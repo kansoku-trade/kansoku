@@ -1,0 +1,26 @@
+.env
+.env.local
+.env.*.local
+
+~/.cache/
+.DS_Store
+__pycache__/
+*.pyc
+
+node_modules/
+
+# Installed third-party skills — pinned in skills-lock.json.
+# Restore on a fresh clone with: npx skills experimental_install
+.agents/
+/.claude/skills/*
+!/.claude/skills/_shared/
+!/.claude/skills/capital-rotation/
+!/.claude/skills/fred/
+!/.claude/skills/gdelt/
+!/.claude/skills/market-session-tracker/
+!/.claude/skills/sec-edgar/
+!/.claude/skills/stock-deep-dive/
+!/.claude/skills/trump-truth-monitor/
+
+journal/
+stocks/

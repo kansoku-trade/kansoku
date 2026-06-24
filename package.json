@@ -1,0 +1,14 @@
+{
+  "name": "trade",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Personal trade journal with market-intel agent skills",
+  "scripts": {
+    "prepare": "skills experimental_install",
+    "skills:install": "skills experimental_install",
+    "skills:update": "skills update -p -y"
+  },
+  "devDependencies": {
+    "skills": "^1.5.13"
+  }
+}
