@@ -15,6 +15,7 @@ node_modules/
 /.claude/skills/*
 !/.claude/skills/_shared/
 !/.claude/skills/capital-rotation/
+!/.claude/skills/chart/
 !/.claude/skills/fred/
 !/.claude/skills/gdelt/
 !/.claude/skills/market-session-tracker/
