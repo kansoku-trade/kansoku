@@ -425,6 +425,167 @@ def _compute_checks(
     ]
 
 
+_ZONE_PALETTE = {
+    "warning": {
+        "label_zh": "诱多区",
+        "fill": "rgba(239, 83, 80, 0.16)",
+        "border": "#ef5350",
+        "axis_color": "#ef5350",
+        "hint": "刚 climax top 后的第一次回调，主力借反弹派发——不能买",
+    },
+    "watch": {
+        "label_zh": "关注区",
+        "fill": "rgba(255, 193, 7, 0.16)",
+        "border": "#ffc107",
+        "axis_color": "#ffc107",
+        "hint": "需触及当天缩量 + ≥1 根反转 K + 大盘配合，确认后小试",
+    },
+    "buy": {
+        "label_zh": "第一买点",
+        "fill": "rgba(38, 166, 154, 0.20)",
+        "border": "#26a69a",
+        "axis_color": "#26a69a",
+        "hint": "VDU 后放量反弹是合格信号，可分批进场",
+    },
+    "value": {
+        "label_zh": "价值区",
+        "fill": "rgba(0, 137, 123, 0.32)",
+        "border": "#00897b",
+        "axis_color": "#26a69a",
+        "hint": "成交密集区 + 长期均线交汇，机构成本带，逆向布局重点",
+    },
+}
+
+
+def _normalize_support_zones(raw_zones: list[dict] | None) -> list[dict]:
+    if not raw_zones:
+        return []
+    out: list[dict] = []
+    for z in raw_zones:
+        try:
+            low = float(z["low"])
+            high = float(z["high"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        if high < low:
+            low, high = high, low
+        tier = z.get("tier") or "watch"
+        palette = _ZONE_PALETTE.get(tier, _ZONE_PALETTE["watch"])
+        out.append({
+            "low": low,
+            "high": high,
+            "tier": tier,
+            "label": z.get("label") or palette["label_zh"],
+            "fill": z.get("fill") or palette["fill"],
+            "border": z.get("border") or palette["border"],
+            "axis_color": palette["axis_color"],
+            "note": z.get("note") or palette["hint"],
+            "sources": z.get("sources") or [],
+        })
+    out.sort(key=lambda z: -z["low"])
+    return out
+
+
+def _compute_volume_profile(
+    highs: list[float],
+    lows: list[float],
+    vols: list[float],
+    lookback: int = 120,
+    n_bins: int = 30,
+) -> dict:
+    seg = min(lookback, len(highs))
+    hs = highs[-seg:]
+    ls = lows[-seg:]
+    vs = vols[-seg:]
+    lo, hi = min(ls), max(hs)
+    if hi <= lo:
+        return {"bins": [], "max_weight": 0.0, "lookback": seg}
+    span = hi - lo
+    bins_arr = [0.0] * n_bins
+    width = span / n_bins
+    for i in range(seg):
+        b_lo = int((ls[i] - lo) / width)
+        b_hi = int((hs[i] - lo) / width)
+        b_lo = max(0, min(n_bins - 1, b_lo))
+        b_hi = max(0, min(n_bins - 1, b_hi))
+        n = b_hi - b_lo + 1
+        per = vs[i] / n
+        for b in range(b_lo, b_hi + 1):
+            bins_arr[b] += per
+    max_w = max(bins_arr) or 1.0
+    bin_out = []
+    for i, w in enumerate(bins_arr):
+        bin_out.append({
+            "low":  round(lo + i * width, 4),
+            "high": round(lo + (i + 1) * width, 4),
+            "weight": round(w, 2),
+            "pct": round(w / max_w, 4),
+        })
+    return {"bins": bin_out, "max_weight": round(max_w, 2), "lookback": seg}
+
+
+def _default_support_zones(
+    closes: list[float],
+    highs: list[float],
+    lows: list[float],
+    ma50: float,
+    ma150: float,
+    ma200: float,
+    vp: dict,
+) -> list[dict]:
+    """Heuristic default zones when user does not supply them.
+
+    Picks two MA bands (MA50, MA200) + the densest volume cluster from vp.
+    """
+    zones: list[dict] = []
+    last = closes[-1]
+    # 1. MA50 ± 2% band — watch tier
+    if ma50 and ma50 < last:
+        zones.append({
+            "low": round(ma50 * 0.98, 2),
+            "high": round(ma50 * 1.02, 2),
+            "tier": "watch",
+            "label": "MA50 关注区",
+            "sources": [f"MA50 ${ma50:.2f}"],
+        })
+    # 2. MA200 band — value tier
+    if ma200 and ma200 < last:
+        zones.append({
+            "low": round(min(ma200, ma150 or ma200) * 0.97, 2),
+            "high": round(max(ma200, ma150 or ma200) * 1.03, 2),
+            "tier": "value",
+            "label": "长期均线价值区",
+            "sources": [f"MA150 ${ma150:.2f}", f"MA200 ${ma200:.2f}"],
+        })
+    # 3. Densest volume cluster below current price — buy or value tier
+    bins = [b for b in vp.get("bins", []) if b["high"] < last]
+    if bins:
+        top = max(bins, key=lambda b: b["weight"])
+        # merge adjacent strong bins
+        idx = bins.index(top)
+        lo, hi = top["low"], top["high"]
+        thresh = top["weight"] * 0.6
+        for j in range(idx - 1, -1, -1):
+            if bins[j]["weight"] >= thresh:
+                lo = bins[j]["low"]
+            else:
+                break
+        for j in range(idx + 1, len(bins)):
+            if bins[j]["weight"] >= thresh:
+                hi = bins[j]["high"]
+            else:
+                break
+        tier = "value" if (hi + lo) / 2 < last * 0.85 else "buy"
+        zones.append({
+            "low": round(lo, 2),
+            "high": round(hi, 2),
+            "tier": tier,
+            "label": "成交密集区",
+            "sources": [f"过去 {vp.get('lookback', 0)} 日 volume profile 峰值"],
+        })
+    return _normalize_support_zones(zones)
+
+
 def _auto_verdict(checks: list[dict], last: float, ma50: float) -> dict:
     fails = [c for c in checks if c["status"] == "fail"]
     if fails:
@@ -510,6 +671,37 @@ SEPA_HTML_TEMPLATE = """<!DOCTYPE html>
   .check-icon { font-size: 14px; }
   .check-label { font-size: 12px; color: #c9d1d9; font-weight: 500; }
   .check-val { font-size: 11px; color: #8b949e; margin-top: 2px; }
+  .zone-item { padding: 8px 10px; margin-bottom: 6px; background: #0d1117;
+               border-left: 3px solid var(--zc); }
+  .zone-head { display: flex; justify-content: space-between; align-items: baseline; }
+  .zone-label { font-size: 12px; font-weight: 600; color: var(--zc); }
+  .zone-range { font-size: 11px; color: #c9d1d9; font-variant-numeric: tabular-nums; }
+  .zone-meta  { font-size: 10px; color: #8b949e; margin-top: 3px; line-height: 1.45; }
+  #vp-canvas { position: absolute; top: 0; right: 0; pointer-events: none; z-index: 5; }
+  .layer-panel { position: absolute; top: 8px; right: 8px; z-index: 20;
+                 background: rgba(13,17,23,0.94); border: 1px solid #21262d;
+                 font-size: 10.5px; min-width: 132px; max-width: 180px; }
+  .lp-header { padding: 3px 8px; cursor: pointer; user-select: none;
+               display: flex; justify-content: space-between; align-items: center; gap: 8px;
+               color: #c9d1d9; font-weight: 500; font-size: 10.5px; }
+  .lp-header:hover { background: rgba(255,255,255,0.04); }
+  .lp-arrow { font-size: 8px; transition: transform 0.15s; opacity: 0.6; }
+  .layer-panel.collapsed { min-width: 0; max-width: none; }
+  .layer-panel.collapsed .lp-arrow { transform: rotate(-90deg); }
+  .layer-panel.collapsed .lp-body { display: none; }
+  .lp-body { padding: 4px 8px 6px; max-height: 70vh; overflow-y: auto;
+             border-top: 1px solid #21262d; }
+  .lp-group { margin-bottom: 5px; }
+  .lp-group:last-child { margin-bottom: 0; }
+  .lp-group-title { font-size: 8.5px; color: #6e7681; text-transform: uppercase;
+                    margin-bottom: 1px; letter-spacing: 0.06em; }
+  .lp-group label { display: flex; align-items: center; color: #c9d1d9; padding: 1px 0;
+                    cursor: pointer; user-select: none; line-height: 1.25; font-size: 11px; }
+  .lp-group label:hover { color: #f0f6fc; }
+  .lp-group input[type=checkbox] { margin: 0 5px 0 0; accent-color: #58a6ff;
+                                    flex-shrink: 0; width: 11px; height: 11px; }
+  .lp-swatch { display: inline-block; width: 7px; height: 7px; margin-right: 4px;
+               border-radius: 1px; flex-shrink: 0; }
   .disclaimer { margin-top: 16px; padding-top: 10px; border-top: 1px solid #21262d;
                 font-size: 10px; color: #6e7681; line-height: 1.4; }
 </style>
@@ -524,6 +716,14 @@ SEPA_HTML_TEMPLATE = """<!DOCTYPE html>
         <span><span class="swatch" style="background:#ba68c8"></span>MA150 $__MA150__</span>
         <span><span class="swatch" style="background:#4fc3f7"></span>MA200 $__MA200__</span>
       </div>
+      <div class="layer-panel collapsed" id="layer-panel">
+        <div class="lp-header" id="lp-header">
+          <span>图层</span>
+          <span class="lp-arrow">▾</span>
+        </div>
+        <div class="lp-body" id="lp-body"></div>
+      </div>
+      <canvas id="vp-canvas"></canvas>
       <div id="chart-main"></div>
     </div>
     <div class="chart-block rs">
@@ -563,6 +763,7 @@ SEPA_HTML_TEMPLATE = """<!DOCTYPE html>
       <div class="k">距 MA200</div><div class="v __MA200_CLS__">__MA200_PCT__</div>
       __RS_KVS__
     </div>
+    __SUPPORT_ZONES_SECTION__
     __ENTRY_PLAN_SECTION__
     __POSITION_SECTION__
     <div class="disclaimer">
@@ -598,18 +799,29 @@ ma50.setData(DATA.ma50);
 ma150.setData(DATA.ma150);
 ma200.setData(DATA.ma200);
 
-candle.createPriceLine({ price: DATA.high52w, color: '#9c27b0', lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: '52w 高' });
-candle.createPriceLine({ price: DATA.low52w,  color: '#4caf50', lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: '52w 低' });
-if (DATA.extendedLine) {
-  candle.createPriceLine({ price: DATA.extendedLine, color: '#ff5252', lineWidth: 1, lineStyle: 3, axisLabelVisible: true, title: 'MA50 +25% extended' });
+function makeTogglableLine(series, spec) {
+  let ref = series.createPriceLine(spec);
+  let visible = true;
+  return {
+    set(v) {
+      if (v === visible) return;
+      if (v) { ref = series.createPriceLine(spec); }
+      else   { series.removePriceLine(ref); ref = null; }
+      visible = v;
+    },
+    get visible() { return visible; },
+  };
 }
 
+const lineH52w = makeTogglableLine(candle, { price: DATA.high52w, color: '#9c27b0', lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: '52w 高' });
+const lineL52w = makeTogglableLine(candle, { price: DATA.low52w,  color: '#4caf50', lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: '52w 低' });
+const lineExt = DATA.extendedLine
+  ? makeTogglableLine(candle, { price: DATA.extendedLine, color: '#ff5252', lineWidth: 1, lineStyle: 3, axisLabelVisible: true, title: 'MA50 +25% extended' })
+  : null;
+
+let epZones = null, epLines = null;
 if (DATA.entryPlan) {
   const ep = DATA.entryPlan;
-
-  // ---- Long Position 视觉：绿色盈利区 + 红色亏损区 (模拟 TradingView 多头仓位工具) ----
-  // 用 BaselineSeries（baseValue 锚在 entry pivot），它会从 baseValue 到 series value 之间
-  // 双向填充上下颜色，正好覆盖 entry→target2 和 entry→stop 两段范围（不会溢出到图底）。
   const greenZone = mainChart.addBaselineSeries({
     baseValue: { type: 'price', price: ep.pivot },
     topFillColor1:    'rgba(38, 166, 154, 0.25)',
@@ -618,12 +830,9 @@ if (DATA.entryPlan) {
     bottomFillColor1: 'rgba(0, 0, 0, 0)',
     bottomFillColor2: 'rgba(0, 0, 0, 0)',
     bottomLineColor:  'rgba(0, 0, 0, 0)',
-    priceLineVisible: false,
-    lastValueVisible: false,
-    crosshairMarkerVisible: false,
+    priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false,
   });
   greenZone.setData(DATA.candles.map(c => ({ time: c.time, value: ep.target2 })));
-
   const redZone = mainChart.addBaselineSeries({
     baseValue: { type: 'price', price: ep.pivot },
     topFillColor1:    'rgba(0, 0, 0, 0)',
@@ -632,23 +841,103 @@ if (DATA.entryPlan) {
     bottomFillColor1: 'rgba(239, 83, 80, 0.05)',
     bottomFillColor2: 'rgba(239, 83, 80, 0.25)',
     bottomLineColor:  'rgba(239, 83, 80, 0)',
-    priceLineVisible: false,
-    lastValueVisible: false,
-    crosshairMarkerVisible: false,
+    priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false,
   });
   redZone.setData(DATA.candles.map(c => ({ time: c.time, value: ep.stop })));
+  epZones = { greenZone, redZone };
+  epLines = [
+    makeTogglableLine(candle, { price: ep.pivot,         color: '#26a69a', lineWidth: 2, lineStyle: 0, axisLabelVisible: true, title: `买入 pivot $${ep.pivot.toFixed(2)}` }),
+    makeTogglableLine(candle, { price: ep.buy_zone_high, color: '#26a69a', lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: `买入区上限 +5%` }),
+    makeTogglableLine(candle, { price: ep.stop,          color: '#ef5350', lineWidth: 2, lineStyle: 2, axisLabelVisible: true, title: `止损 $${ep.stop.toFixed(2)}` }),
+    makeTogglableLine(candle, { price: ep.target1,       color: '#42a5f5', lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: `T1 +${ep.target1_pct.toFixed(0)}% $${ep.target1.toFixed(2)}` }),
+    makeTogglableLine(candle, { price: ep.target2,       color: '#1976d2', lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: `T2 +${ep.target2_pct.toFixed(0)}% $${ep.target2.toFixed(2)}` }),
+  ];
+}
 
-  // ---- 边界价格线（labels 落在右侧 price axis）----
-  candle.createPriceLine({ price: ep.pivot,         color: '#26a69a', lineWidth: 2, lineStyle: 0, axisLabelVisible: true, title: `买入 pivot $${ep.pivot.toFixed(2)}` });
-  candle.createPriceLine({ price: ep.buy_zone_high, color: '#26a69a', lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: `买入区上限 +5%` });
-  candle.createPriceLine({ price: ep.stop,          color: '#ef5350', lineWidth: 2, lineStyle: 2, axisLabelVisible: true, title: `止损 $${ep.stop.toFixed(2)}` });
-  candle.createPriceLine({ price: ep.target1,       color: '#42a5f5', lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: `T1 +${ep.target1_pct.toFixed(0)}% $${ep.target1.toFixed(2)}` });
-  candle.createPriceLine({ price: ep.target2,       color: '#1976d2', lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: `T2 +${ep.target2_pct.toFixed(0)}% $${ep.target2.toFixed(2)}` });
+const zoneLayers = [];
+if (DATA.supportZones && DATA.supportZones.length) {
+  DATA.supportZones.forEach(z => {
+    const zoneSeries = mainChart.addBaselineSeries({
+      baseValue: { type: 'price', price: z.high },
+      topFillColor1:    'rgba(0,0,0,0)',
+      topFillColor2:    'rgba(0,0,0,0)',
+      topLineColor:     'rgba(0,0,0,0)',
+      bottomFillColor1: z.fill,
+      bottomFillColor2: z.fill,
+      bottomLineColor:  z.border,
+      priceLineVisible: false,
+      lastValueVisible: false,
+      crosshairMarkerVisible: false,
+    });
+    zoneSeries.setData(DATA.candles.map(c => ({ time: c.time, value: z.low })));
+    const mid = (z.high + z.low) / 2;
+    const midLine = makeTogglableLine(candle, {
+      price: mid, color: z.border, lineWidth: 0, lineStyle: 0,
+      axisLabelVisible: true,
+      title: `${z.label} $${z.low.toFixed(0)}-${z.high.toFixed(0)}`,
+    });
+    zoneLayers.push({ series: zoneSeries, line: midLine, mid, info: z });
+  });
 }
 
 const volSeries = mainChart.addHistogramSeries({ priceFormat: { type: 'volume' }, priceScaleId: 'vol' });
 mainChart.priceScale('vol').applyOptions({ scaleMargins: { top: 0.82, bottom: 0 } });
 volSeries.setData(DATA.volumes);
+
+const vpCanvas = document.getElementById('vp-canvas');
+let vpEnabled = true;
+const vpCtx = vpCanvas.getContext('2d');
+const VP_WIDTH = 90;
+function drawVolumeProfile() {
+  const rect = mainEl.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  vpCanvas.style.width = VP_WIDTH + 'px';
+  vpCanvas.style.height = rect.height + 'px';
+  vpCanvas.width = VP_WIDTH * dpr;
+  vpCanvas.height = rect.height * dpr;
+  vpCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  vpCtx.clearRect(0, 0, VP_WIDTH, rect.height);
+  if (!vpEnabled || !DATA.volumeProfile || !DATA.volumeProfile.bins.length) return;
+  const bins = DATA.volumeProfile.bins;
+  const drawW = VP_WIDTH - 14;
+  bins.forEach(b => {
+    const yHi = candle.priceToCoordinate(b.high);
+    const yLo = candle.priceToCoordinate(b.low);
+    if (yHi == null || yLo == null) return;
+    const top = Math.min(yHi, yLo);
+    const h = Math.max(1, Math.abs(yLo - yHi) - 0.5);
+    const w = Math.max(1, b.pct * drawW);
+    vpCtx.fillStyle = 'rgba(139, 148, 158, 0.55)';
+    vpCtx.fillRect(VP_WIDTH - w - 2, top, w, h);
+  });
+  // POC (Point of Control) — highest weight bin gets highlight
+  const poc = bins.reduce((a, b) => (b.weight > a.weight ? b : a), bins[0]);
+  if (poc) {
+    const yHi = candle.priceToCoordinate(poc.high);
+    const yLo = candle.priceToCoordinate(poc.low);
+    if (yHi != null && yLo != null) {
+      const top = Math.min(yHi, yLo);
+      const h = Math.max(1, Math.abs(yLo - yHi));
+      vpCtx.fillStyle = 'rgba(255, 152, 0, 0.85)';
+      vpCtx.fillRect(VP_WIDTH - drawW - 2, top, drawW, h);
+      vpCtx.fillStyle = '#ff9800';
+      vpCtx.font = '10px -apple-system, sans-serif';
+      vpCtx.textAlign = 'right';
+      vpCtx.fillText('POC', VP_WIDTH - 4, top + h / 2 + 3);
+    }
+  }
+}
+let vpRaf = null;
+function scheduleVpDraw() {
+  if (vpRaf) return;
+  vpRaf = requestAnimationFrame(() => { vpRaf = null; drawVolumeProfile(); });
+}
+mainChart.timeScale().subscribeVisibleLogicalRangeChange(scheduleVpDraw);
+mainChart.subscribeCrosshairMove(scheduleVpDraw);
+new ResizeObserver(scheduleVpDraw).observe(mainEl);
+setTimeout(drawVolumeProfile, 200);
+// Continuous redraw at low fps to track autoscale price changes
+setInterval(scheduleVpDraw, 250);
 
 const rsEl = document.getElementById('chart-rs');
 const rsChart = ChartLib.createChart(rsEl, { ...baseOptions, width: rsEl.clientWidth, height: rsEl.clientHeight });
@@ -666,6 +955,92 @@ const vr = vrChart.addHistogramSeries({ priceLineVisible: false });
 vr.setData(DATA.volRatio);
 vr.createPriceLine({ price: 1.5, color: '#ff5722', lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: '1.5×' });
 vr.createPriceLine({ price: 1.0, color: '#666',    lineWidth: 1, lineStyle: 3, axisLabelVisible: false });
+
+// ---- Layer control panel ----
+(function buildLayerPanel() {
+  const body = document.getElementById('lp-body');
+  const header = document.getElementById('lp-header');
+  const panel = document.getElementById('layer-panel');
+  header.addEventListener('click', () => panel.classList.toggle('collapsed'));
+
+  const groups = [];
+
+  groups.push({
+    title: '均线',
+    items: [
+      { key: 'ma50',  label: 'MA50',  color: '#ffb74d', toggle: v => ma50.applyOptions({ visible: v }) },
+      { key: 'ma150', label: 'MA150', color: '#ba68c8', toggle: v => ma150.applyOptions({ visible: v }) },
+      { key: 'ma200', label: 'MA200', color: '#4fc3f7', toggle: v => ma200.applyOptions({ visible: v }) },
+    ],
+  });
+
+  const priceItems = [
+    { key: 'h52w',    label: '52w 高', color: '#9c27b0', toggle: v => lineH52w.set(v) },
+    { key: 'l52w',    label: '52w 低', color: '#4caf50', toggle: v => lineL52w.set(v) },
+  ];
+  if (lineExt) priceItems.push({ key: 'ext', label: 'MA50 +25%', color: '#ff5252', toggle: v => lineExt.set(v) });
+  groups.push({ title: '价位线', items: priceItems });
+
+  if (zoneLayers.length) {
+    groups.push({
+      title: '支撑区',
+      items: zoneLayers.map((zl, i) => ({
+        key: 'zone' + i, label: zl.info.label, color: zl.info.border,
+        toggle: v => { zl.series.applyOptions({ visible: v }); zl.line.set(v); },
+      })),
+    });
+  }
+
+  if (epLines) {
+    groups.push({
+      title: '入场计划',
+      items: [
+        { key: 'ep-zone', label: '盈亏区域', color: '#26a69a',
+          toggle: v => { epZones.greenZone.applyOptions({ visible: v }); epZones.redZone.applyOptions({ visible: v }); } },
+        { key: 'ep-line', label: 'pivot / 止损 / T1 / T2', color: '#42a5f5',
+          toggle: v => epLines.forEach(l => l.set(v)) },
+      ],
+    });
+  }
+
+  groups.push({
+    title: '其他',
+    items: [
+      { key: 'vol', label: '成交量', color: '#26a69a',
+        toggle: v => volSeries.applyOptions({ visible: v }) },
+      { key: 'markers', label: '事件标记', color: '#d32f2f',
+        toggle: v => candle.setMarkers(v ? DATA.markers : []) },
+      { key: 'vp', label: '成交分布 (VP)', color: '#ff9800',
+        toggle: v => { vpEnabled = v; drawVolumeProfile(); } },
+    ],
+  });
+
+  groups.forEach(g => {
+    const wrap = document.createElement('div');
+    wrap.className = 'lp-group';
+    const t = document.createElement('div');
+    t.className = 'lp-group-title';
+    t.textContent = g.title;
+    wrap.appendChild(t);
+    g.items.forEach(it => {
+      const lbl = document.createElement('label');
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = true;
+      cb.dataset.key = it.key;
+      cb.addEventListener('change', () => it.toggle(cb.checked));
+      const sw = document.createElement('span');
+      sw.className = 'lp-swatch';
+      sw.style.background = it.color;
+      const txt = document.createTextNode(it.label);
+      lbl.appendChild(cb);
+      lbl.appendChild(sw);
+      lbl.appendChild(txt);
+      wrap.appendChild(lbl);
+    });
+    body.appendChild(wrap);
+  });
+})();
 
 (function syncTimeScales(charts) {
   let syncing = false;
@@ -785,6 +1160,21 @@ def build_sepa_html(data: dict) -> tuple[str, dict]:
 
     verdict = context.get("verdict") or _auto_verdict(checks, last, ma50_now)
 
+    vp_cfg = context.get("volume_profile") or {}
+    vp = _compute_volume_profile(
+        highs, lows, vols,
+        lookback=int(vp_cfg.get("lookback_days", 120)),
+        n_bins=int(vp_cfg.get("bins", 30)),
+    )
+
+    raw_zones = context.get("support_zones")
+    if raw_zones is None and context.get("auto_support_zones", True):
+        support_zones = _default_support_zones(
+            closes, highs, lows, ma50_now, ma150_now, ma200_now, vp,
+        )
+    else:
+        support_zones = _normalize_support_zones(raw_zones)
+
     entry_plan_raw = context.get("entry_plan")
     entry_plan = None
     if entry_plan_raw and entry_plan_raw.get("pivot"):
@@ -867,6 +1257,29 @@ def build_sepa_html(data: dict) -> tuple[str, dict]:
             '</div>'
         )
 
+    support_zones_html = ""
+    if support_zones:
+        zone_rows = []
+        for z in support_zones:
+            dist = (z["high"] + z["low"]) / 2 / last * 100 - 100
+            sources_str = (
+                f'<span style="color:#6e7681;"> · {" / ".join(z["sources"])}</span>'
+                if z["sources"] else ""
+            )
+            zone_rows.append(
+                f'<div class="zone-item" style="--zc: {z["axis_color"]};">'
+                f'<div class="zone-head">'
+                f'<span class="zone-label">{z["label"]}</span>'
+                f'<span class="zone-range">${z["low"]:.2f} – ${z["high"]:.2f} ({dist:+.1f}%)</span>'
+                f'</div>'
+                f'<div class="zone-meta">{z["note"]}{sources_str}</div>'
+                f'</div>'
+            )
+        support_zones_html = (
+            '<div class="section-title">支撑区</div>'
+            + "".join(zone_rows)
+        )
+
     position_html = ""
     if position:
         shares = position.get("shares")
@@ -910,6 +1323,8 @@ def build_sepa_html(data: dict) -> tuple[str, dict]:
         "low52w": low_52w,
         "extendedLine": ext_line,
         "entryPlan": entry_plan,
+        "supportZones": support_zones,
+        "volumeProfile": vp,
     }
 
     h52_pct = (last / high_52w - 1) * 100
@@ -943,6 +1358,7 @@ def build_sepa_html(data: dict) -> tuple[str, dict]:
         "__MA200_PCT__": f"{ma200_pct:+.2f}%",
         "__MA200_CLS__": "up" if ma200_pct >= 0 else "down",
         "__RS_KVS__": rs_kvs,
+        "__SUPPORT_ZONES_SECTION__": support_zones_html,
         "__ENTRY_PLAN_SECTION__": entry_plan_html,
         "__POSITION_SECTION__": position_html,
         "__DATA__": json.dumps(data_js, ensure_ascii=False, default=str),
