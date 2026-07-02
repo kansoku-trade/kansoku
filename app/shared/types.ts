@@ -377,6 +377,7 @@ export interface ChartMeta {
   symbol: string | null;
   created_at: string;
   updated_at: string;
+  prediction_updated_at?: string;
 }
 
 export interface ChartDoc extends ChartMeta {

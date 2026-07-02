@@ -3,6 +3,7 @@ import type { ChartDoc } from "../../../shared/types.js";
 import { ClientError } from "../errors.js";
 import { BASE_URL } from "../env.js";
 import { buildChart, mergeForPatch, rebuild, refreshBody } from "../services/build.js";
+import { predictionStale } from "../services/staleness.js";
 import { allocateId, deleteChart, listCharts, loadChart, saveChart } from "../services/store.js";
 
 export const chartsRoute = new Hono();
@@ -17,7 +18,16 @@ chartsRoute.get("/", async (c) => {
     symbol: c.req.query("symbol"),
     limit: c.req.query("limit") ? Number(c.req.query("limit")) : undefined,
   });
-  return c.json({ ok: true, data: metas.map((m) => ({ ...m, url: chartUrl(m.id) })) });
+  const now = new Date();
+  const withStale = await Promise.all(
+    metas.map(async (m) => {
+      const doc = m.type === "intraday" ? await loadChart(m.id) : null;
+      const stale = doc ? predictionStale(doc, now) : false;
+      return { ...m, url: chartUrl(m.id), prediction_stale: stale };
+    }),
+  );
+  const data = c.req.query("stale") === "true" ? withStale.filter((m) => m.prediction_stale) : withStale;
+  return c.json({ ok: true, data });
 });
 
 chartsRoute.post("/", async (c) => {
@@ -49,7 +59,7 @@ chartsRoute.post("/", async (c) => {
 chartsRoute.get("/:id", async (c) => {
   const doc = await loadChart(c.req.param("id"));
   if (!doc) throw new ClientError(`chart not found: ${c.req.param("id")}`, "GET /api/charts lists available ids", 404);
-  return c.json({ ok: true, data: doc });
+  return c.json({ ok: true, data: { ...doc, prediction_stale: predictionStale(doc, new Date()) } });
 });
 
 chartsRoute.patch("/:id", async (c) => {
@@ -69,6 +79,7 @@ chartsRoute.patch("/:id", async (c) => {
     input: result.input,
     built: result.built,
     updated_at: new Date().toISOString(),
+    ...("prediction" in body ? { prediction_updated_at: new Date().toISOString() } : {}),
   };
   await saveChart(updated);
   return c.json({

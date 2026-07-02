@@ -14,6 +14,7 @@ function toMeta(doc: ChartDoc): ChartMeta {
     symbol: doc.symbol,
     created_at: doc.created_at,
     updated_at: doc.updated_at,
+    prediction_updated_at: doc.prediction_updated_at,
   };
 }
 

@@ -1,5 +1,7 @@
+import type { ChartDoc } from "../../../shared/types.js";
 import { ClientError } from "../errors.js";
 import { buildChart, refreshBody } from "../services/build.js";
+import { predictionStale } from "../services/staleness.js";
 import { loadChart } from "../services/store.js";
 import { createPoller, type PollerHandle } from "./poller.js";
 
@@ -8,11 +10,15 @@ const LIVE_TYPES = new Set(["flow", "kline", "intraday"]);
 
 const chartPollers = new Map<string, PollerHandle>();
 
+function predictionFields(doc: ChartDoc) {
+  return { prediction_updated_at: doc.prediction_updated_at, prediction_stale: predictionStale(doc, new Date()) };
+}
+
 export async function subscribeChart(id: string, push: (envelope: string) => void): Promise<() => void> {
   const doc = await loadChart(id);
   if (!doc) throw new ClientError(`chart not found: ${id}`, undefined, 404);
 
-  push(JSON.stringify({ type: "data", data: { built: doc.built } }));
+  push(JSON.stringify({ type: "data", data: { built: doc.built, ...predictionFields(doc) } }));
 
   if (!LIVE_TYPES.has(doc.type) || !refreshBody(doc.type, doc.input)) return () => {};
 
@@ -24,9 +30,8 @@ export async function subscribeChart(id: string, push: (envelope: string) => voi
         const latest = await loadChart(id);
         if (!latest) throw new ClientError(`chart not found: ${id}`, undefined, 404);
         const body = refreshBody(latest.type, latest.input);
-        if (!body) return { built: latest.built };
-        const result = await buildChart(body);
-        return { built: result.built };
+        const built = body ? (await buildChart(body)).built : latest.built;
+        return { built, ...predictionFields(latest) };
       },
       onStop: () => {
         chartPollers.delete(id);
