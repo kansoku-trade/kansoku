@@ -1,11 +1,12 @@
 # trade-skills
 
-> 个人美股交易日志，外加一套自用的 Claude Code 行情研究技能（skill）。
+> 个人美股交易日志，外加一套自用的 Claude Code 行情研究技能（skill）和一个本地图表应用。
 
-这是一个**交易日志仓库**，不是软件项目——没有构建脚本，没有测试，也没有运行时。它做两件事：
+这是一个**交易日志仓库**，不是对外发布的软件产品。它做三件事：
 
 1. **留下可查的记录**：所有札记都是纯 markdown，按日期放在 `journal/`，按个股放在 `stocks/`。没有数据库。
 2. **提供一套调研工具**：`.claude/skills/` 下的自定义 skill 调用券商、政府、新闻接口，把零散数据拼成一份能落档的研究稿。
+3. **本地渲染图表**：`app/`（Hono + React）在 `http://localhost:5199` 渲染全部图表——K 线、资金流、SEPA 仪表盘、短线多周期预测面板，指标全部服务端实算，并带实时行情推送。
 
 公开仓库地址：[Innei/trade-skills](https://github.com/Innei/trade-skills)。`journal/` 与 `stocks/` 在 `.gitignore` 中，仅本地保留，不会推送。
 
@@ -35,10 +36,11 @@
 - **`stock-deep-dive`**：第一次看一只新票时用。一次性跑业务、基本面、技术面、催化剂、上下游、自审六个角度。
 - **`capital-rotation`**：盘后一次性扫指数 / 半导体 / 软件云 / 大科技几条赛道的资金净流入，定一个轮动叙事，写入 `journal/YYYY-MM-DD-flow.md`。
 - **`market-session-tracker`**：盘前到收盘期间盯一份观察清单，识别突破、派发、回调档位，按时间戳更新判断。
-- **`chart`**：把 Longbridge 原生 JSON 渲染成 ECharts HTML 图（K 线、资金流曲线、跨品种比较），落到 `journal/charts/`。
+- **`intraday-signal`**：单票短线钻取。5 分钟 / 15 分钟 / 1 小时三周期读 MACD 与波段结构（1 小时定趋势、15 分钟定入场、5 分钟做触发），产出带锚点的方向判断、三情景推演、双向打法和入场 / 止损 / 目标计划，最后渲染成预测面板。
+- **`chart`**：通过 `app/` 的 API 出图（POST `/api/charts`），五种图型：flow / kline / cohort / sepa / intraday。服务端自己拉数据、算指标、自动标注（MACD 结构信号、14 种经典 K 线形态、背离 / 背驰、盘前盘后夜盘时段覆盖层）。
 
 > [!TIP]
-> 三个工作流互有重叠。**单票第一次研究**用 `stock-deep-dive`；**盘后看大盘资金去哪了**用 `capital-rotation`；**盘中实时盯盘**用 `market-session-tracker`；**只看一个维度**（比如只查个报价）就跳过工作流，直接调 `longbridge-*`。
+> 几个工作流互有重叠。**单票第一次研究**用 `stock-deep-dive`；**盘后看大盘资金去哪了**用 `capital-rotation`；**盘中实时盯盘**用 `market-session-tracker`；**单票短线找入场**用 `intraday-signal`；**只看一个维度**（比如只查个报价）就跳过工作流，直接调 `longbridge-*`。
 
 ### 第三层 · 落档
 
@@ -71,6 +73,16 @@ python3 .claude/skills/trump-truth-monitor/scripts/archive.py --quiet
 
 **缓存与限流**：`.claude/skills/_shared/client.py` 在 `~/.cache/market-intel/` 下缓存，并按数据源自动节流——SEC 10 req/s、FRED 120 req/min、**GDELT ≥ 5 秒一次请求**。
 
+## 图表应用
+
+```bash
+cd app && pnpm install && pnpm build   # 首次
+cd app && pnpm start                   # http://localhost:5199
+cd app && pnpm test                    # 金标测试（与原 Python 实现逐数对齐）
+```
+
+服务端自己调 longbridge CLI 拉数据并用 TypeScript 计算全部指标；图表数据以 JSON 落在 `journal/charts/data/`（gitignored），前端永远用最新代码渲染历史数据。页面打开期间有实时行情推送（10 秒报价流 + 60 秒图表重建，识别盘前 / 盘后 / 夜盘时段）。细节见 [`app/README.md`](./app/README.md)。
+
 ## 安装
 
 ```bash
@@ -101,14 +113,17 @@ SEC_USER_AGENT="Your Name <you@example.com>"  # SEC EDGAR 要求带身份
 ├── .claude/skills/        # 自定义 skill 源码（仅自有，第三方走符号链接）
 │   ├── _shared/           # 公共 env / 缓存客户端
 │   ├── capital-rotation/  # 资金轮动扫描
-│   ├── chart/             # ECharts 渲染
+│   ├── chart/             # 图表应用的调用规范
 │   ├── fred/              # FRED 宏观数据
 │   ├── gdelt/             # 全球新闻流
+│   ├── intraday-signal/   # 单票短线多周期钻取
 │   ├── market-session-tracker/
 │   ├── sec-edgar/         # SEC 文件
 │   ├── stock-deep-dive/   # 单票六维研究
 │   └── trump-truth-monitor/
 ├── .agents/               # pnpm 还原的第三方 skill（gitignored）
+├── app/                   # 图表应用（server: Hono + TS / web: Vite + React）
+├── docs/                  # 设计文档
 ├── journal/               # 每日札记（gitignored）
 ├── stocks/                # 个股笔记（gitignored）
 ├── CLAUDE.md              # 给 Claude Code 的项目说明
