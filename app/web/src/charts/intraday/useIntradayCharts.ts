@@ -1,7 +1,7 @@
 import type { RefObject } from "react";
 import { useEffect, useRef } from "react";
 import type { IChartApi, ISeriesApi, LogicalRange } from "lightweight-charts";
-import type { IntradayBuilt, TimeframeKey } from "../../../../shared/types";
+import type { IntradayBuilt, IntradayPriceZone, TimeframeKey } from "../../../../shared/types";
 import {
   addPriceLine,
   asTime,
@@ -35,6 +35,7 @@ interface Handle {
   mainTip: MarkerTooltipHandle;
   macdTip: MarkerTooltipHandle;
   dynamic: { chart: IChartApi; series: ISeriesApi<"Line"> }[];
+  planLines: ReturnType<typeof addPriceLine>[];
 }
 
 const sessionBackdrop = (chart: IChartApi, scaleId: string): ISeriesApi<"Histogram"> => {
@@ -48,6 +49,9 @@ const sessionBackdrop = (chart: IChartApi, scaleId: string): ISeriesApi<"Histogr
 };
 
 const NEAR_LEFT_BARS = 10;
+
+const zoneTitle = (z: IntradayPriceZone, edge?: "上沿" | "下沿") =>
+  `${z.label}${edge ? edge : ""} $${(edge === "上沿" ? z.high : z.low).toFixed(2)}`;
 
 export function useIntradayCharts(
   built: IntradayBuilt,
@@ -88,7 +92,7 @@ export function useIntradayCharts(
     main.priceScale("vol").applyOptions({ scaleMargins: { top: 0.75, bottom: 0 } });
     main.priceScale("right").applyOptions({ scaleMargins: { top: 0.08, bottom: 0.3 } });
 
-    const emaCount = builtRef.current.timeframes.m5?.emas.length ?? 0;
+    const emaCount = builtRef.current.timeframes.m5?.emas?.length ?? 0;
     const emaSeries = Array.from({ length: emaCount }, (_, i) =>
       main.addLineSeries({
         color: EMA_COLORS[i % EMA_COLORS.length],
@@ -105,14 +109,6 @@ export function useIntradayCharts(
     const dif = macd.addLineSeries({ color: "#42a5f5", lineWidth: 1, priceLineVisible: false, lastValueVisible: true });
     const dea = macd.addLineSeries({ color: "#ff9800", lineWidth: 1, priceLineVisible: false, lastValueVisible: true });
 
-    const ep = builtRef.current.entryPlan;
-    if (ep) {
-      addPriceLine(candle, { price: ep.entry, color: "#58a6ff", lineWidth: 2, lineStyle: 0, title: `入场 $${ep.entry.toFixed(2)}` });
-      addPriceLine(candle, { price: ep.stop, color: "#ef5350", lineWidth: 2, lineStyle: 2, title: `止损 $${ep.stop.toFixed(2)}` });
-      addPriceLine(candle, { price: ep.target1, color: "#26a69a", lineWidth: 1, lineStyle: 2, title: `T1 $${ep.target1.toFixed(2)}` });
-      addPriceLine(candle, { price: ep.target2, color: "#00897b", lineWidth: 1, lineStyle: 2, title: `T2 $${ep.target2.toFixed(2)}` });
-    }
-
     syncTimeScales([main, macd]);
     const observers = [observeSize(mainEl, main), observeSize(macdEl, macd)];
     const mainTip = markerTooltip(main, mainEl);
@@ -123,7 +119,7 @@ export function useIntradayCharts(
     };
     main.timeScale().subscribeVisibleLogicalRangeChange(onRangeChange);
 
-    handleRef.current = { main, macd, candle, vol, session, macdSession, emaSeries, hist, dif, dea, mainTip, macdTip, dynamic: [] };
+    handleRef.current = { main, macd, candle, vol, session, macdSession, emaSeries, hist, dif, dea, mainTip, macdTip, dynamic: [], planLines: [] };
     lastTfRef.current = null;
     firstTimeRef.current = null;
 
@@ -184,16 +180,37 @@ export function useIntradayCharts(
       lastValueVisible: false,
       crosshairMarkerVisible: false,
     } as const;
-    d.priceConnectors.forEach((c) => {
+    (d.priceConnectors ?? []).forEach((c) => {
       const s = h.main.addLineSeries({ color: c.color, ...connectorOpts });
       s.setData(toLineData(c.data));
       h.dynamic.push({ chart: h.main, series: s });
     });
-    d.macdConnectors.forEach((c) => {
+    (d.macdConnectors ?? []).forEach((c) => {
       const s = h.macd.addLineSeries({ color: c.color, ...connectorOpts });
       s.setData(toLineData(c.data));
       h.dynamic.push({ chart: h.macd, series: s });
     });
+
+    h.planLines.forEach((line) => h.candle.removePriceLine(line));
+    h.planLines = [];
+    const ep = built.entryPlan;
+    if (ep) {
+      h.planLines.push(addPriceLine(h.candle, { price: ep.entry, color: "#58a6ff", lineWidth: 2, lineStyle: 0, title: `入场 $${ep.entry.toFixed(2)}` }));
+      h.planLines.push(addPriceLine(h.candle, { price: ep.stop, color: "#ef5350", lineWidth: 2, lineStyle: 2, title: `止损 $${ep.stop.toFixed(2)}` }));
+      h.planLines.push(addPriceLine(h.candle, { price: ep.target1, color: "#26a69a", lineWidth: 1, lineStyle: 2, title: `T1 $${ep.target1.toFixed(2)}` }));
+      h.planLines.push(addPriceLine(h.candle, { price: ep.target2, color: "#00897b", lineWidth: 1, lineStyle: 2, title: `T2 $${ep.target2.toFixed(2)}` }));
+      (ep.price_zones ?? [])
+        .filter((z) => z.kind === "resistance")
+        .forEach((z) => {
+          const color = z.color ?? "#8b949e";
+          if (Math.abs(z.high - z.low) < 0.0001) {
+            h.planLines.push(addPriceLine(h.candle, { price: z.low, color, lineWidth: 1, lineStyle: 2, title: zoneTitle(z) }));
+          } else {
+            h.planLines.push(addPriceLine(h.candle, { price: z.low, color, lineWidth: 1, lineStyle: 2, title: zoneTitle(z, "下沿") }));
+            h.planLines.push(addPriceLine(h.candle, { price: z.high, color, lineWidth: 1, lineStyle: 2, title: zoneTitle(z, "上沿") }));
+          }
+        });
+    }
 
     if (lastTfRef.current !== activeTf) {
       lastTfRef.current = activeTf;

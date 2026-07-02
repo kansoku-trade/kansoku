@@ -1,5 +1,12 @@
 import type { CSSProperties } from "react";
-import { AUTO_SIGNAL_META, type DivergencePair, type IntradayBuilt, type TimeframeKey } from "../../../../shared/types";
+import {
+  AUTO_SIGNAL_META,
+  type DivergencePair,
+  type IntradayBuilt,
+  type IntradayPriceZone,
+  type IntradayTargetContext,
+  type TimeframeKey,
+} from "../../../../shared/types";
 import { formatMarketClock, formatMarketDateTime, formatMarketMonthDayTime } from "../../../../shared/time";
 import { fmt, signed, upDown } from "../../format";
 import { NewsSection } from "../NewsSection";
@@ -9,6 +16,15 @@ const DIRECTION_LABEL: Record<string, string> = { long: "📈 做多", short: "�
 const DIRECTION_COLOR: Record<string, string> = { long: "#26a69a", short: "#ef5350", neutral: "#8b949e" };
 const SIGNAL_ICON: Record<string, string> = { pin_bar: "📌", macd_divergence: "⚡", macd_beichi: "🌀" };
 const TF_ORDER: TimeframeKey[] = ["m5", "m15", "h1"];
+const ZONE_KIND_LABEL: Record<string, string> = {
+  entry: "入场区",
+  stop: "止损/失效",
+  target: "目标区",
+  support: "支撑区",
+  resistance: "压力/阻力区",
+  invalidation: "失效区",
+  watch: "观察区",
+};
 
 const barTime = (t: number) => formatMarketMonthDayTime(t, true);
 
@@ -50,6 +66,8 @@ export function IntradaySidebar({ built, activeTf, predictionUpdatedAt, predicti
   const totalProb = scenarios.reduce((acc, sc) => acc + Number(sc.probability || 0), 0);
   const rbp = p?.range_bound_plan;
   const signals = p?.signals ?? [];
+  const targetContexts = ep?.target_contexts ?? [];
+  const priceZones = (ep?.price_zones ?? []).filter((zone) => zone.kind === "resistance");
 
   return (
     <div className="sidebar">
@@ -139,19 +157,54 @@ export function IntradaySidebar({ built, activeTf, predictionUpdatedAt, predicti
               {fmt(ep.rr)} : 1{!ep.rr_ok && <span className="warn-red"> ⚠ &lt;2:1</span>}
             </div>
           </div>
+          {(ep.rationale || ep.stop_note) && (
+            <div className="plan-explain">
+              {ep.rationale && (
+                <>
+                  <div className="section-subtitle">入场理由</div>
+                  <div className="note-block strong">{ep.rationale}</div>
+                </>
+              )}
+              {ep.stop_note && (
+                <>
+                  <div className="section-subtitle">止损理由</div>
+                  <div className="note-block">{ep.stop_note}</div>
+                </>
+              )}
+            </div>
+          )}
+          {targetContexts.length > 0 && (
+            <>
+              <div className="section-subtitle">目标依据</div>
+              {targetContexts.map((target) => (
+                <TargetContextCard key={target.key} target={target} />
+              ))}
+            </>
+          )}
+          {priceZones.length > 0 && (
+            <>
+              <div className="section-subtitle">关键区间</div>
+              {priceZones.map((zone, i) => (
+                <PriceZoneCard key={`${zone.kind}-${zone.label}-${i}`} zone={zone} compact />
+              ))}
+            </>
+          )}
           {ep.note && <div className="note-block">{ep.note}</div>}
         </>
       )}
 
       {p && signals.length > 0 && (
         <>
-          <div className="section-title">支撑信号</div>
+          <div className="section-title">关键标注</div>
           {signals.map((sig, i) => (
             <div key={i} className="check-item signal">
-              <div className="check-icon">{SIGNAL_ICON[sig.type] ?? "•"}</div>
+              <div className="check-icon">{SIGNAL_ICON[sig.type ?? sig.kind ?? "other"] ?? "•"}</div>
               <div>
                 <div className="check-label">{sig.label ?? ""}</div>
-                <div className="check-val">{TF_LABELS[sig.timeframe] ?? sig.timeframe}</div>
+                <div className="check-val">
+                  {TF_LABELS[sig.timeframe] ?? sig.timeframe}
+                  {sig.price != null ? ` · $${fmt(sig.price)}` : ""}
+                </div>
               </div>
             </div>
           ))}
@@ -228,5 +281,39 @@ function TechRow({ label, value }: { label: string; value: string }) {
       <div className="k">{label} DIF/DEA/HIST</div>
       <div className="v left">{value}</div>
     </>
+  );
+}
+
+function PriceZoneCard({ zone, compact = false }: { zone: IntradayPriceZone; compact?: boolean }) {
+  const color = zone.color ?? "#8b949e";
+  const isBand = Math.abs(zone.high - zone.low) >= 0.0001;
+  return (
+    <div className={`zone-item ${compact ? "compact" : ""}`} style={{ "--zc": color } as CSSProperties}>
+      <div className="zone-head">
+        <span className="zone-label">{zone.label}</span>
+        <span className="zone-range">
+          {isBand ? `$${fmt(zone.low)} - $${fmt(zone.high)}` : `$${fmt(zone.low)}`}
+        </span>
+      </div>
+      <div className="zone-meta">
+        {ZONE_KIND_LABEL[zone.kind] ?? zone.kind}
+        {zone.note ? ` · ${zone.note}` : ""}
+      </div>
+      {zone.sources && zone.sources.length > 0 && <div className="zone-sources">{zone.sources.join(" / ")}</div>}
+    </div>
+  );
+}
+
+function TargetContextCard({ target }: { target: IntradayTargetContext }) {
+  return (
+    <div className="target-context">
+      <div className="target-head">
+        <span>{target.label}</span>
+        <span>${fmt(target.price)}</span>
+      </div>
+      {target.zone && <PriceZoneCard zone={target.zone} compact />}
+      {target.note && <div className="zone-meta md">{target.note}</div>}
+      {target.condition && <div className="zone-meta">条件：{target.condition}</div>}
+    </div>
   );
 }

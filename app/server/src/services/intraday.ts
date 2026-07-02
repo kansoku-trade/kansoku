@@ -8,7 +8,9 @@ import {
   type EmaLine,
   type IntradayBuilt,
   type IntradayEntryPlan,
+  type IntradayPriceZone,
   type IntradayPrediction,
+  type IntradayTargetContext,
   type IntradayTfData,
   type IntradayTfSummary,
   type MacdCross,
@@ -31,6 +33,15 @@ const MACD_MIN_BARS = 60;
 const SIGNAL_ICON: Record<string, string> = { pin_bar: "📌", macd_divergence: "⚡", macd_beichi: "🌀" };
 const BEICHI_WEAKER_RATIO = 0.9;
 const MIN_PUSH_BARS = 3;
+const ZONE_COLORS: Record<string, string> = {
+  entry: "#58a6ff",
+  stop: "#ef5350",
+  target: "#26a69a",
+  support: "#26a69a",
+  resistance: "#ffb74d",
+  invalidation: "#ef5350",
+  watch: "#8b949e",
+};
 
 const barTimeShort = (t: number) => formatMarketMonthDayTime(t, true);
 
@@ -272,7 +283,7 @@ function buildIntradaySignals(signals: IntradayPrediction["signals"]): Record<Ti
   for (const sig of signals ?? []) {
     const tf = sig.timeframe;
     if (!tf || !(tf in perTf)) continue;
-    const stype = sig.type ?? "other";
+    const stype = sig.type ?? sig.kind ?? "other";
     const bias = sig.bias;
     const color = bias === "bullish" ? "#26a69a" : bias === "bearish" ? "#ef5350" : "#ffc107";
     const shape = bias === "bullish" ? "arrowUp" : bias === "bearish" ? "arrowDown" : "circle";
@@ -359,27 +370,54 @@ function autoPatternMarkers(items: DivergencePair[], group: "divergence" | "beic
 export function computeIntradayEntryPlan(
   raw: NonNullable<IntradayPrediction["entry_plan"]>,
   direction: string,
+  extraZones: IntradayPrediction["price_zones"] = [],
 ): IntradayEntryPlan {
   const entry = Number(raw.entry);
   const stop = Number(raw.stop);
-  const t1Pct = Number(raw.target1_pct ?? 3);
-  const t2Pct = Number(raw.target2_pct ?? 6);
-  let target1: number;
-  let target2: number;
+  const targetFromPct = (pct: number) => pyRound(direction === "short" ? entry * (1 - pct / 100) : entry * (1 + pct / 100), 4);
+  const pctFromTarget = (target: number) => {
+    if (!entry) return 0;
+    const rawPct = direction === "short" ? ((entry - target) / entry) * 100 : ((target - entry) / entry) * 100;
+    return pyRound(rawPct, 4);
+  };
+  const rawT1Pct = Number(raw.target1_pct ?? 3);
+  const rawT2Pct = Number(raw.target2_pct ?? 6);
+  const target1 = Number.isFinite(Number(raw.target1)) ? Number(raw.target1) : targetFromPct(rawT1Pct);
+  const target2 = Number.isFinite(Number(raw.target2)) ? Number(raw.target2) : targetFromPct(rawT2Pct);
+  const t1Pct = raw.target1 == null ? rawT1Pct : pctFromTarget(target1);
+  const t2Pct = raw.target2 == null ? rawT2Pct : pctFromTarget(target2);
   let risk: number;
   let reward: number;
   if (direction === "short") {
-    target1 = pyRound(entry * (1 - t1Pct / 100), 4);
-    target2 = pyRound(entry * (1 - t2Pct / 100), 4);
     risk = stop - entry;
     reward = entry - target2;
   } else {
-    target1 = pyRound(entry * (1 + t1Pct / 100), 4);
-    target2 = pyRound(entry * (1 + t2Pct / 100), 4);
     risk = entry - stop;
     reward = target2 - entry;
   }
   const rr = risk > 0 ? reward / risk : 0;
+  const entryZone = normalizePriceZone(raw.entry_zone, "entry", "入场参考");
+  const targetContexts: IntradayTargetContext[] = [
+    {
+      key: "target1",
+      label: raw.target1_label ?? "T1",
+      price: target1,
+      zone: normalizePriceZone(raw.target1_zone, "target", "T1 参考结构"),
+      note: raw.target1_note,
+      condition: raw.target1_condition,
+    },
+    {
+      key: "target2",
+      label: raw.target2_label ?? "T2",
+      price: target2,
+      zone: normalizePriceZone(raw.target2_zone, "target", "T2 参考结构"),
+      note: raw.target2_note,
+      condition: raw.target2_condition,
+    },
+  ];
+  const priceZones = (extraZones ?? [])
+    .map((z) => normalizePriceZone(z, z.kind ?? "watch", z.label ?? "压力/阻力区"))
+    .filter((z): z is IntradayPriceZone => z?.kind === "resistance");
   return {
     entry,
     stop,
@@ -391,7 +429,45 @@ export function computeIntradayEntryPlan(
     rr_ok: rr >= 2,
     rr_great: rr >= 3,
     note: raw.note ?? "",
+    rationale: raw.rationale ?? "",
+    stop_note: raw.stop_note ?? "",
+    entry_zone: entryZone,
+    target_contexts: targetContexts,
+    price_zones: dedupeZones(priceZones),
   };
+}
+
+function normalizePriceZone(
+  raw: Partial<IntradayPriceZone> | undefined,
+  kind: IntradayPriceZone["kind"],
+  fallbackLabel: string,
+  fallbackPrice?: number,
+): IntradayPriceZone | null {
+  const low = Number(raw?.low ?? fallbackPrice);
+  const high = Number(raw?.high ?? raw?.low ?? fallbackPrice);
+  if (!Number.isFinite(low) || !Number.isFinite(high)) return null;
+  const lo = Math.min(low, high);
+  const hi = Math.max(low, high);
+  return {
+    kind: raw?.kind ?? kind,
+    label: raw?.label ?? fallbackLabel,
+    low: pyRound(lo, 4),
+    high: pyRound(hi, 4),
+    note: raw?.note,
+    source: raw?.source,
+    sources: raw?.sources?.filter(Boolean) ?? (raw?.source ? [raw.source] : undefined),
+    color: raw?.color ?? ZONE_COLORS[raw?.kind ?? kind] ?? ZONE_COLORS.watch,
+  };
+}
+
+function dedupeZones(zones: IntradayPriceZone[]): IntradayPriceZone[] {
+  const seen = new Set<string>();
+  return zones.filter((z) => {
+    const key = `${z.kind}:${z.label}:${z.low}:${z.high}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 export interface IntradayInput {
@@ -427,7 +503,12 @@ export function buildIntraday(input: IntradayInput): { built: IntradayBuilt; met
     );
   }
 
-  const prediction = input.prediction ?? null;
+  const prediction = input.prediction
+    ? {
+        ...input.prediction,
+        range_bound_plan: input.prediction.range_bound_plan ?? input.prediction.range_plan,
+      }
+    : null;
   const emaPeriods = sanitizeEmaPeriods(input.ema_periods);
   const tfs = Object.fromEntries(
     TIMEFRAME_ORDER.map((k) => [k, coerceIntradayTimeframe(tfRaw[k] as RawBar[], k, emaPeriods)]),
@@ -449,7 +530,7 @@ export function buildIntraday(input: IntradayInput): { built: IntradayBuilt; met
   }
 
   const epRaw = prediction?.entry_plan;
-  const entryPlan = epRaw?.entry && epRaw.stop ? computeIntradayEntryPlan(epRaw, direction) : null;
+  const entryPlan = epRaw?.entry && epRaw.stop ? computeIntradayEntryPlan(epRaw, direction, prediction?.price_zones) : null;
 
   const timeframes = {} as Record<TimeframeKey, IntradayTfData>;
   for (const k of TIMEFRAME_ORDER) {

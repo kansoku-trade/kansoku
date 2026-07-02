@@ -5,6 +5,7 @@ import { IntradaySidebar } from "./IntradaySidebar";
 import { EMA_COLORS, useIntradayCharts } from "./useIntradayCharts";
 
 export const TF_LABELS: Record<TimeframeKey, string> = { m5: "5分钟", m15: "15分钟", h1: "1小时" };
+const TF_SHORT_LABELS: Record<TimeframeKey, string> = { m5: "5m", m15: "15m", h1: "1h" };
 const TF_ORDER: TimeframeKey[] = ["m5", "m15", "h1"];
 
 const MACD_MIN = 100;
@@ -16,13 +17,31 @@ const clampMacdHeight = (h: number) => Math.min(MACD_MAX, Math.max(MACD_MIN, h))
 
 interface IntradayDashboardProps {
   built: IntradayBuilt;
+  activeTf: TimeframeKey;
   predictionUpdatedAt?: string;
   predictionStale?: boolean;
   onLoadHistory?: () => void;
 }
 
-export function IntradayDashboard({ built, predictionUpdatedAt, predictionStale, onLoadHistory }: IntradayDashboardProps) {
-  const [tf, setTf] = useState<TimeframeKey>(built.defaultTf in built.timeframes ? built.defaultTf : "m15");
+export function IntradayTimeframeSwitch({
+  activeTf,
+  onChange,
+}: {
+  activeTf: TimeframeKey;
+  onChange: (tf: TimeframeKey) => void;
+}) {
+  return (
+    <div className="chart-timeframe-switch" aria-label="时间周期">
+      {TF_ORDER.map((k) => (
+        <button key={k} aria-pressed={k === activeTf} onClick={() => onChange(k)} title={TF_LABELS[k]}>
+          {TF_SHORT_LABELS[k]}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+export function IntradayDashboard({ built, activeTf, predictionUpdatedAt, predictionStale, onLoadHistory }: IntradayDashboardProps) {
   const [macdHeight, setMacdHeight] = useState(() => {
     const saved = Number(localStorage.getItem(MACD_HEIGHT_KEY));
     return Number.isFinite(saved) && saved > 0 ? clampMacdHeight(saved) : MACD_DEFAULT;
@@ -30,7 +49,7 @@ export function IntradayDashboard({ built, predictionUpdatedAt, predictionStale,
   const [dragging, setDragging] = useState(false);
   const mainRef = useRef<HTMLDivElement>(null);
   const macdRef = useRef<HTMLDivElement>(null);
-  useIntradayCharts(built, tf, mainRef, macdRef, onLoadHistory);
+  useIntradayCharts(built, activeTf, mainRef, macdRef, onLoadHistory);
 
   const onResizeStart = (e: React.PointerEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -56,17 +75,10 @@ export function IntradayDashboard({ built, predictionUpdatedAt, predictionStale,
   return (
     <div className="layout">
       <div className="charts-col">
-        <div className="tf-tabs">
-          {TF_ORDER.map((k) => (
-            <button key={k} className={`tf-tab${k === tf ? " active" : ""}`} onClick={() => setTf(k)}>
-              {TF_LABELS[k]}
-            </button>
-          ))}
-        </div>
         <div className="chart-block intraday-main">
           <div className="chart-label">K 线 + 成交量</div>
           <div className="chart-legend">
-            {(built.sidebar.technicals[tf]?.emas ?? []).map((e, i) => (
+            {(built.sidebar.technicals[activeTf]?.emas ?? []).map((e, i) => (
               <span key={e.period}>
                 <span className="swatch" style={{ background: EMA_COLORS[i % EMA_COLORS.length] }} />
                 EMA{e.period}
@@ -92,7 +104,7 @@ export function IntradayDashboard({ built, predictionUpdatedAt, predictionStale,
       </div>
       <IntradaySidebar
         built={built}
-        activeTf={tf}
+        activeTf={activeTf}
         predictionUpdatedAt={predictionUpdatedAt}
         predictionStale={predictionStale}
       />

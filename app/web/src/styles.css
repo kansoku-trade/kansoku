@@ -36,7 +36,10 @@ a:hover { text-decoration: underline; }
   flex-shrink: 0; animation: pulse 1.5s infinite;
 }
 @keyframes pulse { 50% { opacity: 0.3; } }
-.topbar-quote { display: inline-flex; align-items: baseline; gap: 6px; font-size: 13px; margin-left: auto; }
+.topbar-actions {
+  margin-left: auto; display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0;
+}
+.topbar-quote { display: inline-flex; align-items: baseline; gap: 6px; font-size: 13px; }
 
 .filters { display: flex; gap: 8px; margin-bottom: 16px; }
 .filters input, .filters select {
@@ -108,13 +111,23 @@ a:hover { text-decoration: underline; }
 }
 .chart-legend .swatch { display: inline-block; width: 10px; height: 2px; vertical-align: middle; margin-right: 4px; }
 
-.tf-tabs { display: flex; gap: 4px; padding: 8px 12px; border-bottom: 1px solid #21262d; background: #161b22; }
-.tf-tab {
-  background: transparent; border: 1px solid #30363d; color: #8b949e; font-size: 12px;
-  padding: 5px 14px; cursor: pointer; border-radius: 4px;
+.chart-timeframe-switch {
+  display: inline-flex; gap: 2px; padding: 2px;
+  background: #0d1117; border: 1px solid #21262d; border-radius: 5px;
 }
-.tf-tab:hover { color: #c9d1d9; border-color: #58a6ff; }
-.tf-tab.active { background: #1f6feb; color: #fff; border-color: #1f6feb; }
+.chart-timeframe-switch button {
+  min-width: 30px; height: 20px; padding: 0 7px;
+  background: transparent; border: 0; border-radius: 3px; color: #8b949e;
+  font-size: 11px; font-variant-numeric: tabular-nums; line-height: 20px;
+  cursor: pointer;
+}
+.chart-timeframe-switch button:hover { color: #f0f6fc; background: rgba(255,255,255,0.05); }
+.chart-timeframe-switch button:focus-visible {
+  outline: 1px solid #58a6ff; outline-offset: 1px;
+}
+.chart-timeframe-switch button[aria-pressed="true"] {
+  color: #f0f6fc; background: rgba(88,166,255,0.14);
+}
 
 .sidebar { background: #161b22; padding: 16px; overflow-y: auto; font-size: 13px; }
 .header { margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid #21262d; }
@@ -147,6 +160,10 @@ a:hover { text-decoration: underline; }
   font-size: 11px; color: #8b949e; text-transform: uppercase; letter-spacing: 0.08em;
   margin-top: 16px; margin-bottom: 8px;
 }
+.section-subtitle {
+  font-size: 10px; color: #6e7681; text-transform: uppercase; letter-spacing: 0.06em;
+  margin-top: 10px; margin-bottom: 6px;
+}
 .grid2 { display: grid; grid-template-columns: auto 1fr; gap: 6px 10px; font-size: 12px; }
 .grid2 .k { color: #8b949e; }
 .grid2 .v { color: #c9d1d9; text-align: right; font-variant-numeric: tabular-nums; }
@@ -165,6 +182,7 @@ a:hover { text-decoration: underline; }
 .check-val { font-size: 11px; color: #8b949e; margin-top: 2px; }
 
 .zone-item { padding: 8px 10px; margin-bottom: 6px; background: #0d1117; border-left: 3px solid var(--zc); }
+.zone-item.compact { padding: 6px 8px; margin-bottom: 5px; }
 .zone-head { display: flex; justify-content: space-between; align-items: baseline; }
 .zone-label { font-size: 12px; font-weight: 600; color: var(--zc); }
 .zone-label.plain { color: #c9d1d9; }
@@ -172,8 +190,20 @@ a:hover { text-decoration: underline; }
 .zone-range.accent { font-size: 12px; font-weight: 600; color: #58a6ff; }
 .zone-meta { font-size: 10px; color: #8b949e; margin-top: 3px; line-height: 1.45; }
 .zone-meta.md { font-size: 11px; }
+.zone-sources { font-size: 10px; color: #6e7681; margin-top: 4px; line-height: 1.35; }
 
 .note-block { font-size: 11px; color: #8b949e; margin-top: 6px; line-height: 1.4; }
+.note-block.strong { color: #c9d1d9; background: #0d1117; padding: 7px 8px; border-left: 2px solid #58a6ff; }
+.plan-explain { margin-top: 8px; }
+.target-context {
+  background: #0d1117; border: 1px solid #21262d; padding: 8px;
+  margin-bottom: 6px;
+}
+.target-head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-size: 12px; font-weight: 600; color: #c9d1d9;
+  font-variant-numeric: tabular-nums;
+}
 .rule-block {
   font-size: 10px; color: #6e7681; margin-top: 8px; line-height: 1.5;
   border-left: 2px solid #21262d; padding-left: 8px;

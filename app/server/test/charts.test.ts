@@ -16,7 +16,7 @@ const build = vi.hoisted(() => ({
     ...body,
   })),
   rebuild: vi.fn(),
-  refreshBody: vi.fn(() => null),
+  refreshBody: vi.fn((): Record<string, unknown> | null => null),
 }));
 
 vi.mock("../src/services/store.js", () => store);

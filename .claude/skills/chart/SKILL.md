@@ -182,6 +182,10 @@ climax top (volume ≥ 2.5×20MA + red close + local high), MA50/MA200 breakdown
   ],
   "range_bound_plan": { "condition": "...", "long_tactic": "...", "short_tactic": "..." },
   "entry_plan": { "entry": 1049.81, "stop": 1030.00, "target1_pct": 3, "target2_pct": 6, "note": "..." },
+  "price_zones": [                                      // only real resistance/pressure zones drawn on chart
+    { "kind": "resistance", "label": "反弹压力带", "low": 60.90, "high": 61.35,
+      "note": "短线均线和第一修复位重合", "sources": ["5m EMA9/21", "第一修复位"] }
+  ],
   "signals": [
     { "type": "pin_bar", "timeframe": "m15", "time": "...", "price": 1044.17,
       "bias": "bullish", "label": "看涨 Pin Bar" },
@@ -194,7 +198,37 @@ climax top (volume ≥ 2.5×20MA + red close + local high), MA50/MA200 breakdown
 ```
 
 R/R is direction-aware (`long`: risk = entry−stop; `short`: risk = stop−entry);
-the sidebar flags rr < 2:1 in red. MACD structure signals + simplified 背离/背驰
+the sidebar flags rr < 2:1 in red. `entry_plan` can carry structured level
+context so the chart explains why a point was selected instead of hiding the
+reason in prose:
+
+```jsonc
+{
+  "entry": 61.10,
+  "stop": 62.52,
+  "target1": 60.00,                 // optional explicit target price; overrides pct-derived price
+  "target2": 57.92,
+  "rationale": "反弹到 60.90-61.35 压力带后受阻才入场。",
+  "stop_note": "站回上一段反弹高点，空头计划失效。",
+  "entry_zone": { "kind": "resistance", "label": "反弹压力带", "low": 60.90, "high": 61.35 },
+  "target1_label": "T1 · 日内低点",
+  "target1_note": "整数位和日内低点，首次触及先看是否止跌。",
+  "target1_zone": { "kind": "support", "label": "日内低点", "low": 60.00, "high": 60.00 },
+  "target2_label": "T2 · 深一档支撑",
+  "target2_condition": "60.00 跌破并反抽失败后才成立。",
+  "target2_zone": { "kind": "support", "label": "深一档支撑", "low": 57.90, "high": 58.00 }
+}
+```
+
+`entry_plan.entry_zone` and `target1_zone` / `target2_zone` are explanation
+context for the right panel only; they are not drawn as chart zones and should
+not be named `入场区`, `T1 区域`, or `T2 区域`. Put only genuine upper supply
+areas in top-level `price_zones` with `kind: "resistance"`; those are rendered
+as chart boundaries and in the sidebar's key-zone section.
+
+Supported zone kinds remain `entry`, `stop`, `target`, `support`, `resistance`,
+`invalidation`, `watch`, but the intraday chart-zone overlay intentionally
+filters to explicit `resistance` zones. MACD structure signals + simplified 背离/背驰
 are auto-detected and drawn on every render regardless of `prediction`. Every
 DIF/DEA cross is classified by zero-line position（零上/零下金叉、零上/零下死叉）
 plus structural patterns: 二次金叉（零下双金叉且低点抬高 → 底部确认）、空中加油

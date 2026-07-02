@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import type { ChartBuilt, ChartDoc } from "../../../shared/types";
+import type { ChartBuilt, ChartDoc, IntradayBuilt, TimeframeKey } from "../../../shared/types";
 import { api } from "../api";
 import { EChartsView } from "../charts/EChartsView";
-import { IntradayDashboard } from "../charts/intraday/IntradayDashboard";
+import { IntradayDashboard, IntradayTimeframeSwitch } from "../charts/intraday/IntradayDashboard";
 import { SepaDashboard } from "../charts/sepa/SepaDashboard";
 import { TopbarQuote } from "../QuoteBar";
 import { useSSE } from "../useSSE";
@@ -13,10 +13,17 @@ type ChartDocView = ChartDoc & { prediction_stale?: boolean };
 
 const HISTORY_MAX_COUNT = 1000;
 
+const resolveIntradayTf = (built: IntradayBuilt, preferred: TimeframeKey | null): TimeframeKey => {
+  if (preferred && preferred in built.timeframes) return preferred;
+  if (built.defaultTf in built.timeframes) return built.defaultTf;
+  return "m15";
+};
+
 export function ChartDetail({ id }: { id: string }) {
   const [doc, setDoc] = useState<ChartDocView | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [viewCount, setViewCount] = useState<number | null>(null);
+  const [intradayTf, setIntradayTf] = useState<TimeframeKey | null>(null);
   const historyBusyRef = useRef(false);
   const docRef = useRef<ChartDocView | null>(null);
   const viewCountRef = useRef<number | null>(null);
@@ -25,6 +32,7 @@ export function ChartDetail({ id }: { id: string }) {
     setDoc(null);
     setError(null);
     setViewCount(null);
+    setIntradayTf(null);
     historyBusyRef.current = false;
     api<ChartDocView>(`/api/charts/${encodeURIComponent(id)}`)
       .then(setDoc)
@@ -78,6 +86,8 @@ export function ChartDetail({ id }: { id: string }) {
   }
   if (!doc) return <div className="page empty">加载中…</div>;
 
+  const activeIntradayTf = doc.built.kind === "intraday" ? resolveIntradayTf(doc.built, intradayTf) : null;
+
   return (
     <div className="fullpage">
       <div className="detail-topbar">
@@ -87,14 +97,18 @@ export function ChartDetail({ id }: { id: string }) {
           {doc.id} · 更新 {doc.updated_at.slice(0, 16).replace("T", " ")}
         </span>
         {live && degraded && <span className="degraded-dot" title="数据延迟：行情拉取失败，正在重试" />}
-        {doc.symbol && <TopbarQuote symbol={doc.symbol} />}
+        <span className="topbar-actions">
+          {activeIntradayTf && <IntradayTimeframeSwitch activeTf={activeIntradayTf} onChange={setIntradayTf} />}
+          {doc.symbol && <TopbarQuote symbol={doc.symbol} />}
+        </span>
       </div>
       <div className="detail-body">
         {doc.built.kind === "echarts" && <EChartsView built={doc.built} />}
         {doc.built.kind === "sepa" && <SepaDashboard built={doc.built} />}
-        {doc.built.kind === "intraday" && (
+        {doc.built.kind === "intraday" && activeIntradayTf && (
           <IntradayDashboard
             built={doc.built}
+            activeTf={activeIntradayTf}
             predictionUpdatedAt={doc.prediction_updated_at}
             predictionStale={doc.prediction_stale}
             onLoadHistory={loadHistory}

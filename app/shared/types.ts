@@ -312,6 +312,40 @@ export interface IntradayEntryPlan {
   rr_ok: boolean;
   rr_great: boolean;
   note: string;
+  rationale: string;
+  stop_note: string;
+  entry_zone: IntradayPriceZone | null;
+  target_contexts: IntradayTargetContext[];
+  price_zones: IntradayPriceZone[];
+}
+
+export type IntradayPriceZoneKind =
+  | "entry"
+  | "stop"
+  | "target"
+  | "support"
+  | "resistance"
+  | "invalidation"
+  | "watch";
+
+export interface IntradayPriceZone {
+  kind: IntradayPriceZoneKind;
+  label: string;
+  low: number;
+  high: number;
+  note?: string;
+  source?: string;
+  sources?: string[];
+  color?: string;
+}
+
+export interface IntradayTargetContext {
+  key: "target1" | "target2";
+  label: string;
+  price: number;
+  zone: IntradayPriceZone | null;
+  note?: string;
+  condition?: string;
 }
 
 export interface PredictionScenario {
@@ -322,7 +356,8 @@ export interface PredictionScenario {
 }
 
 export interface PredictionSignal {
-  type: string;
+  type?: string;
+  kind?: string;
   timeframe: TimeframeKey;
   time?: string;
   price?: number;
@@ -336,7 +371,28 @@ export interface IntradayPrediction {
   anchor?: { timeframe: TimeframeKey; time: string; price: number };
   scenarios?: PredictionScenario[];
   range_bound_plan?: { condition?: string; long_tactic?: string; short_tactic?: string };
-  entry_plan?: { entry: number; stop: number; target1_pct?: number; target2_pct?: number; note?: string };
+  range_plan?: { condition?: string; long_tactic?: string; short_tactic?: string };
+  entry_plan?: {
+    entry: number;
+    stop: number;
+    target1?: number;
+    target2?: number;
+    target1_pct?: number;
+    target2_pct?: number;
+    note?: string;
+    rationale?: string;
+    stop_note?: string;
+    entry_zone?: Partial<IntradayPriceZone>;
+    target1_label?: string;
+    target1_note?: string;
+    target1_condition?: string;
+    target1_zone?: Partial<IntradayPriceZone>;
+    target2_label?: string;
+    target2_note?: string;
+    target2_condition?: string;
+    target2_zone?: Partial<IntradayPriceZone>;
+  };
+  price_zones?: Partial<IntradayPriceZone>[];
   signals?: PredictionSignal[];
 }
 
