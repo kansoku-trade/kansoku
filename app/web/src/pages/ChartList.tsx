@@ -5,6 +5,7 @@ import { QuoteBar } from "../QuoteBar";
 
 interface MetaWithUrl extends ChartMeta {
   url: string;
+  prediction_stale: boolean;
 }
 
 export function ChartList() {
@@ -56,6 +57,7 @@ export function ChartList() {
           <span className={`badge ${m.type}`}>{m.type}</span>
           <span className="title">{m.title}</span>
           {m.symbol && <span className="sym">{m.symbol}</span>}
+          {m.prediction_stale && <span className="stale-dot" title="预测已过期" />}
         </a>
       ))}
       {legacy.length > 0 && (

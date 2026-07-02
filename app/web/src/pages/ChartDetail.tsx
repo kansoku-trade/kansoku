@@ -9,22 +9,29 @@ import { useSSE } from "../useSSE";
 
 const LIVE_TYPES = new Set(["flow", "kline", "intraday"]);
 
+type ChartDocView = ChartDoc & { prediction_stale?: boolean };
+
 export function ChartDetail({ id }: { id: string }) {
-  const [doc, setDoc] = useState<ChartDoc | null>(null);
+  const [doc, setDoc] = useState<ChartDocView | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setDoc(null);
     setError(null);
-    api<ChartDoc>(`/api/charts/${encodeURIComponent(id)}`)
+    api<ChartDocView>(`/api/charts/${encodeURIComponent(id)}`)
       .then(setDoc)
       .catch((e: Error) => setError(e.message));
   }, [id]);
 
   const live = Boolean(doc && LIVE_TYPES.has(doc.type) && doc.symbol);
-  const { degraded } = useSSE<{ built: ChartBuilt }>(
+  const { degraded } = useSSE<{ built: ChartBuilt; prediction_updated_at?: string; prediction_stale?: boolean }>(
     live ? `/api/stream/charts/${encodeURIComponent(id)}` : null,
-    (d) => setDoc((prev) => (prev ? { ...prev, built: d.built } : prev)),
+    (d) =>
+      setDoc((prev) =>
+        prev
+          ? { ...prev, built: d.built, prediction_updated_at: d.prediction_updated_at, prediction_stale: d.prediction_stale }
+          : prev,
+      ),
   );
 
   if (error) {
@@ -53,7 +60,13 @@ export function ChartDetail({ id }: { id: string }) {
       <div className="detail-body">
         {doc.built.kind === "echarts" && <EChartsView built={doc.built} />}
         {doc.built.kind === "sepa" && <SepaDashboard built={doc.built} />}
-        {doc.built.kind === "intraday" && <IntradayDashboard built={doc.built} />}
+        {doc.built.kind === "intraday" && (
+          <IntradayDashboard
+            built={doc.built}
+            predictionUpdatedAt={doc.prediction_updated_at}
+            predictionStale={doc.prediction_stale}
+          />
+        )}
       </div>
     </div>
   );

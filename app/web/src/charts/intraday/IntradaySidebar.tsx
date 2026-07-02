@@ -11,6 +11,14 @@ const TF_ORDER: TimeframeKey[] = ["m5", "m15", "h1"];
 
 const barTime = (t: number) => new Date(t * 1000).toISOString().slice(5, 16).replace("T", " ");
 
+function predictionAgeText(updatedAt: string): string {
+  const updated = new Date(updatedAt);
+  const hh = String(updated.getHours()).padStart(2, "0");
+  const mm = String(updated.getMinutes()).padStart(2, "0");
+  const minutesAgo = Math.max(0, Math.floor((Date.now() - updated.getTime()) / 60_000));
+  return `更新于 ${hh}:${mm}（${minutesAgo} 分钟前）`;
+}
+
 function AutoSignalItem({ kindKey, pair }: { kindKey: string; pair: DivergencePair }) {
   const meta = AUTO_SIGNAL_META[kindKey];
   if (!meta) return null;
@@ -28,7 +36,14 @@ function AutoSignalItem({ kindKey, pair }: { kindKey: string; pair: DivergencePa
   );
 }
 
-export function IntradaySidebar({ built, activeTf }: { built: IntradayBuilt; activeTf: TimeframeKey }) {
+interface IntradaySidebarProps {
+  built: IntradayBuilt;
+  activeTf: TimeframeKey;
+  predictionUpdatedAt?: string;
+  predictionStale?: boolean;
+}
+
+export function IntradaySidebar({ built, activeTf, predictionUpdatedAt, predictionStale }: IntradaySidebarProps) {
   const s = built.sidebar;
   const p = s.prediction;
   const ep = s.entryPlan;
@@ -48,7 +63,14 @@ export function IntradaySidebar({ built, activeTf }: { built: IntradayBuilt; act
 
       {p ? (
         <div className="verdict" style={{ "--vc": DIRECTION_COLOR[p.direction] ?? "#8b949e" } as CSSProperties}>
-          <div className="verdict-label">短线方向判断</div>
+          <div className="verdict-label">
+            短线方向判断
+            {predictionStale ? (
+              <span className="stale-badge">⚠ 盘中已过期</span>
+            ) : (
+              predictionUpdatedAt && <span className="prediction-age">{predictionAgeText(predictionUpdatedAt)}</span>
+            )}
+          </div>
           <div className="verdict-text">{DIRECTION_LABEL[p.direction] ?? "🤔 观望"}</div>
           {p.anchor && (
             <div className="verdict-reason">

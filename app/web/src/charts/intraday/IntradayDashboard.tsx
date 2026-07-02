@@ -14,7 +14,13 @@ const MACD_HEIGHT_KEY = "intraday-macd-height";
 
 const clampMacdHeight = (h: number) => Math.min(MACD_MAX, Math.max(MACD_MIN, h));
 
-export function IntradayDashboard({ built }: { built: IntradayBuilt }) {
+interface IntradayDashboardProps {
+  built: IntradayBuilt;
+  predictionUpdatedAt?: string;
+  predictionStale?: boolean;
+}
+
+export function IntradayDashboard({ built, predictionUpdatedAt, predictionStale }: IntradayDashboardProps) {
   const [tf, setTf] = useState<TimeframeKey>(built.defaultTf in built.timeframes ? built.defaultTf : "m15");
   const [macdHeight, setMacdHeight] = useState(() => {
     const saved = Number(localStorage.getItem(MACD_HEIGHT_KEY));
@@ -83,7 +89,12 @@ export function IntradayDashboard({ built }: { built: IntradayBuilt }) {
           <div ref={macdRef} className="chart-host" />
         </div>
       </div>
-      <IntradaySidebar built={built} activeTf={tf} />
+      <IntradaySidebar
+        built={built}
+        activeTf={tf}
+        predictionUpdatedAt={predictionUpdatedAt}
+        predictionStale={predictionStale}
+      />
     </div>
   );
 }
