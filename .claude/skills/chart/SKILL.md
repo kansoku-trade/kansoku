@@ -219,6 +219,33 @@ Off-session bars (盘前/盘后浅蓝、夜盘深蓝) get a full-height backdrop
 panes — thin-volume price action outside regular hours is visually discounted at
 a glance. Regular hours = 09:30-16:00 ET (DST-aware via America/New_York).
 
+### Realtime prediction upkeep
+
+Once the US cash session is open, intraday charts must be maintained under
+these rules:
+
+- **Cash-session rebuilds drop off-session bars.** Any PATCH after 09:30 ET
+  passes `{"session": "intraday", "refresh": true}` — the prediction
+  dashboard must not render pre-market / overnight bars intraday. The
+  default `--session all` is for pre-market analysis only.
+- **Volume calls align to prior sessions' same-time window.** Never compare
+  today's running volume against full-day totals. Pull `longbridge kline
+  --period 5m` (regular-session bars), sum today's bars, and compare against
+  the same number of opening bars averaged over the prior ~5-8 sessions.
+  Pair the ratio with per-bar direction before calling a move confirmed — a
+  level break on ~0.6x same-period volume is not a confirmed breakout.
+  Caveat: Longbridge daily-K volume includes extended hours; 5m-K volume
+  does not — never mix the two.
+- **Stale predictions get refreshed on a ~15 min loop.** The server marks an
+  intraday chart's prediction stale when it is >15 min old during regular
+  hours (`GET /api/charts?stale=true` lists them; the SSE envelope and chart
+  metas carry `prediction_updated_at` / `prediction_stale`). Each loop
+  round: fetch the stale list → re-pull quote / capital flow / klines →
+  PATCH `prediction` only if scenarios materially changed, otherwise
+  re-PATCH the unchanged prediction to refresh its timestamp → append a
+  timestamped journal note on material revisions (revision discipline) →
+  stop the loop after 16:00 ET close.
+
 ## Storage
 
 - Chart docs: `journal/charts/data/<YYYY-MM-DD>-<slug>.json` — gitignored,
