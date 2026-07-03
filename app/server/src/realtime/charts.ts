@@ -6,7 +6,7 @@ import { loadChart } from "../services/store.js";
 import { createPoller, type PollerHandle } from "./poller.js";
 
 const CHART_INTERVAL_MS = 60_000;
-const LIVE_TYPES = new Set(["flow", "kline", "intraday"]);
+const LIVE_TYPES = new Set(["flow", "intraday"]);
 
 const chartPollers = new Map<string, PollerHandle>();
 

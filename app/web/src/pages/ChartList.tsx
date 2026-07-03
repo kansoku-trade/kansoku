@@ -40,7 +40,6 @@ export function ChartList() {
           <option value="sepa">sepa</option>
           <option value="intraday">intraday</option>
           <option value="flow">flow</option>
-          <option value="kline">kline</option>
           <option value="cohort">cohort</option>
         </select>
         <input

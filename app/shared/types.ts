@@ -1,4 +1,4 @@
-export type ChartType = "flow" | "kline" | "cohort" | "sepa" | "intraday";
+export type ChartType = "flow" | "cohort" | "sepa" | "intraday";
 
 export interface RawBar {
   time: string;
@@ -216,6 +216,7 @@ export interface IntradayTfData {
   macdConnectors: Connector[];
   autoDivergence: DivergencePair[];
   autoBeichi: DivergencePair[];
+  pattern123?: Pattern123[];
   offSession?: OffSessionBar[];
 }
 
@@ -286,6 +287,19 @@ export interface CandlePattern {
   implication: string;
 }
 
+export interface Pattern123 {
+  kind: "bullish" | "bearish";
+  status: "forming" | "confirmed";
+  p1: SwingPoint;
+  p2: SwingPoint;
+  p3: SwingPoint;
+  trigger: number;
+  invalidation: number;
+  confirm: SwingPoint | null;
+  label: string;
+  implication: string;
+}
+
 export interface IntradayTfSummary {
   last_dif: number | null;
   last_dea: number | null;
@@ -299,6 +313,7 @@ export interface IntradayTfSummary {
   structure_signals?: MacdStructureSignal[];
   zero_tangle?: boolean;
   candle_patterns?: CandlePattern[];
+  pattern_123?: Pattern123[];
 }
 
 export interface IntradayEntryPlan {

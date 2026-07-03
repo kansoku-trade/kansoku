@@ -10,6 +10,7 @@ const store = vi.hoisted(() => ({
 }));
 
 const build = vi.hoisted(() => ({
+  ALL_TYPES: ["flow", "cohort", "sepa", "intraday"],
   buildChart: vi.fn(),
   mergeForPatch: vi.fn((_type: string, input: Record<string, unknown>, body: Record<string, unknown>) => ({
     ...input,
@@ -156,6 +157,21 @@ describe("PATCH /:id prediction_updated_at", () => {
     });
     const saved = store.saveChart.mock.calls[0][0] as ChartDoc;
     expect(saved.prediction_updated_at).toBeUndefined();
+  });
+});
+
+describe("PATCH /:id legacy type guard", () => {
+  it("rejects PATCH on a persisted doc whose type is no longer supported", async () => {
+    const doc = makeDoc({ type: "kline" as ChartDoc["type"] });
+    store.loadChart.mockResolvedValue(doc);
+
+    const res = await builtApp().request(`/${doc.id}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ title: "new title" }),
+    });
+    expect(res.status).toBe(400);
+    expect(store.saveChart).not.toHaveBeenCalled();
   });
 });
 

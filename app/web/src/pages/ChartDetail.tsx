@@ -7,7 +7,7 @@ import { SepaDashboard } from "../charts/sepa/SepaDashboard";
 import { TopbarQuote } from "../QuoteBar";
 import { useSSE } from "../useSSE";
 
-const LIVE_TYPES = new Set(["flow", "kline", "intraday"]);
+const LIVE_TYPES = new Set(["flow", "intraday"]);
 
 type ChartDocView = ChartDoc & { prediction_stale?: boolean };
 

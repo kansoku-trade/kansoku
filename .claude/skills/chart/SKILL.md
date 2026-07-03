@@ -2,11 +2,12 @@
 name: chart
 description: >
   Render financial charts via the local chart web app (`app/` — Hono server +
-  React front end, port 5199). Five chart types: intraday capital-flow line
-  (`flow`), OHLC candlestick with volume (`kline`), cross-symbol signed-bar
-  comparison (`cohort`) — all ECharts — plus SEPA strategy dashboard (`sepa`)
-  and short-term multi-timeframe prediction dashboard (`intraday`) — both
-  TradingView Lightweight Charts. The server fetches Longbridge data itself
+  React front end, port 5199). Four chart types: intraday capital-flow line
+  (`flow`) and cross-symbol signed-bar comparison (`cohort`) — both ECharts —
+  plus SEPA strategy dashboard (`sepa`) and short-term multi-timeframe
+  prediction dashboard (`intraday`) — both TradingView Lightweight Charts.
+  Multi-timeframe K-line review lives inside `intraday` (the standalone kline
+  chart type was removed). The server fetches Longbridge data itself
   (kline / capital flow) and computes all indicators (MA, MACD, RS, trend
   template, volume profile, divergence/beichi detection) in TypeScript; the
   caller only POSTs `{type, symbol, ...}` to `/api/charts` and gets back
@@ -29,7 +30,7 @@ latest front-end code.
 ## When to call
 
 - After running `longbridge capital --flow` context or when the user wants a flow visual ⇒ `flow`
-- For multi-day K-line review ⇒ `kline`
+- For K-line review (multi-timeframe candles + MACD + auto signals) ⇒ `intraday`
 - After collecting cumulative net inflow across a cohort of symbols ⇒ `cohort`
 - After running `sepa-strategy` on a single name ⇒ `sepa`
 - When inside `intraday-signal` ⇒ `intraday` (two-call pattern: POST preview → PATCH prediction)
@@ -71,7 +72,7 @@ Base URL `http://localhost:5199`. All responses follow the
 | `DELETE /api/charts/:id` | remove a chart |
 | `GET /api/legacy` | list old single-file HTML archives (served at `/legacy/<file>`) |
 | `GET /api/stream/quotes?extra=` | SSE quote snapshots (watchlist ∪ positions ∪ extra), 10s cadence |
-| `GET /api/stream/charts/:id` | SSE live rebuilds for flow/kline/intraday charts, 60s cadence |
+| `GET /api/stream/charts/:id` | SSE live rebuilds for flow/intraday charts, 60s cadence |
 
 The stream endpoints power the web UI's realtime display; the AI workflow never
 needs them — created charts update themselves in the browser while open, and
@@ -85,9 +86,6 @@ The server fetches Longbridge data itself when `symbol` is given; pass `data`
 ```jsonc
 // flow — server runs `longbridge capital <SYM> --flow`
 { "type": "flow", "symbol": "MU.US", "subtitle": "单位推断为千 USD · 仅供参考" }
-
-// kline — server runs `longbridge kline <SYM> --period <p> --count <n>`
-{ "type": "kline", "symbol": "NVDA.US", "period": "day", "count": 30 }
 
 // cohort — data is always caller-assembled
 { "type": "cohort", "title": "存储 vs Mag 7 主力净流",
@@ -250,6 +248,18 @@ two-bar > single-bar). `technicals.<tf>.candle_patterns` (last 6) exposes them
 to the analysis workflow. Caveat: the newest bar may still be forming intraday —
 a pattern on it can repaint until the bar closes.
 
+123 reversal structures (Sperandeo 1-2-3) are also auto-detected per timeframe
+from confirmed swing pivots: ① a ~20-bar extreme → ② the reaction pivot → ③ a
+higher low (bullish) / lower high (bearish). The price pane gets ①②③ markers, a
+①→②→③ connector, and a dashed trigger line at the ② price running from ③ to the
+latest bar; a close beyond ② flips the structure to confirmed (`123✓` marker on
+the breakout bar), while a break of ① drops the structure silently. The ③ marker
+shows `③?` until confirmation. `technicals.<tf>.pattern_123` (last 2, each with
+`status: forming|confirmed`, `trigger`, `invalidation`, `p1/p2/p3`) exposes them
+to the analysis workflow — a `forming` structure is a ready-made entry setup
+(enter on the ② break, stop beyond ①). The sidebar's 自动信号 section lists them
+with an 酝酿中/已确认 badge.
+
 Off-session bars (盘前/盘后浅蓝、夜盘深蓝) get a full-height backdrop on both
 panes — thin-volume price action outside regular hours is visually discounted at
 a glance. Regular hours = 09:30-16:00 ET (DST-aware via America/New_York).
@@ -302,6 +312,6 @@ green/red. Use for 5-20-point series where a full chart is overkill.
 
 - `longbridge-capital-flow` / `longbridge-kline` — same data the server pulls; call directly only for in-chat analysis
 - `capital-rotation` — should end with a `cohort` chart
-- `market-session-tracker` — may create `flow` and `kline` charts
+- `market-session-tracker` — may create `flow` charts
 - `sepa-strategy` — calls `sepa` as the last step of its Step 10
 - `intraday-signal` — calls `intraday` twice (POST preview, then PATCH prediction)

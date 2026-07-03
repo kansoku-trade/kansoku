@@ -5,6 +5,7 @@ import {
   type IntradayBuilt,
   type IntradayPriceZone,
   type IntradayTargetContext,
+  type Pattern123,
   type TimeframeKey,
 } from "../../../../shared/types";
 import { formatMarketClock, formatMarketDateTime, formatMarketMonthDayTime } from "../../../../shared/time";
@@ -32,6 +33,31 @@ function predictionAgeText(updatedAt: string): string {
   const updated = new Date(updatedAt);
   const minutesAgo = Math.max(0, Math.floor((Date.now() - updated.getTime()) / 60_000));
   return `更新于 ${formatMarketClock(updated, true)}（${minutesAgo} 分钟前）`;
+}
+
+function Pattern123Item({ pat }: { pat: Pattern123 }) {
+  const confirmed = pat.status === "confirmed";
+  return (
+    <div className="check-item signal">
+      <div className="check-icon">🔢</div>
+      <div>
+        <div className="check-label">
+          {pat.label}
+          <span className={`p123-badge${confirmed ? " confirmed" : ""}`}>{confirmed ? "已确认" : "酝酿中"}</span>
+        </div>
+        <div className="check-val">
+          ① {barTime(pat.p1.time)} ${fmt(pat.p1.price)} → ② ${fmt(pat.p2.price)} → ③ {barTime(pat.p3.time)} $
+          {fmt(pat.p3.price)}
+        </div>
+        <div className="check-val">{pat.implication}</div>
+        {confirmed && pat.confirm && (
+          <div className="check-val">
+            {barTime(pat.confirm.time)} 收盘 ${fmt(pat.confirm.price)} 突破触发线 ${fmt(pat.trigger)}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 function AutoSignalItem({ kindKey, pair }: { kindKey: string; pair: DivergencePair }) {
@@ -213,18 +239,22 @@ export function IntradaySidebar({ built, activeTf, predictionUpdatedAt, predicti
 
       {(() => {
         const tfData = built.timeframes[activeTf];
+        const patterns123 = tfData?.pattern123 ?? [];
         const autoItems = [
           ...(tfData?.autoDivergence ?? []).map((d) => ({ kindKey: `divergence-${d.kind}`, pair: d })),
           ...(tfData?.autoBeichi ?? []).map((d) => ({ kindKey: `beichi-${d.kind}`, pair: d })),
         ];
-        if (!autoItems.length) return null;
+        if (!autoItems.length && !patterns123.length) return null;
         return (
           <>
             <div className="section-title">自动信号 · {TF_LABELS[activeTf]}</div>
+            {patterns123.map((pat, i) => (
+              <Pattern123Item key={`p123-${i}`} pat={pat} />
+            ))}
             {autoItems.map((it, i) => (
               <AutoSignalItem key={i} kindKey={it.kindKey} pair={it.pair} />
             ))}
-            <div className="note-block">简化算法自动检测（仅比较相邻确认摆动点），仅供参考，不构成买卖依据</div>
+            <div className="note-block">简化算法自动检测（基于已确认摆动点），仅供参考，不构成买卖依据</div>
           </>
         );
       })()}

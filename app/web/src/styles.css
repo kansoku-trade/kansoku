@@ -180,6 +180,13 @@ a:hover { text-decoration: underline; }
 .check-icon { font-size: 14px; }
 .check-label { font-size: 12px; color: #c9d1d9; font-weight: 500; }
 .check-val { font-size: 11px; color: #8b949e; margin-top: 2px; }
+.p123-badge {
+  margin-left: 6px; padding: 1px 6px; border-radius: 8px; font-size: 10px; font-weight: 600;
+  color: #ffc107; background: rgba(255, 193, 7, 0.15); border: 1px solid rgba(255, 193, 7, 0.4);
+}
+.p123-badge.confirmed {
+  color: #26a69a; background: rgba(38, 166, 154, 0.15); border-color: rgba(38, 166, 154, 0.4);
+}
 
 .zone-item { padding: 8px 10px; margin-bottom: 6px; background: #0d1117; border-left: 3px solid var(--zc); }
 .zone-item.compact { padding: 6px 8px; margin-bottom: 5px; }

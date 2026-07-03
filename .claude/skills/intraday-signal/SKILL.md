@@ -66,9 +66,14 @@ curl -s -X POST http://localhost:5199/api/charts \
 ```
 
 The response's `data.technicals` gives, per timeframe: the latest DIF/DEA/HIST,
-the last ~6 swing highs/lows, the most recent 金叉/死叉 (`last_cross`), and any
-auto-detected `divergence_candidates` / `beichi_candidates` (confirmed pivots only —
-the chart itself also draws these automatically, in both preview and final render).
+the last ~6 swing highs/lows, the most recent 金叉/死叉 (`last_cross`), any
+auto-detected `divergence_candidates` / `beichi_candidates`, and `pattern_123` —
+auto-detected 123 reversal structures (①extreme → ②reaction pivot → ③higher-low /
+lower-high), each with `status` (`forming` = trigger not yet broken, `confirmed` =
+close broke the ② trigger), `trigger`, and `invalidation` prices. A `forming`
+pattern_123 is a ready-made entry setup: entry at the ② trigger break, stop
+beyond ① (all confirmed pivots only — the chart itself also draws these
+automatically, in both preview and final render).
 Read these numbers — don't guess MACD direction from eyeballing candles. Note the
 auto-detector can't confirm a pivot on the last 1-2 bars (needs bars on both sides);
 for very recent action, read `last_dif`/`last_dea`/`last_hist` directly and reason
