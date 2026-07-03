@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import type { ChartDoc } from "../../../shared/types.js";
 import { ClientError } from "../errors.js";
 import { BASE_URL } from "../env.js";
-import { buildChart, mergeForPatch, rebuild, refreshBody } from "../services/build.js";
+import { ALL_TYPES, buildChart, mergeForPatch, rebuild, refreshBody } from "../services/build.js";
 import { clampViewCount } from "../services/history.js";
 import { predictionStale } from "../services/staleness.js";
 import { allocateId, deleteChart, listCharts, loadChart, saveChart } from "../services/store.js";
@@ -82,6 +82,13 @@ chartsRoute.patch("/:id", async (c) => {
   const id = c.req.param("id");
   const doc = await loadChart(id);
   if (!doc) throw new ClientError(`chart not found: ${id}`, "GET /api/charts lists available ids", 404);
+  if (!ALL_TYPES.includes(doc.type)) {
+    throw new ClientError(
+      `chart type '${doc.type}' is no longer supported`,
+      "legacy charts are read-only; create an intraday chart instead",
+      400,
+    );
+  }
   const body = (await c.req.json().catch(() => {
     throw new ClientError("request body must be JSON");
   })) as Record<string, unknown>;

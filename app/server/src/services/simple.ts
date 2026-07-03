@@ -1,4 +1,3 @@
-import type { RawBar } from "../../../shared/types.js";
 import { ClientError } from "../errors.js";
 
 const UP_COLOR = "#22c55e";
@@ -84,91 +83,6 @@ export function buildFlowOption(rows: FlowRow[]): Record<string, unknown> {
         name: "净流出",
         data: neg,
         itemStyle: { color: DOWN_COLOR },
-      },
-    ],
-  };
-}
-
-export function buildKlineOption(rows: RawBar[]): Record<string, unknown> {
-  const times = rows.map((row) => row.time);
-  const candles = rows.map((row) => [Number(row.open), Number(row.close), Number(row.low), Number(row.high)]);
-  const volumes = rows.map((row) => {
-    const isUp = Number(row.close) >= Number(row.open);
-    return {
-      value: Number(row.volume),
-      itemStyle: { color: isUp ? UP_COLOR : DOWN_COLOR, opacity: 0.6 },
-    };
-  });
-
-  return {
-    tooltip: {
-      trigger: "axis",
-      axisPointer: { type: "cross" },
-      backgroundColor: "rgba(20,24,30,0.92)",
-      borderColor: "#333",
-      textStyle: { color: "#eee" },
-    },
-    axisPointer: { link: [{ xAxisIndex: "all" }] },
-    grid: [
-      { left: "8%", right: "5%", top: 30, height: "60%" },
-      { left: "8%", right: "5%", top: "74%", height: "15%" },
-    ],
-    xAxis: [
-      {
-        type: "category",
-        data: times,
-        gridIndex: 0,
-        axisLine: { lineStyle: { color: "#666" } },
-        axisLabel: { show: false },
-        splitLine: { show: false },
-      },
-      {
-        type: "category",
-        data: times,
-        gridIndex: 1,
-        axisLine: { lineStyle: { color: "#666" } },
-        axisLabel: { color: "#aaa", fontSize: 10 },
-        splitLine: { show: false },
-      },
-    ],
-    yAxis: [
-      {
-        scale: true,
-        gridIndex: 0,
-        axisLine: { lineStyle: { color: "#666" } },
-        axisLabel: { color: "#aaa" },
-        splitLine: { lineStyle: { color: "#1f242c" } },
-      },
-      {
-        scale: true,
-        gridIndex: 1,
-        axisLine: { lineStyle: { color: "#666" } },
-        axisLabel: { show: false },
-        splitLine: { show: false },
-      },
-    ],
-    dataZoom: [
-      { type: "inside", xAxisIndex: [0, 1] },
-      { type: "slider", xAxisIndex: [0, 1], height: 18, bottom: 18, borderColor: "#333" },
-    ],
-    series: [
-      {
-        name: "K-line",
-        type: "candlestick",
-        data: candles,
-        itemStyle: {
-          color: UP_COLOR,
-          color0: DOWN_COLOR,
-          borderColor: UP_COLOR,
-          borderColor0: DOWN_COLOR,
-        },
-      },
-      {
-        name: "Volume",
-        type: "bar",
-        xAxisIndex: 1,
-        yAxisIndex: 1,
-        data: volumes,
       },
     ],
   };

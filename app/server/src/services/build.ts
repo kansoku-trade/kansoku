@@ -4,9 +4,9 @@ import { ymd } from "./indicators.js";
 import { buildIntraday, TIMEFRAME_ORDER, type IntradayInput } from "./intraday.js";
 import { fetchFlow, fetchKline, fetchNews } from "./longbridge.js";
 import { buildSepa, type SepaInput } from "./sepa.js";
-import { buildCohortOption, buildFlowOption, buildKlineOption, type CohortRow, type FlowRow } from "./simple.js";
+import { buildCohortOption, buildFlowOption, type CohortRow, type FlowRow } from "./simple.js";
 
-export const ALL_TYPES: ChartType[] = ["flow", "kline", "cohort", "sepa", "intraday"];
+export const ALL_TYPES: ChartType[] = ["flow", "cohort", "sepa", "intraday"];
 
 const TF_PERIODS: Record<string, string> = { m5: "5m", m15: "15m", h1: "1h" };
 
@@ -108,17 +108,6 @@ async function prepareInput(type: ChartType, body: Body): Promise<Record<string,
       }
       return { symbol, rows, subtitle: body.subtitle ?? "" };
     }
-    case "kline": {
-      let rows = body.data as RawBar[] | undefined;
-      let symbol = typeof body.symbol === "string" ? body.symbol : null;
-      const period = String(body.period ?? "day");
-      const session = typeof body.session === "string" ? body.session : undefined;
-      if (!rows) {
-        symbol = requireSymbol(body, "kline");
-        rows = await fetchKline(symbol, period, Number(body.count ?? 30), session);
-      }
-      return { symbol, period, session, rows, subtitle: body.subtitle ?? "" };
-    }
     case "cohort": {
       const rows = body.data as CohortRow[] | undefined;
       if (!Array.isArray(rows) || !rows.length) {
@@ -163,7 +152,6 @@ export function rebuild(type: ChartType, input: Record<string, unknown>, title?:
       };
     }
     case "flow":
-    case "kline":
     case "cohort": {
       const rows = input.rows as Record<string, unknown>[];
       if (!Array.isArray(rows) || !rows.length) {
@@ -177,18 +165,13 @@ export function rebuild(type: ChartType, input: Record<string, unknown>, title?:
         option = buildFlowOption(rows as unknown as FlowRow[]);
         defaultTitle = symbol ? `${symbol} 主力资金流` : "主力资金流";
         slug = symbol ? symbolSlug(symbol, "flow") : "flow";
-      } else if (type === "kline") {
-        option = buildKlineOption(rows as unknown as RawBar[]);
-        const period = String(input.period ?? "day");
-        defaultTitle = symbol ? `${symbol} ${period} K线` : "K线";
-        slug = symbol ? symbolSlug(symbol, `kline-${period}`) : "kline";
       } else {
         option = buildCohortOption(rows as unknown as CohortRow[]);
         defaultTitle = "cohort 对比";
         slug = title ? slugify(title, "cohort") : "cohort";
       }
       const lastTime = rows[rows.length - 1]?.time;
-      const sessionDate = type !== "cohort" && typeof lastTime === "string" ? ymd(lastTime) : localToday();
+      const sessionDate = type === "flow" && typeof lastTime === "string" ? ymd(lastTime) : localToday();
       return {
         type,
         title: title || defaultTitle,
@@ -222,17 +205,6 @@ export function refreshBody(type: ChartType, input: Record<string, unknown>): Re
   switch (type) {
     case "flow":
       return { type, symbol, subtitle: input.subtitle };
-    case "kline": {
-      const rows = input.rows;
-      return {
-        type,
-        symbol,
-        period: input.period,
-        session: input.session,
-        count: Array.isArray(rows) ? rows.length : undefined,
-        subtitle: input.subtitle,
-      };
-    }
     case "intraday":
       return {
         type,
@@ -254,7 +226,6 @@ const PATCHABLE: Record<ChartType, string[]> = {
   sepa: ["name", "as_of_date", "position", "context"],
   intraday: ["name", "as_of", "position", "prediction", "session"],
   flow: ["subtitle"],
-  kline: ["subtitle"],
   cohort: ["subtitle"],
 };
 
@@ -263,7 +234,7 @@ export function mergeForPatch(type: ChartType, input: Record<string, unknown>, b
   for (const key of PATCHABLE[type]) {
     if (key in body) merged[key] = body[key];
   }
-  if ((type === "flow" || type === "kline" || type === "cohort") && Array.isArray(body.data)) {
+  if ((type === "flow" || type === "cohort") && Array.isArray(body.data)) {
     merged.rows = body.data;
   }
   return merged;

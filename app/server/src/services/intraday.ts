@@ -15,8 +15,10 @@ import {
   type IntradayTfSummary,
   type MacdCross,
   type NewsItem,
+  type Pattern123,
   type RawBar,
   type SeriesMarker,
+  type SwingPoint,
   type TimeframeKey,
 } from "../../../shared/types.js";
 import { formatMarketMonthDayTime } from "../../../shared/time.js";
@@ -24,6 +26,7 @@ import { ClientError } from "../errors.js";
 import { detectCandlePatterns } from "./candlePatterns.js";
 import { ema, findSwings, lineData, macd, pyRound, sma, toTs } from "./indicators.js";
 import { classifyMacdStructure, MACD_STRUCTURE_META, ZERO_TANGLE_NOTE, type MacdStructure } from "./macdStructure.js";
+import { detect123Patterns } from "./pattern123.js";
 import { offSessionBars } from "./session.js";
 
 export const TIMEFRAME_ORDER: TimeframeKey[] = ["m5", "m15", "h1"];
@@ -169,6 +172,7 @@ export interface CoercedTimeframe {
   candlePatterns: CandlePattern[];
   autoDivergence: DivergencePair[];
   autoBeichi: DivergencePair[];
+  pattern123: Pattern123[];
   lastClose: number;
   summary: IntradayTfSummary;
 }
@@ -239,6 +243,7 @@ export function coerceIntradayTimeframe(bars: RawBar[], key: string, emaPeriods 
     ...findPriceDivergence(withMacd(swingLows), false),
   ].sort((a, b) => a.b.time - b.b.time);
   const autoBeichi = findMacdBeichi(hist, highs, lows, timesTs).sort((a, b) => a.b.time - b.b.time);
+  const pattern123 = detect123Patterns(highs, lows, closes, timesTs).slice(-2);
 
   return {
     candles,
@@ -252,6 +257,7 @@ export function coerceIntradayTimeframe(bars: RawBar[], key: string, emaPeriods 
     candlePatterns,
     autoDivergence: autoDivergence.slice(-2),
     autoBeichi: autoBeichi.slice(-2),
+    pattern123,
     lastClose: closes[closes.length - 1],
     summary: {
       last_dif: lastNonNull(dif),
@@ -266,6 +272,7 @@ export function coerceIntradayTimeframe(bars: RawBar[], key: string, emaPeriods 
       structure_signals: structure.signals.slice(-6),
       zero_tangle: structure.tangle,
       candle_patterns: candlePatterns.slice(-6),
+      pattern_123: pattern123,
     },
   };
 }
@@ -365,6 +372,68 @@ function autoPatternMarkers(items: DivergencePair[], group: "divergence" | "beic
     });
   }
   return { markers, priceConnectors, macdConnectors };
+}
+
+function pattern123Overlay(patterns: Pattern123[], lastBarTime: number): TfOverlay {
+  const markers: SeriesMarker[] = [];
+  const priceConnectors: Connector[] = [];
+  for (const pat of patterns) {
+    const bullish = pat.kind === "bullish";
+    const color = bullish ? "#26a69a" : "#ef5350";
+    const breakVerb = bullish ? "站上" : "跌破";
+    const statusText = pat.confirm
+      ? `已于 ${barTimeShort(pat.confirm.time)} 收盘${breakVerb} ②，结构确认`
+      : `酝酿中：等待收盘${breakVerb} ② $${pat.trigger.toFixed(2)}`;
+    const tooltip =
+      `🔢 自动·${pat.label}（简化算法，仅供参考）\n` +
+      `① ${barTimeShort(pat.p1.time)} $${pat.p1.price} → ② ${barTimeShort(pat.p2.time)} $${pat.p2.price} → ③ ${barTimeShort(pat.p3.time)} $${pat.p3.price}\n` +
+      `${pat.implication}\n${statusText}`;
+    const pts: [SwingPoint, string][] = [
+      [pat.p1, "①"],
+      [pat.p2, "②"],
+      [pat.p3, "③"],
+    ];
+    for (const [p, text] of pts) {
+      const isTrough = bullish !== (text === "②");
+      markers.push({
+        time: p.time,
+        position: isTrough ? "belowBar" : "aboveBar",
+        color,
+        shape: "circle",
+        text: pat.confirm || text !== "③" ? text : `${text}?`,
+        tooltip,
+      });
+    }
+    if (pat.confirm) {
+      markers.push({
+        time: pat.confirm.time,
+        position: bullish ? "belowBar" : "aboveBar",
+        color,
+        shape: bullish ? "arrowUp" : "arrowDown",
+        text: "123✓",
+        tooltip: `🔢 123 结构确认\n${barTimeShort(pat.confirm.time)} 收盘 $${pat.confirm.price.toFixed(2)} ${breakVerb}触发线 $${pat.trigger.toFixed(2)}\n${pat.implication}`,
+      });
+    }
+    priceConnectors.push({
+      color,
+      data: [
+        { time: pat.p1.time, value: pat.p1.price },
+        { time: pat.p2.time, value: pat.p2.price },
+        { time: pat.p3.time, value: pat.p3.price },
+      ],
+    });
+    const triggerEnd = pat.confirm ? pat.confirm.time : lastBarTime;
+    if (triggerEnd > pat.p3.time) {
+      priceConnectors.push({
+        color,
+        data: [
+          { time: pat.p3.time, value: pat.trigger },
+          { time: triggerEnd, value: pat.trigger },
+        ],
+      });
+    }
+  }
+  return { markers, priceConnectors, macdConnectors: [] };
 }
 
 export function computeIntradayEntryPlan(
@@ -538,6 +607,7 @@ export function buildIntraday(input: IntradayInput): { built: IntradayBuilt; met
     const sig = signalsByTf[k];
     const autoDiv = autoPatternMarkers(tf.autoDivergence, "divergence", "#ab47bc");
     const autoBei = autoPatternMarkers(tf.autoBeichi, "beichi", "#ff8f00");
+    const auto123 = pattern123Overlay(tf.pattern123, tf.candles[tf.candles.length - 1].time);
     const tangleSuffix = tf.structure.tangle ? `\n${ZERO_TANGLE_NOTE}` : "";
     const crossMarkers: SeriesMarker[] = tf.structure.signals.map((s, i) => {
       const meta = MACD_STRUCTURE_META[s.kind];
@@ -569,13 +639,14 @@ export function buildIntraday(input: IntradayInput): { built: IntradayBuilt; met
       macdDea: tf.macdDea,
       macdHist: tf.macdHist,
       macdCrossMarkers: crossMarkers,
-      markers: [...sig.markers, ...autoDiv.markers, ...autoBei.markers, ...patternMarkers]
+      markers: [...sig.markers, ...autoDiv.markers, ...autoBei.markers, ...auto123.markers, ...patternMarkers]
         .sort((a, b) => a.time - b.time)
         .map((m, i) => ({ ...m, id: `m-${i}` })),
-      priceConnectors: [...sig.priceConnectors, ...autoDiv.priceConnectors, ...autoBei.priceConnectors],
+      priceConnectors: [...sig.priceConnectors, ...autoDiv.priceConnectors, ...autoBei.priceConnectors, ...auto123.priceConnectors],
       macdConnectors: [...sig.macdConnectors, ...autoDiv.macdConnectors, ...autoBei.macdConnectors],
       autoDivergence: tf.autoDivergence,
       autoBeichi: tf.autoBeichi,
+      pattern123: tf.pattern123,
       offSession: offSessionBars(tf.candles.map((c) => c.time)),
     };
   }
