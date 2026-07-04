@@ -72,6 +72,7 @@ function buildSubmitTool(
   trigger: string,
   append: (comment: CockpitComment) => Promise<void>,
   onSubmit: (escalate: boolean) => void,
+  isTerminated: () => boolean,
 ): AgentTool<typeof submitSchema> {
   return {
     name: "submit_comment",
@@ -79,6 +80,9 @@ function buildSubmitTool(
     description: "记录一条盘中点评。收到快照后必须调用且只调用一次。",
     parameters: submitSchema,
     execute: async (_id, params: SubmitParams) => {
+      if (isTerminated()) {
+        return { content: [{ type: "text", text: "skipped" }], details: {}, terminate: true };
+      }
       await append({
         ts: new Date().toISOString(),
         symbol,
@@ -94,27 +98,35 @@ function buildSubmitTool(
   };
 }
 
+interface RunState {
+  done: boolean;
+}
+
 class CommentatorTimeoutError extends Error {}
 
-async function runWithTimeout(agent: CommentatorAgent, prompt: string, timeoutMs: number): Promise<void> {
-  let settled = false;
+async function runWithTimeout(
+  agent: CommentatorAgent,
+  prompt: string,
+  timeoutMs: number,
+  state: RunState,
+): Promise<void> {
   await new Promise<void>((resolve, reject) => {
     const timer = setTimeout(() => {
-      if (settled) return;
-      settled = true;
+      if (state.done) return;
+      state.done = true;
       agent.abort();
       reject(new CommentatorTimeoutError(`timed out after ${timeoutMs}ms`));
     }, timeoutMs);
     agent.prompt(prompt).then(
       () => {
-        if (settled) return;
-        settled = true;
+        if (state.done) return;
+        state.done = true;
         clearTimeout(timer);
         resolve();
       },
       (err) => {
-        if (settled) return;
-        settled = true;
+        if (state.done) return;
+        state.done = true;
         clearTimeout(timer);
         reject(err instanceof Error ? err : new Error(String(err)));
       },
@@ -146,15 +158,23 @@ export async function runCommentator({
       source: "system",
     });
 
+  const state: RunState = { done: false };
+
   try {
     let escalate: boolean | null = null;
-    const tool = buildSubmitTool(symbol, reason, append, (value) => {
-      escalate = value;
-    });
+    const tool = buildSubmitTool(
+      symbol,
+      reason,
+      append,
+      (value) => {
+        escalate = value;
+      },
+      () => state.done,
+    );
     const agent = factory({ systemPrompt: SYSTEM_PROMPT, model: deps.model, tools: [tool] });
     const promptText = JSON.stringify({ pack, trigger }).slice(0, MAX_PROMPT_CHARS);
 
-    await runWithTimeout(agent, promptText, timeoutMs);
+    await runWithTimeout(agent, promptText, timeoutMs, state);
 
     if (escalate === null) {
       await writeError("点评员未调用 submit_comment，本次无结论。");

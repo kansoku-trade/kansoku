@@ -151,6 +151,31 @@ describe("runCommentator", () => {
     expect(comments[0].text).toContain("超时");
   });
 
+  it("does not append a second comment when a late submit runs after the timeout", async () => {
+    let capturedSubmit: Parameters<AgentFactory>[0]["tools"][number] | undefined;
+    const { deps, comments } = harness((tools) => {
+      capturedSubmit = tools.find((t) => t.name === "submit_comment");
+      return {
+        prompt: () => new Promise<void>(() => {}),
+        abort: () => {},
+      };
+    }, 10);
+
+    const result = await runCommentator({ symbol: "MU.US", pack: makePack("MU.US"), trigger, deps });
+    expect(result).toEqual({ escalate: false });
+    expect(comments).toHaveLength(1);
+    expect(comments[0].source).toBe("system");
+
+    const late = await capturedSubmit!.execute("call-late", {
+      level: "info",
+      text: "迟到的点评",
+      escalate: false,
+    });
+    expect(late.terminate).toBe(true);
+    expect(comments).toHaveLength(1);
+    expect(comments[0].source).toBe("system");
+  });
+
   it("skips and returns escalate:false when a run for the symbol is already in flight", async () => {
     let release: (() => void) | null = null;
     const gate = new Promise<void>((resolve) => {
