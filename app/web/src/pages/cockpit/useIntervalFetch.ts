@@ -18,7 +18,10 @@ export function useIntervalFetch<T>(url: string | null, ms: number): IntervalFet
     const load = () => {
       api<T>(url)
         .then((d) => {
-          if (!cancelled) setData(d);
+          if (!cancelled) {
+            setData(d);
+            setError(null);
+          }
         })
         .catch((e: Error) => {
           if (!cancelled) setError(e.message);

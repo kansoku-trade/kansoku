@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { BenchmarkSeries, ChartDoc, CockpitPosition, SymbolAnalysisRow } from "../../../shared/types";
-import { api } from "../api";
+import { ApiError, api } from "../api";
 import { IntradayDashboard, IntradayTimeframeSwitch } from "../charts/intraday/IntradayDashboard";
 import { NewsTab } from "../charts/intraday/tabs/NewsTab";
 import { PredictionTab } from "../charts/intraday/tabs/PredictionTab";
@@ -17,16 +17,21 @@ type LatestDoc = ChartDoc & { url: string; prediction_stale?: boolean };
 export function SymbolCockpit({ sym }: { sym: string }) {
   const [latestId, setLatestId] = useState<string | null>(null);
   const [latestChecked, setLatestChecked] = useState(false);
+  const [latestError, setLatestError] = useState<string | null>(null);
 
   useEffect(() => {
     setLatestId(null);
     setLatestChecked(false);
+    setLatestError(null);
     api<LatestDoc>(`/api/symbols/${encodeURIComponent(sym)}/latest`)
       .then((d) => {
         setLatestId(d.id);
         setLatestChecked(true);
       })
-      .catch(() => setLatestChecked(true));
+      .catch((e: ApiError) => {
+        if (e.status !== 404) setLatestError(e.message);
+        setLatestChecked(true);
+      });
   }, [sym]);
 
   const { doc, error, degraded, intradayTf, setIntradayTf, loadHistory } = useIntradayDoc(latestId);
@@ -52,7 +57,11 @@ export function SymbolCockpit({ sym }: { sym: string }) {
     return (
       <div className="page">
         <h1>{sym}</h1>
-        <div className="empty">这只股票还没有 intraday 分析——先跑一次 intraday-signal 生成分析</div>
+        {latestError ? (
+          <div className="error-box">{latestError}</div>
+        ) : (
+          <div className="empty">这只股票还没有 intraday 分析——先跑一次 intraday-signal 生成分析</div>
+        )}
         <p>
           <a href="#/">← 返回列表</a>
         </p>
