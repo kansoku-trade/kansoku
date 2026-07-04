@@ -6,7 +6,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "echarts": "^5.5.1",
+    "echarts": "^6.1.0",
     "lightweight-charts": "^4.2.3",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
