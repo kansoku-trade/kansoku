@@ -307,11 +307,13 @@ function buildIntradaySignals(signals: IntradayPrediction["signals"]): Record<Ti
           shape,
           text: SIGNAL_ICON[stype] ?? "•",
           tooltip,
+          group: "ai",
         });
       }
       if (points.length === 2) {
         perTf[tf].priceConnectors.push({
           color,
+          group: "ai",
           data: [
             { time: toTs(points[0].time), value: Number(points[0].price) },
             { time: toTs(points[1].time), value: Number(points[1].price) },
@@ -320,6 +322,7 @@ function buildIntradaySignals(signals: IntradayPrediction["signals"]): Record<Ti
         if (points[0].macd_value != null && points[1].macd_value != null) {
           perTf[tf].macdConnectors.push({
             color,
+            group: "ai",
             data: [
               { time: toTs(points[0].time), value: Number(points[0].macd_value) },
               { time: toTs(points[1].time), value: Number(points[1].macd_value) },
@@ -336,6 +339,7 @@ function buildIntradaySignals(signals: IntradayPrediction["signals"]): Record<Ti
         shape,
         text: SIGNAL_ICON[stype] ?? "•",
         tooltip,
+        group: "ai",
       });
     }
   }
@@ -355,10 +359,11 @@ function autoPatternMarkers(items: DivergencePair[], group: "divergence" | "beic
       `${barTimeShort(a.time)} $${a.price} → ${barTimeShort(b.time)} $${b.price}\n` +
       meta.impact;
     for (const p of [a, b]) {
-      markers.push({ time: p.time, position, color, shape: "circle", text: meta.icon, tooltip });
+      markers.push({ time: p.time, position, color, shape: "circle", text: meta.icon, tooltip, group });
     }
     priceConnectors.push({
       color,
+      group,
       data: [
         { time: a.time, value: a.price },
         { time: b.time, value: b.price },
@@ -366,6 +371,7 @@ function autoPatternMarkers(items: DivergencePair[], group: "divergence" | "beic
     });
     macdConnectors.push({
       color,
+      group,
       data: [
         { time: a.time, value: a.macd_value },
         { time: b.time, value: b.macd_value },
@@ -403,6 +409,7 @@ function pattern123Overlay(patterns: Pattern123[], lastBarTime: number): TfOverl
         shape: "circle",
         text: pat.confirm || text !== "③" ? text : `${text}?`,
         tooltip,
+        group: "pattern123",
       });
     }
     if (pat.confirm) {
@@ -413,10 +420,12 @@ function pattern123Overlay(patterns: Pattern123[], lastBarTime: number): TfOverl
         shape: bullish ? "arrowUp" : "arrowDown",
         text: "123✓",
         tooltip: `🔢 123 结构确认\n${barTimeShort(pat.confirm.time)} 收盘 $${pat.confirm.price.toFixed(2)} ${breakVerb}触发线 $${pat.trigger.toFixed(2)}\n${pat.implication}`,
+        group: "pattern123",
       });
     }
     priceConnectors.push({
       color,
+      group: "pattern123",
       data: [
         { time: pat.p1.time, value: pat.p1.price },
         { time: pat.p2.time, value: pat.p2.price },
@@ -427,6 +436,7 @@ function pattern123Overlay(patterns: Pattern123[], lastBarTime: number): TfOverl
     if (triggerEnd > pat.p3.time) {
       priceConnectors.push({
         color,
+        group: "pattern123",
         data: [
           { time: pat.p3.time, value: pat.trigger },
           { time: triggerEnd, value: pat.trigger },
@@ -623,6 +633,7 @@ export function buildIntraday(input: IntradayInput): { built: IntradayBuilt; met
       shape: "circle",
       text: `🎯 预测点 $${Number(anchor.price).toFixed(2)}`,
       tooltip: `🎯 AI 预测锚点\n${TIMEFRAME_LABELS[anchor.timeframe]} · ${barTimeShort(toTs(anchor.time))} · $${Number(anchor.price).toFixed(2)}\n方向判断（${direction === "short" ? "做空" : direction === "long" ? "做多" : "观望"}）基于这根 K 线做出`,
+      group: "ai",
     });
   }
 
@@ -658,6 +669,7 @@ export function buildIntraday(input: IntradayInput): { built: IntradayBuilt; met
       shape: p.bias === "bullish" ? "arrowUp" : "arrowDown",
       text: p.label,
       tooltip: `🕯️ 自动·${p.label}（简化算法，仅供参考）\n${barTimeShort(p.time)} $${p.price}\n${p.implication}`,
+      group: "candle",
     }));
     timeframes[k] = {
       candles: tf.candles,

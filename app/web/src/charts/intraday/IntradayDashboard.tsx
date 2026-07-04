@@ -1,7 +1,9 @@
 import { useRef, useState } from "react";
 import type { IntradayBuilt, TimeframeKey } from "../../../../shared/types";
 import { fmt } from "../../format";
+import { IndicatorToggles } from "./IndicatorToggles";
 import { IntradaySidebar } from "./IntradaySidebar";
+import { useIndicatorToggles } from "./useIndicatorToggles";
 import { EMA_COLORS, useIntradayCharts } from "./useIntradayCharts";
 
 export const TF_LABELS: Record<TimeframeKey, string> = { m5: "5分钟", m15: "15分钟", h1: "1小时" };
@@ -49,7 +51,8 @@ export function IntradayDashboard({ built, activeTf, predictionUpdatedAt, predic
   const [dragging, setDragging] = useState(false);
   const mainRef = useRef<HTMLDivElement>(null);
   const macdRef = useRef<HTMLDivElement>(null);
-  useIntradayCharts(built, activeTf, mainRef, macdRef, onLoadHistory);
+  const { toggles, toggle } = useIndicatorToggles();
+  useIntradayCharts(built, activeTf, mainRef, macdRef, onLoadHistory, toggles);
 
   const onResizeStart = (e: React.PointerEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -90,6 +93,7 @@ export function IntradayDashboard({ built, activeTf, predictionUpdatedAt, predic
               盘前/盘后 · 深色为夜盘
             </span>
           </div>
+          <IndicatorToggles toggles={toggles} onToggle={toggle} />
           <div ref={mainRef} className="chart-host" />
         </div>
         <div

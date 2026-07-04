@@ -134,6 +134,52 @@ describe("intraday parity vs python golden fixture", () => {
     expect(() => buildIntraday({ ...input, context })).toThrow(/news/);
   });
 
+  it("tags every marker and connector with its origin group", () => {
+    const prediction = {
+      direction: "long" as const,
+      anchor: { timeframe: "m15" as const, time: "2026-06-01T14:30:00.000Z", price: 100 },
+      signals: [
+        {
+          type: "macd_divergence",
+          timeframe: "m15" as const,
+          bias: "bullish" as const,
+          label: "底背离",
+          points: [
+            { time: "2026-06-01T14:00:00.000Z", price: 98, macd_value: -0.2 },
+            { time: "2026-06-01T14:15:00.000Z", price: 97, macd_value: -0.1 },
+          ],
+        },
+        {
+          type: "pin_bar",
+          timeframe: "m15" as const,
+          time: "2026-06-01T14:30:00.000Z",
+          price: 100,
+          bias: "bullish" as const,
+          label: "Pin Bar",
+        },
+      ],
+      entry_plan: { entry: 100, stop: 95 },
+    };
+    const { built } = buildIntraday({ ...input, prediction });
+
+    const groupsSeen = new Set<string | undefined>();
+    for (const key of ["m5", "m15", "h1"] as TimeframeKey[]) {
+      const tf = built.timeframes[key];
+      for (const m of tf.markers) {
+        expect(m.group).toBeDefined();
+        groupsSeen.add(m.group);
+      }
+      for (const c of [...tf.priceConnectors, ...tf.macdConnectors]) {
+        expect(c.group).toBeDefined();
+        groupsSeen.add(c.group);
+      }
+      for (const m of tf.macdCrossMarkers) {
+        expect(m.group).toBeUndefined();
+      }
+    }
+    expect(groupsSeen).toEqual(new Set(["ai", "divergence", "beichi", "pattern123", "candle"]));
+  });
+
   it("throws ClientError when sources_used is not an array", () => {
     const context = {
       generated_at: "2026-07-05T14:00:00.000Z",

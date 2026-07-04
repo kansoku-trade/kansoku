@@ -28,6 +28,7 @@ export interface Candle {
 
 export type MarkerPosition = "aboveBar" | "belowBar" | "inBar";
 export type MarkerShape = "circle" | "arrowUp" | "arrowDown" | "square";
+export type OverlayGroup = "ai" | "divergence" | "beichi" | "pattern123" | "candle";
 
 export interface SeriesMarker {
   time: number;
@@ -37,6 +38,7 @@ export interface SeriesMarker {
   text: string;
   id?: string;
   tooltip?: string;
+  group?: OverlayGroup;
 }
 
 export const AUTO_SIGNAL_META: Record<string, { icon: string; title: string; impact: string }> = {
@@ -65,6 +67,7 @@ export const AUTO_SIGNAL_META: Record<string, { icon: string; title: string; imp
 export interface Connector {
   color: string;
   data: LinePoint[];
+  group?: OverlayGroup;
 }
 
 export interface SupportZone {

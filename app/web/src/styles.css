@@ -129,6 +129,25 @@ a:hover { text-decoration: underline; }
   color: #f0f6fc; background: rgba(88,166,255,0.14);
 }
 
+.chart-indicator-toggles {
+  position: absolute; top: 8px; right: 12px; z-index: 10;
+  display: inline-flex; gap: 2px; padding: 2px; flex-wrap: wrap; max-width: 60%;
+  background: rgba(13,17,23,0.7); border: 1px solid #21262d; border-radius: 5px;
+}
+.chart-indicator-toggles button {
+  height: 20px; padding: 0 7px;
+  background: transparent; border: 0; border-radius: 3px; color: #8b949e;
+  font-size: 11px; line-height: 20px; cursor: pointer; white-space: nowrap;
+}
+.chart-indicator-toggles button:hover { color: #f0f6fc; background: rgba(255,255,255,0.05); }
+.chart-indicator-toggles button:focus-visible {
+  outline: 1px solid #58a6ff; outline-offset: 1px;
+}
+.chart-indicator-toggles button[aria-pressed="false"] { color: #4d5561; }
+.chart-indicator-toggles button[aria-pressed="true"] {
+  color: #f0f6fc; background: rgba(88,166,255,0.14);
+}
+
 .sidebar { background: #161b22; padding: 16px; overflow-y: auto; font-size: 13px; }
 .header { margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid #21262d; }
 .symbol { font-size: 22px; font-weight: 600; color: #f0f6fc; }
@@ -246,6 +265,22 @@ a:hover { text-decoration: underline; }
 .lp-group label:hover { color: #f0f6fc; }
 .lp-group input[type=checkbox] { margin: 0 5px 0 0; accent-color: #58a6ff; flex-shrink: 0; width: 11px; height: 11px; }
 .lp-swatch { display: inline-block; width: 7px; height: 7px; margin-right: 4px; border-radius: 1px; flex-shrink: 0; }
+
+.conclusion-card { margin-bottom: 14px; }
+.conclusion-action { color: #c9d1d9; font-weight: 500; }
+
+.sidebar-tab-bar {
+  display: flex; gap: 4px; margin-bottom: 12px; border-bottom: 1px solid #21262d;
+}
+.sidebar-tab-bar button {
+  background: transparent; border: 0; padding: 6px 10px; font-size: 12px;
+  color: #8b949e; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px;
+}
+.sidebar-tab-bar button:hover { color: #f0f6fc; }
+.sidebar-tab-bar button[aria-selected="true"] { color: #f0f6fc; border-bottom-color: #58a6ff; }
+
+.news-badge.context-tag { background: #21262d; color: #ffb74d; }
+.news-badge.context-source { background: #21262d; color: #8b949e; }
 
 .news-item {
   display: block; padding: 7px 8px; margin-bottom: 4px; background: #0d1117;

@@ -1,7 +1,7 @@
 import type { RefObject } from "react";
 import { useEffect, useRef } from "react";
 import type { IChartApi, ISeriesApi, LogicalRange } from "lightweight-charts";
-import type { IntradayBuilt, IntradayPriceZone, TimeframeKey } from "../../../../shared/types";
+import type { IntradayBuilt, IntradayPriceZone, SeriesMarker, TimeframeKey } from "../../../../shared/types";
 import {
   addPriceLine,
   asTime,
@@ -18,6 +18,7 @@ import {
   toMarkers,
   type MarkerTooltipHandle,
 } from "../lw";
+import type { IndicatorToggleKey } from "./useIndicatorToggles";
 
 export const EMA_COLORS = ["#ffb74d", "#ba68c8", "#4fc3f7", "#ffee58"];
 
@@ -53,12 +54,21 @@ const NEAR_LEFT_BARS = 10;
 const zoneTitle = (z: IntradayPriceZone, edge?: "上沿" | "下沿") =>
   `${z.label}${edge ? edge : ""} $${(edge === "上沿" ? z.high : z.low).toFixed(2)}`;
 
+const groupAllowed = (toggles: Record<IndicatorToggleKey, boolean>, group?: SeriesMarker["group"]) =>
+  group === undefined || toggles[group as IndicatorToggleKey];
+
+const filterByGroup = <T extends { group?: SeriesMarker["group"] }>(
+  items: T[],
+  toggles: Record<IndicatorToggleKey, boolean>,
+): T[] => items.filter((item) => groupAllowed(toggles, item.group));
+
 export function useIntradayCharts(
   built: IntradayBuilt,
   activeTf: TimeframeKey,
   mainRef: RefObject<HTMLDivElement | null>,
   macdRef: RefObject<HTMLDivElement | null>,
-  onNearLeftEdge?: () => void,
+  onNearLeftEdge: (() => void) | undefined,
+  toggles: Record<IndicatorToggleKey, boolean>,
 ): void {
   const handleRef = useRef<Handle | null>(null);
   const builtRef = useRef(built);
@@ -163,15 +173,17 @@ export function useIntradayCharts(
     h.macdSession.setData(sessData);
     h.emaSeries.forEach((s, i) => {
       const emaLine = d.emas[i];
-      s.setData(emaLine ? padLineData(emaLine.data, timeline) : []);
+      s.setData(toggles.ema && emaLine ? padLineData(emaLine.data, timeline) : []);
     });
-    h.candle.setMarkers(toMarkers(d.markers));
-    h.mainTip.setMarkers(d.markers);
+    const markers = filterByGroup(d.markers, toggles);
+    h.candle.setMarkers(toMarkers(markers));
+    h.mainTip.setMarkers(markers);
     h.dif.setData(padLineData(d.macdDif, timeline));
     h.dea.setData(padLineData(d.macdDea, timeline));
     h.hist.setData(padHistData(d.macdHist, timeline));
-    h.dif.setMarkers(toMarkers(d.macdCrossMarkers));
-    h.macdTip.setMarkers(d.macdCrossMarkers);
+    const crossMarkers = toggles.crosses ? d.macdCrossMarkers : [];
+    h.dif.setMarkers(toMarkers(crossMarkers));
+    h.macdTip.setMarkers(crossMarkers);
 
     const connectorOpts = {
       lineWidth: 1,
@@ -180,12 +192,12 @@ export function useIntradayCharts(
       lastValueVisible: false,
       crosshairMarkerVisible: false,
     } as const;
-    (d.priceConnectors ?? []).forEach((c) => {
+    filterByGroup(d.priceConnectors ?? [], toggles).forEach((c) => {
       const s = h.main.addLineSeries({ color: c.color, ...connectorOpts });
       s.setData(toLineData(c.data));
       h.dynamic.push({ chart: h.main, series: s });
     });
-    (d.macdConnectors ?? []).forEach((c) => {
+    filterByGroup(d.macdConnectors ?? [], toggles).forEach((c) => {
       const s = h.macd.addLineSeries({ color: c.color, ...connectorOpts });
       s.setData(toLineData(c.data));
       h.dynamic.push({ chart: h.macd, series: s });
@@ -194,7 +206,7 @@ export function useIntradayCharts(
     h.planLines.forEach((line) => h.candle.removePriceLine(line));
     h.planLines = [];
     const ep = built.entryPlan;
-    if (ep) {
+    if (ep && toggles.levels) {
       h.planLines.push(addPriceLine(h.candle, { price: ep.entry, color: "#58a6ff", lineWidth: 2, lineStyle: 0, title: `入场 $${ep.entry.toFixed(2)}` }));
       h.planLines.push(addPriceLine(h.candle, { price: ep.stop, color: "#ef5350", lineWidth: 2, lineStyle: 2, title: `止损 $${ep.stop.toFixed(2)}` }));
       h.planLines.push(addPriceLine(h.candle, { price: ep.target1, color: "#26a69a", lineWidth: 1, lineStyle: 2, title: `T1 $${ep.target1.toFixed(2)}` }));
@@ -225,5 +237,5 @@ export function useIntradayCharts(
     }
     barCountRef.current = d.candles.length;
     firstTimeRef.current = timeline[0] ?? null;
-  }, [built, activeTf]);
+  }, [built, activeTf, toggles]);
 }
