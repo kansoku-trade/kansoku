@@ -24,7 +24,7 @@ import {
 } from "../../../shared/types.js";
 import { formatMarketMonthDayTime } from "../../../shared/time.js";
 import { ClientError } from "../errors.js";
-import { detectCandlePatterns } from "./candlePatterns.js";
+import { CANDLE_PATTERN_META, detectCandlePatterns } from "./candlePatterns.js";
 import { ema, findSwings, lineData, macd, pyRound, sma, toTs } from "./indicators.js";
 import { classifyMacdStructure, MACD_STRUCTURE_META, ZERO_TANGLE_NOTE, type MacdStructure } from "./macdStructure.js";
 import { detect123Patterns } from "./pattern123.js";
@@ -631,7 +631,7 @@ export function buildIntraday(input: IntradayInput): { built: IntradayBuilt; met
       position: "inBar",
       color: "#58a6ff",
       shape: "circle",
-      text: `🎯 预测点 $${Number(anchor.price).toFixed(2)}`,
+      text: "🎯",
       tooltip: `🎯 AI 预测锚点\n${TIMEFRAME_LABELS[anchor.timeframe]} · ${barTimeShort(toTs(anchor.time))} · $${Number(anchor.price).toFixed(2)}\n方向判断（${direction === "short" ? "做空" : direction === "long" ? "做多" : "观望"}）基于这根 K 线做出`,
       group: "ai",
     });
@@ -662,12 +662,21 @@ export function buildIntraday(input: IntradayInput): { built: IntradayBuilt; met
         tooltip: `${s.bias === "bullish" ? "🟢" : "🔴"} ${s.label} · ${barTimeShort(s.time)}${pending}\n${s.implication}${tangleSuffix}`,
       };
     });
-    const patternMarkers: SeriesMarker[] = tf.candlePatterns.slice(-12).map((p) => ({
+    const barIndex = new Map(tf.candles.map((c, i) => [c.time, i]));
+    const lastIdxByKind = new Map<CandlePattern["kind"], number>();
+    const dedupedPatterns = tf.candlePatterns.filter((p) => {
+      const idx = barIndex.get(p.time) ?? -1;
+      const prevIdx = lastIdxByKind.get(p.kind);
+      if (prevIdx !== undefined && idx - prevIdx <= 2) return false;
+      lastIdxByKind.set(p.kind, idx);
+      return true;
+    });
+    const patternMarkers: SeriesMarker[] = dedupedPatterns.slice(-12).map((p) => ({
       time: p.time,
       position: p.bias === "bullish" ? "belowBar" : "aboveBar",
       color: p.bias === "bullish" ? "#26a69a" : "#ef5350",
       shape: p.bias === "bullish" ? "arrowUp" : "arrowDown",
-      text: p.label,
+      text: CANDLE_PATTERN_META[p.kind].strong ? p.label : "",
       tooltip: `🕯️ 自动·${p.label}（简化算法，仅供参考）\n${barTimeShort(p.time)} $${p.price}\n${p.implication}`,
       group: "candle",
     }));

@@ -2,6 +2,7 @@ import { promises as fs } from "node:fs";
 import { join } from "node:path";
 import type { ChartDoc, ChartMeta } from "../../../shared/types.js";
 import { CHART_DATA_DIR } from "../env.js";
+import { migrateLegacyDoc } from "./build.js";
 
 const INDEX_FILE = join(CHART_DATA_DIR, "index.json");
 
@@ -71,7 +72,8 @@ export async function listCharts(filter: ListFilter = {}): Promise<ChartMeta[]> 
 export async function loadChart(id: string): Promise<ChartDoc | null> {
   if (!/^[\p{L}\p{N}._-]+$/u.test(id)) return null;
   try {
-    return JSON.parse(await fs.readFile(docPath(id), "utf-8")) as ChartDoc;
+    const doc = JSON.parse(await fs.readFile(docPath(id), "utf-8")) as ChartDoc;
+    return migrateLegacyDoc(doc);
   } catch {
     return null;
   }

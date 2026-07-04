@@ -1,10 +1,10 @@
-import type { ChartBuilt, ChartType, RawBar } from "../../../shared/types.js";
+import type { ChartBuilt, ChartDoc, ChartType, RawBar } from "../../../shared/types.js";
 import { ClientError } from "../errors.js";
 import { ymd } from "./indicators.js";
 import { buildIntraday, TIMEFRAME_ORDER, type IntradayInput } from "./intraday.js";
 import { fetchFlow, fetchKline, fetchNews } from "./longbridge.js";
 import { buildSepa, type SepaInput } from "./sepa.js";
-import { buildCohortOption, buildFlowOption, type CohortRow, type FlowRow } from "./simple.js";
+import { cleanCohortRows, type CohortRow, type FlowRow } from "./simple.js";
 
 export const ALL_TYPES: ChartType[] = ["flow", "cohort", "sepa", "intraday"];
 
@@ -159,15 +159,16 @@ export function rebuild(type: ChartType, input: Record<string, unknown>, title?:
         throw new ClientError(`${type}: input rows must be a non-empty array`);
       }
       const symbol = typeof input.symbol === "string" ? input.symbol : null;
-      let option: Record<string, unknown>;
+      const subtitle = String(input.subtitle ?? "");
+      let built: ChartBuilt;
       let defaultTitle: string;
       let slug: string;
       if (type === "flow") {
-        option = buildFlowOption(rows as unknown as FlowRow[]);
+        built = { kind: "simple", chartType: "flow", rows: rows as unknown as FlowRow[], subtitle };
         defaultTitle = symbol ? `${symbol} 主力资金流` : "主力资金流";
         slug = symbol ? symbolSlug(symbol, "flow") : "flow";
       } else {
-        option = buildCohortOption(rows as unknown as CohortRow[]);
+        built = { kind: "simple", chartType: "cohort", rows: cleanCohortRows(rows as unknown as CohortRow[]), subtitle };
         defaultTitle = "cohort 对比";
         slug = title ? slugify(title, "cohort") : "cohort";
       }
@@ -180,10 +181,19 @@ export function rebuild(type: ChartType, input: Record<string, unknown>, title?:
         symbol,
         sessionDate,
         input,
-        built: { kind: "echarts", option, subtitle: String(input.subtitle ?? ""), rows: rows.length },
+        built,
         meta: { rows: rows.length },
       };
     }
+  }
+}
+
+export function migrateLegacyDoc(doc: ChartDoc): ChartDoc {
+  if ((doc.built as { kind?: string } | undefined)?.kind !== "echarts") return doc;
+  try {
+    return { ...doc, built: rebuild(doc.type, doc.input, doc.title).built };
+  } catch {
+    return doc;
   }
 }
 

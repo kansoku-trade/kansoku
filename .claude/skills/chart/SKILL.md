@@ -3,7 +3,7 @@ name: chart
 description: >
   Render financial charts via the local chart web app (`app/` — Hono server +
   React front end, port 5199). Four chart types: intraday capital-flow line
-  (`flow`) and cross-symbol signed-bar comparison (`cohort`) — both ECharts —
+  (`flow`) and cross-symbol signed-bar comparison (`cohort`) — both Recharts —
   plus SEPA strategy dashboard (`sepa`) and short-term multi-timeframe
   prediction dashboard (`intraday`) — both TradingView Lightweight Charts.
   Multi-timeframe K-line review lives inside `intraday` (the standalone kline

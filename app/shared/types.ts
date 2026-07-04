@@ -461,14 +461,21 @@ export interface IntradayBuilt {
   sidebar: IntradaySidebar;
 }
 
-export interface EChartsBuilt {
-  kind: "echarts";
-  option: Record<string, unknown>;
-  subtitle: string;
-  rows: number;
+export interface FlowRow {
+  time: string;
+  inflow: string | number;
 }
 
-export type ChartBuilt = EChartsBuilt | SepaBuilt | IntradayBuilt;
+export interface CohortPoint {
+  label: string;
+  value: number;
+}
+
+export type SimpleBuilt =
+  | { kind: "simple"; chartType: "flow"; rows: FlowRow[]; subtitle: string }
+  | { kind: "simple"; chartType: "cohort"; rows: CohortPoint[]; subtitle: string };
+
+export type ChartBuilt = SimpleBuilt | SepaBuilt | IntradayBuilt;
 
 export const CURRENT_SCHEMA_VERSION = 2;
 

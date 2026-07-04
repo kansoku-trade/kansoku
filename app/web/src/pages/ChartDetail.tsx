@@ -1,4 +1,4 @@
-import { EChartsView } from "../charts/EChartsView";
+import { SimpleChartView } from "../charts/simple/SimpleChartView";
 import { IntradayDashboard, IntradayTimeframeSwitch } from "../charts/intraday/IntradayDashboard";
 import { resolveIntradayTf, useIntradayDoc } from "../charts/intraday/useIntradayDoc";
 import { SepaDashboard } from "../charts/sepa/SepaDashboard";
@@ -39,7 +39,10 @@ export function ChartDetail({ id }: { id: string }) {
         </span>
       </div>
       <div className="detail-body">
-        {doc.built.kind === "echarts" && <EChartsView built={doc.built} />}
+        {doc.built.kind === "simple" && <SimpleChartView built={doc.built} />}
+        {!["simple", "sepa", "intraday"].includes(doc.built.kind) && (
+          <div className="error-box">该图表格式已不再支持，请重新生成（旧格式重建失败）</div>
+        )}
         {doc.built.kind === "sepa" && <SepaDashboard built={doc.built} />}
         {doc.built.kind === "intraday" && activeIntradayTf && (
           <IntradayDashboard

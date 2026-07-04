@@ -1,30 +1,72 @@
+import { CartesianGrid, Legend, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { BenchmarkSeries, CockpitPosition } from "../../../../shared/types";
+import { fullTime, hhmm, tooltipContentStyle, tooltipLabelStyle } from "../../charts/simple/theme";
 import { fmt, signed, upDown } from "../../format";
-import { MiniEChart } from "./MiniEChart";
 
 const BENCHMARK_COLORS = ["#58a6ff", "#ffc107", "#ba68c8"];
 
-function buildBenchmarkOption(series: BenchmarkSeries[]) {
-  return {
-    grid: { left: 46, right: 16, top: 24, bottom: 30 },
-    xAxis: { type: "time", axisLabel: { color: "#8b949e", fontSize: 10 } },
-    yAxis: {
-      type: "value",
-      axisLabel: { color: "#8b949e", fontSize: 10, formatter: "{value}%" },
-      splitLine: { lineStyle: { color: "#21262d" } },
-    },
-    legend: { top: 0, textStyle: { color: "#8b949e", fontSize: 11 } },
-    tooltip: { trigger: "axis" },
-    series: series.map((s, i) => ({
-      name: s.symbol,
-      type: "line",
-      showSymbol: false,
-      data: s.points.map((p) => [p.time, p.pct]),
-      lineStyle: { color: BENCHMARK_COLORS[i % BENCHMARK_COLORS.length], width: 2 },
-      itemStyle: { color: BENCHMARK_COLORS[i % BENCHMARK_COLORS.length] },
-      markLine: i === 0 ? { silent: true, symbol: "none", lineStyle: { color: "#30363d" }, data: [{ yAxis: 0 }] } : undefined,
-    })),
-  };
+function mergeBenchmark(series: BenchmarkSeries[]): Record<string, number>[] {
+  const byTime = new Map<number, Record<string, number>>();
+  for (const s of series) {
+    for (const p of s.points) {
+      const t = p.time;
+      if (!Number.isFinite(t)) continue;
+      const row = byTime.get(t) ?? { t };
+      row[s.symbol] = p.pct;
+      byTime.set(t, row);
+    }
+  }
+  return [...byTime.values()].sort((a, b) => a.t - b.t);
+}
+
+function BenchmarkChart({ series }: { series: BenchmarkSeries[] }) {
+  const data = mergeBenchmark(series);
+  return (
+    <div style={{ width: "100%", height: 180 }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={data} margin={{ top: 4, right: 16, bottom: 0, left: 0 }}>
+          <CartesianGrid stroke="#21262d" vertical={false} />
+          <XAxis
+            dataKey="t"
+            type="number"
+            scale="time"
+            domain={["dataMin", "dataMax"]}
+            tickFormatter={hhmm}
+            tick={{ fill: "#8b949e", fontSize: 10 }}
+            tickLine={false}
+            axisLine={{ stroke: "#30363d" }}
+            minTickGap={40}
+          />
+          <YAxis
+            tick={{ fill: "#8b949e", fontSize: 10 }}
+            tickLine={false}
+            axisLine={false}
+            width={46}
+            tickFormatter={(v: number) => `${v}%`}
+          />
+          <Legend verticalAlign="top" height={20} wrapperStyle={{ fontSize: 11, color: "#8b949e" }} />
+          <Tooltip
+            contentStyle={tooltipContentStyle}
+            labelStyle={tooltipLabelStyle}
+            labelFormatter={(t) => fullTime(Number(t))}
+            formatter={(value) => `${Number(value).toFixed(2)}%`}
+          />
+          <ReferenceLine y={0} stroke="#30363d" />
+          {series.map((s, i) => (
+            <Line
+              key={s.symbol}
+              dataKey={s.symbol}
+              stroke={BENCHMARK_COLORS[i % BENCHMARK_COLORS.length]}
+              strokeWidth={2}
+              dot={false}
+              connectNulls
+              isAnimationActive={false}
+            />
+          ))}
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
 }
 
 interface EnvTabProps {
@@ -78,7 +120,7 @@ export function EnvTab({ position, positionError, benchmark, benchmarkError }: E
         环境对照（相对首点百分比）
       </div>
       {benchmark && benchmark.length > 0 ? (
-        <MiniEChart option={buildBenchmarkOption(benchmark)} height={180} />
+        <BenchmarkChart series={benchmark} />
       ) : benchmarkError ? (
         <div className="note-block">环境对照数据获取失败：{benchmarkError}</div>
       ) : (
