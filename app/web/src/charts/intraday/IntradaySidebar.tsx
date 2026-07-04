@@ -15,6 +15,8 @@ interface IntradaySidebarProps {
   predictionUpdatedAt?: string;
   predictionStale?: boolean;
   tabsOverride?: SidebarTab[];
+  active?: string;
+  onActiveChange?: (key: string) => void;
 }
 
 export function IntradaySidebar({
@@ -23,9 +25,13 @@ export function IntradaySidebar({
   predictionUpdatedAt,
   predictionStale,
   tabsOverride,
+  active: activeProp,
+  onActiveChange,
 }: IntradaySidebarProps) {
   const s = built.sidebar;
-  const [active, setActive] = useState("prediction");
+  const [internalActive, setInternalActive] = useState("prediction");
+  const active = activeProp ?? internalActive;
+  const setActive = onActiveChange ?? setInternalActive;
 
   const hasNews = Boolean(s.context?.news?.length) || Boolean(s.news?.length);
   const hasPosition = s.position !== null;

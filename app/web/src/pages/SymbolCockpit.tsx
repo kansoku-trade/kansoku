@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { BenchmarkSeries, ChartDoc, CockpitPosition, SymbolAnalysisRow } from "../../../shared/types";
+import { formatMarketClock } from "../../../shared/time";
 import { ApiError, api } from "../api";
 import { IntradayDashboard, IntradayTimeframeSwitch } from "../charts/intraday/IntradayDashboard";
 import { NewsTab } from "../charts/intraday/tabs/NewsTab";
@@ -7,9 +8,11 @@ import { PredictionTab } from "../charts/intraday/tabs/PredictionTab";
 import { resolveIntradayTf, useIntradayDoc } from "../charts/intraday/useIntradayDoc";
 import type { SidebarTab } from "../charts/SidebarTabs";
 import { TopbarQuote } from "../QuoteBar";
+import { AiTab } from "./cockpit/AiTab";
 import { EnvTab } from "./cockpit/EnvTab";
 import { FlowTab } from "./cockpit/FlowTab";
 import { HistoryTab } from "./cockpit/HistoryTab";
+import { useCockpitComments } from "./cockpit/useCockpitComments";
 import { useIntervalFetch } from "./cockpit/useIntervalFetch";
 
 type LatestDoc = ChartDoc & { url: string; prediction_stale?: boolean };
@@ -52,6 +55,30 @@ export function SymbolCockpit({ sym }: { sym: string }) {
       .then(setAnalyses)
       .catch(() => setAnalyses([]));
   }, [sym]);
+
+  const [activeTab, setActiveTab] = useState("prediction");
+  const { comments, error: commentsError, loaded: commentsLoaded } = useCockpitComments(sym);
+
+  const warnAlertCount = comments.reduce((n, c) => (c.level === "warn" || c.level === "alert" ? n + 1 : n), 0);
+  const [readCount, setReadCount] = useState<number | null>(null);
+  useEffect(() => {
+    setReadCount(null);
+  }, [sym]);
+  useEffect(() => {
+    if (commentsLoaded && readCount === null) setReadCount(warnAlertCount);
+  }, [commentsLoaded, readCount, warnAlertCount]);
+  useEffect(() => {
+    if (activeTab === "ai") setReadCount(warnAlertCount);
+  }, [activeTab, warnAlertCount]);
+  const unread = activeTab === "ai" || readCount === null ? 0 : Math.max(0, warnAlertCount - readCount);
+
+  const latestAlert = useMemo(() => {
+    for (let i = comments.length - 1; i >= 0; i--) {
+      const c = comments[i];
+      if (c.level === "warn" || c.level === "alert") return c;
+    }
+    return null;
+  }, [comments]);
 
   if (latestChecked && !latestId) {
     return (
@@ -117,6 +144,15 @@ export function SymbolCockpit({ sym }: { sym: string }) {
       hidden: analysesRows.length === 0,
       content: <HistoryTab rows={analysesRows} currentId={latestId} />,
     },
+    {
+      key: "ai",
+      label: (
+        <>
+          AI 点评{unread > 0 && <span className="ai-unread">{unread}</span>}
+        </>
+      ),
+      content: <AiTab symbol={sym} comments={comments} error={commentsError} />,
+    },
   ];
 
   return (
@@ -127,6 +163,19 @@ export function SymbolCockpit({ sym }: { sym: string }) {
         <span className="meta">{sym}</span>
         {degraded && <span className="degraded-dot" title="数据延迟：行情拉取失败，正在重试" />}
         <span className="topbar-actions">
+          {latestAlert && (
+            <button
+              className={`ai-badge ${latestAlert.level}`}
+              onClick={() => setActiveTab("ai")}
+              title={latestAlert.text}
+            >
+              <span className="dot" />
+              <span className="ai-badge-text">
+                AI {latestAlert.level === "alert" ? "警报" : "提醒"} {formatMarketClock(latestAlert.ts)} ·{" "}
+                {latestAlert.trigger ?? latestAlert.text}
+              </span>
+            </button>
+          )}
           <IntradayTimeframeSwitch activeTf={activeIntradayTf} onChange={setIntradayTf} />
           {latestId && <a href={`#/charts/${encodeURIComponent(latestId)}`}>存档 ↗</a>}
           {doc.symbol && <TopbarQuote symbol={doc.symbol} />}
@@ -140,6 +189,8 @@ export function SymbolCockpit({ sym }: { sym: string }) {
           predictionStale={doc.prediction_stale}
           onLoadHistory={loadHistory}
           sidebarTabs={sidebarTabs}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
         />
       </div>
     </div>

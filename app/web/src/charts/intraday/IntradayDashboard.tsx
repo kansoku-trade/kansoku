@@ -25,6 +25,8 @@ interface IntradayDashboardProps {
   predictionStale?: boolean;
   onLoadHistory?: () => void;
   sidebarTabs?: SidebarTab[];
+  activeTab?: string;
+  onTabChange?: (key: string) => void;
 }
 
 export function IntradayTimeframeSwitch({
@@ -52,6 +54,8 @@ export function IntradayDashboard({
   predictionStale,
   onLoadHistory,
   sidebarTabs,
+  activeTab,
+  onTabChange,
 }: IntradayDashboardProps) {
   const [macdHeight, setMacdHeight] = useState(() => {
     const saved = Number(localStorage.getItem(MACD_HEIGHT_KEY));
@@ -121,6 +125,8 @@ export function IntradayDashboard({
         predictionUpdatedAt={predictionUpdatedAt}
         predictionStale={predictionStale}
         tabsOverride={sidebarTabs}
+        active={activeTab}
+        onActiveChange={onTabChange}
       />
     </div>
   );

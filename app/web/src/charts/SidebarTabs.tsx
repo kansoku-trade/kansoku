@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 export interface SidebarTab {
   key: string;
-  label: string;
+  label: ReactNode;
   hidden?: boolean;
   content: ReactNode;
 }
