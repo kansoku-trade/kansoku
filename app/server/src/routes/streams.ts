@@ -1,5 +1,4 @@
-import { Hono } from "hono";
-import { streamSSE } from "hono/streaming";
+import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import { subscribeChart } from "../realtime/charts.js";
 import { subscribeQuotes } from "../realtime/quotes.js";
 import { clampViewCount } from "../services/history.js";
@@ -8,55 +7,41 @@ const KEEPALIVE_MS = 15_000;
 
 type Attach = (push: (envelope: string) => void) => (() => void) | Promise<() => void>;
 
-function sseEndpoint(attach: Attach) {
-  return (c: Parameters<typeof streamSSE>[0]) =>
-    streamSSE(c, async (stream) => {
-      const queue: string[] = [];
-      let aborted = false;
-      let notify: (() => void) | null = null;
-      const push = (envelope: string) => {
-        queue.push(envelope);
-        notify?.();
-      };
-      const unsub = await attach(push);
-      stream.onAbort(() => {
-        aborted = true;
-        unsub();
-        notify?.();
-      });
-      while (!aborted) {
-        if (!queue.length) {
-          await Promise.race([
-            new Promise<void>((resolve) => {
-              notify = resolve;
-            }),
-            new Promise<void>((resolve) => setTimeout(resolve, KEEPALIVE_MS)),
-          ]);
-          notify = null;
-        }
-        if (aborted) break;
-        const next = queue.shift();
-        if (next !== undefined) {
-          await stream.writeSSE({ event: "message", data: next });
-        } else {
-          await stream.writeSSE({ event: "ping", data: String(Date.now()) });
-        }
-      }
-    });
+async function sse(req: FastifyRequest, reply: FastifyReply, attach: Attach): Promise<void> {
+  reply.hijack();
+  const res = reply.raw;
+  res.writeHead(200, {
+    "content-type": "text/event-stream",
+    "cache-control": "no-cache",
+    connection: "keep-alive",
+  });
+  const write = (event: string, data: string) => {
+    res.write(`event: ${event}\ndata: ${data}\n\n`);
+  };
+  const keepalive = setInterval(() => write("ping", String(Date.now())), KEEPALIVE_MS);
+  let closed = false;
+  let unsub: (() => void) | null = null;
+  req.raw.on("close", () => {
+    closed = true;
+    clearInterval(keepalive);
+    unsub?.();
+    res.end();
+  });
+  unsub = await attach((envelope) => write("message", envelope));
+  if (closed) unsub();
 }
 
-export const streamsRoute = new Hono();
+export const streamsRoute: FastifyPluginAsync = async (app) => {
+  app.get<{ Querystring: { extra?: string } }>("/quotes", (req, reply) => {
+    const extra = (req.query.extra ?? "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    return sse(req, reply, (push) => subscribeQuotes(push, extra));
+  });
 
-streamsRoute.get("/quotes", (c) => {
-  const extra = (c.req.query("extra") ?? "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-  return sseEndpoint((push) => subscribeQuotes(push, extra))(c);
-});
-
-streamsRoute.get("/charts/:id", (c) => {
-  const id = c.req.param("id");
-  const count = clampViewCount(c.req.query("count")) ?? undefined;
-  return sseEndpoint((push) => subscribeChart(id, push, count))(c);
-});
+  app.get<{ Params: { id: string }; Querystring: { count?: string } }>("/charts/:id", (req, reply) => {
+    const count = clampViewCount(req.query.count) ?? undefined;
+    return sse(req, reply, (push) => subscribeChart(req.params.id, push, count));
+  });
+};

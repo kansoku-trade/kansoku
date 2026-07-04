@@ -1,3 +1,4 @@
+import Fastify, { type FastifyInstance } from "fastify";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ChartDoc, ChartMeta } from "../../shared/types.js";
 
@@ -24,6 +25,23 @@ vi.mock("../src/services/store.js", () => store);
 vi.mock("../src/services/build.js", () => build);
 
 const { chartsRoute } = await import("../src/routes/charts.js");
+const { ClientError } = await import("../src/errors.js");
+
+async function testApp(): Promise<FastifyInstance> {
+  const app = Fastify();
+  app.setErrorHandler((err, _req, reply) => {
+    if (err instanceof ClientError) {
+      return reply.status(err.status).send({ ok: false, error: err.message });
+    }
+    return reply.status(500).send({ ok: false, error: err instanceof Error ? err.message : String(err) });
+  });
+  await app.register(chartsRoute);
+  return app;
+}
+
+function patchReq(id: string, payload: unknown) {
+  return { method: "PATCH" as const, url: `/${id}`, payload: payload as Record<string, unknown> };
+}
 
 const REGULAR_TS = "2026-07-02T15:00:00.000Z";
 
@@ -66,6 +84,11 @@ beforeEach(() => {
   build.buildChart.mockReset();
 });
 
+function freezeAt(ts: string) {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date(ts));
+}
+
 describe("PATCH /:id prediction_updated_at", () => {
   it("sets prediction_updated_at when body explicitly contains a prediction key", async () => {
     const doc = makeDoc({ prediction_updated_at: undefined });
@@ -78,15 +101,11 @@ describe("PATCH /:id prediction_updated_at", () => {
       built: doc.built,
       meta: {},
     });
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date(REGULAR_TS));
+    const app = await testApp();
+    freezeAt(REGULAR_TS);
 
-    const res = await chartsRoute.request(`/${doc.id}`, {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ prediction: { direction: "short" } }),
-    });
-    expect(res.status).toBe(200);
+    const res = await app.inject(patchReq(doc.id, { prediction: { direction: "short" } }));
+    expect(res.statusCode).toBe(200);
     expect(store.saveChart).toHaveBeenCalledTimes(1);
     const saved = store.saveChart.mock.calls[0][0] as ChartDoc;
     expect(saved.prediction_updated_at).toBe(REGULAR_TS);
@@ -104,14 +123,10 @@ describe("PATCH /:id prediction_updated_at", () => {
       built: doc.built,
       meta: {},
     });
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date(REGULAR_TS));
+    const app = await testApp();
+    freezeAt(REGULAR_TS);
 
-    await chartsRoute.request(`/${doc.id}`, {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ prediction: null }),
-    });
+    await app.inject(patchReq(doc.id, { prediction: null }));
     const saved = store.saveChart.mock.calls[0][0] as ChartDoc;
     expect(saved.prediction_updated_at).toBe(REGULAR_TS);
     vi.useRealTimers();
@@ -129,11 +144,8 @@ describe("PATCH /:id prediction_updated_at", () => {
       meta: {},
     });
 
-    await chartsRoute.request(`/${doc.id}`, {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ title: "new title" }),
-    });
+    const app = await testApp();
+    await app.inject(patchReq(doc.id, { title: "new title" }));
     const saved = store.saveChart.mock.calls[0][0] as ChartDoc;
     expect(saved.prediction_updated_at).toBe("2026-07-01T12:00:00.000Z");
   });
@@ -150,13 +162,88 @@ describe("PATCH /:id prediction_updated_at", () => {
       meta: {},
     });
 
-    await chartsRoute.request(`/${doc.id}`, {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ position: { shares: 1 } }),
-    });
+    const app = await testApp();
+    await app.inject(patchReq(doc.id, { position: { shares: 1 } }));
     const saved = store.saveChart.mock.calls[0][0] as ChartDoc;
     expect(saved.prediction_updated_at).toBeUndefined();
+  });
+});
+
+describe("POST / schema_version", () => {
+  it("assigns CURRENT_SCHEMA_VERSION (2) to newly created docs", async () => {
+    store.allocateId.mockResolvedValue("2026-07-05-nvda-intraday");
+    build.buildChart.mockResolvedValue({
+      type: "intraday",
+      title: "NVDA 短线多周期",
+      slug: "nvda-intraday",
+      symbol: "NVDA.US",
+      sessionDate: "2026-07-05",
+      input: { symbol: "NVDA.US", context: { generated_at: "2026-07-05T14:00:00.000Z" } },
+      built: { kind: "intraday" },
+      meta: {},
+    });
+
+    const app = await testApp();
+    const res = await app.inject({
+      method: "POST",
+      url: "/",
+      payload: { type: "intraday", symbol: "NVDA.US" },
+    });
+    expect(res.statusCode).toBe(200);
+    const saved = store.saveChart.mock.calls[0][0] as ChartDoc;
+    expect(saved.schema_version).toBe(2);
+  });
+});
+
+describe("PATCH /:id context", () => {
+  it("merges a context payload passed via mergeForPatch into the saved input", async () => {
+    const context = {
+      generated_at: "2026-07-05T14:00:00.000Z",
+      conclusion: { stance: "long", summary: "多头结构未破坏", action: "回踩不破前低可加仓" },
+      news: [],
+      sources_used: ["longbridge-news"],
+    };
+    const doc = makeDoc({ input: { symbol: "NVDA.US", prediction: null, context: null } });
+    store.loadChart.mockResolvedValue(doc);
+    build.mergeForPatch.mockReturnValueOnce({ ...doc.input, context });
+    build.rebuild.mockReturnValue({
+      type: "intraday",
+      title: doc.title,
+      symbol: doc.symbol,
+      input: { ...doc.input, context },
+      built: doc.built,
+      meta: {},
+    });
+
+    const app = await testApp();
+    await app.inject(patchReq(doc.id, { context }));
+    const saved = store.saveChart.mock.calls[0][0] as ChartDoc;
+    expect(saved.input.context).toEqual(context);
+  });
+
+  it("leaves context untouched on a PATCH that omits it", async () => {
+    const context = {
+      generated_at: "2026-07-05T14:00:00.000Z",
+      conclusion: { stance: "long", summary: "x", action: "y" },
+      news: [],
+      sources_used: [],
+    };
+    const doc = makeDoc({ input: { symbol: "NVDA.US", prediction: null, context } });
+    store.loadChart.mockResolvedValue(doc);
+    build.mergeForPatch.mockReturnValueOnce({ ...doc.input });
+    build.rebuild.mockReturnValue({
+      type: "intraday",
+      title: "new title",
+      symbol: doc.symbol,
+      input: doc.input,
+      built: doc.built,
+      meta: {},
+    });
+
+    const app = await testApp();
+    await app.inject(patchReq(doc.id, { title: "new title" }));
+    const saved = store.saveChart.mock.calls[0][0] as ChartDoc;
+    expect(saved.input.context).toEqual(context);
   });
 });
 
@@ -165,26 +252,37 @@ describe("PATCH /:id legacy type guard", () => {
     const doc = makeDoc({ type: "kline" as ChartDoc["type"] });
     store.loadChart.mockResolvedValue(doc);
 
-    const res = await builtApp().request(`/${doc.id}`, {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ title: "new title" }),
-    });
-    expect(res.status).toBe(400);
+    const app = await testApp();
+    const res = await app.inject(patchReq(doc.id, { title: "new title" }));
+    expect(res.statusCode).toBe(400);
     expect(store.saveChart).not.toHaveBeenCalled();
+  });
+});
+
+describe("GET /:id backward compat with v1 docs", () => {
+  it("loads and renders a v1 doc whose input has no context key at all", async () => {
+    const doc = makeDoc({ schema_version: 1, input: { symbol: "NVDA.US", prediction: null } });
+    store.loadChart.mockResolvedValue(doc);
+
+    const app = await testApp();
+    const res = await app.inject(`/${doc.id}`);
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.data.schema_version).toBe(1);
+    expect(body.data.prediction_stale).toBe(false);
   });
 });
 
 describe("GET /:id computed prediction_stale", () => {
   it("carries prediction_updated_at and computed prediction_stale", async () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date(REGULAR_TS));
+    const app = await testApp();
+    freezeAt(REGULAR_TS);
     const staleAt = new Date(new Date(REGULAR_TS).getTime() - 16 * 60_000).toISOString();
     const doc = makeDoc({ prediction_updated_at: staleAt });
     store.loadChart.mockResolvedValue(doc);
 
-    const res = await chartsRoute.request(`/${doc.id}`);
-    const body = await res.json();
+    const res = await app.inject(`/${doc.id}`);
+    const body = res.json();
     expect(body.data.prediction_updated_at).toBe(staleAt);
     expect(body.data.prediction_stale).toBe(true);
     vi.useRealTimers();
@@ -193,8 +291,8 @@ describe("GET /:id computed prediction_stale", () => {
 
 describe("GET / list staleness exposure and filtering", () => {
   it("exposes prediction_updated_at and prediction_stale on each meta", async () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date(REGULAR_TS));
+    const app = await testApp();
+    freezeAt(REGULAR_TS);
     const staleAt = new Date(new Date(REGULAR_TS).getTime() - 16 * 60_000).toISOString();
     const freshAt = new Date(new Date(REGULAR_TS).getTime() - 5 * 60_000).toISOString();
     const staleMeta = makeMeta({ id: "stale-chart", prediction_updated_at: staleAt });
@@ -207,8 +305,8 @@ describe("GET / list staleness exposure and filtering", () => {
       return null;
     });
 
-    const res = await chartsRoute.request("/");
-    const body = await res.json();
+    const res = await app.inject("/");
+    const body = res.json();
     const byId = Object.fromEntries(body.data.map((m: { id: string }) => [m.id, m]));
     expect(byId["stale-chart"].prediction_stale).toBe(true);
     expect(byId["stale-chart"].prediction_updated_at).toBe(staleAt);
@@ -218,8 +316,8 @@ describe("GET / list staleness exposure and filtering", () => {
   });
 
   it("?stale=true returns only currently-stale charts", async () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date(REGULAR_TS));
+    const app = await testApp();
+    freezeAt(REGULAR_TS);
     const staleAt = new Date(new Date(REGULAR_TS).getTime() - 16 * 60_000).toISOString();
     const freshAt = new Date(new Date(REGULAR_TS).getTime() - 5 * 60_000).toISOString();
     const staleMeta = makeMeta({ id: "stale-chart", prediction_updated_at: staleAt });
@@ -231,25 +329,12 @@ describe("GET / list staleness exposure and filtering", () => {
       return null;
     });
 
-    const res = await chartsRoute.request("/?stale=true");
-    const body = await res.json();
+    const res = await app.inject("/?stale=true");
+    const body = res.json();
     expect(body.data.map((m: { id: string }) => m.id)).toEqual(["stale-chart"]);
     vi.useRealTimers();
   });
 });
-
-const { Hono } = await import("hono");
-const { ClientError } = await import("../src/errors.js");
-
-function builtApp() {
-  const app = new Hono();
-  app.onError((err, c) => {
-    if (err instanceof ClientError) return c.json({ ok: false, error: err.message }, err.status === 404 ? 404 : 400);
-    throw err;
-  });
-  app.route("/", chartsRoute);
-  return app;
-}
 
 describe("GET /:id/built", () => {
   it("rebuilds ephemerally with the requested count and never saves", async () => {
@@ -258,9 +343,10 @@ describe("GET /:id/built", () => {
     build.refreshBody.mockReturnValue({ type: "intraday", symbol: doc.symbol, session: "intraday" });
     build.buildChart.mockResolvedValue({ built: { kind: "intraday" }, meta: {} });
 
-    const res = await builtApp().request(`/${doc.id}/built?count=300`);
-    expect(res.status).toBe(200);
-    const body = await res.json();
+    const app = await testApp();
+    const res = await app.inject(`/${doc.id}/built?count=300`);
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
     expect(body.data.count).toBe(300);
     expect(build.buildChart).toHaveBeenCalledWith(
       expect.objectContaining({ type: "intraday", symbol: doc.symbol, count: 300, title: doc.title }),
@@ -274,8 +360,9 @@ describe("GET /:id/built", () => {
     build.refreshBody.mockReturnValue({ type: "intraday", symbol: doc.symbol });
     build.buildChart.mockResolvedValue({ built: { kind: "intraday" }, meta: {} });
 
-    const res = await builtApp().request(`/${doc.id}/built?count=5000`);
-    const body = await res.json();
+    const app = await testApp();
+    const res = await app.inject(`/${doc.id}/built?count=5000`);
+    const body = res.json();
     expect(body.data.count).toBe(1000);
     expect(build.buildChart).toHaveBeenCalledWith(expect.objectContaining({ count: 1000 }));
   });
@@ -283,20 +370,23 @@ describe("GET /:id/built", () => {
   it("rejects missing or invalid count", async () => {
     const doc = makeDoc();
     store.loadChart.mockResolvedValue(doc);
-    expect((await builtApp().request(`/${doc.id}/built`)).status).toBe(400);
-    expect((await builtApp().request(`/${doc.id}/built?count=abc`)).status).toBe(400);
-    expect((await builtApp().request(`/${doc.id}/built?count=-3`)).status).toBe(400);
+    const app = await testApp();
+    expect((await app.inject(`/${doc.id}/built`)).statusCode).toBe(400);
+    expect((await app.inject(`/${doc.id}/built?count=abc`)).statusCode).toBe(400);
+    expect((await app.inject(`/${doc.id}/built?count=-3`)).statusCode).toBe(400);
   });
 
   it("rejects non-intraday charts", async () => {
     store.loadChart.mockResolvedValue(makeDoc({ type: "flow" }));
-    const res = await builtApp().request("/some-flow/built?count=300");
-    expect(res.status).toBe(400);
+    const app = await testApp();
+    const res = await app.inject("/some-flow/built?count=300");
+    expect(res.statusCode).toBe(400);
   });
 
   it("404s on unknown chart", async () => {
     store.loadChart.mockResolvedValue(null);
-    const res = await builtApp().request("/nope/built?count=300");
-    expect(res.status).toBe(404);
+    const app = await testApp();
+    const res = await app.inject("/nope/built?count=300");
+    expect(res.statusCode).toBe(404);
   });
 });

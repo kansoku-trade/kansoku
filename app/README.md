@@ -2,18 +2,17 @@
 
 本地图表应用，取代了原来嵌在 Python 字符串里的 HTML 模板渲染。分两部分：
 
-- `server/` — Hono + TypeScript。负责调 longbridge CLI 拉数据、计算所有指标与信号（均线 / MACD / RS / 趋势模板 8 条 / 成交分布 / 背离与背驰 / MACD 结构分类 / K 线形态 / 交易时段分类）、把图表数据持久化成 JSON、对外提供 API，并托管打包好的前端。
+- `server/` — Fastify + TypeScript。负责调 longbridge CLI 拉数据、计算所有指标与信号（均线 / MACD / RS / 趋势模板 8 条 / 成交分布 / 背离与背驰 / MACD 结构分类 / K 线形态 / 交易时段分类）、把图表数据持久化成 JSON、对外提供 API，并以 middleware mode 内嵌 Vite 直接托管前端源码（没有打包产物这一环）。
 - `web/` — Vite + React + TypeScript。五种图的渲染组件：flow / kline / cohort（ECharts）、sepa / intraday（TradingView Lightweight Charts），外加图表列表页和旧版 HTML 存档入口。
 
 ## 启动
 
 ```bash
 pnpm install        # 首次
-pnpm build          # 打包前端（server 托管 dist）
 pnpm start          # http://localhost:5199
 ```
 
-开发时改前端代码用 `pnpm dev`（Vite 热更新在 5198，API 代理到 5199）。
+单进程：server 内嵌 Vite dev server，前端改动即时热更新，不需要 build。改 server 代码用 `pnpm dev`（tsx watch，后端文件变了自动重启，Vite 随进程一起重启）。
 
 ## AI 怎么用
 
