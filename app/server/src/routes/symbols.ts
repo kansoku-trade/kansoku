@@ -16,6 +16,8 @@ import {
 } from "../services/longbridge.js";
 import { classifySession, easternDate } from "../services/session.js";
 import { listComments } from "../ai/comments.js";
+import { runAnalyst } from "../ai/analyst.js";
+import { aiConfig } from "../ai/models.js";
 import { predictionStale } from "../services/staleness.js";
 import { listCharts, loadChart } from "../services/store.js";
 import { normalizeQuote, type RawQuote } from "../realtime/quotes.js";
@@ -111,6 +113,15 @@ export const symbolsRoute: FastifyPluginAsync = async (app) => {
       throw new ClientError(`invalid date: ${date}`, "expected YYYY-MM-DD");
     }
     return { ok: true, data: await listComments(sym, date) };
+  });
+
+  app.post<{ Params: Params }>("/:sym/reassess", async (req) => {
+    const sym = normalizeSymbol(req.params.sym);
+    const model = aiConfig().analystModel;
+    if (!model) return { ok: true, data: { started: false, reason: "analyst layer disabled" } };
+    const result = runAnalyst({ symbol: sym, origin: "manual", deps: { model } });
+    void result.done?.catch(() => {});
+    return { ok: true, data: { started: result.started, ...(result.reason ? { reason: result.reason } : {}) } };
   });
 
   app.get<{ Params: Params }>("/:sym/latest", async (req) => {
