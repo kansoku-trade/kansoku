@@ -8,6 +8,17 @@ const etFormatter = new Intl.DateTimeFormat("en-US", {
   minute: "2-digit",
 });
 
+const dateFormatter = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "America/New_York",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
+export function easternDate(date: Date = new Date()): string {
+  return dateFormatter.format(date);
+}
+
 const REGULAR_START = 9 * 60 + 30;
 const REGULAR_END = 16 * 60;
 const PRE_START = 4 * 60;

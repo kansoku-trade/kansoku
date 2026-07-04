@@ -14,15 +14,17 @@ import {
   fetchPositions,
   longbridgeJson,
 } from "../services/longbridge.js";
-import { classifySession } from "../services/session.js";
+import { classifySession, easternDate } from "../services/session.js";
+import { listComments } from "../ai/comments.js";
 import { predictionStale } from "../services/staleness.js";
 import { listCharts, loadChart } from "../services/store.js";
 import { normalizeQuote, type RawQuote } from "../realtime/quotes.js";
 
 const SYMBOL_RE = /^[A-Z0-9.]+$/;
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const BENCHMARK_SYMBOLS = ["SMH.US", "QQQ.US"];
 
-function normalizeSymbol(raw: string): string {
+export function normalizeSymbol(raw: string): string {
   let sym = raw.trim().toUpperCase();
   if (!sym.includes(".")) sym += ".US";
   if (!SYMBOL_RE.test(sym)) {
@@ -100,6 +102,15 @@ export const symbolsRoute: FastifyPluginAsync = async (app) => {
       return { ...meta, url: chartUrl(meta.id), direction, anchor, outcome };
     });
     return { ok: true, data: rows };
+  });
+
+  app.get<{ Params: Params; Querystring: { date?: string } }>("/:sym/comments", async (req) => {
+    const sym = normalizeSymbol(req.params.sym);
+    const date = req.query.date ?? easternDate();
+    if (!DATE_RE.test(date)) {
+      throw new ClientError(`invalid date: ${date}`, "expected YYYY-MM-DD");
+    }
+    return { ok: true, data: await listComments(sym, date) };
   });
 
   app.get<{ Params: Params }>("/:sym/latest", async (req) => {

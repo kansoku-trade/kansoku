@@ -575,3 +575,17 @@ export interface SymbolAnalysisRow extends ChartMeta {
   anchor: { time: string; price: number } | null;
   outcome: AnalysisOutcome | null;
 }
+
+export type CommentLevel = "info" | "warn" | "alert" | "error";
+export type CommentSource = "commentator" | "analyst" | "system";
+
+export interface CockpitComment {
+  ts: string;
+  symbol: string;
+  level: CommentLevel;
+  text: string;
+  trigger?: string;
+  source: CommentSource;
+  escalated?: boolean;
+  chartId?: string;
+}

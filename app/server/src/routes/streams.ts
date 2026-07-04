@@ -1,7 +1,10 @@
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import { listComments, onComment } from "../ai/comments.js";
 import { subscribeChart } from "../realtime/charts.js";
 import { subscribeQuotes } from "../realtime/quotes.js";
 import { clampViewCount } from "../services/history.js";
+import { easternDate } from "../services/session.js";
+import { normalizeSymbol } from "./symbols.js";
 
 const KEEPALIVE_MS = 15_000;
 
@@ -43,5 +46,14 @@ export const streamsRoute: FastifyPluginAsync = async (app) => {
   app.get<{ Params: { id: string }; Querystring: { count?: string } }>("/charts/:id", (req, reply) => {
     const count = clampViewCount(req.query.count) ?? undefined;
     return sse(req, reply, (push) => subscribeChart(req.params.id, push, count));
+  });
+
+  app.get<{ Params: { symbol: string } }>("/comments/:symbol", (req, reply) => {
+    const symbol = normalizeSymbol(req.params.symbol);
+    return sse(req, reply, async (push) => {
+      const comments = await listComments(symbol, easternDate());
+      push(JSON.stringify({ type: "init", comments }));
+      return onComment(symbol, (comment) => push(JSON.stringify({ type: "comment", comment })));
+    });
   });
 };
