@@ -56,6 +56,22 @@ describe("comments storage", () => {
     const files = await fs.readdir(`${ctx.dir}/comments`);
     expect(files).toContain("MRVL.US-2026-07-02.json");
   });
+
+  it("lands every comment under concurrent appends for one symbol", async () => {
+    const texts = Array.from({ length: 8 }, (_, i) => `c${i}`);
+    await Promise.all(texts.map((text) => appendComment(comment({ text }))));
+    const list = await listComments("MU.US", "2026-07-02");
+    expect(list.map((c) => c.text).sort()).toEqual([...texts].sort());
+  });
+
+  it("treats a non-array JSON file as empty and appends onto it", async () => {
+    await fs.mkdir(`${ctx.dir}/comments`, { recursive: true });
+    await fs.writeFile(`${ctx.dir}/comments/MU.US-2026-07-02.json`, "{}");
+    expect(await listComments("MU.US", "2026-07-02")).toEqual([]);
+    await expect(appendComment(comment({ text: "recovered" }))).resolves.toBeUndefined();
+    const list = await listComments("MU.US", "2026-07-02");
+    expect(list.map((c) => c.text)).toEqual(["recovered"]);
+  });
 });
 
 describe("comment event bus", () => {
@@ -75,5 +91,17 @@ describe("comment event bus", () => {
     await appendComment(comment({ symbol: "MU.US" }));
     expect(received).toHaveLength(0);
     unsub();
+  });
+
+  it("isolates a throwing listener from later listeners and the append", async () => {
+    const received: CockpitComment[] = [];
+    const unsubBad = onComment("MU.US", () => {
+      throw new Error("boom");
+    });
+    const unsubGood = onComment("MU.US", (c) => received.push(c));
+    await expect(appendComment(comment({ text: "survives" }))).resolves.toBeUndefined();
+    expect(received.map((c) => c.text)).toEqual(["survives"]);
+    unsubBad();
+    unsubGood();
   });
 });

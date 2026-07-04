@@ -28,7 +28,13 @@ export function onComment(symbol: string, listener: Listener): () => void {
 function broadcast(comment: CockpitComment): void {
   const set = listeners.get(comment.symbol);
   if (!set) return;
-  for (const listener of [...set]) listener(comment);
+  for (const listener of [...set]) {
+    try {
+      listener(comment);
+    } catch {
+      continue;
+    }
+  }
 }
 
 function fileName(symbol: string, date: string): string {
@@ -41,17 +47,34 @@ function filePath(symbol: string, date: string): string {
 
 export async function listComments(symbol: string, date: string): Promise<CockpitComment[]> {
   try {
-    return JSON.parse(await fs.readFile(filePath(symbol, date), "utf-8")) as CockpitComment[];
+    const parsed = JSON.parse(await fs.readFile(filePath(symbol, date), "utf-8"));
+    return Array.isArray(parsed) ? (parsed as CockpitComment[]) : [];
   } catch {
     return [];
   }
 }
 
+const writeQueues = new Map<string, Promise<unknown>>();
+
+function withFileLock(path: string, task: () => Promise<void>): Promise<void> {
+  const prev = writeQueues.get(path) ?? Promise.resolve();
+  const result = prev.then(task, task);
+  const tail = result.catch(() => {});
+  writeQueues.set(path, tail);
+  void tail.then(() => {
+    if (writeQueues.get(path) === tail) writeQueues.delete(path);
+  });
+  return result;
+}
+
 export async function appendComment(comment: CockpitComment): Promise<void> {
   const date = easternDate(new Date(comment.ts));
-  await fs.mkdir(COMMENTS_DIR, { recursive: true });
-  const existing = await listComments(comment.symbol, date);
-  existing.push(comment);
-  await fs.writeFile(filePath(comment.symbol, date), JSON.stringify(existing));
+  const path = filePath(comment.symbol, date);
+  await withFileLock(path, async () => {
+    await fs.mkdir(COMMENTS_DIR, { recursive: true });
+    const existing = await listComments(comment.symbol, date);
+    existing.push(comment);
+    await fs.writeFile(path, JSON.stringify(existing));
+  });
   broadcast(comment);
 }
