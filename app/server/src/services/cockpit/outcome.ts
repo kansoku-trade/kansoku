@@ -14,6 +14,15 @@ export function judgeOutcome(
 
   const { stop, target1 } = plan;
   const anchorSec = toSec(anchor.time);
+
+  if (bars.length > 0) {
+    const firstSec = toSec(bars[0].time);
+    if (firstSec > anchorSec) {
+      const tolerance = bars.length > 1 ? Math.max(0, toSec(bars[1].time) - firstSec) : Infinity;
+      if (firstSec - anchorSec > tolerance) return null;
+    }
+  }
+
   const following = bars.filter((bar) => toSec(bar.time) > anchorSec);
 
   if (following.length === 0) {

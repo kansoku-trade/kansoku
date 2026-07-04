@@ -95,9 +95,12 @@ listed here only for completeness:
 - `GET /api/symbols/:sym/analyses` — past `intraday` analyses for this symbol with mechanical outcome judgments (`hit_target` / `hit_stop` / `open`, computed server-side from post-anchor bars — never AI recall)
 - `GET /api/symbols/:sym/latest` — the latest `intraday` chart doc in full, plus `prediction_stale`
 
-The client-side indicator toggle bar (show/hide 金叉/死叉、自动背离、自动背驰、123
-结构、AI 信号标注、入场/止损/目标价位线、swing 高低点; state in localStorage) has
-no API surface — it's a pure front-end feature on both the cockpit and archive pages.
+The client-side indicator toggle bar (show/hide 金叉死叉、自动背离、自动背驰、123
+结构、K线形态、AI 标注、价位线、EMA 均线; state in localStorage) has no API surface —
+it's a pure front-end feature on both the cockpit and archive pages. Swing 高低点
+are not one of the toggles — they're baked into the divergence/beichi/pattern123
+detectors as the underlying pivot data, not a standalone overlay (deliberate
+deviation from the earlier spec draft).
 
 ### POST body per type
 

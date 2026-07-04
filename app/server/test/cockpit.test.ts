@@ -80,6 +80,31 @@ describe("buildBenchmark", () => {
     const result = buildBenchmark([{ symbol: "EMPTY", bars: [] }]);
     expect(result).toEqual([]);
   });
+
+  it("trims to the common start when series begin at different times", () => {
+    const series = [
+      {
+        symbol: "SMH",
+        bars: [
+          bar("2026-06-30T13:30:00Z", 90, 91, 89, 90),
+          bar("2026-07-01T13:30:00Z", 100, 101, 99, 100),
+          bar("2026-07-02T13:30:00Z", 100, 111, 99, 110),
+        ],
+      },
+      {
+        symbol: "QQQ",
+        bars: [bar("2026-07-01T13:30:00Z", 50, 51, 49, 50), bar("2026-07-02T13:30:00Z", 50, 56, 49, 55)],
+      },
+    ];
+    const result = buildBenchmark(series);
+    expect(result).toHaveLength(2);
+    for (const s of result) {
+      expect(s.points[0]).toEqual({ time: Date.parse("2026-07-01T13:30:00Z"), pct: 0 });
+      expect(s.points).toHaveLength(2);
+    }
+    const smh = result.find((s) => s.symbol === "SMH");
+    expect(smh?.points[1].pct).toBeCloseTo(10);
+  });
 });
 
 describe("buildCockpitPosition", () => {
@@ -202,5 +227,29 @@ describe("judgeOutcome", () => {
   it("returns null when stop or target1 missing", () => {
     expect(judgeOutcome("long", anchor, { stop: 90 }, [])).toBeNull();
     expect(judgeOutcome("long", anchor, { target1: 120 }, [])).toBeNull();
+  });
+
+  it("returns null when the bar window starts after the anchor (gap between anchor and window)", () => {
+    const bars: RawBar[] = [
+      bar("2026-07-01T14:00:00Z", 100, 200, 1, 100),
+      bar("2026-07-01T14:01:00Z", 100, 101, 99, 100),
+    ];
+    const result = judgeOutcome("long", anchor, { stop: 90, target1: 120 }, bars);
+    expect(result).toBeNull();
+  });
+
+  it("judges normally when the window covers the anchor", () => {
+    const bars: RawBar[] = [
+      bar("2026-07-01T13:30:00Z", 100, 101, 99, 100),
+      bar("2026-07-01T13:31:00Z", 100, 105, 99, 104),
+    ];
+    const result = judgeOutcome("long", anchor, { stop: 90, target1: 104 }, bars);
+    expect(result?.status).toBe("hit_target");
+  });
+
+  it("keeps open with zero raw bars (existing behavior)", () => {
+    const result = judgeOutcome("long", anchor, { stop: 90, target1: 120 }, []);
+    expect(result?.status).toBe("open");
+    expect(result?.pct_since_anchor).toBe(0);
   });
 });
