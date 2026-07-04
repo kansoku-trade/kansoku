@@ -5,6 +5,7 @@ import { ClientError } from "./errors.js";
 import { CHART_DATA_DIR, LEGACY_CHARTS_DIR, PORT } from "./env.js";
 import { chartsRoute } from "./routes/charts.js";
 import { streamsRoute } from "./routes/streams.js";
+import { symbolsRoute } from "./routes/symbols.js";
 
 export async function createApp(): Promise<FastifyInstance> {
   const app = Fastify();
@@ -31,6 +32,7 @@ export async function createApp(): Promise<FastifyInstance> {
 
   await app.register(chartsRoute, { prefix: "/api/charts" });
   await app.register(streamsRoute, { prefix: "/api/stream" });
+  await app.register(symbolsRoute, { prefix: "/api/symbols" });
 
   app.get("/api/legacy", async () => {
     let files: string[] = [];

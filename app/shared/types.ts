@@ -558,3 +558,10 @@ export interface AnalysisOutcome {
   pct_since_anchor: number;
   resolved_at: number | null;
 }
+
+export interface SymbolAnalysisRow extends ChartMeta {
+  url: string;
+  direction: "long" | "short" | "neutral" | null;
+  anchor: { time: string; price: number } | null;
+  outcome: AnalysisOutcome | null;
+}
