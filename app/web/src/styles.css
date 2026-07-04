@@ -269,6 +269,8 @@ a:hover { text-decoration: underline; }
 .conclusion-card { margin-bottom: 14px; }
 .conclusion-action { color: #c9d1d9; font-weight: 500; }
 
+.sidebar-tabs { display: flex; flex-direction: column; min-height: 0; }
+.sidebar-tab-panel { min-height: 0; }
 .sidebar-tab-bar {
   display: flex; gap: 4px; margin-bottom: 12px; border-bottom: 1px solid #21262d;
 }

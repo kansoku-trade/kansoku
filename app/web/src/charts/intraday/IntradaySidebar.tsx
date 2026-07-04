@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { IntradayBuilt, TimeframeKey } from "../../../../shared/types";
 import { formatMarketDateTime } from "../../../../shared/time";
 import { fmt } from "../../format";
+import type { SidebarTab } from "../SidebarTabs";
 import { SidebarTabs } from "../SidebarTabs";
 import { ConclusionCard } from "./ConclusionCard";
 import { NewsTab } from "./tabs/NewsTab";
@@ -13,14 +14,48 @@ interface IntradaySidebarProps {
   activeTf: TimeframeKey;
   predictionUpdatedAt?: string;
   predictionStale?: boolean;
+  tabsOverride?: SidebarTab[];
 }
 
-export function IntradaySidebar({ built, activeTf, predictionUpdatedAt, predictionStale }: IntradaySidebarProps) {
+export function IntradaySidebar({
+  built,
+  activeTf,
+  predictionUpdatedAt,
+  predictionStale,
+  tabsOverride,
+}: IntradaySidebarProps) {
   const s = built.sidebar;
   const [active, setActive] = useState("prediction");
 
   const hasNews = Boolean(s.context?.news?.length) || Boolean(s.news?.length);
   const hasPosition = s.position !== null;
+
+  const tabs: SidebarTab[] = tabsOverride ?? [
+    {
+      key: "prediction",
+      label: "预测",
+      content: (
+        <PredictionTab
+          built={built}
+          activeTf={activeTf}
+          predictionUpdatedAt={predictionUpdatedAt}
+          predictionStale={predictionStale}
+        />
+      ),
+    },
+    {
+      key: "news",
+      label: "消息",
+      hidden: !hasNews,
+      content: <NewsTab context={s.context} news={s.news ?? []} />,
+    },
+    {
+      key: "position",
+      label: "持仓",
+      hidden: !hasPosition,
+      content: <PositionTab position={s.position} />,
+    },
+  ];
 
   return (
     <div className="sidebar">
@@ -33,36 +68,7 @@ export function IntradaySidebar({ built, activeTf, predictionUpdatedAt, predicti
 
       <ConclusionCard context={s.context} predictionStale={predictionStale} />
 
-      <SidebarTabs
-        active={active}
-        onChange={setActive}
-        tabs={[
-          {
-            key: "prediction",
-            label: "预测",
-            content: (
-              <PredictionTab
-                built={built}
-                activeTf={activeTf}
-                predictionUpdatedAt={predictionUpdatedAt}
-                predictionStale={predictionStale}
-              />
-            ),
-          },
-          {
-            key: "news",
-            label: "消息",
-            hidden: !hasNews,
-            content: <NewsTab context={s.context} news={s.news ?? []} />,
-          },
-          {
-            key: "position",
-            label: "持仓",
-            hidden: !hasPosition,
-            content: <PositionTab position={s.position} />,
-          },
-        ]}
-      />
+      <SidebarTabs active={active} onChange={setActive} tabs={tabs} />
 
       <div className="disclaimer">
         ⚠️ 仅供学习参考，不构成投资建议。数据来源：长桥证券。

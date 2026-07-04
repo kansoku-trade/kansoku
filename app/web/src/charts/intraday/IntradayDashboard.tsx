@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import type { IntradayBuilt, TimeframeKey } from "../../../../shared/types";
 import { fmt } from "../../format";
+import type { SidebarTab } from "../SidebarTabs";
 import { IndicatorToggles } from "./IndicatorToggles";
 import { IntradaySidebar } from "./IntradaySidebar";
 import { useIndicatorToggles } from "./useIndicatorToggles";
@@ -23,6 +24,7 @@ interface IntradayDashboardProps {
   predictionUpdatedAt?: string;
   predictionStale?: boolean;
   onLoadHistory?: () => void;
+  sidebarTabs?: SidebarTab[];
 }
 
 export function IntradayTimeframeSwitch({
@@ -43,7 +45,14 @@ export function IntradayTimeframeSwitch({
   );
 }
 
-export function IntradayDashboard({ built, activeTf, predictionUpdatedAt, predictionStale, onLoadHistory }: IntradayDashboardProps) {
+export function IntradayDashboard({
+  built,
+  activeTf,
+  predictionUpdatedAt,
+  predictionStale,
+  onLoadHistory,
+  sidebarTabs,
+}: IntradayDashboardProps) {
   const [macdHeight, setMacdHeight] = useState(() => {
     const saved = Number(localStorage.getItem(MACD_HEIGHT_KEY));
     return Number.isFinite(saved) && saved > 0 ? clampMacdHeight(saved) : MACD_DEFAULT;
@@ -111,6 +120,7 @@ export function IntradayDashboard({ built, activeTf, predictionUpdatedAt, predic
         activeTf={activeTf}
         predictionUpdatedAt={predictionUpdatedAt}
         predictionStale={predictionStale}
+        tabsOverride={sidebarTabs}
       />
     </div>
   );
