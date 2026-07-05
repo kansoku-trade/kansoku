@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
-import type { BenchmarkSeries, ChartDoc, CockpitPosition, SymbolAnalysisRow } from "../../../shared/types";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { BenchmarkSeries, ChartDoc, CockpitPosition, RelativeVolume, SymbolAnalysisRow } from "../../../shared/types";
 import { formatMarketClock } from "../../../shared/time";
-import { ApiError, api } from "../api";
+import { useQuery } from "../apiHooks";
 import { IntradayDashboard, IntradayTimeframeSwitch } from "../charts/intraday/IntradayDashboard";
 import { NewsTab } from "../charts/intraday/tabs/NewsTab";
 import { PredictionTab } from "../charts/intraday/tabs/PredictionTab";
@@ -11,6 +11,7 @@ import { TopbarQuote } from "../QuoteBar";
 import { AiTab } from "./cockpit/AiTab";
 import { EnvTab } from "./cockpit/EnvTab";
 import { FlowTab } from "./cockpit/FlowTab";
+import { GenerateAnalysis } from "./cockpit/GenerateAnalysis";
 import { HistoryTab } from "./cockpit/HistoryTab";
 import { useCockpitComments } from "./cockpit/useCockpitComments";
 import { useIntervalFetch } from "./cockpit/useIntervalFetch";
@@ -18,23 +19,17 @@ import { useIntervalFetch } from "./cockpit/useIntervalFetch";
 type LatestDoc = ChartDoc & { url: string; prediction_stale?: boolean };
 
 export function SymbolCockpit({ sym }: { sym: string }) {
-  const [latestId, setLatestId] = useState<string | null>(null);
-  const [latestChecked, setLatestChecked] = useState(false);
-  const [latestError, setLatestError] = useState<string | null>(null);
+  const [generated, setGenerated] = useState<{ symbol: string; id: string } | null>(null);
+  const generatedId = generated?.symbol === sym ? generated.id : null;
+  const latestUrl = `/api/symbols/${encodeURIComponent(sym)}/latest`;
+  const { data: latestDoc, failure: latestFailure, loading: latestLoading } = useQuery<LatestDoc>(latestUrl);
+  const latestId = generatedId ?? latestDoc?.id ?? null;
+  const latestChecked = !latestLoading;
+  const latestError = latestFailure && latestFailure.status !== 404 ? latestFailure.message : null;
+  const markGeneratedReady = useCallback((id: string) => setGenerated({ symbol: sym, id }), [sym]);
 
   useEffect(() => {
-    setLatestId(null);
-    setLatestChecked(false);
-    setLatestError(null);
-    api<LatestDoc>(`/api/symbols/${encodeURIComponent(sym)}/latest`)
-      .then((d) => {
-        setLatestId(d.id);
-        setLatestChecked(true);
-      })
-      .catch((e: ApiError) => {
-        if (e.status !== 404) setLatestError(e.message);
-        setLatestChecked(true);
-      });
+    setGenerated(null);
   }, [sym]);
 
   const { doc, error, degraded, intradayTf, setIntradayTf, loadHistory } = useIntradayDoc(latestId);
@@ -47,14 +42,12 @@ export function SymbolCockpit({ sym }: { sym: string }) {
     `/api/symbols/${encodeURIComponent(sym)}/benchmark`,
     60_000,
   );
+  const { data: relvol } = useIntervalFetch<RelativeVolume | null>(
+    `/api/symbols/${encodeURIComponent(sym)}/relvol`,
+    60_000,
+  );
 
-  const [analyses, setAnalyses] = useState<SymbolAnalysisRow[] | null>(null);
-  useEffect(() => {
-    setAnalyses(null);
-    api<SymbolAnalysisRow[]>(`/api/symbols/${encodeURIComponent(sym)}/analyses`)
-      .then(setAnalyses)
-      .catch(() => setAnalyses([]));
-  }, [sym]);
+  const { data: analyses } = useQuery<SymbolAnalysisRow[]>(`/api/symbols/${encodeURIComponent(sym)}/analyses`);
 
   const [activeTab, setActiveTab] = useState("prediction");
   const { comments, error: commentsError, loaded: commentsLoaded } = useCockpitComments(sym);
@@ -87,7 +80,10 @@ export function SymbolCockpit({ sym }: { sym: string }) {
         {latestError ? (
           <div className="error-box">{latestError}</div>
         ) : (
-          <div className="empty">这只股票还没有 intraday 分析——先跑一次 intraday-signal 生成分析</div>
+          <>
+            <div className="empty">这只股票还没有 intraday 分析——点下面按钮让 AI 生成，或跑一次 intraday-signal</div>
+            <GenerateAnalysis sym={sym} onReady={markGeneratedReady} />
+          </>
         )}
         <p>
           <a href="#/">← 返回列表</a>
@@ -135,7 +131,13 @@ export function SymbolCockpit({ sym }: { sym: string }) {
       label: "持仓&环境",
       hidden: envHidden,
       content: (
-        <EnvTab position={position} positionError={positionError} benchmark={benchmark} benchmarkError={benchmarkError} />
+        <EnvTab
+          position={position}
+          positionError={positionError}
+          benchmark={benchmark}
+          benchmarkError={benchmarkError}
+          relvol={relvol}
+        />
       ),
     },
     {

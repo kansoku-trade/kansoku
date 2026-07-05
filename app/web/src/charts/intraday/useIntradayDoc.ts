@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ChartBuilt, ChartDoc, IntradayBuilt, TimeframeKey } from "../../../../shared/types";
-import { api } from "../../api";
+import { api, isAbortError } from "../../api";
+import { useQuery } from "../../apiHooks";
 import { useSSE } from "../../useSSE";
 
 const LIVE_TYPES = new Set(["flow", "intraday"]);
@@ -16,24 +17,31 @@ export function resolveIntradayTf(built: IntradayBuilt, preferred: TimeframeKey 
 
 export function useIntradayDoc(id: string | null) {
   const [doc, setDoc] = useState<ChartDocView | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [viewCount, setViewCount] = useState<number | null>(null);
   const [intradayTf, setIntradayTf] = useState<TimeframeKey | null>(null);
   const historyBusyRef = useRef(false);
   const docRef = useRef<ChartDocView | null>(null);
   const viewCountRef = useRef<number | null>(null);
+  const historyControllerRef = useRef<AbortController | null>(null);
+  const docUrl = id ? `/api/charts/${encodeURIComponent(id)}` : null;
+  const { data: initialDoc, error } = useQuery<ChartDocView>(docUrl);
 
   useEffect(() => {
     setDoc(null);
-    setError(null);
     setViewCount(null);
     setIntradayTf(null);
     historyBusyRef.current = false;
-    if (!id) return;
-    api<ChartDocView>(`/api/charts/${encodeURIComponent(id)}`)
-      .then(setDoc)
-      .catch((e: Error) => setError(e.message));
+    historyControllerRef.current?.abort();
+    historyControllerRef.current = null;
+    return () => {
+      historyControllerRef.current?.abort();
+      historyControllerRef.current = null;
+    };
   }, [id]);
+
+  useEffect(() => {
+    if (initialDoc) setDoc(initialDoc);
+  }, [initialDoc]);
 
   docRef.current = doc;
   viewCountRef.current = viewCount;
@@ -49,7 +57,7 @@ export function useIntradayDoc(id: string | null) {
       ),
   );
 
-  const loadHistory = () => {
+  const loadHistory = useCallback(() => {
     if (!id) return;
     if (historyBusyRef.current) return;
     const docNow = docRef.current;
@@ -58,18 +66,27 @@ export function useIntradayDoc(id: string | null) {
     const current = viewCountRef.current ?? bars;
     if (current <= 0 || current >= HISTORY_MAX_COUNT) return;
     historyBusyRef.current = true;
+    const controller = new AbortController();
+    historyControllerRef.current = controller;
     api<{ built: ChartBuilt; count: number }>(
       `/api/charts/${encodeURIComponent(id)}/built?count=${Math.min(current * 2, HISTORY_MAX_COUNT)}`,
+      { signal: controller.signal },
     )
       .then((d) => {
+        if (historyControllerRef.current !== controller) return;
         setViewCount(d.count);
         setDoc((p) => (p ? { ...p, built: d.built } : p));
       })
-      .catch(() => undefined)
+      .catch((caught: unknown) => {
+        if (!isAbortError(caught)) return;
+      })
       .finally(() => {
-        historyBusyRef.current = false;
+        if (historyControllerRef.current === controller) {
+          historyControllerRef.current = null;
+          historyBusyRef.current = false;
+        }
       });
-  };
+  }, [id]);
 
   return { doc, error, degraded, live, intradayTf, setIntradayTf, loadHistory };
 }

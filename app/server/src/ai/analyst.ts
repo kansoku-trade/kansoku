@@ -11,11 +11,13 @@ import {
 } from "../../../shared/types.js";
 import { BASE_URL } from "../env.js";
 import { buildChart } from "../services/build.js";
-import { fetchKline as defaultFetchKline, fetchNews as defaultFetchNews } from "../services/longbridge.js";
+import { getProvider } from "../services/marketdata/registry.js";
 import { allocateId, saveChart } from "../services/store.js";
 import { appendComment as defaultAppendComment } from "./comments.js";
 import { buildReassessPack as defaultBuildReassessPack, type ReassessPack } from "./datapack.js";
 import type { AiModel } from "./models.js";
+import { notifyUser } from "./notify.js";
+import { attachAiUsageLogger } from "./usage.js";
 
 const DEFAULT_TIMEOUT_MS = 600_000;
 const ESCALATION_COOLDOWN_MS = 30 * 60_000;
@@ -37,6 +39,7 @@ const SYSTEM_PROMPT = [
   "- entry_plan：给出入场价 entry、止损 stop、目标 target1 / target2。方向决定止损在上还是在下。",
   "- scenarios：给出三个情景（如上破 / 震荡 / 下破），每个带概率 probability，三者概率之和为 1。",
   "- comment：一句话中文白话结论，会作为点评写入。",
+  "若快照里没有已归档预测，说明这是该标的的首次分析而非重估，照常完成全部流程并给出完整结论。",
   "全程中文白话，只做美股，不要臆造数据，拿不到就说明。",
 ].join("\n");
 
@@ -116,6 +119,7 @@ export interface AnalystDeps {
   appendComment?: (comment: CockpitComment) => Promise<void>;
   timeoutMs?: number;
   now?: () => number;
+  origin?: AnalystOrigin;
 }
 
 export interface RunAnalystInput {
@@ -266,6 +270,7 @@ function buildTools(
         type: "intraday",
         symbol,
         session: "all",
+        origin: "analyst",
         prediction,
       });
       state.chartId = chart.id;
@@ -328,17 +333,20 @@ export async function executeAnalystRun(symbol: string, deps: AnalystDeps): Prom
   try {
     const tools = buildTools(symbol, {
       buildReassessPack: deps.buildReassessPack ?? defaultBuildReassessPack,
-      fetchNews: deps.fetchNews ?? defaultFetchNews,
-      fetchKline: deps.fetchKline ?? defaultFetchKline,
+      fetchNews: deps.fetchNews ?? ((symbol) => getProvider().getNews(symbol)),
+      fetchKline: deps.fetchKline ?? ((symbol, period, count) => getProvider().getKline(symbol, period, count)),
       createChart: deps.createChart ?? defaultCreateChart,
       appendComment: append,
     }, state);
     const agent = factory({ systemPrompt: SYSTEM_PROMPT, model: deps.model, tools });
+    attachAiUsageLogger(agent, { layer: "analyst", symbol, model: deps.model, origin: deps.origin });
 
     await runWithTimeout(agent, `请重估 ${symbol} 的短线多周期结论。`, timeoutMs, state);
 
     if (!state.submitted) {
       await writeError("分析员未提交预测，本次无结论。");
+    } else {
+      notifyUser(`${symbol} AI 分析完成`, "多周期重估已落图，打开 cockpit 查看结论。");
     }
   } catch (err) {
     const text =
@@ -360,6 +368,6 @@ export function runAnalyst({ symbol, origin, deps }: RunAnalystInput): StartResu
   runningAnalysts.add(symbol);
   if (origin === "escalation") lastEscalationStart.set(symbol, now);
 
-  const done = executeAnalystRun(symbol, deps).finally(() => runningAnalysts.delete(symbol));
+  const done = executeAnalystRun(symbol, { ...deps, origin }).finally(() => runningAnalysts.delete(symbol));
   return { started: true, done };
 }

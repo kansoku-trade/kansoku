@@ -1,4 +1,10 @@
-export type TriggerKind = "macd_cross" | "level_break" | "flow_flip" | "volume_spike";
+export type TriggerKind =
+  | "macd_cross"
+  | "level_break"
+  | "flow_flip"
+  | "volume_spike"
+  | "zone_break"
+  | "day_level_break";
 
 export interface Trigger {
   kind: TriggerKind;
@@ -18,11 +24,24 @@ export interface PredictionLevels {
   target2?: number | null;
 }
 
+export interface TriggerZone {
+  label: string;
+  low: number;
+  high: number;
+}
+
+export interface NamedLevel {
+  name: string;
+  value: number;
+}
+
 export interface TriggerInput {
   bars: TriggerBar[];
   macdHist: number[];
   flow: number[];
   levels: PredictionLevels;
+  zones?: TriggerZone[];
+  dayLevels?: NamedLevel[];
 }
 
 const VOLUME_BASELINE_BARS = 20;
@@ -49,24 +68,66 @@ function detectMacdCross(macdHist: number[]): Trigger | null {
   };
 }
 
-function detectLevelBreak(bars: TriggerBar[], levels: PredictionLevels): Trigger | null {
+function lastTwoCloses(bars: TriggerBar[]): [number, number] | null {
   if (bars.length < 2) return null;
-  const prevClose = bars[bars.length - 2].close;
-  const lastClose = bars[bars.length - 1].close;
-  const named: [string, number | null | undefined][] = [
+  return [bars[bars.length - 2].close, bars[bars.length - 1].close];
+}
+
+function crossedLevel(prevClose: number, lastClose: number, level: number): "above" | "below" | null {
+  if (prevClose < level && lastClose >= level) return "above";
+  if (prevClose > level && lastClose <= level) return "below";
+  return null;
+}
+
+function detectNamedLevelBreak(bars: TriggerBar[], named: NamedLevel[], kind: TriggerKind): Trigger | null {
+  const closes = lastTwoCloses(bars);
+  if (!closes) return null;
+  const [prevClose, lastClose] = closes;
+  for (const { name, value } of named) {
+    const cross = crossedLevel(prevClose, lastClose, value);
+    if (cross) {
+      return { kind, detail: `Price broke ${cross} ${name} ${value} (${prevClose} -> ${lastClose})` };
+    }
+  }
+  return null;
+}
+
+function detectLevelBreak(bars: TriggerBar[], levels: PredictionLevels): Trigger | null {
+  const named: NamedLevel[] = [];
+  const pairs: [string, number | null | undefined][] = [
     ["entry", levels.entry],
     ["stop", levels.stop],
     ["target1", levels.target1],
     ["target2", levels.target2],
   ];
-  for (const [name, level] of named) {
-    if (level == null) continue;
-    if (prevClose < level && lastClose >= level) {
-      return { kind: "level_break", detail: `Price broke above ${name} ${level} (${prevClose} -> ${lastClose})` };
-    }
-    if (prevClose > level && lastClose <= level) {
-      return { kind: "level_break", detail: `Price broke below ${name} ${level} (${prevClose} -> ${lastClose})` };
-    }
+  for (const [name, value] of pairs) {
+    if (value != null) named.push({ name, value });
+  }
+  return detectNamedLevelBreak(bars, named, "level_break");
+}
+
+function zonePosition(price: number, zone: TriggerZone): -1 | 0 | 1 {
+  if (price < zone.low) return -1;
+  if (price > zone.high) return 1;
+  return 0;
+}
+
+function detectZoneBreak(bars: TriggerBar[], zones: TriggerZone[]): Trigger | null {
+  const closes = lastTwoCloses(bars);
+  if (!closes) return null;
+  const [prevClose, lastClose] = closes;
+  for (const zone of zones) {
+    if (!Number.isFinite(zone.low) || !Number.isFinite(zone.high)) continue;
+    const prev = zonePosition(prevClose, zone);
+    const last = zonePosition(lastClose, zone);
+    if (prev === last) continue;
+    const detail =
+      last === 0
+        ? `Price entered zone "${zone.label}" ${zone.low}-${zone.high} (${prevClose} -> ${lastClose})`
+        : prev === 0
+          ? `Price exited zone "${zone.label}" ${zone.low}-${zone.high} ${last > 0 ? "upward" : "downward"} (${prevClose} -> ${lastClose})`
+          : `Price crossed through zone "${zone.label}" ${zone.low}-${zone.high} (${prevClose} -> ${lastClose})`;
+    return { kind: "zone_break", detail };
   }
   return null;
 }
@@ -110,6 +171,14 @@ export function detectTriggers(input: TriggerInput): Trigger[] {
   if (flow) triggers.push(flow);
   const volume = detectVolumeSpike(input.bars);
   if (volume) triggers.push(volume);
+  if (input.zones?.length) {
+    const zone = detectZoneBreak(input.bars, input.zones);
+    if (zone) triggers.push(zone);
+  }
+  if (input.dayLevels?.length) {
+    const day = detectNamedLevelBreak(input.bars, input.dayLevels, "day_level_break");
+    if (day) triggers.push(day);
+  }
   return triggers;
 }
 

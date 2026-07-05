@@ -164,6 +164,71 @@ describe("detectTriggers combinations", () => {
   });
 });
 
+describe("detectTriggers zone_break", () => {
+  const zone = { label: "阻力位", low: 100, high: 102 };
+
+  it("fires when price enters the zone from below", () => {
+    const out = detectTriggers(baseInput({ bars: [bar(1, 99, 1000), bar(2, 101, 1000)], zones: [zone] }));
+    const hit = out.find((t) => t.kind === "zone_break");
+    expect(hit?.detail).toContain("entered zone");
+    expect(hit?.detail).toContain("阻力位");
+  });
+
+  it("fires when price exits the zone upward", () => {
+    const out = detectTriggers(baseInput({ bars: [bar(1, 101, 1000), bar(2, 103, 1000)], zones: [zone] }));
+    expect(out.find((t) => t.kind === "zone_break")?.detail).toContain("exited zone");
+  });
+
+  it("fires when price crosses through the whole zone in one bar", () => {
+    const out = detectTriggers(baseInput({ bars: [bar(1, 99, 1000), bar(2, 104, 1000)], zones: [zone] }));
+    expect(out.find((t) => t.kind === "zone_break")?.detail).toContain("crossed through");
+  });
+
+  it("does not fire while price stays inside the zone", () => {
+    const out = detectTriggers(baseInput({ bars: [bar(1, 100.5, 1000), bar(2, 101.5, 1000)], zones: [zone] }));
+    expect(out.map((t) => t.kind)).not.toContain("zone_break");
+  });
+
+  it("does not fire when no zones are given", () => {
+    const out = detectTriggers(baseInput({ bars: [bar(1, 99, 1000), bar(2, 103, 1000)] }));
+    expect(out.map((t) => t.kind)).not.toContain("zone_break");
+  });
+});
+
+describe("detectTriggers day_level_break", () => {
+  it("fires when price crosses above the previous-day high", () => {
+    const out = detectTriggers(
+      baseInput({
+        bars: [bar(1, 99, 1000), bar(2, 101, 1000)],
+        dayLevels: [{ name: "prev_day_high", value: 100 }],
+      }),
+    );
+    const hit = out.find((t) => t.kind === "day_level_break");
+    expect(hit?.detail).toContain("prev_day_high");
+    expect(hit?.detail).toContain("above");
+  });
+
+  it("fires when price loses the opening-range low", () => {
+    const out = detectTriggers(
+      baseInput({
+        bars: [bar(1, 101, 1000), bar(2, 99, 1000)],
+        dayLevels: [{ name: "opening_range_low", value: 100 }],
+      }),
+    );
+    expect(out.find((t) => t.kind === "day_level_break")?.detail).toContain("below opening_range_low");
+  });
+
+  it("does not fire without a crossing", () => {
+    const out = detectTriggers(
+      baseInput({
+        bars: [bar(1, 98, 1000), bar(2, 99, 1000)],
+        dayLevels: [{ name: "pre_market_high", value: 100 }],
+      }),
+    );
+    expect(out.map((t) => t.kind)).not.toContain("day_level_break");
+  });
+});
+
 describe("shouldHeartbeat", () => {
   it("returns true when never run", () => {
     expect(shouldHeartbeat(null, 1_000_000)).toBe(true);

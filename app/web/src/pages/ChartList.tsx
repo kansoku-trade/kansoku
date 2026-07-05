@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import type { ChartMeta, LegacyChart } from "../../../shared/types";
-import { api } from "../api";
+import { useQuery } from "../apiHooks";
 import { QuoteBar } from "../QuoteBar";
 
 interface MetaWithUrl extends ChartMeta {
@@ -9,30 +9,28 @@ interface MetaWithUrl extends ChartMeta {
 }
 
 export function ChartList() {
-  const [charts, setCharts] = useState<MetaWithUrl[] | null>(null);
-  const [legacy, setLegacy] = useState<LegacyChart[]>([]);
-  const [error, setError] = useState<string | null>(null);
   const [type, setType] = useState("");
   const [symbol, setSymbol] = useState("");
   const [showLegacy, setShowLegacy] = useState(false);
 
-  useEffect(() => {
+  const chartsUrl = useMemo(() => {
     const params = new URLSearchParams();
     if (type) params.set("type", type);
     if (symbol) params.set("symbol", symbol);
-    api<MetaWithUrl[]>(`/api/charts?${params}`)
-      .then(setCharts)
-      .catch((e: Error) => setError(e.message));
+    const query = params.toString();
+    return `/api/charts${query ? `?${query}` : ""}`;
   }, [type, symbol]);
 
-  useEffect(() => {
-    api<LegacyChart[]>("/api/legacy").then(setLegacy).catch(() => setLegacy([]));
-  }, []);
+  const { data: charts, error } = useQuery<MetaWithUrl[]>(chartsUrl);
+  const { data: legacyData } = useQuery<LegacyChart[]>("/api/legacy");
+  const legacy = legacyData ?? [];
 
   return (
     <div className="page">
       <h1>Trade Charts</h1>
-      <div className="sub">图表数据存于 journal/charts/data · 渲染永远是最新版</div>
+      <div className="sub">
+        图表数据存于 journal/charts/data · 渲染永远是最新版 · <a href="#/overview">盘中总览 →</a>
+      </div>
       <QuoteBar />
       <div className="filters">
         <select value={type} onChange={(e) => setType(e.target.value)}>

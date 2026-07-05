@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ChartDoc, ChartMeta, CockpitComment, RawBar } from "../../shared/types.js";
-import type { RawPosition } from "../src/services/longbridge.js";
+import type { RawPosition } from "../src/services/marketdata/types.js";
 import {
   buildCommentPack,
   buildReassessPack,
@@ -120,6 +120,7 @@ describe("buildCommentPack", () => {
       stop: 96,
       target1: 106,
       target2: 112,
+      zones: [],
     });
     expect(pack.recent_comments.map((c) => c.text)).toEqual(["c2", "c3", "c4", "c5", "c6"]);
   });
@@ -132,6 +133,57 @@ describe("buildCommentPack", () => {
   it("stays JSON-serializable", async () => {
     const pack = await buildCommentPack("MU.US", makeDeps());
     expect(() => JSON.stringify(pack)).not.toThrow();
+  });
+
+  it("extracts non-plan zones from the entry plan into the prediction summary", async () => {
+    const doc = intradayDoc("2026-07-02-mu", "2026-07-02T15:00:00Z");
+    const built = doc.built as Extract<ChartDoc["built"], { kind: "intraday" }>;
+    built.entryPlan!.price_zones = [
+      { kind: "resistance", label: "上方阻力", low: 108, high: 110 },
+      { kind: "entry", label: "入场区", low: 99, high: 101 },
+    ];
+    const pack = await buildCommentPack("MU.US", makeDeps({ loadChart: async () => doc }));
+    expect(pack.prediction?.zones).toEqual([{ label: "上方阻力", low: 108, high: 110 }]);
+  });
+
+  it("computes day levels and relative volume from period-aware klines", async () => {
+    const m5 = [
+      ...genBars(4).map((b, i) => ({ ...b, time: new Date(Date.parse("2026-07-02T12:00:00Z") + i * 5 * 60_000).toISOString() })),
+      ...genBars(10),
+    ];
+    const dayBars: RawBar[] = [
+      { time: "2026-07-01T04:00:00Z", open: 98, high: 104, low: 97, close: 103, volume: 100000 },
+      { time: "2026-07-02T04:00:00Z", open: 103, high: 106, low: 101, close: 105, volume: 100000 },
+    ];
+    const m15: RawBar[] = [
+      { time: "2026-07-01T13:30:00Z", open: 100, high: 101, low: 99, close: 100, volume: 500 },
+      { time: "2026-07-02T13:30:00Z", open: 100, high: 101, low: 99, close: 100, volume: 1500 },
+    ];
+    const deps = makeDeps({
+      fetchKline: async (_sym, period) => {
+        if (period === "day") return dayBars;
+        if (period === "15m") return m15;
+        return m5;
+      },
+    });
+    const pack = await buildCommentPack("MU.US", deps);
+    expect(pack.day_levels.prev_day).toEqual({ high: 104, low: 97, close: 103 });
+    expect(pack.day_levels.pre_market).not.toBeNull();
+    expect(pack.day_levels.opening_range).not.toBeNull();
+    expect(pack.rel_volume?.ratio).toBe(3);
+    expect(pack.rel_volume?.days_used).toBe(1);
+  });
+
+  it("degrades day levels and relative volume to null when auxiliary fetches fail", async () => {
+    const deps = makeDeps({
+      fetchKline: async (_sym, period) => {
+        if (period === "day" || period === "15m") throw new Error("boom");
+        return genBars(80);
+      },
+    });
+    const pack = await buildCommentPack("MU.US", deps);
+    expect(pack.day_levels.prev_day).toBeNull();
+    expect(pack.rel_volume).toBeNull();
   });
 });
 

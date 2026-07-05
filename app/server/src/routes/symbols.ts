@@ -6,21 +6,18 @@ import { toTs } from "../services/indicators.js";
 import { buildBenchmark } from "../services/cockpit/benchmark.js";
 import { buildCockpitFlow } from "../services/cockpit/flow.js";
 import { judgeOutcome } from "../services/cockpit/outcome.js";
+import { getResolvedOutcomes, saveResolvedOutcome } from "../services/cockpit/outcomeCache.js";
 import { buildCockpitPosition } from "../services/cockpit/position.js";
-import {
-  fetchCapitalDistribution,
-  fetchFlow,
-  fetchKline,
-  fetchPositions,
-  longbridgeJson,
-} from "../services/longbridge.js";
+import { computeRelativeVolume } from "../services/relvol.js";
+import { getProvider } from "../services/marketdata/registry.js";
+import type { RawPosition } from "../services/marketdata/types.js";
 import { classifySession, easternDate } from "../services/session.js";
 import { listComments } from "../ai/comments.js";
 import { runAnalyst } from "../ai/analyst.js";
 import { aiConfig } from "../ai/models.js";
 import { predictionStale } from "../services/staleness.js";
 import { listCharts, loadChart } from "../services/store.js";
-import { normalizeQuote, type RawQuote } from "../realtime/quotes.js";
+import { normalizeQuote } from "../realtime/quotes.js";
 
 const SYMBOL_RE = /^[A-Z0-9.]+$/;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -50,7 +47,12 @@ type Params = { sym: string };
 export const symbolsRoute: FastifyPluginAsync = async (app) => {
   app.get<{ Params: Params }>("/:sym/flow", async (req) => {
     const sym = normalizeSymbol(req.params.sym);
-    const [flowRes, distRes] = await Promise.allSettled([fetchFlow(sym), fetchCapitalDistribution(sym)]);
+    const provider = getProvider();
+    if (!provider.getFlow) return { ok: true, data: null };
+    const [flowRes, distRes] = await Promise.allSettled([
+      provider.getFlow(sym),
+      provider.getCapitalDistribution?.(sym) ?? Promise.resolve(null),
+    ]);
     if (flowRes.status === "rejected") throw flowRes.reason;
     const dist = distRes.status === "fulfilled" ? distRes.value : null;
     return { ok: true, data: buildCockpitFlow(flowRes.value, dist) };
@@ -59,7 +61,7 @@ export const symbolsRoute: FastifyPluginAsync = async (app) => {
   app.get<{ Params: Params }>("/:sym/benchmark", async (req) => {
     const sym = normalizeSymbol(req.params.sym);
     const symbols = [sym, ...BENCHMARK_SYMBOLS.filter((s) => s !== sym)];
-    const barsList = await Promise.all(symbols.map((s) => fetchKline(s, "5m", 100)));
+    const barsList = await Promise.all(symbols.map((s) => getProvider().getKline(s, "5m", 100)));
     const regularBars = barsList.map((bars) => bars.filter((b) => classifySession(toTs(b.time)) === "regular"));
     const data = buildBenchmark(symbols.map((s, i) => ({ symbol: s, bars: regularBars[i] })));
     return { ok: true, data };
@@ -67,7 +69,11 @@ export const symbolsRoute: FastifyPluginAsync = async (app) => {
 
   app.get<{ Params: Params }>("/:sym/position", async (req) => {
     const sym = normalizeSymbol(req.params.sym);
-    const [positions, quotes] = await Promise.all([fetchPositions(), longbridgeJson<RawQuote[]>(["quote", sym])]);
+    const provider = getProvider();
+    const [positions, quotes] = await Promise.all([
+      provider.getPositions?.() ?? Promise.resolve([] as RawPosition[]),
+      provider.getQuotes([sym]),
+    ]);
     if (quotes.length === 0) {
       throw new ClientError(`no quote data for ${sym}`, undefined, 502);
     }
@@ -85,11 +91,14 @@ export const symbolsRoute: FastifyPluginAsync = async (app) => {
     const sym = normalizeSymbol(req.params.sym);
     const metas = await listCharts({ symbol: sym, type: "intraday" });
     const docs = await Promise.all(metas.map((m) => loadChart(m.id)));
+    const cached = await getResolvedOutcomes(metas.map((m) => m.id));
     let bars: RawBar[] | null = null;
-    try {
-      bars = await fetchKline(sym, "15m", 300);
-    } catch {
-      bars = null;
+    if (metas.some((m) => !cached.has(m.id))) {
+      try {
+        bars = await getProvider().getKline(sym, "15m", 300);
+      } catch {
+        bars = null;
+      }
     }
     const rows: SymbolAnalysisRow[] = metas.map((meta, i) => {
       const doc = docs[i];
@@ -100,10 +109,22 @@ export const symbolsRoute: FastifyPluginAsync = async (app) => {
         doc && doc.built.kind === "intraday" && doc.built.entryPlan
           ? { stop: doc.built.entryPlan.stop, target1: doc.built.entryPlan.target1 }
           : null;
-      const outcome = direction && anchor && bars ? judgeOutcome(direction, anchor, plan, bars) : null;
+      let outcome = cached.get(meta.id) ?? null;
+      if (!outcome && direction && anchor && bars) {
+        outcome = judgeOutcome(direction, anchor, plan, bars);
+        if (outcome && outcome.status !== "open") {
+          void saveResolvedOutcome({ chartId: meta.id, symbol: sym, direction }, outcome).catch(() => {});
+        }
+      }
       return { ...meta, url: chartUrl(meta.id), direction, anchor, outcome };
     });
     return { ok: true, data: rows };
+  });
+
+  app.get<{ Params: Params }>("/:sym/relvol", async (req) => {
+    const sym = normalizeSymbol(req.params.sym);
+    const bars = await getProvider().getKline(sym, "15m", 500);
+    return { ok: true, data: computeRelativeVolume(bars) };
   });
 
   app.get<{ Params: Params; Querystring: { date?: string } }>("/:sym/comments", async (req) => {

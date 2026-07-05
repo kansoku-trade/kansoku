@@ -576,6 +576,70 @@ export interface SymbolAnalysisRow extends ChartMeta {
   outcome: AnalysisOutcome | null;
 }
 
+export interface RelativeVolume {
+  ratio: number;
+  today_cum: number;
+  baseline_avg: number;
+  days_used: number;
+  cutoff_minute: number;
+}
+
+export interface StatsBucket {
+  total: number;
+  hit_target: number;
+  hit_stop: number;
+  open: number;
+  unjudged: number;
+  win_rate: number | null;
+  avg_pct: number | null;
+}
+
+export interface PredictionStats {
+  total: number;
+  overall: StatsBucket;
+  by_direction: { long: StatsBucket; short: StatsBucket };
+  by_origin: { analyst: StatsBucket; manual: StatsBucket };
+}
+
+export interface AiUsageLayerSummary {
+  runs: number;
+  total_tokens: number;
+  cost_total: number;
+}
+
+export interface AiUsageSummary {
+  date: string;
+  runs: number;
+  calls: number;
+  total_tokens: number;
+  cost_total: number;
+  by_layer: Record<string, AiUsageLayerSummary>;
+}
+
+export interface OverviewRow {
+  symbol: string;
+  chart_id: string;
+  url: string;
+  title: string;
+  direction: "long" | "short" | "neutral" | null;
+  last: number | null;
+  pct: number | null;
+  session: string | null;
+  entry: number | null;
+  stop: number | null;
+  target1: number | null;
+  stop_distance_pct: number | null;
+  target1_distance_pct: number | null;
+  prediction_stale: boolean;
+  latest_comment: { ts: string; level: CommentLevel; text: string } | null;
+  alert_count: number;
+}
+
+export interface OverviewBoard {
+  date: string;
+  rows: OverviewRow[];
+}
+
 export type CommentLevel = "info" | "warn" | "alert" | "error";
 export type CommentSource = "commentator" | "analyst" | "system";
 

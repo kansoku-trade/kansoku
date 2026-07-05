@@ -3,7 +3,10 @@ import { join } from "node:path";
 import { createServer as createViteServer } from "vite";
 import { startAiScheduler } from "./ai/scheduler.js";
 import { createApp } from "./app.js";
+import { loadDotenv } from "./dotenv.js";
 import { BASE_URL, PORT, WEB_ROOT } from "./env.js";
+
+loadDotenv();
 
 const app = await createApp();
 await app.register(middie);

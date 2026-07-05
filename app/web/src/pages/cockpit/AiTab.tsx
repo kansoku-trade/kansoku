@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { ApiResult, CockpitComment } from "../../../../shared/types";
+import type { CockpitComment } from "../../../../shared/types";
 import { formatMarketClock } from "../../../../shared/time";
 import { buildFeed } from "./aiFeed";
+import { useReassessSymbol } from "./useReassessSymbol";
 
 const LEVEL_LABEL: Record<string, string> = { info: "info", warn: "warn", alert: "alert", error: "error" };
 const SOURCE_LABEL: Record<string, string> = { analyst: "分析员", system: "系统" };
@@ -53,10 +54,10 @@ export function AiTab({
   error: string | null;
 }) {
   const [running, setRunning] = useState(false);
-  const [pending, setPending] = useState(false);
   const [hint, setHint] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
   const startedAtRef = useRef(0);
+  const { pending, reassess } = useReassessSymbol(symbol);
 
   useEffect(() => {
     if (!running) return;
@@ -72,25 +73,19 @@ export function AiTab({
     if (done) setRunning(false);
   }, [comments, running]);
 
-  const reassess = async () => {
-    setPending(true);
+  const runReassess = async () => {
     setHint(null);
-    try {
-      const res = await fetch(`/api/symbols/${encodeURIComponent(symbol)}/reassess`, { method: "POST" });
-      const json = (await res.json()) as ApiResult<{ started: boolean; reason?: string }>;
-      if (!json.ok) {
-        setHint(json.error);
-      } else if (json.data.started) {
-        startedAtRef.current = Date.now();
-        setRunning(true);
-      } else {
-        setHint("已在运行");
-        window.setTimeout(() => setHint(null), 3000);
-      }
-    } catch {
-      setHint("请求失败");
-    } finally {
-      setPending(false);
+    const result = await reassess();
+    if (!result.ok) {
+      if (!result.aborted) setHint(result.error);
+      return;
+    }
+    if (result.data.started) {
+      startedAtRef.current = Date.now();
+      setRunning(true);
+    } else {
+      setHint("已在运行");
+      window.setTimeout(() => setHint(null), 3000);
     }
   };
 
@@ -108,7 +103,7 @@ export function AiTab({
   return (
     <div className="ai-tab">
       <div className="ai-reassess">
-        <button className="ai-btn" onClick={reassess} disabled={pending || running}>
+        <button className="ai-btn" onClick={runReassess} disabled={pending || running}>
           {running && <span className="ai-spin" />}
           {running ? "重估进行中…" : "重新分析"}
         </button>

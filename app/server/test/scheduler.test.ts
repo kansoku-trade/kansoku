@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { CockpitComment } from "../../shared/types.js";
 import { createAiScheduler, type SchedulerDeps } from "../src/ai/scheduler.js";
 import type { CommentPack } from "../src/ai/datapack.js";
 import type { AiModel } from "../src/ai/models.js";
@@ -6,7 +7,7 @@ import type { Trigger } from "../src/ai/triggers.js";
 
 const fakeModel = { provider: "anthropic", id: "haiku" } as unknown as AiModel;
 
-function makePack(symbol: string): CommentPack {
+function makePack(symbol: string, overrides: Partial<CommentPack> = {}): CommentPack {
   return {
     symbol,
     as_of: "2026-07-05T15:00:00.000Z",
@@ -15,21 +16,27 @@ function makePack(symbol: string): CommentPack {
     flow: [],
     prediction: null,
     recent_comments: [],
+    day_levels: { prev_day: null, pre_market: null, opening_range: null },
+    rel_volume: null,
+    ...overrides,
   };
 }
 
 interface Recorded {
   commentatorCalls: { symbol: string; trigger: Trigger }[];
   analystCalls: { symbol: string; origin: string }[];
+  comments: CockpitComment[];
+  recaps: string[];
 }
 
 function harness(overrides: Partial<SchedulerDeps> = {}): { deps: SchedulerDeps; rec: Recorded } {
-  const rec: Recorded = { commentatorCalls: [], analystCalls: [] };
+  const rec: Recorded = { commentatorCalls: [], analystCalls: [], comments: [], recaps: [] };
   const deps: SchedulerDeps = {
     now: () => 1_000_000,
     aiConfig: () => ({ commentModel: fakeModel, analystModel: fakeModel }),
-    isRegularSession: () => true,
+    sessionKind: () => "regular",
     discoverTargets: async () => ["MU.US"],
+    discoverPreTargets: async () => ["MU.US"],
     buildCommentPack: async (symbol) => makePack(symbol),
     detectTriggers: () => [],
     shouldHeartbeat: () => false,
@@ -42,15 +49,21 @@ function harness(overrides: Partial<SchedulerDeps> = {}): { deps: SchedulerDeps;
       return { started: true };
     },
     escalationOnCooldown: () => false,
+    appendComment: async (comment) => {
+      rec.comments.push(comment);
+    },
+    runRecap: async (date) => {
+      rec.recaps.push(date);
+    },
     ...overrides,
   };
   return { deps, rec };
 }
 
 describe("aiScheduler tick", () => {
-  it("does nothing outside the regular session", async () => {
+  it("does nothing overnight", async () => {
     const discoverTargets = vi.fn(async () => ["MU.US"]);
-    const { deps, rec } = harness({ isRegularSession: () => false, discoverTargets });
+    const { deps, rec } = harness({ sessionKind: () => "overnight", discoverTargets });
     await createAiScheduler(deps).tick();
     expect(discoverTargets).not.toHaveBeenCalled();
     expect(rec.commentatorCalls).toHaveLength(0);
@@ -133,18 +146,19 @@ describe("aiScheduler tick", () => {
   it("feeds real entry/stop/target1/target2 into trigger levels", async () => {
     let seen: import("../src/ai/triggers.js").TriggerInput | null = null;
     const { deps } = harness({
-      buildCommentPack: async (symbol) => ({
-        ...makePack(symbol),
-        prediction: {
-          chartId: "c1",
-          direction: "long",
-          anchor: { timeframe: "m5", time: "2026-07-05T15:00:00Z", price: 99 },
-          entry: 100,
-          stop: 96,
-          target1: 106,
-          target2: 112,
-        },
-      }),
+      buildCommentPack: async (symbol) =>
+        makePack(symbol, {
+          prediction: {
+            chartId: "c1",
+            direction: "long",
+            anchor: { timeframe: "m5", time: "2026-07-05T15:00:00Z", price: 99 },
+            entry: 100,
+            stop: 96,
+            target1: 106,
+            target2: 112,
+            zones: [{ label: "阻力", low: 108, high: 110 }],
+          },
+        }),
       detectTriggers: (input) => {
         seen = input;
         return [];
@@ -153,6 +167,35 @@ describe("aiScheduler tick", () => {
     });
     await createAiScheduler(deps).tick();
     expect(seen!.levels).toEqual({ entry: 100, stop: 96, target1: 106, target2: 112 });
+    expect(seen!.zones).toEqual([{ label: "阻力", low: 108, high: 110 }]);
+  });
+
+  it("feeds day levels into the trigger input", async () => {
+    let seen: import("../src/ai/triggers.js").TriggerInput | null = null;
+    const { deps } = harness({
+      buildCommentPack: async (symbol) =>
+        makePack(symbol, {
+          day_levels: {
+            prev_day: { high: 110, low: 100, close: 105 },
+            pre_market: { high: 108, low: 104 },
+            opening_range: { high: 107, low: 105 },
+          },
+        }),
+      detectTriggers: (input) => {
+        seen = input;
+        return [];
+      },
+      shouldHeartbeat: () => true,
+    });
+    await createAiScheduler(deps).tick();
+    expect(seen!.dayLevels).toEqual([
+      { name: "prev_day_high", value: 110 },
+      { name: "prev_day_low", value: 100 },
+      { name: "pre_market_high", value: 108 },
+      { name: "pre_market_low", value: 104 },
+      { name: "opening_range_high", value: 107 },
+      { name: "opening_range_low", value: 105 },
+    ]);
   });
 
   it("swallows and logs a discoverTargets throw, later ticks still run", async () => {
@@ -187,6 +230,121 @@ describe("aiScheduler tick", () => {
     const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     await createAiScheduler(deps).tick();
     expect(rec.commentatorCalls.map((c) => c.symbol)).toEqual(["MU.US"]);
+    errSpy.mockRestore();
+  });
+});
+
+describe("aiScheduler pre-market", () => {
+  function gapPack(symbol: string, last: number, prevClose: number | null): CommentPack {
+    return makePack(symbol, {
+      quote: { last } as CommentPack["quote"],
+      day_levels: {
+        prev_day: prevClose == null ? null : { high: prevClose + 2, low: prevClose - 2, close: prevClose },
+        pre_market: { high: last + 0.5, low: last - 0.5 },
+        opening_range: null,
+      },
+    });
+  }
+
+  it("appends a system gap comment for a >=2% gap and dedupes within the day", async () => {
+    const { deps, rec } = harness({
+      sessionKind: () => "pre",
+      buildCommentPack: async (symbol) => gapPack(symbol, 102.5, 100),
+    });
+    const scheduler = createAiScheduler(deps);
+    await scheduler.tick();
+    expect(rec.comments).toHaveLength(1);
+    expect(rec.comments[0].trigger).toBe("premarket_gap");
+    expect(rec.comments[0].level).toBe("info");
+    expect(rec.comments[0].source).toBe("system");
+    expect(rec.comments[0].text).toContain("高开");
+    expect(rec.commentatorCalls).toHaveLength(0);
+  });
+
+  it("uses warn level for a >=3% gap", async () => {
+    const { deps, rec } = harness({
+      sessionKind: () => "pre",
+      buildCommentPack: async (symbol) => gapPack(symbol, 96, 100),
+    });
+    await createAiScheduler(deps).tick();
+    expect(rec.comments[0].level).toBe("warn");
+    expect(rec.comments[0].text).toContain("低开");
+  });
+
+  it("stays quiet below the gap threshold or without a prior close", async () => {
+    const small = harness({ sessionKind: () => "pre", buildCommentPack: async (s) => gapPack(s, 101, 100) });
+    await createAiScheduler(small.deps).tick();
+    expect(small.rec.comments).toHaveLength(0);
+
+    const noPrev = harness({ sessionKind: () => "pre", buildCommentPack: async (s) => gapPack(s, 105, null) });
+    await createAiScheduler(noPrev.deps).tick();
+    expect(noPrev.rec.comments).toHaveLength(0);
+  });
+
+  it("throttles pre-market ticks to the 5-minute cadence", async () => {
+    let nowMs = 1_000_000;
+    const discoverPreTargets = vi.fn(async () => ["MU.US"]);
+    const { deps } = harness({
+      sessionKind: () => "pre",
+      now: () => nowMs,
+      discoverPreTargets,
+      buildCommentPack: async (s) => gapPack(s, 101, 100),
+    });
+    const scheduler = createAiScheduler(deps);
+    await scheduler.tick();
+    nowMs += 60_000;
+    await scheduler.tick();
+    expect(discoverPreTargets).toHaveBeenCalledTimes(1);
+    nowMs += 5 * 60_000;
+    await scheduler.tick();
+    expect(discoverPreTargets).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not re-append when a premarket_gap comment already exists", async () => {
+    const existing: CockpitComment = {
+      ts: "2026-07-05T12:00:00.000Z",
+      symbol: "MU.US",
+      level: "info",
+      text: "已有跳空提示",
+      trigger: "premarket_gap",
+      source: "system",
+    };
+    const { deps, rec } = harness({
+      sessionKind: () => "pre",
+      buildCommentPack: async (symbol) =>
+        makePack(symbol, {
+          quote: { last: 105 } as CommentPack["quote"],
+          day_levels: { prev_day: { high: 102, low: 98, close: 100 }, pre_market: null, opening_range: null },
+          recent_comments: [existing],
+        }),
+    });
+    await createAiScheduler(deps).tick();
+    expect(rec.comments).toHaveLength(0);
+  });
+});
+
+describe("aiScheduler post-session recap", () => {
+  it("runs the recap once per date", async () => {
+    let nowMs = 1_000_000;
+    const { deps, rec } = harness({ sessionKind: () => "post", now: () => nowMs });
+    const scheduler = createAiScheduler(deps);
+    await scheduler.tick();
+    expect(rec.recaps).toHaveLength(1);
+    nowMs += 60_000;
+    await scheduler.tick();
+    expect(rec.recaps).toHaveLength(1);
+  });
+
+  it("swallows a recap failure", async () => {
+    const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const { deps } = harness({
+      sessionKind: () => "post",
+      runRecap: async () => {
+        throw new Error("recap boom");
+      },
+    });
+    await expect(createAiScheduler(deps).tick()).resolves.toBeUndefined();
+    expect(errSpy).toHaveBeenCalled();
     errSpy.mockRestore();
   });
 });

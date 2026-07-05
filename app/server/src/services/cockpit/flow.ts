@@ -1,5 +1,5 @@
 import type { CapitalBucket, CockpitFlow, LinePoint } from "../../../../shared/types.js";
-import type { RawCapitalDistribution } from "../longbridge.js";
+import type { RawCapitalDistribution } from "../marketdata/types.js";
 import type { FlowRow } from "../simple.js";
 
 function toBucket(inRaw: string, outRaw: string): CapitalBucket {

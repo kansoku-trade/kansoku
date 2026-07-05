@@ -1,26 +1,13 @@
 import type { QuoteCell } from "../../../shared/types.js";
-import { longbridgeJson } from "../services/longbridge.js";
+import { getProvider } from "../services/marketdata/registry.js";
+import type { ExtendedQuote, RawQuote } from "../services/marketdata/types.js";
 import { createPoller, type PollerHandle } from "./poller.js";
+
+export type { RawQuote } from "../services/marketdata/types.js";
 
 const QUOTE_INTERVAL_MS = 10_000;
 const SYMBOLS_TTL_MS = 600_000;
 const EXTENDED_FRESH_MS = 15 * 60_000;
-
-interface ExtendedQuote {
-  last?: string;
-  prev_close?: string;
-  timestamp?: string;
-}
-
-export interface RawQuote {
-  symbol: string;
-  last: string;
-  prev_close: string;
-  change_percentage: string;
-  pre_market?: ExtendedQuote;
-  post_market?: ExtendedQuote;
-  overnight?: ExtendedQuote;
-}
 
 
 export function normalizeQuote(q: RawQuote, nowMs: number): QuoteCell {
@@ -51,26 +38,19 @@ export function normalizeQuote(q: RawQuote, nowMs: number): QuoteCell {
   return { symbol: q.symbol, session: "日盘", last: regularLast, pct: regularPct, regularLast, regularPct };
 }
 
-interface WatchlistGroup {
-  securities?: { symbol: string }[];
-}
-
-interface PositionRow {
-  symbol: string;
-}
-
 let baseSymbols: string[] = [];
 let baseFetchedAt = 0;
 
 async function refreshBaseSymbols(): Promise<void> {
   if (Date.now() - baseFetchedAt < SYMBOLS_TTL_MS && baseSymbols.length) return;
+  const provider = getProvider();
   const set = new Set<string>();
-  const [groups, positions] = await Promise.allSettled([
-    longbridgeJson<WatchlistGroup[]>(["watchlist"]),
-    longbridgeJson<PositionRow[]>(["positions"]),
+  const [watchlist, positions] = await Promise.allSettled([
+    provider.getWatchlistSymbols?.() ?? Promise.resolve([]),
+    provider.getPositions?.() ?? Promise.resolve([]),
   ]);
-  if (groups.status === "fulfilled") {
-    for (const g of groups.value) for (const s of g.securities ?? []) set.add(s.symbol);
+  if (watchlist.status === "fulfilled") {
+    for (const s of watchlist.value) set.add(s);
   }
   if (positions.status === "fulfilled") {
     for (const p of positions.value) set.add(p.symbol);
@@ -105,7 +85,7 @@ function getPoller(): PollerHandle {
         await refreshBaseSymbols();
         const symbols = [...new Set([...baseSymbols, ...extras.keys()])];
         if (!symbols.length) return { ts: 0, quotes: [] };
-        const raw = await longbridgeJson<RawQuote[]>(["quote", ...symbols]);
+        const raw = await getProvider().getQuotes(symbols);
         const now = Date.now();
         return { ts: now, quotes: raw.map((q) => normalizeQuote(q, now)) };
       },

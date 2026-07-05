@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { CockpitComment } from "../../../../shared/types";
-import { api } from "../../api";
+import { useQuery } from "../../apiHooks";
 
 interface CommentEnvelope {
   type: "init" | "comment";
@@ -8,37 +8,38 @@ interface CommentEnvelope {
   comment?: CockpitComment;
 }
 
+const commentKey = (comment: CockpitComment): string => `${comment.ts}\u0000${comment.text}`;
+
+const mergeComments = (current: CockpitComment[], incoming: CockpitComment[]): CockpitComment[] => {
+  const byKey = new Map(current.map((comment) => [commentKey(comment), comment]));
+  incoming.forEach((comment) => byKey.set(commentKey(comment), comment));
+  return [...byKey.values()].sort((a, b) => Date.parse(a.ts) - Date.parse(b.ts));
+};
+
 export function useCockpitComments(symbol: string): {
   comments: CockpitComment[];
   error: string | null;
   loaded: boolean;
 } {
   const [comments, setComments] = useState<CockpitComment[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [loaded, setLoaded] = useState(false);
+  const [streamLoaded, setStreamLoaded] = useState(false);
+  const commentsUrl = `/api/symbols/${encodeURIComponent(symbol)}/comments`;
+  const { data: initialComments, error, loading } = useQuery<CockpitComment[]>(commentsUrl);
 
   useEffect(() => {
     setComments([]);
-    setError(null);
-    setLoaded(false);
+    setStreamLoaded(false);
+  }, [symbol]);
+
+  useEffect(() => {
+    if (initialComments) setComments((prev) => mergeComments(prev, initialComments));
+  }, [initialComments]);
+
+  useEffect(() => {
     let cancelled = false;
-
-    api<CockpitComment[]>(`/api/symbols/${encodeURIComponent(symbol)}/comments`)
-      .then((d) => {
-        if (!cancelled) {
-          setComments(d);
-          setLoaded(true);
-        }
-      })
-      .catch((e: Error) => {
-        if (!cancelled) {
-          setError(e.message);
-          setLoaded(true);
-        }
-      });
-
     const es = new EventSource(`/api/stream/comments/${encodeURIComponent(symbol)}`);
     es.onmessage = (e) => {
+      if (cancelled) return;
       let env: CommentEnvelope;
       try {
         env = JSON.parse(e.data) as CommentEnvelope;
@@ -46,11 +47,11 @@ export function useCockpitComments(symbol: string): {
         return;
       }
       if (env.type === "init" && env.comments) {
-        setComments(env.comments);
-        setLoaded(true);
+        setComments((prev) => mergeComments(prev, env.comments ?? []));
+        setStreamLoaded(true);
       } else if (env.type === "comment" && env.comment) {
         const c = env.comment;
-        setComments((prev) => (prev.some((p) => p.ts === c.ts && p.text === c.text) ? prev : [...prev, c]));
+        setComments((prev) => mergeComments(prev, [c]));
       }
     };
 
@@ -60,5 +61,5 @@ export function useCockpitComments(symbol: string): {
     };
   }, [symbol]);
 
-  return { comments, error, loaded };
+  return { comments, error, loaded: streamLoaded || !loading };
 }

@@ -5,6 +5,7 @@ import { appendComment as defaultAppendComment } from "./comments.js";
 import type { CommentPack } from "./datapack.js";
 import type { AiModel } from "./models.js";
 import type { Trigger } from "./triggers.js";
+import { attachAiUsageLogger } from "./usage.js";
 
 const DEFAULT_TIMEOUT_MS = 60_000;
 const MAX_PROMPT_CHARS = 24_000;
@@ -172,6 +173,7 @@ export async function runCommentator({
       () => state.done,
     );
     const agent = factory({ systemPrompt: SYSTEM_PROMPT, model: deps.model, tools: [tool] });
+    attachAiUsageLogger(agent, { layer: "commentator", symbol, model: deps.model });
     const promptText = JSON.stringify({ pack, trigger }).slice(0, MAX_PROMPT_CHARS);
 
     await runWithTimeout(agent, promptText, timeoutMs, state);

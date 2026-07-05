@@ -2,7 +2,7 @@ import type { ChartBuilt, ChartDoc, ChartType, RawBar } from "../../../shared/ty
 import { ClientError } from "../errors.js";
 import { ymd } from "./indicators.js";
 import { buildIntraday, TIMEFRAME_ORDER, type IntradayInput } from "./intraday.js";
-import { fetchFlow, fetchKline, fetchNews } from "./longbridge.js";
+import { getProvider } from "./marketdata/registry.js";
 import { buildSepa, type SepaInput } from "./sepa.js";
 import { cleanCohortRows, type CohortRow, type FlowRow } from "./simple.js";
 
@@ -56,12 +56,13 @@ async function prepareInput(type: ChartType, body: Body): Promise<Record<string,
     case "sepa": {
       const symbol = requireSymbol(body, "sepa");
       const count = Number(body.count ?? 260);
+      const provider = getProvider();
       const [kline, spyKline, news] = await Promise.all([
-        (async () => (body.kline as RawBar[] | undefined) ?? (await fetchKline(symbol, "day", count)))(),
+        (async () => (body.kline as RawBar[] | undefined) ?? (await provider.getKline(symbol, "day", count)))(),
         (async () =>
           (body.spy_kline as RawBar[] | undefined) ??
-          (body.skip_spy === true ? [] : await fetchKline("SPY.US", "day", count)))(),
-        fetchNews(symbol),
+          (body.skip_spy === true ? [] : await provider.getKline("SPY.US", "day", count)))(),
+        provider.getNews(symbol),
       ]);
       return {
         symbol,
@@ -79,10 +80,11 @@ async function prepareInput(type: ChartType, body: Body): Promise<Record<string,
       const count = Number(body.count ?? 150);
       const session = typeof body.session === "string" ? body.session : "all";
       let timeframes = body.timeframes as Record<string, RawBar[]> | undefined;
-      const newsPromise = fetchNews(symbol);
+      const provider = getProvider();
+      const newsPromise = provider.getNews(symbol);
       if (!timeframes) {
         const [m5, m15, h1] = await Promise.all(
-          TIMEFRAME_ORDER.map((k) => fetchKline(symbol, TF_PERIODS[k], count, session)),
+          TIMEFRAME_ORDER.map((k) => provider.getKline(symbol, TF_PERIODS[k], count, session)),
         );
         timeframes = { m5, m15, h1 };
       }
@@ -98,6 +100,7 @@ async function prepareInput(type: ChartType, body: Body): Promise<Record<string,
         position: body.position,
         prediction: body.prediction ?? null,
         context: body.context ?? null,
+        origin: body.origin ?? null,
       };
     }
     case "flow": {
@@ -105,7 +108,14 @@ async function prepareInput(type: ChartType, body: Body): Promise<Record<string,
       let symbol = typeof body.symbol === "string" ? body.symbol : null;
       if (!rows) {
         symbol = requireSymbol(body, "flow");
-        rows = await fetchFlow(symbol);
+        const provider = getProvider();
+        if (!provider.getFlow) {
+          throw new ClientError(
+            `flow: provider "${provider.name}" has no capital-flow data`,
+            "pass `data` explicitly or switch MARKET_PROVIDER to one with the flow capability",
+          );
+        }
+        rows = await provider.getFlow(symbol);
       }
       return { symbol, rows, subtitle: body.subtitle ?? "" };
     }
@@ -226,6 +236,7 @@ export function refreshBody(type: ChartType, input: Record<string, unknown>): Re
         position: input.position,
         prediction: input.prediction,
         context: input.context,
+        origin: input.origin,
       };
     case "sepa":
       return { type, symbol, name: input.name, position: input.position, context: input.context };

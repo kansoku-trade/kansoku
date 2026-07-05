@@ -4,11 +4,18 @@ import Fastify, { type FastifyInstance } from "fastify";
 import { ClientError } from "./errors.js";
 import { CHART_DATA_DIR, LEGACY_CHARTS_DIR, PORT } from "./env.js";
 import { chartsRoute } from "./routes/charts.js";
+import { overviewRoute } from "./routes/overview.js";
 import { streamsRoute } from "./routes/streams.js";
 import { symbolsRoute } from "./routes/symbols.js";
 
 export async function createApp(): Promise<FastifyInstance> {
   const app = Fastify();
+
+  app.addHook("onResponse", async (req, reply) => {
+    if (!req.url.startsWith("/api")) return;
+    const ms = Math.round(reply.elapsedTime);
+    console.log(`[api] ${req.method} ${req.url} -> ${reply.statusCode} ${ms}ms`);
+  });
 
   app.setErrorHandler((err, _req, reply) => {
     if (err instanceof ClientError) {
@@ -33,6 +40,7 @@ export async function createApp(): Promise<FastifyInstance> {
   await app.register(chartsRoute, { prefix: "/api/charts" });
   await app.register(streamsRoute, { prefix: "/api/stream" });
   await app.register(symbolsRoute, { prefix: "/api/symbols" });
+  await app.register(overviewRoute, { prefix: "/api/overview" });
 
   app.get("/api/legacy", async () => {
     let files: string[] = [];

@@ -1,37 +1,11 @@
-import { promises as fs } from "node:fs";
-import { join } from "node:path";
 import { runAnalyst } from "../src/ai/analyst.js";
 import { listComments } from "../src/ai/comments.js";
 import { runCommentator } from "../src/ai/commentator.js";
 import { buildCommentPack } from "../src/ai/datapack.js";
 import { aiConfig } from "../src/ai/models.js";
 import type { Trigger } from "../src/ai/triggers.js";
-import { PROJECT_ROOT } from "../src/env.js";
+import { loadDotenv } from "../src/dotenv.js";
 import { easternDate } from "../src/services/session.js";
-
-async function loadDotenv(): Promise<void> {
-  let raw: string;
-  try {
-    raw = await fs.readFile(join(PROJECT_ROOT, ".env"), "utf-8");
-  } catch {
-    return;
-  }
-  for (const line of raw.split("\n")) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-    const eq = trimmed.indexOf("=");
-    if (eq <= 0) continue;
-    const key = trimmed.slice(0, eq).trim();
-    let value = trimmed.slice(eq + 1).trim();
-    if (
-      (value.startsWith('"') && value.endsWith('"')) ||
-      (value.startsWith("'") && value.endsWith("'"))
-    ) {
-      value = value.slice(1, -1);
-    }
-    if (!(key in process.env)) process.env[key] = value;
-  }
-}
 
 function fail(message: string): never {
   console.error(`error: ${message}`);
@@ -44,7 +18,7 @@ async function main(): Promise<void> {
   const symbol = args.find((a) => !a.startsWith("--"));
   if (!symbol) fail("usage: tsx scripts/ai-smoke.ts <SYMBOL> [--analyst]");
 
-  await loadDotenv();
+  loadDotenv();
   const config = aiConfig();
   console.log(`comment model: ${process.env.AI_COMMENT_MODEL ?? "(unset)"} -> ${config.commentModel ? "resolved" : "null"}`);
   console.log(`analyst model: ${process.env.AI_ANALYST_MODEL ?? "(unset)"} -> ${config.analystModel ? "resolved" : "null"}`);

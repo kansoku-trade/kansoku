@@ -21,6 +21,8 @@ function makePack(symbol: string): CommentPack {
     flow: [],
     prediction: null,
     recent_comments: [],
+    day_levels: { prev_day: null, pre_market: null, opening_range: null },
+    rel_volume: null,
   };
 }
 

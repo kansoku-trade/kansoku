@@ -9,7 +9,9 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^26.0.1",
+    "drizzle-kit": "^0.31.10",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3",
     "vitest": "^4.1.9"
@@ -19,6 +21,8 @@
     "@earendil-works/pi-ai": "^0.80.3",
     "@fastify/middie": "^9.3.3",
     "@fastify/static": "^9.1.3",
+    "better-sqlite3": "^12.11.1",
+    "drizzle-orm": "^0.45.2",
     "fastify": "^5.9.0",
     "typebox": "1.1.38",
     "vite": "^8.1.2"

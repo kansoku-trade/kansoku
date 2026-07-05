@@ -1,5 +1,5 @@
 import type { CockpitPosition } from "../../../../shared/types.js";
-import type { RawPosition } from "../longbridge.js";
+import type { RawPosition } from "../marketdata/types.js";
 
 export function buildCockpitPosition(
   positions: RawPosition[],

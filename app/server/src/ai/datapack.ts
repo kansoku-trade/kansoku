@@ -8,19 +8,26 @@ import type {
   IntradayTfSummary,
   QuoteCell,
   RawBar,
+  RelativeVolume,
   TimeframeKey,
 } from "../../../shared/types.js";
 import { ClientError } from "../errors.js";
-import { normalizeQuote, type RawQuote } from "../realtime/quotes.js";
+import { normalizeQuote } from "../realtime/quotes.js";
 import { buildCockpitPosition } from "../services/cockpit/position.js";
+import { openingRange, preMarketRange, prevDayLevels, type DayLevels } from "../services/dayLevels.js";
 import { macd } from "../services/indicators.js";
 import { coerceIntradayTimeframe } from "../services/intraday.js";
-import { fetchFlow, fetchKline, fetchPositions, longbridgeJson, type RawPosition } from "../services/longbridge.js";
+import { computeRelativeVolume } from "../services/relvol.js";
+import { getProvider } from "../services/marketdata/registry.js";
+import type { RawPosition } from "../services/marketdata/types.js";
 import { easternDate } from "../services/session.js";
 import { listCharts, loadChart, type ListFilter } from "../services/store.js";
 import { listComments } from "./comments.js";
 
 const KLINE_COUNT = 150;
+const COMMENT_M5_FETCH = 240;
+const RELVOL_M15_BARS = 500;
+const DAY_KLINE_COUNT = 10;
 const COMMENT_M5_BARS = 48;
 const REASSESS_TF_BARS = 60;
 const RECENT_COMMENTS = 5;
@@ -43,13 +50,13 @@ export interface DatapackDeps {
 
 export const defaultDatapackDeps: DatapackDeps = {
   fetchQuote: async (symbol) => {
-    const quotes = await longbridgeJson<RawQuote[]>(["quote", symbol]);
+    const quotes = await getProvider().getQuotes([symbol]);
     if (!quotes.length) throw new ClientError(`no quote data for ${symbol}`, undefined, 502);
     return normalizeQuote(quotes[0], Date.now());
   },
-  fetchKline,
-  fetchFlow,
-  fetchPositions,
+  fetchKline: (symbol, period, count) => getProvider().getKline(symbol, period, count),
+  fetchFlow: (symbol) => getProvider().getFlow?.(symbol) ?? Promise.resolve([]),
+  fetchPositions: () => getProvider().getPositions?.() ?? Promise.resolve([]),
   listComments,
   listCharts,
   loadChart,
@@ -64,6 +71,7 @@ export interface PredictionSummary {
   stop: number | null;
   target1: number | null;
   target2: number | null;
+  zones: { label: string; low: number; high: number }[];
 }
 
 export interface CommentPack {
@@ -74,6 +82,8 @@ export interface CommentPack {
   flow: FlowRow[];
   prediction: PredictionSummary | null;
   recent_comments: CockpitComment[];
+  day_levels: DayLevels;
+  rel_volume: RelativeVolume | null;
 }
 
 export interface ReassessTimeframe {
@@ -104,10 +114,15 @@ export async function findTodayLatestIntradayDoc(
   return deps.loadChart(todays[0].id);
 }
 
+const PLAN_ZONE_KINDS = new Set(["entry", "stop", "target"]);
+
 function predictionSummary(doc: ChartDoc | null): PredictionSummary | null {
   if (!doc) return null;
   const prediction = (doc.input.prediction as IntradayPrediction | undefined) ?? null;
   const plan = doc.built.kind === "intraday" ? doc.built.entryPlan : null;
+  const zones = (plan?.price_zones ?? [])
+    .filter((z) => !PLAN_ZONE_KINDS.has(z.kind) && Number.isFinite(z.low) && Number.isFinite(z.high))
+    .map((z) => ({ label: z.label, low: z.low, high: z.high }));
   return {
     chartId: doc.id,
     direction: prediction?.direction ?? null,
@@ -116,6 +131,7 @@ function predictionSummary(doc: ChartDoc | null): PredictionSummary | null {
     stop: plan?.stop ?? null,
     target1: plan?.target1 ?? null,
     target2: plan?.target2 ?? null,
+    zones,
   };
 }
 
@@ -132,12 +148,14 @@ export async function buildCommentPack(
   deps: DatapackDeps = defaultDatapackDeps,
 ): Promise<CommentPack> {
   const now = deps.now();
-  const [quote, m5Bars, flow, doc, comments] = await Promise.all([
+  const [quote, m5Bars, flow, doc, comments, dayBars, m15Bars] = await Promise.all([
     deps.fetchQuote(symbol),
-    deps.fetchKline(symbol, "5m", KLINE_COUNT),
+    deps.fetchKline(symbol, "5m", COMMENT_M5_FETCH),
     deps.fetchFlow(symbol),
     findTodayLatestIntradayDoc(symbol, deps),
     deps.listComments(symbol, easternDate(now)),
+    deps.fetchKline(symbol, "day", DAY_KLINE_COUNT).catch(() => [] as RawBar[]),
+    deps.fetchKline(symbol, "15m", RELVOL_M15_BARS).catch(() => [] as RawBar[]),
   ]);
 
   const closes = m5Bars.map((b) => Number(b.close));
@@ -152,6 +170,12 @@ export async function buildCommentPack(
     flow,
     prediction: predictionSummary(doc),
     recent_comments: comments.slice(-RECENT_COMMENTS),
+    day_levels: {
+      prev_day: prevDayLevels(dayBars, now),
+      pre_market: preMarketRange(m5Bars, now),
+      opening_range: openingRange(m5Bars, now),
+    },
+    rel_volume: computeRelativeVolume(m15Bars, now),
   };
 }
 

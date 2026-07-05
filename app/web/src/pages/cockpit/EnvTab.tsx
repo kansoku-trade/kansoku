@@ -1,5 +1,5 @@
 import { CartesianGrid, Legend, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import type { BenchmarkSeries, CockpitPosition } from "../../../../shared/types";
+import type { BenchmarkSeries, CockpitPosition, RelativeVolume } from "../../../../shared/types";
 import { fullTime, hhmm, tooltipContentStyle, tooltipLabelStyle } from "../../charts/simple/theme";
 import { fmt, signed, upDown } from "../../format";
 
@@ -74,11 +74,31 @@ interface EnvTabProps {
   positionError: string | null;
   benchmark: BenchmarkSeries[] | null;
   benchmarkError: string | null;
+  relvol?: RelativeVolume | null;
 }
 
-export function EnvTab({ position, positionError, benchmark, benchmarkError }: EnvTabProps) {
+function relvolTone(ratio: number): string {
+  if (ratio >= 1.5) return "up";
+  if (ratio <= 0.6) return "down";
+  return "";
+}
+
+export function EnvTab({ position, positionError, benchmark, benchmarkError, relvol }: EnvTabProps) {
   return (
     <>
+      {relvol && (
+        <>
+          <div className="section-title">量能对比（对齐前 {relvol.days_used} 日同时段）</div>
+          <div className="grid2">
+            <div className="k">今天 vs 均值</div>
+            <div className={`v ${relvolTone(relvol.ratio)}`}>×{relvol.ratio.toFixed(2)}</div>
+            <div className="k">今日累计</div>
+            <div className="v">{Math.round(relvol.today_cum).toLocaleString()}</div>
+            <div className="k">同时段均值</div>
+            <div className="v">{Math.round(relvol.baseline_avg).toLocaleString()}</div>
+          </div>
+        </>
+      )}
       {position && (
         <>
           <div className="section-title">持仓</div>

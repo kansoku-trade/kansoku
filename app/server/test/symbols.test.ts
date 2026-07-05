@@ -2,12 +2,16 @@ import Fastify, { type FastifyInstance } from "fastify";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ChartDoc, ChartMeta } from "../../shared/types.js";
 
-const longbridge = vi.hoisted(() => ({
-  fetchFlow: vi.fn(),
-  fetchCapitalDistribution: vi.fn(),
-  fetchKline: vi.fn(),
-  fetchPositions: vi.fn(),
-  longbridgeJson: vi.fn(),
+const provider = vi.hoisted(() => ({
+  name: "mock",
+  capabilities: new Set(["flow", "capital-distribution", "positions", "watchlist"]),
+  getFlow: vi.fn(),
+  getCapitalDistribution: vi.fn(),
+  getKline: vi.fn(),
+  getPositions: vi.fn(),
+  getQuotes: vi.fn(),
+  getNews: vi.fn(),
+  getWatchlistSymbols: vi.fn(),
 }));
 
 const store = vi.hoisted(() => ({
@@ -15,8 +19,12 @@ const store = vi.hoisted(() => ({
   loadChart: vi.fn(),
 }));
 
-vi.mock("../src/services/longbridge.js", () => longbridge);
+vi.mock("../src/services/marketdata/registry.js", () => ({ getProvider: () => provider }));
 vi.mock("../src/services/store.js", () => store);
+vi.mock("../src/services/cockpit/outcomeCache.js", () => ({
+  getResolvedOutcomes: async () => new Map(),
+  saveResolvedOutcome: async () => {},
+}));
 
 const { symbolsRoute } = await import("../src/routes/symbols.js");
 const { ClientError } = await import("../src/errors.js");
@@ -60,23 +68,23 @@ function makeDoc(overrides: Partial<ChartDoc> = {}): ChartDoc {
 }
 
 beforeEach(() => {
-  longbridge.fetchFlow.mockReset();
-  longbridge.fetchCapitalDistribution.mockReset();
-  longbridge.fetchKline.mockReset();
-  longbridge.fetchPositions.mockReset();
-  longbridge.longbridgeJson.mockReset();
+  provider.getFlow.mockReset();
+  provider.getCapitalDistribution.mockReset();
+  provider.getKline.mockReset();
+  provider.getPositions.mockReset();
+  provider.getQuotes.mockReset();
   store.listCharts.mockReset();
   store.loadChart.mockReset();
 });
 
 describe("symbol normalization", () => {
   it("normalizes a lowercase bare ticker to <SYM>.US before calling the fetcher", async () => {
-    longbridge.fetchFlow.mockResolvedValue([]);
-    longbridge.fetchCapitalDistribution.mockResolvedValue(null);
+    provider.getFlow.mockResolvedValue([]);
+    provider.getCapitalDistribution.mockResolvedValue(null);
     const app = await testApp();
     await app.inject("/mu/flow");
-    expect(longbridge.fetchFlow).toHaveBeenCalledWith("MU.US");
-    expect(longbridge.fetchCapitalDistribution).toHaveBeenCalledWith("MU.US");
+    expect(provider.getFlow).toHaveBeenCalledWith("MU.US");
+    expect(provider.getCapitalDistribution).toHaveBeenCalledWith("MU.US");
   });
 
   it("rejects a symbol with invalid characters", async () => {
@@ -88,8 +96,8 @@ describe("symbol normalization", () => {
 
 describe("GET /:sym/flow", () => {
   it("degrades gracefully when distribution fetch rejects", async () => {
-    longbridge.fetchFlow.mockResolvedValue([{ time: "2026-07-02T13:30:00Z", inflow: "10" }]);
-    longbridge.fetchCapitalDistribution.mockRejectedValue(new Error("upstream down"));
+    provider.getFlow.mockResolvedValue([{ time: "2026-07-02T13:30:00Z", inflow: "10" }]);
+    provider.getCapitalDistribution.mockRejectedValue(new Error("upstream down"));
     const app = await testApp();
     const res = await app.inject("/MU.US/flow");
     expect(res.statusCode).toBe(200);
@@ -100,8 +108,8 @@ describe("GET /:sym/flow", () => {
 
   it("propagates the flow fetch rejection status", async () => {
     const { ClientError: CE } = await import("../src/errors.js");
-    longbridge.fetchFlow.mockRejectedValue(new CE("longbridge down", undefined, 502));
-    longbridge.fetchCapitalDistribution.mockResolvedValue(null);
+    provider.getFlow.mockRejectedValue(new CE("longbridge down", undefined, 502));
+    provider.getCapitalDistribution.mockResolvedValue(null);
     const app = await testApp();
     const res = await app.inject("/MU.US/flow");
     expect(res.statusCode).toBe(502);
@@ -110,12 +118,12 @@ describe("GET /:sym/flow", () => {
 
 describe("GET /:sym/benchmark", () => {
   it("excludes the requested symbol from the benchmark set", async () => {
-    longbridge.fetchKline.mockResolvedValue([bar("2026-07-02T13:30:00Z", 100, 101, 99, 100)]);
+    provider.getKline.mockResolvedValue([bar("2026-07-02T13:30:00Z", 100, 101, 99, 100)]);
     const app = await testApp();
     const res = await app.inject("/SMH.US/benchmark");
     expect(res.statusCode).toBe(200);
-    expect(longbridge.fetchKline).toHaveBeenCalledTimes(2);
-    const symbolsFetched = longbridge.fetchKline.mock.calls.map((c) => c[0]);
+    expect(provider.getKline).toHaveBeenCalledTimes(2);
+    const symbolsFetched = provider.getKline.mock.calls.map((c) => c[0]);
     expect(symbolsFetched).toEqual(["SMH.US", "QQQ.US"]);
     const body = res.json();
     expect(body.data.map((s: { symbol: string }) => s.symbol)).toEqual(["SMH.US", "QQQ.US"]);
@@ -124,7 +132,7 @@ describe("GET /:sym/benchmark", () => {
   it("filters out pre-market bars before building the benchmark series", async () => {
     const preMarketBar = bar("2026-07-02T08:00:00Z", 100, 101, 99, 100);
     const regularBar = bar("2026-07-02T13:30:00Z", 100, 105, 99, 104);
-    longbridge.fetchKline.mockImplementation(async (sym: string) =>
+    provider.getKline.mockImplementation(async (sym: string) =>
       sym === "MU.US" ? [preMarketBar, regularBar] : [regularBar],
     );
     const app = await testApp();
@@ -138,10 +146,10 @@ describe("GET /:sym/benchmark", () => {
 
 describe("GET /:sym/position", () => {
   it("returns distances when the symbol is held and an entry plan exists", async () => {
-    longbridge.fetchPositions.mockResolvedValue([
+    provider.getPositions.mockResolvedValue([
       { available: "6", cost_price: "100", currency: "USD", market: "US", name: "Micron", symbol: "MU.US", quantity: "6" },
     ]);
-    longbridge.longbridgeJson.mockResolvedValue([
+    provider.getQuotes.mockResolvedValue([
       { symbol: "MU.US", last: "110", prev_close: "108", change_percentage: "1.8" },
     ]);
     store.listCharts.mockResolvedValue([makeMeta()]);
@@ -161,8 +169,8 @@ describe("GET /:sym/position", () => {
   });
 
   it("returns null data when the symbol is not held", async () => {
-    longbridge.fetchPositions.mockResolvedValue([]);
-    longbridge.longbridgeJson.mockResolvedValue([
+    provider.getPositions.mockResolvedValue([]);
+    provider.getQuotes.mockResolvedValue([
       { symbol: "MU.US", last: "110", prev_close: "108", change_percentage: "1.8" },
     ]);
     store.listCharts.mockResolvedValue([]);
@@ -173,8 +181,8 @@ describe("GET /:sym/position", () => {
   });
 
   it("502s when the quote fetch returns an empty array", async () => {
-    longbridge.fetchPositions.mockResolvedValue([]);
-    longbridge.longbridgeJson.mockResolvedValue([]);
+    provider.getPositions.mockResolvedValue([]);
+    provider.getQuotes.mockResolvedValue([]);
     const app = await testApp();
     const res = await app.inject("/MU.US/position");
     expect(res.statusCode).toBe(502);
@@ -192,7 +200,7 @@ describe("GET /:sym/analyses", () => {
     });
     store.listCharts.mockResolvedValue([makeMeta()]);
     store.loadChart.mockResolvedValue(doc);
-    longbridge.fetchKline.mockResolvedValue([bar("2026-07-02T13:45:00Z", 100, 122, 99, 121)]);
+    provider.getKline.mockResolvedValue([bar("2026-07-02T13:45:00Z", 100, 122, 99, 121)]);
 
     const app = await testApp();
     const res = await app.inject("/MU.US/analyses");
@@ -205,7 +213,7 @@ describe("GET /:sym/analyses", () => {
   it("returns nulls for a doc without a prediction", async () => {
     store.listCharts.mockResolvedValue([makeMeta()]);
     store.loadChart.mockResolvedValue(makeDoc());
-    longbridge.fetchKline.mockResolvedValue([]);
+    provider.getKline.mockResolvedValue([]);
 
     const app = await testApp();
     const res = await app.inject("/MU.US/analyses");
@@ -225,7 +233,7 @@ describe("GET /:sym/analyses", () => {
     });
     store.listCharts.mockResolvedValue([makeMeta()]);
     store.loadChart.mockResolvedValue(doc);
-    longbridge.fetchKline.mockRejectedValue(new Error("upstream down"));
+    provider.getKline.mockRejectedValue(new Error("upstream down"));
 
     const app = await testApp();
     const res = await app.inject("/MU.US/analyses");

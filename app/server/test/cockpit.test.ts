@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { RawBar } from "../../shared/types.js";
-import type { RawCapitalDistribution, RawPosition } from "../src/services/longbridge.js";
+import type { RawCapitalDistribution, RawPosition } from "../src/services/marketdata/types.js";
 import type { FlowRow } from "../src/services/simple.js";
 import { buildBenchmark } from "../src/services/cockpit/benchmark.js";
 import { buildCockpitFlow } from "../src/services/cockpit/flow.js";

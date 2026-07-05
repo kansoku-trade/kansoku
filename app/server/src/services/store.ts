@@ -1,10 +1,11 @@
 import { promises as fs } from "node:fs";
 import { join } from "node:path";
+import { desc, eq, sql } from "drizzle-orm";
 import type { ChartDoc, ChartMeta } from "../../../shared/types.js";
+import { getDb, type Db } from "../db/index.js";
+import { chartMeta, outcomes } from "../db/schema.js";
 import { CHART_DATA_DIR } from "../env.js";
 import { migrateLegacyDoc } from "./build.js";
-
-const INDEX_FILE = join(CHART_DATA_DIR, "index.json");
 
 function toMeta(doc: ChartDoc): ChartMeta {
   return {
@@ -19,6 +20,32 @@ function toMeta(doc: ChartDoc): ChartMeta {
   };
 }
 
+function rowToMeta(row: typeof chartMeta.$inferSelect): ChartMeta {
+  return {
+    id: row.id,
+    schema_version: row.schemaVersion,
+    type: row.type as ChartMeta["type"],
+    title: row.title,
+    symbol: row.symbol,
+    created_at: row.createdAt,
+    updated_at: row.updatedAt,
+    ...(row.predictionUpdatedAt != null ? { prediction_updated_at: row.predictionUpdatedAt } : {}),
+  };
+}
+
+function metaToRow(meta: ChartMeta): typeof chartMeta.$inferInsert {
+  return {
+    id: meta.id,
+    schemaVersion: meta.schema_version,
+    type: meta.type,
+    title: meta.title,
+    symbol: meta.symbol,
+    createdAt: meta.created_at,
+    updatedAt: meta.updated_at,
+    predictionUpdatedAt: meta.prediction_updated_at ?? null,
+  };
+}
+
 async function ensureDir(): Promise<void> {
   await fs.mkdir(CHART_DATA_DIR, { recursive: true });
 }
@@ -27,28 +54,24 @@ function docPath(id: string): string {
   return join(CHART_DATA_DIR, `${id}.json`);
 }
 
-async function rebuildIndex(): Promise<ChartMeta[]> {
+let scanned = false;
+
+async function ensureIndex(db: Db): Promise<void> {
+  if (scanned) return;
+  scanned = true;
+  const [{ count }] = await db.select({ count: sql<number>`count(*)` }).from(chartMeta);
+  if (count > 0) return;
   await ensureDir();
   const files = (await fs.readdir(CHART_DATA_DIR)).filter((f) => f.endsWith(".json") && f !== "index.json");
-  const metas: ChartMeta[] = [];
   for (const f of files) {
     try {
       const doc = JSON.parse(await fs.readFile(join(CHART_DATA_DIR, f), "utf-8")) as ChartDoc;
-      if (doc.id && doc.type) metas.push(toMeta(doc));
+      if (doc.id && doc.type) {
+        await db.insert(chartMeta).values(metaToRow(toMeta(doc))).onConflictDoNothing();
+      }
     } catch {
       continue;
     }
-  }
-  metas.sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
-  await fs.writeFile(INDEX_FILE, JSON.stringify(metas, null, 1));
-  return metas;
-}
-
-async function readIndex(): Promise<ChartMeta[]> {
-  try {
-    return JSON.parse(await fs.readFile(INDEX_FILE, "utf-8")) as ChartMeta[];
-  } catch {
-    return rebuildIndex();
   }
 }
 
@@ -58,8 +81,10 @@ export interface ListFilter {
   limit?: number;
 }
 
-export async function listCharts(filter: ListFilter = {}): Promise<ChartMeta[]> {
-  let metas = await readIndex();
+export async function listCharts(filter: ListFilter = {}, db: Db = getDb()): Promise<ChartMeta[]> {
+  await ensureIndex(db);
+  const rows = await db.select().from(chartMeta).orderBy(desc(chartMeta.createdAt));
+  let metas = rows.map(rowToMeta);
   if (filter.type) metas = metas.filter((m) => m.type === filter.type);
   if (filter.symbol) {
     const s = filter.symbol.toUpperCase();
@@ -93,20 +118,19 @@ export async function allocateId(date: string, slug: string): Promise<string> {
   }
 }
 
-export async function saveChart(doc: ChartDoc): Promise<void> {
+export async function saveChart(doc: ChartDoc, db: Db = getDb()): Promise<void> {
+  await ensureIndex(db);
   await ensureDir();
   await fs.writeFile(docPath(doc.id), JSON.stringify(doc));
-  const metas = (await readIndex()).filter((m) => m.id !== doc.id);
-  metas.unshift(toMeta(doc));
-  metas.sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
-  await fs.writeFile(INDEX_FILE, JSON.stringify(metas, null, 1));
+  const row = metaToRow(toMeta(doc));
+  await db.insert(chartMeta).values(row).onConflictDoUpdate({ target: chartMeta.id, set: row });
 }
 
-export async function deleteChart(id: string): Promise<boolean> {
+export async function deleteChart(id: string, db: Db = getDb()): Promise<boolean> {
   const doc = await loadChart(id);
   if (!doc) return false;
   await fs.rm(docPath(id));
-  const metas = (await readIndex()).filter((m) => m.id !== id);
-  await fs.writeFile(INDEX_FILE, JSON.stringify(metas, null, 1));
+  await db.delete(chartMeta).where(eq(chartMeta.id, id));
+  await db.delete(outcomes).where(eq(outcomes.chartId, id));
   return true;
 }

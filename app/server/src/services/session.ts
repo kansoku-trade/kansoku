@@ -19,6 +19,17 @@ export function easternDate(date: Date = new Date()): string {
   return dateFormatter.format(date);
 }
 
+export function easternMinuteOfDay(ts: number): number {
+  const parts = etFormatter.formatToParts(new Date(ts * 1000));
+  let hour = 0;
+  let minute = 0;
+  for (const p of parts) {
+    if (p.type === "hour") hour = Number(p.value);
+    else if (p.type === "minute") minute = Number(p.value);
+  }
+  return (hour % 24) * 60 + minute;
+}
+
 const REGULAR_START = 9 * 60 + 30;
 const REGULAR_END = 16 * 60;
 const PRE_START = 4 * 60;

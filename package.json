@@ -4,6 +4,7 @@
   "private": true,
   "description": "Personal trade journal with market-intel agent skills",
   "scripts": {
+    "dev": "cd app && pnpm dev",
     "prepare": "skills experimental_install",
     "skills:install": "skills experimental_install",
     "skills:update": "skills update -p -y"

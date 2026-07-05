@@ -1,10 +1,9 @@
-import { promises as fs } from "node:fs";
-import { join } from "node:path";
-import type { CockpitComment } from "../../../shared/types.js";
-import { CHART_DATA_DIR } from "../env.js";
+import { and, asc, eq } from "drizzle-orm";
+import type { CockpitComment, CommentLevel, CommentSource } from "../../../shared/types.js";
+import { getDb, type Db } from "../db/index.js";
+import { comments } from "../db/schema.js";
 import { easternDate } from "../services/session.js";
-
-const COMMENTS_DIR = join(CHART_DATA_DIR, "comments");
+import { notifyUser } from "./notify.js";
 
 type Listener = (comment: CockpitComment) => void;
 
@@ -37,44 +36,40 @@ function broadcast(comment: CockpitComment): void {
   }
 }
 
-function fileName(symbol: string, date: string): string {
-  return `${symbol.replace(/[/\\]/g, "_")}-${date}.json`;
+function toComment(row: typeof comments.$inferSelect): CockpitComment {
+  return {
+    ts: row.ts,
+    symbol: row.symbol,
+    level: row.level as CommentLevel,
+    text: row.text,
+    ...(row.trigger != null ? { trigger: row.trigger } : {}),
+    source: row.source as CommentSource,
+    ...(row.escalated != null ? { escalated: row.escalated } : {}),
+    ...(row.chartId != null ? { chartId: row.chartId } : {}),
+  };
 }
 
-function filePath(symbol: string, date: string): string {
-  return join(COMMENTS_DIR, fileName(symbol, date));
+export async function listComments(symbol: string, date: string, db: Db = getDb()): Promise<CockpitComment[]> {
+  const rows = await db
+    .select()
+    .from(comments)
+    .where(and(eq(comments.symbol, symbol), eq(comments.easternDate, date)))
+    .orderBy(asc(comments.id));
+  return rows.map(toComment);
 }
 
-export async function listComments(symbol: string, date: string): Promise<CockpitComment[]> {
-  try {
-    const parsed = JSON.parse(await fs.readFile(filePath(symbol, date), "utf-8"));
-    return Array.isArray(parsed) ? (parsed as CockpitComment[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-const writeQueues = new Map<string, Promise<unknown>>();
-
-function withFileLock(path: string, task: () => Promise<void>): Promise<void> {
-  const prev = writeQueues.get(path) ?? Promise.resolve();
-  const result = prev.then(task, task);
-  const tail = result.catch(() => {});
-  writeQueues.set(path, tail);
-  void tail.then(() => {
-    if (writeQueues.get(path) === tail) writeQueues.delete(path);
-  });
-  return result;
-}
-
-export async function appendComment(comment: CockpitComment): Promise<void> {
-  const date = easternDate(new Date(comment.ts));
-  const path = filePath(comment.symbol, date);
-  await withFileLock(path, async () => {
-    await fs.mkdir(COMMENTS_DIR, { recursive: true });
-    const existing = await listComments(comment.symbol, date);
-    existing.push(comment);
-    await fs.writeFile(path, JSON.stringify(existing));
+export async function appendComment(comment: CockpitComment, db: Db = getDb()): Promise<void> {
+  await db.insert(comments).values({
+    ts: comment.ts,
+    easternDate: easternDate(new Date(comment.ts)),
+    symbol: comment.symbol,
+    level: comment.level,
+    text: comment.text,
+    trigger: comment.trigger ?? null,
+    source: comment.source,
+    escalated: comment.escalated ?? null,
+    chartId: comment.chartId ?? null,
   });
   broadcast(comment);
+  if (comment.level === "alert") notifyUser(`${comment.symbol} 盘中警报`, comment.text);
 }
