@@ -50,10 +50,15 @@ bars) — no manual `longbridge kline` calls needed. Multi-source grounding is
 tiered so runs stay fast — pull the "always" tier every run, judge the rest by
 the day's tape:
 
-- **Always**: `longbridge-news` on the symbol — same-day catalyst check. The
-  chart server also auto-attaches raw headlines to the sidebar's `news` list,
-  but that's unclassified — the AI must still read and tag them for `context`.
-- **Default**: `twitter-reader` — X sentiment on the symbol.
+- **Always, check first**: `twitter-reader` — X is the fastest tape on breaking
+  news and sentiment; on an intraday horizon its lead time over aggregated feeds
+  is exactly the window that matters. Search the symbol, read the last few hours.
+- **Always**: `longbridge-news` on the symbol — official/aggregated headlines.
+  It lags X by minutes to hours, so treat it as confirmation and source-anchoring
+  for what X surfaced, not as the breaking-news feed; its item timestamps are
+  publish times, not event times. The chart server also auto-attaches raw
+  headlines to the sidebar's `news` list, but that's unclassified — the AI must
+  still read and tag them for `context`.
 - **On-demand** (judge by the day's tape, don't run every time): `trump-truth-monitor`
   (policy-sensitive days), `sec-edgar` (filing/insider leads), `gdelt` / `fred`
   (macro event days).
@@ -94,7 +99,20 @@ blow-off because the session's last bar can't be a confirmed pivot yet).
 
 ### Step 4 — Write the technical read
 
-Using the timeframe data + Step 3's numbers, decide:
+**First, classify the day from Step 2's pull (消息面权重定级):**
+
+- **催化日** — a live symbol-moving item exists today: earnings/guidance, policy
+  or tariff news touching the name, a major industry headline, or any story that
+  already visibly moved the price. News leads, technicals follow: technical
+  levels are demoted to "where does it land after the shock" rather than
+  direction; every scenario's probability must state how the news shifted it;
+  if the news points against the technical read, cap the technical-side scenario
+  at ≤40% or call `neutral`.
+- **平静日** — no such item. Technicals lead; news is confirmation only and must
+  not override a clean structure read.
+
+State which regime was applied in `conclusion.summary`. Then, using the
+timeframe data + Step 3's numbers, decide:
 
 1. **Direction + anchor** — `long` / `short` / `neutral`, anchored to a specific
    timeframe + time + price (never a bare directional call with no anchor).
@@ -186,6 +204,8 @@ the journal's narrative record.
 - ❌ Skipping the journal write
 - ❌ Contradicting a live `market-session-tracker` read for the same symbol without reconciling — this is a narrower, single-symbol lens, not an override
 - ❌ Writing a `context.news` item without a `source`
+- ❌ Skipping the 催化日/平静日 classification, or trading pure technical levels on a 催化日 without stating how the news shifted each scenario's probability
+- ❌ Calling a day 平静 from `longbridge-news` alone without having checked X — longbridge lags; "no headline yet" there doesn't mean no news
 - ❌ A `conclusion.action` that contradicts the prediction's direction without explaining why
 - ❌ Pulling every on-demand source (`trump-truth-monitor` / `sec-edgar` / `gdelt` / `fred`) on every run — tiering exists to keep runs fast; judge by the day's tape
 
@@ -194,8 +214,8 @@ the journal's narrative record.
 - `chart` — renders type `intraday`; this skill is chart's primary caller for that type
 - `longbridge-kline` — same data the chart server pulls; call directly only for in-chat analysis
 - `longbridge-capital-flow` — optional grounding context (distribution check)
-- `longbridge-news` — always-tier grounding context (same-day catalyst check)
-- `twitter-reader` — default-tier grounding context (X sentiment on the symbol)
+- `twitter-reader` — always-tier, checked first (fastest tape on breaking news/sentiment)
+- `longbridge-news` — always-tier grounding context (lagging official headlines; confirmation + source anchor)
 - `trump-truth-monitor` — on-demand grounding context (policy-sensitive days)
 - `sec-edgar` — on-demand grounding context (filing/insider leads)
 - `gdelt` / `fred` — on-demand grounding context (macro event days)
