@@ -60,7 +60,7 @@ function SymbolCard({ row }: { row: OverviewRow }) {
           </span>
         )}
         {row.prediction_stale && <Dot tone="accent" title="预测已过期" />}
-        {row.alert_count > 0 && <span className="unread-badge">{row.alert_count}</span>}
+        {row.alert_count > 0 && <Badge tone="down" className="unread-badge">{row.alert_count}</Badge>}
       </div>
       <div className="symbol-card-levels">
         <span>止损 {pctCell(row.stop_distance_pct)}</span>
