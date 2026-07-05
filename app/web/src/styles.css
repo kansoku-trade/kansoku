@@ -175,14 +175,6 @@ a:hover { color: var(--accent); }
 .qc-price, .qc-pct { font-variant-numeric: tabular-nums; }
 .qc-price.up, .qc-pct.up { color: var(--up); }
 .qc-price.down, .qc-pct.down { color: var(--down); }
-.degraded-dot {
-  width: 8px; height: 8px; border-radius: 50%; background: var(--accent);
-  flex-shrink: 0; animation: pulse 1.5s infinite;
-}
-@keyframes pulse { 50% { opacity: 0.3; } }
-@media (prefers-reduced-motion: reduce) {
-  .degraded-dot { animation: none; }
-}
 .topbar-actions {
   margin-left: auto; display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0;
 }

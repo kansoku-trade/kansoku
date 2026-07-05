@@ -176,7 +176,7 @@ export function SymbolCockpit({ sym }: { sym: string }) {
         </a>
         <span className="title">{doc.title}</span>
         <span className="meta">{sym}</span>
-        {degraded && <span className="degraded-dot" title="数据延迟：行情拉取失败，正在重试" />}
+        {degraded && <Dot tone="accent" pulse title="数据延迟：行情拉取失败，正在重试" />}
         <span className="topbar-actions">
           {latestAlert && (
             <button
