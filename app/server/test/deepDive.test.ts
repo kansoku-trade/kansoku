@@ -165,6 +165,22 @@ describe("deep-dive tools", () => {
     expect(others).toEqual(["MRVL.md"]);
   });
 
+  it("write_note honors the stocksDir override instead of repoRoot/stocks", async () => {
+    const altDir = join(repoRoot, "alt-stocks");
+    const { deps } = harness(async (tools) => {
+      await tool(tools, "write_note").execute("c1", { content: "override note" });
+    });
+    deps.stocksDir = altDir;
+
+    startDeepDive("MU", deps);
+    await vi.waitFor(() => expect(deepDiveState().running).toBe(false));
+
+    const written = await fs.readFile(join(altDir, "MU.md"), "utf8");
+    expect(written).toBe("override note");
+    const real = await fs.readdir(join(repoRoot, "stocks"));
+    expect(real).toEqual([]);
+  });
+
   it("bash tool rejects redirection / rm / mv / cp / tee commands", async () => {
     const rejected: string[] = [];
     const { deps } = harness(async (tools) => {

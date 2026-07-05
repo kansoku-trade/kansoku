@@ -54,8 +54,9 @@ const bashSchema = Type.Object({ command: Type.String() });
 const readFileSchema = Type.Object({ path: Type.String() });
 const writeNoteSchema = Type.Object({ content: Type.String() });
 
-export function buildTools(repoRoot: string, symbol: string, exec: ExecFn): AgentTool[] {
+export function buildTools(repoRoot: string, symbol: string, exec: ExecFn, stocksDir?: string): AgentTool[] {
   const skillIndex = loadSkillIndex([join(repoRoot, ".claude", "skills")]);
+  const notesDir = stocksDir ?? join(repoRoot, "stocks");
 
   const readSkillTool: AgentTool<typeof readSkillSchema> = {
     name: "read_skill",
@@ -113,8 +114,8 @@ export function buildTools(repoRoot: string, symbol: string, exec: ExecFn): Agen
     execute: async (_id, params) => {
       const content = params.content;
       if (!content.trim()) return textResult("rejected: content is empty");
-      const path = join(repoRoot, "stocks", `${symbol}.md`);
-      await fs.mkdir(join(repoRoot, "stocks"), { recursive: true });
+      const path = join(notesDir, `${symbol}.md`);
+      await fs.mkdir(notesDir, { recursive: true });
       await fs.writeFile(path, content, "utf8");
       return textResult(`written to stocks/${symbol}.md`);
     },

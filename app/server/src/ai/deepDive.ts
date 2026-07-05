@@ -38,6 +38,7 @@ export interface DeepDiveDeps {
   agentFactory?: DeepDiveAgentFactory;
   notify?: (title: string, message: string) => void;
   repoRoot?: string;
+  stocksDir?: string;
   exec?: ExecFn;
   timeoutMs?: number;
   now?: () => number;
@@ -82,7 +83,7 @@ function unexpectedDirty(before: string, after: string, symbol: string): boolean
   return afterLines.some((line) => !beforeLines.has(line) && !line.includes(noteLine));
 }
 
-const defaultAgentFactory: DeepDiveAgentFactory = (config) =>
+export const defaultAgentFactory: DeepDiveAgentFactory = (config) =>
   new Agent({
     initialState: {
       systemPrompt: config.systemPrompt,
@@ -129,7 +130,7 @@ async function executeDeepDiveRun(symbol: string, deps: DeepDiveDeps): Promise<v
 
   try {
     if (!deps.model) throw new Error("model not resolved");
-    const tools = buildTools(repoRoot, symbol, exec);
+    const tools = buildTools(repoRoot, symbol, exec, deps.stocksDir);
     const systemPrompt = buildSystemPrompt(repoRoot);
     const agent = factory({ systemPrompt, model: deps.model, tools });
     attachAiUsageLogger(agent, { layer: "analyst", symbol, model: deps.model, origin: "deep-dive" });
