@@ -1,6 +1,8 @@
+import { promises as fs } from "node:fs";
+import { join } from "node:path";
 import type { FastifyPluginAsync } from "fastify";
 import type { ChartDoc, IntradayPrediction, RawBar, SymbolAnalysisRow } from "../../../shared/types.js";
-import { BASE_URL } from "../env.js";
+import { BASE_URL, STOCKS_DIR } from "../env.js";
 import { ClientError } from "../errors.js";
 import { toTs } from "../services/indicators.js";
 import { buildBenchmark } from "../services/cockpit/benchmark.js";
@@ -21,7 +23,16 @@ import { normalizeQuote } from "../realtime/quotes.js";
 
 const SYMBOL_RE = /^[A-Z0-9.]+$/;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const NOTE_NAME_RE = /^[A-Z0-9._-]+$/;
 const BENCHMARK_SYMBOLS = ["SMH.US", "QQQ.US"];
+
+function noteFileName(raw: string): string {
+  const name = raw.trim().replace(/\.US$/i, "").toUpperCase();
+  if (!NOTE_NAME_RE.test(name) || name.includes("..")) {
+    throw new ClientError(`invalid symbol: ${raw}`, "expected a plain ticker like MU or MU.US");
+  }
+  return name;
+}
 
 export function normalizeSymbol(raw: string): string {
   let sym = raw.trim().toUpperCase();
@@ -143,6 +154,18 @@ export const symbolsRoute: FastifyPluginAsync = async (app) => {
     const result = runAnalyst({ symbol: sym, origin: "manual", deps: { model } });
     void result.done?.catch(() => {});
     return { ok: true, data: { started: result.started, ...(result.reason ? { reason: result.reason } : {}) } };
+  });
+
+  app.get<{ Params: Params }>("/:sym/note", async (req) => {
+    const name = noteFileName(req.params.sym);
+    const path = join(STOCKS_DIR, `${name}.md`);
+    try {
+      const [markdown, stat] = await Promise.all([fs.readFile(path, "utf8"), fs.stat(path)]);
+      return { markdown, mtime: stat.mtime.toISOString() };
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code === "ENOENT") return { markdown: null };
+      throw err;
+    }
   });
 
   app.get<{ Params: Params }>("/:sym/latest", async (req) => {
