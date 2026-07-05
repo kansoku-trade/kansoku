@@ -7,6 +7,7 @@ const OPTIONAL_METHODS: Record<Capability, keyof MarketDataProvider> = {
   "capital-distribution": "getCapitalDistribution",
   positions: "getPositions",
   watchlist: "getWatchlistSymbols",
+  portfolio: "getPortfolio",
 };
 
 describe("marketdata registry", () => {

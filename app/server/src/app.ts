@@ -5,6 +5,7 @@ import { ClientError } from "./errors.js";
 import { CHART_DATA_DIR, LEGACY_CHARTS_DIR, PORT } from "./env.js";
 import { chartsRoute } from "./routes/charts.js";
 import { overviewRoute } from "./routes/overview.js";
+import { positionsRoute } from "./routes/positions.js";
 import { streamsRoute } from "./routes/streams.js";
 import { symbolsRoute } from "./routes/symbols.js";
 
@@ -41,6 +42,7 @@ export async function createApp(): Promise<FastifyInstance> {
   await app.register(streamsRoute, { prefix: "/api/stream" });
   await app.register(symbolsRoute, { prefix: "/api/symbols" });
   await app.register(overviewRoute, { prefix: "/api/overview" });
+  await app.register(positionsRoute, { prefix: "/api/positions" });
 
   app.get("/api/legacy", async () => {
     let files: string[] = [];

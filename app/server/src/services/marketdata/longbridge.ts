@@ -2,7 +2,7 @@ import { execFile } from "node:child_process";
 import type { NewsItem, RawBar } from "../../../../shared/types.js";
 import { ClientError } from "../../errors.js";
 import type { FlowRow } from "../simple.js";
-import type { MarketDataProvider, RawCapitalDistribution, RawPosition, RawQuote } from "./types.js";
+import type { MarketDataProvider, RawCapitalDistribution, RawPortfolio, RawPosition, RawQuote } from "./types.js";
 
 const FAILURE_COOLDOWN_MS = 120_000;
 
@@ -103,7 +103,7 @@ interface WatchlistGroup {
 
 export const longbridgeProvider: MarketDataProvider = {
   name: "longbridge",
-  capabilities: new Set(["flow", "capital-distribution", "positions", "watchlist"]),
+  capabilities: new Set(["flow", "capital-distribution", "positions", "watchlist", "portfolio"]),
 
   getKline(symbol: string, period: string, count: number, session?: string): Promise<RawBar[]> {
     const args = ["kline", symbol, "--period", period, "--count", String(count)];
@@ -139,6 +139,10 @@ export const longbridgeProvider: MarketDataProvider = {
 
   getPositions(): Promise<RawPosition[]> {
     return longbridgeJson<RawPosition[]>(["positions"]);
+  },
+
+  getPortfolio(): Promise<RawPortfolio> {
+    return longbridgeJson<RawPortfolio>(["portfolio"]);
   },
 
   async getWatchlistSymbols(): Promise<string[]> {

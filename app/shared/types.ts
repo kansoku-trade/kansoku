@@ -637,7 +637,44 @@ export interface OverviewRow {
 
 export interface OverviewBoard {
   date: string;
+  session: SessionKind;
   rows: OverviewRow[];
+}
+
+export interface PortfolioPositionRow {
+  symbol: string;
+  name: string;
+  quantity: number;
+  cost_price: number;
+  last: number;
+  market_value: number;
+  pnl: number;
+  pnl_pct: number;
+}
+
+export interface PortfolioSummary {
+  currency: string;
+  total_asset: number;
+  market_cap: number;
+  cash: number;
+  total_pl: number;
+  today_pl: number;
+  positions: PortfolioPositionRow[];
+}
+
+export interface RecapSettlementRow {
+  symbol: string;
+  chart_id: string;
+  direction: "long" | "short" | "neutral" | null;
+  day_pct: number | null;
+  outcome: AnalysisOutcome | null;
+}
+
+export interface OverviewRecap {
+  date: string;
+  settlements: RecapSettlementRow[];
+  alerts: { ts: string; symbol: string; level: CommentLevel; text: string }[];
+  usage: AiUsageSummary;
 }
 
 export type CommentLevel = "info" | "warn" | "alert" | "error";

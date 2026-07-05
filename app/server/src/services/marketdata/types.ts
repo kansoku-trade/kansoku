@@ -34,7 +34,30 @@ export interface RawPosition {
   symbol: string;
 }
 
-export type Capability = "flow" | "capital-distribution" | "positions" | "watchlist";
+export interface RawPortfolioHolding {
+  symbol: string;
+  name: string;
+  currency: string;
+  quantity: string;
+  cost_price: string;
+  market_price: string;
+  market_value: string;
+  prev_close: string;
+}
+
+export interface RawPortfolio {
+  overview: {
+    total_asset: string;
+    market_cap: string;
+    total_cash: string;
+    total_pl: string;
+    total_today_pl: string;
+    currency: string;
+  };
+  holdings: RawPortfolioHolding[];
+}
+
+export type Capability = "flow" | "capital-distribution" | "positions" | "watchlist" | "portfolio";
 
 export interface MarketDataProvider {
   readonly name: string;
@@ -45,5 +68,6 @@ export interface MarketDataProvider {
   getFlow?(symbol: string): Promise<FlowRow[]>;
   getCapitalDistribution?(symbol: string): Promise<RawCapitalDistribution>;
   getPositions?(): Promise<RawPosition[]>;
+  getPortfolio?(): Promise<RawPortfolio>;
   getWatchlistSymbols?(): Promise<string[]>;
 }
