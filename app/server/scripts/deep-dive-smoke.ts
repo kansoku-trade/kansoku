@@ -27,7 +27,7 @@ function fail(message: string): never {
 }
 
 function usage(): never {
-  fail("usage: tsx scripts/deep-dive-smoke.ts <SYMBOL> [--full]");
+  fail("usage: vite-node scripts/deep-dive-smoke.ts <SYMBOL> [--full]");
 }
 
 async function runDefaultMode(symbol: string): Promise<void> {
