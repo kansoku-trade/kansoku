@@ -16,6 +16,7 @@ import type { RawPosition } from "../services/marketdata/types.js";
 import { classifySession, easternDate } from "../services/session.js";
 import { listComments } from "../ai/comments.js";
 import { runAnalyst } from "../ai/analyst.js";
+import { deepDiveState, startDeepDive } from "../ai/deepDive.js";
 import { aiConfig } from "../ai/models.js";
 import { predictionStale } from "../services/staleness.js";
 import { listCharts, loadChart } from "../services/store.js";
@@ -167,6 +168,18 @@ export const symbolsRoute: FastifyPluginAsync = async (app) => {
       throw err;
     }
   });
+
+  app.post<{ Params: Params }>("/:sym/deep-dive", async (req, reply) => {
+    const name = noteFileName(req.params.sym);
+    const result = startDeepDive(name);
+    if (result.started) return reply.status(202).send({ ok: true });
+    if (result.reason === "busy") {
+      throw new ClientError(`deep dive already running`, "wait for the current run to finish", 409);
+    }
+    throw new ClientError(`deep dive disabled`, "set AI_DEEPDIVE_MODEL to a valid provider/id", 503);
+  });
+
+  app.get<{ Params: Params }>("/:sym/deep-dive/status", async () => deepDiveState());
 
   app.get<{ Params: Params }>("/:sym/latest", async (req) => {
     const sym = normalizeSymbol(req.params.sym);
