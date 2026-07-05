@@ -19,6 +19,7 @@ import {
   type MarkerTooltipHandle,
 } from "../lw";
 import type { IndicatorToggleKey } from "./useIndicatorToggles";
+import { FvgPrimitive } from "./fvgPrimitive";
 import { seriesPalette, theme } from "../../theme";
 
 export const EMA_COLORS = [theme.accent, theme.textPrimary, theme.textSecondary, theme.up, theme.down] as const;
@@ -38,6 +39,7 @@ interface Handle {
   macdTip: MarkerTooltipHandle;
   dynamic: { chart: IChartApi; series: ISeriesApi<"Line"> }[];
   planLines: ReturnType<typeof addPriceLine>[];
+  fvg: FvgPrimitive;
 }
 
 const sessionBackdrop = (chart: IChartApi, scaleId: string): ISeriesApi<"Histogram"> => {
@@ -104,6 +106,9 @@ export function useIntradayCharts(
     main.priceScale("vol").applyOptions({ scaleMargins: { top: 0.75, bottom: 0 } });
     main.priceScale("right").applyOptions({ scaleMargins: { top: 0.08, bottom: 0.3 } });
 
+    const fvg = new FvgPrimitive();
+    candle.attachPrimitive(fvg);
+
     const emaCount = builtRef.current.timeframes.m5?.emas?.length ?? 0;
     const emaSeries = Array.from({ length: emaCount }, (_, i) =>
       main.addLineSeries({
@@ -131,7 +136,7 @@ export function useIntradayCharts(
     };
     main.timeScale().subscribeVisibleLogicalRangeChange(onRangeChange);
 
-    handleRef.current = { main, macd, candle, vol, session, macdSession, emaSeries, hist, dif, dea, mainTip, macdTip, dynamic: [], planLines: [] };
+    handleRef.current = { main, macd, candle, vol, session, macdSession, emaSeries, hist, dif, dea, mainTip, macdTip, dynamic: [], planLines: [], fvg };
     lastTfRef.current = null;
     firstTimeRef.current = null;
 
@@ -177,6 +182,7 @@ export function useIntradayCharts(
       const emaLine = d.emas[i];
       s.setData(toggles.ema && emaLine ? padLineData(emaLine.data, timeline) : []);
     });
+    h.fvg.setData(toggles.fvg ? (d.fvgZones ?? []) : []);
     const markers = filterByGroup(d.markers, toggles);
     h.candle.setMarkers(toMarkers(markers));
     h.mainTip.setMarkers(markers);

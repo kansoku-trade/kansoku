@@ -221,6 +221,14 @@ export interface IntradayTfData {
   autoBeichi: DivergencePair[];
   pattern123?: Pattern123[];
   offSession?: OffSessionBar[];
+  fvgZones?: IntradayFvgZone[];
+}
+
+export interface IntradayFvgZone {
+  startTime: number;
+  low: number;
+  high: number;
+  kind: "bullish" | "bearish";
 }
 
 export interface SwingPoint {

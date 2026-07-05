@@ -9,6 +9,7 @@ import {
   type IntradayBuilt,
   type IntradayContext,
   type IntradayEntryPlan,
+  type IntradayFvgZone,
   type IntradayPriceZone,
   type IntradayPrediction,
   type IntradayTargetContext,
@@ -25,6 +26,7 @@ import {
 import { formatMarketMonthDayTime } from "../../../shared/time.js";
 import { ClientError } from "../errors.js";
 import { CANDLE_PATTERN_META, detectCandlePatterns } from "./candlePatterns.js";
+import { detectFvgZones } from "./fvg.js";
 import { ema, findSwings, lineData, macd, pyRound, sma, toTs } from "./indicators.js";
 import { classifyMacdStructure, MACD_STRUCTURE_META, ZERO_TANGLE_NOTE, type MacdStructure } from "./macdStructure.js";
 import { detect123Patterns } from "./pattern123.js";
@@ -174,6 +176,7 @@ export interface CoercedTimeframe {
   autoDivergence: DivergencePair[];
   autoBeichi: DivergencePair[];
   pattern123: Pattern123[];
+  fvgZones: IntradayFvgZone[];
   lastClose: number;
   summary: IntradayTfSummary;
 }
@@ -259,6 +262,7 @@ export function coerceIntradayTimeframe(bars: RawBar[], key: string, emaPeriods 
     autoDivergence: autoDivergence.slice(-2),
     autoBeichi: autoBeichi.slice(-2),
     pattern123,
+    fvgZones: detectFvgZones(candles),
     lastClose: closes[closes.length - 1],
     summary: {
       last_dif: lastNonNull(dif),
@@ -696,6 +700,7 @@ export function buildIntraday(input: IntradayInput): { built: IntradayBuilt; met
       autoDivergence: tf.autoDivergence,
       autoBeichi: tf.autoBeichi,
       pattern123: tf.pattern123,
+      fvgZones: tf.fvgZones,
       offSession: offSessionBars(tf.candles.map((c) => c.time)),
     };
   }

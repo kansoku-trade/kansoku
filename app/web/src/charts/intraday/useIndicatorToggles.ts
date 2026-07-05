@@ -8,6 +8,7 @@ export type IndicatorToggleKey =
   | "candle"
   | "ai"
   | "levels"
+  | "fvg"
   | "ema";
 
 export const INDICATOR_TOGGLE_LABELS: Record<IndicatorToggleKey, string> = {
@@ -18,6 +19,7 @@ export const INDICATOR_TOGGLE_LABELS: Record<IndicatorToggleKey, string> = {
   candle: "K线形态",
   ai: "AI 标注",
   levels: "价位线",
+  fvg: "FVG 缺口",
   ema: "EMA 均线",
 };
 
