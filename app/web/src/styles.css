@@ -1,14 +1,149 @@
+:root {
+  --bg-canvas: #0a0a0a;
+  --bg-surface: #141414;
+  --bg-element: #1e1e1e;
+  --bg-hover: #262626;
+  --border: #262626;
+  --border-strong: #3a3a3a;
+  --text-primary: #e8e8e8;
+  --text-secondary: #9a9a9a;
+  --text-muted: #5c5c5c;
+  --accent: #ffb000;
+  --up: #26a69a;
+  --down: #ef5350;
+  --font-ui: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --fs-xs: 10px;
+  --fs-sm: 11px;
+  --fs-base: 12px;
+  --fs-md: 13px;
+  --fs-lg: 15px;
+  --fs-xl: 20px;
+  --radius: 2px;
+}
+
+.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+}
+.card--link { cursor: pointer; text-decoration: none; }
+.card--link:hover { background: var(--bg-hover); border-color: var(--border-strong); }
+
+.badge {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: var(--bg-element);
+  color: var(--text-secondary);
+  border-radius: var(--radius);
+  padding: 1px 6px;
+  display: inline-block;
+}
+.badge--up { color: var(--up); }
+.badge--down { color: var(--down); }
+.badge--accent { color: var(--accent); }
+.badge--solid { background: var(--down); color: var(--bg-canvas); }
+
+.btn {
+  background: var(--bg-element);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-size: var(--fs-base);
+  padding: 5px 14px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.btn:hover:not([disabled]) { border-color: var(--accent); }
+.btn--accent { color: var(--accent); border-color: var(--accent); }
+.btn--busy { color: var(--text-secondary); cursor: wait; }
+.btn--done { color: var(--up); border-color: var(--up); }
+.btn--failed { color: var(--accent); }
+.btn[disabled] { color: var(--text-muted); cursor: default; }
+
+.chip {
+  font-size: var(--fs-base);
+  padding: 3px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  cursor: pointer;
+  user-select: none;
+  background: transparent;
+  display: inline-block;
+  text-decoration: none;
+}
+.chip:hover { border-color: var(--accent); color: var(--accent); }
+.chip.active { color: var(--accent); border-color: var(--accent); }
+
+.input {
+  background: var(--bg-element);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-size: var(--fs-base);
+  padding: 5px 10px;
+}
+.input:focus { outline: none; border-color: var(--accent); }
+
+.dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-secondary);
+  flex-shrink: 0;
+}
+.dot--accent { background: var(--accent); }
+.dot--up { background: var(--up); }
+.dot--down { background: var(--down); }
+.dot--pulse { animation: dot-pulse 1.5s infinite; }
+@keyframes dot-pulse { 50% { opacity: 0.3; } }
+@media (prefers-reduced-motion: reduce) {
+  .dot--pulse { animation: none; }
+}
+
+.section-title {
+  font-size: var(--fs-sm);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.spinner {
+  border: 2px solid var(--border-strong);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  width: 11px;
+  height: 11px;
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation: none; }
+}
+
 * { box-sizing: border-box; }
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Helvetica Neue", Arial, sans-serif;
-  background: #121212;
-  color: #d1d1d1;
+  font-family: var(--font-ui);
+  background: var(--bg-canvas);
+  color: var(--text-primary);
 }
 
-a { color: #58a6ff; text-decoration: none; }
-a:hover { text-decoration: underline; }
+a { text-decoration: none; }
+a:hover { color: var(--accent); }
+
+:focus-visible { outline: 1px solid var(--accent); outline-offset: 1px; }
 
 .page { max-width: 900px; margin: 0 auto; padding: 24px 20px 60px; }
 .page h1 { font-size: 20px; font-weight: 600; color: #f6f6f6; margin: 0 0 4px; }
