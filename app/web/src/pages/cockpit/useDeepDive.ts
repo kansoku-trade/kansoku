@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ApiError, api, errorMessage, isAbortError } from "../../api";
+import { ApiError, errorMessage, isAbortError } from "../../api";
+
+export const bareSymbol = (value: string) => value.toUpperCase().replace(/\.US$/, "");
+
+const isErrorBody = (value: unknown): value is { error: string; hint?: string } =>
+  typeof value === "object" && value !== null && typeof (value as { error?: unknown }).error === "string";
 
 export interface DeepDiveStatus {
   running: boolean;
@@ -67,7 +72,7 @@ export function useDeepDive(symbol: string, onNoteReady: () => void) {
         setRunningSymbol(null);
         setStartedAt(null);
         const result = status.lastResult;
-        if (result && result.symbol === symbol && result.finishedAt !== seenFinishedAtRef.current) {
+        if (result && bareSymbol(result.symbol) === bareSymbol(symbol) && result.finishedAt !== seenFinishedAtRef.current) {
           seenFinishedAtRef.current = result.finishedAt;
           if (result.ok) {
             setSuccessNote(result.dirtyWarning ? "分析完成 ⚠️ 检测到笔记之外的改动" : "分析完成");
@@ -94,7 +99,15 @@ export function useDeepDive(symbol: string, onNoteReady: () => void) {
     setSuccessNote(null);
     setPending(true);
     try {
-      await api<{ ok: true }>(`/api/symbols/${encodeURIComponent(symbol)}/deep-dive`, { method: "POST" });
+      const res = await fetch(`/api/symbols/${encodeURIComponent(symbol)}/deep-dive`, { method: "POST" });
+      if (!res.ok) {
+        let message = `HTTP ${res.status}`;
+        try {
+          const body: unknown = await res.json();
+          if (isErrorBody(body)) message = body.hint ? `${body.error} (${body.hint})` : body.error;
+        } catch {}
+        throw new ApiError(message, res.status);
+      }
       setRunning(true);
       setRunningSymbol(symbol);
       setStartedAt(new Date().toISOString());

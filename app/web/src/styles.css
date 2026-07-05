@@ -563,6 +563,7 @@ a.zone-item:hover { text-decoration: none; background: var(--bg-hover); }
   margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--border);
 }
 .note-tab-header--center { justify-content: center; border-bottom: none; }
+.note-tab-header .btn { white-space: nowrap; flex-shrink: 0; }
 .note-tab-mtime { font-size: var(--fs-sm); color: var(--text-secondary); }
 
 .note-md {

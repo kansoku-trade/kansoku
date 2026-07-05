@@ -3,7 +3,7 @@ import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { formatMarketDateTime } from "../../../../shared/time";
 import { Button, Empty, ErrorBox, Spinner } from "../../ui";
-import { useDeepDive } from "./useDeepDive";
+import { bareSymbol, useDeepDive } from "./useDeepDive";
 import { useNote } from "./useNote";
 
 const MARKDOWN_COMPONENTS: Components = {
@@ -43,7 +43,8 @@ export function NoteTab({ symbol }: { symbol: string }) {
 
   if (error) return <ErrorBox>{error}</ErrorBox>;
 
-  const runningElsewhere = deepDive.running && deepDive.runningSymbol && deepDive.runningSymbol !== symbol;
+  const runningElsewhere =
+    deepDive.running && deepDive.runningSymbol && bareSymbol(deepDive.runningSymbol) !== bareSymbol(symbol);
 
   const buttonLabel = deepDive.running
     ? runningElsewhere
