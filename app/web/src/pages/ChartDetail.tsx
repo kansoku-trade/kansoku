@@ -1,18 +1,24 @@
+import { useEffect } from "react";
 import { SimpleChartView } from "../charts/simple/SimpleChartView";
 import { IntradayDashboard, IntradayTimeframeSwitch } from "../charts/intraday/IntradayDashboard";
 import { resolveIntradayTf, useIntradayDoc } from "../charts/intraday/useIntradayDoc";
 import { SepaDashboard } from "../charts/sepa/SepaDashboard";
 import { TopbarQuote } from "../QuoteBar";
+import { recordRecentChart } from "../recentCharts";
 
 export function ChartDetail({ id }: { id: string }) {
   const { doc, error, degraded, live, intradayTf, setIntradayTf, loadHistory } = useIntradayDoc(id);
+
+  useEffect(() => {
+    if (doc) recordRecentChart({ id: doc.id, title: doc.title, type: doc.type });
+  }, [doc?.id]);
 
   if (error) {
     return (
       <div className="page">
         <div className="error-box">{error}</div>
         <p>
-          <a href="#/">← 返回列表</a>
+          <a href="#/charts">← 返回列表</a>
         </p>
       </div>
     );
@@ -24,7 +30,7 @@ export function ChartDetail({ id }: { id: string }) {
   return (
     <div className="fullpage">
       <div className="detail-topbar">
-        <a href="#/">← 列表</a>
+        <a href="#/charts">← 列表</a>
         <span className="title">{doc.title}</span>
         <span className="meta">
           {doc.id} · 更新 {doc.updated_at.slice(0, 16).replace("T", " ")}

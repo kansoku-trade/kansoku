@@ -1,14 +1,23 @@
+import { useEffect } from "react";
 import { ChartDetail } from "./pages/ChartDetail";
 import { ChartList } from "./pages/ChartList";
-import { Overview } from "./pages/Overview";
+import { Home } from "./pages/Home";
 import { SymbolCockpit } from "./pages/SymbolCockpit";
-import { useHashRoute } from "./router";
+import { navigate, useHashRoute } from "./router";
+
+function RedirectHome() {
+  useEffect(() => navigate("/"), []);
+  return null;
+}
 
 export function App() {
   const route = useHashRoute();
 
   if (route === "/overview") {
-    return <Overview />;
+    return <RedirectHome />;
+  }
+  if (route === "/charts") {
+    return <ChartList />;
   }
   const chartMatch = route.match(/^\/charts\/(.+)$/);
   if (chartMatch) {
@@ -18,5 +27,5 @@ export function App() {
   if (symbolMatch) {
     return <SymbolCockpit sym={decodeURIComponent(symbolMatch[1])} />;
   }
-  return <ChartList />;
+  return <Home />;
 }
