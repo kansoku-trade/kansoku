@@ -1,11 +1,12 @@
 import { promises as fs } from "node:fs";
 import { join } from "node:path";
 import { desc, eq, sql } from "drizzle-orm";
-import type { ChartDoc, ChartMeta } from "../../../shared/types.js";
+import { CURRENT_SCHEMA_VERSION, type ChartDoc, type ChartMeta } from "../../../shared/types.js";
 import { getDb, type Db } from "../db/index.js";
 import { chartMeta, outcomes } from "../db/schema.js";
 import { CHART_DATA_DIR } from "../env.js";
-import { migrateLegacyDoc } from "./build.js";
+import { publishAnalysisCreated } from "../realtime/analyses.js";
+import { migrateLegacyDoc, type BuildResult } from "./build.js";
 
 function toMeta(doc: ChartDoc): ChartMeta {
   return {
@@ -123,6 +124,25 @@ export async function saveChart(doc: ChartDoc, db: Db = getDb()): Promise<void> 
   await fs.writeFile(docPath(doc.id), JSON.stringify(doc));
   const row = metaToRow(toMeta(doc));
   await db.insert(chartMeta).values(row).onConflictDoUpdate({ target: chartMeta.id, set: row });
+}
+
+export async function createChart(result: BuildResult, db: Db = getDb()): Promise<ChartDoc> {
+  const id = await allocateId(result.sessionDate, result.slug);
+  const now = new Date().toISOString();
+  const doc: ChartDoc = {
+    id,
+    schema_version: CURRENT_SCHEMA_VERSION,
+    type: result.type,
+    title: result.title,
+    symbol: result.symbol,
+    created_at: now,
+    updated_at: now,
+    input: result.input,
+    built: result.built,
+  };
+  await saveChart(doc, db);
+  if (doc.symbol) publishAnalysisCreated({ symbol: doc.symbol, chartId: doc.id });
+  return doc;
 }
 
 export async function deleteChart(id: string, db: Db = getDb()): Promise<boolean> {

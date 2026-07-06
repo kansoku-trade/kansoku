@@ -27,6 +27,16 @@ describe("parseWsMessage", () => {
     });
   });
 
+  it("parses an analyses sub", () => {
+    expect(parseWsMessage({ op: "sub", key: "k4", kind: "analyses", symbol: "mu" })).toEqual({
+      op: "sub",
+      key: "k4",
+      kind: "analyses",
+      symbol: "mu",
+    });
+    expect(parseWsMessage({ op: "sub", key: "k", kind: "analyses" })).toBeNull();
+  });
+
   it("parses unsub", () => {
     expect(parseWsMessage({ op: "unsub", key: "k1" })).toEqual({ op: "unsub", key: "k1" });
   });

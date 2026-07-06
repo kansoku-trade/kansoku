@@ -7,6 +7,7 @@ const store = vi.hoisted(() => ({
   loadChart: vi.fn(),
   saveChart: vi.fn(),
   allocateId: vi.fn(),
+  createChart: vi.fn(),
   deleteChart: vi.fn(),
 }));
 
@@ -78,6 +79,7 @@ beforeEach(() => {
   store.listCharts.mockReset();
   store.loadChart.mockReset();
   store.saveChart.mockReset();
+  store.createChart.mockReset();
   build.mergeForPatch.mockClear();
   build.rebuild.mockReset();
   build.refreshBody.mockReset().mockReturnValue(null);
@@ -169,10 +171,9 @@ describe("PATCH /:id prediction_updated_at", () => {
   });
 });
 
-describe("POST / schema_version", () => {
-  it("assigns CURRENT_SCHEMA_VERSION (2) to newly created docs", async () => {
-    store.allocateId.mockResolvedValue("2026-07-05-nvda-intraday");
-    build.buildChart.mockResolvedValue({
+describe("POST /", () => {
+  it("hands the build result to store.createChart and returns the persisted doc", async () => {
+    const buildResult = {
       type: "intraday",
       title: "NVDA 短线多周期",
       slug: "nvda-intraday",
@@ -181,7 +182,9 @@ describe("POST / schema_version", () => {
       input: { symbol: "NVDA.US", context: { generated_at: "2026-07-05T14:00:00.000Z" } },
       built: { kind: "intraday" },
       meta: {},
-    });
+    };
+    build.buildChart.mockResolvedValue(buildResult);
+    store.createChart.mockResolvedValue(makeDoc({ id: "2026-07-05-nvda-intraday", schema_version: 2 }));
 
     const app = await testApp();
     const res = await app.inject({
@@ -190,8 +193,8 @@ describe("POST / schema_version", () => {
       payload: { type: "intraday", symbol: "NVDA.US" },
     });
     expect(res.statusCode).toBe(200);
-    const saved = store.saveChart.mock.calls[0][0] as ChartDoc;
-    expect(saved.schema_version).toBe(2);
+    expect(store.createChart.mock.calls[0][0]).toEqual(buildResult);
+    expect(res.json().data.id).toBe("2026-07-05-nvda-intraday");
   });
 });
 

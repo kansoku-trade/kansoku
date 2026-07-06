@@ -1,18 +1,11 @@
 import { Agent, type AgentTool } from "@earendil-works/pi-agent-core";
 import { type Static, Type } from "typebox";
 import { Check } from "typebox/value";
-import {
-  CURRENT_SCHEMA_VERSION,
-  type ChartDoc,
-  type CockpitComment,
-  type CommentLevel,
-  type NewsItem,
-  type RawBar,
-} from "../../../shared/types.js";
+import { type CockpitComment, type CommentLevel, type NewsItem, type RawBar } from "../../../shared/types.js";
 import { BASE_URL } from "../env.js";
 import { buildChart } from "../services/build.js";
 import { getProvider } from "../services/marketdata/registry.js";
-import { allocateId, saveChart } from "../services/store.js";
+import { createChart } from "../services/store.js";
 import { appendComment as defaultAppendComment } from "./comments.js";
 import { buildReassessPack as defaultBuildReassessPack, type ReassessPack } from "./datapack.js";
 import type { AiModel } from "./models.js";
@@ -216,21 +209,8 @@ const defaultAgentFactory: AnalystAgentFactory = (config) =>
 
 async function defaultCreateChart(body: Record<string, unknown>): Promise<{ id: string; url: string }> {
   const result = await buildChart(body);
-  const id = await allocateId(result.sessionDate, result.slug);
-  const now = new Date().toISOString();
-  const doc: ChartDoc = {
-    id,
-    schema_version: CURRENT_SCHEMA_VERSION,
-    type: result.type,
-    title: result.title,
-    symbol: result.symbol,
-    created_at: now,
-    updated_at: now,
-    input: result.input,
-    built: result.built,
-  };
-  await saveChart(doc);
-  return { id, url: `${BASE_URL}/charts/${encodeURIComponent(id)}` };
+  const doc = await createChart(result);
+  return { id: doc.id, url: `${BASE_URL}/charts/${encodeURIComponent(doc.id)}` };
 }
 
 interface RunState {

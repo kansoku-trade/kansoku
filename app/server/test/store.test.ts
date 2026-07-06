@@ -1,6 +1,7 @@
 import { promises as fs } from "node:fs";
 import { join } from "node:path";
 import { afterAll, describe, expect, it, vi } from "vitest";
+import type { BuildResult } from "../src/services/build.js";
 import type { ChartDoc } from "../../shared/types.js";
 
 const ctx = vi.hoisted(() => {
@@ -12,7 +13,24 @@ const ctx = vi.hoisted(() => {
 
 vi.mock("../src/env.js", () => ({ CHART_DATA_DIR: ctx.dir }));
 
-const { allocateId, listCharts, loadChart, saveChart, deleteChart } = await import("../src/services/store.js");
+const { allocateId, listCharts, loadChart, saveChart, createChart, deleteChart } = await import(
+  "../src/services/store.js"
+);
+const { subscribeAnalyses } = await import("../src/realtime/analyses.js");
+
+function buildResult(overrides: Partial<BuildResult> = {}): BuildResult {
+  return {
+    type: "intraday",
+    title: "MU 短线多周期",
+    slug: "mu-intraday",
+    symbol: "MU.US",
+    sessionDate: "2026-08-10",
+    input: {},
+    built: { kind: "intraday" } as unknown as ChartDoc["built"],
+    meta: {},
+    ...overrides,
+  };
+}
 
 function doc(id: string, overrides: Partial<ChartDoc> = {}): ChartDoc {
   return {
@@ -106,6 +124,29 @@ describe("chart store", () => {
       expect(await deleteChart("2026-08-06-orphan")).toBe(true);
       expect((await listCharts()).map((m) => m.id)).not.toContain("2026-08-06-orphan");
       expect(await deleteChart("2026-08-06-orphan")).toBe(false);
+    });
+  });
+
+  describe("createChart", () => {
+    it("allocates an id, persists the doc, and publishes analysis-created when symbol is set", async () => {
+      const received: unknown[] = [];
+      const unsub = subscribeAnalyses("MU.US", (envelope) => received.push(JSON.parse(envelope)));
+      const created = await createChart(buildResult({ sessionDate: "2026-08-10", slug: "mu-intraday" }));
+      unsub();
+
+      expect(created.id).toBe("2026-08-10-mu-intraday");
+      expect(created.schema_version).toBe(2);
+      expect(created.created_at).toBe(created.updated_at);
+      expect(await loadChart(created.id)).toMatchObject({ id: created.id, symbol: "MU.US" });
+      expect(received).toEqual([{ type: "analysis-created", symbol: "MU.US", chartId: created.id }]);
+    });
+
+    it("does not publish for symbol-less charts", async () => {
+      const received: unknown[] = [];
+      const unsub = subscribeAnalyses("MU.US", (envelope) => received.push(JSON.parse(envelope)));
+      await createChart(buildResult({ symbol: null, sessionDate: "2026-08-11", slug: "flow", type: "flow" }));
+      unsub();
+      expect(received).toEqual([]);
     });
   });
 });

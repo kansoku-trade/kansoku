@@ -1,11 +1,11 @@
 import type { FastifyPluginAsync } from "fastify";
-import { CURRENT_SCHEMA_VERSION, type ChartDoc } from "../../../shared/types.js";
+import type { ChartDoc } from "../../../shared/types.js";
 import { ClientError } from "../errors.js";
 import { BASE_URL } from "../env.js";
 import { ALL_TYPES, buildChart, mergeForPatch, rebuild, refreshBody } from "../services/build.js";
 import { clampViewCount } from "../services/history.js";
 import { predictionStale } from "../services/staleness.js";
-import { allocateId, deleteChart, listCharts, loadChart, saveChart } from "../services/store.js";
+import { createChart, deleteChart, listCharts, loadChart, saveChart } from "../services/store.js";
 
 function chartUrl(id: string): string {
   return `${BASE_URL}/charts/${encodeURIComponent(id)}`;
@@ -43,24 +43,11 @@ export const chartsRoute: FastifyPluginAsync = async (app) => {
   app.post("/", async (req) => {
     const body = jsonBody(req.body, 'e.g. {"type": "sepa", "symbol": "MRVL.US"}');
     const result = await buildChart(body);
-    const id = await allocateId(result.sessionDate, result.slug);
-    const now = new Date().toISOString();
-    const doc: ChartDoc = {
-      id,
-      schema_version: CURRENT_SCHEMA_VERSION,
-      type: result.type,
-      title: result.title,
-      symbol: result.symbol,
-      created_at: now,
-      updated_at: now,
-      input: result.input,
-      built: result.built,
-    };
-    await saveChart(doc);
+    const doc = await createChart(result);
     return {
       ok: true,
-      data: { id, url: chartUrl(id), type: result.type, title: result.title, symbol: result.symbol, ...result.meta },
-      meta: { chart_type: result.type },
+      data: { id: doc.id, url: chartUrl(doc.id), type: doc.type, title: doc.title, symbol: doc.symbol, ...result.meta },
+      meta: { chart_type: doc.type },
     };
   });
 

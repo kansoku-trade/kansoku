@@ -3,6 +3,7 @@ import type { FastifyPluginAsync } from "fastify";
 import type { WebSocket } from "ws";
 import type { CockpitComment } from "../../../shared/types.js";
 import { listComments, onComment } from "../ai/comments.js";
+import { subscribeAnalyses } from "../realtime/analyses.js";
 import { subscribeChart } from "../realtime/charts.js";
 import { subscribeQuotes } from "../realtime/quotes.js";
 import { clampViewCount } from "../services/history.js";
@@ -33,7 +34,7 @@ const PING_MS = 15_000;
 export interface WsSub {
   op: "sub";
   key: string;
-  kind: "quotes" | "chart" | "comments";
+  kind: "quotes" | "chart" | "comments" | "analyses";
   extra?: string[];
   id?: string;
   count?: number;
@@ -66,6 +67,10 @@ export function parseWsMessage(raw: unknown): WsClientMessage | null {
     if (typeof msg.symbol !== "string" || !msg.symbol) return null;
     return { op: "sub", key: msg.key, kind: "comments", symbol: msg.symbol };
   }
+  if (msg.kind === "analyses") {
+    if (typeof msg.symbol !== "string" || !msg.symbol) return null;
+    return { op: "sub", key: msg.key, kind: "analyses", symbol: msg.symbol };
+  }
   return null;
 }
 
@@ -75,7 +80,8 @@ async function attachChannel(msg: WsSub, push: (envelope: string) => void): Prom
     const count = clampViewCount(msg.count != null ? String(msg.count) : undefined) ?? undefined;
     return subscribeChart(msg.id as string, push, count);
   }
-  return attachComments(normalizeSymbol(msg.symbol as string), push);
+  if (msg.kind === "comments") return attachComments(normalizeSymbol(msg.symbol as string), push);
+  return subscribeAnalyses(normalizeSymbol(msg.symbol as string), push);
 }
 
 function handleSocket(socket: WebSocket): void {
