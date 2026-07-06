@@ -74,6 +74,12 @@ describe("chart store", () => {
     expect(await listCharts({ limit: 1 })).toHaveLength(1);
   });
 
+  it("filters by an array of types (OR semantics)", async () => {
+    const ids = (await listCharts({ type: ["sepa", "intraday"] })).map((m) => m.id);
+    expect(ids).toContain("2026-07-02-b");
+    expect(ids).toContain("2026-07-02-a");
+  });
+
   it("upserts on re-save instead of duplicating", async () => {
     await saveChart(doc("2026-07-02-a", { title: "updated", created_at: "2026-07-02T15:00:00.000Z" }));
     const metas = (await listCharts()).filter((m) => m.id === "2026-07-02-a");

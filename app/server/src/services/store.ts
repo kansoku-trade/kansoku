@@ -77,7 +77,7 @@ async function ensureIndex(db: Db): Promise<void> {
 }
 
 export interface ListFilter {
-  type?: string;
+  type?: string | string[];
   symbol?: string;
   limit?: number;
 }
@@ -86,7 +86,10 @@ export async function listCharts(filter: ListFilter = {}, db: Db = getDb()): Pro
   await ensureIndex(db);
   const rows = await db.select().from(chartMeta).orderBy(desc(chartMeta.createdAt));
   let metas = rows.map(rowToMeta);
-  if (filter.type) metas = metas.filter((m) => m.type === filter.type);
+  if (filter.type) {
+    const types = Array.isArray(filter.type) ? filter.type : [filter.type];
+    metas = metas.filter((m) => types.includes(m.type));
+  }
   if (filter.symbol) {
     const s = filter.symbol.toUpperCase();
     metas = metas.filter((m) => (m.symbol ?? "").toUpperCase().includes(s));

@@ -3,10 +3,10 @@ import { QuoteBar } from "../QuoteBar";
 import { Badge, ErrorBox, SectionTitle } from "../ui";
 import { useTitle } from "../useTitle";
 import { useIntervalFetch } from "./cockpit/useIntervalFetch";
+import { CrossSectionCharts } from "./home/CrossSectionCharts";
 import { PositionsCard } from "./home/PositionsCard";
 import { QuickBar } from "./home/QuickBar";
 import { RecapBoard } from "./home/RecapBoard";
-import { TodayCharts } from "./home/TodayCharts";
 import { WatchBoard } from "./home/WatchBoard";
 
 const SESSION_LABEL: Record<string, string> = { pre: "盘前", regular: "盘中", post: "盘后", overnight: "休市" };
@@ -36,7 +36,7 @@ export function Home() {
             <>
               <SectionTitle>看盘</SectionTitle>
               <WatchBoard board={board} error={boardError} compact={false} />
-              <TodayCharts date={board?.date ?? null} />
+              <CrossSectionCharts />
             </>
           ) : (
             <>
@@ -57,7 +57,7 @@ export function Home() {
               <WatchBoard board={board} error={boardError} compact />
               <SectionTitle>持仓</SectionTitle>
               <PositionsCard portfolio={portfolio} error={portfolioError} watching={watching} />
-              <TodayCharts date={board?.date ?? null} />
+              <CrossSectionCharts />
             </>
           )}
         </div>

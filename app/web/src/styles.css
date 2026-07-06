@@ -602,9 +602,11 @@ a.zone-item:hover { text-decoration: none; background: var(--bg-hover); }
 .recap-alert .ts { color: var(--text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .recap-alert .sym { color: var(--text-primary); font-weight: 600; white-space: nowrap; }
 
-.today-charts { margin-top: 20px; }
-.today-charts-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-.today-chart-item { display: flex; align-items: center; gap: 8px; font-size: var(--fs-base); padding: 6px 10px; }
+.cross-section-charts { margin-top: 20px; }
+.cross-section-switcher { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 12px; }
+.cross-section-list { display: flex; flex-direction: column; gap: 16px; }
+.cross-section-card-title { font-size: var(--fs-md); font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
+.cross-section-card-body { height: 340px; }
 
 .chartlist-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 4px 0 8px; }
 .chartlist-toolbar .toolbar-spacer { flex: 1; }

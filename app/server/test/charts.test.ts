@@ -339,6 +339,29 @@ describe("GET / list staleness exposure and filtering", () => {
   });
 });
 
+describe("GET / type filtering", () => {
+  it("splits a comma-separated ?type= into an array passed to listCharts", async () => {
+    store.listCharts.mockResolvedValue([]);
+    const app = await testApp();
+    await app.inject("/?type=flow,cohort");
+    expect(store.listCharts).toHaveBeenCalledWith(expect.objectContaining({ type: ["flow", "cohort"] }));
+  });
+
+  it("passes a single ?type= through as a one-element array", async () => {
+    store.listCharts.mockResolvedValue([]);
+    const app = await testApp();
+    await app.inject("/?type=sepa");
+    expect(store.listCharts).toHaveBeenCalledWith(expect.objectContaining({ type: ["sepa"] }));
+  });
+
+  it("omits type entirely when not provided", async () => {
+    store.listCharts.mockResolvedValue([]);
+    const app = await testApp();
+    await app.inject("/");
+    expect(store.listCharts).toHaveBeenCalledWith(expect.objectContaining({ type: undefined }));
+  });
+});
+
 describe("GET /:id/built", () => {
   it("rebuilds ephemerally with the requested count and never saves", async () => {
     const doc = makeDoc();

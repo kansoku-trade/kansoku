@@ -23,8 +23,14 @@ function jsonBody(body: unknown, hint?: string): Record<string, unknown> {
 
 export const chartsRoute: FastifyPluginAsync = async (app) => {
   app.get<{ Querystring: Query }>("/", async (req) => {
+    const type = req.query.type
+      ? req.query.type
+          .split(",")
+          .map((t) => t.trim())
+          .filter(Boolean)
+      : undefined;
     const metas = await listCharts({
-      type: req.query.type,
+      type,
       symbol: req.query.symbol,
       limit: req.query.limit ? Number(req.query.limit) : undefined,
     });
