@@ -12,6 +12,7 @@ import { TopbarQuote } from "../QuoteBar";
 import { recordRecentSymbol } from "../recentCharts";
 import { Badge, Dot, Empty, ErrorBox, MarketTime } from "../ui";
 import { useTitle } from "../useTitle";
+import { useSSE } from "../useSSE";
 import { AiTab } from "./cockpit/AiTab";
 import { AnalysisTimeline } from "./cockpit/AnalysisTimeline";
 import { EnvTab } from "./cockpit/EnvTab";
@@ -19,8 +20,12 @@ import { FlowTab } from "./cockpit/FlowTab";
 import { GenerateAnalysis } from "./cockpit/GenerateAnalysis";
 import { ReviewTab, type ReviewSection } from "./cockpit/ReviewTab";
 import { useCockpitComments } from "./cockpit/useCockpitComments";
-import { useIntervalFetch } from "./cockpit/useIntervalFetch";
 import { useLatestAnalysis } from "./cockpit/useLatestAnalysis";
+
+interface PositionPayload {
+  position: CockpitPosition | null;
+  relvol: RelativeVolume | null;
+}
 
 export function SymbolCockpit({ sym }: { sym: string }) {
   const symLabel = sym.toUpperCase().replace(/\.US$/, "");
@@ -35,18 +40,21 @@ export function SymbolCockpit({ sym }: { sym: string }) {
     if (doc) recordRecentSymbol(sym);
   }, [sym, doc?.id]);
 
-  const { data: position, error: positionError } = useIntervalFetch<CockpitPosition>(
-    `/api/symbols/${encodeURIComponent(sym)}/position`,
-    60_000,
-  );
-  const { data: benchmark, error: benchmarkError } = useIntervalFetch<BenchmarkSeries[]>(
-    `/api/symbols/${encodeURIComponent(sym)}/benchmark`,
-    60_000,
-  );
-  const { data: relvol } = useIntervalFetch<RelativeVolume | null>(
-    `/api/symbols/${encodeURIComponent(sym)}/relvol`,
-    60_000,
-  );
+  const [position, setPosition] = useState<CockpitPosition | null>(null);
+  const [relvol, setRelvol] = useState<RelativeVolume | null>(null);
+  const [benchmark, setBenchmark] = useState<BenchmarkSeries[] | null>(null);
+  useEffect(() => {
+    setPosition(null);
+    setRelvol(null);
+    setBenchmark(null);
+  }, [sym]);
+  const { degraded: positionDegraded } = useSSE<PositionPayload>({ kind: "position", symbol: sym }, (d) => {
+    setPosition(d.position);
+    setRelvol(d.relvol);
+  });
+  const { degraded: benchmarkDegraded } = useSSE<BenchmarkSeries[]>({ kind: "benchmark", symbol: sym }, setBenchmark);
+  const positionError = positionDegraded ? "持仓数据获取失败，正在重试" : null;
+  const benchmarkError = benchmarkDegraded ? "环境对照数据获取失败，正在重试" : null;
 
   const { data: journal } = useQuery<{ name: string; date: string }[]>(
     `/api/symbols/${encodeURIComponent(sym)}/journal`,

@@ -4,6 +4,7 @@ import { navigate, useQueryParam } from "../router";
 import { QuoteBar } from "../QuoteBar";
 import { Badge, ErrorBox, SectionTitle } from "../ui";
 import { useTitle } from "../useTitle";
+import { useSSE } from "../useSSE";
 import { useIntervalFetch } from "./cockpit/useIntervalFetch";
 import { CrossSectionCharts } from "./home/CrossSectionCharts";
 import { PositionsCard } from "./home/PositionsCard";
@@ -21,7 +22,9 @@ export function Home() {
   useEffect(() => {
     if (noticeParam) navigate("/", { replace: true });
   }, [noticeParam]);
-  const { data: board, error: boardError } = useIntervalFetch<OverviewBoard>("/api/overview", 30_000);
+  const [board, setBoard] = useState<OverviewBoard | null>(null);
+  const { degraded: boardDegraded } = useSSE<OverviewBoard>({ kind: "board" }, setBoard);
+  const boardError = boardDegraded ? "盘面数据获取失败，正在重试" : null;
   const { data: portfolio, error: portfolioError } = useIntervalFetch<PortfolioSummary>("/api/positions", 60_000);
 
   const session = board?.session ?? null;
