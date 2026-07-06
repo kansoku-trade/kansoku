@@ -1,4 +1,6 @@
+import { useEffect, useState } from "react";
 import type { OverviewBoard, PortfolioSummary } from "../../../shared/types";
+import { navigate, useQueryParam } from "../router";
 import { QuoteBar } from "../QuoteBar";
 import { Badge, ErrorBox, SectionTitle } from "../ui";
 import { useTitle } from "../useTitle";
@@ -10,9 +12,15 @@ import { RecapBoard } from "./home/RecapBoard";
 import { WatchBoard } from "./home/WatchBoard";
 
 const SESSION_LABEL: Record<string, string> = { pre: "盘前", regular: "盘中", post: "盘后", overnight: "休市" };
+const NOTICE_LABEL: Record<string, string> = { "chart-not-found": "该图表不存在，已为你返回首页" };
 
 export function Home() {
   useTitle(null);
+  const noticeParam = useQueryParam("notice");
+  const [notice] = useState(noticeParam);
+  useEffect(() => {
+    if (noticeParam) navigate("/", { replace: true });
+  }, [noticeParam]);
   const { data: board, error: boardError } = useIntervalFetch<OverviewBoard>("/api/overview", 30_000);
   const { data: portfolio, error: portfolioError } = useIntervalFetch<PortfolioSummary>("/api/positions", 60_000);
 
@@ -25,6 +33,7 @@ export function Home() {
     <div className="page home-page">
       <h1>盘面 {session && <Badge className="session-tag">{SESSION_LABEL[session] ?? session}</Badge>}</h1>
       <div className="sub">{board?.date ?? ""} · 盘中看盘、盘后复盘，随时段自动切换</div>
+      {notice && NOTICE_LABEL[notice] && <ErrorBox>{NOTICE_LABEL[notice]}</ErrorBox>}
       <QuoteBar />
       <QuickBar shortcuts={shortcuts} />
       {!board && !boardError && <div className="note-block">盘面加载中…</div>}

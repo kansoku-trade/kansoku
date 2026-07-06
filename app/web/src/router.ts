@@ -20,9 +20,10 @@ export function useRoute(): string {
   return route;
 }
 
-export function navigate(route: string): void {
+export function navigate(route: string, options: { replace?: boolean } = {}): void {
   if (route === currentRoute() + window.location.search) return;
-  window.history.pushState({}, "", route);
+  if (options.replace) window.history.replaceState({}, "", route);
+  else window.history.pushState({}, "", route);
   window.dispatchEvent(new Event(LOCATION_EVENT));
 }
 

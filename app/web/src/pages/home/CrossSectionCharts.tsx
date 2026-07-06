@@ -1,9 +1,8 @@
-import { useState } from "react";
 import type { ChartDoc, ChartMeta } from "../../../../shared/types";
 import { marketDate } from "../../../../shared/time";
 import { useQuery } from "../../apiHooks";
 import { SimpleChartView } from "../../charts/simple/SimpleChartView";
-import { useQueryParam } from "../../router";
+import { navigate, useQueryParam } from "../../router";
 import { Card, Chip, Empty, ErrorBox, SectionTitle } from "../../ui";
 
 const CROSS_SECTION_TYPES = "flow,cohort";
@@ -25,11 +24,10 @@ function ChartCard({ id }: { id: string }) {
 
 export function CrossSectionCharts() {
   const dateParam = useQueryParam("date");
-  const [manualDate, setManualDate] = useState<string | null>(null);
   const { data: metas, error } = useQuery<ChartMeta[]>(`/api/charts?type=${CROSS_SECTION_TYPES}`);
 
   const dates = [...new Set((metas ?? []).map((m) => marketDate(m.created_at)))].sort().reverse();
-  const selected = manualDate ?? dateParam ?? marketDate();
+  const selected = dateParam ?? marketDate();
   const matches = (metas ?? []).filter((m) => marketDate(m.created_at) === selected);
 
   return (
@@ -39,7 +37,7 @@ export function CrossSectionCharts() {
       {dates.length > 0 && (
         <div className="cross-section-switcher">
           {dates.map((d) => (
-            <Chip key={d} active={d === selected} onClick={() => setManualDate(d)}>
+            <Chip key={d} active={d === selected} onClick={() => navigate(`/?date=${d}`, { replace: true })}>
               {d}
             </Chip>
           ))}
