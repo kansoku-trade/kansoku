@@ -2,7 +2,10 @@ export type ChannelSpec =
   | { kind: "quotes"; extra?: string[] }
   | { kind: "chart"; id: string; count?: number }
   | { kind: "comments"; symbol: string }
-  | { kind: "analyses"; symbol: string };
+  | { kind: "analyses"; symbol: string }
+  | { kind: "position"; symbol: string }
+  | { kind: "benchmark"; symbol: string }
+  | { kind: "board" };
 
 interface ChannelSub {
   spec: ChannelSpec;
