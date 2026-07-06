@@ -3,7 +3,10 @@ import type { FastifyPluginAsync } from "fastify";
 import type { WebSocket } from "ws";
 import type { CockpitComment } from "../../../shared/types.js";
 import { listComments, onComment } from "../ai/comments.js";
+import { subscribeBenchmark } from "../realtime/benchmark.js";
+import { subscribeBoard } from "../realtime/board.js";
 import { subscribeChart } from "../realtime/charts.js";
+import { subscribePosition } from "../realtime/position.js";
 import { subscribeQuotes } from "../realtime/quotes.js";
 import { clampViewCount } from "../services/history.js";
 import { easternDate } from "../services/session.js";
@@ -33,7 +36,7 @@ const PING_MS = 15_000;
 export interface WsSub {
   op: "sub";
   key: string;
-  kind: "quotes" | "chart" | "comments";
+  kind: "quotes" | "chart" | "comments" | "position" | "benchmark" | "board";
   extra?: string[];
   id?: string;
   count?: number;
@@ -66,6 +69,17 @@ export function parseWsMessage(raw: unknown): WsClientMessage | null {
     if (typeof msg.symbol !== "string" || !msg.symbol) return null;
     return { op: "sub", key: msg.key, kind: "comments", symbol: msg.symbol };
   }
+  if (msg.kind === "position") {
+    if (typeof msg.symbol !== "string" || !msg.symbol) return null;
+    return { op: "sub", key: msg.key, kind: "position", symbol: msg.symbol };
+  }
+  if (msg.kind === "benchmark") {
+    if (typeof msg.symbol !== "string" || !msg.symbol) return null;
+    return { op: "sub", key: msg.key, kind: "benchmark", symbol: msg.symbol };
+  }
+  if (msg.kind === "board") {
+    return { op: "sub", key: msg.key, kind: "board" };
+  }
   return null;
 }
 
@@ -75,6 +89,9 @@ async function attachChannel(msg: WsSub, push: (envelope: string) => void): Prom
     const count = clampViewCount(msg.count != null ? String(msg.count) : undefined) ?? undefined;
     return subscribeChart(msg.id as string, push, count);
   }
+  if (msg.kind === "position") return subscribePosition(normalizeSymbol(msg.symbol as string), push);
+  if (msg.kind === "benchmark") return subscribeBenchmark(normalizeSymbol(msg.symbol as string), push);
+  if (msg.kind === "board") return subscribeBoard(push);
   return attachComments(normalizeSymbol(msg.symbol as string), push);
 }
 

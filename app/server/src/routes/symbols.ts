@@ -10,6 +10,7 @@ import { buildCockpitFlow } from "../services/cockpit/flow.js";
 import { judgeOutcome } from "../services/cockpit/outcome.js";
 import { getResolvedOutcomes, saveResolvedOutcome } from "../services/cockpit/outcomeCache.js";
 import { buildCockpitPosition } from "../services/cockpit/position.js";
+import { entryPlanFromDoc, latestIntradayDoc } from "../services/cockpit/entryPlan.js";
 import { computeRelativeVolume } from "../services/relvol.js";
 import { getProvider } from "../services/marketdata/registry.js";
 import type { RawPosition } from "../services/marketdata/types.js";
@@ -50,12 +51,6 @@ function chartUrl(id: string): string {
   return `${BASE_URL}/charts/${encodeURIComponent(id)}`;
 }
 
-async function latestIntradayDoc(sym: string): Promise<ChartDoc | null> {
-  const metas = await listCharts({ symbol: sym, type: "intraday", limit: 1 });
-  if (!metas.length) return null;
-  return loadChart(metas[0].id);
-}
-
 type Params = { sym: string };
 
 export const symbolsRoute: FastifyPluginAsync = async (app) => {
@@ -92,11 +87,7 @@ export const symbolsRoute: FastifyPluginAsync = async (app) => {
       throw new ClientError(`no quote data for ${sym}`, undefined, 502);
     }
     const quote = normalizeQuote(quotes[0], Date.now());
-    const doc = await latestIntradayDoc(sym);
-    const plan =
-      doc && doc.built.kind === "intraday" && doc.built.entryPlan
-        ? { stop: doc.built.entryPlan.stop, target1: doc.built.entryPlan.target1, target2: doc.built.entryPlan.target2 }
-        : null;
+    const plan = entryPlanFromDoc(await latestIntradayDoc(sym));
     const data = buildCockpitPosition(positions, sym, quote.last, plan);
     return { ok: true, data };
   });
