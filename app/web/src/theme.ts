@@ -3,6 +3,7 @@ export const theme = {
   bgSurface: "#141414",
   bgElement: "#1e1e1e",
   border: "#262626",
+  gridLine: "#1d1d1d",
   borderStrong: "#3a3a3a",
   textPrimary: "#e8e8e8",
   textSecondary: "#9a9a9a",

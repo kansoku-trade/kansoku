@@ -103,7 +103,10 @@ export function baseChart(el: HTMLElement, timeVisible: boolean, marketTime = fa
     width: el.clientWidth,
     height: el.clientHeight,
     layout: { background: { color: theme.bgSurface }, textColor: theme.textSecondary },
-    grid: { vertLines: { visible: false }, horzLines: { visible: false } },
+    grid: {
+      vertLines: { color: theme.gridLine, style: 0 },
+      horzLines: { color: theme.gridLine, style: 0 },
+    },
     crosshair: { mode: 0 },
     // minimumWidth pins the axis width so live price ticks with varying digit
     // counts don't resize the pane and make the chart jitter horizontally.
