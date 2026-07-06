@@ -37,6 +37,26 @@ describe("parseWsMessage", () => {
     expect(parseWsMessage({ op: "sub", key: "k", kind: "analyses" })).toBeNull();
   });
 
+  it("parses position, benchmark and board subs", () => {
+    expect(parseWsMessage({ op: "sub", key: "k5", kind: "position", symbol: "mu" })).toEqual({
+      op: "sub",
+      key: "k5",
+      kind: "position",
+      symbol: "mu",
+    });
+    expect(parseWsMessage({ op: "sub", key: "k6", kind: "benchmark", symbol: "mu" })).toEqual({
+      op: "sub",
+      key: "k6",
+      kind: "benchmark",
+      symbol: "mu",
+    });
+    expect(parseWsMessage({ op: "sub", key: "k7", kind: "board" })).toEqual({
+      op: "sub",
+      key: "k7",
+      kind: "board",
+    });
+  });
+
   it("parses unsub", () => {
     expect(parseWsMessage({ op: "unsub", key: "k1" })).toEqual({ op: "unsub", key: "k1" });
   });
@@ -46,6 +66,8 @@ describe("parseWsMessage", () => {
     expect(parseWsMessage({ op: "sub", key: "", kind: "quotes" })).toBeNull();
     expect(parseWsMessage({ op: "sub", key: "k", kind: "chart" })).toBeNull();
     expect(parseWsMessage({ op: "sub", key: "k", kind: "comments" })).toBeNull();
+    expect(parseWsMessage({ op: "sub", key: "k", kind: "position" })).toBeNull();
+    expect(parseWsMessage({ op: "sub", key: "k", kind: "benchmark" })).toBeNull();
     expect(parseWsMessage({ op: "sub", key: "k", kind: "nope" })).toBeNull();
     expect(parseWsMessage({ op: "sub", key: "x".repeat(201), kind: "quotes" })).toBeNull();
   });
