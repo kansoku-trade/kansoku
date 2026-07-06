@@ -5,7 +5,9 @@ description: >
   pulls K-line across three timeframes, reads MACD + swing structure, writes a
   direction call (long/short/neutral) with an explicit anchor price, 3-scenario
   forward read, a range-bound playbook (long tactic + short tactic), an
-  entry/stop/target plan with direction-aware R/R — MACD divergence/背驰,
+  entry/stop/target plan with dual-basis R/R (T1 + T2), position sizing from
+  the live broker account, an event-risk gate (earnings / FOMC / CPI), and
+  market/sector alignment + relvol volume checks — MACD divergence/背驰,
   candle patterns like Pin Bar, and 123 structures are auto-detected and drawn
   server-side —
   then renders it via the `chart` skill (type `intraday`,
@@ -55,6 +57,23 @@ the day's tape:
 - **Always, check first**: `twitter-reader` — X is the fastest tape on breaking
   news and sentiment; on an intraday horizon its lead time over aggregated feeds
   is exactly the window that matters. Search the symbol, read the last few hours.
+  X sentiment is an *input*, not a conclusion — form the price-structure read in
+  Step 3 independently, then reconcile; don't go hunting the chart for evidence
+  of whatever narrative X planted.
+- **Always: event risk（财报 + 宏观时刻表）**. Find the next earnings date
+  (longbridge news / X / IR; if unconfirmable, say so explicitly in the report)
+  and today's scheduled macro releases in ET (CPI/非农 8:30, 多数数据 10:00,
+  FOMC 决议 14:00 + 记者会 14:30; use `fred`/news to confirm on event days). Any
+  hard event inside the trade horizon must appear in the scenarios — a stop
+  cannot protect you through a gap（跳空开盘直接越过止损价，实际亏损可远大于计划）.
+- **Always: market alignment（大盘/板块对齐）**. One call:
+  `longbridge quote SPY.US QQQ.US <sector-ETF>.US`（如半导体 SMH、软件 IGV）.
+  State whether the intended direction is with or against today's index/sector
+  tape; trading against it is allowed but must be justified in one line.
+- **Always: volume check**. `GET /api/symbols/<SYM>/relvol`（服务端已算好的
+  相对成交量——当前量相对同时段常态量的倍数）+ `longbridge capital <SYM>.US
+  --format json`（triple-bucket flow）. Breakouts and reversals without volume
+  are suspects, not signals; cite relvol when calling any breakout real.
 - **Always**: `longbridge-news` on the symbol — official/aggregated headlines.
   It lags X by minutes to hours, so treat it as confirmation and source-anchoring
   for what X surfaced, not as the breaking-news feed; its item timestamps are
@@ -65,10 +84,10 @@ the day's tape:
   (policy-sensitive days), `sec-edgar` (filing/insider leads), `gdelt` / `fred`
   (macro event days).
 - Whatever was actually pulled goes into `context.sources_used` (Step 4).
-- Housekeeping, pulled as needed regardless of tiering: `longbridge capital
-  <SYM>.US --format json` (triple-bucket flow, checks for distribution), the
-  user's live position via `longbridge positions --format json` if they hold
-  this symbol.
+- Housekeeping, pulled as needed regardless of tiering: the user's live position
+  via `longbridge positions --format json` if they hold this symbol, and account
+  size via `longbridge portfolio --format json` (needed for position sizing in
+  Step 4 — never ask the user, read the broker).
 
 ### Step 3 — Preview: read the technicals
 
@@ -129,18 +148,43 @@ timeframe data + Step 3's numbers, decide:
 3. **Range-bound playbook** — if one scenario is "震荡/oscillating", fill
    `range_bound_plan` with an explicit tactic for **both** directions (`long_tactic`
    and `short_tactic`) — never describe only one side of a two-sided range.
-4. **Entry plan** — `entry`, `stop`, `target1_pct`, `target2_pct`. R/R is
-   direction-aware: for `long`, `risk = entry-stop`, `reward = target2-entry`;
-   for `short`, `risk = stop-entry`, `reward = entry-target2`. **State the R/R
-   explicitly; if < 2:1, say so — do not silently proceed with a poor ratio.**
-5. **Signals（可选）** — the chart auto-detects and draws MACD divergence/背驰,
+4. **Entry plan** — `entry`, `stop`, `target1_pct`, `target2_pct`.
+   - **Stop = structure, not a number.** The stop sits beyond a named structure
+     (swing point 外沿、123 结构的 ①、区间边界), never a bare round number or
+     arbitrary %. Name the structure in `stop_note`.
+   - **R/R in both口径.** Compute direction-aware R/R twice: T1-based and
+     T2-based (`long`: risk = entry−stop, reward = target−entry; `short`
+     mirrored). Report both. **If T1-based R/R < 1:1, the plan is rejected —
+     rework the entry or pass.** If only the T2 口径 reaches 2:1, say so
+     explicitly（远目标是有条件的，不许拿它化妆头条盈亏比）.
+   - **Event gate.** Default: no holding through earnings or a scheduled
+     FOMC/CPI-class release within the horizon. An exception must state the gap
+     risk in one line（跳空可越过止损，最大亏损≠1R）.
+   - **Session liquidity.** Entries outside regular hours（盘前/盘后）must be
+     flagged: spreads wide, size thin, stop execution unreliable. Also note the
+     9:30–10:00 ET window is fake-breakout-prone — a breakout entry there needs
+     relvol confirmation.
+5. **Position size（仓位）** — from the `longbridge portfolio` pull: risk
+   budget = 1% of account value by default (0.5% on a 催化日 or counter-tape
+   trade); `shares = floor(budget / |entry − stop|)`. Report 股数、名义金额、
+   占账户 %。**A plan without a size is not a plan** — this is what separates
+   an opinion from a trade.
+6. **Trade management（入场后）** — write the management leg into
+   `entry_plan.note` / the report: at T1 take half off and move the stop to
+   breakeven（推保本）; time stop — if the trade hasn't moved in ~6 根 m15 bars
+   (≈1.5h), the thesis is stale, exit flat; stopped out = stay out, no
+   revenge re-entry unless a *new* structure signal forms.
+7. **Existing position（若用户已持仓）** — the read must end with an explicit
+   加 / 减 / 持 / 清 call on the live position, reconciled against cost basis —
+   not just a fresh-entry plan alongside an ignored holding.
+8. **Signals（可选）** — the chart auto-detects and draws MACD divergence/背驰,
    candle patterns, and 123 structures server-side; cite those markers in the
    report rather than re-labeling them. The only signal worth adding by hand is
    an `other`-type note for something the detectors cannot see yet — e.g. a
    last-bar blow-off whose pivot the swing algorithm can't confirm (the MU
    2026-07-01 final hour) — anchored to a specific `timeframe` + `time` +
    `price`.
-6. **`context`** — besides `prediction`, write the `context` payload (see
+9. **`context`** — besides `prediction`, write the `context` payload (see
    `chart` skill's `context` schema): tag every news/sentiment item pulled in
    Step 2 with `source` + `tag` + a one-line `note`, list what was actually
    pulled in `sources_used`, and write the `conclusion` card (`stance` /
@@ -172,16 +216,19 @@ pull) if the user holds this symbol — the dashboard renders a 持仓视角 car
 
 Present in this order (mirrors the user's original ask):
 
-1. 方向判断 + 锚点（在哪个位置做的判断）
-2. 情景推演（后续 K 线可能的多种走势，带百分比）
-3. 震荡应对（若为震荡情景：多、空两种打法）
-4. 入场计划（盈亏比 + 具体入场点/止损/目标）
-5. 支撑信号（引用图上自动检测的 MACD 背离/背驰、K 线形态、123 结构，指到具体 K 线；如有 `other` 补充备注一并说明）
-6. 图表链接：主链接是本次分析的冻结快照 `data.url`
+1. 大盘/板块环境 + 事件风险（顺风还是逆风；财报/宏观时刻表内有没有雷）
+2. 方向判断 + 锚点（在哪个位置做的判断）
+3. 情景推演（后续 K 线可能的多种走势，带百分比）
+4. 震荡应对（若为震荡情景：多、空两种打法）
+5. 入场计划（双口径盈亏比 + 入场点/止损/目标 + 止损依托的结构）
+6. 仓位建议（股数、名义金额、占账户 %、单笔风险额）+ 入场后管理（T1 减半推保本 / 时间止损）
+7. 持仓处置（若已持仓：加 / 减 / 持 / 清，对照成本价）
+8. 支撑信号（引用图上自动检测的 MACD 背离/背驰、K 线形态、123 结构，指到具体 K 线；如有 `other` 补充备注一并说明；量能 relvol 佐证）
+9. 图表链接：主链接是本次分析的冻结快照 `data.url`
    （`http://localhost:5199/charts/<id>`——含本次预测/情景/入场/信号，
    分析完立即打开就是看它），辅链接是标的驾驶舱
    `http://localhost:5199/symbol/<SYM>`（聚合活数据 + 历史分析），附在后面
-7. 免责声明：仅供参考，不构成投资建议
+10. 免责声明：仅供参考，不构成投资建议
 
 ### Step 7 — Journal
 
@@ -193,12 +240,25 @@ outcome judgment (`hit_target` / `hit_stop` / `open`, computed server-side from
 post-anchor bars) — that's a quick mechanical scoreboard, not a substitute for
 the journal's narrative record.
 
+**Calibration loop（概率对账）**: roughly every 10 analyses on any symbol, pull
+the 历史 tab and compare stated scenario probabilities against realized
+outcomes（标了 60% 的情景实际兑现了几成？）. Write one line of calibration
+verdict into that day's journal entry — systematically over-confident
+probabilities are a finding, not a footnote. Probabilities that never get
+audited degrade into rhetoric.
+
 ## Anti-patterns
 
 - ❌ A directional call with no anchor price/time
 - ❌ Scenarios that don't sum to ~100%, or only one scenario
 - ❌ A range-bound call that only covers one direction (must give both long and short tactics)
 - ❌ Omitting or silently glossing over an R/R below 2:1
+- ❌ Reporting only the T2-based R/R（拿有条件的远目标化妆盈亏比）
+- ❌ An entry plan with no position size, or a size invented without pulling `longbridge portfolio`
+- ❌ A stop parked on a round number / bare % with no structure behind it
+- ❌ Planning to hold through earnings or an FOMC/CPI-class event without naming the gap risk
+- ❌ A counter-tape call (against SPY/QQQ/sector direction) with no one-line justification
+- ❌ Calling a breakout real without citing relvol/volume
 - ❌ "看起来有背离" without citing the auto-detected marker (or the two specific bars, if the detector hasn't confirmed it yet)
 - ❌ Skipping the preview call and guessing MACD values instead of reading them
 - ❌ Skipping the journal write
