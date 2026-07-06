@@ -290,13 +290,21 @@ export type CandlePatternKind =
   | "bullish_harami"
   | "bearish_harami"
   | "three_white_soldiers"
-  | "three_black_crows";
+  | "three_black_crows"
+  | "doji"
+  | "long_legged_doji"
+  | "gravestone_doji"
+  | "dragonfly_doji"
+  | "tweezer_top"
+  | "tweezer_bottom"
+  | "bullish_marubozu"
+  | "bearish_marubozu";
 
 export interface CandlePattern {
   kind: CandlePatternKind;
   time: number;
   price: number;
-  bias: "bullish" | "bearish";
+  bias: "bullish" | "bearish" | "neutral";
   label: string;
   implication: string;
 }

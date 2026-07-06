@@ -13,10 +13,17 @@ const PIN_BAR_EXTREME_LOOKBACK = 3;
 const LONG_SHADOW_RANGE_RATIO = 0.6;
 const SMALL_BODY_RANGE_RATIO = 0.3;
 const SMALL_SHADOW_RANGE_RATIO = 0.15;
+const AVG_RANGE_WINDOW = 14;
+const DOJI_BODY_RANGE_RATIO = 0.05;
+const DOJI_LONG_SHADOW_RANGE_RATIO = 0.7;
+const DOJI_LEGGED_SHADOW_RANGE_RATIO = 0.35;
+const TWEEZER_TOLERANCE_RANGE_RATIO = 0.1;
+const MARUBOZU_BODY_RANGE_RATIO = 0.85;
+const MARUBOZU_BODY_AVG_RATIO = 1.3;
 
 export const CANDLE_PATTERN_META: Record<
   CandlePatternKind,
-  { label: string; bias: "bullish" | "bearish"; strong: boolean; implication: string }
+  { label: string; bias: "bullish" | "bearish" | "neutral"; strong: boolean; implication: string }
 > = {
   bullish_engulfing: {
     label: "看涨吞没",
@@ -114,6 +121,54 @@ export const CANDLE_PATTERN_META: Record<
     strong: true,
     implication: "连续三根步步低的中大阴线——卖方持续控盘，顶部反转或弱势延续信号，杀伤力大",
   },
+  doji: {
+    label: "十字星",
+    bias: "neutral",
+    strong: false,
+    implication: "开盘收盘几乎持平——多空力量暂时均衡，方向未定，需看下一根确认走向",
+  },
+  long_legged_doji: {
+    label: "长腿十字",
+    bias: "neutral",
+    strong: false,
+    implication: "上下影线都很长但开收几乎持平——盘中剧烈拉锯却收平，分歧加剧的信号，方向未定",
+  },
+  gravestone_doji: {
+    label: "墓碑十字",
+    bias: "bearish",
+    strong: false,
+    implication: "上涨末端冲高后又跌回开盘价附近——上攻力量被完全抛压吞噬，见顶警示；跌破其低点则确认转弱",
+  },
+  dragonfly_doji: {
+    label: "蜻蜓十字",
+    bias: "bullish",
+    strong: false,
+    implication: "下跌末端探底后又收回开盘价附近——抛压被买盘完全接住，止跌信号；下一根收在高点上方则确认",
+  },
+  tweezer_top: {
+    label: "镊子顶",
+    bias: "bearish",
+    strong: false,
+    implication: "上涨末端连续两根 K 线在几乎同一高点受阻——同一价位反复被抛压压制，见顶警示；跌破前一根低点则确认",
+  },
+  tweezer_bottom: {
+    label: "镊子底",
+    bias: "bullish",
+    strong: false,
+    implication: "下跌末端连续两根 K 线在几乎同一低点获支撑——同一价位反复被买盘接住，止跌信号；突破前一根高点则确认",
+  },
+  bullish_marubozu: {
+    label: "光头大阳",
+    bias: "bullish",
+    strong: false,
+    implication: "开盘即最低、收盘即最高的大阳实体——买方全程控盘无回撤，强势信号；次日低开或收阴则转弱",
+  },
+  bearish_marubozu: {
+    label: "光头大阴",
+    bias: "bearish",
+    strong: false,
+    implication: "开盘即最高、收盘即最低的大阴实体——卖方全程控盘无反抽，弱势信号；次日高开或收阳则转弱",
+  },
 };
 
 export function detectCandlePatterns(
@@ -148,6 +203,18 @@ export function detectCandlePatterns(
     for (let j = from; j < i; j++) {
       if (!validBar(j)) continue;
       sum += body(j);
+      count += 1;
+    }
+    return count ? sum / count : 0;
+  };
+
+  const avgRange = (i: number) => {
+    const from = Math.max(0, i - AVG_RANGE_WINDOW);
+    let sum = 0;
+    let count = 0;
+    for (let j = from; j < i; j++) {
+      if (!validBar(j)) continue;
+      sum += range(j);
       count += 1;
     }
     return count ? sum / count : 0;
@@ -355,6 +422,25 @@ export function detectCandlePatterns(
       uptrendInto(i - 1)
     ) {
       push("bearish_harami", i, highs[i], 2);
+    } else {
+      const ar = avgRange(i);
+      if (
+        ar > 0 &&
+        uptrendInto(i - 1) &&
+        green(i - 1) &&
+        red(i) &&
+        Math.abs(highs[i] - highs[i - 1]) <= TWEEZER_TOLERANCE_RANGE_RATIO * ar
+      ) {
+        push("tweezer_top", i, Math.max(highs[i], highs[i - 1]), 2);
+      } else if (
+        ar > 0 &&
+        downtrendInto(i - 1) &&
+        red(i - 1) &&
+        green(i) &&
+        Math.abs(lows[i] - lows[i - 1]) <= TWEEZER_TOLERANCE_RANGE_RATIO * ar
+      ) {
+        push("tweezer_bottom", i, Math.min(lows[i], lows[i - 1]), 2);
+      }
     }
   }
 
@@ -363,6 +449,28 @@ export function detectCandlePatterns(
     const r = range(i);
     const b = body(i);
     if (r <= 0) continue;
+
+    if (uptrendInto(i) || downtrendInto(i)) {
+      if (b <= DOJI_BODY_RANGE_RATIO * r) {
+        if (upperShadow(i) >= DOJI_LONG_SHADOW_RANGE_RATIO * r && uptrendInto(i)) {
+          push("gravestone_doji", i, highs[i]);
+          continue;
+        } else if (lowerShadow(i) >= DOJI_LONG_SHADOW_RANGE_RATIO * r && downtrendInto(i)) {
+          push("dragonfly_doji", i, lows[i]);
+          continue;
+        } else if (
+          upperShadow(i) >= DOJI_LEGGED_SHADOW_RANGE_RATIO * r &&
+          lowerShadow(i) >= DOJI_LEGGED_SHADOW_RANGE_RATIO * r
+        ) {
+          push("long_legged_doji", i, closes[i]);
+          continue;
+        } else {
+          push("doji", i, closes[i]);
+          continue;
+        }
+      }
+    }
+
     const longLower =
       lowerShadow(i) >= LONG_SHADOW_RANGE_RATIO * r &&
       b <= SMALL_BODY_RANGE_RATIO * r &&
@@ -379,6 +487,19 @@ export function detectCandlePatterns(
     else if (longUpper && uptrendInto(i)) push("shooting_star", i, highs[i]);
     else if (longLower && isLocalLow(i)) push("pin_bar_lower", i, lows[i]);
     else if (longUpper && isLocalHigh(i)) push("pin_bar_upper", i, highs[i]);
+  }
+
+  for (let i = 0; i < n; i++) {
+    if (!validBar(i)) continue;
+    const r = range(i);
+    const b = body(i);
+    if (r <= 0) continue;
+    const ab = avgBody(i);
+    if (ab <= 0) continue;
+    if (b < MARUBOZU_BODY_RANGE_RATIO * r || b < MARUBOZU_BODY_AVG_RATIO * ab) continue;
+
+    if (green(i)) push("bullish_marubozu", i, lows[i]);
+    else if (red(i)) push("bearish_marubozu", i, highs[i]);
   }
 
   return out.sort((a, b) => a.time - b.time);

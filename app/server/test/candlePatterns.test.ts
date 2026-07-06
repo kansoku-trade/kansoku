@@ -183,13 +183,92 @@ describe("detectCandlePatterns", () => {
   });
 });
 
+describe("detectCandlePatterns new pattern kinds", () => {
+  const uptrend4 = [smallGreen(101), smallGreen(102), smallGreen(103), smallGreen(104)];
+  const downtrend4 = [smallRed(104), smallRed(103), smallRed(102), smallRed(101)];
+
+  it("detects a gravestone doji at the end of an uptrend", () => {
+    const gravestone = { open: 100, close: 100.05, high: 101, low: 99.95 };
+
+    expect(detect([...uptrend4, gravestone]).map((p) => p.kind)).toContain("gravestone_doji");
+  });
+
+  it("does not classify the same gravestone shape as gravestone_doji in a downtrend", () => {
+    const gravestone = { open: 100, close: 100.05, high: 101, low: 99.95 };
+    const kinds = detect([...downtrend4, gravestone]).map((p) => p.kind);
+
+    expect(kinds).not.toContain("gravestone_doji");
+  });
+
+  it("detects a dragonfly doji at the end of a downtrend", () => {
+    const dragonfly = { open: 100, close: 99.95, high: 100.05, low: 99 };
+
+    expect(detect([...downtrend4, dragonfly]).map((p) => p.kind)).toContain("dragonfly_doji");
+  });
+
+  it("detects a long-legged doji when both shadows are long", () => {
+    const longLegged = { open: 100, close: 100.02, high: 100.7, low: 99.3 };
+
+    expect(detect([...uptrend4, longLegged]).map((p) => p.kind)).toContain("long_legged_doji");
+  });
+
+  it("detects a plain doji at a trend end and rejects a doji in a flat market", () => {
+    const plainDoji = { open: 100.67, close: 100.7, high: 101, low: 100 };
+
+    expect(detect([...uptrend4, plainDoji]).map((p) => p.kind)).toContain("doji");
+
+    const flatBars = [smallGreen(100), smallRed(100.1), smallGreen(100.05), smallRed(100.1)];
+    expect(detect([...flatBars, plainDoji]).map((p) => p.kind)).not.toContain("doji");
+  });
+
+  it("detects tweezer_top when two highs at an uptrend end match within tolerance", () => {
+    const barI1 = { open: 104.5, close: 105, high: 105.2, low: 104.3 };
+    const barI = { open: 105, close: 104.5, high: 105.25, low: 104.2 };
+
+    expect(detect([...uptrend4, barI1, barI]).map((p) => p.kind)).toContain("tweezer_top");
+  });
+
+  it("rejects tweezer_top when the highs differ by more than tolerance", () => {
+    const barI1 = { open: 104.5, close: 105, high: 105.2, low: 104.3 };
+    const barIFar = { open: 105, close: 104.5, high: 105.6, low: 104.2 };
+
+    expect(detect([...uptrend4, barI1, barIFar]).map((p) => p.kind)).not.toContain("tweezer_top");
+  });
+
+  it("detects tweezer_bottom when two lows at a downtrend end match within tolerance", () => {
+    const barI1 = { open: 100, close: 99.5, high: 100.1, low: 98.8 };
+    const barI = { open: 99.5, close: 100, high: 100.2, low: 98.75 };
+
+    expect(detect([...downtrend4, barI1, barI]).map((p) => p.kind)).toContain("tweezer_bottom");
+  });
+
+  it("detects a bullish marubozu with an open-at-low, close-at-high body", () => {
+    const marubozu = { open: 100, close: 110, high: 110, low: 100 };
+
+    expect(detect([smallGreen(100), smallRed(100.2), smallGreen(100.1), smallRed(100.2), marubozu]).map((p) => p.kind)).toContain(
+      "bullish_marubozu",
+    );
+  });
+
+  it("detects a bearish marubozu with an open-at-high, close-at-low body", () => {
+    const marubozu = { open: 110, close: 100, high: 110, low: 100 };
+
+    expect(detect([smallGreen(100), smallRed(100.2), smallGreen(100.1), smallRed(100.2), marubozu]).map((p) => p.kind)).toContain(
+      "bearish_marubozu",
+    );
+  });
+});
+
 describe("detectCandlePatterns real-data regression", () => {
   const fixtures = ["mu-5m.json", "mu-15m.json", "mu-1h.json", "mrvl-day.json", "spy-day.json"];
 
   it.each(fixtures)("keeps total detections bounded on %s", (name) => {
     const { bars, patterns } = detectFromFixture(name);
 
-    expect(patterns.length).toBeLessThanOrEqual(Math.ceil(bars.length / 6));
+    // Task 2 added 8 pattern kinds (doji family, tweezers, marubozu) on top of the
+    // original 16, so the same bar count now legitimately supports more detections.
+    // The cap is widened from bars/6 to bars/4 to keep it a bound, not a tight fit.
+    expect(patterns.length).toBeLessThanOrEqual(Math.ceil(bars.length / 4));
   });
 
   it("fires at least one single-bar pattern across the MU intraday fixtures", () => {
