@@ -26,6 +26,22 @@ export function navigate(route: string): void {
   window.dispatchEvent(new Event(LOCATION_EVENT));
 }
 
+export function useQueryParam(name: string): string | null {
+  const read = () => new URLSearchParams(window.location.search).get(name);
+  const [value, setValue] = useState(read);
+  useEffect(() => {
+    const onChange = () => setValue(read());
+    onChange();
+    window.addEventListener("popstate", onChange);
+    window.addEventListener(LOCATION_EVENT, onChange);
+    return () => {
+      window.removeEventListener("popstate", onChange);
+      window.removeEventListener(LOCATION_EVENT, onChange);
+    };
+  }, [name]);
+  return value;
+}
+
 export function installRouter(): void {
   document.addEventListener("click", (event) => {
     if (event.defaultPrevented || event.button !== 0) return;

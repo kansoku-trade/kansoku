@@ -470,6 +470,7 @@ a.zone-item:hover { text-decoration: none; background: var(--bg-hover); }
 .ai-reassess { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
 .ai-hint { font-size: var(--fs-sm); color: var(--text-secondary); }
 .ai-date-select { margin-left: auto; background: var(--bg-surface); color: var(--text-primary); border: 1px solid var(--border); border-radius: 4px; font-size: var(--fs-sm); padding: 3px 6px; }
+.analysis-timeline-select { margin-left: 0; }
 
 .journal-section { margin-top: 18px; }
 .journal-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }

@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ArrowUpRight } from "lucide-react";
-import type { BenchmarkSeries, ChartDoc, CockpitPosition, RelativeVolume, SymbolAnalysisRow } from "../../../shared/types";
+import type { BenchmarkSeries, CockpitPosition, RelativeVolume } from "../../../shared/types";
 import { useQuery } from "../apiHooks";
 import { IntradayDashboard, IntradayTimeframeSwitch } from "../charts/intraday/IntradayDashboard";
 import { NewsTab } from "../charts/intraday/tabs/NewsTab";
@@ -11,29 +11,19 @@ import { TopbarQuote } from "../QuoteBar";
 import { Badge, Dot, Empty, ErrorBox, MarketTime } from "../ui";
 import { useTitle } from "../useTitle";
 import { AiTab } from "./cockpit/AiTab";
+import { AnalysisTimeline } from "./cockpit/AnalysisTimeline";
 import { EnvTab } from "./cockpit/EnvTab";
 import { FlowTab } from "./cockpit/FlowTab";
 import { GenerateAnalysis } from "./cockpit/GenerateAnalysis";
 import { ReviewTab, type ReviewSection } from "./cockpit/ReviewTab";
 import { useCockpitComments } from "./cockpit/useCockpitComments";
 import { useIntervalFetch } from "./cockpit/useIntervalFetch";
-
-type LatestDoc = ChartDoc & { url: string; prediction_stale?: boolean };
+import { useLatestAnalysis } from "./cockpit/useLatestAnalysis";
 
 export function SymbolCockpit({ sym }: { sym: string }) {
-  const [generated, setGenerated] = useState<{ symbol: string; id: string } | null>(null);
   const symLabel = sym.toUpperCase().replace(/\.US$/, "");
-  const generatedId = generated?.symbol === sym ? generated.id : null;
-  const latestUrl = `/api/symbols/${encodeURIComponent(sym)}/latest`;
-  const { data: latestDoc, failure: latestFailure, loading: latestLoading } = useQuery<LatestDoc>(latestUrl);
-  const latestId = generatedId ?? latestDoc?.id ?? null;
-  const latestChecked = !latestLoading;
-  const latestError = latestFailure && latestFailure.status !== 404 ? latestFailure.message : null;
-  const markGeneratedReady = useCallback((id: string) => setGenerated({ symbol: sym, id }), [sym]);
-
-  useEffect(() => {
-    setGenerated(null);
-  }, [sym]);
+  const { mode, activeId: latestId, latestChecked, latestError, hasNewer, jumpToLatest, goToAnalysis, analyses } =
+    useLatestAnalysis(sym);
 
   const { doc, error, degraded, intradayTf, setIntradayTf, loadHistory } = useIntradayDoc(latestId);
 
@@ -52,7 +42,6 @@ export function SymbolCockpit({ sym }: { sym: string }) {
     60_000,
   );
 
-  const { data: analyses } = useQuery<SymbolAnalysisRow[]>(`/api/symbols/${encodeURIComponent(sym)}/analyses`);
   const { data: journal } = useQuery<{ name: string; date: string }[]>(
     `/api/symbols/${encodeURIComponent(sym)}/journal`,
   );
@@ -97,7 +86,7 @@ export function SymbolCockpit({ sym }: { sym: string }) {
         ) : (
           <>
             <Empty>这只股票还没有 intraday 分析——点下面按钮让 AI 生成，或跑一次 intraday-signal</Empty>
-            <GenerateAnalysis sym={sym} onReady={markGeneratedReady} />
+            <GenerateAnalysis sym={sym} />
           </>
         )}
         <p>
@@ -132,7 +121,7 @@ export function SymbolCockpit({ sym }: { sym: string }) {
   const activeIntradayTf = resolveIntradayTf(doc.built, intradayTf);
   const s = doc.built.sidebar;
   const hasNews = Boolean(s.context?.news?.length) || Boolean(s.news?.length);
-  const analysesRows = analyses ?? [];
+  const analysesRows = analyses;
 
   const sidebarTabs: SidebarTab[] = [
     {
@@ -201,6 +190,13 @@ export function SymbolCockpit({ sym }: { sym: string }) {
         <span className="meta">{sym}</span>
         {degraded && <Dot tone="accent" pulse title="数据延迟：行情拉取失败，正在重试" />}
         <span className="topbar-actions">
+          {hasNewer && (
+            <button className="badge badge--accent alert-badge" onClick={jumpToLatest}>
+              <Dot tone="accent" pulse />
+              <span className="alert-badge-text">有新分析，点击查看最新</span>
+            </button>
+          )}
+          <AnalysisTimeline rows={analysesRows} activeId={latestId} mode={mode} onSelect={goToAnalysis} />
           {latestAlert && (
             <button
               className={`badge badge--${latestAlert.level === "alert" ? "down" : "accent"} alert-badge`}

@@ -13,7 +13,7 @@ const REASON_TEXT: Record<string, string> = {
   "escalation on cooldown": "刚分析过，请稍后再试",
 };
 
-export function GenerateAnalysis({ sym, onReady }: { sym: string; onReady: (id: string) => void }) {
+export function GenerateAnalysis({ sym }: { sym: string }) {
   const [running, setRunning] = useState(false);
   const [hint, setHint] = useState<string | null>(null);
   const startedAtRef = useRef(0);
@@ -33,8 +33,7 @@ export function GenerateAnalysis({ sym, onReady }: { sym: string; onReady: (id: 
   useEffect(() => {
     if (!latestDoc) return;
     setRunning(false);
-    onReady(latestDoc.id);
-  }, [latestDoc, onReady]);
+  }, [latestDoc]);
 
   const start = async () => {
     setHint(null);

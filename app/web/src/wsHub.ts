@@ -1,7 +1,8 @@
 export type ChannelSpec =
   | { kind: "quotes"; extra?: string[] }
   | { kind: "chart"; id: string; count?: number }
-  | { kind: "comments"; symbol: string };
+  | { kind: "comments"; symbol: string }
+  | { kind: "analyses"; symbol: string };
 
 interface ChannelSub {
   spec: ChannelSpec;
