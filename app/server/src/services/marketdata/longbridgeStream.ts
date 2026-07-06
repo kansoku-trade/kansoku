@@ -1,6 +1,9 @@
-import { Config, OAuth, QuoteContext, SubType, TradeSession } from "longbridge";
-import type { PushQuote, PushQuoteEvent } from "longbridge";
+import { Config, OAuth, QuoteContext, SubType, TradeContext, TradeSession } from "longbridge";
+import type { PushQuote, PushQuoteEvent, PushCandlestickEvent } from "longbridge";
 import type { QuoteCell } from "../../../../shared/types.js";
+import { CandlestickLedger, periodToCandlePeriod, type CandleBar, type CandlePeriod } from "./candlestickLedger.js";
+
+export type { CandleBar, CandlePeriod };
 
 const PREV_CLOSE_TTL_MS = 30 * 60_000;
 const RECONNECT_BASE_MS = 1_000;
@@ -38,6 +41,9 @@ class LongbridgeStream {
   private connectPromise: Promise<QuoteContext> | null = null;
   private reconnectAttempt = 0;
 
+  private tradeCtx: TradeContext | null = null;
+  private tradeConnectPromise: Promise<TradeContext> | null = null;
+
   private snapshots = new Map<string, QuoteCell>();
   private prevCloseCache = new Map<string, PrevCloseCache>();
   private lastRegular = new Map<string, { last: number; pct: number }>();
@@ -45,6 +51,7 @@ class LongbridgeStream {
   private subscribed = new Set<string>();
   private listeners = new Set<StreamListener>();
   private prevCloseTimer: ReturnType<typeof setInterval> | null = null;
+  private candlestickLedger = new CandlestickLedger(() => this.connect());
 
   private async buildConfig(): Promise<Config> {
     const oauthId = process.env.LONGBRIDGE_OAUTH_CLIENT_ID;
@@ -79,6 +86,13 @@ class LongbridgeStream {
         }
         this.handlePush(event);
       });
+      ctx.setOnCandlestick((err, event) => {
+        if (err) {
+          console.warn("[longbridge-stream] onCandlestick error", err.message);
+          return;
+        }
+        this.handleCandlestickPush(event);
+      });
       this.ctx = ctx;
       this.reconnectAttempt = 0;
       if (!this.prevCloseTimer) {
@@ -93,6 +107,7 @@ class LongbridgeStream {
         await ctx.subscribe(syms, [SubType.Quote]);
         await this.refreshPrevClose(syms).catch(() => {});
       }
+      await this.candlestickLedger.resubscribeAll();
       return ctx;
     })();
     try {
@@ -152,6 +167,46 @@ class LongbridgeStream {
     };
     this.snapshots.set(symbol, cell);
     for (const listener of this.listeners) listener(cell);
+  }
+
+  private handleCandlestickPush(event: PushCandlestickEvent): void {
+    const period = periodToCandlePeriod(event.data.period);
+    if (!period) return;
+    const c = event.data.candlestick;
+    const bar: CandleBar = {
+      symbol: event.symbol,
+      period,
+      ts: c.timestamp.getTime(),
+      open: c.open.toNumber(),
+      high: c.high.toNumber(),
+      low: c.low.toNumber(),
+      close: c.close.toNumber(),
+      volume: c.volume,
+      turnover: c.turnover.toNumber(),
+    };
+    this.candlestickLedger.dispatch(event.symbol, period, bar);
+  }
+
+  subscribeCandlesticks(symbol: string, period: CandlePeriod, cb: (bar: CandleBar) => void): () => void {
+    return this.candlestickLedger.subscribe(symbol, period, cb);
+  }
+
+  async getTradeContext(): Promise<TradeContext> {
+    if (this.tradeCtx) return this.tradeCtx;
+    if (this.tradeConnectPromise) return this.tradeConnectPromise;
+    this.tradeConnectPromise = (async () => {
+      const config = await this.buildConfig();
+      const ctx = await TradeContext.new(config);
+      this.tradeCtx = ctx;
+      return ctx;
+    })();
+    try {
+      return await this.tradeConnectPromise;
+    } catch (err) {
+      this.tradeConnectPromise = null;
+      console.warn("[longbridge-stream] trade connect failed:", err instanceof Error ? err.message : err);
+      throw err;
+    }
   }
 
   private async refreshPrevClose(symbols: string[]): Promise<void> {
