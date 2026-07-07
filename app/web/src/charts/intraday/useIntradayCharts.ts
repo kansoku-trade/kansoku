@@ -64,6 +64,12 @@ const filterByGroup = <T extends { group?: SeriesMarker["group"] }>(
   toggles: Record<IndicatorToggleKey, boolean>,
 ): T[] => items.filter((item) => groupAllowed(toggles, item.group));
 
+export interface DrawingChartHandle {
+  chart: IChartApi;
+  series: ISeriesApi<"Candlestick">;
+  container: HTMLElement;
+}
+
 export function useIntradayCharts(
   built: IntradayBuilt,
   activeTf: TimeframeKey,
@@ -71,6 +77,7 @@ export function useIntradayCharts(
   macdRef: RefObject<HTMLDivElement | null>,
   onNearLeftEdge: (() => void) | undefined,
   toggles: Record<IndicatorToggleKey, boolean>,
+  onHandle?: (h: DrawingChartHandle | null) => void,
 ): void {
   const handleRef = useRef<Handle | null>(null);
   const builtRef = useRef(built);
@@ -81,6 +88,8 @@ export function useIntradayCharts(
   const firstTimeRef = useRef<number | null>(null);
   const onNearRef = useRef(onNearLeftEdge);
   onNearRef.current = onNearLeftEdge;
+  const onHandleRef = useRef(onHandle);
+  onHandleRef.current = onHandle;
 
   useEffect(() => {
     const mainEl = mainRef.current;
@@ -142,8 +151,10 @@ export function useIntradayCharts(
     handleRef.current = { main, macd, candle, vol, session, macdSession, emaSeries, hist, dif, dea, mainTip, macdTip, dynamic: [], planLines: [], fvg, anchorBg };
     lastTfRef.current = null;
     firstTimeRef.current = null;
+    onHandleRef.current?.({ chart: main, series: candle, container: mainEl });
 
     return () => {
+      onHandleRef.current?.(null);
       main.timeScale().unsubscribeVisibleLogicalRangeChange(onRangeChange);
       mainTip.destroy();
       macdTip.destroy();

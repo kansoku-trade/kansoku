@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clampViewCount, INTRADAY_MAX_COUNT } from "../src/services/history.js";
+import { clampViewCount } from "../src/services/history.js";
 
 describe("clampViewCount", () => {
   it("parses a positive integer", () => {
@@ -10,8 +10,8 @@ describe("clampViewCount", () => {
     expect(clampViewCount("300.9")).toBe(300);
   });
 
-  it("clamps to INTRADAY_MAX_COUNT", () => {
-    expect(clampViewCount("5000")).toBe(INTRADAY_MAX_COUNT);
+  it("does not cap large counts", () => {
+    expect(clampViewCount("5000")).toBe(5000);
   });
 
   it("returns null for missing, empty, zero, negative, and non-numeric input", () => {

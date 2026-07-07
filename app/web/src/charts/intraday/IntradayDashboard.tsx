@@ -1,7 +1,9 @@
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import type { IntradayBuilt, TimeframeKey } from "../../../../shared/types";
 import { fmt } from "../../format";
 import type { SidebarTab } from "../SidebarTabs";
+import { DrawingToolbar } from "../drawings/DrawingToolbar";
+import { useDrawings, type DrawingsHandle } from "../drawings/useDrawings";
 import { IndicatorToggles } from "./IndicatorToggles";
 import { IntradaySidebar } from "./IntradaySidebar";
 import { useIndicatorToggles } from "./useIndicatorToggles";
@@ -19,6 +21,7 @@ const MACD_HEIGHT_KEY = "intraday-macd-height";
 const clampMacdHeight = (h: number) => Math.min(MACD_MAX, Math.max(MACD_MIN, h));
 
 interface IntradayDashboardProps {
+  symbol: string;
   built: IntradayBuilt;
   activeTf: TimeframeKey;
   predictionUpdatedAt?: string;
@@ -49,6 +52,7 @@ export function IntradayTimeframeSwitch({
 }
 
 export function IntradayDashboard({
+  symbol,
   built,
   activeTf,
   predictionUpdatedAt,
@@ -67,7 +71,13 @@ export function IntradayDashboard({
   const mainRef = useRef<HTMLDivElement>(null);
   const macdRef = useRef<HTMLDivElement>(null);
   const { toggles, toggle } = useIndicatorToggles();
-  useIntradayCharts(built, activeTf, mainRef, macdRef, onLoadHistory, toggles);
+  const [drawingHandle, setDrawingHandle] = useState<DrawingsHandle | null>(null);
+  useIntradayCharts(built, activeTf, mainRef, macdRef, onLoadHistory, toggles, setDrawingHandle);
+  const barTimes = useMemo(
+    () => built.timeframes[activeTf]?.candles.map((c) => c.time) ?? [],
+    [built, activeTf],
+  );
+  const drawingsApi = useDrawings(drawingHandle, symbol, barTimes);
 
   const onResizeStart = (e: React.PointerEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -113,6 +123,7 @@ export function IntradayDashboard({
             </span>
           </div>
           <IndicatorToggles toggles={toggles} onToggle={toggle} />
+          <DrawingToolbar api={drawingsApi} />
           <div ref={mainRef} className="chart-host" />
         </div>
         <div

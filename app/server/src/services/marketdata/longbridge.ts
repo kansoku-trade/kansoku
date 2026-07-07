@@ -21,6 +21,8 @@ import type { MarketDataProvider, RawCapitalDistribution, RawPortfolio, RawPosit
 const NEWS_TIMEOUT_MS = 60_000;
 const THROTTLE_MIN_INTERVAL_MS = 100;
 const MAX_HISTORY_PAGES = 5;
+// Longbridge rejects kline requests above 1000 bars per call (code 301607).
+const KLINE_PAGE_SIZE = 1000;
 
 const LEGACY_PERIOD_ALIASES: Record<string, CandlePeriod> = { "1h": "60m" };
 
@@ -148,9 +150,10 @@ async function fetchCandles(
   count: number,
   tradeSessions: TradeSessions,
 ): Promise<Candlestick[]> {
-  let bars = await port.candlesticks(symbol, period, count, AdjustType.NoAdjust, tradeSessions);
+  let bars = await port.candlesticks(symbol, period, Math.min(count, KLINE_PAGE_SIZE), AdjustType.NoAdjust, tradeSessions);
   let pages = 0;
-  while (bars.length < count && bars.length > 0 && pages < MAX_HISTORY_PAGES) {
+  const maxPages = Math.max(MAX_HISTORY_PAGES, Math.ceil(count / KLINE_PAGE_SIZE) + 2);
+  while (bars.length < count && bars.length > 0 && pages < maxPages) {
     pages++;
     const earliest = bars[0];
     const more = await port.historyCandlesticksByOffset(
@@ -159,7 +162,7 @@ async function fetchCandles(
       AdjustType.NoAdjust,
       false,
       toNaiveDatetime(earliest.timestamp),
-      count - bars.length,
+      Math.min(count - bars.length, KLINE_PAGE_SIZE),
       tradeSessions,
     );
     const older = more.filter((b) => b.timestamp.getTime() < earliest.timestamp.getTime());

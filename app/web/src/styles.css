@@ -282,6 +282,23 @@ a:hover { color: var(--accent); }
   color: var(--text-primary); background: var(--bg-hover);
 }
 
+.drawing-toolbar {
+  position: absolute; top: 40px; left: 8px; z-index: 10;
+  display: flex; flex-direction: column; gap: 2px; padding: 4px;
+  background: rgba(10, 10, 10, 0.7); border: 1px solid var(--border); border-radius: var(--radius);
+}
+.drawing-toolbar button {
+  width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
+  background: transparent; border: 0; border-radius: var(--radius); color: var(--text-secondary);
+  cursor: pointer;
+}
+.drawing-toolbar button:hover:not(:disabled) { color: var(--text-primary); background: var(--bg-hover); }
+.drawing-toolbar button:focus-visible { outline: 1px solid var(--accent); outline-offset: 1px; }
+.drawing-toolbar button:disabled { color: var(--text-muted); opacity: 0.4; cursor: default; }
+.drawing-toolbar button[aria-pressed="true"] { color: var(--accent); background: var(--bg-hover); }
+.drawing-toolbar-sep { height: 1px; margin: 2px 2px; background: var(--border); }
+.drawing-toolbar-clear-armed { color: var(--down) !important; }
+
 .sidebar { background: var(--bg-surface); padding: 16px; overflow-y: auto; font-size: var(--fs-md); }
 .header { margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
 .symbol { font-size: var(--fs-xl); font-weight: 600; color: var(--text-primary); }

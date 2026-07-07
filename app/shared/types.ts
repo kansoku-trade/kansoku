@@ -746,3 +746,17 @@ export interface Notice {
   body: string;
   at: string;
 }
+
+export type AnnotationKind = "trendline" | "hline" | "rect" | "fib";
+
+export interface AnnotationPoint {
+  time: number;
+  price: number;
+}
+
+export interface Annotation {
+  id: string;
+  kind: AnnotationKind;
+  points: AnnotationPoint[];
+  createdAt: number;
+}

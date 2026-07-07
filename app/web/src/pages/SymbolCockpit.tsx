@@ -256,6 +256,7 @@ export function SymbolCockpit({ sym }: { sym: string }) {
       </div>
       <div className="detail-body">
         <IntradayDashboard
+          symbol={sym}
           built={doc.built}
           activeTf={activeIntradayTf}
           predictionUpdatedAt={doc.prediction_updated_at}

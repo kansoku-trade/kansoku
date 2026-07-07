@@ -5,7 +5,6 @@ import { useQuery } from "../../apiHooks";
 import { useSSE } from "../../useSSE";
 
 const LIVE_TYPES = new Set(["flow", "intraday"]);
-const HISTORY_MAX_COUNT = 1000;
 
 export type ChartDocView = ChartDoc & { prediction_stale?: boolean };
 
@@ -20,6 +19,7 @@ export function useIntradayDoc(id: string | null) {
   const [viewCount, setViewCount] = useState<number | null>(null);
   const [intradayTf, setIntradayTf] = useState<TimeframeKey | null>(null);
   const historyBusyRef = useRef(false);
+  const historyExhaustedRef = useRef(false);
   const docRef = useRef<ChartDocView | null>(null);
   const viewCountRef = useRef<number | null>(null);
   const historyControllerRef = useRef<AbortController | null>(null);
@@ -31,6 +31,7 @@ export function useIntradayDoc(id: string | null) {
     setViewCount(null);
     setIntradayTf(null);
     historyBusyRef.current = false;
+    historyExhaustedRef.current = false;
     historyControllerRef.current?.abort();
     historyControllerRef.current = null;
     return () => {
@@ -59,21 +60,25 @@ export function useIntradayDoc(id: string | null) {
 
   const loadHistory = useCallback(() => {
     if (!id) return;
-    if (historyBusyRef.current) return;
+    if (historyBusyRef.current || historyExhaustedRef.current) return;
     const docNow = docRef.current;
     if (!docNow || docNow.built.kind !== "intraday") return;
     const bars = Math.max(...Object.values(docNow.built.timeframes).map((t) => t.candles.length), 0);
     const current = viewCountRef.current ?? bars;
-    if (current <= 0 || current >= HISTORY_MAX_COUNT) return;
+    if (current <= 0) return;
     historyBusyRef.current = true;
     const controller = new AbortController();
     historyControllerRef.current = controller;
     api<{ built: ChartBuilt; count: number }>(
-      `/api/charts/${encodeURIComponent(id)}/built?count=${Math.min(current * 2, HISTORY_MAX_COUNT)}`,
+      `/api/charts/${encodeURIComponent(id)}/built?count=${current * 2}`,
       { signal: controller.signal },
     )
       .then((d) => {
         if (historyControllerRef.current !== controller) return;
+        if (d.built.kind === "intraday") {
+          const grown = Math.max(...Object.values(d.built.timeframes).map((t) => t.candles.length), 0);
+          if (grown <= bars) historyExhaustedRef.current = true;
+        }
         setViewCount(d.count);
         setDoc((p) => (p ? { ...p, built: d.built } : p));
       })
