@@ -5,6 +5,7 @@ import type {
   CockpitPosition,
   FlowRow,
   IntradayDayContext,
+  IntradayOptionsLevels,
   IntradayPrediction,
   IntradayTfSummary,
   NewsItem,
@@ -21,7 +22,9 @@ import { lastVwap, sessionVwap } from "../services/vwap.js";
 import { macd } from "../services/indicators.js";
 import { coerceIntradayTimeframe } from "../services/intraday.js";
 import { computeRelativeVolume } from "../services/relvol.js";
+import { readActiveLessons } from "../services/lessons.js";
 import { getProvider } from "../services/marketdata/registry.js";
+import { getOptionsLevels } from "../services/optionsLevels.js";
 import type { RawPosition } from "../services/marketdata/types.js";
 import { easternDate } from "../services/session.js";
 import { listCharts, loadChart, type ListFilter } from "../services/store.js";
@@ -50,6 +53,8 @@ export interface DatapackDeps {
   listComments: (symbol: string, date: string) => Promise<CockpitComment[]>;
   listCharts: (filter: ListFilter) => Promise<ChartMeta[]>;
   loadChart: (id: string) => Promise<ChartDoc | null>;
+  fetchOptionsLevels: (symbol: string) => Promise<IntradayOptionsLevels | null>;
+  readLessons: () => Promise<string[]>;
   now: () => Date;
 }
 
@@ -66,6 +71,8 @@ export const defaultDatapackDeps: DatapackDeps = {
   listComments,
   listCharts,
   loadChart,
+  fetchOptionsLevels: getOptionsLevels,
+  readLessons: readActiveLessons,
   now: () => new Date(),
 };
 
@@ -105,6 +112,8 @@ export interface ReassessPack {
   rel_volume: RelativeVolume | null;
   day_levels: DayLevels | null;
   day_context: IntradayDayContext | null;
+  options_levels: IntradayOptionsLevels | null;
+  lessons: string[];
   market: { spy: QuoteCell | null; qqq: QuoteCell | null };
   news: NewsItem[];
   prediction: IntradayPrediction | null;
@@ -228,7 +237,7 @@ export async function buildReassessPack(
   deps: DatapackDeps = defaultDatapackDeps,
 ): Promise<ReassessPack> {
   const now = deps.now();
-  const [barsList, flow, doc, positions, relvolBars, dayBars, news, spy, qqq] = await Promise.all([
+  const [barsList, flow, doc, positions, relvolBars, dayBars, news, spy, qqq, optionsLevels, lessons] = await Promise.all([
     Promise.all(REASSESS_TIMEFRAMES.map((tf) => deps.fetchKline(symbol, tf.period, KLINE_COUNT))),
     deps.fetchFlow(symbol),
     findTodayLatestIntradayDoc(symbol, deps),
@@ -238,6 +247,8 @@ export async function buildReassessPack(
     deps.fetchNews(symbol).catch(() => [] as NewsItem[]),
     deps.fetchQuote("SPY.US").catch(() => null),
     deps.fetchQuote("QQQ.US").catch(() => null),
+    deps.fetchOptionsLevels(symbol).catch(() => null),
+    deps.readLessons().catch(() => [] as string[]),
   ]);
 
   const timeframes = {} as Record<TimeframeKey, ReassessTimeframe>;
@@ -273,6 +284,8 @@ export async function buildReassessPack(
       opening_range: openingRange(m5Bars, now),
     },
     day_context: buildDayContext(dayBars, m5Bars, now, lastVwap(sessionVwap(m5Bars))),
+    options_levels: optionsLevels,
+    lessons,
     market: { spy, qqq },
     news: news.slice(0, 6),
     prediction,

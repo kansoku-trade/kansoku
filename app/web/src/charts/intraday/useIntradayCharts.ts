@@ -55,6 +55,10 @@ interface Handle {
 const NEAR_LEFT_BARS = 10;
 const VWAP_COLOR = "#c084fc";
 const DAY_LEVEL_COLOR = "#8b949e";
+const CALL_WALL_COLOR = "#e3b341";
+const PUT_WALL_COLOR = "#39c5cf";
+
+const fmtOi = (oi: number) => (oi >= 1000 ? `${(oi / 1000).toFixed(1)}k` : String(oi));
 
 const zoneTitle = (z: IntradayPriceZone, edge?: "上沿" | "下沿") =>
   `${z.label}${edge ? edge : ""} $${(edge === "上沿" ? z.high : z.low).toFixed(2)}`;
@@ -277,6 +281,22 @@ export function useIntradayCharts(
         if (price == null) continue;
         h.planLines.push(
           addPriceLine(h.candle, { price, color: DAY_LEVEL_COLOR, lineWidth: 1, lineStyle: 1, title: `${title} $${price.toFixed(2)}` }),
+        );
+      }
+    }
+
+    const ow = built.sidebar.optionsLevels;
+    if (toggles.optwall && ow) {
+      for (const w of ow.walls) {
+        const call = w.dominant === "call";
+        h.planLines.push(
+          addPriceLine(h.candle, {
+            price: w.strike,
+            color: call ? CALL_WALL_COLOR : PUT_WALL_COLOR,
+            lineWidth: 1,
+            lineStyle: 4,
+            title: `${call ? "C墙" : "P墙"} $${w.strike} (${fmtOi(call ? w.call_oi : w.put_oi)})`,
+          }),
         );
       }
     }

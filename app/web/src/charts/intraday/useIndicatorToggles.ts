@@ -11,7 +11,8 @@ export type IndicatorToggleKey =
   | "fvg"
   | "ema"
   | "vwap"
-  | "daylevel";
+  | "daylevel"
+  | "optwall";
 
 export const INDICATOR_TOGGLE_LABELS: Record<IndicatorToggleKey, string> = {
   crosses: "金叉死叉",
@@ -25,6 +26,7 @@ export const INDICATOR_TOGGLE_LABELS: Record<IndicatorToggleKey, string> = {
   ema: "EMA 均线",
   vwap: "VWAP",
   daylevel: "日内参照位",
+  optwall: "期权墙",
 };
 
 export const INDICATOR_TOGGLE_KEYS = Object.keys(INDICATOR_TOGGLE_LABELS) as IndicatorToggleKey[];

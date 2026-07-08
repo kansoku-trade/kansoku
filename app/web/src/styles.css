@@ -414,6 +414,18 @@ a.zone-item:hover { text-decoration: none; background: var(--bg-hover); }
 .conclusion-card { margin-bottom: 14px; }
 .conclusion-action { color: var(--text-primary); font-weight: 500; }
 
+.event-card {
+  margin-bottom: 14px; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--bg-surface);
+}
+.event-card-label {
+  display: flex; align-items: center; gap: 5px; font-size: var(--fs-sm); color: var(--text-secondary);
+  text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px;
+}
+.event-row { display: flex; gap: 8px; font-size: var(--fs-sm); line-height: 1.6; }
+.event-time { color: var(--text-secondary); flex-shrink: 0; font-variant-numeric: tabular-nums; }
+.event-title { color: var(--text-primary); min-width: 0; }
+
 .sidebar-tabs { display: flex; flex-direction: column; min-height: 0; }
 .sidebar-tab-panel { min-height: 0; }
 .sidebar-tab-bar {
