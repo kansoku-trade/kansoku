@@ -6,6 +6,7 @@ import { MarketTime } from "../../ui";
 import type { SidebarTab } from "../SidebarTabs";
 import { SidebarTabs } from "../SidebarTabs";
 import { ConclusionCard } from "./ConclusionCard";
+import { EventRiskCard } from "./EventRiskCard";
 import { NewsTab } from "./tabs/NewsTab";
 import { PositionTab } from "./tabs/PositionTab";
 import { PredictionTab } from "./tabs/PredictionTab";
@@ -77,6 +78,8 @@ export function IntradaySidebar({
       </div>
 
       <ConclusionCard context={s.context} predictionStale={predictionStale} />
+
+      <EventRiskCard eventRisk={s.eventRisk} />
 
       <SidebarTabs active={active} onChange={setActive} tabs={tabs} />
 

@@ -22,7 +22,7 @@ interface UsageTotal extends UsageSnapshot {
 }
 
 export interface AiUsageLogContext {
-  layer: "commentator" | "analyst";
+  layer: "commentator" | "analyst" | "event-filter";
   symbol: string;
   model: { provider?: string; id?: string };
   origin?: string;

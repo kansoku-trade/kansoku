@@ -79,6 +79,8 @@ function makeDeps(overrides: Partial<DatapackDeps> = {}): DatapackDeps {
     listComments: async () => Array.from({ length: 7 }, (_, i) => comment(`c${i}`)),
     listCharts: async () => [{ ...doc } as ChartMeta],
     loadChart: async () => doc,
+    fetchOptionsLevels: async () => null,
+    readLessons: async () => [],
     now: () => NOW,
     ...overrides,
   };

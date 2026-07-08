@@ -504,6 +504,34 @@ export interface IntradayDayContext {
   vwap: number | null;
 }
 
+export interface OptionsWallLevel {
+  strike: number;
+  call_oi: number;
+  put_oi: number;
+  dominant: "call" | "put";
+}
+
+export interface IntradayOptionsLevels {
+  spot: number | null;
+  put_call_oi_ratio: number | null;
+  expiries: string[];
+  walls: OptionsWallLevel[];
+  updated_at: string;
+}
+
+export interface MacroEventItem {
+  ts: string;
+  title: string;
+  estimate: string | null;
+  previous: string | null;
+}
+
+export interface IntradayEventRisk {
+  next_earnings: { date: string; title: string } | null;
+  macro: MacroEventItem[];
+  updated_at: string;
+}
+
 export interface IntradaySidebar {
   symbol: string;
   name: string;
@@ -514,6 +542,8 @@ export interface IntradaySidebar {
   position: PositionView | null;
   technicals: Record<TimeframeKey, IntradayTfSummary>;
   dayContext?: IntradayDayContext | null;
+  optionsLevels?: IntradayOptionsLevels | null;
+  eventRisk?: IntradayEventRisk | null;
   news: NewsItem[];
   context: IntradayContext | null;
 }

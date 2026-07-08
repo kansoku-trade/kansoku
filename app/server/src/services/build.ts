@@ -3,6 +3,8 @@ import { ClientError } from "../errors.js";
 import { ymd } from "./indicators.js";
 import { buildIntraday, TIMEFRAME_ORDER, type IntradayInput } from "./intraday.js";
 import { getProvider } from "./marketdata/registry.js";
+import { getEventRisk } from "./events.js";
+import { getOptionsLevels } from "./optionsLevels.js";
 import { buildSepa, type SepaInput } from "./sepa.js";
 import { cleanCohortRows, type CohortRow, type FlowRow } from "./simple.js";
 
@@ -98,6 +100,8 @@ async function prepareInput(type: ChartType, body: Body): Promise<Record<string,
       let dayKline = body.day_kline as RawBar[] | undefined;
       const provider = getProvider();
       const newsPromise = provider.getNews(symbol);
+      const optionsPromise = getOptionsLevels(symbol);
+      const eventRiskPromise = getEventRisk(symbol).catch(() => null);
       if (!timeframes) {
         const [m5, m15, h1] = await Promise.all(
           TIMEFRAME_ORDER.map((k) => provider.getKline(symbol, TF_PERIODS[k], count, session)),
@@ -117,6 +121,8 @@ async function prepareInput(type: ChartType, body: Body): Promise<Record<string,
         day_kline: dayKline,
         ema_periods: body.ema_periods,
         news: await newsPromise,
+        options_levels: await optionsPromise,
+        event_risk: await eventRiskPromise,
         position: body.position,
         prediction: body.prediction ?? null,
         context: body.context ?? null,

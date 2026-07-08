@@ -10,6 +10,8 @@ import {
   type EntryPlanStatus,
   type IntradayBuilt,
   type IntradayContext,
+  type IntradayEventRisk,
+  type IntradayOptionsLevels,
   type IntradayEntryPlan,
   type IntradayFvgZone,
   type IntradayPriceZone,
@@ -738,6 +740,8 @@ export interface IntradayInput {
   position?: { shares?: number; cost?: number };
   prediction?: IntradayPrediction | null;
   context?: IntradayContext | null;
+  options_levels?: IntradayOptionsLevels | null;
+  event_risk?: IntradayEventRisk | null;
 }
 
 const CONTEXT_STANCES = new Set(["long", "short", "neutral"]);
@@ -966,6 +970,8 @@ export function buildIntraday(input: IntradayInput): { built: IntradayBuilt; met
       position,
       technicals,
       dayContext,
+      optionsLevels: input.options_levels ?? null,
+      eventRisk: input.event_risk ?? null,
       news: input.news ?? [],
       context,
     },
@@ -976,6 +982,8 @@ export function buildIntraday(input: IntradayInput): { built: IntradayBuilt; met
     bars: Object.fromEntries(TIMEFRAME_ORDER.map((k) => [k, tfs[k].candles.length])) as Record<TimeframeKey, number>,
     technicals,
     day_context: dayContext,
+    options_levels: input.options_levels ?? null,
+    event_risk: input.event_risk ?? null,
   };
 
   return { built, meta };

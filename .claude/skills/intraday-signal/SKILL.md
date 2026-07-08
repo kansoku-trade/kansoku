@@ -139,7 +139,11 @@ The response also carries `meta.day_context`（日线背景与日内参照位，
 `daily_trend`（up/down/range，日线收盘对 MA20/MA50 的位置）、`daily_ma20`/`daily_ma50`、
 `high_20d`/`low_20d`（近 20 个交易日高低）、`prev_day`（昨日高/低/收）、
 `pre_market`（今日盘前高低）、`opening_range`（开盘前 30 分钟区间）、`vwap`。
-**先读这个再读三个周期**——1 小时的"趋势"可能只是日线大区间里的一段震荡；
+`meta` 还带 `options_levels`（期权墙——服务端拉 CBOE 自动算，与 Step 2 的
+`options-levels` 脚本同源同口径，preview 里有值时 Step 2 的脚本调用可省）和
+`event_risk`（下次财报日 + 近 3 天重要宏观发布——同样可替代 Step 2 的
+`finance-calendar` 调用）；两者都会渲染到页面（期权墙画线 + 事件风险卡）。
+**先读 day_context 再读三个周期**——1 小时的"趋势"可能只是日线大区间里的一段震荡；
 h1 方向与 `daily_trend` 相反时必须在报告里写明这是逆日线的判断。这些参照位
 也画在图上（"日内参照位"图层）。
 
