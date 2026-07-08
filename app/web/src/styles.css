@@ -263,25 +263,6 @@ a:hover { color: var(--accent); }
   color: var(--text-primary); background: var(--bg-hover);
 }
 
-.chart-indicator-toggles {
-  position: absolute; top: 8px; right: 60px; z-index: 10;
-  display: inline-flex; gap: 2px; padding: 2px; flex-wrap: wrap; max-width: 60%;
-  background: rgba(10, 10, 10, 0.7); border: 1px solid var(--border); border-radius: var(--radius);
-}
-.chart-indicator-toggles button {
-  height: 20px; padding: 0 7px;
-  background: transparent; border: 0; border-radius: var(--radius); color: var(--text-secondary);
-  font-size: var(--fs-sm); line-height: 20px; cursor: pointer; white-space: nowrap;
-}
-.chart-indicator-toggles button:hover { color: var(--text-primary); background: var(--bg-hover); }
-.chart-indicator-toggles button:focus-visible {
-  outline: 1px solid var(--accent); outline-offset: 1px;
-}
-.chart-indicator-toggles button[aria-pressed="false"] { color: var(--text-muted); }
-.chart-indicator-toggles button[aria-pressed="true"] {
-  color: var(--text-primary); background: var(--bg-hover);
-}
-
 .drawing-toolbar {
   position: absolute; top: 40px; left: 8px; z-index: 10;
   display: flex; flex-direction: column; gap: 2px; padding: 4px;
@@ -386,7 +367,7 @@ a.zone-item:hover { text-decoration: none; background: var(--bg-hover); }
 .vp-canvas { position: absolute; top: 0; right: 0; pointer-events: none; z-index: 5; }
 
 .layer-panel {
-  position: absolute; top: 8px; right: 8px; z-index: 20;
+  position: absolute; top: 8px; right: 64px; z-index: 20;
   background: rgba(10, 10, 10, 0.94); border: 1px solid var(--border);
   font-size: var(--fs-xs); min-width: 132px; max-width: 180px;
 }
@@ -408,6 +389,7 @@ a.zone-item:hover { text-decoration: none; background: var(--bg-hover); }
   cursor: pointer; user-select: none; line-height: 1.25; font-size: var(--fs-sm);
 }
 .lp-group label:hover { color: var(--text-primary); }
+.lp-group label:has(input:not(:checked)) { color: var(--text-muted); }
 .lp-group input[type=checkbox] { margin: 0 5px 0 0; accent-color: var(--accent); flex-shrink: 0; width: 11px; height: 11px; }
 .lp-swatch { display: inline-block; width: 7px; height: 7px; margin-right: 4px; border-radius: var(--radius); flex-shrink: 0; }
 

@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { theme } from "../../theme";
 
 export type IndicatorToggleKey =
   | "crosses"
@@ -13,6 +14,21 @@ export type IndicatorToggleKey =
   | "vwap"
   | "daylevel"
   | "optwall";
+
+export const INDICATOR_TOGGLE_ORDER: IndicatorToggleKey[] = [
+  "ema",
+  "vwap",
+  "levels",
+  "daylevel",
+  "fvg",
+  "pattern123",
+  "optwall",
+  "crosses",
+  "divergence",
+  "beichi",
+  "candle",
+  "ai",
+];
 
 export const INDICATOR_TOGGLE_LABELS: Record<IndicatorToggleKey, string> = {
   crosses: "金叉死叉",
@@ -29,12 +45,31 @@ export const INDICATOR_TOGGLE_LABELS: Record<IndicatorToggleKey, string> = {
   optwall: "期权墙",
 };
 
-export const INDICATOR_TOGGLE_KEYS = Object.keys(INDICATOR_TOGGLE_LABELS) as IndicatorToggleKey[];
+export const INDICATOR_TOGGLE_COLORS: Record<IndicatorToggleKey, string> = {
+  ema: theme.accent,
+  vwap: theme.up,
+  levels: theme.textSecondary,
+  daylevel: theme.textPrimary,
+  fvg: theme.up,
+  pattern123: theme.accent,
+  optwall: theme.down,
+  crosses: theme.up,
+  divergence: theme.down,
+  beichi: theme.textSecondary,
+  candle: theme.accent,
+  ai: theme.accent,
+};
+
+export const INDICATOR_TOGGLE_KEYS = INDICATOR_TOGGLE_ORDER;
 
 const STORAGE_KEY = "intraday-indicators";
 
+const DEFAULT_ON = new Set<IndicatorToggleKey>(["ema", "vwap", "levels", "daylevel"]);
+
 function defaultToggles(): Record<IndicatorToggleKey, boolean> {
-  return Object.fromEntries(INDICATOR_TOGGLE_KEYS.map((k) => [k, true])) as Record<IndicatorToggleKey, boolean>;
+  return Object.fromEntries(
+    INDICATOR_TOGGLE_KEYS.map((k) => [k, DEFAULT_ON.has(k)]),
+  ) as Record<IndicatorToggleKey, boolean>;
 }
 
 function loadToggles(): Record<IndicatorToggleKey, boolean> {
@@ -59,9 +94,9 @@ export function useIndicatorToggles() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(toggles));
   }, [toggles]);
 
-  const toggle = (key: IndicatorToggleKey) => {
-    setToggles((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
+  const set = useCallback((key: IndicatorToggleKey, value: boolean) => {
+    setToggles((prev) => (prev[key] === value ? prev : { ...prev, [key]: value }));
+  }, []);
 
-  return { toggles, toggle };
+  return { toggles, set };
 }

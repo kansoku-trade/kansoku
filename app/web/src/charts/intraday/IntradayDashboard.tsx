@@ -4,9 +4,14 @@ import { fmt } from "../../format";
 import type { SidebarTab } from "../SidebarTabs";
 import { DrawingToolbar } from "../drawings/DrawingToolbar";
 import { useDrawings, type DrawingsHandle } from "../drawings/useDrawings";
-import { IndicatorToggles } from "./IndicatorToggles";
+import { LayerPanel, type LayerGroup } from "../LayerPanel";
 import { IntradaySidebar } from "./IntradaySidebar";
-import { useIndicatorToggles } from "./useIndicatorToggles";
+import {
+  INDICATOR_TOGGLE_COLORS,
+  INDICATOR_TOGGLE_LABELS,
+  INDICATOR_TOGGLE_ORDER,
+  useIndicatorToggles,
+} from "./useIndicatorToggles";
 import { EMA_COLORS, useIntradayCharts } from "./useIntradayCharts";
 
 export const TF_LABELS: Record<TimeframeKey, string> = { m5: "5分钟", m15: "15分钟", h1: "1小时" };
@@ -70,7 +75,7 @@ export function IntradayDashboard({
   const [dragging, setDragging] = useState(false);
   const mainRef = useRef<HTMLDivElement>(null);
   const macdRef = useRef<HTMLDivElement>(null);
-  const { toggles, toggle } = useIndicatorToggles();
+  const { toggles, set: setToggle } = useIndicatorToggles();
   const [drawingHandle, setDrawingHandle] = useState<DrawingsHandle | null>(null);
   useIntradayCharts(built, activeTf, mainRef, macdRef, onLoadHistory, toggles, setDrawingHandle);
   const barTimes = useMemo(
@@ -78,6 +83,19 @@ export function IntradayDashboard({
     [built, activeTf],
   );
   const drawingsApi = useDrawings(drawingHandle, symbol, barTimes);
+  const layerGroups = useMemo<LayerGroup[]>(
+    () => [
+      {
+        items: INDICATOR_TOGGLE_ORDER.map((key) => ({
+          key,
+          label: INDICATOR_TOGGLE_LABELS[key],
+          color: INDICATOR_TOGGLE_COLORS[key],
+          toggle: (v: boolean) => setToggle(key, v),
+        })),
+      },
+    ],
+    [setToggle],
+  );
 
   const onResizeStart = (e: React.PointerEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -122,7 +140,7 @@ export function IntradayDashboard({
               夜盘
             </span>
           </div>
-          <IndicatorToggles toggles={toggles} onToggle={toggle} />
+          <LayerPanel groups={layerGroups} checked={toggles} />
           <DrawingToolbar api={drawingsApi} />
           <div ref={mainRef} className="chart-host" />
         </div>
