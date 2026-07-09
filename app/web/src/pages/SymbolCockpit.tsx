@@ -15,6 +15,7 @@ import { useTitle } from "../useTitle";
 import { useSSE } from "../useSSE";
 import { AiTab } from "./cockpit/AiTab";
 import { AnalysisTimeline } from "./cockpit/AnalysisTimeline";
+import { ChatDock } from "./cockpit/chat/ChatDock";
 import { EnvTab } from "./cockpit/EnvTab";
 import { FlowTab } from "./cockpit/FlowTab";
 import { GenerateAnalysis } from "./cockpit/GenerateAnalysis";
@@ -265,6 +266,7 @@ export function SymbolCockpit({ sym }: { sym: string }) {
           sidebarTabs={sidebarTabs}
           activeTab={activeTab}
           onTabChange={setActiveTab}
+          dock={<ChatDock chartId={doc.id} docCreatedAt={doc.created_at} />}
         />
       </div>
     </div>

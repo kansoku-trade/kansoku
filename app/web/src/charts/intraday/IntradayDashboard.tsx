@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, type ReactNode } from "react";
 import type { IntradayBuilt, TimeframeKey } from "../../../../shared/types";
 import { fmt } from "../../format";
 import type { SidebarTab } from "../SidebarTabs";
@@ -36,6 +36,7 @@ interface IntradayDashboardProps {
   extraTabs?: SidebarTab[];
   activeTab?: string;
   onTabChange?: (key: string) => void;
+  dock?: ReactNode;
 }
 
 export function IntradayTimeframeSwitch({
@@ -67,6 +68,7 @@ export function IntradayDashboard({
   extraTabs,
   activeTab,
   onTabChange,
+  dock,
 }: IntradayDashboardProps) {
   const [macdHeight, setMacdHeight] = useState(() => {
     const saved = Number(localStorage.getItem(MACD_HEIGHT_KEY));
@@ -163,6 +165,7 @@ export function IntradayDashboard({
         extraTabs={extraTabs}
         active={activeTab}
         onActiveChange={onTabChange}
+        dock={dock}
       />
     </div>
   );

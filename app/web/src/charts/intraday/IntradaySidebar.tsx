@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { TriangleAlert } from "lucide-react";
 import type { IntradayBuilt, TimeframeKey } from "../../../../shared/types";
 import { fmt } from "../../format";
@@ -20,6 +20,7 @@ interface IntradaySidebarProps {
   extraTabs?: SidebarTab[];
   active?: string;
   onActiveChange?: (key: string) => void;
+  dock?: ReactNode;
 }
 
 export function IntradaySidebar({
@@ -31,6 +32,7 @@ export function IntradaySidebar({
   extraTabs,
   active: activeProp,
   onActiveChange,
+  dock,
 }: IntradaySidebarProps) {
   const s = built.sidebar;
   const [internalActive, setInternalActive] = useState("prediction");
@@ -70,24 +72,28 @@ export function IntradaySidebar({
 
   return (
     <div className="sidebar">
-      <div className="header">
-        <div className="symbol">{s.symbol}</div>
-        <div className="name">{s.name}</div>
-        <div className="price">${fmt(s.last)}</div>
-        <div className="price-date">{s.asOf ? <MarketTime value={s.asOf} /> : ""} · 长桥证券</div>
+      <div className="sidebar-scroll">
+        <div className="header">
+          <div className="symbol">{s.symbol}</div>
+          <div className="name">{s.name}</div>
+          <div className="price">${fmt(s.last)}</div>
+          <div className="price-date">{s.asOf ? <MarketTime value={s.asOf} /> : ""} · 长桥证券</div>
+        </div>
+
+        <ConclusionCard context={s.context} predictionStale={predictionStale} />
+
+        <EventRiskCard eventRisk={s.eventRisk} />
+
+        <SidebarTabs active={active} onChange={setActive} tabs={tabs} />
+
+        <div className="disclaimer">
+          <TriangleAlert className="icon" size={12} /> 仅供学习参考，不构成投资建议。数据来源：长桥证券。
+          <br />
+          方向判断、情景推演、入场计划、Pin Bar/MACD 背离标注均为 AI 分析结论；MACD 数值本身由脚本计算。
+        </div>
       </div>
 
-      <ConclusionCard context={s.context} predictionStale={predictionStale} />
-
-      <EventRiskCard eventRisk={s.eventRisk} />
-
-      <SidebarTabs active={active} onChange={setActive} tabs={tabs} />
-
-      <div className="disclaimer">
-        <TriangleAlert className="icon" size={12} /> 仅供学习参考，不构成投资建议。数据来源：长桥证券。
-        <br />
-        方向判断、情景推演、入场计划、Pin Bar/MACD 背离标注均为 AI 分析结论；MACD 数值本身由脚本计算。
-      </div>
+      {dock}
     </div>
   );
 }

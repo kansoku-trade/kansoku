@@ -5,7 +5,8 @@ export type ChannelSpec =
   | { kind: "analyses"; symbol: string }
   | { kind: "position"; symbol: string }
   | { kind: "benchmark"; symbol: string }
-  | { kind: "board" };
+  | { kind: "board" }
+  | { kind: "chat"; id: string };
 
 interface ChannelSub {
   spec: ChannelSpec;
