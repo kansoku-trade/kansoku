@@ -8,6 +8,7 @@ export interface AiAgentHandle {
   abort(): void;
   setTools?(tools: AgentTool[]): void;
   subscribe?(listener: (event: AgentEvent) => void): () => void;
+  state?: { messages: AgentMessage[] };
 }
 
 export type AiAgentFactory = (config: {
@@ -37,6 +38,7 @@ const defaultAgentFactory: AiAgentFactory = (config) => {
       agent.state.tools = tools;
     },
     subscribe: (listener: Parameters<Agent["subscribe"]>[0]) => agent.subscribe(listener),
+    state: agent.state,
   };
 };
 
