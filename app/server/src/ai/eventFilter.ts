@@ -1,9 +1,10 @@
-import { Agent, type AgentTool } from "@earendil-works/pi-agent-core";
+import type { AgentTool } from "@earendil-works/pi-agent-core";
 import { type Static, Type } from "typebox";
 import type { MacroEventItem } from "../../../shared/types.js";
-import { getCodexApiKey } from "./codexAuth.js";
+import { type AiAgentFactory, createAgentSession } from "./agentSession.js";
 import { aiConfig } from "./models.js";
-import { attachAiUsageLogger } from "./usage.js";
+
+const TIMEOUT_MS = 60_000;
 
 const SYSTEM_PROMPT = [
   "你是财经事件相关性过滤器。输入是一只美股标的和一批即将发布的美国宏观事件，",
@@ -23,7 +24,16 @@ const submitSchema = Type.Object({
 
 type SubmitParams = Static<typeof submitSchema>;
 
-export async function filterMacroForSymbol(symbol: string, items: MacroEventItem[]): Promise<MacroEventItem[]> {
+export interface EventFilterDeps {
+  agentFactory?: AiAgentFactory;
+  timeoutMs?: number;
+}
+
+export async function filterMacroForSymbol(
+  symbol: string,
+  items: MacroEventItem[],
+  deps: EventFilterDeps = {},
+): Promise<MacroEventItem[]> {
   if (!items.length) return items;
   const model = aiConfig().commentModel;
   if (!model) return items;
@@ -40,22 +50,21 @@ export async function filterMacroForSymbol(symbol: string, items: MacroEventItem
     },
   };
 
-  const agent = new Agent({
-    getApiKey: getCodexApiKey,
-    initialState: {
-      systemPrompt: SYSTEM_PROMPT,
-      model,
-      tools: [tool],
-      ...(model.thinkingLevel ? { thinkingLevel: model.thinkingLevel } : {}),
-    },
+  const session = createAgentSession({
+    layer: "event-filter",
+    symbol,
+    model,
+    systemPrompt: SYSTEM_PROMPT,
+    tools: [tool],
+    agentFactory: deps.agentFactory,
   });
-  attachAiUsageLogger(agent, { layer: "event-filter", symbol, model });
 
-  await agent.prompt(
+  await session.runTurn(
     JSON.stringify({
       symbol,
       events: items.map((e, i) => ({ i, ts: e.ts, title: e.title })),
     }),
+    deps.timeoutMs ?? TIMEOUT_MS,
   );
 
   if (kept === null) return items;
