@@ -1,9 +1,10 @@
+import type { AgentMessage } from "@earendil-works/pi-agent-core";
 import { index, integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const comments = sqliteTable(
   "comments",
   {
-    id: integer("id").primaryKey({ autoIncrement: true }),
+    id: text("id").primaryKey(),
     ts: text("ts").notNull(),
     easternDate: text("eastern_date").notNull(),
     symbol: text("symbol").notNull(),
@@ -20,7 +21,7 @@ export const comments = sqliteTable(
 export const aiUsage = sqliteTable(
   "ai_usage",
   {
-    id: integer("id").primaryKey({ autoIncrement: true }),
+    id: text("id").primaryKey(),
     ts: text("ts").notNull(),
     easternDate: text("eastern_date").notNull(),
     layer: text("layer").notNull(),
@@ -62,3 +63,28 @@ export const outcomes = sqliteTable("outcomes", {
   resolvedAt: integer("resolved_at").notNull(),
   judgedAt: text("judged_at").notNull(),
 });
+
+export const chatSessions = sqliteTable(
+  "chat_sessions",
+  {
+    id: text("id").primaryKey(),
+    chartId: text("chart_id").notNull().unique(),
+    symbol: text("symbol").notNull(),
+    title: text("title").notNull(),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (t) => [index("chat_sessions_symbol").on(t.symbol)],
+);
+
+export const chatMessages = sqliteTable(
+  "chat_messages",
+  {
+    id: text("id").primaryKey(),
+    sessionId: text("session_id").notNull(),
+    ts: text("ts").notNull(),
+    role: text("role").notNull(),
+    payload: text("payload", { mode: "json" }).$type<AgentMessage>().notNull(),
+  },
+  (t) => [index("chat_messages_session").on(t.sessionId)],
+);

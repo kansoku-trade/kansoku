@@ -2,6 +2,7 @@ import { and, asc, desc, eq } from "drizzle-orm";
 import type { CockpitComment, CommentLevel, CommentSource } from "../../../shared/types.js";
 import { getDb, type Db } from "../db/index.js";
 import { comments } from "../db/schema.js";
+import { nextSnowflake } from "../db/snowflake.js";
 import { easternDate } from "../services/session.js";
 
 type Listener = (comment: CockpitComment) => void;
@@ -53,7 +54,7 @@ export async function listComments(symbol: string, date: string, db: Db = getDb(
     .select()
     .from(comments)
     .where(and(eq(comments.symbol, symbol), eq(comments.easternDate, date)))
-    .orderBy(asc(comments.id));
+    .orderBy(asc(comments.ts), asc(comments.id));
   return rows.map(toComment);
 }
 
@@ -78,6 +79,7 @@ export async function listAllCommentDates(limit = 30, db: Db = getDb()): Promise
 
 export async function appendComment(comment: CockpitComment, db: Db = getDb()): Promise<void> {
   await db.insert(comments).values({
+    id: nextSnowflake(),
     ts: comment.ts,
     easternDate: easternDate(new Date(comment.ts)),
     symbol: comment.symbol,

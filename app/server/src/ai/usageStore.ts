@@ -2,6 +2,7 @@ import { asc, desc, eq } from "drizzle-orm";
 import type { AiUsageSummary } from "../../../shared/types.js";
 import { getDb, type Db } from "../db/index.js";
 import { aiUsage } from "../db/schema.js";
+import { nextSnowflake } from "../db/snowflake.js";
 import { easternDate } from "../services/session.js";
 
 export interface AiUsageRecord {
@@ -37,7 +38,11 @@ function toRecord(row: typeof aiUsage.$inferSelect): AiUsageRecord {
 }
 
 export async function listUsage(date: string, db: Db = getDb()): Promise<AiUsageRecord[]> {
-  const rows = await db.select().from(aiUsage).where(eq(aiUsage.easternDate, date)).orderBy(asc(aiUsage.id));
+  const rows = await db
+    .select()
+    .from(aiUsage)
+    .where(eq(aiUsage.easternDate, date))
+    .orderBy(asc(aiUsage.ts), asc(aiUsage.id));
   return rows.map(toRecord);
 }
 
@@ -52,6 +57,7 @@ export async function listUsageDates(limit = 30, db: Db = getDb()): Promise<stri
 
 export async function appendUsage(record: AiUsageRecord, db: Db = getDb()): Promise<void> {
   await db.insert(aiUsage).values({
+    id: nextSnowflake(),
     ts: record.ts,
     easternDate: easternDate(new Date(record.ts)),
     layer: record.layer,
