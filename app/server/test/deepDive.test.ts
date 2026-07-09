@@ -1,14 +1,8 @@
 import { promises as fs } from "node:fs";
 import { join } from "node:path";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  type DeepDiveAgent,
-  type DeepDiveAgentFactory,
-  type DeepDiveDeps,
-  deepDiveState,
-  resetDeepDiveStateForTests,
-  startDeepDive,
-} from "../src/ai/deepDive.js";
+import type { AiAgentFactory, AiAgentHandle } from "../src/ai/agentSession.js";
+import { type DeepDiveDeps, deepDiveState, resetDeepDiveStateForTests, startDeepDive } from "../src/ai/deepDive.js";
 import type { AiModel } from "../src/ai/models.js";
 import type { Notice } from "../../shared/types.js";
 import { onNotice } from "../src/ai/notices.js";
@@ -19,7 +13,7 @@ const base = process.env.TMPDIR ?? "/tmp/";
 const sep = base.endsWith("/") ? "" : "/";
 const repoRoot = `${base}${sep}deep-dive-test-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
-type Tools = Parameters<DeepDiveAgentFactory>[0]["tools"];
+type Tools = Parameters<AiAgentFactory>[0]["tools"];
 
 function tool(tools: Tools, name: string) {
   const t = tools.find((x) => x.name === name);
@@ -44,8 +38,8 @@ function harness(
 ): Harness {
   const notifications: { title: string; message: string }[] = [];
 
-  const agentFactory: DeepDiveAgentFactory = ({ tools }) => {
-    const agent: DeepDiveAgent = {
+  const agentFactory: AiAgentFactory = ({ tools }) => {
+    const agent: AiAgentHandle = {
       prompt: opts.hang ? () => new Promise<void>(() => {}) : () => script(tools),
       abort: () => opts.onAbort?.(),
     };
@@ -132,7 +126,7 @@ describe("startDeepDive success/failure paths", () => {
   });
 
   it("records a failure when the agent rejects", async () => {
-    const agentFactory: DeepDiveAgentFactory = () => ({
+    const agentFactory: AiAgentFactory = () => ({
       prompt: async () => {
         throw new Error("boom");
       },

@@ -3,10 +3,10 @@ import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
-import { defaultAgentFactory, deepDiveState, startDeepDive } from "../src/ai/deepDive.js";
+import { createAgentSession } from "../src/ai/agentSession.js";
+import { deepDiveState, startDeepDive } from "../src/ai/deepDive.js";
 import { buildSystemPrompt, buildTools } from "../src/ai/deepDiveTools.js";
 import { resolveModel } from "../src/ai/models.js";
-import { attachAiUsageLogger } from "../src/ai/usage.js";
 import { loadDotenv } from "../src/dotenv.js";
 import { PROJECT_ROOT } from "../src/env.js";
 import { loadSkillIndex, readSkill } from "../src/services/skills.js";
@@ -65,8 +65,14 @@ async function runDefaultMode(symbol: string): Promise<void> {
   }));
 
   const systemPrompt = buildSystemPrompt(PROJECT_ROOT);
-  const agent = defaultAgentFactory({ systemPrompt, model, tools: wrappedTools });
-  attachAiUsageLogger(agent, { layer: "analyst", symbol, model, origin: "deep-dive-smoke" });
+  const session = createAgentSession({
+    layer: "analyst",
+    symbol,
+    origin: "deep-dive-smoke",
+    model,
+    systemPrompt,
+    tools: wrappedTools,
+  });
 
   const smokePrompt = [
     `This is a smoke test for symbol ${symbol}. Do exactly these steps in order, then stop:`,
@@ -77,7 +83,7 @@ async function runDefaultMode(symbol: string): Promise<void> {
   ].join("\n");
 
   const startedAt = Date.now();
-  await agent.prompt(smokePrompt);
+  await session.agent.prompt(smokePrompt);
   const elapsedMs = Date.now() - startedAt;
 
   console.log(`\ntool calls observed (in order):`);

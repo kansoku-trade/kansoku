@@ -1,12 +1,10 @@
 import { exec as nodeExec } from "node:child_process";
 import { promisify } from "node:util";
-import { Agent, type AgentTool } from "@earendil-works/pi-agent-core";
 import { PROJECT_ROOT } from "../env.js";
-import { getCodexApiKey } from "./codexAuth.js";
+import { type AiAgentFactory, createAgentSession } from "./agentSession.js";
 import { buildSystemPrompt, buildTools, type ExecFn, type ExecResult } from "./deepDiveTools.js";
-import { resolveModel, type AiModel } from "./models.js";
+import { aiConfig, type AiModel } from "./models.js";
 import { emitNotice } from "./notices.js";
-import { attachAiUsageLogger } from "./usage.js";
 
 const DEFAULT_TIMEOUT_MS = 15 * 60_000;
 const BASH_TIMEOUT_MS = 120_000;
@@ -21,22 +19,11 @@ export type DeepDiveState = {
   lastResult?: { symbol: string; ok: boolean; finishedAt: string; error?: string; dirtyWarning?: boolean };
 };
 
-export interface DeepDiveAgent {
-  prompt(text: string): Promise<unknown>;
-  abort(): void;
-}
-
-export type DeepDiveAgentFactory = (config: {
-  systemPrompt: string;
-  model: AiModel;
-  tools: AgentTool[];
-}) => DeepDiveAgent;
-
 export type { ExecFn, ExecResult };
 
 export interface DeepDiveDeps {
   model: AiModel | null;
-  agentFactory?: DeepDiveAgentFactory;
+  agentFactory?: AiAgentFactory;
   notify?: (title: string, message: string, kind: "deep_dive_done" | "deep_dive_failed") => void;
   repoRoot?: string;
   stocksDir?: string;
@@ -54,8 +41,6 @@ export function deepDiveState(): DeepDiveState {
 export function resetDeepDiveStateForTests(): void {
   state = { running: false };
 }
-
-class DeepDiveTimeoutError extends Error {}
 
 function defaultExec(repoRoot: string): ExecFn {
   return async (command: string) => {
@@ -84,50 +69,12 @@ function unexpectedDirty(before: string, after: string, symbol: string): boolean
   return afterLines.some((line) => !beforeLines.has(line) && !line.includes(noteLine));
 }
 
-export const defaultAgentFactory: DeepDiveAgentFactory = (config) =>
-  new Agent({
-    getApiKey: getCodexApiKey,
-    initialState: {
-      systemPrompt: config.systemPrompt,
-      model: config.model,
-      tools: config.tools,
-      ...(config.model.thinkingLevel ? { thinkingLevel: config.model.thinkingLevel } : {}),
-    },
-  });
-
-async function runWithTimeout(agent: DeepDiveAgent, prompt: string, timeoutMs: number): Promise<void> {
-  let done = false;
-  await new Promise<void>((resolvePromise, reject) => {
-    const timer = setTimeout(() => {
-      if (done) return;
-      done = true;
-      agent.abort();
-      reject(new DeepDiveTimeoutError(`timed out after ${timeoutMs}ms`));
-    }, timeoutMs);
-    agent.prompt(prompt).then(
-      () => {
-        if (done) return;
-        done = true;
-        clearTimeout(timer);
-        resolvePromise();
-      },
-      (err) => {
-        if (done) return;
-        done = true;
-        clearTimeout(timer);
-        reject(err instanceof Error ? err : new Error(String(err)));
-      },
-    );
-  });
-}
-
 async function executeDeepDiveRun(symbol: string, deps: DeepDiveDeps): Promise<void> {
   const repoRoot = deps.repoRoot ?? PROJECT_ROOT;
   const notify =
     deps.notify ??
     ((title: string, body: string, kind: "deep_dive_done" | "deep_dive_failed") =>
       emitNotice({ symbol, kind, title, body, at: new Date().toISOString() }));
-  const factory = deps.agentFactory ?? defaultAgentFactory;
   const timeoutMs = deps.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const exec = deps.exec ?? defaultExec(repoRoot);
   const now = deps.now ?? (() => Date.now());
@@ -138,11 +85,17 @@ async function executeDeepDiveRun(symbol: string, deps: DeepDiveDeps): Promise<v
     if (!deps.model) throw new Error("model not resolved");
     const tools = buildTools(repoRoot, symbol, exec, deps.stocksDir);
     const systemPrompt = buildSystemPrompt(repoRoot);
-    const agent = factory({ systemPrompt, model: deps.model, tools });
-    attachAiUsageLogger(agent, { layer: "analyst", symbol, model: deps.model, origin: "deep-dive" });
+    const session = createAgentSession({
+      layer: "analyst",
+      symbol,
+      origin: "deep-dive",
+      model: deps.model,
+      systemPrompt,
+      tools,
+      agentFactory: deps.agentFactory,
+    });
 
-    await runWithTimeout(
-      agent,
+    await session.runTurn(
       `Run the stock-deep-dive skill flow for ${symbol}, then write the updated note.`,
       timeoutMs,
     );
@@ -183,7 +136,7 @@ export function startDeepDive(
 ): { started: true } | { started: false; reason: "busy" | "disabled" } {
   if (state.running) return { started: false, reason: "busy" };
 
-  const model = deps && "model" in deps ? deps.model ?? null : resolveModel(process.env.AI_DEEPDIVE_MODEL);
+  const model = deps && "model" in deps ? deps.model ?? null : aiConfig().deepDiveModel;
   if (!model) return { started: false, reason: "disabled" };
 
   const now = deps?.now ?? (() => Date.now());
