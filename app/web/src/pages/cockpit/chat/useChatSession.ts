@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { errorMessage, isAbortError } from "../../../api";
+import { errorMessage } from "../../../api";
 import { subscribeChannel } from "../../../wsHub";
 
 export interface ChatSessionInfo {
@@ -77,13 +77,14 @@ export function useChatSession(chartId: string): ChatSessionState {
   const requestSeqRef = useRef(0);
   const toolSeqRef = useRef(0);
   const errorSeqRef = useRef(0);
+  const sendPendingRef = useRef(false);
 
   const reload = useCallback(
     (markError?: string) => {
       const seq = ++requestSeqRef.current;
       fetchChat(chartId)
         .then((env) => {
-          if (requestSeqRef.current !== seq) return;
+          if (requestSeqRef.current !== seq || sendPendingRef.current) return;
           setSession(env.session);
           setRows(
             markError
@@ -94,15 +95,17 @@ export function useChatSession(chartId: string): ChatSessionState {
           setStreamText(env.busy ? env.partial : "");
           setLoaded(true);
         })
-        .catch((err: unknown) => {
-          if (requestSeqRef.current !== seq || isAbortError(err)) return;
+        .catch(() => {
+          if (requestSeqRef.current !== seq || sendPendingRef.current) return;
           setLoaded(true);
+          setHint("对话记录加载失败");
         });
     },
     [chartId],
   );
 
   useEffect(() => {
+    sendPendingRef.current = false;
     setSession(null);
     setRows([]);
     setBusy(false);
@@ -163,6 +166,7 @@ export function useChatSession(chartId: string): ChatSessionState {
       const trimmed = text.trim();
       if (!trimmed) return { ok: false, error: "内容不能为空" };
       const optimisticId = `optimistic-${Date.now()}`;
+      sendPendingRef.current = true;
       setHint(null);
       setBusy(true);
       setRows((prev) => [...prev, { id: optimisticId, ts: new Date().toISOString(), kind: "user", text: trimmed }]);
@@ -172,7 +176,10 @@ export function useChatSession(chartId: string): ChatSessionState {
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ text: trimmed }),
         });
-        if (res.status === 202) return { ok: true };
+        if (res.status === 202) {
+          sendPendingRef.current = false;
+          return { ok: true };
+        }
         let message = `HTTP ${res.status}`;
         try {
           const body: unknown = await res.json();
@@ -181,12 +188,14 @@ export function useChatSession(chartId: string): ChatSessionState {
         setBusy(false);
         setHint(message);
         setRows((prev) => prev.filter((row) => row.id !== optimisticId));
+        sendPendingRef.current = false;
         return { ok: false, error: message };
       } catch (err) {
         const message = errorMessage(err);
         setBusy(false);
         setHint(message);
         setRows((prev) => prev.filter((row) => row.id !== optimisticId));
+        sendPendingRef.current = false;
         return { ok: false, error: message };
       }
     },
