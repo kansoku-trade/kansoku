@@ -47,7 +47,7 @@ function harness(overrides: Partial<SchedulerDeps> = {}): { deps: SchedulerDeps;
   const rec: Recorded = { commentatorCalls: [], analystCalls: [], comments: [], recaps: [] };
   const deps: SchedulerDeps = {
     now: () => 1_000_000,
-    aiConfig: () => ({ commentModel: fakeModel, analystModel: fakeModel }),
+    aiConfig: () => ({ commentModel: fakeModel, analystModel: fakeModel, deepDiveModel: null, chatModel: null }),
     sessionKind: () => "regular",
     discoverTargets: async () => ["MU.US"],
     discoverPreTargets: async () => ["MU.US"],
@@ -91,7 +91,7 @@ describe("aiScheduler tick", () => {
   it("does nothing when the comment model is unresolved", async () => {
     const discoverTargets = vi.fn(async () => ["MU.US"]);
     const { deps, rec } = harness({
-      aiConfig: () => ({ commentModel: null, analystModel: null }),
+      aiConfig: () => ({ commentModel: null, analystModel: null, deepDiveModel: null, chatModel: null }),
       discoverTargets,
     });
     await createAiScheduler(deps).tick();
@@ -154,7 +154,7 @@ describe("aiScheduler tick", () => {
 
   it("does not escalate when the analyst model is unresolved", async () => {
     const { deps, rec } = harness({
-      aiConfig: () => ({ commentModel: fakeModel, analystModel: null }),
+      aiConfig: () => ({ commentModel: fakeModel, analystModel: null, deepDiveModel: null, chatModel: null }),
       detectTriggers: () => [{ kind: "level_break", detail: "broke stop" }],
       runCommentator: async () => ({ escalate: true }),
     });
@@ -398,7 +398,9 @@ describe("aiScheduler loop", () => {
   });
 
   it("does not start when the comment model is unresolved", () => {
-    const { deps } = harness({ aiConfig: () => ({ commentModel: null, analystModel: null }) });
+    const { deps } = harness({
+      aiConfig: () => ({ commentModel: null, analystModel: null, deepDiveModel: null, chatModel: null }),
+    });
     const scheduler = createAiScheduler(deps);
     expect(scheduler.start()).toBe(false);
   });

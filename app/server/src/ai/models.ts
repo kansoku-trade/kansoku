@@ -12,6 +12,8 @@ const THINKING_LEVELS: ReadonlySet<string> = new Set(["minimal", "low", "medium"
 export type AiConfig = {
   commentModel: AiModel | null;
   analystModel: AiModel | null;
+  deepDiveModel: AiModel | null;
+  chatModel: AiModel | null;
 };
 
 type ModelLookup = (provider: string, id: string) => AiModel | undefined;
@@ -55,8 +57,11 @@ export function resolveModel(
 }
 
 export function aiConfig(): AiConfig {
+  const analystModel = resolveModel(process.env.AI_ANALYST_MODEL);
   return {
     commentModel: resolveModel(process.env.AI_COMMENT_MODEL),
-    analystModel: resolveModel(process.env.AI_ANALYST_MODEL),
+    analystModel,
+    deepDiveModel: resolveModel(process.env.AI_DEEPDIVE_MODEL),
+    chatModel: resolveModel(process.env.AI_CHAT_MODEL) ?? analystModel,
   };
 }

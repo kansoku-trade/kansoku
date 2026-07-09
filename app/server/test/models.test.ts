@@ -97,12 +97,21 @@ describe("aiConfig", () => {
   afterEach(() => {
     process.env.AI_COMMENT_MODEL = prev.AI_COMMENT_MODEL;
     process.env.AI_ANALYST_MODEL = prev.AI_ANALYST_MODEL;
+    process.env.AI_DEEPDIVE_MODEL = prev.AI_DEEPDIVE_MODEL;
+    process.env.AI_CHAT_MODEL = prev.AI_CHAT_MODEL;
   });
 
-  it("returns null for both layers when unset", () => {
+  it("returns null for every layer when unset", () => {
     delete process.env.AI_COMMENT_MODEL;
     delete process.env.AI_ANALYST_MODEL;
-    expect(aiConfig()).toEqual({ commentModel: null, analystModel: null });
+    delete process.env.AI_DEEPDIVE_MODEL;
+    delete process.env.AI_CHAT_MODEL;
+    expect(aiConfig()).toEqual({
+      commentModel: null,
+      analystModel: null,
+      deepDiveModel: null,
+      chatModel: null,
+    });
   });
 
   it("resolves each layer from its env var", () => {
@@ -111,5 +120,42 @@ describe("aiConfig", () => {
     const config = aiConfig();
     expect(config.commentModel?.id).toBe("claude-haiku-4-5");
     expect(config.analystModel).toBeNull();
+  });
+
+  it("resolves deepDiveModel from AI_DEEPDIVE_MODEL", () => {
+    process.env.AI_DEEPDIVE_MODEL = "anthropic/claude-haiku-4-5";
+    expect(aiConfig().deepDiveModel?.id).toBe("claude-haiku-4-5");
+  });
+
+  it("returns null deepDiveModel when unset", () => {
+    delete process.env.AI_DEEPDIVE_MODEL;
+    expect(aiConfig().deepDiveModel).toBeNull();
+  });
+
+  it("uses AI_CHAT_MODEL when set", () => {
+    process.env.AI_CHAT_MODEL = "anthropic/claude-haiku-4-5";
+    delete process.env.AI_ANALYST_MODEL;
+    expect(aiConfig().chatModel?.id).toBe("claude-haiku-4-5");
+  });
+
+  it("falls back to the resolved analyst model when AI_CHAT_MODEL is unset", () => {
+    delete process.env.AI_CHAT_MODEL;
+    process.env.AI_ANALYST_MODEL = "anthropic/claude-haiku-4-5";
+    const config = aiConfig();
+    expect(config.chatModel?.id).toBe("claude-haiku-4-5");
+    expect(config.chatModel).toBe(config.analystModel);
+  });
+
+  it("falls back to the analyst model when AI_CHAT_MODEL is unresolvable", () => {
+    process.env.AI_CHAT_MODEL = "bogus/does-not-exist";
+    process.env.AI_ANALYST_MODEL = "anthropic/claude-haiku-4-5";
+    const config = aiConfig();
+    expect(config.chatModel?.id).toBe("claude-haiku-4-5");
+  });
+
+  it("returns null chatModel when both AI_CHAT_MODEL and AI_ANALYST_MODEL are unset", () => {
+    delete process.env.AI_CHAT_MODEL;
+    delete process.env.AI_ANALYST_MODEL;
+    expect(aiConfig().chatModel).toBeNull();
   });
 });
