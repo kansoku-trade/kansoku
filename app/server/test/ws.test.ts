@@ -5,6 +5,10 @@ vi.mock("../src/ai/comments.js", () => ({
   onComment: vi.fn(() => () => {}),
   listComments: vi.fn(async () => []),
 }));
+vi.mock("../src/ai/chat.js", () => ({
+  onChatEvent: vi.fn(),
+  chatTurnState: vi.fn(),
+}));
 vi.mock("../src/realtime/analyses.js", () => ({ subscribeAnalyses: vi.fn(() => () => {}) }));
 vi.mock("../src/realtime/benchmark.js", () => ({ subscribeBenchmark: vi.fn(() => () => {}) }));
 vi.mock("../src/realtime/board.js", () => ({ subscribeBoard: vi.fn(() => () => {}) }));
@@ -15,6 +19,10 @@ vi.mock("../src/realtime/quotes.js", () => ({ subscribeQuotes: vi.fn(() => () =>
 const { handleSocket, parseWsMessage } = await import("../src/routes/ws.js");
 const { activeLeaseSymbols, hasActiveLease, LEASE_GRACE_MS, resetLeases } = await import("../src/ai/leases.js");
 const { emitNotice } = await import("../src/ai/notices.js");
+const { onChatEvent, chatTurnState } = (await import("../src/ai/chat.js")) as unknown as {
+  onChatEvent: ReturnType<typeof vi.fn>;
+  chatTurnState: ReturnType<typeof vi.fn>;
+};
 
 class MockSocket extends EventEmitter {
   readyState = 1;
@@ -99,6 +107,15 @@ describe("parseWsMessage", () => {
     });
   });
 
+  it("parses a chat sub", () => {
+    expect(parseWsMessage({ op: "sub", key: "k8", kind: "chat", id: "chart-1" })).toEqual({
+      op: "sub",
+      key: "k8",
+      kind: "chat",
+      id: "chart-1",
+    });
+  });
+
   it("parses unsub", () => {
     expect(parseWsMessage({ op: "unsub", key: "k1" })).toEqual({ op: "unsub", key: "k1" });
   });
@@ -110,8 +127,55 @@ describe("parseWsMessage", () => {
     expect(parseWsMessage({ op: "sub", key: "k", kind: "comments" })).toBeNull();
     expect(parseWsMessage({ op: "sub", key: "k", kind: "position" })).toBeNull();
     expect(parseWsMessage({ op: "sub", key: "k", kind: "benchmark" })).toBeNull();
+    expect(parseWsMessage({ op: "sub", key: "k", kind: "chat" })).toBeNull();
     expect(parseWsMessage({ op: "sub", key: "k", kind: "nope" })).toBeNull();
     expect(parseWsMessage({ op: "sub", key: "x".repeat(201), kind: "quotes" })).toBeNull();
+  });
+});
+
+describe("chat channel", () => {
+  beforeEach(() => {
+    onChatEvent.mockReset();
+    chatTurnState.mockReset();
+  });
+
+  it("pushes init before forwarding a live event", async () => {
+    let capturedListener: ((event: unknown) => void) | undefined;
+    const unsubFn = vi.fn();
+    chatTurnState.mockReturnValue({ busy: true, partial: "部分回答" });
+    onChatEvent.mockImplementation((_id: string, listener: (event: unknown) => void) => {
+      capturedListener = listener;
+      return unsubFn;
+    });
+
+    const socket = makeSocket();
+    socket.emit("message", JSON.stringify({ op: "sub", key: "chat1", kind: "chat", id: "chart-1" }));
+    await waitFor(() => socket.sent.some((raw) => raw.includes('"type":"init"')));
+
+    expect(onChatEvent).toHaveBeenCalledWith("chart-1", expect.any(Function));
+    const initEnvelope = JSON.parse(socket.sent.find((raw) => raw.includes('"type":"init"'))!);
+    expect(initEnvelope).toEqual({ key: "chat1", payload: { type: "init", busy: true, partial: "部分回答" } });
+
+    capturedListener?.({ event: "delta", text: "hi" });
+    await waitFor(() => socket.sent.some((raw) => raw.includes('"type":"event"')));
+    const eventEnvelope = JSON.parse(socket.sent.find((raw) => raw.includes('"type":"event"'))!);
+    expect(eventEnvelope).toEqual({
+      key: "chat1",
+      payload: { type: "event", event: { event: "delta", text: "hi" } },
+    });
+  });
+
+  it("stops forwarding on unsub", async () => {
+    const unsubFn = vi.fn();
+    chatTurnState.mockReturnValue({ busy: false, partial: "" });
+    onChatEvent.mockImplementation(() => unsubFn);
+
+    const socket = makeSocket();
+    socket.emit("message", JSON.stringify({ op: "sub", key: "chat1", kind: "chat", id: "chart-1" }));
+    await waitFor(() => socket.sent.some((raw) => raw.includes('"type":"init"')));
+
+    socket.emit("message", JSON.stringify({ op: "unsub", key: "chat1" }));
+    expect(unsubFn).toHaveBeenCalledTimes(1);
   });
 });
 

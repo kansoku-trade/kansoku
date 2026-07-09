@@ -2,6 +2,7 @@ import websocket from "@fastify/websocket";
 import type { FastifyPluginAsync } from "fastify";
 import type { WebSocket } from "ws";
 import type { CockpitComment } from "../../../shared/types.js";
+import { chatTurnState, onChatEvent } from "../ai/chat.js";
 import { listComments, onComment } from "../ai/comments.js";
 import { acquireLease, releaseLease } from "../ai/leases.js";
 import { onNotice } from "../ai/notices.js";
@@ -43,7 +44,7 @@ const PING_MS = 15_000;
 export interface WsSub {
   op: "sub";
   key: string;
-  kind: "quotes" | "chart" | "comments" | "analyses" | "position" | "benchmark" | "board";
+  kind: "quotes" | "chart" | "comments" | "analyses" | "position" | "benchmark" | "board" | "chat";
   extra?: string[];
   id?: string;
   count?: number;
@@ -91,7 +92,18 @@ export function parseWsMessage(raw: unknown): WsClientMessage | null {
   if (msg.kind === "board") {
     return { op: "sub", key: msg.key, kind: "board" };
   }
+  if (msg.kind === "chat") {
+    if (typeof msg.id !== "string" || !msg.id) return null;
+    return { op: "sub", key: msg.key, kind: "chat", id: msg.id };
+  }
   return null;
+}
+
+function attachChat(chartId: string, push: (envelope: string) => void): () => void {
+  const unsub = onChatEvent(chartId, (event) => push(JSON.stringify({ type: "event", event })));
+  const { busy, partial } = chatTurnState(chartId);
+  push(JSON.stringify({ type: "init", busy, partial }));
+  return unsub;
 }
 
 async function attachChannel(msg: WsSub, push: (envelope: string) => void): Promise<() => void> {
@@ -116,6 +128,7 @@ async function attachChannel(msg: WsSub, push: (envelope: string) => void): Prom
   if (msg.kind === "analyses") return subscribeAnalyses(normalizeSymbol(msg.symbol as string), push);
   if (msg.kind === "position") return subscribePosition(normalizeSymbol(msg.symbol as string), push);
   if (msg.kind === "benchmark") return subscribeBenchmark(normalizeSymbol(msg.symbol as string), push);
+  if (msg.kind === "chat") return attachChat(msg.id as string, push);
   return subscribeBoard(push);
 }
 
