@@ -1,4 +1,4 @@
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { chmod, readFile, writeFile } from "node:fs/promises";
 import type { IncomingMessage, Server } from "node:http";
 import { createServer } from "node:net";
@@ -33,6 +33,17 @@ export function unauthorizedResponse(): Response {
   return Response.json({ ok: false, error: "unauthorized" }, { status: 401 });
 }
 
+// Hashing both sides to a fixed-length digest before comparing means the
+// buffers passed to timingSafeEqual are always the same length (32 bytes),
+// so there's no length-mismatch throw path to branch on — a plain ===/!==
+// (or a length check before comparing) would let an attacker infer the
+// token's length or a byte-by-byte prefix match from response timing.
+function timingSafeTokenEqual(a: string, b: string): boolean {
+  const digestA = createHash("sha256").update(a).digest();
+  const digestB = createHash("sha256").update(b).digest();
+  return timingSafeEqual(digestA, digestB);
+}
+
 export function createGatedFetch(
   kernelFetch: (request: Request) => Promise<Response>,
   getToken: () => string | null,
@@ -46,7 +57,7 @@ export function createGatedFetch(
     if (!token) return unauthorizedResponse();
 
     const header = request.headers.get("authorization");
-    if (header !== `Bearer ${token}`) return unauthorizedResponse();
+    if (!header || !timingSafeTokenEqual(header, `Bearer ${token}`)) return unauthorizedResponse();
 
     return kernelFetch(request);
   };
@@ -54,7 +65,9 @@ export function createGatedFetch(
 
 export function isAuthorizedWsRequest(req: Pick<IncomingMessage, "headers">, token: string | null): boolean {
   if (!token) return false;
-  return req.headers.authorization === `Bearer ${token}`;
+  const header = req.headers.authorization;
+  if (!header) return false;
+  return timingSafeTokenEqual(header, `Bearer ${token}`);
 }
 
 export async function findAvailablePort(

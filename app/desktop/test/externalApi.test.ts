@@ -53,6 +53,31 @@ describe("createGatedFetch", () => {
     expect(kernelFetch).not.toHaveBeenCalled();
   });
 
+  it("401s on a wrong token of the same length as the real one", async () => {
+    const fetch = createGatedFetch(kernelFetch, () => "abcdefgh");
+    const res = await fetch(
+      new Request("http://localhost/api/charts", { headers: { authorization: "Bearer 00000000" } }),
+    );
+    expect(res.status).toBe(401);
+    expect(kernelFetch).not.toHaveBeenCalled();
+  });
+
+  it("401s on a wrong-length token", async () => {
+    const fetch = createGatedFetch(kernelFetch, () => "abcdefgh");
+    const res = await fetch(
+      new Request("http://localhost/api/charts", { headers: { authorization: "Bearer short" } }),
+    );
+    expect(res.status).toBe(401);
+    expect(kernelFetch).not.toHaveBeenCalled();
+  });
+
+  it("401s on an empty Authorization header", async () => {
+    const fetch = createGatedFetch(kernelFetch, () => "secret");
+    const res = await fetch(new Request("http://localhost/api/charts", { headers: { authorization: "" } }));
+    expect(res.status).toBe(401);
+    expect(kernelFetch).not.toHaveBeenCalled();
+  });
+
   it("passes through to the kernel on the right token", async () => {
     const fetch = createGatedFetch(kernelFetch, () => "secret");
     const req = new Request("http://localhost/api/charts", { headers: { authorization: "Bearer secret" } });
@@ -86,6 +111,18 @@ describe("isAuthorizedWsRequest", () => {
 
   it("rejects a wrong header", () => {
     expect(isAuthorizedWsRequest({ headers: { authorization: "Bearer wrong" } }, "secret")).toBe(false);
+  });
+
+  it("rejects a wrong header of the same length as the real token", () => {
+    expect(isAuthorizedWsRequest({ headers: { authorization: "Bearer 00000000" } }, "abcdefgh")).toBe(false);
+  });
+
+  it("rejects a wrong-length header", () => {
+    expect(isAuthorizedWsRequest({ headers: { authorization: "Bearer short" } }, "abcdefgh")).toBe(false);
+  });
+
+  it("rejects an empty header", () => {
+    expect(isAuthorizedWsRequest({ headers: { authorization: "" } }, "secret")).toBe(false);
   });
 
   it("accepts the right bearer header", () => {
