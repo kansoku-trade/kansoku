@@ -1,12 +1,6 @@
 import { BadRequestException, type ArgumentsHost, type ExceptionFilter } from "@tsuki-hono/common";
 import { ClientError } from "../errors.js";
-
-function jsonResponse(status: number, body: Record<string, unknown>): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { "content-type": "application/json; charset=utf-8" },
-  });
-}
+import { jsonResponse } from "../httpResponse.js";
 
 function isMalformedJsonBody(exception: unknown): boolean {
   if (!(exception instanceof BadRequestException)) return false;

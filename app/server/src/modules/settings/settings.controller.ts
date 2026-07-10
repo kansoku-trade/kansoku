@@ -20,6 +20,7 @@ import {
   validateRoleSetting,
 } from "./settingsValidation.js";
 import { easternDate } from "../../services/session.js";
+import { jsonResponse } from "../../httpResponse.js";
 
 const DEFAULT_TEST_TIMEOUT_MS = 25_000;
 const TEST_PROMPT_MAX_TOKENS = 16;
@@ -74,13 +75,6 @@ async function collectKnownSecrets(credentials: AppCredentialStore, provider: st
   } catch {
     return [];
   }
-}
-
-function jsonResponse(status: number, body: Record<string, unknown>): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { "content-type": "application/json; charset=utf-8" },
-  });
 }
 
 @Controller("settings")

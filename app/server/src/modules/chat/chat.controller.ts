@@ -4,6 +4,7 @@ import { type ChatDeps, chatTurnState, runChatTurn, toDisplayMessages } from "..
 import { getSessionByChartId, listMessages } from "../../ai/chatStore.js";
 import { aiConfig } from "../../ai/models.js";
 import { ClientError } from "../../errors.js";
+import { jsonResponse } from "../../httpResponse.js";
 import { loadChart } from "../../services/store.js";
 
 const MAX_TEXT_LENGTH = 4000;
@@ -20,13 +21,6 @@ export function setChatDepsForTests(deps: ChatDeps | null): void {
 
 function buildDeps(): ChatDeps {
   return testDeps ?? { model: aiConfig().chatModel };
-}
-
-function jsonResponse(status: number, body: Record<string, unknown>): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { "content-type": "application/json; charset=utf-8" },
-  });
 }
 
 @Controller("charts")
