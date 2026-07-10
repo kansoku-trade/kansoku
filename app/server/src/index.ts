@@ -1,8 +1,10 @@
 import middie from "@fastify/middie";
 import { join } from "node:path";
 import { createServer as createViteServer } from "vite";
+import { initAiSettings } from "./ai/initAiSettings.js";
 import { startAiScheduler } from "./ai/scheduler.js";
 import { createApp } from "./app.js";
+import { getDb } from "./db/index.js";
 import { loadDotenv } from "./dotenv.js";
 import { BASE_URL, PORT, WEB_ROOT } from "./env.js";
 
@@ -11,6 +13,8 @@ loadDotenv();
 // 1h prompt-cache TTL: commentator sessions re-run at 5-min heartbeats, the
 // default 5-min ephemeral TTL expires right at the boundary and misses.
 process.env.PI_CACHE_RETENTION ??= "long";
+
+initAiSettings(getDb());
 
 const app = await createApp();
 await app.register(middie);
