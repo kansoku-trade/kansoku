@@ -135,12 +135,9 @@ export interface InitUpdaterOptions {
 export function initUpdater(options: InitUpdaterOptions = {}): void {
   if (process.env.ELECTRON_DEV === "1") return;
 
-  const envDelay = Number(process.env.UPDATER_CHECK_DELAY_MS);
-  const delayMs = options.delayMs ?? (Number.isFinite(envDelay) && envDelay > 0 ? envDelay : CHECK_DELAY_MS);
-
   setTimeout(() => {
     void runElectronCheck();
-  }, delayMs);
+  }, options.delayMs ?? CHECK_DELAY_MS);
 }
 
 async function runElectronCheck(): Promise<void> {
@@ -159,7 +156,9 @@ async function runElectronCheck(): Promise<void> {
         body: `${release.version} is ready — click to view the release`,
       });
       notification.on("click", () => {
-        void shell.openExternal(release.htmlUrl);
+        shell.openExternal(release.htmlUrl).catch((err) => {
+          log(`skipped: openExternal failed (${(err as Error).message})`);
+        });
       });
       notification.show();
     },
