@@ -24,7 +24,7 @@ import { computeRelativeVolume } from "../../services/relvol.js";
 import { classifySession, easternDate } from "../../services/session.js";
 import { predictionStale } from "../../services/staleness.js";
 import { listCharts, loadChart } from "../../services/store.js";
-import { noteFileName, normalizeSymbol } from "./symbol.utils.js";
+import { noteFileName, normalizeSymbol } from "../../services/symbol.utils.js";
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const JOURNAL_FILE_RE = /^(\d{4}-\d{2}-\d{2})-([\w-]+)\.md$/;

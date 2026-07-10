@@ -1,4 +1,4 @@
-import { ClientError } from "../../errors.js";
+import { ClientError } from "../errors.js";
 
 const SYMBOL_RE = /^[A-Z0-9.]+$/;
 const NOTE_NAME_RE = /^[A-Z0-9._-]+$/;
