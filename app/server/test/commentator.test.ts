@@ -266,6 +266,47 @@ describe("runCommentator", () => {
     expect(factoryCalls).toBe(2);
   });
 
+  it("reseeds a fresh session when only thinkingLevel changes", async () => {
+    let factoryCalls = 0;
+    const agentFactory: AiAgentFactory = ({ tools }) => {
+      factoryCalls += 1;
+      return {
+        prompt: async () => {
+          await tools.find((t) => t.name === "submit_comment")?.execute("c", { level: "info", text: "x", escalate: false });
+        },
+        abort: () => {},
+      };
+    };
+    const appendComment = async () => {};
+    const lowModel = { provider: "anthropic", id: "claude-haiku-4-5", thinkingLevel: "low" } as unknown as AiModel;
+    const highModel = { provider: "anthropic", id: "claude-haiku-4-5", thinkingLevel: "high" } as unknown as AiModel;
+    await runCommentator({ symbol: "MU.US", pack: makePack("MU.US"), trigger, deps: { model: lowModel, agentFactory, appendComment } });
+    await runCommentator({ symbol: "MU.US", pack: makePack("MU.US"), trigger, deps: { model: highModel, agentFactory, appendComment } });
+    expect(factoryCalls).toBe(2);
+  });
+
+  it("reuses the session when provider/id/thinkingLevel are unchanged", async () => {
+    let factoryCalls = 0;
+    const agentFactory: AiAgentFactory = ({ tools }) => {
+      factoryCalls += 1;
+      let currentTools = tools;
+      return {
+        prompt: async () => {
+          await currentTools.find((t) => t.name === "submit_comment")?.execute("c", { level: "info", text: "x", escalate: false });
+        },
+        abort: () => {},
+        setTools: (tools) => {
+          currentTools = tools;
+        },
+      };
+    };
+    const appendComment = async () => {};
+    const model = { provider: "anthropic", id: "claude-haiku-4-5", thinkingLevel: "low" } as unknown as AiModel;
+    await runCommentator({ symbol: "MU.US", pack: makePack("MU.US"), trigger, deps: { model, agentFactory, appendComment } });
+    await runCommentator({ symbol: "MU.US", pack: makePack("MU.US"), trigger, deps: { model, agentFactory, appendComment } });
+    expect(factoryCalls).toBe(1);
+  });
+
   it("drops the session after a failed run and reseeds with a full pack", async () => {
     const prompts: string[] = [];
     let factoryCalls = 0;

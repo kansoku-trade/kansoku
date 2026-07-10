@@ -60,8 +60,8 @@ export function resetCommentatorSessions(): void {
 }
 
 function modelKey(model: AiModel): string {
-  const ref = model as { provider?: string; id?: string };
-  return `${ref.provider ?? "unknown"}/${ref.id ?? "unknown"}`;
+  const ref = model as { provider?: string; id?: string; thinkingLevel?: string };
+  return `${ref.provider ?? "unknown"}/${ref.id ?? "unknown"}/${ref.thinkingLevel ?? "off"}`;
 }
 
 function triggerText(trigger: Trigger): string {

@@ -123,3 +123,7 @@ export function getActiveSettingsStore(): SettingsStore {
   }
   return active;
 }
+
+export function activeSettingsRevision(): number {
+  return active ? active.revision() : 0;
+}
