@@ -1,0 +1,208 @@
+name: desktop-release
+
+on:
+  push:
+    tags:
+      - "desktop-v*"
+
+concurrency:
+  group: desktop-release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  SPARKLE_VERSION: "2.9.4"
+  SPARKLE_TARBALL_SHA256: "ce89daf967db1e1893ed3ebd67575ed82d3902563e3191ca92aaec9164fbdef9"
+  REPO_SLUG: "Innei/trade-skills"
+
+jobs:
+  release:
+    runs-on: macos-14
+    timeout-minutes: 45
+    permissions:
+      contents: write
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: version consistency check (tag vs desktop package.json)
+        id: version
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          TAG_VERSION="${TAG#desktop-v}"
+          PKG_VERSION="$(node -p "require('./app/desktop/package.json').version")"
+          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
+            echo "::error::tag $TAG (version $TAG_VERSION) does not match app/desktop/package.json version $PKG_VERSION"
+            exit 1
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$TAG_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: "11.10.0"
+
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          # only the content-addressable pnpm store is cached, never node_modules —
+          # a cached node_modules can carry a stale @electron/rebuild forge-meta
+          # entry that lies about better-sqlite3 already being built for Electron's
+          # ABI (see commit 39aa0f5).
+          cache: pnpm
+          cache-dependency-path: app/pnpm-lock.yaml
+
+      - name: install dependencies
+        working-directory: app
+        run: pnpm install --frozen-lockfile
+
+      - name: typecheck (web, server, desktop)
+        working-directory: app
+        run: pnpm -r typecheck
+
+      - name: test — web, desktop
+        working-directory: app
+        run: |
+          pnpm --filter @trade/web test
+          pnpm --filter @trade/desktop test
+
+      - name: test — server (json report for the known-failure gate)
+        working-directory: app/server
+        run: pnpm test -- --reporter=json --outputFile=test-results.json || true
+
+      - name: gate — server suite has no NEW failures
+        run: node .github/scripts/assert-known-test-failures.mjs app/server/test-results.json
+
+      - name: rebuild native modules (forced, pre-package)
+        working-directory: app/desktop
+        run: |
+          rm -rf node_modules/better-sqlite3/build "$HOME/Library/Caches/electron-rebuild"
+          pnpm rebuild-native
+
+      - name: fetch Sparkle tools
+        run: |
+          curl -sSL -o /tmp/sparkle.tar.xz \
+            "https://github.com/sparkle-project/Sparkle/releases/download/${SPARKLE_VERSION}/Sparkle-${SPARKLE_VERSION}.tar.xz"
+          echo "${SPARKLE_TARBALL_SHA256}  /tmp/sparkle.tar.xz" | shasum -a 256 -c -
+          mkdir -p /tmp/sparkle
+          tar -xf /tmp/sparkle.tar.xz -C /tmp/sparkle bin/
+          chmod +x /tmp/sparkle/bin/*
+          echo "/tmp/sparkle/bin" >> "$GITHUB_PATH"
+
+      - name: inject SUPublicEDKey into electron-builder.yml
+        run: |
+          PLACEHOLDER="SPARKLE_ED_PUBLIC_KEY_PLACEHOLDER"
+          if ! grep -q "$PLACEHOLDER" app/desktop/electron-builder.yml; then
+            echo "::error::placeholder $PLACEHOLDER not found in app/desktop/electron-builder.yml — has the Sparkle bridge integration point moved?"
+            exit 1
+          fi
+          sed -i '' "s|$PLACEHOLDER|${{ secrets.SPARKLE_ED_PUBLIC_KEY }}|" app/desktop/electron-builder.yml
+
+      - name: build web
+        working-directory: app
+        run: pnpm --filter @trade/web build
+
+      - name: package desktop (dmg + zip, no paid signing identity)
+        working-directory: app/desktop
+        run: pnpm package
+
+      - name: ad-hoc re-sign + re-zip (Sparkle requires a valid signature)
+        working-directory: app/desktop
+        run: |
+          # electron-builder's `identity: null` leaves Electron's own ad-hoc
+          # signature on the main executable only; adding extraResources /
+          # asarUnpack afterwards invalidates the bundle's CodeDirectory.
+          # generate_appcast refuses any archive whose .app doesn't pass
+          # `codesign --verify --deep --strict`, so the app is re-signed
+          # ad-hoc (no paid identity/cert needed — ad-hoc is orthogonal to
+          # Developer ID signing/notarization) and the zip rebuilt with
+          # ditto (not `zip`, to preserve resource forks/xattrs). The .dmg is
+          # NOT re-signed here — see docs/desktop-release.md for that gap —
+          # it is upload-only; Sparkle auto-updates only ever consume the zip.
+          APP_DIR="$PWD/release/mac-arm64/$(basename release/mac-arm64/*.app)"
+          ZIP_PATH="$PWD/$(echo release/*.zip)"
+          codesign --force --deep --sign - "$APP_DIR"
+          codesign --verify --deep --strict "$APP_DIR"
+          rm -f "$ZIP_PATH"
+          ( cd "$(dirname "$APP_DIR")" && ditto -c -k --sequesterRsrc --keepParent "$(basename "$APP_DIR")" "$ZIP_PATH" )
+
+      - name: prepare release archive dir
+        id: archive
+        run: |
+          ARCHIVE_DIR="$RUNNER_TEMP/release-archive"
+          mkdir -p "$ARCHIVE_DIR"
+          # only the zip goes into ARCHIVE_DIR — that's the directory
+          # generate_appcast scans, and an unsigned dmg would just be skipped
+          # with a warning (or worse, confuse delta-base detection). The dmg
+          # is uploaded to the release directly from app/desktop/release/.
+          cp app/desktop/release/*.zip "$ARCHIVE_DIR/"
+          {
+            echo "dir=$ARCHIVE_DIR"
+            echo "dmg_path=$(echo app/desktop/release/*.dmg)"
+            echo "zip_name=$(basename app/desktop/release/*.zip)"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: fetch existing appcast + last 2 release archives (delta base)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # old zips are fetched into the same dir generate_appcast scans so it can
+          # diff them for deltas, but they must NOT be re-uploaded as this release's
+          # own assets — the draft-release step uploads only this release's own
+          # dmg (dmg_path) and zip (zip_name), captured above, plus appcast.xml + *.delta.
+          ARCHIVE_DIR="${{ steps.archive.outputs.dir }}"
+          LATEST_TAG="$(gh release view --repo "$REPO_SLUG" --json tagName -q .tagName 2>/dev/null || true)"
+          if [ -n "$LATEST_TAG" ]; then
+            gh release download --repo "$REPO_SLUG" --pattern 'appcast.xml' --dir "$ARCHIVE_DIR" "$LATEST_TAG" \
+              || echo "no appcast.xml asset on latest release $LATEST_TAG"
+          else
+            echo "no previous release (first release) — generate_appcast will create a fresh appcast.xml"
+          fi
+          PREV_TAGS="$(gh release list --repo "$REPO_SLUG" --exclude-drafts --limit 2 --json tagName -q '.[].tagName' 2>/dev/null || true)"
+          for T in $PREV_TAGS; do
+            gh release download --repo "$REPO_SLUG" --pattern '*.zip' --dir "$ARCHIVE_DIR" "$T" \
+              || echo "no zip asset on release $T, skipping"
+          done
+
+      - name: sign + generate appcast (EdDSA key lives only on a RAM disk)
+        env:
+          SPARKLE_ED_PRIVATE_KEY: ${{ secrets.SPARKLE_ED_PRIVATE_KEY }}
+        run: |
+          ARCHIVE_DIR="${{ steps.archive.outputs.dir }}"
+          TAG="${{ steps.version.outputs.tag }}"
+
+          DEV="$(hdiutil attach -nomount ram://16384 | awk '{print $1}')"
+          diskutil erasevolume HFS+ SparkleKeyRAM "$DEV" >/dev/null
+          KEY_DIR="/Volumes/SparkleKeyRAM"
+          KEY_FILE="$KEY_DIR/ed_private_key"
+          printf '%s' "$SPARKLE_ED_PRIVATE_KEY" > "$KEY_FILE"
+
+          generate_appcast \
+            --ed-key-file "$KEY_FILE" \
+            --download-url-prefix "https://github.com/${REPO_SLUG}/releases/download/${TAG}/" \
+            "$ARCHIVE_DIR"
+
+          dd if=/dev/urandom of="$KEY_FILE" bs=1024 count=4 conv=notrunc 2>/dev/null
+          rm -f "$KEY_FILE"
+          hdiutil detach "$DEV"
+
+      - name: draft GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          shopt -s nullglob
+          ARCHIVE_DIR="${{ steps.archive.outputs.dir }}"
+          TAG="${{ steps.version.outputs.tag }}"
+          ASSETS=(
+            "${{ steps.archive.outputs.dmg_path }}"
+            "$ARCHIVE_DIR/${{ steps.archive.outputs.zip_name }}"
+            "$ARCHIVE_DIR/appcast.xml"
+            "$ARCHIVE_DIR"/*.delta
+          )
+          gh release create "$TAG" \
+            --repo "$REPO_SLUG" \
+            --draft \
+            --title "TradeCharts $TAG" \
+            --generate-notes \
+            "${ASSETS[@]}"
