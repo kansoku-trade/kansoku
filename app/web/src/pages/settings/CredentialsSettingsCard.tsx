@@ -4,6 +4,7 @@ import { useQuery } from "../../apiHooks";
 import { clearRestricted } from "../../restrictedMode";
 import { Badge, Button, Card, openModal, SectionTitle } from "../../ui";
 import { CredentialsForm } from "./CredentialsForm";
+import { refreshAfterClear, refreshAfterSave } from "./credentialsRefreshActions";
 import { deriveCredentialsStatusLabel } from "./credentialsStatusLabel";
 import { CREDENTIALS_STATUS_URL, getDesktopCredentialsBridge, type CredentialsGetResult } from "./desktopCredentials";
 
@@ -25,11 +26,9 @@ export function CredentialsSettingsCard() {
 
   if (!bridge) return null;
 
-  const refreshAfterChange = () => {
-    reloadStoreStatus();
-    reloadServerStatus();
-    clearRestricted();
-  };
+  const reload = { reloadStoreStatus, reloadServerStatus };
+  const handleSaved = () => refreshAfterSave(reload, clearRestricted);
+  const handleCleared = () => refreshAfterClear(reload);
 
   const handleClear = () => {
     openModal({
@@ -46,7 +45,7 @@ export function CredentialsSettingsCard() {
                 setClearing(true);
                 try {
                   await bridge.clear();
-                  refreshAfterChange();
+                  handleCleared();
                   closeModal();
                 } catch (err) {
                   setError(errorMessage(err));
@@ -95,7 +94,7 @@ export function CredentialsSettingsCard() {
             ? "出于安全考虑不回显已保存的凭证；如需更新，请重新填写全部三项后保存。"
             : "填入三项凭证后先测试连接，确认无误后再保存。"
         }
-        onSaved={refreshAfterChange}
+        onSaved={handleSaved}
       />
     </Card>
   );

@@ -13,6 +13,7 @@ import type {
 } from "longbridge";
 import type { NewsItem, RawBar } from "../../../../shared/types.js";
 import { ClientError } from "../../errors.js";
+import { sanitizeAuthError } from "../../modules/settings/settingsValidation.js";
 import { clearCredentialRejection, recordCredentialRejection } from "../credentials/credentialStatus.js";
 import { NoCredentialsError } from "../credentials/errors.js";
 import type { FlowRow } from "../simple.js";
@@ -94,7 +95,7 @@ async function callSdk<T>(label: string, fn: () => Promise<T>): Promise<T> {
     }
     const detail = err instanceof Error ? err.message : String(err);
     if (CREDENTIALS_REJECTED_RE.test(detail)) {
-      const message = `longbridge ${label} failed: ${detail}`;
+      const message = `longbridge ${label} failed: ${sanitizeAuthError(detail, [])}`;
       recordCredentialRejection(message);
       throw new ClientError(
         message,

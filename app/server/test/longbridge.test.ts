@@ -289,6 +289,24 @@ describe("longbridgeProvider (SDK-backed)", () => {
     });
   });
 
+  it("scrubs a bearer-token-shaped secret from the stored lastError on a credentials rejection", async () => {
+    const { getLastCredentialError } = await import("../src/services/credentials/credentialStatus.js");
+    const createLongbridgeProvider = await loadProvider();
+    const provider = createLongbridgeProvider(
+      async () =>
+        ({
+          quote: vi.fn().mockRejectedValue(new Error("token invalid: Bearer abc123.def456-XYZ")),
+        }) as unknown as QuotePort,
+      async () => ({}) as TradePort,
+    );
+
+    await expect(provider.getQuotes(["NVDA.US"])).rejects.toMatchObject({ code: "CREDENTIALS_REJECTED" });
+
+    const lastError = getLastCredentialError();
+    expect(lastError).not.toContain("abc123.def456-XYZ");
+    expect(lastError).toContain("Bearer [redacted]");
+  });
+
   it("maps a NoCredentialsError to a 503 ClientError with code NO_CREDENTIALS", async () => {
     const { NoCredentialsError } = await import("../src/services/credentials/errors.js");
     const createLongbridgeProvider = await loadProvider();

@@ -38,6 +38,16 @@ describe("credentialStore", () => {
     expect(store.lastError()).toBeNull();
   });
 
+  it("clears a stale lastError once the file is gone", () => {
+    writeFileSync(filePath, "not json{{{", { mode: 0o600 });
+    const store = createCredentialStore({ safeStorage: fakeSafeStorage(), filePath });
+    expect(store.get()).toBeNull();
+    expect(store.lastError()).toBe("corrupt credentials file");
+    rmSync(filePath);
+    expect(store.get()).toBeNull();
+    expect(store.lastError()).toBeNull();
+  });
+
   it("round-trips credentials through set/get", () => {
     const store = createCredentialStore({ safeStorage: fakeSafeStorage(), filePath });
     const result = store.set(CREDS);

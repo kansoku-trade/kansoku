@@ -52,7 +52,10 @@ export function createCredentialStore(deps: CredentialStoreDeps): CredentialStor
     try {
       raw = readFileSync(deps.filePath, "utf8");
     } catch (err) {
-      if ((err as NodeJS.ErrnoException).code === "ENOENT") return null;
+      if ((err as NodeJS.ErrnoException).code === "ENOENT") {
+        lastError = null;
+        return null;
+      }
       lastError = "failed to read credentials file";
       return null;
     }
