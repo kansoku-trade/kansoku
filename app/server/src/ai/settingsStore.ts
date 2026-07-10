@@ -1,0 +1,121 @@
+import type { ThinkingLevel } from "@earendil-works/pi-ai";
+import type { Db } from "../db/index.js";
+import { aiRoleSettings } from "../db/schema.js";
+
+export type AiRole = "comment" | "analyst" | "deepDive" | "chat";
+export type RoleMode = "custom" | "disabled" | "inherit";
+
+export interface RoleSetting {
+  mode: RoleMode;
+  provider: string | null;
+  modelId: string | null;
+  thinkingLevel: ThinkingLevel | null;
+}
+
+export interface SettingsStore {
+  getRole(role: AiRole): RoleSetting;
+  listRoles(): Record<AiRole, RoleSetting>;
+  setRole(role: AiRole, setting: RoleSetting): void;
+  revision(): number;
+}
+
+const ROLES: AiRole[] = ["comment", "analyst", "deepDive", "chat"];
+
+function defaultFor(role: AiRole): RoleSetting {
+  return { mode: role === "chat" ? "inherit" : "disabled", provider: null, modelId: null, thinkingLevel: null };
+}
+
+function validate(role: AiRole, setting: RoleSetting): void {
+  if (setting.mode === "inherit" && role !== "chat") {
+    throw new Error(`settingsStore: mode "inherit" is only allowed for role "chat", got "${role}"`);
+  }
+  if (setting.mode === "custom" && (!setting.provider || !setting.modelId || !setting.thinkingLevel)) {
+    throw new Error(
+      `settingsStore: mode "custom" requires provider, modelId, and thinkingLevel for role "${role}"`,
+    );
+  }
+}
+
+export function createSettingsStore(db: Db): SettingsStore {
+  const cache = new Map<AiRole, RoleSetting>();
+  let rev = 0;
+
+  const rows = db.select().from(aiRoleSettings).all();
+  const byRole = new Map(rows.map((row) => [row.role, row]));
+  for (const role of ROLES) {
+    const row = byRole.get(role);
+    if (!row) {
+      console.warn(`settingsStore: no row for role "${role}" at load time, using default`);
+      cache.set(role, defaultFor(role));
+      continue;
+    }
+    cache.set(role, {
+      mode: row.mode as RoleMode,
+      provider: row.provider,
+      modelId: row.modelId,
+      thinkingLevel: row.thinkingLevel as ThinkingLevel | null,
+    });
+  }
+
+  return {
+    getRole(role: AiRole): RoleSetting {
+      return cache.get(role) ?? defaultFor(role);
+    },
+
+    listRoles(): Record<AiRole, RoleSetting> {
+      const result = {} as Record<AiRole, RoleSetting>;
+      for (const role of ROLES) result[role] = cache.get(role) ?? defaultFor(role);
+      return result;
+    },
+
+    setRole(role: AiRole, setting: RoleSetting): void {
+      validate(role, setting);
+      const persisted: RoleSetting =
+        setting.mode === "custom"
+          ? setting
+          : { mode: setting.mode, provider: null, modelId: null, thinkingLevel: null };
+      const updatedAt = new Date().toISOString();
+
+      db.insert(aiRoleSettings)
+        .values({
+          role,
+          mode: persisted.mode,
+          provider: persisted.provider,
+          modelId: persisted.modelId,
+          thinkingLevel: persisted.thinkingLevel,
+          updatedAt,
+        })
+        .onConflictDoUpdate({
+          target: aiRoleSettings.role,
+          set: {
+            mode: persisted.mode,
+            provider: persisted.provider,
+            modelId: persisted.modelId,
+            thinkingLevel: persisted.thinkingLevel,
+            updatedAt,
+          },
+        })
+        .run();
+
+      cache.set(role, persisted);
+      rev += 1;
+    },
+
+    revision(): number {
+      return rev;
+    },
+  };
+}
+
+let active: SettingsStore | null = null;
+
+export function setActiveSettingsStore(store: SettingsStore | null): void {
+  active = store;
+}
+
+export function getActiveSettingsStore(): SettingsStore {
+  if (!active) {
+    throw new Error("settingsStore: no active settings store; call setActiveSettingsStore before use");
+  }
+  return active;
+}

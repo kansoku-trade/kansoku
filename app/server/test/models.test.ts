@@ -1,7 +1,14 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { builtinModels } from "@earendil-works/pi-ai/providers/all";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { aiConfig, type AiModel, parseModelRef, resolveModel } from "../src/ai/models.js";
+import { createSettingsStore, setActiveSettingsStore } from "../src/ai/settingsStore.js";
+import { createDb } from "../src/db/index.js";
 
 const fakeModel = { provider: "anthropic", id: "claude-haiku-4-5" } as unknown as AiModel;
+const realModel = builtinModels().getModels("anthropic")[0];
 
 describe("parseModelRef", () => {
   it("splits on the first slash", () => {
@@ -93,19 +100,27 @@ describe("resolveModel", () => {
 });
 
 describe("aiConfig", () => {
-  const prev = { ...process.env };
-  afterEach(() => {
-    process.env.AI_COMMENT_MODEL = prev.AI_COMMENT_MODEL;
-    process.env.AI_ANALYST_MODEL = prev.AI_ANALYST_MODEL;
-    process.env.AI_DEEPDIVE_MODEL = prev.AI_DEEPDIVE_MODEL;
-    process.env.AI_CHAT_MODEL = prev.AI_CHAT_MODEL;
+  let dir: string;
+
+  function storeOverDb(): ReturnType<typeof createSettingsStore> {
+    dir = mkdtempSync(join(tmpdir(), "models-test-"));
+    const db = createDb(join(dir, "app.db"));
+    return createSettingsStore(db);
+  }
+
+  beforeEach(() => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
   });
 
-  it("returns null for every layer when unset", () => {
-    delete process.env.AI_COMMENT_MODEL;
-    delete process.env.AI_ANALYST_MODEL;
-    delete process.env.AI_DEEPDIVE_MODEL;
-    delete process.env.AI_CHAT_MODEL;
+  afterEach(() => {
+    setActiveSettingsStore(null);
+    vi.restoreAllMocks();
+    if (dir) rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("returns null for every layer when all roles are disabled", () => {
+    const store = storeOverDb();
+    setActiveSettingsStore(store);
     expect(aiConfig()).toEqual({
       commentModel: null,
       analystModel: null,
@@ -114,48 +129,87 @@ describe("aiConfig", () => {
     });
   });
 
-  it("resolves each layer from its env var", () => {
-    process.env.AI_COMMENT_MODEL = "anthropic/claude-haiku-4-5";
-    delete process.env.AI_ANALYST_MODEL;
+  it("resolves each layer from its role setting", () => {
+    const store = storeOverDb();
+    store.setRole("comment", {
+      mode: "custom",
+      provider: realModel.provider,
+      modelId: realModel.id,
+      thinkingLevel: "medium",
+    });
+    setActiveSettingsStore(store);
     const config = aiConfig();
-    expect(config.commentModel?.id).toBe("claude-haiku-4-5");
+    expect(config.commentModel?.id).toBe(realModel.id);
     expect(config.analystModel).toBeNull();
   });
 
-  it("resolves deepDiveModel from AI_DEEPDIVE_MODEL", () => {
-    process.env.AI_DEEPDIVE_MODEL = "anthropic/claude-haiku-4-5";
-    expect(aiConfig().deepDiveModel?.id).toBe("claude-haiku-4-5");
+  it("resolves deepDiveModel from a custom deepDive role", () => {
+    const store = storeOverDb();
+    store.setRole("deepDive", {
+      mode: "custom",
+      provider: realModel.provider,
+      modelId: realModel.id,
+      thinkingLevel: "medium",
+    });
+    setActiveSettingsStore(store);
+    expect(aiConfig().deepDiveModel?.id).toBe(realModel.id);
   });
 
-  it("returns null deepDiveModel when unset", () => {
-    delete process.env.AI_DEEPDIVE_MODEL;
+  it("returns null deepDiveModel when disabled", () => {
+    const store = storeOverDb();
+    setActiveSettingsStore(store);
     expect(aiConfig().deepDiveModel).toBeNull();
   });
 
-  it("uses AI_CHAT_MODEL when set", () => {
-    process.env.AI_CHAT_MODEL = "anthropic/claude-haiku-4-5";
-    delete process.env.AI_ANALYST_MODEL;
-    expect(aiConfig().chatModel?.id).toBe("claude-haiku-4-5");
+  it("uses the chat role's own custom setting when set", () => {
+    const store = storeOverDb();
+    store.setRole("chat", {
+      mode: "custom",
+      provider: realModel.provider,
+      modelId: realModel.id,
+      thinkingLevel: "medium",
+    });
+    setActiveSettingsStore(store);
+    expect(aiConfig().chatModel?.id).toBe(realModel.id);
   });
 
-  it("falls back to the resolved analyst model when AI_CHAT_MODEL is unset", () => {
-    delete process.env.AI_CHAT_MODEL;
-    process.env.AI_ANALYST_MODEL = "anthropic/claude-haiku-4-5";
+  it("falls back to the resolved analyst model when chat mode is inherit", () => {
+    const store = storeOverDb();
+    store.setRole("analyst", {
+      mode: "custom",
+      provider: realModel.provider,
+      modelId: realModel.id,
+      thinkingLevel: "medium",
+    });
+    setActiveSettingsStore(store);
     const config = aiConfig();
-    expect(config.chatModel?.id).toBe("claude-haiku-4-5");
-    expect(config.chatModel).toBe(config.analystModel);
+    expect(config.chatModel?.id).toBe(realModel.id);
+    expect(config.chatModel).toEqual(config.analystModel);
   });
 
-  it("falls back to the analyst model when AI_CHAT_MODEL is unresolvable", () => {
-    process.env.AI_CHAT_MODEL = "bogus/does-not-exist";
-    process.env.AI_ANALYST_MODEL = "anthropic/claude-haiku-4-5";
-    const config = aiConfig();
-    expect(config.chatModel?.id).toBe("claude-haiku-4-5");
-  });
-
-  it("returns null chatModel when both AI_CHAT_MODEL and AI_ANALYST_MODEL are unset", () => {
-    delete process.env.AI_CHAT_MODEL;
-    delete process.env.AI_ANALYST_MODEL;
+  it("returns null chatModel when chat is inherit and analyst is disabled", () => {
+    const store = storeOverDb();
+    setActiveSettingsStore(store);
     expect(aiConfig().chatModel).toBeNull();
+  });
+
+  it("returns null chatModel when chat is disabled, even if analyst is set", () => {
+    const store = storeOverDb();
+    store.setRole("analyst", {
+      mode: "custom",
+      provider: realModel.provider,
+      modelId: realModel.id,
+      thinkingLevel: "medium",
+    });
+    store.setRole("chat", { mode: "disabled", provider: null, modelId: null, thinkingLevel: null });
+    setActiveSettingsStore(store);
+    const config = aiConfig();
+    expect(config.analystModel).not.toBeNull();
+    expect(config.chatModel).toBeNull();
+  });
+
+  it("throws a clear error when no active settings store is set", () => {
+    setActiveSettingsStore(null);
+    expect(() => aiConfig()).toThrow(/settings store/i);
   });
 });
