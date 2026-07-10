@@ -1,9 +1,10 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { app, BrowserWindow, dialog, ipcMain, safeStorage, shell } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, Menu, safeStorage, shell } from "electron";
 import { createCredentialsBridgeHandlers, registerCredentialsIpc } from "./credentialsBridge.js";
 import { testLongbridgeCredentials } from "./credentialsTest.js";
 import { createCredentialStore } from "./credentialStore.js";
+import { buildImportManifest, copyImportManifest, validateImportSource } from "./dataImport.js";
 import { createDesktopCredentialProvider, selectCredentialProvider } from "./desktopCredentialProvider.js";
 import { createDesktopSecretBox } from "./desktopSecretBox.js";
 import { createExternalApiController, type ExternalApiController } from "./externalApi.js";
@@ -141,6 +142,88 @@ function registerExternalApiIpc(controller: ExternalApiController): void {
   ipcMain.handle("desktop:external-api:reset-token", () => controller.resetToken());
 }
 
+function messageBox(win: BrowserWindow | null, options: Electron.MessageBoxOptions): Promise<Electron.MessageBoxReturnValue> {
+  return win ? dialog.showMessageBox(win, options) : dialog.showMessageBox(options);
+}
+
+function openDialog(win: BrowserWindow | null, options: Electron.OpenDialogOptions): Promise<Electron.OpenDialogReturnValue> {
+  return win ? dialog.showOpenDialog(win, options) : dialog.showOpenDialog(options);
+}
+
+async function runImportFromRepoFlow(win: BrowserWindow | null): Promise<void> {
+  if (!app.isPackaged) {
+    await messageBox(win, {
+      type: "info",
+      title: "从 repo 导入数据",
+      message: "开发模式下数据目录本身就是仓库，无需导入。",
+    });
+    return;
+  }
+
+  const picked = await openDialog(win, {
+    title: "选择 trade 仓库目录",
+    properties: ["openDirectory"],
+  });
+  if (picked.canceled || picked.filePaths.length === 0) return;
+  const sourceRoot = picked.filePaths[0];
+
+  const validation = validateImportSource(sourceRoot, dataRoot);
+  if (!validation.ok) {
+    const messages: Record<typeof validation.reason, string> = {
+      self: "所选目录就是当前数据目录，无需导入。",
+      "missing-journal": "所选目录不像 trade 仓库：找不到 journal/charts/data。",
+      empty: "所选目录的 journal/charts/data 里没有可导入的图表文件。",
+    };
+    await messageBox(win, {
+      type: "warning",
+      title: "从 repo 导入数据",
+      message: messages[validation.reason],
+    });
+    return;
+  }
+
+  const manifest = buildImportManifest(sourceRoot, dataRoot);
+  let overwrite = false;
+  if (manifest.collisionCount > 0) {
+    const choice = await messageBox(win, {
+      type: "question",
+      buttons: ["取消", "跳过已存在的文件", "覆盖已存在的文件"],
+      defaultId: 1,
+      cancelId: 0,
+      title: "从 repo 导入数据",
+      message: `有 ${manifest.collisionCount} 个文件在当前数据目录中已存在，如何处理？`,
+    });
+    if (choice.response === 0) return;
+    overwrite = choice.response === 2;
+  }
+
+  const result = copyImportManifest(manifest, { overwrite });
+  await messageBox(win, {
+    type: "info",
+    title: "从 repo 导入数据",
+    message: `导入完成：复制 ${result.copied} 个文件，跳过 ${result.skipped} 个。`,
+  });
+}
+
+function buildAppMenu(): void {
+  const template: Electron.MenuItemConstructorOptions[] = [
+    {
+      label: app.name,
+      submenu: [
+        {
+          label: "从 repo 导入数据…",
+          click: () => {
+            void runImportFromRepoFlow(BrowserWindow.getFocusedWindow());
+          },
+        },
+        { type: "separator" },
+        { role: "quit" },
+      ],
+    },
+  ];
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+}
+
 function showFatalErrorWindow(error: unknown) {
   const message = error instanceof Error ? (error.stack ?? error.message) : String(error);
   console.error("[desktop] fatal startup error", error);
@@ -171,6 +254,7 @@ app.whenReady().then(async () => {
     registerExternalApiIpc(externalApiController);
     await externalApiController.boot();
 
+    buildAppMenu();
     createWindow();
     initUpdater();
 
