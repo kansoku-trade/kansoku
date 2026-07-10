@@ -1,0 +1,24 @@
+{
+  "name": "@trade/desktop",
+  "private": true,
+  "type": "module",
+  "main": "dist-main/main.mjs",
+  "scripts": {
+    "build": "tsdown",
+    "rebuild-native": "electron-rebuild -v 43.1.0 --force -w better-sqlite3",
+    "predev": "pnpm rebuild-native",
+    "dev": "tsdown --watch --onSuccess \"electron .\"",
+    "prestart": "pnpm rebuild-native",
+    "start": "electron .",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^4.2.0",
+    "@types/node": "^26.0.1",
+    "electron": "43.1.0",
+    "tsdown": "^0.22.4",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.9"
+  }
+}
