@@ -123,14 +123,49 @@ describe("PortTransport", () => {
     expect(transport.readyState).toBe(READY_STATE.CLOSED);
   });
 
-  it("close() closes the underlying port and flips readyState", () => {
+  it("close() closes the underlying port, flips readyState, and self-emits onclose", () => {
+    // A MessagePort's close event only fires on the entangled peer, never on
+    // the end that called close() itself — the caller must self-report.
     const win = new FakeWindow();
     const transport = new PortTransport(win);
     const port = new FakePort();
     win.respondWithPort(port);
 
+    const onclose = vi.fn();
+    transport.onclose = onclose;
     transport.close();
+
     expect(port.closed).toBe(true);
+    expect(transport.readyState).toBe(READY_STATE.CLOSED);
+    expect(onclose).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not double-fire onclose if close() runs after the port already reported closed", () => {
+    const win = new FakeWindow();
+    const transport = new PortTransport(win);
+    const port = new FakePort();
+    win.respondWithPort(port);
+
+    const onclose = vi.fn();
+    transport.onclose = onclose;
+    port.emitClose();
+    transport.close();
+
+    expect(onclose).toHaveBeenCalledTimes(1);
+  });
+
+  it("self-emits onclose when the handshake response carries no port", () => {
+    const win = new FakeWindow();
+    const transport = new PortTransport(win);
+    const onclose = vi.fn();
+    const onerror = vi.fn();
+    transport.onclose = onclose;
+    transport.onerror = onerror;
+
+    win.emit(win, "desktop-rt-port", []);
+
+    expect(onerror).toHaveBeenCalledTimes(1);
+    expect(onclose).toHaveBeenCalledTimes(1);
     expect(transport.readyState).toBe(READY_STATE.CLOSED);
   });
 });

@@ -14,7 +14,11 @@ export interface PortLike {
 export function wrapMessagePort(port: PortLike): Connection {
   return {
     send(text) {
-      port.postMessage(text);
+      // A queued async push can land after the port is physically closed but
+      // before its close event has propagated back to this listener.
+      try {
+        port.postMessage(text);
+      } catch {}
     },
     onMessage(cb) {
       port.on("message", (e) => cb(String(e.data)));

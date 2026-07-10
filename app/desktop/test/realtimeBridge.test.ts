@@ -21,10 +21,12 @@ const { attachRealtimeBridge, wrapMessagePort } = await import("../src/realtimeB
 class FakePort implements PortLike {
   sent: unknown[] = [];
   started = false;
+  throwOnPostMessage = false;
   private messageListeners: ((e: { data: unknown }) => void)[] = [];
   private closeListeners: (() => void)[] = [];
 
   postMessage(message: unknown): void {
+    if (this.throwOnPostMessage) throw new Error("port is closed");
     this.sent.push(message);
   }
   on(event: "message" | "close", listener: never): unknown {
@@ -62,6 +64,14 @@ describe("wrapMessagePort", () => {
     });
     port.emitClose();
     expect(closed).toBe(true);
+  });
+
+  it("swallows a send on a port that is physically closed before its close event lands", () => {
+    const port = new FakePort();
+    const conn = wrapMessagePort(port);
+    port.throwOnPostMessage = true;
+    expect(() => conn.send("late push")).not.toThrow();
+    expect(port.sent).toEqual([]);
   });
 
   it("stringifies non-string message payloads", () => {

@@ -50,6 +50,7 @@ export class PortTransport implements SocketLike {
       const port = event.ports[0];
       if (!port) {
         this.onerror?.();
+        this.transitionToClosed();
         return;
       }
       this.bindPort(port);
@@ -61,14 +62,17 @@ export class PortTransport implements SocketLike {
   private bindPort(port: PortLike): void {
     this.port = port;
     port.addEventListener("message", (e) => this.onmessage?.({ data: String(e.data) }));
-    port.addEventListener("close", () => {
-      this.readyState = READY_STATE.CLOSED;
-      this.port = null;
-      this.onclose?.();
-    });
+    port.addEventListener("close", () => this.transitionToClosed());
     port.start?.();
     this.readyState = READY_STATE.OPEN;
     this.onopen?.();
+  }
+
+  private transitionToClosed(): void {
+    if (this.readyState === READY_STATE.CLOSED) return;
+    this.readyState = READY_STATE.CLOSED;
+    this.port = null;
+    this.onclose?.();
   }
 
   send(data: string): void {
@@ -76,8 +80,10 @@ export class PortTransport implements SocketLike {
   }
 
   close(): void {
-    this.readyState = READY_STATE.CLOSED;
-    this.port?.close();
-    this.port = null;
+    // A MessagePort's close event only fires on the entangled peer, never on
+    // the end that called close() itself, so this end must self-report.
+    const port = this.port;
+    this.transitionToClosed();
+    port?.close();
   }
 }
