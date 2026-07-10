@@ -354,6 +354,23 @@ these rules:
   append a timestamped journal note on material revisions (revision
   discipline) → stop the loop after 16:00 ET close.
 
+## 桌面版模式
+
+打包的桌面版（`TradeCharts.app`）默认不监听任何本机端口，全部走 `app://` 内部协议。要用这个 skill 的 curl 命令连它，需要用户在应用内「设置 → 本机 API」手动打开开关：开关一开，应用会另起一个只监听 `127.0.0.1` 的 HTTP/WS 服务，套一层 token 校验后再转发到同一个内核实例。
+
+- 端口默认 `5199`，被占用会自动 +1 往后找（最多找 10 个），实际端口以设置页显示的为准 —— 不要硬编码 5199。
+- 除 `GET /api/health` 外，所有请求都要带 `Authorization: Bearer <token>`，token 在设置页可复制/重置。
+
+```bash
+curl -s http://127.0.0.1:<PORT>/api/health                                   # 无需 token
+curl -s http://127.0.0.1:<PORT>/api/charts \
+  -H "Authorization: Bearer <TOKEN>"
+```
+
+WebSocket（`/api/ws`，用于实时行情推送）同样要求 `Authorization: Bearer <token>` 请求头——浏览器端 WebSocket API 发不出自定义请求头，但命令行/skill 场景（Node `ws` 库等）可以正常带头，故沿用同一套 header 校验，不额外走 query 参数。
+
+token 等同完整 API 权限，只在本机使用，不要转发到局域网或公网；重置 token 后旧 token 立即失效，需要用新 token 重新连接。停用开关或应用退出时该端口会关闭。
+
 ## Storage
 
 - Chart docs: `journal/charts/data/<YYYY-MM-DD>-<slug>.json` — gitignored,

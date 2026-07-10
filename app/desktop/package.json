@@ -18,6 +18,7 @@
     "package": "tsdown && pnpm rebuild-native && pnpm build:native && electron-builder --mac dmg zip --arm64"
   },
   "dependencies": {
+    "@hono/node-server": "1.19.14",
     "better-sqlite3": "^12.11.1",
     "longbridge": "^4.3.3",
     "longbridge-darwin-arm64": "4.3.3"
