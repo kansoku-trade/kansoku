@@ -34,6 +34,7 @@ describe("Fastify malformed JSON body (capture for Tsuki parity)", () => {
       payload: "{not valid json",
     });
     expect(res.statusCode).toBe(400);
+    // keep in sync by hand with src/app.ts:24-34's FST_ERR_CTP* handler
     expect(res.json()).toEqual({
       ok: false,
       error: "request body must be JSON",
