@@ -1,6 +1,7 @@
 packages:
   - server
   - web
+  - desktop
 autoInstallPeers: false
 ignoredOptionalDependencies:
   - esbuild
