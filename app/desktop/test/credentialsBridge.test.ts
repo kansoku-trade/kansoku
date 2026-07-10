@@ -18,10 +18,16 @@ function fakeProvider(overrides: Partial<DesktopCredentialProvider> = {}): Deskt
 }
 
 describe("createCredentialsBridgeHandlers", () => {
-  it("get() never returns secrets, only a configured flag", () => {
-    const provider = fakeProvider({ isConfigured: () => true });
+  it("get() never returns secrets, only a configured flag and lastError", () => {
+    const provider = fakeProvider({ isConfigured: () => true, lastError: () => null });
     const handlers = createCredentialsBridgeHandlers({ provider, testCredentials: vi.fn() });
-    expect(handlers.get()).toEqual({ configured: true });
+    expect(handlers.get()).toEqual({ configured: true, lastError: null });
+  });
+
+  it("get() surfaces the provider's lastError so the UI can tell 未配置 apart from a store failure", () => {
+    const provider = fakeProvider({ isConfigured: () => false, lastError: () => "corrupt credentials file" });
+    const handlers = createCredentialsBridgeHandlers({ provider, testCredentials: vi.fn() });
+    expect(handlers.get()).toEqual({ configured: false, lastError: "corrupt credentials file" });
   });
 
   it("set() delegates to the provider and returns its result", () => {
@@ -107,7 +113,7 @@ describe("createCredentialsBridgeHandlers", () => {
 describe("registerCredentialsIpc", () => {
   it("wires all four channels to their handler methods", async () => {
     const handlers = {
-      get: vi.fn().mockReturnValue({ configured: true }),
+      get: vi.fn().mockReturnValue({ configured: true, lastError: null }),
       set: vi.fn().mockReturnValue({ ok: true }),
       clear: vi.fn(),
       test: vi.fn().mockResolvedValue({ ok: true }),
@@ -117,7 +123,7 @@ describe("registerCredentialsIpc", () => {
 
     registerCredentialsIpc(ipcMain, handlers);
 
-    expect(registered.get(CREDENTIALS_CHANNELS.get)?.(null)).toEqual({ configured: true });
+    expect(registered.get(CREDENTIALS_CHANNELS.get)?.(null)).toEqual({ configured: true, lastError: null });
     expect(registered.get(CREDENTIALS_CHANNELS.set)?.(null, CREDS)).toEqual({ ok: true });
     expect(handlers.set).toHaveBeenCalledWith(CREDS);
     registered.get(CREDENTIALS_CHANNELS.clear)?.(null);

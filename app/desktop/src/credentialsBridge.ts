@@ -14,8 +14,13 @@ export interface CredentialsBridgeDeps {
   now?: () => number;
 }
 
+export interface CredentialsGetResult {
+  configured: boolean;
+  lastError: string | null;
+}
+
 export interface CredentialsBridgeHandlers {
-  get(): { configured: boolean };
+  get(): CredentialsGetResult;
   set(creds: LongbridgeCredentials): SetCredentialsResult;
   clear(): void;
   test(creds: LongbridgeCredentials): Promise<TestCredentialsResult>;
@@ -28,8 +33,8 @@ export function createCredentialsBridgeHandlers(deps: CredentialsBridgeDeps): Cr
   let hasCompletedOnce = false;
 
   return {
-    get(): { configured: boolean } {
-      return { configured: deps.provider.isConfigured() };
+    get(): CredentialsGetResult {
+      return { configured: deps.provider.isConfigured(), lastError: deps.provider.lastError() };
     },
 
     set(creds: LongbridgeCredentials): SetCredentialsResult {

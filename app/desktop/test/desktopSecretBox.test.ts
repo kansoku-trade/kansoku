@@ -1,6 +1,6 @@
 import { existsSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createDesktopSecretBox } from "../src/desktopSecretBox.js";
 import { SecretBoxError } from "../../server/src/ai/secretBox.js";
@@ -104,6 +104,35 @@ describe("desktopSecretBox", () => {
   it("resetKey throws instead of writing plaintext when encryption is unavailable", () => {
     const box = createDesktopSecretBox({ safeStorage: fakeSafeStorage(false), wrappedKeyPath, legacyKeyPath });
     expect(() => box.resetKey()).toThrow(SecretBoxError);
+  });
+
+  it("resetKey keeps an existing legacy keyfile in sync with the new wrapped key", () => {
+    const legacyKey = Buffer.alloc(32, 3);
+    writeFileSync(legacyKeyPath, legacyKey, { mode: 0o600 });
+    const box = createDesktopSecretBox({ safeStorage: fakeSafeStorage(), wrappedKeyPath, legacyKeyPath });
+
+    box.resetKey();
+
+    const rewrittenLegacy = readFileSync(legacyKeyPath);
+    expect(rewrittenLegacy).not.toEqual(legacyKey);
+    expect(rewrittenLegacy).toHaveLength(32);
+    expect(statSync(legacyKeyPath).mode & 0o777).toBe(0o600);
+
+    // A bare-Node consumer reading only legacyKeyPath must decrypt with the
+    // same key resetKey() just wrapped.
+    const envelope = box.encrypt("longbridge", "secret-value");
+    const bareNodeBox = createDesktopSecretBox({
+      safeStorage: fakeSafeStorage(),
+      wrappedKeyPath: join(dirname(wrappedKeyPath), "unrelated-wrapped.json"),
+      legacyKeyPath,
+    });
+    expect(bareNodeBox.decrypt("longbridge", envelope)).toBe("secret-value");
+  });
+
+  it("resetKey does not create a legacy keyfile that never existed", () => {
+    const box = createDesktopSecretBox({ safeStorage: fakeSafeStorage(), wrappedKeyPath, legacyKeyPath });
+    box.resetKey();
+    expect(existsSync(legacyKeyPath)).toBe(false);
   });
 
   it("a corrupt wrapped-key file is treated as invalid, not a crash", () => {

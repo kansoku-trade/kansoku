@@ -67,6 +67,11 @@ function readLegacyKey(path: string): Buffer | null {
   return readFileSync(path);
 }
 
+function writeLegacyKey(path: string, key: Buffer): void {
+  writeFileSync(path, key, { mode: 0o600 });
+  chmodSync(path, 0o600);
+}
+
 // Migration order on every boot: prefer an already-wrapped key (steady
 // state); else wrap a pre-P3 plaintext keyfile in place, keeping the
 // original file untouched (never delete user data); else mint a fresh key.
@@ -120,6 +125,11 @@ export function createDesktopSecretBox(deps: DesktopSecretBoxDeps): SecretBox {
       }
       const fresh = randomBytes(KEY_BYTES);
       writeWrappedKey(deps.wrappedKeyPath, fresh, deps.safeStorage);
+      // A bare-Node host sharing this data root (no Electron, no safeStorage)
+      // reads the master key straight from legacyKeyPath — if that file is
+      // still around, keep it in lockstep or it'd decrypt with a stale key
+      // after this reset.
+      if (readLegacyKey(deps.legacyKeyPath)) writeLegacyKey(deps.legacyKeyPath, fresh);
     },
   };
 }
