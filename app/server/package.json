@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "HOST_MODE=dev KERNEL_PORT=5200 vite-node --watch src/main.node.ts",
     "start": "vite-node src/main.node.ts",
+    "pretest": "node scripts/ensureNativeAbi.mjs",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
