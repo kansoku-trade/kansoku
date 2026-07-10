@@ -127,7 +127,7 @@ export function createAppProtocolHandler(deps: ProtocolHostDeps) {
 
     if (!deps.distRootExists()) {
       return new Response(missingDistErrorHtml(deps.distRoot), {
-        status: 200,
+        status: 503,
         headers: { "content-type": "text/html; charset=utf-8" },
       });
     }

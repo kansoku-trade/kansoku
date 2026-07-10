@@ -3,7 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "predev": "node scripts/ensureNativeAbi.mjs",
     "dev": "HOST_MODE=dev KERNEL_PORT=5200 vite-node --watch src/main.node.ts",
+    "prestart": "node scripts/ensureNativeAbi.mjs",
     "start": "vite-node src/main.node.ts",
     "pretest": "node scripts/ensureNativeAbi.mjs",
     "test": "vitest run",

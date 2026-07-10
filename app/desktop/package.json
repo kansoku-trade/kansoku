@@ -9,12 +9,12 @@
     "rebuild-native": "electron-rebuild -v 43.1.0 --force -w better-sqlite3",
     "build:native": "cd native/sparkle-bridge && npm ci && npm run build",
     "predev": "pnpm rebuild-native && pnpm build:native",
-    "dev": "tsdown --watch --onSuccess \"electron .\"",
+    "dev": "ELECTRON_DEV=1 tsdown --watch --onSuccess \"electron .\"",
     "prestart": "pnpm rebuild-native && pnpm build:native",
     "start": "electron .",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "prepackage": "pnpm --filter @trade/web build && test -f ../web/dist/index.html || (echo 'web/dist/index.html missing after build' && exit 1)",
+    "prepackage": "pnpm --filter @trade/web build && (test -f ../web/dist/index.html || (echo 'web/dist/index.html missing after build' && exit 1))",
     "package": "tsdown && pnpm rebuild-native && pnpm build:native && electron-builder --mac dmg zip --arm64"
   },
   "dependencies": {

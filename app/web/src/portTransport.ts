@@ -28,6 +28,8 @@ export function isDesktopRealtime(win: unknown = typeof window === "undefined" ?
   return (win as { __DESKTOP_RT__?: boolean } | undefined)?.__DESKTOP_RT__ === true;
 }
 
+const DEFAULT_HANDSHAKE_TIMEOUT_MS = 5_000;
+
 export class PortTransport implements SocketLike {
   readyState: number = READY_STATE.CONNECTING;
   onopen: (() => void) | null = null;
@@ -37,16 +39,18 @@ export class PortTransport implements SocketLike {
 
   private port: PortLike | null = null;
   private win: WindowLike;
+  private handshakeTimer: ReturnType<typeof setTimeout> | null = null;
 
-  constructor(win: WindowLike = window as unknown as WindowLike) {
+  constructor(win: WindowLike = window as unknown as WindowLike, handshakeTimeoutMs = DEFAULT_HANDSHAKE_TIMEOUT_MS) {
     this.win = win;
-    this.handshake();
+    this.handshake(handshakeTimeoutMs);
   }
 
-  private handshake(): void {
+  private handshake(timeoutMs: number): void {
     const onMessage = (event: { source: unknown; data: unknown; ports: PortLike[] }) => {
       if (event.source !== this.win || event.data !== "desktop-rt-port") return;
       this.win.removeEventListener("message", onMessage);
+      this.clearHandshakeTimer();
       const port = event.ports[0];
       if (!port) {
         this.onerror?.();
@@ -57,6 +61,21 @@ export class PortTransport implements SocketLike {
     };
     this.win.addEventListener("message", onMessage);
     this.win.postMessage("desktop-rt-connect", "*");
+    // The main-process handshake reply is a same-process IPC round trip that
+    // should resolve near-instantly; if it never arrives, fail into the
+    // reconnect path instead of leaving callers awaiting onopen forever.
+    this.handshakeTimer = setTimeout(() => {
+      this.handshakeTimer = null;
+      this.win.removeEventListener("message", onMessage);
+      this.onerror?.();
+      this.transitionToClosed();
+    }, timeoutMs);
+  }
+
+  private clearHandshakeTimer(): void {
+    if (this.handshakeTimer === null) return;
+    clearTimeout(this.handshakeTimer);
+    this.handshakeTimer = null;
   }
 
   private bindPort(port: PortLike): void {

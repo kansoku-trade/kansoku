@@ -168,4 +168,31 @@ describe("PortTransport", () => {
     expect(onclose).toHaveBeenCalledTimes(1);
     expect(transport.readyState).toBe(READY_STATE.CLOSED);
   });
+
+  it("fires onerror and closes if the main process never answers the handshake", () => {
+    vi.useFakeTimers();
+    try {
+      const win = new FakeWindow();
+      const transport = new PortTransport(win, 1_000);
+      const onclose = vi.fn();
+      const onerror = vi.fn();
+      transport.onclose = onclose;
+      transport.onerror = onerror;
+
+      vi.advanceTimersByTime(999);
+      expect(onerror).not.toHaveBeenCalled();
+      expect(transport.readyState).toBe(READY_STATE.CONNECTING);
+
+      vi.advanceTimersByTime(1);
+      expect(onerror).toHaveBeenCalledTimes(1);
+      expect(onclose).toHaveBeenCalledTimes(1);
+      expect(transport.readyState).toBe(READY_STATE.CLOSED);
+
+      const port = new FakePort();
+      win.respondWithPort(port);
+      expect(transport.readyState).toBe(READY_STATE.CLOSED);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

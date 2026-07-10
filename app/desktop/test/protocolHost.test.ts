@@ -150,7 +150,7 @@ describe("createAppProtocolHandler", () => {
       distRootExists: () => false,
     });
     const response = await handler(new Request("app://-/index.html"));
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(503);
     const text = await response.text();
     expect(text).toContain("/nowhere");
   });

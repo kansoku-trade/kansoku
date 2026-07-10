@@ -1,6 +1,7 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { app, BrowserWindow, dialog } from "electron";
+import { app, BrowserWindow, dialog, shell } from "electron";
+import { isAllowedNavigationUrl, isExternalHttpUrl } from "./navigationGuard.js";
 import { registerAppProtocolHandler, registerAppScheme } from "./protocolHost.js";
 import { resolveDataRoot, resolveRepoRoot, scaffoldDataRoot } from "./repoRoot.js";
 import { initUpdater } from "./updater.js";
@@ -72,7 +73,24 @@ function createWindow() {
     );
   });
 
-  const url = process.env.ELECTRON_DEV === "1" ? DEV_WEB_URL : PROD_APP_URL;
+  const isDev = process.env.ELECTRON_DEV === "1";
+  const devUrl = isDev ? DEV_WEB_URL : undefined;
+
+  // A page loaded via app:// carries the preload's MessagePort kernel access.
+  // Without this guard, following an in-app link (e.g. a markdown link in
+  // rendered content) to a hostile origin would inherit that same preload.
+  win.webContents.on("will-navigate", (event, navUrl) => {
+    if (isAllowedNavigationUrl(navUrl, { devUrl })) return;
+    event.preventDefault();
+    if (isExternalHttpUrl(navUrl)) shell.openExternal(navUrl).catch(() => {});
+  });
+
+  win.webContents.setWindowOpenHandler(({ url: openUrl }) => {
+    if (isExternalHttpUrl(openUrl)) shell.openExternal(openUrl).catch(() => {});
+    return { action: "deny" };
+  });
+
+  const url = isDev ? DEV_WEB_URL : PROD_APP_URL;
   win.loadURL(url);
 }
 
