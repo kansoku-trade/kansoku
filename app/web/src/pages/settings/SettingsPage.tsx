@@ -1,6 +1,7 @@
 import { useQuery } from "../../apiHooks";
 import { ErrorBox } from "../../ui";
 import { useTitle } from "../../useTitle";
+import { CredentialsSettingsCard } from "./CredentialsSettingsCard";
 import { ExternalApiCard } from "./ExternalApiCard";
 import { ProviderCredentialsCard } from "./ProviderCredentialsCard";
 import { RoleModelsCard } from "./RoleModelsCard";
@@ -38,6 +39,7 @@ export function SettingsPage() {
   return (
     <div className="page settings-page">
       <h1>设置</h1>
+      <CredentialsSettingsCard />
       <ProviderCredentialsCard settings={settings} catalog={catalog} onChanged={reloadAll} />
       <RoleModelsCard settings={settings} catalog={catalog} usage={usage ?? null} />
       <ExternalApiCard />

@@ -6,7 +6,8 @@ import { getCredentialProvider } from "../../services/credentials/registry.js";
 export class CredentialsController {
   @Get("/status")
   async getStatus() {
-    const credentials = await getCredentialProvider().getLongbridgeCredentials();
-    return { ok: true, data: { configured: credentials !== null, lastError: getLastCredentialError() } };
+    const oauthViable = Boolean(process.env.LONGBRIDGE_OAUTH_CLIENT_ID);
+    const credentials = oauthViable ? null : await getCredentialProvider().getLongbridgeCredentials();
+    return { ok: true, data: { configured: oauthViable || credentials !== null, lastError: getLastCredentialError() } };
   }
 }

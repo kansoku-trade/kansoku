@@ -831,3 +831,28 @@ a.zone-item:hover { text-decoration: none; background: var(--bg-hover); }
 .settings-primary-clear:hover { color: var(--down); }
 
 .settings-external-api-token { font-family: var(--font-mono); word-break: break-all; }
+
+.credentials-form { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+.credentials-form-label { display: flex; flex-direction: column; gap: 6px; font-size: var(--fs-sm); color: var(--text-secondary); }
+.credentials-form-actions { display: flex; gap: 8px; margin-top: 2px; }
+
+.onboarding-page { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px; }
+.onboarding-card { max-width: 480px; width: 100%; }
+.onboarding-card h1 { font-size: var(--fs-xl); font-weight: 600; color: var(--text-primary); margin-bottom: 10px; }
+.onboarding-explainer { font-size: var(--fs-base); color: var(--text-secondary); line-height: 1.6; margin-bottom: 14px; }
+.onboarding-explainer a { color: var(--accent); }
+.onboarding-skip-row { display: flex; justify-content: center; margin-top: 14px; }
+
+.restricted-banner {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  background: var(--bg-element); border-bottom: 1px solid var(--down); color: var(--down);
+  padding: 8px 16px; font-size: var(--fs-base);
+}
+.restricted-banner-actions { display: flex; align-items: center; gap: 10px; }
+.restricted-banner-link {
+  background: none; border: none; color: var(--accent); font-size: var(--fs-base); cursor: pointer; padding: 0;
+}
+.restricted-banner-dismiss {
+  background: none; border: none; color: var(--text-muted); font-size: var(--fs-base); cursor: pointer; padding: 0 4px;
+}
+.restricted-banner-dismiss:hover { color: var(--text-primary); }

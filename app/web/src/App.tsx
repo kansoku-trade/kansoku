@@ -4,11 +4,14 @@ import type { ChartDoc } from "../../shared/types";
 import { chartTargetPath } from "../../shared/chartUrl";
 import { useQuery } from "./apiHooks";
 import { openNewChartDialog } from "./newChart/NewChartDialog";
+import { Onboarding } from "./onboarding/Onboarding";
+import { useCredentialsGate } from "./onboarding/useCredentialsGate";
 import { Home } from "./pages/Home";
 import { SettingsPage } from "./pages/settings/SettingsPage";
 import { SymbolCockpit } from "./pages/SymbolCockpit";
+import { RestrictedBanner } from "./RestrictedBanner";
 import { navigate, useRoute } from "./router";
-import { ErrorBox, ModalHost } from "./ui";
+import { ErrorBox, ModalHost, Spinner } from "./ui";
 
 function Redirect({ to }: { to: string }) {
   useEffect(() => navigate(to, { replace: true }), [to]);
@@ -67,8 +70,23 @@ function GlobalTopbar() {
 }
 
 export function App() {
+  const gate = useCredentialsGate();
+
+  if (gate.status === "loading") {
+    return (
+      <div className="page">
+        <Spinner />
+      </div>
+    );
+  }
+
+  if (gate.status === "onboarding" && gate.bridge) {
+    return <Onboarding bridge={gate.bridge} onDone={gate.recheck} onSkip={gate.skip} />;
+  }
+
   return (
     <>
+      <RestrictedBanner />
       <GlobalTopbar />
       <Router />
       <ModalHost />

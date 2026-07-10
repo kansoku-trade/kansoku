@@ -1,4 +1,5 @@
 import type { ApiResult } from "../../shared/types";
+import { isCredentialsErrorCode, markRestricted } from "./restrictedMode";
 
 export class ApiError extends Error {
   status: number;
@@ -46,7 +47,10 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
     throw new ApiError("Malformed API response", res.status);
   }
 
-  if (!json.ok) throw new ApiError(json.hint ? `${json.error} (${json.hint})` : json.error, res.status, json.code);
+  if (!json.ok) {
+    if (isCredentialsErrorCode(res.status, json.code)) markRestricted();
+    throw new ApiError(json.hint ? `${json.error} (${json.hint})` : json.error, res.status, json.code);
+  }
   if (!res.ok) throw new ApiError(`HTTP ${res.status}${res.statusText ? ` ${res.statusText}` : ""}`, res.status);
   return json.data;
 }
