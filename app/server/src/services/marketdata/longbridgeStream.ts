@@ -1,7 +1,9 @@
-import { Config, OAuth, QuoteContext, SubType, TradeContext, TradeSession } from "longbridge";
-import type { PushQuote, PushQuoteEvent, PushCandlestickEvent } from "longbridge";
+import { QuoteContext, SubType, TradeContext, TradeSession } from "longbridge";
+import type { Config, PushQuote, PushQuoteEvent, PushCandlestickEvent } from "longbridge";
 import type { QuoteCell } from "../../../../shared/types.js";
+import { getCredentialProvider } from "../credentials/registry.js";
 import { CandlestickLedger, periodToCandlePeriod, type CandleBar, type CandlePeriod } from "./candlestickLedger.js";
+import { resolveLongbridgeConfig } from "./longbridgeConfig.js";
 
 export type { CandleBar, CandlePeriod };
 
@@ -53,24 +55,19 @@ class LongbridgeStream {
   private prevCloseTimer: ReturnType<typeof setInterval> | null = null;
   private candlestickLedger = new CandlestickLedger(() => this.connect());
 
-  private async buildConfig(): Promise<Config> {
-    const oauthId = process.env.LONGBRIDGE_OAUTH_CLIENT_ID;
-    if (oauthId) {
-      const oauth = await OAuth.build(oauthId, (err, url) => {
-        if (err) {
-          console.warn("[longbridge-stream] OAuth error", err.message);
-          return;
-        }
-        console.log(
-          `\n[longbridge-stream] 首次授权：在浏览器打开以下 URL 完成登录（授权后 token 会缓存到 ~/.longbridge/openapi/tokens/ 并自动 refresh）\n${url}\n`,
-        );
-      });
-      return Config.fromOAuth(oauth);
-    }
-    if (process.env.LONGBRIDGE_APP_KEY) return Config.fromApikeyEnv();
-    throw new Error(
-      "Longbridge credentials missing: set LONGBRIDGE_OAUTH_CLIENT_ID (preferred) or LONGBRIDGE_APP_KEY/SECRET/ACCESS_TOKEN in .env",
-    );
+  constructor() {
+    getCredentialProvider().onChange(() => this.resetClients());
+  }
+
+  private buildConfig(): Promise<Config> {
+    return resolveLongbridgeConfig();
+  }
+
+  private resetClients(): void {
+    this.ctx = null;
+    this.connectPromise = null;
+    this.tradeCtx = null;
+    this.tradeConnectPromise = null;
   }
 
   private async connect(): Promise<QuoteContext> {
@@ -311,4 +308,4 @@ export function getLongbridgeStream(): LongbridgeStream {
   return instance;
 }
 
-export type { LongbridgeStream };
+export { LongbridgeStream };

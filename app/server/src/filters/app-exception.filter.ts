@@ -11,7 +11,12 @@ function isMalformedJsonBody(exception: unknown): boolean {
 export class AppExceptionFilter implements ExceptionFilter {
   catch(exception: unknown, _host: ArgumentsHost): Response {
     if (exception instanceof ClientError) {
-      return jsonResponse(exception.status, { ok: false, error: exception.message, hint: exception.hint });
+      return jsonResponse(exception.status, {
+        ok: false,
+        error: exception.message,
+        hint: exception.hint,
+        code: exception.code,
+      });
     }
     // Tsuki's @Body() decorator throws BadRequestException("Invalid JSON payload")
     // on unparseable JSON; map it to this repo's envelope shape.

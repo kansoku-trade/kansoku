@@ -13,6 +13,8 @@ import type {
 } from "longbridge";
 import type { NewsItem, RawBar } from "../../../../shared/types.js";
 import { ClientError } from "../../errors.js";
+import { clearCredentialRejection, recordCredentialRejection } from "../credentials/credentialStatus.js";
+import { NoCredentialsError } from "../credentials/errors.js";
 import type { FlowRow } from "../simple.js";
 import { CANDLE_PERIOD_MAP, type CandlePeriod } from "./candlestickLedger.js";
 import { getLongbridgeStream } from "./longbridgeStream.js";
@@ -23,6 +25,9 @@ const THROTTLE_MIN_INTERVAL_MS = 100;
 const MAX_HISTORY_PAGES = 5;
 // Longbridge rejects kline requests above 1000 bars per call (code 301607).
 const KLINE_PAGE_SIZE = 1000;
+// Heuristic over the SDK's opaque native error message — same pattern as
+// settingsValidation.categorizeTestError for AI provider auth errors.
+const CREDENTIALS_REJECTED_RE = /token.*(expired|invalid|revoked)|invalid.*(access.?token|token)|unauthori[sz]ed|401\d{3}/i;
 
 const LEGACY_PERIOD_ALIASES: Record<string, CandlePeriod> = { "1h": "60m" };
 
@@ -74,10 +79,30 @@ function throttle(): Promise<void> {
 async function callSdk<T>(label: string, fn: () => Promise<T>): Promise<T> {
   await throttle();
   try {
-    return await fn();
+    const result = await fn();
+    clearCredentialRejection();
+    return result;
   } catch (err) {
     if (err instanceof ClientError) throw err;
+    if (err instanceof NoCredentialsError) {
+      throw new ClientError(
+        err.message,
+        "Configure Longbridge credentials (LONGBRIDGE_APP_KEY/APP_SECRET/ACCESS_TOKEN, or via the host's credential provider) before calling market-data endpoints.",
+        503,
+        "NO_CREDENTIALS",
+      );
+    }
     const detail = err instanceof Error ? err.message : String(err);
+    if (CREDENTIALS_REJECTED_RE.test(detail)) {
+      const message = `longbridge ${label} failed: ${detail}`;
+      recordCredentialRejection(message);
+      throw new ClientError(
+        message,
+        "Longbridge rejected the configured credentials (expired or invalid token) — update them and retry.",
+        503,
+        "CREDENTIALS_REJECTED",
+      );
+    }
     throw new ClientError(
       `longbridge ${label} failed: ${detail}`,
       "Check Longbridge OAuth/API-key credentials in .env (LONGBRIDGE_OAUTH_CLIENT_ID or LONGBRIDGE_APP_KEY/SECRET/ACCESS_TOKEN) and the symbol format (e.g. NVDA.US).",

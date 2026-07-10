@@ -249,15 +249,47 @@ describe("longbridgeProvider (SDK-backed)", () => {
     await expect(provider.getWatchlistSymbols!()).resolves.toEqual(["MU.US", "NVDA.US"]);
   });
 
-  it("maps a rejected SDK call to a ClientError with an auth/config hint", async () => {
+  it("maps a rejected SDK call with a non-auth message to a 502 ClientError with an auth/config hint", async () => {
+    const createLongbridgeProvider = await loadProvider();
+    const provider = createLongbridgeProvider(
+      async () => ({ quote: vi.fn().mockRejectedValue(new Error("network timeout")) } as unknown as QuotePort),
+      async () => ({}) as TradePort,
+    );
+
+    await expect(provider.getQuotes(["NVDA.US"])).rejects.toThrow(/longbridge quote failed: network timeout/);
+    await expect(provider.getQuotes(["NVDA.US"])).rejects.toMatchObject({ status: 502, hint: expect.stringMatching(/credentials/i), code: undefined });
+  });
+
+  it("maps an auth-shaped rejection (expired/invalid token) to a 503 ClientError with code CREDENTIALS_REJECTED", async () => {
     const createLongbridgeProvider = await loadProvider();
     const provider = createLongbridgeProvider(
       async () => ({ quote: vi.fn().mockRejectedValue(new Error("token expired")) } as unknown as QuotePort),
       async () => ({}) as TradePort,
     );
 
-    await expect(provider.getQuotes(["NVDA.US"])).rejects.toThrow(/longbridge quote failed: token expired/);
-    await expect(provider.getQuotes(["NVDA.US"])).rejects.toMatchObject({ status: 502, hint: expect.stringMatching(/credentials/i) });
+    await expect(provider.getQuotes(["NVDA.US"])).rejects.toMatchObject({
+      status: 503,
+      code: "CREDENTIALS_REJECTED",
+      message: expect.stringMatching(/longbridge quote failed: token expired/),
+      hint: expect.stringMatching(/rejected the configured credentials/i),
+    });
+  });
+
+  it("maps a NoCredentialsError to a 503 ClientError with code NO_CREDENTIALS", async () => {
+    const { NoCredentialsError } = await import("../src/services/credentials/errors.js");
+    const createLongbridgeProvider = await loadProvider();
+    const provider = createLongbridgeProvider(
+      async () => {
+        throw new NoCredentialsError();
+      },
+      async () => ({}) as TradePort,
+    );
+
+    await expect(provider.getQuotes(["NVDA.US"])).rejects.toMatchObject({
+      status: 503,
+      code: "NO_CREDENTIALS",
+      message: "longbridge credentials not configured",
+    });
   });
 
   it("throttles consecutive SDK calls to a minimum interval", async () => {
