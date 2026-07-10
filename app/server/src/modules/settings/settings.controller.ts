@@ -18,7 +18,7 @@ import {
   sanitizeAuthError,
   validateCustomRef,
   validateRoleSetting,
-} from "../../routes/settingsValidation.js";
+} from "./settingsValidation.js";
 import { easternDate } from "../../services/session.js";
 
 const DEFAULT_TEST_TIMEOUT_MS = 25_000;

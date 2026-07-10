@@ -7,8 +7,8 @@ export interface Kernel {
   app: HonoHttpApplication;
 }
 
-// globalPrefix "/api" mirrors the existing Fastify route prefixing so migrated
-// controllers can use bare paths (e.g. @Controller("health")) for "/api/health".
+// globalPrefix "/api" lets controllers use bare paths (e.g. @Controller("health"))
+// for "/api/health".
 export async function createKernel(): Promise<Kernel> {
   const app = await createApplication(AppModule, { globalPrefix: "/api" });
   app.useGlobalFilters(new AppExceptionFilter());

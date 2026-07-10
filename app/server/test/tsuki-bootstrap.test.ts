@@ -7,7 +7,7 @@ import { CHART_DATA_DIR, PORT } from "../src/env.js";
 import { tsukiRequest } from "./helpers.js";
 
 describe("tsuki bootstrap", () => {
-  it("GET /api/health matches the Fastify envelope", async () => {
+  it("GET /api/health returns the status envelope", async () => {
     const res = await tsukiRequest("/api/health");
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({

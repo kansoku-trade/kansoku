@@ -19,8 +19,8 @@ export class AppExceptionFilter implements ExceptionFilter {
     if (exception instanceof ClientError) {
       return jsonResponse(exception.status, { ok: false, error: exception.message, hint: exception.hint });
     }
-    // mirrors Fastify's FST_ERR_CTP* body-parse error handling (see src/app.ts) —
-    // Tsuki's @Body() decorator throws this on unparseable JSON.
+    // Tsuki's @Body() decorator throws BadRequestException("Invalid JSON payload")
+    // on unparseable JSON; map it to this repo's envelope shape.
     if (isMalformedJsonBody(exception)) {
       return jsonResponse(400, {
         ok: false,
