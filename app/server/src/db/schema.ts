@@ -88,3 +88,23 @@ export const chatMessages = sqliteTable(
   },
   (t) => [index("chat_messages_session").on(t.sessionId)],
 );
+
+export const aiRoleSettings = sqliteTable("ai_role_settings", {
+  role: text("role").primaryKey(),
+  mode: text("mode").notNull(),
+  provider: text("provider"),
+  modelId: text("model_id"),
+  thinkingLevel: text("thinking_level"),
+  updatedAt: text("updated_at").notNull(),
+});
+
+export const providerCredentials = sqliteTable("provider_credentials", {
+  provider: text("provider").primaryKey(),
+  secret: text("secret").notNull(),
+  updatedAt: text("updated_at").notNull(),
+});
+
+export const appMeta = sqliteTable("app_meta", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull(),
+});

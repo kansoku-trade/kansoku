@@ -15,6 +15,13 @@
       "when": 1783619322747,
       "tag": "0001_deep_sheva_callister",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1783671634458,
+      "tag": "0002_complex_spirit",
+      "breakpoints": true
     }
   ]
 }
