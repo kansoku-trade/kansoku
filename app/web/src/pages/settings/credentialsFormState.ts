@@ -49,6 +49,8 @@ export function credentialsFormReducer(
         fields: { ...state.fields, [action.key]: action.value },
         testStatus: "idle",
         testMessage: null,
+        saveStatus: "idle",
+        saveError: null,
       };
     case "test-start":
       return { ...state, testStatus: "testing", testMessage: null };

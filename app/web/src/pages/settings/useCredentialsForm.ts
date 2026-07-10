@@ -1,5 +1,6 @@
 import { useReducer } from "react";
-import { friendlyCredentialError, type DesktopCredentialsBridge } from "./desktopCredentials";
+import type { DesktopCredentialsBridge } from "./desktopCredentials";
+import { runCredentialsSave, runCredentialsTest } from "./credentialsFormActions";
 import {
   allCredentialsFieldsFilled,
   credentialsFormReducer,
@@ -13,24 +14,14 @@ export function useCredentialsForm(bridge: DesktopCredentialsBridge, onSaved: ()
 
   const setField = (key: keyof CredentialsFormFields, value: string) => dispatch({ type: "field", key, value });
 
-  const handleTest = async () => {
+  const handleTest = () => {
     if (!allCredentialsFieldsFilled(state.fields)) return;
-    dispatch({ type: "test-start" });
-    const result = await bridge.test(state.fields);
-    if (result.ok) dispatch({ type: "test-ok" });
-    else dispatch({ type: "test-fail", message: friendlyCredentialError(result.error) ?? result.error });
+    void runCredentialsTest(bridge, state.fields, dispatch);
   };
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!allCredentialsFieldsFilled(state.fields)) return;
-    dispatch({ type: "save-start" });
-    const result = await bridge.set(state.fields);
-    if (result.ok) {
-      dispatch({ type: "save-ok" });
-      onSaved();
-    } else {
-      dispatch({ type: "save-fail", message: friendlyCredentialError(result.error) ?? result.error });
-    }
+    void runCredentialsSave(bridge, state.fields, dispatch, onSaved);
   };
 
   return { state, canSubmit, setField, handleTest, handleSave };
