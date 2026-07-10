@@ -56,6 +56,12 @@ class LongbridgeStream {
   private candlestickLedger = new CandlestickLedger(() => this.connect());
 
   constructor() {
+    // Binds to the provider INSTANCE active right now, not "whatever the
+    // registry holds later" — swapping in a new provider object via
+    // initCredentialProvider() after this point orphans this subscription.
+    // Hosts that need runtime credential updates must keep one long-lived
+    // provider and notify through it (its own onChange callback), not
+    // replace the provider object.
     getCredentialProvider().onChange(() => this.resetClients());
   }
 

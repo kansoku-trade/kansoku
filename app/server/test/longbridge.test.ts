@@ -260,6 +260,20 @@ describe("longbridgeProvider (SDK-backed)", () => {
     await expect(provider.getQuotes(["NVDA.US"])).rejects.toMatchObject({ status: 502, hint: expect.stringMatching(/credentials/i), code: undefined });
   });
 
+  it("does not mislabel an entitlement/permission rejection as CREDENTIALS_REJECTED", async () => {
+    const createLongbridgeProvider = await loadProvider();
+    const provider = createLongbridgeProvider(
+      async () => ({ quote: vi.fn().mockRejectedValue(new Error("unauthorized to trade this security")) } as unknown as QuotePort),
+      async () => ({}) as TradePort,
+    );
+
+    await expect(provider.getQuotes(["NVDA.US"])).rejects.toMatchObject({
+      status: 502,
+      code: undefined,
+      message: expect.stringMatching(/unauthorized to trade this security/),
+    });
+  });
+
   it("maps an auth-shaped rejection (expired/invalid token) to a 503 ClientError with code CREDENTIALS_REJECTED", async () => {
     const createLongbridgeProvider = await loadProvider();
     const provider = createLongbridgeProvider(

@@ -27,7 +27,7 @@ const MAX_HISTORY_PAGES = 5;
 const KLINE_PAGE_SIZE = 1000;
 // Heuristic over the SDK's opaque native error message — same pattern as
 // settingsValidation.categorizeTestError for AI provider auth errors.
-const CREDENTIALS_REJECTED_RE = /token.*(expired|invalid|revoked)|invalid.*(access.?token|token)|unauthori[sz]ed|401\d{3}/i;
+const CREDENTIALS_REJECTED_RE = /token.*(expired|invalid|revoked)|invalid.*(access.?token|token)|unauthori[sz]ed.*(token|credential|access)|401\d{3}/i;
 
 const LEGACY_PERIOD_ALIASES: Record<string, CandlePeriod> = { "1h": "60m" };
 
