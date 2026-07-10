@@ -1,7 +1,10 @@
-import { Agent, type AgentEvent, type AgentMessage, type AgentTool } from "@earendil-works/pi-agent-core";
-import { getCodexApiKey } from "./codexAuth.js";
+import { Agent, type AgentEvent, type AgentMessage, type AgentTool, type StreamFn } from "@earendil-works/pi-agent-core";
+import { getModelsRuntime } from "./modelsRuntime.js";
 import type { AiModel } from "./models.js";
 import { attachAiUsageLogger, type AiUsageLogContext } from "./usage.js";
+
+export const runtimeStreamFn: StreamFn = (model, context, options) =>
+  getModelsRuntime().streamSimple(model, context, options);
 
 export interface AiAgentHandle {
   prompt(text: string): Promise<unknown>;
@@ -22,7 +25,7 @@ export class AgentTimeoutError extends Error {}
 
 const defaultAgentFactory: AiAgentFactory = (config) => {
   const agent = new Agent({
-    getApiKey: getCodexApiKey,
+    streamFn: runtimeStreamFn,
     initialState: {
       systemPrompt: config.systemPrompt,
       model: config.model,

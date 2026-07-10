@@ -1,7 +1,9 @@
 import type { AgentEvent, AgentMessage, AgentTool } from "@earendil-works/pi-agent-core";
+import type { MutableModels } from "@earendil-works/pi-ai";
 import { Type } from "typebox";
-import { describe, expect, it } from "vitest";
-import { AgentTimeoutError, createAgentSession, type AiAgentFactory } from "../src/ai/agentSession.js";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { AgentTimeoutError, createAgentSession, runtimeStreamFn, type AiAgentFactory } from "../src/ai/agentSession.js";
+import { setModelsRuntimeForTests } from "../src/ai/modelsRuntime.js";
 import type { AiModel } from "../src/ai/models.js";
 
 const fakeModel = { provider: "anthropic", id: "claude-haiku-4-5" } as unknown as AiModel;
@@ -15,6 +17,28 @@ const fakeTool: AgentTool = {
 };
 
 const fakeMessage: AgentMessage = { role: "user", content: "hi", timestamp: 0 };
+
+describe("runtimeStreamFn", () => {
+  afterEach(() => {
+    setModelsRuntimeForTests(null);
+  });
+
+  it("delegates to the runtime's streamSimple with the same args", () => {
+    const spy = vi.fn();
+    setModelsRuntimeForTests({ streamSimple: spy } as unknown as MutableModels);
+
+    const fakeContext = { messages: [] } as unknown as Parameters<typeof runtimeStreamFn>[1];
+    const options = { apiKey: undefined } as unknown as Parameters<typeof runtimeStreamFn>[2];
+    runtimeStreamFn(fakeModel, fakeContext, options);
+
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy).toHaveBeenCalledWith(fakeModel, fakeContext, options);
+  });
+
+  it("throws when no runtime has been initialized", () => {
+    expect(() => runtimeStreamFn(fakeModel, {} as never, undefined)).toThrow(/not initialized/);
+  });
+});
 
 describe("createAgentSession", () => {
   it("passes systemPrompt/model/tools/messages verbatim to the factory", () => {
