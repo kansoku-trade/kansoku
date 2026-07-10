@@ -1,3 +1,5 @@
+import { isDesktopRealtime, PortTransport, type SocketLike } from "./portTransport.js";
+
 export type ChannelSpec =
   | { kind: "quotes"; extra?: string[] }
   | { kind: "chart"; id: string; count?: number }
@@ -16,7 +18,7 @@ interface ChannelSub {
 
 const RECONNECT_MS = 2_000;
 
-let ws: WebSocket | null = null;
+let ws: SocketLike | null = null;
 let manualClose = false;
 let reconnectTimer: number | null = null;
 let nextKey = 0;
@@ -33,7 +35,7 @@ function broadcast(connected: boolean): void {
 
 function connect(): void {
   if (ws || subs.size === 0) return;
-  const sock = new WebSocket(wsUrl());
+  const sock = (isDesktopRealtime() ? new PortTransport() : new WebSocket(wsUrl())) as unknown as SocketLike;
   ws = sock;
   sock.onopen = () => {
     for (const [key, sub] of subs) sock.send(JSON.stringify({ op: "sub", key, ...sub.spec }));

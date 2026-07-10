@@ -12,10 +12,12 @@ const PLACEHOLDER_HTML = `data:text/html,${encodeURIComponent(
 async function bootKernel() {
   const { initServerRuntime } = await import("../../server/src/runtimeInit.js");
   const { createKernel } = await import("../../server/src/bootstrap.js");
+  const { attachRealtimeBridge } = await import("./realtimeBridge.js");
 
   initServerRuntime();
   const kernel = await createKernel();
   const apiApp = kernel.app.getInstance();
+  attachRealtimeBridge();
 
   const health = await apiApp.fetch(new Request("http://localhost/api/health"));
   console.log(`[desktop] kernel self-test /api/health -> ${health.status}`, await health.text());
