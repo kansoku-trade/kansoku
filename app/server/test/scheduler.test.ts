@@ -397,12 +397,36 @@ describe("aiScheduler loop", () => {
     scheduler.stop();
   });
 
-  it("does not start when the comment model is unresolved", () => {
+  it("starts even when the comment model is unresolved", () => {
     const { deps } = harness({
       aiConfig: () => ({ commentModel: null, analystModel: null, deepDiveModel: null, chatModel: null }),
     });
     const scheduler = createAiScheduler(deps);
-    expect(scheduler.start()).toBe(false);
+    expect(scheduler.start()).toBe(true);
+    scheduler.stop();
+  });
+
+  it("picks up a comment model enabled after start without a restart", async () => {
+    let commentModel: AiModel | null = null;
+    const discoverTargets = vi.fn(async () => ["MU.US"]);
+    const { deps, rec } = harness({
+      aiConfig: () => ({ commentModel, analystModel: null, deepDiveModel: null, chatModel: null }),
+      discoverTargets,
+      detectTriggers: () => [{ kind: "macd_cross", detail: "x" }],
+    });
+    const scheduler = createAiScheduler(deps);
+    expect(scheduler.start()).toBe(true);
+
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(discoverTargets).not.toHaveBeenCalled();
+    expect(rec.commentatorCalls).toHaveLength(0);
+
+    commentModel = fakeModel;
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(discoverTargets).toHaveBeenCalledTimes(1);
+    expect(rec.commentatorCalls.map((c) => c.symbol)).toEqual(["MU.US"]);
+
+    scheduler.stop();
   });
 
   it("stops firing after stop", async () => {

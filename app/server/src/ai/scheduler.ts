@@ -263,7 +263,6 @@ export function createAiScheduler(deps: SchedulerDeps = defaultSchedulerDeps): A
   return {
     start() {
       if (timer) return true;
-      if (!deps.aiConfig().commentModel) return false;
       timer = setInterval(() => void tick(), TICK_MS);
       return true;
     },
