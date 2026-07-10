@@ -69,16 +69,18 @@ jobs:
 
       - name: test — server (json report for the known-failure gate)
         working-directory: app/server
-        run: pnpm test -- --reporter=json --outputFile=test-results.json || true
+        # no leading `--` here: pnpm forwards it verbatim to the underlying
+        # `vitest run` script, which then reads it as a positional file filter
+        # instead of a flag separator, and --reporter/--outputFile are silently
+        # swallowed as filter globs instead of applied.
+        run: pnpm test --reporter=json --outputFile=test-results.json || true
 
       - name: gate — server suite has no NEW failures
         run: node .github/scripts/assert-known-test-failures.mjs app/server/test-results.json
 
-      - name: rebuild native modules (forced, pre-package)
+      - name: clear native-module rebuild cache (pnpm package forces the real rebuild)
         working-directory: app/desktop
-        run: |
-          rm -rf node_modules/better-sqlite3/build "$HOME/Library/Caches/electron-rebuild"
-          pnpm rebuild-native
+        run: rm -rf node_modules/better-sqlite3/build "$HOME/Library/Caches/electron-rebuild"
 
       - name: fetch Sparkle tools
         run: |
@@ -91,13 +93,15 @@ jobs:
           echo "/tmp/sparkle/bin" >> "$GITHUB_PATH"
 
       - name: inject SUPublicEDKey into electron-builder.yml
+        env:
+          SPARKLE_ED_PUBLIC_KEY: ${{ secrets.SPARKLE_ED_PUBLIC_KEY }}
         run: |
           PLACEHOLDER="SPARKLE_ED_PUBLIC_KEY_PLACEHOLDER"
           if ! grep -q "$PLACEHOLDER" app/desktop/electron-builder.yml; then
             echo "::error::placeholder $PLACEHOLDER not found in app/desktop/electron-builder.yml — has the Sparkle bridge integration point moved?"
             exit 1
           fi
-          sed -i '' "s|$PLACEHOLDER|${{ secrets.SPARKLE_ED_PUBLIC_KEY }}|" app/desktop/electron-builder.yml
+          sed -i '' "s|$PLACEHOLDER|$SPARKLE_ED_PUBLIC_KEY|" app/desktop/electron-builder.yml
 
       - name: build web
         working-directory: app

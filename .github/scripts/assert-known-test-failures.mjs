@@ -26,15 +26,18 @@ for (const testFile of report.testResults ?? []) {
 const newFailures = [...failed].filter((name) => !KNOWN_FAILURES.has(name));
 const nowPassing = [...KNOWN_FAILURES].filter((name) => !failed.has(name));
 
-if (nowPassing.length > 0) {
-  console.log(`info: ${nowPassing.length} previously-known failure(s) now pass — consider shrinking KNOWN_FAILURES:`);
-  for (const name of nowPassing) console.log(`  - ${name}`);
-}
-
 if (newFailures.length > 0) {
   console.error(`server test gate FAILED: ${newFailures.length} new failure(s) not in the known-failure allowlist:`);
   for (const name of newFailures) console.error(`  - ${name}`);
   process.exit(1);
 }
 
-console.log(`server test gate OK: ${failed.size} failing test(s), all within the known-failure allowlist.`);
+if (nowPassing.length > 0) {
+  console.error(
+    `server test gate FAILED: ${nowPassing.length} previously-known failure(s) now pass — the allowlist is stale. Remove them from KNOWN_FAILURES in this file (a conscious edit, not an auto-fix) and re-run:`,
+  );
+  for (const name of nowPassing) console.error(`  - ${name}`);
+  process.exit(1);
+}
+
+console.log(`server test gate OK: ${failed.size} failing test(s), exactly matching the known-failure allowlist.`);
