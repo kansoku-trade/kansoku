@@ -34,6 +34,12 @@ describe("decideRoute", () => {
     expect(decideRoute("app://-/assets/%2e%2e%2f%2e%2e%2fetc/passwd")).toEqual({ kind: "blocked" });
     expect(decideRoute("app://-/..\\..\\etc\\passwd")).toEqual({ kind: "blocked" });
   });
+
+  it("blocks malformed percent-encoding instead of throwing", () => {
+    expect(decideRoute("app://-/%zz")).toEqual({ kind: "blocked" });
+    expect(decideRoute("app://-/%")).toEqual({ kind: "blocked" });
+    expect(decideRoute("app://-/%c0%ae")).toEqual({ kind: "blocked" });
+  });
 });
 
 describe("guardStaticPath", () => {
@@ -114,6 +120,16 @@ describe("createAppProtocolHandler", () => {
       distRootExists: () => true,
     });
     const response = await handler(new Request("app://-/assets/%2e%2e%2f%2e%2e%2fsecret"));
+    expect(response.status).toBe(403);
+  });
+
+  it("blocks malformed percent-encoding with 403 instead of rejecting", async () => {
+    const handler = createAppProtocolHandler({
+      kernelFetch,
+      distRoot: "/dist",
+      distRootExists: () => true,
+    });
+    const response = await handler(new Request("app://-/%zz"));
     expect(response.status).toBe(403);
   });
 

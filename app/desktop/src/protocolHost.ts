@@ -29,7 +29,17 @@ export type RouteDecision =
 // the static web build with SPA fallback for extensionless paths.
 export function decideRoute(requestUrl: string): RouteDecision {
   const url = new URL(requestUrl);
-  const pathname = decodeURIComponent(url.pathname);
+
+  // decodeURIComponent throws on malformed percent-encoding (bare "%",
+  // "%zz", or invalid UTF-8 byte sequences like "%c0%ae") — treat that as
+  // a blocked request rather than letting the exception escape as an
+  // unhandled rejection.
+  let pathname: string;
+  try {
+    pathname = decodeURIComponent(url.pathname);
+  } catch {
+    return { kind: "blocked" };
+  }
 
   if (pathname === "/api" || pathname.startsWith("/api/")) {
     return { kind: "kernel" };
