@@ -1,41 +1,12 @@
 import type { FastifyPluginAsync } from "fastify";
-import type { PortfolioSummary } from "../../../shared/types.js";
 import { ClientError } from "../errors.js";
+import { summarizePortfolio } from "../modules/positions/positions.utils.js";
 import { getProvider } from "../services/marketdata/registry.js";
-import type { RawPortfolio } from "../services/marketdata/types.js";
+import type { PortfolioSummary } from "../../../shared/types.js";
 
 const CACHE_TTL_MS = 30_000;
 
-function num(value: string): number {
-  const n = Number(value);
-  return Number.isFinite(n) ? n : 0;
-}
-
-export function summarizePortfolio(raw: RawPortfolio): PortfolioSummary {
-  return {
-    currency: raw.overview.currency,
-    total_asset: num(raw.overview.total_asset),
-    market_cap: num(raw.overview.market_cap),
-    cash: num(raw.overview.total_cash),
-    total_pl: num(raw.overview.total_pl),
-    today_pl: num(raw.overview.total_today_pl),
-    positions: raw.holdings.map((h) => {
-      const quantity = num(h.quantity);
-      const cost = num(h.cost_price);
-      const last = num(h.market_price);
-      return {
-        symbol: h.symbol,
-        name: h.name,
-        quantity,
-        cost_price: cost,
-        last,
-        market_value: num(h.market_value),
-        pnl: (last - cost) * quantity,
-        pnl_pct: cost > 0 ? (last / cost - 1) * 100 : 0,
-      };
-    }),
-  };
-}
+export { summarizePortfolio };
 
 export const positionsRoute: FastifyPluginAsync = async (app) => {
   let cache: { at: number; data: PortfolioSummary } | null = null;

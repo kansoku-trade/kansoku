@@ -1,5 +1,5 @@
-import Fastify, { type FastifyInstance } from "fastify";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { createApplication } from "@tsuki-hono/core";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { RawPortfolio } from "../src/services/marketdata/types.js";
 
 const provider = vi.hoisted(() => ({
@@ -13,8 +13,10 @@ const provider = vi.hoisted(() => ({
 
 vi.mock("../src/services/marketdata/registry.js", () => ({ getProvider: () => provider }));
 
-const { positionsRoute, summarizePortfolio } = await import("../src/routes/positions.js");
+const { summarizePortfolio } = await import("../src/modules/positions/positions.utils.js");
 const { ClientError } = await import("../src/errors.js");
+const { AppExceptionFilter } = await import("../src/filters/app-exception.filter.js");
+const { PositionsModule } = await import("../src/modules/positions/positions.module.js");
 
 function makePortfolio(): RawPortfolio {
   return {
@@ -41,17 +43,17 @@ function makePortfolio(): RawPortfolio {
   };
 }
 
-async function testApp(): Promise<FastifyInstance> {
-  const app = Fastify();
-  app.setErrorHandler((err, _req, reply) => {
-    if (err instanceof ClientError) {
-      return reply.status(err.status).send({ ok: false, error: err.message, hint: err.hint });
-    }
-    return reply.status(500).send({ ok: false, error: err instanceof Error ? err.message : String(err) });
-  });
-  await app.register(positionsRoute);
+let app: Awaited<ReturnType<typeof createApplication>>;
+
+async function testApp() {
+  app = await createApplication(PositionsModule, { globalPrefix: "/api" });
+  app.useGlobalFilters(new AppExceptionFilter());
   return app;
 }
+
+afterEach(async () => {
+  await app?.close?.();
+});
 
 beforeEach(() => {
   provider.getPortfolio = vi.fn();
@@ -72,33 +74,33 @@ describe("summarizePortfolio", () => {
 describe("GET /api/positions", () => {
   it("returns the summarized portfolio", async () => {
     provider.getPortfolio!.mockResolvedValue(makePortfolio());
-    const app = await testApp();
-    const res = await app.inject("/");
-    expect(res.statusCode).toBe(200);
-    const body = res.json();
+    const a = await testApp();
+    const res = await a.getInstance().request("/api/positions");
+    expect(res.status).toBe(200);
+    const body = await res.json();
     expect(body.data.positions).toHaveLength(1);
     expect(body.data.positions[0].symbol).toBe("MRVL.US");
   });
 
   it("serves the cached summary within the TTL without re-calling the provider", async () => {
     provider.getPortfolio!.mockResolvedValue(makePortfolio());
-    const app = await testApp();
-    await app.inject("/");
-    await app.inject("/");
+    const a = await testApp();
+    await a.getInstance().request("/api/positions");
+    await a.getInstance().request("/api/positions");
     expect(provider.getPortfolio).toHaveBeenCalledTimes(1);
   });
 
   it("501s when the provider has no portfolio support", async () => {
     provider.getPortfolio = undefined;
-    const app = await testApp();
-    const res = await app.inject("/");
-    expect(res.statusCode).toBe(501);
+    const a = await testApp();
+    const res = await a.getInstance().request("/api/positions");
+    expect(res.status).toBe(501);
   });
 
   it("propagates provider failures", async () => {
     provider.getPortfolio!.mockRejectedValue(new ClientError("longbridge portfolio failed", undefined, 502));
-    const app = await testApp();
-    const res = await app.inject("/");
-    expect(res.statusCode).toBe(502);
+    const a = await testApp();
+    const res = await a.getInstance().request("/api/positions");
+    expect(res.status).toBe(502);
   });
 });

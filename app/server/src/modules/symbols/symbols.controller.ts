@@ -1,42 +1,41 @@
 import { promises as fs } from "node:fs";
 import { join } from "node:path";
-import type { FastifyPluginAsync } from "fastify";
-import type { IntradayPrediction, RawBar, SymbolAnalysisRow } from "../../../shared/types.js";
-import { chartUrl } from "../chartUrl.js";
-import { JOURNAL_DIR, STOCKS_DIR } from "../env.js";
-import { ClientError } from "../errors.js";
-import { noteFileName, normalizeSymbol } from "../modules/symbols/symbol.utils.js";
-import { toTs } from "../services/indicators.js";
-import { buildBenchmark } from "../services/cockpit/benchmark.js";
-import { buildCockpitFlow } from "../services/cockpit/flow.js";
-import { attachRMultiple, judgeOutcome, zoneFromPrediction } from "../services/cockpit/outcome.js";
-import { getResolvedOutcomes, saveResolvedOutcome } from "../services/cockpit/outcomeCache.js";
-import { buildCockpitPosition } from "../services/cockpit/position.js";
-import { entryPlanFromDoc, latestIntradayDoc } from "../services/cockpit/entryPlan.js";
-import { computeRelativeVolume } from "../services/relvol.js";
-import { getProvider } from "../services/marketdata/registry.js";
-import type { RawPosition } from "../services/marketdata/types.js";
-import { classifySession, easternDate } from "../services/session.js";
-import { listCommentDates, listComments } from "../ai/comments.js";
-import { runAnalyst } from "../ai/analyst.js";
-import { deepDiveState, startDeepDive } from "../ai/deepDive.js";
-import { aiConfig } from "../ai/models.js";
-import { predictionStale } from "../services/staleness.js";
-import { listCharts, loadChart } from "../services/store.js";
-import { normalizeQuote } from "../realtime/quotes.js";
+import { Controller, ContextParam, Get, Param, Post, Query } from "@tsuki-hono/common";
+import type { Context } from "hono";
+import type { IntradayPrediction, RawBar, SymbolAnalysisRow } from "../../../../shared/types.js";
+import { runAnalyst } from "../../ai/analyst.js";
+import { listCommentDates, listComments } from "../../ai/comments.js";
+import { deepDiveState, startDeepDive } from "../../ai/deepDive.js";
+import { aiConfig } from "../../ai/models.js";
+import { chartUrl } from "../../chartUrl.js";
+import { JOURNAL_DIR, STOCKS_DIR } from "../../env.js";
+import { ClientError } from "../../errors.js";
+import { normalizeQuote } from "../../realtime/quotes.js";
+import { buildBenchmark } from "../../services/cockpit/benchmark.js";
+import { entryPlanFromDoc, latestIntradayDoc } from "../../services/cockpit/entryPlan.js";
+import { buildCockpitFlow } from "../../services/cockpit/flow.js";
+import { attachRMultiple, judgeOutcome, zoneFromPrediction } from "../../services/cockpit/outcome.js";
+import { getResolvedOutcomes, saveResolvedOutcome } from "../../services/cockpit/outcomeCache.js";
+import { buildCockpitPosition } from "../../services/cockpit/position.js";
+import { toTs } from "../../services/indicators.js";
+import { getProvider } from "../../services/marketdata/registry.js";
+import type { RawPosition } from "../../services/marketdata/types.js";
+import { computeRelativeVolume } from "../../services/relvol.js";
+import { classifySession, easternDate } from "../../services/session.js";
+import { predictionStale } from "../../services/staleness.js";
+import { listCharts, loadChart } from "../../services/store.js";
+import { noteFileName, normalizeSymbol } from "./symbol.utils.js";
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const JOURNAL_FILE_RE = /^(\d{4}-\d{2}-\d{2})-([\w-]+)\.md$/;
 const JOURNAL_NAME_RE = /^\d{4}-\d{2}-\d{2}-[\w-]+\.md$/;
 const BENCHMARK_SYMBOLS = ["SMH.US", "QQQ.US"];
 
-export { normalizeSymbol };
-
-type Params = { sym: string };
-
-export const symbolsRoute: FastifyPluginAsync = async (app) => {
-  app.get<{ Params: Params }>("/:sym/flow", async (req) => {
-    const sym = normalizeSymbol(req.params.sym);
+@Controller("symbols")
+export class SymbolsController {
+  @Get("/:sym/flow")
+  async getFlow(@Param("sym") symParam: string) {
+    const sym = normalizeSymbol(symParam);
     const provider = getProvider();
     if (!provider.getFlow) return { ok: true, data: null };
     const [flowRes, distRes] = await Promise.allSettled([
@@ -46,19 +45,21 @@ export const symbolsRoute: FastifyPluginAsync = async (app) => {
     if (flowRes.status === "rejected") throw flowRes.reason;
     const dist = distRes.status === "fulfilled" ? distRes.value : null;
     return { ok: true, data: buildCockpitFlow(flowRes.value, dist) };
-  });
+  }
 
-  app.get<{ Params: Params }>("/:sym/benchmark", async (req) => {
-    const sym = normalizeSymbol(req.params.sym);
+  @Get("/:sym/benchmark")
+  async getBenchmark(@Param("sym") symParam: string) {
+    const sym = normalizeSymbol(symParam);
     const symbols = [sym, ...BENCHMARK_SYMBOLS.filter((s) => s !== sym)];
     const barsList = await Promise.all(symbols.map((s) => getProvider().getKline(s, "5m", 100)));
     const regularBars = barsList.map((bars) => bars.filter((b) => classifySession(toTs(b.time)) === "regular"));
     const data = buildBenchmark(symbols.map((s, i) => ({ symbol: s, bars: regularBars[i] })));
     return { ok: true, data };
-  });
+  }
 
-  app.get<{ Params: Params }>("/:sym/position", async (req) => {
-    const sym = normalizeSymbol(req.params.sym);
+  @Get("/:sym/position")
+  async getPosition(@Param("sym") symParam: string) {
+    const sym = normalizeSymbol(symParam);
     const provider = getProvider();
     const [positions, quotes] = await Promise.all([
       provider.getPositions?.() ?? Promise.resolve([] as RawPosition[]),
@@ -71,10 +72,11 @@ export const symbolsRoute: FastifyPluginAsync = async (app) => {
     const plan = entryPlanFromDoc(await latestIntradayDoc(sym));
     const data = buildCockpitPosition(positions, sym, quote.last, plan);
     return { ok: true, data };
-  });
+  }
 
-  app.get<{ Params: Params }>("/:sym/analyses", async (req) => {
-    const sym = normalizeSymbol(req.params.sym);
+  @Get("/:sym/analyses")
+  async getAnalyses(@Param("sym") symParam: string) {
+    const sym = normalizeSymbol(symParam);
     const metas = await listCharts({ symbol: sym, type: "intraday" });
     const docs = await Promise.all(metas.map((m) => loadChart(m.id)));
     const cached = await getResolvedOutcomes(metas.map((m) => m.id));
@@ -105,30 +107,34 @@ export const symbolsRoute: FastifyPluginAsync = async (app) => {
       return { ...meta, url: chartUrl(meta), direction, anchor, outcome };
     });
     return { ok: true, data: rows };
-  });
+  }
 
-  app.get<{ Params: Params }>("/:sym/relvol", async (req) => {
-    const sym = normalizeSymbol(req.params.sym);
+  @Get("/:sym/relvol")
+  async getRelvol(@Param("sym") symParam: string) {
+    const sym = normalizeSymbol(symParam);
     const bars = await getProvider().getKline(sym, "15m", 500);
     return { ok: true, data: computeRelativeVolume(bars) };
-  });
+  }
 
-  app.get<{ Params: Params; Querystring: { date?: string } }>("/:sym/comments", async (req) => {
-    const sym = normalizeSymbol(req.params.sym);
-    const date = req.query.date ?? easternDate();
+  @Get("/:sym/comments")
+  async getComments(@Param("sym") symParam: string, @Query("date") dateParam: string | undefined) {
+    const sym = normalizeSymbol(symParam);
+    const date = dateParam ?? easternDate();
     if (!DATE_RE.test(date)) {
       throw new ClientError(`invalid date: ${date}`, "expected YYYY-MM-DD");
     }
     return { ok: true, data: await listComments(sym, date) };
-  });
+  }
 
-  app.get<{ Params: Params }>("/:sym/comment-dates", async (req) => {
-    const sym = normalizeSymbol(req.params.sym);
+  @Get("/:sym/comment-dates")
+  async getCommentDates(@Param("sym") symParam: string) {
+    const sym = normalizeSymbol(symParam);
     return { ok: true, data: await listCommentDates(sym) };
-  });
+  }
 
-  app.get<{ Params: Params }>("/:sym/journal", async (req) => {
-    const bare = normalizeSymbol(req.params.sym).replace(/\.US$/, "").toLowerCase();
+  @Get("/:sym/journal")
+  async getJournal(@Param("sym") symParam: string) {
+    const bare = normalizeSymbol(symParam).replace(/\.US$/, "").toLowerCase();
     let files: string[];
     try {
       files = await fs.readdir(JOURNAL_DIR);
@@ -145,10 +151,10 @@ export const symbolsRoute: FastifyPluginAsync = async (app) => {
     }
     rows.sort((a, b) => (a.name < b.name ? 1 : -1));
     return { ok: true, data: rows };
-  });
+  }
 
-  app.get<{ Params: Params & { name: string } }>("/:sym/journal/:name", async (req) => {
-    const name = req.params.name;
+  @Get("/:sym/journal/:name")
+  async getJournalEntry(@Param("name") name: string) {
     if (!JOURNAL_NAME_RE.test(name)) {
       throw new ClientError(`invalid journal name: ${name}`, "expected YYYY-MM-DD-<slug>.md");
     }
@@ -162,19 +168,21 @@ export const symbolsRoute: FastifyPluginAsync = async (app) => {
       }
       throw err;
     }
-  });
+  }
 
-  app.post<{ Params: Params }>("/:sym/reassess", async (req) => {
-    const sym = normalizeSymbol(req.params.sym);
+  @Post("/:sym/reassess")
+  async reassess(@Param("sym") symParam: string) {
+    const sym = normalizeSymbol(symParam);
     const model = aiConfig().analystModel;
     if (!model) return { ok: true, data: { started: false, reason: "analyst layer disabled" } };
     const result = runAnalyst({ symbol: sym, origin: "manual", deps: { model } });
     void result.done?.catch(() => {});
     return { ok: true, data: { started: result.started, ...(result.reason ? { reason: result.reason } : {}) } };
-  });
+  }
 
-  app.get<{ Params: Params }>("/:sym/note", async (req) => {
-    const name = noteFileName(req.params.sym);
+  @Get("/:sym/note")
+  async getNote(@Param("sym") symParam: string) {
+    const name = noteFileName(symParam);
     const path = join(STOCKS_DIR, `${name}.md`);
     try {
       const [markdown, stat] = await Promise.all([fs.readFile(path, "utf8"), fs.stat(path)]);
@@ -183,22 +191,27 @@ export const symbolsRoute: FastifyPluginAsync = async (app) => {
       if ((err as NodeJS.ErrnoException).code === "ENOENT") return { markdown: null };
       throw err;
     }
-  });
+  }
 
-  app.post<{ Params: Params }>("/:sym/deep-dive", async (req, reply) => {
-    const name = noteFileName(req.params.sym);
+  @Post("/:sym/deep-dive")
+  async postDeepDive(@Param("sym") symParam: string, @ContextParam() ctx: Context) {
+    const name = noteFileName(symParam);
     const result = startDeepDive(name);
-    if (result.started) return reply.status(202).send({ ok: true });
+    if (result.started) return ctx.json({ ok: true }, 202);
     if (result.reason === "busy") {
       throw new ClientError(`deep dive already running`, "wait for the current run to finish", 409);
     }
     throw new ClientError(`deep dive disabled`, "未配置深度研究模型，请在 /settings 配置", 503);
-  });
+  }
 
-  app.get<{ Params: Params }>("/:sym/deep-dive/status", async () => deepDiveState());
+  @Get("/:sym/deep-dive/status")
+  async getDeepDiveStatus() {
+    return deepDiveState();
+  }
 
-  app.get<{ Params: Params }>("/:sym/latest", async (req) => {
-    const sym = normalizeSymbol(req.params.sym);
+  @Get("/:sym/latest")
+  async getLatest(@Param("sym") symParam: string) {
+    const sym = normalizeSymbol(symParam);
     const doc = await latestIntradayDoc(sym);
     if (!doc) {
       throw new ClientError(`no intraday analysis for ${sym}`, "run intraday-signal for this symbol first", 404);
@@ -207,5 +220,5 @@ export const symbolsRoute: FastifyPluginAsync = async (app) => {
       ok: true,
       data: { ...doc, url: chartUrl(doc), prediction_stale: predictionStale(doc, new Date()) },
     };
-  });
-};
+  }
+}
