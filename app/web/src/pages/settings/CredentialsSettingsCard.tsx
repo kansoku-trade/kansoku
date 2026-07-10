@@ -1,23 +1,35 @@
 import { useEffect, useState } from "react";
 import { errorMessage } from "../../api";
+import { useQuery } from "../../apiHooks";
+import { clearRestricted } from "../../restrictedMode";
 import { Badge, Button, Card, openModal, SectionTitle } from "../../ui";
 import { CredentialsForm } from "./CredentialsForm";
-import { friendlyCredentialError, getDesktopCredentialsBridge, type CredentialsGetResult } from "./desktopCredentials";
+import { deriveCredentialsStatusLabel } from "./credentialsStatusLabel";
+import { CREDENTIALS_STATUS_URL, getDesktopCredentialsBridge, type CredentialsGetResult } from "./desktopCredentials";
 
 export function CredentialsSettingsCard() {
   const bridge = getDesktopCredentialsBridge();
-  const [status, setStatus] = useState<CredentialsGetResult | null>(null);
+  const [storeStatus, setStoreStatus] = useState<CredentialsGetResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [clearing, setClearing] = useState(false);
+  const { data: serverStatus, reload: reloadServerStatus } = useQuery<CredentialsGetResult>(
+    bridge ? CREDENTIALS_STATUS_URL : null,
+  );
 
-  const reloadStatus = () => {
+  const reloadStoreStatus = () => {
     if (!bridge) return;
-    bridge.get().then(setStatus).catch((err) => setError(errorMessage(err)));
+    bridge.get().then(setStoreStatus).catch((err) => setError(errorMessage(err)));
   };
 
-  useEffect(reloadStatus, [bridge]);
+  useEffect(reloadStoreStatus, [bridge]);
 
   if (!bridge) return null;
+
+  const refreshAfterChange = () => {
+    reloadStoreStatus();
+    reloadServerStatus();
+    clearRestricted();
+  };
 
   const handleClear = () => {
     openModal({
@@ -34,7 +46,7 @@ export function CredentialsSettingsCard() {
                 setClearing(true);
                 try {
                   await bridge.clear();
-                  reloadStatus();
+                  refreshAfterChange();
                   closeModal();
                 } catch (err) {
                   setError(errorMessage(err));
@@ -51,17 +63,20 @@ export function CredentialsSettingsCard() {
     });
   };
 
-  const statusLabel = status?.configured
-    ? "已配置"
-    : friendlyCredentialError(status?.lastError ?? null) ?? "未配置";
+  const configured = serverStatus?.configured ?? false;
+  const statusLabel = deriveCredentialsStatusLabel({
+    serverConfigured: configured,
+    storeConfigured: storeStatus?.configured ?? false,
+    lastError: storeStatus?.lastError ?? null,
+  });
 
   return (
     <Card className="settings-credentials-card">
       <SectionTitle>长桥凭证</SectionTitle>
       <div className="settings-cred-row">
         <span className="settings-cred-name">配置状态</span>
-        <Badge tone={status?.configured ? "up" : "down"}>{statusLabel}</Badge>
-        {status?.configured && (
+        <Badge tone={configured ? "up" : "down"}>{statusLabel}</Badge>
+        {storeStatus?.configured && (
           <span className="settings-cred-actions">
             <Button onClick={handleClear} disabled={clearing}>
               清除凭证
@@ -76,11 +91,11 @@ export function CredentialsSettingsCard() {
         bridge={bridge}
         submitLabel="保存"
         hint={
-          status?.configured
+          storeStatus?.configured
             ? "出于安全考虑不回显已保存的凭证；如需更新，请重新填写全部三项后保存。"
             : "填入三项凭证后先测试连接，确认无误后再保存。"
         }
-        onSaved={reloadStatus}
+        onSaved={refreshAfterChange}
       />
     </Card>
   );

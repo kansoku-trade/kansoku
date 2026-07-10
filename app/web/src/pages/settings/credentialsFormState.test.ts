@@ -28,6 +28,14 @@ describe("credentialsFormReducer", () => {
     expect(next.testMessage).toBeNull();
   });
 
+  it("updates a field and resets any prior save error (stale save error under edited form)", () => {
+    const failed: CredentialsFormState = { ...initialCredentialsFormState, saveStatus: "fail", saveError: "boom" };
+    const next = credentialsFormReducer(failed, { type: "field", key: "appSecret", value: "xyz" });
+    expect(next.fields.appSecret).toBe("xyz");
+    expect(next.saveStatus).toBe("idle");
+    expect(next.saveError).toBeNull();
+  });
+
   it("test-start sets testing and clears any prior message", () => {
     const state: CredentialsFormState = { ...initialCredentialsFormState, testMessage: "old" };
     const next = credentialsFormReducer(state, { type: "test-start" });
