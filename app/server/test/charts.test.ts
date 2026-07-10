@@ -408,6 +408,7 @@ describe("malformed JSON body", () => {
     const body = await res.json();
     // captured from `createApp()` (Fastify) POSTing the same malformed body to
     // /api/charts — see test/malformed-json.fastify.test.ts for the capture.
+    // keep in sync by hand with src/app.ts:24-34's FST_ERR_CTP* handler
     expect(body).toEqual({
       ok: false,
       error: "request body must be JSON",
