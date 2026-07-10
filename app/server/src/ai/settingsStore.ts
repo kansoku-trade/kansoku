@@ -59,12 +59,16 @@ export function createSettingsStore(db: Db): SettingsStore {
 
   return {
     getRole(role: AiRole): RoleSetting {
-      return cache.get(role) ?? defaultFor(role);
+      const setting = cache.get(role);
+      return setting ? { ...setting } : defaultFor(role);
     },
 
     listRoles(): Record<AiRole, RoleSetting> {
       const result = {} as Record<AiRole, RoleSetting>;
-      for (const role of ROLES) result[role] = cache.get(role) ?? defaultFor(role);
+      for (const role of ROLES) {
+        const setting = cache.get(role);
+        result[role] = setting ? { ...setting } : defaultFor(role);
+      }
       return result;
     },
 
@@ -72,7 +76,7 @@ export function createSettingsStore(db: Db): SettingsStore {
       validate(role, setting);
       const persisted: RoleSetting =
         setting.mode === "custom"
-          ? setting
+          ? { ...setting }
           : { mode: setting.mode, provider: null, modelId: null, thinkingLevel: null };
       const updatedAt = new Date().toISOString();
 

@@ -184,7 +184,7 @@ describe("aiConfig", () => {
     setActiveSettingsStore(store);
     const config = aiConfig();
     expect(config.chatModel?.id).toBe(realModel.id);
-    expect(config.chatModel).toEqual(config.analystModel);
+    expect(config.chatModel).toBe(config.analystModel);
   });
 
   it("returns null chatModel when chat is inherit and analyst is disabled", () => {

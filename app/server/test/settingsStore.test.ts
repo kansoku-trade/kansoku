@@ -97,6 +97,40 @@ describe("createSettingsStore setRole persistence", () => {
     }
   });
 
+  it("is immune to mutation of objects passed to setRole or returned by getRole", () => {
+    const { dir, path } = tempDbPath();
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const db = createDb(path);
+      const store = createSettingsStore(db);
+      const input: RoleSetting = {
+        mode: "custom",
+        provider: realModel.provider,
+        modelId: realModel.id,
+        thinkingLevel: "medium",
+      };
+      store.setRole("analyst", input);
+      input.modelId = "mutated-input";
+
+      const returned = store.getRole("analyst");
+      returned.provider = "mutated-returned";
+
+      expect(store.getRole("analyst")).toEqual({
+        mode: "custom",
+        provider: realModel.provider,
+        modelId: realModel.id,
+        thinkingLevel: "medium",
+      });
+
+      const listed = store.listRoles();
+      listed.analyst.mode = "disabled";
+      expect(store.getRole("analyst").mode).toBe("custom");
+    } finally {
+      vi.restoreAllMocks();
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it("revision starts at 0 and increments per write", () => {
     const { dir, path } = tempDbPath();
     vi.spyOn(console, "warn").mockImplementation(() => {});
