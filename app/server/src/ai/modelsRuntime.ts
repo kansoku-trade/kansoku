@@ -14,6 +14,8 @@ export const SINGLE_KEY_PROVIDERS: ReadonlySet<string> = new Set([
   "together",
   "fireworks",
   "cerebras",
+  "moonshotai",
+  "kimi-coding",
   "minimax",
   "zai",
   "nvidia",
