@@ -797,3 +797,17 @@ a.zone-item:hover { text-decoration: none; background: var(--bg-hover); }
 .settings-test-result--ok { color: var(--up); }
 .settings-test-result--fail { color: var(--down); }
 .settings-footer-note { color: var(--text-muted); font-size: var(--fs-sm); margin-top: 20px; }
+
+.settings-primary-row {
+  background: var(--bg-elevated, rgba(255, 255, 255, 0.03));
+  margin: 0 -12px;
+  padding: 12px;
+  border-radius: 8px;
+  border-bottom: none;
+}
+.settings-roles-card .settings-primary-row + .settings-role-row { border-top: 1px solid var(--border); margin-top: 8px; }
+.settings-role-usage { color: var(--text-muted); font-size: var(--fs-sm); margin-left: auto; }
+.settings-role-usage + .settings-role-status { margin-left: 12px; }
+.settings-usage-total { color: var(--text-muted); font-size: var(--fs-sm); margin-top: 10px; text-align: right; }
+.settings-primary-clear { background: none; border: none; color: var(--text-muted); font-size: var(--fs-sm); cursor: pointer; padding: 0; }
+.settings-primary-clear:hover { color: var(--down); }

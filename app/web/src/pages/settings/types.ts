@@ -19,9 +19,19 @@ export interface CredentialEntry {
 export type MasterKeyStatus = "ready" | "missing" | "invalid";
 
 export interface AiSettings {
-  roles: Record<Role, RoleSetting>;
+  roles: Record<Role | "primary", RoleSetting>;
   credentials: CredentialEntry[];
   masterKey: MasterKeyStatus;
+}
+
+export interface RoleUsage {
+  calls: number;
+  cost: number;
+}
+
+export interface UsageToday {
+  roles: Record<Role, RoleUsage>;
+  total: RoleUsage;
 }
 
 export interface CatalogModel {
@@ -56,3 +66,16 @@ export const ROLE_LABEL: Record<Role, string> = {
 };
 
 export const CODEX_PROVIDER = "openai-codex";
+
+export const THINKING_LABEL: Record<string, string> = {
+  off: "关闭思考",
+  minimal: "最简",
+  low: "低",
+  medium: "中",
+  high: "高",
+  xhigh: "极高",
+};
+
+export function thinkingLabel(level: string | null): string {
+  return level ? (THINKING_LABEL[level] ?? level) : THINKING_LABEL.off;
+}

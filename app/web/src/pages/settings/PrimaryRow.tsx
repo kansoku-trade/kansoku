@@ -1,64 +1,36 @@
 import { useState } from "react";
 import { Check, TriangleAlert } from "lucide-react";
 import { api, errorMessage } from "../../api";
-import { Button, Chip, Select, Spinner } from "../../ui";
+import { Button, Chip, openModal, Select, Spinner } from "../../ui";
 import { defaultCustom, firstModelId, providerKeyReady, providerLabel, saveRole } from "./roleShared";
-import {
-  ROLE_LABEL,
-  thinkingLabel,
-  type Catalog,
-  type CredentialEntry,
-  type Role,
-  type RoleMode,
-  type RoleSetting,
-  type RoleUsage,
-} from "./types";
+import { thinkingLabel, type Catalog, type CredentialEntry, type RoleSetting } from "./types";
 import { useSaveQueue } from "./useSaveQueue";
 
-function usageText(usage: RoleUsage | undefined): string {
-  if (!usage || (usage.calls === 0 && usage.cost === 0)) return "今日 —";
-  return `今日 $${usage.cost.toFixed(2)} · ${usage.calls} 次`;
-}
-
-function resolvePrimaryText(primary: RoleSetting, catalog: Catalog): string | null {
-  if (primary.mode !== "custom" || !primary.provider || !primary.modelId) return null;
-  const model = catalog.providers
-    .find((p) => p.id === primary.provider)
-    ?.models.find((m) => m.id === primary.modelId);
-  if (!model) return null;
-  return `${model.name} · ${thinkingLabel(primary.thinkingLevel)}`;
-}
-
-const MODE_OPTIONS: { mode: RoleMode; label: string }[] = [
-  { mode: "inherit", label: "跟随主模型" },
-  { mode: "custom", label: "自定义" },
-  { mode: "disabled", label: "停用" },
-];
-
-export function RoleRow({
-  role,
+export function PrimaryRow({
   setting,
-  primary,
   catalog,
   credentials,
-  usage,
+  onDraft,
 }: {
-  role: Role;
   setting: RoleSetting;
-  primary: RoleSetting;
   catalog: Catalog;
   credentials: CredentialEntry[];
-  usage?: RoleUsage;
+  onDraft: (next: RoleSetting) => void;
 }) {
-  const [draft, setDraft] = useState(setting);
+  const [draft, setDraftState] = useState(setting);
   const [rolledBack, setRolledBack] = useState(false);
   const [testState, setTestState] = useState<{ status: "idle" | "busy" | "ok" | "fail"; text?: string }>({
     status: "idle",
   });
 
+  const setDraft = (next: RoleSetting) => {
+    setDraftState(next);
+    onDraft(next);
+  };
+
   const queue = useSaveQueue<RoleSetting>({
     initial: setting,
-    save: (snapshot) => saveRole(role, snapshot),
+    save: (snapshot) => saveRole("primary", snapshot),
     onError: (_err, rolledBackTo) => {
       setDraft(rolledBackTo ?? setting);
       setRolledBack(true);
@@ -70,19 +42,6 @@ export function RoleRow({
     setRolledBack(false);
     setTestState({ status: "idle" });
     queue.push(next);
-  };
-
-  const setMode = (mode: RoleMode) => {
-    if (mode === draft.mode) return;
-    if (mode === "custom" && (!draft.provider || !draft.modelId)) {
-      push(defaultCustom(catalog));
-      return;
-    }
-    if (mode !== "custom") {
-      push({ mode, provider: null, modelId: null, thinkingLevel: null, stale: false });
-      return;
-    }
-    push({ ...draft, mode });
   };
 
   const setProvider = (provider: string) => {
@@ -97,6 +56,29 @@ export function RoleRow({
     push({ ...draft, thinkingLevel });
   };
 
+  const clear = () => {
+    openModal({
+      title: "清除主模型",
+      body: (closeModal) => (
+        <div className="settings-reset-confirm">
+          <p>清除后，所有「跟随主模型」的用途将变为未配置，直到重新设置主模型。确定继续吗？</p>
+          <div className="settings-cred-actions">
+            <Button onClick={closeModal}>取消</Button>
+            <Button
+              accent
+              onClick={() => {
+                push({ mode: "disabled", provider: null, modelId: null, thinkingLevel: null, stale: false });
+                closeModal();
+              }}
+            >
+              确认清除
+            </Button>
+          </div>
+        </div>
+      ),
+    });
+  };
+
   const provider = draft.provider ? catalog.providers.find((p) => p.id === draft.provider) : null;
   const models = provider?.models ?? [];
   const model = draft.modelId ? models.find((m) => m.id === draft.modelId) : null;
@@ -106,7 +88,6 @@ export function RoleRow({
     draft.mode === "custom" && Boolean(draft.provider) && !providerKeyReady(draft.provider!, credentials, catalog);
   const complete =
     draft.mode === "custom" && Boolean(draft.provider) && Boolean(draft.modelId) && Boolean(draft.thinkingLevel);
-  const primaryText = resolvePrimaryText(primary, catalog);
 
   const runTest = async () => {
     if (!draft.provider || !draft.modelId || !draft.thinkingLevel) return;
@@ -124,15 +105,10 @@ export function RoleRow({
   };
 
   return (
-    <div className="settings-role-row">
+    <div className="settings-role-row settings-primary-row">
       <div className="settings-role-head">
-        <span className="settings-role-name">{ROLE_LABEL[role]}</span>
-        {MODE_OPTIONS.map((opt) => (
-          <Chip key={opt.mode} active={draft.mode === opt.mode} onClick={() => setMode(opt.mode)}>
-            {opt.label}
-          </Chip>
-        ))}
-        <span className="settings-role-usage">{usageText(usage)}</span>
+        <span className="settings-role-name">主模型</span>
+        {draft.mode !== "custom" && <Chip onClick={() => push(defaultCustom(catalog))}>设置主模型</Chip>}
         <span className={`settings-role-status${rolledBack ? " settings-role-status--rollback" : ""}`}>
           {queue.flushing() ? (
             <Spinner />
@@ -173,17 +149,17 @@ export function RoleRow({
           {testState.status === "fail" && (
             <span className="settings-test-result settings-test-result--fail">{testState.text}</span>
           )}
+          <button type="button" className="settings-primary-clear" onClick={clear}>
+            清除
+          </button>
         </div>
       )}
 
+      {draft.mode !== "custom" && (
+        <div className="settings-role-warning">未设置——所有「跟随主模型」的用途都处于暂停</div>
+      )}
       {computedStale && <div className="settings-role-warning">模型已不在目录，请改选</div>}
       {keyMissing && <div className="settings-role-warning">该 provider 未配 key</div>}
-      {draft.mode === "inherit" &&
-        (primaryText ? (
-          <div className="settings-role-warning settings-role-warning--gray">跟随主模型 · {primaryText}</div>
-        ) : (
-          <div className="settings-role-warning">主模型未设置，此用途暂停</div>
-        ))}
     </div>
   );
 }
