@@ -30,46 +30,32 @@ trap cleanup EXIT
 
 log "work dir: $WORK_DIR"
 
-# electron-builder's `identity: null` leaves Electron's own ad-hoc signature on
-# the main executable, but adding extraResources/asarUnpack after that breaks
-# the bundle's CodeDirectory (resources hash no longer matches). Sparkle's
-# generate_appcast refuses to read an archive whose .app doesn't pass
-# `codesign --verify --deep --strict`, so the zip must be re-signed ad-hoc (no
-# paid identity/cert needed) right after packaging, before it's fed to
-# generate_appcast. Re-zip with ditto, not `zip`, so the resigned bundle's
-# resource forks/xattrs survive.
-#
-# generate_appcast also turns out to only emit sparkle:edSignature for an
-# archive whose .app declares SUPublicEDKey in Info.plist — it treats that key
-# as the signal that the app expects signed updates. The Sparkle bridge task
-# (electron-phase2-t6, landed on a sibling branch, not yet merged into this
-# one) wires that key in via electron-builder.yml's extendInfo at build time;
-# until this branch has it, PlistBuddy injects the same key post-build so the
-# dry run still exercises the real "app declares SUPublicEDKey -> generate_appcast
-# signs" path end to end, not a hand-waved stand-in.
-#
-# KNOWN GAP (see report): the .dmg electron-builder produces embeds the SAME
-# broken-signature .app and is NOT re-signed here — rebuilding it via `hdiutil
-# create` hit a reproducible, unexplained "No such file or directory" in this
-# script's process tree (reliable here, but a bare repro of the identical
-# hdiutil command outside the script succeeds every time). Given this is a
-# CI-glue script and not the place to own electron-builder.yml's signing
-# config, the fix belongs in an electron-builder `afterPack` hook (ad-hoc sign
-# once, before both dmg and zip targets are built) — flagged for whoever owns
-# electron-builder.yml next. Until then the dmg is upload-only, for reference;
-# production auto-updates only ever consume the (correctly resigned) zip.
-resign_zip() {
-  local app_dir="$1" zip_path="$2" public_key="$3"
-  local app_name plist
-  app_name="$(basename "$app_dir")"
-  plist="$app_dir/Contents/Info.plist"
-  if ! /usr/libexec/PlistBuddy -c "Print :SUPublicEDKey" "$plist" >/dev/null 2>&1; then
-    /usr/libexec/PlistBuddy -c "Add :SUPublicEDKey string $public_key" "$plist"
-  fi
-  codesign --force --deep --sign - "$app_dir" >/dev/null
+# electron-builder.yml's afterPack hook (scripts/afterPack.cjs) ad-hoc signs
+# the .app once, before either the dmg or zip target is packaged, so both
+# artifacts embed an already-valid CodeDirectory — this only verifies that,
+# it does not re-sign or re-zip. Sparkle's generate_appcast refuses to read
+# an archive whose .app doesn't pass `codesign --verify --deep --strict`.
+verify_app() {
+  local app_dir="$1"
   codesign --verify --deep --strict "$app_dir"
-  rm -f "$zip_path"
-  ( cd "$(dirname "$app_dir")" && ditto -c -k --sequesterRsrc --keepParent "$app_name" "$zip_path" )
+}
+
+verify_zip() {
+  local zip_path="$1"
+  local extract_dir
+  extract_dir="$(mktemp -d)"
+  ditto -x -k "$zip_path" "$extract_dir"
+  verify_app "$extract_dir"/*.app
+  rm -rf "$extract_dir"
+}
+
+verify_dmg() {
+  local dmg_path="$1"
+  local mount_dir
+  mount_dir="$(mktemp -d)"
+  hdiutil attach "$dmg_path" -mountpoint "$mount_dir" -nobrowse -quiet
+  verify_app "$mount_dir"/*.app
+  hdiutil detach "$mount_dir" -quiet
 }
 
 log "== fetch Sparkle $SPARKLE_VERSION tools =="
@@ -88,13 +74,14 @@ PUBLIC_KEY="$(generate_keys --account "$ACCOUNT" -p)"
 generate_keys --account "$ACCOUNT" -x "$WORK_DIR/ed_private_key"
 log "public key: $PUBLIC_KEY"
 
-log "== inject SUPublicEDKey placeholder (best-effort — Sparkle bridge lands in a sibling task) =="
+log "== inject SUPublicEDKey placeholder =="
 PLACEHOLDER="SPARKLE_ED_PUBLIC_KEY_PLACEHOLDER"
 if grep -q "$PLACEHOLDER" "$DESKTOP_DIR/electron-builder.yml"; then
   sed -i '' "s|$PLACEHOLDER|$PUBLIC_KEY|" "$DESKTOP_DIR/electron-builder.yml"
   log "placeholder replaced"
 else
-  log "WARNING: placeholder not present in electron-builder.yml yet (expected until the Sparkle bridge task lands) — skipping, this step is a hard failure in real CI"
+  log "FAIL: placeholder $PLACEHOLDER not found in electron-builder.yml — has the Sparkle bridge integration point moved?"
+  exit 1
 fi
 
 log "== build an OLD version first, to give generate_appcast a delta base =="
@@ -110,7 +97,7 @@ fs.writeFileSync(p, JSON.stringify(pkg, null, 2) + '\n');
 rm -rf "$DESKTOP_DIR/node_modules/better-sqlite3/build" "$HOME/Library/Caches/electron-rebuild"
 ( cd "$DESKTOP_DIR" && pnpm package )
 OLD_ZIP_PATH="$(ls "$DESKTOP_DIR"/release/*.zip)"
-resign_zip "$DESKTOP_DIR/release/mac-arm64"/*.app "$OLD_ZIP_PATH" "$PUBLIC_KEY"
+verify_zip "$OLD_ZIP_PATH"
 mkdir -p "$WORK_DIR/archive"
 cp "$OLD_ZIP_PATH" "$WORK_DIR/archive/"
 rm -rf "$DESKTOP_DIR/release"
@@ -127,7 +114,8 @@ rm -rf "$DESKTOP_DIR/node_modules/better-sqlite3/build" "$HOME/Library/Caches/el
 ( cd "$DESKTOP_DIR" && pnpm package )
 NEW_ZIP_PATH="$(ls "$DESKTOP_DIR"/release/*.zip)"
 NEW_DMG_PATH="$(ls "$DESKTOP_DIR"/release/*.dmg)"
-resign_zip "$DESKTOP_DIR/release/mac-arm64"/*.app "$NEW_ZIP_PATH" "$PUBLIC_KEY"
+verify_zip "$NEW_ZIP_PATH"
+verify_dmg "$NEW_DMG_PATH"
 NEW_DMG="$(basename "$NEW_DMG_PATH")"
 NEW_ZIP="$(basename "$NEW_ZIP_PATH")"
 cp "$NEW_ZIP_PATH" "$WORK_DIR/archive/"
@@ -206,8 +194,8 @@ PY
 
 DELTA_COUNT="$(find "$WORK_DIR/archive" -maxdepth 1 -name '*.delta' | wc -l | tr -d ' ')"
 log "== summary =="
-log "dmg: $NEW_DMG"
-log "zip: $NEW_ZIP"
+log "dmg: $NEW_DMG (codesign --verify --deep --strict: passed)"
+log "zip: $NEW_ZIP (codesign --verify --deep --strict: passed)"
 log "appcast.xml: valid, ${DELTA_COUNT} delta file(s) on disk"
 log "archive dir: $WORK_DIR/archive (kept only if KEEP_WORK_DIR=1 was set)"
 log "DRY RUN PASSED"

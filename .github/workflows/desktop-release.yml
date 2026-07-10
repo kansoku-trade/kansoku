@@ -40,7 +40,7 @@ jobs:
       - name: setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: "11.10.0"
+          package_json_file: app/package.json
 
       - name: setup node
         uses: actions/setup-node@v4
@@ -111,25 +111,27 @@ jobs:
         working-directory: app/desktop
         run: pnpm package
 
-      - name: ad-hoc re-sign + re-zip (Sparkle requires a valid signature)
+      - name: verify ad-hoc signature (dmg + zip both embed the afterPack-signed app)
         working-directory: app/desktop
         run: |
-          # electron-builder's `identity: null` leaves Electron's own ad-hoc
-          # signature on the main executable only; adding extraResources /
-          # asarUnpack afterwards invalidates the bundle's CodeDirectory.
+          # electron-builder.yml's afterPack hook (scripts/afterPack.cjs)
+          # ad-hoc signs the .app once, before either target is packaged, so
+          # both the dmg and the zip embed an already-valid CodeDirectory —
+          # this step only has to confirm that, not re-sign or re-zip.
           # generate_appcast refuses any archive whose .app doesn't pass
-          # `codesign --verify --deep --strict`, so the app is re-signed
-          # ad-hoc (no paid identity/cert needed — ad-hoc is orthogonal to
-          # Developer ID signing/notarization) and the zip rebuilt with
-          # ditto (not `zip`, to preserve resource forks/xattrs). The .dmg is
-          # NOT re-signed here — see docs/desktop-release.md for that gap —
-          # it is upload-only; Sparkle auto-updates only ever consume the zip.
-          APP_DIR="$PWD/release/mac-arm64/$(basename release/mac-arm64/*.app)"
+          # `codesign --verify --deep --strict`.
           ZIP_PATH="$PWD/$(echo release/*.zip)"
-          codesign --force --deep --sign - "$APP_DIR"
-          codesign --verify --deep --strict "$APP_DIR"
-          rm -f "$ZIP_PATH"
-          ( cd "$(dirname "$APP_DIR")" && ditto -c -k --sequesterRsrc --keepParent "$(basename "$APP_DIR")" "$ZIP_PATH" )
+          DMG_PATH="$PWD/$(echo release/*.dmg)"
+
+          ZIP_EXTRACT_DIR="$(mktemp -d)"
+          ditto -x -k "$ZIP_PATH" "$ZIP_EXTRACT_DIR"
+          codesign --verify --deep --strict "$ZIP_EXTRACT_DIR"/*.app
+          rm -rf "$ZIP_EXTRACT_DIR"
+
+          DMG_MOUNT_DIR="$(mktemp -d)"
+          hdiutil attach "$DMG_PATH" -mountpoint "$DMG_MOUNT_DIR" -nobrowse -quiet
+          codesign --verify --deep --strict "$DMG_MOUNT_DIR"/*.app
+          hdiutil detach "$DMG_MOUNT_DIR" -quiet
 
       - name: prepare release archive dir
         id: archive
@@ -155,15 +157,21 @@ jobs:
           # diff them for deltas, but they must NOT be re-uploaded as this release's
           # own assets — the draft-release step uploads only this release's own
           # dmg (dmg_path) and zip (zip_name), captured above, plus appcast.xml + *.delta.
+          # $REPO_SLUG (trade-skills) also hosts non-desktop releases, so these
+          # queries filter to desktop-v* tags explicitly rather than trusting
+          # "latest across the whole repo" — an unrelated release published
+          # after a desktop one would otherwise get picked as the delta base.
           ARCHIVE_DIR="${{ steps.archive.outputs.dir }}"
-          LATEST_TAG="$(gh release view --repo "$REPO_SLUG" --json tagName -q .tagName 2>/dev/null || true)"
+          LATEST_TAG="$(gh release list --repo "$REPO_SLUG" --exclude-drafts --limit 20 --json tagName \
+            -q '[.[] | select(.tagName | startswith("desktop-v"))][0].tagName' 2>/dev/null || true)"
           if [ -n "$LATEST_TAG" ]; then
             gh release download --repo "$REPO_SLUG" --pattern 'appcast.xml' --dir "$ARCHIVE_DIR" "$LATEST_TAG" \
               || echo "no appcast.xml asset on latest release $LATEST_TAG"
           else
             echo "no previous release (first release) — generate_appcast will create a fresh appcast.xml"
           fi
-          PREV_TAGS="$(gh release list --repo "$REPO_SLUG" --exclude-drafts --limit 2 --json tagName -q '.[].tagName' 2>/dev/null || true)"
+          PREV_TAGS="$(gh release list --repo "$REPO_SLUG" --exclude-drafts --limit 20 --json tagName \
+            -q '[.[] | select(.tagName | startswith("desktop-v"))][0:2][].tagName' 2>/dev/null || true)"
           for T in $PREV_TAGS; do
             gh release download --repo "$REPO_SLUG" --pattern '*.zip' --dir "$ARCHIVE_DIR" "$T" \
               || echo "no zip asset on release $T, skipping"

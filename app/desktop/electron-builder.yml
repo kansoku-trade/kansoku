@@ -2,6 +2,7 @@ appId: dev.innei.trade-charts
 productName: TradeCharts
 directories:
   output: release
+afterPack: scripts/afterPack.cjs
 files:
   - dist-main/**
   - dist-preload/**
