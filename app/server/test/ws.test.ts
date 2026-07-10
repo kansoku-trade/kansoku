@@ -1,5 +1,8 @@
-import { EventEmitter } from "node:events";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { createServer, type Server } from "node:http";
+import { AddressInfo } from "node:net";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import WebSocket from "ws";
+import type { Connection } from "../src/realtime/connection.js";
 
 vi.mock("../src/ai/comments.js", () => ({
   onComment: vi.fn(() => () => {}),
@@ -16,33 +19,47 @@ vi.mock("../src/realtime/charts.js", () => ({ subscribeChart: vi.fn(() => () => 
 vi.mock("../src/realtime/position.js", () => ({ subscribePosition: vi.fn(() => () => {}) }));
 vi.mock("../src/realtime/quotes.js", () => ({ subscribeQuotes: vi.fn(() => () => {}) }));
 
-const { handleSocket, parseWsMessage } = await import("../src/routes/ws.js");
+const { parseWsMessage, handleConnection } = await import("../src/realtime/channelProtocol.js");
+const { attachWs } = await import("../src/realtime/wsHost.js");
 const { activeLeaseSymbols, hasActiveLease, LEASE_GRACE_MS, resetLeases } = await import("../src/ai/leases.js");
 const { emitNotice } = await import("../src/ai/notices.js");
+const { subscribeBoard } = (await import("../src/realtime/board.js")) as unknown as {
+  subscribeBoard: ReturnType<typeof vi.fn>;
+};
+const { subscribeQuotes } = (await import("../src/realtime/quotes.js")) as unknown as {
+  subscribeQuotes: ReturnType<typeof vi.fn>;
+};
 const { onChatEvent, chatTurnState } = (await import("../src/ai/chat.js")) as unknown as {
   onChatEvent: ReturnType<typeof vi.fn>;
   chatTurnState: ReturnType<typeof vi.fn>;
 };
 
-class MockSocket extends EventEmitter {
-  readyState = 1;
-  OPEN = 1;
+class FakeConnection implements Connection {
   sent: string[] = [];
-  closedByUs = false;
-  send(data: string): void {
-    this.sent.push(data);
+  private messageListeners: ((text: string) => void)[] = [];
+  private closeListeners: (() => void)[] = [];
+
+  send(text: string): void {
+    this.sent.push(text);
   }
-  ping(): void {}
-  close(): void {
-    this.closedByUs = true;
-    this.emit("close");
+  onMessage(cb: (text: string) => void): void {
+    this.messageListeners.push(cb);
+  }
+  onClose(cb: () => void): void {
+    this.closeListeners.push(cb);
+  }
+  emitMessage(text: string): void {
+    for (const cb of this.messageListeners) cb(text);
+  }
+  emitClose(): void {
+    for (const cb of this.closeListeners) cb();
   }
 }
 
-function makeSocket(): MockSocket {
-  const socket = new MockSocket();
-  handleSocket(socket as unknown as Parameters<typeof handleSocket>[0]);
-  return socket;
+function makeSocket(): FakeConnection {
+  const conn = new FakeConnection();
+  handleConnection(conn);
+  return conn;
 }
 
 async function waitFor(check: () => boolean): Promise<void> {
@@ -149,7 +166,7 @@ describe("chat channel", () => {
     });
 
     const socket = makeSocket();
-    socket.emit("message", JSON.stringify({ op: "sub", key: "chat1", kind: "chat", id: "chart-1" }));
+    socket.emitMessage(JSON.stringify({ op: "sub", key: "chat1", kind: "chat", id: "chart-1" }));
     await waitFor(() => socket.sent.some((raw) => raw.includes('"type":"init"')));
 
     expect(onChatEvent).toHaveBeenCalledWith("chart-1", expect.any(Function));
@@ -171,10 +188,10 @@ describe("chat channel", () => {
     onChatEvent.mockImplementation(() => unsubFn);
 
     const socket = makeSocket();
-    socket.emit("message", JSON.stringify({ op: "sub", key: "chat1", kind: "chat", id: "chart-1" }));
+    socket.emitMessage(JSON.stringify({ op: "sub", key: "chat1", kind: "chat", id: "chart-1" }));
     await waitFor(() => socket.sent.some((raw) => raw.includes('"type":"init"')));
 
-    socket.emit("message", JSON.stringify({ op: "unsub", key: "chat1" }));
+    socket.emitMessage(JSON.stringify({ op: "unsub", key: "chat1" }));
     expect(unsubFn).toHaveBeenCalledTimes(1);
   });
 });
@@ -186,37 +203,37 @@ describe("comments lease wiring", () => {
 
   it("acquires a lease when subscribing to a symbol's comments channel", async () => {
     const socket = makeSocket();
-    socket.emit("message", JSON.stringify({ op: "sub", key: "c1", kind: "comments", symbol: "mu" }));
+    socket.emitMessage(JSON.stringify({ op: "sub", key: "c1", kind: "comments", symbol: "mu" }));
     await waitFor(() => hasActiveLease("MU.US"));
     expect(hasActiveLease("MU.US")).toBe(true);
   });
 
   it("releases the lease on explicit unsubscribe (grace window, then expiry)", async () => {
     const socket = makeSocket();
-    socket.emit("message", JSON.stringify({ op: "sub", key: "c1", kind: "comments", symbol: "mu" }));
+    socket.emitMessage(JSON.stringify({ op: "sub", key: "c1", kind: "comments", symbol: "mu" }));
     await waitFor(() => hasActiveLease("MU.US"));
-    socket.emit("message", JSON.stringify({ op: "unsub", key: "c1" }));
+    socket.emitMessage(JSON.stringify({ op: "unsub", key: "c1" }));
     expect(hasActiveLease("MU.US")).toBe(true);
     expect(hasActiveLease("MU.US", Date.now() + LEASE_GRACE_MS + 1)).toBe(false);
   });
 
   it("releases the lease exactly once on socket close with an active subscription", async () => {
     const socket = makeSocket();
-    socket.emit("message", JSON.stringify({ op: "sub", key: "c1", kind: "comments", symbol: "mu" }));
+    socket.emitMessage(JSON.stringify({ op: "sub", key: "c1", kind: "comments", symbol: "mu" }));
     await waitFor(() => hasActiveLease("MU.US"));
-    socket.close();
+    socket.emitClose();
     expect(hasActiveLease("MU.US", Date.now() + LEASE_GRACE_MS + 1)).toBe(false);
   });
 
   it("does not double-release when explicit unsubscribe is followed by socket close", async () => {
     const socket = makeSocket();
-    socket.emit("message", JSON.stringify({ op: "sub", key: "c1", kind: "comments", symbol: "mu" }));
+    socket.emitMessage(JSON.stringify({ op: "sub", key: "c1", kind: "comments", symbol: "mu" }));
     await waitFor(() => hasActiveLease("MU.US"));
 
     const t0 = Date.now();
-    socket.emit("message", JSON.stringify({ op: "unsub", key: "c1" }));
+    socket.emitMessage(JSON.stringify({ op: "unsub", key: "c1" }));
     await new Promise((r) => setTimeout(r, 20));
-    socket.close();
+    socket.emitClose();
 
     expect(hasActiveLease("MU.US", t0 + LEASE_GRACE_MS - 5)).toBe(true);
     expect(hasActiveLease("MU.US", t0 + LEASE_GRACE_MS + 50)).toBe(false);
@@ -224,7 +241,7 @@ describe("comments lease wiring", () => {
 
   it("does not create a lease for a non-comments channel subscribe", async () => {
     const socket = makeSocket();
-    socket.emit("message", JSON.stringify({ op: "sub", key: "b1", kind: "board" }));
+    socket.emitMessage(JSON.stringify({ op: "sub", key: "b1", kind: "board" }));
     await new Promise((r) => setTimeout(r, 20));
     expect(activeLeaseSymbols()).toEqual([]);
   });
@@ -237,7 +254,7 @@ describe("comments channel notice forwarding", () => {
 
   it("delivers a notice envelope for the subscribed symbol", async () => {
     const socket = makeSocket();
-    socket.emit("message", JSON.stringify({ op: "sub", key: "c1", kind: "comments", symbol: "mu" }));
+    socket.emitMessage(JSON.stringify({ op: "sub", key: "c1", kind: "comments", symbol: "mu" }));
     await waitFor(() => hasActiveLease("MU.US"));
 
     emitNotice({
@@ -256,10 +273,10 @@ describe("comments channel notice forwarding", () => {
 
   it("stops delivering notices after unsubscribe and still releases the lease exactly once", async () => {
     const socket = makeSocket();
-    socket.emit("message", JSON.stringify({ op: "sub", key: "c1", kind: "comments", symbol: "mu" }));
+    socket.emitMessage(JSON.stringify({ op: "sub", key: "c1", kind: "comments", symbol: "mu" }));
     await waitFor(() => hasActiveLease("MU.US"));
 
-    socket.emit("message", JSON.stringify({ op: "unsub", key: "c1" }));
+    socket.emitMessage(JSON.stringify({ op: "unsub", key: "c1" }));
     expect(hasActiveLease("MU.US", Date.now() + LEASE_GRACE_MS + 1)).toBe(false);
 
     emitNotice({
@@ -271,5 +288,104 @@ describe("comments channel notice forwarding", () => {
     });
     await new Promise((r) => setTimeout(r, 20));
     expect(socket.sent.some((raw) => raw.includes('"type":"notice"'))).toBe(false);
+  });
+});
+
+describe("MAX_CHANNELS_PER_SOCKET cap", () => {
+  afterEach(() => {
+    subscribeQuotes.mockReset();
+    subscribeQuotes.mockImplementation(() => () => {});
+  });
+
+  it("drops a sub beyond the cap without evicting existing subs", async () => {
+    const unsubFns: ReturnType<typeof vi.fn>[] = [];
+    subscribeQuotes.mockImplementation((push: (envelope: string) => void) => {
+      push(JSON.stringify({ type: "quote" }));
+      const unsub = vi.fn();
+      unsubFns.push(unsub);
+      return unsub;
+    });
+
+    const socket = makeSocket();
+    for (let i = 0; i < 16; i++) {
+      socket.emitMessage(JSON.stringify({ op: "sub", key: `k${i}`, kind: "quotes" }));
+    }
+    await waitFor(() => subscribeQuotes.mock.calls.length === 16);
+    expect(socket.sent.filter((raw) => raw.includes('"type":"quote"'))).toHaveLength(16);
+
+    socket.emitMessage(JSON.stringify({ op: "sub", key: "k16", kind: "quotes" }));
+    await new Promise((r) => setTimeout(r, 20));
+
+    expect(subscribeQuotes).toHaveBeenCalledTimes(16);
+    expect(socket.sent.some((raw) => raw.includes('"key":"k16"'))).toBe(false);
+
+    socket.emitMessage(JSON.stringify({ op: "unsub", key: "k0" }));
+    expect(unsubFns[0]).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("degraded status on attachChannel failure", () => {
+  afterEach(() => {
+    subscribeQuotes.mockReset();
+    subscribeQuotes.mockImplementation(() => () => {});
+  });
+
+  it("sends the exact degraded envelope and allows re-subscribing the same key", async () => {
+    subscribeQuotes.mockImplementationOnce(() => {
+      throw new Error("boom");
+    });
+    subscribeQuotes.mockImplementation(() => () => {});
+
+    const socket = makeSocket();
+    socket.emitMessage(JSON.stringify({ op: "sub", key: "q1", kind: "quotes" }));
+    await waitFor(() => socket.sent.some((raw) => raw.includes('"type":"status"')));
+
+    const envelope = JSON.parse(socket.sent.find((raw) => raw.includes('"type":"status"'))!);
+    expect(envelope).toEqual({ key: "q1", payload: { type: "status", degraded: true, error: "boom" } });
+
+    socket.emitMessage(JSON.stringify({ op: "sub", key: "q1", kind: "quotes" }));
+    await waitFor(() => subscribeQuotes.mock.calls.length === 2);
+    expect(subscribeQuotes).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("attachWs (node http.Server integration)", () => {
+  let server: Server;
+  let baseUrl: string;
+
+  beforeEach(async () => {
+    subscribeBoard.mockReset();
+    server = createServer();
+    attachWs(server, "/api/ws");
+    await new Promise<void>((resolve) => server.listen(0, resolve));
+    const { port } = server.address() as AddressInfo;
+    baseUrl = `ws://127.0.0.1:${port}/api/ws`;
+  });
+
+  afterEach(async () => {
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+  });
+
+  it("round-trips a real sub through a live socket", async () => {
+    subscribeBoard.mockImplementation((push: (envelope: string) => void) => {
+      push(JSON.stringify({ type: "board", value: 42 }));
+      return () => {};
+    });
+
+    const client = new WebSocket(baseUrl);
+    const received: string[] = [];
+    await new Promise<void>((resolve, reject) => {
+      client.on("open", resolve);
+      client.on("error", reject);
+    });
+    client.on("message", (data) => received.push(String(data)));
+
+    client.send(JSON.stringify({ op: "sub", key: "b1", kind: "board" }));
+    await vi.waitFor(() => {
+      if (received.length === 0) throw new Error("no message yet");
+    });
+
+    expect(JSON.parse(received[0])).toEqual({ key: "b1", payload: { type: "board", value: 42 } });
+    client.close();
   });
 });

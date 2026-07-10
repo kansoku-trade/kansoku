@@ -1,8 +1,8 @@
 import type { Api, Model, ModelThinkingLevel, MutableModels } from "@earendil-works/pi-ai";
 import { getSupportedThinkingLevels } from "@earendil-works/pi-ai";
-import { ClientError } from "../errors.js";
-import { SINGLE_KEY_PROVIDERS } from "../ai/modelsRuntime.js";
-import type { AiRole, RoleMode, RoleSetting } from "../ai/settingsStore.js";
+import { ClientError } from "../../errors.js";
+import { SINGLE_KEY_PROVIDERS } from "../../ai/modelsRuntime.js";
+import type { AiRole, RoleMode, RoleSetting } from "../../ai/settingsStore.js";
 
 export const CODEX_PROVIDER = "openai-codex";
 export const ROLES: AiRole[] = ["primary", "comment", "analyst", "deepDive", "chat"];

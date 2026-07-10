@@ -1,15 +1,14 @@
 import type { MutableModels } from "@earendil-works/pi-ai";
-import type { FastifyPluginAsync } from "fastify";
-import { getAiRuntime } from "../ai/initAiSettings.js";
-import type { AppCredentialStore } from "../ai/credentialStore.js";
-import { getModelsRuntime, SINGLE_KEY_PROVIDERS } from "../ai/modelsRuntime.js";
 import { getSupportedThinkingLevels } from "@earendil-works/pi-ai";
-import type { SecretBox } from "../ai/secretBox.js";
-import { type AiRole, getActiveSettingsStore, type SettingsStore } from "../ai/settingsStore.js";
-import { listUsage, type AiUsageRecord } from "../ai/usageStore.js";
-import { getDb, type Db } from "../db/index.js";
-import { ClientError } from "../errors.js";
-import { easternDate } from "../services/session.js";
+import { Body, Controller, Delete, Get, Param, Post, Put } from "@tsuki-hono/common";
+import { getAiRuntime } from "../../ai/initAiSettings.js";
+import type { AppCredentialStore } from "../../ai/credentialStore.js";
+import { getModelsRuntime, SINGLE_KEY_PROVIDERS } from "../../ai/modelsRuntime.js";
+import type { SecretBox } from "../../ai/secretBox.js";
+import { type AiRole, getActiveSettingsStore, type SettingsStore } from "../../ai/settingsStore.js";
+import { listUsage, type AiUsageRecord } from "../../ai/usageStore.js";
+import { getDb, type Db } from "../../db/index.js";
+import { ClientError } from "../../errors.js";
 import {
   allowedProviders,
   categorizeTestError,
@@ -20,17 +19,35 @@ import {
   validateCustomRef,
   validateRoleSetting,
 } from "./settingsValidation.js";
+import { easternDate } from "../../services/session.js";
 
 const DEFAULT_TEST_TIMEOUT_MS = 25_000;
 const TEST_PROMPT_MAX_TOKENS = 16;
 
-export interface SettingsRouteOptions {
-  settingsStore?: SettingsStore;
-  credentials?: AppCredentialStore;
-  secretBox?: SecretBox;
-  models?: MutableModels;
-  testTimeoutMs?: number;
-  db?: Db;
+export interface SettingsControllerDeps {
+  settingsStore: SettingsStore;
+  credentials: AppCredentialStore;
+  secretBox: SecretBox;
+  models: MutableModels;
+  testTimeoutMs: number;
+  db: Db;
+}
+
+let testDeps: Partial<SettingsControllerDeps> | null = null;
+
+export function setSettingsDepsForTests(overrides: Partial<SettingsControllerDeps> | null): void {
+  testDeps = overrides;
+}
+
+function deps(): SettingsControllerDeps {
+  return {
+    settingsStore: testDeps?.settingsStore ?? getActiveSettingsStore(),
+    credentials: testDeps?.credentials ?? getAiRuntime().credentials,
+    secretBox: testDeps?.secretBox ?? getAiRuntime().secretBox,
+    models: testDeps?.models ?? getModelsRuntime(),
+    testTimeoutMs: testDeps?.testTimeoutMs ?? DEFAULT_TEST_TIMEOUT_MS,
+    db: testDeps?.db ?? getDb(),
+  };
 }
 
 function usageRole(record: AiUsageRecord): "comment" | "analyst" | "deepDive" | "chat" | null {
@@ -59,43 +76,50 @@ async function collectKnownSecrets(credentials: AppCredentialStore, provider: st
   }
 }
 
-export const settingsRoute: FastifyPluginAsync<SettingsRouteOptions> = async (app, opts) => {
-  const settingsStore = opts.settingsStore ?? getActiveSettingsStore();
-  const credentials = opts.credentials ?? getAiRuntime().credentials;
-  const secretBox = opts.secretBox ?? getAiRuntime().secretBox;
-  const models = opts.models ?? getModelsRuntime();
-  const testTimeoutMs = opts.testTimeoutMs ?? DEFAULT_TEST_TIMEOUT_MS;
-  const db = opts.db ?? getDb();
+function jsonResponse(status: number, body: Record<string, unknown>): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "content-type": "application/json; charset=utf-8" },
+  });
+}
 
-  app.get("/ai", async () => {
+@Controller("settings")
+export class SettingsController {
+  @Get("/ai")
+  async getAi() {
+    const { settingsStore, credentials, secretBox, models } = deps();
     const rolesOut = {} as Record<AiRole, ReturnType<SettingsStore["getRole"]> & { stale: boolean }>;
     for (const role of ROLES) {
       const setting = settingsStore.getRole(role);
-      const stale =
-        setting.mode === "custom" && !models.getModel(setting.provider ?? "", setting.modelId ?? "");
+      const stale = setting.mode === "custom" && !models.getModel(setting.provider ?? "", setting.modelId ?? "");
       rolesOut[role] = { ...setting, stale };
     }
     return {
       ok: true,
       data: { roles: rolesOut, credentials: credentials.list(), masterKey: secretBox.status() },
     };
-  });
+  }
 
-  app.put<{ Params: { role: string }; Body: Record<string, unknown> }>("/ai/roles/:role", async (req) => {
-    const role = parseRole(req.params.role);
-    const setting = validateRoleSetting(role, req.body ?? {}, models);
+  @Put("/ai/roles/:role")
+  async putRole(@Param("role") roleParam: string, @Body() body: Record<string, unknown> | null) {
+    const { settingsStore, models } = deps();
+    const role = parseRole(roleParam);
+    const setting = validateRoleSetting(role, body ?? {}, models);
     settingsStore.setRole(role, setting);
     return { ok: true, data: { role, ...settingsStore.getRole(role) } };
-  });
+  }
 
-  app.delete<{ Params: { role: string } }>("/ai/roles/:role", async (req) => {
-    const role = parseRole(req.params.role);
+  @Delete("/ai/roles/:role")
+  async deleteRole(@Param("role") roleParam: string) {
+    const { settingsStore } = deps();
+    const role = parseRole(roleParam);
     settingsStore.setRole(role, { mode: "disabled", provider: null, modelId: null, thinkingLevel: null });
     return { ok: true, data: { role, mode: "disabled" } };
-  });
+  }
 
-  app.put<{ Params: { provider: string }; Body: { key?: unknown } }>("/ai/credentials/:provider", async (req) => {
-    const provider = req.params.provider;
+  @Put("/ai/credentials/:provider")
+  async putCredential(@Param("provider") provider: string, @Body() body: { key?: unknown } | null) {
+    const { credentials } = deps();
     if (provider === CODEX_PROVIDER) {
       throw new ClientError(`cannot set an api key for ${CODEX_PROVIDER}`, "managed by codex CLI login");
     }
@@ -105,17 +129,18 @@ export const settingsRoute: FastifyPluginAsync<SettingsRouteOptions> = async (ap
         `expected one of ${[...SINGLE_KEY_PROVIDERS].join(", ")}`,
       );
     }
-    const key = req.body?.key;
+    const key = body?.key;
     if (typeof key !== "string" || !key) {
       throw new ClientError('"key" must be a non-empty string');
     }
     credentials.setApiKey(provider, key);
     const entry = credentials.list().find((e) => e.provider === provider);
     return { ok: true, data: { provider, masked: entry?.masked ?? null } };
-  });
+  }
 
-  app.delete<{ Params: { provider: string } }>("/ai/credentials/:provider", async (req) => {
-    const provider = req.params.provider;
+  @Delete("/ai/credentials/:provider")
+  async deleteCredential(@Param("provider") provider: string) {
+    const { credentials } = deps();
     try {
       await credentials.delete(provider);
     } catch (err) {
@@ -123,9 +148,11 @@ export const settingsRoute: FastifyPluginAsync<SettingsRouteOptions> = async (ap
       throw new ClientError(err instanceof Error ? err.message : String(err), hint);
     }
     return { ok: true, data: { provider, deleted: true } };
-  });
+  }
 
-  app.get("/ai/catalog", async () => {
+  @Get("/ai/catalog")
+  async getCatalog() {
+    const { credentials, models } = deps();
     const configuredApiKey = new Set(credentials.list().filter((e) => e.ok).map((e) => e.provider));
     const providers = [];
     for (const id of allowedProviders()) {
@@ -152,10 +179,12 @@ export const settingsRoute: FastifyPluginAsync<SettingsRouteOptions> = async (ap
       providers.push({ id, name, auth, models: modelList });
     }
     return { ok: true, data: { providers } };
-  });
+  }
 
-  app.post<{ Body: Record<string, unknown> }>("/ai/test", async (req, reply) => {
-    const { provider, modelId, thinkingLevel, model } = validateCustomRef(req.body ?? {}, models);
+  @Post("/ai/test")
+  async postTest(@Body() body: Record<string, unknown> | null) {
+    const { models, credentials, testTimeoutMs } = deps();
+    const { provider, modelId, thinkingLevel, model } = validateCustomRef(body ?? {}, models);
     const controller = new AbortController();
     let timedOut = false;
     let timer!: ReturnType<typeof setTimeout>;
@@ -187,18 +216,18 @@ export const settingsRoute: FastifyPluginAsync<SettingsRouteOptions> = async (ap
       const hint = sanitizeAuthError(rawMessage, secrets);
       if (timedOut) {
         console.error(`settings: /ai/test timed out for ${provider}/${modelId}: ${hint}`);
-        reply.status(504);
-        return { ok: false, error: "timeout", hint };
+        return jsonResponse(504, { ok: false, error: "timeout", hint });
       }
       console.error(`settings: /ai/test failed for ${provider}/${modelId}: ${hint}`);
-      reply.status(502);
-      return { ok: false, error: categorizeTestError(rawMessage), hint };
+      return jsonResponse(502, { ok: false, error: categorizeTestError(rawMessage), hint });
     } finally {
       clearTimeout(timer);
     }
-  });
+  }
 
-  app.get("/ai/usage-today", async () => {
+  @Get("/ai/usage-today")
+  async getUsageToday() {
+    const { db } = deps();
     const records = await listUsage(easternDate(new Date()), db);
     const roles = {
       comment: { calls: 0, cost: 0 },
@@ -216,13 +245,15 @@ export const settingsRoute: FastifyPluginAsync<SettingsRouteOptions> = async (ap
       roles[role].cost += record.cost_total;
     }
     return { ok: true, data: { roles, total } };
-  });
+  }
 
-  app.post("/ai/reset-credentials", async () => {
+  @Post("/ai/reset-credentials")
+  async postResetCredentials() {
+    const { db, credentials, secretBox } = deps();
     db.transaction(() => {
       credentials.wipeAll();
     });
     secretBox.resetKey();
     return { ok: true, data: { reset: true } };
-  });
-};
+  }
+}

@@ -1,9 +1,7 @@
-import type { FastifyPluginAsync } from "fastify";
-import type { Annotation, AnnotationKind, AnnotationPoint } from "../../../shared/types.js";
-import { ClientError } from "../errors.js";
-import { loadAnnotations, saveAnnotations } from "../services/annotations.js";
-
-type Params = { symbol: string };
+import { Body, Controller, Get, Param, Put } from "@tsuki-hono/common";
+import type { Annotation, AnnotationKind, AnnotationPoint } from "../../../../shared/types.js";
+import { ClientError } from "../../errors.js";
+import { loadAnnotations, saveAnnotations } from "../../services/annotations.js";
 
 const KINDS: AnnotationKind[] = ["trendline", "hline", "rect", "fib"];
 
@@ -45,15 +43,18 @@ function parseAnnotations(body: unknown): Annotation[] {
   return annotations;
 }
 
-export const annotationsRoute: FastifyPluginAsync = async (app) => {
-  app.get<{ Params: Params }>("/:symbol", async (req) => {
-    const data = await loadAnnotations(req.params.symbol);
+@Controller("annotations")
+export class AnnotationsController {
+  @Get("/:symbol")
+  async getAnnotations(@Param("symbol") symbol: string) {
+    const data = await loadAnnotations(symbol);
     return { ok: true, data };
-  });
+  }
 
-  app.put<{ Params: Params }>("/:symbol", async (req) => {
-    const annotations = parseAnnotations(req.body);
-    await saveAnnotations(req.params.symbol, annotations);
+  @Put("/:symbol")
+  async putAnnotations(@Param("symbol") symbol: string, @Body() body: unknown) {
+    const annotations = parseAnnotations(body);
+    await saveAnnotations(symbol, annotations);
     return { ok: true, data: { count: annotations.length } };
-  });
-};
+  }
+}

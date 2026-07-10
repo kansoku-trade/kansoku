@@ -5,7 +5,6 @@ import type { MutableModels } from "@earendil-works/pi-ai";
 import { getSupportedThinkingLevels } from "@earendil-works/pi-ai";
 import { builtinModels } from "@earendil-works/pi-ai/providers/all";
 import { eq } from "drizzle-orm";
-import Fastify, { type FastifyInstance } from "fastify";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createCredentialStore, type AppCredentialStore } from "../src/ai/credentialStore.js";
 import { SINGLE_KEY_PROVIDERS } from "../src/ai/modelsRuntime.js";
@@ -13,9 +12,9 @@ import { createSecretBox, type SecretBox } from "../src/ai/secretBox.js";
 import { createSettingsStore, type SettingsStore } from "../src/ai/settingsStore.js";
 import { createDb, type Db } from "../src/db/index.js";
 import { aiUsage, providerCredentials } from "../src/db/schema.js";
+import { setSettingsDepsForTests } from "../src/modules/settings/settings.controller.js";
 import { easternDate } from "../src/services/session.js";
-import { ClientError } from "../src/errors.js";
-import { settingsRoute, type SettingsRouteOptions } from "../src/routes/settings.js";
+import { tsukiRequest } from "./helpers.js";
 
 const catalog = builtinModels();
 const ANALYST_PROVIDER = "anthropic";
@@ -63,42 +62,60 @@ function makeCtx(): TestCtx {
   return { dir, db, secretBox, credentials, settingsStore, models };
 }
 
-async function buildApp(ctx: TestCtx, overrides: Partial<SettingsRouteOptions> = {}): Promise<FastifyInstance> {
-  const app = Fastify();
-  app.setErrorHandler((err, _req, reply) => {
-    if (err instanceof ClientError) {
-      return reply.status(err.status).send({ ok: false, error: err.message, hint: err.hint });
-    }
-    return reply.status(500).send({ ok: false, error: err instanceof Error ? err.message : String(err) });
-  });
-  await app.register(settingsRoute, {
+function applyCtx(ctx: TestCtx, overrides: Partial<TestCtx & { testTimeoutMs: number; models: MutableModels }> = {}): void {
+  setSettingsDepsForTests({
     settingsStore: ctx.settingsStore,
     credentials: ctx.credentials,
     secretBox: ctx.secretBox,
-    models: ctx.models,
+    models: overrides.models ?? ctx.models,
     db: ctx.db,
-    testTimeoutMs: 5_000,
-    ...overrides,
+    testTimeoutMs: overrides.testTimeoutMs ?? 5_000,
   });
-  return app;
+}
+
+const BASE = "/api/settings";
+
+async function get(path: string): Promise<Response> {
+  return tsukiRequest(`${BASE}${path}`);
+}
+
+async function del(path: string): Promise<Response> {
+  return tsukiRequest(`${BASE}${path}`, { method: "DELETE" });
+}
+
+async function put(path: string, payload?: unknown): Promise<Response> {
+  return tsukiRequest(`${BASE}${path}`, {
+    method: "PUT",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(payload ?? {}),
+  });
+}
+
+async function post(path: string, payload?: unknown): Promise<Response> {
+  return tsukiRequest(`${BASE}${path}`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: payload === undefined ? undefined : JSON.stringify(payload),
+  });
 }
 
 let ctx: TestCtx;
 
 beforeEach(() => {
   ctx = makeCtx();
+  applyCtx(ctx);
 });
 
 afterEach(() => {
+  setSettingsDepsForTests(null);
   rmSync(ctx.dir, { recursive: true, force: true });
 });
 
 describe("envelope", () => {
   it("GET /ai returns default roles, empty credentials, and a masterKey status, wrapped in {ok, data}", async () => {
-    const app = await buildApp(ctx);
-    const res = await app.inject({ method: "GET", url: "/ai" });
-    expect(res.statusCode).toBe(200);
-    const body = res.json();
+    const res = await get("/ai");
+    expect(res.status).toBe(200);
+    const body = await res.json();
     expect(body.ok).toBe(true);
     expect(body.data).toBeDefined();
     expect(body.data.credentials).toEqual([]);
@@ -113,70 +130,58 @@ describe("envelope", () => {
 
 describe("PUT/DELETE /ai/roles/:role", () => {
   it("rejects an unknown role", async () => {
-    const app = await buildApp(ctx);
-    const res = await app.inject({ method: "PUT", url: "/ai/roles/bogus", payload: { mode: "disabled" } });
-    expect(res.statusCode).toBe(400);
-    expect(res.json().ok).toBe(false);
+    const res = await put("/ai/roles/bogus", { mode: "disabled" });
+    expect(res.status).toBe(400);
+    expect((await res.json()).ok).toBe(false);
   });
 
   it("rejects inherit mode on the primary role and accepts it on task roles", async () => {
-    const app = await buildApp(ctx);
-    const rejected = await app.inject({ method: "PUT", url: "/ai/roles/primary", payload: { mode: "inherit" } });
-    expect(rejected.statusCode).toBe(400);
-    const accepted = await app.inject({ method: "PUT", url: "/ai/roles/comment", payload: { mode: "inherit" } });
-    expect(accepted.statusCode).toBe(200);
-    expect(accepted.json().data).toMatchObject({ role: "comment", mode: "inherit" });
+    const rejected = await put("/ai/roles/primary", { mode: "inherit" });
+    expect(rejected.status).toBe(400);
+    const accepted = await put("/ai/roles/comment", { mode: "inherit" });
+    expect(accepted.status).toBe(200);
+    expect((await accepted.json()).data).toMatchObject({ role: "comment", mode: "inherit" });
   });
 
   it("rejects an unknown provider", async () => {
-    const app = await buildApp(ctx);
-    const res = await app.inject({
-      method: "PUT",
-      url: "/ai/roles/analyst",
-      payload: { mode: "custom", provider: "not-a-provider", modelId: "x", thinkingLevel: "off" },
+    const res = await put("/ai/roles/analyst", {
+      mode: "custom",
+      provider: "not-a-provider",
+      modelId: "x",
+      thinkingLevel: "off",
     });
-    expect(res.statusCode).toBe(400);
+    expect(res.status).toBe(400);
   });
 
   it("rejects a model not in the catalog", async () => {
-    const app = await buildApp(ctx);
-    const res = await app.inject({
-      method: "PUT",
-      url: "/ai/roles/analyst",
-      payload: { mode: "custom", provider: ANALYST_PROVIDER, modelId: "no-such-model", thinkingLevel: "off" },
+    const res = await put("/ai/roles/analyst", {
+      mode: "custom",
+      provider: ANALYST_PROVIDER,
+      modelId: "no-such-model",
+      thinkingLevel: "off",
     });
-    expect(res.statusCode).toBe(400);
+    expect(res.status).toBe(400);
   });
 
   it("rejects a thinkingLevel the model does not support", async () => {
-    const app = await buildApp(ctx);
-    const res = await app.inject({
-      method: "PUT",
-      url: "/ai/roles/analyst",
-      payload: {
-        mode: "custom",
-        provider: ANALYST_PROVIDER,
-        modelId: ANALYST_MODEL_ID,
-        thinkingLevel: "not-a-level",
-      },
+    const res = await put("/ai/roles/analyst", {
+      mode: "custom",
+      provider: ANALYST_PROVIDER,
+      modelId: ANALYST_MODEL_ID,
+      thinkingLevel: "not-a-level",
     });
-    expect(res.statusCode).toBe(400);
+    expect(res.status).toBe(400);
   });
 
   it("persists a valid custom setting and returns it", async () => {
-    const app = await buildApp(ctx);
-    const res = await app.inject({
-      method: "PUT",
-      url: "/ai/roles/analyst",
-      payload: {
-        mode: "custom",
-        provider: ANALYST_PROVIDER,
-        modelId: ANALYST_MODEL_ID,
-        thinkingLevel: analystThinkingLevel,
-      },
+    const res = await put("/ai/roles/analyst", {
+      mode: "custom",
+      provider: ANALYST_PROVIDER,
+      modelId: ANALYST_MODEL_ID,
+      thinkingLevel: analystThinkingLevel,
     });
-    expect(res.statusCode).toBe(200);
-    const body = res.json();
+    expect(res.status).toBe(200);
+    const body = await res.json();
     expect(body.ok).toBe(true);
     expect(body.data).toEqual({
       role: "analyst",
@@ -199,37 +204,29 @@ describe("PUT/DELETE /ai/roles/:role", () => {
       modelId: ANALYST_MODEL_ID,
       thinkingLevel: analystThinkingLevel,
     });
-    const app = await buildApp(ctx);
-    const res = await app.inject({ method: "DELETE", url: "/ai/roles/analyst" });
-    expect(res.statusCode).toBe(200);
-    expect(res.json()).toEqual({ ok: true, data: { role: "analyst", mode: "disabled" } });
+    const res = await del("/ai/roles/analyst");
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true, data: { role: "analyst", mode: "disabled" } });
     expect(ctx.settingsStore.getRole("analyst")).toMatchObject({ mode: "disabled", provider: null });
   });
 });
 
 describe("PUT/DELETE /ai/credentials/:provider", () => {
   it("rejects setting an api key for openai-codex", async () => {
-    const app = await buildApp(ctx);
-    const res = await app.inject({ method: "PUT", url: "/ai/credentials/openai-codex", payload: { key: "x" } });
-    expect(res.statusCode).toBe(400);
-    expect(res.json().hint).toMatch(/codex/i);
+    const res = await put("/ai/credentials/openai-codex", { key: "x" });
+    expect(res.status).toBe(400);
+    expect((await res.json()).hint).toMatch(/codex/i);
   });
 
   it("rejects an empty key", async () => {
-    const app = await buildApp(ctx);
-    const res = await app.inject({ method: "PUT", url: "/ai/credentials/deepseek", payload: { key: "" } });
-    expect(res.statusCode).toBe(400);
+    const res = await put("/ai/credentials/deepseek", { key: "" });
+    expect(res.status).toBe(400);
   });
 
   it("sets an api key, encrypts it in the DB, and returns a masked tail", async () => {
-    const app = await buildApp(ctx);
-    const res = await app.inject({
-      method: "PUT",
-      url: "/ai/credentials/deepseek",
-      payload: { key: "sk-real-secret-9876" },
-    });
-    expect(res.statusCode).toBe(200);
-    const body = res.json();
+    const res = await put("/ai/credentials/deepseek", { key: "sk-real-secret-9876" });
+    expect(res.status).toBe(200);
+    const body = await res.json();
     expect(body.ok).toBe(true);
     expect(body.data.provider).toBe("deepseek");
     expect(body.data.masked.endsWith("9876")).toBe(true);
@@ -240,34 +237,30 @@ describe("PUT/DELETE /ai/credentials/:provider", () => {
 
   it("DELETE removes a credential", async () => {
     ctx.credentials.setApiKey("deepseek", "sk-real-secret-9876");
-    const app = await buildApp(ctx);
-    const res = await app.inject({ method: "DELETE", url: "/ai/credentials/deepseek" });
-    expect(res.statusCode).toBe(200);
+    const res = await del("/ai/credentials/deepseek");
+    expect(res.status).toBe(200);
     await expect(ctx.credentials.read("deepseek")).resolves.toBeUndefined();
   });
 
   it("DELETE openai-codex is rejected", async () => {
-    const app = await buildApp(ctx);
-    const res = await app.inject({ method: "DELETE", url: "/ai/credentials/openai-codex" });
-    expect(res.statusCode).toBe(400);
+    const res = await del("/ai/credentials/openai-codex");
+    expect(res.status).toBe(400);
   });
 });
 
 describe("GET /ai/catalog", () => {
   it("only lists the allowlisted providers plus openai-codex", async () => {
-    const app = await buildApp(ctx);
-    const res = await app.inject({ method: "GET", url: "/ai/catalog" });
-    expect(res.statusCode).toBe(200);
-    const ids = res.json().data.providers.map((p: { id: string }) => p.id).sort();
+    const res = await get("/ai/catalog");
+    expect(res.status).toBe(200);
+    const ids = (await res.json()).data.providers.map((p: { id: string }) => p.id).sort();
     const expected = [...SINGLE_KEY_PROVIDERS, "openai-codex"].sort();
     expect(ids).toEqual(expected);
   });
 
   it("shows configured for a provider with a stored key, missing for codex with no auth file", async () => {
     ctx.credentials.setApiKey(ANALYST_PROVIDER, "sk-real-secret-9876");
-    const app = await buildApp(ctx);
-    const res = await app.inject({ method: "GET", url: "/ai/catalog" });
-    const providers = res.json().data.providers as { id: string; auth: { kind: string; status: string } }[];
+    const res = await get("/ai/catalog");
+    const providers = (await res.json()).data.providers as { id: string; auth: { kind: string; status: string } }[];
     const anthropic = providers.find((p) => p.id === ANALYST_PROVIDER);
     expect(anthropic?.auth).toEqual({ kind: "api_key", status: "configured" });
     const codex = providers.find((p) => p.id === "openai-codex");
@@ -275,9 +268,8 @@ describe("GET /ai/catalog", () => {
   });
 
   it("carries a non-empty thinkingLevels array for each catalog model", async () => {
-    const app = await buildApp(ctx);
-    const res = await app.inject({ method: "GET", url: "/ai/catalog" });
-    const providers = res.json().data.providers as { id: string; models: { thinkingLevels: string[] }[] }[];
+    const res = await get("/ai/catalog");
+    const providers = (await res.json()).data.providers as { id: string; models: { thinkingLevels: string[] }[] }[];
     const anthropic = providers.find((p) => p.id === ANALYST_PROVIDER);
     expect(anthropic?.models.length).toBeGreaterThan(0);
     for (const model of anthropic?.models ?? []) {
@@ -289,14 +281,14 @@ describe("GET /ai/catalog", () => {
 describe("POST /ai/test", () => {
   it("returns a latencyMs on success", async () => {
     const models = stubModels(async () => ({ role: "assistant" }) as never, ctx.credentials);
-    const app = await buildApp(ctx, { models });
-    const res = await app.inject({
-      method: "POST",
-      url: "/ai/test",
-      payload: { provider: ANALYST_PROVIDER, modelId: ANALYST_MODEL_ID, thinkingLevel: analystThinkingLevel },
+    applyCtx(ctx, { models });
+    const res = await post("/ai/test", {
+      provider: ANALYST_PROVIDER,
+      modelId: ANALYST_MODEL_ID,
+      thinkingLevel: analystThinkingLevel,
     });
-    expect(res.statusCode).toBe(200);
-    const body = res.json();
+    expect(res.status).toBe(200);
+    const body = await res.json();
     expect(body.ok).toBe(true);
     expect(typeof body.data.latencyMs).toBe("number");
   });
@@ -306,14 +298,14 @@ describe("POST /ai/test", () => {
     const models = stubModels(async () => {
       throw new Error("upstream rejected key sk-real-secret-9876");
     }, ctx.credentials);
-    const app = await buildApp(ctx, { models });
-    const res = await app.inject({
-      method: "POST",
-      url: "/ai/test",
-      payload: { provider: ANALYST_PROVIDER, modelId: ANALYST_MODEL_ID, thinkingLevel: analystThinkingLevel },
+    applyCtx(ctx, { models });
+    const res = await post("/ai/test", {
+      provider: ANALYST_PROVIDER,
+      modelId: ANALYST_MODEL_ID,
+      thinkingLevel: analystThinkingLevel,
     });
-    expect(res.statusCode).toBe(502);
-    const body = res.json();
+    expect(res.status).toBe(502);
+    const body = await res.json();
     expect(body.ok).toBe(false);
     expect(body.hint).toContain("[redacted]");
     expect(body.hint).not.toContain("sk-real-secret-9876");
@@ -321,14 +313,14 @@ describe("POST /ai/test", () => {
 
   it("times out with a 504 and a stable timeout category", async () => {
     const models = stubModels(() => new Promise(() => {}), ctx.credentials);
-    const app = await buildApp(ctx, { models, testTimeoutMs: 50 });
-    const res = await app.inject({
-      method: "POST",
-      url: "/ai/test",
-      payload: { provider: ANALYST_PROVIDER, modelId: ANALYST_MODEL_ID, thinkingLevel: analystThinkingLevel },
+    applyCtx(ctx, { models, testTimeoutMs: 50 });
+    const res = await post("/ai/test", {
+      provider: ANALYST_PROVIDER,
+      modelId: ANALYST_MODEL_ID,
+      thinkingLevel: analystThinkingLevel,
     });
-    expect(res.statusCode).toBe(504);
-    expect(res.json().error).toBe("timeout");
+    expect(res.status).toBe(504);
+    expect((await res.json()).error).toBe("timeout");
   });
 });
 
@@ -339,10 +331,9 @@ describe("POST /ai/reset-credentials", () => {
     const oldRow = ctx.db.select().from(providerCredentials).where(eq(providerCredentials.provider, "deepseek")).get();
     if (!oldRow) throw new Error("unreachable");
 
-    const app = await buildApp(ctx);
-    const res = await app.inject({ method: "POST", url: "/ai/reset-credentials" });
-    expect(res.statusCode).toBe(200);
-    expect(res.json()).toEqual({ ok: true, data: { reset: true } });
+    const res = await post("/ai/reset-credentials");
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true, data: { reset: true } });
 
     expect(ctx.credentials.list()).toEqual([]);
     expect(() => ctx.secretBox.decrypt("deepseek", oldRow.secret)).toThrow();
@@ -357,18 +348,18 @@ describe("no-plaintext sweep", () => {
     const models = stubModels(async () => {
       throw new Error(`upstream said: ${canary}`);
     }, ctx.credentials);
-    const app = await buildApp(ctx, { models });
+    applyCtx(ctx, { models });
 
-    const getAi = await app.inject({ method: "GET", url: "/ai" });
-    const getCatalog = await app.inject({ method: "GET", url: "/ai/catalog" });
-    const testRes = await app.inject({
-      method: "POST",
-      url: "/ai/test",
-      payload: { provider: ANALYST_PROVIDER, modelId: ANALYST_MODEL_ID, thinkingLevel: analystThinkingLevel },
+    const getAi = await get("/ai");
+    const getCatalog = await get("/ai/catalog");
+    const testRes = await post("/ai/test", {
+      provider: ANALYST_PROVIDER,
+      modelId: ANALYST_MODEL_ID,
+      thinkingLevel: analystThinkingLevel,
     });
 
     for (const res of [getAi, getCatalog, testRes]) {
-      expect(JSON.stringify(res.json())).not.toContain(canary);
+      expect(JSON.stringify(await res.json())).not.toContain(canary);
     }
   });
 });
@@ -406,10 +397,9 @@ describe("GET /ai/usage-today", () => {
     insertUsage("mystery-layer", null, 1, 1.0, today);
     insertUsage("chat", null, 9, 9.0, "2000-01-01");
 
-    const app = await buildApp(ctx);
-    const res = await app.inject({ method: "GET", url: "/ai/usage-today" });
-    expect(res.statusCode).toBe(200);
-    const { data } = res.json();
+    const res = await get("/ai/usage-today");
+    expect(res.status).toBe(200);
+    const { data } = await res.json();
     expect(data.roles.comment).toEqual({ calls: 5, cost: 0.04 });
     expect(data.roles.analyst).toEqual({ calls: 1, cost: 0.2 });
     expect(data.roles.deepDive).toEqual({ calls: 1, cost: 0.5 });
@@ -419,9 +409,8 @@ describe("GET /ai/usage-today", () => {
   });
 
   it("returns zeros with no usage rows", async () => {
-    const app = await buildApp(ctx);
-    const res = await app.inject({ method: "GET", url: "/ai/usage-today" });
-    const { data } = res.json();
+    const res = await get("/ai/usage-today");
+    const { data } = await res.json();
     expect(data.roles.comment).toEqual({ calls: 0, cost: 0 });
     expect(data.total).toEqual({ calls: 0, cost: 0 });
   });

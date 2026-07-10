@@ -1,6 +1,6 @@
-import Fastify, { type FastifyInstance } from "fastify";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ChartDoc, ChartMeta } from "../../shared/types.js";
+import { tsukiRequest } from "./helpers.js";
 
 const provider = vi.hoisted(() => ({
   name: "mock",
@@ -35,14 +35,10 @@ vi.mock("../src/services/cockpit/outcomeCache.js", () => ({
   saveResolvedOutcome: async () => {},
 }));
 
-const { overviewRoute } = await import("../src/routes/overview.js");
+const { resetOverviewCacheForTests } = await import("../src/modules/overview/overview.controller.js");
 const { easternDate } = await import("../src/services/session.js");
 
-async function testApp(): Promise<FastifyInstance> {
-  const app = Fastify();
-  await app.register(overviewRoute);
-  return app;
-}
+const BASE = "/api/overview";
 
 function makeMeta(overrides: Partial<ChartMeta> = {}): ChartMeta {
   return {
@@ -82,6 +78,7 @@ const emptyUsage = {
 };
 
 beforeEach(() => {
+  resetOverviewCacheForTests();
   provider.getKline.mockReset();
   provider.getQuotes.mockReset();
   store.listCharts.mockReset();
@@ -96,10 +93,9 @@ beforeEach(() => {
 describe("GET / (board)", () => {
   it("includes a session field even when there are no rows", async () => {
     store.listCharts.mockResolvedValue([]);
-    const app = await testApp();
-    const res = await app.inject("/");
-    expect(res.statusCode).toBe(200);
-    const body = res.json();
+    const res = await tsukiRequest(BASE);
+    expect(res.status).toBe(200);
+    const body = await res.json();
     expect(["pre", "regular", "post", "overnight"]).toContain(body.data.session);
     expect(body.data.rows).toEqual([]);
   });
@@ -111,9 +107,8 @@ describe("GET / (board)", () => {
       { symbol: "MU.US", last: "110", prev_close: "108", change_percentage: "1.8" },
     ]);
     comments.listComments.mockResolvedValue([]);
-    const app = await testApp();
-    const res = await app.inject("/");
-    const body = res.json();
+    const res = await tsukiRequest(BASE);
+    const body = await res.json();
     expect(body.data.rows).toHaveLength(1);
     expect(body.data.rows[0].symbol).toBe("MU.US");
     expect(["pre", "regular", "post", "overnight"]).toContain(body.data.session);
@@ -123,10 +118,9 @@ describe("GET / (board)", () => {
 describe("GET /recap", () => {
   it("returns empty settlements plus usage when nothing was tracked today", async () => {
     store.listCharts.mockResolvedValue([]);
-    const app = await testApp();
-    const res = await app.inject("/recap");
-    expect(res.statusCode).toBe(200);
-    const body = res.json();
+    const res = await tsukiRequest(`${BASE}/recap`);
+    expect(res.status).toBe(200);
+    const body = await res.json();
     expect(body.data.settlements).toEqual([]);
     expect(body.data.alerts).toEqual([]);
     expect(body.data.usage).toEqual(emptyUsage);
@@ -145,10 +139,9 @@ describe("GET /recap", () => {
       { ts: "2026-07-05T14:00:00Z", symbol: "MU.US", level: "alert", text: "接近目标", source: "commentator" },
       { ts: "2026-07-05T13:00:00Z", symbol: "MU.US", level: "info", text: "正常", source: "commentator" },
     ]);
-    const app = await testApp();
-    const res = await app.inject("/recap");
-    expect(res.statusCode).toBe(200);
-    const body = res.json();
+    const res = await tsukiRequest(`${BASE}/recap`);
+    expect(res.status).toBe(200);
+    const body = await res.json();
     const [row] = body.data.settlements;
     expect(row.symbol).toBe("MU.US");
     expect(row.direction).toBe("long");
@@ -166,24 +159,21 @@ describe("GET /recap", () => {
     ]);
     provider.getKline.mockResolvedValue([]);
     comments.listComments.mockResolvedValue([]);
-    const app = await testApp();
-    await app.inject("/recap");
-    await app.inject("/recap");
+    await tsukiRequest(`${BASE}/recap`);
+    await tsukiRequest(`${BASE}/recap`);
     expect(provider.getQuotes).toHaveBeenCalledTimes(1);
   });
 
   it("rejects a malformed date querystring", async () => {
-    const app = await testApp();
-    const res = await app.inject("/recap?date=07-05-2026");
-    expect(res.statusCode).toBe(400);
+    const res = await tsukiRequest(`${BASE}/recap?date=07-05-2026`);
+    expect(res.status).toBe(400);
   });
 
   it("defaults to today when date is absent", async () => {
     store.listCharts.mockResolvedValue([]);
-    const app = await testApp();
-    const res = await app.inject("/recap");
-    expect(res.statusCode).toBe(200);
-    expect(res.json().data.date).toBe(easternDate());
+    const res = await tsukiRequest(`${BASE}/recap`);
+    expect(res.status).toBe(200);
+    expect((await res.json()).data.date).toBe(easternDate());
   });
 
   it("computes historical day_pct from daily bars without calling getQuotes", async () => {
@@ -203,10 +193,9 @@ describe("GET /recap", () => {
       }
       return Promise.resolve([]);
     });
-    const app = await testApp();
-    const res = await app.inject(`/recap?date=${histDate}`);
-    expect(res.statusCode).toBe(200);
-    const [row] = res.json().data.settlements;
+    const res = await tsukiRequest(`${BASE}/recap?date=${histDate}`);
+    expect(res.status).toBe(200);
+    const [row] = (await res.json()).data.settlements;
     expect(row.day_pct).toBeCloseTo(10);
     expect(provider.getQuotes).not.toHaveBeenCalled();
   });
@@ -226,10 +215,9 @@ describe("GET /recap", () => {
       }
       return Promise.resolve([]);
     });
-    const app = await testApp();
-    const res = await app.inject(`/recap?date=${histDate}`);
-    expect(res.statusCode).toBe(200);
-    const [row] = res.json().data.settlements;
+    const res = await tsukiRequest(`${BASE}/recap?date=${histDate}`);
+    expect(res.status).toBe(200);
+    const [row] = (await res.json()).data.settlements;
     expect(row.day_pct).toBeNull();
   });
 
@@ -244,10 +232,9 @@ describe("GET /recap", () => {
       if (period === "day") return Promise.reject(new Error("provider down"));
       return Promise.resolve([]);
     });
-    const app = await testApp();
-    const res = await app.inject(`/recap?date=${histDate}`);
-    expect(res.statusCode).toBe(200);
-    const [row] = res.json().data.settlements;
+    const res = await tsukiRequest(`${BASE}/recap?date=${histDate}`);
+    expect(res.status).toBe(200);
+    const [row] = (await res.json()).data.settlements;
     expect(row.day_pct).toBeNull();
   });
 
@@ -261,13 +248,14 @@ describe("GET /recap", () => {
     store.loadChart.mockResolvedValue(makeDoc());
     comments.listComments.mockResolvedValue([]);
     provider.getKline.mockResolvedValue([]);
-    const app = await testApp();
-    const resA = await app.inject(`/recap?date=${dateA}`);
-    const resB = await app.inject(`/recap?date=${dateB}`);
-    expect(resA.json().data.date).toBe(dateA);
-    expect(resB.json().data.date).toBe(dateB);
-    expect(resA.json().data.settlements[0].symbol).toBe("MU.US");
-    expect(resB.json().data.settlements[0].symbol).toBe("NVDA.US");
+    const resA = await tsukiRequest(`${BASE}/recap?date=${dateA}`);
+    const resB = await tsukiRequest(`${BASE}/recap?date=${dateB}`);
+    const bodyA = await resA.json();
+    const bodyB = await resB.json();
+    expect(bodyA.data.date).toBe(dateA);
+    expect(bodyB.data.date).toBe(dateB);
+    expect(bodyA.data.settlements[0].symbol).toBe("MU.US");
+    expect(bodyB.data.settlements[0].symbol).toBe("NVDA.US");
   });
 });
 
@@ -279,17 +267,15 @@ describe("GET /recap-dates", () => {
       makeMeta({ id: "2026-07-01-mu-intraday", created_at: new Date("2026-07-01T14:00:00.000Z").toISOString() }),
       makeMeta({ id: "2026-07-06-nvda-intraday", symbol: "NVDA.US", created_at: new Date("2026-07-06T14:00:00.000Z").toISOString() }),
     ]);
-    const app = await testApp();
-    const res = await app.inject("/recap-dates");
-    expect(res.statusCode).toBe(200);
-    expect(res.json().data).toEqual(["2026-07-06", "2026-07-05", "2026-07-03", "2026-07-01"]);
+    const res = await tsukiRequest(`${BASE}/recap-dates`);
+    expect(res.status).toBe(200);
+    expect((await res.json()).data).toEqual(["2026-07-06", "2026-07-05", "2026-07-03", "2026-07-01"]);
   });
 
   it("returns an empty list when there is no data in any source", async () => {
     store.listCharts.mockResolvedValue([]);
-    const app = await testApp();
-    const res = await app.inject("/recap-dates");
-    expect(res.statusCode).toBe(200);
-    expect(res.json().data).toEqual([]);
+    const res = await tsukiRequest(`${BASE}/recap-dates`);
+    expect(res.status).toBe(200);
+    expect((await res.json()).data).toEqual([]);
   });
 });

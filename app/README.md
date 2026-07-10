@@ -3,7 +3,7 @@
 本地图表应用，取代了原来嵌在 Python 字符串里的 HTML 模板渲染。pnpm workspace，三个包：
 
 - `shared/` — 跨包类型定义（`ChartDoc` / `IntradayBuilt` / `SepaBuilt` / `CockpitFlow` / 等）与时间工具函数，server 和 web 共同引用。
-- `server/` — Fastify + TypeScript。调 longbridge CLI 拉数据、算指标、提供 REST API 和 SSE 实时流，并以 middleware mode 内嵌 Vite dev server 直接托管前端源码（无打包环节）。
+- `server/` — Tsuki（Hono + NestJS 风格模块/DI）+ TypeScript。调 longbridge CLI 拉数据、算指标、提供 REST API 和 WS 实时流。核心是一个不自己 listen 的 kernel（`bootstrap.ts`），可以被不同「宿主」绑定端口/传输——目前有生产用的 node 宿主（`main.node.ts`，`@hono/node-server`）和开发用的 Vite 宿主（web 那边的 Vite dev server 把请求代理过来），未来还会加 Electron 宿主。
 - `web/` — Vite + React + TypeScript。五种渲染组件 + 个股仪表盘。
 
 ## 启动
@@ -13,7 +13,9 @@ pnpm install        # 首次（从 workspace root）
 pnpm start          # http://localhost:5199
 ```
 
-单进程：server 内嵌 Vite dev server，前端改动即时热更新，不需要 build。改 server 代码用 `pnpm dev`（tsx watch，后端文件变了自动重启，Vite 随进程一起重启）。
+`pnpm start` 起 node 宿主单进程：kernel 绑在 5199 端口，同时托管 REST API、WS（`/api/ws`）和已构建好的前端静态资源（`web/dist`，没 build 过会提示先跑 `pnpm --filter @trade/web build`）。
+
+开发态是两个进程，`pnpm dev` 用 `concurrently` 并行拉起：web 起 Vite dev server（监听 5199，把 `/api`、`/legacy` 代理到 kernel）负责前端热更新；server 用 `vite-node --watch` 跑 kernel 本体（监听 `KERNEL_PORT`，默认 5200），改 server 代码自动重启，不需要单独的 build 步骤。
 
 ## 页面路由
 
@@ -55,14 +57,22 @@ pnpm start          # http://localhost:5199
 | `GET` | `/api/overview/stats` | 全部历史预测的战绩汇总：总命中率、做多/做空分开、AI 生成 vs 手动分析分开（AI 落的图带 `origin: "analyst"` 标记） |
 | `GET` | `/api/overview/usage` | 当日 AI 花费汇总（`?date=YYYY-MM-DD` 可查历史），按点评员/分析员分层 |
 
-### 实时流（SSE）
+### 实时流（WS）
 
-| 方法 | 路径 | 说明 |
+单条 WebSocket 连接 `/api/ws`，多路复用所有实时频道——前端每订阅一路发一条 `{op: "sub", key, kind, ...}`，收到的每条消息都带 `{key, payload}` 好路由回对应订阅方；`{op: "unsub", key}` 退订。频道（`kind`）：
+
+| kind | 参数 | 内容 |
 |---|---|---|
-| `GET` | `/api/stream/quotes?extra=SYM1,SYM2` | 行情快照流。标的 = 长桥 watchlist ∪ 持仓 ∪ extra 参数，10 秒一轮，自动识别盘前/盘后/隔夜时段 |
-| `GET` | `/api/stream/charts/:id?count=N` | 图表数据流。flow / intraday 图被打开时每 60 秒重拉数据、重算指标、推新数据（sepa 是收盘级研判工具，不参与实时）。数据指纹去重，连续 5 次失败退避到 5 分钟并亮黄点 |
+| `quotes` | `extra?` | 行情快照。标的 = 长桥 watchlist ∪ 持仓 ∪ `extra` 里额外传的，自动识别盘前/盘后/隔夜时段 |
+| `chart` | `id`、`count?` | 图表数据流。flow / intraday 图被打开时定期重拉数据、重算指标、推新数据（sepa 是收盘级研判工具，不参与实时） |
+| `board` | — | 首页跨标的看板（`/api/overview` 的实时版） |
+| `comments` | `symbol` | 点评流（点评员/分析员产出的中文点评 + 提醒） |
+| `analyses` | `symbol` | 历史分析结果追踪的实时更新 |
+| `position` | `symbol` | 该标的持仓快照 |
+| `benchmark` | `symbol` | 持仓 vs SMH / QQQ 基准归一化对照 |
+| `chat` | `id` | 个股仪表盘里 AI 追问对话的流式回复 |
 
-**SSE 协议**：`event: message` + `data: {ok: true, data: {...}}`；每 15 秒 `event: ping` 保活。前端收到后原地更新，不重置缩放。
+服务端连不上数据源时推 `{type: "status", degraded: true, error}`，前端亮黄点提示；断线由前端自动重连。开发态下 `/api/ws` 由 web 的 Vite dev server 代理到 kernel。
 
 ## 图表类型
 

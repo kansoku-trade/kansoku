@@ -1,8 +1,17 @@
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { createKernel, type Kernel } from "../src/bootstrap.js";
 
 const FIXTURES = join(dirname(fileURLToPath(import.meta.url)), "fixtures");
+
+let kernelPromise: Promise<Kernel> | undefined;
+
+export async function tsukiRequest(path: string, init?: RequestInit): Promise<Response> {
+  kernelPromise ??= createKernel();
+  const { app } = await kernelPromise;
+  return app.getInstance().request(path, init);
+}
 
 export function loadFixture<T>(name: string): T {
   return JSON.parse(readFileSync(join(FIXTURES, name), "utf-8")) as T;

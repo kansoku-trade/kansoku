@@ -1,20 +1,18 @@
-import websocket from "@fastify/websocket";
-import type { FastifyPluginAsync } from "fastify";
-import type { WebSocket } from "ws";
 import type { CockpitComment } from "../../../shared/types.js";
 import { chatTurnState, onChatEvent } from "../ai/chat.js";
 import { listComments, onComment } from "../ai/comments.js";
 import { acquireLease, releaseLease } from "../ai/leases.js";
 import { onNotice } from "../ai/notices.js";
-import { subscribeAnalyses } from "../realtime/analyses.js";
-import { subscribeBenchmark } from "../realtime/benchmark.js";
-import { subscribeBoard } from "../realtime/board.js";
-import { subscribeChart } from "../realtime/charts.js";
-import { subscribePosition } from "../realtime/position.js";
-import { subscribeQuotes } from "../realtime/quotes.js";
+import { normalizeSymbol } from "../modules/symbols/symbol.utils.js";
 import { clampViewCount } from "../services/history.js";
 import { easternDate } from "../services/session.js";
-import { normalizeSymbol } from "./symbols.js";
+import { subscribeAnalyses } from "./analyses.js";
+import { subscribeBenchmark } from "./benchmark.js";
+import { subscribeBoard } from "./board.js";
+import { subscribeChart } from "./charts.js";
+import type { Connection } from "./connection.js";
+import { subscribePosition } from "./position.js";
+import { subscribeQuotes } from "./quotes.js";
 
 async function attachComments(symbol: string, push: (envelope: string) => void): Promise<() => void> {
   const buffered: CockpitComment[] = [];
@@ -39,7 +37,6 @@ async function attachComments(symbol: string, push: (envelope: string) => void):
 }
 
 const MAX_CHANNELS_PER_SOCKET = 16;
-const PING_MS = 15_000;
 
 export interface WsSub {
   op: "sub";
@@ -132,18 +129,12 @@ async function attachChannel(msg: WsSub, push: (envelope: string) => void): Prom
   return subscribeBoard(push);
 }
 
-export function handleSocket(socket: WebSocket): void {
+export function handleConnection(conn: Connection): void {
   const subs = new Map<string, () => void>();
   let closed = false;
 
-  const ping = setInterval(() => {
-    if (socket.readyState === socket.OPEN) socket.ping();
-  }, PING_MS);
-
   const send = (key: string, envelope: string) => {
-    if (!closed && socket.readyState === socket.OPEN) {
-      socket.send(`{"key":${JSON.stringify(key)},"payload":${envelope}}`);
-    }
+    if (!closed) conn.send(`{"key":${JSON.stringify(key)},"payload":${envelope}}`);
   };
 
   const handle = async (raw: string) => {
@@ -174,19 +165,12 @@ export function handleSocket(socket: WebSocket): void {
     }
   };
 
-  socket.on("message", (buf) => {
-    void handle(String(buf));
+  conn.onMessage((raw) => {
+    void handle(raw);
   });
-  socket.on("close", () => {
+  conn.onClose(() => {
     closed = true;
-    clearInterval(ping);
     for (const unsub of subs.values()) unsub();
     subs.clear();
   });
-  socket.on("error", () => socket.close());
 }
-
-export const wsRoute: FastifyPluginAsync = async (app) => {
-  await app.register(websocket);
-  app.get("/", { websocket: true }, (socket) => handleSocket(socket));
-};
