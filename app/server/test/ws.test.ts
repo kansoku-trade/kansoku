@@ -388,4 +388,36 @@ describe("attachWs (node http.Server integration)", () => {
     expect(JSON.parse(received[0])).toEqual({ key: "b1", payload: { type: "board", value: 42 } });
     client.close();
   });
+
+  it("destroys the socket on an upgrade request to the wrong path", async () => {
+    const client = new WebSocket(baseUrl.replace("/api/ws", "/nope"));
+    await new Promise<void>((resolve, reject) => {
+      client.on("close", () => resolve());
+      client.on("open", () => reject(new Error("should not upgrade")));
+      client.on("error", () => {});
+    });
+  });
+
+  it("still upgrades when the path carries a query string", async () => {
+    subscribeBoard.mockImplementation((push: (envelope: string) => void) => {
+      push(JSON.stringify({ type: "board", value: 7 }));
+      return () => {};
+    });
+
+    const client = new WebSocket(`${baseUrl}?foo=1`);
+    const received: string[] = [];
+    await new Promise<void>((resolve, reject) => {
+      client.on("open", resolve);
+      client.on("error", reject);
+    });
+    client.on("message", (data) => received.push(String(data)));
+
+    client.send(JSON.stringify({ op: "sub", key: "b1", kind: "board" }));
+    await vi.waitFor(() => {
+      if (received.length === 0) throw new Error("no message yet");
+    });
+
+    expect(JSON.parse(received[0])).toEqual({ key: "b1", payload: { type: "board", value: 7 } });
+    client.close();
+  });
 });
