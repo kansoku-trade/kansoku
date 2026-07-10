@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { app, BrowserWindow, dialog } from "electron";
 import { registerAppProtocolHandler, registerAppScheme } from "./protocolHost.js";
 import { resolveRepoRoot } from "./repoRoot.js";
+import { initUpdater } from "./updater.js";
 
 // Scheme registration must run before app.ready — calling it at module top
 // level (evaluated on import, ahead of the whenReady() handler below) makes
@@ -84,6 +85,7 @@ app.whenReady().then(async () => {
     });
 
     createWindow();
+    initUpdater();
 
     app.on("activate", () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow();
