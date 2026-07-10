@@ -12,4 +12,6 @@ export const ANNOTATIONS_DIR = join(PROJECT_ROOT, "journal", "charts", "annotati
 export const LEGACY_CHARTS_DIR = join(PROJECT_ROOT, "journal", "charts");
 export const WEB_ROOT = join(APP_ROOT, "web");
 export const PORT = Number(process.env.PORT || 5199);
+export const KERNEL_PORT = Number(process.env.KERNEL_PORT || 5200);
 export const BASE_URL = `http://localhost:${PORT}`;
+export const WEB_DIST = join(WEB_ROOT, "dist");

@@ -2,9 +2,13 @@
   "name": "trade-app",
   "private": true,
   "scripts": {
-    "dev": "pnpm --filter @trade/server dev",
+    "dev": "concurrently -n web,server -c blue,green \"pnpm --filter @trade/web dev\" \"pnpm --filter @trade/server dev\"",
     "start": "pnpm --filter @trade/server start",
+    "build": "pnpm --filter @trade/web build",
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
   }
 }

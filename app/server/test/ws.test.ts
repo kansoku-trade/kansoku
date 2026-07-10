@@ -19,7 +19,8 @@ vi.mock("../src/realtime/charts.js", () => ({ subscribeChart: vi.fn(() => () => 
 vi.mock("../src/realtime/position.js", () => ({ subscribePosition: vi.fn(() => () => {}) }));
 vi.mock("../src/realtime/quotes.js", () => ({ subscribeQuotes: vi.fn(() => () => {}) }));
 
-const { attachWs, handleConnection, parseWsMessage } = await import("../src/routes/ws.js");
+const { parseWsMessage, handleConnection } = await import("../src/realtime/channelProtocol.js");
+const { attachWs } = await import("../src/realtime/wsHost.js");
 const { activeLeaseSymbols, hasActiveLease, LEASE_GRACE_MS, resetLeases } = await import("../src/ai/leases.js");
 const { emitNotice } = await import("../src/ai/notices.js");
 const { subscribeBoard } = (await import("../src/realtime/board.js")) as unknown as {
