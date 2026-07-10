@@ -1,6 +1,6 @@
-import Fastify, { type FastifyInstance } from "fastify";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ChartDoc, ChartMeta } from "../../shared/types.js";
+import { tsukiRequest } from "./helpers.js";
 
 const store = vi.hoisted(() => ({
   listCharts: vi.fn(),
@@ -25,23 +25,26 @@ const build = vi.hoisted(() => ({
 vi.mock("../src/services/store.js", () => store);
 vi.mock("../src/services/build.js", () => build);
 
-const { chartsRoute } = await import("../src/routes/charts.js");
-const { ClientError } = await import("../src/errors.js");
-
-async function testApp(): Promise<FastifyInstance> {
-  const app = Fastify();
-  app.setErrorHandler((err, _req, reply) => {
-    if (err instanceof ClientError) {
-      return reply.status(err.status).send({ ok: false, error: err.message });
-    }
-    return reply.status(500).send({ ok: false, error: err instanceof Error ? err.message : String(err) });
-  });
-  await app.register(chartsRoute);
-  return app;
+function patchReq(id: string, payload: unknown): [string, RequestInit] {
+  return [
+    `/api/charts/${id}`,
+    {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload),
+    },
+  ];
 }
 
-function patchReq(id: string, payload: unknown) {
-  return { method: "PATCH" as const, url: `/${id}`, payload: payload as Record<string, unknown> };
+function postReq(payload: unknown): [string, RequestInit] {
+  return [
+    "/api/charts",
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload),
+    },
+  ];
 }
 
 const REGULAR_TS = "2026-07-02T15:00:00.000Z";
@@ -103,11 +106,10 @@ describe("PATCH /:id prediction_updated_at", () => {
       built: doc.built,
       meta: {},
     });
-    const app = await testApp();
     freezeAt(REGULAR_TS);
 
-    const res = await app.inject(patchReq(doc.id, { prediction: { direction: "short" } }));
-    expect(res.statusCode).toBe(200);
+    const res = await tsukiRequest(...patchReq(doc.id, { prediction: { direction: "short" } }));
+    expect(res.status).toBe(200);
     expect(store.saveChart).toHaveBeenCalledTimes(1);
     const saved = store.saveChart.mock.calls[0][0] as ChartDoc;
     expect(saved.prediction_updated_at).toBe(REGULAR_TS);
@@ -125,10 +127,9 @@ describe("PATCH /:id prediction_updated_at", () => {
       built: doc.built,
       meta: {},
     });
-    const app = await testApp();
     freezeAt(REGULAR_TS);
 
-    await app.inject(patchReq(doc.id, { prediction: null }));
+    await tsukiRequest(...patchReq(doc.id, { prediction: null }));
     const saved = store.saveChart.mock.calls[0][0] as ChartDoc;
     expect(saved.prediction_updated_at).toBe(REGULAR_TS);
     vi.useRealTimers();
@@ -146,8 +147,7 @@ describe("PATCH /:id prediction_updated_at", () => {
       meta: {},
     });
 
-    const app = await testApp();
-    await app.inject(patchReq(doc.id, { title: "new title" }));
+    await tsukiRequest(...patchReq(doc.id, { title: "new title" }));
     const saved = store.saveChart.mock.calls[0][0] as ChartDoc;
     expect(saved.prediction_updated_at).toBe("2026-07-01T12:00:00.000Z");
   });
@@ -164,8 +164,7 @@ describe("PATCH /:id prediction_updated_at", () => {
       meta: {},
     });
 
-    const app = await testApp();
-    await app.inject(patchReq(doc.id, { position: { shares: 1 } }));
+    await tsukiRequest(...patchReq(doc.id, { position: { shares: 1 } }));
     const saved = store.saveChart.mock.calls[0][0] as ChartDoc;
     expect(saved.prediction_updated_at).toBeUndefined();
   });
@@ -186,15 +185,11 @@ describe("POST /", () => {
     build.buildChart.mockResolvedValue(buildResult);
     store.createChart.mockResolvedValue(makeDoc({ id: "2026-07-05-nvda-intraday", schema_version: 2 }));
 
-    const app = await testApp();
-    const res = await app.inject({
-      method: "POST",
-      url: "/",
-      payload: { type: "intraday", symbol: "NVDA.US" },
-    });
-    expect(res.statusCode).toBe(200);
+    const res = await tsukiRequest(...postReq({ type: "intraday", symbol: "NVDA.US" }));
+    expect(res.status).toBe(200);
     expect(store.createChart.mock.calls[0][0]).toEqual(buildResult);
-    expect(res.json().data.id).toBe("2026-07-05-nvda-intraday");
+    const body = await res.json();
+    expect(body.data.id).toBe("2026-07-05-nvda-intraday");
   });
 });
 
@@ -218,8 +213,7 @@ describe("PATCH /:id context", () => {
       meta: {},
     });
 
-    const app = await testApp();
-    await app.inject(patchReq(doc.id, { context }));
+    await tsukiRequest(...patchReq(doc.id, { context }));
     const saved = store.saveChart.mock.calls[0][0] as ChartDoc;
     expect(saved.input.context).toEqual(context);
   });
@@ -243,8 +237,7 @@ describe("PATCH /:id context", () => {
       meta: {},
     });
 
-    const app = await testApp();
-    await app.inject(patchReq(doc.id, { title: "new title" }));
+    await tsukiRequest(...patchReq(doc.id, { title: "new title" }));
     const saved = store.saveChart.mock.calls[0][0] as ChartDoc;
     expect(saved.input.context).toEqual(context);
   });
@@ -255,9 +248,8 @@ describe("PATCH /:id legacy type guard", () => {
     const doc = makeDoc({ type: "kline" as ChartDoc["type"] });
     store.loadChart.mockResolvedValue(doc);
 
-    const app = await testApp();
-    const res = await app.inject(patchReq(doc.id, { title: "new title" }));
-    expect(res.statusCode).toBe(400);
+    const res = await tsukiRequest(...patchReq(doc.id, { title: "new title" }));
+    expect(res.status).toBe(400);
     expect(store.saveChart).not.toHaveBeenCalled();
   });
 });
@@ -267,10 +259,9 @@ describe("GET /:id backward compat with v1 docs", () => {
     const doc = makeDoc({ schema_version: 1, input: { symbol: "NVDA.US", prediction: null } });
     store.loadChart.mockResolvedValue(doc);
 
-    const app = await testApp();
-    const res = await app.inject(`/${doc.id}`);
-    expect(res.statusCode).toBe(200);
-    const body = res.json();
+    const res = await tsukiRequest(`/api/charts/${doc.id}`);
+    expect(res.status).toBe(200);
+    const body = await res.json();
     expect(body.data.schema_version).toBe(1);
     expect(body.data.prediction_stale).toBe(false);
   });
@@ -278,14 +269,13 @@ describe("GET /:id backward compat with v1 docs", () => {
 
 describe("GET /:id computed prediction_stale", () => {
   it("carries prediction_updated_at and computed prediction_stale", async () => {
-    const app = await testApp();
     freezeAt(REGULAR_TS);
     const staleAt = new Date(new Date(REGULAR_TS).getTime() - 16 * 60_000).toISOString();
     const doc = makeDoc({ prediction_updated_at: staleAt });
     store.loadChart.mockResolvedValue(doc);
 
-    const res = await app.inject(`/${doc.id}`);
-    const body = res.json();
+    const res = await tsukiRequest(`/api/charts/${doc.id}`);
+    const body = await res.json();
     expect(body.data.prediction_updated_at).toBe(staleAt);
     expect(body.data.prediction_stale).toBe(true);
     vi.useRealTimers();
@@ -294,7 +284,6 @@ describe("GET /:id computed prediction_stale", () => {
 
 describe("GET / list staleness exposure and filtering", () => {
   it("exposes prediction_updated_at and prediction_stale on each meta", async () => {
-    const app = await testApp();
     freezeAt(REGULAR_TS);
     const staleAt = new Date(new Date(REGULAR_TS).getTime() - 16 * 60_000).toISOString();
     const freshAt = new Date(new Date(REGULAR_TS).getTime() - 5 * 60_000).toISOString();
@@ -308,8 +297,8 @@ describe("GET / list staleness exposure and filtering", () => {
       return null;
     });
 
-    const res = await app.inject("/");
-    const body = res.json();
+    const res = await tsukiRequest("/api/charts");
+    const body = await res.json();
     const byId = Object.fromEntries(body.data.map((m: { id: string }) => [m.id, m]));
     expect(byId["stale-chart"].prediction_stale).toBe(true);
     expect(byId["stale-chart"].prediction_updated_at).toBe(staleAt);
@@ -319,7 +308,6 @@ describe("GET / list staleness exposure and filtering", () => {
   });
 
   it("?stale=true returns only currently-stale charts", async () => {
-    const app = await testApp();
     freezeAt(REGULAR_TS);
     const staleAt = new Date(new Date(REGULAR_TS).getTime() - 16 * 60_000).toISOString();
     const freshAt = new Date(new Date(REGULAR_TS).getTime() - 5 * 60_000).toISOString();
@@ -332,8 +320,8 @@ describe("GET / list staleness exposure and filtering", () => {
       return null;
     });
 
-    const res = await app.inject("/?stale=true");
-    const body = res.json();
+    const res = await tsukiRequest("/api/charts?stale=true");
+    const body = await res.json();
     expect(body.data.map((m: { id: string }) => m.id)).toEqual(["stale-chart"]);
     vi.useRealTimers();
   });
@@ -342,22 +330,19 @@ describe("GET / list staleness exposure and filtering", () => {
 describe("GET / type filtering", () => {
   it("splits a comma-separated ?type= into an array passed to listCharts", async () => {
     store.listCharts.mockResolvedValue([]);
-    const app = await testApp();
-    await app.inject("/?type=flow,cohort");
+    await tsukiRequest("/api/charts?type=flow,cohort");
     expect(store.listCharts).toHaveBeenCalledWith(expect.objectContaining({ type: ["flow", "cohort"] }));
   });
 
   it("passes a single ?type= through as a one-element array", async () => {
     store.listCharts.mockResolvedValue([]);
-    const app = await testApp();
-    await app.inject("/?type=sepa");
+    await tsukiRequest("/api/charts?type=sepa");
     expect(store.listCharts).toHaveBeenCalledWith(expect.objectContaining({ type: ["sepa"] }));
   });
 
   it("omits type entirely when not provided", async () => {
     store.listCharts.mockResolvedValue([]);
-    const app = await testApp();
-    await app.inject("/");
+    await tsukiRequest("/api/charts");
     expect(store.listCharts).toHaveBeenCalledWith(expect.objectContaining({ type: undefined }));
   });
 });
@@ -369,10 +354,9 @@ describe("GET /:id/built", () => {
     build.refreshBody.mockReturnValue({ type: "intraday", symbol: doc.symbol, session: "intraday" });
     build.buildChart.mockResolvedValue({ built: { kind: "intraday" }, meta: {} });
 
-    const app = await testApp();
-    const res = await app.inject(`/${doc.id}/built?count=300`);
-    expect(res.statusCode).toBe(200);
-    const body = res.json();
+    const res = await tsukiRequest(`/api/charts/${doc.id}/built?count=300`);
+    expect(res.status).toBe(200);
+    const body = await res.json();
     expect(body.data.count).toBe(300);
     expect(build.buildChart).toHaveBeenCalledWith(
       expect.objectContaining({ type: "intraday", symbol: doc.symbol, count: 300, title: doc.title }),
@@ -386,9 +370,8 @@ describe("GET /:id/built", () => {
     build.refreshBody.mockReturnValue({ type: "intraday", symbol: doc.symbol });
     build.buildChart.mockResolvedValue({ built: { kind: "intraday" }, meta: {} });
 
-    const app = await testApp();
-    const res = await app.inject(`/${doc.id}/built?count=5000`);
-    const body = res.json();
+    const res = await tsukiRequest(`/api/charts/${doc.id}/built?count=5000`);
+    const body = await res.json();
     expect(body.data.count).toBe(1000);
     expect(build.buildChart).toHaveBeenCalledWith(expect.objectContaining({ count: 1000 }));
   });
@@ -396,23 +379,40 @@ describe("GET /:id/built", () => {
   it("rejects missing or invalid count", async () => {
     const doc = makeDoc();
     store.loadChart.mockResolvedValue(doc);
-    const app = await testApp();
-    expect((await app.inject(`/${doc.id}/built`)).statusCode).toBe(400);
-    expect((await app.inject(`/${doc.id}/built?count=abc`)).statusCode).toBe(400);
-    expect((await app.inject(`/${doc.id}/built?count=-3`)).statusCode).toBe(400);
+    expect((await tsukiRequest(`/api/charts/${doc.id}/built`)).status).toBe(400);
+    expect((await tsukiRequest(`/api/charts/${doc.id}/built?count=abc`)).status).toBe(400);
+    expect((await tsukiRequest(`/api/charts/${doc.id}/built?count=-3`)).status).toBe(400);
   });
 
   it("rejects non-intraday charts", async () => {
     store.loadChart.mockResolvedValue(makeDoc({ type: "flow" }));
-    const app = await testApp();
-    const res = await app.inject("/some-flow/built?count=300");
-    expect(res.statusCode).toBe(400);
+    const res = await tsukiRequest("/api/charts/some-flow/built?count=300");
+    expect(res.status).toBe(400);
   });
 
   it("404s on unknown chart", async () => {
     store.loadChart.mockResolvedValue(null);
-    const app = await testApp();
-    const res = await app.inject("/nope/built?count=300");
-    expect(res.statusCode).toBe(404);
+    const res = await tsukiRequest("/api/charts/nope/built?count=300");
+    expect(res.status).toBe(404);
+  });
+});
+
+describe("malformed JSON body", () => {
+  it("matches Fastify's FST_ERR_CTP* envelope byte-for-byte", async () => {
+    const res = await tsukiRequest("/api/charts", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: "{not valid json",
+    });
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    // captured from `createApp()` (Fastify) POSTing the same malformed body to
+    // /api/charts — see test/malformed-json.fastify.test.ts for the capture.
+    // keep in sync by hand with src/app.ts:24-34's FST_ERR_CTP* handler
+    expect(body).toEqual({
+      ok: false,
+      error: "request body must be JSON",
+      hint: 'e.g. {"type": "sepa", "symbol": "MRVL.US"}',
+    });
   });
 });
