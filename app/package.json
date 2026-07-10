@@ -4,7 +4,7 @@
   "scripts": {
     "dev": "pnpm --filter @trade/server dev",
     "start": "pnpm --filter @trade/server start",
-    "test": "pnpm --filter @trade/server test",
+    "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck"
   }
 }

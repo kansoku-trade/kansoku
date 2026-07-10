@@ -758,3 +758,42 @@ a.zone-item:hover { text-decoration: none; background: var(--bg-hover); }
   border-left: 2px solid var(--down); padding: 6px 8px;
 }
 .chat-empty { font-size: var(--fs-sm); color: var(--text-muted); padding: 20px 0; text-align: center; }
+
+.global-settings-link {
+  position: fixed; top: 14px; right: 16px; z-index: 50;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; color: var(--text-secondary);
+  background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius);
+}
+.global-settings-link:hover { color: var(--text-primary); border-color: var(--border-strong); background: var(--bg-hover); }
+
+.settings-page .card { margin-bottom: 16px; }
+.settings-warning-strip {
+  display: flex; align-items: center; gap: 10px; justify-content: space-between;
+  background: var(--bg-element); border: 1px solid var(--down); color: var(--down);
+  border-radius: var(--radius); padding: 8px 10px; margin-bottom: 12px; font-size: var(--fs-base);
+}
+.settings-cred-row, .settings-cred-add {
+  display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border);
+  font-size: var(--fs-base);
+}
+.settings-cred-row:last-child, .settings-cred-add:last-child { border-bottom: none; }
+.settings-cred-name { color: var(--text-primary); font-weight: 500; min-width: 90px; }
+.settings-cred-meta { color: var(--text-secondary); flex: 1; }
+.settings-cred-actions { display: flex; gap: 6px; margin-left: auto; }
+
+.settings-role-row { padding: 12px 0; border-bottom: 1px solid var(--border); }
+.settings-role-row:last-child { border-bottom: none; }
+.settings-role-head {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap;
+}
+.settings-role-name { color: var(--text-primary); font-weight: 500; min-width: 70px; }
+.settings-role-status { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-sm); }
+.settings-role-status--rollback { color: var(--down); }
+.settings-role-body { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.settings-role-warning { color: var(--accent); font-size: var(--fs-sm); }
+.settings-role-warning--gray { color: var(--text-muted); }
+.settings-test-result { font-size: var(--fs-sm); }
+.settings-test-result--ok { color: var(--up); }
+.settings-test-result--fail { color: var(--down); }
+.settings-footer-note { color: var(--text-muted); font-size: var(--fs-sm); margin-top: 20px; }
