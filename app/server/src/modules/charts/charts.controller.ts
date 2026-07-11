@@ -33,7 +33,11 @@ export class ChartsController {
 
   @Get("/:id/built")
   async built(@Param("id") id: string, @Query() query: QueryParams) {
-    const data = await chartsService.built({ id, count: query.count });
+    const data = await chartsService.built({
+      id,
+      count: query.count,
+      mode: query.mode === "forward" ? "forward" : undefined,
+    });
     return { ok: true, data };
   }
 

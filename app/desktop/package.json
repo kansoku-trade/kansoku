@@ -21,6 +21,7 @@
     "@hono/node-server": "1.19.14",
     "better-sqlite3": "^12.11.1",
     "electron-ipc-decorator": "^1.0.1",
+    "electron-window-state": "5.0.3",
     "longbridge": "^4.3.3",
     "longbridge-darwin-arm64": "4.3.3"
   },

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ChevronsRight } from "lucide-react";
 import type { BenchmarkSeries, CockpitPosition, RelativeVolume } from "../../../shared/types";
 import { useQuery } from "../apiHooks";
 import { IntradayDashboard, IntradayTimeframeSwitch } from "../charts/intraday/IntradayDashboard";
@@ -34,7 +34,8 @@ export function SymbolCockpit({ sym }: { sym: string }) {
   const { mode, activeId: latestId, latestChecked, latestError, hasNewer, jumpToLatest, goToAnalysis, analyses } =
     useLatestAnalysis(sym);
 
-  const { doc, error, degraded, intradayTf, setIntradayTf, loadHistory } = useIntradayDoc(latestId);
+  const { doc, error, degraded, canLoadForward, loadForward, forwardBusy, intradayTf, setIntradayTf, loadHistory } =
+    useIntradayDoc(latestId);
 
   useTitle(doc?.title ?? symLabel);
 
@@ -230,6 +231,20 @@ export function SymbolCockpit({ sym }: { sym: string }) {
         <span className="title">{doc.title}</span>
         <span className="meta">{sym}</span>
         {degraded && <Dot tone="accent" pulse title="数据延迟：行情拉取失败，正在重试" />}
+        <span className="topbar-chart-ctrls">
+          <IntradayTimeframeSwitch activeTf={activeIntradayTf} onChange={setIntradayTf} />
+          {canLoadForward && (
+            <button
+              className="load-forward-btn"
+              disabled={forwardBusy}
+              onClick={loadForward}
+              title="历史图表默认冻结在分析时的走势，点击加载分析日之后的 K 线到最新"
+            >
+              <ChevronsRight size={14} className="load-forward-icon" />
+              <span>{forwardBusy ? "加载中…" : "加载后续 K 线"}</span>
+            </button>
+          )}
+        </span>
         <span className="topbar-actions">
           {hasNewer && (
             <button className="badge badge--accent alert-badge" onClick={jumpToLatest}>
@@ -252,7 +267,6 @@ export function SymbolCockpit({ sym }: { sym: string }) {
               </span>
             </button>
           )}
-          <IntradayTimeframeSwitch activeTf={activeIntradayTf} onChange={setIntradayTf} />
           {doc.symbol && <TopbarQuote symbol={doc.symbol} />}
         </span>
       </div>

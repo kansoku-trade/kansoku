@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from "electron";
 import { CREDENTIALS_CHANNELS } from "./credentialsChannels.js";
 import { IPC_GROUPS } from "./ipc/groups.js";
+import { TABS_COMMAND_CHANNEL, type TabsCommand } from "./tabsChannels.js";
 
 // main.ts boots one embedded kernel regardless of dev or packaged mode, so
 // both the packaged app:// page and the dev renderer (ELECTRON_DEV=1, served
@@ -56,6 +57,14 @@ if (isPrivilegedOrigin) {
     enable: () => ipcRenderer.invoke("desktop:external-api:enable"),
     disable: () => ipcRenderer.invoke("desktop:external-api:disable"),
     resetToken: () => ipcRenderer.invoke("desktop:external-api:reset-token"),
+  };
+
+  desktopApi.tabs = {
+    onCommand: (cb: (command: TabsCommand) => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, command: TabsCommand) => cb(command);
+      ipcRenderer.on(TABS_COMMAND_CHANNEL, listener);
+      return () => ipcRenderer.removeListener(TABS_COMMAND_CHANNEL, listener);
+    },
   };
 }
 

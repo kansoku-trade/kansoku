@@ -2,43 +2,99 @@ import { useEffect, useState } from "react";
 
 const LOCATION_EVENT = "locationchange";
 
-function currentRoute(): string {
-  return window.location.pathname || "/";
+export interface RouteStore {
+  getRoute(): string;
+  subscribe(cb: () => void): () => void;
+  push(route: string): void;
+  replace(route: string): void;
+}
+
+function currentWindowRoute(): string {
+  return (window.location.pathname || "/") + window.location.search;
+}
+
+const windowStore: RouteStore = {
+  getRoute: currentWindowRoute,
+  subscribe(cb) {
+    window.addEventListener("popstate", cb);
+    window.addEventListener(LOCATION_EVENT, cb);
+    return () => {
+      window.removeEventListener("popstate", cb);
+      window.removeEventListener(LOCATION_EVENT, cb);
+    };
+  },
+  push(route) {
+    window.history.pushState({}, "", route);
+    window.dispatchEvent(new Event(LOCATION_EVENT));
+  },
+  replace(route) {
+    window.history.replaceState({}, "", route);
+    window.dispatchEvent(new Event(LOCATION_EVENT));
+  },
+};
+
+let activeStore: RouteStore | null = null;
+
+// Desktop tab mode points this at a per-tab in-memory store before mounting
+// that tab's page tree, so useRoute/navigate/useQueryParam resolve against
+// the active tab instead of window.location without changing their public
+// signatures. Only TabsProvider (web/src/desktop) calls this.
+export function __setActiveRouteStore(store: RouteStore | null): void {
+  activeStore = store;
+}
+
+function currentStore(): RouteStore {
+  return activeStore ?? windowStore;
+}
+
+export function createMemoryRouteStore(initialRoute: string, opts: { onChange?: (route: string) => void } = {}): RouteStore {
+  let route = initialRoute;
+  const listeners = new Set<() => void>();
+  const set = (next: string) => {
+    if (next === route) return;
+    route = next;
+    opts.onChange?.(next);
+    for (const cb of listeners) cb();
+  };
+  return {
+    getRoute: () => route,
+    subscribe(cb) {
+      listeners.add(cb);
+      return () => listeners.delete(cb);
+    },
+    push: set,
+    replace: set,
+  };
 }
 
 export function useRoute(): string {
-  const [route, setRoute] = useState(currentRoute);
+  const [route, setRoute] = useState(() => currentStore().getRoute());
   useEffect(() => {
-    const onChange = () => setRoute(currentRoute());
-    window.addEventListener("popstate", onChange);
-    window.addEventListener(LOCATION_EVENT, onChange);
-    return () => {
-      window.removeEventListener("popstate", onChange);
-      window.removeEventListener(LOCATION_EVENT, onChange);
-    };
+    const store = currentStore();
+    setRoute(store.getRoute());
+    return store.subscribe(() => setRoute(store.getRoute()));
   }, []);
   return route;
 }
 
 export function navigate(route: string, options: { replace?: boolean } = {}): void {
-  if (route === currentRoute() + window.location.search) return;
-  if (options.replace) window.history.replaceState({}, "", route);
-  else window.history.pushState({}, "", route);
-  window.dispatchEvent(new Event(LOCATION_EVENT));
+  const store = currentStore();
+  if (route === store.getRoute()) return;
+  if (options.replace) store.replace(route);
+  else store.push(route);
 }
 
 export function useQueryParam(name: string): string | null {
-  const read = () => new URLSearchParams(window.location.search).get(name);
+  const read = () => {
+    const [, search] = currentStore().getRoute().split("?");
+    return new URLSearchParams(search ?? "").get(name);
+  };
   const [value, setValue] = useState(read);
   useEffect(() => {
+    const store = currentStore();
     const onChange = () => setValue(read());
     onChange();
-    window.addEventListener("popstate", onChange);
-    window.addEventListener(LOCATION_EVENT, onChange);
-    return () => {
-      window.removeEventListener("popstate", onChange);
-      window.removeEventListener(LOCATION_EVENT, onChange);
-    };
+    return store.subscribe(onChange);
   }, [name]);
   return value;
 }

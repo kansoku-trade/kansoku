@@ -1,9 +1,11 @@
-import type { ChartDoc } from "../../../../../shared/types.js";
+import type { ChartDoc, RawBar, TimeframeKey } from "../../../../../shared/types.js";
 import { chartUrl } from "../../chartUrl.js";
 import type { ChartsApi } from "../../contract/charts.js";
 import { ClientError } from "../../errors.js";
+import { mergeFreshBars } from "../../realtime/candleMerge.js";
 import { ALL_TYPES, buildChart, mergeForPatch, rebuild, refreshBody } from "../../services/build.js";
 import { clampViewCount } from "../../services/history.js";
+import { TIMEFRAME_ORDER } from "../../services/intraday.js";
 import { predictionStale } from "../../services/staleness.js";
 import { createChart, deleteChart, listCharts, loadChart, saveChart } from "../../services/store.js";
 
@@ -53,6 +55,32 @@ export const chartsService: ChartsApi = {
     const body = refreshBody(doc.type, doc.input);
     if (!body) throw new ClientError("chart has no symbol to refetch", undefined, 400);
     const result = await buildChart({ ...body, count, title: doc.title });
+    // Forward mode (historical chart "load subsequent bars"): keep the frozen
+    // analysis snapshot pinned and graft on only bars newer than its tail, so the
+    // original candles survive the full refetch. Transient view — NOT written
+    // back, so reopening shows the frozen snapshot again. Any gap (the latest-N
+    // window doesn't reach the snapshot tail) is a longbridge limitation: candles
+    // fetch latest-N only, with no time-range parameter.
+    if (input.mode === "forward") {
+      const frozen = (doc.input.timeframes ?? {}) as Partial<Record<TimeframeKey, RawBar[]>>;
+      const fresh = (result.input.timeframes ?? {}) as Partial<Record<TimeframeKey, RawBar[]>>;
+      const merged: Partial<Record<TimeframeKey, RawBar[]>> = {};
+      for (const tf of TIMEFRAME_ORDER) merged[tf] = mergeFreshBars(frozen[tf] ?? [], fresh[tf] ?? []);
+      const lastM5 = merged.m5?.[merged.m5.length - 1];
+      const rebuilt = rebuild(
+        "intraday",
+        {
+          ...doc.input,
+          timeframes: merged,
+          as_of: lastM5?.time ?? doc.input.as_of,
+          options_levels: result.input.options_levels,
+          event_risk: result.input.event_risk,
+        },
+        doc.title,
+      );
+      const mergedCount = Math.max(...TIMEFRAME_ORDER.map((tf) => merged[tf]?.length ?? 0), 0);
+      return { built: rebuilt.built, count: mergedCount };
+    }
     return { built: result.built, count };
   },
 

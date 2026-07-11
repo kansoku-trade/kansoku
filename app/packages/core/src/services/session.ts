@@ -19,6 +19,10 @@ export function easternDate(date: Date = new Date()): string {
   return dateFormatter.format(date);
 }
 
+export function isCurrentSessionId(id: string): boolean {
+  return id.slice(0, 10) === easternDate();
+}
+
 export function easternMinuteOfDay(ts: number): number {
   const parts = etFormatter.formatToParts(new Date(ts * 1000));
   let hour = 0;

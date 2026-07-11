@@ -21,6 +21,7 @@ import { isAllowedNavigationUrl, isExternalHttpUrl } from "./navigationGuard.js"
 import { DEFAULT_LONGBRIDGE_OAUTH_CLIENT_ID, performOAuthLogin } from "./oauthLogin.js";
 import { registerAppProtocolHandler, registerAppScheme } from "./protocolHost.js";
 import { resolveRepoRoot } from "./repoRoot.js";
+import { TABS_COMMAND_CHANNEL, type TabsCommand } from "./tabsChannels.js";
 import { initUpdater } from "./updater.js";
 
 // Scheme registration must run before app.ready — calling it at module top
@@ -35,6 +36,8 @@ const WEB_DIST_ROOT = app.isPackaged
   ? join(process.resourcesPath, "web-dist")
   : join(resolveRepoRoot(), "app", "web", "dist");
 const IS_DEV = process.env.ELECTRON_DEV === "1";
+// Match web --bg-canvas so the native surface isn't white before the renderer paints.
+const WINDOW_BG = "#0a0a0a";
 
 let externalApiController: ExternalApiController | undefined;
 
@@ -105,14 +108,24 @@ async function bootKernel() {
 
 function createWindow() {
   const win = new BrowserWindow({
-    width: 1280,
-    height: 800,
+    width: 1440,
+    height: 900,
+    minWidth: 1100,
+    minHeight: 720,
+    backgroundColor: WINDOW_BG,
+    show: false,
+    titleBarStyle: "hiddenInset",
+    trafficLightPosition: { x: 12, y: 12 },
     webPreferences: {
       sandbox: true,
       contextIsolation: true,
       nodeIntegration: false,
       preload: join(app.getAppPath(), "dist-preload", "preload.cjs"),
     },
+  });
+
+  win.once("ready-to-show", () => {
+    win.show();
   });
 
   win.webContents.on("console-message", (event) => {
@@ -242,6 +255,10 @@ async function runImportFromRepoFlow(win: BrowserWindow | null): Promise<void> {
   }
 }
 
+function sendTabsCommand(command: TabsCommand): void {
+  BrowserWindow.getFocusedWindow()?.webContents.send(TABS_COMMAND_CHANNEL, command);
+}
+
 function buildAppMenu(): void {
   const template: Electron.MenuItemConstructorOptions[] = [
     {
@@ -259,6 +276,16 @@ function buildAppMenu(): void {
         { role: "quit" },
       ],
     },
+    {
+      label: "Window",
+      submenu: [
+        { label: "New Tab", accelerator: "CmdOrCtrl+T", click: () => sendTabsCommand("new-tab") },
+        { label: "Close Tab", accelerator: "CmdOrCtrl+W", click: () => sendTabsCommand("close-tab") },
+        { type: "separator" },
+        { label: "Show Next Tab", accelerator: "CmdOrCtrl+Shift+]", click: () => sendTabsCommand("next-tab") },
+        { label: "Show Previous Tab", accelerator: "CmdOrCtrl+Shift+[", click: () => sendTabsCommand("prev-tab") },
+      ],
+    },
   ];
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
 }
@@ -267,10 +294,10 @@ function showFatalErrorWindow(error: unknown) {
   const message = error instanceof Error ? (error.stack ?? error.message) : String(error);
   console.error("[desktop] fatal startup error", error);
 
-  const win = new BrowserWindow({ width: 720, height: 480 });
+  const win = new BrowserWindow({ width: 720, height: 480, backgroundColor: WINDOW_BG });
   win.loadURL(
     `data:text/html,${encodeURIComponent(
-      `<title>trade — startup failed</title><body style="font:13px ui-monospace,monospace;padding:2rem;white-space:pre-wrap">${message
+      `<title>trade — startup failed</title><body style="font:13px ui-monospace,monospace;padding:2rem;white-space:pre-wrap;background:${WINDOW_BG};color:#e8e8e8">${message
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")}</body>`,
     )}`,

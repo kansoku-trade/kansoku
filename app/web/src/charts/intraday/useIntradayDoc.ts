@@ -6,6 +6,17 @@ import { useSSE } from "../../useSSE";
 
 const LIVE_TYPES = new Set(["flow", "intraday"]);
 
+const easternDateFormatter = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "America/New_York",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
+function isCurrentSessionId(id: string): boolean {
+  return id.slice(0, 10) === easternDateFormatter.format(new Date());
+}
+
 export type ChartDocView = ChartDoc & { prediction_stale?: boolean };
 
 export function resolveIntradayTf(built: IntradayBuilt, preferred: TimeframeKey | null): TimeframeKey {
@@ -44,7 +55,10 @@ export function useIntradayDoc(id: string | null) {
   docRef.current = doc;
   viewCountRef.current = viewCount;
 
-  const live = Boolean(id && doc && LIVE_TYPES.has(doc.type) && doc.symbol);
+  const isCurrent = Boolean(id && isCurrentSessionId(id));
+  const live = Boolean(id && doc && LIVE_TYPES.has(doc.type) && doc.symbol && isCurrent);
+  const canLoadForward = Boolean(id && doc && LIVE_TYPES.has(doc.type) && doc.symbol && !isCurrent);
+  const [forwardBusy, setForwardBusy] = useState(false);
   const { degraded } = useSSE<{ built: ChartBuilt; prediction_updated_at?: string; prediction_stale?: boolean }>(
     live && id ? { kind: "chart", id, ...(viewCount ? { count: viewCount } : {}) } : null,
     (d) =>
@@ -87,5 +101,19 @@ export function useIntradayDoc(id: string | null) {
       });
   }, [id]);
 
-  return { doc, error, degraded, live, intradayTf, setIntradayTf, loadHistory };
+  const loadForward = useCallback(() => {
+    if (!id || forwardBusy) return;
+    setForwardBusy(true);
+    const count = viewCountRef.current;
+    client.charts
+      .built({ id, mode: "forward", ...(count ? { count } : {}) })
+      .then((d) => {
+        setViewCount(d.count);
+        setDoc((p) => (p ? { ...p, built: d.built as ChartBuilt } : p));
+      })
+      .catch(() => {})
+      .finally(() => setForwardBusy(false));
+  }, [id, forwardBusy]);
+
+  return { doc, error, degraded, live, canLoadForward, loadForward, forwardBusy, intradayTf, setIntradayTf, loadHistory };
 }

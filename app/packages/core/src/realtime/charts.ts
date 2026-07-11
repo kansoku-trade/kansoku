@@ -5,10 +5,10 @@ import { getEventRisk } from "../services/events.js";
 import { TIMEFRAME_ORDER } from "../services/intraday.js";
 import { getOptionsLevels } from "../services/optionsLevels.js";
 import { getLongbridgeStream, type CandlePeriod } from "../services/marketdata/longbridgeStream.js";
-import { classifySession } from "../services/session.js";
+import { classifySession, isCurrentSessionId } from "../services/session.js";
 import { predictionStale } from "../services/staleness.js";
 import { loadChart } from "../services/store.js";
-import { mergeCandleBar, type PushBar } from "./candleMerge.js";
+import { mergeCandleBar, mergeFreshBars, type PushBar } from "./candleMerge.js";
 import { createPoller, type PollerHandle } from "./poller.js";
 import { isPushFresh, pollIntervalMs } from "./pushFallback.js";
 
@@ -67,12 +67,11 @@ function scheduleDebouncedRebuild(key: string): void {
   }, wait);
 }
 
-async function runPushRebuild(key: string): Promise<void> {
-  const state = candleStates.get(key);
-  const handle = chartPollers.get(key);
-  if (!state || !handle) return;
-  const latest = await loadChart(state.id);
-  if (!latest) return;
+// Rebuild an intraday chart from the live in-memory candle state (the frozen
+// analysis snapshot plus whatever bars push/poller have merged in). Both the
+// streaming push path and the poller safety net funnel through here so the two
+// never diverge on the same series.
+async function buildFromState(state: CandleState, latest: ChartDoc): Promise<Record<string, unknown>> {
   const latestInput = latest.input as Record<string, unknown>;
   const timeframes = state.timeframes;
   const lastM5 = timeframes.m5?.[timeframes.m5.length - 1];
@@ -92,7 +91,16 @@ async function runPushRebuild(key: string): Promise<void> {
     event_risk: eventRisk ?? latestInput.event_risk ?? null,
   };
   const result = rebuild("intraday", input, latest.title);
-  handle.pushData({ built: result.built, ...predictionFields({ ...latest, built: result.built }) });
+  return { built: result.built, ...predictionFields({ ...latest, built: result.built }) };
+}
+
+async function runPushRebuild(key: string): Promise<void> {
+  const state = candleStates.get(key);
+  const handle = chartPollers.get(key);
+  if (!state || !handle) return;
+  const latest = await loadChart(state.id);
+  if (!latest) return;
+  handle.pushData(await buildFromState(state, latest));
 }
 
 function setupCandleState(key: string, id: string, viewCount: number | undefined, doc: ChartDoc): void {
@@ -143,7 +151,7 @@ export async function subscribeChart(id: string, push: (envelope: string) => voi
     push(JSON.stringify({ type: "data", data: { built: doc.built, ...predictionFields(doc) } }));
   }
 
-  if (!LIVE_TYPES.has(doc.type) || !refreshBody(doc.type, doc.input)) return () => {};
+  if (!LIVE_TYPES.has(doc.type) || !refreshBody(doc.type, doc.input) || !isCurrentSessionId(id)) return () => {};
 
   const key = viewCount === undefined ? id : `${id}#${viewCount}`;
   let handle = chartPollers.get(key);
@@ -158,8 +166,19 @@ export async function subscribeChart(id: string, push: (envelope: string) => voi
         if (!body) return { built: latest.built, ...predictionFields(latest) };
         const result = await buildChart(viewCount === undefined ? body : { ...body, count: viewCount });
         if (latest.type === "intraday") {
+          // Safety net converges WITHOUT clobbering the frozen analysis snapshot:
+          // fold the full refetch into state.timeframes tail-only (mergeFreshBars
+          // pins bars older than the current tail), then rebuild from the merged
+          // state so push and poller share one series and history stays put.
           const state = candleStates.get(key);
-          if (state) state.timeframes = { ...(result.input.timeframes as Partial<Record<TimeframeKey, RawBar[]>>) };
+          if (state) {
+            const freshTf = (result.input.timeframes ?? {}) as Partial<Record<TimeframeKey, RawBar[]>>;
+            for (const tf of TIMEFRAME_ORDER) {
+              const incoming = freshTf[tf];
+              if (incoming) state.timeframes[tf] = mergeFreshBars(state.timeframes[tf] ?? [], incoming);
+            }
+            return await buildFromState(state, latest);
+          }
         }
         return { built: result.built, ...predictionFields(latest) };
       },
