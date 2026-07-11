@@ -11,11 +11,17 @@ import * as schema from "./schema.js";
 // bundling-relocation reason. A packaged desktop app points TRADE_PROJECT_ROOT
 // at userData (not a repo checkout, no server/drizzle folder there), so it
 // sets TRADE_MIGRATIONS_DIR explicitly at the extraResources copy instead.
-const MIGRATIONS_DIR =
-  process.env.TRADE_MIGRATIONS_DIR ??
-  (process.env.TRADE_PROJECT_ROOT
-    ? join(APP_ROOT, "server", "drizzle")
-    : join(dirname(fileURLToPath(import.meta.url)), "..", "..", "drizzle"));
+// Resolved lazily: the desktop bundle merges this module into main.mjs, where
+// a top-level const would evaluate before main.ts assigns TRADE_PROJECT_ROOT /
+// TRADE_MIGRATIONS_DIR and capture a wrong fallback path.
+function resolveMigrationsDir(): string {
+  return (
+    process.env.TRADE_MIGRATIONS_DIR ??
+    (process.env.TRADE_PROJECT_ROOT
+      ? join(APP_ROOT, "server", "drizzle")
+      : join(dirname(fileURLToPath(import.meta.url)), "..", "..", "drizzle"))
+  );
+}
 
 export type Db = ReturnType<typeof drizzle<typeof schema>>;
 
@@ -24,7 +30,7 @@ export function createDb(path: string): Db {
   const client = new Database(path);
   client.pragma("journal_mode = WAL");
   const db = drizzle({ client, schema });
-  migrate(db, { migrationsFolder: MIGRATIONS_DIR });
+  migrate(db, { migrationsFolder: resolveMigrationsDir() });
   return db;
 }
 
