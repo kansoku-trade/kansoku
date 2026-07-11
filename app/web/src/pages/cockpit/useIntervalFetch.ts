@@ -5,8 +5,8 @@ interface IntervalFetchState<T> {
   error: string | null;
 }
 
-export function useIntervalFetch<T>(url: string | null, ms: number | null): IntervalFetchState<T> {
-  const oneShot = useQuery<T>(ms === null ? url : null);
-  const polling = usePollingQuery<T>(ms === null ? null : url, ms ?? 0);
+export function useIntervalFetch<T>(key: string | null, fetch: () => Promise<T>, ms: number | null): IntervalFetchState<T> {
+  const oneShot = useQuery<T>(ms === null ? key : null, fetch);
+  const polling = usePollingQuery<T>(ms === null ? null : key, fetch, ms ?? 0);
   return ms === null ? { data: oneShot.data, error: oneShot.error } : { data: polling.data, error: polling.error };
 }
