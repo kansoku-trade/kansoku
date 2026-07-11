@@ -1,202 +1,78 @@
-import { promises as fs } from "node:fs";
-import { join } from "node:path";
 import { Controller, ContextParam, Get, Param, Post, Query } from "@tsuki-hono/common";
 import type { Context } from "hono";
-import type { IntradayPrediction, RawBar, SymbolAnalysisRow } from "../../../../shared/types.js";
-import { runAnalyst } from "../../../../packages/core/src/ai/analyst.js";
-import { listCommentDates, listComments } from "../../../../packages/core/src/ai/comments.js";
-import { deepDiveState, startDeepDive } from "../../../../packages/core/src/ai/deepDive.js";
-import { aiConfig } from "../../../../packages/core/src/ai/models.js";
-import { chartUrl } from "../../../../packages/core/src/chartUrl.js";
-import { JOURNAL_DIR, STOCKS_DIR } from "../../../../packages/core/src/env.js";
+import { symbolsService } from "../../../../packages/core/src/modules/symbols/symbols.service.js";
 import { ClientError } from "../../../../packages/core/src/errors.js";
-import { normalizeQuote } from "../../../../packages/core/src/realtime/quotes.js";
-import { buildBenchmark } from "../../../../packages/core/src/services/cockpit/benchmark.js";
-import { entryPlanFromDoc, latestIntradayDoc } from "../../../../packages/core/src/services/cockpit/entryPlan.js";
-import { buildCockpitFlow } from "../../../../packages/core/src/services/cockpit/flow.js";
-import { attachRMultiple, judgeOutcome, zoneFromPrediction } from "../../../../packages/core/src/services/cockpit/outcome.js";
-import { getResolvedOutcomes, saveResolvedOutcome } from "../../../../packages/core/src/services/cockpit/outcomeCache.js";
-import { buildCockpitPosition } from "../../../../packages/core/src/services/cockpit/position.js";
-import { toTs } from "../../../../packages/core/src/services/indicators.js";
-import { getProvider } from "../../../../packages/core/src/services/marketdata/registry.js";
-import type { RawPosition } from "../../../../packages/core/src/services/marketdata/types.js";
-import { computeRelativeVolume } from "../../../../packages/core/src/services/relvol.js";
-import { classifySession, easternDate } from "../../../../packages/core/src/services/session.js";
-import { predictionStale } from "../../../../packages/core/src/services/staleness.js";
-import { listCharts, loadChart } from "../../../../packages/core/src/services/store.js";
-import { noteFileName, normalizeSymbol } from "../../../../packages/core/src/services/symbol.utils.js";
-
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-const JOURNAL_FILE_RE = /^(\d{4}-\d{2}-\d{2})-([\w-]+)\.md$/;
-const JOURNAL_NAME_RE = /^\d{4}-\d{2}-\d{2}-[\w-]+\.md$/;
-const BENCHMARK_SYMBOLS = ["SMH.US", "QQQ.US"];
 
 @Controller("symbols")
 export class SymbolsController {
   @Get("/:sym/flow")
-  async getFlow(@Param("sym") symParam: string) {
-    const sym = normalizeSymbol(symParam);
-    const provider = getProvider();
-    if (!provider.getFlow) return { ok: true, data: null };
-    const [flowRes, distRes] = await Promise.allSettled([
-      provider.getFlow(sym),
-      provider.getCapitalDistribution?.(sym) ?? Promise.resolve(null),
-    ]);
-    if (flowRes.status === "rejected") throw flowRes.reason;
-    const dist = distRes.status === "fulfilled" ? distRes.value : null;
-    return { ok: true, data: buildCockpitFlow(flowRes.value, dist) };
+  async getFlow(@Param("sym") sym: string) {
+    const data = await symbolsService.flow({ sym });
+    return { ok: true, data };
   }
 
   @Get("/:sym/benchmark")
-  async getBenchmark(@Param("sym") symParam: string) {
-    const sym = normalizeSymbol(symParam);
-    const symbols = [sym, ...BENCHMARK_SYMBOLS.filter((s) => s !== sym)];
-    const barsList = await Promise.all(symbols.map((s) => getProvider().getKline(s, "5m", 100)));
-    const regularBars = barsList.map((bars) => bars.filter((b) => classifySession(toTs(b.time)) === "regular"));
-    const data = buildBenchmark(symbols.map((s, i) => ({ symbol: s, bars: regularBars[i] })));
+  async getBenchmark(@Param("sym") sym: string) {
+    const data = await symbolsService.benchmark({ sym });
     return { ok: true, data };
   }
 
   @Get("/:sym/position")
-  async getPosition(@Param("sym") symParam: string) {
-    const sym = normalizeSymbol(symParam);
-    const provider = getProvider();
-    const [positions, quotes] = await Promise.all([
-      provider.getPositions?.() ?? Promise.resolve([] as RawPosition[]),
-      provider.getQuotes([sym]),
-    ]);
-    if (quotes.length === 0) {
-      throw new ClientError(`no quote data for ${sym}`, undefined, 502);
-    }
-    const quote = normalizeQuote(quotes[0], Date.now());
-    const plan = entryPlanFromDoc(await latestIntradayDoc(sym));
-    const data = buildCockpitPosition(positions, sym, quote.last, plan);
+  async getPosition(@Param("sym") sym: string) {
+    const data = await symbolsService.position({ sym });
     return { ok: true, data };
   }
 
   @Get("/:sym/analyses")
-  async getAnalyses(@Param("sym") symParam: string) {
-    const sym = normalizeSymbol(symParam);
-    const metas = await listCharts({ symbol: sym, type: "intraday" });
-    const docs = await Promise.all(metas.map((m) => loadChart(m.id)));
-    const cached = await getResolvedOutcomes(metas.map((m) => m.id));
-    let bars: RawBar[] | null = null;
-    if (metas.some((m) => !cached.has(m.id))) {
-      try {
-        bars = await getProvider().getKline(sym, "15m", 300);
-      } catch {
-        bars = null;
-      }
-    }
-    const rows: SymbolAnalysisRow[] = metas.map((meta, i) => {
-      const doc = docs[i];
-      const prediction = (doc?.input.prediction as IntradayPrediction | null | undefined) ?? null;
-      const direction = prediction?.direction ?? null;
-      const anchor = prediction?.anchor ? { time: prediction.anchor.time, price: prediction.anchor.price } : null;
-      const plan =
-        doc && doc.built.kind === "intraday" && doc.built.entryPlan
-          ? { entry: doc.built.entryPlan.entry, stop: doc.built.entryPlan.stop, target1: doc.built.entryPlan.target1 }
-          : null;
-      let outcome = attachRMultiple(cached.get(meta.id) ?? null, direction, plan);
-      if (!outcome && direction && anchor && bars) {
-        outcome = judgeOutcome(direction, anchor, plan, bars, zoneFromPrediction(prediction));
-        if (outcome && outcome.status !== "open") {
-          void saveResolvedOutcome({ chartId: meta.id, symbol: sym, direction }, outcome).catch(() => {});
-        }
-      }
-      return { ...meta, url: chartUrl(meta), direction, anchor, outcome };
-    });
-    return { ok: true, data: rows };
+  async getAnalyses(@Param("sym") sym: string) {
+    const data = await symbolsService.analyses({ sym });
+    return { ok: true, data };
   }
 
   @Get("/:sym/relvol")
-  async getRelvol(@Param("sym") symParam: string) {
-    const sym = normalizeSymbol(symParam);
-    const bars = await getProvider().getKline(sym, "15m", 500);
-    return { ok: true, data: computeRelativeVolume(bars) };
+  async getRelvol(@Param("sym") sym: string) {
+    const data = await symbolsService.relvol({ sym });
+    return { ok: true, data };
   }
 
   @Get("/:sym/comments")
-  async getComments(@Param("sym") symParam: string, @Query("date") dateParam: string | undefined) {
-    const sym = normalizeSymbol(symParam);
-    const date = dateParam ?? easternDate();
-    if (!DATE_RE.test(date)) {
-      throw new ClientError(`invalid date: ${date}`, "expected YYYY-MM-DD");
-    }
-    return { ok: true, data: await listComments(sym, date) };
+  async getComments(@Param("sym") sym: string, @Query("date") date: string | undefined) {
+    const data = await symbolsService.comments({ sym, date });
+    return { ok: true, data };
   }
 
   @Get("/:sym/comment-dates")
-  async getCommentDates(@Param("sym") symParam: string) {
-    const sym = normalizeSymbol(symParam);
-    return { ok: true, data: await listCommentDates(sym) };
+  async getCommentDates(@Param("sym") sym: string) {
+    const data = await symbolsService.commentDates({ sym });
+    return { ok: true, data };
   }
 
   @Get("/:sym/journal")
-  async getJournal(@Param("sym") symParam: string) {
-    const bare = normalizeSymbol(symParam).replace(/\.US$/, "").toLowerCase();
-    let files: string[];
-    try {
-      files = await fs.readdir(JOURNAL_DIR);
-    } catch {
-      return { ok: true, data: [] };
-    }
-    const rows: { name: string; date: string }[] = [];
-    for (const f of files) {
-      const m = JOURNAL_FILE_RE.exec(f);
-      if (!m) continue;
-      const rest = m[2].toLowerCase();
-      if (rest !== bare && !rest.startsWith(`${bare}-`)) continue;
-      rows.push({ name: f, date: m[1] });
-    }
-    rows.sort((a, b) => (a.name < b.name ? 1 : -1));
-    return { ok: true, data: rows };
+  async getJournal(@Param("sym") sym: string) {
+    const data = await symbolsService.journal({ sym });
+    return { ok: true, data };
   }
 
   @Get("/:sym/journal/:name")
-  async getJournalEntry(@Param("name") name: string) {
-    if (!JOURNAL_NAME_RE.test(name)) {
-      throw new ClientError(`invalid journal name: ${name}`, "expected YYYY-MM-DD-<slug>.md");
-    }
-    const path = join(JOURNAL_DIR, name);
-    try {
-      const [markdown, stat] = await Promise.all([fs.readFile(path, "utf8"), fs.stat(path)]);
-      return { ok: true, data: { name, markdown, mtime: stat.mtime.toISOString() } };
-    } catch (err) {
-      if ((err as NodeJS.ErrnoException).code === "ENOENT") {
-        throw new ClientError(`journal not found: ${name}`, undefined, 404);
-      }
-      throw err;
-    }
+  async getJournalEntry(@Param("sym") sym: string, @Param("name") name: string) {
+    const data = await symbolsService.journalEntry({ sym, name });
+    return { ok: true, data };
   }
 
   @Post("/:sym/reassess")
-  async reassess(@Param("sym") symParam: string) {
-    const sym = normalizeSymbol(symParam);
-    const model = aiConfig().analystModel;
-    if (!model) return { ok: true, data: { started: false, reason: "analyst layer disabled" } };
-    const result = runAnalyst({ symbol: sym, origin: "manual", deps: { model } });
-    void result.done?.catch(() => {});
-    return { ok: true, data: { started: result.started, ...(result.reason ? { reason: result.reason } : {}) } };
+  async reassess(@Param("sym") sym: string) {
+    const data = await symbolsService.reassess({ sym });
+    return { ok: true, data };
   }
 
   @Get("/:sym/note")
-  async getNote(@Param("sym") symParam: string) {
-    const name = noteFileName(symParam);
-    const path = join(STOCKS_DIR, `${name}.md`);
-    try {
-      const [markdown, stat] = await Promise.all([fs.readFile(path, "utf8"), fs.stat(path)]);
-      return { markdown, mtime: stat.mtime.toISOString() };
-    } catch (err) {
-      if ((err as NodeJS.ErrnoException).code === "ENOENT") return { markdown: null };
-      throw err;
-    }
+  async getNote(@Param("sym") sym: string) {
+    return symbolsService.note({ sym });
   }
 
   @Post("/:sym/deep-dive")
-  async postDeepDive(@Param("sym") symParam: string, @ContextParam() ctx: Context) {
-    const name = noteFileName(symParam);
-    const result = startDeepDive(name);
+  async postDeepDive(@Param("sym") sym: string, @ContextParam() ctx: Context) {
+    const result = await symbolsService.deepDive({ sym });
     if (result.started) return ctx.json({ ok: true }, 202);
     if (result.reason === "busy") {
       throw new ClientError(`deep dive already running`, "wait for the current run to finish", 409);
@@ -206,19 +82,12 @@ export class SymbolsController {
 
   @Get("/:sym/deep-dive/status")
   async getDeepDiveStatus() {
-    return deepDiveState();
+    return symbolsService.deepDiveStatus();
   }
 
   @Get("/:sym/latest")
-  async getLatest(@Param("sym") symParam: string) {
-    const sym = normalizeSymbol(symParam);
-    const doc = await latestIntradayDoc(sym);
-    if (!doc) {
-      throw new ClientError(`no intraday analysis for ${sym}`, "run intraday-signal for this symbol first", 404);
-    }
-    return {
-      ok: true,
-      data: { ...doc, url: chartUrl(doc), prediction_stale: predictionStale(doc, new Date()) },
-    };
+  async getLatest(@Param("sym") sym: string) {
+    const data = await symbolsService.latest({ sym });
+    return { ok: true, data };
   }
 }
