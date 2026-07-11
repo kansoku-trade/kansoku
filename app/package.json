@@ -4,7 +4,7 @@
   "packageManager": "pnpm@11.10.0",
   "scripts": {
     "dev": "concurrently -n web,server -c blue,green \"pnpm --filter @trade/web dev\" \"pnpm --filter @trade/server dev\"",
-    "dev:desktop": "concurrently --kill-others -n web,desktop -c blue,magenta \"pnpm --filter @trade/web dev\" \"pnpm --filter @trade/desktop dev\"",
+    "dev:desktop": "concurrently --kill-others -n web,server,desktop -c blue,green,magenta \"pnpm --filter @trade/web dev\" \"pnpm --filter @trade/server dev\" \"pnpm --filter @trade/desktop dev\"",
     "start": "pnpm --filter @trade/server start",
     "start:desktop": "pnpm --filter @trade/web build && pnpm --filter @trade/desktop start",
     "build": "pnpm --filter @trade/web build",
