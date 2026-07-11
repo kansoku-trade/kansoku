@@ -13,7 +13,7 @@ const provider = vi.hoisted(() => ({
 
 vi.mock("../../packages/core/src/services/marketdata/registry.js", () => ({ getProvider: () => provider }));
 
-const { summarizePortfolio } = await import("../src/modules/positions/positions.utils.js");
+const { summarizePortfolio } = await import("../../packages/core/src/modules/positions/positions.utils.js");
 const { ClientError } = await import("../../packages/core/src/errors.js");
 const { AppExceptionFilter } = await import("../src/filters/app-exception.filter.js");
 const { PositionsModule } = await import("../src/modules/positions/positions.module.js");

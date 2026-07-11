@@ -1,5 +1,5 @@
-import type { PortfolioSummary } from "../../../../shared/types.js";
-import type { RawPortfolio } from "../../../../packages/core/src/services/marketdata/types.js";
+import type { PortfolioSummary } from "../../../../../shared/types.js";
+import type { RawPortfolio } from "../../services/marketdata/types.js";
 
 function num(value: string): number {
   const n = Number(value);
