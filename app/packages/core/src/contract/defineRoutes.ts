@@ -3,6 +3,7 @@ export type HttpMethod = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
 export interface RouteMeta {
   method: HttpMethod;
   path: string;
+  withMeta?: true;
 }
 
 export type RouteTable<Api> = { [K in keyof Api]: RouteMeta };
@@ -20,4 +21,8 @@ export interface WithMeta<T> {
   data: T;
   meta: Record<string, unknown>;
 }
+
+export type TransportEnvelope<T> =
+  | { ok: true; data: T; meta?: Record<string, unknown> }
+  | { ok: false; error: string; code?: string; hint?: string; status?: number };
 
