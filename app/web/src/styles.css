@@ -615,6 +615,17 @@ a.zone-item:hover { text-decoration: none; background: var(--bg-hover); }
 .home-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; align-items: start; }
 @media (max-width: 1000px) { .home-grid { grid-template-columns: 1fr; } }
 
+.home-page .section-title { font-size: var(--fs-base); }
+.home-page .note-block,
+.home-page .positions-summary,
+.home-page .positions-list,
+.home-page .watch-strip-cell,
+.home-page .recap-alert,
+.home-page .recap-row .dir,
+.home-page .symbol-card-levels,
+.home-page .symbol-card-comment,
+.home-page .quickbar-recent { font-size: var(--fs-md); }
+
 .quickbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 4px 0 20px; }
 .quickbar-input { width: 170px; }
 .quickbar-recent { font-size: var(--fs-base); color: var(--text-muted); display: flex; gap: 8px; align-items: center; }
