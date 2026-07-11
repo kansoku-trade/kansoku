@@ -1,10 +1,11 @@
 import { Controller, Get } from "@tsuki-hono/common";
-import { CHART_DATA_DIR, PORT } from "../../../../packages/core/src/env.js";
+import { healthService } from "../../../../packages/core/src/modules/health/health.service.js";
 
 @Controller("health")
 export class HealthController {
   @Get("/")
-  getHealth() {
-    return { ok: true, data: { status: "up", port: PORT, dataDir: CHART_DATA_DIR } };
+  async getHealth() {
+    const data = await healthService.get();
+    return { ok: true, data };
   }
 }
