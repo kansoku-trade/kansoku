@@ -62,6 +62,13 @@ export function createHttpClient(routes: RouteMap): AppApi {
           throw new ApiError(`${label}: invalid JSON response`, status);
         }
 
+        if (meta.raw === "statusBody") return { status: res.status, body: json };
+
+        if (meta.raw === "body") {
+          if (!res.ok) throw new ApiError(`HTTP ${res.status}${res.statusText ? ` ${res.statusText}` : ""}`, res.status);
+          return json;
+        }
+
         if (!isEnvelope(json)) throw new ApiError("Malformed API response", res.status);
 
         const { data, meta: metaOut } = unwrapEnvelope(json, res.status);

@@ -20,6 +20,6 @@ export interface ChatApi {
 }
 
 export const chatRoutes = defineRoutes<ChatApi>("charts", {
-  get: { method: "GET", path: "/:id/chat" },
-  postMessage: { method: "POST", path: "/:id/chat/messages" },
+  get: { method: "GET", path: "/:id/chat", raw: "body" },
+  postMessage: { method: "POST", path: "/:id/chat/messages", raw: "statusBody" },
 });

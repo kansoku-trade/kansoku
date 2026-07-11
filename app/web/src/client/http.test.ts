@@ -100,4 +100,39 @@ describe("createHttpClient", () => {
 
     await expect(client.positions.list()).rejects.toThrow(ApiError);
   });
+
+  it('returns the JSON body as-is for raw:"body" routes, with no envelope unwrap', async () => {
+    const fetchMock = vi.fn(async () => jsonResponse({ session: null, messages: [], busy: false, partial: null }));
+    vi.stubGlobal("fetch", fetchMock);
+    const client = createHttpClient(allRoutes);
+
+    const result = await client.chat.get({ id: "abc" });
+    expect(result).toEqual({ session: null, messages: [], busy: false, partial: null });
+  });
+
+  it('throws ApiError on non-2xx for raw:"body" routes', async () => {
+    const fetchMock = vi.fn(async () => jsonResponse({ markdown: null }, 404));
+    vi.stubGlobal("fetch", fetchMock);
+    const client = createHttpClient(allRoutes);
+
+    await expect(client.symbols.note({ sym: "MRVL" })).rejects.toThrow(ApiError);
+  });
+
+  it('returns { status, body } for raw:"statusBody" routes on success', async () => {
+    const fetchMock = vi.fn(async () => jsonResponse({ accepted: true }, 202));
+    vi.stubGlobal("fetch", fetchMock);
+    const client = createHttpClient(allRoutes);
+
+    const result = await client.chat.postMessage({ id: "abc", text: "hi" });
+    expect(result).toEqual({ status: 202, body: { accepted: true } });
+  });
+
+  it('returns { status, body } without throwing for raw:"statusBody" routes on non-2xx', async () => {
+    const fetchMock = vi.fn(async () => jsonResponse({ error: "busy" }, 409));
+    vi.stubGlobal("fetch", fetchMock);
+    const client = createHttpClient(allRoutes);
+
+    const result = await client.chat.postMessage({ id: "abc", text: "hi" });
+    expect(result).toEqual({ status: 409, body: { error: "busy" } });
+  });
 });

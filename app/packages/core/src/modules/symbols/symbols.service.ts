@@ -183,7 +183,7 @@ export const symbolsService: SymbolsApi = {
     return startDeepDive(name);
   },
 
-  async deepDiveStatus() {
+  async deepDiveStatus(_input) {
     return deepDiveState();
   },
 

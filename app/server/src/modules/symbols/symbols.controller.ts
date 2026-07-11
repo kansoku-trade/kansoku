@@ -81,8 +81,8 @@ export class SymbolsController {
   }
 
   @Get("/:sym/deep-dive/status")
-  async getDeepDiveStatus() {
-    return symbolsService.deepDiveStatus();
+  async getDeepDiveStatus(@Param("sym") sym: string) {
+    return symbolsService.deepDiveStatus({ sym });
   }
 
   @Get("/:sym/latest")

@@ -4,6 +4,9 @@ export interface RouteMeta {
   method: HttpMethod;
   path: string;
   withMeta?: true;
+  // "body": HTTP response body IS the return value directly, not wrapped in {ok,data}.
+  // "statusBody": the return type is itself {status,body} — caller branches on the HTTP status.
+  raw?: "body" | "statusBody";
 }
 
 export type RouteTable<Api> = { [K in keyof Api]: RouteMeta };

@@ -48,7 +48,7 @@ export interface SymbolsApi {
   reassess(input: { sym: string }): Promise<ReassessResult>;
   note(input: { sym: string }): Promise<NoteResult>;
   deepDive(input: { sym: string }): Promise<DeepDiveStartResult>;
-  deepDiveStatus(): Promise<DeepDiveState>;
+  deepDiveStatus(input: { sym: string }): Promise<DeepDiveState>;
   latest(input: { sym: string }): Promise<LatestChart>;
 }
 
@@ -63,8 +63,8 @@ export const symbolsRoutes = defineRoutes<SymbolsApi>("symbols", {
   journal: { method: "GET", path: "/:sym/journal" },
   journalEntry: { method: "GET", path: "/:sym/journal/:name" },
   reassess: { method: "POST", path: "/:sym/reassess" },
-  note: { method: "GET", path: "/:sym/note" },
-  deepDive: { method: "POST", path: "/:sym/deep-dive" },
-  deepDiveStatus: { method: "GET", path: "/:sym/deep-dive/status" },
+  note: { method: "GET", path: "/:sym/note", raw: "body" },
+  deepDive: { method: "POST", path: "/:sym/deep-dive", raw: "body" },
+  deepDiveStatus: { method: "GET", path: "/:sym/deep-dive/status", raw: "body" },
   latest: { method: "GET", path: "/:sym/latest" },
 });
