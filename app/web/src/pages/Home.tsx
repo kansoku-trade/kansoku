@@ -64,7 +64,7 @@ export function Home() {
         {isToday ? `${board?.date ?? ""} · 盘中看盘、盘后复盘，随时段自动切换` : `${date} · 历史复盘`}
       </div>
       {notice && NOTICE_LABEL[notice] && <ErrorBox>{NOTICE_LABEL[notice]}</ErrorBox>}
-      {isToday && <QuoteBar />}
+      <QuoteBar />
       <QuickBar shortcuts={shortcuts} />
       {switcherDates.length > 0 && (
         <div className="cross-section-switcher">
