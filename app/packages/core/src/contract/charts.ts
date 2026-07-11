@@ -21,7 +21,7 @@ export interface ChartsApi {
   create(input: Record<string, unknown>): Promise<WithMeta<Record<string, unknown>>>;
   update(input: { id: string } & Record<string, unknown>): Promise<WithMeta<Record<string, unknown>>>;
   remove(input: { id: string }): Promise<{ id: string; deleted: true }>;
-  built(input: { id: string; count?: string }): Promise<ChartBuiltResult>;
+  built(input: { id: string; count?: number | string }): Promise<ChartBuiltResult>;
 }
 
 export const chartsRoutes = defineRoutes<ChartsApi>("charts", {
