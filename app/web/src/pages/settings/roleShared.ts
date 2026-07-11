@@ -1,4 +1,4 @@
-import { api } from "../../api";
+import { client } from "../../client";
 import {
   CODEX_PROVIDER,
   type Catalog,
@@ -38,26 +38,19 @@ type RoleSettingResponse = Omit<RoleSetting, "stale">;
 
 export async function saveRole(role: string, setting: RoleSetting): Promise<RoleSetting> {
   if (setting.mode === "disabled") {
-    await api(`/api/settings/ai/roles/${role}`, { method: "DELETE" });
+    await client.settings.deleteRole({ role });
     return { mode: "disabled", provider: null, modelId: null, thinkingLevel: null, stale: false };
   }
   if (setting.mode === "inherit") {
-    const res = await api<RoleSettingResponse>(`/api/settings/ai/roles/${role}`, {
-      method: "PUT",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ mode: "inherit" }),
-    });
+    const res: RoleSettingResponse = await client.settings.putRole({ role, mode: "inherit" });
     return { ...res, stale: false };
   }
-  const res = await api<RoleSettingResponse>(`/api/settings/ai/roles/${role}`, {
-    method: "PUT",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      mode: "custom",
-      provider: setting.provider,
-      modelId: setting.modelId,
-      thinkingLevel: setting.thinkingLevel,
-    }),
+  const res: RoleSettingResponse = await client.settings.putRole({
+    role,
+    mode: "custom",
+    provider: setting.provider,
+    modelId: setting.modelId,
+    thinkingLevel: setting.thinkingLevel,
   });
   return { ...res, stale: false };
 }

@@ -4,6 +4,7 @@ import type { OverviewRecap, PredictionStats, StatsBucket } from "../../../../sh
 import { signed } from "../../format";
 import { symbolAnalysisPath } from "../../../../shared/chartUrl";
 import { marketDate } from "../../../../shared/time";
+import { client } from "../../client";
 import { Badge, Card, ErrorBox, MarketTime, Num, SectionTitle } from "../../ui";
 import { useIntervalFetch } from "../cockpit/useIntervalFetch";
 
@@ -107,10 +108,15 @@ export function RecapBoard({ date, defaultExpanded }: { date: string; defaultExp
   const [expanded, setExpanded] = useState(defaultExpanded);
   const isToday = date === marketDate();
   const { data: recap, error } = useIntervalFetch<OverviewRecap>(
-    expanded ? `/api/overview/recap?date=${date}` : null,
+    expanded ? `overview.recap:${date}` : null,
+    () => client.overview.recap({ date }),
     isToday ? 5 * 60_000 : null,
   );
-  const { data: stats } = useIntervalFetch<PredictionStats>(expanded ? "/api/overview/stats" : null, 5 * 60_000);
+  const { data: stats } = useIntervalFetch<PredictionStats>(
+    expanded ? "overview.stats" : null,
+    () => client.overview.stats(),
+    5 * 60_000,
+  );
 
   const title = isToday ? "今日复盘" : `${date.slice(5)} 复盘`;
   const costLabel = isToday ? "今日 AI 花费" : "当日 AI 花费";

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ChartBuilt, ChartDoc, IntradayBuilt, TimeframeKey } from "../../../../shared/types";
-import { api, isAbortError } from "../../api";
 import { useQuery } from "../../apiHooks";
+import { client } from "../../client";
 import { useSSE } from "../../useSSE";
 
 const LIVE_TYPES = new Set(["flow", "intraday"]);
@@ -22,9 +22,11 @@ export function useIntradayDoc(id: string | null) {
   const historyExhaustedRef = useRef(false);
   const docRef = useRef<ChartDocView | null>(null);
   const viewCountRef = useRef<number | null>(null);
-  const historyControllerRef = useRef<AbortController | null>(null);
-  const docUrl = id ? `/api/charts/${encodeURIComponent(id)}` : null;
-  const { data: initialDoc, error } = useQuery<ChartDocView>(docUrl);
+  const historyTokenRef = useRef<object | null>(null);
+  const { data: initialDoc, error } = useQuery<ChartDocView>(
+    id ? `charts.get:${id}` : null,
+    () => client.charts.get({ id: id! }),
+  );
 
   useEffect(() => {
     setDoc(null);
@@ -32,12 +34,7 @@ export function useIntradayDoc(id: string | null) {
     setIntradayTf(null);
     historyBusyRef.current = false;
     historyExhaustedRef.current = false;
-    historyControllerRef.current?.abort();
-    historyControllerRef.current = null;
-    return () => {
-      historyControllerRef.current?.abort();
-      historyControllerRef.current = null;
-    };
+    historyTokenRef.current = null;
   }, [id]);
 
   useEffect(() => {
@@ -67,27 +64,24 @@ export function useIntradayDoc(id: string | null) {
     const current = viewCountRef.current ?? bars;
     if (current <= 0) return;
     historyBusyRef.current = true;
-    const controller = new AbortController();
-    historyControllerRef.current = controller;
-    api<{ built: ChartBuilt; count: number }>(
-      `/api/charts/${encodeURIComponent(id)}/built?count=${current * 2}`,
-      { signal: controller.signal },
-    )
+    const token = {};
+    historyTokenRef.current = token;
+    client.charts
+      .built({ id, count: current * 2 })
       .then((d) => {
-        if (historyControllerRef.current !== controller) return;
-        if (d.built.kind === "intraday") {
-          const grown = Math.max(...Object.values(d.built.timeframes).map((t) => t.candles.length), 0);
+        if (historyTokenRef.current !== token) return;
+        const built = d.built as ChartBuilt;
+        if (built.kind === "intraday") {
+          const grown = Math.max(...Object.values(built.timeframes).map((t) => t.candles.length), 0);
           if (grown <= bars) historyExhaustedRef.current = true;
         }
         setViewCount(d.count);
-        setDoc((p) => (p ? { ...p, built: d.built } : p));
+        setDoc((p) => (p ? { ...p, built } : p));
       })
-      .catch((caught: unknown) => {
-        if (!isAbortError(caught)) return;
-      })
+      .catch(() => {})
       .finally(() => {
-        if (historyControllerRef.current === controller) {
-          historyControllerRef.current = null;
+        if (historyTokenRef.current === token) {
+          historyTokenRef.current = null;
           historyBusyRef.current = false;
         }
       });

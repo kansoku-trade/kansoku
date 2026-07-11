@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Check } from "lucide-react";
 import type { OverviewBoard, OverviewRow } from "../../../../shared/types";
-import { api, errorMessage } from "../../api";
+import { errorMessage } from "../../api";
+import { client } from "../../client";
 import { fmt, signed } from "../../format";
 import { Badge, Button, Card, Dot, Empty, ErrorBox, MarketTime, Num } from "../../ui";
 import { directionTone } from "../../charts/intraday/directionLabels";
@@ -21,10 +22,7 @@ function ReassessButton({ symbol }: { symbol: string }) {
     if (state === "running") return;
     setState("running");
     try {
-      const res = await api<{ started: boolean; reason?: string }>(
-        `/api/symbols/${encodeURIComponent(symbol)}/reassess`,
-        { method: "POST" },
-      );
+      const res = await client.symbols.reassess({ sym: symbol });
       setState(res.started ? "done" : "failed");
     } catch (err) {
       console.warn(`reassess ${symbol}: ${errorMessage(err)}`);

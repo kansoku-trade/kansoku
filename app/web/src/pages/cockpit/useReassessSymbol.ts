@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { api, errorMessage, isAbortError } from "../../api";
+import { errorMessage } from "../../api";
+import { client } from "../../client";
 
 export interface ReassessResponse {
   started: boolean;
@@ -17,45 +18,42 @@ export function useReassessSymbol(symbol: string): {
 } {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const controllerRef = useRef<AbortController | null>(null);
+  const tokenRef = useRef<object | null>(null);
   const mountedRef = useRef(true);
 
   useEffect(() => {
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
-      controllerRef.current?.abort();
+      tokenRef.current = null;
     };
   }, []);
 
   useEffect(() => {
-    controllerRef.current?.abort();
-    controllerRef.current = null;
+    tokenRef.current = null;
     setPending(false);
     setError(null);
   }, [symbol]);
 
   const reassess = useCallback(async (): Promise<ReassessOutcome> => {
-    controllerRef.current?.abort();
-    const controller = new AbortController();
-    controllerRef.current = controller;
+    const token = {};
+    tokenRef.current = token;
     setPending(true);
     setError(null);
 
     try {
-      const data = await api<ReassessResponse>(`/api/symbols/${encodeURIComponent(symbol)}/reassess`, {
-        method: "POST",
-        signal: controller.signal,
-      });
+      const data = await client.symbols.reassess({ sym: symbol });
+      const superseded = tokenRef.current !== token;
+      if (superseded) return { ok: false, error: "请求已取消", aborted: true };
       return { ok: true, data };
     } catch (caught: unknown) {
-      const aborted = isAbortError(caught);
-      const message = aborted ? "请求已取消" : errorMessage(caught);
-      if (mountedRef.current && controllerRef.current === controller && !aborted) setError(message);
-      return { ok: false, error: message, aborted };
+      const superseded = tokenRef.current !== token;
+      const message = superseded ? "请求已取消" : errorMessage(caught);
+      if (mountedRef.current && !superseded) setError(message);
+      return { ok: false, error: message, aborted: superseded };
     } finally {
-      if (mountedRef.current && controllerRef.current === controller) {
-        controllerRef.current = null;
+      if (mountedRef.current && tokenRef.current === token) {
+        tokenRef.current = null;
         setPending(false);
       }
     }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { ChartDoc, SymbolAnalysisRow } from "../../../../shared/types";
 import { useQuery } from "../../apiHooks";
+import { client } from "../../client";
 import { navigate, useQueryParam } from "../../router";
 import { subscribeChannel } from "../../wsHub";
 import { applyAnalysisBroadcast, INITIAL_FEED_STATE, symbolUrl, type AnalysisFeedState } from "./analysisMode";
@@ -29,12 +30,16 @@ export function useLatestAnalysis(sym: string): LatestAnalysisState {
   const pinnedId = useQueryParam("analysis");
   const mode: "latest" | "pinned" = pinnedId ? "pinned" : "latest";
 
-  const latestUrl = pinnedId ? null : `/api/symbols/${encodeURIComponent(sym)}/latest`;
-  const { data: latestDoc, failure: latestFailure, loading: latestLoading, reload: reloadLatest } =
-    useQuery<LatestDoc>(latestUrl);
+  const latestKey = pinnedId ? null : `symbols.latest:${sym}`;
+  const { data: latestDoc, failure: latestFailure, loading: latestLoading, reload: reloadLatest } = useQuery<LatestDoc>(
+    latestKey,
+    () => client.symbols.latest({ sym }),
+  );
 
-  const analysesUrl = `/api/symbols/${encodeURIComponent(sym)}/analyses`;
-  const { data: analyses, reload: reloadAnalyses } = useQuery<SymbolAnalysisRow[]>(analysesUrl);
+  const analysesKey = `symbols.analyses:${sym}`;
+  const { data: analyses, reload: reloadAnalyses } = useQuery<SymbolAnalysisRow[]>(analysesKey, () =>
+    client.symbols.analyses({ sym }),
+  );
 
   const [feed, setFeed] = useState<AnalysisFeedState>(INITIAL_FEED_STATE);
 

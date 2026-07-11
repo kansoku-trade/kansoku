@@ -1,6 +1,7 @@
 import { Bar, BarChart, CartesianGrid, Cell, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { CapitalBucket, CockpitFlow } from "../../../../shared/types";
 import { hhmm, tooltipContentStyle, tooltipItemStyle, tooltipLabelStyle, tooltipTime } from "../../charts/simple/theme";
+import { client } from "../../client";
 import { signed, upDown } from "../../format";
 import { theme } from "../../theme";
 import { SectionTitle } from "../../ui";
@@ -56,7 +57,11 @@ function FlowMiniChart({ flow }: { flow: CockpitFlow }) {
 }
 
 export function FlowTab({ symbol }: { symbol: string }) {
-  const { data: flow, error } = useIntervalFetch<CockpitFlow>(`/api/symbols/${encodeURIComponent(symbol)}/flow`, 60_000);
+  const { data: flow, error } = useIntervalFetch<CockpitFlow | null>(
+    `symbols.flow:${symbol}`,
+    () => client.symbols.flow({ sym: symbol }),
+    60_000,
+  );
 
   if (error) return <div className="note-block">资金流数据获取失败：{error}</div>;
   if (!flow) return <div className="note-block">加载中…</div>;

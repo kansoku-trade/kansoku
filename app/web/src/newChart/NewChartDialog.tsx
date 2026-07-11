@@ -1,7 +1,7 @@
 import { useReducer } from "react";
-import { api } from "../api";
 import { chartTargetPath } from "../../../shared/chartUrl";
 import type { ChartType } from "../../../shared/types";
+import { client } from "../client";
 import { navigate } from "../router";
 import { Button, Chip, Input, openModal } from "../ui";
 import { classifyChartError } from "./chartError";
@@ -23,11 +23,8 @@ function NewChartForm({ onDone }: { onDone: () => void }) {
     if (!symbol) return;
     dispatch({ type: "submitStart" });
     try {
-      const created = await api<CreateChartResponse>("/api/charts", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(buildChartPayload(state.presetId, symbol)),
-      });
+      const { data } = await client.charts.create(buildChartPayload(state.presetId, symbol));
+      const created = data as unknown as CreateChartResponse;
       onDone();
       navigate(chartTargetPath({ ...created, created_at: new Date().toISOString() }));
     } catch (err) {

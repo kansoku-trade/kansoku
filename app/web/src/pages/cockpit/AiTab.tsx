@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { CockpitComment } from "../../../../shared/types";
 import { marketDate } from "../../../../shared/time";
 import { useQuery } from "../../apiHooks";
+import { client } from "../../client";
 import { Badge, Button, MarketTime, Select, Spinner } from "../../ui";
 import { buildFeed, type FeedRow } from "./aiFeed";
 import { symbolUrl } from "./analysisMode";
@@ -76,7 +77,8 @@ export function AiTab({
 
   const today = marketDate();
   const { data: dates } = useQuery<string[]>(
-    readOnly ? null : `/api/symbols/${encodeURIComponent(symbol)}/comment-dates`,
+    readOnly ? null : `symbols.commentDates:${symbol}`,
+    () => client.symbols.commentDates({ sym: symbol }),
   );
   const pastDates = useMemo(() => (dates ?? []).filter((d) => d < today), [dates, today]);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -93,7 +95,8 @@ export function AiTab({
     }
   }, [readOnly, loaded, comments.length, pastDates, selectedDate]);
   const { data: pastComments, error: pastError } = useQuery<CockpitComment[]>(
-    selectedDate ? `/api/symbols/${encodeURIComponent(symbol)}/comments?date=${selectedDate}` : null,
+    selectedDate ? `symbols.comments:${symbol}:${selectedDate}` : null,
+    () => client.symbols.comments({ sym: symbol, date: selectedDate! }),
   );
   const shownComments = selectedDate ? (pastComments ?? []) : comments;
   const shownError = selectedDate ? pastError : error;

@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { api, errorMessage } from "../../api";
+import { errorMessage } from "../../api";
+import { client } from "../../client";
 import { Button, Card, Dot, Input, openModal, Select, SectionTitle } from "../../ui";
 import {
   CODEX_PROVIDER,
@@ -29,7 +30,7 @@ function ResetCredentialsDialog({
     setBusy(true);
     setError(null);
     try {
-      await api("/api/settings/ai/reset-credentials", { method: "POST" });
+      await client.settings.resetCredentials();
       onChanged();
       closeModal();
     } catch (err) {
@@ -201,11 +202,7 @@ export function ProviderCredentialsCard({
     setBusyProvider(provider);
     setProviderError(provider, null);
     try {
-      await api("/api/settings/ai/credentials/" + encodeURIComponent(provider), {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ key: editKey }),
-      });
+      await client.settings.putCredential({ provider, key: editKey });
       setEditingProvider(null);
       setEditKey("");
       onChanged();
@@ -221,11 +218,7 @@ export function ProviderCredentialsCard({
     setAddBusy(true);
     setAddError(null);
     try {
-      await api("/api/settings/ai/credentials/" + encodeURIComponent(provider), {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ key: addKey }),
-      });
+      await client.settings.putCredential({ provider, key: addKey });
       setAddProvider("");
       setAddKey("");
       onChanged();
@@ -240,7 +233,7 @@ export function ProviderCredentialsCard({
     setBusyProvider(provider);
     setProviderError(provider, null);
     try {
-      await api("/api/settings/ai/credentials/" + encodeURIComponent(provider), { method: "DELETE" });
+      await client.settings.deleteCredential({ provider });
       onChanged();
     } catch (err) {
       setProviderError(provider, errorMessage(err));

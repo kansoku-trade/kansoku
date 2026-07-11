@@ -12,8 +12,6 @@ export interface CredentialsGetResult {
   lastError: string | null;
 }
 
-export const CREDENTIALS_STATUS_URL = "/api/credentials/status";
-
 export type SetCredentialsResult = { ok: true } | { ok: false; error: string };
 export type TestCredentialsResult = { ok: true } | { ok: false; error: string };
 

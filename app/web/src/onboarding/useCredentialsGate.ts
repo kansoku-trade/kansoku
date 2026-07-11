@@ -1,10 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "../apiHooks";
-import {
-  CREDENTIALS_STATUS_URL,
-  getDesktopCredentialsBridge,
-  type CredentialsGetResult,
-} from "../pages/settings/desktopCredentials";
+import { client } from "../client";
+import { getDesktopCredentialsBridge, type CredentialsGetResult } from "../pages/settings/desktopCredentials";
 import { clearRestricted, markRestricted } from "../restrictedMode";
 import { computeGateStatus, type GateStatus } from "./gateStatus";
 
@@ -16,7 +13,10 @@ export function useCredentialsGate(): {
 } {
   const bridge = getDesktopCredentialsBridge();
   const [skipped, setSkipped] = useState(false);
-  const { data, loading, reload } = useQuery<CredentialsGetResult>(bridge ? CREDENTIALS_STATUS_URL : null);
+  const { data, loading, reload } = useQuery<CredentialsGetResult>(
+    bridge ? "credentials.status" : null,
+    () => client.credentials.status() as Promise<CredentialsGetResult>,
+  );
 
   useEffect(() => {
     if (data?.configured) clearRestricted();

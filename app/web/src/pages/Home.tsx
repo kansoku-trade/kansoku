@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { ChartMeta, OverviewBoard, PortfolioSummary } from "../../../shared/types";
 import { marketDate } from "../../../shared/time";
 import { useQuery } from "../apiHooks";
+import { client } from "../client";
 import { navigate, useQueryParam } from "../router";
 import { QuoteBar } from "../QuoteBar";
 import { Badge, Chip, ErrorBox, SectionTitle } from "../ui";
@@ -34,12 +35,15 @@ export function Home() {
   const { degraded: boardDegraded } = useSSE<OverviewBoard>({ kind: "board" }, setBoard);
   const boardError = boardDegraded ? "盘面数据获取失败，正在重试" : null;
   const { data: portfolio, error: portfolioError } = useIntervalFetch<PortfolioSummary>(
-    isToday ? "/api/positions" : null,
+    isToday ? "positions.list" : null,
+    () => client.positions.list(),
     60_000,
   );
 
-  const { data: chartMetas } = useQuery<ChartMeta[]>(`/api/charts?type=${CROSS_SECTION_TYPES}`);
-  const { data: recapDates } = useQuery<string[]>("/api/overview/recap-dates");
+  const { data: chartMetas } = useQuery<ChartMeta[]>(`charts.list:${CROSS_SECTION_TYPES}`, () =>
+    client.charts.list({ type: CROSS_SECTION_TYPES }),
+  );
+  const { data: recapDates } = useQuery<string[]>("overview.recapDates", () => client.overview.recapDates());
   const candidateDates = [
     ...new Set([today, ...(chartMetas ?? []).map((m) => marketDate(m.created_at)), ...(recapDates ?? [])]),
   ]

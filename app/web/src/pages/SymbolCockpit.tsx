@@ -3,6 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import type { BenchmarkSeries, CockpitPosition, RelativeVolume } from "../../../shared/types";
 import { useQuery } from "../apiHooks";
 import { IntradayDashboard, IntradayTimeframeSwitch } from "../charts/intraday/IntradayDashboard";
+import { client } from "../client";
 import { NewsTab } from "../charts/intraday/tabs/NewsTab";
 import { PredictionTab } from "../charts/intraday/tabs/PredictionTab";
 import { resolveIntradayTf, useIntradayDoc } from "../charts/intraday/useIntradayDoc";
@@ -57,8 +58,8 @@ export function SymbolCockpit({ sym }: { sym: string }) {
   const positionError = positionDegraded ? "持仓数据获取失败，正在重试" : null;
   const benchmarkError = benchmarkDegraded ? "环境对照数据获取失败，正在重试" : null;
 
-  const { data: journal } = useQuery<{ name: string; date: string }[]>(
-    `/api/symbols/${encodeURIComponent(sym)}/journal`,
+  const { data: journal } = useQuery<{ name: string; date: string }[]>(`symbols.journal:${sym}`, () =>
+    client.symbols.journal({ sym }),
   );
 
   const [activeTab, setActiveTab] = useState("prediction");

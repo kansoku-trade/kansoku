@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { ChartDoc } from "../../../../shared/types";
 import { usePollingQuery } from "../../apiHooks";
+import { client } from "../../client";
 import { Button, Spinner } from "../../ui";
 import { useReassessSymbol } from "./useReassessSymbol";
 
@@ -18,8 +19,8 @@ export function GenerateAnalysis({ sym }: { sym: string }) {
   const [hint, setHint] = useState<string | null>(null);
   const startedAtRef = useRef(0);
   const { pending, reassess } = useReassessSymbol(sym);
-  const latestUrl = running ? `/api/symbols/${encodeURIComponent(sym)}/latest` : null;
-  const { data: latestDoc } = usePollingQuery<ChartDoc>(latestUrl, POLL_MS);
+  const latestKey = running ? `symbols.latest:${sym}` : null;
+  const { data: latestDoc } = usePollingQuery<ChartDoc>(latestKey, () => client.symbols.latest({ sym }), POLL_MS);
 
   useEffect(() => {
     if (!running) return;

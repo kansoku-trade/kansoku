@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { CockpitComment, Notice } from "../../../../shared/types";
 import { marketDate } from "../../../../shared/time";
 import { useQuery } from "../../apiHooks";
+import { client } from "../../client";
 import { maybeNotify, requestNotificationPermissionOnce } from "../../lib/notifications";
 import { subscribeChannel } from "../../wsHub";
 
@@ -31,10 +32,10 @@ export function useCockpitComments(
   const live = !date || date === marketDate();
   const [comments, setComments] = useState<CockpitComment[]>([]);
   const [streamLoaded, setStreamLoaded] = useState(false);
-  const commentsUrl = date
-    ? `/api/symbols/${encodeURIComponent(symbol)}/comments?date=${date}`
-    : `/api/symbols/${encodeURIComponent(symbol)}/comments`;
-  const { data: initialComments, error, loading } = useQuery<CockpitComment[]>(commentsUrl);
+  const commentsKey = date ? `symbols.comments:${symbol}:${date}` : `symbols.comments:${symbol}`;
+  const { data: initialComments, error, loading } = useQuery<CockpitComment[]>(commentsKey, () =>
+    client.symbols.comments({ sym: symbol, date }),
+  );
 
   useEffect(() => {
     requestNotificationPermissionOnce();

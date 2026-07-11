@@ -2,6 +2,7 @@ import type { ChartDoc, ChartMeta } from "../../../../shared/types";
 import { marketDate } from "../../../../shared/time";
 import { useQuery } from "../../apiHooks";
 import { SimpleChartView } from "../../charts/simple/SimpleChartView";
+import { client } from "../../client";
 import { useQueryParam } from "../../router";
 import { Card, Empty, ErrorBox, SectionTitle } from "../../ui";
 
@@ -9,7 +10,7 @@ export const CROSS_SECTION_TYPES = "flow,cohort";
 export const MAX_VISIBLE_DATES = 10;
 
 function ChartCard({ id }: { id: string }) {
-  const { data: doc, error } = useQuery<ChartDoc>(`/api/charts/${encodeURIComponent(id)}`);
+  const { data: doc, error } = useQuery<ChartDoc>(`charts.get:${id}`, () => client.charts.get({ id }));
   if (error) return <ErrorBox>{error}</ErrorBox>;
   if (!doc || doc.built.kind !== "simple") return null;
 
@@ -25,7 +26,9 @@ function ChartCard({ id }: { id: string }) {
 
 export function CrossSectionCharts({ date }: { date?: string } = {}) {
   const dateParam = useQueryParam("date");
-  const { data: metas, error } = useQuery<ChartMeta[]>(`/api/charts?type=${CROSS_SECTION_TYPES}`);
+  const { data: metas, error } = useQuery<ChartMeta[]>(`charts.list:${CROSS_SECTION_TYPES}`, () =>
+    client.charts.list({ type: CROSS_SECTION_TYPES }),
+  );
 
   const selected = date ?? dateParam ?? marketDate();
   const matches = (metas ?? []).filter((m) => marketDate(m.created_at) === selected);

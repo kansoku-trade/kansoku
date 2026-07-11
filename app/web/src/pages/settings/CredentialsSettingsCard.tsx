@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import { errorMessage } from "../../api";
 import { useQuery } from "../../apiHooks";
+import { client } from "../../client";
 import { clearRestricted } from "../../restrictedMode";
 import { Badge, Button, Card, openModal, SectionTitle } from "../../ui";
 import { CredentialsForm } from "./CredentialsForm";
 import { OAuthLoginSection } from "./OAuthLoginSection";
 import { refreshAfterClear, refreshAfterSave } from "./credentialsRefreshActions";
 import { deriveCredentialsStatusLabel } from "./credentialsStatusLabel";
-import { CREDENTIALS_STATUS_URL, getDesktopCredentialsBridge, type CredentialsGetResult } from "./desktopCredentials";
+import { getDesktopCredentialsBridge, type CredentialsGetResult } from "./desktopCredentials";
 
 export function CredentialsSettingsCard() {
   const bridge = getDesktopCredentialsBridge();
@@ -16,7 +17,8 @@ export function CredentialsSettingsCard() {
   const [clearing, setClearing] = useState(false);
   const [showManualForm, setShowManualForm] = useState(false);
   const { data: serverStatus, reload: reloadServerStatus } = useQuery<CredentialsGetResult>(
-    bridge ? CREDENTIALS_STATUS_URL : null,
+    bridge ? "credentials.status" : null,
+    () => client.credentials.status() as Promise<CredentialsGetResult>,
   );
 
   const reloadStoreStatus = () => {

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useQuery } from "../../apiHooks";
+import { client } from "../../client";
 import { navigate } from "../../router";
 import { Button, ErrorBox } from "../../ui";
 import { useTitle } from "../../useTitle";
@@ -91,9 +92,18 @@ function SettingsBackLink() {
 
 export function SettingsPage() {
   useTitle("设置");
-  const { data: settings, error: settingsError, reload: reloadSettings } = useQuery<AiSettings>("/api/settings/ai");
-  const { data: catalog, error: catalogError, reload: reloadCatalog } = useQuery<Catalog>("/api/settings/ai/catalog");
-  const { data: usage, error: usageError, reload: reloadUsage } = useQuery<UsageToday>("/api/settings/ai/usage-today");
+  const { data: settings, error: settingsError, reload: reloadSettings } = useQuery<AiSettings>(
+    "settings.getAi",
+    () => client.settings.getAi(),
+  );
+  const { data: catalog, error: catalogError, reload: reloadCatalog } = useQuery<Catalog>(
+    "settings.getCatalog",
+    () => client.settings.getCatalog(),
+  );
+  const { data: usage, error: usageError, reload: reloadUsage } = useQuery<UsageToday>(
+    "settings.getUsageToday",
+    () => client.settings.getUsageToday(),
+  );
 
   const reloadAll = () => {
     reloadSettings();

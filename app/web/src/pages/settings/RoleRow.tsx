@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Check, TriangleAlert } from "lucide-react";
-import { api, errorMessage } from "../../api";
+import { errorMessage } from "../../api";
+import { client } from "../../client";
 import { Button, Select, Spinner } from "../../ui";
 import { RoleModeControl } from "./RoleModeControl";
 import { defaultCustom, firstModelId, providerKeyReady, providerLabel, saveRole, selectableProviders } from "./roleShared";
@@ -93,11 +94,12 @@ export function RoleRow({
     if (!draft.provider || !draft.modelId || !draft.thinkingLevel) return;
     setTestState({ status: "busy" });
     try {
-      const res = await api<{ latencyMs: number }>("/api/settings/ai/test", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ provider: draft.provider, modelId: draft.modelId, thinkingLevel: draft.thinkingLevel }),
+      const res = await client.settings.testConnection({
+        provider: draft.provider,
+        modelId: draft.modelId,
+        thinkingLevel: draft.thinkingLevel,
       });
+      if (!res.ok) throw new Error(res.hint ? `${res.error} (${res.hint})` : res.error);
       setTestState({ status: "ok", text: `通过 · ${res.latencyMs}ms` });
     } catch (err) {
       setTestState({ status: "fail", text: errorMessage(err) });

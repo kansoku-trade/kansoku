@@ -3,6 +3,7 @@ import { ChartCandlestick, Settings } from "lucide-react";
 import type { ChartDoc } from "../../shared/types";
 import { chartTargetPath } from "../../shared/chartUrl";
 import { useQuery } from "./apiHooks";
+import { client } from "./client";
 import { openNewChartDialog } from "./newChart/NewChartDialog";
 import { Onboarding } from "./onboarding/Onboarding";
 import { useCredentialsGate } from "./onboarding/useCredentialsGate";
@@ -19,7 +20,7 @@ function Redirect({ to }: { to: string }) {
 }
 
 function ChartRedirect({ id }: { id: string }) {
-  const { data, failure } = useQuery<ChartDoc>(`/api/charts/${encodeURIComponent(id)}`);
+  const { data, failure } = useQuery<ChartDoc>(`charts.get:${id}`, () => client.charts.get({ id }));
 
   useEffect(() => {
     if (data) navigate(chartTargetPath(data), { replace: true });

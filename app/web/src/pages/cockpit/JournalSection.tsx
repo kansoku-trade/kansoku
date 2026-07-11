@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { api, errorMessage } from "../../api";
+import { errorMessage } from "../../api";
+import { client } from "../../client";
 import { ErrorBox, Spinner } from "../../ui";
 import { openMarkdownModal } from "./markdown";
 
@@ -27,9 +28,8 @@ export function JournalSection({
     let alive = true;
     setLoadingName(selected);
     setErr(null);
-    api<{ name: string; markdown: string }>(
-      `/api/symbols/${encodeURIComponent(symbol)}/journal/${encodeURIComponent(selected)}`,
-    )
+    client.symbols
+      .journalEntry({ sym: symbol, name: selected })
       .then((data) => {
         if (!alive) return;
         setLoadingName(null);
