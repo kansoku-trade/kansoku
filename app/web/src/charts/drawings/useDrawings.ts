@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { IChartApi, ISeriesApi, Logical } from "lightweight-charts";
 import type { Annotation, AnnotationKind, AnnotationPoint } from "../../../../shared/types";
 import { logicalToTime, timeToLogical, type HitRegion, type Pt } from "../../../../shared/drawings";
+import { client } from "../../client";
 import { DrawingsPrimitive, type MeasureShape, type PreviewShape } from "./drawingsPrimitive";
 import {
   dragPoints,
@@ -122,13 +123,11 @@ export function useDrawings(handle: DrawingsHandle | null, symbol: string, barTi
     const pending = pendingSaveRef.current;
     if (!pending) return;
     pendingSaveRef.current = null;
-    void fetch(`/api/annotations/${encodeURIComponent(pending.symbol)}`, {
-      method: "PUT",
-      headers: { "content-type": "application/json", accept: "application/json" },
-      body: JSON.stringify({ annotations: pending.annotations }),
-    }).catch((err: unknown) => {
-      console.error("failed to save annotations", err);
-    });
+    void client.annotations
+      .replace({ symbol: pending.symbol, annotations: pending.annotations })
+      .catch((err: unknown) => {
+        console.error("failed to save annotations", err);
+      });
   }, []);
 
   const scheduleSave = useCallback(
@@ -362,7 +361,6 @@ export function useDrawings(handle: DrawingsHandle | null, symbol: string, barTi
 
   useEffect(() => {
     if (!handle) return;
-    const controller = new AbortController();
     let active = true;
     const target = symbol;
 
@@ -375,17 +373,10 @@ export function useDrawings(handle: DrawingsHandle | null, symbol: string, barTi
     setAnnotations([]);
     pushState();
 
-    fetch(`/api/annotations/${encodeURIComponent(symbol)}`, {
-      signal: controller.signal,
-      headers: { accept: "application/json" },
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json() as Promise<{ ok: boolean; data: Annotation[] }>;
-      })
-      .then((json) => {
+    client.annotations
+      .list({ symbol })
+      .then((loaded) => {
         if (!active || target !== symbolRef.current) return;
-        const loaded = json.ok && Array.isArray(json.data) ? json.data : [];
         selectedIdRef.current = null;
         dragRef.current = null;
         drawingRef.current = null;
@@ -396,13 +387,12 @@ export function useDrawings(handle: DrawingsHandle | null, symbol: string, barTi
         pushState();
       })
       .catch((err: unknown) => {
-        if (!active || (err instanceof DOMException && err.name === "AbortError")) return;
+        if (!active) return;
         console.error("failed to load annotations", err);
       });
 
     return () => {
       active = false;
-      controller.abort();
       flushSave();
     };
   }, [handle, symbol, flushSave, pushState]);

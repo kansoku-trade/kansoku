@@ -1,10 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ApiError, errorMessage, isAbortError } from "../../api";
+import { ApiError, errorMessage } from "../../api";
+import { client } from "../../client";
 
 export const bareSymbol = (value: string) => value.toUpperCase().replace(/\.US$/, "");
-
-const isErrorBody = (value: unknown): value is { error: string; hint?: string } =>
-  typeof value === "object" && value !== null && typeof (value as { error?: unknown }).error === "string";
 
 export interface DeepDiveStatus {
   running: boolean;
@@ -14,12 +12,6 @@ export interface DeepDiveStatus {
 }
 
 const STATUS_POLL_MS = 10_000;
-
-async function fetchDeepDiveStatus(symbol: string, signal?: AbortSignal): Promise<DeepDiveStatus> {
-  const res = await fetch(`/api/symbols/${encodeURIComponent(symbol)}/deep-dive/status`, { signal });
-  if (!res.ok) throw new ApiError(`HTTP ${res.status}`, res.status);
-  return res.json();
-}
 
 export function useDeepDive(symbol: string, onNoteReady: () => void) {
   const [pending, setPending] = useState(false);
@@ -34,7 +26,8 @@ export function useDeepDive(symbol: string, onNoteReady: () => void) {
 
   useEffect(() => {
     let active = true;
-    fetchDeepDiveStatus(symbol)
+    client.symbols
+      .deepDiveStatus({ sym: symbol })
       .then((status) => {
         if (!active) return;
         if (status.running) {
@@ -56,11 +49,10 @@ export function useDeepDive(symbol: string, onNoteReady: () => void) {
   useEffect(() => {
     if (!running) return;
     let active = true;
-    const controller = new AbortController();
 
     const poll = async () => {
       try {
-        const status = await fetchDeepDiveStatus(symbol, controller.signal);
+        const status = await client.symbols.deepDiveStatus({ sym: symbol });
         if (!active) return;
         if (status.running) {
           setRunning(true);
@@ -81,15 +73,14 @@ export function useDeepDive(symbol: string, onNoteReady: () => void) {
             setInlineMessage(result.error ?? "分析失败");
           }
         }
-      } catch (error) {
-        if (!active || isAbortError(error)) return;
+      } catch {
+        if (!active) return;
       }
     };
 
     const timer = window.setInterval(poll, STATUS_POLL_MS);
     return () => {
       active = false;
-      controller.abort();
       window.clearInterval(timer);
     };
   }, [running, symbol, onNoteReady]);
@@ -99,15 +90,7 @@ export function useDeepDive(symbol: string, onNoteReady: () => void) {
     setSuccessNote(null);
     setPending(true);
     try {
-      const res = await fetch(`/api/symbols/${encodeURIComponent(symbol)}/deep-dive`, { method: "POST" });
-      if (!res.ok) {
-        let message = `HTTP ${res.status}`;
-        try {
-          const body: unknown = await res.json();
-          if (isErrorBody(body)) message = body.hint ? `${body.error} (${body.hint})` : body.error;
-        } catch {}
-        throw new ApiError(message, res.status);
-      }
+      await client.symbols.deepDive({ sym: symbol });
       setRunning(true);
       setRunningSymbol(symbol);
       setStartedAt(new Date().toISOString());

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { errorMessage, isAbortError } from "../../api";
+import { errorMessage } from "../../api";
+import { client } from "../../client";
 
 export interface NoteResponse {
   markdown: string | null;
@@ -13,26 +14,21 @@ export function useNote(symbol: string) {
   const reload = useCallback(() => setVersion((v) => v + 1), []);
 
   useEffect(() => {
-    const controller = new AbortController();
     let active = true;
     setError(null);
 
-    fetch(`/api/symbols/${encodeURIComponent(symbol)}/note`, { signal: controller.signal })
-      .then(async (res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return (await res.json()) as NoteResponse;
-      })
+    client.symbols
+      .note({ sym: symbol })
       .then((data) => {
         if (active) setNote(data);
       })
       .catch((err: unknown) => {
-        if (!active || isAbortError(err)) return;
+        if (!active) return;
         setError(errorMessage(err));
       });
 
     return () => {
       active = false;
-      controller.abort();
     };
   }, [symbol, version]);
 

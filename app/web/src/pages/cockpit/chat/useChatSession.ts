@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { errorMessage } from "../../../api";
+import { client } from "../../../client";
 import { subscribeChannel } from "../../../wsHub";
 
 export interface ChatSessionInfo {
@@ -46,9 +47,8 @@ const isErrorBody = (value: unknown): value is { error: string; hint?: string } 
   typeof value === "object" && value !== null && typeof (value as { error?: unknown }).error === "string";
 
 async function fetchChat(chartId: string): Promise<ChatEnvelope> {
-  const res = await fetch(`/api/charts/${encodeURIComponent(chartId)}/chat`);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
+  const state = await client.chat.get({ id: chartId });
+  return state as unknown as ChatEnvelope;
 }
 
 export interface ChatSendResult {
@@ -180,20 +180,16 @@ export function useChatSession(chartId: string): ChatSessionState {
       setBusy(true);
       setRows((prev) => [...prev, { id: optimisticId, ts: new Date().toISOString(), kind: "user", text: trimmed }]);
       try {
-        const res = await fetch(`/api/charts/${encodeURIComponent(chartId)}/chat/messages`, {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ text: trimmed }),
-        });
-        if (res.status === 202) {
+        const result = await client.chat.postMessage({ id: chartId, text: trimmed });
+        if (result.status === 202) {
           sendPendingRef.current = false;
           return { ok: true };
         }
-        let message = `HTTP ${res.status}`;
-        try {
-          const body: unknown = await res.json();
-          if (isErrorBody(body)) message = body.hint ? `${body.error} (${body.hint})` : body.error;
-        } catch {}
+        const message = isErrorBody(result.body)
+          ? result.body.hint
+            ? `${result.body.error} (${result.body.hint})`
+            : result.body.error
+          : `HTTP ${result.status}`;
         setBusy(false);
         setHint(message);
         setRows((prev) => prev.filter((row) => row.id !== optimisticId));
