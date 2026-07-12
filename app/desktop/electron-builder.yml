@@ -9,6 +9,7 @@ electronLanguages:
   - en
   - zh_CN
 afterPack: scripts/afterPack.cjs
+afterAllArtifactBuild: scripts/afterAllArtifactBuild.cjs
 files:
   - dist-main/**
   - dist-preload/**
@@ -26,6 +27,8 @@ extraFiles:
 asarUnpack:
   - "**/node_modules/better-sqlite3/**"
   - "**/native/sparkle-bridge/build/**"
+dmg:
+  writeUpdateInfo: false
 mac:
   icon: build/icon.icns
   target:
