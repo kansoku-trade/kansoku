@@ -1,7 +1,9 @@
 # 首启 Onboarding 向导设计
 
-日期：2026-07-12
+日期：2026-07-12（2026-07-13 增补第 ③ 步）
 状态：已确认，待写实施计划
+
+> 2026-07-13 增补：新增第 ③ 步「连接 X/Twitter（opencli）」，见文末增补章节。原文中「两步向导」的描述由增补章节覆盖为三步。
 
 ## 背景
 
@@ -131,3 +133,44 @@
 - 探测：codex 有效凭据 → 画面 A；无 → 画面 B；codex 凭据失效当作无。
 - 连后设默认模型：codex / lobehub / 厂商各自写对 `primary`，其余 `inherit`；目录为空时的降级提示。
 - LobeHub Device Flow 在引导内的成功 / 取消 / 关闭弹窗路径。
+
+## 增补（2026-07-13）—— 第 ③ 步 连接 X/Twitter（opencli）
+
+### 背景
+
+AI 分析（如深度研究、消息面解读）需要抓取 X/Twitter 上的市场消息，数据通道是 [opencli](https://github.com/jackwener/opencli)（`npm install -g @jackwener/opencli`）：通过 Chrome 的 Browser Bridge 扩展复用浏览器登录态读推特，`opencli doctor` 一条命令可检查「已装 + daemon + 扩展连接 + x.com 登录态」。因此向导增加一步引导用户配好它。
+
+### 流程与门槛
+
+流程变为 `① 连接数据（长桥，硬）→ ② 配置 AI（软）→ ③ 连接 X/Twitter（软）`，顶部进度指示改三格。第 ③ 步与第 ② 步同为软门槛：可跳过，跳过后不再打扰，以后在设置里补。
+
+### 第 ③ 步画面（按探测状态分档）
+
+进入时探测一次 opencli 健康状态，四态：
+
+- `not_installed` —— 没找到 `opencli` 命令 → 安装引导：复制 `npm install -g @jackwener/opencli` 按钮 + GitHub 链接（App 不代装，同 codex 的约定）。
+- `extension_missing` —— 已装但 Browser Bridge 扩展未连接 → 给扩展安装步骤（Releases 下载 zip → `chrome://extensions` 开发者模式 → Load unpacked）。
+- `no_session` —— 扩展已连但 x.com 未登录 → 提示去 Chrome 登录 x.com 后「重新检测」。
+- `ready` —— 全通 → 大卡 `✓ X/Twitter 已连接，AI 分析可引用推特消息面`，主按钮「完成」。
+
+每态都有「重新检测」；屏底常驻弱化链接「跳过，稍后在设置里配置」。文案讲清用途：AI 分析时抓取推特上的市场消息。
+
+### 探测接口
+
+内核新增 opencli 探测（归属 credentials 或 ai 模块，实施时定）：定位 `opencli` 可执行文件 → 运行 `opencli doctor` 并解析输出，映射到上述四态。`doctor` 会顺带拉起 daemon，这是期望的副作用（连通即代表可用）。返回形如 `{ state, cliPath, lastError }`，与长桥 `credentials.status` 同构。
+
+### 完成标记与 gate
+
+复用现有一次性标记 `onboardingCompleted`，不新增标记——写入时机从「第 ② 步连上/跳过」后移到「第 ③ 步完成/跳过」。gate 双轨逻辑不变：长桥实时轨照旧；`onboardingCompleted === false` 时进向导，从第一个未满足步骤进。opencli 状态不参与 gate——掉线不拉回向导，AI 分析抓不到推特时降级跳过该数据源。
+
+### 边界情况
+
+- **已完成 onboarding 的老用户**：`onboardingCompleted` 已为 true，不因新增步骤被重新拉进向导（符合软门槛定位）。
+- **`doctor` 超时 / 输出解析失败**：归入 `not_installed` 兜底文案 +「重新检测」，不阻断「跳过」。
+
+### 测试
+
+- 四态映射：未装 / 扩展未连 / 未登录 / 全通各自渲染对应引导。
+- 完成 / 跳过后写 `onboardingCompleted`；写标记时机后移不影响第 ② 步的连接动作本身。
+- 老用户（已有标记）不回炉。
+- `doctor` 异常时降级到 `not_installed` 且「跳过」仍可用。
