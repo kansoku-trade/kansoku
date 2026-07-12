@@ -1,5 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ChartDoc } from "../../../shared/types.js";
+import { easternDate } from "../src/services/session.js";
+
+const TODAY = easternDate();
 
 const store = vi.hoisted(() => ({ loadChart: vi.fn() }));
 const build = vi.hoisted(() => ({
@@ -25,7 +28,7 @@ type CandleCb = (bar: { ts: number; open: number; high: number; low: number; clo
 
 function makeDoc(overrides: Partial<ChartDoc> = {}): ChartDoc {
   return {
-    id: "2026-07-06-nvda-intraday",
+    id: `${TODAY}-nvda-intraday`,
     schema_version: 1,
     type: "intraday",
     title: "NVDA 短线多周期",
@@ -79,7 +82,7 @@ describe("subscribeChart candlestick-push wiring", () => {
 
   it("merges a same-bucket push into the last bar and schedules exactly one debounced rebuild for a burst", async () => {
     const events: string[] = [];
-    const unsub = await subscribeChart("2026-07-06-nvda-intraday", (e) => events.push(e));
+    const unsub = await subscribeChart(`${TODAY}-nvda-intraday`, (e) => events.push(e));
 
     const m5cb = callbacksByPeriod.get("5m");
     expect(m5cb).toBeTruthy();
@@ -102,8 +105,8 @@ describe("subscribeChart candlestick-push wiring", () => {
   });
 
   it("appends a new bar when a push opens a later bucket", async () => {
-    store.loadChart.mockResolvedValue(makeDoc({ id: "2026-07-06-nvda-intraday-2" }));
-    const unsub = await subscribeChart("2026-07-06-nvda-intraday-2", () => {});
+    store.loadChart.mockResolvedValue(makeDoc({ id: `${TODAY}-nvda-intraday-2` }));
+    const unsub = await subscribeChart(`${TODAY}-nvda-intraday-2`, () => {});
     const m5cb = callbacksByPeriod.get("5m")!;
 
     m5cb({ symbol: "NVDA.US", period: "5m", ts: 2_000, open: 2, high: 2, low: 2, close: 2, volume: 5 });
@@ -116,8 +119,8 @@ describe("subscribeChart candlestick-push wiring", () => {
   });
 
   it("releases all per-timeframe ledger subscriptions when the last subscriber leaves", async () => {
-    store.loadChart.mockResolvedValue(makeDoc({ id: "2026-07-06-nvda-intraday-3" }));
-    const unsub = await subscribeChart("2026-07-06-nvda-intraday-3", () => {});
+    store.loadChart.mockResolvedValue(makeDoc({ id: `${TODAY}-nvda-intraday-3` }));
+    const unsub = await subscribeChart(`${TODAY}-nvda-intraday-3`, () => {});
     expect(longbridgeStream.subscribeCandlesticks).toHaveBeenCalledTimes(3);
 
     unsub();
@@ -128,15 +131,15 @@ describe("subscribeChart candlestick-push wiring", () => {
   });
 
   it("does not wire candlestick subscriptions for non-intraday live types", async () => {
-    store.loadChart.mockResolvedValue(makeDoc({ id: "2026-07-06-flow", type: "flow" }));
+    store.loadChart.mockResolvedValue(makeDoc({ id: `${TODAY}-flow`, type: "flow" }));
     build.refreshBody.mockReturnValue({ type: "flow", symbol: "NVDA.US" });
 
-    await subscribeChart("2026-07-06-flow", () => {});
+    await subscribeChart(`${TODAY}-flow`, () => {});
     expect(longbridgeStream.subscribeCandlesticks).not.toHaveBeenCalled();
   });
 
   it("writes the poller's freshly fetched bars into candle state so a later push has no hole", async () => {
-    store.loadChart.mockResolvedValue(makeDoc({ id: "2026-07-06-nvda-intraday-fresh" }));
+    store.loadChart.mockResolvedValue(makeDoc({ id: `${TODAY}-nvda-intraday-fresh` }));
     build.buildChart.mockResolvedValue({
       input: {
         timeframes: {
@@ -148,7 +151,7 @@ describe("subscribeChart candlestick-push wiring", () => {
       built: { kind: "intraday", polled: true },
     });
 
-    const unsub = await subscribeChart("2026-07-06-nvda-intraday-fresh", () => {});
+    const unsub = await subscribeChart(`${TODAY}-nvda-intraday-fresh`, () => {});
     await vi.advanceTimersByTimeAsync(0);
     await vi.advanceTimersByTimeAsync(0);
 
@@ -157,16 +160,20 @@ describe("subscribeChart candlestick-push wiring", () => {
     await vi.advanceTimersByTimeAsync(1_500);
 
     const [, input] = build.rebuild.mock.calls[0];
-    expect(input.timeframes.m5).toHaveLength(2);
-    expect(input.timeframes.m5[0].time).toBe(new Date(5_000).toISOString());
-    expect(input.timeframes.m5[1].time).toBe(new Date(6_000).toISOString());
+    expect(input.timeframes.m5).toHaveLength(3);
+    expect(input.timeframes.m5[0].time).toBe(new Date(1_000).toISOString());
+    expect(input.timeframes.m5[0].close).toBe(1);
+    expect(input.timeframes.m5[1].time).toBe(new Date(5_000).toISOString());
+    expect(input.timeframes.m5[1].close).toBe(5);
+    expect(input.timeframes.m5[2].time).toBe(new Date(6_000).toISOString());
+    expect(input.timeframes.m5[2].close).toBe(6);
     unsub();
   });
 
   it("respects the requested view count instead of the persisted full-length series on rebuild", async () => {
     store.loadChart.mockResolvedValue(
       makeDoc({
-        id: "2026-07-06-nvda-intraday-count",
+        id: `${TODAY}-nvda-intraday-count`,
         input: {
           symbol: "NVDA.US",
           timeframes: {
@@ -184,7 +191,7 @@ describe("subscribeChart candlestick-push wiring", () => {
     build.buildChart.mockResolvedValue({
       input: {
         timeframes: {
-          m5: [{ time: new Date(3_000).toISOString(), open: 3, high: 3, low: 3, close: 3, volume: 1 }],
+          m5: [{ time: new Date(3_000).toISOString(), open: 3.5, high: 3.5, low: 3.5, close: 3.5, volume: 1 }],
           m15: [],
           h1: [],
         },
@@ -192,7 +199,7 @@ describe("subscribeChart candlestick-push wiring", () => {
       built: { kind: "intraday", polled: true },
     });
 
-    const unsub = await subscribeChart("2026-07-06-nvda-intraday-count", () => {}, 1);
+    const unsub = await subscribeChart(`${TODAY}-nvda-intraday-count`, () => {}, 1);
     await vi.advanceTimersByTimeAsync(0);
     await vi.advanceTimersByTimeAsync(0);
 
@@ -203,9 +210,15 @@ describe("subscribeChart candlestick-push wiring", () => {
     await vi.advanceTimersByTimeAsync(1_500);
 
     const [, input] = build.rebuild.mock.calls[0];
-    expect(input.timeframes.m5).toHaveLength(2);
-    expect(input.timeframes.m5[0].time).toBe(new Date(3_000).toISOString());
-    expect(input.timeframes.m5[1].time).toBe(new Date(4_000).toISOString());
+    expect(input.timeframes.m5).toHaveLength(4);
+    expect(input.timeframes.m5[0].time).toBe(new Date(1_000).toISOString());
+    expect(input.timeframes.m5[0].close).toBe(1);
+    expect(input.timeframes.m5[1].time).toBe(new Date(2_000).toISOString());
+    expect(input.timeframes.m5[1].close).toBe(2);
+    expect(input.timeframes.m5[2].time).toBe(new Date(3_000).toISOString());
+    expect(input.timeframes.m5[2].close).toBe(3.5);
+    expect(input.timeframes.m5[3].time).toBe(new Date(4_000).toISOString());
+    expect(input.timeframes.m5[3].close).toBe(4);
     unsub();
   });
 });
