@@ -1,9 +1,11 @@
 import {
   createChart,
+  createSeriesMarkers,
   type CandlestickData,
   type HistogramData,
   type IChartApi,
   type ISeriesApi,
+  type ISeriesMarkersPluginApi,
   type LineData,
   type SeriesMarker as LwMarker,
   type SeriesType,
@@ -54,6 +56,13 @@ export function padHistData(pts: ColoredPoint[], timeline: number[]): (Histogram
 
 export const toMarkers = (ms: SeriesMarker[]): LwMarker<Time>[] =>
   ms.map((m) => ({ time: asTime(m.time), position: m.position, color: m.color, shape: m.shape, text: m.text, id: m.id }));
+
+export function attachMarkers(
+  series: ISeriesApi<SeriesType>,
+  markers: SeriesMarker[] = [],
+): ISeriesMarkersPluginApi<Time> {
+  return createSeriesMarkers(series, toMarkers(markers));
+}
 
 export interface MarkerTooltipHandle {
   setMarkers(ms: SeriesMarker[]): void;

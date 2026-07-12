@@ -1,12 +1,12 @@
 import type {
   IChartApiBase,
+  IPrimitivePaneRenderer,
+  IPrimitivePaneView,
   ISeriesApi,
   ISeriesPrimitive,
   ISeriesPrimitiveAxisView,
-  ISeriesPrimitivePaneRenderer,
-  ISeriesPrimitivePaneView,
+  PrimitivePaneViewZOrder,
   SeriesAttachedParameter,
-  SeriesPrimitivePaneViewZOrder,
   Time,
 } from "lightweight-charts";
 import type { Annotation, AnnotationPoint } from "../../../../shared/types";
@@ -34,9 +34,9 @@ export interface DrawingsState {
 const EMPTY_STATE: DrawingsState = { annotations: [], selectedId: null, preview: null, measure: null, barTimes: [] };
 const EMPTY_FRAME: DrawFrame = { cmds: [], axisLabels: [] };
 
-type DrawTarget = Parameters<ISeriesPrimitivePaneRenderer["draw"]>[0];
+type DrawTarget = Parameters<IPrimitivePaneRenderer["draw"]>[0];
 
-class DrawingsRenderer implements ISeriesPrimitivePaneRenderer {
+class DrawingsRenderer implements IPrimitivePaneRenderer {
   constructor(private readonly frame: DrawFrame) {}
 
   draw(target: DrawTarget): void {
@@ -49,7 +49,7 @@ class DrawingsRenderer implements ISeriesPrimitivePaneRenderer {
   }
 }
 
-class DrawingsPaneView implements ISeriesPrimitivePaneView {
+class DrawingsPaneView implements IPrimitivePaneView {
   private frame: DrawFrame = EMPTY_FRAME;
 
   constructor(private readonly source: DrawingsPrimitive) {}
@@ -63,11 +63,11 @@ class DrawingsPaneView implements ISeriesPrimitivePaneView {
     this.frame = buildFrame(state, chart, series);
   }
 
-  renderer(): ISeriesPrimitivePaneRenderer {
+  renderer(): IPrimitivePaneRenderer {
     return new DrawingsRenderer(this.frame);
   }
 
-  zOrder(): SeriesPrimitivePaneViewZOrder {
+  zOrder(): PrimitivePaneViewZOrder {
     return "top";
   }
 
@@ -124,7 +124,7 @@ export class DrawingsPrimitive implements ISeriesPrimitive<Time> {
     this.paneView.update();
   }
 
-  paneViews(): readonly ISeriesPrimitivePaneView[] {
+  paneViews(): readonly IPrimitivePaneView[] {
     return [this.paneView];
   }
 

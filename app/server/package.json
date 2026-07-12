@@ -13,21 +13,21 @@
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",
-    "@types/node": "^26.0.1",
+    "@types/node": "^26.1.1",
     "@types/ws": "^8.18.1",
     "typescript": "^6.0.3",
     "vite-node": "^6.0.0",
-    "vitest": "^4.1.9"
+    "vitest": "^4.1.10"
   },
   "dependencies": {
     "@earendil-works/pi-agent-core": "^0.80.6",
     "@earendil-works/pi-ai": "^0.80.6",
-    "@hono/node-server": "1.19.14",
-    "@tsuki-hono/common": "0.0.4",
-    "@tsuki-hono/core": "0.0.4",
+    "@hono/node-server": "2.0.8",
+    "@tsuki-hono/common": "0.0.5",
+    "@tsuki-hono/core": "0.0.5",
     "better-sqlite3": "^12.11.1",
     "drizzle-orm": "^0.45.2",
-    "hono": "4.12.26",
+    "hono": "4.12.29",
     "reflect-metadata": "0.2.2",
     "tsyringe": "4.10.0",
     "ws": "^8.21.0"

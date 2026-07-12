@@ -1,15 +1,15 @@
 import type {
   IChartApiBase,
+  IPrimitivePaneRenderer,
+  IPrimitivePaneView,
   ISeriesPrimitive,
-  ISeriesPrimitivePaneRenderer,
-  ISeriesPrimitivePaneView,
+  PrimitivePaneViewZOrder,
   SeriesAttachedParameter,
-  SeriesPrimitivePaneViewZOrder,
   Time,
 } from "lightweight-charts";
 import type { OffSessionSegment } from "../../../../shared/types";
 
-type DrawTarget = Parameters<ISeriesPrimitivePaneRenderer["draw"]>[0];
+type DrawTarget = Parameters<IPrimitivePaneRenderer["draw"]>[0];
 
 const colorFor = (kind: OffSessionSegment["kind"]): string =>
   kind === "overnight" ? "rgba(70, 100, 180, 0.22)" : "rgba(232, 232, 232, 0.08)";
@@ -20,7 +20,7 @@ interface BandPx {
   color: string;
 }
 
-class SessionRenderer implements ISeriesPrimitivePaneRenderer {
+class SessionRenderer implements IPrimitivePaneRenderer {
   constructor(private readonly bands: BandPx[]) {}
 
   draw(target: DrawTarget): void {
@@ -38,7 +38,7 @@ class SessionRenderer implements ISeriesPrimitivePaneRenderer {
   }
 }
 
-class SessionPaneView implements ISeriesPrimitivePaneView {
+class SessionPaneView implements IPrimitivePaneView {
   private bands: BandPx[] = [];
 
   constructor(private readonly source: SessionBgPrimitive) {}
@@ -59,11 +59,11 @@ class SessionPaneView implements ISeriesPrimitivePaneView {
     }
   }
 
-  renderer(): ISeriesPrimitivePaneRenderer {
+  renderer(): IPrimitivePaneRenderer {
     return new SessionRenderer(this.bands);
   }
 
-  zOrder(): SeriesPrimitivePaneViewZOrder {
+  zOrder(): PrimitivePaneViewZOrder {
     return "bottom";
   }
 }
@@ -93,7 +93,7 @@ export class SessionBgPrimitive implements ISeriesPrimitive<Time> {
     this.paneView.update();
   }
 
-  paneViews(): readonly ISeriesPrimitivePaneView[] {
+  paneViews(): readonly IPrimitivePaneView[] {
     return [this.paneView];
   }
 

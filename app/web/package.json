@@ -11,13 +11,13 @@
   "dependencies": {
     "@base-ui/react": "^1.6.0",
     "electron-ipc-decorator": "^1.0.1",
-    "lightweight-charts": "^4.2.3",
-    "lucide-react": "^1.23.0",
+    "lightweight-charts": "^5.2.0",
+    "lucide-react": "^1.24.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
-    "react-is": "^19.0.0",
+    "react-is": "^19.2.7",
     "react-markdown": "^10.1.0",
-    "recharts": "^3.9.1",
+    "recharts": "^3.9.2",
     "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
@@ -28,7 +28,7 @@
     "@vitejs/plugin-react": "^6.0.3",
     "babel-plugin-react-compiler": "^1.0.0",
     "typescript": "^6.0.3",
-    "vite": "^8.1.2",
-    "vitest": "^4.1.9"
+    "vite": "^8.1.4",
+    "vitest": "^4.1.10"
   }
 }

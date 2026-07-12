@@ -21,6 +21,6 @@
     "skills:update": "skills update -p -y"
   },
   "devDependencies": {
-    "skills": "^1.5.13"
+    "skills": "^1.5.16"
   }
 }

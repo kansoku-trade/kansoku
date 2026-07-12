@@ -1,9 +1,19 @@
 import type { RefObject } from "react";
 import { useEffect, useRef } from "react";
-import type { IChartApi, ISeriesApi, LogicalRange } from "lightweight-charts";
+import {
+  CandlestickSeries,
+  HistogramSeries,
+  LineSeries,
+  type IChartApi,
+  type ISeriesApi,
+  type ISeriesMarkersPluginApi,
+  type LogicalRange,
+  type Time,
+} from "lightweight-charts";
 import type { IntradayBuilt, IntradayPriceZone, SeriesMarker, TimeframeKey } from "../../../../shared/types";
 import {
   addPriceLine,
+  attachMarkers,
   baseChart,
   centerLastBar,
   markerTooltip,
@@ -13,8 +23,8 @@ import {
   syncTimeScales,
   toCandleData,
   toLineData,
-  toVolumeData,
   toMarkers,
+  toVolumeData,
   type MarkerTooltipHandle,
 } from "../lw";
 import type { IndicatorToggleKey } from "./useIndicatorToggles";
@@ -36,6 +46,7 @@ interface Handle {
   main: IChartApi;
   macd: IChartApi;
   candle: ISeriesApi<"Candlestick">;
+  candleMarkers: ISeriesMarkersPluginApi<Time>;
   vol: ISeriesApi<"Histogram">;
   session: SessionBgPrimitive;
   macdSession: SessionBgPrimitive;
@@ -43,6 +54,7 @@ interface Handle {
   vwapSeries: ISeriesApi<"Line">;
   hist: ISeriesApi<"Histogram">;
   dif: ISeriesApi<"Line">;
+  difMarkers: ISeriesMarkersPluginApi<Time>;
   dea: ISeriesApi<"Line">;
   mainTip: MarkerTooltipHandle;
   macdTip: MarkerTooltipHandle;
@@ -104,14 +116,15 @@ export function useIntradayCharts(
     if (!mainEl || !macdEl) return;
 
     const main = baseChart(mainEl, true, true);
-    const candle = main.addCandlestickSeries({
+    const candle = main.addSeries(CandlestickSeries, {
       upColor: theme.up,
       downColor: theme.down,
       borderVisible: false,
       wickUpColor: theme.up,
       wickDownColor: theme.down,
     });
-    const vol = main.addHistogramSeries({
+    const candleMarkers = attachMarkers(candle);
+    const vol = main.addSeries(HistogramSeries, {
       priceFormat: { type: "volume" },
       priceScaleId: "vol",
       priceLineVisible: false,
@@ -129,7 +142,7 @@ export function useIntradayCharts(
 
     const emaCount = builtRef.current.timeframes.m5?.emas?.length ?? 0;
     const emaSeries = Array.from({ length: emaCount }, (_, i) =>
-      main.addLineSeries({
+      main.addSeries(LineSeries, {
         color: EMA_COLORS[i % EMA_COLORS.length],
         lineWidth: 1,
         priceLineVisible: false,
@@ -138,7 +151,7 @@ export function useIntradayCharts(
       }),
     );
 
-    const vwapSeries = main.addLineSeries({
+    const vwapSeries = main.addSeries(LineSeries, {
       color: VWAP_COLOR,
       lineWidth: 2,
       priceLineVisible: false,
@@ -147,11 +160,12 @@ export function useIntradayCharts(
     });
 
     const macd = baseChart(macdEl, true, true);
-    const hist = macd.addHistogramSeries({ priceLineVisible: false, lastValueVisible: false });
+    const hist = macd.addSeries(HistogramSeries, { priceLineVisible: false, lastValueVisible: false });
     const macdSession = new SessionBgPrimitive();
     hist.attachPrimitive(macdSession);
-    const dif = macd.addLineSeries({ color: theme.accent, lineWidth: 1, priceLineVisible: false, lastValueVisible: true });
-    const dea = macd.addLineSeries({ color: seriesPalette[4], lineWidth: 1, priceLineVisible: false, lastValueVisible: true });
+    const dif = macd.addSeries(LineSeries, { color: theme.accent, lineWidth: 1, priceLineVisible: false, lastValueVisible: true });
+    const difMarkers = attachMarkers(dif);
+    const dea = macd.addSeries(LineSeries, { color: seriesPalette[4], lineWidth: 1, priceLineVisible: false, lastValueVisible: true });
 
     syncTimeScales([main, macd]);
     const observers = [observeSize(mainEl, main), observeSize(macdEl, macd)];
@@ -163,7 +177,27 @@ export function useIntradayCharts(
     };
     main.timeScale().subscribeVisibleLogicalRangeChange(onRangeChange);
 
-    handleRef.current = { main, macd, candle, vol, session, macdSession, emaSeries, vwapSeries, hist, dif, dea, mainTip, macdTip, dynamic: [], planLines: [], fvg, anchorBg };
+    handleRef.current = {
+      main,
+      macd,
+      candle,
+      candleMarkers,
+      vol,
+      session,
+      macdSession,
+      emaSeries,
+      vwapSeries,
+      hist,
+      dif,
+      difMarkers,
+      dea,
+      mainTip,
+      macdTip,
+      dynamic: [],
+      planLines: [],
+      fvg,
+      anchorBg,
+    };
     lastTfRef.current = null;
     firstTimeRef.current = null;
     onHandleRef.current?.({ chart: main, series: candle, container: mainEl });
@@ -212,29 +246,29 @@ export function useIntradayCharts(
     const anchorHere = anchor && anchor.timeframe === activeTf ? anchor : null;
     h.anchorBg.setData(toggles.ai && anchorHere ? [Math.floor(Date.parse(anchorHere.time) / 1000)] : []);
     const markers = filterByGroup(d.markers, toggles);
-    h.candle.setMarkers(toMarkers(markers));
+    h.candleMarkers.setMarkers(toMarkers(markers));
     h.mainTip.setMarkers(markers);
     h.dif.setData(padLineData(d.macdDif, timeline));
     h.dea.setData(padLineData(d.macdDea, timeline));
     h.hist.setData(padHistData(d.macdHist, timeline));
     const crossMarkers = toggles.crosses ? d.macdCrossMarkers : [];
-    h.dif.setMarkers(toMarkers(crossMarkers));
+    h.difMarkers.setMarkers(toMarkers(crossMarkers));
     h.macdTip.setMarkers(crossMarkers);
 
     const connectorOpts = {
-      lineWidth: 1,
-      lineStyle: 2,
+      lineWidth: 1 as const,
+      lineStyle: 2 as const,
       priceLineVisible: false,
       lastValueVisible: false,
       crosshairMarkerVisible: false,
-    } as const;
+    };
     filterByGroup(d.priceConnectors ?? [], toggles).forEach((c) => {
-      const s = h.main.addLineSeries({ color: c.color, ...connectorOpts });
+      const s = h.main.addSeries(LineSeries, { color: c.color, ...connectorOpts });
       s.setData(toLineData(c.data));
       h.dynamic.push({ chart: h.main, series: s });
     });
     filterByGroup(d.macdConnectors ?? [], toggles).forEach((c) => {
-      const s = h.macd.addLineSeries({ color: c.color, ...connectorOpts });
+      const s = h.macd.addSeries(LineSeries, { color: c.color, ...connectorOpts });
       s.setData(toLineData(c.data));
       h.dynamic.push({ chart: h.macd, series: s });
     });

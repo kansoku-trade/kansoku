@@ -1,7 +1,6 @@
-import { ChartCandlestick, Settings } from "lucide-react";
+import { Settings } from "lucide-react";
 import { AppSkeleton } from "./AppSkeleton";
 import { DesktopShell } from "./desktop/DesktopShell";
-import { openNewChartDialog } from "./newChart/NewChartDialog";
 import { Onboarding } from "./onboarding/Onboarding";
 import { useCredentialsGate } from "./onboarding/useCredentialsGate";
 import { Router } from "./PageRouter";
@@ -15,10 +14,6 @@ function GlobalTopbar() {
   if (route === "/settings") return null;
   return (
     <div className="global-topbar">
-      <button className="global-new-chart" onClick={openNewChartDialog} aria-label="新建图表">
-        <ChartCandlestick size={16} />
-        新建图表
-      </button>
       <a className="global-settings-link" href="/settings" aria-label="设置">
         <Settings size={16} />
       </a>

@@ -1,14 +1,14 @@
 import type {
   IChartApiBase,
+  IPrimitivePaneRenderer,
+  IPrimitivePaneView,
   ISeriesPrimitive,
-  ISeriesPrimitivePaneRenderer,
-  ISeriesPrimitivePaneView,
+  PrimitivePaneViewZOrder,
   SeriesAttachedParameter,
-  SeriesPrimitivePaneViewZOrder,
   Time,
 } from "lightweight-charts";
 
-type DrawTarget = Parameters<ISeriesPrimitivePaneRenderer["draw"]>[0];
+type DrawTarget = Parameters<IPrimitivePaneRenderer["draw"]>[0];
 
 const ANCHOR_BG = "rgba(88, 166, 255, 0.18)";
 
@@ -17,7 +17,7 @@ interface BandPx {
   w: number;
 }
 
-class AnchorRenderer implements ISeriesPrimitivePaneRenderer {
+class AnchorRenderer implements IPrimitivePaneRenderer {
   constructor(private readonly bands: BandPx[]) {}
 
   draw(target: DrawTarget): void {
@@ -35,7 +35,7 @@ class AnchorRenderer implements ISeriesPrimitivePaneRenderer {
   }
 }
 
-class AnchorPaneView implements ISeriesPrimitivePaneView {
+class AnchorPaneView implements IPrimitivePaneView {
   private bands: BandPx[] = [];
 
   constructor(private readonly source: AnchorBgPrimitive) {}
@@ -55,11 +55,11 @@ class AnchorPaneView implements ISeriesPrimitivePaneView {
     }
   }
 
-  renderer(): ISeriesPrimitivePaneRenderer {
+  renderer(): IPrimitivePaneRenderer {
     return new AnchorRenderer(this.bands);
   }
 
-  zOrder(): SeriesPrimitivePaneViewZOrder {
+  zOrder(): PrimitivePaneViewZOrder {
     return "bottom";
   }
 }
@@ -89,7 +89,7 @@ export class AnchorBgPrimitive implements ISeriesPrimitive<Time> {
     this.paneView.update();
   }
 
-  paneViews(): readonly ISeriesPrimitivePaneView[] {
+  paneViews(): readonly IPrimitivePaneView[] {
     return [this.paneView];
   }
 

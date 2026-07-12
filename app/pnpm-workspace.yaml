@@ -14,3 +14,4 @@ allowBuilds:
 minimumReleaseAgeExclude:
   - '@earendil-works/pi-ai@0.80.6'
   - '@earendil-works/pi-agent-core@0.80.6'
+  - tsdown@0.22.5

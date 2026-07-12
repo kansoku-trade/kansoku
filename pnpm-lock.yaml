@@ -9,13 +9,13 @@ importers:
   .:
     devDependencies:
       skills:
-        specifier: ^1.5.13
-        version: 1.5.13
+        specifier: ^1.5.16
+        version: 1.5.16
 
 packages:
 
-  skills@1.5.13:
-    resolution: {integrity: sha512-eKYnMYCV4zlmXSikluxctEsn46i9ci18vb2d8b45yb4zTIvj3nFqMV3IrzF7VxqoXPF2AQnEZqVDu9tbPB2Atw==}
+  skills@1.5.16:
+    resolution: {integrity: sha512-O+pjcrnm5WkSSBD3WJxjdDssE+oynm7k1LnKMjXvsVeQdmKmY/a+gi6WUOhyGVIYptkFmBBEho/zyf22UtN6cw==}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -26,7 +26,7 @@ packages:
 
 snapshots:
 
-  skills@1.5.13:
+  skills@1.5.16:
     dependencies:
       yaml: 2.9.0
 

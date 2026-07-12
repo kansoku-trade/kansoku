@@ -10,7 +10,7 @@
     "build": "npm run fetch-sparkle && npm run rebuild"
   },
   "dependencies": {
-    "node-addon-api": "^8.5.0"
+    "node-addon-api": "^8.9.0"
   },
   "devDependencies": {
     "node-gyp": "^13.0.1"
