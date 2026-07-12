@@ -4,6 +4,12 @@
 发版 CI（desktop-release.yml）会提取对应版本的段落作为 GitHub Release 的说明，
 段落缺失会直接让发版失败——先写说明，再发版。
 
+## 0.2.0 — 2026-07-12
+
+- 应用正式更名为 **Kansoku**：应用名、菜单、窗口标题全部统一
+- 首次启动引导换上 Kansoku 品牌视觉与深色界面
+- ⚠️ 因应用标识随更名变更，0.1.1 无法通过应用内自动更新升级到本版——请到 [Releases](https://github.com/Innei/kansoku/releases) 手动下载安装一次，之后的版本恢复自动更新
+
 ## 0.1.1 — 2026-07-12
 
 Kansoku 桌面版首个公开版本（macOS · Apple Silicon）。
