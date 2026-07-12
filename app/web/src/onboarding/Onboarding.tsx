@@ -8,6 +8,23 @@ const STEPS: { key: OnboardingStep; label: string }[] = [
   { key: "ai", label: "配置 AI" },
 ];
 
+const KANSOKU_MARK_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 134" aria-hidden="true"><path d="M18 36 C60 19 115 22 162 44" fill="none" stroke="#E2E8F0" stroke-opacity="0.34" stroke-width="3" stroke-linecap="round"/><path d="M18 67 C61 54 112 57 162 67" fill="none" stroke="#FACC15" stroke-width="4.2" stroke-linecap="round"/><path d="M18 100 C64 119 116 113 162 86" fill="none" stroke="#E2E8F0" stroke-opacity="0.34" stroke-width="3" stroke-linecap="round"/><circle cx="124" cy="63" r="7.8" fill="#FEF08A"/></svg>`;
+
+function Brand() {
+  return (
+    <header className="onboarding-brand">
+      <span
+        className="onboarding-brand-mark"
+        dangerouslySetInnerHTML={{ __html: KANSOKU_MARK_SVG }}
+      />
+      <div className="onboarding-brand-text">
+        <span className="onboarding-brand-name">Kansoku</span>
+        <span className="onboarding-brand-tag">OBSERVED PATH</span>
+      </div>
+    </header>
+  );
+}
+
 function Progress({ step }: { step: OnboardingStep }) {
   const activeIndex = step === "longbridge" ? 0 : 1;
   return (
@@ -43,6 +60,7 @@ export function Onboarding({
       </div>
       <div className="page onboarding-page">
         <div className="onboarding-shell">
+          <Brand />
           <Progress step={step} />
           {step === "longbridge" ? (
             <StepLongbridge status={status} onRecheck={onRecheck} />
