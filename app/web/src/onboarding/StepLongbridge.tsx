@@ -12,7 +12,7 @@ export function StepLongbridge({
 }) {
   const state = status?.state ?? "cli_missing";
   const title = state === "cli_missing" ? "安装 Longbridge CLI" : state === "login_required" ? "登录长桥账号" : "修复登录状态";
-  const command = state === "cli_missing" ? "curl -fsSL https://open.longbridge.com/install | sh" : "longbridge auth login";
+  const command = state === "cli_missing" ? "curl -fsSL https://open.longbridge.com/longbridge/longbridge-terminal/install | sh" : "longbridge auth login";
   const explanation =
     state === "cli_missing"
       ? "Kansoku 使用本机 Longbridge CLI 获取行情和账户数据。安装完成后请返回这里重新检测。"
