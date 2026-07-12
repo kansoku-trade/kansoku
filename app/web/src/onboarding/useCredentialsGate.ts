@@ -12,7 +12,7 @@ export function useCredentialsGate(): {
   bridge: ReturnType<typeof getDesktopCredentialsBridge>;
   details: CredentialsGetResult | null;
   recheck: () => void;
-  completeAi: () => Promise<void>;
+  completeOnboarding: () => Promise<void>;
 } {
   const bridge = getDesktopCredentialsBridge();
   const onboardingBridge = getDesktopOnboardingBridge();
@@ -42,10 +42,10 @@ export function useCredentialsGate(): {
     onboardingCompleted: onboardingBridge ? (onboardingState ? onboardingState.completed : null) : true,
   });
 
-  const completeAi = useCallback(async () => {
+  const completeOnboarding = useCallback(async () => {
     if (onboardingBridge) await onboardingBridge.complete();
     reloadOnboarding();
   }, [onboardingBridge, reloadOnboarding]);
 
-  return { status, step, bridge, details: data ?? null, recheck: reload, completeAi };
+  return { status, step, bridge, details: data ?? null, recheck: reload, completeOnboarding };
 }

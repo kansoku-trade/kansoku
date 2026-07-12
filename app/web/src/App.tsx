@@ -30,7 +30,7 @@ export function App() {
   }
 
   if (gate.status === "onboarding" && gate.bridge && gate.step) {
-    return <Onboarding step={gate.step} status={gate.details} onRecheck={gate.recheck} onComplete={gate.completeAi} />;
+    return <Onboarding step={gate.step} status={gate.details} onRecheck={gate.recheck} onComplete={gate.completeOnboarding} />;
   }
 
   if (isDesktopRealtime()) {

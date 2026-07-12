@@ -32,7 +32,7 @@ interface ProviderRow {
   action: { label: string; accent: boolean; onClick: () => void };
 }
 
-export function StepAi({ onComplete }: { onComplete: () => Promise<void> }) {
+export function StepAi({ onNext }: { onNext: () => void }) {
   const { data: catalog, loading } = useQuery<Catalog>("onboarding.catalog", fetchCatalog);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -59,7 +59,7 @@ export function StepAi({ onComplete }: { onComplete: () => Promise<void> }) {
     setError(null);
     try {
       await connect();
-      await onComplete();
+      onNext();
     } catch (err) {
       setError(errorMessage(err));
       setBusy(null);
@@ -88,15 +88,15 @@ export function StepAi({ onComplete }: { onComplete: () => Promise<void> }) {
             closeModal={closeModal}
             onConnected={() => {
               // Connected: refresh the catalog so LobeHub's models exist, wire
-              // one to primary, then finish. A model-assign failure still
-              // completes onboarding — the user just picks a model in settings.
+              // one to primary, then advance. A model-assign failure still
+              // advances — the user just picks a model in settings.
               void (async () => {
                 try {
                   await connectPrimary(await fetchCatalog(), LOBEHUB_PROVIDER);
                 } catch (err) {
                   console.warn("onboarding: LobeHub connected but model not assigned", err);
                 }
-                await onComplete();
+                onNext();
               })();
             }}
           />

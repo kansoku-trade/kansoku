@@ -1,5 +1,5 @@
 export type GateStatus = "loading" | "onboarding" | "ready";
-export type OnboardingStep = "longbridge" | "ai";
+export type OnboardingStep = "longbridge" | "ai" | "twitter";
 
 export interface GateResult {
   status: GateStatus;

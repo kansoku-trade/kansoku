@@ -1,11 +1,15 @@
+import { useState } from "react";
 import type { CredentialsGetResult } from "../pages/settings/desktopCredentials";
 import type { OnboardingStep } from "./gateStatus";
+import { resolveRenderStep } from "./stepResolution";
 import { StepAi } from "./StepAi";
 import { StepLongbridge } from "./StepLongbridge";
+import { StepTwitter } from "./StepTwitter";
 
 const STEPS: { key: OnboardingStep; label: string }[] = [
   { key: "longbridge", label: "连接数据" },
   { key: "ai", label: "配置 AI" },
+  { key: "twitter", label: "连接 X" },
 ];
 
 const KANSOKU_MARK_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 134" aria-hidden="true"><path d="M18 36 C60 19 115 22 162 44" fill="none" stroke="#E2E8F0" stroke-opacity="0.34" stroke-width="3" stroke-linecap="round"/><path d="M18 67 C61 54 112 57 162 67" fill="none" stroke="#FACC15" stroke-width="4.2" stroke-linecap="round"/><path d="M18 100 C64 119 116 113 162 86" fill="none" stroke="#E2E8F0" stroke-opacity="0.34" stroke-width="3" stroke-linecap="round"/><circle cx="124" cy="63" r="7.8" fill="#FEF08A"/></svg>`;
@@ -26,7 +30,7 @@ function Brand() {
 }
 
 function Progress({ step }: { step: OnboardingStep }) {
-  const activeIndex = step === "longbridge" ? 0 : 1;
+  const activeIndex = STEPS.findIndex((s) => s.key === step);
   return (
     <ol className="onboarding-progress">
       {STEPS.map((s, i) => {
@@ -53,6 +57,9 @@ export function Onboarding({
   onRecheck: () => void;
   onComplete: () => Promise<void>;
 }) {
+  const [localStep, setLocalStep] = useState<OnboardingStep>(step === "longbridge" ? "ai" : step);
+  const renderStep = resolveRenderStep(step, localStep);
+
   return (
     <>
       <div className="onboarding-drag-bar" aria-hidden="true">
@@ -61,11 +68,13 @@ export function Onboarding({
       <div className="page onboarding-page">
         <div className="onboarding-shell">
           <Brand />
-          <Progress step={step} />
-          {step === "longbridge" ? (
+          <Progress step={renderStep} />
+          {renderStep === "longbridge" ? (
             <StepLongbridge status={status} onRecheck={onRecheck} />
+          ) : renderStep === "ai" ? (
+            <StepAi onNext={() => setLocalStep("twitter")} />
           ) : (
-            <StepAi onComplete={onComplete} />
+            <StepTwitter onComplete={onComplete} />
           )}
         </div>
       </div>

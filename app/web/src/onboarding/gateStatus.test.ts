@@ -48,4 +48,17 @@ describe("computeGateStatus", () => {
       step: null,
     });
   });
+
+  it("never returns the twitter step — the gate has no per-step knowledge of it", () => {
+    const cases = [
+      { ...base, hasDesktopBridge: false },
+      { ...base, statusLoading: true, configured: null, onboardingCompleted: null },
+      { ...base, configured: false },
+      { ...base, configured: null },
+      { ...base, configured: true, onboardingCompleted: false },
+      { ...base, configured: true, onboardingCompleted: true },
+      { ...base, configured: true, onboardingCompleted: null },
+    ];
+    for (const params of cases) expect(computeGateStatus(params).step).not.toBe("twitter");
+  });
 });

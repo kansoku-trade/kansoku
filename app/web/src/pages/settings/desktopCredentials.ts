@@ -6,6 +6,12 @@ export interface CredentialsGetResult {
   cliPath: string | null;
 }
 
+export interface OpencliStatus {
+  state: "ready" | "not_installed" | "extension_missing" | "no_session";
+  cliPath: string | null;
+  lastError: string | null;
+}
+
 export interface DesktopCredentialsBridge {
   get(): Promise<CredentialsGetResult>;
 }
