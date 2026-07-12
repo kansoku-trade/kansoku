@@ -1,23 +1,9 @@
-import { afterEach, describe, expect, it } from "vitest";
-import { setCredentialProviderForTests } from "../../packages/core/src/services/credentials/registry.js";
-import { resetCredentialStatusForTests } from "../../packages/core/src/services/credentials/credentialStatus.js";
-import type { CredentialProvider } from "../../packages/core/src/services/credentials/types.js";
+import { describe, expect, it } from "vitest";
 
 const { tsukiRequest } = await import("./helpers.js");
 
-const nullProvider: CredentialProvider = {
-  getLongbridgeAuth: async () => null,
-  onChange: () => () => {},
-};
-
-describe("restricted mode (no Longbridge credentials configured)", () => {
-  afterEach(() => {
-    setCredentialProviderForTests(null);
-    resetCredentialStatusForTests();
-  });
-
+describe("kernel without Longbridge dependency", () => {
   it("boots cleanly and health stays 200", async () => {
-    setCredentialProviderForTests(nullProvider);
     const res = await tsukiRequest("/api/health");
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -25,62 +11,28 @@ describe("restricted mode (no Longbridge credentials configured)", () => {
   });
 
   it("charts CRUD (no market data needed) keeps working fully", async () => {
-    setCredentialProviderForTests(nullProvider);
     const res = await tsukiRequest("/api/charts");
     expect(res.status).toBe(200);
   });
+});
 
-  it("a market-data endpoint returns the NO_CREDENTIALS envelope with status 503", async () => {
-    setCredentialProviderForTests(nullProvider);
-    const res = await tsukiRequest("/api/positions");
-    expect(res.status).toBe(503);
-    const body = await res.json();
-    expect(body).toMatchObject({
-      ok: false,
-      error: "longbridge credentials not configured",
-      code: "NO_CREDENTIALS",
-    });
-  });
-
-  it("GET /api/credentials/status reports configured:false with no lastError", async () => {
-    setCredentialProviderForTests(nullProvider);
+describe("GET /api/credentials/status", () => {
+  it("reports the CLI-backed credential state in the contract shape", async () => {
     const res = await tsukiRequest("/api/credentials/status");
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body).toEqual({ ok: true, data: { configured: false, method: null, lastError: null } });
-  });
-});
+    expect(body.ok).toBe(true);
 
-describe("GET /api/credentials/status with credentials configured", () => {
-  afterEach(() => {
-    setCredentialProviderForTests(null);
-    resetCredentialStatusForTests();
-  });
-
-  it("reports configured:true", async () => {
-    setCredentialProviderForTests({
-      getLongbridgeAuth: async () => ({ kind: "apikey", appKey: "k", appSecret: "s", accessToken: "t" }),
-      onChange: () => () => {},
-    });
-    const res = await tsukiRequest("/api/credentials/status");
-    const body = await res.json();
-    expect(body).toEqual({ ok: true, data: { configured: true, method: "apikey", lastError: null } });
-  });
-});
-
-describe("GET /api/credentials/status with an OAuth provider", () => {
-  afterEach(() => {
-    setCredentialProviderForTests(null);
-    resetCredentialStatusForTests();
-  });
-
-  it("reports configured:true with method oauth", async () => {
-    setCredentialProviderForTests({
-      getLongbridgeAuth: async () => ({ kind: "oauth", clientId: "client-id" }),
-      onChange: () => () => {},
-    });
-    const res = await tsukiRequest("/api/credentials/status");
-    const body = await res.json();
-    expect(body).toEqual({ ok: true, data: { configured: true, method: "oauth", lastError: null } });
+    const { configured, method, lastError, state, cliPath } = body.data;
+    expect(method).toBe("cli");
+    expect(["ready", "cli_missing", "login_required", "token_unreadable"]).toContain(state);
+    expect(configured).toBe(state === "ready");
+    if (state === "ready") {
+      expect(lastError).toBeNull();
+      expect(typeof cliPath).toBe("string");
+    } else {
+      expect(typeof lastError).toBe("string");
+      if (state === "cli_missing") expect(cliPath).toBeNull();
+    }
   });
 });

@@ -3,10 +3,6 @@ import { readFileSync } from "node:fs";
 
 const KNOWN_FAILURES = new Set([
   "GET /:id/built clamps count to 1000",
-  "subscribeChart candlestick-push wiring merges a same-bucket push into the last bar and schedules exactly one debounced rebuild for a burst",
-  "subscribeChart candlestick-push wiring appends a new bar when a push opens a later bucket",
-  "subscribeChart candlestick-push wiring writes the poller's freshly fetched bars into candle state so a later push has no hole",
-  "subscribeChart candlestick-push wiring respects the requested view count instead of the persisted full-length series on rebuild",
 ]);
 
 const resultsPath = process.argv[2];
