@@ -61,14 +61,14 @@ describe("probeOpencli", () => {
     expect(result.lastError).toBeTruthy();
   });
 
-  it("reports extension_missing when doctor exits non-zero", async () => {
+  it("reports extension_missing when doctor exits non-zero, using the stderr excerpt as lastError", async () => {
     const cli = fakeCli();
     const exec = vi.fn().mockRejectedValueOnce(
       Object.assign(new Error("Command failed"), { stdout: DOCTOR_OK, stderr: "boom", code: 1 }),
     );
     const result = await probeOpencli({ env: { OPENCLI_PATH: cli, PATH: "" }, exec });
     expect(result.state).toBe("extension_missing");
-    expect(result.lastError).toBeTruthy();
+    expect(result.lastError).toContain("boom");
   });
 
   it("reports no_session when doctor is healthy but twitter profile fails", async () => {
@@ -86,6 +86,20 @@ describe("probeOpencli", () => {
   it("falls back to not_installed when doctor times out or returns unparseable output", async () => {
     const cli = fakeCli();
     const exec = vi.fn().mockRejectedValueOnce(Object.assign(new Error("Command timed out"), { killed: true, signal: "SIGTERM" }));
+    const result = await probeOpencli({ env: { OPENCLI_PATH: cli, PATH: "" }, exec });
+    expect(result.state).toBe("not_installed");
+    expect(result.cliPath).toBe(cli);
+  });
+
+  it("falls back to not_installed when doctor times out even with buffered partial stdout", async () => {
+    const cli = fakeCli();
+    const exec = vi.fn().mockRejectedValueOnce(
+      Object.assign(new Error("Command timed out"), {
+        killed: true,
+        signal: "SIGTERM",
+        stdout: "opencli v1.8.4 doctor\n\n[OK] Daemon: running on port 19825 (v1.8.4)\n",
+      }),
+    );
     const result = await probeOpencli({ env: { OPENCLI_PATH: cli, PATH: "" }, exec });
     expect(result.state).toBe("not_installed");
     expect(result.cliPath).toBe(cli);

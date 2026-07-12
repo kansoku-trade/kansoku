@@ -101,7 +101,7 @@ export async function probeOpencli(deps: OpencliDeps = {}): Promise<OpencliStatu
 
   const exec = deps.exec ?? execFileAsync;
   let doctorStdout: string;
-  let doctorFailed = false;
+  let doctorError: unknown = null;
   try {
     const { stdout } = await exec(cliPath, ["doctor"], {
       timeout: DOCTOR_TIMEOUT_MS,
@@ -110,10 +110,11 @@ export async function probeOpencli(deps: OpencliDeps = {}): Promise<OpencliStatu
     });
     doctorStdout = stdout;
   } catch (error) {
-    const stdout = (error as { stdout?: string }).stdout;
-    if (typeof stdout === "string" && stdout.length > 0) {
+    const { stdout, killed, signal } = error as { stdout?: string; killed?: boolean; signal?: string | null };
+    const timedOut = killed === true || Boolean(signal);
+    if (!timedOut && typeof stdout === "string" && stdout.length > 0) {
       doctorStdout = stdout;
-      doctorFailed = true;
+      doctorError = error;
     } else {
       return { state: "not_installed", cliPath, lastError: truncate(errorMessage(error)) };
     }
@@ -121,13 +122,11 @@ export async function probeOpencli(deps: OpencliDeps = {}): Promise<OpencliStatu
 
   const hasOkExtension = /^\[OK\]\s*Extension:/m.test(doctorStdout);
   const hasOkConnectivity = /^\[OK\]\s*Connectivity:/m.test(doctorStdout);
-  if (doctorFailed || !hasOkExtension || !hasOkConnectivity) {
+  if (doctorError || !hasOkExtension || !hasOkConnectivity) {
     const failingLine = firstFailingDoctorLine(doctorStdout);
-    return {
-      state: "extension_missing",
-      cliPath,
-      lastError: truncate(failingLine ?? (doctorStdout || "opencli doctor 未返回预期的健康状态")),
-    };
+    const lastError =
+      failingLine ?? (doctorError ? errorMessage(doctorError) : "opencli doctor 未返回预期的健康状态");
+    return { state: "extension_missing", cliPath, lastError: truncate(lastError) };
   }
 
   try {
