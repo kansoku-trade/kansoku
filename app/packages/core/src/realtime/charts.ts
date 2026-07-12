@@ -261,6 +261,6 @@ export async function subscribePreview(symbol: string, push: (envelope: string) 
   }
 
   const built = previewInitialBuilt.get(key);
-  if (built !== undefined) push(JSON.stringify({ type: "data", data: { built } }));
+  if (built !== undefined && !handle.hasData()) push(JSON.stringify({ type: "data", data: { built } }));
   return handle.subscribe(push);
 }

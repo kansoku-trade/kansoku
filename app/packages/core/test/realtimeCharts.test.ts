@@ -310,6 +310,25 @@ describe("subscribePreview", () => {
     unsub2();
   });
 
+  it("gives a late joiner the current rebuilt data once, not a stale duplicate of the initial preview snapshot", async () => {
+    const events1: string[] = [];
+    const events2: string[] = [];
+    const unsub1 = await subscribePreview("PQQ5.US", (e) => events1.push(e));
+    await vi.advanceTimersByTimeAsync(0);
+    await vi.advanceTimersByTimeAsync(0);
+
+    build.rebuild.mockClear();
+    const unsub2 = await subscribePreview("PQQ5.US", (e) => events2.push(e));
+
+    expect(build.rebuild).not.toHaveBeenCalled();
+    expect(events2).toHaveLength(1);
+    const parsed = JSON.parse(events2[0]);
+    expect(parsed.type).toBe("data");
+    expect(parsed.data.built.pushed).toBe(true);
+    unsub1();
+    unsub2();
+  });
+
   it("tears down state once both subscribers leave and rebuilds from scratch on a fresh subscribe", async () => {
     const unsub1 = await subscribePreview("PQQ4.US", () => {});
     const unsub2 = await subscribePreview("PQQ4.US", () => {});

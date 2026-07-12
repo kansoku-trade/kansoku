@@ -2,6 +2,7 @@ export interface PollerHandle {
   subscribe(listener: (envelope: string) => void): () => void;
   subscriberCount(): number;
   pushData(data: unknown): void;
+  hasData(): boolean;
 }
 
 export interface PollerOptions {
@@ -90,6 +91,9 @@ export function createPoller(opts: PollerOptions): PollerHandle {
     pushData(data: unknown) {
       if (stopped) return;
       applyData(data);
+    },
+    hasData() {
+      return lastData !== null;
     },
   };
 }
