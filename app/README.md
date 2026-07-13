@@ -22,7 +22,7 @@ pnpm start          # http://localhost:5199
 | 路由 | 功能 |
 |---|---|
 | `/` | 首页 —— 盘中看盘 + 持仓 + 跨标的图表（flow / cohort），盘后自动切到复盘视图；`?date=YYYY-MM-DD` 定位到某天的跨标的图 |
-| `/symbol/:sym` | 个股仪表盘（Cockpit）—— 六个标签页：预测、环境（含资金流/持仓对照）、消息（有新闻才显示）、复盘（历史分析/日志/笔记）、AI 点评；`?analysis=<id>` 把页面钉在某一次具体的 sepa / intraday 分析上（不带这个参数就跟随最新分析实时刷新） |
+| `/symbol/:sym` | 个股仪表盘（Cockpit）—— 六个标签页：预测、环境（含资金流/持仓对照）、消息（有新闻才显示）、复盘（历史分析/日志/笔记）、AI 点评；`?analysis=<id>` 把页面钉在某一次具体的 sepa / intraday 分析上，不带参数时跟随最新分析，`?view=live` 则进入不落盘、持续更新的实时视图 |
 | `/overview`、`/charts` | 旧路由，自动跳回首页 `/` |
 | `/charts/:id` | 旧的单图详情页路由，已下线；前端查出该图表的 `type` 后自动跳转到新位置——sepa / intraday 图 → `/symbol/:sym?analysis=:id`，flow / cohort 图 → `/?date=YYYY-MM-DD`；查不到该图表则跳回首页并提示 |
 

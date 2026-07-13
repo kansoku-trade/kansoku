@@ -1,4 +1,4 @@
-import { symbolAnalysisPath } from "../../../../shared/chartUrl";
+import { symbolAnalysisPath, symbolLivePath } from "../../../../shared/chartUrl";
 
 export {
   sameSymbol,
@@ -7,4 +7,12 @@ export {
   type AnalysisFeedState,
 } from "../../../../shared/analysisFeed";
 
+export type AnalysisViewMode = "live" | "latest" | "pinned";
+
+export function resolveAnalysisViewMode(view: string | null, analysisId: string | null): AnalysisViewMode {
+  if (view === "live") return "live";
+  return analysisId ? "pinned" : "latest";
+}
+
 export const symbolUrl = symbolAnalysisPath;
+export const symbolLiveUrl = symbolLivePath;

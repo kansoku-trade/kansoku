@@ -215,7 +215,7 @@ export function useSepaCharts(
     vr.createPriceLine({ price: 1.5, color: theme.down, lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: "1.5×" });
     vr.createPriceLine({ price: 1.0, color: theme.borderStrong, lineWidth: 1, lineStyle: 3, axisLabelVisible: false, title: "" });
 
-    syncTimeScales([main, rsChart, vrChart]);
+    const stopTimeScaleSync = syncTimeScales([main, rsChart, vrChart]);
     showLastBars(main, chart.candles);
 
     const observers = [observeSize(mainEl, main), observeSize(rsEl, rsChart), observeSize(vrEl, vrChart)];
@@ -295,6 +295,7 @@ export function useSepaCharts(
       if (vpRaf) cancelAnimationFrame(vpRaf);
       vpRo.disconnect();
       observers.forEach((ro) => ro.disconnect());
+      stopTimeScaleSync();
       main.remove();
       rsChart.remove();
       vrChart.remove();

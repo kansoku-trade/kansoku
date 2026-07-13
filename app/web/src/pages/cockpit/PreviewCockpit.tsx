@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ArrowLeft } from "lucide-react";
+import type { SymbolAnalysisRow } from "../../../../shared/types";
 import { IntradayDashboard, IntradayTimeframeSwitch } from "../../charts/intraday/IntradayDashboard";
 import { resolveIntradayTf } from "../../charts/intraday/useIntradayDoc";
 import { useIntradayPreview } from "../../charts/intraday/useIntradayPreview";
@@ -7,6 +8,7 @@ import type { SidebarTab } from "../../charts/SidebarTabs";
 import { TopbarQuote } from "../../QuoteBar";
 import { Dot, Empty, ErrorBox } from "../../ui";
 import { useTitle } from "../../useTitle";
+import { AnalysisTimeline } from "./AnalysisTimeline";
 import { GenerateAnalysis } from "./GenerateAnalysis";
 import { buildSharedSidebarTabs } from "./sharedSidebarTabs";
 import { useAiUnreadBadge } from "./useAiUnreadBadge";
@@ -14,7 +16,17 @@ import { useCockpitComments } from "./useCockpitComments";
 import { useCockpitEnv } from "./useCockpitEnv";
 import { useCockpitReviewState } from "./useCockpitReviewState";
 
-export function PreviewCockpit({ sym }: { sym: string }) {
+export function PreviewCockpit({
+  sym,
+  analysesRows,
+  onLive,
+  onSelectAnalysis,
+}: {
+  sym: string;
+  analysesRows: SymbolAnalysisRow[];
+  onLive: () => void;
+  onSelectAnalysis: (id: string | null) => void;
+}) {
   const symLabel = sym.toUpperCase().replace(/\.US$/, "");
   const { built, error, degraded, intradayTf, setIntradayTf } = useIntradayPreview(sym);
   useTitle(symLabel);
@@ -54,7 +66,11 @@ export function PreviewCockpit({ sym }: { sym: string }) {
       label: "预测",
       content: (
         <>
-          <Empty>这只股票还没有 AI 分析——先看实时走势，也可以直接生成一份</Empty>
+          <Empty>
+            {analysesRows.length > 0
+              ? "当前为实时视图——图表会随行情更新；可从右上角切回历史分析，或生成一份当前分析"
+              : "这只股票还没有 AI 分析——先看实时走势，也可以直接生成一份"}
+          </Empty>
           <GenerateAnalysis sym={sym} />
         </>
       ),
@@ -63,7 +79,7 @@ export function PreviewCockpit({ sym }: { sym: string }) {
       sym,
       sidebar: built.sidebar,
       env,
-      analysesRows: [],
+      analysesRows,
       latestId: null,
       journalEntries,
       reloadJournal,
@@ -91,6 +107,13 @@ export function PreviewCockpit({ sym }: { sym: string }) {
           <IntradayTimeframeSwitch activeTf={activeIntradayTf} onChange={setIntradayTf} />
         </span>
         <span className="topbar-actions">
+          <AnalysisTimeline
+            rows={analysesRows}
+            activeId={null}
+            mode="live"
+            onLive={onLive}
+            onSelect={onSelectAnalysis}
+          />
           <TopbarQuote symbol={built.sidebar.symbol} />
         </span>
       </div>
