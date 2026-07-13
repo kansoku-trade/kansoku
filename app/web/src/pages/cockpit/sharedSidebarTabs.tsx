@@ -15,6 +15,7 @@ export function buildSharedSidebarTabs(params: {
   analysesRows: SymbolAnalysisRow[];
   latestId: string | null;
   journalEntries: { name: string; date: string }[];
+  reloadJournal: () => void;
   reviewSection: ReviewSection;
   setReviewSection: (section: ReviewSection) => void;
   selectedJournal: string | null;
@@ -24,7 +25,7 @@ export function buildSharedSidebarTabs(params: {
   commentsLoaded: boolean;
   unread: number;
 }): SidebarTab[] {
-  const { sym, sidebar, env, analysesRows, latestId, journalEntries, reviewSection, setReviewSection, selectedJournal, setSelectedJournal, comments, commentsError, commentsLoaded, unread } = params;
+  const { sym, sidebar, env, analysesRows, latestId, journalEntries, reloadJournal, reviewSection, setReviewSection, selectedJournal, setSelectedJournal, comments, commentsError, commentsLoaded, unread } = params;
   const hasNews = Boolean(sidebar.context?.news?.length) || Boolean(sidebar.news?.length);
 
   return [
@@ -58,6 +59,7 @@ export function buildSharedSidebarTabs(params: {
           onSectionChange={setReviewSection}
           selectedJournal={selectedJournal}
           onSelectJournal={setSelectedJournal}
+          reloadJournal={reloadJournal}
         />
       ),
     },

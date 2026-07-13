@@ -5,6 +5,7 @@ import type { ReviewSection } from "./ReviewTab";
 
 export interface CockpitReviewState {
   journalEntries: { name: string; date: string }[];
+  reloadJournal: () => void;
   reviewSection: ReviewSection;
   setReviewSection: (section: ReviewSection) => void;
   selectedJournal: string | null;
@@ -12,8 +13,9 @@ export interface CockpitReviewState {
 }
 
 export function useCockpitReviewState(sym: string): CockpitReviewState {
-  const { data: journal } = useQuery<{ name: string; date: string }[]>(`symbols.journal:${sym}`, () =>
-    client.symbols.journal({ sym }),
+  const { data: journal, reload: reloadJournal } = useQuery<{ name: string; date: string }[]>(
+    `symbols.journal:${sym}`,
+    () => client.symbols.journal({ sym }),
   );
   const [reviewSection, setReviewSection] = useState<ReviewSection>("history");
   const [selectedJournal, setSelectedJournal] = useState<string | null>(null);
@@ -22,5 +24,5 @@ export function useCockpitReviewState(sym: string): CockpitReviewState {
     setReviewSection("history");
   }, [sym]);
 
-  return { journalEntries: journal ?? [], reviewSection, setReviewSection, selectedJournal, setSelectedJournal };
+  return { journalEntries: journal ?? [], reloadJournal, reviewSection, setReviewSection, selectedJournal, setSelectedJournal };
 }

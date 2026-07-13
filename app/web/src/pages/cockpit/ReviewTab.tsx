@@ -20,6 +20,7 @@ export function ReviewTab({
   onSectionChange,
   selectedJournal,
   onSelectJournal,
+  reloadJournal,
 }: {
   symbol: string;
   rows: SymbolAnalysisRow[];
@@ -29,6 +30,7 @@ export function ReviewTab({
   onSectionChange: (section: ReviewSection) => void;
   selectedJournal: string | null;
   onSelectJournal: (name: string | null) => void;
+  reloadJournal: () => void;
 }) {
   const journalByDate = new Map(journal.map((e) => [e.date, e.name] as [string, string]));
   const openJournal = (name: string) => {
@@ -62,7 +64,13 @@ export function ReviewTab({
           />
         ))}
       {section === "journal" && (
-        <JournalSection symbol={symbol} entries={journal} selected={selectedJournal} onSelect={onSelectJournal} />
+        <JournalSection
+          symbol={symbol}
+          entries={journal}
+          selected={selectedJournal}
+          onSelect={onSelectJournal}
+          reloadJournal={reloadJournal}
+        />
       )}
       {section === "note" && <NoteTab symbol={symbol} />}
     </div>

@@ -34,7 +34,7 @@ export function SymbolCockpit({ sym }: { sym: string }) {
   }, [sym, doc?.id, latestChecked, latestId, latestError]);
 
   const env = useCockpitEnv(sym);
-  const { journalEntries, reviewSection, setReviewSection, selectedJournal, setSelectedJournal } =
+  const { journalEntries, reloadJournal, reviewSection, setReviewSection, selectedJournal, setSelectedJournal } =
     useCockpitReviewState(sym);
 
   const [activeTab, setActiveTab] = useState("prediction");
@@ -125,6 +125,7 @@ export function SymbolCockpit({ sym }: { sym: string }) {
       analysesRows,
       latestId,
       journalEntries,
+      reloadJournal,
       reviewSection,
       setReviewSection,
       selectedJournal,

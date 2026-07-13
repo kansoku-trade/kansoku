@@ -20,7 +20,7 @@ export function PreviewCockpit({ sym }: { sym: string }) {
   useTitle(symLabel);
 
   const env = useCockpitEnv(sym);
-  const { journalEntries, reviewSection, setReviewSection, selectedJournal, setSelectedJournal } =
+  const { journalEntries, reloadJournal, reviewSection, setReviewSection, selectedJournal, setSelectedJournal } =
     useCockpitReviewState(sym);
   const [activeTab, setActiveTab] = useState("prediction");
   const { comments, error: commentsError, loaded: commentsLoaded } = useCockpitComments(sym);
@@ -66,6 +66,7 @@ export function PreviewCockpit({ sym }: { sym: string }) {
       analysesRows: [],
       latestId: null,
       journalEntries,
+      reloadJournal,
       reviewSection,
       setReviewSection,
       selectedJournal,

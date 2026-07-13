@@ -2,6 +2,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { errorMessage } from "../../api";
 import { client } from "../../client";
 
+export const REASON_TEXT: Record<string, string> = {
+  "analyst layer disabled": "AI 分析未配置（服务端缺 analyst 模型）",
+  "already running": "已在分析中，稍等片刻",
+  "escalation on cooldown": "刚分析过，请稍后再试",
+};
+
 export interface ReassessResponse {
   started: boolean;
   reason?: string;

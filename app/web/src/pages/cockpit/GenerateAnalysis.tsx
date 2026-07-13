@@ -3,16 +3,10 @@ import type { ChartDoc } from "../../../../shared/types";
 import { usePollingQuery } from "../../apiHooks";
 import { client } from "../../client";
 import { Button, Spinner } from "../../ui";
-import { useReassessSymbol } from "./useReassessSymbol";
+import { REASON_TEXT, useReassessSymbol } from "./useReassessSymbol";
 
 const POLL_MS = 5_000;
 const TIMEOUT_MS = 10 * 60_000;
-
-const REASON_TEXT: Record<string, string> = {
-  "analyst layer disabled": "AI 分析未配置（服务端缺 analyst 模型）",
-  "already running": "已在分析中，稍等片刻",
-  "escalation on cooldown": "刚分析过，请稍后再试",
-};
 
 export function GenerateAnalysis({ sym }: { sym: string }) {
   const [running, setRunning] = useState(false);
