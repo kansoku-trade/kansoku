@@ -5,6 +5,7 @@ import type {
   CockpitPosition,
   FlowRow,
   IntradayDayContext,
+  IntradayEventRisk,
   IntradayOptionsLevels,
   IntradayPrediction,
   IntradayTfSummary,
@@ -20,6 +21,7 @@ import { buildCockpitPosition } from "../services/cockpit/position.js";
 import { buildDayContext, openingRange, preMarketRange, prevDayLevels, type DayLevels } from "../services/dayLevels.js";
 import { lastVwap, sessionVwap } from "../services/vwap.js";
 import { macd } from "../services/indicators.js";
+import { getEventRisk } from "../services/events.js";
 import { coerceIntradayTimeframe } from "../services/intraday.js";
 import { computeRelativeVolume } from "../services/relvol.js";
 import { readActiveLessons } from "../services/lessons.js";
@@ -54,6 +56,7 @@ export interface DatapackDeps {
   listCharts: (filter: ListFilter) => Promise<ChartMeta[]>;
   loadChart: (id: string) => Promise<ChartDoc | null>;
   fetchOptionsLevels: (symbol: string) => Promise<IntradayOptionsLevels | null>;
+  fetchEventRisk: (symbol: string) => Promise<IntradayEventRisk | null>;
   readLessons: () => Promise<string[]>;
   now: () => Date;
 }
@@ -72,6 +75,7 @@ export const defaultDatapackDeps: DatapackDeps = {
   listCharts,
   loadChart,
   fetchOptionsLevels: getOptionsLevels,
+  fetchEventRisk: getEventRisk,
   readLessons: readActiveLessons,
   now: () => new Date(),
 };
@@ -113,6 +117,7 @@ export interface ReassessPack {
   day_levels: DayLevels | null;
   day_context: IntradayDayContext | null;
   options_levels: IntradayOptionsLevels | null;
+  event_risk: IntradayEventRisk | null;
   lessons: string[];
   market: { spy: QuoteCell | null; qqq: QuoteCell | null };
   news: NewsItem[];
@@ -237,19 +242,21 @@ export async function buildReassessPack(
   deps: DatapackDeps = defaultDatapackDeps,
 ): Promise<ReassessPack> {
   const now = deps.now();
-  const [barsList, flow, doc, positions, relvolBars, dayBars, news, spy, qqq, optionsLevels, lessons] = await Promise.all([
-    Promise.all(REASSESS_TIMEFRAMES.map((tf) => deps.fetchKline(symbol, tf.period, KLINE_COUNT))),
-    deps.fetchFlow(symbol),
-    findTodayLatestIntradayDoc(symbol, deps),
-    deps.fetchPositions().catch(() => [] as RawPosition[]),
-    deps.fetchKline(symbol, "15m", RELVOL_M15_BARS).catch(() => [] as RawBar[]),
-    deps.fetchKline(symbol, "day", REASSESS_DAY_KLINE_COUNT).catch(() => [] as RawBar[]),
-    deps.fetchNews(symbol).catch(() => [] as NewsItem[]),
-    deps.fetchQuote("SPY.US").catch(() => null),
-    deps.fetchQuote("QQQ.US").catch(() => null),
-    deps.fetchOptionsLevels(symbol).catch(() => null),
-    deps.readLessons().catch(() => [] as string[]),
-  ]);
+  const [barsList, flow, doc, positions, relvolBars, dayBars, news, spy, qqq, optionsLevels, eventRisk, lessons] =
+    await Promise.all([
+      Promise.all(REASSESS_TIMEFRAMES.map((tf) => deps.fetchKline(symbol, tf.period, KLINE_COUNT))),
+      deps.fetchFlow(symbol),
+      findTodayLatestIntradayDoc(symbol, deps),
+      deps.fetchPositions().catch(() => [] as RawPosition[]),
+      deps.fetchKline(symbol, "15m", RELVOL_M15_BARS).catch(() => [] as RawBar[]),
+      deps.fetchKline(symbol, "day", REASSESS_DAY_KLINE_COUNT).catch(() => [] as RawBar[]),
+      deps.fetchNews(symbol).catch(() => [] as NewsItem[]),
+      deps.fetchQuote("SPY.US").catch(() => null),
+      deps.fetchQuote("QQQ.US").catch(() => null),
+      deps.fetchOptionsLevels(symbol).catch(() => null),
+      deps.fetchEventRisk(symbol).catch(() => null),
+      deps.readLessons().catch(() => [] as string[]),
+    ]);
 
   const timeframes = {} as Record<TimeframeKey, ReassessTimeframe>;
   REASSESS_TIMEFRAMES.forEach((tf, i) => {
@@ -285,6 +292,7 @@ export async function buildReassessPack(
     },
     day_context: buildDayContext(dayBars, m5Bars, now, lastVwap(sessionVwap(m5Bars))),
     options_levels: optionsLevels,
+    event_risk: eventRisk,
     lessons,
     market: { spy, qqq },
     news: news.slice(0, 6),

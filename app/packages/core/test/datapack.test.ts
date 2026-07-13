@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ChartDoc, ChartMeta, CockpitComment, RawBar } from "../../../shared/types.js";
+import type { ChartDoc, ChartMeta, CockpitComment, IntradayEventRisk, RawBar } from "../../../shared/types.js";
 import type { RawPosition } from "../src/services/marketdata/types.js";
 import {
   buildCommentPack,
@@ -80,6 +80,7 @@ function makeDeps(overrides: Partial<DatapackDeps> = {}): DatapackDeps {
     listCharts: async () => [{ ...doc } as ChartMeta],
     loadChart: async () => doc,
     fetchOptionsLevels: async () => null,
+    fetchEventRisk: async () => null,
     readLessons: async () => [],
     now: () => NOW,
     ...overrides,
@@ -302,6 +303,28 @@ describe("buildReassessPack", () => {
     const pack = await buildReassessPack("MU.US", deps);
     expect(pack.timeframes.m5.summary).toBeNull();
     expect(pack.timeframes.m5.bars).toHaveLength(20);
+  });
+
+  it("surfaces the stubbed event_risk value", async () => {
+    const eventRisk: IntradayEventRisk = {
+      next_earnings: { date: "2026-07-10", title: "Q3 earnings" },
+      macro: [{ ts: "2026-07-09T12:30:00Z", title: "CPI", estimate: "3.1%", previous: "3.0%" }],
+      updated_at: NOW.toISOString(),
+    };
+    const pack = await buildReassessPack("MU.US", makeDeps({ fetchEventRisk: async () => eventRisk }));
+    expect(pack.event_risk).toEqual(eventRisk);
+  });
+
+  it("event_risk null when fetchEventRisk rejects", async () => {
+    const pack = await buildReassessPack(
+      "MU.US",
+      makeDeps({
+        fetchEventRisk: async () => {
+          throw new Error("calendar down");
+        },
+      }),
+    );
+    expect(pack.event_risk).toBeNull();
   });
 });
 

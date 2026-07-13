@@ -15,6 +15,7 @@ function report(overrides: Partial<RecapSymbolReport> = {}): RecapSymbolReport {
   return {
     symbol: "MU.US",
     direction: "long",
+    origin: "analyst",
     entry: 100,
     stop: 96,
     target1: 106,
@@ -75,6 +76,38 @@ describe("buildRecapMarkdown", () => {
     expect(open).toContain("收盘未了结，锚点以来 -0.50%");
     const unjudged = buildRecapMarkdown("2026-07-02", [report({ outcome: null })], null);
     expect(unjudged).toContain("结局：无法判定");
+  });
+
+  it("renders the daily scoreboard from mixed outcomes and origins", () => {
+    const md = buildRecapMarkdown(
+      "2026-07-02",
+      [
+        report({
+          symbol: "MU.US",
+          direction: "long",
+          origin: "analyst",
+          outcome: { status: "hit_target", pct_since_anchor: 4.2, resolved_at: 1, r_multiple: 1.5 },
+        }),
+        report({
+          symbol: "SMH.US",
+          direction: "neutral",
+          origin: "manual",
+          zone: { low: 90, high: 95 },
+          outcome: { status: "broke_range", pct_since_anchor: -2.1, resolved_at: 1 },
+        }),
+      ],
+      null,
+    );
+    expect(md).toContain("## 当日记分板");
+    expect(md).toContain("样本 2：命中目标 1 · 打止损 0 · 守区间 0 · 破区间 1 · 未了结 0 · 无法判定 0");
+    expect(md).toContain("命中率（已了结口径）：50.0%（与 /api/overview/stats 同一机械口径）");
+    expect(md).toContain("平均盈亏倍数 avg_r：+1.50（每笔平均赚/亏多少个止损单位）");
+    expect(md).toContain("多单 1 笔 / 空单 0 笔 / 观望 1 笔");
+  });
+
+  it("renders the empty scoreboard when no symbol has a direction", () => {
+    const md = buildRecapMarkdown("2026-07-02", [report({ direction: null, outcome: null })], null);
+    expect(md).toContain("当日没有落盘的预测，记分板为空。");
   });
 });
 

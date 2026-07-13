@@ -98,17 +98,26 @@ describe("PATCH /:id prediction_updated_at", () => {
   it("sets prediction_updated_at when body explicitly contains a prediction key", async () => {
     const doc = makeDoc({ prediction_updated_at: undefined });
     store.loadChart.mockResolvedValue(doc);
+    const prediction = {
+      direction: "short",
+      anchor: { timeframe: "m5", time: "2026-07-05T15:00:00Z", price: 100 },
+      entry_plan: { entry: 100, stop: 103, target1: 96 },
+      scenarios: [
+        { label: "上破", probability: 40 },
+        { label: "下破", probability: 60 },
+      ],
+    };
     build.rebuild.mockReturnValue({
       type: "intraday",
       title: doc.title,
       symbol: doc.symbol,
-      input: { ...doc.input, prediction: { direction: "short" } },
+      input: { ...doc.input, prediction },
       built: doc.built,
       meta: {},
     });
     freezeAt(REGULAR_TS);
 
-    const res = await tsukiRequest(...patchReq(doc.id, { prediction: { direction: "short" } }));
+    const res = await tsukiRequest(...patchReq(doc.id, { prediction }));
     expect(res.status).toBe(200);
     expect(store.saveChart).toHaveBeenCalledTimes(1);
     const saved = store.saveChart.mock.calls[0][0] as ChartDoc;
@@ -190,6 +199,127 @@ describe("POST /", () => {
     expect(store.createChart.mock.calls[0][0]).toEqual(buildResult);
     const body = await res.json();
     expect(body.data.id).toBe("2026-07-05-nvda-intraday");
+  });
+});
+
+describe("POST / prediction validation", () => {
+  const validPrediction = {
+    direction: "long",
+    anchor: { timeframe: "m5", time: "2026-07-05T15:00:00Z", price: 100 },
+    entry_plan: { entry: 100, stop: 97, target1: 104 },
+    scenarios: [
+      { label: "上破", probability: 60 },
+      { label: "下破", probability: 40 },
+    ],
+  };
+
+  it("rejects an intraday prediction with a T1 R/R below 1:1", async () => {
+    const res = await tsukiRequest(
+      ...postReq({
+        type: "intraday",
+        symbol: "NVDA.US",
+        prediction: { ...validPrediction, entry_plan: { entry: 100, stop: 98, target1: 101 } },
+      }),
+    );
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toContain("预测未通过校验：");
+    expect(build.buildChart).not.toHaveBeenCalled();
+  });
+
+  it("rejects an intraday prediction with a garbage direction", async () => {
+    const res = await tsukiRequest(
+      ...postReq({
+        type: "intraday",
+        symbol: "NVDA.US",
+        prediction: { ...validPrediction, direction: "up" },
+      }),
+    );
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toContain("预测未通过校验：");
+    expect(build.buildChart).not.toHaveBeenCalled();
+  });
+
+  it("still allows an intraday preview POST without a prediction", async () => {
+    build.buildChart.mockResolvedValue({
+      type: "intraday",
+      title: "NVDA 短线多周期",
+      symbol: "NVDA.US",
+      input: { symbol: "NVDA.US" },
+      built: { kind: "intraday" },
+      meta: {},
+    });
+    store.createChart.mockResolvedValue(makeDoc());
+    const res = await tsukiRequest(...postReq({ type: "intraday", symbol: "NVDA.US" }));
+    expect(res.status).toBe(200);
+  });
+
+  it("accepts an intraday POST with a valid prediction", async () => {
+    build.buildChart.mockResolvedValue({
+      type: "intraday",
+      title: "NVDA 短线多周期",
+      symbol: "NVDA.US",
+      input: { symbol: "NVDA.US", prediction: validPrediction },
+      built: { kind: "intraday" },
+      meta: {},
+    });
+    store.createChart.mockResolvedValue(makeDoc());
+    const res = await tsukiRequest(...postReq({ type: "intraday", symbol: "NVDA.US", prediction: validPrediction }));
+    expect(res.status).toBe(200);
+  });
+});
+
+describe("PATCH /:id prediction validation", () => {
+  const validPrediction = {
+    direction: "long",
+    anchor: { timeframe: "m5", time: "2026-07-05T15:00:00Z", price: 100 },
+    entry_plan: { entry: 100, stop: 97, target1: 104 },
+    scenarios: [
+      { label: "上破", probability: 60 },
+      { label: "下破", probability: 40 },
+    ],
+  };
+
+  it("rejects a PATCH with an invalid prediction", async () => {
+    const doc = makeDoc();
+    store.loadChart.mockResolvedValue(doc);
+    const res = await tsukiRequest(
+      ...patchReq(doc.id, { prediction: { ...validPrediction, entry_plan: { entry: 100, stop: 98, target1: 101 } } }),
+    );
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toContain("预测未通过校验：");
+    expect(store.saveChart).not.toHaveBeenCalled();
+  });
+
+  it("accepts a PATCH with a valid prediction", async () => {
+    const doc = makeDoc();
+    store.loadChart.mockResolvedValue(doc);
+    build.rebuild.mockReturnValue({
+      type: "intraday",
+      title: doc.title,
+      symbol: doc.symbol,
+      input: { ...doc.input, prediction: validPrediction },
+      built: doc.built,
+      meta: {},
+    });
+    const res = await tsukiRequest(...patchReq(doc.id, { prediction: validPrediction }));
+    expect(res.status).toBe(200);
+    expect(store.saveChart).toHaveBeenCalledTimes(1);
+  });
+
+  it("allows clearing a prediction with null without validation", async () => {
+    const doc = makeDoc();
+    store.loadChart.mockResolvedValue(doc);
+    build.rebuild.mockReturnValue({
+      type: "intraday",
+      title: doc.title,
+      symbol: doc.symbol,
+      input: { ...doc.input, prediction: null },
+      built: doc.built,
+      meta: {},
+    });
+    const res = await tsukiRequest(...patchReq(doc.id, { prediction: null }));
+    expect(res.status).toBe(200);
+    expect(store.saveChart).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -364,7 +494,7 @@ describe("GET /:id/built", () => {
     expect(store.saveChart).not.toHaveBeenCalled();
   });
 
-  it("clamps count to 1000", async () => {
+  it("passes a large count through uncapped", async () => {
     const doc = makeDoc();
     store.loadChart.mockResolvedValue(doc);
     build.refreshBody.mockReturnValue({ type: "intraday", symbol: doc.symbol });
@@ -372,8 +502,8 @@ describe("GET /:id/built", () => {
 
     const res = await tsukiRequest(`/api/charts/${doc.id}/built?count=5000`);
     const body = await res.json();
-    expect(body.data.count).toBe(1000);
-    expect(build.buildChart).toHaveBeenCalledWith(expect.objectContaining({ count: 1000 }));
+    expect(body.data.count).toBe(5000);
+    expect(build.buildChart).toHaveBeenCalledWith(expect.objectContaining({ count: 5000 }));
   });
 
   it("rejects missing or invalid count", async () => {

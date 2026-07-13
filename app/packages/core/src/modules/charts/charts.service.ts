@@ -1,4 +1,4 @@
-import type { ChartDoc, RawBar, TimeframeKey } from "../../../../../shared/types.js";
+import type { ChartDoc, IntradayPrediction, RawBar, TimeframeKey } from "../../../../../shared/types.js";
 import { chartUrl } from "../../chartUrl.js";
 import type { ChartsApi } from "../../contract/charts.js";
 import { ClientError } from "../../errors.js";
@@ -6,8 +6,17 @@ import { mergeFreshBars } from "../../realtime/candleMerge.js";
 import { ALL_TYPES, buildChart, mergeForPatch, rebuild, refreshBody } from "../../services/build.js";
 import { clampViewCount } from "../../services/history.js";
 import { TIMEFRAME_ORDER } from "../../services/intraday.js";
+import { validatePrediction } from "../../services/predictionRules.js";
 import { predictionStale } from "../../services/staleness.js";
 import { createChart, deleteChart, listCharts, loadChart, saveChart } from "../../services/store.js";
+
+function assertPredictionValid(prediction: unknown): void {
+  if (prediction == null) return;
+  const issues = validatePrediction(prediction as IntradayPrediction);
+  if (issues.length) {
+    throw new ClientError(`预测未通过校验：${issues.join("；")}`, undefined, 400);
+  }
+}
 
 export const chartsService: ChartsApi = {
   async list(input = {}) {
@@ -36,6 +45,9 @@ export const chartsService: ChartsApi = {
   },
 
   async create(input) {
+    if (input.type === "intraday" && input.prediction != null) {
+      assertPredictionValid(input.prediction);
+    }
     const result = await buildChart(input);
     const doc = await createChart(result);
     return {
@@ -94,6 +106,9 @@ export const chartsService: ChartsApi = {
         "legacy charts are read-only; create an intraday chart instead",
         400,
       );
+    }
+    if (doc.type === "intraday" && "prediction" in parsed && parsed.prediction != null) {
+      assertPredictionValid(parsed.prediction);
     }
     const merged = mergeForPatch(doc.type, doc.input, parsed);
     const title = typeof parsed.title === "string" && parsed.title ? parsed.title : doc.title;

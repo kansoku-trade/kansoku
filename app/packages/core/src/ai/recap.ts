@@ -9,6 +9,7 @@ import type {
   RawBar,
 } from "../../../../shared/types.js";
 import { JOURNAL_DIR } from "../env.js";
+import { aggregateStats, type StatsRow } from "../services/cockpit/stats.js";
 import { attachRMultiple, judgeOutcome, zoneFromPrediction } from "../services/cockpit/outcome.js";
 import { getResolvedOutcomes, saveResolvedOutcome, type OutcomeKey } from "../services/cockpit/outcomeCache.js";
 import { getProvider } from "../services/marketdata/registry.js";
@@ -22,6 +23,7 @@ const OUTCOME_BARS = 300;
 export interface RecapSymbolReport {
   symbol: string;
   direction: "long" | "short" | "neutral" | null;
+  origin: "analyst" | "manual";
   entry: number | null;
   stop: number | null;
   target1: number | null;
@@ -100,6 +102,31 @@ function commentLines(comments: CockpitComment[]): string[] {
   return lines;
 }
 
+function scoreboardLines(reports: RecapSymbolReport[]): string[] {
+  const rows: StatsRow[] = [];
+  for (const report of reports) {
+    if (!report.direction) continue;
+    rows.push({ direction: report.direction, origin: report.origin, outcome: report.outcome });
+  }
+  if (!rows.length) return ["当日没有落盘的预测，记分板为空。"];
+
+  const stats = aggregateStats(rows);
+  const { overall } = stats;
+  const winRateText =
+    overall.win_rate != null ? `${(overall.win_rate * 100).toFixed(1)}%（与 /api/overview/stats 同一机械口径）` : "——（当日无已了结样本）";
+  const avgRText =
+    overall.avg_r != null
+      ? `${overall.avg_r >= 0 ? "+" : ""}${overall.avg_r.toFixed(2)}（每笔平均赚/亏多少个止损单位）`
+      : "——（当日无已了结样本）";
+
+  return [
+    `- 样本 ${overall.total}：命中目标 ${overall.hit_target} · 打止损 ${overall.hit_stop} · 守区间 ${overall.held_range} · 破区间 ${overall.broke_range} · 未了结 ${overall.open} · 无法判定 ${overall.unjudged}`,
+    `- 命中率（已了结口径）：${winRateText}`,
+    `- 平均盈亏倍数 avg_r：${avgRText}`,
+    `- 多单 ${stats.by_direction.long.total} 笔 / 空单 ${stats.by_direction.short.total} 笔 / 观望 ${stats.by_direction.neutral.total} 笔`,
+  ];
+}
+
 function usageLines(usage: AiUsageSummary | null): string[] {
   if (!usage || usage.runs === 0) return ["当日没有记录到 AI 花费。"];
   const lines = [
@@ -126,6 +153,8 @@ export function buildRecapMarkdown(
     if (report.direction) sections.push(outcomeLine(report.outcome));
     sections.push(...commentLines(report.comments));
   }
+  sections.push("", "## 当日记分板", "");
+  sections.push(...scoreboardLines(reports));
   sections.push("", "## 当日 AI 花费", "");
   sections.push(...usageLines(usage));
   sections.push("");
@@ -185,6 +214,7 @@ async function buildSymbolReport(
   return {
     symbol,
     direction: prediction?.direction ?? null,
+    origin: doc?.input.origin === "analyst" ? "analyst" : "manual",
     entry: plan?.entry ?? null,
     stop: plan?.stop ?? null,
     target1: plan?.target1 ?? null,
