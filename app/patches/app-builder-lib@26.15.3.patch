@@ -30,3 +30,522 @@ index f59727f481c3ed954e0c280e82f3ecba78c0bf77..69d824a992d562455153680d05638c95
              });
          });
          return Promise.resolve();
+diff --git a/scheme.json b/scheme.json
+index bee12b64d777332cb095efcc700cdec0b64cb0c0..9266ff77a9c7197ec6662cab2ee0f6eea8e0d099 100644
+--- a/scheme.json
++++ b/scheme.json
+@@ -67,7 +67,7 @@
+               "type": "null"
+             }
+           ],
+-          "description": "The compression algorithm passed to the AppImage build tool.\n\n**FUSE2 toolset (`\"0.0.0\"` or unset):** only `\"xz\"` and `\"gzip\"` are forwarded\nto mksquashfs (`-comp <value>`); `\"xz\"` additionally passes `-Xdict-size 100% -b 1048576`.\n`\"zstd\"`, `null`, and unset fall through to the root-level `compression` option:\n- `\"maximum\"` → `\"xz\"`\n- anything else → flag omitted (mksquashfs defaults to gzip)\n\n**Static-runtime toolsets (`>= 1.0.0`):** `\"gzip\"` and `\"zstd\"` are forwarded\ndirectly. `\"xz\"` is mapped to `\"zstd\"` (nearest supported equivalent). `null`\nor unset falls through to the root-level `compression` option:\n- `\"store\"` → `\"gzip\"`\n- `\"normal\"` / `\"maximum\"` / unset → `\"zstd\"`"
++          "description": "The compression algorithm passed to the AppImage build tool.\n\n**FUSE2 toolset (`\"0.0.0\"` or unset):** only `\"xz\"` and `\"gzip\"` are forwarded\nto mksquashfs (`-comp <value>`); `\"xz\"` additionally passes `-Xdict-size 100% -b 1048576`.\n`\"zstd\"`, `null`, and unset fall through to the root-level `compression` option:\n- `\"maximum\"` \u2192 `\"xz\"`\n- anything else \u2192 flag omitted (mksquashfs defaults to gzip)\n\n**Static-runtime toolsets (`>= 1.0.0`):** `\"gzip\"` and `\"zstd\"` are forwarded\ndirectly. `\"xz\"` is mapped to `\"zstd\"` (nearest supported equivalent). `null`\nor unset falls through to the root-level `compression` option:\n- `\"store\"` \u2192 `\"gzip\"`\n- `\"normal\"` / `\"maximum\"` / unset \u2192 `\"zstd\"`"
+         },
+         "description": {
+           "description": "As [description](https://www.electron.build/configuration#description) from application package.json, but allows you to specify different for Linux.",
+@@ -947,7 +947,7 @@
+           ]
+         },
+         "contents": {
+-          "description": "The content — to customize icon locations. The x and y coordinates refer to the position of the **center** of the icon (at 1x scale), and do not take the label into account.",
++          "description": "The content \u2014 to customize icon locations. The x and y coordinates refer to the position of the **center** of the icon (at 1x scale), and do not take the label into account.",
+           "items": {
+             "$ref": "#/definitions/DmgContent"
+           },
+@@ -1022,7 +1022,7 @@
+               ]
+             }
+           ],
+-          "description": "License agreement to display when the DMG is mounted.\n\nAccepts a single file path (`.rtf`, `.txt`, or `.html`) used as the English/default license,\nor a language-code → file-path map for multi-language builds.\n\nWhen set, this takes precedence over the file-naming convention\n(`license_en.txt`, etc. in the build resources directory).\nPaths are resolved relative to the build resources directory or project root."
++          "description": "License agreement to display when the DMG is mounted.\n\nAccepts a single file path (`.rtf`, `.txt`, or `.html`) used as the English/default license,\nor a language-code \u2192 file-path map for multi-language builds.\n\nWhen set, this takes precedence over the file-naming convention\n(`license_en.txt`, etc. in the build resources directory).\nPaths are resolved relative to the build resources directory or project root."
+         },
+         "publish": {
+           "anyOf": [
+@@ -1094,7 +1094,7 @@
+         },
+         "window": {
+           "$ref": "#/definitions/DmgWindow",
+-          "description": "The DMG window position and size. With y co-ordinates running from bottom to top.\n\nThe Finder makes sure that the window will be on the user’s display, so if you want your window at the top left of the display you could use `\"x\": 0, \"y\": 100000` as the x, y co-ordinates.\nIt is not to be possible to position the window relative to the [top left](https://github.com/electron-userland/electron-builder/issues/3990#issuecomment-512960957) or relative to the center of the user’s screen."
++          "description": "The DMG window position and size. With y co-ordinates running from bottom to top.\n\nThe Finder makes sure that the window will be on the user\u2019s display, so if you want your window at the top left of the display you could use `\"x\": 0, \"y\": 100000` as the x, y co-ordinates.\nIt is not to be possible to position the window relative to the [top left](https://github.com/electron-userland/electron-builder/issues/3990#issuecomment-512960957) or relative to the center of the user\u2019s screen."
+         },
+         "writeUpdateInfo": {
+           "default": true,
+@@ -1288,12 +1288,12 @@
+         },
+         "rank": {
+           "default": "Default",
+-          "description": "*macOS-only* The app’s rank with respect to the type. The value can be `Owner`, `Default`, `Alternate`, or `None`. Corresponds to `LSHandlerRank`.",
++          "description": "*macOS-only* The app\u2019s rank with respect to the type. The value can be `Owner`, `Default`, `Alternate`, or `None`. Corresponds to `LSHandlerRank`.",
+           "type": "string"
+         },
+         "role": {
+           "default": "Editor",
+-          "description": "*macOS-only* The app’s role with respect to the type. The value can be `Editor`, `Viewer`, `Shell`, or `None`. Corresponds to `CFBundleTypeRole`.",
++          "description": "*macOS-only* The app\u2019s role with respect to the type. The value can be `Editor`, `Viewer`, `Shell`, or `None`. Corresponds to `CFBundleTypeRole`.",
+           "type": "string"
+         }
+       },
+@@ -1726,7 +1726,7 @@
+             }
+           ],
+           "default": "draft",
+-          "description": "The type of release. By default `draft` release will be created.\n\nAlso you can set release type using environment variable. If `EP_DRAFT`is set to `true` — `draft`, if `EP_PRE_RELEASE`is set to `true` — `prerelease`."
++          "description": "The type of release. By default `draft` release will be created.\n\nAlso you can set release type using environment variable. If `EP_DRAFT`is set to `true` \u2014 `draft`, if `EP_PRE_RELEASE`is set to `true` \u2014 `prerelease`."
+         },
+         "repo": {
+           "description": "The repository name. [Detected automatically](#github-repository-and-bintray-package).",
+@@ -2226,7 +2226,7 @@
+               ]
+             }
+           ],
+-          "description": "A [glob patterns](https://www.electron.build/file-patterns) relative to the [app directory](https://www.electron.build/configuration#directories), which specifies which files to include when copying files to create the package.\n\nDefaults to:\n```json\n[\n\"**\\/*\",\n\"!**\\/node_modules/*\\/{CHANGELOG.md,README.md,README,readme.md,readme}\",\n\"!**\\/node_modules/*\\/{test,__tests__,tests,powered-test,example,examples}\",\n\"!**\\/node_modules/*.d.ts\",\n\"!**\\/node_modules/.bin\",\n\"!**\\/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}\",\n\"!.editorconfig\",\n\"!**\\/._*\",\n\"!**\\/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,.gitignore,.gitattributes}\",\n\"!**\\/{__pycache__,thumbs.db,.flowconfig,.idea,.vs,.nyc_output}\",\n\"!**\\/{appveyor.yml,.travis.yml,circle.yml}\",\n\"!**\\/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}\"\n]\n```\n\nDevelopment dependencies are never copied in any case. You don't need to ignore it explicitly. Hidden files are not ignored by default, but all files that should be ignored, are ignored by default.\n\nDefault pattern \\`**\\/*\\` **is not added to your custom** if some of your patterns is not ignore (i.e. not starts with `!`). `package.json` and \\`**\\/node_modules/**\\/*` (only production dependencies will be copied) is added to your custom in any case. All default ignores are added in any case — you don't need to repeat it if you configure own patterns.\n\nMay be specified in the platform options (e.g. in the [mac](https://www.electron.build/mac)).\n\nYou may also specify custom source and destination directories by using `FileSet` objects instead of simple glob patterns.\n\n```json\n[\n{\n\"from\": \"path/to/source\",\n\"to\": \"path/to/destination\",\n\"filter\": [\"**\\/*\", \"!foo/*.js\"]\n}\n]\n```\n\nYou can use [file macros](https://www.electron.build/file-patterns#file-macros) in the `from` and `to` fields as well. `from` and `to` can be files and you can use this to [rename](https://github.com/electron-userland/electron-builder/issues/1119) a file while packaging."
++          "description": "A [glob patterns](https://www.electron.build/file-patterns) relative to the [app directory](https://www.electron.build/configuration#directories), which specifies which files to include when copying files to create the package.\n\nDefaults to:\n```json\n[\n\"**\\/*\",\n\"!**\\/node_modules/*\\/{CHANGELOG.md,README.md,README,readme.md,readme}\",\n\"!**\\/node_modules/*\\/{test,__tests__,tests,powered-test,example,examples}\",\n\"!**\\/node_modules/*.d.ts\",\n\"!**\\/node_modules/.bin\",\n\"!**\\/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}\",\n\"!.editorconfig\",\n\"!**\\/._*\",\n\"!**\\/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,.gitignore,.gitattributes}\",\n\"!**\\/{__pycache__,thumbs.db,.flowconfig,.idea,.vs,.nyc_output}\",\n\"!**\\/{appveyor.yml,.travis.yml,circle.yml}\",\n\"!**\\/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}\"\n]\n```\n\nDevelopment dependencies are never copied in any case. You don't need to ignore it explicitly. Hidden files are not ignored by default, but all files that should be ignored, are ignored by default.\n\nDefault pattern \\`**\\/*\\` **is not added to your custom** if some of your patterns is not ignore (i.e. not starts with `!`). `package.json` and \\`**\\/node_modules/**\\/*` (only production dependencies will be copied) is added to your custom in any case. All default ignores are added in any case \u2014 you don't need to repeat it if you configure own patterns.\n\nMay be specified in the platform options (e.g. in the [mac](https://www.electron.build/mac)).\n\nYou may also specify custom source and destination directories by using `FileSet` objects instead of simple glob patterns.\n\n```json\n[\n{\n\"from\": \"path/to/source\",\n\"to\": \"path/to/destination\",\n\"filter\": [\"**\\/*\", \"!foo/*.js\"]\n}\n]\n```\n\nYou can use [file macros](https://www.electron.build/file-patterns#file-macros) in the `from` and `to` fields as well. `from` and `to` can be files and you can use this to [rename](https://github.com/electron-userland/electron-builder/issues/1119) a file while packaging."
+         },
+         "forceCodeSigning": {
+           "default": false,
+@@ -2949,7 +2949,7 @@
+               ]
+             }
+           ],
+-          "description": "A [glob patterns](https://www.electron.build/file-patterns) relative to the [app directory](https://www.electron.build/configuration#directories), which specifies which files to include when copying files to create the package.\n\nDefaults to:\n```json\n[\n\"**\\/*\",\n\"!**\\/node_modules/*\\/{CHANGELOG.md,README.md,README,readme.md,readme}\",\n\"!**\\/node_modules/*\\/{test,__tests__,tests,powered-test,example,examples}\",\n\"!**\\/node_modules/*.d.ts\",\n\"!**\\/node_modules/.bin\",\n\"!**\\/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}\",\n\"!.editorconfig\",\n\"!**\\/._*\",\n\"!**\\/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,.gitignore,.gitattributes}\",\n\"!**\\/{__pycache__,thumbs.db,.flowconfig,.idea,.vs,.nyc_output}\",\n\"!**\\/{appveyor.yml,.travis.yml,circle.yml}\",\n\"!**\\/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}\"\n]\n```\n\nDevelopment dependencies are never copied in any case. You don't need to ignore it explicitly. Hidden files are not ignored by default, but all files that should be ignored, are ignored by default.\n\nDefault pattern \\`**\\/*\\` **is not added to your custom** if some of your patterns is not ignore (i.e. not starts with `!`). `package.json` and \\`**\\/node_modules/**\\/*` (only production dependencies will be copied) is added to your custom in any case. All default ignores are added in any case — you don't need to repeat it if you configure own patterns.\n\nMay be specified in the platform options (e.g. in the [mac](https://www.electron.build/mac)).\n\nYou may also specify custom source and destination directories by using `FileSet` objects instead of simple glob patterns.\n\n```json\n[\n{\n\"from\": \"path/to/source\",\n\"to\": \"path/to/destination\",\n\"filter\": [\"**\\/*\", \"!foo/*.js\"]\n}\n]\n```\n\nYou can use [file macros](https://www.electron.build/file-patterns#file-macros) in the `from` and `to` fields as well. `from` and `to` can be files and you can use this to [rename](https://github.com/electron-userland/electron-builder/issues/1119) a file while packaging."
++          "description": "A [glob patterns](https://www.electron.build/file-patterns) relative to the [app directory](https://www.electron.build/configuration#directories), which specifies which files to include when copying files to create the package.\n\nDefaults to:\n```json\n[\n\"**\\/*\",\n\"!**\\/node_modules/*\\/{CHANGELOG.md,README.md,README,readme.md,readme}\",\n\"!**\\/node_modules/*\\/{test,__tests__,tests,powered-test,example,examples}\",\n\"!**\\/node_modules/*.d.ts\",\n\"!**\\/node_modules/.bin\",\n\"!**\\/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}\",\n\"!.editorconfig\",\n\"!**\\/._*\",\n\"!**\\/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,.gitignore,.gitattributes}\",\n\"!**\\/{__pycache__,thumbs.db,.flowconfig,.idea,.vs,.nyc_output}\",\n\"!**\\/{appveyor.yml,.travis.yml,circle.yml}\",\n\"!**\\/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}\"\n]\n```\n\nDevelopment dependencies are never copied in any case. You don't need to ignore it explicitly. Hidden files are not ignored by default, but all files that should be ignored, are ignored by default.\n\nDefault pattern \\`**\\/*\\` **is not added to your custom** if some of your patterns is not ignore (i.e. not starts with `!`). `package.json` and \\`**\\/node_modules/**\\/*` (only production dependencies will be copied) is added to your custom in any case. All default ignores are added in any case \u2014 you don't need to repeat it if you configure own patterns.\n\nMay be specified in the platform options (e.g. in the [mac](https://www.electron.build/mac)).\n\nYou may also specify custom source and destination directories by using `FileSet` objects instead of simple glob patterns.\n\n```json\n[\n{\n\"from\": \"path/to/source\",\n\"to\": \"path/to/destination\",\n\"filter\": [\"**\\/*\", \"!foo/*.js\"]\n}\n]\n```\n\nYou can use [file macros](https://www.electron.build/file-patterns#file-macros) in the `from` and `to` fields as well. `from` and `to` can be files and you can use this to [rename](https://github.com/electron-userland/electron-builder/issues/1119) a file while packaging."
+         },
+         "forceCodeSigning": {
+           "default": false,
+@@ -3028,7 +3028,7 @@
+           ]
+         },
+         "identity": {
+-          "description": "The signing identity (certificate name) to use when signing. Consider using environment variables [CSC_LINK or CSC_NAME](https://www.electron.build/code-signing) instead of specifying this option.\nMAS installer identity is specified in the [mas](https://www.electron.build/mas).\n\n- **Not set** (default): electron-builder searches the keychain for a valid signing certificate. If none is found, signing is skipped for all architectures — there is no automatic ad-hoc fallback.\n- **`null`**: skip signing entirely.\n- **`\"-\"`**: opt in to ad-hoc signing explicitly. Note that `hardenedRuntime: true` (the default) combined with ad-hoc signing requires\n  the [`com.apple.security.cs.disable-library-validation`](https://developer.apple.com/documentation/BundleResources/Entitlements/com.apple.security.cs.disable-library-validation)\n  entitlement to prevent app launch failures; otherwise set `hardenedRuntime: false`.",
++          "description": "The signing identity (certificate name) to use when signing. Consider using environment variables [CSC_LINK or CSC_NAME](https://www.electron.build/code-signing) instead of specifying this option.\nMAS installer identity is specified in the [mas](https://www.electron.build/mas).\n\n- **Not set** (default): electron-builder searches the keychain for a valid signing certificate. If none is found, signing is skipped for all architectures \u2014 there is no automatic ad-hoc fallback.\n- **`null`**: skip signing entirely.\n- **`\"-\"`**: opt in to ad-hoc signing explicitly. Note that `hardenedRuntime: true` (the default) combined with ad-hoc signing requires\n  the [`com.apple.security.cs.disable-library-validation`](https://developer.apple.com/documentation/BundleResources/Entitlements/com.apple.security.cs.disable-library-validation)\n  entitlement to prevent app launch failures; otherwise set `hardenedRuntime: false`.",
+           "type": [
+             "null",
+             "string"
+@@ -3587,7 +3587,7 @@
+               ]
+             }
+           ],
+-          "description": "A [glob patterns](https://www.electron.build/file-patterns) relative to the [app directory](https://www.electron.build/configuration#directories), which specifies which files to include when copying files to create the package.\n\nDefaults to:\n```json\n[\n\"**\\/*\",\n\"!**\\/node_modules/*\\/{CHANGELOG.md,README.md,README,readme.md,readme}\",\n\"!**\\/node_modules/*\\/{test,__tests__,tests,powered-test,example,examples}\",\n\"!**\\/node_modules/*.d.ts\",\n\"!**\\/node_modules/.bin\",\n\"!**\\/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}\",\n\"!.editorconfig\",\n\"!**\\/._*\",\n\"!**\\/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,.gitignore,.gitattributes}\",\n\"!**\\/{__pycache__,thumbs.db,.flowconfig,.idea,.vs,.nyc_output}\",\n\"!**\\/{appveyor.yml,.travis.yml,circle.yml}\",\n\"!**\\/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}\"\n]\n```\n\nDevelopment dependencies are never copied in any case. You don't need to ignore it explicitly. Hidden files are not ignored by default, but all files that should be ignored, are ignored by default.\n\nDefault pattern \\`**\\/*\\` **is not added to your custom** if some of your patterns is not ignore (i.e. not starts with `!`). `package.json` and \\`**\\/node_modules/**\\/*` (only production dependencies will be copied) is added to your custom in any case. All default ignores are added in any case — you don't need to repeat it if you configure own patterns.\n\nMay be specified in the platform options (e.g. in the [mac](https://www.electron.build/mac)).\n\nYou may also specify custom source and destination directories by using `FileSet` objects instead of simple glob patterns.\n\n```json\n[\n{\n\"from\": \"path/to/source\",\n\"to\": \"path/to/destination\",\n\"filter\": [\"**\\/*\", \"!foo/*.js\"]\n}\n]\n```\n\nYou can use [file macros](https://www.electron.build/file-patterns#file-macros) in the `from` and `to` fields as well. `from` and `to` can be files and you can use this to [rename](https://github.com/electron-userland/electron-builder/issues/1119) a file while packaging."
++          "description": "A [glob patterns](https://www.electron.build/file-patterns) relative to the [app directory](https://www.electron.build/configuration#directories), which specifies which files to include when copying files to create the package.\n\nDefaults to:\n```json\n[\n\"**\\/*\",\n\"!**\\/node_modules/*\\/{CHANGELOG.md,README.md,README,readme.md,readme}\",\n\"!**\\/node_modules/*\\/{test,__tests__,tests,powered-test,example,examples}\",\n\"!**\\/node_modules/*.d.ts\",\n\"!**\\/node_modules/.bin\",\n\"!**\\/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}\",\n\"!.editorconfig\",\n\"!**\\/._*\",\n\"!**\\/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,.gitignore,.gitattributes}\",\n\"!**\\/{__pycache__,thumbs.db,.flowconfig,.idea,.vs,.nyc_output}\",\n\"!**\\/{appveyor.yml,.travis.yml,circle.yml}\",\n\"!**\\/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}\"\n]\n```\n\nDevelopment dependencies are never copied in any case. You don't need to ignore it explicitly. Hidden files are not ignored by default, but all files that should be ignored, are ignored by default.\n\nDefault pattern \\`**\\/*\\` **is not added to your custom** if some of your patterns is not ignore (i.e. not starts with `!`). `package.json` and \\`**\\/node_modules/**\\/*` (only production dependencies will be copied) is added to your custom in any case. All default ignores are added in any case \u2014 you don't need to repeat it if you configure own patterns.\n\nMay be specified in the platform options (e.g. in the [mac](https://www.electron.build/mac)).\n\nYou may also specify custom source and destination directories by using `FileSet` objects instead of simple glob patterns.\n\n```json\n[\n{\n\"from\": \"path/to/source\",\n\"to\": \"path/to/destination\",\n\"filter\": [\"**\\/*\", \"!foo/*.js\"]\n}\n]\n```\n\nYou can use [file macros](https://www.electron.build/file-patterns#file-macros) in the `from` and `to` fields as well. `from` and `to` can be files and you can use this to [rename](https://github.com/electron-userland/electron-builder/issues/1119) a file while packaging."
+         },
+         "forceCodeSigning": {
+           "default": false,
+@@ -3666,7 +3666,7 @@
+           ]
+         },
+         "identity": {
+-          "description": "The signing identity (certificate name) to use when signing. Consider using environment variables [CSC_LINK or CSC_NAME](https://www.electron.build/code-signing) instead of specifying this option.\nMAS installer identity is specified in the [mas](https://www.electron.build/mas).\n\n- **Not set** (default): electron-builder searches the keychain for a valid signing certificate. If none is found, signing is skipped for all architectures — there is no automatic ad-hoc fallback.\n- **`null`**: skip signing entirely.\n- **`\"-\"`**: opt in to ad-hoc signing explicitly. Note that `hardenedRuntime: true` (the default) combined with ad-hoc signing requires\n  the [`com.apple.security.cs.disable-library-validation`](https://developer.apple.com/documentation/BundleResources/Entitlements/com.apple.security.cs.disable-library-validation)\n  entitlement to prevent app launch failures; otherwise set `hardenedRuntime: false`.",
++          "description": "The signing identity (certificate name) to use when signing. Consider using environment variables [CSC_LINK or CSC_NAME](https://www.electron.build/code-signing) instead of specifying this option.\nMAS installer identity is specified in the [mas](https://www.electron.build/mas).\n\n- **Not set** (default): electron-builder searches the keychain for a valid signing certificate. If none is found, signing is skipped for all architectures \u2014 there is no automatic ad-hoc fallback.\n- **`null`**: skip signing entirely.\n- **`\"-\"`**: opt in to ad-hoc signing explicitly. Note that `hardenedRuntime: true` (the default) combined with ad-hoc signing requires\n  the [`com.apple.security.cs.disable-library-validation`](https://developer.apple.com/documentation/BundleResources/Entitlements/com.apple.security.cs.disable-library-validation)\n  entitlement to prevent app launch failures; otherwise set `hardenedRuntime: false`.",
+           "type": [
+             "null",
+             "string"
+@@ -3913,7 +3913,7 @@
+         },
+         "buildResources": {
+           "default": "build",
+-          "description": "The path to build resources.\n\nPlease note — build resources are not packed into the app. If you need to use some files, e.g. as tray icon, please include required files explicitly: `\"files\": [\"**\\/*\", \"build/icon.*\"]`",
++          "description": "The path to build resources.\n\nPlease note \u2014 build resources are not packed into the app. If you need to use some files, e.g. as tray icon, please include required files explicitly: `\"files\": [\"**\\/*\", \"build/icon.*\"]`",
+           "type": [
+             "null",
+             "string"
+@@ -4282,7 +4282,7 @@
+           "type": "boolean"
+         },
+         "guid": {
+-          "description": "The GUID for the installer. Used to identify the application for upgrade and uninstall operations.\nIf not specified, a deterministic GUID is generated from the app ID (`appId`) — but this means\nchanging your `appId` will break silent upgrades of existing installs.",
++          "description": "The GUID for the installer. Used to identify the application for upgrade and uninstall operations.\nIf not specified, a deterministic GUID is generated from the app ID (`appId`) \u2014 but this means\nchanging your `appId` will break silent upgrades of existing installs.",
+           "type": [
+             "null",
+             "string"
+@@ -4335,7 +4335,7 @@
+           "description": "The installer languages (e.g. `en_US`, `de_DE`). Change only if you understand what do you do and for what."
+         },
+         "installerSidebar": {
+-          "description": "*assisted installer only.* `MUI_WELCOMEFINISHPAGE_BITMAP`, relative to the [build resources](https://www.electron.build/docs/contents#extraresources) or to the project directory.\nDefaults to `build/installerSidebar.bmp` or `${NSISDIR}\\\\Contrib\\\\Graphics\\\\Wizard\\\\nsis3-metro.bmp`. Image size 164 × 314 pixels.",
++          "description": "*assisted installer only.* `MUI_WELCOMEFINISHPAGE_BITMAP`, relative to the [build resources](https://www.electron.build/docs/contents#extraresources) or to the project directory.\nDefaults to `build/installerSidebar.bmp` or `${NSISDIR}\\\\Contrib\\\\Graphics\\\\Wizard\\\\nsis3-metro.bmp`. Image size 164 \u00d7 314 pixels.",
+           "type": [
+             "null",
+             "string"
+@@ -4349,7 +4349,7 @@
+           ]
+         },
+         "license": {
+-          "description": "The path to EULA license file. Defaults to `license.txt` or `eula.txt` (or uppercase variants). In addition to `txt`, `rtf` and `html` supported (don't forget to use `target=\"_blank\"` for links).\n\nMultiple license files in different languages are supported — use lang postfix (e.g. `_de`, `_ru`). For example, create files `license_de.txt` and `license_en.txt` in the build resources.\nIf OS language is german, `license_de.txt` will be displayed. See map of [language code to name](https://github.com/meikidd/iso-639-1/blob/master/src/data.js).\n\nAppropriate license file will be selected by user OS language.",
++          "description": "The path to EULA license file. Defaults to `license.txt` or `eula.txt` (or uppercase variants). In addition to `txt`, `rtf` and `html` supported (don't forget to use `target=\"_blank\"` for links).\n\nMultiple license files in different languages are supported \u2014 use lang postfix (e.g. `_de`, `_ru`). For example, create files `license_de.txt` and `license_en.txt` in the build resources.\nIf OS language is german, `license_de.txt` will be displayed. See map of [language code to name](https://github.com/meikidd/iso-639-1/blob/master/src/data.js).\n\nAppropriate license file will be selected by user OS language.",
+           "type": [
+             "null",
+             "string"
+@@ -4565,7 +4565,7 @@
+           "type": "boolean"
+         },
+         "appPackageUrl": {
+-          "description": "The application package download URL. Optional — by default computed using publish configuration.\n\nURL like `https://example.com/download/latest` allows web installer to be version independent (installer will download latest application package).\nPlease note — it is [full URL](https://github.com/electron-userland/electron-builder/issues/1810#issuecomment-317650878).\n\nCustom `X-Arch` http header is set to `32` or `64`.",
++          "description": "The application package download URL. Optional \u2014 by default computed using publish configuration.\n\nURL like `https://example.com/download/latest` allows web installer to be version independent (installer will download latest application package).\nPlease note \u2014 it is [full URL](https://github.com/electron-userland/electron-builder/issues/1810#issuecomment-317650878).\n\nCustom `X-Arch` http header is set to `32` or `64`.",
+           "type": [
+             "null",
+             "string"
+@@ -4635,7 +4635,7 @@
+           "type": "boolean"
+         },
+         "guid": {
+-          "description": "The GUID for the installer. Used to identify the application for upgrade and uninstall operations.\nIf not specified, a deterministic GUID is generated from the app ID (`appId`) — but this means\nchanging your `appId` will break silent upgrades of existing installs.",
++          "description": "The GUID for the installer. Used to identify the application for upgrade and uninstall operations.\nIf not specified, a deterministic GUID is generated from the app ID (`appId`) \u2014 but this means\nchanging your `appId` will break silent upgrades of existing installs.",
+           "type": [
+             "null",
+             "string"
+@@ -4688,7 +4688,7 @@
+           "description": "The installer languages (e.g. `en_US`, `de_DE`). Change only if you understand what do you do and for what."
+         },
+         "installerSidebar": {
+-          "description": "*assisted installer only.* `MUI_WELCOMEFINISHPAGE_BITMAP`, relative to the [build resources](https://www.electron.build/docs/contents#extraresources) or to the project directory.\nDefaults to `build/installerSidebar.bmp` or `${NSISDIR}\\\\Contrib\\\\Graphics\\\\Wizard\\\\nsis3-metro.bmp`. Image size 164 × 314 pixels.",
++          "description": "*assisted installer only.* `MUI_WELCOMEFINISHPAGE_BITMAP`, relative to the [build resources](https://www.electron.build/docs/contents#extraresources) or to the project directory.\nDefaults to `build/installerSidebar.bmp` or `${NSISDIR}\\\\Contrib\\\\Graphics\\\\Wizard\\\\nsis3-metro.bmp`. Image size 164 \u00d7 314 pixels.",
+           "type": [
+             "null",
+             "string"
+@@ -4702,7 +4702,7 @@
+           ]
+         },
+         "license": {
+-          "description": "The path to EULA license file. Defaults to `license.txt` or `eula.txt` (or uppercase variants). In addition to `txt`, `rtf` and `html` supported (don't forget to use `target=\"_blank\"` for links).\n\nMultiple license files in different languages are supported — use lang postfix (e.g. `_de`, `_ru`). For example, create files `license_de.txt` and `license_en.txt` in the build resources.\nIf OS language is german, `license_de.txt` will be displayed. See map of [language code to name](https://github.com/meikidd/iso-639-1/blob/master/src/data.js).\n\nAppropriate license file will be selected by user OS language.",
++          "description": "The path to EULA license file. Defaults to `license.txt` or `eula.txt` (or uppercase variants). In addition to `txt`, `rtf` and `html` supported (don't forget to use `target=\"_blank\"` for links).\n\nMultiple license files in different languages are supported \u2014 use lang postfix (e.g. `_de`, `_ru`). For example, create files `license_de.txt` and `license_en.txt` in the build resources.\nIf OS language is german, `license_de.txt` will be displayed. See map of [language code to name](https://github.com/meikidd/iso-639-1/blob/master/src/data.js).\n\nAppropriate license file will be selected by user OS language.",
+           "type": [
+             "null",
+             "string"
+@@ -5594,7 +5594,7 @@
+         },
+         "allowCurrentUserHome": {
+           "default": true,
+-          "description": "Whether can be installed into the current user’s home directory.\nA home directory installation is done as the current user (not as root), and it cannot write outside of the home directory.\nIf the product cannot be installed in the user’s home directory and be not completely functional from user’s home directory.\n\nCorresponds to [enable_currentUserHome](https://developer.apple.com/library/content/documentation/DeveloperTools/Reference/DistributionDefinitionRef/Chapters/Distribution_XML_Ref.html#//apple_ref/doc/uid/TP40005370-CH100-SW70).",
++          "description": "Whether can be installed into the current user\u2019s home directory.\nA home directory installation is done as the current user (not as root), and it cannot write outside of the home directory.\nIf the product cannot be installed in the user\u2019s home directory and be not completely functional from user\u2019s home directory.\n\nCorresponds to [enable_currentUserHome](https://developer.apple.com/library/content/documentation/DeveloperTools/Reference/DistributionDefinitionRef/Chapters/Distribution_XML_Ref.html#//apple_ref/doc/uid/TP40005370-CH100-SW70).",
+           "type": [
+             "null",
+             "boolean"
+@@ -5602,7 +5602,7 @@
+         },
+         "allowRootDirectory": {
+           "default": true,
+-          "description": "Whether can be installed into the root directory. Should usually be `true` unless the product can be installed only to the user’s home directory.\n\nCorresponds to [enable_localSystem](https://developer.apple.com/library/content/documentation/DeveloperTools/Reference/DistributionDefinitionRef/Chapters/Distribution_XML_Ref.html#//apple_ref/doc/uid/TP40005370-CH100-SW70).",
++          "description": "Whether can be installed into the root directory. Should usually be `true` unless the product can be installed only to the user\u2019s home directory.\n\nCorresponds to [enable_localSystem](https://developer.apple.com/library/content/documentation/DeveloperTools/Reference/DistributionDefinitionRef/Chapters/Distribution_XML_Ref.html#//apple_ref/doc/uid/TP40005370-CH100-SW70).",
+           "type": [
+             "null",
+             "boolean"
+@@ -5844,7 +5844,7 @@
+           "description": "Allows you to provide your own `nsis-resources`"
+         },
+         "guid": {
+-          "description": "The GUID for the installer. Used to identify the application for upgrade and uninstall operations.\nIf not specified, a deterministic GUID is generated from the app ID (`appId`) — but this means\nchanging your `appId` will break silent upgrades of existing installs.",
++          "description": "The GUID for the installer. Used to identify the application for upgrade and uninstall operations.\nIf not specified, a deterministic GUID is generated from the app ID (`appId`) \u2014 but this means\nchanging your `appId` will break silent upgrades of existing installs.",
+           "type": [
+             "null",
+             "string"
+@@ -5937,7 +5937,7 @@
+     },
+     "Protocol": {
+       "additionalProperties": false,
+-      "description": "URL Protocol Schemes. Protocols to associate the app with. macOS only.\n\nPlease note — on macOS [you need to register an `open-url` event handler](http://electron.atom.io/docs/api/app/#event-open-url-macos).",
++      "description": "URL Protocol Schemes. Protocols to associate the app with. macOS only.\n\nPlease note \u2014 on macOS [you need to register an `open-url` event handler](http://electron.atom.io/docs/api/app/#event-open-url-macos).",
+       "properties": {
+         "name": {
+           "description": "The name. e.g. `IRC server URL`.",
+@@ -5945,7 +5945,7 @@
+         },
+         "role": {
+           "default": "Editor",
+-          "description": "*macOS-only* The app’s role with respect to the type.",
++          "description": "*macOS-only* The app\u2019s role with respect to the type.",
+           "enum": [
+             "Editor",
+             "None",
+@@ -6038,7 +6038,7 @@
+           ]
+         },
+         "releaseNotesFile": {
+-          "description": "The path to release notes file. Defaults to `release-notes-${platform}.md` (where `platform` it is current platform — `mac`, `linux` or `windows`) or `release-notes.md` in the [build resources](https://www.electron.build/contents#extraresources).",
++          "description": "The path to release notes file. Defaults to `release-notes-${platform}.md` (where `platform` it is current platform \u2014 `mac`, `linux` or `windows`) or `release-notes.md` in the [build resources](https://www.electron.build/contents#extraresources).",
+           "type": [
+             "null",
+             "string"
+@@ -6060,14 +6060,14 @@
+     },
+     "RemoteBuildOptions": {
+       "additionalProperties": false,
+-      "description": "Configuration for a remote snap build on [Launchpad](https://launchpad.net/).\nRemote builds run on Canonical's infrastructure without requiring native hardware or nested virtualisation.\n\nEach electron-builder build invocation targets exactly one architecture — to build for multiple\narchitectures, configure the top-level `arch` option (e.g. `arch: [\"x64\", \"arm64\"]`); each arch\nspawns a separate `snapcraft remote-build` job on Launchpad.\n\nAuthentication is resolved in this order:\n1. `cscLink` config field — base64-encoded credentials or a file path\n2. `SNAP_CSC_LINK` environment variable — same format as `cscLink`\n   (CI-recommended; follows the same pattern as `WIN_CSC_LINK` for Windows code signing)\n3. `SNAPCRAFT_STORE_CREDENTIALS` environment variable (read directly by snapcraft)\n4. An active interactive `snapcraft login` session\n\n**CI setup** (set once as a CI secret):\n```sh\nexport SNAP_CSC_LINK=$(snapcraft export-login - | base64 -w0)\n```\nThe resolved credentials are injected only into the spawned `snapcraft` subprocess\nenvironment and never exposed through `process.env`.",
++      "description": "Configuration for a remote snap build on [Launchpad](https://launchpad.net/).\nRemote builds run on Canonical's infrastructure without requiring native hardware or nested virtualisation.\n\nEach electron-builder build invocation targets exactly one architecture \u2014 to build for multiple\narchitectures, configure the top-level `arch` option (e.g. `arch: [\"x64\", \"arm64\"]`); each arch\nspawns a separate `snapcraft remote-build` job on Launchpad.\n\nAuthentication is resolved in this order:\n1. `cscLink` config field \u2014 base64-encoded credentials or a file path\n2. `SNAP_CSC_LINK` environment variable \u2014 same format as `cscLink`\n   (CI-recommended; follows the same pattern as `WIN_CSC_LINK` for Windows code signing)\n3. `SNAPCRAFT_STORE_CREDENTIALS` environment variable (read directly by snapcraft)\n4. An active interactive `snapcraft login` session\n\n**CI setup** (set once as a CI secret):\n```sh\nexport SNAP_CSC_LINK=$(snapcraft export-login - | base64 -w0)\n```\nThe resolved credentials are injected only into the spawned `snapcraft` subprocess\nenvironment and never exposed through `process.env`.",
+       "properties": {
+         "acceptPublicUpload": {
+           "description": "Suppress the Launchpad public-upload consent prompt by automatically accepting it.\nYour source code will be uploaded to a **public** Launchpad repository.\nSet to `true` in CI once you understand the implications.",
+           "type": "boolean"
+         },
+         "buildFor": {
+-          "description": "Target architecture for the remote build. Accepts a single snapcraft arch string\n(e.g. `\"amd64\"`, `\"arm64\"`, `\"armhf\"`).\n\nTo build for multiple architectures, configure electron-builder's top-level `arch` option\n(e.g. `arch: [\"x64\", \"arm64\"]`) — each arch spawns a separate remote-build job on Launchpad,\nkeeping the one-build-per-artifact contract intact.",
++          "description": "Target architecture for the remote build. Accepts a single snapcraft arch string\n(e.g. `\"amd64\"`, `\"arm64\"`, `\"armhf\"`).\n\nTo build for multiple architectures, configure electron-builder's top-level `arch` option\n(e.g. `arch: [\"x64\", \"arm64\"]`) \u2014 each arch spawns a separate remote-build job on Launchpad,\nkeeping the one-build-per-artifact contract intact.",
+           "type": "string"
+         },
+         "enabled": {
+@@ -6087,7 +6087,7 @@
+           "type": "boolean"
+         },
+         "strategy": {
+-          "description": "Controls whether snapcraft may fall back to a different remote build strategy.\n- `\"disable-fallback\"` — always use the primary strategy, fail if unavailable.\n- `\"force-fallback\"` — always use the fallback strategy.",
++          "description": "Controls whether snapcraft may fall back to a different remote build strategy.\n- `\"disable-fallback\"` \u2014 always use the primary strategy, fail if unavailable.\n- `\"force-fallback\"` \u2014 always use the fallback strategy.",
+           "enum": [
+             "disable-fallback",
+             "force-fallback"
+@@ -6491,7 +6491,7 @@
+           "description": "Names of snapcraft parts that must be built before the app part.\nDefaults to `[\"desktop-gtk2\"]`.\n\nUse `\"default\"` to keep the default and add extras:\n`[\"default\", \"my-helper-part\"]`."
+         },
+         "allowNativeWayland": {
+-          "description": "Allow the snap to run with native Wayland support (`--ozone-platform=wayland`).\nDefaults to `false` for Electron < 38 (legacy behaviour); `true` for Electron ≥ 38.\nSet explicitly to override the version-based default.",
++          "description": "Allow the snap to run with native Wayland support (`--ozone-platform=wayland`).\nDefaults to `false` for Electron < 38 (legacy behaviour); `true` for Electron \u2265 38.\nSet explicitly to override the version-based default.",
+           "type": [
+             "null",
+             "boolean"
+@@ -6581,7 +6581,7 @@
+               "type": "null"
+             }
+           ],
+-          "description": "Compression algorithm for the snap SquashFS image.\n- `xz` — smaller file, slower decompression (good for distribution).\n- `lzo` — larger file, faster decompression (good for development iteration).\nOmit to use snapcraft's default (`xz`).\n\nWhen not set, `linux.compression` is mapped automatically:\n`\"store\"` → `\"lzo\"`, `\"maximum\"` → `\"xz\"`, `\"normal\"` → snapcraft default.\nExplicitly setting this field always overrides the mapped value."
++          "description": "Compression algorithm for the snap SquashFS image.\n- `xz` \u2014 smaller file, slower decompression (good for distribution).\n- `lzo` \u2014 larger file, faster decompression (good for development iteration).\nOmit to use snapcraft's default (`xz`).\n\nWhen not set, `linux.compression` is mapped automatically:\n`\"store\"` \u2192 `\"lzo\"`, `\"maximum\"` \u2192 `\"xz\"`, `\"normal\"` \u2192 snapcraft default.\nExplicitly setting this field always overrides the mapped value."
+         },
+         "confinement": {
+           "anyOf": [
+@@ -6598,7 +6598,7 @@
+             }
+           ],
+           "default": "strict",
+-          "description": "The type of [snap confinement](https://snapcraft.io/docs/reference/confinement).\n- `strict` — recommended; the snap runs in a fully isolated sandbox.\n- `devmode` — sandbox violations are logged but not enforced; for development only.\n- `classic` — no confinement; equivalent to a traditionally packaged application.\n  Requires Snap Store approval before publishing."
++          "description": "The type of [snap confinement](https://snapcraft.io/docs/reference/confinement).\n- `strict` \u2014 recommended; the snap runs in a fully isolated sandbox.\n- `devmode` \u2014 sandbox violations are logged but not enforced; for development only.\n- `classic` \u2014 no confinement; equivalent to a traditionally packaged application.\n  Requires Snap Store approval before publishing."
+         },
+         "description": {
+           "description": "As [description](https://www.electron.build/configuration#description) from application package.json, but allows you to specify different for Linux.",
+@@ -6660,7 +6660,7 @@
+             }
+           ],
+           "default": "stable",
+-          "description": "The quality grade of the snap.\n- `stable` — suitable for all channels, including `stable` and `candidate`.\n- `devel` — development snapshot; cannot be promoted to `stable` or `candidate`."
++          "description": "The quality grade of the snap.\n- `stable` \u2014 suitable for all channels, including `stable` and `candidate`.\n- `devel` \u2014 development snapshot; cannot be promoted to `stable` or `candidate`."
+         },
+         "hooks": {
+           "default": "build/snap-hooks",
+@@ -6679,7 +6679,7 @@
+               "type": "null"
+             }
+           ],
+-          "description": "[Snap layouts](https://snapcraft.io/docs/snap-layouts) — bind-mount or symlink host paths\ninto the snap's namespace, making libraries or config at `/usr`, `/var`, `/etc`, etc.\naccessible inside the confined environment."
++          "description": "[Snap layouts](https://snapcraft.io/docs/snap-layouts) \u2014 bind-mount or symlink host paths\ninto the snap's namespace, making libraries or config at `/usr`, `/var`, `/etc`, etc.\naccessible inside the confined environment."
+         },
+         "mimeTypes": {
+           "anyOf": [
+@@ -6830,7 +6830,7 @@
+     },
+     "SnapOptions24": {
+       "additionalProperties": false,
+-      "description": "**[Beta]** Options for building a core24 snap. This interface does not extend the legacy\n`SnapBaseOptions` — it uses the snapcraft CLI directly.\n\nFields inherited from {@link CommonLinuxOptions} (`description`, `category`, `mimeTypes`,\n`executableArgs`, `desktop`, `synopsis`) are automatically populated from the root `linux.*`\nconfiguration. You do not need to duplicate them here; values set directly on this interface\ntake precedence over the cascaded `linux.*` values.",
++      "description": "**[Beta]** Options for building a core24 snap. This interface does not extend the legacy\n`SnapBaseOptions` \u2014 it uses the snapcraft CLI directly.\n\nFields inherited from {@link CommonLinuxOptions} (`description`, `category`, `mimeTypes`,\n`executableArgs`, `desktop`, `synopsis`) are automatically populated from the root `linux.*`\nconfiguration. You do not need to duplicate them here; values set directly on this interface\ntake precedence over the cascaded `linux.*` values.",
+       "properties": {
+         "after": {
+           "anyOf": [
+@@ -6923,7 +6923,7 @@
+               "type": "null"
+             }
+           ],
+-          "description": "Compression algorithm for the snap SquashFS image.\n- `xz` — smaller file, slower decompression (recommended for distribution).\n- `lzo` — larger file, faster decompression (useful for development iteration).\nOmit to use snapcraft's default (`xz`).\n\nWhen not set, `linux.compression` is mapped automatically:\n`\"store\"` → `\"lzo\"`, `\"maximum\"` → `\"xz\"`, `\"normal\"` → snapcraft default.\nExplicitly setting this field always overrides the mapped value."
++          "description": "Compression algorithm for the snap SquashFS image.\n- `xz` \u2014 smaller file, slower decompression (recommended for distribution).\n- `lzo` \u2014 larger file, faster decompression (useful for development iteration).\nOmit to use snapcraft's default (`xz`).\n\nWhen not set, `linux.compression` is mapped automatically:\n`\"store\"` \u2192 `\"lzo\"`, `\"maximum\"` \u2192 `\"xz\"`, `\"normal\"` \u2192 snapcraft default.\nExplicitly setting this field always overrides the mapped value."
+         },
+         "confinement": {
+           "anyOf": [
+@@ -7003,7 +7003,7 @@
+           "description": "[Snapcraft extensions](https://snapcraft.io/docs/snapcraft-extensions) to apply to the app.\nDefaults to `[\"gnome\"]` in normal builds (recommended for Electron apps on Ubuntu 24.04+).\nAutomatically set to `[]` in `useDestructiveMode` builds, where the gnome extension is\nincompatible. Explicitly including `\"gnome\"` while `useDestructiveMode` is set will throw.\nSee: https://snapcraft.io/docs/gnome-extension"
+         },
+         "forceX11": {
+-          "description": "Set to `true` to force X11 by injecting `--ozone-platform=x11` into the snap command line.\nWhen unset or `false`, no flag is injected and native Wayland is allowed.\nUnlike the legacy `snap.allowNativeWayland`, there is no electron-version-based default here —\ncore24 always allows Wayland unless this is explicitly `true`.",
++          "description": "Set to `true` to force X11 by injecting `--ozone-platform=x11` into the snap command line.\nWhen unset or `false`, no flag is injected and native Wayland is allowed.\nUnlike the legacy `snap.allowNativeWayland`, there is no electron-version-based default here \u2014\ncore24 always allows Wayland unless this is explicitly `true`.",
+           "type": [
+             "null",
+             "boolean"
+@@ -7023,7 +7023,7 @@
+             }
+           ],
+           "default": "stable",
+-          "description": "The quality grade of the snap.\n`devel` — not publishable to stable/candidate channels.\n`stable` — suitable for all channels."
++          "description": "The quality grade of the snap.\n`devel` \u2014 not publishable to stable/candidate channels.\n`stable` \u2014 suitable for all channels."
+         },
+         "hooks": {
+           "default": "build/snap-hooks",
+@@ -7042,7 +7042,7 @@
+               "type": "null"
+             }
+           ],
+-          "description": "[Snap layouts](https://snapcraft.io/docs/snap-layouts) — bind-mount or symlink host paths\ninto the snap's namespace. User-provided layouts always override the extension defaults."
++          "description": "[Snap layouts](https://snapcraft.io/docs/snap-layouts) \u2014 bind-mount or symlink host paths\ninto the snap's namespace. User-provided layouts always override the extension defaults."
+         },
+         "mimeTypes": {
+           "anyOf": [
+@@ -7080,7 +7080,7 @@
+               "type": "null"
+             }
+           ],
+-          "description": "[Plugs](https://snapcraft.io/docs/reference/interfaces) (consumed interfaces) for the app.\nWhen the `gnome` extension is active, content-snap plugs (themes, GNOME platform, GPU)\nare added automatically — only list custom plugs here.\nWithout any extension, defaults to the standard Electron plug set.\n\nSupports descriptor objects for plugs with attributes:\n```json\n[{ \"browser-sandbox\": { \"interface\": \"browser-support\", \"allow-sandbox\": true } }]\n```"
++          "description": "[Plugs](https://snapcraft.io/docs/reference/interfaces) (consumed interfaces) for the app.\nWhen the `gnome` extension is active, content-snap plugs (themes, GNOME platform, GPU)\nare added automatically \u2014 only list custom plugs here.\nWithout any extension, defaults to the standard Electron plug set.\n\nSupports descriptor objects for plugs with attributes:\n```json\n[{ \"browser-sandbox\": { \"interface\": \"browser-support\", \"allow-sandbox\": true } }]\n```"
+         },
+         "publish": {
+           "anyOf": [
+@@ -7158,7 +7158,7 @@
+               "type": "null"
+             }
+           ],
+-          "description": "[Slots](https://snapcraft.io/docs/reference/interfaces) (provided interfaces) for the app.\nUse for MPRIS, D-Bus services, etc.\n\nExample — expose MPRIS under the Chromium bus name:\n```json\n[{ \"mpris\": { \"name\": \"chromium\" } }]\n```"
++          "description": "[Slots](https://snapcraft.io/docs/reference/interfaces) (provided interfaces) for the app.\nUse for MPRIS, D-Bus services, etc.\n\nExample \u2014 expose MPRIS under the Chromium bus name:\n```json\n[{ \"mpris\": { \"name\": \"chromium\" } }]\n```"
+         },
+         "stagePackages": {
+           "anyOf": [
+@@ -7196,7 +7196,7 @@
+           ]
+         },
+         "useDestructiveMode": {
+-          "description": "Build directly on the host without an isolated VM or container (snapcraft `--destructive-mode`).\nEquivalent to setting `SNAPCRAFT_BUILD_ENVIRONMENT=host`.\n\n**Not recommended for most use cases.** Destructive mode pollutes the host environment\nand produces builds that are difficult to reproduce — any library or tool present on the\nhost at build time can silently end up in the snap. Prefer `useLXD` or `useMultipass`\nfor clean, reproducible builds; use `remoteBuild` for multi-architecture CI.\n\nValid reasons to enable this option:\n- Building inside a Docker container where nested virtualisation (LXD / Multipass) is\n  unavailable and a remote Launchpad build is not acceptable.\n- Running test suites in CI where the environment is already fully controlled.\n\nThe `gnome` extension is incompatible with this mode enabled — do not include it in `extensions`.",
++          "description": "Build directly on the host without an isolated VM or container (snapcraft `--destructive-mode`).\nEquivalent to setting `SNAPCRAFT_BUILD_ENVIRONMENT=host`.\n\n**Not recommended for most use cases.** Destructive mode pollutes the host environment\nand produces builds that are difficult to reproduce \u2014 any library or tool present on the\nhost at build time can silently end up in the snap. Prefer `useLXD` or `useMultipass`\nfor clean, reproducible builds; use `remoteBuild` for multi-architecture CI.\n\nValid reasons to enable this option:\n- Building inside a Docker container where nested virtualisation (LXD / Multipass) is\n  unavailable and a remote Launchpad build is not acceptable.\n- Running test suites in CI where the environment is already fully controlled.\n\nThe `gnome` extension is incompatible with this mode enabled \u2014 do not include it in `extensions`.",
+           "type": [
+             "null",
+             "boolean"
+@@ -7257,7 +7257,7 @@
+           "description": "Names of snapcraft parts that must be built before the app part.\nDefaults to `[\"desktop-gtk2\"]`.\n\nUse `\"default\"` to keep the default and add extras:\n`[\"default\", \"my-helper-part\"]`."
+         },
+         "allowNativeWayland": {
+-          "description": "Allow the snap to run with native Wayland support (`--ozone-platform=wayland`).\nDefaults to `false` for Electron < 38 (legacy behaviour); `true` for Electron ≥ 38.\nSet explicitly to override the version-based default.",
++          "description": "Allow the snap to run with native Wayland support (`--ozone-platform=wayland`).\nDefaults to `false` for Electron < 38 (legacy behaviour); `true` for Electron \u2265 38.\nSet explicitly to override the version-based default.",
+           "type": [
+             "null",
+             "boolean"
+@@ -7340,7 +7340,7 @@
+               "type": "null"
+             }
+           ],
+-          "description": "Compression algorithm for the snap SquashFS image.\n- `xz` — smaller file, slower decompression (good for distribution).\n- `lzo` — larger file, faster decompression (good for development iteration).\nOmit to use snapcraft's default (`xz`).\n\nWhen not set, `linux.compression` is mapped automatically:\n`\"store\"` → `\"lzo\"`, `\"maximum\"` → `\"xz\"`, `\"normal\"` → snapcraft default.\nExplicitly setting this field always overrides the mapped value."
++          "description": "Compression algorithm for the snap SquashFS image.\n- `xz` \u2014 smaller file, slower decompression (good for distribution).\n- `lzo` \u2014 larger file, faster decompression (good for development iteration).\nOmit to use snapcraft's default (`xz`).\n\nWhen not set, `linux.compression` is mapped automatically:\n`\"store\"` \u2192 `\"lzo\"`, `\"maximum\"` \u2192 `\"xz\"`, `\"normal\"` \u2192 snapcraft default.\nExplicitly setting this field always overrides the mapped value."
+         },
+         "confinement": {
+           "anyOf": [
+@@ -7357,7 +7357,7 @@
+             }
+           ],
+           "default": "strict",
+-          "description": "The type of [snap confinement](https://snapcraft.io/docs/reference/confinement).\n- `strict` — recommended; the snap runs in a fully isolated sandbox.\n- `devmode` — sandbox violations are logged but not enforced; for development only.\n- `classic` — no confinement; equivalent to a traditionally packaged application.\n  Requires Snap Store approval before publishing."
++          "description": "The type of [snap confinement](https://snapcraft.io/docs/reference/confinement).\n- `strict` \u2014 recommended; the snap runs in a fully isolated sandbox.\n- `devmode` \u2014 sandbox violations are logged but not enforced; for development only.\n- `classic` \u2014 no confinement; equivalent to a traditionally packaged application.\n  Requires Snap Store approval before publishing."
+         },
+         "description": {
+           "description": "As [description](https://www.electron.build/configuration#description) from application package.json, but allows you to specify different for Linux.",
+@@ -7416,7 +7416,7 @@
+             }
+           ],
+           "default": "stable",
+-          "description": "The quality grade of the snap.\n- `stable` — suitable for all channels, including `stable` and `candidate`.\n- `devel` — development snapshot; cannot be promoted to `stable` or `candidate`."
++          "description": "The quality grade of the snap.\n- `stable` \u2014 suitable for all channels, including `stable` and `candidate`.\n- `devel` \u2014 development snapshot; cannot be promoted to `stable` or `candidate`."
+         },
+         "hooks": {
+           "default": "build/snap-hooks",
+@@ -7435,7 +7435,7 @@
+               "type": "null"
+             }
+           ],
+-          "description": "[Snap layouts](https://snapcraft.io/docs/snap-layouts) — bind-mount or symlink host paths\ninto the snap's namespace, making libraries or config at `/usr`, `/var`, `/etc`, etc.\naccessible inside the confined environment."
++          "description": "[Snap layouts](https://snapcraft.io/docs/snap-layouts) \u2014 bind-mount or symlink host paths\ninto the snap's namespace, making libraries or config at `/usr`, `/var`, `/etc`, etc.\naccessible inside the confined environment."
+         },
+         "mimeTypes": {
+           "anyOf": [
+@@ -7726,7 +7726,7 @@
+           "description": "**[Beta]** Options for building a core24 snap. Uses the snapcraft CLI directly.\nInherits desktop-entry fields from `CommonLinuxOptions` and publish config from `TargetSpecificOptions`."
+         },
+         "cscLink": {
+-          "description": "Snapcraft Store credentials — base64-encoded credentials string or file path.\nAccepts the same formats as `WIN_CSC_LINK` / `CSC_LINK`: base64 data,\nabsolute/relative/`~/` file paths, and `file://` URIs.\nRelative paths are resolved against the build resources directory.\n\nInjected as `SNAPCRAFT_STORE_CREDENTIALS` into every snapcraft subprocess\n(core18/core20/core22/core24 builds and `snapcraft upload`).\nNot applied for `base: \"custom\"` — inject credentials manually via environment variables.\n\nThe `SNAP_CSC_LINK` environment variable is the CI-friendly alternative.\nGenerate with: `snapcraft export-login - | base64 -w0`",
++          "description": "Snapcraft Store credentials \u2014 base64-encoded credentials string or file path.\nAccepts the same formats as `WIN_CSC_LINK` / `CSC_LINK`: base64 data,\nabsolute/relative/`~/` file paths, and `file://` URIs.\nRelative paths are resolved against the build resources directory.\n\nInjected as `SNAPCRAFT_STORE_CREDENTIALS` into every snapcraft subprocess\n(core18/core20/core22/core24 builds and `snapcraft upload`).\nNot applied for `base: \"custom\"` \u2014 inject credentials manually via environment variables.\n\nThe `SNAP_CSC_LINK` environment variable is the CI-friendly alternative.\nGenerate with: `snapcraft export-login - | base64 -w0`",
+           "type": "string"
+         },
+         "custom": {
+@@ -7738,7 +7738,7 @@
+               "type": "null"
+             }
+           ],
+-          "description": "**[Beta]** Pass-through custom snap configuration. electron-builder will read the\nsnapcraft.yaml at `yamlPath` and use it verbatim — no plugs, extensions,\norganize mappings, or desktop files are injected."
++          "description": "**[Beta]** Pass-through custom snap configuration. electron-builder will read the\nsnapcraft.yaml at `yamlPath` and use it verbatim \u2014 no plugs, extensions,\norganize mappings, or desktop files are injected."
+         },
+         "publish": {
+           "anyOf": [
+@@ -8150,7 +8150,7 @@
+           "type": "string"
+         },
+         "iconUrl": {
+-          "description": "A URL to an ICO file to use as the application icon (displayed in Control Panel > Programs and Features). Defaults to the Electron icon.\n\nPlease note — [local icon file url is not accepted](https://github.com/atom/grunt-electron-installer/issues/73), must be https/http.\n\nIf you don't plan to build windows installer, you can omit it.\nIf your project repository is public on GitHub, it will be `https://github.com/${u}/${p}/blob/master/build/icon.ico?raw=true` by default.",
++          "description": "A URL to an ICO file to use as the application icon (displayed in Control Panel > Programs and Features). Defaults to the Electron icon.\n\nPlease note \u2014 [local icon file url is not accepted](https://github.com/atom/grunt-electron-installer/issues/73), must be https/http.\n\nIf you don't plan to build windows installer, you can omit it.\nIf your project repository is public on GitHub, it will be `https://github.com/${u}/${p}/blob/master/build/icon.ico?raw=true` by default.",
+           "type": [
+             "null",
+             "string"
+@@ -8619,7 +8619,7 @@
+               ]
+             }
+           ],
+-          "description": "A [glob patterns](https://www.electron.build/file-patterns) relative to the [app directory](https://www.electron.build/configuration#directories), which specifies which files to include when copying files to create the package.\n\nDefaults to:\n```json\n[\n\"**\\/*\",\n\"!**\\/node_modules/*\\/{CHANGELOG.md,README.md,README,readme.md,readme}\",\n\"!**\\/node_modules/*\\/{test,__tests__,tests,powered-test,example,examples}\",\n\"!**\\/node_modules/*.d.ts\",\n\"!**\\/node_modules/.bin\",\n\"!**\\/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}\",\n\"!.editorconfig\",\n\"!**\\/._*\",\n\"!**\\/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,.gitignore,.gitattributes}\",\n\"!**\\/{__pycache__,thumbs.db,.flowconfig,.idea,.vs,.nyc_output}\",\n\"!**\\/{appveyor.yml,.travis.yml,circle.yml}\",\n\"!**\\/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}\"\n]\n```\n\nDevelopment dependencies are never copied in any case. You don't need to ignore it explicitly. Hidden files are not ignored by default, but all files that should be ignored, are ignored by default.\n\nDefault pattern \\`**\\/*\\` **is not added to your custom** if some of your patterns is not ignore (i.e. not starts with `!`). `package.json` and \\`**\\/node_modules/**\\/*` (only production dependencies will be copied) is added to your custom in any case. All default ignores are added in any case — you don't need to repeat it if you configure own patterns.\n\nMay be specified in the platform options (e.g. in the [mac](https://www.electron.build/mac)).\n\nYou may also specify custom source and destination directories by using `FileSet` objects instead of simple glob patterns.\n\n```json\n[\n{\n\"from\": \"path/to/source\",\n\"to\": \"path/to/destination\",\n\"filter\": [\"**\\/*\", \"!foo/*.js\"]\n}\n]\n```\n\nYou can use [file macros](https://www.electron.build/file-patterns#file-macros) in the `from` and `to` fields as well. `from` and `to` can be files and you can use this to [rename](https://github.com/electron-userland/electron-builder/issues/1119) a file while packaging."
++          "description": "A [glob patterns](https://www.electron.build/file-patterns) relative to the [app directory](https://www.electron.build/configuration#directories), which specifies which files to include when copying files to create the package.\n\nDefaults to:\n```json\n[\n\"**\\/*\",\n\"!**\\/node_modules/*\\/{CHANGELOG.md,README.md,README,readme.md,readme}\",\n\"!**\\/node_modules/*\\/{test,__tests__,tests,powered-test,example,examples}\",\n\"!**\\/node_modules/*.d.ts\",\n\"!**\\/node_modules/.bin\",\n\"!**\\/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}\",\n\"!.editorconfig\",\n\"!**\\/._*\",\n\"!**\\/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,.gitignore,.gitattributes}\",\n\"!**\\/{__pycache__,thumbs.db,.flowconfig,.idea,.vs,.nyc_output}\",\n\"!**\\/{appveyor.yml,.travis.yml,circle.yml}\",\n\"!**\\/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}\"\n]\n```\n\nDevelopment dependencies are never copied in any case. You don't need to ignore it explicitly. Hidden files are not ignored by default, but all files that should be ignored, are ignored by default.\n\nDefault pattern \\`**\\/*\\` **is not added to your custom** if some of your patterns is not ignore (i.e. not starts with `!`). `package.json` and \\`**\\/node_modules/**\\/*` (only production dependencies will be copied) is added to your custom in any case. All default ignores are added in any case \u2014 you don't need to repeat it if you configure own patterns.\n\nMay be specified in the platform options (e.g. in the [mac](https://www.electron.build/mac)).\n\nYou may also specify custom source and destination directories by using `FileSet` objects instead of simple glob patterns.\n\n```json\n[\n{\n\"from\": \"path/to/source\",\n\"to\": \"path/to/destination\",\n\"filter\": [\"**\\/*\", \"!foo/*.js\"]\n}\n]\n```\n\nYou can use [file macros](https://www.electron.build/file-patterns#file-macros) in the `from` and `to` fields as well. `from` and `to` can be files and you can use this to [rename](https://github.com/electron-userland/electron-builder/issues/1119) a file while packaging."
+         },
+         "forceCodeSigning": {
+           "default": false,
+@@ -9160,7 +9160,7 @@
+       "description": "[Experimental] Configuration for concurrent builds."
+     },
+     "copyright": {
+-      "default": "Copyright © year ${author}",
++      "default": "Copyright \u00a9 year ${author}",
+       "description": "The human-readable copyright line for the app.",
+       "type": [
+         "null",
+@@ -9438,7 +9438,7 @@
+           ]
+         }
+       ],
+-      "description": "A [glob patterns](https://www.electron.build/file-patterns) relative to the [app directory](https://www.electron.build/configuration#directories), which specifies which files to include when copying files to create the package.\n\nDefaults to:\n```json\n[\n\"**\\/*\",\n\"!**\\/node_modules/*\\/{CHANGELOG.md,README.md,README,readme.md,readme}\",\n\"!**\\/node_modules/*\\/{test,__tests__,tests,powered-test,example,examples}\",\n\"!**\\/node_modules/*.d.ts\",\n\"!**\\/node_modules/.bin\",\n\"!**\\/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}\",\n\"!.editorconfig\",\n\"!**\\/._*\",\n\"!**\\/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,.gitignore,.gitattributes}\",\n\"!**\\/{__pycache__,thumbs.db,.flowconfig,.idea,.vs,.nyc_output}\",\n\"!**\\/{appveyor.yml,.travis.yml,circle.yml}\",\n\"!**\\/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}\"\n]\n```\n\nDevelopment dependencies are never copied in any case. You don't need to ignore it explicitly. Hidden files are not ignored by default, but all files that should be ignored, are ignored by default.\n\nDefault pattern \\`**\\/*\\` **is not added to your custom** if some of your patterns is not ignore (i.e. not starts with `!`). `package.json` and \\`**\\/node_modules/**\\/*` (only production dependencies will be copied) is added to your custom in any case. All default ignores are added in any case — you don't need to repeat it if you configure own patterns.\n\nMay be specified in the platform options (e.g. in the [mac](https://www.electron.build/mac)).\n\nYou may also specify custom source and destination directories by using `FileSet` objects instead of simple glob patterns.\n\n```json\n[\n{\n\"from\": \"path/to/source\",\n\"to\": \"path/to/destination\",\n\"filter\": [\"**\\/*\", \"!foo/*.js\"]\n}\n]\n```\n\nYou can use [file macros](https://www.electron.build/file-patterns#file-macros) in the `from` and `to` fields as well. `from` and `to` can be files and you can use this to [rename](https://github.com/electron-userland/electron-builder/issues/1119) a file while packaging."
++      "description": "A [glob patterns](https://www.electron.build/file-patterns) relative to the [app directory](https://www.electron.build/configuration#directories), which specifies which files to include when copying files to create the package.\n\nDefaults to:\n```json\n[\n\"**\\/*\",\n\"!**\\/node_modules/*\\/{CHANGELOG.md,README.md,README,readme.md,readme}\",\n\"!**\\/node_modules/*\\/{test,__tests__,tests,powered-test,example,examples}\",\n\"!**\\/node_modules/*.d.ts\",\n\"!**\\/node_modules/.bin\",\n\"!**\\/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}\",\n\"!.editorconfig\",\n\"!**\\/._*\",\n\"!**\\/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,.gitignore,.gitattributes}\",\n\"!**\\/{__pycache__,thumbs.db,.flowconfig,.idea,.vs,.nyc_output}\",\n\"!**\\/{appveyor.yml,.travis.yml,circle.yml}\",\n\"!**\\/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}\"\n]\n```\n\nDevelopment dependencies are never copied in any case. You don't need to ignore it explicitly. Hidden files are not ignored by default, but all files that should be ignored, are ignored by default.\n\nDefault pattern \\`**\\/*\\` **is not added to your custom** if some of your patterns is not ignore (i.e. not starts with `!`). `package.json` and \\`**\\/node_modules/**\\/*` (only production dependencies will be copied) is added to your custom in any case. All default ignores are added in any case \u2014 you don't need to repeat it if you configure own patterns.\n\nMay be specified in the platform options (e.g. in the [mac](https://www.electron.build/mac)).\n\nYou may also specify custom source and destination directories by using `FileSet` objects instead of simple glob patterns.\n\n```json\n[\n{\n\"from\": \"path/to/source\",\n\"to\": \"path/to/destination\",\n\"filter\": [\"**\\/*\", \"!foo/*.js\"]\n}\n]\n```\n\nYou can use [file macros](https://www.electron.build/file-patterns#file-macros) in the `from` and `to` fields as well. `from` and `to` can be files and you can use this to [rename](https://github.com/electron-userland/electron-builder/issues/1119) a file while packaging."
+     },
+     "flatpak": {
+       "anyOf": [
+@@ -9819,7 +9819,7 @@
+           "type": "null"
+         }
+       ],
+-      "description": "Snapcraft configuration. Prefer this over the deprecated `snap` field.\n\nSelects the snapcraft base and provides per-core options:\n- `base: \"core18\" | \"core20\" | \"core22\"` — legacy builds; accepts the same options as `snap`\n- `base: \"core24\"` — modern builds with the GNOME extension (recommended for new apps, requires Electron 25+)\n- `base: \"custom\"` — pass an existing `snapcraft.yaml` through unchanged; no plugs, extensions,\n  or desktop files are injected\n\nWhen both `snapcraft` and `snap` are set, `snapcraft` takes precedence."
++      "description": "Snapcraft configuration. Prefer this over the deprecated `snap` field.\n\nSelects the snapcraft base and provides per-core options:\n- `base: \"core18\" | \"core20\" | \"core22\"` \u2014 legacy builds; accepts the same options as `snap`\n- `base: \"core24\"` \u2014 modern builds with the GNOME extension (recommended for new apps, requires Electron 25+)\n- `base: \"custom\"` \u2014 pass an existing `snapcraft.yaml` through unchanged; no plugs, extensions,\n  or desktop files are injected\n\nWhen both `snapcraft` and `snap` are set, `snapcraft` takes precedence."
+     },
+     "squirrelWindows": {
+       "anyOf": [
+@@ -9857,7 +9857,7 @@
+           ]
+         }
+       ],
+-      "description": "The build target(s) for this platform. Can be a target name string, a {@link TargetConfiguration}\nobject, or an array of either. Available targets depend on the platform — see platform-specific\noptions (e.g. {@link MacConfiguration.target}, {@link WindowsConfiguration.target},\n{@link LinuxConfiguration.target})."
++      "description": "The build target(s) for this platform. Can be a target name string, a {@link TargetConfiguration}\nobject, or an array of either. Available targets depend on the platform \u2014 see platform-specific\noptions (e.g. {@link MacConfiguration.target}, {@link WindowsConfiguration.target},\n{@link LinuxConfiguration.target})."
+     },
+     "toolsets": {
+       "anyOf": [
+@@ -9887,6 +9887,23 @@
+         "null",
+         "string"
+       ]
++    },
++    "zip": {
++      "anyOf": [
++        {
++          "type": "object",
++          "properties": {
++            "writeUpdateInfo": {
++              "type": "boolean"
++            }
++          },
++          "additionalProperties": true
++        },
++        {
++          "type": "null"
++        }
++      ],
++      "description": "macOS zip options (patched: honor writeUpdateInfo=false to skip blockmaps)."
+     }
+   },
+   "type": "object"

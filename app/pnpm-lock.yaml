@@ -5,7 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 patchedDependencies:
-  app-builder-lib@26.15.3: 447066ee85b5544a7c2cf482e42539761714fe5b1bb87928ae67f423732a54a1
+  app-builder-lib@26.15.3: c416fed2625eead3df98604066e6101fe9cdb27a04510e08b5cb1df761c384e4
 
 importers:
 
@@ -4191,7 +4191,7 @@ snapshots:
 
   ansis@4.3.1: {}
 
-  app-builder-lib@26.15.3(patch_hash=447066ee85b5544a7c2cf482e42539761714fe5b1bb87928ae67f423732a54a1)(dmg-builder@26.15.3):
+  app-builder-lib@26.15.3(patch_hash=c416fed2625eead3df98604066e6101fe9cdb27a04510e08b5cb1df761c384e4)(dmg-builder@26.15.3):
     dependencies:
       '@electron/asar': 3.4.1
       '@electron/fuses': 1.8.0
@@ -4555,7 +4555,7 @@ snapshots:
 
   dmg-builder@26.15.3:
     dependencies:
-      app-builder-lib: 26.15.3(patch_hash=447066ee85b5544a7c2cf482e42539761714fe5b1bb87928ae67f423732a54a1)(dmg-builder@26.15.3)
+      app-builder-lib: 26.15.3(patch_hash=c416fed2625eead3df98604066e6101fe9cdb27a04510e08b5cb1df761c384e4)(dmg-builder@26.15.3)
       builder-util: 26.15.3
       fs-extra: 10.1.0
       js-yaml: 4.3.0
@@ -4597,7 +4597,7 @@ snapshots:
 
   electron-builder@26.15.3:
     dependencies:
-      app-builder-lib: 26.15.3(patch_hash=447066ee85b5544a7c2cf482e42539761714fe5b1bb87928ae67f423732a54a1)(dmg-builder@26.15.3)
+      app-builder-lib: 26.15.3(patch_hash=c416fed2625eead3df98604066e6101fe9cdb27a04510e08b5cb1df761c384e4)(dmg-builder@26.15.3)
       builder-util: 26.15.3
       builder-util-runtime: 9.7.0
       chalk: 4.1.2
