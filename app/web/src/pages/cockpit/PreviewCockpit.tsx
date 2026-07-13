@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ArrowLeft } from "lucide-react";
-import type { SymbolAnalysisRow } from "../../../../shared/types";
+import type { QuoteCell, SymbolAnalysisRow } from "../../../../shared/types";
 import { IntradayDashboard, IntradayTimeframeSwitch } from "../../charts/intraday/IntradayDashboard";
 import { resolveIntradayTf } from "../../charts/intraday/useIntradayDoc";
 import { useIntradayPreview } from "../../charts/intraday/useIntradayPreview";
@@ -21,11 +21,13 @@ export function PreviewCockpit({
   analysesRows,
   onLive,
   onSelectAnalysis,
+  liveQuote,
 }: {
   sym: string;
   analysesRows: SymbolAnalysisRow[];
   onLive: () => void;
   onSelectAnalysis: (id: string | null) => void;
+  liveQuote: QuoteCell | null;
 }) {
   const symLabel = sym.toUpperCase().replace(/\.US$/, "");
   const { built, error, degraded, intradayTf, setIntradayTf } = useIntradayPreview(sym);
@@ -114,7 +116,7 @@ export function PreviewCockpit({
             onLive={onLive}
             onSelect={onSelectAnalysis}
           />
-          <TopbarQuote symbol={built.sidebar.symbol} />
+          <TopbarQuote quote={liveQuote} />
         </span>
       </div>
       <div className="detail-body">
@@ -125,6 +127,7 @@ export function PreviewCockpit({
           sidebarTabs={sidebarTabs}
           activeTab={activeTab}
           onTabChange={setActiveTab}
+          liveQuote={liveQuote}
         />
       </div>
     </div>

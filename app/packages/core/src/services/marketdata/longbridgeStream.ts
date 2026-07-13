@@ -88,6 +88,7 @@ export class LongbridgeStream {
       pct,
       regularLast: regular?.last ?? quote.lastDone,
       regularPct: regular?.pct ?? pct,
+      ...(quote.timestamp > 0 ? { asOf: new Date(quote.timestamp * 1000).toISOString() } : {}),
     };
     this.snapshots.set(quote.symbol, cell);
     for (const listener of this.listeners) listener(cell);
@@ -237,4 +238,3 @@ export function getLongbridgeStream(): LongbridgeStream {
   if (!instance) instance = new LongbridgeStream();
   return instance;
 }
-

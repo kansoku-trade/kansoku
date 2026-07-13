@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { TriangleAlert } from "lucide-react";
-import type { IntradayBuilt, TimeframeKey } from "../../../../shared/types";
+import type { IntradayBuilt, QuoteCell, TimeframeKey } from "../../../../shared/types";
 import { fmt } from "../../format";
 import { MarketTime } from "../../ui";
 import type { SidebarTab } from "../SidebarTabs";
@@ -21,6 +21,15 @@ interface IntradaySidebarProps {
   active?: string;
   onActiveChange?: (key: string) => void;
   dock?: ReactNode;
+  liveQuote?: QuoteCell | null;
+}
+
+export function resolveSidebarQuote(sidebar: IntradayBuilt["sidebar"], liveQuote?: QuoteCell | null) {
+  const current = liveQuote?.symbol === sidebar.symbol ? liveQuote : null;
+  return {
+    last: current?.last ?? sidebar.last,
+    asOf: current?.asOf ?? sidebar.asOf,
+  };
 }
 
 export function IntradaySidebar({
@@ -33,8 +42,10 @@ export function IntradaySidebar({
   active: activeProp,
   onActiveChange,
   dock,
+  liveQuote,
 }: IntradaySidebarProps) {
   const s = built.sidebar;
+  const displayedQuote = resolveSidebarQuote(s, liveQuote);
   const [internalActive, setInternalActive] = useState("prediction");
   const active = activeProp ?? internalActive;
   const setActive = onActiveChange ?? setInternalActive;
@@ -76,8 +87,10 @@ export function IntradaySidebar({
         <div className="header">
           <div className="symbol">{s.symbol}</div>
           <div className="name">{s.name}</div>
-          <div className="price">${fmt(s.last)}</div>
-          <div className="price-date">{s.asOf ? <MarketTime value={s.asOf} /> : ""} · 长桥证券</div>
+          <div className="price">${fmt(displayedQuote.last)}</div>
+          <div className="price-date">
+            {displayedQuote.asOf ? <MarketTime value={displayedQuote.asOf} /> : ""} · 长桥证券
+          </div>
         </div>
 
         <ConclusionCard context={s.context} predictionStale={predictionStale} />

@@ -8,6 +8,7 @@ import { TopbarQuote } from "../QuoteBar";
 import { recordRecentSymbol } from "../recentCharts";
 import { Dot, Empty, ErrorBox, MarketTime } from "../ui";
 import { useTitle } from "../useTitle";
+import { useLiveQuote } from "../useLiveQuote";
 import { AnalysisTimeline } from "./cockpit/AnalysisTimeline";
 import { ChatDock } from "./cockpit/chat/ChatDock";
 import { PreviewCockpit } from "./cockpit/PreviewCockpit";
@@ -21,6 +22,7 @@ import { useLatestAnalysis } from "./cockpit/useLatestAnalysis";
 
 export function SymbolCockpit({ sym }: { sym: string }) {
   const symLabel = sym.toUpperCase().replace(/\.US$/, "");
+  const liveQuote = useLiveQuote(sym);
   const {
     mode,
     activeId: latestId,
@@ -33,8 +35,18 @@ export function SymbolCockpit({ sym }: { sym: string }) {
     analyses,
   } = useLatestAnalysis(sym);
 
-  const { doc, error, degraded, canLoadForward, loadForward, forwardBusy, intradayTf, setIntradayTf, loadHistory } =
-    useIntradayDoc(latestId);
+  const {
+    doc,
+    error,
+    degraded,
+    live,
+    canLoadForward,
+    loadForward,
+    forwardBusy,
+    intradayTf,
+    setIntradayTf,
+    loadHistory,
+  } = useIntradayDoc(latestId);
 
   useTitle(doc?.title ?? symLabel);
 
@@ -57,6 +69,7 @@ export function SymbolCockpit({ sym }: { sym: string }) {
         analysesRows={analyses}
         onLive={goToLive}
         onSelectAnalysis={goToAnalysis}
+        liveQuote={liveQuote}
       />
     );
   }
@@ -80,6 +93,7 @@ export function SymbolCockpit({ sym }: { sym: string }) {
         analysesRows={analyses}
         onLive={goToLive}
         onSelectAnalysis={goToAnalysis}
+        liveQuote={liveQuote}
       />
     );
   }
@@ -113,7 +127,7 @@ export function SymbolCockpit({ sym }: { sym: string }) {
           </a>
           <span className="title">{doc.title}</span>
           <span className="meta">{sym}</span>
-          <span className="topbar-actions">{doc.symbol && <TopbarQuote symbol={doc.symbol} />}</span>
+          <span className="topbar-actions">{doc.symbol && <TopbarQuote quote={liveQuote} />}</span>
         </div>
         <div className="detail-body">
           <SepaDashboard built={doc.built} />
@@ -215,7 +229,7 @@ export function SymbolCockpit({ sym }: { sym: string }) {
               </span>
             </button>
           )}
-          {doc.symbol && <TopbarQuote symbol={doc.symbol} />}
+          {doc.symbol && <TopbarQuote quote={liveQuote} />}
         </span>
       </div>
       <div className="detail-body">
@@ -230,6 +244,7 @@ export function SymbolCockpit({ sym }: { sym: string }) {
           activeTab={activeTab}
           onTabChange={setActiveTab}
           dock={<ChatDock chartId={doc.id} docCreatedAt={doc.created_at} />}
+          liveQuote={live ? liveQuote : null}
         />
       </div>
     </div>

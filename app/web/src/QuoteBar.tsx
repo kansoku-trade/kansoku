@@ -42,17 +42,14 @@ export function QuoteBar() {
   );
 }
 
-export function TopbarQuote({ symbol }: { symbol: string }) {
-  const [snap, setSnap] = useState<QuoteSnapshot | null>(null);
-  useSSE<QuoteSnapshot>({ kind: "quotes", extra: [symbol] }, setSnap);
-  const q = snap?.quotes.find((x) => x.symbol === symbol);
-  if (!q) return null;
+export function TopbarQuote({ quote }: { quote: QuoteCell | null }) {
+  if (!quote) return null;
 
   return (
     <span className="topbar-quote">
-      <span className={`num qc-price ${upDown(q.pct)}`}>${q.last.toFixed(2)}</span>
-      <span className={`num qc-pct ${upDown(q.pct)}`}>{signed(q.pct)}%</span>
-      <Badge className="qc-session">{q.session}</Badge>
+      <span className={`num qc-price ${upDown(quote.pct)}`}>${quote.last.toFixed(2)}</span>
+      <span className={`num qc-pct ${upDown(quote.pct)}`}>{signed(quote.pct)}%</span>
+      <Badge className="qc-session">{quote.session}</Badge>
     </span>
   );
 }

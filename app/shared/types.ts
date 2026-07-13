@@ -597,6 +597,7 @@ export interface QuoteCell {
   pct: number;
   regularLast: number;
   regularPct: number;
+  asOf?: string;
 }
 
 export interface QuoteSnapshot {
