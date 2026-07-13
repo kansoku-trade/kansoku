@@ -95,16 +95,12 @@ appcast → 校验"的链路,用的是一次性生成、跑完即删的临时密
 
 ## 四、已知失败清单（server 测试门禁）
 
-`app/server` 测试套件里有 5 个测试是已知失败（跟这次发布流水线的改动无关，是既
-有 bug）,CI 的 `.github/scripts/assert-known-test-failures.mjs` 只允许这 5 个
-在允许名单里失败,出现名单之外的新失败会让 CI 直接 fail：
+`app/server` 测试套件若有已知失败,CI 的
+`.github/scripts/assert-known-test-failures.mjs` 只允许名单内失败；出现名单
+之外的新失败会直接 fail。名单里的用例若已修好,也必须从 `KNOWN_FAILURES`
+删掉,否则清单过时同样会 fail。
 
-- `GET /:id/built clamps count to 1000`
-- `subscribeChart candlestick-push wiring` 下面 4 条（都跟去抖动重建的时序有关)
-
-这份清单需要跟着代码走——真的修好了某个已知失败,记得把它从
-`assert-known-test-failures.mjs` 的 `KNOWN_FAILURES` 里删掉,不然清单会越攒越
-不准。
+当前名单为空（无已知失败）。
 
 ## 五、SUFeedURL 的隐含约束(必读)
 

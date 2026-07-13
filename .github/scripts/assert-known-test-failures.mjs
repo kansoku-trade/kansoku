@@ -1,9 +1,7 @@
 #!/usr/bin/env node
 import { readFileSync } from "node:fs";
 
-const KNOWN_FAILURES = new Set([
-  "GET /:id/built clamps count to 1000",
-]);
+const KNOWN_FAILURES = new Set([]);
 
 const resultsPath = process.argv[2];
 if (!resultsPath) {
