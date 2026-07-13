@@ -4,7 +4,13 @@ import { buildPaletteCommands } from "./commands.js";
 describe("buildPaletteCommands", () => {
   it("lists symbol candidates and static commands when the query is empty", () => {
     const commands = buildPaletteCommands("", ["NVDA.US", "MRVL.US"]);
-    expect(commands.map((c) => c.id)).toEqual(["symbol:NVDA.US", "symbol:MRVL.US", "nav:home", "nav:settings"]);
+    expect(commands.map((c) => c.id)).toEqual([
+      "symbol:NVDA.US",
+      "symbol:MRVL.US",
+      "nav:home",
+      "nav:settings",
+      "nav:logs",
+    ]);
   });
 
   it("dedupes symbols across sources", () => {

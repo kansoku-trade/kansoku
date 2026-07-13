@@ -12,7 +12,7 @@ import { ContextMenuHost, ModalHost } from "./ui";
 
 function GlobalTopbar() {
   const route = useRoute();
-  if (route === "/settings") return null;
+  if (route === "/settings" || route === "/logs") return null;
   return (
     <div className="global-topbar">
       <a className="global-settings-link" href="/settings" aria-label="设置">

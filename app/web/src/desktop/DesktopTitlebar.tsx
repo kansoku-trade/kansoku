@@ -1,4 +1,4 @@
-import { ChartCandlestick, Circle, House, Plus, Settings, TrendingUp, X } from "lucide-react";
+import { ChartCandlestick, Circle, House, Plus, ScrollText, Settings, TrendingUp, X } from "lucide-react";
 import { openNewChartDialog } from "../newChart/NewChartDialog";
 import { ScrollArea, showContextMenu, type ContextMenuItem } from "../ui";
 import { tabKind, type TabState } from "./tabsStore";
@@ -7,6 +7,7 @@ import type { TabsController } from "./tabsController";
 const TAB_ICONS: Record<ReturnType<typeof tabKind>, typeof House> = {
   home: House,
   settings: Settings,
+  logs: ScrollText,
   symbol: TrendingUp,
   other: Circle,
 };
@@ -72,11 +73,32 @@ export function DesktopTitlebar({ controller }: { controller: TabsController }) 
     const multi = snapshot.tabs.length > 1;
     const isLast = index === snapshot.tabs.length - 1;
     const items: ContextMenuItem[] = [
-      { key: "close", label: "关闭标签页", disabled: !multi, onClick: () => closeTabById(tabId) },
-      { key: "close-others", label: "关闭其他标签页", disabled: !multi, onClick: () => closeOtherTabs(tabId) },
-      { key: "close-right", label: "关闭右侧标签页", disabled: isLast, onClick: () => closeTabsToRight(tabId) },
+      {
+        key: "close",
+        label: "关闭标签页",
+        accelerator: "CmdOrCtrl+W",
+        disabled: !multi,
+        onClick: () => closeTabById(tabId),
+      },
+      {
+        key: "close-others",
+        label: "关闭其他标签页",
+        disabled: !multi,
+        onClick: () => closeOtherTabs(tabId),
+      },
+      {
+        key: "close-right",
+        label: "关闭右侧标签页",
+        disabled: isLast,
+        onClick: () => closeTabsToRight(tabId),
+      },
       { type: "divider" },
-      { key: "new", label: "新建标签页", onClick: openHomeTab },
+      {
+        key: "new",
+        label: "新建标签页",
+        accelerator: "CmdOrCtrl+T",
+        onClick: openHomeTab,
+      },
     ];
     showContextMenu(items);
   };

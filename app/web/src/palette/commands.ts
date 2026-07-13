@@ -13,6 +13,7 @@ const MAX_COMMANDS = 12;
 const STATIC_COMMANDS: PaletteCommand[] = [
   { id: "nav:home", title: "回首页", keywords: ["home"], route: "/" },
   { id: "nav:settings", title: "打开设置", keywords: ["settings", "config"], route: "/settings" },
+  { id: "nav:logs", title: "查看日志", keywords: ["logs", "log", "日志", "debug"], route: "/logs" },
 ];
 
 function symbolCommand(sym: string): PaletteCommand {

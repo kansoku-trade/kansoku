@@ -4,6 +4,7 @@ import { chartTargetPath } from "../../shared/chartUrl";
 import { useQuery } from "./apiHooks";
 import { client } from "./client";
 import { Home } from "./pages/Home";
+import { LogsPage } from "./pages/logViewer/LogsPage";
 import { SettingsPage } from "./pages/settings/SettingsPage";
 import { SymbolCockpit } from "./pages/SymbolCockpit";
 import { navigate, useRoute } from "./router";
@@ -46,5 +47,6 @@ export function Router() {
   const symbolMatch = route.match(/^\/symbol\/(.+)$/);
   if (symbolMatch) return <SymbolCockpit sym={decodeURIComponent(symbolMatch[1])} />;
   if (route === "/settings") return <SettingsPage />;
+  if (route === "/logs") return <LogsPage />;
   return <Home />;
 }

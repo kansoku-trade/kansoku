@@ -14,11 +14,12 @@ export type TabsSnapshot = {
   activeTabId: string;
 };
 
-export type TabKind = "home" | "settings" | "symbol" | "other";
+export type TabKind = "home" | "settings" | "logs" | "symbol" | "other";
 
 export function tabKind(route: string): TabKind {
   if (route === "/") return "home";
   if (route === "/settings" || route.startsWith("/settings?")) return "settings";
+  if (route === "/logs" || route.startsWith("/logs?")) return "logs";
   if (route.startsWith("/symbol/")) return "symbol";
   return "other";
 }

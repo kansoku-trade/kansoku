@@ -6,6 +6,7 @@ import { navigate } from "../../router";
 import { Button, Card, ErrorBox, SectionTitle } from "../../ui";
 import { useTitle } from "../../useTitle";
 import { DataRootSection } from "./DataRootSection";
+import { DiagnosticsSection } from "./DiagnosticsSection";
 import { LongbridgeSection } from "./LongbridgeSection";
 import { ProviderCredentialsSection } from "./ProviderCredentialsSection";
 import { RoleModelsCard } from "./RoleModelsCard";
@@ -74,6 +75,7 @@ function SettingsWorkspace({
           </div>
           <LongbridgeSection />
           <DataRootSection />
+          <DiagnosticsSection />
           <ProviderCredentialsSection
             settings={settings}
             catalog={catalog}

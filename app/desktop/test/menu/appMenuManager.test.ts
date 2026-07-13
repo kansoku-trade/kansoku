@@ -7,6 +7,7 @@ function makeDeps(overrides: Partial<MenuActionDeps> = {}): MenuActionDeps {
     importFromRepo: vi.fn(),
     selectDataRoot: vi.fn(),
     openSettings: vi.fn(),
+    openLogs: vi.fn(),
     checkForUpdates: vi.fn(),
     newTab: vi.fn(),
     closeTab: vi.fn(),
@@ -43,49 +44,62 @@ function findByRole(
 }
 
 describe("buildAppMenuTemplate", () => {
-  it("builds app / edit / view / window top-level sections", () => {
+  it("builds app / edit / view / window / help top-level sections", () => {
     const template = buildAppMenuTemplate("Kansoku", makeDeps());
     expect(template.map((item) => item.label ?? item.role)).toEqual([
       "Kansoku",
       "编辑",
       "显示",
       "窗口",
+      "帮助",
     ]);
   });
 
-  it("includes about, check updates, import, select data root, settings, and quit in the app menu", () => {
+  it("keeps about, check updates, settings, and quit in the app menu", () => {
     const deps = makeDeps();
     const appMenu = asSubmenu(buildAppMenuTemplate("Kansoku", deps)[0]);
     expect(findByRole(appMenu, "about").role).toBe("about");
     expect(findByLabel(appMenu, "检查更新…").label).toBe("检查更新…");
-    expect(findByLabel(appMenu, "从 repo 导入数据…").label).toBe("从 repo 导入数据…");
-    expect(findByLabel(appMenu, "选择数据目录…").label).toBe("选择数据目录…");
     expect(findByLabel(appMenu, "设置…")).toMatchObject({
       label: "设置…",
       accelerator: "CmdOrCtrl+,",
     });
     expect(findByRole(appMenu, "quit").role).toBe("quit");
+    expect(appMenu.some((item) => item.label === "查看日志…")).toBe(false);
+    expect(appMenu.some((item) => item.label === "选择数据目录…")).toBe(false);
+    expect(appMenu.some((item) => item.label === "从 repo 导入数据…")).toBe(false);
   });
 
   it("wires app menu clicks to deps", () => {
     const deps = makeDeps();
     const appMenu = asSubmenu(buildAppMenuTemplate("Kansoku", deps)[0]);
     findByLabel(appMenu, "检查更新…").click?.(undefined as never, undefined as never, undefined as never);
-    findByLabel(appMenu, "从 repo 导入数据…").click?.(
-      undefined as never,
-      undefined as never,
-      undefined as never,
-    );
-    findByLabel(appMenu, "选择数据目录…").click?.(
-      undefined as never,
-      undefined as never,
-      undefined as never,
-    );
     findByLabel(appMenu, "设置…").click?.(undefined as never, undefined as never, undefined as never);
     expect(deps.checkForUpdates).toHaveBeenCalledOnce();
-    expect(deps.importFromRepo).toHaveBeenCalledOnce();
-    expect(deps.selectDataRoot).toHaveBeenCalledOnce();
     expect(deps.openSettings).toHaveBeenCalledOnce();
+  });
+
+  it("puts logs and data tools in the help menu", () => {
+    const deps = makeDeps();
+    const helpMenu = asSubmenu(buildAppMenuTemplate("Kansoku", deps)[4]);
+    expect(findByLabel(helpMenu, "查看日志…").label).toBe("查看日志…");
+    expect(findByLabel(helpMenu, "选择数据目录…").label).toBe("选择数据目录…");
+    expect(findByLabel(helpMenu, "从 repo 导入数据…").label).toBe("从 repo 导入数据…");
+
+    findByLabel(helpMenu, "查看日志…").click?.(undefined as never, undefined as never, undefined as never);
+    findByLabel(helpMenu, "选择数据目录…").click?.(
+      undefined as never,
+      undefined as never,
+      undefined as never,
+    );
+    findByLabel(helpMenu, "从 repo 导入数据…").click?.(
+      undefined as never,
+      undefined as never,
+      undefined as never,
+    );
+    expect(deps.openLogs).toHaveBeenCalledOnce();
+    expect(deps.selectDataRoot).toHaveBeenCalledOnce();
+    expect(deps.importFromRepo).toHaveBeenCalledOnce();
   });
 
   it("includes tab actions and avoids role close on close-tab", () => {
