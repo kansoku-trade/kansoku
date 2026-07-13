@@ -557,6 +557,9 @@ a.zone-item:hover { text-decoration: none; background: var(--bg-hover); }
   font-size: var(--fs-base); font-variant-numeric: tabular-nums;
   cursor: pointer; white-space: nowrap;
 }
+.analysis-timeline-trigger {
+  height: 26px; padding-inline: 7px; font-size: var(--fs-sm);
+}
 .ui-select-trigger:hover { color: var(--text-primary); background: var(--bg-hover); }
 .ui-select-trigger[data-popup-open] { color: var(--text-primary); background: var(--bg-hover); }
 .ui-select-icon { display: inline-flex; color: var(--text-secondary); }
@@ -570,7 +573,7 @@ a.zone-item:hover { text-decoration: none; background: var(--bg-hover); }
 }
 .ui-select-item {
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
-  padding: 4px 8px; border-radius: var(--radius);
+  min-height: 26px; padding: 4px 8px; border-radius: var(--radius);
   font-size: var(--fs-sm); font-variant-numeric: tabular-nums;
   color: var(--text-secondary); cursor: pointer; white-space: nowrap;
 }

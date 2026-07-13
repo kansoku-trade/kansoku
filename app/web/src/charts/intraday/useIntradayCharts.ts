@@ -167,7 +167,7 @@ export function useIntradayCharts(
     const difMarkers = attachMarkers(dif);
     const dea = macd.addSeries(LineSeries, { color: seriesPalette[4], lineWidth: 1, priceLineVisible: false, lastValueVisible: true });
 
-    syncTimeScales([main, macd]);
+    const stopTimeScaleSync = syncTimeScales([main, macd]);
     const observers = [observeSize(mainEl, main), observeSize(macdEl, macd)];
     const mainTip = markerTooltip(main, mainEl);
     const macdTip = markerTooltip(macd, macdEl);
@@ -208,6 +208,7 @@ export function useIntradayCharts(
       mainTip.destroy();
       macdTip.destroy();
       observers.forEach((ro) => ro.disconnect());
+      stopTimeScaleSync();
       main.remove();
       macd.remove();
       handleRef.current = null;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { chartTargetPath, symbolAnalysisPath, type ChartUrlDoc } from "../../shared/chartUrl.js";
+import { chartTargetPath, symbolAnalysisPath, symbolLivePath, type ChartUrlDoc } from "../../shared/chartUrl.js";
 
 function doc(overrides: Partial<ChartUrlDoc>): ChartUrlDoc {
   return {
@@ -40,5 +40,9 @@ describe("chartTargetPath", () => {
 
   it("omits the analysis query when no id is given", () => {
     expect(symbolAnalysisPath("MRVL.US", null)).toBe("/symbol/MRVL.US");
+  });
+
+  it("routes the live view without pinning an analysis", () => {
+    expect(symbolLivePath("MRVL US")).toBe("/symbol/MRVL%20US?view=live");
   });
 });

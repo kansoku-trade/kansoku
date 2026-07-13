@@ -7,6 +7,7 @@ import {
   type ISeriesApi,
   type ISeriesMarkersPluginApi,
   type LineData,
+  type LogicalRange,
   type SeriesMarker as LwMarker,
   type SeriesType,
   type TickMarkType,
@@ -177,18 +178,21 @@ export function makeTogglableLine(series: AnySeries, spec: PriceLineSpec): Toggl
   };
 }
 
-export function syncTimeScales(charts: IChartApi[]): void {
+export function syncTimeScales(charts: IChartApi[]): () => void {
   let syncing = false;
-  charts.forEach((src) => {
-    src.timeScale().subscribeVisibleLogicalRangeChange((range) => {
+  const subscriptions = charts.map((src) => {
+    const onRangeChange = (range: LogicalRange | null) => {
       if (syncing || !range) return;
       syncing = true;
       charts.forEach((dst) => {
         if (dst !== src) dst.timeScale().setVisibleLogicalRange(range);
       });
       syncing = false;
-    });
+    };
+    src.timeScale().subscribeVisibleLogicalRangeChange(onRangeChange);
+    return () => src.timeScale().unsubscribeVisibleLogicalRangeChange(onRangeChange);
   });
+  return () => subscriptions.forEach((unsubscribe) => unsubscribe());
 }
 
 export function centerLastBar(chart: IChartApi, candles: Candle[], n = 90): void {
@@ -204,10 +208,21 @@ export function showLastBars(chart: IChartApi, candles: Candle[], n = 90): void 
   chart.timeScale().setVisibleRange({ from: asTime(startTs), to: asTime(lastTs) });
 }
 
-export function observeSize(el: HTMLElement, chart: IChartApi): ResizeObserver {
+export interface SizeObserverHandle {
+  disconnect(): void;
+}
+
+export function observeSize(el: HTMLElement, chart: IChartApi): SizeObserverHandle {
+  let active = true;
   const ro = new ResizeObserver(() => {
+    if (!active) return;
     chart.applyOptions({ width: el.clientWidth, height: el.clientHeight });
   });
   ro.observe(el);
-  return ro;
+  return {
+    disconnect() {
+      active = false;
+      ro.disconnect();
+    },
+  };
 }

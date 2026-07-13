@@ -21,8 +21,17 @@ import { useLatestAnalysis } from "./cockpit/useLatestAnalysis";
 
 export function SymbolCockpit({ sym }: { sym: string }) {
   const symLabel = sym.toUpperCase().replace(/\.US$/, "");
-  const { mode, activeId: latestId, latestChecked, latestError, hasNewer, jumpToLatest, goToAnalysis, analyses } =
-    useLatestAnalysis(sym);
+  const {
+    mode,
+    activeId: latestId,
+    latestChecked,
+    latestError,
+    hasNewer,
+    jumpToLatest,
+    goToLive,
+    goToAnalysis,
+    analyses,
+  } = useLatestAnalysis(sym);
 
   const { doc, error, degraded, canLoadForward, loadForward, forwardBusy, intradayTf, setIntradayTf, loadHistory } =
     useIntradayDoc(latestId);
@@ -41,6 +50,17 @@ export function SymbolCockpit({ sym }: { sym: string }) {
   const { comments, error: commentsError, loaded: commentsLoaded } = useCockpitComments(sym);
   const { unread, latestAlert } = useAiUnreadBadge(sym, comments, commentsLoaded, activeTab);
 
+  if (mode === "live") {
+    return (
+      <PreviewCockpit
+        sym={sym}
+        analysesRows={analyses}
+        onLive={goToLive}
+        onSelectAnalysis={goToAnalysis}
+      />
+    );
+  }
+
   if (latestChecked && !latestId) {
     if (latestError)
       return (
@@ -54,7 +74,14 @@ export function SymbolCockpit({ sym }: { sym: string }) {
           </p>
         </div>
       );
-    return <PreviewCockpit sym={sym} />;
+    return (
+      <PreviewCockpit
+        sym={sym}
+        analysesRows={analyses}
+        onLive={goToLive}
+        onSelectAnalysis={goToAnalysis}
+      />
+    );
   }
 
   if (error) {
@@ -167,7 +194,13 @@ export function SymbolCockpit({ sym }: { sym: string }) {
               <span className="alert-badge-text">有新分析，点击查看最新</span>
             </button>
           )}
-          <AnalysisTimeline rows={analysesRows} activeId={latestId} mode={mode} onSelect={goToAnalysis} />
+          <AnalysisTimeline
+            rows={analysesRows}
+            activeId={latestId}
+            mode={mode}
+            onLive={goToLive}
+            onSelect={goToAnalysis}
+          />
           {latestAlert && (
             <button
               className={`badge badge--${latestAlert.level === "alert" ? "down" : "accent"} alert-badge`}

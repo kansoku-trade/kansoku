@@ -345,16 +345,7 @@ export function useDrawings(handle: DrawingsHandle | null, symbol: string, barTi
       window.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("pointerup", onPointerUp);
       window.removeEventListener("keydown", onKeyDown);
-      try {
-        chart.applyOptions({ handleScroll: true, handleScale: true });
-      } catch {
-        void 0;
-      }
-      try {
-        series.detachPrimitive(primitive);
-      } catch {
-        void 0;
-      }
+      // The chart owner detaches primitives during chart.remove(); calling chart APIs here can race that disposal.
       primitiveRef.current = null;
     };
   }, [handle, applyTool, commitAnnotations, pushState, scheduleSave, updateScrollLock]);
