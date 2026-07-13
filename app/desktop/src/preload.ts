@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer } from "electron";
+import { CONTEXT_MENU_CHANNELS } from "./contextMenu/channels.js";
 import { CREDENTIALS_CHANNELS } from "./credentials/channels.js";
 import { IPC_GROUPS } from "./ipc/groups.js";
 import { TABS_COMMAND_CHANNEL, type TabsCommand } from "./tabs/channels.js";
@@ -64,6 +65,17 @@ if (isPrivilegedOrigin) {
     get: () => ipcRenderer.invoke("desktop:data-root:get"),
     pick: () => ipcRenderer.invoke("desktop:data-root:pick"),
     reset: () => ipcRenderer.invoke("desktop:data-root:reset"),
+  };
+
+  desktopApi.logs = {
+    getInfo: () => ipcRenderer.invoke("desktop:logs:get-info"),
+    tail: (opts?: { maxBytes?: number }) => ipcRenderer.invoke("desktop:logs:tail", opts),
+    reveal: () => ipcRenderer.invoke("desktop:logs:reveal"),
+    openDir: () => ipcRenderer.invoke("desktop:logs:open-dir"),
+  };
+
+  desktopApi.contextMenu = {
+    popup: (request: unknown) => ipcRenderer.invoke(CONTEXT_MENU_CHANNELS.popup, request),
   };
 }
 

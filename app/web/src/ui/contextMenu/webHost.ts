@@ -1,15 +1,4 @@
-import type { ReactNode } from "react";
-
-export type ContextMenuItem =
-  | {
-      key?: string;
-      label: ReactNode;
-      icon?: ReactNode;
-      onClick?: () => void;
-      danger?: boolean;
-      disabled?: boolean;
-    }
-  | { type: "divider"; key?: string };
+import type { ContextMenuItem, ContextMenuPoint } from "./types";
 
 export interface ContextMenuAnchor {
   getBoundingClientRect: () => DOMRect;
@@ -46,13 +35,18 @@ export function getServerSnapshot(): ContextMenuState {
   return emptyState;
 }
 
-// Tracked globally so an imperative showContextMenu() opens at the cursor. The
-// host registers these on window in the capture phase, so lastPointer is fresh
-// before any element's own contextmenu/pointerdown handler runs.
 export function updateLastPointer(event: MouseEvent | PointerEvent): void {
   lastPointer.x = event.clientX;
   lastPointer.y = event.clientY;
   lastPointer.ready = true;
+}
+
+export function getLastPointer(): ContextMenuPoint {
+  if (typeof window === "undefined") return { x: 0, y: 0 };
+  if (!lastPointer.ready) {
+    return { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+  }
+  return { x: lastPointer.x, y: lastPointer.y };
 }
 
 function anchorAt(x: number, y: number): ContextMenuAnchor {
@@ -72,22 +66,17 @@ function anchorAt(x: number, y: number): ContextMenuAnchor {
   };
 }
 
-export function showContextMenu(items: ContextMenuItem[]): void {
-  if (typeof window === "undefined") return;
-  const x = lastPointer.ready ? lastPointer.x : window.innerWidth / 2;
-  const y = lastPointer.ready ? lastPointer.y : window.innerHeight / 2;
-  state = { open: true, items, anchor: anchorAt(x, y) };
+export function openWebContextMenu(items: ContextMenuItem[], point: ContextMenuPoint): void {
+  state = { open: true, items, anchor: anchorAt(point.x, point.y) };
   emit();
 }
 
-// Swap items without re-positioning — for interactive items that mutate the menu.
-export function updateContextMenuItems(items: ContextMenuItem[]): void {
-  if (typeof window === "undefined") return;
+export function updateWebContextMenuItems(items: ContextMenuItem[]): void {
   state = { ...state, items };
   emit();
 }
 
-export function closeContextMenu(): void {
+export function closeWebContextMenu(): void {
   state = emptyState;
   emit();
 }

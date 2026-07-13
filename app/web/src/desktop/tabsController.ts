@@ -14,6 +14,7 @@ export interface TabsController {
   closeTabsToRight(id: string): void;
   openHomeTab(): void;
   focusOrOpenSettings(): void;
+  focusOrOpenLogs(): void;
 }
 
 function withCurrentScrollCaptured(snapshot: TabsSnapshot): TabsSnapshot {
@@ -70,6 +71,10 @@ export function useTabsController(): TabsController {
     setSnapshot((prev) => tabsStore.focusOrOpenRoute(withCurrentScrollCaptured(prev), "/settings"));
   }, []);
 
+  const focusOrOpenLogs = useCallback(() => {
+    setSnapshot((prev) => tabsStore.focusOrOpenRoute(withCurrentScrollCaptured(prev), "/logs"));
+  }, []);
+
   const closeActiveTab = useCallback(() => {
     setSnapshot((prev) => tabsStore.closeActiveTab(prev));
   }, []);
@@ -91,8 +96,9 @@ export function useTabsController(): TabsController {
       else if (command === "next-tab") goToNextTab();
       else if (command === "prev-tab") goToPrevTab();
       else if (command === "open-settings") focusOrOpenSettings();
+      else if (command === "open-logs") focusOrOpenLogs();
     });
-  }, [openHomeTab, closeActiveTab, goToNextTab, goToPrevTab, focusOrOpenSettings]);
+  }, [openHomeTab, closeActiveTab, goToNextTab, goToPrevTab, focusOrOpenSettings, focusOrOpenLogs]);
 
   return {
     snapshot,
@@ -103,5 +109,6 @@ export function useTabsController(): TabsController {
     closeTabsToRight,
     openHomeTab,
     focusOrOpenSettings,
+    focusOrOpenLogs,
   };
 }

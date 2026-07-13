@@ -20,8 +20,22 @@ import { registerOnboardingIpc } from "./onboarding/ipc.js";
 import { runImportFromRepoFlow } from "./dataImport/flow.js";
 import { runSelectDataRootFlow } from "./dataRoot/flow.js";
 import { registerDataRootIpc } from "./dataRoot/ipc.js";
+import {
+  createFileLogger,
+  installConsoleBridge,
+  resolveMainLogPath,
+} from "./logging/fileLogger.js";
+import { installDefaultContextMenu } from "./contextMenu/defaultMenu.js";
+import { registerContextMenuIpc } from "./contextMenu/ipc.js";
+import { registerLogsIpc } from "./logging/ipc.js";
 import { sendTabsCommand } from "./tabs/commands.js";
 import { initUpdater } from "./updater/updater.js";
+
+const fileLogger = createFileLogger({
+  logFilePath: resolveMainLogPath(app.getPath("logs")),
+});
+installConsoleBridge(fileLogger);
+console.log(`[desktop] logging to ${fileLogger.path}`);
 
 // Scheme registration must run before app.ready — calling it at module top
 // level (evaluated on import, ahead of the whenReady() handler below) makes
@@ -44,6 +58,7 @@ function installAppMenu(checkForUpdates: () => void): void {
         });
       },
       openSettings: () => sendTabsCommand("open-settings"),
+      openLogs: () => sendTabsCommand("open-logs"),
       checkForUpdates,
       newTab: () => sendTabsCommand("new-tab"),
       closeTab: () => sendTabsCommand("close-tab"),
@@ -68,6 +83,9 @@ app.whenReady().then(async () => {
 
     registerOnboardingIpc(createOnboardingStore());
     registerDataRootIpc();
+    registerLogsIpc(fileLogger);
+    registerContextMenuIpc();
+    await installDefaultContextMenu();
 
     const updater = initUpdater();
     installAppMenu(() => updater.checkNow());

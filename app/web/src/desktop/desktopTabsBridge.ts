@@ -1,4 +1,10 @@
-export type TabsCommand = "new-tab" | "close-tab" | "next-tab" | "prev-tab" | "open-settings";
+export type TabsCommand =
+  | "new-tab"
+  | "close-tab"
+  | "next-tab"
+  | "prev-tab"
+  | "open-settings"
+  | "open-logs";
 
 export interface DesktopTabsBridge {
   onCommand(cb: (command: TabsCommand) => void): () => void;

@@ -8,7 +8,14 @@ export default defineConfig([
     platform: "node",
     deps: {
       alwaysBundle: ["electron-window-state"],
-      neverBundle: ["electron", "better-sqlite3"],
+      neverBundle: [
+        "electron",
+        "better-sqlite3",
+        "electron-context-menu",
+        "electron-dl",
+        "electron-is-dev",
+        "cli-truncate",
+      ],
     },
     dts: false,
     clean: true,

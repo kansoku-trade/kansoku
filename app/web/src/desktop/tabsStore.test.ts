@@ -145,6 +145,11 @@ describe("tabKind", () => {
     expect(tabKind("/settings?tab=billing")).toBe("settings");
   });
 
+  it("classifies logs routes", () => {
+    expect(tabKind("/logs")).toBe("logs");
+    expect(tabKind("/logs?x=1")).toBe("logs");
+  });
+
   it("classifies symbol routes", () => {
     expect(tabKind("/symbol/NVDA")).toBe("symbol");
   });
