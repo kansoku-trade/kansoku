@@ -943,6 +943,7 @@ a.zone-item:hover { text-decoration: none; background: var(--bg-hover); }
   -webkit-app-region: no-drag;
 }
 .desktop-content { padding-top: 40px; }
+.desktop-content .fullpage { height: calc(100vh - 40px); }
 /* 桌面版：新建图表/设置在标题栏里，detail-topbar 不必为浮动 global-topbar 留右侧空位 */
 .desktop-content .detail-topbar { padding-right: 14px; }
 
