@@ -5,6 +5,8 @@ export { Chip } from "./Chip";
 export { Input } from "./Input";
 export { Select } from "./Select";
 export type { SelectOption } from "./Select";
+export { SegmentedControl } from "./SegmentedControl";
+export type { SegmentedControlOption } from "./SegmentedControl";
 export { Dot } from "./Dot";
 export { SectionTitle } from "./SectionTitle";
 export { Num } from "./Num";

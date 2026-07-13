@@ -102,6 +102,25 @@
   padding: 0 10px;
 }
 
+.ui-segmented-control {
+  display: grid; border: 1px solid var(--border-strong); border-radius: var(--radius);
+}
+.ui-segmented-control-option { position: relative; min-width: 0; cursor: pointer; }
+.ui-segmented-control-option + .ui-segmented-control-option { border-left: 1px solid var(--border-strong); }
+.ui-segmented-control-option input {
+  position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none;
+}
+.ui-segmented-control-option span {
+  display: flex; height: 100%; align-items: center; justify-content: center;
+  color: var(--text-muted); font-size: var(--fs-xs); white-space: nowrap;
+}
+.ui-segmented-control-option input:checked + span {
+  background: var(--bg-hover); color: var(--text-primary); font-weight: 600;
+}
+.ui-segmented-control-option:focus-within {
+  z-index: 1; border-color: var(--focus-border); box-shadow: var(--focus-ring);
+}
+
 .dot {
   display: inline-block;
   width: 7px;
@@ -1152,7 +1171,8 @@ a.zone-item:hover { text-decoration: none; background: var(--bg-hover); }
   display: grid; grid-template-columns: minmax(0, 1.8fr) minmax(280px, 0.9fr);
   gap: 12px; align-items: start;
 }
-.settings-roles-card, .settings-connections-card { overflow: hidden; padding: 0; min-width: 0; }
+.settings-side-column { display: grid; min-width: 0; gap: 12px; }
+.settings-roles-card, .settings-connections-card, .settings-display-card { overflow: hidden; padding: 0; min-width: 0; }
 .settings-card-heading {
   display: flex; min-height: 34px; align-items: center; justify-content: space-between;
   gap: 12px; padding: 0 11px; border-bottom: 1px solid var(--border);
@@ -1161,6 +1181,19 @@ a.zone-item:hover { text-decoration: none; background: var(--bg-hover); }
 .settings-card-heading > span {
   color: var(--text-muted); font-family: var(--font-mono); font-size: var(--fs-xs);
   font-variant-numeric: tabular-nums;
+}
+
+.settings-time-preference {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 11px;
+}
+.settings-preference-copy { min-width: 0; }
+.settings-preference-name { color: var(--text-primary); font-size: var(--fs-sm); font-weight: 500; }
+.settings-preference-description {
+  margin-top: 3px; color: var(--text-muted); font-size: var(--fs-xs); overflow-wrap: anywhere;
+}
+.settings-time-mode {
+  width: 168px; height: 28px; flex: 0 0 auto; grid-template-columns: 1fr 1fr;
 }
 
 .settings-primary-row {
@@ -1197,23 +1230,7 @@ a.zone-item:hover { text-decoration: none; background: var(--bg-hover); }
 .settings-role-grid { min-height: 47px; padding: 0 11px; }
 .settings-assignment-row--disabled .settings-role-name { color: var(--text-secondary); }
 .settings-role-mode {
-  display: grid; height: 26px; grid-template-columns: 1.35fr 1fr 0.75fr;
-  border: 1px solid var(--border-strong); border-radius: var(--radius);
-}
-.settings-role-mode-option { position: relative; min-width: 0; cursor: pointer; }
-.settings-role-mode-option + .settings-role-mode-option { border-left: 1px solid var(--border-strong); }
-.settings-role-mode-option input {
-  position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none;
-}
-.settings-role-mode-option span {
-  display: flex; height: 100%; align-items: center; justify-content: center;
-  color: var(--text-muted); font-size: var(--fs-xs); white-space: nowrap;
-}
-.settings-role-mode-option input:checked + span {
-  background: var(--bg-hover); color: var(--text-primary); font-weight: 600;
-}
-.settings-role-mode-option:focus-within {
-  z-index: 1; border-color: var(--focus-border); box-shadow: var(--focus-ring);
+  height: 26px; grid-template-columns: 1.35fr 1fr 0.75fr;
 }
 .settings-role-effective {
   overflow: hidden; color: var(--text-secondary); font-size: var(--fs-sm);
@@ -1382,6 +1399,8 @@ a.zone-item:hover { text-decoration: none; background: var(--bg-hover); }
   .settings-provider-editor .btn { justify-content: center; }
   .settings-provider-add { grid-template-columns: 1fr; }
   .settings-provider-add .settings-provider-error { grid-column: auto; }
+  .settings-time-preference { align-items: stretch; flex-direction: column; }
+  .settings-time-mode { width: 100%; }
 }
 .settings-manual-cred-toggle {
   background: none; border: none; color: var(--text-muted); font-size: var(--fs-sm);

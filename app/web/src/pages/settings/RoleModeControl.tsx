@@ -1,10 +1,11 @@
+import { SegmentedControl, type SegmentedControlOption } from "../../ui";
 import { ROLE_LABEL, type Role, type RoleMode } from "./types";
 
-const MODE_OPTIONS: Array<{ mode: RoleMode; label: string }> = [
-  { mode: "inherit", label: "跟随主模型" },
-  { mode: "custom", label: "自定义" },
-  { mode: "disabled", label: "停用" },
-];
+const MODE_OPTIONS = [
+  { value: "inherit", label: "跟随主模型" },
+  { value: "custom", label: "自定义" },
+  { value: "disabled", label: "停用" },
+] satisfies readonly SegmentedControlOption<RoleMode>[];
 
 export function RoleModeControl({
   role,
@@ -16,19 +17,12 @@ export function RoleModeControl({
   onChange: (mode: RoleMode) => void;
 }) {
   return (
-    <div className="settings-role-mode" role="radiogroup" aria-label={ROLE_LABEL[role] + "分配方式"}>
-      {MODE_OPTIONS.map((option) => (
-        <label className="settings-role-mode-option" key={option.mode}>
-          <input
-            checked={value === option.mode}
-            name={"settings-role-mode-" + role}
-            onChange={() => onChange(option.mode)}
-            type="radio"
-            value={option.mode}
-          />
-          <span>{option.label}</span>
-        </label>
-      ))}
-    </div>
+    <SegmentedControl
+      ariaLabel={ROLE_LABEL[role] + "分配方式"}
+      className="settings-role-mode"
+      value={value}
+      options={MODE_OPTIONS}
+      onChange={onChange}
+    />
   );
 }

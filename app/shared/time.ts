@@ -88,6 +88,16 @@ export function formatDateTimeInZone(input: TimeInput, timeZone: string, include
   return `${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}${includeZone && p.timeZoneName ? ` ${p.timeZoneName}` : ""}`;
 }
 
+export function formatMonthDayTimeInZone(input: TimeInput, timeZone: string, includeZone = false): string {
+  const p = parts(input, timeZone, includeZone);
+  return `${p.month}-${p.day} ${p.hour}:${p.minute}${includeZone && p.timeZoneName ? ` ${p.timeZoneName}` : ""}`;
+}
+
+export function formatClockInZone(input: TimeInput, timeZone: string, includeZone = false): string {
+  const p = parts(input, timeZone, includeZone);
+  return `${p.hour}:${p.minute}${includeZone && p.timeZoneName ? ` ${p.timeZoneName}` : ""}`;
+}
+
 export function shouldShowLocalTime(input: TimeInput, currentTimeZone = localTimeZone()): boolean {
   if (!currentTimeZone || currentTimeZone === MARKET_TIME_ZONE) return false;
   try {
