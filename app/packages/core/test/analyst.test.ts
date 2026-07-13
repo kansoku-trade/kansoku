@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import type { CockpitComment } from "../../../shared/types.js";
 import type { AiAgentFactory, AiAgentHandle } from "../src/ai/agentSession.js";
 import {
+  analystRunStatus,
   type AnalystDeps,
   buildAnalystSystemPrompt,
   buildJournalTool,
@@ -289,6 +290,29 @@ describe("buildJournalTool", () => {
 });
 
 describe("runAnalyst gating", () => {
+  it("exposes the active run until the analyst finishes", async () => {
+    const symbol = "STATUS.US";
+    const startedAt = "2026-07-14T02:03:04.000Z";
+    let release!: () => void;
+    const wait = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const { deps } = harness(async () => wait);
+
+    const run = runAnalyst({
+      symbol,
+      origin: "manual",
+      deps: { ...deps, now: () => Date.parse(startedAt) },
+    });
+
+    expect(run.started).toBe(true);
+    expect(analystRunStatus(symbol)).toEqual({ running: true, startedAt });
+
+    release();
+    await run.done;
+    expect(analystRunStatus(symbol)).toEqual({ running: false });
+  });
+
   it("blocks a second run for the same symbol while one is in flight", async () => {
     const symbol = "LOCK.US";
     const { deps } = harness(async () => {}, { hang: true });

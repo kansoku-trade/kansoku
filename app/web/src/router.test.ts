@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { __setActiveRouteStore, createMemoryRouteStore, navigate } from "./router.js";
+import { __setActiveRouteStore, createMemoryRouteStore, navigate, routePathname } from "./router.js";
 
 afterEach(() => {
   __setActiveRouteStore(null);
@@ -44,6 +44,16 @@ describe("createMemoryRouteStore", () => {
     unsubscribe();
     store.push("/a");
     expect(cb).not.toHaveBeenCalled();
+  });
+});
+
+describe("routePathname", () => {
+  it("keeps analysis query parameters out of the symbol route", () => {
+    expect(routePathname("/symbol/DRAM.US?analysis=2026-07-13-dram-intraday")).toBe("/symbol/DRAM.US");
+  });
+
+  it("preserves percent-encoded question marks inside path segments", () => {
+    expect(routePathname("/charts/chart%3Fid?view=compact")).toBe("/charts/chart%3Fid");
   });
 });
 

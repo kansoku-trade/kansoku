@@ -7,7 +7,7 @@ import { Home } from "./pages/Home";
 import { LogsPage } from "./pages/logViewer/LogsPage";
 import { SettingsPage } from "./pages/settings/SettingsPage";
 import { SymbolCockpit } from "./pages/SymbolCockpit";
-import { navigate, useRoute } from "./router";
+import { navigate, routePathname, useRoute } from "./router";
 import { ErrorBox } from "./ui";
 
 function Redirect({ to }: { to: string }) {
@@ -36,17 +36,18 @@ function ChartRedirect({ id }: { id: string }) {
 
 export function Router() {
   const route = useRoute();
+  const pathname = routePathname(route);
 
-  if (route === "/overview" || route === "/charts") {
+  if (pathname === "/overview" || pathname === "/charts") {
     return <Redirect to="/" />;
   }
-  const chartMatch = route.match(/^\/charts\/(.+)$/);
+  const chartMatch = pathname.match(/^\/charts\/(.+)$/);
   if (chartMatch) {
     return <ChartRedirect id={decodeURIComponent(chartMatch[1])} />;
   }
-  const symbolMatch = route.match(/^\/symbol\/(.+)$/);
+  const symbolMatch = pathname.match(/^\/symbol\/(.+)$/);
   if (symbolMatch) return <SymbolCockpit sym={decodeURIComponent(symbolMatch[1])} />;
-  if (route === "/settings") return <SettingsPage />;
-  if (route === "/logs") return <LogsPage />;
+  if (pathname === "/settings") return <SettingsPage />;
+  if (pathname === "/logs") return <LogsPage />;
   return <Home />;
 }

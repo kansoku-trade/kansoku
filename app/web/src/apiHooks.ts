@@ -14,6 +14,10 @@ export interface QueryState<T> {
   reload: () => void;
 }
 
+export interface QueryOptions {
+  cache?: boolean;
+}
+
 interface QueryInternalState<T> extends Omit<QueryState<T>, "reload"> {
   key: string | null;
 }
@@ -25,8 +29,8 @@ const failureFrom = (error: unknown): QueryFailure => ({
 
 const queryCache = new Map<string, unknown>();
 
-const initialState = <T>(key: string | null): QueryInternalState<T> => {
-  const cached = key !== null && queryCache.has(key);
+const initialState = <T>(key: string | null, useCache: boolean): QueryInternalState<T> => {
+  const cached = useCache && key !== null && queryCache.has(key);
   return {
     key,
     data: cached ? (queryCache.get(key!) as T) : null,
@@ -36,8 +40,9 @@ const initialState = <T>(key: string | null): QueryInternalState<T> => {
   };
 };
 
-export function useQuery<T>(key: string | null, fetch: () => Promise<T>): QueryState<T> {
-  const [state, setState] = useState<QueryInternalState<T>>(() => initialState<T>(key));
+export function useQuery<T>(key: string | null, fetch: () => Promise<T>, options: QueryOptions = {}): QueryState<T> {
+  const useCache = options.cache !== false;
+  const [state, setState] = useState<QueryInternalState<T>>(() => initialState<T>(key, useCache));
   const [version, setVersion] = useState(0);
   const reload = useCallback(() => setVersion((v) => v + 1), []);
   const fetchRef = useRef(fetch);
@@ -46,13 +51,13 @@ export function useQuery<T>(key: string | null, fetch: () => Promise<T>): QueryS
   useEffect(() => {
     let active = true;
 
-    setState(initialState<T>(key));
+    setState(initialState<T>(key, useCache));
     if (!key) return;
 
     fetchRef
       .current()
       .then((data) => {
-        queryCache.set(key, data);
+        if (useCache) queryCache.set(key, data);
         if (active) setState({ key, data, error: null, failure: null, loading: false });
       })
       .catch((error: unknown) => {
@@ -64,15 +69,21 @@ export function useQuery<T>(key: string | null, fetch: () => Promise<T>): QueryS
     return () => {
       active = false;
     };
-  }, [key, version]);
+  }, [key, useCache, version]);
 
-  const visibleState = state.key === key ? state : initialState<T>(key);
+  const visibleState = state.key === key ? state : initialState<T>(key, useCache);
   const { key: _key, ...queryState } = visibleState;
   return { ...queryState, reload };
 }
 
-export function usePollingQuery<T>(key: string | null, fetch: () => Promise<T>, ms: number): QueryState<T> {
-  const [state, setState] = useState<QueryInternalState<T>>(() => initialState<T>(key));
+export function usePollingQuery<T>(
+  key: string | null,
+  fetch: () => Promise<T>,
+  ms: number,
+  options: QueryOptions = {},
+): QueryState<T> {
+  const useCache = options.cache !== false;
+  const [state, setState] = useState<QueryInternalState<T>>(() => initialState<T>(key, useCache));
   const [version, setVersion] = useState(0);
   const reload = useCallback(() => setVersion((v) => v + 1), []);
   const fetchRef = useRef(fetch);
@@ -82,7 +93,7 @@ export function usePollingQuery<T>(key: string | null, fetch: () => Promise<T>, 
     let active = true;
     let inFlight = false;
 
-    setState(initialState<T>(key));
+    setState(initialState<T>(key, useCache));
     if (!key) return;
 
     const load = () => {
@@ -92,7 +103,7 @@ export function usePollingQuery<T>(key: string | null, fetch: () => Promise<T>, 
       fetchRef
         .current()
         .then((data) => {
-          queryCache.set(key, data);
+          if (useCache) queryCache.set(key, data);
           if (active) setState({ key, data, error: null, failure: null, loading: false });
         })
         .catch((error: unknown) => {
@@ -111,9 +122,9 @@ export function usePollingQuery<T>(key: string | null, fetch: () => Promise<T>, 
       active = false;
       window.clearInterval(timer);
     };
-  }, [key, ms, version]);
+  }, [key, ms, useCache, version]);
 
-  const visibleState = state.key === key ? state : initialState<T>(key);
+  const visibleState = state.key === key ? state : initialState<T>(key, useCache);
   const { key: _key, ...queryState } = visibleState;
   return { ...queryState, reload };
 }

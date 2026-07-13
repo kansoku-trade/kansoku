@@ -1,7 +1,7 @@
 import { promises as fs } from "node:fs";
 import { join } from "node:path";
 import type { IntradayPrediction, RawBar, SymbolAnalysisRow } from "../../../../../shared/types.js";
-import { runAnalyst } from "../../ai/analyst.js";
+import { analystRunStatus, runAnalyst } from "../../ai/analyst.js";
 import { listCommentDates, listComments } from "../../ai/comments.js";
 import { deepDiveState, startDeepDive } from "../../ai/deepDive.js";
 import { aiConfig } from "../../ai/models.js";
@@ -164,6 +164,10 @@ export const symbolsService: SymbolsApi = {
     const result = runAnalyst({ symbol: sym, origin: "manual", deps: { model } });
     void result.done?.catch(() => {});
     return { started: result.started, ...(result.reason ? { reason: result.reason } : {}) };
+  },
+
+  async reassessStatus(input) {
+    return analystRunStatus(normalizeSymbol(input.sym));
   },
 
   async note(input) {

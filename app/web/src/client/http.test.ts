@@ -59,6 +59,19 @@ describe("createHttpClient", () => {
     expect(fetchMock.mock.calls[0][0]).toBe("/api/ai/providers/lobehub/account");
   });
 
+  it("reads the current AI analysis run state from the symbol status route", async () => {
+    const fetchMock = vi.fn(async (_url?: string, _init?: RequestInit) =>
+      jsonResponse({ ok: true, data: { running: true, startedAt: "2026-07-14T02:03:04.000Z" } }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const client = createHttpClient(allRoutes);
+
+    const status = await client.symbols.reassessStatus({ sym: "MU" });
+
+    expect(fetchMock.mock.calls[0][0]).toBe("/api/symbols/MU/reassess/status");
+    expect(status).toEqual({ running: true, startedAt: "2026-07-14T02:03:04.000Z" });
+  });
+
   it("reassembles {data, meta} for withMeta routes", async () => {
     const fetchMock = vi.fn(async (_url?: string, _init?: RequestInit) => jsonResponse({ ok: true, data: { id: "x" }, meta: { created: true } }));
     vi.stubGlobal("fetch", fetchMock);

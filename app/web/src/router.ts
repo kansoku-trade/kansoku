@@ -77,6 +77,12 @@ export function useRoute(): string {
   return route;
 }
 
+export function routePathname(route: string): string {
+  const queryIndex = route.indexOf("?");
+  const pathname = queryIndex === -1 ? route : route.slice(0, queryIndex);
+  return pathname || "/";
+}
+
 export function navigate(route: string, options: { replace?: boolean } = {}): void {
   const store = currentStore();
   if (route === store.getRoute()) return;

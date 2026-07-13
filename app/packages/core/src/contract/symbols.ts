@@ -27,6 +27,7 @@ export interface NoteResult {
 }
 
 export type ReassessResult = { started: boolean; reason?: string };
+export type ReassessStatus = { running: boolean; startedAt?: string };
 
 export type DeepDiveStartResult = { started: true } | { started: false; reason: "busy" | "disabled" };
 
@@ -46,6 +47,7 @@ export interface SymbolsApi {
   journal(input: { sym: string }): Promise<JournalListRow[]>;
   journalEntry(input: { sym: string; name: string }): Promise<JournalEntry>;
   reassess(input: { sym: string }): Promise<ReassessResult>;
+  reassessStatus(input: { sym: string }): Promise<ReassessStatus>;
   note(input: { sym: string }): Promise<NoteResult>;
   deepDive(input: { sym: string }): Promise<DeepDiveStartResult>;
   deepDiveStatus(input: { sym: string }): Promise<DeepDiveState>;
@@ -63,6 +65,7 @@ export const symbolsRoutes = defineRoutes<SymbolsApi>("symbols", {
   journal: { method: "GET", path: "/:sym/journal" },
   journalEntry: { method: "GET", path: "/:sym/journal/:name" },
   reassess: { method: "POST", path: "/:sym/reassess" },
+  reassessStatus: { method: "GET", path: "/:sym/reassess/status" },
   note: { method: "GET", path: "/:sym/note", raw: "body" },
   deepDive: { method: "POST", path: "/:sym/deep-dive", raw: "body" },
   deepDiveStatus: { method: "GET", path: "/:sym/deep-dive/status", raw: "body" },

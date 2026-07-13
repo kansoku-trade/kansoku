@@ -65,6 +65,12 @@ export class SymbolsController {
     return { ok: true, data };
   }
 
+  @Get("/:sym/reassess/status")
+  async getReassessStatus(@Param("sym") sym: string) {
+    const data = await symbolsService.reassessStatus({ sym });
+    return { ok: true, data };
+  }
+
   @Get("/:sym/note")
   async getNote(@Param("sym") sym: string) {
     return symbolsService.note({ sym });

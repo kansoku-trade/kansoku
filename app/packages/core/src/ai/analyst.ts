@@ -164,7 +164,19 @@ export interface StartResult {
 }
 
 const analystRunLock = createRunLock();
+const analystRunStartedAt = new Map<string, string>();
 const lastEscalationStart = new Map<string, number>();
+
+export interface AnalystRunStatus {
+  running: boolean;
+  startedAt?: string;
+}
+
+export function analystRunStatus(symbol: string): AnalystRunStatus {
+  if (!analystRunLock.isLocked(symbol)) return { running: false };
+  const startedAt = analystRunStartedAt.get(symbol);
+  return { running: true, ...(startedAt ? { startedAt } : {}) };
+}
 
 export function escalationOnCooldown(symbol: string, now: number): boolean {
   for (const [key, ts] of lastEscalationStart) {
@@ -358,6 +370,11 @@ export function runAnalyst({ symbol, origin, deps }: RunAnalystInput): StartResu
 
   if (origin === "escalation") lastEscalationStart.set(symbol, now);
 
-  const done = executeAnalystRun(symbol, { ...deps, origin }).finally(() => analystRunLock.release(symbol));
+  analystRunStartedAt.set(symbol, new Date(now).toISOString());
+
+  const done = executeAnalystRun(symbol, { ...deps, origin }).finally(() => {
+    analystRunStartedAt.delete(symbol);
+    analystRunLock.release(symbol);
+  });
   return { started: true, done };
 }
