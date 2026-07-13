@@ -1,6 +1,8 @@
-import type { AuthContext, CredentialStore } from "@earendil-works/pi-ai";
+import type { AuthContext, CredentialStore, MutableModels } from "@earendil-works/pi-ai";
+import { openaiCodexOAuthProvider } from "@earendil-works/pi-ai/oauth";
 import { builtinModels } from "@earendil-works/pi-ai/providers/all";
-import type { MutableModels } from "@earendil-works/pi-ai";
+
+const CODEX_PROVIDER = "openai-codex";
 
 export const SINGLE_KEY_PROVIDERS: ReadonlySet<string> = new Set([
   "anthropic",
@@ -29,11 +31,46 @@ const isolatedAuthContext: AuthContext = {
 
 let singleton: MutableModels | null = null;
 
+function installStaticCodexOAuth(models: MutableModels): void {
+  const provider = models.getProvider(CODEX_PROVIDER);
+  const oauth = provider?.auth.oauth;
+  if (!provider || !oauth) {
+    throw new Error("modelsRuntime: openai-codex OAuth provider is unavailable");
+  }
+
+  // pi-ai 的内置 provider 会通过运行时动态 import 加载 OAuth 实现；桌面主进程
+  // 合并为单个构建产物后没有对应文件。应用只复用 codex CLI 登录态，因此在这里
+  // 静态绑定实际请求需要的凭据转换与刷新逻辑。
+  models.setProvider({
+    ...provider,
+    auth: {
+      ...provider.auth,
+      oauth: {
+        name: oauth.name,
+        async login() {
+          throw new Error("OpenAI Codex 登录由 codex CLI 管理，请先在终端完成登录");
+        },
+        async refresh(credential) {
+          return {
+            ...(await openaiCodexOAuthProvider.refreshToken(credential)),
+            type: "oauth" as const,
+          };
+        },
+        async toAuth(credential) {
+          return { apiKey: openaiCodexOAuthProvider.getApiKey(credential) };
+        },
+      },
+    },
+  });
+}
+
 export function initModelsRuntime(credentials: CredentialStore): MutableModels {
   if (singleton) {
     throw new Error("modelsRuntime: already initialized; call setModelsRuntimeForTests(null) first in tests");
   }
-  singleton = builtinModels({ credentials, authContext: isolatedAuthContext });
+  const models = builtinModels({ credentials, authContext: isolatedAuthContext });
+  installStaticCodexOAuth(models);
+  singleton = models;
   return singleton;
 }
 
