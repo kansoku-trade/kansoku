@@ -73,6 +73,44 @@ describe("WebApiLobeHubCloudGateway", () => {
     ]);
   });
 
+  it("maps minimal to low for deepseek-v4 effort models, keeps minimal otherwise", async () => {
+    const gateway = new WebApiLobeHubCloudGateway({
+      baseUrl: "https://cloud.test",
+      clientId: "trade-client",
+      credentials,
+      fetch: vi.fn(async () =>
+        json({
+          models: [
+            {
+              id: "deepseek-v4-pro",
+              type: "chat",
+              enabled: true,
+              abilities: { reasoning: true },
+              settings: { extendParams: ["deepseekV4ReasoningEffort"] },
+            },
+            {
+              id: "gpt-6",
+              type: "chat",
+              enabled: true,
+              abilities: { reasoning: true },
+              settings: { extendParams: ["gpt5ReasoningEffort"] },
+            },
+          ],
+        }),
+      ) as typeof fetch,
+    });
+
+    const models = await gateway.listModels();
+    expect(models[0]).toMatchObject({
+      id: "deepseek-v4-pro",
+      thinkingLevelMap: { off: null, minimal: "low", low: "low", medium: "medium", high: "high", xhigh: "max" },
+    });
+    expect(models[1]).toMatchObject({
+      id: "gpt-6",
+      thinkingLevelMap: { off: null, minimal: "minimal", low: "low", medium: "medium", high: "high", xhigh: "high" },
+    });
+  });
+
   it("completes Device Flow after pending authorization and stores OAuth tokens", async () => {
     let pollCount = 0;
     const fetcher = vi.fn(async (input: string | URL | Request) => {
@@ -173,6 +211,42 @@ describe("WebApiLobeHubCloudGateway", () => {
     expect(result.usage.cost.total).toBe(0.012);
     expect(result.stopReason).toBe("toolUse");
     expect(tracePayload).toMatchObject({ sessionId: "trade:chart-1", tags: ["client:trade"] });
+  });
+
+  it("maps the requested thinking level through thinkingLevelMap before sending reasoning_effort", async () => {
+    await credentials.modify("lobehub", async () => ({
+      type: "oauth",
+      access: "access-1",
+      refresh: "refresh-1",
+      expires: Date.now() + 3_600_000,
+    }));
+    const bodies: Record<string, unknown>[] = [];
+    const fetcher = vi.fn(async (_input: string | URL | Request, init?: RequestInit) => {
+      bodies.push(JSON.parse(String(init?.body)));
+      return new Response('event: text\ndata: "ok"\n\nevent: stop\ndata: "stop"\n\n', {
+        status: 200,
+        headers: { "Content-Type": "text/event-stream" },
+      });
+    });
+    const gateway = new WebApiLobeHubCloudGateway({
+      baseUrl: "https://cloud.test",
+      clientId: "trade-client",
+      credentials,
+      fetch: fetcher as typeof fetch,
+    });
+    const deepseek = {
+      ...model,
+      thinkingLevelMap: { off: null, minimal: "low", low: "low", medium: "medium", high: "high", xhigh: "max" },
+    };
+    const context = { messages: [{ role: "user" as const, content: "hi", timestamp: Date.now() }] };
+
+    for await (const _e of gateway.stream(deepseek, context, { reasoning: "minimal" } as never)) void _e;
+    for await (const _e of gateway.stream(deepseek, context, { reasoning: "xhigh" } as never)) void _e;
+    for await (const _e of gateway.stream(model, context, { reasoning: "minimal" } as never)) void _e;
+
+    expect(bodies[0].reasoning_effort).toBe("low");
+    expect(bodies[1].reasoning_effort).toBe("max");
+    expect(bodies[2].reasoning_effort).toBe("minimal");
   });
 
   it("serializes refresh-token rotation across concurrent quota requests", async () => {

@@ -109,6 +109,17 @@ function decodeJwtClaims(token: string): JsonObject {
   }
 }
 
+// DeepSeek v4 upstream accepts effort low|medium|high|xhigh|max — "minimal" is
+// rejected with a 471 ProviderBizError. Which effort knob a model uses is
+// announced via settings.extendParams in /webapi/lobehub-model-config.
+const DEFAULT_THINKING_MAP = { off: null, minimal: "minimal", low: "low", medium: "medium", high: "high", xhigh: "high" } as const;
+const DEEPSEEK_V4_THINKING_MAP = { off: null, minimal: "low", low: "low", medium: "medium", high: "high", xhigh: "max" } as const;
+
+function thinkingLevelMapFromSettings(settings: JsonObject | null) {
+  const extendParams = Array.isArray(settings?.extendParams) ? settings.extendParams : [];
+  return extendParams.includes("deepseekV4ReasoningEffort") ? DEEPSEEK_V4_THINKING_MAP : DEFAULT_THINKING_MAP;
+}
+
 function modelFromCloud(raw: unknown, baseUrl: string): Model<typeof LOBEHUB_API> | null {
   const item = object(raw);
   if (!item || item.type !== "chat" || item.enabled === false) return null;
@@ -123,9 +134,7 @@ function modelFromCloud(raw: unknown, baseUrl: string): Model<typeof LOBEHUB_API
     provider: LOBEHUB_PROVIDER,
     baseUrl,
     reasoning,
-    thinkingLevelMap: reasoning
-      ? { off: null, minimal: "minimal", low: "low", medium: "medium", high: "high", xhigh: "high" }
-      : undefined,
+    thinkingLevelMap: reasoning ? thinkingLevelMapFromSettings(object(item.settings)) : undefined,
     input: abilities?.vision === true ? ["text", "image"] : ["text"],
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
     contextWindow: number(item.contextWindowTokens, 128_000),
@@ -528,9 +537,12 @@ export class WebApiLobeHubCloudGateway implements LobeHubCloudGateway {
         ...(context.tools?.length ? { tools: context.tools.map((tool) => ({ type: "function", function: tool })) } : {}),
         ...(options?.temperature === undefined ? {} : { temperature: options.temperature }),
         ...(options?.maxTokens === undefined ? {} : { max_tokens: options.maxTokens }),
-        ...(typeof (options as Record<string, unknown> | undefined)?.reasoning === "string"
-          ? { reasoning_effort: (options as Record<string, unknown>).reasoning }
-          : {}),
+        ...(() => {
+          const requested = (options as Record<string, unknown> | undefined)?.reasoning;
+          if (typeof requested !== "string") return {};
+          const mapped = model.thinkingLevelMap ? model.thinkingLevelMap[requested as keyof typeof model.thinkingLevelMap] : requested;
+          return mapped ? { reasoning_effort: mapped } : {};
+        })(),
       };
       const changed = await options?.onPayload?.(payload, model);
       const response = await this.fetcher(`${this.baseUrl}/webapi/chat/lobehub`, {
