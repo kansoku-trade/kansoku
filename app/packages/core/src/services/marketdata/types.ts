@@ -64,6 +64,7 @@ export interface MarketDataProvider {
   readonly capabilities: ReadonlySet<Capability>;
   getKline(symbol: string, period: string, count: number, session?: string): Promise<RawBar[]>;
   getQuotes(symbols: string[]): Promise<RawQuote[]>;
+  getSecurityName?(symbol: string): Promise<string | null>;
   getNews(symbol: string, limit?: number): Promise<NewsItem[]>;
   getFlow?(symbol: string): Promise<FlowRow[]>;
   getCapitalDistribution?(symbol: string): Promise<RawCapitalDistribution>;

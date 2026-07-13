@@ -22,6 +22,11 @@ interface CliNewsItem {
   url: string;
 }
 
+interface CliSecurityInfo {
+  symbol?: string;
+  name?: string;
+}
+
 interface CliWatchlistGroup {
   securities?: Array<{ symbol?: string } | string>;
 }
@@ -59,6 +64,8 @@ async function callCli<T>(label: string, run: LongbridgeRunner, args: string[]):
 }
 
 export function createLongbridgeProvider(run: LongbridgeRunner = runLongbridgeJson): MarketDataProvider {
+  const securityNameCache = new Map<string, Promise<string | null>>();
+
   return {
     name: "longbridge",
     capabilities: new Set(["flow", "capital-distribution", "positions", "watchlist", "portfolio"]),
@@ -81,6 +88,25 @@ export function createLongbridgeProvider(run: LongbridgeRunner = runLongbridgeJs
     getQuotes(symbols: string[]): Promise<RawQuote[]> {
       if (!symbols.length) return Promise.resolve([]);
       return callCli<RawQuote[]>("quote", run, ["quote", ...symbols]);
+    },
+
+    getSecurityName(symbol: string): Promise<string | null> {
+      const key = symbol.toUpperCase();
+      const cached = securityNameCache.get(key);
+      if (cached) return cached;
+
+      const request = run<CliSecurityInfo[]>(["static", symbol, "--lang", "zh-CN"])
+        .then((rows) => {
+          const exact = rows.find((row) => row.symbol?.toUpperCase() === key) ?? rows[0];
+          const name = exact?.name?.trim();
+          return name || null;
+        })
+        .catch(() => null);
+      securityNameCache.set(key, request);
+      void request.then((name) => {
+        if (!name && securityNameCache.get(key) === request) securityNameCache.delete(key);
+      });
+      return request;
     },
 
     async getNews(symbol: string, limit = 6): Promise<NewsItem[]> {
@@ -141,4 +167,3 @@ export function createLongbridgeProvider(run: LongbridgeRunner = runLongbridgeJs
 }
 
 export const longbridgeProvider: MarketDataProvider = createLongbridgeProvider();
-

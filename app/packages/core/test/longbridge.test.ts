@@ -34,6 +34,22 @@ describe("longbridgeProvider (CLI-backed)", () => {
     await expect(provider.getQuotes(["NVDA.US"])).resolves.toEqual(rows);
   });
 
+  it("loads and caches the Chinese security name from static reference data", async () => {
+    const run = runner({
+      "static MRVL.US --lang zh-CN": [{ symbol: "MRVL.US", name: "迈威尔科技" }],
+    });
+    const provider = createLongbridgeProvider(run);
+
+    await expect(provider.getSecurityName!("MRVL.US")).resolves.toBe("迈威尔科技");
+    await expect(provider.getSecurityName!("MRVL.US")).resolves.toBe("迈威尔科技");
+    expect(run).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps a missing Chinese security name non-fatal", async () => {
+    const provider = createLongbridgeProvider(vi.fn().mockRejectedValue(new Error("offline")));
+    await expect(provider.getSecurityName!("NVDA.US")).resolves.toBeNull();
+  });
+
   it("maps and limits news while preserving the existing empty-list fallback", async () => {
     const rows = [
       { id: 1, title: "one", published_at: "2026-07-06T00:00:00Z", url: "https://one" },

@@ -9,6 +9,7 @@ import { TIMEFRAME_ORDER } from "../../services/intraday.js";
 import { validatePrediction } from "../../services/predictionRules.js";
 import { predictionStale } from "../../services/staleness.js";
 import { createChart, deleteChart, listCharts, loadChart, saveChart } from "../../services/store.js";
+import { localizeChartDocName } from "../../services/securityName.js";
 
 function assertPredictionValid(prediction: unknown): void {
   if (prediction == null) return;
@@ -41,7 +42,8 @@ export const chartsService: ChartsApi = {
   async get(input) {
     const doc = await loadChart(input.id);
     if (!doc) throw new ClientError(`chart not found: ${input.id}`, "GET /api/charts lists available ids", 404);
-    return { ...doc, prediction_stale: predictionStale(doc, new Date()) };
+    const localized = await localizeChartDocName(doc);
+    return { ...localized, prediction_stale: predictionStale(localized, new Date()) };
   },
 
   async create(input) {

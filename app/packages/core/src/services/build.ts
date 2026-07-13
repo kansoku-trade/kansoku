@@ -5,6 +5,7 @@ import { buildIntraday, TIMEFRAME_ORDER, type IntradayInput } from "./intraday.j
 import { getProvider } from "./marketdata/registry.js";
 import { getEventRisk } from "./events.js";
 import { getOptionsLevels } from "./optionsLevels.js";
+import { resolveSecurityName } from "./securityName.js";
 import { buildSepa, type SepaInput } from "./sepa.js";
 import { cleanCohortRows, type CohortRow, type FlowRow } from "./simple.js";
 
@@ -74,16 +75,17 @@ async function prepareInput(type: ChartType, body: Body): Promise<Record<string,
       const symbol = requireSymbol(body, "sepa");
       const count = Number(body.count ?? 260);
       const provider = getProvider();
-      const [kline, spyKline, news] = await Promise.all([
+      const [kline, spyKline, news, name] = await Promise.all([
         (async () => (body.kline as RawBar[] | undefined) ?? (await provider.getKline(symbol, "day", count)))(),
         (async () =>
           (body.spy_kline as RawBar[] | undefined) ??
           (body.skip_spy === true ? [] : await provider.getKline("SPY.US", "day", count)))(),
         provider.getNews(symbol),
+        resolveSecurityName(symbol, body.name, provider),
       ]);
       return {
         symbol,
-        name: body.name,
+        name,
         as_of_date: body.as_of_date,
         kline,
         spy_kline: spyKline,
@@ -99,6 +101,7 @@ async function prepareInput(type: ChartType, body: Body): Promise<Record<string,
       let timeframes = body.timeframes as Record<string, RawBar[]> | undefined;
       let dayKline = body.day_kline as RawBar[] | undefined;
       const provider = getProvider();
+      const namePromise = resolveSecurityName(symbol, body.name, provider);
       const newsPromise = provider.getNews(symbol);
       const optionsPromise = getOptionsLevels(symbol);
       const eventRiskPromise = getEventRisk(symbol).catch(() => null);
@@ -114,7 +117,7 @@ async function prepareInput(type: ChartType, body: Body): Promise<Record<string,
       const lastM5 = timeframes.m5?.[timeframes.m5.length - 1];
       return {
         symbol,
-        name: body.name,
+        name: await namePromise,
         as_of: body.as_of ?? lastM5?.time,
         session,
         timeframes,
