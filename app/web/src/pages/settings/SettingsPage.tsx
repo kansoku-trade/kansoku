@@ -5,6 +5,7 @@ import { client } from "../../client";
 import { navigate } from "../../router";
 import { Button, Card, ErrorBox, SectionTitle } from "../../ui";
 import { useTitle } from "../../useTitle";
+import { DataRootSection } from "./DataRootSection";
 import { LongbridgeSection } from "./LongbridgeSection";
 import { ProviderCredentialsSection } from "./ProviderCredentialsSection";
 import { RoleModelsCard } from "./RoleModelsCard";
@@ -72,6 +73,7 @@ function SettingsWorkspace({
             <SectionTitle>连接</SectionTitle>
           </div>
           <LongbridgeSection />
+          <DataRootSection />
           <ProviderCredentialsSection
             settings={settings}
             catalog={catalog}

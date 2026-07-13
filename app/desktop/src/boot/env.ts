@@ -1,5 +1,8 @@
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { app } from "electron";
+import { buildDataRootStatus } from "../dataRoot/status.js";
+import { isDataRootUsable } from "../dataRoot/usability.js";
 import { resolveDataRoot, scaffoldDataRoot } from "./paths.js";
 
 // package.json's "name" is the scoped npm id ("@trade/desktop"), which
@@ -8,16 +11,44 @@ import { resolveDataRoot, scaffoldDataRoot } from "./paths.js";
 // resolution runs.
 app.setName("Kansoku");
 
+const envOverride = process.env.TRADE_PROJECT_ROOT;
+const isPackaged = app.isPackaged;
+const userDataPath = app.getPath("userData");
+
+const configuredPath = isPackaged ? readConfiguredPath(userDataPath) : null;
+const customPathUsable = configuredPath !== null ? isDataRootUsable(configuredPath) : false;
+
 export const dataRoot = resolveDataRoot({
-  isPackaged: app.isPackaged,
-  envOverride: process.env.TRADE_PROJECT_ROOT,
-  userDataPath: app.getPath("userData"),
+  isPackaged,
+  envOverride,
+  userDataPath,
+  customPath: configuredPath,
+  customPathUsable,
 });
 
-if (app.isPackaged) {
+export const dataRootStatus = buildDataRootStatus({
+  isPackaged,
+  envOverride,
+  userDataPath,
+  configuredPath,
+  effectivePath: dataRoot,
+  customPathUsable,
+});
+
+if (isPackaged) {
   scaffoldDataRoot(dataRoot);
   process.env.TRADE_MIGRATIONS_DIR = join(process.resourcesPath, "drizzle");
 }
 process.env.TRADE_PROJECT_ROOT = dataRoot;
 
 export const IS_DEV = process.env.ELECTRON_DEV === "1";
+
+function readConfiguredPath(userDataPath: string): string | null {
+  try {
+    const raw = readFileSync(join(userDataPath, "data-root.json"), "utf8");
+    const parsed = JSON.parse(raw) as { path?: unknown };
+    return typeof parsed.path === "string" ? parsed.path : null;
+  } catch {
+    return null;
+  }
+}

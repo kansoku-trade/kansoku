@@ -23,12 +23,15 @@ export interface DataRootOptions {
   isPackaged: boolean;
   envOverride: string | undefined;
   userDataPath: string;
+  customPath?: string | null;
+  customPathUsable?: boolean;
 }
 
 export function resolveDataRoot(opts: DataRootOptions): string {
   if (opts.envOverride) return opts.envOverride;
-  if (opts.isPackaged) return opts.userDataPath;
-  return resolveRepoRoot();
+  if (!opts.isPackaged) return resolveRepoRoot();
+  if (opts.customPath && opts.customPathUsable) return opts.customPath;
+  return opts.userDataPath;
 }
 
 const DATA_ROOT_SUBDIRS = [

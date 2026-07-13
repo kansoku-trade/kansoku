@@ -39,6 +39,60 @@ describe("resolveDataRoot", () => {
     });
     expect(root).toBe(resolveRepoRoot());
   });
+
+  it("uses a usable custom path when packaged and no env override", () => {
+    const root = resolveDataRoot({
+      isPackaged: true,
+      envOverride: undefined,
+      userDataPath: "/unused/userData",
+      customPath: "/Users/me/git/trade",
+      customPathUsable: true,
+    });
+    expect(root).toBe("/Users/me/git/trade");
+  });
+
+  it("ignores custom path when marked unusable", () => {
+    const root = resolveDataRoot({
+      isPackaged: true,
+      envOverride: undefined,
+      userDataPath: "/Users/x/Library/Application Support/Kansoku",
+      customPath: "/gone/path",
+      customPathUsable: false,
+    });
+    expect(root).toBe("/Users/x/Library/Application Support/Kansoku");
+  });
+
+  it("ignores custom path when usability is omitted", () => {
+    const root = resolveDataRoot({
+      isPackaged: true,
+      envOverride: undefined,
+      userDataPath: "/Users/x/Library/Application Support/Kansoku",
+      customPath: "/Users/me/git/trade",
+    });
+    expect(root).toBe("/Users/x/Library/Application Support/Kansoku");
+  });
+
+  it("env override still wins over a usable custom path", () => {
+    const root = resolveDataRoot({
+      isPackaged: true,
+      envOverride: "/explicit/override",
+      userDataPath: "/unused/userData",
+      customPath: "/Users/me/git/trade",
+      customPathUsable: true,
+    });
+    expect(root).toBe("/explicit/override");
+  });
+
+  it("dev mode ignores custom path and stays on repo root", () => {
+    const root = resolveDataRoot({
+      isPackaged: false,
+      envOverride: undefined,
+      userDataPath: "/unused/userData",
+      customPath: "/Users/me/git/trade",
+      customPathUsable: true,
+    });
+    expect(root).toBe(resolveRepoRoot());
+  });
 });
 
 describe("scaffoldDataRoot", () => {

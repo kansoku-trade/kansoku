@@ -5,6 +5,7 @@ import type { MenuActionDeps } from "../../src/menu/types.js";
 function makeDeps(overrides: Partial<MenuActionDeps> = {}): MenuActionDeps {
   return {
     importFromRepo: vi.fn(),
+    selectDataRoot: vi.fn(),
     openSettings: vi.fn(),
     checkForUpdates: vi.fn(),
     newTab: vi.fn(),
@@ -52,12 +53,13 @@ describe("buildAppMenuTemplate", () => {
     ]);
   });
 
-  it("includes about, check updates, import, settings, and quit in the app menu", () => {
+  it("includes about, check updates, import, select data root, settings, and quit in the app menu", () => {
     const deps = makeDeps();
     const appMenu = asSubmenu(buildAppMenuTemplate("Kansoku", deps)[0]);
     expect(findByRole(appMenu, "about").role).toBe("about");
     expect(findByLabel(appMenu, "检查更新…").label).toBe("检查更新…");
     expect(findByLabel(appMenu, "从 repo 导入数据…").label).toBe("从 repo 导入数据…");
+    expect(findByLabel(appMenu, "选择数据目录…").label).toBe("选择数据目录…");
     expect(findByLabel(appMenu, "设置…")).toMatchObject({
       label: "设置…",
       accelerator: "CmdOrCtrl+,",
@@ -74,9 +76,15 @@ describe("buildAppMenuTemplate", () => {
       undefined as never,
       undefined as never,
     );
+    findByLabel(appMenu, "选择数据目录…").click?.(
+      undefined as never,
+      undefined as never,
+      undefined as never,
+    );
     findByLabel(appMenu, "设置…").click?.(undefined as never, undefined as never, undefined as never);
     expect(deps.checkForUpdates).toHaveBeenCalledOnce();
     expect(deps.importFromRepo).toHaveBeenCalledOnce();
+    expect(deps.selectDataRoot).toHaveBeenCalledOnce();
     expect(deps.openSettings).toHaveBeenCalledOnce();
   });
 

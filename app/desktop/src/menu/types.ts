@@ -1,5 +1,6 @@
 export type MenuActionDeps = {
   importFromRepo: () => void;
+  selectDataRoot: () => void;
   openSettings: () => void;
   checkForUpdates: () => void;
   newTab: () => void;

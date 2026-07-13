@@ -18,6 +18,8 @@ import { registerAppProtocolHandler, registerAppScheme, resolveWebDistRoot } fro
 import { createOnboardingStore } from "./onboarding/store.js";
 import { registerOnboardingIpc } from "./onboarding/ipc.js";
 import { runImportFromRepoFlow } from "./dataImport/flow.js";
+import { runSelectDataRootFlow } from "./dataRoot/flow.js";
+import { registerDataRootIpc } from "./dataRoot/ipc.js";
 import { sendTabsCommand } from "./tabs/commands.js";
 import { initUpdater } from "./updater/updater.js";
 
@@ -34,6 +36,11 @@ function installAppMenu(checkForUpdates: () => void): void {
       importFromRepo: () => {
         runImportFromRepoFlow(BrowserWindow.getFocusedWindow()).catch((error: unknown) => {
           console.error("[desktop] import-from-repo flow crashed", error);
+        });
+      },
+      selectDataRoot: () => {
+        runSelectDataRootFlow(BrowserWindow.getFocusedWindow()).catch((error: unknown) => {
+          console.error("[desktop] select-data-root flow crashed", error);
         });
       },
       openSettings: () => sendTabsCommand("open-settings"),
@@ -60,6 +67,7 @@ app.whenReady().then(async () => {
     });
 
     registerOnboardingIpc(createOnboardingStore());
+    registerDataRootIpc();
 
     const updater = initUpdater();
     installAppMenu(() => updater.checkNow());
