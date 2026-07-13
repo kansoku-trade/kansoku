@@ -11,6 +11,7 @@ import { LongbridgeSection } from "./LongbridgeSection";
 import { ProviderCredentialsSection } from "./ProviderCredentialsSection";
 import { RoleModelsCard } from "./RoleModelsCard";
 import { SettingsStatusStrip } from "./SettingsStatusStrip";
+import { TimeDisplaySettingsCard } from "./TimeDisplaySettingsCard";
 import { deriveSettingsViewModel } from "./settingsViewModel";
 import type {
   AiRoles,
@@ -61,31 +62,38 @@ function SettingsWorkspace({
     <>
       <SettingsStatusStrip summary={view.summary} usageError={usageError} onRetryUsage={reloadUsage} />
       <div className="settings-workspace">
-        <RoleModelsCard
-          initialRoles={settings.roles}
-          roles={roleDrafts}
-          catalog={catalog}
-          credentials={settings.credentials}
-          view={view}
-          onDraftChange={updateRoleDraft}
-        />
-        <Card className="settings-connections-card">
-          <div className="settings-card-heading">
-            <SectionTitle>连接</SectionTitle>
-          </div>
-          <LongbridgeSection />
-          <DataRootSection />
-          <DiagnosticsSection />
-          <ProviderCredentialsSection
-            settings={settings}
+        <div className="settings-main-column">
+          <RoleModelsCard
+            initialRoles={settings.roles}
+            roles={roleDrafts}
             catalog={catalog}
-            usedProviderIds={usedProviderIds}
-            onChanged={reloadAll}
-            lobehubAccount={lobehubAccount}
-            lobehubCredits={lobehubCredits}
-            lobehubCreditsError={lobehubCreditsError}
+            credentials={settings.credentials}
+            view={view}
+            onDraftChange={updateRoleDraft}
           />
-        </Card>
+          <Card className="settings-provider-card">
+            <ProviderCredentialsSection
+              settings={settings}
+              catalog={catalog}
+              usedProviderIds={usedProviderIds}
+              onChanged={reloadAll}
+              lobehubAccount={lobehubAccount}
+              lobehubCredits={lobehubCredits}
+              lobehubCreditsError={lobehubCreditsError}
+            />
+          </Card>
+        </div>
+        <div className="settings-side-column">
+          <TimeDisplaySettingsCard />
+          <Card className="settings-connections-card">
+            <div className="settings-card-heading">
+              <SectionTitle>连接</SectionTitle>
+            </div>
+            <LongbridgeSection />
+            <DataRootSection />
+            <DiagnosticsSection />
+          </Card>
+        </div>
       </div>
     </>
   );
@@ -173,7 +181,7 @@ export function SettingsPage() {
     <div className="page settings-page">
       <SettingsBackLink />
       <h1>设置</h1>
-      <div className="settings-page-subtitle">AI 模型、Provider 与用量</div>
+      <div className="settings-page-subtitle">显示、AI 模型、Provider 与用量</div>
       <SettingsWorkspace
         settings={settings}
         catalog={catalog}
