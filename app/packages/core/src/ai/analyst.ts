@@ -5,7 +5,7 @@ import { type Static, Type } from "typebox";
 import { Check } from "typebox/value";
 import { type CockpitComment, type CommentLevel, type NewsItem, type RawBar } from "../../../../shared/types.js";
 import { chartUrl } from "../chartUrl.js";
-import { JOURNAL_DIR, PROJECT_ROOT } from "../env.js";
+import { JOURNAL_DIR, PROJECT_ROOT, skillSearchDirs } from "../env.js";
 import { buildChart } from "../services/build.js";
 import { getProvider } from "../services/marketdata/registry.js";
 import { validatePrediction } from "../services/predictionRules.js";
@@ -47,7 +47,7 @@ export function buildAnalystSystemPrompt(skillText: string): string {
 }
 
 function loadIntradaySkillText(repoRoot: string): string | null {
-  const index = loadSkillIndex([join(repoRoot, ".claude", "skills")]);
+  const index = loadSkillIndex(skillSearchDirs(repoRoot));
   return readSkill(index, SKILL_NAME);
 }
 
@@ -264,7 +264,7 @@ function buildTools(
     },
   };
 
-  const skillIndex = loadSkillIndex([join(deps.repoRoot, ".claude", "skills")]);
+  const skillIndex = loadSkillIndex(skillSearchDirs(deps.repoRoot));
 
   return [
     readDataPack,

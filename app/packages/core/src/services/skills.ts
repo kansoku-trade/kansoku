@@ -35,6 +35,7 @@ function parseSkillMd(content: string): { name: string; description: string } | 
 
 export function loadSkillIndex(dirs: string[]): SkillMeta[] {
   const result: SkillMeta[] = [];
+  const seen = new Set<string>();
 
   for (const dir of dirs) {
     if (!existsSync(dir)) continue;
@@ -46,6 +47,8 @@ export function loadSkillIndex(dirs: string[]): SkillMeta[] {
 
       const parsed = parseSkillMd(readFileSync(skillPath, "utf8"));
       if (!parsed) continue;
+      if (seen.has(parsed.name)) continue;
+      seen.add(parsed.name);
       result.push({ name: parsed.name, description: parsed.description, dir: entryDir });
     }
   }

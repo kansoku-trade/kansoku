@@ -21,6 +21,10 @@ extraResources:
     to: web-dist
   - from: ../packages/core/drizzle
     to: drizzle
+  # Agent skill texts + scripts (intraday-signal, options-levels, …). Linked
+  # into the data root at boot so analyst reassess can read SKILL.md.
+  - from: ../../.claude/skills
+    to: skills
 extraFiles:
   - from: native/sparkle-bridge/vendor/Sparkle.framework
     to: Frameworks/Sparkle.framework

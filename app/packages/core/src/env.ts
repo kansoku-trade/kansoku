@@ -21,3 +21,12 @@ export const KERNEL_PORT = Number(process.env.KERNEL_PORT || 5200);
 export const HOST_MODE: "dev" | "prod" = process.env.HOST_MODE === "dev" ? "dev" : "prod";
 export const BASE_URL = `http://localhost:${PORT}`;
 export const WEB_DIST = join(WEB_ROOT, "dist");
+
+/** Skill search roots: packaged desktop sets TRADE_SKILLS_DIR to Resources/skills. */
+export function skillSearchDirs(repoRoot: string = PROJECT_ROOT): string[] {
+  const dirs: string[] = [];
+  const envDir = process.env.TRADE_SKILLS_DIR;
+  if (envDir) dirs.push(envDir);
+  dirs.push(join(repoRoot, ".claude", "skills"));
+  return dirs;
+}

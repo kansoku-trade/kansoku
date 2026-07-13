@@ -2,6 +2,7 @@ import { promises as fs } from "node:fs";
 import { join } from "node:path";
 import type { AgentTool } from "@earendil-works/pi-agent-core";
 import { Type } from "typebox";
+import { skillSearchDirs } from "../env.js";
 import { loadSkillIndex, skillIndexPrompt } from "../services/skills.js";
 import { buildBashTool, buildReadFileTool, buildReadSkillTool, type ExecFn, type ExecResult } from "./agentTools.js";
 import { textResult } from "./dataTools.js";
@@ -9,7 +10,7 @@ import { textResult } from "./dataTools.js";
 export type { ExecFn, ExecResult };
 
 export function buildSystemPrompt(repoRoot: string): string {
-  const index = loadSkillIndex([join(repoRoot, ".claude", "skills")]);
+  const index = loadSkillIndex(skillSearchDirs(repoRoot));
   return [
     "You are an equity research agent maintaining per-stock six-lens notes in this repo.",
     "Available skills:",
@@ -29,7 +30,7 @@ export function buildSystemPrompt(repoRoot: string): string {
 const writeNoteSchema = Type.Object({ content: Type.String() });
 
 export function buildTools(repoRoot: string, symbol: string, exec: ExecFn, stocksDir?: string): AgentTool[] {
-  const skillIndex = loadSkillIndex([join(repoRoot, ".claude", "skills")]);
+  const skillIndex = loadSkillIndex(skillSearchDirs(repoRoot));
   const notesDir = stocksDir ?? join(repoRoot, "stocks");
 
   const writeNoteTool: AgentTool<typeof writeNoteSchema> = {

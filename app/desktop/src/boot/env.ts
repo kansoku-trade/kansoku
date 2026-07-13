@@ -4,6 +4,7 @@ import { app } from "electron";
 import { buildDataRootStatus } from "../dataRoot/status.js";
 import { isDataRootUsable } from "../dataRoot/usability.js";
 import { resolveDataRoot, scaffoldDataRoot } from "./paths.js";
+import { bundledSkillsPath, ensureBundledSkills } from "./skills.js";
 
 // package.json's "name" is the scoped npm id ("@trade/desktop"), which
 // Electron would otherwise use verbatim for app.getPath("userData") — the
@@ -38,6 +39,9 @@ export const dataRootStatus = buildDataRootStatus({
 if (isPackaged) {
   scaffoldDataRoot(dataRoot);
   process.env.TRADE_MIGRATIONS_DIR = join(process.resourcesPath, "drizzle");
+  const skillsDir = bundledSkillsPath(process.resourcesPath);
+  process.env.TRADE_SKILLS_DIR = skillsDir;
+  ensureBundledSkills(dataRoot, skillsDir);
 }
 process.env.TRADE_PROJECT_ROOT = dataRoot;
 
