@@ -59,6 +59,12 @@ if (isPrivilegedOrigin) {
       return () => ipcRenderer.removeListener(TABS_COMMAND_CHANNEL, listener);
     },
   };
+
+  desktopApi.dataRoot = {
+    get: () => ipcRenderer.invoke("desktop:data-root:get"),
+    pick: () => ipcRenderer.invoke("desktop:data-root:pick"),
+    reset: () => ipcRenderer.invoke("desktop:data-root:reset"),
+  };
 }
 
 contextBridge.exposeInMainWorld("desktop", desktopApi);
