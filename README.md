@@ -24,6 +24,10 @@
 
 **个股驾驶舱** —— 一屏看完一只票：多周期 K 线（5m/15m/1h）叠加均线、MACD、K 线形态标注、入场/止损/目标价位线；右栏是财报与宏观事件日历、短线方向判断和 Bull/Base/Bear 三档情景推演（概率合计 100%，附触发条件），页签在预测、环境、消息、复盘和 AI 点评之间切换。
 
+**追着分析问下去** —— 每份分析都能就地追问「凭什么」。面板浮在图上，可拖走、可缩放、可全屏，侧栏的结论和事件日历始终看得见。AI 查了什么数据全程留痕，点开就是「查了什么 / 拿回什么」的原始出入参，结论可溯源；答歪了随时按停止，已经说出口的半截回答会留下不会丢；空面板会先替你想好三个最该问的问题。已归档的预测是冻结记录，追问只解释、不改写。
+
+![追着分析问下去](https://github.com/Innei/kansoku/releases/download/web-preview/app-chat.png)
+
 **SEPA 策略仪表盘** —— Minervini 趋势模板 8 条逐项打钩，长期均线价值区、成交密集区、52 周高低距离、RS 相对强弱（vs SPY）、量能比一屏呈现，自动给出 Buy / Watch List / Avoid 结论。
 
 ![SEPA 策略仪表盘](https://github.com/Innei/kansoku/releases/download/web-preview/app-sepa.png)
