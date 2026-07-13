@@ -11,6 +11,7 @@ export interface SparkleInitOptions {
 export interface SparkleBridge {
   init(options: SparkleInitOptions): boolean;
   checkForUpdates(): void;
+  installUpdateNow(): void;
   setAutomaticChecks(enabled: boolean): void;
 }
 
@@ -41,6 +42,7 @@ export function loadSparkleBridge(deps: SparkleBridgeLoadDeps): SparkleBridge | 
     if (
       typeof addon.init !== "function" ||
       typeof addon.checkForUpdates !== "function" ||
+      typeof addon.installUpdateNow !== "function" ||
       typeof addon.setAutomaticChecks !== "function"
     ) {
       deps.log?.("addon loaded but missing expected exports, treating as unavailable");

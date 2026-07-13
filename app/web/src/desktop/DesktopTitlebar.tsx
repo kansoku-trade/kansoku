@@ -1,6 +1,18 @@
-import { ChartCandlestick, Circle, House, Plus, ScrollText, Settings, TrendingUp, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import {
+  ArrowUpCircle,
+  ChartCandlestick,
+  Circle,
+  House,
+  Plus,
+  ScrollText,
+  Settings,
+  TrendingUp,
+  X,
+} from "lucide-react";
 import { openNewChartDialog } from "../newChart/NewChartDialog";
 import { ScrollArea, showContextMenu, type ContextMenuItem } from "../ui";
+import { getDesktopUpdaterBridge, isAvailableStatus, type UpdaterUiStatus } from "./desktopUpdater";
 import { tabKind, type TabState } from "./tabsStore";
 import type { TabsController } from "./tabsController";
 
@@ -65,9 +77,33 @@ function Tab({
   );
 }
 
+function useUpdaterStatus(): UpdaterUiStatus | null {
+  const [status, setStatus] = useState<UpdaterUiStatus | null>(null);
+
+  useEffect(() => {
+    const bridge = getDesktopUpdaterBridge();
+    if (!bridge) return;
+    let cancelled = false;
+    void bridge.getStatus().then((next) => {
+      if (!cancelled) setStatus(next);
+    });
+    const unsubscribe = bridge.onStatus((next) => {
+      if (!cancelled) setStatus(next);
+    });
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
+  }, []);
+
+  return status;
+}
+
 export function DesktopTitlebar({ controller }: { controller: TabsController }) {
   const { snapshot, activateTab, closeTabById, closeOtherTabs, closeTabsToRight, openHomeTab, focusOrOpenSettings } =
     controller;
+  const updaterStatus = useUpdaterStatus();
+  const showUpdateBadge = isAvailableStatus(updaterStatus);
 
   const openTabMenu = (tabId: string, index: number) => {
     const multi = snapshot.tabs.length > 1;
@@ -128,6 +164,19 @@ export function DesktopTitlebar({ controller }: { controller: TabsController }) 
         </button>
       </ScrollArea>
       <div className="desktop-titlebar-actions">
+        {showUpdateBadge && (
+          <button
+            className="desktop-update-badge"
+            type="button"
+            aria-label="有更新可用"
+            title="有更新可用"
+            onClick={() => {
+              void getDesktopUpdaterBridge()?.installNow();
+            }}
+          >
+            <ArrowUpCircle size={16} />
+          </button>
+        )}
         <button className="global-new-chart" type="button" onClick={openNewChartDialog}>
           <ChartCandlestick size={16} />
           新建图表

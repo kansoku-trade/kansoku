@@ -24,9 +24,111 @@
 
 @end
 
+// Forwards all UI to SPUStandardUserDriver, except optionally auto-accepting
+// "update found" so titlebar install skips the confirm dialog.
+@interface AutoAcceptUserDriver : NSObject <SPUUserDriver>
+@property (nonatomic, strong) id<SPUUserDriver> inner;
+@property (nonatomic, assign) BOOL autoAcceptFoundUpdate;
+@end
+
+@implementation AutoAcceptUserDriver
+
+- (instancetype)initWithInner:(id<SPUUserDriver>)inner {
+  self = [super init];
+  if (self) {
+    _inner = inner;
+    _autoAcceptFoundUpdate = NO;
+  }
+  return self;
+}
+
+- (void)showUpdatePermissionRequest:(SPUUpdatePermissionRequest *)request reply:(void (^)(SUUpdatePermissionResponse *))reply {
+  [self.inner showUpdatePermissionRequest:request reply:reply];
+}
+
+- (void)showUserInitiatedUpdateCheckWithCancellation:(void (^)(void))cancellation {
+  [self.inner showUserInitiatedUpdateCheckWithCancellation:cancellation];
+}
+
+- (void)showUpdateFoundWithAppcastItem:(SUAppcastItem *)appcastItem state:(SPUUserUpdateState *)state reply:(void (^)(SPUUserUpdateChoice))reply {
+  if (self.autoAcceptFoundUpdate && !appcastItem.informationOnlyUpdate) {
+    NSLog(@"[sparkle-bridge] auto-accepting found update (install now path)");
+    self.autoAcceptFoundUpdate = NO;
+    reply(SPUUserUpdateChoiceInstall);
+    return;
+  }
+  self.autoAcceptFoundUpdate = NO;
+  [self.inner showUpdateFoundWithAppcastItem:appcastItem state:state reply:reply];
+}
+
+- (void)showUpdateReleaseNotesWithDownloadData:(SPUDownloadData *)downloadData {
+  [self.inner showUpdateReleaseNotesWithDownloadData:downloadData];
+}
+
+- (void)showUpdateReleaseNotesFailedToDownloadWithError:(NSError *)error {
+  [self.inner showUpdateReleaseNotesFailedToDownloadWithError:error];
+}
+
+- (void)showUpdateNotFoundWithError:(NSError *)error acknowledgement:(void (^)(void))acknowledgement {
+  self.autoAcceptFoundUpdate = NO;
+  [self.inner showUpdateNotFoundWithError:error acknowledgement:acknowledgement];
+}
+
+- (void)showUpdaterError:(NSError *)error acknowledgement:(void (^)(void))acknowledgement {
+  self.autoAcceptFoundUpdate = NO;
+  [self.inner showUpdaterError:error acknowledgement:acknowledgement];
+}
+
+- (void)showDownloadInitiatedWithCancellation:(void (^)(void))cancellation {
+  [self.inner showDownloadInitiatedWithCancellation:cancellation];
+}
+
+- (void)showDownloadDidReceiveExpectedContentLength:(uint64_t)expectedContentLength {
+  [self.inner showDownloadDidReceiveExpectedContentLength:expectedContentLength];
+}
+
+- (void)showDownloadDidReceiveDataOfLength:(uint64_t)length {
+  [self.inner showDownloadDidReceiveDataOfLength:length];
+}
+
+- (void)showDownloadDidStartExtractingUpdate {
+  [self.inner showDownloadDidStartExtractingUpdate];
+}
+
+- (void)showExtractionReceivedProgress:(double)progress {
+  [self.inner showExtractionReceivedProgress:progress];
+}
+
+- (void)showReadyToInstallAndRelaunch:(void (^)(SPUUserUpdateChoice))reply {
+  [self.inner showReadyToInstallAndRelaunch:reply];
+}
+
+- (void)showInstallingUpdateWithApplicationTerminated:(BOOL)applicationTerminated retryTerminatingApplication:(void (^)(void))retryTerminatingApplication {
+  [self.inner showInstallingUpdateWithApplicationTerminated:applicationTerminated retryTerminatingApplication:retryTerminatingApplication];
+}
+
+- (void)showUpdateInstalledAndRelaunched:(BOOL)relaunched acknowledgement:(void (^)(void))acknowledgement {
+  [self.inner showUpdateInstalledAndRelaunched:relaunched acknowledgement:acknowledgement];
+}
+
+- (void)dismissUpdateInstallation {
+  self.autoAcceptFoundUpdate = NO;
+  [self.inner dismissUpdateInstallation];
+}
+
+- (void)showUpdateInFocus {
+  if ([self.inner respondsToSelector:@selector(showUpdateInFocus)]) {
+    [self.inner showUpdateInFocus];
+  }
+}
+
+@end
+
 namespace {
 
-SPUStandardUpdaterController *g_controller = nil;
+SPUUpdater *g_updater = nil;
+AutoAcceptUserDriver *g_userDriver = nil;
+SPUStandardUserDriver *g_standardDriver = nil;
 SparkleBridgeLogDelegate *g_logDelegate = nil;
 
 NSString *NapiStringToNSString(const Napi::Value &value) {
@@ -50,18 +152,21 @@ Napi::Value Init(const Napi::CallbackInfo &info) {
   __block BOOL initialized = NO;
 
   void (^work)(void) = ^{
-    if (g_controller != nil) {
+    if (g_updater != nil) {
       initialized = YES;
       return;
     }
 
     @try {
       g_logDelegate = [[SparkleBridgeLogDelegate alloc] init];
-      g_controller = [[SPUStandardUpdaterController alloc] initWithStartingUpdater:YES
-                                                                    updaterDelegate:g_logDelegate
-                                                                userDriverDelegate:nil];
-
       NSBundle *hostBundle = [NSBundle mainBundle];
+      g_standardDriver = [[SPUStandardUserDriver alloc] initWithHostBundle:hostBundle delegate:nil];
+      g_userDriver = [[AutoAcceptUserDriver alloc] initWithInner:g_standardDriver];
+      g_updater = [[SPUUpdater alloc] initWithHostBundle:hostBundle
+                                       applicationBundle:hostBundle
+                                              userDriver:g_userDriver
+                                                delegate:g_logDelegate];
+
       NSString *plistFeedUrl = hostBundle.infoDictionary[@"SUFeedURL"];
       NSString *plistPublicKey = hostBundle.infoDictionary[@"SUPublicEDKey"];
 
@@ -73,7 +178,7 @@ Napi::Value Init(const Napi::CallbackInfo &info) {
         if (url != nil) {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-          [g_controller.updater setFeedURL:url];
+          [g_updater setFeedURL:url];
 #pragma clang diagnostic pop
         }
       }
@@ -88,10 +193,24 @@ Napi::Value Init(const Napi::CallbackInfo &info) {
              "signed Info.plist at package time.");
       }
 
+      NSError *startError = nil;
+      if (![g_updater startUpdater:&startError]) {
+        NSLog(@"[sparkle-bridge] startUpdater failed: %@", startError);
+        g_updater = nil;
+        g_userDriver = nil;
+        g_standardDriver = nil;
+        g_logDelegate = nil;
+        initialized = NO;
+        return;
+      }
+
       initialized = YES;
     } @catch (NSException *exception) {
       NSLog(@"[sparkle-bridge] init threw: %@", exception.reason);
-      g_controller = nil;
+      g_updater = nil;
+      g_userDriver = nil;
+      g_standardDriver = nil;
+      g_logDelegate = nil;
       initialized = NO;
     }
   };
@@ -105,17 +224,17 @@ Napi::Value Init(const Napi::CallbackInfo &info) {
   return Napi::Boolean::New(env, initialized);
 }
 
-Napi::Value CheckForUpdates(const Napi::CallbackInfo &info) {
-  Napi::Env env = info.Env();
-
+void RunUpdateCheck(BOOL autoAccept) {
   void (^work)(void) = ^{
-    if (g_controller == nil) return;
+    if (g_updater == nil || g_userDriver == nil) return;
     @try {
-      NSLog(@"[sparkle-bridge] checkForUpdates: canCheckForUpdates=%d sessionInProgress=%d",
-            g_controller.updater.canCheckForUpdates, g_controller.updater.sessionInProgress);
-      [g_controller checkForUpdates:nil];
+      NSLog(@"[sparkle-bridge] checkForUpdates: autoAccept=%d canCheckForUpdates=%d sessionInProgress=%d",
+            autoAccept, g_updater.canCheckForUpdates, g_updater.sessionInProgress);
+      g_userDriver.autoAcceptFoundUpdate = autoAccept;
+      [g_updater checkForUpdates];
     } @catch (NSException *exception) {
       NSLog(@"[sparkle-bridge] checkForUpdates threw: %@", exception.reason);
+      g_userDriver.autoAcceptFoundUpdate = NO;
     }
   };
 
@@ -124,7 +243,17 @@ Napi::Value CheckForUpdates(const Napi::CallbackInfo &info) {
   } else {
     dispatch_async(dispatch_get_main_queue(), work);
   }
+}
 
+Napi::Value CheckForUpdates(const Napi::CallbackInfo &info) {
+  Napi::Env env = info.Env();
+  RunUpdateCheck(NO);
+  return env.Undefined();
+}
+
+Napi::Value InstallUpdateNow(const Napi::CallbackInfo &info) {
+  Napi::Env env = info.Env();
+  RunUpdateCheck(YES);
   return env.Undefined();
 }
 
@@ -139,9 +268,9 @@ Napi::Value SetAutomaticChecks(const Napi::CallbackInfo &info) {
   bool enabled = info[0].As<Napi::Boolean>().Value();
 
   void (^work)(void) = ^{
-    if (g_controller == nil) return;
+    if (g_updater == nil) return;
     @try {
-      g_controller.updater.automaticallyChecksForUpdates = enabled;
+      g_updater.automaticallyChecksForUpdates = enabled;
     } @catch (NSException *exception) {
       NSLog(@"[sparkle-bridge] setAutomaticChecks threw: %@", exception.reason);
     }
@@ -159,6 +288,7 @@ Napi::Value SetAutomaticChecks(const Napi::CallbackInfo &info) {
 Napi::Object InitModule(Napi::Env env, Napi::Object exports) {
   exports.Set(Napi::String::New(env, "init"), Napi::Function::New(env, Init));
   exports.Set(Napi::String::New(env, "checkForUpdates"), Napi::Function::New(env, CheckForUpdates));
+  exports.Set(Napi::String::New(env, "installUpdateNow"), Napi::Function::New(env, InstallUpdateNow));
   exports.Set(Napi::String::New(env, "setAutomaticChecks"), Napi::Function::New(env, SetAutomaticChecks));
   return exports;
 }

@@ -30,6 +30,7 @@ import { registerContextMenuIpc } from "./contextMenu/ipc.js";
 import { registerLogsIpc } from "./logging/ipc.js";
 import { sendTabsCommand } from "./tabs/commands.js";
 import { initUpdater } from "./updater/updater.js";
+import { registerUpdaterIpc } from "./updater/ipc.js";
 
 const fileLogger = createFileLogger({
   logFilePath: resolveMainLogPath(app.getPath("logs")),
@@ -88,11 +89,16 @@ app.whenReady().then(async () => {
     await installDefaultContextMenu();
 
     const updater = initUpdater();
+    registerUpdaterIpc(updater);
     installAppMenu(() => updater.checkNow());
-    createWindow();
+    const openMainWindow = () =>
+      createWindow({
+        onFocus: () => updater.silentCheckOnActivate(),
+      });
+    openMainWindow();
 
     app.on("activate", () => {
-      if (BrowserWindow.getAllWindows().length === 0) createWindow();
+      if (BrowserWindow.getAllWindows().length === 0) openMainWindow();
     });
   } catch (error) {
     showFatalErrorWindow(error);

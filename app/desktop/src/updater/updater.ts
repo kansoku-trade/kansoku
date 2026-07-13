@@ -2,6 +2,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { app, dialog, Notification, shell } from "electron";
 import { loadSparkleBridgeForApp, type SparkleBridge, type SparkleInitOptions } from "./sparkle.js";
+import { createUpdaterStatusStore, type UpdaterStatusStore, type UpdaterUiStatus } from "./status.js";
 
 const OWNER_REPO = "Innei/kansoku";
 const RELEASES_URL = `https://api.github.com/repos/${OWNER_REPO}/releases/latest`;
@@ -36,6 +37,7 @@ export interface UpdaterDeps {
   notify: (release: ReleaseInfo) => void;
   log?: (message: string) => void;
   force?: boolean;
+  silent?: boolean;
 }
 
 function normalizeVersion(raw: string): number[] {
@@ -105,8 +107,12 @@ export async function checkForUpdate(deps: UpdaterDeps): Promise<CheckForUpdateR
     deps.log?.(`no-op: up to date (current ${deps.currentVersion}, latest ${release.version})`);
     return { kind: "up-to-date", current: deps.currentVersion, latest: release.version };
   }
-  deps.notify(release);
-  deps.log?.(`notified: ${release.version} available`);
+  if (!deps.silent) {
+    deps.notify(release);
+    deps.log?.(`notified: ${release.version} available`);
+  } else {
+    deps.log?.(`silent available: ${release.version}`);
+  }
   return { kind: "available", release };
 }
 
@@ -180,6 +186,10 @@ export function startUpdater(deps: StartUpdaterDeps): "sparkle" | "weak" {
 
 export type UpdaterHandle = {
   checkNow: () => void;
+  silentCheckOnActivate: () => void;
+  getStatus: () => UpdaterUiStatus;
+  onStatus: (cb: (status: UpdaterUiStatus) => void) => () => void;
+  installNow: () => void;
 };
 
 type UpdaterMode = "dev" | "sparkle" | "weak";
@@ -224,13 +234,47 @@ export function createUpdaterHandle(options: {
   mode: UpdaterMode;
   sparkleBridge?: SparkleBridge | null;
   showMessage?: InitUpdaterOptions["showMessage"];
-  runWeakCheck?: (force: boolean) => Promise<CheckForUpdateResult>;
+  runWeakCheck?: (force: boolean, silent?: boolean) => Promise<CheckForUpdateResult>;
+  openRelease?: (url: string) => void;
+  statusStore?: UpdaterStatusStore;
   log?: (message: string) => void;
 }): UpdaterHandle {
   const showMessage = options.showMessage ?? defaultShowMessage;
   const log = options.log ?? (() => {});
+  const statusStore = options.statusStore ?? createUpdaterStatusStore();
+  const openRelease =
+    options.openRelease ??
+    ((url: string) => {
+      shell.openExternal(url).catch((err) => {
+        log(`openRelease failed: ${(err as Error).message}`);
+      });
+    });
+
+  let silentCheckInFlight = false;
+
+  const applyResult = (result: CheckForUpdateResult) => {
+    statusStore.applyResult(result);
+  };
 
   return {
+    getStatus: () => statusStore.get(),
+    onStatus: (cb) => statusStore.on(cb),
+    silentCheckOnActivate: () => {
+      if (options.mode === "dev") return;
+      const run = options.runWeakCheck;
+      if (!run || silentCheckInFlight) return;
+      silentCheckInFlight = true;
+      void (async () => {
+        try {
+          const result = await run(false, true);
+          applyResult(result);
+        } catch (err) {
+          log(`silentCheck failed: ${(err as Error).message}`);
+        } finally {
+          silentCheckInFlight = false;
+        }
+      })();
+    },
     checkNow: () => {
       if (options.mode === "dev") {
         showMessage({
@@ -267,7 +311,8 @@ export function createUpdaterHandle(options: {
 
       void (async () => {
         try {
-          const result = await run(true);
+          const result = await run(true, false);
+          applyResult(result);
           if (result.kind === "available") return;
           if (result.kind === "up-to-date") {
             showMessage({
@@ -303,6 +348,77 @@ export function createUpdaterHandle(options: {
         }
       })();
     },
+    installNow: () => {
+      if (options.mode === "dev") {
+        showMessage({
+          type: "info",
+          title: "检查更新",
+          message: "开发模式不检查更新。",
+        });
+        return;
+      }
+
+      if (options.mode === "sparkle" && options.sparkleBridge) {
+        try {
+          options.sparkleBridge.installUpdateNow();
+        } catch (err) {
+          log(`installNow sparkle failed: ${(err as Error).message}`);
+          showMessage({
+            type: "error",
+            title: "检查更新",
+            message: `安装更新失败：${(err as Error).message}`,
+          });
+        }
+        return;
+      }
+
+      const current = statusStore.get();
+      if (current.kind === "available") {
+        openRelease(current.htmlUrl);
+        return;
+      }
+
+      const run = options.runWeakCheck;
+      if (!run) {
+        showMessage({
+          type: "warning",
+          title: "检查更新",
+          message: "更新检查暂不可用。",
+        });
+        return;
+      }
+
+      void (async () => {
+        try {
+          const result = await run(true, true);
+          applyResult(result);
+          if (result.kind === "available") {
+            openRelease(result.release.htmlUrl);
+            return;
+          }
+          if (result.kind === "up-to-date") {
+            showMessage({
+              type: "info",
+              title: "检查更新",
+              message: "已是最新版本。",
+            });
+            return;
+          }
+          showMessage({
+            type: "warning",
+            title: "检查更新",
+            message: "暂时无法打开更新页面。",
+          });
+        } catch (err) {
+          log(`installNow weak failed: ${(err as Error).message}`);
+          showMessage({
+            type: "error",
+            title: "检查更新",
+            message: `检查更新失败：${(err as Error).message}`,
+          });
+        }
+      })();
+    },
   };
 }
 
@@ -310,9 +426,10 @@ export function initUpdater(options: InitUpdaterOptions = {}): UpdaterHandle {
   const isDev = options.isDev ?? process.env.ELECTRON_DEV === "1";
   const log = (message: string) => console.debug(`[updater] ${message}`);
   const showMessage = options.showMessage ?? defaultShowMessage;
+  const statusStore = createUpdaterStatusStore();
 
   if (isDev) {
-    return createUpdaterHandle({ mode: "dev", showMessage, log });
+    return createUpdaterHandle({ mode: "dev", showMessage, statusStore, log });
   }
 
   const sparkleBridge = loadSparkleBridgeForApp(log);
@@ -324,26 +441,39 @@ export function initUpdater(options: InitUpdaterOptions = {}): UpdaterHandle {
     },
     runWeakChecker: () => {
       setTimeout(() => {
-        void runElectronCheck(false);
+        void runElectronCheck(false, false).then((result) => statusStore.applyResult(result));
       }, options.delayMs ?? CHECK_DELAY_MS);
     },
     log,
   });
 
+  // Badge detection always uses GitHub, including sparkle mode.
+  if (mode === "sparkle") {
+    setTimeout(() => {
+      void runElectronCheck(false, true).then((result) => statusStore.applyResult(result));
+    }, options.delayMs ?? CHECK_DELAY_MS);
+  }
+
   return createUpdaterHandle({
     mode,
     sparkleBridge: mode === "sparkle" ? sparkleBridge : null,
     showMessage,
-    runWeakCheck: async (force) => runElectronCheck(force),
+    statusStore,
+    runWeakCheck: async (force, silent) => {
+      const result = await runElectronCheck(force, silent === true);
+      statusStore.applyResult(result);
+      return result;
+    },
     log,
   });
 }
 
-async function runElectronCheck(force = false): Promise<CheckForUpdateResult> {
+async function runElectronCheck(force = false, silent = false): Promise<CheckForUpdateResult> {
   const log = (message: string) => console.debug(`[updater] ${message}`);
   const deps: UpdaterDeps = {
     ...createWeakCheckDeps(log),
     force,
+    silent,
   };
 
   try {

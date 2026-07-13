@@ -3,6 +3,7 @@ import { CONTEXT_MENU_CHANNELS } from "./contextMenu/channels.js";
 import { CREDENTIALS_CHANNELS } from "./credentials/channels.js";
 import { IPC_GROUPS } from "./ipc/groups.js";
 import { TABS_COMMAND_CHANNEL, type TabsCommand } from "./tabs/channels.js";
+import { UPDATER_CHANNELS } from "./updater/channels.js";
 
 // main.ts boots one embedded kernel regardless of dev or packaged mode, so
 // both the packaged app:// page and the dev renderer (ELECTRON_DEV=1, served
@@ -76,6 +77,16 @@ if (isPrivilegedOrigin) {
 
   desktopApi.contextMenu = {
     popup: (request: unknown) => ipcRenderer.invoke(CONTEXT_MENU_CHANNELS.popup, request),
+  };
+
+  desktopApi.updater = {
+    getStatus: () => ipcRenderer.invoke(UPDATER_CHANNELS.getStatus),
+    onStatus: (cb: (status: unknown) => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, status: unknown) => cb(status);
+      ipcRenderer.on(UPDATER_CHANNELS.status, listener);
+      return () => ipcRenderer.removeListener(UPDATER_CHANNELS.status, listener);
+    },
+    installNow: () => ipcRenderer.invoke(UPDATER_CHANNELS.installNow),
   };
 }
 

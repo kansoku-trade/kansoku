@@ -12,7 +12,11 @@ export const APP_ICON_PNG = join(resolveRepoRoot(), "app", "desktop", "build", "
 // Match web --bg-canvas so the native surface isn't white before the renderer paints.
 export const WINDOW_BG = "#0a0a0a";
 
-export function createWindow() {
+export type CreateWindowOptions = {
+  onFocus?: () => void;
+};
+
+export function createWindow(options: CreateWindowOptions = {}): BrowserWindow {
   const windowState = windowStateKeeper({
     defaultWidth: 1440,
     defaultHeight: 900,
@@ -40,6 +44,10 @@ export function createWindow() {
   });
 
   windowState.manage(win);
+
+  if (options.onFocus) {
+    win.on("focus", options.onFocus);
+  }
 
   win.once("ready-to-show", () => {
     win.show();
@@ -73,4 +81,5 @@ export function createWindow() {
 
   const url = IS_DEV ? DEV_WEB_URL : PROD_APP_URL;
   win.loadURL(url);
+  return win;
 }

@@ -952,6 +952,13 @@ a.zone-item:hover { text-decoration: none; background: var(--bg-hover); }
   flex: 0 0 auto; display: flex; align-items: center; gap: 8px; padding-right: 14px;
   -webkit-app-region: no-drag;
 }
+.desktop-update-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; color: var(--accent);
+  border: none; background: transparent; padding: 0; cursor: pointer;
+  border-radius: var(--radius);
+}
+.desktop-update-badge:hover { color: var(--text-primary); background: rgba(255, 176, 0, 0.12); }
 .desktop-content { padding-top: 40px; }
 .desktop-content .fullpage { height: calc(100vh - 40px); }
 /* 桌面版：新建图表/设置在标题栏里，detail-topbar 不必为浮动 global-topbar 留右侧空位 */
