@@ -20,7 +20,10 @@ function usageRole(record: AiUsageRecord): "comment" | "analyst" | "deepDive" | 
     case "analyst":
       return record.origin === "deep-dive" ? "deepDive" : "analyst";
     case "chat":
+    case "research-chat":
       return "chat";
+    case "research-refresh":
+      return "deepDive";
     default:
       return null;
   }

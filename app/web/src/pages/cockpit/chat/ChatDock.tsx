@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "motion/react";
-import { Square } from "lucide-react";
-import { Button, Input } from "../../../ui";
+import { ChatComposer } from "./ChatComposer";
 import { ChatPanel } from "./ChatPanel";
 import { useChatSession } from "./useChatSession";
 import { useFloatingRect } from "./useFloatingRect";
@@ -59,32 +58,20 @@ export function ChatDock({ chartId, docCreatedAt }: ChatDockProps) {
   };
 
   const composer = (
-    <div className="chat-composer">
-      <Input
-        className="chat-composer-field"
-        placeholder="就这份分析继续追问…"
-        value={text}
-        disabled={busy}
-        autoFocus={mode !== "dock"}
-        onFocus={() => setMode((prev) => (prev === "dock" ? "float" : prev))}
-        onChange={(e) => setText(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key !== "Enter" || e.nativeEvent.isComposing) return;
-          e.preventDefault();
-          void submit(text);
-        }}
-      />
-      {busy ? (
-        <Button className="chat-composer-stop" onClick={() => void abort()} disabled={aborting}>
-          <Square size={11} />
-          {aborting ? "停止中…" : "停止"}
-        </Button>
-      ) : (
-        <Button className="chat-composer-send" onClick={() => void submit(text)} disabled={!text.trim()}>
-          发送
-        </Button>
-      )}
-    </div>
+    <ChatComposer
+      value={text}
+      onChange={setText}
+      busy={busy}
+      aborting={aborting}
+      placeholder="就这份分析继续追问…"
+      onSubmit={(value) => void submit(value)}
+      onAbort={() => void abort()}
+      hint={hint}
+      inputProps={{
+        autoFocus: mode !== "dock",
+        onFocus: () => setMode((prev) => (prev === "dock" ? "float" : prev)),
+      }}
+    />
   );
 
   const shell = (
@@ -119,18 +106,12 @@ export function ChatDock({ chartId, docCreatedAt }: ChatDockProps) {
         onPickSuggestion={(question) => void submit(question)}
       />
       {composer}
-      {hint && <div className="chat-hint">{hint}</div>}
     </motion.div>
   );
 
   return (
     <div className="chat-dock" ref={hostRef}>
-      {mode === "dock" && (
-        <>
-          {composer}
-          {hint && <div className="chat-hint">{hint}</div>}
-        </>
-      )}
+      {mode === "dock" && composer}
       {layoutEl &&
         createPortal(
           <AnimatePresence>{mode !== "dock" && shell}</AnimatePresence>,

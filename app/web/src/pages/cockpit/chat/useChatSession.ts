@@ -5,8 +5,9 @@ import { subscribeChannel } from "../../../wsHub";
 
 export interface ChatSessionInfo {
   id: string;
-  chartId: string;
-  symbol: string;
+  chartId?: string;
+  symbol?: string;
+  path?: string;
   title: string;
   createdAt: string;
   updatedAt: string;
@@ -51,8 +52,10 @@ type ChatWsEnvelope = { type: "init"; busy: boolean; partial: string } | { type:
 const isErrorBody = (value: unknown): value is { error: string; hint?: string } =>
   typeof value === "object" && value !== null && typeof (value as { error?: unknown }).error === "string";
 
-async function fetchChat(chartId: string): Promise<ChatEnvelope> {
-  const state = await client.chat.get({ id: chartId });
+type ConversationKind = "chart" | "research";
+
+async function fetchChat(kind: ConversationKind, id: string): Promise<ChatEnvelope> {
+  const state = kind === "chart" ? await client.chat.get({ id }) : await client.research.getChat({ path: id });
   return state as unknown as ChatEnvelope;
 }
 
@@ -76,7 +79,7 @@ export interface ChatSessionState {
   ensureSuggestions: () => void;
 }
 
-export function useChatSession(chartId: string): ChatSessionState {
+function useConversationSession(kind: ConversationKind, id: string): ChatSessionState {
   const [session, setSession] = useState<ChatSessionInfo | null>(null);
   const [rows, setRows] = useState<ChatRow[]>([]);
   const [busy, setBusy] = useState(false);
@@ -95,13 +98,13 @@ export function useChatSession(chartId: string): ChatSessionState {
   const reload = useCallback(
     (markError?: string) => {
       const seq = ++requestSeqRef.current;
-      fetchChat(chartId)
+      fetchChat(kind, id)
         .then((env) => {
           if (requestSeqRef.current !== seq || sendPendingRef.current) return;
           setSession(env.session);
           setRows(
             markError
-              ? [...env.messages, { id: `error-${chartId}-${errorSeqRef.current++}`, ts: new Date().toISOString(), kind: "error", text: markError }]
+              ? [...env.messages, { id: `error-${id}-${errorSeqRef.current++}`, ts: new Date().toISOString(), kind: "error", text: markError }]
               : env.messages,
           );
           setBusy(env.busy);
@@ -115,7 +118,7 @@ export function useChatSession(chartId: string): ChatSessionState {
           setHint("对话记录加载失败");
         });
     },
-    [chartId],
+    [id, kind],
   );
 
   useEffect(() => {
@@ -131,12 +134,12 @@ export function useChatSession(chartId: string): ChatSessionState {
     setLoaded(false);
     setSuggestions([]);
     reload();
-  }, [chartId, reload]);
+  }, [id, reload]);
 
   useEffect(() => {
     let connectedOnce = false;
     const off = subscribeChannel(
-      { kind: "chat", id: chartId },
+      kind === "chart" ? { kind: "chat", id } : { kind: "research-chat", path: id },
       (payload) => {
         const env = payload as ChatWsEnvelope;
         if (env.type !== "init" && env.type !== "event") return;
@@ -188,7 +191,7 @@ export function useChatSession(chartId: string): ChatSessionState {
       },
     );
     return off;
-  }, [chartId, reload]);
+  }, [id, kind, reload]);
 
   const send = useCallback(
     async (text: string): Promise<ChatSendResult> => {
@@ -201,7 +204,10 @@ export function useChatSession(chartId: string): ChatSessionState {
       setSuggestions([]);
       setRows((prev) => [...prev, { id: optimisticId, ts: new Date().toISOString(), kind: "user", text: trimmed }]);
       try {
-        const result = await client.chat.postMessage({ id: chartId, text: trimmed });
+        const result =
+          kind === "chart"
+            ? await client.chat.postMessage({ id, text: trimmed })
+            : await client.research.postMessage({ path: id, text: trimmed });
         if (result.status === 202) {
           sendPendingRef.current = false;
           return { ok: true };
@@ -225,24 +231,25 @@ export function useChatSession(chartId: string): ChatSessionState {
         return { ok: false, error: message };
       }
     },
-    [chartId],
+    [id, kind],
   );
 
   const abort = useCallback(async (): Promise<void> => {
     setAborting(true);
     try {
-      await client.chat.abort({ id: chartId });
+      if (kind === "chart") await client.chat.abort({ id });
+      else await client.research.abortChat({ path: id });
     } catch {
       setAborting(false);
     }
-  }, [chartId]);
+  }, [id, kind]);
 
   const ensureSuggestions = useCallback(() => {
     if (suggestionsRequestedRef.current) return;
     suggestionsRequestedRef.current = true;
     const seq = requestSeqRef.current;
-    client.chat
-      .suggestions({ id: chartId })
+    const request = kind === "chart" ? client.chat.suggestions({ id }) : client.research.suggestions({ path: id });
+    request
       .then((res) => {
         if (requestSeqRef.current !== seq) return;
         setSuggestions(res.suggestions);
@@ -250,7 +257,7 @@ export function useChatSession(chartId: string): ChatSessionState {
       .catch(() => {
         setSuggestions([]);
       });
-  }, [chartId]);
+  }, [id, kind]);
 
   return {
     session,
@@ -266,4 +273,12 @@ export function useChatSession(chartId: string): ChatSessionState {
     abort,
     ensureSuggestions,
   };
+}
+
+export function useChatSession(chartId: string): ChatSessionState {
+  return useConversationSession("chart", chartId);
+}
+
+export function useResearchChatSession(path: string): ChatSessionState {
+  return useConversationSession("research", path);
 }

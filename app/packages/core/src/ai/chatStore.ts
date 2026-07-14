@@ -1,8 +1,8 @@
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
-import { asc, eq } from "drizzle-orm";
-import { getDb, type Db } from "../db/index.js";
-import { chatMessages, chatSessions } from "../db/schema.js";
+import type { Db } from "../db/index.js";
+import { chatSessions } from "../db/schema.js";
 import { nextSnowflake } from "../db/snowflake.js";
+import { type ConversationMessageRow, createConversationStore, titleFromText } from "./conversationStore.js";
 
 export interface ChatSession {
   id: string;
@@ -13,58 +13,39 @@ export interface ChatSession {
   updatedAt: string;
 }
 
-export interface ChatMessageRow {
-  id: string;
-  sessionId: string;
-  ts: string;
-  role: string;
-  payload: AgentMessage;
-}
+export type ChatMessageRow = ConversationMessageRow;
 
-export function titleFromText(text: string): string {
-  const collapsed = text.trim().replace(/\s+/g, " ");
-  return [...collapsed].slice(0, 40).join("");
-}
+export { titleFromText };
 
-export async function getSessionByChartId(chartId: string, db: Db = getDb()): Promise<ChatSession | null> {
-  const rows = await db.select().from(chatSessions).where(eq(chatSessions.chartId, chartId)).limit(1);
-  return rows[0] ?? null;
-}
-
-export async function createSession(
-  input: { chartId: string; symbol: string; title: string },
-  db: Db = getDb(),
-): Promise<ChatSession> {
-  const now = new Date().toISOString();
-  const session: ChatSession = {
+const store = createConversationStore<ChatSession, { chartId: string; symbol: string; title: string }>({
+  sessionTable: chatSessions,
+  idColumn: chatSessions.id,
+  keyColumn: chatSessions.chartId,
+  buildSession: (input, now) => ({
     id: nextSnowflake(),
     chartId: input.chartId,
     symbol: input.symbol,
     title: input.title,
     createdAt: now,
     updatedAt: now,
-  };
-  await db.insert(chatSessions).values(session);
-  return session;
+  }),
+});
+
+export function getSessionByChartId(chartId: string, db?: Db): Promise<ChatSession | null> {
+  return store.getSessionByKey(chartId, db);
 }
 
-export async function listMessages(sessionId: string, db: Db = getDb()): Promise<ChatMessageRow[]> {
-  return db
-    .select()
-    .from(chatMessages)
-    .where(eq(chatMessages.sessionId, sessionId))
-    .orderBy(asc(chatMessages.ts), asc(chatMessages.id));
+export function createSession(
+  input: { chartId: string; symbol: string; title: string },
+  db?: Db,
+): Promise<ChatSession> {
+  return store.createSession(input, db);
 }
 
-export async function appendMessages(sessionId: string, messages: AgentMessage[], db: Db = getDb()): Promise<void> {
-  if (messages.length === 0) return;
-  const now = new Date().toISOString();
-  db.transaction((tx) => {
-    for (const message of messages) {
-      tx.insert(chatMessages)
-        .values({ id: nextSnowflake(), sessionId, ts: now, role: message.role, payload: message })
-        .run();
-    }
-    tx.update(chatSessions).set({ updatedAt: now }).where(eq(chatSessions.id, sessionId)).run();
-  });
+export function listMessages(sessionId: string, db?: Db): Promise<ChatMessageRow[]> {
+  return store.listMessages(sessionId, db);
+}
+
+export function appendMessages(sessionId: string, messages: AgentMessage[], db?: Db): Promise<void> {
+  return store.appendMessages(sessionId, messages, db);
 }

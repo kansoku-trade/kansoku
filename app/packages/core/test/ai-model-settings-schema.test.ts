@@ -26,6 +26,9 @@ describe("ai model settings schema (migration 0002)", () => {
           "outcomes",
           "chat_sessions",
           "chat_messages",
+          "research_chat_sessions",
+          "research_edit_proposals",
+          "research_refresh_tasks",
         ]),
       );
 

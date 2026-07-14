@@ -8,6 +8,7 @@ import { deepDiveState, startDeepDive } from "../../packages/core/src/ai/deepDiv
 import { buildSystemPrompt, buildTools } from "../../packages/core/src/ai/deepDiveTools.js";
 import { initAiSettings } from "../../packages/core/src/ai/initAiSettings.js";
 import { aiConfig } from "../../packages/core/src/ai/models.js";
+import { loadSharedDiscipline } from "../../packages/core/src/ai/promptPolicy.js";
 import { getDb } from "../../packages/core/src/db/index.js";
 import { loadDotenv } from "../src/dotenv.js";
 import { PROJECT_ROOT } from "../../packages/core/src/env.js";
@@ -66,7 +67,9 @@ async function runDefaultMode(symbol: string): Promise<void> {
     },
   }));
 
-  const systemPrompt = buildSystemPrompt(PROJECT_ROOT, skillText);
+  const disciplineText = loadSharedDiscipline(PROJECT_ROOT);
+  if (!disciplineText) fail("trading-discipline skill not found");
+  const systemPrompt = buildSystemPrompt(PROJECT_ROOT, skillText, disciplineText);
   const session = createAgentSession({
     layer: "analyst",
     symbol,

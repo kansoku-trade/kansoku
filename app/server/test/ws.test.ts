@@ -15,6 +15,14 @@ vi.mock("../../packages/core/src/ai/chat.js", () => ({
   onChatEvent: vi.fn(),
   chatTurnState: vi.fn(),
 }));
+vi.mock("../../packages/core/src/ai/researchChat.js", () => ({
+  onResearchChatEvent: vi.fn(),
+  researchChatTurnState: vi.fn(),
+}));
+vi.mock("../../packages/core/src/ai/researchRefresh.js", () => ({
+  getLatestResearchRefreshTask: vi.fn(),
+  onResearchRefreshEvent: vi.fn(),
+}));
 vi.mock("../../packages/core/src/realtime/analyses.js", () => ({ subscribeAnalyses: vi.fn(() => () => {}) }));
 vi.mock("../../packages/core/src/realtime/benchmark.js", () => ({ subscribeBenchmark: vi.fn(() => () => {}) }));
 vi.mock("../../packages/core/src/realtime/board.js", () => ({ subscribeBoard: vi.fn(() => () => {}) }));
@@ -34,6 +42,18 @@ const { subscribeQuotes } = (await import("../../packages/core/src/realtime/quot
 const { onChatEvent, chatTurnState } = (await import("../../packages/core/src/ai/chat.js")) as unknown as {
   onChatEvent: ReturnType<typeof vi.fn>;
   chatTurnState: ReturnType<typeof vi.fn>;
+};
+const { onResearchChatEvent, researchChatTurnState } = (await import(
+  "../../packages/core/src/ai/researchChat.js"
+)) as unknown as {
+  onResearchChatEvent: ReturnType<typeof vi.fn>;
+  researchChatTurnState: ReturnType<typeof vi.fn>;
+};
+const { getLatestResearchRefreshTask, onResearchRefreshEvent } = (await import(
+  "../../packages/core/src/ai/researchRefresh.js"
+)) as unknown as {
+  getLatestResearchRefreshTask: ReturnType<typeof vi.fn>;
+  onResearchRefreshEvent: ReturnType<typeof vi.fn>;
 };
 
 class FakeConnection implements Connection {
@@ -140,6 +160,24 @@ describe("parseWsMessage", () => {
     });
   });
 
+  it("parses a research chat sub", () => {
+    expect(parseWsMessage({ op: "sub", key: "k9", kind: "research-chat", path: "stocks/MU.md" })).toEqual({
+      op: "sub",
+      key: "k9",
+      kind: "research-chat",
+      path: "stocks/MU.md",
+    });
+  });
+
+  it("parses a research refresh sub", () => {
+    expect(parseWsMessage({ op: "sub", key: "k10", kind: "research-refresh", path: "stocks/MU.md" })).toEqual({
+      op: "sub",
+      key: "k10",
+      kind: "research-refresh",
+      path: "stocks/MU.md",
+    });
+  });
+
   it("parses unsub", () => {
     expect(parseWsMessage({ op: "unsub", key: "k1" })).toEqual({ op: "unsub", key: "k1" });
   });
@@ -152,8 +190,78 @@ describe("parseWsMessage", () => {
     expect(parseWsMessage({ op: "sub", key: "k", kind: "position" })).toBeNull();
     expect(parseWsMessage({ op: "sub", key: "k", kind: "benchmark" })).toBeNull();
     expect(parseWsMessage({ op: "sub", key: "k", kind: "chat" })).toBeNull();
+    expect(parseWsMessage({ op: "sub", key: "k", kind: "research-chat" })).toBeNull();
+    expect(parseWsMessage({ op: "sub", key: "k", kind: "research-refresh" })).toBeNull();
     expect(parseWsMessage({ op: "sub", key: "k", kind: "nope" })).toBeNull();
     expect(parseWsMessage({ op: "sub", key: "x".repeat(201), kind: "quotes" })).toBeNull();
+  });
+});
+
+describe("research refresh channel", () => {
+  beforeEach(() => {
+    getLatestResearchRefreshTask.mockReset();
+    onResearchRefreshEvent.mockReset();
+  });
+
+  it("pushes persisted state and live task updates", async () => {
+    let capturedListener: ((task: unknown) => void) | undefined;
+    const initial = { id: "refresh-1", path: "stocks/MU.md", status: "running", phase: "documents" };
+    getLatestResearchRefreshTask.mockResolvedValue(initial);
+    onResearchRefreshEvent.mockImplementation((_path: string, listener: (task: unknown) => void) => {
+      capturedListener = listener;
+      return vi.fn();
+    });
+
+    const socket = makeSocket();
+    socket.emitMessage(JSON.stringify({ op: "sub", key: "refresh1", kind: "research-refresh", path: "stocks/MU.md" }));
+    await waitFor(() => socket.sent.some((raw) => raw.includes('"type":"init"')));
+
+    expect(onResearchRefreshEvent).toHaveBeenCalledWith("stocks/MU.md", expect.any(Function));
+    expect(JSON.parse(socket.sent.find((raw) => raw.includes('"type":"init"'))!)).toEqual({
+      key: "refresh1",
+      payload: { type: "init", task: initial },
+    });
+
+    const completed = { ...initial, status: "completed", phase: "completed" };
+    capturedListener?.(completed);
+    await waitFor(() => socket.sent.some((raw) => raw.includes('"type":"task"')));
+    expect(JSON.parse(socket.sent.find((raw) => raw.includes('"type":"task"'))!)).toEqual({
+      key: "refresh1",
+      payload: { type: "task", task: completed },
+    });
+  });
+});
+
+describe("research chat channel", () => {
+  beforeEach(() => {
+    onResearchChatEvent.mockReset();
+    researchChatTurnState.mockReset();
+  });
+
+  it("pushes document-scoped init state and live events", async () => {
+    let capturedListener: ((event: unknown) => void) | undefined;
+    researchChatTurnState.mockReturnValue({ busy: true, partial: "正在核对" });
+    onResearchChatEvent.mockImplementation((_path: string, listener: (event: unknown) => void) => {
+      capturedListener = listener;
+      return vi.fn();
+    });
+
+    const socket = makeSocket();
+    socket.emitMessage(JSON.stringify({ op: "sub", key: "research1", kind: "research-chat", path: "stocks/MU.md" }));
+    await waitFor(() => socket.sent.some((raw) => raw.includes('"type":"init"')));
+
+    expect(onResearchChatEvent).toHaveBeenCalledWith("stocks/MU.md", expect.any(Function));
+    expect(JSON.parse(socket.sent.find((raw) => raw.includes('"type":"init"'))!)).toEqual({
+      key: "research1",
+      payload: { type: "init", busy: true, partial: "正在核对" },
+    });
+
+    capturedListener?.({ event: "delta", text: "结论" });
+    await waitFor(() => socket.sent.some((raw) => raw.includes('"type":"event"')));
+    expect(JSON.parse(socket.sent.find((raw) => raw.includes('"type":"event"'))!)).toEqual({
+      key: "research1",
+      payload: { type: "event", event: { event: "delta", text: "结论" } },
+    });
   });
 });
 

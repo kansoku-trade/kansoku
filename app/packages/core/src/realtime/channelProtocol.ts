@@ -1,5 +1,7 @@
 import type { CockpitComment } from "../../../../shared/types.js";
-import { chatTurnState, onChatEvent } from "../ai/chat.js";
+import { type ChatEvent, chatTurnState, onChatEvent } from "../ai/chat.js";
+import { onResearchChatEvent, researchChatTurnState } from "../ai/researchChat.js";
+import { getLatestResearchRefreshTask, onResearchRefreshEvent } from "../ai/researchRefresh.js";
 import { listComments, onAnyComment, onComment } from "../ai/comments.js";
 import { onAnyNotice } from "../ai/notices.js";
 import { type AnnotationsChangedEvent, loadAnnotations, onAnnotationsChanged } from "../services/annotations.js";
@@ -56,12 +58,15 @@ export interface WsSub {
     | "benchmark"
     | "board"
     | "chat"
+    | "research-chat"
+    | "research-refresh"
     | "preview"
     | "annotations";
   extra?: string[];
   id?: string;
   count?: number;
   symbol?: string;
+  path?: string;
 }
 
 export interface WsUnsub {
@@ -116,6 +121,14 @@ export function parseWsMessage(raw: unknown): WsClientMessage | null {
     if (typeof msg.id !== "string" || !msg.id) return null;
     return { op: "sub", key: msg.key, kind: "chat", id: msg.id };
   }
+  if (msg.kind === "research-chat") {
+    if (typeof msg.path !== "string" || !msg.path || msg.path.length > 1_000) return null;
+    return { op: "sub", key: msg.key, kind: "research-chat", path: msg.path };
+  }
+  if (msg.kind === "research-refresh") {
+    if (typeof msg.path !== "string" || !msg.path || msg.path.length > 1_000) return null;
+    return { op: "sub", key: msg.key, kind: "research-refresh", path: msg.path };
+  }
   if (msg.kind === "annotations") {
     if (typeof msg.symbol !== "string" || !msg.symbol) return null;
     return { op: "sub", key: msg.key, kind: "annotations", symbol: msg.symbol };
@@ -123,10 +136,22 @@ export function parseWsMessage(raw: unknown): WsClientMessage | null {
   return null;
 }
 
-function attachChat(chartId: string, push: (envelope: string) => void): () => void {
-  const unsub = onChatEvent(chartId, (event) => push(JSON.stringify({ type: "event", event })));
-  const { busy, partial } = chatTurnState(chartId);
+function attachConversation(
+  key: string,
+  push: (envelope: string) => void,
+  subscribe: (key: string, listener: (event: ChatEvent) => void) => () => void,
+  turnState: (key: string) => { busy: boolean; partial: string },
+): () => void {
+  const unsub = subscribe(key, (event) => push(JSON.stringify({ type: "event", event })));
+  const { busy, partial } = turnState(key);
   push(JSON.stringify({ type: "init", busy, partial }));
+  return unsub;
+}
+
+async function attachResearchRefresh(path: string, push: (envelope: string) => void): Promise<() => void> {
+  const unsub = onResearchRefreshEvent(path, (task) => push(JSON.stringify({ type: "task", task })));
+  const task = await getLatestResearchRefreshTask(path);
+  push(JSON.stringify({ type: "init", task }));
   return unsub;
 }
 
@@ -169,7 +194,10 @@ async function attachChannel(msg: WsSub, push: (envelope: string) => void): Prom
   if (msg.kind === "position") return subscribePosition(normalizeSymbol(msg.symbol as string), push);
   if (msg.kind === "benchmark") return subscribeBenchmark(normalizeSymbol(msg.symbol as string), push);
   if (msg.kind === "preview") return subscribePreview(msg.symbol as string, push);
-  if (msg.kind === "chat") return attachChat(msg.id as string, push);
+  if (msg.kind === "chat") return attachConversation(msg.id as string, push, onChatEvent, chatTurnState);
+  if (msg.kind === "research-chat")
+    return attachConversation(msg.path as string, push, onResearchChatEvent, researchChatTurnState);
+  if (msg.kind === "research-refresh") return attachResearchRefresh(msg.path as string, push);
   if (msg.kind === "annotations") return attachAnnotations(msg.symbol as string, push);
   return subscribeBoard(push);
 }
