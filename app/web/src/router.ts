@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { parseAppDeepLink } from "../../shared/appDeepLink";
 
 const LOCATION_EVENT = "locationchange";
 
@@ -116,12 +117,31 @@ export function installRouter(): void {
     if (anchor.hasAttribute("download")) return;
 
     const href = anchor.getAttribute("href");
-    if (!href || href.startsWith("http") || href.startsWith("//") || href.startsWith("#")) return;
-
-    const url = new URL(anchor.href);
-    if (url.origin !== window.location.origin) return;
+    const route = resolveAnchorRoute(href, anchor.href, window.location.origin);
+    if (!route) return;
 
     event.preventDefault();
-    navigate(url.pathname + url.search);
+    navigate(route);
   });
+}
+
+const ABSOLUTE_SCHEME_RE = /^[A-Za-z][A-Za-z\d+.-]*:/;
+
+export function resolveAnchorRoute(
+  rawHref: string | null,
+  resolvedHref: string,
+  currentOrigin: string,
+): string | null {
+  if (!rawHref) return null;
+  const appLink = parseAppDeepLink(rawHref);
+  if (appLink) return appLink.route;
+  if (rawHref.startsWith("//") || rawHref.startsWith("#") || ABSOLUTE_SCHEME_RE.test(rawHref)) return null;
+
+  try {
+    const url = new URL(resolvedHref);
+    if (url.origin !== currentOrigin) return null;
+    return url.pathname + url.search;
+  } catch {
+    return null;
+  }
 }

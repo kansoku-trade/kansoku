@@ -13,6 +13,7 @@ export interface TabsController {
   closeOtherTabs(id: string): void;
   closeTabsToRight(id: string): void;
   openHomeTab(): void;
+  focusOrOpenResearch(): void;
   focusOrOpenSettings(): void;
   focusOrOpenLogs(): void;
 }
@@ -71,6 +72,12 @@ export function useTabsController(): TabsController {
     setSnapshot((prev) => tabsStore.focusOrOpenRoute(withCurrentScrollCaptured(prev), "/settings"));
   }, []);
 
+  const focusOrOpenResearch = useCallback(() => {
+    setSnapshot((prev) =>
+      tabsStore.focusOrOpenRoutePrefix(withCurrentScrollCaptured(prev), "/research", "/research?view=journal"),
+    );
+  }, []);
+
   const focusOrOpenLogs = useCallback(() => {
     setSnapshot((prev) => tabsStore.focusOrOpenRoute(withCurrentScrollCaptured(prev), "/logs"));
   }, []);
@@ -108,6 +115,7 @@ export function useTabsController(): TabsController {
     closeOtherTabs,
     closeTabsToRight,
     openHomeTab,
+    focusOrOpenResearch,
     focusOrOpenSettings,
     focusOrOpenLogs,
   };

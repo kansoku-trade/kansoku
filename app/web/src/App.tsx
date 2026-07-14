@@ -1,4 +1,4 @@
-import { Settings } from "lucide-react";
+import { Library, Settings } from "lucide-react";
 import { AppSkeleton } from "./AppSkeleton";
 import { DesktopShell } from "./desktop/DesktopShell";
 import { Onboarding } from "./onboarding/Onboarding";
@@ -7,14 +7,23 @@ import { useCredentialsGate } from "./onboarding/useCredentialsGate";
 import { Router } from "./PageRouter";
 import { RestrictedBanner } from "./RestrictedBanner";
 import { isDesktopRealtime } from "./portTransport";
-import { useRoute } from "./router";
+import { routePathname, useRoute } from "./router";
 import { ContextMenuHost, ModalHost } from "./ui";
 
 function GlobalTopbar() {
   const route = useRoute();
-  if (route === "/settings" || route === "/logs") return null;
+  const pathname = routePathname(route);
+  if (pathname === "/settings" || pathname === "/logs") return null;
   return (
     <div className="global-topbar">
+      <a
+        className={`global-settings-link${pathname === "/research" ? " active" : ""}`}
+        href="/research?view=journal"
+        aria-label="研究库"
+        aria-current={pathname === "/research" ? "page" : undefined}
+      >
+        <Library size={16} />
+      </a>
       <a className="global-settings-link" href="/settings" aria-label="设置">
         <Settings size={16} />
       </a>

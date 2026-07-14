@@ -1,36 +1,55 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react'
 import {
   ArrowUpCircle,
-  ChartCandlestick,
   Circle,
   House,
+  Library,
   Plus,
   ScrollText,
   Settings,
   TrendingUp,
   X,
-} from "lucide-react";
-import { openNewChartDialog } from "../newChart/NewChartDialog";
-import { ScrollArea, showContextMenu, type ContextMenuItem } from "../ui";
-import { getDesktopUpdaterBridge, isAvailableStatus, type UpdaterUiStatus } from "./desktopUpdater";
-import { tabKind, type TabState } from "./tabsStore";
-import type { TabsController } from "./tabsController";
+} from 'lucide-react'
+import { openNewChartDialog } from '../newChart/NewChartDialog'
+import { ScrollArea, showContextMenu, type ContextMenuItem } from '../ui'
+import {
+  getDesktopUpdaterBridge,
+  isAvailableStatus,
+  type UpdaterUiStatus,
+} from './desktopUpdater'
+import { tabKind, type TabState } from './tabsStore'
+import type { TabsController } from './tabsController'
 
 const TAB_ICONS: Record<ReturnType<typeof tabKind>, typeof House> = {
   home: House,
+  research: Library,
   settings: Settings,
   logs: ScrollText,
   symbol: TrendingUp,
   other: Circle,
-};
+}
 
 function TabIcon({ route }: { route: string }) {
-  const Icon = TAB_ICONS[tabKind(route)];
+  const Icon = TAB_ICONS[tabKind(route)]
   return (
     <span className="desktop-tab-icon-wrap">
       <Icon className="desktop-tab-icon" size={12} />
     </span>
-  );
+  )
+}
+
+function AddTab() {
+  return (
+    <button
+      type="button"
+      className="desktop-tab-new"
+      aria-label="新建图表"
+      title="新建图表"
+      onClick={openNewChartDialog}
+    >
+      <Plus size={13} />
+    </button>
+  )
 }
 
 function Tab({
@@ -41,21 +60,21 @@ function Tab({
   onClose,
   onContextMenu,
 }: {
-  tab: TabState;
-  active: boolean;
-  closable: boolean;
-  onActivate: () => void;
-  onClose: () => void;
-  onContextMenu: () => void;
+  tab: TabState
+  active: boolean
+  closable: boolean
+  onActivate: () => void
+  onClose: () => void
+  onContextMenu: () => void
 }) {
   return (
     <button
       type="button"
-      className={`desktop-tab${active ? " desktop-tab--active" : ""}`}
+      className={`desktop-tab${active ? ' desktop-tab--active' : ''}`}
       onClick={onActivate}
       onContextMenu={(event) => {
-        event.preventDefault();
-        onContextMenu();
+        event.preventDefault()
+        onContextMenu()
       }}
     >
       <TabIcon route={tab.route} />
@@ -66,78 +85,90 @@ function Tab({
           role="button"
           aria-label="关闭标签页"
           onClick={(event) => {
-            event.stopPropagation();
-            onClose();
+            event.stopPropagation()
+            onClose()
           }}
         >
           <X size={11} />
         </span>
       )}
     </button>
-  );
+  )
 }
 
 function useUpdaterStatus(): UpdaterUiStatus | null {
-  const [status, setStatus] = useState<UpdaterUiStatus | null>(null);
+  const [status, setStatus] = useState<UpdaterUiStatus | null>(null)
 
   useEffect(() => {
-    const bridge = getDesktopUpdaterBridge();
-    if (!bridge) return;
-    let cancelled = false;
+    const bridge = getDesktopUpdaterBridge()
+    if (!bridge) return
+    let cancelled = false
     void bridge.getStatus().then((next) => {
-      if (!cancelled) setStatus(next);
-    });
+      if (!cancelled) setStatus(next)
+    })
     const unsubscribe = bridge.onStatus((next) => {
-      if (!cancelled) setStatus(next);
-    });
+      if (!cancelled) setStatus(next)
+    })
     return () => {
-      cancelled = true;
-      unsubscribe();
-    };
-  }, []);
+      cancelled = true
+      unsubscribe()
+    }
+  }, [])
 
-  return status;
+  return status
 }
 
-export function DesktopTitlebar({ controller }: { controller: TabsController }) {
-  const { snapshot, activateTab, closeTabById, closeOtherTabs, closeTabsToRight, openHomeTab, focusOrOpenSettings } =
-    controller;
-  const updaterStatus = useUpdaterStatus();
-  const showUpdateBadge = isAvailableStatus(updaterStatus);
+export function DesktopTitlebar({
+  controller,
+}: {
+  controller: TabsController
+}) {
+  const {
+    snapshot,
+    activateTab,
+    closeTabById,
+    closeOtherTabs,
+    closeTabsToRight,
+    openHomeTab,
+    focusOrOpenResearch,
+    focusOrOpenSettings,
+  } = controller
+  const updaterStatus = useUpdaterStatus()
+  const showUpdateBadge = isAvailableStatus(updaterStatus)
 
   const openTabMenu = (tabId: string, index: number) => {
-    const multi = snapshot.tabs.length > 1;
-    const isLast = index === snapshot.tabs.length - 1;
+    const multi = snapshot.tabs.length > 1
+    const isLast = index === snapshot.tabs.length - 1
     const items: ContextMenuItem[] = [
       {
-        key: "close",
-        label: "关闭标签页",
-        accelerator: "CmdOrCtrl+W",
+        key: 'close',
+        label: '关闭标签页',
+        accelerator: 'CmdOrCtrl+W',
         disabled: !multi,
         onClick: () => closeTabById(tabId),
       },
       {
-        key: "close-others",
-        label: "关闭其他标签页",
+        key: 'close-others',
+        label: '关闭其他标签页',
         disabled: !multi,
         onClick: () => closeOtherTabs(tabId),
       },
       {
-        key: "close-right",
-        label: "关闭右侧标签页",
+        key: 'close-right',
+        label: '关闭右侧标签页',
         disabled: isLast,
         onClick: () => closeTabsToRight(tabId),
       },
-      { type: "divider" },
+      { type: 'divider' },
       {
-        key: "new",
-        label: "新建标签页",
-        accelerator: "CmdOrCtrl+T",
+        key: 'new',
+        label: '新建标签页',
+        accelerator: 'CmdOrCtrl+T',
         onClick: openHomeTab,
       },
-    ];
-    showContextMenu(items);
-  };
+    ]
+    showContextMenu(items)
+  }
 
   return (
     <div className="desktop-titlebar">
@@ -159,9 +190,7 @@ export function DesktopTitlebar({ controller }: { controller: TabsController }) 
             onContextMenu={() => openTabMenu(tab.id, index)}
           />
         ))}
-        <button type="button" className="desktop-tab-new" aria-label="新建标签页" onClick={openHomeTab}>
-          <Plus size={13} />
-        </button>
+        <AddTab />
       </ScrollArea>
       <div className="desktop-titlebar-actions">
         {showUpdateBadge && (
@@ -171,20 +200,29 @@ export function DesktopTitlebar({ controller }: { controller: TabsController }) 
             aria-label="有更新可用"
             title="有更新可用"
             onClick={() => {
-              void getDesktopUpdaterBridge()?.installNow();
+              void getDesktopUpdaterBridge()?.installNow()
             }}
           >
             <ArrowUpCircle size={16} />
           </button>
         )}
-        <button className="global-new-chart" type="button" onClick={openNewChartDialog}>
-          <ChartCandlestick size={16} />
-          新建图表
+        <button
+          className="global-settings-link"
+          type="button"
+          aria-label="研究库"
+          onClick={focusOrOpenResearch}
+        >
+          <Library size={16} />
         </button>
-        <button className="global-settings-link" type="button" aria-label="设置" onClick={focusOrOpenSettings}>
+        <button
+          className="global-settings-link"
+          type="button"
+          aria-label="设置"
+          onClick={focusOrOpenSettings}
+        >
           <Settings size={16} />
         </button>
       </div>
     </div>
-  );
+  )
 }

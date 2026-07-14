@@ -8,6 +8,7 @@ describe("buildPaletteCommands", () => {
       "symbol:NVDA.US",
       "symbol:MRVL.US",
       "nav:home",
+      "nav:research",
       "nav:settings",
       "nav:logs",
     ]);
@@ -41,6 +42,11 @@ describe("buildPaletteCommands", () => {
   it("matches static commands by keyword", () => {
     const commands = buildPaletteCommands("settings", []);
     expect(commands.some((c) => c.id === "nav:settings")).toBe(true);
+  });
+
+  it("exposes the research library through journal and stock keywords", () => {
+    expect(buildPaletteCommands("journal", []).map((command) => command.id)).toContain("nav:research");
+    expect(buildPaletteCommands("笔记", []).map((command) => command.id)).toContain("nav:research");
   });
 
   it("caps the list length", () => {

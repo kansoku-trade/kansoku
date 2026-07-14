@@ -14,10 +14,11 @@ export type TabsSnapshot = {
   activeTabId: string;
 };
 
-export type TabKind = "home" | "settings" | "logs" | "symbol" | "other";
+export type TabKind = "home" | "research" | "settings" | "logs" | "symbol" | "other";
 
 export function tabKind(route: string): TabKind {
   if (route === "/") return "home";
+  if (route === "/research" || route.startsWith("/research?")) return "research";
   if (route === "/settings" || route.startsWith("/settings?")) return "settings";
   if (route === "/logs" || route.startsWith("/logs?")) return "logs";
   if (route.startsWith("/symbol/")) return "symbol";
@@ -135,4 +136,10 @@ export function focusOrOpenRoute(snapshot: TabsSnapshot, route: string): TabsSna
   const existing = snapshot.tabs.find((tab) => tab.route === route);
   if (existing) return { ...snapshot, activeTabId: existing.id };
   return openTab(snapshot, route);
+}
+
+export function focusOrOpenRoutePrefix(snapshot: TabsSnapshot, prefix: string, initialRoute: string): TabsSnapshot {
+  const existing = snapshot.tabs.find((tab) => tab.route === prefix || tab.route.startsWith(`${prefix}?`));
+  if (existing) return { ...snapshot, activeTabId: existing.id };
+  return openTab(snapshot, initialRoute);
 }

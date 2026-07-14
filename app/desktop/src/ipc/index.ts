@@ -6,6 +6,7 @@ import { HealthIpc } from "./healthIpc.js";
 import { LobeHubIpc } from "./lobehubIpc.js";
 import { OverviewIpc } from "./overviewIpc.js";
 import { PositionsIpc } from "./positionsIpc.js";
+import { ResearchIpc } from "./researchIpc.js";
 import { SettingsIpc } from "./settingsIpc.js";
 import { SymbolsIpc } from "./symbolsIpc.js";
 
@@ -15,6 +16,7 @@ export const ipcServiceClasses = [
   SymbolsIpc,
   AnnotationsIpc,
   PositionsIpc,
+  ResearchIpc,
   OverviewIpc,
   SettingsIpc,
   CredentialsIpc,

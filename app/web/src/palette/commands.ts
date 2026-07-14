@@ -12,6 +12,7 @@ const MAX_COMMANDS = 12;
 
 const STATIC_COMMANDS: PaletteCommand[] = [
   { id: "nav:home", title: "回首页", keywords: ["home"], route: "/" },
+  { id: "nav:research", title: "打开研究库", keywords: ["research", "stocks", "journal", "研究", "日志", "笔记"], route: "/research?view=journal" },
   { id: "nav:settings", title: "打开设置", keywords: ["settings", "config"], route: "/settings" },
   { id: "nav:logs", title: "查看日志", keywords: ["logs", "log", "日志", "debug"], route: "/logs" },
 ];

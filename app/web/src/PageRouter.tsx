@@ -5,6 +5,7 @@ import { useQuery } from "./apiHooks";
 import { client } from "./client";
 import { Home } from "./pages/Home";
 import { LogsPage } from "./pages/logViewer/LogsPage";
+import { ResearchPage } from "./pages/research/ResearchPage";
 import { SettingsPage } from "./pages/settings/SettingsPage";
 import { SymbolCockpit } from "./pages/SymbolCockpit";
 import { navigate, routePathname, useRoute } from "./router";
@@ -47,6 +48,7 @@ export function Router() {
   }
   const symbolMatch = pathname.match(/^\/symbol\/(.+)$/);
   if (symbolMatch) return <SymbolCockpit sym={decodeURIComponent(symbolMatch[1])} />;
+  if (pathname === "/research") return <ResearchPage />;
   if (pathname === "/settings") return <SettingsPage />;
   if (pathname === "/logs") return <LogsPage />;
   return <Home />;

@@ -4,6 +4,7 @@ export const IPC_GROUPS = [
   "symbols",
   "annotations",
   "positions",
+  "research",
   "overview",
   "settings",
   "credentials",

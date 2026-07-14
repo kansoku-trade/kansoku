@@ -4,6 +4,7 @@ import {
   closeActiveTab,
   closeTab,
   focusOrOpenRoute,
+  focusOrOpenRoutePrefix,
   loadTabsSnapshot,
   nextTab,
   openTab,
@@ -119,6 +120,21 @@ describe("focusOrOpenRoute", () => {
   });
 });
 
+describe("focusOrOpenRoutePrefix", () => {
+  it("focuses an existing research tab regardless of its selected document", () => {
+    const snapshot = snapshotOf(["/", "/research?view=stocks&path=stocks%2FMU.md"], 0);
+    const next = focusOrOpenRoutePrefix(snapshot, "/research", "/research?view=journal");
+    expect(next.tabs).toHaveLength(2);
+    expect(next.activeTabId).toBe(snapshot.tabs[1].id);
+  });
+
+  it("opens the requested initial route when the route group is absent", () => {
+    const snapshot = snapshotOf(["/"], 0);
+    const next = focusOrOpenRoutePrefix(snapshot, "/research", "/research?view=journal");
+    expect(next.tabs[1].route).toBe("/research?view=journal");
+  });
+});
+
 describe("activateTab / updateTabRoute / updateTabTitle / updateTabScroll", () => {
   it("activateTab ignores an unknown id", () => {
     const snapshot = snapshotOf(["/"]);
@@ -143,6 +159,11 @@ describe("tabKind", () => {
   it("classifies settings routes, with or without a query string", () => {
     expect(tabKind("/settings")).toBe("settings");
     expect(tabKind("/settings?tab=billing")).toBe("settings");
+  });
+
+  it("classifies research routes", () => {
+    expect(tabKind("/research")).toBe("research");
+    expect(tabKind("/research?view=journal")).toBe("research");
   });
 
   it("classifies logs routes", () => {

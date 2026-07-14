@@ -15,6 +15,8 @@ export { Empty } from "./Empty";
 export { ErrorBox } from "./ErrorBox";
 export { Tooltip } from "./Tooltip";
 export { ScrollArea } from "./ScrollArea";
+export { ResizablePanel } from "./ResizablePanel";
+export type { ResizablePanelSide } from "./ResizablePanel";
 export { MarketTime } from "./MarketTime";
 export { TimeAgo } from "./TimeAgo";
 export { Modal } from "./Modal";

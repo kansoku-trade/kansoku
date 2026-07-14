@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { __setActiveRouteStore, createMemoryRouteStore, navigate, routePathname } from "./router.js";
+import { __setActiveRouteStore, createMemoryRouteStore, navigate, resolveAnchorRoute, routePathname } from "./router.js";
 
 afterEach(() => {
   __setActiveRouteStore(null);
@@ -54,6 +54,27 @@ describe("routePathname", () => {
 
   it("preserves percent-encoded question marks inside path segments", () => {
     expect(routePathname("/charts/chart%3Fid?view=compact")).toBe("/charts/chart%3Fid");
+  });
+});
+
+describe("resolveAnchorRoute", () => {
+  it("routes durable localhost chart links inside both web and packaged app runtimes", () => {
+    const href = "http://localhost:5199/symbol/DRAM.US?analysis=2026-07-09-dram-intraday-3";
+    expect(resolveAnchorRoute(href, href, "http://localhost:5199")).toBe(
+      "/symbol/DRAM.US?analysis=2026-07-09-dram-intraday-3",
+    );
+    expect(resolveAnchorRoute(href, href, "null")).toBe(
+      "/symbol/DRAM.US?analysis=2026-07-09-dram-intraday-3",
+    );
+  });
+
+  it("keeps ordinary relative navigation working under app://", () => {
+    expect(resolveAnchorRoute("/settings", "app://-/settings", "null")).toBe("/settings");
+  });
+
+  it("leaves external protocols to the browser or Electron navigation guard", () => {
+    expect(resolveAnchorRoute("https://example.com", "https://example.com/", "null")).toBeNull();
+    expect(resolveAnchorRoute("mailto:test@example.com", "mailto:test@example.com", "null")).toBeNull();
   });
 });
 
