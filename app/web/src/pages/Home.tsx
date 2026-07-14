@@ -5,11 +5,12 @@ import { useQuery } from "../apiHooks";
 import { client } from "../client";
 import { navigate, useQueryParam } from "../router";
 import { QuoteBar } from "../QuoteBar";
-import { Badge, Chip, ErrorBox, SectionTitle } from "../ui";
+import { Badge, ErrorBox, SectionTitle } from "../ui";
 import { useTitle } from "../useTitle";
 import { useSSE } from "../useSSE";
 import { useIntervalFetch } from "./cockpit/useIntervalFetch";
-import { CROSS_SECTION_TYPES, CrossSectionCharts, MAX_VISIBLE_DATES } from "./home/CrossSectionCharts";
+import { CROSS_SECTION_TYPES, CrossSectionCharts } from "./home/CrossSectionCharts";
+import { DateTimeline } from "./home/DateTimeline";
 import { PositionsCard } from "./home/PositionsCard";
 import { QuickBar } from "./home/QuickBar";
 import { RecapBoard } from "./home/RecapBoard";
@@ -49,8 +50,9 @@ export function Home() {
   ]
     .sort()
     .reverse();
-  const visibleDates = candidateDates.slice(0, MAX_VISIBLE_DATES);
-  const switcherDates = visibleDates.includes(date) ? visibleDates : [date, ...visibleDates].slice(0, MAX_VISIBLE_DATES);
+  const timelineDates = candidateDates.includes(date)
+    ? candidateDates
+    : [date, ...candidateDates].sort().reverse();
 
   const session = board?.session ?? null;
   const trading = isToday && (session === "pre" || session === "regular");
@@ -66,15 +68,7 @@ export function Home() {
       {notice && NOTICE_LABEL[notice] && <ErrorBox>{NOTICE_LABEL[notice]}</ErrorBox>}
       <QuoteBar />
       <QuickBar shortcuts={shortcuts} />
-      {switcherDates.length > 0 && (
-        <div className="cross-section-switcher">
-          {switcherDates.map((d) => (
-            <Chip key={d} active={d === date} onClick={() => navigate(`/?date=${d}`, { replace: true })}>
-              {d}
-            </Chip>
-          ))}
-        </div>
-      )}
+      <DateTimeline dates={timelineDates} selected={date} onSelect={(d) => navigate(`/?date=${d}`, { replace: true })} />
       {isToday && !board && !boardError && <div className="note-block">盘面加载中…</div>}
       {isToday && boardError && !board && <ErrorBox>{boardError}</ErrorBox>}
       {(!isToday || board) && (

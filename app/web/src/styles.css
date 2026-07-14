@@ -838,7 +838,35 @@ a.zone-item:hover { text-decoration: none; background: var(--bg-hover); }
 .recap-alert .text { line-height: 1.6; text-wrap: pretty; }
 
 .cross-section-charts { margin-top: 20px; }
-.cross-section-switcher { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 12px; }
+.date-timeline { margin: 8px 0 12px; overflow-x: auto; scrollbar-width: thin; }
+.dtl-track { position: relative; display: inline-flex; min-width: 100%; padding: 2px 8px; box-sizing: border-box; }
+.dtl-track::before { content: ""; position: absolute; left: 8px; right: 8px; top: 24px; height: 1px; background: var(--border-strong); }
+.dtl-item {
+  position: relative; flex: none; width: 48px;
+  display: flex; flex-direction: column; align-items: center;
+  background: none; border: none; padding: 0; cursor: pointer; font-family: var(--font-ui);
+}
+.dtl-month {
+  height: 14px; line-height: 14px; align-self: flex-start; padding-left: 2px;
+  font-size: var(--fs-xs); color: var(--text-muted); white-space: nowrap;
+}
+.dtl-dot {
+  box-sizing: border-box; width: 7px; height: 7px; margin: 5px 0 4px; border-radius: 50%;
+  background: var(--bg-canvas); border: 1px solid var(--border-strong); position: relative; z-index: 1;
+}
+.dtl-item:hover .dtl-dot { border-color: var(--accent); }
+.dtl-item.active .dtl-dot { width: 9px; height: 9px; margin: 4px 0 3px; background: var(--accent); border-color: var(--accent); }
+.dtl-day { font-size: var(--fs-sm); color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.dtl-item:hover .dtl-day { color: var(--text-primary); }
+.dtl-item.active .dtl-day { color: var(--accent); }
+.dtl-item.month-start { border-left: 1px solid var(--border); }
+.dtl-earlier {
+  flex: none; align-self: flex-start; margin: 16px 10px 0 0; padding: 0 6px; height: 17px;
+  position: relative; z-index: 1;
+  font-size: var(--fs-xs); color: var(--text-secondary); font-family: var(--font-ui);
+  background: var(--bg-canvas); border: 1px solid var(--border-strong); border-radius: var(--radius); cursor: pointer;
+}
+.dtl-earlier:hover { color: var(--accent); border-color: var(--accent); }
 .cross-section-list { display: flex; flex-direction: column; gap: 16px; }
 .cross-section-card-title { font-size: var(--fs-md); font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
 .cross-section-card-body { height: 340px; }

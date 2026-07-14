@@ -7,7 +7,6 @@ import { useQueryParam } from "../../router";
 import { Card, Empty, ErrorBox, SectionTitle } from "../../ui";
 
 export const CROSS_SECTION_TYPES = "flow,cohort";
-export const MAX_VISIBLE_DATES = 10;
 
 function ChartCard({ id }: { id: string }) {
   const { data: doc, error } = useQuery<ChartDoc>(`charts.get:${id}`, () => client.charts.get({ id }));
