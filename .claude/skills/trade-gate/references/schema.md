@@ -18,8 +18,8 @@ journal/decisions/YYYY-MM-DD-patrol.json
 | `symbol` | string | 标的代码，不带交易所后缀（如 `MU`）；patrol 记录省略此字段，改用 `positions` 数组 |
 | `action` | string | `buy` \| `sell` \| `patrol` |
 | `key_data` | array | 支撑判定的关键数据点，见下方「key_data 元素」 |
-| `executed` | boolean \| null | 执行核对结果，决策当下永远是 `null`，由下次运行时回填 |
-| `violation` | boolean \| null | 违规判定，决策当下永远是 `null`，由下次运行时回填；patrol 记录没有这两个字段（巡检不是一次决策，没有对应成交） |
+| `executed` | boolean \| null | 执行核对结果，决策当下永远是 `null`，由下次运行时回填；仅适用于 buy 和 sell 记录 |
+| `violation` | boolean \| null | 违规判定，决策当下永远是 `null`，由下次运行时回填；仅适用于 buy 和 sell 记录（巡检不是一次决策，没有对应成交） |
 
 ### key_data 元素
 
@@ -199,15 +199,12 @@ journal/decisions/YYYY-MM-DD-patrol.json
   ],
   "key_data": [
     { "fact": "长桥持仓：MU/NVDA/SMH/DRAM/QQQM 共 5 个标的", "source": "longbridge positions", "at": "2026-07-14T09:00:00-04:00" }
-  ],
-  "executed": null,
-  "violation": null
+  ]
 }
 ```
 
 - `flush_check` 提到顶层，因为爆仓潮判据是全局性的（韩国/美股大盘数据），对所有持仓共用一份，不必每个持仓各查一次。
 - `positions[]` 每个元素的 `triggers` 结构与卖出记录的 `triggers` 一致（缺省 `flush_check` 字段，因为已提到顶层），外加一个 `verdict`，取值枚举同卖出记录的四值；`hold_plan` / `six_category` 里若某数据源当次没拿到，对应布尔值改写字符串 `"未获取到"` 而非猜测。
-- 巡检记录没有 `executed` / `violation` 的实际意义（巡检本身不是一次买卖决策），字段保留为 `null` 只是为了三种记录 schema 一致，读取脚本不必按类型分叉。
 
 ## 执行核对回填规则（`executed` / `violation`）
 

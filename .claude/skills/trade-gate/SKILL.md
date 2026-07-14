@@ -221,7 +221,8 @@ journal/decisions/YYYY-MM-DD-patrol.json
 **每次运行本 skill 的任何入口**（买入/卖出/巡检都算一次运行），开始正式流程
 之前，先做一遍这个核对：
 
-1. 找出 `journal/decisions/` 里所有 `executed: null` 的记录。
+1. 找出 `journal/decisions/` 里所有 `executed: null` 的记录，**仅限 `action` 为
+   `buy` 或 `sell` 的记录**；`action: "patrol"` 的记录跳过（巡检不涉及买卖执行）。
 2. 对每条记录的 `symbol`，拉 `longbridge` 的成交记录（订单/成交历史），比对
    决策日期之后到今天之间是否有对应成交。
 3. 按 schema.md「执行核对回填规则」表逐条判定并回填 `executed` / `violation`，
