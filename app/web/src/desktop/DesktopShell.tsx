@@ -4,6 +4,7 @@ import { CommandPalette } from "../palette/CommandPalette";
 import { RestrictedBanner } from "../RestrictedBanner";
 import { ContextMenuHost, ModalHost } from "../ui";
 import { DesktopTitlebar } from "./DesktopTitlebar";
+import { LinkHoverStatus } from "./LinkHoverStatus";
 import { useTabsController } from "./tabsController";
 
 export function DesktopShell() {
@@ -18,6 +19,7 @@ export function DesktopShell() {
         <Router />
       </div>
       <CommandPalette onOpenRoute={controller.openTab} />
+      <LinkHoverStatus />
       <ModalHost />
       <ContextMenuHost />
     </>

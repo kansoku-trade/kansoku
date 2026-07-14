@@ -1152,6 +1152,30 @@ a.zone-item:hover { text-decoration: none; background: var(--bg-hover); }
 /* 桌面版：全局操作在标题栏里，detail-topbar 不必为浮动 global-topbar 留右侧空位 */
 .desktop-content .detail-topbar { padding-right: 14px; }
 
+.link-hover-status {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  z-index: 90;
+  max-width: 60vw;
+  padding: 3px 10px;
+  background: var(--bg-element);
+  border: 1px solid var(--border);
+  border-left: none;
+  border-bottom: none;
+  border-top-right-radius: var(--radius);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+.link-hover-status--visible { opacity: 1; }
+
 .app-skeleton {
   min-height: 100vh;
   background: var(--bg-canvas);
