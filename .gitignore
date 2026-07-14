@@ -12,6 +12,7 @@ node_modules/
 
 # Installed third-party skills — pinned in skills-lock.json.
 # Restore on a fresh clone with: npx skills experimental_install
+# Then relink first-party skills into .agents: python3 scripts/sync-agents-skills.py
 .agents/
 /.claude/skills/*
 !/.claude/skills/_shared/
