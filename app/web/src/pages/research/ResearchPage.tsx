@@ -7,6 +7,7 @@ import { navigate, useQueryParam } from "../../router";
 import { Badge, Empty, ErrorBox, Input, MarketTime, ResizablePanel, Spinner } from "../../ui";
 import { useTitle } from "../../useTitle";
 import { Markdown } from "../cockpit/markdown";
+import { ResearchAssistant } from "./ResearchAssistant";
 import {
   kindForView,
   parseResearchView,
@@ -31,11 +32,6 @@ const EXPLORER_WIDTH_STORAGE_KEY = "kansoku.research.explorer-width";
 function defaultExplorerWidth(): number {
   const viewportWidth = typeof window === "undefined" ? 1440 : window.innerWidth;
   return Math.min(EXPLORER_MAX_WIDTH, Math.max(EXPLORER_MIN_WIDTH, viewportWidth * 0.215));
-}
-
-function relatedDocumentSecondary(meta: ResearchDocumentMeta): string {
-  if (meta.kind === "stock") return meta.symbols.join(" · ") || researchTypeLabel(meta.type);
-  return [meta.date, researchTypeLabel(meta.type)].filter(Boolean).join(" · ");
 }
 
 function ResearchExplorer({
@@ -129,47 +125,34 @@ function ResearchReader({ document, loading, error }: { document: ResearchDocume
 
 function ResearchContext({
   selected,
+  document,
   allDocuments,
   onSelect,
+  onDocumentChanged,
 }: {
   selected: ResearchDocumentMeta | null;
+  document: ResearchDocument | null;
   allDocuments: ResearchDocumentMeta[];
   onSelect: (document: ResearchDocumentMeta) => void;
+  onDocumentChanged: (document?: ResearchDocument) => void;
 }) {
   if (!selected) return null;
   const related = relatedDocuments(selected, allDocuments).slice(0, 8);
 
   return (
     <aside className="research-context" aria-label="关联研究资料">
-      <section className="research-context-section">
-        <h3>关联标的</h3>
-        {selected.symbols.length > 0 ? (
-          <div className="research-symbol-links">
-            {selected.symbols.map((symbol) => (
-              <a key={symbol} className="chip" href={`/symbol/${encodeURIComponent(`${symbol}.US`)}`}>
-                {symbol}
-              </a>
-            ))}
-          </div>
-        ) : (
-          <p>这是一份全局记录，不归属于单一股票。</p>
-        )}
-      </section>
-      <section className="research-context-section">
-        <h3>相关记录</h3>
-        {related.length > 0 ? (
-          <div className="research-related-list">
-            {related.map((document) => (
-              <button type="button" key={document.path} onClick={() => onSelect(document)}>
-                <span>{document.title}</span>
-                <small>{relatedDocumentSecondary(document)}</small>
-              </button>
-            ))}
-          </div>
-        ) : (
-          <p>暂时没有通过标的建立的关联记录。</p>
-        )}
-      </section>
+      {document ? (
+        <ResearchAssistant
+          key={document.path}
+          document={document}
+          selected={selected}
+          related={related}
+          onSelect={onSelect}
+          onDocumentChanged={onDocumentChanged}
+        />
+      ) : (
+        <div className="research-reader-state"><Spinner /> 正在加载正文…</div>
+      )}
     </aside>
   );
 }
@@ -312,7 +295,13 @@ export function ResearchPage() {
         <main className="research-reader">
           <ResearchReader document={document} loading={documentLoading} error={documentError} />
         </main>
-        <ResearchContext selected={selected} allDocuments={allDocuments ?? []} onSelect={selectDocument} />
+        <ResearchContext
+          selected={selected}
+          document={document?.path === selected?.path ? document : null}
+          allDocuments={allDocuments ?? []}
+          onSelect={selectDocument}
+          onDocumentChanged={refresh}
+        />
       </div>
     </div>
   );

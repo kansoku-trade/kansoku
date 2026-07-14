@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { AgentEvent, AgentMessage, AgentTool } from "@earendil-works/pi-agent-core";
+import type { AgentMessage, AgentTool } from "@earendil-works/pi-agent-core";
 import { Type } from "typebox";
 import type {
   Annotation,
@@ -14,16 +14,21 @@ import { annotationsService } from "../modules/annotations/annotations.service.j
 import { getProvider } from "../services/marketdata/registry.js";
 import { easternDate } from "../services/session.js";
 import { loadChart as defaultLoadChart } from "../services/store.js";
-import { AgentTimeoutError, type AiAgentFactory, type AiAgentHandle, createAgentSession } from "./agentSession.js";
+import type { AiAgentFactory } from "./agentSession.js";
 import {
   appendMessages,
   type ChatMessageRow,
   createSession,
   getSessionByChartId,
   listMessages,
-  titleFromText,
 } from "./chatStore.js";
 import { listComments as defaultListComments } from "./comments.js";
+import {
+  type ConversationEvent,
+  type ConversationPreparedTurn,
+  createConversationEngine,
+} from "./conversationEngine.js";
+import { stringifyPayload, textOf } from "./conversationShared.js";
 import {
   buildDataPackTool,
   buildDrawAnnotationsTool,
@@ -36,7 +41,6 @@ import { buildReassessPack as defaultBuildReassessPack, type ReassessPack } from
 import type { AiModel } from "./models.js";
 import { CHAT_DIALOG_RULES, CHAT_GATED_RETRY_INSTRUCTION, CHAT_GATED_TURN_INSTRUCTION } from "./prompts.js";
 import { composeWithDiscipline, DisciplineMissingError, loadSharedDiscipline } from "./promptPolicy.js";
-import { createRunLock } from "./runLock.js";
 import {
   type DirectionalVerification,
   isDirectionalClaim,
@@ -44,18 +48,10 @@ import {
   verifyDirectionalRead,
 } from "./verifyRead.js";
 
-const DEFAULT_TIMEOUT_MS = 180_000;
 const COMMENT_CAP = 20;
 const RELEVANT_COMMENT_SOURCES = new Set(["analyst", "system"]);
-const TOOL_TEXT_CAP = 4000;
 
-
-export type ChatEvent =
-  | { event: "delta"; text: string }
-  | { event: "tool"; label: string; status: "start" | "end"; input?: string; output?: string }
-  | { event: "done" }
-  | { event: "aborted" }
-  | { event: "error"; message: string };
+export type ChatEvent = ConversationEvent;
 
 export interface ChatDisplayMessage {
   id: string;
@@ -88,88 +84,7 @@ export type ChatStartResult =
   | { started: false; reason: "busy" | "chart_not_found" | "not_intraday" | "no_model" }
   | { started: true; done: Promise<void> };
 
-interface TurnState {
-  busy: boolean;
-  partial: string;
-  aborted: boolean;
-  abort: (() => void) | null;
-}
-
-const chatRunLock = createRunLock();
-const turnStates = new Map<string, TurnState>();
-const listeners = new Map<string, Set<(event: ChatEvent) => void>>();
-
-export function onChatEvent(chartId: string, listener: (event: ChatEvent) => void): () => void {
-  let set = listeners.get(chartId);
-  if (!set) {
-    set = new Set();
-    listeners.set(chartId, set);
-  }
-  set.add(listener);
-  return () => {
-    const current = listeners.get(chartId);
-    if (!current) return;
-    current.delete(listener);
-    if (current.size === 0) listeners.delete(chartId);
-  };
-}
-
-function broadcast(chartId: string, event: ChatEvent): void {
-  const set = listeners.get(chartId);
-  if (!set) return;
-  for (const listener of [...set]) {
-    try {
-      listener(event);
-    } catch {
-      continue;
-    }
-  }
-}
-
-export function chatTurnState(chartId: string): { busy: boolean; partial: string } {
-  const state = turnStates.get(chartId);
-  return state ? { busy: state.busy, partial: state.partial } : { busy: false, partial: "" };
-}
-
-export function abortChatTurn(chartId: string): boolean {
-  const state = turnStates.get(chartId);
-  if (!state?.busy || !state.abort) return false;
-  state.aborted = true;
-  state.abort();
-  return true;
-}
-
-function truncate(text: string): string {
-  return text.length > TOOL_TEXT_CAP ? `${text.slice(0, TOOL_TEXT_CAP)}…（已截断）` : text;
-}
-
-function stringifyToolPayload(value: unknown): string | undefined {
-  if (value == null) return undefined;
-  if (typeof value === "string") return value ? truncate(value) : undefined;
-  try {
-    return truncate(JSON.stringify(value));
-  } catch {
-    return undefined;
-  }
-}
-
-function textOf(block: { type: string; text?: string }): string {
-  return block.type === "text" && typeof block.text === "string" ? block.text : "";
-}
-
 function toolResultText(message: Extract<AgentMessage, { role: "toolResult" }>): string {
-  return message.content.map(textOf).join("");
-}
-
-function agentToolResultText(result: unknown): string | undefined {
-  if (typeof result !== "object" || result === null) return undefined;
-  const content = (result as { content?: unknown }).content;
-  if (!Array.isArray(content)) return undefined;
-  return content.map((block) => textOf(block as { type: string; text?: string })).join("");
-}
-
-function concatAssistantText(message: AgentMessage): string {
-  if (message.role !== "assistant") return "";
   return message.content.map(textOf).join("");
 }
 
@@ -199,8 +114,8 @@ export function toDisplayMessages(rows: ChatMessageRow[]): ChatDisplayMessage[] 
             ts: row.ts,
             kind: "tool",
             label: block.name,
-            input: stringifyToolPayload(block.arguments),
-            output: stringifyToolPayload(outputs.get(block.id)),
+            input: stringifyPayload(block.arguments),
+            output: stringifyPayload(outputs.get(block.id)),
           });
         }
       });
@@ -251,62 +166,6 @@ export function buildChatSystemPrompt(
   return composeWithDiscipline(disciplineText, own);
 }
 
-interface TranslatorCtx {
-  emittedLen: number;
-  settled: boolean;
-  /**
-   * On a directional-claim turn the model's free text is suppressed until submit_chat_answer has
-   * passed the mechanical gate. Streaming it live would defeat the gate entirely — the words are
-   * already on the user's screen by the time a post-hoc check could reject them.
-   */
-  buffered: boolean;
-}
-
-function translateEvent(
-  event: AgentEvent,
-  ctx: TranslatorCtx,
-  toolLabels: Map<string, string>,
-  state: TurnState,
-  emit: (event: ChatEvent) => void,
-): void {
-  if (ctx.settled) return;
-  if (event.type === "message_start") {
-    if (event.message.role === "assistant") {
-      ctx.emittedLen = 0;
-      state.partial = "";
-    }
-    return;
-  }
-  if (event.type === "message_update") {
-    if (event.message.role !== "assistant") return;
-    const full = concatAssistantText(event.message);
-    if (full.length > ctx.emittedLen) {
-      const delta = full.slice(ctx.emittedLen);
-      ctx.emittedLen = full.length;
-      state.partial = full;
-      if (!ctx.buffered) emit({ event: "delta", text: delta });
-    }
-    return;
-  }
-  if (event.type === "tool_execution_start") {
-    emit({
-      event: "tool",
-      label: toolLabels.get(event.toolName) ?? event.toolName,
-      status: "start",
-      input: stringifyToolPayload(event.args),
-    });
-    return;
-  }
-  if (event.type === "tool_execution_end") {
-    emit({
-      event: "tool",
-      label: toolLabels.get(event.toolName) ?? event.toolName,
-      status: "end",
-      output: stringifyToolPayload(agentToolResultText(event.result)),
-    });
-  }
-}
-
 const claimStatusSchema = Type.Union([
   Type.Literal("supported"),
   Type.Literal("partial"),
@@ -322,7 +181,7 @@ const submitChatAnswerSchema = Type.Object({
 
 const noArgsSchema = Type.Object({});
 
-/** Per-turn verification ledger. A submitted answer may only cite an id minted in this turn. */
+// Per-turn verification ledger. A submitted answer may only cite an id minted in this turn.
 interface VerifyCtx {
   minted: Map<string, DirectionalVerification>;
   answer: string | null;
@@ -401,258 +260,106 @@ function buildTools(
   return verifyCtx ? [...base, ...buildVerifyTools(symbol, verifyCtx, deps)] : base;
 }
 
-async function persistIncrement(
-  sessionId: string,
-  agent: AiAgentHandle,
-  historyLength: number,
-): Promise<AgentMessage[]> {
-  const messages = agent.state?.messages ?? [];
-  const increment = messages.slice(historyLength + 1);
-  if (increment.length) await appendMessages(sessionId, increment);
-  return increment;
-}
-
-function hasAssistantText(messages: AgentMessage[]): boolean {
-  return messages.some((message) => concatAssistantText(message).length > 0);
-}
-
-const ZERO_USAGE = {
-  input: 0,
-  output: 0,
-  cacheRead: 0,
-  cacheWrite: 0,
-  totalTokens: 0,
-  cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
-};
-
-function synthesizePartialAssistantMessage(
-  model: AiModel,
-  text: string,
-  timestamp: number,
-  stopReason: "aborted" | "stop" = "aborted",
-): AgentMessage {
-  return {
-    role: "assistant",
-    content: [{ type: "text", text }],
-    api: model.api,
-    provider: model.provider,
-    model: model.id,
-    usage: ZERO_USAGE,
-    stopReason,
-    timestamp,
-  };
-}
-
-async function persistFailureIncrement(
-  sessionId: string,
-  agent: AiAgentHandle,
-  historyLength: number,
-  partial: string,
-  model: AiModel,
-  timestamp: number,
-): Promise<AgentMessage[]> {
-  try {
-    const increment = await persistIncrement(sessionId, agent, historyLength);
-    if (hasAssistantText(increment) || !partial) return increment;
-    const synthesized = synthesizePartialAssistantMessage(model, partial, timestamp);
-    await appendMessages(sessionId, [synthesized]);
-    return [...increment, synthesized];
-  } catch (err) {
-    console.error("chat: failed to persist failure-path increment", err);
-    return [];
-  }
-}
-
-async function executeChatTurn(
+function prepareTurn(
   chartId: string,
   text: string,
   doc: ChartDoc,
   symbol: string,
   model: AiModel,
   deps: ChatDeps,
-  state: TurnState,
-): Promise<void> {
-  const timeoutMs = deps.timeoutMs ?? DEFAULT_TIMEOUT_MS;
-  try {
-    const listCommentsFn = deps.listComments ?? defaultListComments;
-    const buildPackFn = deps.buildPack ?? defaultBuildReassessPack;
-    const fetchKlineFn = deps.fetchKline ?? ((sym, period, count) => getProvider().getKline(sym, period, count));
-    const fetchNewsFn = deps.fetchNews ?? ((sym) => getProvider().getNews(sym));
-    const readAnnotationsFn = deps.readAnnotations ?? ((sym) => annotationsService.list({ symbol: sym }));
-    const writeAnnotationsFn =
-      deps.writeAnnotations ??
-      (async (sym: string, annotations: Annotation[]) => {
-        await annotationsService.replace({ symbol: sym, annotations });
-      });
-    const genIdFn = deps.genId ?? randomUUID;
+): ConversationPreparedTurn {
+  const nowFn = () => (deps.now ? deps.now() : Date.now());
+  return {
+    model,
+    agentFactory: deps.agentFactory,
+    timeoutMs: deps.timeoutMs,
+    now: deps.now,
+    store: {
+      getSession: () => getSessionByChartId(chartId),
+      createSession: (title) => createSession({ chartId, symbol, title }),
+      listMessages: (sessionId) => listMessages(sessionId),
+      appendMessages: (sessionId, messages) => appendMessages(sessionId, messages),
+    },
+    buildTurn: async () => {
+      const listCommentsFn = deps.listComments ?? defaultListComments;
+      const buildPackFn = deps.buildPack ?? defaultBuildReassessPack;
+      const fetchKlineFn = deps.fetchKline ?? ((sym, period, count) => getProvider().getKline(sym, period, count));
+      const fetchNewsFn = deps.fetchNews ?? ((sym) => getProvider().getNews(sym));
+      const readAnnotationsFn = deps.readAnnotations ?? ((sym) => annotationsService.list({ symbol: sym }));
+      const writeAnnotationsFn =
+        deps.writeAnnotations ??
+        (async (sym: string, annotations: Annotation[]) => {
+          await annotationsService.replace({ symbol: sym, annotations });
+        });
+      const genIdFn = deps.genId ?? randomUUID;
 
-    let chatSession = await getSessionByChartId(chartId);
-    if (!chatSession) {
-      chatSession = await createSession({ chartId, symbol, title: titleFromText(text) });
-    }
+      const analysisDayComments = await listCommentsFn(symbol, easternDate(new Date(doc.created_at)));
+      const disciplineText = deps.disciplineText ?? loadSharedDiscipline(deps.repoRoot ?? PROJECT_ROOT);
+      if (!disciplineText) throw new DisciplineMissingError();
+      const systemPrompt = buildChatSystemPrompt(doc, analysisDayComments, disciplineText);
 
-    const history = await listMessages(chatSession.id);
-    const historyPayloads = history.map((row) => row.payload);
+      const gated = isDirectionalClaim(text);
+      const verifyCtx: VerifyCtx | null = gated ? { minted: new Map(), answer: null, seq: 0 } : null;
 
-    const nowMs = deps.now ? deps.now() : Date.now();
-    const userMessage: AgentMessage = { role: "user", content: text, timestamp: nowMs };
-    await appendMessages(chatSession.id, [userMessage]);
-
-    const analysisDayComments = await listCommentsFn(symbol, easternDate(new Date(doc.created_at)));
-    const disciplineText = deps.disciplineText ?? loadSharedDiscipline(deps.repoRoot ?? PROJECT_ROOT);
-    if (!disciplineText) throw new DisciplineMissingError();
-    const systemPrompt = buildChatSystemPrompt(doc, analysisDayComments, disciplineText);
-
-    const gated = isDirectionalClaim(text);
-    const verifyCtx: VerifyCtx | null = gated ? { minted: new Map(), answer: null, seq: 0 } : null;
-
-    const tools = buildTools(
-      symbol,
-      {
-        buildPack: buildPackFn,
-        fetchKline: fetchKlineFn,
-        fetchNews: fetchNewsFn,
-        readAnnotations: readAnnotationsFn,
-        writeAnnotations: writeAnnotationsFn,
-        now: () => (deps.now ? deps.now() : Date.now()),
-        genId: genIdFn,
-      },
-      verifyCtx,
-    );
-    const toolLabels = new Map(tools.map((tool) => [tool.name, tool.label]));
-
-    const translatorCtx: TranslatorCtx = { emittedLen: 0, settled: false, buffered: gated };
-
-    const agentSession = createAgentSession({
-      layer: "chat",
-      symbol,
-      model,
-      systemPrompt,
-      tools,
-      messages: historyPayloads,
-      agentFactory: deps.agentFactory,
-      onEvent: (event) => translateEvent(event, translatorCtx, toolLabels, state, (e) => broadcast(chartId, e)),
-    });
-
-    state.abort = () => agentSession.agent.abort();
-
-    const settleAborted = async (): Promise<void> => {
-      const abortedNowMs = deps.now ? deps.now() : Date.now();
-      await persistFailureIncrement(
-        chatSession.id,
-        agentSession.agent,
-        history.length,
-        state.partial,
-        model,
-        abortedNowMs,
+      const tools = buildTools(
+        symbol,
+        {
+          buildPack: buildPackFn,
+          fetchKline: fetchKlineFn,
+          fetchNews: fetchNewsFn,
+          readAnnotations: readAnnotationsFn,
+          writeAnnotations: writeAnnotationsFn,
+          now: nowFn,
+          genId: genIdFn,
+        },
+        verifyCtx,
       );
-      broadcast(chartId, { event: "aborted" });
-    };
 
-    try {
-      await agentSession.runTurn(gated ? `${text}\n\n${CHAT_GATED_TURN_INSTRUCTION}` : text, timeoutMs);
-
-      // One explicit retry, mirroring the commentator: a rejected submit only returns a tool
-      // result, so without an outer nudge the model is free to give up and ship nothing.
-      if (verifyCtx && !verifyCtx.answer && !state.aborted && !agentSession.agent.state?.errorMessage) {
-        await agentSession.runTurn(CHAT_GATED_RETRY_INSTRUCTION, timeoutMs);
-      }
-
-      translatorCtx.settled = true;
-      if (state.aborted) {
-        await settleAborted();
-        return;
-      }
-      const increment = await persistIncrement(chatSession.id, agentSession.agent, history.length);
-      const errorMessage = agentSession.agent.state?.errorMessage;
-
-      if (verifyCtx) {
-        if (errorMessage) {
-          broadcast(chartId, { event: "error", message: errorMessage });
-          return;
-        }
-        if (!verifyCtx.answer) {
-          // Fail closed. An unverified answer is worse than no answer.
-          broadcast(chartId, { event: "error", message: "回答未通过走势核验，已拦截。请重试或改用「重新分析」。" });
-          return;
-        }
-        const answerMs = deps.now ? deps.now() : Date.now();
-        await appendMessages(chatSession.id, [
-          synthesizePartialAssistantMessage(model, verifyCtx.answer, answerMs, "stop"),
-        ]);
-        broadcast(chartId, { event: "delta", text: verifyCtx.answer });
-        broadcast(chartId, { event: "done" });
-        return;
-      }
-
-      if (errorMessage || !hasAssistantText(increment)) {
-        broadcast(chartId, { event: "error", message: errorMessage ?? "模型未产出回答" });
-      } else {
-        broadcast(chartId, { event: "done" });
-      }
-    } catch (err) {
-      translatorCtx.settled = true;
-      if (state.aborted) {
-        await settleAborted();
-        return;
-      }
-      const failureNowMs = deps.now ? deps.now() : Date.now();
-      await persistFailureIncrement(
-        chatSession.id,
-        agentSession.agent,
-        history.length,
-        state.partial,
-        model,
-        failureNowMs,
-      );
-      const message =
-        err instanceof AgentTimeoutError
-          ? `回答超时（${timeoutMs}ms）`
-          : err instanceof Error
-            ? err.message
-            : String(err);
-      broadcast(chartId, { event: "error", message });
-    }
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error("chat: executeChatTurn failed before the agent turn started", err);
-    broadcast(chartId, { event: "error", message });
-  }
+      return {
+        symbol,
+        systemPrompt,
+        tools,
+        gate: verifyCtx
+          ? {
+              instruction: CHAT_GATED_TURN_INSTRUCTION,
+              retryInstruction: CHAT_GATED_RETRY_INSTRUCTION,
+              failClosedMessage: "回答未通过走势核验，已拦截。请重试或改用「重新分析」。",
+              answer: () => verifyCtx.answer,
+            }
+          : undefined,
+      };
+    },
+  };
 }
 
-export async function runChatTurn(chartId: string, text: string, deps: ChatDeps): Promise<ChatStartResult> {
-  if (!chatRunLock.tryAcquire(chartId)) return { started: false, reason: "busy" };
-
-  let doc: ChartDoc | null;
-  try {
+const engine = createConversationEngine<ChatDeps, "chart_not_found" | "not_intraday" | "no_model">({
+  layer: "chat",
+  logLabels: {
+    persistFailure: "chat: failed to persist failure-path increment",
+    preTurnFailure: "chat: executeChatTurn failed before the agent turn started",
+  },
+  prepare: async (chartId, text, deps) => {
     const loadChartFn = deps.loadChart ?? defaultLoadChart;
-    doc = await loadChartFn(chartId);
-  } catch (err) {
-    chatRunLock.release(chartId);
-    throw err;
-  }
-  if (!doc) {
-    chatRunLock.release(chartId);
-    return { started: false, reason: "chart_not_found" };
-  }
-  if (doc.built.kind !== "intraday" || !doc.symbol) {
-    chatRunLock.release(chartId);
-    return { started: false, reason: "not_intraday" };
-  }
-  if (!deps.model) {
-    chatRunLock.release(chartId);
-    return { started: false, reason: "no_model" };
-  }
+    const doc = await loadChartFn(chartId);
+    if (!doc) return { ok: false, reason: "chart_not_found" };
+    if (doc.built.kind !== "intraday" || !doc.symbol) return { ok: false, reason: "not_intraday" };
+    if (!deps.model) return { ok: false, reason: "no_model" };
+    return { ok: true, turn: prepareTurn(chartId, text, doc, doc.symbol, deps.model, deps) };
+  },
+});
 
-  const symbol = doc.symbol;
-  const model = deps.model;
-  const state: TurnState = { busy: true, partial: "", aborted: false, abort: null };
-  turnStates.set(chartId, state);
+export function onChatEvent(chartId: string, listener: (event: ChatEvent) => void): () => void {
+  return engine.onEvent(chartId, listener);
+}
 
-  const done = executeChatTurn(chartId, text, doc, symbol, model, deps, state).finally(() => {
-    chatRunLock.release(chartId);
-    turnStates.delete(chartId);
-  });
+export function chatTurnState(chartId: string): { busy: boolean; partial: string } {
+  return engine.turnState(chartId);
+}
 
-  return { started: true, done };
+export function abortChatTurn(chartId: string): boolean {
+  return engine.abort(chartId);
+}
+
+export function runChatTurn(chartId: string, text: string, deps: ChatDeps): Promise<ChatStartResult> {
+  return engine.run(chartId, text, deps);
 }

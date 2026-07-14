@@ -29,6 +29,20 @@
       "when": 1784016000000,
       "tag": "0003_calm_symbol_follows",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1784033100000,
+      "tag": "0004_research_assistant",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1784034000000,
+      "tag": "0005_research_refresh",
+      "breakpoints": true
     }
   ]
 }

@@ -1,4 +1,12 @@
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
+import type {
+  ResearchEditOperation,
+  ResearchEditStatus,
+  ResearchKind,
+  ResearchRefreshPhase,
+  ResearchRefreshReport,
+  ResearchRefreshStatus,
+} from "../contract/research.js";
 import { index, integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const comments = sqliteTable(
@@ -87,6 +95,64 @@ export const chatMessages = sqliteTable(
     payload: text("payload", { mode: "json" }).$type<AgentMessage>().notNull(),
   },
   (t) => [index("chat_messages_session").on(t.sessionId)],
+);
+
+export const researchChatSessions = sqliteTable(
+  "research_chat_sessions",
+  {
+    id: text("id").primaryKey(),
+    path: text("path").notNull().unique(),
+    title: text("title").notNull(),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (t) => [index("research_chat_sessions_updated").on(t.updatedAt)],
+);
+
+export const researchEditProposals = sqliteTable(
+  "research_edit_proposals",
+  {
+    id: text("id").primaryKey(),
+    sessionId: text("session_id").notNull(),
+    path: text("path").notNull(),
+    kind: text("kind").$type<ResearchKind>().notNull(),
+    status: text("status").$type<ResearchEditStatus>().notNull(),
+    summary: text("summary").notNull(),
+    operations: text("operations", { mode: "json" }).$type<ResearchEditOperation[]>().notNull(),
+    appliedOperationIndexes: text("applied_operation_indexes", { mode: "json" }).$type<number[]>(),
+    beforeMarkdown: text("before_markdown").notNull(),
+    afterMarkdown: text("after_markdown").notNull(),
+    baseRevision: text("base_revision").notNull(),
+    afterRevision: text("after_revision").notNull(),
+    createdAt: text("created_at").notNull(),
+    resolvedAt: text("resolved_at"),
+  },
+  (t) => [
+    index("research_edit_proposals_path").on(t.path, t.createdAt),
+    index("research_edit_proposals_session").on(t.sessionId),
+  ],
+);
+
+export const researchRefreshTasks = sqliteTable(
+  "research_refresh_tasks",
+  {
+    id: text("id").primaryKey(),
+    path: text("path").notNull(),
+    objective: text("objective").notNull(),
+    status: text("status").$type<ResearchRefreshStatus>().notNull(),
+    phase: text("phase").$type<ResearchRefreshPhase>().notNull(),
+    activity: text("activity").notNull(),
+    baseRevision: text("base_revision").notNull(),
+    report: text("report", { mode: "json" }).$type<ResearchRefreshReport>(),
+    error: text("error"),
+    startedAt: text("started_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+    finishedAt: text("finished_at"),
+  },
+  (t) => [
+    index("research_refresh_tasks_path").on(t.path, t.startedAt),
+    index("research_refresh_tasks_status").on(t.status),
+  ],
 );
 
 export const aiRoleSettings = sqliteTable("ai_role_settings", {

@@ -95,6 +95,7 @@ describe("research document loading", () => {
       title: "MU 复盘",
       markdown: "# MU 复盘\n\n正文。\n",
     });
+    expect(document.revision).toMatch(/^[a-f0-9]{64}$/);
   });
 
   it("rejects traversal and symlink escape paths", async () => {

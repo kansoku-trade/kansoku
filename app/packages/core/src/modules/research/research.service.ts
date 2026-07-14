@@ -1,12 +1,13 @@
+import { createHash, randomUUID } from "node:crypto";
 import { promises as fs } from "node:fs";
 import { basename, extname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import type {
-  ResearchApi,
   ResearchDocument,
   ResearchDocumentMeta,
   ResearchDocumentType,
   ResearchKind,
 } from "../../contract/research.js";
+import type { ResearchApi } from "../../contract/research.js";
 import { PROJECT_ROOT } from "../../env.js";
 import { ClientError } from "../../errors.js";
 
@@ -133,6 +134,10 @@ function symbolsFrom(kind: ResearchKind, path: string, markdown: string): string
   return [...symbols].sort();
 }
 
+export function researchDocumentRevision(markdown: string): string {
+  return createHash("sha256").update(markdown).digest("hex");
+}
+
 async function readDocument(rootDir: string, absolutePath: string, kind: ResearchKind): Promise<ResearchDocument> {
   const [markdown, stat] = await Promise.all([fs.readFile(absolutePath, "utf8"), fs.stat(absolutePath)]);
   const relativePath = toPosix(relative(rootDir, absolutePath));
@@ -147,6 +152,7 @@ async function readDocument(rootDir: string, absolutePath: string, kind: Researc
     mtime: stat.mtime.toISOString(),
     excerpt: excerptFrom(markdown),
     markdown,
+    revision: researchDocumentRevision(markdown),
   };
 }
 
@@ -163,7 +169,10 @@ function isWithin(root: string, path: string): boolean {
   return rel !== "" && !rel.startsWith(`..${sep}`) && rel !== ".." && !isAbsolute(rel);
 }
 
-async function resolveDocumentPath(rootDir: string, inputPath: string): Promise<{ path: string; kind: ResearchKind }> {
+export async function resolveResearchDocumentPath(
+  rootDir: string,
+  inputPath: string,
+): Promise<{ path: string; kind: ResearchKind }> {
   if (!inputPath || inputPath.includes("\0") || isAbsolute(inputPath) || extname(inputPath).toLowerCase() !== ".md") {
     throw new ClientError("invalid research document path", "expected stocks/*.md or journal/**/*.md");
   }
@@ -190,7 +199,9 @@ async function resolveDocumentPath(rootDir: string, inputPath: string): Promise<
   }
 }
 
-export function createResearchService(rootDir: string): ResearchApi {
+export type ResearchLibraryApi = Pick<ResearchApi, "list" | "get">;
+
+export function createResearchService(rootDir: string): ResearchLibraryApi {
   return {
     async list(input) {
       if (input.kind !== undefined && input.kind !== "stock" && input.kind !== "journal") {
@@ -218,10 +229,47 @@ export function createResearchService(rootDir: string): ResearchApi {
     },
 
     async get(input) {
-      const resolved = await resolveDocumentPath(rootDir, input.path);
+      const resolved = await resolveResearchDocumentPath(rootDir, input.path);
       return readDocument(rootDir, resolved.path, resolved.kind);
     },
   };
 }
 
-export const researchService = createResearchService(PROJECT_ROOT);
+export async function writeResearchDocumentAtomic(input: {
+  rootDir: string;
+  path: string;
+  markdown: string;
+  expectedRevision: string;
+}): Promise<ResearchDocument> {
+  if (!input.markdown.trim()) throw new ClientError("research document cannot be empty");
+  const resolved = await resolveResearchDocumentPath(input.rootDir, input.path);
+  const current = await readDocument(input.rootDir, resolved.path, resolved.kind);
+  if (current.revision !== input.expectedRevision) {
+    throw new ClientError(
+      "research document changed since the edit was proposed",
+      "refresh the document and generate a new proposal",
+      409,
+      "research_revision_conflict",
+    );
+  }
+
+  const tempPath = `${resolved.path}.${process.pid}.${randomUUID()}.tmp`;
+  try {
+    const stat = await fs.stat(resolved.path);
+    await fs.writeFile(tempPath, input.markdown, { encoding: "utf8", mode: stat.mode });
+    await fs.rename(tempPath, resolved.path);
+  } catch (error) {
+    await fs.rm(tempPath, { force: true }).catch(() => undefined);
+    throw error;
+  }
+  return readDocument(input.rootDir, resolved.path, resolved.kind);
+}
+
+export const researchService: ResearchLibraryApi = {
+  list(input) {
+    return createResearchService(PROJECT_ROOT).list(input);
+  },
+  get(input) {
+    return createResearchService(PROJECT_ROOT).get(input);
+  },
+};
