@@ -20,6 +20,8 @@
     font-size: calc(var(--typeset-size) * 1.125);
     line-height: var(--typeset-leading);
     color: var(--color-foreground, currentColor);
+    min-width: 0;
+    max-width: 100%;
     overflow-wrap: break-word;
     margin-trim: block-start;
 
@@ -388,6 +390,8 @@
        flow margin. Tables shrink to fit, so widen the table to make it scroll
        instead of compress. */
     &:where(.typeset-scroll) {
+      width: 100%;
+      max-width: 100%;
       overflow-x: auto;
       margin-block-start: var(--typeset-flow);
     }

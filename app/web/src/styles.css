@@ -655,9 +655,14 @@ a.zone-item:hover { text-decoration: none; background: var(--bg-hover); }
   transform: translateY(8px) scale(0.97); opacity: 0;
 }
 .modal-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 18px; border-bottom: 1px solid var(--border); }
-.modal-title { font-size: var(--fs-md, 14px); color: var(--text-primary); font-weight: 600; }
-.modal-close { background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 2px; display: flex; }
-.modal-close:hover { color: var(--text-primary); }
+.modal-title { min-width: 0; overflow: hidden; color: var(--text-primary); font-size: var(--fs-md, 14px); font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.modal-head-actions { display: flex; flex: 0 0 auto; align-items: center; gap: 4px; }
+.modal-head-action, .modal-close {
+  display: inline-flex; width: 24px; height: 24px; padding: 0; align-items: center; justify-content: center;
+  color: var(--text-secondary); background: none; border: none; border-radius: var(--radius); cursor: pointer;
+}
+.modal-head-action:hover, .modal-close:hover { color: var(--text-primary); background: var(--bg-hover); }
+.modal-head-action:focus-visible, .modal-close:focus-visible { outline: var(--focus-outline); outline-offset: 1px; }
 .modal-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
 .modal-body > .scroll-area-viewport { flex: 1 1 auto; min-height: 0; height: auto; }
 .modal-body-content { padding: 16px 20px; }

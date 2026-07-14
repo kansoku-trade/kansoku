@@ -31,6 +31,7 @@ export function ScrollArea({
         className={`scroll-area-viewport${viewportClassName ? ` ${viewportClassName}` : ""}`}
       >
         <BaseScrollArea.Content
+          style={orientation === "vertical" ? { minWidth: 0, width: "100%" } : undefined}
           className={`scroll-area-content${contentClassName ? ` ${contentClassName}` : ""}`}
         >
           {children}

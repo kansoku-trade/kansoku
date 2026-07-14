@@ -1,10 +1,12 @@
 import type { ReactNode } from "react";
 
 export type ModalState = "entering" | "open" | "closing";
+export type ModalSlot = ReactNode | ((close: () => void) => ReactNode);
 
 export interface ModalOptions {
   title: ReactNode;
-  body: ReactNode | ((close: () => void) => ReactNode);
+  body: ModalSlot;
+  headerAction?: ModalSlot;
   onClose?: () => void;
 }
 
