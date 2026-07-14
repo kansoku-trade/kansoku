@@ -1,9 +1,11 @@
-import { ArrowRight, ChartCandlestick, LayoutDashboard } from "lucide-react";
+import { ArrowRight, ChartCandlestick, LayoutDashboard, Library } from "lucide-react";
 import type { ComponentPropsWithoutRef } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { parseAppDeepLink } from "../../../../shared/appDeepLink";
+import { navigate } from "../../router";
 import { openModal } from "../../ui";
+import { researchRoute } from "../research/researchModel";
 
 type MarkdownVariant = "chat" | "report";
 
@@ -66,14 +68,32 @@ export function Markdown({
 export function openMarkdownModal({
   title,
   markdown,
+  documentPath,
   onClose,
 }: {
   title: string;
   markdown: string;
+  documentPath?: string;
   onClose?: () => void;
 }): () => void {
   return openModal({
     title,
+    headerAction: documentPath
+      ? (close) => (
+          <button
+            type="button"
+            className="modal-head-action"
+            aria-label="在研究库中打开"
+            title="在研究库中打开"
+            onClick={() => {
+              close();
+              navigate(researchRoute("journal", documentPath));
+            }}
+          >
+            <Library size={16} />
+          </button>
+        )
+      : undefined,
     body: <Markdown>{markdown}</Markdown>,
     onClose,
   });

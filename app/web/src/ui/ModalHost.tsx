@@ -15,6 +15,8 @@ function ModalFrame({ entry }: { entry: ModalEntry }) {
   }, [entry.id]);
 
   const body = typeof entry.body === "function" ? entry.body(close) : entry.body;
+  const headerAction =
+    typeof entry.headerAction === "function" ? entry.headerAction(close) : entry.headerAction;
 
   return (
     <div className="modal-backdrop" data-state={entry.state} onClick={close}>
@@ -27,9 +29,12 @@ function ModalFrame({ entry }: { entry: ModalEntry }) {
       >
         <div className="modal-head">
           <span className="modal-title">{entry.title}</span>
-          <button className="modal-close" onClick={close} aria-label="关闭">
-            <X size={16} />
-          </button>
+          <div className="modal-head-actions">
+            {headerAction}
+            <button type="button" className="modal-close" onClick={close} aria-label="关闭">
+              <X size={16} />
+            </button>
+          </div>
         </div>
         <ScrollArea className="modal-body" contentClassName="modal-body-content">
           {body}

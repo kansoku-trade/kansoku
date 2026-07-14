@@ -55,6 +55,7 @@ export function JournalSection({
         openMarkdownModal({
           title: data.name,
           markdown: data.markdown,
+          documentPath: `journal/${data.name}`,
           onClose: () => onSelect(null),
         });
       })
