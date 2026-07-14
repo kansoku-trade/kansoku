@@ -93,10 +93,7 @@ async function executeDeepDiveRun(symbol: string, deps: DeepDiveDeps): Promise<v
       agentFactory: deps.agentFactory,
     });
 
-    await session.runTurn(
-      `Run the stock-deep-dive skill flow for ${symbol}, then write the updated note.`,
-      timeoutMs,
-    );
+    await session.runTurn(`请按 stock-deep-dive 技能流程研究 ${symbol}，完成后写入更新的笔记。`, timeoutMs);
 
     if (!noteWritten) {
       throw new Error("agent finished without calling write_note — no findings were persisted.");

@@ -6,6 +6,8 @@ import { skillSearchDirs } from "../env.js";
 import { loadSkillIndex, readSkill, skillIndexPrompt } from "../services/skills.js";
 import { buildBashTool, buildReadFileTool, buildReadSkillTool, type ExecFn, type ExecResult } from "./agentTools.js";
 import { textResult } from "./dataTools.js";
+import { deepDiveAdapterPrompt } from "./prompts.js";
+import { composeWithDiscipline } from "./promptPolicy.js";
 
 export type { ExecFn, ExecResult };
 
@@ -25,27 +27,8 @@ export function loadDeepDiveSkillText(repoRoot: string): string | null {
  */
 export function buildSystemPrompt(repoRoot: string, deepDiveSkill: string, disciplineText = ""): string {
   const index = loadSkillIndex(skillSearchDirs(repoRoot));
-
-  const own = [
-    "You are an equity research agent maintaining per-stock six-lens notes in this repo.",
-    `The full ${DEEP_DIVE_SKILL} skill is appended below — follow its flow and anti-patterns verbatim.`,
-    "Available skills (load any of these with read_skill when the flow calls for them):",
-    skillIndexPrompt(index),
-    "Tool usage rules:",
-    "- Use bash to run the longbridge CLI and python scripts under .claude/skills; NEVER write files via bash (no redirection, tee, rm, mv, cp).",
-    "- Use read_file to inspect repo-relative files (e.g. an existing stocks/{SYMBOL}.md note).",
-    "- write_note is the ONLY way to persist your findings; it always writes stocks/{SYMBOL}.md for the symbol you were asked to research.",
-    "- A run that never calls write_note is a FAILED run. Do not finish without calling it.",
-    "Note-writing rules:",
-    "- Update the existing note incrementally; do not discard prior sections unless they are stale.",
-    "- Keep tickers and CLI/API names (e.g. NVDA, longbridge) in English.",
-    "",
-    "---",
-    "",
-    deepDiveSkill,
-  ].join("\n");
-
-  return disciplineText ? [disciplineText, "", "---", "", own].join("\n") : own;
+  const own = [deepDiveAdapterPrompt(skillIndexPrompt(index)), "", "---", "", deepDiveSkill].join("\n");
+  return composeWithDiscipline(disciplineText, own);
 }
 
 const writeNoteSchema = Type.Object({ content: Type.String() });
@@ -63,7 +46,7 @@ export function buildTools(
   const writeNoteTool: AgentTool<typeof writeNoteSchema> = {
     name: "write_note",
     label: "Write Note",
-    description: `Write the updated note for ${symbol} to stocks/${symbol}.md. This is the only way to persist findings.`,
+    description: `把 ${symbol} 更新后的笔记写入 stocks/${symbol}.md。这是持久化研究结论的唯一途径。`,
     parameters: writeNoteSchema,
     execute: async (_id, params) => {
       const content = params.content;

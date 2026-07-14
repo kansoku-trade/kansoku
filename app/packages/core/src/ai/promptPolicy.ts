@@ -57,9 +57,17 @@ export function disciplineFor(capability: AgentCapability, repoRoot: string): st
   return text;
 }
 
+/**
+ * The one canonical [discipline, ---, own] join. Callers that receive the discipline text
+ * injected (analyst / deepDive / chat, for testability) use this directly; withDiscipline
+ * resolves the text first and is for callers that own no injection seam.
+ */
+export function composeWithDiscipline(disciplineText: string, systemPrompt: string): string {
+  if (!disciplineText) return systemPrompt;
+  return [disciplineText, "", "---", "", systemPrompt].join("\n");
+}
+
 /** Prepends the discipline to an agent's own system prompt. */
 export function withDiscipline(capability: AgentCapability, repoRoot: string, systemPrompt: string): string {
-  const discipline = disciplineFor(capability, repoRoot);
-  if (!discipline) return systemPrompt;
-  return [discipline, "", "---", "", systemPrompt].join("\n");
+  return composeWithDiscipline(disciplineFor(capability, repoRoot), systemPrompt);
 }

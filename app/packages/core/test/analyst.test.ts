@@ -275,7 +275,7 @@ describe("skill-based system prompt", () => {
     await executeAnalystRun("MU.US", deps);
     expect(systemPrompts).toHaveLength(1);
     expect(systemPrompts[0]).toContain("假技能全文");
-    expect(systemPrompts[0].indexOf("in-app 环境映射")).toBeLessThan(systemPrompts[0].indexOf("假技能全文"));
+    expect(systemPrompts[0].indexOf("Kansoku 环境映射")).toBeLessThan(systemPrompts[0].indexOf("假技能全文"));
     expect(buildAnalystSystemPrompt("SKILL BODY")).toContain("SKILL BODY");
   });
 
@@ -292,8 +292,8 @@ describe("skill-based system prompt", () => {
     const { deps, systemPrompts } = harness(async () => {});
     await executeAnalystRun("MU.US", deps);
     const prompt = systemPrompts[0];
-    expect(prompt.indexOf("假纪律全文")).toBeLessThan(prompt.indexOf("in-app 环境映射"));
-    expect(prompt.indexOf("in-app 环境映射")).toBeLessThan(prompt.indexOf("假技能全文"));
+    expect(prompt.indexOf("假纪律全文")).toBeLessThan(prompt.indexOf("Kansoku 环境映射"));
+    expect(prompt.indexOf("Kansoku 环境映射")).toBeLessThan(prompt.indexOf("假技能全文"));
   });
 
   it("aborts with an error comment when the shared discipline is missing", async () => {

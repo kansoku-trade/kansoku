@@ -2,7 +2,7 @@
 name: trading-discipline
 description: >
   本仓库所有交易分析共享的判读纪律——一手信源、GAAP 陷阱、反自动附和的独立核验协议、
-  情景而非点位、资金流单位歧义、强制平仓 ≠ 主动卖出、输出语言。这是唯一的纪律源头：
+  情景而非点位、资金流单位歧义、强制平仓 ≠ 主动卖出、输出语言、账户与仓库记录约定。这是唯一的纪律源头：
   根 CLAUDE.md 导入它，app 内的 analyst / deepDive / chat 由 promptPolicy 注入它。
   领域 skill 只引用规则 ID（如 TD-SOURCE-01），不得复制规则正文——复制必然漂移。
 ---
@@ -57,6 +57,10 @@ description: >
 **TD-KOREA-01 — 韩国领先美股存储链，不是同步。** 读 MU / DRAM / SNDK / WDC / STX / SMH 之前，**先看韩国收盘**（`korea-market` skill；长桥不支持 KRX，EWY / KORU 是被汇率污染且滞后的替身）。
 - 2026-07-02（KOSPI −7.9% 触发熔断）与 2026-07-13（SK Hynix −15.4%，史上最大单日跌幅）两次，美股存储链都是跟跌方。
 
+**TD-PROXY-01 — `.SOX.US` 在长桥拿不到。** 看费城半导体指数用 SMH / SOXX 这两只 ETF 当替身。
+
+**TD-WINDOW-01 — GDELT 是滚动近窗的新闻流，不是历史档案。** Trump RSS 镜像只保留约 5 天（~100 条）；更早的帖子只有 `archive.py` 归档过才存在，别指望现场回查。
+
 ---
 
 ## C. 判读纪律（会下结论的 agent 适用）
@@ -108,6 +112,16 @@ description: >
 - **成交量是「卖方卖完了」和「买方走光了」的分水岭。**
 
 **TD-LEVERAGE-01 — 杠杆 ETF 涨得快是真的，但「回本能力」被永久打断。** 每日强制调回目标倍数 → 被规则逼着**追涨杀跌**。**股票跌 30% 再完整涨回原点，2 倍 ETF 仍亏 26%**（它在低点被迫减了仓，反弹时追不回来）。**光是来回震荡就能磨死它。** 完整机制见 `stocks/_leveraged-etf-mechanics.md`。
+
+---
+
+## E. 账户与仓库记录约定（会查账户 / 写 journal / 写 stocks 笔记的 agent 适用）
+
+**TD-BROKER-01 — 持仓相关先查长桥，不问用户。** 持仓、成本、盈亏、账户余额都在券商账户里：用 `longbridge-positions` / `longbridge-profit-analysis` / `longbridge-portfolio`（或 `longbridge` CLI；Kansoku 内的数据快照已带持仓）。只有券商查询失败或返回有歧义时才允许问用户。
+
+**TD-JOURNAL-01 — journal 文件名用美股交易日，同日重跑追加分节，绝不覆盖。** 文件名里的日期 = 美股交易日，不是亚洲本地日期。
+
+**TD-NOTES-01 — `stocks/{SYMBOL}.md` 增量更新，不整篇重写。** 新事件补进对应小节，只删确实过时的段落。代号与 CLI/API 名保留 English。
 
 ---
 

@@ -7,21 +7,11 @@ import { type AiAgentFactory, createAgentSession } from "./agentSession.js";
 import { listComments as defaultListComments } from "./comments.js";
 import type { AiModel } from "./models.js";
 import { aiConfig } from "./models.js";
+import { CHAT_SUGGESTIONS_PROMPT } from "./prompts.js";
 
 const TIMEOUT_MS = 30_000;
 const MAX_SUGGESTIONS = 3;
 const MAX_LENGTH = 40;
-
-const SYSTEM_PROMPT = [
-  "你是短线技术分析员。用户刚打开一份已归档的日内分析，还没开口提问。",
-  "任务：替他想好 3 条最值得追问的问题，作为对话的开场白。",
-  "出题标准：",
-  "- 冲着这份分析最虚的地方去——没给依据的断言、拍脑袋的概率、来历不明的价位。",
-  "- 每条不超过 20 个字，用第一人称口吻发问，像用户自己在问。",
-  "- 三条要各问各的，不要三条都在问同一件事。",
-  "- 只问这份分析里真实出现过的东西，不要凭空编造数字。",
-  "必须调用 submit_questions 恰好一次。",
-].join("\n");
 
 const submitSchema = Type.Object({
   questions: Type.Array(Type.String(), { description: "3 条追问问题，每条不超过 20 字" }),
@@ -86,7 +76,7 @@ async function generate(chartId: string, deps: ChatSuggestionDeps): Promise<stri
     layer: "chat-suggest",
     symbol,
     model,
-    systemPrompt: SYSTEM_PROMPT,
+    systemPrompt: CHAT_SUGGESTIONS_PROMPT,
     tools: [tool],
     agentFactory: deps.agentFactory,
   });

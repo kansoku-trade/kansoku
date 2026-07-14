@@ -12,7 +12,8 @@ import { validatePrediction } from "../services/predictionRules.js";
 import { loadSkillIndex, readSkill } from "../services/skills.js";
 import { createChart } from "../services/store.js";
 import { AgentTimeoutError, type AiAgentFactory, createAgentSession } from "./agentSession.js";
-import { DisciplineMissingError, loadSharedDiscipline } from "./promptPolicy.js";
+import { ANALYST_ADAPTER_PROMPT, ANALYST_RETRY_PROMPT } from "./prompts.js";
+import { composeWithDiscipline, DisciplineMissingError, loadSharedDiscipline } from "./promptPolicy.js";
 import {
   buildBashTool,
   buildReadFileTool,
@@ -31,24 +32,8 @@ const DEFAULT_TIMEOUT_MS = 15 * 60_000;
 const ESCALATION_COOLDOWN_MS = 30 * 60_000;
 const SKILL_NAME = "intraday-signal";
 
-const ADAPTER_PROMPT = [
-  "你是 app 内自动运行的短线重估分析员。下方附上 intraday-signal 技能全文——判读纪律、工作流程、反模式一律以技能原文为准。",
-  "in-app 环境映射（仅以下几点与技能原文不同，其余照原文执行）：",
-  "- 技能 Step 3 的 POST /api/charts preview：改调 read_data_pack 工具，拿到同一份聚合快照（多周期 technicals、day_context、options_levels、lessons、SPY/QQQ、news、资金流、相对成交量、持仓、已归档预测）。禁止用 bash curl 本机图表接口——那会重复建图。",
-  "- 技能 Step 5 的 PATCH prediction：改调 submit_prediction 工具提交，恰好成功一次；它带硬校验，被打回必须修正后重交。context 部分没有对应工具，把 sources_used 与新闻标注写进 journal。",
-  "- 技能 Step 7 的 journal：改调 write_journal 工具——路径由服务端按美东交易日拼定，同日自动追加分节；你只提供 markdown 内容（含时间戳小节标题）。注意执行顺序与技能原文不同：write_journal 必须在 submit_prediction 之前调用——submit_prediction 成功即结束本次运行，之后没有任何补写机会。",
-  "- 其余步骤（查 X、options-levels 脚本、finance-calendar、portfolio 仓位、读 journal/lessons.md）照技能原文用 bash 执行（cwd = 仓库根目录）；bash 只读，不得写文件。",
-  "- 补拉 K 线用 fetch_kline，最新消息用 fetch_news，过程观察用 append_comment；read_skill / read_file 可加载关联技能（twitter-reader、options-levels、chart）与仓库文件。",
-  "- 若快照里没有已归档预测，说明这是该标的的首次分析而非重估，照常完成全部流程并给出完整结论。",
-  "全程中文白话，只做美股，不要臆造数据，拿不到就说明。",
-].join("\n");
-
-const RETRY_PROMPT =
-  "你上一条回复没有成功调用 submit_prediction。现在立即调用 submit_prediction 恰好一次提交结论；若被校验打回，修正后重交。拿不准方向就按技能规则提交 neutral。";
-
 export function buildAnalystSystemPrompt(skillText: string, disciplineText = ""): string {
-  const parts = disciplineText ? [disciplineText, "", "---", ""] : [];
-  return [...parts, ADAPTER_PROMPT, "", "---", "", skillText].join("\n");
+  return composeWithDiscipline(disciplineText, [ANALYST_ADAPTER_PROMPT, "", "---", "", skillText].join("\n"));
 }
 
 function loadIntradaySkillText(repoRoot: string): string | null {
@@ -401,7 +386,7 @@ export async function executeAnalystRun(symbol: string, deps: AnalystDeps): Prom
     // One explicit retry, mirroring chat/commentator: a rejected submit only returns a tool
     // result, so without an outer nudge the model is free to give up and ship nothing.
     if (!state.submitted && !session.agent.state?.errorMessage) {
-      await session.runTurn(RETRY_PROMPT, timeoutMs);
+      await session.runTurn(ANALYST_RETRY_PROMPT, timeoutMs);
     }
 
     if (!state.submitted) {

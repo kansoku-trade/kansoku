@@ -18,7 +18,8 @@ import { listComments as defaultListComments } from "./comments.js";
 import { buildDataPackTool, buildKlineTool, buildNewsTool, textResult } from "./dataTools.js";
 import { buildReassessPack as defaultBuildReassessPack, type ReassessPack } from "./datapack.js";
 import type { AiModel } from "./models.js";
-import { DisciplineMissingError, loadSharedDiscipline } from "./promptPolicy.js";
+import { CHAT_DIALOG_RULES, CHAT_GATED_RETRY_INSTRUCTION, CHAT_GATED_TURN_INSTRUCTION } from "./prompts.js";
+import { composeWithDiscipline, DisciplineMissingError, loadSharedDiscipline } from "./promptPolicy.js";
 import { createRunLock } from "./runLock.js";
 import {
   type DirectionalVerification,
@@ -32,16 +33,6 @@ const COMMENT_CAP = 20;
 const RELEVANT_COMMENT_SOURCES = new Set(["analyst", "system"]);
 const TOOL_TEXT_CAP = 4000;
 
-const GATED_TURN_INSTRUCTION = [
-  "【本轮触发走势核验】用户对走势下了判断。按 TD-VERIFY-01 执行：",
-  "1. 先调用 verify_directional_read 重新拉取实时数据（不得沿用对话里的旧价格）。",
-  "2. 先看最可能推翻用户判断的证据，再看支持它的。",
-  "3. 通过 submit_chat_answer 提交，带上本轮的 verification_id，claim_status 四选一。",
-  "本轮不要直接输出文字回答——只有 submit_chat_answer 里的 answer 会呈现给用户。",
-].join("\n");
-
-const GATED_RETRY_INSTRUCTION =
-  "你还没有成功提交 submit_chat_answer。现在立即调用 verify_directional_read（若尚未调用）并提交 submit_chat_answer，不要再输出任何文字。";
 
 export type ChatEvent =
   | { event: "delta"; text: string }
@@ -225,26 +216,20 @@ export function buildChatSystemPrompt(
     .map((c) => `${etClock(c.ts)} ${c.text}`);
 
   const own = [
-    "你是短线技术分析员的对话模式，用户在一份已归档的日内分析上向你追问。",
+    "你是交易看盘应用 Kansoku 的短线技术分析员对话模式，用户正在 Kansoku 里的一份已归档日内分析上向你追问。",
     "",
     `标的：${doc.symbol}`,
     `分析创建时间：${doc.created_at}`,
     `已归档预测：${predictionText}`,
     commentLines.length ? `当日分析员点评：\n${commentLines.join("\n")}` : "当日暂无分析员点评。",
     "",
-    "对话纪律：",
-    "- 已归档的预测是冻结记录：不要修改、不要重新提交结论；用户要新结论就让他点「重新分析」。",
-    "- 需要最新行情/消息就调用工具，不要凭记忆猜；拿不到数据就直说。",
-    "- 不给仓位建议（股数/金额）。",
-    "- 用户对走势下判断时（突破/回调/见底/砸盘…），走上面的 TD-VERIFY-01 独立核验协议：先拉实时数据、",
-    "  先找反证、对比现价与盘前高，最后给出 supported / partial / contradicted / insufficient 之一。",
-    "  证据不足就说 insufficient，不要站队，也不要为了显得独立而抬杠。",
+    CHAT_DIALOG_RULES,
   ].join("\n");
 
   // Chat is where the user pushes back on a call, so it is a judgment agent: the caller loads the
   // shared discipline and fails closed without it. Injected rather than read here so this stays a
   // pure function.
-  return disciplineText ? [disciplineText, "", "---", "", own].join("\n") : own;
+  return composeWithDiscipline(disciplineText, own);
 }
 
 interface TranslatorCtx {
@@ -526,12 +511,12 @@ async function executeChatTurn(
     };
 
     try {
-      await agentSession.runTurn(gated ? `${text}\n\n${GATED_TURN_INSTRUCTION}` : text, timeoutMs);
+      await agentSession.runTurn(gated ? `${text}\n\n${CHAT_GATED_TURN_INSTRUCTION}` : text, timeoutMs);
 
       // One explicit retry, mirroring the commentator: a rejected submit only returns a tool
       // result, so without an outer nudge the model is free to give up and ship nothing.
       if (verifyCtx && !verifyCtx.answer && !state.aborted && !agentSession.agent.state?.errorMessage) {
-        await agentSession.runTurn(GATED_RETRY_INSTRUCTION, timeoutMs);
+        await agentSession.runTurn(CHAT_GATED_RETRY_INSTRUCTION, timeoutMs);
       }
 
       translatorCtx.settled = true;

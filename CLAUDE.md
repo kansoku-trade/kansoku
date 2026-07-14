@@ -14,17 +14,11 @@ A personal **US-equities trading journal**, not a software product. The repo is 
 
 **对话回复也用 中文白话，不用文言。** This project overrides the global 文言 chat-reply rule (`~/.claude/CLAUDE.md`). Every reply to the user — explanations, status updates, end-of-turn summaries — is plain modern Chinese.
 
-**少用专业术语和英文行话。** The user is a retail investor, not a finance pro. Avoid jargon (Greeks, sharpe, drawdown, beta, alpha, basis point, hedge, IV, theta, gamma, basis, carry, skew, convexity, duration, P/E expansion, multiple compression, etc.) and English finance terms when a plain phrase works. **If a term truly has no plain equivalent, write it then immediately add a short bracketed gloss in 中文白话.** Examples:
-- bad: "今天 SMH 的 IV crush 比较明显"
-- good: "今天 SMH 的 IV crush（财报后期权隐含波动率坍缩，简单讲就是期权价格急跌）比较明显"
-- bad: "回调到 50 日均线找支撑"
-- good: "回调到 50 日均线（最近 50 个交易日的平均价，常被视为中期支撑）找支撑"
+**少用专业术语和英文行话** —— 细则与正反例见下方导入的纪律文件（TD-LANG-02）。
 
-Tickers (NVDA / MRVL / SMH …), CLI / API names (`longbridge`, `fred`), and file paths stay in English without gloss — those are identifiers, not jargon.
+**持仓相关不要问用户，直接查长桥**（TD-BROKER-01）。
 
-**持仓相关的事情不要问用户，直接查长桥。** When you need to know what the user holds, position size, cost basis, P&L, or account balance, **do not ask** — invoke the `longbridge-positions` / `longbridge-profit-analysis` / `longbridge-portfolio` skill (or the `longbridge` CLI directly) and read the live account. The user finds the question annoying because the answer is already in the broker. Only ask if the broker call fails or returns ambiguous data.
-
-**US markets only** — never query HK / CN / SG symbols in market-wide work.
+**US markets only**（TD-LANG-03）。
 
 ## Architecture — three layers
 
@@ -64,7 +58,7 @@ Every workflow ends by writing markdown. Do not skip this.
 - `journal/YYYY-MM-DD-flow.md` — capital-rotation snapshots (scaffold: `capital-rotation/templates/rotation-snapshot.md`).
 - `journal/YYYY-MM-DD-<theme>.md` — session-tracker reports (scaffold: `market-session-tracker/templates/session-report.md`).
 - `journal/trump-feed/YYYY-MM-DD.md` — Trump post archive, appended idempotently by `archive.py`.
-- `stocks/{SYMBOL}.md` — per-name six-lens notes; **update incrementally** on new events, do not rewrite.
+- `stocks/{SYMBOL}.md` — per-name six-lens notes; 增量更新，不整篇重写（TD-NOTES-01）。
 - `stocks/_chain-ai-stack.md` — cross-stock map tying the tracked names along the AI-capex value chain.
 - `journal/lessons.md` — 复盘教训清单，一行一条带日期；短线预测（`intraday-signal`）每次运行前必读，复盘产生的可执行教训必须沉淀到这里。
 
@@ -96,6 +90,4 @@ The same file is injected into the in-app agents (`analyst` / `deepDive` / `chat
 
 ### Known data gotchas
 
-- `.SOX.US` is unavailable on Longbridge — use `SMH` / `SOXX` ETF proxies.
-- Filename date = **US session date**, not Asia local date. Re-running the same day **appends** a timestamped section; never overwrite.
-- GDELT is a rolling recent-window stream, not a historical archive. The Trump RSS mirror only exposes ~5 days (~100 posts); older posts survive only if `archive.py` captured them.
+已收编进 trading-discipline，只引用不复述：`.SOX.US` 替身见 TD-PROXY-01；journal 文件名 = 美股交易日、同日追加不覆盖见 TD-JOURNAL-01；GDELT / Trump RSS 的窗口限制见 TD-WINDOW-01。

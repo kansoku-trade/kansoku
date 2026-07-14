@@ -6,7 +6,8 @@ import { AgentTimeoutError, type AiAgentFactory, createAgentSession } from "./ag
 import { appendComment as defaultAppendComment } from "./comments.js";
 import { buildCommentUpdate, type CommentPack } from "./datapack.js";
 import type { AiModel } from "./models.js";
-import { OBSERVER_CONTRACT } from "./promptPolicy.js";
+import { COMMENTATOR_PROMPT, COMMENTATOR_RETRY_PROMPT } from "./prompts.js";
+import { composeWithDiscipline, OBSERVER_CONTRACT } from "./promptPolicy.js";
 import { createRunLock } from "./runLock.js";
 import type { Trigger } from "./triggers.js";
 
@@ -18,25 +19,10 @@ const MAX_PROMPT_CHARS = 24_000;
 const SESSION_MAX_RUNS = 40;
 const SESSION_MAX_SENT_CHARS = 120_000;
 
-const RETRY_PROMPT = "你上一条回复没有调用 submit_comment。现在立即调用 submit_comment 恰好一次给出结论，不要再输出任何文字。";
-
 // Observer, not judge: it narrates observable change on a scheduler tick. It gets the compact
 // observer contract, not the full shared discipline — the GAAP trap and QoQ rules are pure cost
 // to an agent that never reads a financial statement.
-const SYSTEM_PROMPT = [
-  OBSERVER_CONTRACT,
-  "",
-  "---",
-  "",
-  "你是盘中点评员。会话开始时你会收到一份 JSON 快照，包含：实时报价、5 分钟 K 线与 MACD、资金流、已归档的日内预测摘要、最近几条点评，以及本次触发原因。",
-  "之后同一交易日内每次触发，你只会收到一份增量更新（最新报价、新增 K 线、资金流尾部等），此前的快照和你写过的点评都在本对话上文里，直接沿用。",
-  "请据此判断当前盘中状态，并调用 submit_comment 恰好一次给出结论。",
-  "纪律：",
-  "- text 用中文白话，最多两句，说清楚现在发生了什么、意味着什么。",
-  "- level：一般观察用 info；值得留意的变化用 warn；触及止损或目标、或与预测明显相反用 alert。",
-  "- escalate 只有在你的结论与已归档预测相反、或价格触及止损/目标时才设为 true，其余一律 false。",
-  "- 必须调用 submit_comment，不要只用文字回复。",
-].join("\n");
+const SYSTEM_PROMPT = composeWithDiscipline(OBSERVER_CONTRACT, COMMENTATOR_PROMPT);
 
 export interface CommentatorDeps {
   model: AiModel;
@@ -195,8 +181,8 @@ export async function runCommentator({
 
     let sentChars = promptText.length;
     if (escalate === null) {
-      await session.agentSession.runTurn(RETRY_PROMPT, timeoutMs);
-      sentChars += RETRY_PROMPT.length;
+      await session.agentSession.runTurn(COMMENTATOR_RETRY_PROMPT, timeoutMs);
+      sentChars += COMMENTATOR_RETRY_PROMPT.length;
     }
 
     if (escalate === null) {
