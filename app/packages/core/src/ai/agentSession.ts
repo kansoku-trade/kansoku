@@ -19,6 +19,8 @@ export type AiAgentFactory = (config: {
   model: AiModel;
   tools: AgentTool[];
   messages?: AgentMessage[];
+  sessionId?: string;
+  transformContext?: (messages: AgentMessage[], signal?: AbortSignal) => Promise<AgentMessage[]>;
 }) => AiAgentHandle;
 
 export class AgentTimeoutError extends Error {}
@@ -33,6 +35,8 @@ const defaultAgentFactory: AiAgentFactory = (config) => {
       ...(config.model.thinkingLevel ? { thinkingLevel: config.model.thinkingLevel } : {}),
       ...(config.messages ? { messages: config.messages } : {}),
     },
+    sessionId: config.sessionId,
+    transformContext: config.transformContext,
   });
   return {
     prompt: (text: string) => agent.prompt(text),
@@ -53,6 +57,8 @@ export function createAgentSession(config: {
   systemPrompt: string;
   tools: AgentTool[];
   messages?: AgentMessage[];
+  sessionId?: string;
+  transformContext?: (messages: AgentMessage[], signal?: AbortSignal) => Promise<AgentMessage[]>;
   agentFactory?: AiAgentFactory;
   onEvent?: (event: AgentEvent) => void;
 }): {
@@ -66,6 +72,8 @@ export function createAgentSession(config: {
     model: config.model,
     tools: config.tools,
     messages: config.messages,
+    sessionId: config.sessionId,
+    transformContext: config.transformContext,
   });
 
   attachAiUsageLogger(agent, {
