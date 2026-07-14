@@ -24,6 +24,7 @@ THROTTLE = {
     "fred":     {"min_interval": 0.5},
     "sec":      {"min_interval": 0.1},
     "gdelt":    {"min_interval": 5.0},
+    "yahoo":    {"min_interval": 0.3},
 }
 
 _LAST_HIT: dict[str, float] = {}
