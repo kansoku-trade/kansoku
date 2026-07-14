@@ -66,7 +66,7 @@ async function runDefaultMode(symbol: string): Promise<void> {
     },
   }));
 
-  const systemPrompt = buildSystemPrompt(PROJECT_ROOT);
+  const systemPrompt = buildSystemPrompt(PROJECT_ROOT, skillText);
   const session = createAgentSession({
     layer: "analyst",
     symbol,
