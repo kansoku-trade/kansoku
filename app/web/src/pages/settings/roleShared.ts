@@ -7,8 +7,18 @@ import {
   type RoleSetting,
 } from "./types";
 
+export const DEFAULT_CODEX_MODEL_ID = "gpt-5.6-luna";
+
 export function firstModelId(catalog: Catalog, providerId: string): string | null {
-  return catalog.providers.find((p) => p.id === providerId)?.models[0]?.id ?? null;
+  const provider = catalog.providers.find((item) => item.id === providerId);
+  if (!provider) return null;
+  if (
+    providerId === CODEX_PROVIDER &&
+    provider.models.some((model) => model.id === DEFAULT_CODEX_MODEL_ID)
+  ) {
+    return DEFAULT_CODEX_MODEL_ID;
+  }
+  return provider.models[0]?.id ?? null;
 }
 
 export function defaultThinkingLevel(

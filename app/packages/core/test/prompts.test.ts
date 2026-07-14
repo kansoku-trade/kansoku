@@ -17,7 +17,6 @@ import {
 import { composeWithDiscipline, OBSERVER_CONTRACT } from "../src/ai/promptPolicy.js";
 
 const DISCIPLINE = "<TRADING-DISCIPLINE>";
-const SKILL = "<SKILL-BODY>";
 
 function fakeDoc(): ChartDoc {
   return {
@@ -34,8 +33,8 @@ function fakeDoc(): ChartDoc {
 }
 
 describe("assembled system prompts (drift guard)", () => {
-  it("analyst = discipline → adapter → skill", () => {
-    expect(buildAnalystSystemPrompt(SKILL, DISCIPLINE)).toMatchSnapshot();
+  it("analyst system prompt stays runtime-stable", () => {
+    expect(buildAnalystSystemPrompt()).toMatchSnapshot();
   });
 
   it("deep dive adapter", () => {

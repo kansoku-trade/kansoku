@@ -1,6 +1,7 @@
 import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import type { AgentMessage } from "@earendil-works/pi-agent-core";
 import { describe, expect, it } from "vitest";
 import type { CockpitComment } from "../../../shared/types.js";
 import type { AiAgentFactory, AiAgentHandle } from "../src/ai/agentSession.js";
@@ -48,6 +49,8 @@ interface Harness {
   createCalls: Record<string, unknown>[];
   klineCalls: { period: string; count: number }[];
   bashCalls: string[];
+  engineeredMessages: AgentMessage[][];
+  sessionIds: (string | undefined)[];
   systemPrompts: string[];
 }
 
@@ -70,6 +73,8 @@ function harness(
   const createCalls: Record<string, unknown>[] = [];
   const klineCalls: { period: string; count: number }[] = [];
   const bashCalls: string[] = [];
+  const engineeredMessages: AgentMessage[][] = [];
+  const sessionIds: (string | undefined)[] = [];
   const systemPrompts: string[] = [];
   const sandbox = mkdtempSync(join(tmpdir(), "analyst-test-"));
 
@@ -80,10 +85,24 @@ function harness(
       return { id: "chart-new", url: "http://localhost/#/charts/chart-new" };
     });
 
-  const agentFactory: AiAgentFactory = ({ tools, systemPrompt }) => {
+  const agentFactory: AiAgentFactory = ({
+    tools,
+    systemPrompt,
+    sessionId,
+    transformContext,
+  }) => {
+    sessionIds.push(sessionId);
     systemPrompts.push(systemPrompt);
     const agent: AiAgentHandle = {
-      prompt: opts.hang ? () => new Promise<void>(() => {}) : () => script(tools),
+      prompt: opts.hang
+        ? () => new Promise<void>(() => {})
+        : async (text) => {
+            const rawMessages: AgentMessage[] = [{ role: "user", content: text, timestamp: Date.now() }];
+            engineeredMessages.push(
+              transformContext ? await transformContext(rawMessages) : rawMessages,
+            );
+            await script(tools);
+          },
       abort: () => opts.onAbort?.(),
     };
     return agent;
@@ -117,7 +136,25 @@ function harness(
       : { disciplineText: FAKE_DISCIPLINE }),
   };
 
-  return { deps, comments, createCalls, klineCalls, bashCalls, systemPrompts };
+  return {
+    deps,
+    comments,
+    createCalls,
+    klineCalls,
+    bashCalls,
+    engineeredMessages,
+    sessionIds,
+    systemPrompts,
+  };
+}
+
+function messageText(message: AgentMessage): string {
+  if (message.role !== "user") return "";
+  if (typeof message.content === "string") return message.content;
+  return message.content
+    .filter((part) => part.type === "text")
+    .map((part) => (part.type === "text" ? part.text : ""))
+    .join("");
 }
 
 function tool(tools: Tools, name: string) {
@@ -269,14 +306,25 @@ describe("analyst tools", () => {
   });
 });
 
-describe("skill-based system prompt", () => {
-  it("embeds the intraday-signal skill text after the adapter preamble", async () => {
-    const { deps, systemPrompts } = harness(async () => {});
+describe("analyst message pipeline", () => {
+  it("keeps the system prompt stable and injects skills before the task", async () => {
+    const { deps, engineeredMessages, sessionIds, systemPrompts } = harness(async () => {});
     await executeAnalystRun("MU.US", deps);
     expect(systemPrompts).toHaveLength(1);
-    expect(systemPrompts[0]).toContain("假技能全文");
-    expect(systemPrompts[0].indexOf("Kansoku 环境映射")).toBeLessThan(systemPrompts[0].indexOf("假技能全文"));
-    expect(buildAnalystSystemPrompt("SKILL BODY")).toContain("SKILL BODY");
+    expect(sessionIds).toHaveLength(1);
+    expect(sessionIds[0]).toMatch(/^analyst:MU\.US:\d+$/);
+    expect(systemPrompts[0]).toBe(buildAnalystSystemPrompt());
+    expect(systemPrompts[0]).not.toContain("假技能全文");
+    expect(systemPrompts[0]).not.toContain("假纪律全文");
+
+    const messages = engineeredMessages[0];
+    expect(messages).toHaveLength(3);
+    const injected = messageText(messages[0]);
+    expect(injected).toContain("<available_skills>");
+    expect(injected).toContain("假技能全文");
+    expect(injected).toContain("假纪律全文");
+    expect(injected).toContain("<data_snapshot");
+    expect(messageText(messages[1])).toContain("请重估 MU.US");
   });
 
   it("aborts with an error comment when the skill file is missing", async () => {
@@ -288,12 +336,12 @@ describe("skill-based system prompt", () => {
     expect(comments[0].text).toContain("SKILL.md");
   });
 
-  it("puts the shared discipline ahead of the adapter and the skill", async () => {
-    const { deps, systemPrompts } = harness(async () => {});
+  it("places the runtime adapter after the activated skill content", async () => {
+    const { deps, engineeredMessages } = harness(async () => {});
     await executeAnalystRun("MU.US", deps);
-    const prompt = systemPrompts[0];
-    expect(prompt.indexOf("假纪律全文")).toBeLessThan(prompt.indexOf("Kansoku 环境映射"));
-    expect(prompt.indexOf("Kansoku 环境映射")).toBeLessThan(prompt.indexOf("假技能全文"));
+    const context = messageText(engineeredMessages[0][0]);
+    expect(context.indexOf("假纪律全文")).toBeLessThan(context.indexOf("Kansoku 环境映射"));
+    expect(context.indexOf("假技能全文")).toBeLessThan(context.indexOf("Kansoku 环境映射"));
   });
 
   it("aborts with an error comment when the shared discipline is missing", async () => {
@@ -366,7 +414,7 @@ describe("runAnalyst gating", () => {
       running: true,
       origin: "manual",
       phase: "researching",
-      activity: "正在规划分析步骤并读取市场信息",
+      activity: "正在整理多周期行情、资金流与持仓",
       startedAt,
       updatedAt: startedAt,
     });

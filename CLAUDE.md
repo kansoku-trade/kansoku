@@ -86,7 +86,7 @@ Shared conventions (enforced by `.claude/skills/_shared/`):
 
 @.claude/skills/trading-discipline/SKILL.md
 
-The same file is injected into the in-app agents (`analyst` / `deepDive` / `chat`) by `app/packages/core/src/ai/promptPolicy.ts`, so Claude Code and the app run on identical discipline. `@` import is a Claude Code mechanism only — the app reads the skill file directly.
+The same file is injected into the in-app agents (`analyst` / `deepDive` / `chat`) by the AI prompt pipeline: `analyst` activates it in its provider-facing MessagesEngine, while `deepDive` / `chat` compose it through `app/packages/core/src/ai/promptPolicy.ts`. Claude Code and the app therefore run on identical discipline. `@` import is a Claude Code mechanism only — the app reads the skill file directly.
 
 ### Known data gotchas
 

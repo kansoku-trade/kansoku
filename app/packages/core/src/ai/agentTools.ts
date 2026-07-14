@@ -49,7 +49,10 @@ const readSkillSchema = Type.Object({ name: Type.String() });
 const bashSchema = Type.Object({ command: Type.String() });
 const readFileSchema = Type.Object({ path: Type.String() });
 
-export function buildReadSkillTool(skillIndex: SkillMeta[]): AgentTool<typeof readSkillSchema> {
+export function buildReadSkillTool(
+  skillIndex: SkillMeta[],
+  onRead?: (name: string) => void,
+): AgentTool<typeof readSkillSchema> {
   return {
     name: "read_skill",
     label: "Read Skill",
@@ -57,6 +60,7 @@ export function buildReadSkillTool(skillIndex: SkillMeta[]): AgentTool<typeof re
     parameters: readSkillSchema,
     execute: async (_id, params) => {
       const text = readSkill(skillIndex, params.name);
+      if (text) onRead?.(params.name);
       return textResult(text ?? `unknown skill: ${params.name}`);
     },
   };

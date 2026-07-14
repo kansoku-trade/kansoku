@@ -8,7 +8,8 @@ import { loadSkillIndex, readSkill } from "../services/skills.js";
  * depends on whether the agent has the inputs, tools and outputs to act on it:
  *
  *   judgment   — analyst / deepDive / chat: form conclusions from data. Get the full discipline.
- *                Fail-closed: no discipline file, no run.
+ *                Analyst injects it through its provider-facing MessagesEngine; the other judgment
+ *                agents use this module's prompt composer. Fail-closed: no discipline file, no run.
  *   observer   — commentator: narrates observable change on a 60s scheduler. Gets a compact
  *                observer contract instead; the GAAP trap and QoQ rules are pure cost to it.
  *   mechanical — chatSuggestions / eventFilter: emit questions / indices. Constrained by schema
@@ -59,7 +60,7 @@ export function disciplineFor(capability: AgentCapability, repoRoot: string): st
 
 /**
  * The one canonical [discipline, ---, own] join. Callers that receive the discipline text
- * injected (analyst / deepDive / chat, for testability) use this directly; withDiscipline
+ * injected (deepDive / chat, for testability) use this directly; withDiscipline
  * resolves the text first and is for callers that own no injection seam.
  */
 export function composeWithDiscipline(disciplineText: string, systemPrompt: string): string {

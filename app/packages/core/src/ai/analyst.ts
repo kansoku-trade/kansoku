@@ -9,11 +9,12 @@ import { JOURNAL_DIR, PROJECT_ROOT, skillSearchDirs } from "../env.js";
 import { buildChart } from "../services/build.js";
 import { getProvider } from "../services/marketdata/registry.js";
 import { validatePrediction } from "../services/predictionRules.js";
-import { loadSkillIndex, readSkill } from "../services/skills.js";
+import { loadSkillIndex, readSkill, type SkillMeta } from "../services/skills.js";
 import { createChart } from "../services/store.js";
 import { AgentTimeoutError, type AiAgentFactory, createAgentSession } from "./agentSession.js";
-import { ANALYST_ADAPTER_PROMPT, ANALYST_RETRY_PROMPT } from "./prompts.js";
-import { composeWithDiscipline, DisciplineMissingError, loadSharedDiscipline } from "./promptPolicy.js";
+import { AnalystMessagesEngine, type AnalystSkillContext } from "./messages/analystMessagesEngine.js";
+import { ANALYST_ADAPTER_PROMPT, ANALYST_RETRY_PROMPT, ANALYST_SYSTEM_PROMPT } from "./prompts.js";
+import { DISCIPLINE_SKILL, DisciplineMissingError } from "./promptPolicy.js";
 import {
   buildBashTool,
   buildReadFileTool,
@@ -32,13 +33,8 @@ const DEFAULT_TIMEOUT_MS = 15 * 60_000;
 const ESCALATION_COOLDOWN_MS = 30 * 60_000;
 const SKILL_NAME = "intraday-signal";
 
-export function buildAnalystSystemPrompt(skillText: string, disciplineText = ""): string {
-  return composeWithDiscipline(disciplineText, [ANALYST_ADAPTER_PROMPT, "", "---", "", skillText].join("\n"));
-}
-
-function loadIntradaySkillText(repoRoot: string): string | null {
-  const index = loadSkillIndex(skillSearchDirs(repoRoot));
-  return readSkill(index, SKILL_NAME);
+export function buildAnalystSystemPrompt(): string {
+  return ANALYST_SYSTEM_PROMPT;
 }
 
 function usSessionDate(epochMs: number): string {
@@ -51,7 +47,7 @@ export function buildJournalTool(
   symbol: string,
   journalDir: string,
   now: () => number,
-  onWrite?: () => void,
+  onWritten?: () => void,
 ): AgentTool<typeof journalSchema> {
   const base = symbol.split(".")[0].toUpperCase();
   return {
@@ -62,13 +58,13 @@ export function buildJournalTool(
     execute: async (_id, params) => {
       const content = params.content;
       if (!content.trim()) return textResult("rejected: content is empty");
-      onWrite?.();
       const file = `${usSessionDate(now())}-${base}-intraday.md`;
       const path = join(journalDir, file);
       await fs.mkdir(journalDir, { recursive: true });
       const existing = await fs.readFile(path, "utf8").catch(() => null);
       const next = existing == null ? content : `${existing.replace(/\n*$/, "")}\n\n---\n\n${content}`;
       await fs.writeFile(path, next, "utf8");
+      onWritten?.();
       return textResult(`written to journal/${file}${existing == null ? "" : " (appended)"}`);
     },
   };
@@ -210,7 +206,51 @@ async function defaultCreateChart(body: Record<string, unknown>): Promise<{ id: 
 
 interface RunState {
   chartId: string | null;
+  journalWritten: boolean;
+  loadedSkillIds: Set<string>;
   submitted: boolean;
+}
+
+function buildAnalystSkillContexts(
+  skillIndex: SkillMeta[],
+  skillText: string,
+  disciplineText: string,
+): AnalystSkillContext[] {
+  const activated = new Map<string, { content: string; fallbackDescription: string }>([
+    [
+      DISCIPLINE_SKILL,
+      {
+        content: disciplineText,
+        fallbackDescription: "所有交易判断共享的纪律与数据边界。",
+      },
+    ],
+    [
+      SKILL_NAME,
+      {
+        content: skillText,
+        fallbackDescription: "单标的日内到数个交易日的多周期方向、情景与交易计划分析。",
+      },
+    ],
+  ]);
+  const skills: AnalystSkillContext[] = skillIndex.map((skill) => ({
+    activated: activated.has(skill.name),
+    content: activated.get(skill.name)?.content,
+    description: skill.description,
+    location: join(skill.dir, "SKILL.md"),
+    name: skill.name,
+  }));
+  const known = new Set(skills.map((skill) => skill.name));
+  for (const [name, entry] of activated) {
+    if (known.has(name)) continue;
+    skills.push({
+      activated: true,
+      content: entry.content,
+      description: entry.fallbackDescription,
+      name,
+    });
+  }
+  const priority = (name: string) => (name === DISCIPLINE_SKILL ? 0 : name === SKILL_NAME ? 1 : 2);
+  return skills.sort((a, b) => priority(a.name) - priority(b.name) || a.name.localeCompare(b.name));
 }
 
 function buildTools(
@@ -223,6 +263,7 @@ function buildTools(
     journalDir: string;
     exec: ExecFn;
     now: () => number;
+    skillIndex: SkillMeta[];
   },
   state: RunState,
   isDone: () => boolean,
@@ -304,8 +345,6 @@ function buildTools(
     },
   };
 
-  const skillIndex = loadSkillIndex(skillSearchDirs(deps.repoRoot));
-
   return [
     readDataPack,
     fetchNewsTool,
@@ -316,11 +355,12 @@ function buildTools(
       reportProgress("researching", "正在补充外部资料与风险信息");
       return deps.exec(command);
     }),
-    buildReadSkillTool(skillIndex),
+    buildReadSkillTool(deps.skillIndex, (name) => state.loadedSkillIds.add(name)),
     buildReadFileTool(deps.repoRoot),
-    buildJournalTool(symbol, deps.journalDir, deps.now, () =>
-      reportProgress("writing", "正在写入本次复盘日志"),
-    ),
+    buildJournalTool(symbol, deps.journalDir, deps.now, () => {
+      state.journalWritten = true;
+      reportProgress("writing", "正在写入本次复盘日志");
+    }),
   ];
 }
 
@@ -334,28 +374,39 @@ export async function executeAnalystRun(symbol: string, deps: AnalystDeps): Prom
   const writeError = (text: string) =>
     append({ ts: new Date().toISOString(), symbol, level: "error", text, source: "system" });
 
-  const state: RunState = { chartId: null, submitted: false };
+  const state: RunState = {
+    chartId: null,
+    journalWritten: false,
+    loadedSkillIds: new Set(),
+    submitted: false,
+  };
   let session: ReturnType<typeof createAgentSession> | undefined;
 
   reportProgress("preparing", "正在加载分析纪律与工具");
   const repoRoot = deps.repoRoot ?? PROJECT_ROOT;
-  const skillText = deps.skillText ?? loadIntradaySkillText(repoRoot);
+  const skillIndex = loadSkillIndex(skillSearchDirs(repoRoot));
+  const skillText = deps.skillText ?? readSkill(skillIndex, SKILL_NAME);
   if (!skillText) {
     await writeError(`${SKILL_NAME} SKILL.md 读不到，重估中止——纪律缺席时不允许裸跑。`);
     return;
   }
 
-  const disciplineText = deps.disciplineText ?? loadSharedDiscipline(repoRoot);
+  const disciplineText = deps.disciplineText ?? readSkill(skillIndex, DISCIPLINE_SKILL);
   if (!disciplineText) {
     await writeError(new DisciplineMissingError().message);
     return;
   }
 
   try {
+    const runStartedAt = now();
+    reportProgress("researching", "正在整理多周期行情、资金流与持仓");
+    const dataPack = await (deps.buildReassessPack ?? defaultBuildReassessPack)(symbol);
+    if (dataPack.prediction_chart_id) state.chartId = dataPack.prediction_chart_id;
+
     const tools = buildTools(
       symbol,
       {
-        buildReassessPack: deps.buildReassessPack ?? defaultBuildReassessPack,
+        buildReassessPack: async () => dataPack,
         fetchNews: deps.fetchNews ?? ((symbol) => getProvider().getNews(symbol)),
         fetchKline: deps.fetchKline ?? ((symbol, period, count) => getProvider().getKline(symbol, period, count)),
         createChart: deps.createChart ?? defaultCreateChart,
@@ -364,19 +415,40 @@ export async function executeAnalystRun(symbol: string, deps: AnalystDeps): Prom
         journalDir: deps.journalDir ?? JOURNAL_DIR,
         exec: deps.exec ?? createDefaultExec(repoRoot),
         now,
+        skillIndex,
       },
       state,
       () => session?.isDone() ?? false,
       reportProgress,
     );
 
+    const messagesEngine = new AnalystMessagesEngine({
+      initialContext: {
+        dataPack,
+        marketDate: usSessionDate(runStartedAt),
+        origin: deps.origin,
+        runtimeAdapter: ANALYST_ADAPTER_PROMPT,
+        skills: buildAnalystSkillContexts(skillIndex, skillText, disciplineText),
+        startedAt: new Date(runStartedAt).toISOString(),
+        symbol,
+      },
+      stepContext: () => ({
+        chartId: state.chartId,
+        journalWritten: state.journalWritten,
+        loadedSkillIds: [...state.loadedSkillIds].sort(),
+        submitted: state.submitted,
+      }),
+    });
+
     session = createAgentSession({
       layer: "analyst",
       symbol,
       origin: deps.origin,
       model: deps.model,
-      systemPrompt: buildAnalystSystemPrompt(skillText, disciplineText),
+      systemPrompt: buildAnalystSystemPrompt(),
       tools,
+      sessionId: `analyst:${symbol}:${runStartedAt}`,
+      transformContext: async (messages) => (await messagesEngine.process(messages)).messages,
       agentFactory: deps.agentFactory,
     });
 
