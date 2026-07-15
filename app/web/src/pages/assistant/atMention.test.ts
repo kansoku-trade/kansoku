@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { detectMentionTrigger, filterMentionCandidates, insertMention } from "./atMention.js";
+import {
+  detectMentionTrigger,
+  filterMentionCandidates,
+  findMentionedCandidates,
+  insertMention,
+  removeMention,
+} from "./atMention.js";
 
 describe("detectMentionTrigger", () => {
   it("detects a trigger right after @", () => {
@@ -80,5 +86,28 @@ describe("insertMention", () => {
     expect(withLiveCursor.text).toBe("@stocks/MU.md  之后又打了不少字");
     expect(withStaleCursor.text).not.toBe(withLiveCursor.text);
     expect(withStaleCursor.text).toBe("@stocks/MU.md U 之后又打了不少字");
+  });
+});
+
+describe("visible mention references", () => {
+  const candidates = [
+    { path: "stocks/MU.md", title: "Micron" },
+    { path: "stocks/NVDA.md", title: "Nvidia" },
+  ];
+
+  it("returns known references in library order without duplicating them", () => {
+    expect(findMentionedCandidates("比较 @stocks/NVDA.md 与 @stocks/MU.md，再看 @stocks/NVDA.md", candidates)).toEqual([
+      candidates[0],
+      candidates[1],
+    ]);
+  });
+
+  it("ignores free-form @ text that is not a known research path", () => {
+    expect(findMentionedCandidates("告诉 @someone 看 @stocks/MU.md", candidates)).toEqual([candidates[0]]);
+  });
+
+  it("removes a selected reference without damaging the surrounding prompt", () => {
+    expect(removeMention("比较 @stocks/NVDA.md 与 @stocks/MU.md", "stocks/NVDA.md")).toBe("比较 与 @stocks/MU.md");
+    expect(removeMention("@stocks/MU.md 看供给", "stocks/MU.md")).toBe("看供给");
   });
 });

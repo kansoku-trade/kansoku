@@ -40,3 +40,14 @@ export function insertMention(value: string, cursor: number, trigger: MentionTri
   const inserted = `@${path} `;
   return { text: before + inserted + after, cursor: before.length + inserted.length };
 }
+
+export function findMentionedCandidates(value: string, candidates: MentionCandidate[]): MentionCandidate[] {
+  const mentionedPaths = new Set(Array.from(value.matchAll(/@([^\s@，。！？、；：,!?;:]+)/g), (match) => match[1]));
+  return candidates.filter((candidate) => mentionedPaths.has(candidate.path));
+}
+
+export function removeMention(value: string, path: string): string {
+  const escapedPath = path.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const mentionPattern = new RegExp(`(^|\\s)@${escapedPath}(?=\\s|$)\\s?`, "g");
+  return value.replace(mentionPattern, "$1").replace(/ {2,}/g, " ").trimStart();
+}
