@@ -36,8 +36,7 @@ const stream = vi.hoisted(() => {
   };
 });
 
-vi.mock("../src/services/marketdata/registry.js", () => ({ getProvider: () => provider }));
-vi.mock("../src/services/marketdata/longbridgeStream.js", () => ({ getLongbridgeStream: () => stream }));
+vi.mock("../src/services/marketdata/registry.js", () => ({ getProvider: () => provider, getStream: () => stream }));
 vi.mock("../src/services/store.js", () => store);
 vi.mock("../src/ai/comments.js", () => comments);
 vi.mock("../src/ai/follows.js", () => follows);

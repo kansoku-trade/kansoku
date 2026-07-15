@@ -1,4 +1,6 @@
 import type { QuoteCell } from "../../../../../shared/types.js";
+import { classifySession, sessionLabel } from "../session.js";
+import { marketOf } from "../symbol.utils.js";
 import { getProvider } from "./registry.js";
 import { CandleAggregator, type CandleBar, type CandlePeriod } from "./candleAggregator.js";
 import {
@@ -10,6 +12,7 @@ import {
   type ProtocolQuote,
 } from "./longbridgeProtocol.js";
 import { LongbridgeQuoteSocket } from "./longbridgeSocket.js";
+import type { CandleListener, QuoteListener, QuoteStream } from "./quoteStream.js";
 
 export type { CandleBar, CandlePeriod };
 
@@ -22,16 +25,6 @@ type PrevCloseCache = {
   overnight: number;
   fetchedAt: number;
 };
-
-type StreamListener = (cell: QuoteCell) => void;
-type CandleListener = (bar: CandleBar) => void;
-
-function sessionLabel(session: number): string {
-  if (session === TRADE_SESSION_PRE) return "盘前";
-  if (session === TRADE_SESSION_POST) return "盘后";
-  if (session === TRADE_SESSION_OVERNIGHT) return "隔夜";
-  return "日盘";
-}
 
 function pctOf(last: number, prev: number): number {
   return prev ? (last / prev - 1) * 100 : 0;
@@ -49,14 +42,14 @@ export interface LongbridgeStreamDeps {
   socket?: LongbridgeQuoteSocket;
 }
 
-export class LongbridgeStream {
+export class LongbridgeStream implements QuoteStream {
   private readonly socket: LongbridgeQuoteSocket;
   private readonly aggregator: CandleAggregator;
   private snapshots = new Map<string, QuoteCell>();
   private prevCloseCache = new Map<string, PrevCloseCache>();
   private lastRegular = new Map<string, { last: number; pct: number }>();
   private quoteRefs = new Map<string, number>();
-  private listeners = new Set<StreamListener>();
+  private listeners = new Set<QuoteListener>();
   private candleRefs = new Map<string, number>();
   private candleListeners = new Map<string, Set<CandleListener>>();
   private prevCloseTimer: ReturnType<typeof setInterval> | null = null;
@@ -81,9 +74,11 @@ export class LongbridgeStream {
     const pct = pctOf(quote.lastDone, prevClose);
     if (quote.tradeSession === 0) this.lastRegular.set(quote.symbol, { last: quote.lastDone, pct });
     const regular = this.lastRegular.get(quote.symbol);
+    const labelTs = quote.timestamp > 0 ? quote.timestamp : Math.floor(Date.now() / 1000);
+    const market = marketOf(quote.symbol);
     const cell: QuoteCell = {
       symbol: quote.symbol,
-      session: sessionLabel(quote.tradeSession),
+      session: sessionLabel(classifySession(labelTs, market), market),
       last: quote.lastDone,
       pct,
       regularLast: regular?.last ?? quote.lastDone,
@@ -215,7 +210,7 @@ export class LongbridgeStream {
     }
   }
 
-  onUpdate(listener: StreamListener): () => void {
+  onUpdate(listener: QuoteListener): () => void {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
   }

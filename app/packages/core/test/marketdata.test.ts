@@ -8,6 +8,8 @@ const OPTIONAL_METHODS: Record<Capability, keyof MarketDataProvider> = {
   positions: "getPositions",
   watchlist: "getWatchlistSymbols",
   portfolio: "getPortfolio",
+  "earnings-calendar": "getEarningsCalendar",
+  "macro-calendar": "getMacroCalendar",
 };
 
 describe("marketdata registry", () => {
@@ -28,6 +30,32 @@ describe("marketdata registry", () => {
   it("rejects an unknown MARKET_PROVIDER with a hint listing the options", () => {
     vi.stubEnv("MARKET_PROVIDER", "yahoo");
     expect(() => getProvider()).toThrow("unknown MARKET_PROVIDER: yahoo");
+  });
+
+  it("routes US/HK/CN to longbridge by default", () => {
+    expect(getProvider("US").name).toBe("longbridge");
+    expect(getProvider("HK").name).toBe("longbridge");
+    expect(getProvider("CN").name).toBe("longbridge");
+  });
+
+  it("MARKET_PROVIDER sets the provider for every market", () => {
+    vi.stubEnv("MARKET_PROVIDER", "longbridge");
+    expect(getProvider("US").name).toBe("longbridge");
+    expect(getProvider("HK").name).toBe("longbridge");
+    expect(getProvider("CN").name).toBe("longbridge");
+  });
+
+  it("a per-market override wins for its own market only", () => {
+    vi.stubEnv("MARKET_PROVIDER", "longbridge");
+    vi.stubEnv("MARKET_PROVIDER_HK", "yahoo");
+    expect(getProvider("US").name).toBe("longbridge");
+    expect(() => getProvider("HK")).toThrow("unknown MARKET_PROVIDER: yahoo");
+    expect(getProvider("CN").name).toBe("longbridge");
+  });
+
+  it("rejects an unknown per-market override with the same hint", () => {
+    vi.stubEnv("MARKET_PROVIDER_CN", "yahoo");
+    expect(() => getProvider("CN")).toThrow("unknown MARKET_PROVIDER: yahoo");
   });
 });
 

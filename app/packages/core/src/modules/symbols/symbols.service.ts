@@ -25,7 +25,7 @@ import { computeRelativeVolume } from "../../services/relvol.js";
 import { classifySession, easternDate } from "../../services/session.js";
 import { predictionStale } from "../../services/staleness.js";
 import { listCharts, loadChart } from "../../services/store.js";
-import { noteFileName, normalizeSymbol } from "../../services/symbol.utils.js";
+import { marketOf, noteFileName, normalizeSymbol } from "../../services/symbol.utils.js";
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const JOURNAL_FILE_RE = /^(\d{4}-\d{2}-\d{2})-([\w-]+)\.md$/;
@@ -35,7 +35,7 @@ const BENCHMARK_SYMBOLS = ["SMH.US", "QQQ.US"];
 export const symbolsService: SymbolsApi = {
   async flow(input) {
     const sym = normalizeSymbol(input.sym);
-    const provider = getProvider();
+    const provider = getProvider(marketOf(sym));
     if (!provider.getFlow) return null;
     const [flowRes, distRes] = await Promise.allSettled([
       provider.getFlow(sym),
@@ -48,15 +48,18 @@ export const symbolsService: SymbolsApi = {
 
   async benchmark(input) {
     const sym = normalizeSymbol(input.sym);
+    if (marketOf(sym) !== "US") return [];
     const symbols = [sym, ...BENCHMARK_SYMBOLS.filter((s) => s !== sym)];
-    const barsList = await Promise.all(symbols.map((s) => getProvider().getKline(s, "5m", 100)));
-    const regularBars = barsList.map((bars) => bars.filter((b) => classifySession(toTs(b.time)) === "regular"));
+    const barsList = await Promise.all(symbols.map((s) => getProvider(marketOf(s)).getKline(s, "5m", 100)));
+    const regularBars = symbols.map((s, i) =>
+      barsList[i].filter((b) => classifySession(toTs(b.time), marketOf(s)) === "regular"),
+    );
     return buildBenchmark(symbols.map((s, i) => ({ symbol: s, bars: regularBars[i] })));
   },
 
   async position(input) {
     const sym = normalizeSymbol(input.sym);
-    const provider = getProvider();
+    const provider = getProvider(marketOf(sym));
     const [positions, quotes] = await Promise.all([
       provider.getPositions?.() ?? Promise.resolve([] as RawPosition[]),
       provider.getQuotes([sym]),
@@ -77,7 +80,7 @@ export const symbolsService: SymbolsApi = {
     let bars: RawBar[] | null = null;
     if (metas.some((m) => !cached.has(m.id))) {
       try {
-        bars = await getProvider().getKline(sym, "15m", 300);
+        bars = await getProvider(marketOf(sym)).getKline(sym, "15m", 300);
       } catch {
         bars = null;
       }
@@ -105,7 +108,7 @@ export const symbolsService: SymbolsApi = {
 
   async relvol(input) {
     const sym = normalizeSymbol(input.sym);
-    const bars = await getProvider().getKline(sym, "15m", 500);
+    const bars = await getProvider(marketOf(sym)).getKline(sym, "15m", 500);
     return computeRelativeVolume(bars);
   },
 

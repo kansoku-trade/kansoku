@@ -3,6 +3,15 @@ import { ClientError } from "../errors.js";
 const SYMBOL_RE = /^[A-Z0-9.]+$/;
 const NOTE_NAME_RE = /^[A-Z0-9._-]+$/;
 
+export type Market = "US" | "HK" | "CN";
+
+export function marketOf(symbol: string): Market {
+  const sym = symbol.trim().toUpperCase();
+  if (sym.endsWith(".HK")) return "HK";
+  if (sym.endsWith(".SH") || sym.endsWith(".SZ")) return "CN";
+  return "US";
+}
+
 export function normalizeSymbol(raw: string): string {
   let sym = raw.trim().toUpperCase();
   if (!sym.includes(".")) sym += ".US";

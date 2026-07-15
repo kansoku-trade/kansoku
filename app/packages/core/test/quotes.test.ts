@@ -42,6 +42,20 @@ describe("normalizeQuote", () => {
     expect(cell.pct).toBeCloseTo(-10.57);
   });
 
+  it("labels a closed HK quote as 休市 during US regular hours, not 日盘", () => {
+    const hk: RawQuote = {
+      symbol: "700.HK",
+      last: "500.0",
+      prev_close: "510.0",
+      change_percentage: "-1.96",
+    };
+    const now = Date.parse("2026-07-02T15:00:00Z");
+    const cell = normalizeQuote(hk, now);
+    expect(cell.session).toBe("休市");
+    expect(cell.last).toBeCloseTo(500);
+    expect(cell.regularLast).toBeCloseTo(500);
+  });
+
   it("handles quotes without extended sessions", () => {
     const bare: RawQuote = {
       symbol: "SPY.US",

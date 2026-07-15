@@ -7,7 +7,9 @@ import {
   formatMarketMonthDayTime,
   formatMonthDayTimeInZone,
   localTimeZone,
+  marketTimeZone,
   shouldShowLocalTime,
+  type Market,
   type TimeInput,
 } from "../../../shared/time";
 import {
@@ -29,13 +31,20 @@ interface MarketTimeProps {
   focusable?: boolean;
   format?: MarketTimeFormat;
   includeZone?: boolean;
+  market?: Market;
   value: TimeInput;
 }
 
-function formatTime(value: TimeInput, format: MarketTimeFormat, includeZone?: boolean): string {
-  if (format === "clock") return formatMarketClock(value, includeZone ?? false);
-  if (format === "month-day-time") return formatMarketMonthDayTime(value, includeZone ?? false);
-  return formatMarketDateTime(value, includeZone ?? true);
+const MARKET_TOOLTIP_LABEL: Record<Market, string> = {
+  US: "美东时间",
+  HK: "港股（香港时间）",
+  CN: "北京时间",
+};
+
+function formatTime(value: TimeInput, format: MarketTimeFormat, includeZone: boolean | undefined, market: Market): string {
+  if (format === "clock") return formatMarketClock(value, includeZone ?? false, market);
+  if (format === "month-day-time") return formatMarketMonthDayTime(value, includeZone ?? false, market);
+  return formatMarketDateTime(value, includeZone ?? true, market);
 }
 
 function formatLocalTime(
@@ -55,20 +64,22 @@ export function resolveMarketTimePresentation({
   timeZone,
   format = "date-time",
   includeZone,
+  market = "US",
 }: {
   value: TimeInput;
   preference: TimeDisplayPreference;
   timeZone: string;
   format?: MarketTimeFormat;
   includeZone?: boolean;
+  market?: Market;
 }): MarketTimePresentation {
-  const marketLabel = formatTime(value, format, includeZone);
-  if (!shouldShowLocalTime(value, timeZone)) return { label: marketLabel, tooltip: null };
+  const marketLabel = formatTime(value, format, includeZone, market);
+  if (!shouldShowLocalTime(value, timeZone, marketTimeZone(market))) return { label: marketLabel, tooltip: null };
 
   if (preference === "local") {
     return {
       label: formatLocalTime(value, timeZone, format, includeZone),
-      tooltip: `美东时间 ${formatMarketDateTime(value, true)}`,
+      tooltip: `${MARKET_TOOLTIP_LABEL[market]} ${formatMarketDateTime(value, true, market)}`,
     };
   }
 
@@ -84,6 +95,7 @@ export function MarketTime({
   focusable,
   format = "date-time",
   includeZone,
+  market = "US",
   value,
 }: MarketTimeProps) {
   const preference = useTimeDisplayPreference();
@@ -93,6 +105,7 @@ export function MarketTime({
     timeZone: localTimeZone(),
     format,
     includeZone,
+    market,
   });
   const label = preference === "local" ? presentation.label : (children ?? presentation.label);
 

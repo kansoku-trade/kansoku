@@ -138,10 +138,14 @@ export function EnvTab({ position, positionError, benchmark, benchmarkError, rel
       )}
       {positionError && !position && <div className="note-block">持仓数据获取失败：{positionError}</div>}
 
-      <SectionTitle style={{ marginTop: position ? 16 : 0 }}>
-        环境对照（相对首点百分比）
-      </SectionTitle>
-      {renderBenchmark()}
+      {!(benchmark && benchmark.length === 0) && (
+        <>
+          <SectionTitle style={{ marginTop: position ? 16 : 0 }}>
+            环境对照（相对首点百分比）
+          </SectionTitle>
+          {renderBenchmark()}
+        </>
+      )}
     </>
   );
 

@@ -31,6 +31,40 @@ describe("CandleAggregator", () => {
     );
   });
 
+  it("produces no candles inside an HK lunch gap", () => {
+    const emit = vi.fn();
+    const aggregator = new CandleAggregator(emit);
+    aggregator.seed("700.HK", "5m", {
+      time: "2026-07-15T03:25:00.000Z",
+      open: 300,
+      high: 300,
+      low: 300,
+      close: 300,
+      volume: 10,
+    });
+
+    const trade = (iso: string, price: number) =>
+      aggregator.handleTrades({
+        symbol: "700.HK",
+        sequence: 1,
+        trades: [{ price, volume: 1, timestamp: Date.parse(iso) / 1000, tradeSession: 0 }],
+      });
+
+    trade("2026-07-15T03:29:00.000Z", 301);
+    emit.mockClear();
+    trade("2026-07-15T04:30:00.000Z", 999);
+    expect(emit).not.toHaveBeenCalled();
+
+    trade("2026-07-15T05:01:00.000Z", 305);
+    const lunchStart = Date.parse("2026-07-15T04:00:00.000Z");
+    const lunchEnd = Date.parse("2026-07-15T05:00:00.000Z");
+    for (const call of emit.mock.calls) {
+      const bar = call[0] as { ts: number };
+      expect(bar.ts < lunchStart || bar.ts >= lunchEnd).toBe(true);
+    }
+    expect(emit).toHaveBeenCalled();
+  });
+
   it("uses quotes to update price without double-counting volume and ignores old data", () => {
     const emit = vi.fn();
     const aggregator = new CandleAggregator(emit);

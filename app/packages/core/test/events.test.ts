@@ -38,6 +38,41 @@ function macroPayload(now: Date) {
   };
 }
 
+describe("getEventRisk provider wiring", () => {
+  const now = new Date("2026-07-10T15:00:00.000Z");
+
+  beforeEach(() => {
+    filterMacroForSymbol.mockClear();
+  });
+
+  afterEach(() => {
+    setActiveSettingsStore(null);
+  });
+
+  it("resolves next earnings and macro releases through the routed provider", async () => {
+    runLongbridgeJson.mockImplementation((args: string[]) => {
+      if (args.includes("report")) {
+        return Promise.resolve({
+          list: [{ date: "2026-07-20", infos: [{ counter_id: "NVDA.US", content: "NVDA Q2 2026" }] }],
+        });
+      }
+      return Promise.resolve(macroPayload(now));
+    });
+
+    const risk = await getEventRisk("NVDA.US", now);
+    expect(risk?.next_earnings).toEqual({ date: "2026-07-20", title: "NVDA Q2 2026" });
+    expect(risk?.macro).toHaveLength(1);
+    expect(risk?.macro[0]?.title).toBe("CPI");
+  });
+
+  it("gates non-US symbols before touching the provider", async () => {
+    runLongbridgeJson.mockClear();
+    const risk = await getEventRisk("700.HK", now);
+    expect(risk).toBeNull();
+    expect(runLongbridgeJson).not.toHaveBeenCalled();
+  });
+});
+
 describe("getEventRisk relevance cache", () => {
   const now = new Date("2026-07-10T15:00:00.000Z");
 

@@ -411,7 +411,7 @@ export function buildSepa(input: SepaInput): { built: SepaBuilt; meta: SepaMeta 
     sidebar: {
       symbol,
       name,
-      asOf: input.as_of_date || dates[dates.length - 1],
+      asOf: input.as_of_date || input.kline[input.kline.length - 1]?.time || dates[dates.length - 1],
       last,
       chgPct,
       verdict,

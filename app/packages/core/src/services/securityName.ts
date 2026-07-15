@@ -1,6 +1,7 @@
 import type { ChartDoc } from "../../../../shared/types.js";
 import { getProvider } from "./marketdata/registry.js";
 import type { MarketDataProvider } from "./marketdata/types.js";
+import { marketOf } from "./symbol.utils.js";
 
 const HAN_RE = /\p{Script=Han}/u;
 
@@ -11,7 +12,7 @@ function nonEmptyName(value: unknown): string | null {
 export async function resolveSecurityName(
   symbol: string,
   fallback: unknown,
-  provider: MarketDataProvider = getProvider(),
+  provider: MarketDataProvider = getProvider(marketOf(symbol)),
 ): Promise<string> {
   const fallbackName = nonEmptyName(fallback) ?? symbol;
   if (HAN_RE.test(fallbackName) || !provider.getSecurityName) return fallbackName;
@@ -23,17 +24,14 @@ export async function resolveSecurityName(
   }
 }
 
-export async function localizeChartDocName(
-  doc: ChartDoc,
-  provider: MarketDataProvider = getProvider(),
-): Promise<ChartDoc> {
+export async function localizeChartDocName(doc: ChartDoc, provider?: MarketDataProvider): Promise<ChartDoc> {
   if (doc.built.kind !== "intraday" && doc.built.kind !== "sepa") return doc;
   if (!("sidebar" in doc.built) || !doc.built.sidebar) return doc;
 
   const symbol = doc.symbol ?? doc.built.sidebar.symbol;
   if (!symbol) return doc;
   const fallback = nonEmptyName(doc.input.name) ?? doc.built.sidebar.name;
-  const name = await resolveSecurityName(symbol, fallback, provider);
+  const name = await resolveSecurityName(symbol, fallback, provider ?? getProvider(marketOf(symbol)));
   if (name === doc.built.sidebar.name && name === doc.input.name) return doc;
 
   if (doc.built.kind === "intraday") {

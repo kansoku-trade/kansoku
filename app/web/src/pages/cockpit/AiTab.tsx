@@ -3,6 +3,7 @@ import type { CockpitComment } from "../../../../shared/types";
 import { marketDate } from "../../../../shared/time";
 import { useQuery } from "../../apiHooks";
 import { client } from "../../client";
+import { marketOfSymbol } from "../../lib/market";
 import { Badge, Button, MarketTime, Select, Spinner } from "../../ui";
 import { AnalysisRunDetails } from "./AnalysisRunDetails";
 import { buildFeed, type FeedRow } from "./aiFeed";
@@ -20,6 +21,7 @@ const LEVEL_TONE: Record<string, "up" | "down" | "accent" | "solid" | undefined>
 const SOURCE_LABEL: Record<string, string> = { analyst: "分析员", system: "系统" };
 
 function CommentItem({ symbol, comment }: { symbol: string; comment: CockpitComment }) {
+  const market = marketOfSymbol(symbol);
   const dim = comment.source === "commentator" && comment.level === "info";
   const meta: React.ReactNode[] = [];
   if (comment.trigger) meta.push(<span key="trigger">触发：{comment.trigger}</span>);
@@ -34,7 +36,7 @@ function CommentItem({ symbol, comment }: { symbol: string; comment: CockpitComm
 
   return (
     <div className={`ai-item${dim ? " dim" : ""}`}>
-      <MarketTime className="t" value={comment.ts} format="clock" />
+      <MarketTime className="t" value={comment.ts} format="clock" market={market} />
       <div className="body">
         <p>
           <Badge tone={LEVEL_TONE[comment.level]} className="level-badge">
@@ -102,6 +104,7 @@ export function AiTab({
   const shownError = selectedDate ? pastError : error;
 
   const rows = useMemo(() => buildFeed(shownComments).reverse(), [shownComments]);
+  const market = marketOfSymbol(symbol);
 
   const toggleFold = (id: string) => {
     setExpanded((prev) => {
@@ -149,14 +152,14 @@ export function AiTab({
     if (!expanded.has(row.id)) {
       return (
         <div key={row.id} className="ai-fold" onClick={() => toggleFold(row.id)}>
-          <MarketTime value={row.from} format="clock" /> – <MarketTime value={row.to} format="clock" /> 无事 ×{row.count}（点击展开）
+          <MarketTime value={row.from} format="clock" market={market} /> – <MarketTime value={row.to} format="clock" market={market} /> 无事 ×{row.count}（点击展开）
         </div>
       );
     }
     return (
       <div key={row.id}>
         <div className="ai-fold open" onClick={() => toggleFold(row.id)}>
-          <MarketTime value={row.from} format="clock" /> – <MarketTime value={row.to} format="clock" /> 无事 ×{row.count}（收起）
+          <MarketTime value={row.from} format="clock" market={market} /> – <MarketTime value={row.to} format="clock" market={market} /> 无事 ×{row.count}（收起）
         </div>
         {[...row.comments].reverse().map((c) => (
           <CommentItem key={`${c.ts}-${c.text}`} symbol={symbol} comment={c} />

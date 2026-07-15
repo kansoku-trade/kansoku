@@ -7,6 +7,7 @@ import { PROJECT_ROOT } from "../env.js";
 import { createResearchService } from "../modules/research/research.service.js";
 import { createResearchEditProposal } from "../modules/research/researchEdit.service.js";
 import { getProvider } from "../services/marketdata/registry.js";
+import { marketOf } from "../services/symbol.utils.js";
 import type { AiAgentFactory } from "./agentSession.js";
 import type { ChatEvent } from "./chat.js";
 import {
@@ -165,7 +166,7 @@ function prepareTurn(path: string, document: ResearchDocument, model: AiModel, d
       if (!disciplineText) throw new DisciplineMissingError();
       const messageEngine = new MessagesEngine([new ResearchDocumentContextProvider(document, related)]);
       const buildPack = deps.buildPack ?? defaultBuildReassessPack;
-      const fetchNews = deps.fetchNews ?? ((symbol: string) => getProvider().getNews(symbol));
+      const fetchNews = deps.fetchNews ?? ((symbol: string) => getProvider(marketOf(symbol)).getNews(symbol));
       const tools = buildTools({ document, sessionId, rootDir, db: deps.db, buildPack, fetchNews });
       return {
         symbol: document.symbols[0] ? `${document.symbols[0]}.US` : "RESEARCH",

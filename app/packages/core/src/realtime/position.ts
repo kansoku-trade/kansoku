@@ -1,10 +1,10 @@
 import type { CockpitPosition, RelativeVolume } from "../../../../shared/types.js";
 import { buildCockpitPosition } from "../services/cockpit/position.js";
 import { entryPlanFromDoc, latestIntradayDoc, type EntryPlan } from "../services/cockpit/entryPlan.js";
-import { getLongbridgeStream } from "../services/marketdata/longbridgeStream.js";
-import { getProvider } from "../services/marketdata/registry.js";
+import { getProvider, getStream } from "../services/marketdata/registry.js";
 import type { RawPosition } from "../services/marketdata/types.js";
 import { computeRelativeVolume } from "../services/relvol.js";
+import { marketOf } from "../services/symbol.utils.js";
 import { createEmitter, emitData, emitStatus, replay } from "./emitter.js";
 
 const SLOW_REFRESH_MS = 60_000;
@@ -41,7 +41,7 @@ export function buildPositionPayload(
 }
 
 function pushLatest(state: State, symbol: string): void {
-  const quote = getLongbridgeStream().getSnapshot(symbol);
+  const quote = getStream(marketOf(symbol)).getSnapshot(symbol);
   if (!quote) return;
   emitData(state.emitter, buildPositionPayload(state.positions, symbol, quote.last, state.plan, state.relvol));
 }
@@ -97,10 +97,10 @@ export function subscribePosition(symbol: string, push: (envelope: string) => vo
   state.emitter.listeners.add(push);
 
   if (fresh) {
-    const retainPromise = getLongbridgeStream()
+    const retainPromise = getStream(marketOf(symbol))
       .retain([symbol])
       .catch((err) => console.warn("[ws-position] retain failed", err));
-    state.quoteUnsub = getLongbridgeStream().onUpdate((cell) => {
+    state.quoteUnsub = getStream(marketOf(symbol)).onUpdate((cell) => {
       if (cell.symbol === symbol) schedulePush(state as State, symbol);
     });
     state.slowTimer = setInterval(() => void refresh(symbol, state as State), SLOW_REFRESH_MS);
@@ -121,7 +121,7 @@ export function subscribePosition(symbol: string, push: (envelope: string) => vo
       if (s.slowTimer) clearInterval(s.slowTimer);
       if (s.pushTimer) clearTimeout(s.pushTimer);
       states.delete(symbol);
-      void getLongbridgeStream()
+      void getStream(marketOf(symbol))
         .release([symbol])
         .catch(() => {});
     }

@@ -1,27 +1,23 @@
 import type { QuoteCell, QuoteSnapshot } from "../../../../shared/types.js";
-import { getLongbridgeStream } from "../services/marketdata/longbridgeStream.js";
+import { getProvider, getStream } from "../services/marketdata/registry.js";
+import { distinctStreams, releaseSymbols, retainSymbols } from "../services/marketdata/streamRouting.js";
 import type { ExtendedQuote, RawQuote } from "../services/marketdata/types.js";
-import { getProvider } from "../services/marketdata/registry.js";
-import { classifySession } from "../services/session.js";
+import { classifySession, sessionLabel } from "../services/session.js";
+import { marketOf } from "../services/symbol.utils.js";
 
 export type { RawQuote } from "../services/marketdata/types.js";
 
 const EXTENDED_FRESH_MS = 15 * 60_000;
 
-const SESSION_LABEL: Record<string, string> = {
-  pre: "盘前",
-  post: "盘后",
-  overnight: "隔夜",
-};
-
 export function normalizeQuote(q: RawQuote, nowMs: number): QuoteCell {
   const regularLast = Number(q.last);
   const regularPct = Number(q.change_percentage);
-  const clock = classifySession(Math.floor(nowMs / 1000));
+  const market = marketOf(q.symbol);
+  const clock = classifySession(Math.floor(nowMs / 1000), market);
   if (clock === "regular") {
     return { symbol: q.symbol, session: "日盘", last: regularLast, pct: regularPct, regularLast, regularPct };
   }
-  const label = SESSION_LABEL[clock];
+  const label = sessionLabel(clock, market);
   const preferred: ExtendedQuote | undefined =
     clock === "pre" ? q.pre_market : clock === "post" ? q.post_market : q.overnight;
   if (preferred?.last && preferred.prev_close && preferred.timestamp) {
@@ -31,7 +27,7 @@ export function normalizeQuote(q: RawQuote, nowMs: number): QuoteCell {
       const prev = Number(preferred.prev_close);
       return {
         symbol: q.symbol,
-        session: label ?? "日盘",
+        session: label,
         last,
         pct: prev ? (last / prev - 1) * 100 : 0,
         regularLast,
@@ -39,7 +35,14 @@ export function normalizeQuote(q: RawQuote, nowMs: number): QuoteCell {
       };
     }
   }
-  return { symbol: q.symbol, session: "日盘", last: regularLast, pct: regularPct, regularLast, regularPct };
+  return {
+    symbol: q.symbol,
+    session: market === "US" ? "日盘" : label,
+    last: regularLast,
+    pct: regularPct,
+    regularLast,
+    regularPct,
+  };
 }
 
 const SYMBOLS_TTL_MS = 600_000;
@@ -71,8 +74,8 @@ async function refreshBaseSymbols(): Promise<void> {
       const added = next.filter((s) => !baseSymbols.includes(s));
       baseSymbols = next;
       baseFetchedAt = Date.now();
-      if (added.length) await getLongbridgeStream().retain(added).catch(() => {});
-      if (dropped.length) await getLongbridgeStream().release(dropped).catch(() => {});
+      if (added.length) await retainSymbols(added).catch(() => {});
+      if (dropped.length) await releaseSymbols(dropped).catch(() => {});
     }
   })().finally(() => {
     baseRefreshInFlight = null;
@@ -83,7 +86,7 @@ async function refreshBaseSymbols(): Promise<void> {
 const listeners = new Set<(env: string) => void>();
 const dedup = new Set<string>();
 let coalesceTimer: ReturnType<typeof setTimeout> | null = null;
-let listenerHandle: (() => void) | null = null;
+let listenerHandles: Array<() => void> | null = null;
 let baseRefreshTimer: ReturnType<typeof setInterval> | null = null;
 let baseRetained = false;
 let degraded = false;
@@ -94,19 +97,18 @@ function emit(env: string): void {
 }
 
 function buildSnapshot(): QuoteSnapshot {
-  const stream = getLongbridgeStream();
   const seen = new Set<string>();
   const quotes: QuoteCell[] = [];
   for (const s of baseSymbols) {
     if (seen.has(s)) continue;
     seen.add(s);
-    const cell = stream.getSnapshot(s);
+    const cell = getStream(marketOf(s)).getSnapshot(s);
     if (cell) quotes.push(cell);
   }
   for (const s of extras.keys()) {
     if (seen.has(s)) continue;
     seen.add(s);
-    const cell = stream.getSnapshot(s);
+    const cell = getStream(marketOf(s)).getSnapshot(s);
     if (cell) quotes.push(cell);
   }
   return { ts: Date.now(), quotes };
@@ -130,16 +132,14 @@ function scheduleFlush(symbol: string): void {
 }
 
 function ensureListener(): void {
-  if (listenerHandle) return;
-  listenerHandle = getLongbridgeStream().onUpdate((cell) => {
-    scheduleFlush(cell.symbol);
-  });
+  if (listenerHandles) return;
+  listenerHandles = distinctStreams().map((stream) => stream.onUpdate((cell) => scheduleFlush(cell.symbol)));
 }
 
 async function ensureBase(): Promise<void> {
   await refreshBaseSymbols();
   if (!baseRetained && baseSymbols.length) {
-    await getLongbridgeStream().retain(baseSymbols).catch((err) => {
+    await retainSymbols(baseSymbols).catch((err) => {
       degraded = true;
       console.warn("[longbridge-stream] base retain failed:", err instanceof Error ? err.message : err);
     });
@@ -164,13 +164,13 @@ function stopIfIdle(): void {
     clearInterval(baseRefreshTimer);
     baseRefreshTimer = null;
   }
-  if (listenerHandle) {
-    listenerHandle();
-    listenerHandle = null;
+  if (listenerHandles) {
+    for (const unsub of listenerHandles) unsub();
+    listenerHandles = null;
   }
   lastEnvelope = null;
   if (baseRetained && baseSymbols.length) {
-    void getLongbridgeStream().release(baseSymbols).catch(() => {});
+    void releaseSymbols(baseSymbols).catch(() => {});
     baseRetained = false;
   }
 }
@@ -210,9 +210,7 @@ export function subscribeQuotes(push: (envelope: string) => void, extraSymbols: 
   startBaseRefreshTimer();
 
   if (fresh.length) {
-    void getLongbridgeStream()
-      .retain(fresh)
-      .catch((err) => console.warn("[longbridge-stream] retain extras failed", err));
+    void retainSymbols(fresh).catch((err) => console.warn("[longbridge-stream] retain extras failed", err));
   }
   void ensureBase().then(() => {
     if (lastEnvelope) push(lastEnvelope);
@@ -224,7 +222,7 @@ export function subscribeQuotes(push: (envelope: string) => void, extraSymbols: 
   return () => {
     listeners.delete(push);
     const drop = removeExtras(cleaned);
-    if (drop.length) void getLongbridgeStream().release(drop).catch(() => {});
+    if (drop.length) void releaseSymbols(drop).catch(() => {});
     stopIfIdle();
   };
 }

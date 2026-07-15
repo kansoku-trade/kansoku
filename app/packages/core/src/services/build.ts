@@ -7,7 +7,9 @@ import { getEventRisk } from "./events.js";
 import { getOptionsLevels } from "./optionsLevels.js";
 import { resolveSecurityName } from "./securityName.js";
 import { buildSepa, type SepaInput } from "./sepa.js";
+import { marketDate } from "./session.js";
 import { cleanCohortRows, type CohortRow, type FlowRow } from "./simple.js";
+import { marketOf } from "./symbol.utils.js";
 
 export const ALL_TYPES: ChartType[] = ["flow", "cohort", "sepa", "intraday"];
 
@@ -21,7 +23,7 @@ const dayKlineCache = new Map<string, { at: number; bars: RawBar[] }>();
 async function getDayKlineCached(symbol: string): Promise<RawBar[]> {
   const hit = dayKlineCache.get(symbol);
   if (hit && Date.now() - hit.at < DAY_KLINE_TTL_MS) return hit.bars;
-  const bars = await getProvider()
+  const bars = await getProvider(marketOf(symbol))
     .getKline(symbol, "day", 60)
     .catch(() => [] as RawBar[]);
   if (bars.length) dayKlineCache.set(symbol, { at: Date.now(), bars });
@@ -40,6 +42,11 @@ export function slugify(s: string, fallback: string): string {
 function symbolSlug(symbol: string, suffix: string): string {
   const sym = symbol.replace(/\.(US|HK)$/i, "").toLowerCase();
   return `${slugify(sym, "chart")}-${suffix}`;
+}
+
+function marketSessionDate(symbol: string, iso: string): string {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso;
+  return marketDate(marketOf(symbol), new Date(iso));
 }
 
 function localToday(): string {
@@ -74,12 +81,12 @@ async function prepareInput(type: ChartType, body: Body): Promise<Record<string,
     case "sepa": {
       const symbol = requireSymbol(body, "sepa");
       const count = Number(body.count ?? 260);
-      const provider = getProvider();
+      const provider = getProvider(marketOf(symbol));
       const [kline, spyKline, news, name] = await Promise.all([
         (async () => (body.kline as RawBar[] | undefined) ?? (await provider.getKline(symbol, "day", count)))(),
         (async () =>
           (body.spy_kline as RawBar[] | undefined) ??
-          (body.skip_spy === true ? [] : await provider.getKline("SPY.US", "day", count)))(),
+          (body.skip_spy === true ? [] : await getProvider("US").getKline("SPY.US", "day", count)))(),
         provider.getNews(symbol),
         resolveSecurityName(symbol, body.name, provider),
       ]);
@@ -100,7 +107,7 @@ async function prepareInput(type: ChartType, body: Body): Promise<Record<string,
       const session = typeof body.session === "string" ? body.session : "all";
       let timeframes = body.timeframes as Record<string, RawBar[]> | undefined;
       let dayKline = body.day_kline as RawBar[] | undefined;
-      const provider = getProvider();
+      const provider = getProvider(marketOf(symbol));
       const namePromise = resolveSecurityName(symbol, body.name, provider);
       const newsPromise = provider.getNews(symbol);
       const optionsPromise = getOptionsLevels(symbol);
@@ -137,7 +144,7 @@ async function prepareInput(type: ChartType, body: Body): Promise<Record<string,
       let symbol = typeof body.symbol === "string" ? body.symbol : null;
       if (!rows) {
         symbol = requireSymbol(body, "flow");
-        const provider = getProvider();
+        const provider = getProvider(marketOf(symbol));
         if (!provider.getFlow) {
           throw new ClientError(
             `flow: provider "${provider.name}" has no capital-flow data`,
@@ -163,7 +170,7 @@ export function rebuild(type: ChartType, input: Record<string, unknown>, title?:
     case "sepa": {
       const { built, meta } = buildSepa(input as unknown as SepaInput);
       const symbol = built.sidebar.symbol;
-      const sessionDate = ymd(built.sidebar.asOf) || localToday();
+      const sessionDate = (built.sidebar.asOf && marketSessionDate(symbol, built.sidebar.asOf)) || localToday();
       return {
         type,
         title: title || `${symbol} SEPA Dashboard`,
@@ -179,7 +186,7 @@ export function rebuild(type: ChartType, input: Record<string, unknown>, title?:
       const { built, meta } = buildIntraday(input as unknown as IntradayInput);
       const symbol = built.sidebar.symbol;
       const asOf = built.sidebar.asOf;
-      const sessionDate = asOf ? ymd(asOf) : localToday();
+      const sessionDate = asOf ? marketSessionDate(symbol, asOf) : localToday();
       return {
         type,
         title: title || `${symbol} 短线多周期`,

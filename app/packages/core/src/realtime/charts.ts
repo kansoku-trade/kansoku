@@ -4,11 +4,12 @@ import { buildChart, rebuild, refreshBody } from "../services/build.js";
 import { getEventRisk } from "../services/events.js";
 import { TIMEFRAME_ORDER } from "../services/intraday.js";
 import { getOptionsLevels } from "../services/optionsLevels.js";
-import { getLongbridgeStream, type CandlePeriod } from "../services/marketdata/longbridgeStream.js";
+import { getStream } from "../services/marketdata/registry.js";
+import type { CandlePeriod } from "../services/marketdata/quoteStream.js";
 import { classifySession, isCurrentSessionId } from "../services/session.js";
 import { predictionStale } from "../services/staleness.js";
 import { loadChart } from "../services/store.js";
-import { normalizeSymbol } from "../services/symbol.utils.js";
+import { marketOf, normalizeSymbol, type Market } from "../services/symbol.utils.js";
 import { mergeCandleBar, mergeFreshBars, type FrozenBarRange, type PushBar } from "./candleMerge.js";
 import { createPoller, type PollerHandle } from "./poller.js";
 import { isPushFresh, pollIntervalMs } from "./pushFallback.js";
@@ -19,9 +20,12 @@ const TF_TO_CANDLE_PERIOD: Record<TimeframeKey, CandlePeriod> = { m5: "5m", m15:
 const DEBOUNCE_MS = 250;
 const PUSH_FRESH_WINDOW_MS = 3_000;
 
+const chartMarkets = new Map<string, Market>();
+
 function chartIntervalMs(key?: string): number {
-  const session = classifySession(Math.floor(Date.now() / 1000));
   const state = key ? candleStates.get(key) : undefined;
+  const market = (key ? chartMarkets.get(key) : undefined) ?? state?.market ?? "US";
+  const session = classifySession(Math.floor(Date.now() / 1000), market);
   const now = Date.now();
   const lastPushAt = state?.lastPushAt ?? null;
   if (state) {
@@ -48,6 +52,7 @@ interface LatestDoc {
 
 interface CandleState {
   viewCount: number | undefined;
+  market: Market;
   timeframes: Partial<Record<TimeframeKey, RawBar[]>>;
   frozenRanges: Partial<Record<TimeframeKey, FrozenBarRange>>;
   lastPushAt: number | null;
@@ -127,7 +132,7 @@ async function runPushRebuild(key: string): Promise<void> {
 
 function wireCandleState(key: string, symbol: string, state: CandleState): void {
   candleStates.set(key, state);
-  const stream = getLongbridgeStream();
+  const stream = getStream(marketOf(symbol));
   for (const tf of TIMEFRAME_ORDER) {
     const period = TF_TO_CANDLE_PERIOD[tf];
     const unsub = stream.subscribeCandlesticks(symbol, period, (bar) => {
@@ -152,6 +157,7 @@ function setupCandleState(key: string, id: string, viewCount: number | undefined
   };
   const state: CandleState = {
     viewCount,
+    market: marketOf(symbol),
     timeframes,
     frozenRanges: frozenRangesOf(timeframes),
     lastPushAt: null,
@@ -173,6 +179,7 @@ function setupPreviewCandleState(key: string, symbol: string, input: Record<stri
   const timeframes = { ...(input.timeframes as Partial<Record<TimeframeKey, RawBar[]>>) };
   const state: CandleState = {
     viewCount: undefined,
+    market: marketOf(symbol),
     timeframes,
     frozenRanges: frozenRangesOf(timeframes),
     lastPushAt: null,
@@ -202,11 +209,14 @@ export async function subscribeChart(id: string, push: (envelope: string) => voi
     push(JSON.stringify({ type: "data", data: { built: doc.built, ...predictionFields(doc) } }));
   }
 
-  if (!LIVE_TYPES.has(doc.type) || !refreshBody(doc.type, doc.input) || !isCurrentSessionId(id)) return () => {};
+  const docSymbol = (doc.input as Record<string, unknown>).symbol;
+  const market = typeof docSymbol === "string" && docSymbol ? marketOf(docSymbol) : "US";
+  if (!LIVE_TYPES.has(doc.type) || !refreshBody(doc.type, doc.input) || !isCurrentSessionId(id, market)) return () => {};
 
   const key = viewCount === undefined ? id : `${id}#${viewCount}`;
   let handle = chartPollers.get(key);
   if (!handle) {
+    chartMarkets.set(key, market);
     if (doc.type === "intraday") setupCandleState(key, id, viewCount, doc);
     handle = createPoller({
       intervalMs: () => chartIntervalMs(key),
@@ -241,6 +251,7 @@ export async function subscribeChart(id: string, push: (envelope: string) => voi
       },
       onStop: () => {
         chartPollers.delete(key);
+        chartMarkets.delete(key);
         teardownCandleState(key);
       },
     });
@@ -259,6 +270,7 @@ export async function subscribePreview(symbol: string, push: (envelope: string) 
   if (!handle) {
     const result = await buildChart({ type: "intraday", symbol: normalized, session: "intraday" });
     previewInitialBuilt.set(key, result.built);
+    chartMarkets.set(key, marketOf(normalized));
     setupPreviewCandleState(key, normalized, result.input, result.title);
     handle = createPoller({
       intervalMs: () => chartIntervalMs(key),
@@ -286,6 +298,7 @@ export async function subscribePreview(symbol: string, push: (envelope: string) 
       },
       onStop: () => {
         chartPollers.delete(key);
+        chartMarkets.delete(key);
         teardownCandleState(key);
         previewInitialBuilt.delete(key);
       },

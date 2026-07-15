@@ -1,6 +1,24 @@
 export const MARKET_TIME_ZONE = "America/New_York";
 
+export type Market = "US" | "HK" | "CN";
+
 export type TimeInput = Date | number | string;
+
+const MARKET_TIME_ZONES: Record<Market, string> = {
+  US: MARKET_TIME_ZONE,
+  HK: "Asia/Hong_Kong",
+  CN: "Asia/Shanghai",
+};
+
+const MARKET_ZONE_SUFFIX: Record<Market, string> = {
+  US: "ET",
+  HK: "HKT",
+  CN: "CST",
+};
+
+export function marketTimeZone(market: Market = "US"): string {
+  return MARKET_TIME_ZONES[market] ?? MARKET_TIME_ZONE;
+}
 
 interface FormatParts {
   year: string;
@@ -98,10 +116,14 @@ export function formatClockInZone(input: TimeInput, timeZone: string, includeZon
   return `${p.hour}:${p.minute}${includeZone && p.timeZoneName ? ` ${p.timeZoneName}` : ""}`;
 }
 
-export function shouldShowLocalTime(input: TimeInput, currentTimeZone = localTimeZone()): boolean {
-  if (!currentTimeZone || currentTimeZone === MARKET_TIME_ZONE) return false;
+export function shouldShowLocalTime(
+  input: TimeInput,
+  currentTimeZone = localTimeZone(),
+  homeTimeZone: string = MARKET_TIME_ZONE,
+): boolean {
+  if (!currentTimeZone || currentTimeZone === homeTimeZone) return false;
   try {
-    return !sameWallClock(input, MARKET_TIME_ZONE, currentTimeZone);
+    return !sameWallClock(input, homeTimeZone, currentTimeZone);
   } catch {
     return false;
   }
@@ -111,14 +133,14 @@ export function localMarketTimeLabel(input: TimeInput, currentTimeZone = localTi
   return shouldShowLocalTime(input, currentTimeZone) ? formatDateTimeInZone(input, currentTimeZone, true) : null;
 }
 
-export function formatMarketDateTime(input: TimeInput, includeZone = true): string {
-  const p = parts(input);
-  return `${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}${includeZone ? " ET" : ""}`;
+export function formatMarketDateTime(input: TimeInput, includeZone = true, market: Market = "US"): string {
+  const p = parts(input, marketTimeZone(market));
+  return `${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}${includeZone ? ` ${MARKET_ZONE_SUFFIX[market]}` : ""}`;
 }
 
-export function formatMarketMonthDayTime(input: TimeInput, includeZone = false): string {
-  const p = parts(input);
-  return `${p.month}-${p.day} ${p.hour}:${p.minute}${includeZone ? " ET" : ""}`;
+export function formatMarketMonthDayTime(input: TimeInput, includeZone = false, market: Market = "US"): string {
+  const p = parts(input, marketTimeZone(market));
+  return `${p.month}-${p.day} ${p.hour}:${p.minute}${includeZone ? ` ${MARKET_ZONE_SUFFIX[market]}` : ""}`;
 }
 
 export function marketDate(input: TimeInput = new Date()): string {
@@ -126,9 +148,9 @@ export function marketDate(input: TimeInput = new Date()): string {
   return `${p.year}-${p.month}-${p.day}`;
 }
 
-export function formatMarketClock(input: TimeInput, includeZone = false): string {
-  const p = parts(input);
-  return `${p.hour}:${p.minute}${includeZone ? " ET" : ""}`;
+export function formatMarketClock(input: TimeInput, includeZone = false, market: Market = "US"): string {
+  const p = parts(input, marketTimeZone(market));
+  return `${p.hour}:${p.minute}${includeZone ? ` ${MARKET_ZONE_SUFFIX[market]}` : ""}`;
 }
 
 export function formatMarketTick(input: TimeInput, tickMarkType: number): string {

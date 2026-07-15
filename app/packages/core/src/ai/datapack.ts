@@ -30,6 +30,7 @@ import { getOptionsLevels } from "../services/optionsLevels.js";
 import type { RawPosition } from "../services/marketdata/types.js";
 import { easternDate } from "../services/session.js";
 import { listCharts, loadChart, type ListFilter } from "../services/store.js";
+import { marketOf } from "../services/symbol.utils.js";
 import { listComments } from "./comments.js";
 
 const KLINE_COUNT = 150;
@@ -63,13 +64,13 @@ export interface DatapackDeps {
 
 export const defaultDatapackDeps: DatapackDeps = {
   fetchQuote: async (symbol) => {
-    const quotes = await getProvider().getQuotes([symbol]);
+    const quotes = await getProvider(marketOf(symbol)).getQuotes([symbol]);
     if (!quotes.length) throw new ClientError(`no quote data for ${symbol}`, undefined, 502);
     return normalizeQuote(quotes[0], Date.now());
   },
-  fetchKline: (symbol, period, count) => getProvider().getKline(symbol, period, count),
-  fetchFlow: (symbol) => getProvider().getFlow?.(symbol) ?? Promise.resolve([]),
-  fetchNews: (symbol) => getProvider().getNews(symbol),
+  fetchKline: (symbol, period, count) => getProvider(marketOf(symbol)).getKline(symbol, period, count),
+  fetchFlow: (symbol) => getProvider(marketOf(symbol)).getFlow?.(symbol) ?? Promise.resolve([]),
+  fetchNews: (symbol) => getProvider(marketOf(symbol)).getNews(symbol),
   fetchPositions: () => getProvider().getPositions?.() ?? Promise.resolve([]),
   listComments,
   listCharts,

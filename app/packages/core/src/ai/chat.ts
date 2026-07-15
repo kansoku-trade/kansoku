@@ -12,6 +12,7 @@ import type {
 import { PROJECT_ROOT } from "../env.js";
 import { annotationsService } from "../modules/annotations/annotations.service.js";
 import { getProvider } from "../services/marketdata/registry.js";
+import { marketOf } from "../services/symbol.utils.js";
 import { easternDate } from "../services/session.js";
 import { loadChart as defaultLoadChart } from "../services/store.js";
 import type { AiAgentFactory } from "./agentSession.js";
@@ -283,8 +284,8 @@ function prepareTurn(
     buildTurn: async () => {
       const listCommentsFn = deps.listComments ?? defaultListComments;
       const buildPackFn = deps.buildPack ?? defaultBuildReassessPack;
-      const fetchKlineFn = deps.fetchKline ?? ((sym, period, count) => getProvider().getKline(sym, period, count));
-      const fetchNewsFn = deps.fetchNews ?? ((sym) => getProvider().getNews(sym));
+      const fetchKlineFn = deps.fetchKline ?? ((sym, period, count) => getProvider(marketOf(sym)).getKline(sym, period, count));
+      const fetchNewsFn = deps.fetchNews ?? ((sym) => getProvider(marketOf(sym)).getNews(sym));
       const readAnnotationsFn = deps.readAnnotations ?? ((sym) => annotationsService.list({ symbol: sym }));
       const writeAnnotationsFn =
         deps.writeAnnotations ??

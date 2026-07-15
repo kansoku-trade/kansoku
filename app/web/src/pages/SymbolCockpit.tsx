@@ -5,6 +5,7 @@ import { resolveIntradayTf, useIntradayDoc } from "../charts/intraday/useIntrada
 import type { SidebarTab } from "../charts/SidebarTabs";
 import { SepaDashboard } from "../charts/sepa/SepaDashboard";
 import { TopbarQuote } from "../QuoteBar";
+import { marketOfSymbol } from "../lib/market";
 import { recordRecentSymbol } from "../recentCharts";
 import { Dot, Empty, ErrorBox, MarketTime } from "../ui";
 import { useTitle } from "../useTitle";
@@ -22,6 +23,7 @@ import { useLatestAnalysis } from "./cockpit/useLatestAnalysis";
 
 export function SymbolCockpit({ sym }: { sym: string }) {
   const symLabel = sym.toUpperCase().replace(/\.US$/, "");
+  const market = marketOfSymbol(sym);
   const liveQuote = useLiveQuote(sym);
   const {
     mode,
@@ -224,7 +226,7 @@ export function SymbolCockpit({ sym }: { sym: string }) {
               <Dot tone={latestAlert.level === "alert" ? "down" : "accent"} pulse />
               <span className="alert-badge-text">
                 AI {latestAlert.level === "alert" ? "警报" : "提醒"}{" "}
-                <MarketTime value={latestAlert.ts} format="clock" /> ·{" "}
+                <MarketTime value={latestAlert.ts} format="clock" market={market} /> ·{" "}
                 {latestAlert.trigger ?? latestAlert.text}
               </span>
             </button>

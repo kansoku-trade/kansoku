@@ -1,13 +1,24 @@
 import { ClientError } from "../../errors.js";
+import type { Market } from "../symbol.utils.js";
 import { longbridgeProvider } from "./longbridge.js";
+import { getLongbridgeStream } from "./longbridgeStream.js";
+import type { QuoteStream } from "./quoteStream.js";
 import type { MarketDataProvider } from "./types.js";
 
 const providers: Record<string, MarketDataProvider> = {
   longbridge: longbridgeProvider,
 };
 
-export function getProvider(): MarketDataProvider {
-  const name = process.env.MARKET_PROVIDER || "longbridge";
+const streamFactories: Record<string, () => QuoteStream> = {
+  longbridge: getLongbridgeStream,
+};
+
+function resolveProviderName(market: Market): string {
+  return process.env[`MARKET_PROVIDER_${market}`] || process.env.MARKET_PROVIDER || "longbridge";
+}
+
+export function getProvider(market: Market = "US"): MarketDataProvider {
+  const name = resolveProviderName(market);
   const provider = providers[name];
   if (!provider) {
     throw new ClientError(
@@ -16,6 +27,18 @@ export function getProvider(): MarketDataProvider {
     );
   }
   return provider;
+}
+
+export function getStream(market: Market = "US"): QuoteStream {
+  const name = resolveProviderName(market);
+  const factory = streamFactories[name];
+  if (!factory) {
+    throw new ClientError(
+      `unknown MARKET_PROVIDER: ${name}`,
+      `available stream providers: ${Object.keys(streamFactories).join(", ")}`,
+    );
+  }
+  return factory();
 }
 
 export function listProviders(): string[] {

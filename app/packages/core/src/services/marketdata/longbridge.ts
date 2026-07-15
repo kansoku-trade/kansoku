@@ -1,8 +1,17 @@
-import type { NewsItem, RawBar } from "../../../../../shared/types.js";
+import type { MacroEventItem, NewsItem, RawBar } from "../../../../../shared/types.js";
 import { ClientError } from "../../errors.js";
 import { runLongbridgeJson } from "../longbridgeCli.js";
 import type { FlowRow } from "../simple.js";
-import type { MarketDataProvider, RawCapitalDistribution, RawPortfolio, RawPosition, RawQuote } from "./types.js";
+import type { Market } from "../symbol.utils.js";
+import type {
+  EarningsCalendarEntry,
+  MacroCalendarResult,
+  MarketDataProvider,
+  RawCapitalDistribution,
+  RawPortfolio,
+  RawPosition,
+  RawQuote,
+} from "./types.js";
 
 export type LongbridgeRunner = <T>(args: string[]) => Promise<T>;
 
@@ -29,6 +38,25 @@ interface CliSecurityInfo {
 
 interface CliWatchlistGroup {
   securities?: Array<{ symbol?: string } | string>;
+}
+
+interface CliCalendarInfo {
+  counter_id?: string;
+  content?: string;
+  datetime?: string;
+  star?: number;
+  data_kv?: Array<{ type?: string; value?: string }>;
+}
+
+interface CliCalendarPayload {
+  list?: Array<{ date?: string; infos?: CliCalendarInfo[] }>;
+}
+
+const MACRO_SUPPORTED_MARKETS = new Set<Market>(["US"]);
+
+function calendarKv(info: CliCalendarInfo, type: string): string | null {
+  const value = info.data_kv?.find((item) => item.type === type)?.value;
+  return value && value !== "--" ? value : null;
 }
 
 const SUPPORTED_PERIODS = new Set(["1m", "5m", "15m", "30m", "1h", "day", "week", "month", "year"]);
@@ -68,7 +96,15 @@ export function createLongbridgeProvider(run: LongbridgeRunner = runLongbridgeJs
 
   return {
     name: "longbridge",
-    capabilities: new Set(["flow", "capital-distribution", "positions", "watchlist", "portfolio"]),
+    capabilities: new Set([
+      "flow",
+      "capital-distribution",
+      "positions",
+      "watchlist",
+      "portfolio",
+      "earnings-calendar",
+      "macro-calendar",
+    ]),
 
     async getKline(symbol: string, period: string, count: number, session?: string): Promise<RawBar[]> {
       const normalized = normalizePeriod(period);
@@ -162,6 +198,56 @@ export function createLongbridgeProvider(run: LongbridgeRunner = runLongbridgeJs
         }
       }
       return [...symbols];
+    },
+
+    async getEarningsCalendar(symbol: string, fromDate: string): Promise<EarningsCalendarEntry | null> {
+      const payload = await callCli<CliCalendarPayload>("finance calendar report", run, [
+        "finance-calendar",
+        "report",
+        "--symbol",
+        symbol,
+      ]);
+      for (const day of payload.list ?? []) {
+        if (!day.date || day.date < fromDate) continue;
+        const info = day.infos?.find((item) => !item.counter_id || item.counter_id === symbol) ?? day.infos?.[0];
+        if (info?.content) return { date: day.date, title: info.content };
+      }
+      return null;
+    },
+
+    async getMacroCalendar(
+      market: Market,
+      startDate: string,
+      endDate: string,
+      minStar: number,
+    ): Promise<MacroCalendarResult> {
+      if (!MACRO_SUPPORTED_MARKETS.has(market)) return { supported: false };
+      const payload = await callCli<CliCalendarPayload>("finance calendar macrodata", run, [
+        "finance-calendar",
+        "macrodata",
+        "--market",
+        market,
+        "--star",
+        String(minStar),
+        "--start",
+        startDate,
+        "--end",
+        endDate,
+      ]);
+      const items: MacroEventItem[] = [];
+      for (const day of payload.list ?? []) {
+        for (const info of day.infos ?? []) {
+          const epoch = Number(info.datetime);
+          if (!info.content || !Number.isFinite(epoch) || (info.star ?? 0) < minStar) continue;
+          items.push({
+            ts: new Date(epoch * 1000).toISOString(),
+            title: info.content,
+            estimate: calendarKv(info, "estimate"),
+            previous: calendarKv(info, "previous"),
+          });
+        }
+      }
+      return { supported: true, items };
     },
   };
 }

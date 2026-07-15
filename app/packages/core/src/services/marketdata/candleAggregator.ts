@@ -1,4 +1,6 @@
 import type { RawBar } from "../../../../../shared/types.js";
+import { classifySession } from "../session.js";
+import { marketOf } from "../symbol.utils.js";
 import type { ProtocolQuote, ProtocolTradePush } from "./longbridgeProtocol.js";
 
 export type CandlePeriod = "5m" | "15m" | "60m";
@@ -19,6 +21,12 @@ const PERIOD_MS: Record<CandlePeriod, number> = { "5m": 5 * 60_000, "15m": 15 * 
 
 function key(symbol: string, period: CandlePeriod): string {
   return `${symbol}\0${period}`;
+}
+
+function isTradeableAt(symbol: string, tsMs: number): boolean {
+  const market = marketOf(symbol);
+  if (market === "US") return true;
+  return classifySession(Math.floor(tsMs / 1000), market) === "regular";
 }
 
 function fromRaw(symbol: string, period: CandlePeriod, raw: RawBar): CandleBar {
@@ -61,6 +69,7 @@ export class CandleAggregator {
     for (const trade of push.trades) {
       if (!Number.isFinite(trade.price) || trade.price <= 0 || trade.volume < 0) continue;
       const timestamp = trade.timestamp * 1000;
+      if (!isTradeableAt(push.symbol, timestamp)) continue;
       for (const period of periods) {
         const itemKey = key(push.symbol, period);
         const current = this.bars.get(itemKey);
@@ -102,6 +111,7 @@ export class CandleAggregator {
     const periods = this.periodsBySymbol.get(quote.symbol);
     if (!periods || !Number.isFinite(quote.lastDone) || quote.lastDone <= 0) return;
     const timestamp = quote.timestamp * 1000;
+    if (!isTradeableAt(quote.symbol, timestamp)) return;
     for (const period of periods) {
       const itemKey = key(quote.symbol, period);
       const current = this.bars.get(itemKey);

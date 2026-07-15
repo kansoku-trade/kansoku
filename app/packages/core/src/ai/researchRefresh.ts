@@ -20,6 +20,7 @@ import { ClientError } from "../errors.js";
 import { createResearchService } from "../modules/research/research.service.js";
 import { createResearchEditProposal } from "../modules/research/researchEdit.service.js";
 import { getProvider } from "../services/marketdata/registry.js";
+import { marketOf } from "../services/symbol.utils.js";
 import { AgentTimeoutError, type AiAgentFactory, createAgentSession } from "./agentSession.js";
 import { textResult } from "./dataTools.js";
 import { buildReassessPack as defaultBuildReassessPack, type ReassessPack } from "./datapack.js";
@@ -434,7 +435,7 @@ async function executeRefresh(
     const evidence = new EvidenceRegistry(document);
     const submittedReports: ResearchRefreshReport[] = [];
     const buildPack = deps.buildPack ?? defaultBuildReassessPack;
-    const fetchNews = deps.fetchNews ?? ((symbol: string) => getProvider().getNews(symbol));
+    const fetchNews = deps.fetchNews ?? ((symbol: string) => getProvider(marketOf(symbol)).getNews(symbol));
     const tools = buildTools({
       task,
       document,

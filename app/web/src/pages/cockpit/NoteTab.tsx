@@ -2,11 +2,13 @@ import { useCallback } from "react";
 import type { ReactNode } from "react";
 import { Maximize2 } from "lucide-react";
 import { Button, Empty, ErrorBox, MarketTime, Spinner, TimeAgo } from "../../ui";
+import { marketOfSymbol } from "../../lib/market";
 import { Markdown, openMarkdownModal } from "./markdown";
 import { bareSymbol, useDeepDive } from "./useDeepDive";
 import { useNote } from "./useNote";
 
 export function NoteTab({ symbol }: { symbol: string }) {
+  const market = marketOfSymbol(symbol);
   const { note, error, reload } = useNote(symbol);
   const onNoteReady = useCallback(() => reload(), [reload]);
   const deepDive = useDeepDive(symbol, onNoteReady);
@@ -52,7 +54,7 @@ export function NoteTab({ symbol }: { symbol: string }) {
       {note?.markdown ? (
         <>
           <div className="note-tab-header">
-            <span className="note-tab-mtime">更新于 {note.mtime ? <MarketTime value={note.mtime} /> : "—"}</span>
+            <span className="note-tab-mtime">更新于 {note.mtime ? <MarketTime value={note.mtime} market={market} /> : "—"}</span>
             <div className="note-tab-actions">
               <button className="link-button" onClick={openFullscreen}>
                 <Maximize2 className="icon" size={13} /> 全屏阅读

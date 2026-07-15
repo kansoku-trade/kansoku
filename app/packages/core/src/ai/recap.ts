@@ -15,6 +15,7 @@ import { getResolvedOutcomes, saveResolvedOutcome, type OutcomeKey } from "../se
 import { getProvider } from "../services/marketdata/registry.js";
 import { easternDate } from "../services/session.js";
 import { listCharts, loadChart } from "../services/store.js";
+import { marketOf } from "../services/symbol.utils.js";
 import { listComments } from "./comments.js";
 import { listUsage, summarizeUsage, type AiUsageRecord } from "./usageStore.js";
 
@@ -176,7 +177,7 @@ export const defaultRecapDeps: RecapDeps = {
   journalDir: JOURNAL_DIR,
   listCharts,
   loadChart,
-  fetchKline: (symbol, period, count) => getProvider().getKline(symbol, period, count),
+  fetchKline: (symbol, period, count) => getProvider(marketOf(symbol)).getKline(symbol, period, count),
   listComments,
   listUsage,
   getOutcome: async (chartId) => (await getResolvedOutcomes([chartId])).get(chartId) ?? null,

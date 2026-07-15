@@ -1,4 +1,5 @@
 import type { IntradayOptionsLevels, OptionsWallLevel } from "../../../../shared/types.js";
+import { marketOf } from "./symbol.utils.js";
 
 const CBOE_BASE = "https://cdn.cboe.com/api/global/delayed_quotes/options";
 // OI settles once per day after the close; 15min only bounds intraday volume staleness.
@@ -80,7 +81,7 @@ function aggregate(sym: string, payload: unknown): IntradayOptionsLevels | null 
 }
 
 export async function getOptionsLevels(symbol: string): Promise<IntradayOptionsLevels | null> {
-  if (!/\.US$/i.test(symbol)) return null;
+  if (marketOf(symbol) !== "US") return null;
   const sym = symbol.replace(/\.US$/i, "").toUpperCase();
   if (sym.startsWith(".")) return null;
   const hit = cache.get(sym);

@@ -2,6 +2,7 @@ import { useState, type ReactNode } from "react";
 import { TriangleAlert } from "lucide-react";
 import type { IntradayBuilt, QuoteCell, TimeframeKey } from "../../../../shared/types";
 import { fmt } from "../../format";
+import { marketOfSymbol } from "../../lib/market";
 import { MarketTime } from "../../ui";
 import type { SidebarTab } from "../SidebarTabs";
 import { SidebarTabs } from "../SidebarTabs";
@@ -45,6 +46,7 @@ export function IntradaySidebar({
   liveQuote,
 }: IntradaySidebarProps) {
   const s = built.sidebar;
+  const market = marketOfSymbol(s.symbol);
   const displayedQuote = resolveSidebarQuote(s, liveQuote);
   const [internalActive, setInternalActive] = useState("prediction");
   const active = activeProp ?? internalActive;
@@ -89,7 +91,7 @@ export function IntradaySidebar({
           <div className="name">{s.name}</div>
           <div className="price">${fmt(displayedQuote.last)}</div>
           <div className="price-date">
-            {displayedQuote.asOf ? <MarketTime value={displayedQuote.asOf} /> : ""} · 长桥证券
+            {displayedQuote.asOf ? <MarketTime value={displayedQuote.asOf} market={market} /> : ""} · 长桥证券
           </div>
         </div>
 

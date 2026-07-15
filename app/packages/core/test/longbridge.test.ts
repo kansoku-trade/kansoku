@@ -96,4 +96,77 @@ describe("longbridgeProvider (CLI-backed)", () => {
     const provider = createLongbridgeProvider(vi.fn().mockRejectedValue(new Error("not logged in")));
     await expect(provider.getQuotes(["NVDA.US"])).rejects.toMatchObject({ status: 502, message: expect.stringContaining("not logged in") });
   });
+
+  it("finds the next earnings entry on or after the given date, matching the symbol's counter_id", async () => {
+    const run = runner({
+      "finance-calendar report --symbol NVDA.US": {
+        list: [
+          { date: "2026-07-01", infos: [{ counter_id: "OTHER.US", content: "OTHER Q2" }] },
+          {
+            date: "2026-07-20",
+            infos: [
+              { counter_id: "OTHER.US", content: "OTHER Q3" },
+              { counter_id: "NVDA.US", content: "NVDA Q2 2026" },
+            ],
+          },
+        ],
+      },
+    });
+    const provider = createLongbridgeProvider(run);
+    await expect(provider.getEarningsCalendar!("NVDA.US", "2026-07-10")).resolves.toEqual({
+      date: "2026-07-20",
+      title: "NVDA Q2 2026",
+    });
+  });
+
+  it("returns null when no earnings entry exists on or after the given date", async () => {
+    const run = runner({
+      "finance-calendar report --symbol NVDA.US": {
+        list: [{ date: "2026-07-01", infos: [{ counter_id: "NVDA.US", content: "past" }] }],
+      },
+    });
+    const provider = createLongbridgeProvider(run);
+    await expect(provider.getEarningsCalendar!("NVDA.US", "2026-07-10")).resolves.toBeNull();
+  });
+
+  it("parses macro calendar rows for a supported market, filtering by star and dropping the '--' sentinel", async () => {
+    const run = runner({
+      "finance-calendar macrodata --market US --star 3 --start 2026-07-10 --end 2026-07-13": {
+        list: [
+          {
+            date: "2026-07-11",
+            infos: [
+              {
+                content: "CPI",
+                datetime: String(Math.floor(Date.parse("2026-07-11T04:00:00.000Z") / 1000)),
+                star: 3,
+                data_kv: [
+                  { type: "estimate", value: "3.1%" },
+                  { type: "previous", value: "--" },
+                ],
+              },
+              { content: "low star", datetime: "1752209800", star: 2, data_kv: [] },
+            ],
+          },
+        ],
+      },
+    });
+    const provider = createLongbridgeProvider(run);
+    await expect(provider.getMacroCalendar!("US", "2026-07-10", "2026-07-13", 3)).resolves.toEqual({
+      supported: true,
+      items: [{ ts: "2026-07-11T04:00:00.000Z", title: "CPI", estimate: "3.1%", previous: null }],
+    });
+  });
+
+  it("declares macro calendar unsupported for HK/CN without calling the CLI", async () => {
+    const run = runner({});
+    const provider = createLongbridgeProvider(run);
+    await expect(provider.getMacroCalendar!("HK", "2026-07-10", "2026-07-13", 3)).resolves.toEqual({
+      supported: false,
+    });
+    await expect(provider.getMacroCalendar!("CN", "2026-07-10", "2026-07-13", 3)).resolves.toEqual({
+      supported: false,
+    });
+    expect(run).not.toHaveBeenCalled();
+  });
 });

@@ -8,6 +8,7 @@ import { chartUrl } from "../chartUrl.js";
 import { JOURNAL_DIR, PROJECT_ROOT, skillSearchDirs } from "../env.js";
 import { buildChart } from "../services/build.js";
 import { getProvider } from "../services/marketdata/registry.js";
+import { marketOf } from "../services/symbol.utils.js";
 import { validatePrediction } from "../services/predictionRules.js";
 import { loadSkillIndex, readSkill, type SkillMeta } from "../services/skills.js";
 import { createChart } from "../services/store.js";
@@ -407,8 +408,9 @@ export async function executeAnalystRun(symbol: string, deps: AnalystDeps): Prom
       symbol,
       {
         buildReassessPack: async () => dataPack,
-        fetchNews: deps.fetchNews ?? ((symbol) => getProvider().getNews(symbol)),
-        fetchKline: deps.fetchKline ?? ((symbol, period, count) => getProvider().getKline(symbol, period, count)),
+        fetchNews: deps.fetchNews ?? ((symbol) => getProvider(marketOf(symbol)).getNews(symbol)),
+        fetchKline:
+          deps.fetchKline ?? ((symbol, period, count) => getProvider(marketOf(symbol)).getKline(symbol, period, count)),
         createChart: deps.createChart ?? defaultCreateChart,
         appendComment: append,
         repoRoot,

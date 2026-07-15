@@ -41,6 +41,7 @@ import { classifyMacdStructure, MACD_STRUCTURE_META, ZERO_TANGLE_NOTE, type Macd
 import { detect123Patterns } from "./pattern123.js";
 import { enrichCandlePatterns, offSessionSignalKeeper, SCORE_DOT_MARKER, SCORE_FULL_MARKER } from "./patternScoring.js";
 import { offSessionSegments } from "./session.js";
+import { marketOf } from "./symbol.utils.js";
 
 export const TIMEFRAME_ORDER: TimeframeKey[] = ["m5", "m15", "h1"];
 export const TIMEFRAME_LABELS: Record<TimeframeKey, string> = { m5: "5分钟", m15: "15分钟", h1: "1小时" };
@@ -930,7 +931,7 @@ export function buildIntraday(input: IntradayInput): { built: IntradayBuilt; met
       autoBeichi: tf.autoBeichi,
       pattern123: tf.pattern123,
       fvgZones: tf.fvgZones,
-      offSession: offSessionSegments(tf.candles.map((c) => c.time)),
+      offSession: offSessionSegments(tf.candles.map((c) => c.time), marketOf(symbol)),
     };
   }
 

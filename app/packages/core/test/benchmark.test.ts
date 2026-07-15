@@ -26,8 +26,7 @@ const stream = vi.hoisted(() => {
   };
 });
 
-vi.mock("../src/services/marketdata/registry.js", () => ({ getProvider: () => provider }));
-vi.mock("../src/services/marketdata/longbridgeStream.js", () => ({ getLongbridgeStream: () => stream }));
+vi.mock("../src/services/marketdata/registry.js", () => ({ getProvider: () => provider, getStream: () => stream }));
 
 const { subscribeBenchmark } = await import("../src/realtime/benchmark.js");
 
@@ -101,5 +100,36 @@ describe("subscribeBenchmark", () => {
     stream.push(cell("SMH.US"));
     await vi.advanceTimersByTimeAsync(6_000);
     expect(provider.getKline).not.toHaveBeenCalled();
+  });
+});
+
+describe("subscribeBenchmark gates the US-only benchmark module for non-US symbols", () => {
+  const HK_REGULAR_TS = "2026-07-08T02:00:00.000Z";
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(HK_REGULAR_TS));
+    stream.listeners.clear();
+    stream.retain.mockClear();
+    stream.release.mockClear();
+    provider.getKline.mockReset().mockImplementation(() =>
+      Promise.resolve([{ time: HK_REGULAR_TS, open: 1, high: 1, low: 1, close: 1, volume: 100 }]),
+    );
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("emits an empty benchmark and retains no stream symbols for a non-US primary symbol", async () => {
+    const events: unknown[] = [];
+    const unsub = subscribeBenchmark("700.HK", (env) => events.push(JSON.parse(env)));
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(stream.retain).not.toHaveBeenCalled();
+    expect(provider.getKline).not.toHaveBeenCalled();
+    const data = events.find((e: any) => e.type === "data") as any;
+    expect(data.data).toEqual([]);
+    unsub();
   });
 });

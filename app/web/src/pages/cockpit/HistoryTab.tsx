@@ -3,6 +3,7 @@ import { Check, CircleX, Clock, NotebookText } from "lucide-react";
 import type { OutcomeStatus, SymbolAnalysisRow } from "../../../../shared/types";
 import { marketDate } from "../../../../shared/time";
 import { fmt, signed } from "../../format";
+import { marketOfSymbol } from "../../lib/market";
 import { symbolUrl } from "./analysisMode";
 import { DIRECTION_COLOR, DIRECTION_LABEL } from "../../charts/intraday/directionLabels";
 import { theme } from "../../theme";
@@ -34,6 +35,7 @@ interface HistoryTabProps {
 }
 
 export function HistoryTab({ symbol, rows, currentId, journalByDate, onOpenJournal }: HistoryTabProps) {
+  const market = marketOfSymbol(symbol);
   const journalFor = (row: SymbolAnalysisRow): string | undefined =>
     journalByDate?.get(marketDate(row.created_at));
   return (
@@ -48,7 +50,7 @@ export function HistoryTab({ symbol, rows, currentId, journalByDate, onOpenJourn
         >
           <div className="zone-head">
             <span className="zone-label plain">
-              <MarketTime value={row.created_at} />
+              <MarketTime value={row.created_at} market={market} />
               {row.id === currentId && <Badge tone="up" className="p123-badge">当前</Badge>}
             </span>
             <span className="zone-range">{row.direction ? DIRECTION_LABEL[row.direction] : "—"}</span>

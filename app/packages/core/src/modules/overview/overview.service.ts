@@ -12,6 +12,7 @@ import { aggregateStats, type StatsRow } from "../../services/cockpit/stats.js";
 import { getProvider } from "../../services/marketdata/registry.js";
 import { easternDate } from "../../services/session.js";
 import { listCharts, loadChart } from "../../services/store.js";
+import { marketOf } from "../../services/symbol.utils.js";
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const OUTCOME_BARS = 300;
@@ -40,7 +41,7 @@ function cacheRecap(date: string, data: OverviewRecap): void {
 }
 
 async function computeHistoricalDayPct(symbol: string, date: string): Promise<number | null> {
-  const bars = await getProvider()
+  const bars = await getProvider(marketOf(symbol))
     .getKline(symbol, "day", DAILY_BARS)
     .catch(() => null);
   if (!bars) return null;
@@ -100,7 +101,7 @@ async function buildRecap(date: string): Promise<OverviewRecap> {
           : null;
       let outcome = attachRMultiple(cached.get(meta.id) ?? null, direction, plan);
       if (!outcome && direction && anchor) {
-        const bars = await getProvider()
+        const bars = await getProvider(marketOf(meta.symbol!))
           .getKline(meta.symbol!, "15m", OUTCOME_BARS)
           .catch(() => null);
         outcome = bars ? judgeOutcome(direction, anchor, plan, bars, zoneFromPrediction(prediction)) : null;
@@ -178,7 +179,7 @@ export const overviewService: OverviewApi = {
     const barsBySymbol = new Map<string, RawBar[] | null>();
     await Promise.all(
       symbolsNeedingBars.map(async (symbol) => {
-        const bars = await getProvider()
+        const bars = await getProvider(marketOf(symbol))
           .getKline(symbol, "15m", OUTCOME_BARS)
           .catch(() => null);
         barsBySymbol.set(symbol, bars);

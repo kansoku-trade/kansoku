@@ -1,13 +1,13 @@
 import { chartUrl } from "../chartUrl.js";
 import { buildOverviewBoard } from "../services/cockpit/board.js";
-import { getLongbridgeStream } from "../services/marketdata/longbridgeStream.js";
+import { distinctStreams } from "../services/marketdata/streamRouting.js";
 import { createEmitter, emitData, emitStatus, replay } from "./emitter.js";
 
 const THROTTLE_MS = 2_000;
 const SLOW_REFRESH_MS = 60_000;
 
 const emitter = createEmitter();
-let quoteUnsub: (() => void) | null = null;
+let quoteUnsubs: Array<() => void> | null = null;
 let timer: ReturnType<typeof setTimeout> | null = null;
 let slowTimer: ReturnType<typeof setInterval> | null = null;
 let refreshing: Promise<void> | null = null;
@@ -39,8 +39,8 @@ function scheduleRefresh(): void {
 }
 
 function ensureListener(): void {
-  if (quoteUnsub) return;
-  quoteUnsub = getLongbridgeStream().onUpdate(() => scheduleRefresh());
+  if (quoteUnsubs) return;
+  quoteUnsubs = distinctStreams().map((stream) => stream.onUpdate(() => scheduleRefresh()));
   slowTimer = setInterval(() => void refresh(), SLOW_REFRESH_MS);
 }
 
@@ -53,8 +53,8 @@ export function subscribeBoard(push: (envelope: string) => void): () => void {
   return () => {
     emitter.listeners.delete(push);
     if (emitter.listeners.size === 0) {
-      quoteUnsub?.();
-      quoteUnsub = null;
+      if (quoteUnsubs) for (const unsub of quoteUnsubs) unsub();
+      quoteUnsubs = null;
       if (timer) clearTimeout(timer);
       timer = null;
       if (slowTimer) clearInterval(slowTimer);
