@@ -30,7 +30,7 @@ import { installDefaultContextMenu } from "./contextMenu/defaultMenu.js";
 import { registerContextMenuIpc } from "./contextMenu/ipc.js";
 import { registerLogsIpc } from "./logging/ipc.js";
 import { sendTabsCommand } from "./tabs/commands.js";
-import { createTabsFileStore } from "./tabs/store.js";
+import { createTabsFileStore, type TabsFileStore } from "./tabs/store.js";
 import { registerTabsIpc } from "./tabs/ipc.js";
 import { initUpdater } from "./updater/updater.js";
 import { registerUpdaterIpc } from "./updater/ipc.js";
@@ -98,7 +98,8 @@ app.whenReady().then(async () => {
 
     registerOnboardingIpc(createOnboardingStore());
     registerDataRootIpc();
-    registerTabsIpc(createTabsFileStore(join(app.getPath("userData"), "tabs.json")));
+    const tabsFileStore: TabsFileStore = createTabsFileStore(join(app.getPath("userData"), "tabs.json"));
+    registerTabsIpc(tabsFileStore);
     registerLogsIpc(fileLogger);
     registerContextMenuIpc();
     await installDefaultContextMenu();
@@ -118,6 +119,20 @@ app.whenReady().then(async () => {
 
     app.on("activate", () => {
       if (windowManager.windowCount() === 0) windowManager.restoreWindows();
+    });
+
+    let quitFlushed = false;
+    app.on("will-quit", (event) => {
+      if (quitFlushed) return;
+      event.preventDefault();
+      Promise.all([tabsFileStore.flush(), windowManager.flush()])
+        .catch((error: unknown) => {
+          console.error("[desktop] flush on quit failed", error);
+        })
+        .finally(() => {
+          quitFlushed = true;
+          app.quit();
+        });
     });
   } catch (error) {
     showFatalErrorWindow(error);

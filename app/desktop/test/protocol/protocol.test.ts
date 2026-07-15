@@ -16,6 +16,17 @@ describe("decideRoute", () => {
     expect(decideRoute("app://-/")).toEqual({ kind: "static", relativePath: "index.html" });
   });
 
+  it("falls back popout routes to index.html even when the last segment has a dot", () => {
+    expect(decideRoute("app://-/popout/symbol/NVDA.US")).toEqual({
+      kind: "static",
+      relativePath: "index.html",
+    });
+    expect(decideRoute("app://-/popout/symbol/700.HK")).toEqual({
+      kind: "static",
+      relativePath: "index.html",
+    });
+  });
+
   it("blocks traversal attempts that survive URL normalization", () => {
     // Plain "../" and even "%2e%2e/" segments never reach decideRoute as
     // literal ".." — the WHATWG URL parser already collapses dot-segments
@@ -68,6 +79,12 @@ describe("applySpaFallback", () => {
     expect(applySpaFallback("assets/app.js")).toBe("assets/app.js");
     expect(applySpaFallback("index.html")).toBe("index.html");
   });
+
+  it("falls back popout routes to index.html regardless of a dotted last segment", () => {
+    expect(applySpaFallback("popout/symbol/NVDA.US")).toBe("index.html");
+    expect(applySpaFallback("popout/symbol/700.HK")).toBe("index.html");
+    expect(applySpaFallback("popout")).toBe("index.html");
+  });
 });
 
 describe("lookupMimeType", () => {
@@ -89,7 +106,7 @@ describe("missingDistErrorHtml", () => {
   it("names the missing dist root and the build command", () => {
     const html = missingDistErrorHtml("/tmp/dist");
     expect(html).toContain("/tmp/dist");
-    expect(html).toContain("pnpm --filter @trade/web build");
+    expect(html).toContain("pnpm --filter @kansoku/web build");
   });
 });
 

@@ -168,6 +168,16 @@ describe("createWindowManager", () => {
     expect(manager.windowCount()).toBe(2);
   });
 
+  it("flushes a pending debounced save immediately", async () => {
+    dir = await mkdtemp(join(tmpdir(), "window-manager-"));
+    const manager = await createWindowManager({ userDataDir: dir, debounceMs: 500 });
+
+    manager.openWindow();
+    await manager.flush();
+
+    expect(await readWindowsJson()).toEqual([{ id: "win-1", activeTabId: "" }]);
+  });
+
   it("wires the popout ipc handler to createPopoutWindow without touching the windows registry", async () => {
     dir = await mkdtemp(join(tmpdir(), "window-manager-"));
     createPopoutWindow.mockClear();

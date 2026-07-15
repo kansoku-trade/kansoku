@@ -68,6 +68,8 @@ export function guardStaticPath(pathname: string): string | null {
 }
 
 export function applySpaFallback(relativePath: string): string {
+  const [firstSegment] = relativePath.split("/");
+  if (firstSegment === "popout") return "index.html";
   if (extname(relativePath) !== "") return relativePath;
   return "index.html";
 }
@@ -99,7 +101,7 @@ export function missingDistErrorHtml(distRoot: string): string {
   <h1>Web build not found</h1>
   <p>Expected a built web app at:</p>
   <pre>${distRoot}</pre>
-  <p>Run <code>pnpm --filter @trade/web build</code> and relaunch.</p>
+  <p>Run <code>pnpm --filter @kansoku/web build</code> and relaunch.</p>
   </body>`;
 }
 

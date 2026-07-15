@@ -23,6 +23,7 @@ export interface WindowManager {
   openWindow(): BrowserWindow;
   restoreWindows(): void;
   windowCount(): number;
+  flush(): Promise<void>;
 }
 
 export async function createWindowManager(options: WindowManagerOptions): Promise<WindowManager> {
@@ -105,6 +106,10 @@ export async function createWindowManager(options: WindowManagerOptions): Promis
 
     windowCount(): number {
       return registry.size;
+    },
+
+    async flush(): Promise<void> {
+      await fileStore.flush();
     },
   };
 }

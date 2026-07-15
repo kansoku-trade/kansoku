@@ -74,6 +74,13 @@ describe("isValidPopoutSymbol", () => {
     expect(isValidPopoutSymbol("../../etc/passwd")).toBe(false);
     expect(isValidPopoutSymbol("<script>")).toBe(false);
   });
+
+  it("rejects dot-only input that URL normalization would escape the popout route with", () => {
+    expect(isValidPopoutSymbol("..")).toBe(false);
+    expect(isValidPopoutSymbol(".")).toBe(false);
+    expect(isValidPopoutSymbol("...")).toBe(false);
+    expect(isValidPopoutSymbol("--")).toBe(false);
+  });
 });
 
 describe("popoutRoute / popoutUrl", () => {
@@ -83,7 +90,7 @@ describe("popoutRoute / popoutUrl", () => {
   });
 
   it("resolves against the prod app:// origin outside dev", () => {
-    expect(popoutUrl("NVDA")).toBe("app://-/popout/symbol/NVDA");
+    expect(popoutUrl("NVDA.US")).toBe("app://-/popout/symbol/NVDA.US");
   });
 });
 
@@ -108,7 +115,7 @@ describe("createPopoutWindow", () => {
   });
 
   it("creates a sandboxed window sized per contract and loads the popout route", () => {
-    const win = createPopoutWindow("NVDA");
+    const win = createPopoutWindow("NVDA.US");
 
     expect(BrowserWindow).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -119,13 +126,13 @@ describe("createPopoutWindow", () => {
         webPreferences: expect.objectContaining({ sandbox: true, contextIsolation: true, nodeIntegration: false }),
       }),
     );
-    expect((win as unknown as FakeWindow).loadedUrl).toBe("app://-/popout/symbol/NVDA");
+    expect((win as unknown as FakeWindow).loadedUrl).toBe("app://-/popout/symbol/NVDA.US");
     expect(isPopoutWindow(win)).toBe(true);
   });
 
   it("cascades successive popouts and forgets them once closed", () => {
-    const win1 = createPopoutWindow("NVDA");
-    const win2 = createPopoutWindow("MU");
+    const win1 = createPopoutWindow("NVDA.US");
+    const win2 = createPopoutWindow("MU.US");
 
     const opts1 = (win1 as unknown as FakeWindow).options;
     const opts2 = (win2 as unknown as FakeWindow).options;

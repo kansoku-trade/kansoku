@@ -10,7 +10,7 @@ import {
   WINDOW_BG,
 } from "./mainWindow.js";
 
-export const SYMBOL_PATTERN = /^[A-Z0-9.\-]{1,20}$/i;
+export const SYMBOL_PATTERN = /^(?=.*[A-Z0-9])[A-Z0-9.\-]{1,20}$/i;
 
 export const POPOUT_DEFAULT_WIDTH = 520;
 export const POPOUT_DEFAULT_HEIGHT = 420;
