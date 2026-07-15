@@ -21,7 +21,7 @@ export interface TabsSnapshot {
 }
 
 export type TabsMutateOp =
-  | { op: "open"; route: string }
+  | { op: "open"; route: string; id?: string }
   | { op: "close"; id: string }
   | { op: "closeOthers"; id: string }
   | { op: "closeToRight"; id: string }

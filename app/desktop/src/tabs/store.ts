@@ -17,7 +17,7 @@ export interface TabsState {
 }
 
 export type MutateOp =
-  | { op: "open"; route: string }
+  | { op: "open"; route: string; id?: string }
   | { op: "close"; id: string }
   | { op: "closeOthers"; id: string }
   | { op: "closeToRight"; id: string }
@@ -26,8 +26,8 @@ export type MutateOp =
   | { op: "updateScroll"; id: string; scrollY: number }
   | { op: "adopt"; tabs: TabState[] };
 
-function makeTab(route: string): TabState {
-  return { id: crypto.randomUUID(), route, title: DEFAULT_TITLE, scrollY: 0 };
+function makeTab(route: string, id?: string): TabState {
+  return { id: id ?? crypto.randomUUID(), route, title: DEFAULT_TITLE, scrollY: 0 };
 }
 
 export function emptyTabsState(): TabsState {
@@ -38,8 +38,9 @@ function withTabs(state: TabsState, tabs: TabState[]): TabsState {
   return { revision: state.revision + 1, tabs };
 }
 
-export function openTab(state: TabsState, route: string): TabsState {
-  return withTabs(state, [...state.tabs, makeTab(route)]);
+export function openTab(state: TabsState, route: string, id?: string): TabsState {
+  const usableId = id && !state.tabs.some((tab) => tab.id === id) ? id : undefined;
+  return withTabs(state, [...state.tabs, makeTab(route, usableId)]);
 }
 
 export function closeTab(state: TabsState, id: string): TabsState {
@@ -98,7 +99,7 @@ export function adoptTabs(state: TabsState, tabs: TabState[]): TabsState {
 export function applyMutation(state: TabsState, mutation: MutateOp): TabsState {
   switch (mutation.op) {
     case "open":
-      return openTab(state, mutation.route);
+      return openTab(state, mutation.route, mutation.id);
     case "close":
       return closeTab(state, mutation.id);
     case "closeOthers":

@@ -6,6 +6,8 @@ import * as tabsStore from "./tabsStore";
 import { loadTabsSnapshot, saveTabsSnapshot, type TabsSnapshot, type TabState } from "./tabsStore";
 
 const ACTIVE_TAB_STORAGE_KEY = "desktop-active-tab-v1";
+const LEGACY_TABS_STORAGE_KEY = "desktop-tabs-v1";
+const PLACEHOLDER_TAB: TabState = { id: "", route: "/", title: "Kansoku", scrollY: 0 };
 
 export interface TabsController {
   snapshot: TabsSnapshot;
@@ -39,6 +41,30 @@ function writeActiveTabId(id: string): void {
   }
 }
 
+function isValidTab(value: unknown): value is TabState {
+  if (!value || typeof value !== "object") return false;
+  const tab = value as Record<string, unknown>;
+  return (
+    typeof tab.id === "string" &&
+    typeof tab.route === "string" &&
+    typeof tab.title === "string" &&
+    typeof tab.scrollY === "number"
+  );
+}
+
+function readLegacyTabs(): TabState[] | null {
+  try {
+    const raw = localStorage.getItem(LEGACY_TABS_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { tabs?: unknown };
+    if (!Array.isArray(parsed.tabs)) return null;
+    const tabs = parsed.tabs.filter(isValidTab);
+    return tabs.length > 0 ? tabs : null;
+  } catch {
+    return null;
+  }
+}
+
 function reselectActiveTabId(prevTabs: TabState[], nextTabs: TabState[], activeTabId: string): string {
   if (nextTabs.length === 0) return activeTabId;
   if (nextTabs.some((tab) => tab.id === activeTabId)) return activeTabId;
@@ -51,66 +77,70 @@ function withCurrentScrollCaptured(snapshot: TabsSnapshot): TabsSnapshot {
   return tabsStore.updateTabScroll(snapshot, snapshot.activeTabId, window.scrollY);
 }
 
-function initialSharedSnapshot(): TabsSnapshot {
-  const placeholder = loadTabsSnapshot();
-  const stored = readActiveTabId();
-  const activeTabId = placeholder.tabs.some((tab) => tab.id === stored) ? stored : placeholder.activeTabId;
-  return { tabs: placeholder.tabs, activeTabId };
-}
-
 export function useTabsController(): TabsController {
   const [bridge] = useState<SharedTabsBridge | null>(() => getSharedTabsBridge());
 
-  const [snapshot, setSnapshot] = useState<TabsSnapshot>(() => (bridge ? initialSharedSnapshot() : loadTabsSnapshot()));
+  const [snapshot, setSnapshot] = useState<TabsSnapshot>(() =>
+    bridge ? { tabs: [], activeTabId: readActiveTabId() } : loadTabsSnapshot(),
+  );
   const snapshotRef = useRef(snapshot);
   snapshotRef.current = snapshot;
 
-  const applyIncoming = useCallback((next: SharedSnapshot) => {
-    setSnapshot((prev) => ({
-      tabs: next.tabs,
-      activeTabId: reselectActiveTabId(prev.tabs, next.tabs, prev.activeTabId),
-    }));
+  const lastRevisionRef = useRef(-1);
+  const applySnapshot = useCallback((next: SharedSnapshot) => {
+    if (next.revision <= lastRevisionRef.current) return;
+    lastRevisionRef.current = next.revision;
+    setSnapshot((prev) => {
+      if (prev.tabs.length === 0) {
+        const activeTabId = next.tabs.some((tab) => tab.id === prev.activeTabId)
+          ? prev.activeTabId
+          : next.tabs[0]?.id ?? "";
+        return { tabs: next.tabs, activeTabId };
+      }
+      return {
+        tabs: next.tabs,
+        activeTabId: reselectActiveTabId(prev.tabs, next.tabs, prev.activeTabId),
+      };
+    });
   }, []);
 
   useEffect(() => {
     if (!bridge) return;
     let cancelled = false;
-    let lastRevision = -1;
 
-    const guarded = (next: SharedSnapshot) => {
-      if (cancelled || next.revision < lastRevision) return;
-      lastRevision = next.revision;
-      applyIncoming(next);
-    };
-
-    const unsubscribe = bridge.onSnapshot(guarded);
+    const unsubscribe = bridge.onSnapshot((next) => {
+      if (!cancelled) applySnapshot(next);
+    });
 
     void bridge.getSnapshot().then(async (initial) => {
       if (cancelled) return;
       if (initial.tabs.length > 0) {
-        guarded(initial);
+        applySnapshot(initial);
         return;
       }
-      const legacy = loadTabsSnapshot();
-      const adopted = await bridge.mutate({ op: "adopt", tabs: legacy.tabs });
-      if (!cancelled) guarded(adopted);
+      const legacy = readLegacyTabs();
+      const result = legacy
+        ? await bridge.mutate({ op: "adopt", tabs: legacy })
+        : await bridge.mutate({ op: "open", route: "/" });
+      if (!cancelled) applySnapshot(result);
     });
 
     return () => {
       cancelled = true;
       unsubscribe();
     };
-  }, [bridge, applyIncoming]);
+  }, [bridge, applySnapshot]);
 
   useEffect(() => {
     if (bridge) {
-      writeActiveTabId(snapshot.activeTabId);
+      if (snapshot.activeTabId) writeActiveTabId(snapshot.activeTabId);
       return;
     }
     saveTabsSnapshot(snapshot);
   }, [snapshot, bridge]);
 
-  const activeTab = snapshot.tabs.find((tab) => tab.id === snapshot.activeTabId) ?? snapshot.tabs[0];
+  const activeTab =
+    snapshot.tabs.find((tab) => tab.id === snapshot.activeTabId) ?? snapshot.tabs[0] ?? PLACEHOLDER_TAB;
 
   const storeRef = useRef<{ tabId: string; store: RouteStore } | null>(null);
   if (storeRef.current?.tabId !== activeTab.id) {
@@ -119,7 +149,7 @@ export function useTabsController(): TabsController {
       store: createMemoryRouteStore(activeTab.route, {
         onChange: (route) => {
           if (bridge) {
-            void bridge.mutate({ op: "updateRoute", id: activeTab.id, route }).then(applyIncoming);
+            void bridge.mutate({ op: "updateRoute", id: activeTab.id, route }).then(applySnapshot);
             return;
           }
           setSnapshot((prev) => tabsStore.updateTabRoute(prev, activeTab.id, route));
@@ -130,7 +160,7 @@ export function useTabsController(): TabsController {
   __setActiveRouteStore(storeRef.current.store);
   __setActiveTitleSink((title) => {
     if (bridge) {
-      void bridge.mutate({ op: "updateTitle", id: activeTab.id, title }).then(applyIncoming);
+      void bridge.mutate({ op: "updateTitle", id: activeTab.id, title }).then(applySnapshot);
       return;
     }
     setSnapshot((prev) => tabsStore.updateTabTitle(prev, activeTab.id, title));
@@ -143,8 +173,10 @@ export function useTabsController(): TabsController {
 
   const captureScroll = useCallback((): Promise<unknown> => {
     if (!bridge) return Promise.resolve();
-    return bridge.mutate({ op: "updateScroll", id: snapshotRef.current.activeTabId, scrollY: window.scrollY }).then(applyIncoming);
-  }, [bridge, applyIncoming]);
+    const id = snapshotRef.current.activeTabId;
+    if (!id) return Promise.resolve();
+    return bridge.mutate({ op: "updateScroll", id, scrollY: window.scrollY }).then(applySnapshot);
+  }, [bridge, applySnapshot]);
 
   const activateTab = useCallback(
     (id: string) => {
@@ -165,9 +197,9 @@ export function useTabsController(): TabsController {
         setSnapshot((prev) => tabsStore.closeTab(prev, id));
         return;
       }
-      void bridge.mutate({ op: "close", id }).then(applyIncoming);
+      void bridge.mutate({ op: "close", id }).then(applySnapshot);
     },
-    [bridge, applyIncoming],
+    [bridge, applySnapshot],
   );
 
   const closeOtherTabs = useCallback(
@@ -176,9 +208,9 @@ export function useTabsController(): TabsController {
         setSnapshot((prev) => tabsStore.closeOtherTabs(withCurrentScrollCaptured(prev), id));
         return;
       }
-      void captureScroll().then(() => bridge.mutate({ op: "closeOthers", id }).then(applyIncoming));
+      void captureScroll().then(() => bridge.mutate({ op: "closeOthers", id }).then(applySnapshot));
     },
-    [bridge, captureScroll, applyIncoming],
+    [bridge, captureScroll, applySnapshot],
   );
 
   const closeTabsToRight = useCallback(
@@ -187,9 +219,9 @@ export function useTabsController(): TabsController {
         setSnapshot((prev) => tabsStore.closeTabsToRight(withCurrentScrollCaptured(prev), id));
         return;
       }
-      void captureScroll().then(() => bridge.mutate({ op: "closeToRight", id }).then(applyIncoming));
+      void captureScroll().then(() => bridge.mutate({ op: "closeToRight", id }).then(applySnapshot));
     },
-    [bridge, captureScroll, applyIncoming],
+    [bridge, captureScroll, applySnapshot],
   );
 
   const openTab = useCallback(
@@ -198,16 +230,15 @@ export function useTabsController(): TabsController {
         setSnapshot((prev) => tabsStore.openTab(withCurrentScrollCaptured(prev), route));
         return;
       }
-      void captureScroll().then(() => {
-        const prevIds = new Set(snapshotRef.current.tabs.map((tab) => tab.id));
-        return bridge.mutate({ op: "open", route }).then((result) => {
-          applyIncoming(result);
-          const created = result.tabs.find((tab) => !prevIds.has(tab.id));
-          if (created) setSnapshot((prev) => ({ ...prev, activeTabId: created.id }));
-        });
-      });
+      const id = crypto.randomUUID();
+      void captureScroll().then(() =>
+        bridge.mutate({ op: "open", route, id }).then((result) => {
+          applySnapshot(result);
+          setSnapshot((prev) => (prev.tabs.some((tab) => tab.id === id) ? { ...prev, activeTabId: id } : prev));
+        }),
+      );
     },
-    [bridge, captureScroll, applyIncoming],
+    [bridge, captureScroll, applySnapshot],
   );
 
   const openHomeTab = useCallback(() => openTab("/"), [openTab]);

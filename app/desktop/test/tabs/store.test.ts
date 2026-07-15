@@ -41,6 +41,31 @@ describe("openTab", () => {
     expect(next.tabs[1].title).toBe("Kansoku");
     expect(next.tabs[1].scrollY).toBe(0);
   });
+
+  it("uses a client-supplied id when it is not already taken", () => {
+    const state = homeState();
+    const next = openTab(state, "/symbol/NVDA.US", "client-id-1");
+    expect(next.tabs[1].id).toBe("client-id-1");
+  });
+
+  it("falls back to a generated id when the supplied id collides", () => {
+    const state = homeState();
+    const takenId = state.tabs[0].id;
+    const next = openTab(state, "/symbol/NVDA.US", takenId);
+    expect(next.tabs).toHaveLength(2);
+    expect(next.tabs[1].id).not.toBe(takenId);
+    expect(next.tabs[1].id).toBeTruthy();
+  });
+
+  it("falls back to a generated id when the supplied id is empty", () => {
+    const next = openTab(homeState(), "/symbol/NVDA.US", "");
+    expect(next.tabs[1].id).not.toBe("");
+  });
+
+  it("applyMutation passes the supplied id through the open op", () => {
+    const next = applyMutation(homeState(), { op: "open", route: "/logs", id: "client-id-2" });
+    expect(next.tabs[1].id).toBe("client-id-2");
+  });
 });
 
 describe("closeTab", () => {
