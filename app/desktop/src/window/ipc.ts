@@ -1,5 +1,5 @@
 import { ipcMain } from "electron";
-import { WINDOWS_ACTIVE_TAB_CHANNEL, WINDOWS_CONTEXT_CHANNEL } from "./channels.js";
+import { WINDOWS_ACTIVE_TAB_CHANNEL, WINDOWS_CONTEXT_CHANNEL, WINDOWS_POPOUT_CHANNEL } from "./channels.js";
 
 export interface WindowsContext {
   windowId: string;
@@ -9,6 +9,7 @@ export interface WindowsContext {
 export interface WindowsIpcDeps {
   getContext(senderId: number): WindowsContext | undefined;
   reportActiveTab(senderId: number, activeTabId: string): void;
+  openPopout(symbol: string): void;
 }
 
 export function registerWindowsIpc(deps: WindowsIpcDeps): void {
@@ -16,5 +17,9 @@ export function registerWindowsIpc(deps: WindowsIpcDeps): void {
 
   ipcMain.on(WINDOWS_ACTIVE_TAB_CHANNEL, (event, activeTabId: string) => {
     deps.reportActiveTab(event.sender.id, activeTabId);
+  });
+
+  ipcMain.handle(WINDOWS_POPOUT_CHANNEL, (_event, symbol: string) => {
+    deps.openPopout(symbol);
   });
 }

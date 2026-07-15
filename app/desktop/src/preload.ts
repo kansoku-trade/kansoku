@@ -5,7 +5,7 @@ import { IPC_GROUPS } from "./ipc/groups.js";
 import { TABS_COMMAND_CHANNEL, TABS_GET_CHANNEL, TABS_MUTATE_CHANNEL, TABS_SNAPSHOT_CHANNEL, type TabsCommand } from "./tabs/channels.js";
 import type { MutateOp, TabsState } from "./tabs/store.js";
 import { UPDATER_CHANNELS } from "./updater/channels.js";
-import { WINDOWS_ACTIVE_TAB_CHANNEL, WINDOWS_CONTEXT_CHANNEL } from "./window/channels.js";
+import { WINDOWS_ACTIVE_TAB_CHANNEL, WINDOWS_CONTEXT_CHANNEL, WINDOWS_POPOUT_CHANNEL } from "./window/channels.js";
 import type { WindowsContext } from "./window/ipc.js";
 
 // main.ts boots one embedded kernel regardless of dev or packaged mode, so
@@ -77,6 +77,7 @@ if (isPrivilegedOrigin) {
     reportActiveTab: (activeTabId: string): void => {
       ipcRenderer.send(WINDOWS_ACTIVE_TAB_CHANNEL, activeTabId);
     },
+    openPopout: (symbol: string): Promise<void> => ipcRenderer.invoke(WINDOWS_POPOUT_CHANNEL, symbol),
   };
 
   desktopApi.dataRoot = {

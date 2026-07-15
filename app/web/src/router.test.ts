@@ -1,5 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { __setActiveRouteStore, createMemoryRouteStore, navigate, resolveAnchorRoute, routePathname } from "./router.js";
+import {
+  __setActiveRouteStore,
+  createMemoryRouteStore,
+  matchPopoutSymbolRoute,
+  navigate,
+  resolveAnchorRoute,
+  routePathname,
+} from "./router.js";
 
 afterEach(() => {
   __setActiveRouteStore(null);
@@ -75,6 +82,20 @@ describe("resolveAnchorRoute", () => {
   it("leaves external protocols to the browser or Electron navigation guard", () => {
     expect(resolveAnchorRoute("https://example.com", "https://example.com/", "null")).toBeNull();
     expect(resolveAnchorRoute("mailto:test@example.com", "mailto:test@example.com", "null")).toBeNull();
+  });
+});
+
+describe("matchPopoutSymbolRoute", () => {
+  it("extracts and decodes the symbol from a popout route", () => {
+    expect(matchPopoutSymbolRoute("/popout/symbol/NVDA")).toBe("NVDA");
+    expect(matchPopoutSymbolRoute("/popout/symbol/700.HK")).toBe("700.HK");
+    expect(matchPopoutSymbolRoute("/popout/symbol/BRK%2EB")).toBe("BRK.B");
+  });
+
+  it("returns null for anything else, including nested paths", () => {
+    expect(matchPopoutSymbolRoute("/symbol/NVDA")).toBeNull();
+    expect(matchPopoutSymbolRoute("/popout/symbol/")).toBeNull();
+    expect(matchPopoutSymbolRoute("/popout/symbol/NVDA/extra")).toBeNull();
   });
 });
 

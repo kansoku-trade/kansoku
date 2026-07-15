@@ -58,20 +58,14 @@ export function IntradayTimeframeSwitch({
   );
 }
 
-export function IntradayDashboard({
-  symbol,
-  built,
-  activeTf,
-  predictionUpdatedAt,
-  predictionStale,
-  onLoadHistory,
-  sidebarTabs,
-  extraTabs,
-  activeTab,
-  onTabChange,
-  dock,
-  liveQuote,
-}: IntradayDashboardProps) {
+interface IntradayChartOnlyProps {
+  symbol: string;
+  built: IntradayBuilt;
+  activeTf: TimeframeKey;
+  onLoadHistory?: () => void;
+}
+
+export function IntradayChartOnly({ symbol, built, activeTf, onLoadHistory }: IntradayChartOnlyProps) {
   const [macdHeight, setMacdHeight] = useState(() => {
     const saved = Number(localStorage.getItem(MACD_HEIGHT_KEY));
     return Number.isFinite(saved) && saved > 0 ? clampMacdHeight(saved) : MACD_DEFAULT;
@@ -123,41 +117,60 @@ export function IntradayDashboard({
   };
 
   return (
-    <div className="layout">
-      <div className="charts-col">
-        <div className="chart-block intraday-main">
-          <div className="chart-label">K 线 + 成交量</div>
-          <div className="chart-legend">
-            {(built.sidebar.technicals[activeTf]?.emas ?? []).map((e, i) => (
-              <span key={e.period}>
-                <span className="swatch" style={{ background: EMA_COLORS[i % EMA_COLORS.length] }} />
-                EMA{e.period}
-                {e.last !== null && ` $${fmt(e.last)}`}
-              </span>
-            ))}
-            <span>
-              <span className="swatch" style={{ background: "rgba(232,232,232,0.3)" }} />
-              盘前/盘后
+    <div className="charts-col">
+      <div className="chart-block intraday-main">
+        <div className="chart-label">K 线 + 成交量</div>
+        <div className="chart-legend">
+          {(built.sidebar.technicals[activeTf]?.emas ?? []).map((e, i) => (
+            <span key={e.period}>
+              <span className="swatch" style={{ background: EMA_COLORS[i % EMA_COLORS.length] }} />
+              EMA{e.period}
+              {e.last !== null && ` $${fmt(e.last)}`}
             </span>
-            <span>
-              <span className="swatch" style={{ background: "rgba(70,100,180,0.7)" }} />
-              夜盘
-            </span>
-          </div>
-          <LayerPanel groups={layerGroups} checked={toggles} />
-          <DrawingToolbar api={drawingsApi} />
-          <div ref={mainRef} className="chart-host" />
+          ))}
+          <span>
+            <span className="swatch" style={{ background: "rgba(232,232,232,0.3)" }} />
+            盘前/盘后
+          </span>
+          <span>
+            <span className="swatch" style={{ background: "rgba(70,100,180,0.7)" }} />
+            夜盘
+          </span>
         </div>
-        <div
-          className={`pane-resizer${dragging ? " dragging" : ""}`}
-          title="拖动调整 MACD 高度"
-          onPointerDown={onResizeStart}
-        />
-        <div className="chart-block macd" style={{ flex: `0 0 ${macdHeight}px` }}>
-          <div className="chart-label">MACD (12,26,9)</div>
-          <div ref={macdRef} className="chart-host" />
-        </div>
+        <LayerPanel groups={layerGroups} checked={toggles} />
+        <DrawingToolbar api={drawingsApi} />
+        <div ref={mainRef} className="chart-host" />
       </div>
+      <div
+        className={`pane-resizer${dragging ? " dragging" : ""}`}
+        title="拖动调整 MACD 高度"
+        onPointerDown={onResizeStart}
+      />
+      <div className="chart-block macd" style={{ flex: `0 0 ${macdHeight}px` }}>
+        <div className="chart-label">MACD (12,26,9)</div>
+        <div ref={macdRef} className="chart-host" />
+      </div>
+    </div>
+  );
+}
+
+export function IntradayDashboard({
+  symbol,
+  built,
+  activeTf,
+  predictionUpdatedAt,
+  predictionStale,
+  onLoadHistory,
+  sidebarTabs,
+  extraTabs,
+  activeTab,
+  onTabChange,
+  dock,
+  liveQuote,
+}: IntradayDashboardProps) {
+  return (
+    <div className="layout">
+      <IntradayChartOnly symbol={symbol} built={built} activeTf={activeTf} onLoadHistory={onLoadHistory} />
       <IntradaySidebar
         built={built}
         activeTf={activeTf}

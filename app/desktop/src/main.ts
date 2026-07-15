@@ -34,6 +34,7 @@ import { createTabsFileStore } from "./tabs/store.js";
 import { registerTabsIpc } from "./tabs/ipc.js";
 import { initUpdater } from "./updater/updater.js";
 import { registerUpdaterIpc } from "./updater/ipc.js";
+import { isPopoutWindow } from "./window/popoutWindow.js";
 
 const fileLogger = createFileLogger({
   logFilePath: resolveMainLogPath(app.getPath("logs")),
@@ -68,7 +69,14 @@ function installAppMenu(checkForUpdates: () => void, openWindow: () => void): vo
       checkForUpdates,
       newWindow: openWindow,
       newTab: () => sendTabsCommand("new-tab"),
-      closeTab: () => sendTabsCommand("close-tab"),
+      closeTab: () => {
+        const focused = BrowserWindow.getFocusedWindow();
+        if (focused && isPopoutWindow(focused)) {
+          focused.close();
+          return;
+        }
+        sendTabsCommand("close-tab");
+      },
       nextTab: () => sendTabsCommand("next-tab"),
       prevTab: () => sendTabsCommand("prev-tab"),
     },

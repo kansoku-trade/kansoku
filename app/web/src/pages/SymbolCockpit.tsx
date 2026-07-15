@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, ChevronsRight } from "lucide-react";
+import { ArrowLeft, ChevronsRight, PictureInPicture2 } from "lucide-react";
 import { IntradayDashboard, IntradayTimeframeSwitch } from "../charts/intraday/IntradayDashboard";
 import { resolveIntradayTf, useIntradayDoc } from "../charts/intraday/useIntradayDoc";
 import type { SidebarTab } from "../charts/SidebarTabs";
 import { SepaDashboard } from "../charts/sepa/SepaDashboard";
+import { getPopoutBridge } from "../desktop/desktopWindowsBridge";
 import { TopbarQuote } from "../QuoteBar";
 import { marketOfSymbol } from "../lib/market";
 import { recordRecentSymbol } from "../recentCharts";
@@ -20,6 +21,25 @@ import { useCockpitComments } from "./cockpit/useCockpitComments";
 import { useCockpitEnv } from "./cockpit/useCockpitEnv";
 import { useCockpitReviewState } from "./cockpit/useCockpitReviewState";
 import { useLatestAnalysis } from "./cockpit/useLatestAnalysis";
+
+function PopoutButton({ sym }: { sym: string }) {
+  const bridge = getPopoutBridge();
+  if (!bridge) return null;
+
+  return (
+    <button
+      className="popout-open-btn"
+      type="button"
+      title="弹出盯盘小窗"
+      aria-label="弹出盯盘小窗"
+      onClick={() => {
+        void bridge.openPopout(sym);
+      }}
+    >
+      <PictureInPicture2 className="icon" size={14} />
+    </button>
+  );
+}
 
 export function SymbolCockpit({ sym }: { sym: string }) {
   const symLabel = sym.toUpperCase().replace(/\.US$/, "");
@@ -129,7 +149,10 @@ export function SymbolCockpit({ sym }: { sym: string }) {
           </a>
           <span className="title">{doc.title}</span>
           <span className="meta">{sym}</span>
-          <span className="topbar-actions">{doc.symbol && <TopbarQuote quote={liveQuote} />}</span>
+          <span className="topbar-actions">
+            <PopoutButton sym={sym} />
+            {doc.symbol && <TopbarQuote quote={liveQuote} />}
+          </span>
         </div>
         <div className="detail-body">
           <SepaDashboard built={doc.built} />
@@ -231,6 +254,7 @@ export function SymbolCockpit({ sym }: { sym: string }) {
               </span>
             </button>
           )}
+          <PopoutButton sym={sym} />
           {doc.symbol && <TopbarQuote quote={liveQuote} />}
         </span>
       </div>

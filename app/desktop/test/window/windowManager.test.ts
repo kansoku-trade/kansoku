@@ -40,8 +40,10 @@ class FakeWindow {
 
 let nextSenderId = 1;
 const createWindow = vi.fn(() => new FakeWindow(nextSenderId++));
+const createPopoutWindow = vi.fn(() => new FakeWindow(nextSenderId++));
 
 vi.mock("../../src/window/mainWindow.js", () => ({ createWindow }));
+vi.mock("../../src/window/popoutWindow.js", () => ({ createPopoutWindow }));
 
 const { createWindowManager } = await import("../../src/window/windowManager.js");
 
@@ -164,5 +166,20 @@ describe("createWindowManager", () => {
       expect.objectContaining({ stateFileName: "window-state-win-2.json" }),
     );
     expect(manager.windowCount()).toBe(2);
+  });
+
+  it("wires the popout ipc handler to createPopoutWindow without touching the windows registry", async () => {
+    dir = await mkdtemp(join(tmpdir(), "window-manager-"));
+    createPopoutWindow.mockClear();
+    ipcMain.handle.mockClear();
+    const manager = await createWindowManager({ userDataDir: dir, debounceMs: 10 });
+
+    const popoutHandler = ipcMain.handle.mock.calls.find(([channel]) => channel === "desktop:windows:popout")?.[1];
+    expect(popoutHandler).toBeDefined();
+
+    await popoutHandler?.({} as never, "NVDA" as never);
+
+    expect(createPopoutWindow).toHaveBeenCalledWith("NVDA");
+    expect(manager.windowCount()).toBe(0);
   });
 });

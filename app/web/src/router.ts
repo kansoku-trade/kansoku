@@ -84,6 +84,13 @@ export function routePathname(route: string): string {
   return pathname || "/";
 }
 
+const POPOUT_SYMBOL_ROUTE_RE = /^\/popout\/symbol\/([^/]+)$/;
+
+export function matchPopoutSymbolRoute(pathname: string): string | null {
+  const match = POPOUT_SYMBOL_ROUTE_RE.exec(pathname);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
 export function navigate(route: string, options: { replace?: boolean } = {}): void {
   const store = currentStore();
   if (route === store.getRoute()) return;
