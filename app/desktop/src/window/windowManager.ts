@@ -3,6 +3,7 @@ import { app } from "electron";
 import type { BrowserWindow } from "electron";
 import { createWindow } from "./mainWindow.js";
 import { registerWindowsIpc } from "./ipc.js";
+import { createPopoutWindow } from "./popoutWindow.js";
 import {
   addWindowEntry,
   createWindowsFileStore,
@@ -55,6 +56,9 @@ export async function createWindowManager(options: WindowManagerOptions): Promis
       if (next === state) return;
       state = next;
       fileStore.scheduleSave(state);
+    },
+    openPopout(symbol) {
+      createPopoutWindow(symbol);
     },
   });
 

@@ -258,6 +258,24 @@ a:hover { color: var(--accent); }
 .detail-topbar .title { color: var(--text-primary); font-weight: 500; }
 .detail-topbar .meta { color: var(--text-secondary); font-size: var(--fs-base); }
 
+.popout-open-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; box-sizing: border-box;
+  background: transparent; border: 1px solid var(--border); border-radius: var(--radius);
+  color: var(--text-secondary); cursor: pointer;
+}
+.popout-open-btn:hover { color: var(--text-primary); background: var(--bg-hover); border-color: var(--border-strong); }
+
+.popout-shell { height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+.popout-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px; background: var(--bg-surface); border-bottom: 1px solid var(--border);
+  font-size: var(--fs-md); flex-shrink: 0;
+}
+.popout-symbol { color: var(--text-primary); font-weight: 600; }
+.popout-body { flex: 1; min-height: 0; }
+.popout-body .charts-col { border-right: none; height: 100%; }
+
 .fullpage { height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 .fullpage .detail-body { flex: 1; min-height: 0; }
 

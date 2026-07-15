@@ -13,6 +13,7 @@ import {
 import { useHubStatus } from '../useHubStatus'
 import type { HubStatus } from '../wsHub'
 import { Dot, ScrollArea, showContextMenu, Tooltip, type ContextMenuItem } from '../ui'
+import { getPopoutBridge } from './desktopWindowsBridge'
 import {
   getDesktopUpdaterBridge,
   isAvailableStatus,
@@ -147,9 +148,12 @@ export function DesktopTitlebar({
   const updaterStatus = useUpdaterStatus()
   const showUpdateBadge = isAvailableStatus(updaterStatus)
 
-  const openTabMenu = (tabId: string, index: number) => {
+  const openTabMenu = (tab: TabState, index: number) => {
+    const tabId = tab.id
     const multi = snapshot.tabs.length > 1
     const isLast = index === snapshot.tabs.length - 1
+    const symbolMatch = tabKind(tab.route) === 'symbol' && tab.route.match(/^\/symbol\/(.+)$/)
+    const popoutBridge = symbolMatch ? getPopoutBridge() : null
     const items: ContextMenuItem[] = [
       {
         key: 'close',
@@ -177,6 +181,18 @@ export function DesktopTitlebar({
         accelerator: 'CmdOrCtrl+T',
         onClick: openHomeTab,
       },
+      ...(popoutBridge && symbolMatch
+        ? [
+            { type: 'divider' as const },
+            {
+              key: 'popout',
+              label: '弹出盯盘小窗',
+              onClick: () => {
+                void popoutBridge.openPopout(decodeURIComponent(symbolMatch[1]))
+              },
+            },
+          ]
+        : []),
     ]
     showContextMenu(items)
   }
@@ -198,7 +214,7 @@ export function DesktopTitlebar({
             closable={snapshot.tabs.length > 1}
             onActivate={() => activateTab(tab.id)}
             onClose={() => closeTabById(tab.id)}
-            onContextMenu={() => openTabMenu(tab.id, index)}
+            onContextMenu={() => openTabMenu(tab, index)}
           />
         ))}
         <NewTabLauncher

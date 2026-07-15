@@ -6,10 +6,11 @@ import { client } from "./client";
 import { AssistantChatPage } from "./pages/assistant/AssistantChatPage";
 import { Home } from "./pages/Home";
 import { LogsPage } from "./pages/logViewer/LogsPage";
+import { PopoutChartWindow } from "./pages/PopoutChartWindow";
 import { ResearchPage } from "./pages/research/ResearchPage";
 import { SettingsPage } from "./pages/settings/SettingsPage";
 import { SymbolCockpit } from "./pages/SymbolCockpit";
-import { navigate, routePathname, useRoute } from "./router";
+import { matchPopoutSymbolRoute, navigate, routePathname, useRoute } from "./router";
 import { ErrorBox } from "./ui";
 
 function Redirect({ to }: { to: string }) {
@@ -45,6 +46,8 @@ export function Router() {
   if (pathname === "/overview" || pathname === "/charts") {
     return <Redirect to="/" />;
   }
+  const popoutSymbol = matchPopoutSymbolRoute(pathname);
+  if (popoutSymbol) return <PopoutChartWindow sym={popoutSymbol} />;
   const chartMatch = pathname.match(/^\/charts\/(.+)$/);
   if (chartMatch) {
     return <ChartRedirect id={decodeURIComponent(chartMatch[1])} />;
