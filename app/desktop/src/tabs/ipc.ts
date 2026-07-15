@@ -1,9 +1,9 @@
 import { BrowserWindow, ipcMain } from "electron";
 import { TABS_GET_CHANNEL, TABS_MUTATE_CHANNEL, TABS_SNAPSHOT_CHANNEL } from "./channels.js";
-import { applyMutation, defaultTabsState, type MutateOp, type TabsFileStore, type TabsState } from "./store.js";
+import { applyMutation, emptyTabsState, type MutateOp, type TabsFileStore, type TabsState } from "./store.js";
 
 export function registerTabsIpc(fileStore: TabsFileStore): void {
-  let state: TabsState = defaultTabsState();
+  let state: TabsState = emptyTabsState();
   const ready = fileStore.load().then((loaded) => {
     state = loaded;
   });

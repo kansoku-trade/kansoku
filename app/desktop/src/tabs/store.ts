@@ -30,8 +30,8 @@ function makeTab(route: string): TabState {
   return { id: crypto.randomUUID(), route, title: DEFAULT_TITLE, scrollY: 0 };
 }
 
-export function defaultTabsState(): TabsState {
-  return { revision: 0, tabs: [makeTab(HOME_ROUTE)] };
+export function emptyTabsState(): TabsState {
+  return { revision: 0, tabs: [] };
 }
 
 function withTabs(state: TabsState, tabs: TabState[]): TabsState {
@@ -148,10 +148,10 @@ export function createTabsFileStore(
       try {
         const raw = await readFile(filePath, "utf8");
         const parsed = JSON.parse(raw) as unknown;
-        if (!isValidTabsState(parsed) || parsed.tabs.length === 0) return defaultTabsState();
+        if (!isValidTabsState(parsed)) return emptyTabsState();
         return parsed;
       } catch {
-        return defaultTabsState();
+        return emptyTabsState();
       }
     },
 

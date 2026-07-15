@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -8,7 +8,7 @@ import {
   closeTab,
   closeTabsToRight,
   createTabsFileStore,
-  defaultTabsState,
+  emptyTabsState,
   openTab,
   adoptTabs,
   updateTabRoute,
@@ -17,22 +17,23 @@ import {
   type TabsState,
 } from "../../src/tabs/store.js";
 
+function homeState(): TabsState {
+  return openTab(emptyTabsState(), "/");
+}
+
 function tabsOf(state: TabsState): string[] {
   return state.tabs.map((tab) => tab.id);
 }
 
-describe("defaultTabsState", () => {
-  it("starts with a single home tab", () => {
-    const state = defaultTabsState();
-    expect(state.revision).toBe(0);
-    expect(state.tabs).toHaveLength(1);
-    expect(state.tabs[0].route).toBe("/");
+describe("emptyTabsState", () => {
+  it("starts with no tabs at revision 0", () => {
+    expect(emptyTabsState()).toEqual({ revision: 0, tabs: [] });
   });
 });
 
 describe("openTab", () => {
   it("appends a new tab and bumps revision", () => {
-    const state = defaultTabsState();
+    const state = homeState();
     const next = openTab(state, "/symbol/NVDA.US");
     expect(next.revision).toBe(state.revision + 1);
     expect(next.tabs).toHaveLength(2);
@@ -44,7 +45,7 @@ describe("openTab", () => {
 
 describe("closeTab", () => {
   it("removes the tab and bumps revision", () => {
-    const state = openTab(defaultTabsState(), "/symbol/NVDA.US");
+    const state = openTab(homeState(), "/symbol/NVDA.US");
     const targetId = state.tabs[0].id;
     const next = closeTab(state, targetId);
     expect(next.revision).toBe(state.revision + 1);
@@ -53,13 +54,13 @@ describe("closeTab", () => {
   });
 
   it("is a no-op when the tab does not exist", () => {
-    const state = defaultTabsState();
+    const state = homeState();
     const next = closeTab(state, "missing-id");
     expect(next).toBe(state);
   });
 
   it("resets to a single home tab when the last tab is closed", () => {
-    const state = defaultTabsState();
+    const state = homeState();
     const targetId = state.tabs[0].id;
     const next = closeTab(state, targetId);
     expect(next.revision).toBe(state.revision + 1);
@@ -71,7 +72,7 @@ describe("closeTab", () => {
 
 describe("closeOtherTabs", () => {
   it("keeps only the given tab", () => {
-    let state = defaultTabsState();
+    let state = homeState();
     state = openTab(state, "/symbol/NVDA.US");
     state = openTab(state, "/symbol/MRVL.US");
     const keepId = state.tabs[1].id;
@@ -82,7 +83,7 @@ describe("closeOtherTabs", () => {
   });
 
   it("is a no-op when the tab does not exist", () => {
-    const state = defaultTabsState();
+    const state = homeState();
     const next = closeOtherTabs(state, "missing-id");
     expect(next).toBe(state);
   });
@@ -90,7 +91,7 @@ describe("closeOtherTabs", () => {
 
 describe("closeTabsToRight", () => {
   it("drops every tab after the given id", () => {
-    let state = defaultTabsState();
+    let state = homeState();
     state = openTab(state, "/symbol/NVDA.US");
     state = openTab(state, "/symbol/MRVL.US");
     const anchorId = state.tabs[1].id;
@@ -100,7 +101,7 @@ describe("closeTabsToRight", () => {
   });
 
   it("is a no-op when the tab does not exist", () => {
-    const state = defaultTabsState();
+    const state = homeState();
     const next = closeTabsToRight(state, "missing-id");
     expect(next).toBe(state);
   });
@@ -108,7 +109,7 @@ describe("closeTabsToRight", () => {
 
 describe("updateTabRoute / updateTabTitle / updateTabScroll", () => {
   it("patches the matching tab and bumps revision", () => {
-    const state = defaultTabsState();
+    const state = homeState();
     const id = state.tabs[0].id;
 
     const withRoute = updateTabRoute(state, id, "/symbol/NVDA.US");
@@ -125,7 +126,7 @@ describe("updateTabRoute / updateTabTitle / updateTabScroll", () => {
   });
 
   it("is a no-op when the tab does not exist", () => {
-    const state = defaultTabsState();
+    const state = homeState();
     expect(updateTabRoute(state, "missing-id", "/x")).toBe(state);
     expect(updateTabTitle(state, "missing-id", "x")).toBe(state);
     expect(updateTabScroll(state, "missing-id", 1)).toBe(state);
@@ -142,13 +143,13 @@ describe("adoptTabs", () => {
   });
 
   it("is a no-op when the store already has tabs", () => {
-    const state = defaultTabsState();
+    const state = homeState();
     const next = adoptTabs(state, [{ id: "a", route: "/", title: "x", scrollY: 0 }]);
     expect(next).toBe(state);
   });
 
   it("is a no-op when the incoming list has no valid tabs", () => {
-    const empty: TabsState = { revision: 0, tabs: [] };
+    const empty = emptyTabsState();
     const next = adoptTabs(empty, [{ id: 1 } as never]);
     expect(next).toBe(empty);
   });
@@ -156,7 +157,7 @@ describe("adoptTabs", () => {
 
 describe("applyMutation", () => {
   it("dispatches every op kind", () => {
-    let state = defaultTabsState();
+    let state = applyMutation(emptyTabsState(), { op: "open", route: "/" });
     state = applyMutation(state, { op: "open", route: "/symbol/NVDA.US" });
     expect(state.tabs).toHaveLength(2);
 
@@ -182,7 +183,7 @@ describe("applyMutation", () => {
     expect(state.tabs).toHaveLength(1);
     expect(state.tabs[0].route).toBe("/");
 
-    const adopted = applyMutation({ revision: 0, tabs: [] }, {
+    const adopted = applyMutation(emptyTabsState(), {
       op: "adopt",
       tabs: [{ id: "z", route: "/", title: "x", scrollY: 0 }],
     });
@@ -203,26 +204,30 @@ describe("createTabsFileStore", () => {
     await rm(dir, { recursive: true, force: true });
   });
 
-  it("falls back to a single home tab when the file is absent", async () => {
+  it("yields an empty state when the file is absent", async () => {
     const store = createTabsFileStore(path);
-    const state = await store.load();
-    expect(state.tabs).toHaveLength(1);
-    expect(state.tabs[0].route).toBe("/");
+    expect(await store.load()).toEqual({ revision: 0, tabs: [] });
   });
 
-  it("treats a corrupt file as a fresh home tab", async () => {
-    await rm(path, { force: true });
-    const { writeFile } = await import("node:fs/promises");
+  it("treats a corrupt file as an empty state", async () => {
     await writeFile(path, "not json");
-    const state = await createTabsFileStore(path).load();
-    expect(state.tabs).toHaveLength(1);
-    expect(state.tabs[0].route).toBe("/");
+    expect(await createTabsFileStore(path).load()).toEqual({ revision: 0, tabs: [] });
+  });
+
+  it("treats a structurally invalid file as an empty state", async () => {
+    await writeFile(path, JSON.stringify({ revision: "x", tabs: [{ id: 1 }] }));
+    expect(await createTabsFileStore(path).load()).toEqual({ revision: 0, tabs: [] });
+  });
+
+  it("preserves a persisted empty tabs list", async () => {
+    await writeFile(path, JSON.stringify({ revision: 7, tabs: [] }));
+    expect(await createTabsFileStore(path).load()).toEqual({ revision: 7, tabs: [] });
   });
 
   it("debounces scheduleSave and persists only the latest state after the wait", async () => {
     const debounceMs = 30;
     const store = createTabsFileStore(path, debounceMs);
-    const first = openTab(defaultTabsState(), "/symbol/NVDA.US");
+    const first = openTab(homeState(), "/symbol/NVDA.US");
     const second = openTab(first, "/symbol/MRVL.US");
 
     store.scheduleSave(first);
@@ -241,12 +246,11 @@ describe("createTabsFileStore", () => {
 
   it("round-trips through load after a flush", async () => {
     const store = createTabsFileStore(path, 500);
-    const state = openTab(defaultTabsState(), "/symbol/NVDA.US");
+    const state = openTab(homeState(), "/symbol/NVDA.US");
     store.scheduleSave(state);
     await store.flush();
 
     const reloaded = await createTabsFileStore(path).load();
-    expect(reloaded.tabs).toHaveLength(2);
-    expect(reloaded.revision).toBe(state.revision);
+    expect(reloaded).toEqual(state);
   });
 });
