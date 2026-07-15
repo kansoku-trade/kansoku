@@ -1,5 +1,6 @@
 import { promises as fs } from "node:fs";
 import { join } from "node:path";
+import type { AgentMessage } from "@earendil-works/pi-agent-core";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AiAgentFactory, AiAgentHandle } from "../src/ai/agentSession.js";
 import { type DeepDiveDeps, deepDiveState, resetDeepDiveStateForTests, startDeepDive } from "../src/ai/deepDive.js";
@@ -150,6 +151,46 @@ describe("startDeepDive success/failure paths", () => {
     expect(systemPrompts[0].indexOf("假纪律全文")).toBeLessThan(systemPrompts[0].indexOf("假技能全文"));
   });
 
+  it("no longer embeds the skill-index listing in the system prompt", async () => {
+    const systemPrompts: string[] = [];
+    const { deps } = harness(async (tools) => writeNote(tools), { systemPrompts });
+
+    startDeepDive("MU", deps);
+    await vi.waitFor(() => expect(deepDiveState().running).toBe(false));
+
+    expect(systemPrompts).toHaveLength(1);
+    expect(systemPrompts[0]).not.toContain("可用技能列表");
+    expect(systemPrompts[0]).toContain("假纪律全文");
+    expect(systemPrompts[0]).toContain("假技能全文");
+  });
+
+  it("wires transformContext to inject the skill catalog as runtime context", async () => {
+    const skillDir = join(repoRoot, ".claude", "skills", "foo");
+    await fs.mkdir(skillDir, { recursive: true });
+    await fs.writeFile(join(skillDir, "SKILL.md"), "---\nname: foo\ndescription: 演示技能\n---\nfoo body");
+
+    let capturedTransform: ((messages: AgentMessage[]) => Promise<AgentMessage[]>) | undefined;
+    const agentFactory: AiAgentFactory = ({ tools, transformContext }) => {
+      capturedTransform = transformContext;
+      const agent: AiAgentHandle = {
+        prompt: () => writeNote(tools),
+        abort: () => {},
+      };
+      return agent;
+    };
+    const { deps } = harness(async () => {});
+    deps.agentFactory = agentFactory;
+
+    startDeepDive("MU", deps);
+    await vi.waitFor(() => expect(deepDiveState().running).toBe(false));
+
+    if (!capturedTransform) throw new Error("missing transformContext");
+    const viewed = await capturedTransform([{ role: "user", content: "hi", timestamp: 0 }]);
+    const text = JSON.stringify(viewed);
+    expect(text).toContain("<available_skills>");
+    expect(text).toContain("foo");
+  });
+
   it("updates state and notifies on success", async () => {
     const { deps, notifications } = harness(async (tools) => {
       await tool(tools, "write_note").execute("c1", { content: "# MU notes" });
@@ -226,6 +267,19 @@ describe("startDeepDive success/failure paths", () => {
 });
 
 describe("deep-dive tools", () => {
+  it("exposes read_skill, bash, read_file, write_note with write_note last", async () => {
+    let names: string[] = [];
+    const { deps } = harness(async (tools) => {
+      names = tools.map((t) => t.name);
+      await writeNote(tools);
+    });
+
+    startDeepDive("MU", deps);
+    await vi.waitFor(() => expect(deepDiveState().running).toBe(false));
+
+    expect(names).toEqual(["read_skill", "bash", "read_file", "write_note"]);
+  });
+
   it("write_note writes only the target symbol file, ignoring any path param", async () => {
     const { deps } = harness(async (tools) => {
       await tool(tools, "write_note").execute("c1", { content: "hello MRVL" });

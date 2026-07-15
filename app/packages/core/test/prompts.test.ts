@@ -38,7 +38,7 @@ describe("assembled system prompts (drift guard)", () => {
   });
 
   it("deep dive adapter", () => {
-    expect(composeWithDiscipline(DISCIPLINE, deepDiveAdapterPrompt("<SKILL-INDEX>"))).toMatchSnapshot();
+    expect(composeWithDiscipline(DISCIPLINE, deepDiveAdapterPrompt())).toMatchSnapshot();
   });
 
   it("chat = discipline → context → dialog rules", () => {
@@ -68,7 +68,7 @@ describe("assembled system prompts (drift guard)", () => {
 });
 
 describe("no restated discipline prose in agent-own prompts", () => {
-  const judgmentOwnProse = [ANALYST_ADAPTER_PROMPT, deepDiveAdapterPrompt(""), CHAT_DIALOG_RULES, CHAT_GATED_TURN_INSTRUCTION];
+  const judgmentOwnProse = [ANALYST_ADAPTER_PROMPT, deepDiveAdapterPrompt(), CHAT_DIALOG_RULES, CHAT_GATED_TURN_INSTRUCTION];
 
   it("cites TD rule IDs instead of copying rule bodies", () => {
     for (const prose of judgmentOwnProse) {

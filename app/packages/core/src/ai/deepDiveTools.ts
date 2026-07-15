@@ -3,8 +3,8 @@ import { join } from "node:path";
 import type { AgentTool } from "@earendil-works/pi-agent-core";
 import { Type } from "typebox";
 import { skillSearchDirs } from "../env.js";
-import { loadSkillIndex, readSkill, skillIndexPrompt } from "../services/skills.js";
-import { buildBashTool, buildReadFileTool, buildReadSkillTool, type ExecFn, type ExecResult } from "./agentTools.js";
+import { loadSkillIndex, readSkill, type SkillMeta } from "../services/skills.js";
+import { buildResearchTools, type ExecFn, type ExecResult } from "./agentTools.js";
 import { textResult } from "./dataTools.js";
 import { deepDiveAdapterPrompt } from "./prompts.js";
 import { composeWithDiscipline } from "./promptPolicy.js";
@@ -25,9 +25,8 @@ export function loadDeepDiveSkillText(repoRoot: string): string | null {
  * Both texts are injected, not read here, so this stays a pure function; the runner owns the
  * fail-closed check.
  */
-export function buildSystemPrompt(repoRoot: string, deepDiveSkill: string, disciplineText = ""): string {
-  const index = loadSkillIndex(skillSearchDirs(repoRoot));
-  const own = [deepDiveAdapterPrompt(skillIndexPrompt(index)), "", "---", "", deepDiveSkill].join("\n");
+export function buildSystemPrompt(_repoRoot: string, deepDiveSkill: string, disciplineText = ""): string {
+  const own = [deepDiveAdapterPrompt(), "", "---", "", deepDiveSkill].join("\n");
   return composeWithDiscipline(disciplineText, own);
 }
 
@@ -39,9 +38,9 @@ export function buildTools(
   exec: ExecFn,
   stocksDir?: string,
   onNoteWritten?: () => void,
-): AgentTool[] {
-  const skillIndex = loadSkillIndex(skillSearchDirs(repoRoot));
+): { tools: AgentTool[]; skillIndex: SkillMeta[] } {
   const notesDir = stocksDir ?? join(repoRoot, "stocks");
+  const { tools: researchTools, skillIndex } = buildResearchTools({ repoRoot, exec });
 
   const writeNoteTool: AgentTool<typeof writeNoteSchema> = {
     name: "write_note",
@@ -59,5 +58,5 @@ export function buildTools(
     },
   };
 
-  return [buildReadSkillTool(skillIndex), buildBashTool(exec), buildReadFileTool(repoRoot), writeNoteTool];
+  return { tools: [...researchTools, writeNoteTool], skillIndex };
 }

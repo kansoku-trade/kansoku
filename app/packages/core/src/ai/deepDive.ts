@@ -2,6 +2,8 @@ import { PROJECT_ROOT } from "../env.js";
 import { type AiAgentFactory, createAgentSession } from "./agentSession.js";
 import { createDefaultExec, type ExecFn, type ExecResult } from "./agentTools.js";
 import { buildSystemPrompt, buildTools, DEEP_DIVE_SKILL, loadDeepDiveSkillText } from "./deepDiveTools.js";
+import { MessagesEngine } from "./messages/messageEngine.js";
+import { SkillCatalogProvider, toSkillContexts } from "./messages/sharedProviders.js";
 import { aiConfig, type AiModel } from "./models.js";
 import { emitNotice } from "./notices.js";
 import { DisciplineMissingError, loadSharedDiscipline } from "./promptPolicy.js";
@@ -79,10 +81,11 @@ async function executeDeepDiveRun(symbol: string, deps: DeepDiveDeps): Promise<v
     if (!disciplineText) throw new DisciplineMissingError();
 
     let noteWritten = false;
-    const tools = buildTools(repoRoot, symbol, exec, deps.stocksDir, () => {
+    const { tools, skillIndex } = buildTools(repoRoot, symbol, exec, deps.stocksDir, () => {
       noteWritten = true;
     });
     const systemPrompt = buildSystemPrompt(repoRoot, skillText, disciplineText);
+    const messagesEngine = new MessagesEngine([new SkillCatalogProvider(toSkillContexts(skillIndex))]);
     const session = createAgentSession({
       layer: "analyst",
       symbol,
@@ -90,6 +93,7 @@ async function executeDeepDiveRun(symbol: string, deps: DeepDiveDeps): Promise<v
       model: deps.model,
       systemPrompt,
       tools,
+      transformContext: async (messages) => (await messagesEngine.process(messages)).messages,
       agentFactory: deps.agentFactory,
     });
 

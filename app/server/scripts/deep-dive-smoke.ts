@@ -57,7 +57,7 @@ async function runDefaultMode(symbol: string): Promise<void> {
     return { stdout, stderr };
   };
 
-  const tools = buildTools(PROJECT_ROOT, symbol, exec, tmpStocksDir);
+  const { tools } = buildTools(PROJECT_ROOT, symbol, exec, tmpStocksDir);
   const wrappedTools = tools.map((tool) => ({
     ...tool,
     execute: async (...args: Parameters<typeof tool.execute>) => {

@@ -33,11 +33,10 @@ export const ANALYST_ADAPTER_PROMPT = [
 export const ANALYST_RETRY_PROMPT =
   "你上一条回复没有成功调用 submit_prediction。现在立即调用 submit_prediction 恰好一次提交结论；若被校验打回，修正后重交。拿不准方向就按技能规则提交 neutral。";
 
-export function deepDiveAdapterPrompt(skillIndexText: string): string {
+export function deepDiveAdapterPrompt(): string {
   return [
     "你是交易看盘应用 Kansoku 内自动运行的个股研究员，负责维护仓库里的个股六镜笔记。下方附上 stock-deep-dive 技能全文——工作流程与反模式一律以技能原文为准。",
-    "可用技能列表（流程需要时用 read_skill 加载）：",
-    skillIndexText,
+    "项目技能目录已作为运行时上下文注入（available_skills），需要时用 read_skill 加载全文。",
     "工具使用规则：",
     "- bash 用于运行 longbridge CLI 和 .claude/skills 下的 python 脚本；禁止用 bash 写文件（不得使用重定向、tee、rm、mv、cp）。",
     "- read_file 用于查看仓库内文件（如已有的 stocks/{SYMBOL}.md 笔记）。",
