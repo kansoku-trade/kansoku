@@ -3,6 +3,7 @@ import type { ChartDoc } from "../../shared/types";
 import { chartTargetPath } from "../../shared/chartUrl";
 import { useQuery } from "./apiHooks";
 import { client } from "./client";
+import { AssistantChatPage } from "./pages/assistant/AssistantChatPage";
 import { Home } from "./pages/Home";
 import { LogsPage } from "./pages/logViewer/LogsPage";
 import { ResearchPage } from "./pages/research/ResearchPage";
@@ -49,6 +50,7 @@ export function Router() {
   const symbolMatch = pathname.match(/^\/symbol\/(.+)$/);
   if (symbolMatch) return <SymbolCockpit sym={decodeURIComponent(symbolMatch[1])} />;
   if (pathname === "/research") return <ResearchPage />;
+  if (pathname === "/chat") return <AssistantChatPage />;
   if (pathname === "/settings") return <SettingsPage />;
   if (pathname === "/logs") return <LogsPage />;
   return <Home />;

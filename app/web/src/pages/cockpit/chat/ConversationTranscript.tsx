@@ -3,6 +3,7 @@ import { ChevronRight } from "lucide-react";
 import { ScrollArea } from "../../../ui";
 import { Markdown } from "../markdown";
 import { mergeTimeline, type TranscriptInsert } from "./transcriptTimeline.js";
+import { summarizeToolInput, toolRowKey } from "./toolSummary.js";
 import type { ChatLiveTool, ChatRow } from "./useChatSession";
 
 const SCROLL_STICK_THRESHOLD = 48;
@@ -10,6 +11,7 @@ const SCROLL_STICK_THRESHOLD = 48;
 function ToolRow({ label, running, input, output }: { label: string; running: boolean; input?: string; output?: string }) {
   const [open, setOpen] = useState(false);
   const hasDetail = Boolean(input || output);
+  const summary = summarizeToolInput(input);
 
   return (
     <div className="chat-tool">
@@ -26,6 +28,7 @@ function ToolRow({ label, running, input, output }: { label: string; running: bo
           {label}
           {running ? "…" : ""}
         </span>
+        {summary ? <span className="chat-tool-summary">{summary}</span> : null}
         {hasDetail ? <ChevronRight size={12} className={`chat-tool-caret${open ? " open" : ""}`} /> : null}
       </button>
       {open && hasDetail ? (
@@ -141,7 +144,7 @@ function ConversationTranscriptView({
       )}
       {liveTools.map((tool) => (
         <ToolRow
-          key={tool.id}
+          key={toolRowKey("live", tool.id)}
           label={tool.label}
           running={tool.status === "start"}
           input={tool.input}

@@ -155,6 +155,17 @@ export const researchRefreshTasks = sqliteTable(
   ],
 );
 
+export const assistantSessions = sqliteTable(
+  "assistant_sessions",
+  {
+    id: text("id").primaryKey(),
+    title: text("title").notNull(),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (t) => [index("assistant_sessions_updated").on(t.updatedAt)],
+);
+
 export const aiRoleSettings = sqliteTable("ai_role_settings", {
   role: text("role").primaryKey(),
   mode: text("mode").notNull(),

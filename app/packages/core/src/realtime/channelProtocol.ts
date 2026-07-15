@@ -1,4 +1,5 @@
 import type { CockpitComment } from "../../../../shared/types.js";
+import { assistantChatTurnState, onAssistantChatEvent } from "../ai/assistantChat.js";
 import { type ChatEvent, chatTurnState, onChatEvent } from "../ai/chat.js";
 import { onResearchChatEvent, researchChatTurnState } from "../ai/researchChat.js";
 import { getLatestResearchRefreshTask, onResearchRefreshEvent } from "../ai/researchRefresh.js";
@@ -59,6 +60,7 @@ export interface WsSub {
     | "board"
     | "chat"
     | "research-chat"
+    | "assistant-chat"
     | "research-refresh"
     | "preview"
     | "annotations";
@@ -124,6 +126,10 @@ export function parseWsMessage(raw: unknown): WsClientMessage | null {
   if (msg.kind === "research-chat") {
     if (typeof msg.path !== "string" || !msg.path || msg.path.length > 1_000) return null;
     return { op: "sub", key: msg.key, kind: "research-chat", path: msg.path };
+  }
+  if (msg.kind === "assistant-chat") {
+    if (typeof msg.id !== "string" || !msg.id) return null;
+    return { op: "sub", key: msg.key, kind: "assistant-chat", id: msg.id };
   }
   if (msg.kind === "research-refresh") {
     if (typeof msg.path !== "string" || !msg.path || msg.path.length > 1_000) return null;
@@ -197,6 +203,8 @@ async function attachChannel(msg: WsSub, push: (envelope: string) => void): Prom
   if (msg.kind === "chat") return attachConversation(msg.id as string, push, onChatEvent, chatTurnState);
   if (msg.kind === "research-chat")
     return attachConversation(msg.path as string, push, onResearchChatEvent, researchChatTurnState);
+  if (msg.kind === "assistant-chat")
+    return attachConversation(msg.id as string, push, onAssistantChatEvent, assistantChatTurnState);
   if (msg.kind === "research-refresh") return attachResearchRefresh(msg.path as string, push);
   if (msg.kind === "annotations") return attachAnnotations(msg.symbol as string, push);
   return subscribeBoard(push);

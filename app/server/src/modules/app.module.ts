@@ -1,5 +1,6 @@
 import { Module } from "@tsuki-hono/common";
 import { AnnotationsModule } from "./annotations/annotations.module.js";
+import { AssistantModule } from "./assistant/assistant.module.js";
 import { ChartsModule } from "./charts/charts.module.js";
 import { ChatModule } from "./chat/chat.module.js";
 import { CredentialsModule } from "./credentials/credentials.module.js";
@@ -15,6 +16,7 @@ import { SymbolsModule } from "./symbols/symbols.module.js";
 @Module({
   imports: [
     HealthModule,
+    AssistantModule,
     ChartsModule,
     SymbolsModule,
     AnnotationsModule,

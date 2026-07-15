@@ -19,6 +19,10 @@ vi.mock("../../packages/core/src/ai/researchChat.js", () => ({
   onResearchChatEvent: vi.fn(),
   researchChatTurnState: vi.fn(),
 }));
+vi.mock("../../packages/core/src/ai/assistantChat.js", () => ({
+  onAssistantChatEvent: vi.fn(),
+  assistantChatTurnState: vi.fn(),
+}));
 vi.mock("../../packages/core/src/ai/researchRefresh.js", () => ({
   getLatestResearchRefreshTask: vi.fn(),
   onResearchRefreshEvent: vi.fn(),
@@ -54,6 +58,12 @@ const { getLatestResearchRefreshTask, onResearchRefreshEvent } = (await import(
 )) as unknown as {
   getLatestResearchRefreshTask: ReturnType<typeof vi.fn>;
   onResearchRefreshEvent: ReturnType<typeof vi.fn>;
+};
+const { onAssistantChatEvent, assistantChatTurnState } = (await import(
+  "../../packages/core/src/ai/assistantChat.js"
+)) as unknown as {
+  onAssistantChatEvent: ReturnType<typeof vi.fn>;
+  assistantChatTurnState: ReturnType<typeof vi.fn>;
 };
 
 class FakeConnection implements Connection {
@@ -260,6 +270,39 @@ describe("research chat channel", () => {
     await waitFor(() => socket.sent.some((raw) => raw.includes('"type":"event"')));
     expect(JSON.parse(socket.sent.find((raw) => raw.includes('"type":"event"'))!)).toEqual({
       key: "research1",
+      payload: { type: "event", event: { event: "delta", text: "结论" } },
+    });
+  });
+});
+
+describe("assistant chat channel", () => {
+  beforeEach(() => {
+    onAssistantChatEvent.mockReset();
+    assistantChatTurnState.mockReset();
+  });
+
+  it("pushes session-scoped init state and live events", async () => {
+    let capturedListener: ((event: unknown) => void) | undefined;
+    assistantChatTurnState.mockReturnValue({ busy: true, partial: "正在核对" });
+    onAssistantChatEvent.mockImplementation((_id: string, listener: (event: unknown) => void) => {
+      capturedListener = listener;
+      return vi.fn();
+    });
+
+    const socket = makeSocket();
+    socket.emitMessage(JSON.stringify({ op: "sub", key: "assistant1", kind: "assistant-chat", id: "session-1" }));
+    await waitFor(() => socket.sent.some((raw) => raw.includes('"type":"init"')));
+
+    expect(onAssistantChatEvent).toHaveBeenCalledWith("session-1", expect.any(Function));
+    expect(JSON.parse(socket.sent.find((raw) => raw.includes('"type":"init"'))!)).toEqual({
+      key: "assistant1",
+      payload: { type: "init", busy: true, partial: "正在核对" },
+    });
+
+    capturedListener?.({ event: "delta", text: "结论" });
+    await waitFor(() => socket.sent.some((raw) => raw.includes('"type":"event"')));
+    expect(JSON.parse(socket.sent.find((raw) => raw.includes('"type":"event"'))!)).toEqual({
+      key: "assistant1",
       payload: { type: "event", event: { event: "delta", text: "结论" } },
     });
   });

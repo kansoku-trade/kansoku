@@ -15,6 +15,7 @@ import {
 } from "./conversationEngine.js";
 import { buildDataPackTool, buildNewsTool, textResult } from "./dataTools.js";
 import { buildReassessPack as defaultBuildReassessPack, type ReassessPack } from "./datapack.js";
+import { buildResearchLibraryTools } from "./researchLibraryTools.js";
 import {
   appendResearchMessages,
   createResearchSession,
@@ -89,8 +90,6 @@ function buildSystemPrompt(document: ResearchDocument, disciplineText: string): 
   return composeWithDiscipline(disciplineText, own);
 }
 
-const searchSchema = Type.Object({ query: Type.String() });
-const readDocumentSchema = Type.Object({ path: Type.String() });
 const operationSchema = Type.Union([
   Type.Object({ type: Type.Literal("replace"), oldText: Type.String(), newText: Type.String() }),
   Type.Object({ type: Type.Literal("insert_after"), anchor: Type.String(), content: Type.String() }),
@@ -111,27 +110,6 @@ function buildTools(input: {
   buildPack: (symbol: string) => Promise<ReassessPack>;
   fetchNews: (symbol: string) => Promise<NewsItem[]>;
 }): AgentTool<any>[] {
-  const library = createResearchService(input.rootDir);
-  const searchTool: AgentTool<typeof searchSchema> = {
-    name: "search_research_documents",
-    label: "搜索研究库",
-    description: "按标题、路径、标的、摘要和正文搜索本地研究资料，最多返回 8 条元数据。",
-    parameters: searchSchema,
-    execute: async (_id, params) => {
-      const rows = await library.list({ query: params.query });
-      return textResult(JSON.stringify(rows.slice(0, 8)));
-    },
-  };
-  const readTool: AgentTool<typeof readDocumentSchema> = {
-    name: "read_research_document",
-    label: "读取研究资料",
-    description: "读取研究库内另一份 stocks/*.md 或 journal/**/*.md 文档。",
-    parameters: readDocumentSchema,
-    execute: async (_id, params) => {
-      const document = await library.get({ path: params.path });
-      return textResult(document.markdown);
-    },
-  };
   const proposalTool: AgentTool<typeof proposalSchema> = {
     name: "propose_current_document_edit",
     label: "生成文档修改",
@@ -151,7 +129,7 @@ function buildTools(input: {
       return textResult(JSON.stringify({ id: proposal.id, status: proposal.status, summary: proposal.summary }));
     },
   };
-  const tools: AgentTool<any>[] = [searchTool, readTool, proposalTool];
+  const tools: AgentTool<any>[] = [...buildResearchLibraryTools(input.rootDir), proposalTool];
 
   const symbol = input.document.symbols[0];
   if (symbol) {

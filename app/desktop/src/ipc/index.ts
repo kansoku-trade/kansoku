@@ -1,4 +1,5 @@
 import { AnnotationsIpc } from "./annotationsIpc.js";
+import { AssistantIpc } from "./assistantIpc.js";
 import { ChartsIpc } from "./chartsIpc.js";
 import { ChatIpc } from "./chatIpc.js";
 import { CredentialsIpc } from "./credentialsIpc.js";
@@ -11,6 +12,7 @@ import { SettingsIpc } from "./settingsIpc.js";
 import { SymbolsIpc } from "./symbolsIpc.js";
 
 export const ipcServiceClasses = [
+  AssistantIpc,
   ChartsIpc,
   ChatIpc,
   SymbolsIpc,

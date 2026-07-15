@@ -33,11 +33,18 @@ export interface ChatLiveTool {
   output?: string;
 }
 
+export interface ChatUsage {
+  totalTokens: number;
+  costTotal: number;
+  calls: number;
+}
+
 interface ChatEnvelope {
   session: ChatSessionInfo | null;
   messages: ChatRow[];
   busy: boolean;
   partial: string;
+  usage?: ChatUsage;
 }
 
 type ChatWsEvent =
@@ -52,12 +59,41 @@ type ChatWsEnvelope = { type: "init"; busy: boolean; partial: string } | { type:
 const isErrorBody = (value: unknown): value is { error: string; hint?: string } =>
   typeof value === "object" && value !== null && typeof (value as { error?: unknown }).error === "string";
 
-type ConversationKind = "chart" | "research";
+export const usageFromEnvelope = (env: { usage?: ChatUsage }): ChatUsage | null => env.usage ?? null;
 
-async function fetchChat(kind: ConversationKind, id: string): Promise<ChatEnvelope> {
-  const state = kind === "chart" ? await client.chat.get({ id }) : await client.research.getChat({ path: id });
-  return state as unknown as ChatEnvelope;
+type ConversationKind = "chart" | "research" | "assistant";
+
+interface ConversationAdapter {
+  fetchChat: (id: string) => Promise<ChatEnvelope>;
+  send: (id: string, text: string) => Promise<{ status: number; body: unknown }>;
+  abort: (id: string) => Promise<unknown>;
+  channel: (id: string) => Parameters<typeof subscribeChannel>[0];
+  suggest: ((id: string) => Promise<{ suggestions: string[] }>) | null;
 }
+
+export const conversationAdapters: Record<ConversationKind, ConversationAdapter> = {
+  chart: {
+    fetchChat: async (id) => (await client.chat.get({ id })) as unknown as ChatEnvelope,
+    send: (id, text) => client.chat.postMessage({ id, text }),
+    abort: (id) => client.chat.abort({ id }),
+    channel: (id) => ({ kind: "chat", id }),
+    suggest: (id) => client.chat.suggestions({ id }),
+  },
+  research: {
+    fetchChat: async (id) => (await client.research.getChat({ path: id })) as unknown as ChatEnvelope,
+    send: (id, text) => client.research.postMessage({ path: id, text }),
+    abort: (id) => client.research.abortChat({ path: id }),
+    channel: (id) => ({ kind: "research-chat", path: id }),
+    suggest: (id) => client.research.suggestions({ path: id }),
+  },
+  assistant: {
+    fetchChat: async (id) => (await client.assistant.getChat({ id })) as unknown as ChatEnvelope,
+    send: (id, text) => client.assistant.postMessage({ id, text }),
+    abort: (id) => client.assistant.abortChat({ id }),
+    channel: (id) => ({ kind: "assistant-chat", id }),
+    suggest: null,
+  },
+};
 
 export interface ChatSendResult {
   ok: boolean;
@@ -74,12 +110,14 @@ export interface ChatSessionState {
   hint: string | null;
   loaded: boolean;
   suggestions: string[];
+  usage: ChatUsage | null;
   send: (text: string) => Promise<ChatSendResult>;
   abort: () => Promise<void>;
   ensureSuggestions: () => void;
 }
 
 function useConversationSession(kind: ConversationKind, id: string): ChatSessionState {
+  const adapter = conversationAdapters[kind];
   const [session, setSession] = useState<ChatSessionInfo | null>(null);
   const [rows, setRows] = useState<ChatRow[]>([]);
   const [busy, setBusy] = useState(false);
@@ -89,6 +127,7 @@ function useConversationSession(kind: ConversationKind, id: string): ChatSession
   const [hint, setHint] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [usage, setUsage] = useState<ChatUsage | null>(null);
   const requestSeqRef = useRef(0);
   const toolSeqRef = useRef(0);
   const errorSeqRef = useRef(0);
@@ -98,7 +137,8 @@ function useConversationSession(kind: ConversationKind, id: string): ChatSession
   const reload = useCallback(
     (markError?: string) => {
       const seq = ++requestSeqRef.current;
-      fetchChat(kind, id)
+      adapter
+        .fetchChat(id)
         .then((env) => {
           if (requestSeqRef.current !== seq || sendPendingRef.current) return;
           setSession(env.session);
@@ -109,6 +149,7 @@ function useConversationSession(kind: ConversationKind, id: string): ChatSession
           );
           setBusy(env.busy);
           setStreamText(env.busy ? env.partial : "");
+          setUsage(usageFromEnvelope(env));
           setLoaded(true);
           setHint((prev) => (prev === "对话记录加载失败" ? null : prev));
         })
@@ -118,7 +159,7 @@ function useConversationSession(kind: ConversationKind, id: string): ChatSession
           setHint("对话记录加载失败");
         });
     },
-    [id, kind],
+    [adapter, id],
   );
 
   useEffect(() => {
@@ -133,13 +174,14 @@ function useConversationSession(kind: ConversationKind, id: string): ChatSession
     setHint(null);
     setLoaded(false);
     setSuggestions([]);
+    setUsage(null);
     reload();
   }, [id, reload]);
 
   useEffect(() => {
     let connectedOnce = false;
     const off = subscribeChannel(
-      kind === "chart" ? { kind: "chat", id } : { kind: "research-chat", path: id },
+      adapter.channel(id),
       (payload) => {
         const env = payload as ChatWsEnvelope;
         if (env.type !== "init" && env.type !== "event") return;
@@ -191,7 +233,7 @@ function useConversationSession(kind: ConversationKind, id: string): ChatSession
       },
     );
     return off;
-  }, [id, kind, reload]);
+  }, [adapter, id, reload]);
 
   const send = useCallback(
     async (text: string): Promise<ChatSendResult> => {
@@ -204,10 +246,7 @@ function useConversationSession(kind: ConversationKind, id: string): ChatSession
       setSuggestions([]);
       setRows((prev) => [...prev, { id: optimisticId, ts: new Date().toISOString(), kind: "user", text: trimmed }]);
       try {
-        const result =
-          kind === "chart"
-            ? await client.chat.postMessage({ id, text: trimmed })
-            : await client.research.postMessage({ path: id, text: trimmed });
+        const result = await adapter.send(id, trimmed);
         if (result.status === 202) {
           sendPendingRef.current = false;
           return { ok: true };
@@ -231,25 +270,25 @@ function useConversationSession(kind: ConversationKind, id: string): ChatSession
         return { ok: false, error: message };
       }
     },
-    [id, kind],
+    [adapter, id],
   );
 
   const abort = useCallback(async (): Promise<void> => {
     setAborting(true);
     try {
-      if (kind === "chart") await client.chat.abort({ id });
-      else await client.research.abortChat({ path: id });
+      await adapter.abort(id);
     } catch {
       setAborting(false);
     }
-  }, [id, kind]);
+  }, [adapter, id]);
 
   const ensureSuggestions = useCallback(() => {
     if (suggestionsRequestedRef.current) return;
     suggestionsRequestedRef.current = true;
+    if (!adapter.suggest) return;
     const seq = requestSeqRef.current;
-    const request = kind === "chart" ? client.chat.suggestions({ id }) : client.research.suggestions({ path: id });
-    request
+    adapter
+      .suggest(id)
       .then((res) => {
         if (requestSeqRef.current !== seq) return;
         setSuggestions(res.suggestions);
@@ -257,7 +296,7 @@ function useConversationSession(kind: ConversationKind, id: string): ChatSession
       .catch(() => {
         setSuggestions([]);
       });
-  }, [id, kind]);
+  }, [adapter, id]);
 
   return {
     session,
@@ -269,6 +308,7 @@ function useConversationSession(kind: ConversationKind, id: string): ChatSession
     hint,
     loaded,
     suggestions,
+    usage,
     send,
     abort,
     ensureSuggestions,
@@ -281,4 +321,8 @@ export function useChatSession(chartId: string): ChatSessionState {
 
 export function useResearchChatSession(path: string): ChatSessionState {
   return useConversationSession("research", path);
+}
+
+export function useAssistantChatSession(sessionId: string): ChatSessionState {
+  return useConversationSession("assistant", sessionId);
 }

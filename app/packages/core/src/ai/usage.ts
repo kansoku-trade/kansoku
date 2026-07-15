@@ -1,7 +1,7 @@
 import type { AgentEvent, AgentMessage } from "@earendil-works/pi-agent-core";
 import { appendUsage } from "./usageStore.js";
 
-interface UsageSnapshot {
+export interface UsageSnapshot {
   input: number;
   output: number;
   cacheRead: number;
@@ -22,7 +22,15 @@ interface UsageTotal extends UsageSnapshot {
 }
 
 export interface AiUsageLogContext {
-  layer: "commentator" | "analyst" | "event-filter" | "chat" | "chat-suggest" | "research-chat" | "research-refresh";
+  layer:
+    | "commentator"
+    | "analyst"
+    | "event-filter"
+    | "chat"
+    | "chat-suggest"
+    | "research-chat"
+    | "research-refresh"
+    | "assistant";
   symbol: string;
   model: { provider?: string; id?: string };
   origin?: string;
@@ -41,7 +49,7 @@ function emptyUsage(): UsageTotal {
   };
 }
 
-function isUsage(value: unknown): value is UsageSnapshot {
+export function isUsage(value: unknown): value is UsageSnapshot {
   if (!value || typeof value !== "object") return false;
   const usage = value as Record<string, unknown>;
   const cost = usage.cost as Record<string, unknown> | undefined;

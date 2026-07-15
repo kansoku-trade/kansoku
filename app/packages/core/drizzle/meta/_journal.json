@@ -43,6 +43,13 @@
       "when": 1784034000000,
       "tag": "0005_research_refresh",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1784035000000,
+      "tag": "0006_assistant_sessions",
+      "breakpoints": true
     }
   ]
 }

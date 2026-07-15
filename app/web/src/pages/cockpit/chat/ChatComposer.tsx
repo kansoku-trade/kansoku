@@ -1,5 +1,5 @@
 import { Send, Square } from "lucide-react";
-import type { InputHTMLAttributes } from "react";
+import type { InputHTMLAttributes, KeyboardEvent } from "react";
 import { Button, Input } from "../../../ui";
 
 interface ChatComposerProps {
@@ -8,11 +8,17 @@ interface ChatComposerProps {
   busy: boolean;
   aborting: boolean;
   disabled?: boolean;
+  allowInputWhileBusy?: boolean;
   placeholder: string;
   onSubmit: (value: string) => void;
   onAbort: () => void;
   hint?: string | null;
-  inputProps?: Pick<InputHTMLAttributes<HTMLInputElement>, "autoFocus" | "onFocus">;
+  inputProps?: Pick<
+    InputHTMLAttributes<HTMLInputElement>,
+    "autoFocus" | "onFocus" | "onKeyUp" | "onClick" | "onSelect"
+  >;
+  onValueDetail?: (value: string, selectionStart: number | null) => void;
+  onKeyDownIntercept?: (event: KeyboardEvent<HTMLInputElement>) => boolean;
 }
 
 export function ChatComposer({
@@ -21,11 +27,14 @@ export function ChatComposer({
   busy,
   aborting,
   disabled,
+  allowInputWhileBusy = false,
   placeholder,
   onSubmit,
   onAbort,
   hint,
   inputProps,
+  onValueDetail,
+  onKeyDownIntercept,
 }: ChatComposerProps) {
   return (
     <>
@@ -34,9 +43,13 @@ export function ChatComposer({
           className="chat-composer-field"
           placeholder={placeholder}
           value={value}
-          disabled={busy || disabled}
-          onChange={(e) => onChange(e.target.value)}
+          disabled={(busy && !allowInputWhileBusy) || disabled}
+          onChange={(e) => {
+            onChange(e.target.value);
+            onValueDetail?.(e.target.value, e.target.selectionStart);
+          }}
           onKeyDown={(e) => {
+            if (onKeyDownIntercept?.(e)) return;
             if (e.key !== "Enter" || e.nativeEvent.isComposing) return;
             e.preventDefault();
             onSubmit(value);

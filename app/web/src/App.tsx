@@ -1,4 +1,4 @@
-import { Library, Settings } from "lucide-react";
+import { Library, MessageCircle, Settings } from "lucide-react";
 import { AppSkeleton } from "./AppSkeleton";
 import { DesktopShell } from "./desktop/DesktopShell";
 import { Onboarding } from "./onboarding/Onboarding";
@@ -23,6 +23,14 @@ function GlobalTopbar() {
         aria-current={pathname === "/research" ? "page" : undefined}
       >
         <Library size={16} />
+      </a>
+      <a
+        className={`global-settings-link${pathname === "/chat" ? " active" : ""}`}
+        href="/chat"
+        aria-label="AI 对话"
+        aria-current={pathname === "/chat" ? "page" : undefined}
+      >
+        <MessageCircle size={16} />
       </a>
       <a className="global-settings-link" href="/settings" aria-label="设置">
         <Settings size={16} />

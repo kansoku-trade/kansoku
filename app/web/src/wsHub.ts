@@ -12,6 +12,7 @@ export type ChannelSpec =
   | { kind: "board" }
   | { kind: "chat"; id: string }
   | { kind: "research-chat"; path: string }
+  | { kind: "assistant-chat"; id: string }
   | { kind: "research-refresh"; path: string }
   | { kind: "annotations"; symbol: string };
 
