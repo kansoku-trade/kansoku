@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useQuery as useReactQuery } from "@tanstack/react-query";
+import { useRef } from "react";
 import { ApiError, errorMessage } from "./api";
 
 export interface QueryFailure {
@@ -12,14 +13,13 @@ export interface QueryState<T> {
   failure: QueryFailure | null;
   loading: boolean;
   reload: () => void;
+  dataUpdatedAt: number | null;
+  refreshed: boolean;
 }
 
 export interface QueryOptions {
   cache?: boolean;
-}
-
-interface QueryInternalState<T> extends Omit<QueryState<T>, "reload"> {
-  key: string | null;
+  persist?: boolean;
 }
 
 const failureFrom = (error: unknown): QueryFailure => ({
@@ -27,53 +27,46 @@ const failureFrom = (error: unknown): QueryFailure => ({
   status: error instanceof ApiError ? error.status : undefined,
 });
 
-const queryCache = new Map<string, unknown>();
-
-const initialState = <T>(key: string | null, useCache: boolean): QueryInternalState<T> => {
-  const cached = useCache && key !== null && queryCache.has(key);
-  return {
-    key,
-    data: cached ? (queryCache.get(key!) as T) : null,
-    error: null,
-    failure: null,
-    loading: Boolean(key) && !cached,
-  };
-};
-
-export function useQuery<T>(key: string | null, fetch: () => Promise<T>, options: QueryOptions = {}): QueryState<T> {
+function useQueryState<T>(
+  key: string | null,
+  fetch: () => Promise<T>,
+  options: QueryOptions,
+  refetchInterval?: number,
+): QueryState<T> {
   const useCache = options.cache !== false;
-  const [state, setState] = useState<QueryInternalState<T>>(() => initialState<T>(key, useCache));
-  const [version, setVersion] = useState(0);
-  const reload = useCallback(() => setVersion((v) => v + 1), []);
+  const shouldPersist = useCache && options.persist !== false;
   const fetchRef = useRef(fetch);
   fetchRef.current = fetch;
 
-  useEffect(() => {
-    let active = true;
+  const query = useReactQuery<T>({
+    queryKey: [key],
+    queryFn: () => fetchRef.current(),
+    enabled: key !== null,
+    staleTime: useCache ? 30_000 : 0,
+    gcTime: useCache ? undefined : 0,
+    meta: shouldPersist ? undefined : { persist: false },
+    refetchInterval,
+  });
 
-    setState(initialState<T>(key, useCache));
-    if (!key) return;
+  const data = query.data ?? null;
+  const failure = query.error ? failureFrom(query.error) : null;
 
-    fetchRef
-      .current()
-      .then((data) => {
-        if (useCache) queryCache.set(key, data);
-        if (active) setState({ key, data, error: null, failure: null, loading: false });
-      })
-      .catch((error: unknown) => {
-        if (!active) return;
-        const failure = failureFrom(error);
-        setState({ key, data: null, error: failure.message, failure, loading: false });
-      });
+  return {
+    data,
+    error: failure?.message ?? null,
+    failure,
+    loading: query.isLoading,
+    dataUpdatedAt: data === null ? null : query.dataUpdatedAt,
+    refreshed: query.isFetchedAfterMount && query.isSuccess,
+    reload: () => {
+      if (key === null) return;
+      void query.refetch();
+    },
+  };
+}
 
-    return () => {
-      active = false;
-    };
-  }, [key, useCache, version]);
-
-  const visibleState = state.key === key ? state : initialState<T>(key, useCache);
-  const { key: _key, ...queryState } = visibleState;
-  return { ...queryState, reload };
+export function useQuery<T>(key: string | null, fetch: () => Promise<T>, options: QueryOptions = {}): QueryState<T> {
+  return useQueryState(key, fetch, options);
 }
 
 export function usePollingQuery<T>(
@@ -82,49 +75,5 @@ export function usePollingQuery<T>(
   ms: number,
   options: QueryOptions = {},
 ): QueryState<T> {
-  const useCache = options.cache !== false;
-  const [state, setState] = useState<QueryInternalState<T>>(() => initialState<T>(key, useCache));
-  const [version, setVersion] = useState(0);
-  const reload = useCallback(() => setVersion((v) => v + 1), []);
-  const fetchRef = useRef(fetch);
-  fetchRef.current = fetch;
-
-  useEffect(() => {
-    let active = true;
-    let inFlight = false;
-
-    setState(initialState<T>(key, useCache));
-    if (!key) return;
-
-    const load = () => {
-      if (inFlight) return;
-      inFlight = true;
-      setState((prev) => (prev.data === null ? { ...prev, loading: true } : prev));
-      fetchRef
-        .current()
-        .then((data) => {
-          if (useCache) queryCache.set(key, data);
-          if (active) setState({ key, data, error: null, failure: null, loading: false });
-        })
-        .catch((error: unknown) => {
-          if (!active) return;
-          const failure = failureFrom(error);
-          setState((prev) => ({ ...prev, error: failure.message, failure, loading: false }));
-        })
-        .finally(() => {
-          inFlight = false;
-        });
-    };
-
-    load();
-    const timer = window.setInterval(load, ms);
-    return () => {
-      active = false;
-      window.clearInterval(timer);
-    };
-  }, [key, ms, useCache, version]);
-
-  const visibleState = state.key === key ? state : initialState<T>(key, useCache);
-  const { key: _key, ...queryState } = visibleState;
-  return { ...queryState, reload };
+  return useQueryState(key, fetch, options, ms);
 }

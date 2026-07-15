@@ -9,7 +9,9 @@ import { Card, Empty, ErrorBox, SectionTitle } from "../../ui";
 export const CROSS_SECTION_TYPES = "flow,cohort";
 
 function ChartCard({ id }: { id: string }) {
-  const { data: doc, error } = useQuery<ChartDoc>(`charts.get:${id}`, () => client.charts.get({ id }));
+  const { data: doc, error } = useQuery<ChartDoc>(`charts.get:${id}`, () => client.charts.get({ id }), {
+    persist: false,
+  });
   if (error) return <ErrorBox>{error}</ErrorBox>;
   if (!doc || doc.built.kind !== "simple") return null;
 

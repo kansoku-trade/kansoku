@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { QuoteCell, QuoteSnapshot } from "../../shared/types";
 import { normalizeSymbol } from "./lib/symbol";
-import { useSSE } from "./useSSE";
+import { useWsChannel } from "./useWsChannel";
 
 function quoteChanged(previous: QuoteCell | null, next: QuoteCell | null): boolean {
   if (previous === next) return false;
@@ -23,7 +23,7 @@ export function useLiveQuote(symbol: string | null): QuoteCell | null {
 
   useEffect(() => setQuote(null), [normalized]);
 
-  useSSE<QuoteSnapshot>(normalized ? { kind: "quotes", extra: [normalized] } : null, (snapshot) => {
+  useWsChannel<QuoteSnapshot>(normalized ? { kind: "quotes", extra: [normalized] } : null, (snapshot) => {
     const next = snapshot.quotes.find((item) => item.symbol === normalized) ?? null;
     setQuote((previous) => (quoteChanged(previous, next) ? next : previous));
   });

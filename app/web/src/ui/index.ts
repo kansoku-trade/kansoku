@@ -22,6 +22,7 @@ export { ResizablePanel } from "./ResizablePanel";
 export type { ResizablePanelSide } from "./ResizablePanel";
 export { MarketTime } from "./MarketTime";
 export { TimeAgo } from "./TimeAgo";
+export { DataAgeBadge, formatDataAge } from "./DataAgeBadge";
 export { Modal } from "./Modal";
 export { ModalHost } from "./ModalHost";
 export {

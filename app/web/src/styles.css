@@ -57,6 +57,8 @@
 .badge--down { color: var(--down); }
 .badge--accent { color: var(--accent); }
 .badge--solid { background: var(--down); color: var(--bg-canvas); }
+.badge--muted { background: transparent; border: 1px solid var(--border); color: var(--text-muted); text-transform: none; letter-spacing: normal; }
+.data-age-badge { margin-left: 8px; vertical-align: 3px; }
 
 .btn {
   background: var(--bg-element);
@@ -201,6 +203,7 @@ a:hover { color: var(--accent); }
   display: flex; gap: 8px; align-items: center; overflow: hidden;
   padding: 8px 0 14px; margin-bottom: 6px; border-bottom: 1px solid var(--border);
 }
+.quote-bar .data-age-badge { margin-left: 0; }
 .quote-placeholder { color: var(--text-muted); }
 .quote-marquee { overflow: hidden; flex: 1; min-width: 0; }
 .quote-marquee:hover .quote-track { animation-play-state: paused; }

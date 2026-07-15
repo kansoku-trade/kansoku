@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { subscribeChannel, type ChannelSpec } from "./wsHub";
+import { loadSnapshot, saveSnapshot } from "./wsSnapshot";
 
 interface Envelope {
   type: "data" | "status";
@@ -7,27 +8,40 @@ interface Envelope {
   degraded?: boolean;
 }
 
-export interface SSEState {
+export interface WsChannelState {
   degraded: boolean;
   connected: boolean;
+  snapshotAt: number | null;
 }
 
-// Historical name — live data now rides the shared /api/ws multiplexed socket.
-export function useSSE<T>(spec: ChannelSpec | null, onData: (data: T) => void): SSEState {
+export function useWsChannel<T>(spec: ChannelSpec | null, onData: (data: T) => void): WsChannelState {
   const [degraded, setDegraded] = useState(false);
   const [connected, setConnected] = useState(false);
+  const [snapshotAt, setSnapshotAt] = useState<number | null>(null);
   const handler = useRef(onData);
   handler.current = onData;
   const specKey = spec ? JSON.stringify(spec) : null;
 
   useEffect(() => {
     if (!specKey) return;
+    const parsedSpec = JSON.parse(specKey) as ChannelSpec;
+
+    const snapshot = loadSnapshot(parsedSpec);
+    if (snapshot) {
+      handler.current(snapshot.data as T);
+      setSnapshotAt(snapshot.at);
+    } else {
+      setSnapshotAt(null);
+    }
+
     const off = subscribeChannel(
-      JSON.parse(specKey) as ChannelSpec,
+      parsedSpec,
       (payload) => {
         const env = payload as Envelope;
         if (env?.type === "data") {
           setDegraded(false);
+          setSnapshotAt(null);
+          saveSnapshot(parsedSpec, env.data);
           handler.current(env.data as T);
         } else if (env?.type === "status") {
           setDegraded(Boolean(env.degraded));
@@ -42,5 +56,5 @@ export function useSSE<T>(spec: ChannelSpec | null, onData: (data: T) => void): 
     };
   }, [specKey]);
 
-  return { degraded, connected };
+  return { degraded, connected, snapshotAt };
 }

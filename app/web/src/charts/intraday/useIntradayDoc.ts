@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { ChartBuilt, ChartDoc, IntradayBuilt, TimeframeKey } from "../../../../shared/types";
 import { useQuery } from "../../apiHooks";
 import { client } from "../../client";
-import { useSSE } from "../../useSSE";
+import { useWsChannel } from "../../useWsChannel";
 
 const LIVE_TYPES = new Set(["flow", "intraday"]);
 
@@ -37,6 +37,7 @@ export function useIntradayDoc(id: string | null) {
   const { data: initialDoc, error } = useQuery<ChartDocView>(
     id ? `charts.get:${id}` : null,
     () => client.charts.get({ id: id! }),
+    { persist: false },
   );
 
   useEffect(() => {
@@ -59,7 +60,7 @@ export function useIntradayDoc(id: string | null) {
   const live = Boolean(id && doc && LIVE_TYPES.has(doc.type) && doc.symbol && isCurrent);
   const canLoadForward = Boolean(id && doc && LIVE_TYPES.has(doc.type) && doc.symbol && !isCurrent);
   const [forwardBusy, setForwardBusy] = useState(false);
-  const { degraded } = useSSE<{ built: ChartBuilt; prediction_updated_at?: string; prediction_stale?: boolean }>(
+  const { degraded } = useWsChannel<{ built: ChartBuilt; prediction_updated_at?: string; prediction_stale?: boolean }>(
     live && id ? { kind: "chart", id, ...(viewCount ? { count: viewCount } : {}) } : null,
     (d) =>
       setDoc((prev) =>

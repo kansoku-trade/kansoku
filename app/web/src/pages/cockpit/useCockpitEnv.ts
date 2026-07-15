@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { BenchmarkSeries, CockpitPosition, RelativeVolume } from "../../../../shared/types";
-import { useSSE } from "../../useSSE";
+import { useWsChannel } from "../../useWsChannel";
 
 interface PositionPayload {
   position: CockpitPosition | null;
@@ -24,11 +24,14 @@ export function useCockpitEnv(sym: string): CockpitEnvState {
     setRelvol(null);
     setBenchmark(null);
   }, [sym]);
-  const { degraded: positionDegraded } = useSSE<PositionPayload>({ kind: "position", symbol: sym }, (d) => {
+  const { degraded: positionDegraded } = useWsChannel<PositionPayload>({ kind: "position", symbol: sym }, (d) => {
     setPosition(d.position);
     setRelvol(d.relvol);
   });
-  const { degraded: benchmarkDegraded } = useSSE<BenchmarkSeries[]>({ kind: "benchmark", symbol: sym }, setBenchmark);
+  const { degraded: benchmarkDegraded } = useWsChannel<BenchmarkSeries[]>(
+    { kind: "benchmark", symbol: sym },
+    setBenchmark,
+  );
 
   return {
     position,

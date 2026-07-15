@@ -1,7 +1,7 @@
 import type { HTMLAttributes } from "react";
 
 type BadgeProps = {
-  tone?: "up" | "down" | "accent" | "solid";
+  tone?: "up" | "down" | "accent" | "solid" | "muted";
 } & HTMLAttributes<HTMLSpanElement>;
 
 export function Badge({ tone, className, children, ...rest }: BadgeProps) {

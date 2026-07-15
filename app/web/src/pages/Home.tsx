@@ -6,9 +6,9 @@ import { client } from "../client";
 import { navigate, useQueryParam } from "../router";
 import { QuoteBar } from "../QuoteBar";
 import { isDesktopRealtime } from "../portTransport";
-import { Badge, ErrorBox, SectionTitle } from "../ui";
+import { Badge, DataAgeBadge, ErrorBox, SectionTitle } from "../ui";
 import { useTitle } from "../useTitle";
-import { useSSE } from "../useSSE";
+import { useWsChannel } from "../useWsChannel";
 import { useIntervalFetch } from "./cockpit/useIntervalFetch";
 import { CROSS_SECTION_TYPES, CrossSectionCharts } from "./home/CrossSectionCharts";
 import { DateTimeline } from "./home/DateTimeline";
@@ -19,6 +19,15 @@ import { WatchBoard } from "./home/WatchBoard";
 
 const SESSION_LABEL: Record<string, string> = { pre: "盘前", regular: "盘中", post: "盘后", overnight: "休市" };
 const NOTICE_LABEL: Record<string, string> = { "chart-not-found": "该图表不存在，已为你返回首页" };
+
+function SectionTitleWithAge({ label, at }: { label: string; at: number | null }) {
+  return (
+    <SectionTitle>
+      {label}
+      <DataAgeBadge at={at} />
+    </SectionTitle>
+  );
+}
 
 export function Home() {
   useTitle(null);
@@ -34,13 +43,19 @@ export function Home() {
   const isToday = date === today;
 
   const [board, setBoard] = useState<OverviewBoard | null>(null);
-  const { degraded: boardDegraded } = useSSE<OverviewBoard>({ kind: "board" }, setBoard);
+  const { degraded: boardDegraded, snapshotAt: boardSnapshotAt } = useWsChannel<OverviewBoard>({ kind: "board" }, setBoard);
   const boardError = boardDegraded ? "盘面数据获取失败，正在重试" : null;
-  const { data: portfolio, error: portfolioError } = useIntervalFetch<PortfolioSummary>(
+  const {
+    data: portfolio,
+    error: portfolioError,
+    dataUpdatedAt: portfolioUpdatedAt,
+    refreshed: portfolioRefreshed,
+  } = useIntervalFetch<PortfolioSummary>(
     isToday ? "positions.list" : null,
     () => client.positions.list(),
     60_000,
   );
+  const portfolioAgeAt = portfolio != null && !portfolioRefreshed ? portfolioUpdatedAt : null;
 
   const { data: chartMetas } = useQuery<ChartMeta[]>(`charts.list:${CROSS_SECTION_TYPES}`, () =>
     client.charts.list({ type: CROSS_SECTION_TYPES }),
@@ -77,7 +92,7 @@ export function Home() {
           <div className="home-main">
             {trading ? (
               <>
-                <SectionTitle>看盘</SectionTitle>
+                <SectionTitleWithAge label="看盘" at={boardSnapshotAt} />
                 <WatchBoard board={board!} error={boardError} compact={false} />
                 <CrossSectionCharts date={date} />
               </>
@@ -88,15 +103,15 @@ export function Home() {
           <div className="home-side">
             {trading ? (
               <>
-                <SectionTitle>持仓</SectionTitle>
+                <SectionTitleWithAge label="持仓" at={portfolioAgeAt} />
                 <PositionsCard portfolio={portfolio} error={portfolioError} watching={watching} />
                 <RecapBoard date={date} defaultExpanded={false} />
               </>
             ) : isToday ? (
               <>
-                <SectionTitle>看盘（定格）</SectionTitle>
+                <SectionTitleWithAge label="看盘（定格）" at={boardSnapshotAt} />
                 <WatchBoard board={board!} error={boardError} compact />
-                <SectionTitle>持仓</SectionTitle>
+                <SectionTitleWithAge label="持仓" at={portfolioAgeAt} />
                 <PositionsCard portfolio={portfolio} error={portfolioError} watching={watching} />
                 <CrossSectionCharts date={date} />
               </>

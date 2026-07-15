@@ -18,7 +18,9 @@ function Redirect({ to }: { to: string }) {
 }
 
 function ChartRedirect({ id }: { id: string }) {
-  const { data, failure } = useQuery<ChartDoc>(`charts.get:${id}`, () => client.charts.get({ id }));
+  const { data, failure } = useQuery<ChartDoc>(`charts.get:${id}`, () => client.charts.get({ id }), {
+    persist: false,
+  });
 
   useEffect(() => {
     if (data) navigate(chartTargetPath(data), { replace: true });
