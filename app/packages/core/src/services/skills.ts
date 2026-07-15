@@ -61,8 +61,3 @@ export function readSkill(index: SkillMeta[], name: string): string | null {
   if (!meta) return null;
   return readFileSync(join(meta.dir, "SKILL.md"), "utf8");
 }
-
-export function skillIndexPrompt(index: SkillMeta[]): string {
-  if (index.length === 0) return "(no skills available)";
-  return index.map((s) => `- ${s.name}: ${s.description}`).join("\n");
-}

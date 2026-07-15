@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { loadSkillIndex, readSkill, skillIndexPrompt } from "../src/services/skills.js";
+import { loadSkillIndex, readSkill } from "../src/services/skills.js";
 
 let root: string;
 
@@ -117,18 +117,5 @@ describe("readSkill", () => {
   it("returns null when the name is not in the index", () => {
     const index = loadSkillIndex([root]);
     expect(readSkill(index, "missing")).toBeNull();
-  });
-});
-
-describe("skillIndexPrompt", () => {
-  it("renders one line per skill as - name: description", () => {
-    writeSkill("alpha", `---\nname: alpha\ndescription: does alpha things\n---\n`);
-    writeSkill("beta", `---\nname: beta\ndescription: does beta things\n---\n`);
-    const index = loadSkillIndex([root]);
-    expect(skillIndexPrompt(index)).toBe("- alpha: does alpha things\n- beta: does beta things");
-  });
-
-  it("returns a placeholder for an empty index", () => {
-    expect(skillIndexPrompt([])).toBe("(no skills available)");
   });
 });
