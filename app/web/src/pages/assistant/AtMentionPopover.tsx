@@ -18,7 +18,7 @@ export function AtMentionPopover({
   }
 
   return (
-    <div className="assistant-mention-popover" role="listbox">
+    <div className="assistant-mention-popover" role="listbox" aria-label="研究资料">
       {candidates.map((candidate, index) => (
         <button
           type="button"

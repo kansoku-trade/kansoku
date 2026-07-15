@@ -7,6 +7,13 @@ import { summarizeToolInput, toolRowKey } from "./toolSummary.js";
 import type { ChatLiveTool, ChatRow } from "./useChatSession";
 
 const SCROLL_STICK_THRESHOLD = 48;
+const tokenFormatter = new Intl.NumberFormat("en-US");
+const costFormatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 6,
+});
 
 function ToolRow({ label, running, input, output }: { label: string; running: boolean; input?: string; output?: string }) {
   const [open, setOpen] = useState(false);
@@ -51,7 +58,7 @@ function ToolRow({ label, running, input, output }: { label: string; running: bo
   );
 }
 
-function ChatRowView({ row }: { row: ChatRow }) {
+function ChatRowView({ row, modelLabels }: { row: ChatRow; modelLabels?: Readonly<Record<string, string>> }) {
   if (row.kind === "user") {
     return (
       <div className="chat-row chat-row--user">
@@ -60,10 +67,23 @@ function ChatRowView({ row }: { row: ChatRow }) {
     );
   }
   if (row.kind === "assistant") {
+    const meta = row.meta;
+    const modelLabel = meta
+      ? (modelLabels?.[JSON.stringify([meta.provider, meta.model])] ?? `${meta.provider}/${meta.model}`)
+      : null;
     return (
       <div className="chat-row">
-        <div className="chat-bubble chat-bubble--assistant">
-          <Markdown variant="chat">{row.text ?? ""}</Markdown>
+        <div className="chat-assistant-message">
+          <div className="chat-bubble chat-bubble--assistant">
+            <Markdown variant="chat">{row.text ?? ""}</Markdown>
+          </div>
+          {meta && modelLabels ? (
+            <div className="chat-message-meta">
+              <span>{modelLabel}</span>
+              <span>{tokenFormatter.format(meta.totalTokens)} tokens</span>
+              <span>{costFormatter.format(meta.costTotal)}</span>
+            </div>
+          ) : null}
         </div>
       </div>
     );
@@ -84,6 +104,7 @@ function ConversationTranscriptView({
   emptyText,
   onPickSuggestion,
   className,
+  modelLabels,
 }: {
   rows: ChatRow[];
   inserts?: TranscriptInsert[];
@@ -94,6 +115,7 @@ function ConversationTranscriptView({
   emptyText: string;
   onPickSuggestion: (question: string) => void;
   className?: string;
+  modelLabels?: Readonly<Record<string, string>>;
 }) {
   const bodyRef = useRef<HTMLDivElement>(null);
   const stickRef = useRef(true);
@@ -135,7 +157,7 @@ function ConversationTranscriptView({
       ) : null}
       {timeline.map((entry) =>
         entry.kind === "row" ? (
-          <ChatRowView key={entry.row.id} row={entry.row} />
+          <ChatRowView key={entry.row.id} row={entry.row} modelLabels={modelLabels} />
         ) : (
           <div key={entry.insert.id} className="chat-insert">
             {entry.insert.node}

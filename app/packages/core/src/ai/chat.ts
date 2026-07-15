@@ -42,6 +42,7 @@ import { buildReassessPack as defaultBuildReassessPack, type ReassessPack } from
 import type { AiModel } from "./models.js";
 import { CHAT_DIALOG_RULES, CHAT_GATED_RETRY_INSTRUCTION, CHAT_GATED_TURN_INSTRUCTION } from "./prompts.js";
 import { composeWithDiscipline, DisciplineMissingError, loadSharedDiscipline } from "./promptPolicy.js";
+import { isUsage } from "./usage.js";
 import {
   type DirectionalVerification,
   isDirectionalClaim,
@@ -62,6 +63,12 @@ export interface ChatDisplayMessage {
   label?: string;
   input?: string;
   output?: string;
+  meta?: {
+    provider: string;
+    model: string;
+    totalTokens: number;
+    costTotal: number;
+  };
 }
 
 export interface ChatDeps {
@@ -105,10 +112,27 @@ export function toDisplayMessages(rows: ChatMessageRow[]): ChatDisplayMessage[] 
       continue;
     }
     if (message.role === "assistant") {
+      let lastTextIndex = -1;
+      for (let idx = message.content.length - 1; idx >= 0; idx -= 1) {
+        if (message.content[idx]?.type === "text") {
+          lastTextIndex = idx;
+          break;
+        }
+      }
+      const usage = isUsage(message.usage) ? message.usage : null;
+      const meta =
+        usage && (usage.totalTokens > 0 || usage.cost.total > 0)
+          ? {
+              provider: message.provider,
+              model: message.model,
+              totalTokens: usage.totalTokens,
+              costTotal: usage.cost.total,
+            }
+          : undefined;
       message.content.forEach((block, idx) => {
         const id = idx === 0 ? row.id : `${row.id}:${idx}`;
         if (block.type === "text") {
-          out.push({ id, ts: row.ts, kind: "assistant", text: block.text });
+          out.push({ id, ts: row.ts, kind: "assistant", text: block.text, ...(idx === lastTextIndex && meta ? { meta } : {}) });
         } else if (block.type === "toolCall") {
           out.push({
             id,

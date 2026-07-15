@@ -23,6 +23,12 @@ export interface ChatRow {
   label?: string;
   input?: string;
   output?: string;
+  meta?: {
+    provider: string;
+    model: string;
+    totalTokens: number;
+    costTotal: number;
+  };
 }
 
 export interface ChatLiveTool {

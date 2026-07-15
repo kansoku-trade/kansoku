@@ -134,6 +134,12 @@ describe("assistantChatService getChat", () => {
 
     const state = await assistantChatService.getChat({ id: session.id });
     expect(state.messages.map((m) => m.kind)).toEqual(["user", "assistant"]);
+    expect(state.messages[1]?.meta).toEqual({
+      provider: "anthropic",
+      model: "test-model",
+      totalTokens: USAGE.totalTokens,
+      costTotal: USAGE.cost.total,
+    });
     expect(state.usage).toEqual({ totalTokens: USAGE.totalTokens, costTotal: USAGE.cost.total, calls: 1 });
   });
 });
