@@ -115,8 +115,8 @@ jobs:
       - name: test — web, desktop
         working-directory: app
         run: |
-          pnpm --filter @trade/web test
-          pnpm --filter @trade/desktop test
+          pnpm --filter @kansoku/web test
+          pnpm --filter @kansoku/desktop test
 
       - name: test — server (json report for the known-failure gate)
         working-directory: app/server
@@ -156,7 +156,7 @@ jobs:
 
       - name: build web
         working-directory: app
-        run: pnpm --filter @trade/web build
+        run: pnpm --filter @kansoku/web build
 
       - name: package desktop (dmg + zip, no paid signing identity)
         working-directory: app/desktop

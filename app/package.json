@@ -1,20 +1,20 @@
 {
-  "name": "trade-app",
+  "name": "kansoku",
   "private": true,
   "packageManager": "pnpm@11.10.0",
   "scripts": {
-    "dev": "concurrently -n web,server -c blue,green \"pnpm --filter @trade/web dev\" \"pnpm --filter @trade/server dev\"",
-    "dev:desktop": "concurrently --kill-others -n web,desktop -c blue,magenta \"pnpm --filter @trade/web dev\" \"pnpm --filter @trade/desktop dev\"",
-    "start": "pnpm --filter @trade/server start",
-    "start:desktop": "pnpm --filter @trade/web build && pnpm --filter @trade/desktop start",
-    "build": "pnpm --filter @trade/web build",
-    "build:desktop": "pnpm --filter @trade/desktop build",
-    "package:desktop": "pnpm --filter @trade/desktop package",
+    "dev": "concurrently -n web,server -c blue,green \"pnpm --filter @kansoku/web dev\" \"pnpm --filter @kansoku/server dev\"",
+    "dev:desktop": "concurrently --kill-others -n web,desktop -c blue,magenta \"pnpm --filter @kansoku/web dev\" \"pnpm --filter @kansoku/desktop dev\"",
+    "start": "pnpm --filter @kansoku/server start",
+    "start:desktop": "pnpm --filter @kansoku/web build && pnpm --filter @kansoku/desktop start",
+    "build": "pnpm --filter @kansoku/web build",
+    "build:desktop": "pnpm --filter @kansoku/desktop build",
+    "package:desktop": "pnpm --filter @kansoku/desktop package",
     "release:desktop:dry-run": "desktop/scripts/release-dry-run.sh",
     "test": "pnpm -r test",
-    "test:desktop": "pnpm --filter @trade/desktop test",
+    "test:desktop": "pnpm --filter @kansoku/desktop test",
     "typecheck": "pnpm -r typecheck",
-    "typecheck:desktop": "pnpm --filter @trade/desktop typecheck"
+    "typecheck:desktop": "pnpm --filter @kansoku/desktop typecheck"
   },
   "devDependencies": {
     "concurrently": "^10.0.3"

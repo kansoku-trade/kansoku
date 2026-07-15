@@ -29,7 +29,7 @@ export async function startHost(port: number, isDevKernel: boolean): Promise<Hos
       app.use("*", serveStatic({ root: WEB_DIST }));
       app.get("*", async (c) => c.html(await readFile(join(WEB_DIST, "index.html"), "utf-8")));
     } else {
-      console.log(`web build not found at ${WEB_DIST} — run "pnpm --filter @trade/web build" to serve it; API-only for now`);
+      console.log(`web build not found at ${WEB_DIST} — run "pnpm --filter @kansoku/web build" to serve it; API-only for now`);
     }
   }
 

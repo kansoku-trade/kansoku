@@ -55,7 +55,7 @@
 
 ```text
 app/
-├── packages/core/   # @trade/core 内核：调 longbridge CLI 拉数据，TypeScript 实算全部指标
+├── packages/core/   # @kansoku/core 内核：调 longbridge CLI 拉数据，TypeScript 实算全部指标
 ├── server/          # 薄 HTTP 宿主（Tsuki 控制器 + WebSocket），浏览器模式用
 ├── desktop/         # Electron 壳：内嵌同一个内核，走类型化 IPC，Sparkle 自动更新
 └── web/             # Vite + React 前端，按运行环境自动选 HTTP 或 IPC 传输

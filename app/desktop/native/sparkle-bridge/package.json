@@ -1,5 +1,5 @@
 {
-  "name": "@trade/sparkle-bridge",
+  "name": "@kansoku/sparkle-bridge",
   "version": "0.1.0",
   "private": true,
   "gypfile": true,

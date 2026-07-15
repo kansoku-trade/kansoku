@@ -1,5 +1,5 @@
 {
-  "name": "@trade/server",
+  "name": "@kansoku/server",
   "private": true,
   "type": "module",
   "scripts": {

@@ -1,5 +1,5 @@
 {
-  "name": "@trade/web",
+  "name": "@kansoku/web",
   "private": true,
   "type": "module",
   "scripts": {

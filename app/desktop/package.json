@@ -1,5 +1,5 @@
 {
-  "name": "@trade/desktop",
+  "name": "@kansoku/desktop",
   "version": "0.12.0",
   "private": true,
   "type": "module",
@@ -15,7 +15,7 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "generate-icon": "bash scripts/generate-icon.sh",
-    "prepackage": "pnpm --filter @trade/web build && (test -f ../web/dist/index.html || (echo 'web/dist/index.html missing after build' && exit 1))",
+    "prepackage": "pnpm --filter @kansoku/web build && (test -f ../web/dist/index.html || (echo 'web/dist/index.html missing after build' && exit 1))",
     "package": "tsdown && node scripts/verifyBundledCodexAuth.mjs && node scripts/stageSkills.mjs && pnpm rebuild-native && pnpm build:native && electron-builder --mac dmg zip --arm64"
   },
   "dependencies": {

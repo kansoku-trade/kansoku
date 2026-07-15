@@ -1,5 +1,5 @@
 {
-  "name": "@trade/core",
+  "name": "@kansoku/core",
   "private": true,
   "type": "module",
   "scripts": {

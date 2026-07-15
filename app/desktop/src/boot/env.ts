@@ -6,7 +6,7 @@ import { isDataRootUsable } from "../dataRoot/usability.js";
 import { resolveDataRoot, scaffoldDataRoot } from "./paths.js";
 import { bundledSkillsPath, ensureBundledSkills } from "./skills.js";
 
-// package.json's "name" is the scoped npm id ("@trade/desktop"), which
+// package.json's "name" is the scoped npm id ("@kansoku/desktop"), which
 // Electron would otherwise use verbatim for app.getPath("userData") — the
 // "/" turns into a nested folder. Pin it to productName before any path
 // resolution runs.
