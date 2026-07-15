@@ -97,6 +97,23 @@ describe("registerTabsIpc", () => {
     }
   });
 
+  it("keeps the state intact for an unrecognized op and does not broadcast", async () => {
+    const initial = openTab(emptyTabsState(), "/");
+    const fileStore = fakeFileStore(initial);
+    registerTabsIpc(fileStore);
+
+    const result = await handlers.get(TABS_MUTATE_CHANNEL)?.({}, { op: "explode", id: "x" });
+
+    expect(result).toEqual(initial);
+    expect(fileStore.scheduleSave).not.toHaveBeenCalled();
+    for (const win of windows) {
+      expect(win.webContents.send).not.toHaveBeenCalled();
+    }
+
+    const after = await handlers.get(TABS_GET_CHANNEL)?.({});
+    expect(after).toEqual(initial);
+  });
+
   it("does not persist or broadcast a no-op mutation", async () => {
     const initial = openTab(emptyTabsState(), "/");
     const fileStore = fakeFileStore(initial);

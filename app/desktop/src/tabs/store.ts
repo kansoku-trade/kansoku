@@ -113,6 +113,8 @@ export function applyMutation(state: TabsState, mutation: MutateOp): TabsState {
       return updateTabScroll(state, mutation.id, mutation.scrollY);
     case "adopt":
       return adoptTabs(state, mutation.tabs);
+    default:
+      return state;
   }
 }
 
