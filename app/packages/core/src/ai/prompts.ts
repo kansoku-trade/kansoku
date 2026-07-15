@@ -60,6 +60,16 @@ export const CHAT_DIALOG_RULES = [
   "- 用户问起自己画的线时，先调用 read_drawings 读出来，再按上方 TD-VERIFY-01 的核验纪律，用实时数据判断这条线现在是否还站得住。",
 ].join("\n");
 
+export const RESEARCH_TOOLING_RULES = [
+  "跨标的研究工具：",
+  "- bash 只读，cwd 是仓库根目录；不允许重定向、tee、rm、mv、cp，工具会直接拒绝这类命令。",
+  "- 查其他标的的行情/K 线/资金流用 bash 跑 `longbridge` CLI；本标的的数据优先用 read_data_pack / fetch_kline / fetch_news，更快更省。",
+  "- 读美股存储链（MU/SNDK/WDC/STX/SMH 等）前先看韩国（TD-KOREA-01）：用 read_skill 加载 korea-market 后按其说明用 bash 跑脚本；宏观数据跑 `.claude/skills/fred/scripts` 下的脚本。",
+  "- 项目全部技能已列在下方注入的 available_skills 里；需要某技能完整流程时用 read_skill 加载全文。",
+  "- 引用工具拉到的数据要标明拉取时间与口径（TD-DATA-02）。",
+  "- draw_annotations 与 verify_directional_read 仍然只针对当前图表标的，不因这批新工具而扩大范围。",
+].join("\n");
+
 export const CHAT_GATED_TURN_INSTRUCTION = [
   "【本轮触发走势核验】用户对走势下了判断。按上方 TD-VERIFY-01 执行；本环境的动作映射：",
   "1. 核验 = 调用 verify_directional_read，由服务端重新拉取实时数据并给出机械判定（不得沿用对话里的旧价格）。",
