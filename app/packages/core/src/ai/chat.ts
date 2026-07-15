@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { join } from "node:path";
 import type { AgentMessage, AgentTool } from "@earendil-works/pi-agent-core";
 import { Type } from "typebox";
 import type {
@@ -16,6 +17,7 @@ import { marketOf } from "../services/symbol.utils.js";
 import { easternDate } from "../services/session.js";
 import { loadChart as defaultLoadChart } from "../services/store.js";
 import type { AiAgentFactory } from "./agentSession.js";
+import { buildResearchTools, type ExecFn } from "./agentTools.js";
 import {
   appendMessages,
   type ChatMessageRow,
@@ -39,8 +41,15 @@ import {
   textResult,
 } from "./dataTools.js";
 import { buildReassessPack as defaultBuildReassessPack, type ReassessPack } from "./datapack.js";
+import { MessagesEngine } from "./messages/messageEngine.js";
+import { SkillCatalogProvider, type SkillContext } from "./messages/sharedProviders.js";
 import type { AiModel } from "./models.js";
-import { CHAT_DIALOG_RULES, CHAT_GATED_RETRY_INSTRUCTION, CHAT_GATED_TURN_INSTRUCTION } from "./prompts.js";
+import {
+  CHAT_DIALOG_RULES,
+  CHAT_GATED_RETRY_INSTRUCTION,
+  CHAT_GATED_TURN_INSTRUCTION,
+  RESEARCH_TOOLING_RULES,
+} from "./prompts.js";
 import { composeWithDiscipline, DisciplineMissingError, loadSharedDiscipline } from "./promptPolicy.js";
 import { isUsage } from "./usage.js";
 import {
@@ -86,6 +95,7 @@ export interface ChatDeps {
   now?: () => number;
   repoRoot?: string;
   disciplineText?: string;
+  exec?: ExecFn;
 }
 
 export type ChatStartResult =
@@ -183,6 +193,8 @@ export function buildChatSystemPrompt(
     commentLines.length ? `当日分析员点评：\n${commentLines.join("\n")}` : "当日暂无分析员点评。",
     "",
     CHAT_DIALOG_RULES,
+    "",
+    RESEARCH_TOOLING_RULES,
   ].join("\n");
 
   // Chat is where the user pushes back on a call, so it is a judgment agent: the caller loads the
@@ -340,10 +352,21 @@ function prepareTurn(
         verifyCtx,
       );
 
+      const repoRoot = deps.repoRoot ?? PROJECT_ROOT;
+      const { tools: researchTools, skillIndex } = buildResearchTools({ repoRoot, exec: deps.exec });
+      const skillContexts: SkillContext[] = skillIndex.map((skill) => ({
+        activated: false,
+        description: skill.description,
+        location: join(skill.dir, "SKILL.md"),
+        name: skill.name,
+      }));
+      const messageEngine = new MessagesEngine([new SkillCatalogProvider(skillContexts)]);
+
       return {
         symbol,
         systemPrompt,
-        tools,
+        tools: [...tools, ...researchTools],
+        transformContext: async (messages) => (await messageEngine.process(messages)).messages,
         gate: verifyCtx
           ? {
               instruction: CHAT_GATED_TURN_INSTRUCTION,

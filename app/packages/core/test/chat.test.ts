@@ -1,3 +1,5 @@
+import { mkdirSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import type { AgentEvent, AgentMessage, AgentTool } from "@earendil-works/pi-agent-core";
 import { describe, expect, it, vi } from "vitest";
 import type { ChartDoc, CockpitComment } from "../../../shared/types.js";
@@ -12,7 +14,10 @@ const ctx = vi.hoisted(() => {
   return { dir };
 });
 
-vi.mock("../src/env.js", () => ({ CHART_DATA_DIR: ctx.dir, PROJECT_ROOT: ctx.dir }));
+vi.mock("../src/env.js", async () => {
+  const actual = await vi.importActual<typeof import("../src/env.js")>("../src/env.js");
+  return { ...actual, CHART_DATA_DIR: ctx.dir, PROJECT_ROOT: ctx.dir };
+});
 
 const FAKE_DISCIPLINE = "# trading-discipline\n假纪律全文。";
 
@@ -191,7 +196,7 @@ describe("runChatTurn gating", () => {
 });
 
 describe("runChatTurn tools", () => {
-  it("wires exactly read_data_pack/fetch_kline/fetch_news/read_drawings/draw_annotations to the agent factory, no submit_prediction or append_comment", async () => {
+  it("wires the five data/draw tools plus the research trio, no submit_prediction or append_comment", async () => {
     const chartId = "tools-1";
     let capturedTools: AgentTool[] | undefined;
     const factory: AiAgentFactory = (config) => {
@@ -213,7 +218,68 @@ describe("runChatTurn tools", () => {
       "fetch_news",
       "read_drawings",
       "draw_annotations",
+      "read_skill",
+      "bash",
+      "read_file",
     ]);
+  });
+
+  it("reaches a custom exec through the bash tool", async () => {
+    const chartId = "tools-2";
+    let capturedTools: AgentTool[] | undefined;
+    const factory: AiAgentFactory = (config) => {
+      capturedTools = config.tools;
+      return {
+        prompt: async () => {},
+        abort: () => {},
+        state: { messages: [...(config.messages ?? [])] },
+      };
+    };
+    const execCalls: string[] = [];
+    const fakeExec = async (command: string) => {
+      execCalls.push(command);
+      return { stdout: "ok", stderr: "" };
+    };
+
+    const result = await runChatTurn(chartId, "hi", baseDeps({ agentFactory: factory, exec: fakeExec }));
+    expect(result.started).toBe(true);
+    if (result.started) await result.done;
+
+    const bashTool = capturedTools?.find((tool) => tool.name === "bash");
+    if (!bashTool) throw new Error("missing bash tool");
+    await bashTool.execute("c1", { command: "longbridge quote MU.US" });
+
+    expect(execCalls).toEqual(["longbridge quote MU.US"]);
+  });
+
+  it("wires transformContext to inject the skill catalog from the repo's skill index", async () => {
+    const chartId = "tools-3";
+    const base = process.env.TMPDIR ?? "/tmp/";
+    const sep = base.endsWith("/") ? "" : "/";
+    const repoRoot = `${base}${sep}chat-skill-fixture-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const skillDir = join(repoRoot, ".claude", "skills", "foo");
+    mkdirSync(skillDir, { recursive: true });
+    writeFileSync(join(skillDir, "SKILL.md"), "---\nname: foo\ndescription: 演示技能\n---\nfoo body");
+
+    let capturedTransform: ((messages: AgentMessage[]) => Promise<AgentMessage[]>) | undefined;
+    const factory: AiAgentFactory = (config) => {
+      capturedTransform = config.transformContext;
+      return {
+        prompt: async () => {},
+        abort: () => {},
+        state: { messages: [...(config.messages ?? [])] },
+      };
+    };
+
+    const result = await runChatTurn(chartId, "hi", baseDeps({ agentFactory: factory, repoRoot }));
+    expect(result.started).toBe(true);
+    if (result.started) await result.done;
+
+    if (!capturedTransform) throw new Error("missing transformContext");
+    const viewed = await capturedTransform([{ role: "user", content: "hi", timestamp: 0 }]);
+    const text = JSON.stringify(viewed);
+    expect(text).toContain("<available_skills>");
+    expect(text).toContain("foo");
   });
 });
 
@@ -727,6 +793,7 @@ describe("buildChatSystemPrompt", () => {
     expect(prompt).toMatch(/\d{2}:\d{2} 开盘走强/);
     expect(prompt).not.toContain("闲聊");
     expect(prompt).toContain("已归档的预测是冻结记录");
+    expect(prompt).toContain("只针对当前图表标的");
   });
 
   it("excludes level: error comment rows (e.g. commentator timeout noise) even from a relevant source", () => {

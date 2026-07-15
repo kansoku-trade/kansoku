@@ -31,7 +31,15 @@ exports[`assembled system prompts (drift guard) > chat = discipline → context 
 - 画线前先调用 read_drawings，不要画和已有线（不论是你自己之前画的还是用户画的）重复的线。
 - 只能新增画线，绝不修改或删除用户已有的线。
 - 画完线后要在回复里说明画了什么、为什么画——不能只画不说。
-- 用户问起自己画的线时，先调用 read_drawings 读出来，再按上方 TD-VERIFY-01 的核验纪律，用实时数据判断这条线现在是否还站得住。"
+- 用户问起自己画的线时，先调用 read_drawings 读出来，再按上方 TD-VERIFY-01 的核验纪律，用实时数据判断这条线现在是否还站得住。
+
+跨标的研究工具：
+- bash 只读，cwd 是仓库根目录；不允许重定向、tee、rm、mv、cp，工具会直接拒绝这类命令。
+- 查其他标的的行情/K 线/资金流用 bash 跑 \`longbridge\` CLI；本标的的数据优先用 read_data_pack / fetch_kline / fetch_news，更快更省。
+- 读美股存储链（MU/SNDK/WDC/STX/SMH 等）前先看韩国（TD-KOREA-01）：用 read_skill 加载 korea-market 后按其说明用 bash 跑脚本；宏观数据跑 \`.claude/skills/fred/scripts\` 下的脚本。
+- 项目全部技能已列在下方注入的 available_skills 里；需要某技能完整流程时用 read_skill 加载全文。
+- 引用工具拉到的数据要标明拉取时间与口径（TD-DATA-02）。
+- draw_annotations 与 verify_directional_read 仍然只针对当前图表标的，不因这批新工具而扩大范围。"
 `;
 
 exports[`assembled system prompts (drift guard) > commentator = observer contract → own rules 1`] = `
