@@ -1,18 +1,24 @@
-import type { RawBar } from "../../../../../shared/types.js";
+import type { FlowRow, RawBar } from "../../../../../shared/types.js";
 import { readLongbridgeToken, type LongbridgeToken } from "../longbridgeToken.js";
-import type { RawQuote } from "./types.js";
+import type { RawCapitalDistribution, RawQuote } from "./types.js";
 import {
   candlestickPeriod,
   COMMAND_AUTH,
   COMMAND_PUSH_QUOTE,
   COMMAND_PUSH_TRADE,
   COMMAND_QUERY_CANDLESTICK,
+  COMMAND_QUERY_CAPITAL_DISTRIBUTION,
+  COMMAND_QUERY_CAPITAL_FLOW,
   COMMAND_QUERY_SECURITY_QUOTE,
+  COMMAND_QUERY_SECURITY_STATIC,
   COMMAND_RECONNECT,
   COMMAND_SUBSCRIBE,
   COMMAND_UNSUBSCRIBE,
   decodeCandlestickResponse,
+  decodeCapitalDistributionResponse,
+  decodeCapitalFlowResponse,
   decodePacket,
+  decodeStaticNameResponse,
   decodePushQuote,
   decodePushTrades,
   decodeSecurityQuoteResponse,
@@ -239,6 +245,28 @@ export class LongbridgeQuoteSocket {
       QUERY_TIMEOUT_MS,
     );
     return decodeCandlestickResponse(body);
+  }
+
+  async queryStaticNames(symbols: string[]): Promise<Array<{ symbol: string; name: string }>> {
+    await this.connect();
+    const body = await this.request(COMMAND_QUERY_SECURITY_STATIC, encodeMultiSecurityRequest(symbols), QUERY_TIMEOUT_MS);
+    return decodeStaticNameResponse(body);
+  }
+
+  async queryCapitalFlow(symbol: string): Promise<FlowRow[]> {
+    await this.connect();
+    const body = await this.request(COMMAND_QUERY_CAPITAL_FLOW, encodeMultiSecurityRequest([symbol]), QUERY_TIMEOUT_MS);
+    return decodeCapitalFlowResponse(body);
+  }
+
+  async queryCapitalDistribution(symbol: string): Promise<RawCapitalDistribution> {
+    await this.connect();
+    const body = await this.request(
+      COMMAND_QUERY_CAPITAL_DISTRIBUTION,
+      encodeMultiSecurityRequest([symbol]),
+      QUERY_TIMEOUT_MS,
+    );
+    return decodeCapitalDistributionResponse(body);
   }
 
   async subscribe(symbols: string[], subTypes: number[]): Promise<void> {

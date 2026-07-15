@@ -1,13 +1,16 @@
 import { gunzipSync } from "node:zlib";
-import type { RawBar } from "../../../../../shared/types.js";
-import type { ExtendedQuote, RawQuote } from "./types.js";
+import type { FlowRow, RawBar } from "../../../../../shared/types.js";
+import type { ExtendedQuote, RawCapitalDistribution, RawQuote } from "./types.js";
 
 export const COMMAND_AUTH = 2;
 export const COMMAND_RECONNECT = 3;
 export const COMMAND_SUBSCRIBE = 6;
 export const COMMAND_UNSUBSCRIBE = 7;
+export const COMMAND_QUERY_SECURITY_STATIC = 10;
 export const COMMAND_QUERY_SECURITY_QUOTE = 11;
 export const COMMAND_QUERY_CANDLESTICK = 19;
+export const COMMAND_QUERY_CAPITAL_FLOW = 24;
+export const COMMAND_QUERY_CAPITAL_DISTRIBUTION = 25;
 export const COMMAND_PUSH_QUOTE = 101;
 export const COMMAND_PUSH_TRADE = 104;
 
@@ -360,6 +363,45 @@ export function decodeCandlestickResponse(body: Uint8Array): RawBar[] {
         volume: numberValue(get(5)),
       };
     });
+}
+
+export function decodeStaticNameResponse(body: Uint8Array): Array<{ symbol: string; name: string }> {
+  return fields(body)
+    .filter((field) => field.number === 1 && field.value instanceof Uint8Array)
+    .map((field) => {
+      const decoded = fields(field.value as Uint8Array);
+      const get = (number: number) => stringValue(decoded.find((item) => item.number === number));
+      return { symbol: get(1), name: get(2) || get(3) };
+    });
+}
+
+export function decodeCapitalFlowResponse(body: Uint8Array): FlowRow[] {
+  return fields(body)
+    .filter((field) => field.number === 2 && field.value instanceof Uint8Array)
+    .map((field) => {
+      const decoded = fields(field.value as Uint8Array);
+      return {
+        time: isoTime(numberValue(decoded.find((item) => item.number === 2))),
+        inflow: stringValue(decoded.find((item) => item.number === 1)),
+      };
+    });
+}
+
+function decodeCapitalBucket(body: Uint8Array | null): { large: string; medium: string; small: string } {
+  const decoded = body ? fields(body) : [];
+  const get = (number: number) => stringValue(decoded.find((field) => field.number === number));
+  return { large: get(1), medium: get(2), small: get(3) };
+}
+
+export function decodeCapitalDistributionResponse(body: Uint8Array): RawCapitalDistribution {
+  const decoded = fields(body);
+  const get = (number: number) => decoded.find((field) => field.number === number);
+  return {
+    symbol: stringValue(get(1)),
+    timestamp: isoTime(numberValue(get(2))),
+    capital_in: decodeCapitalBucket(bytesValue(get(3))),
+    capital_out: decodeCapitalBucket(bytesValue(get(4))),
+  };
 }
 
 export function decodePushTrades(body: Uint8Array): ProtocolTradePush {

@@ -3,6 +3,9 @@ import { describe, expect, it } from "vitest";
 import {
   candlestickPeriod,
   decodeCandlestickResponse,
+  decodeCapitalDistributionResponse,
+  decodeCapitalFlowResponse,
+  decodeStaticNameResponse,
   decodePacket,
   decodePushQuote,
   decodePushTrades,
@@ -88,6 +91,35 @@ describe("Longbridge realtime protocol", () => {
     const candle = [...str(1, "10.5"), ...str(2, "10"), ...str(3, "9.5"), ...str(4, "11"), ...num(5, 42), ...num(7, 60)];
     expect(decodeCandlestickResponse(bytes(...str(1, "A.US"), ...msg(2, candle)))).toEqual([
       { time: "1970-01-01T00:01:00.000Z", open: 10, high: 11, low: 9.5, close: 10.5, volume: 42 },
+    ]);
+  });
+
+  it("decodes capital flow intraday responses into FlowRow rows", () => {
+    const line = [...str(1, "12345.5"), ...num(2, 60)];
+    expect(decodeCapitalFlowResponse(bytes(...str(1, "A.US"), ...msg(2, line)))).toEqual([
+      { time: "1970-01-01T00:01:00.000Z", inflow: "12345.5" },
+    ]);
+  });
+
+  it("decodes capital distribution responses with in/out buckets", () => {
+    const capitalIn = [...str(1, "1"), ...str(2, "2"), ...str(3, "3")];
+    const capitalOut = [...str(1, "4"), ...str(2, "5"), ...str(3, "6")];
+    expect(
+      decodeCapitalDistributionResponse(bytes(...str(1, "A.US"), ...num(2, 60), ...msg(3, capitalIn), ...msg(4, capitalOut))),
+    ).toEqual({
+      symbol: "A.US",
+      timestamp: "1970-01-01T00:01:00.000Z",
+      capital_in: { large: "1", medium: "2", small: "3" },
+      capital_out: { large: "4", medium: "5", small: "6" },
+    });
+  });
+
+  it("decodes static info responses into symbol/name pairs preferring name_cn", () => {
+    const info = [...str(1, "MRVL.US"), ...str(2, "迈威尔科技"), ...str(3, "Marvell Technology")];
+    const noCn = [...str(1, "XXXX.US"), ...str(3, "Fallback Inc")];
+    expect(decodeStaticNameResponse(bytes(...msg(1, info), ...msg(1, noCn)))).toEqual([
+      { symbol: "MRVL.US", name: "迈威尔科技" },
+      { symbol: "XXXX.US", name: "Fallback Inc" },
     ]);
   });
 

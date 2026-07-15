@@ -40,6 +40,9 @@ describe("longbridgeProvider (CLI-backed)", () => {
     const transport = {
       queryQuotes: vi.fn().mockResolvedValue(rows),
       queryCandlesticks: vi.fn().mockResolvedValue(bars),
+      queryCapitalFlow: vi.fn(),
+      queryCapitalDistribution: vi.fn(),
+      queryStaticNames: vi.fn(),
     };
     const run = vi.fn().mockRejectedValue(new Error("CLI should not run"));
     const provider = createLongbridgeProvider(run as LongbridgeRunner, () => transport);
@@ -50,10 +53,59 @@ describe("longbridgeProvider (CLI-backed)", () => {
     expect(run).not.toHaveBeenCalled();
   });
 
+  it("prefers the WS transport for capital flow and distribution when available", async () => {
+    const flowRows = [{ time: "2026-07-16T14:30:00.000Z", inflow: "12" }];
+    const dist = {
+      symbol: "NVDA.US",
+      timestamp: "2026-07-16T14:30:00.000Z",
+      capital_in: { large: "1", medium: "2", small: "3" },
+      capital_out: { large: "4", medium: "5", small: "6" },
+    };
+    const transport = {
+      queryQuotes: vi.fn(),
+      queryCandlesticks: vi.fn(),
+      queryCapitalFlow: vi.fn().mockResolvedValue(flowRows),
+      queryCapitalDistribution: vi.fn().mockResolvedValue(dist),
+      queryStaticNames: vi.fn(),
+    };
+    const run = vi.fn().mockRejectedValue(new Error("CLI should not run"));
+    const provider = createLongbridgeProvider(run as LongbridgeRunner, () => transport);
+
+    await expect(provider.getFlow!("NVDA.US")).resolves.toEqual(flowRows);
+    await expect(provider.getCapitalDistribution!("NVDA.US")).resolves.toEqual(dist);
+    expect(run).not.toHaveBeenCalled();
+  });
+
+  it("falls back to the CLI when the WS capital queries fail", async () => {
+    const transport = {
+      queryQuotes: vi.fn(),
+      queryCandlesticks: vi.fn(),
+      queryCapitalFlow: vi.fn().mockRejectedValue(new Error("socket down")),
+      queryCapitalDistribution: vi.fn().mockRejectedValue(new Error("socket down")),
+      queryStaticNames: vi.fn(),
+    };
+    const run = runner({
+      "capital NVDA.US --flow": [{ time: "10:00", inflow: "12" }],
+      "capital NVDA.US": {
+        symbol: "NVDA.US",
+        timestamp: "2026-07-16T13:00:00Z",
+        capital_in: { large: "1", medium: "2", small: "3" },
+        capital_out: { large: "4", medium: "5", small: "6" },
+      },
+    });
+    const provider = createLongbridgeProvider(run, () => transport);
+
+    await expect(provider.getFlow!("NVDA.US")).resolves.toEqual([{ time: "10:00", inflow: "12" }]);
+    await expect(provider.getCapitalDistribution!("NVDA.US")).resolves.toMatchObject({ symbol: "NVDA.US" });
+  });
+
   it("falls back to the CLI when the WS transport fails", async () => {
     const transport = {
       queryQuotes: vi.fn().mockRejectedValue(new Error("connections limitation is hit")),
       queryCandlesticks: vi.fn().mockRejectedValue(new Error("connections limitation is hit")),
+      queryCapitalFlow: vi.fn(),
+      queryCapitalDistribution: vi.fn(),
+      queryStaticNames: vi.fn(),
     };
     const rows = [{ symbol: "NVDA.US", last: "110", prev_close: "100", change_percentage: "10" }];
     const run = runner({
@@ -66,6 +118,38 @@ describe("longbridgeProvider (CLI-backed)", () => {
 
     await expect(provider.getQuotes(["NVDA.US"])).resolves.toEqual(rows);
     await expect(provider.getKline("NVDA.US", "5m", 2)).resolves.toHaveLength(1);
+  });
+
+  it("prefers the WS transport for security names and still caches per symbol", async () => {
+    const transport = {
+      queryQuotes: vi.fn(),
+      queryCandlesticks: vi.fn(),
+      queryCapitalFlow: vi.fn(),
+      queryCapitalDistribution: vi.fn(),
+      queryStaticNames: vi.fn().mockResolvedValue([{ symbol: "MRVL.US", name: "迈威尔科技" }]),
+    };
+    const run = vi.fn().mockRejectedValue(new Error("CLI should not run"));
+    const provider = createLongbridgeProvider(run as LongbridgeRunner, () => transport);
+
+    await expect(provider.getSecurityName!("MRVL.US")).resolves.toBe("迈威尔科技");
+    await expect(provider.getSecurityName!("MRVL.US")).resolves.toBe("迈威尔科技");
+    expect(transport.queryStaticNames).toHaveBeenCalledTimes(1);
+    expect(run).not.toHaveBeenCalled();
+  });
+
+  it("falls back to the CLI for security names when the WS query fails", async () => {
+    const transport = {
+      queryQuotes: vi.fn(),
+      queryCandlesticks: vi.fn(),
+      queryCapitalFlow: vi.fn(),
+      queryCapitalDistribution: vi.fn(),
+      queryStaticNames: vi.fn().mockRejectedValue(new Error("socket down")),
+    };
+    const run = runner({
+      "static MRVL.US --lang zh-CN": [{ symbol: "MRVL.US", name: "迈威尔科技" }],
+    });
+    const provider = createLongbridgeProvider(run, () => transport);
+    await expect(provider.getSecurityName!("MRVL.US")).resolves.toBe("迈威尔科技");
   });
 
   it("loads and caches the Chinese security name from static reference data", async () => {

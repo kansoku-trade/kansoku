@@ -37,3 +37,28 @@ it.runIf(process.env.LONGBRIDGE_LIVE === "1")(
   20_000,
 );
 
+it.runIf(process.env.LONGBRIDGE_LIVE === "1")(
+  "answers capital flow and distribution queries through the real Longbridge quote gateway",
+  async () => {
+    const socket = new LongbridgeQuoteSocket();
+
+    const flow = await socket.queryCapitalFlow("NVDA.US");
+    expect(flow.length).toBeGreaterThan(0);
+    for (const row of flow.slice(-3)) {
+      expect(Number.isNaN(Date.parse(row.time))).toBe(false);
+      expect(Number.isFinite(Number(row.inflow))).toBe(true);
+    }
+
+    const dist = await socket.queryCapitalDistribution("NVDA.US");
+    expect(dist.symbol).toBe("NVDA.US");
+    expect(Number.isNaN(Date.parse(dist.timestamp))).toBe(false);
+    expect(Number.isFinite(Number(dist.capital_in.large))).toBe(true);
+
+    const names = await socket.queryStaticNames(["MRVL.US"]);
+    expect(names[0]?.symbol).toBe("MRVL.US");
+    expect(names[0]?.name.length).toBeGreaterThan(0);
+    socket.close();
+  },
+  20_000,
+);
+

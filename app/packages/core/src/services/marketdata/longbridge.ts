@@ -100,6 +100,9 @@ async function callCli<T>(label: string, run: LongbridgeRunner, args: string[]):
 export interface QuoteQueryTransport {
   queryQuotes(symbols: string[]): Promise<RawQuote[]>;
   queryCandlesticks(symbol: string, period: string, count: number, session: "intraday" | "all"): Promise<RawBar[]>;
+  queryCapitalFlow(symbol: string): Promise<FlowRow[]>;
+  queryCapitalDistribution(symbol: string): Promise<RawCapitalDistribution>;
+  queryStaticNames(symbols: string[]): Promise<Array<{ symbol: string; name: string }>>;
 }
 
 export function createLongbridgeProvider(
@@ -166,7 +169,11 @@ export function createLongbridgeProvider(
       const cached = securityNameCache.get(key);
       if (cached) return cached;
 
-      const request = run<CliSecurityInfo[]>(["static", symbol, "--lang", "zh-CN"])
+      const request = wsFirst<CliSecurityInfo[]>(
+        "static",
+        () => socket!().queryStaticNames([symbol]),
+        () => run<CliSecurityInfo[]>(["static", symbol, "--lang", "zh-CN"]),
+      )
         .then((rows) => {
           const exact = rows.find((row) => row.symbol?.toUpperCase() === key) ?? rows[0];
           const name = exact?.name?.trim();
@@ -195,11 +202,19 @@ export function createLongbridgeProvider(
     },
 
     getFlow(symbol: string): Promise<FlowRow[]> {
-      return callCli<FlowRow[]>("capital flow", run, ["capital", symbol, "--flow"]);
+      return wsFirst(
+        "capital flow",
+        () => socket!().queryCapitalFlow(symbol),
+        () => callCli<FlowRow[]>("capital flow", run, ["capital", symbol, "--flow"]),
+      );
     },
 
     getCapitalDistribution(symbol: string): Promise<RawCapitalDistribution> {
-      return callCli<RawCapitalDistribution>("capital distribution", run, ["capital", symbol]);
+      return wsFirst(
+        "capital distribution",
+        () => socket!().queryCapitalDistribution(symbol),
+        () => callCli<RawCapitalDistribution>("capital distribution", run, ["capital", symbol]),
+      );
     },
 
     getPositions(): Promise<RawPosition[]> {
