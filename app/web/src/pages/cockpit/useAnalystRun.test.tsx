@@ -5,6 +5,7 @@ import type { ChannelSpec } from "../../wsHub";
 
 const subscribeChannel = vi.fn();
 const reassess = vi.fn();
+const reassessStatus = vi.fn();
 
 vi.mock("../../wsHub", () => ({
   subscribeChannel: (...args: unknown[]) => subscribeChannel(...args),
@@ -14,12 +15,13 @@ vi.mock("../../client", () => ({
   client: {
     symbols: {
       reassess: (...args: unknown[]) => reassess(...args),
+      reassessStatus: (...args: unknown[]) => reassessStatus(...args),
     },
   },
 }));
 
 const { resetAnalystRunsStoreForTests } = await import("../../analystRunsStore");
-const { useAnalystRun } = await import("./useAnalystRun");
+const { useAnalystRun, RECONCILE_WINDOW_MS } = await import("./useAnalystRun");
 
 const runningStatus = (activity: string) => ({
   running: true as const,
@@ -41,11 +43,13 @@ describe("useAnalystRun", () => {
       return vi.fn();
     });
     reassess.mockReset();
+    reassessStatus.mockReset();
   });
 
   afterEach(() => {
     cleanup();
     resetAnalystRunsStoreForTests();
+    vi.useRealTimers();
   });
 
   it("reports not running when the store has no entry for the symbol", () => {
@@ -95,6 +99,69 @@ describe("useAnalystRun", () => {
 
     act(() => {
       subs[0].onPayload({ type: "update", symbol: "MU", status: runningStatus("分析中") });
+    });
+
+    expect(result.current.running).toBe(false);
+  });
+
+  it("clears the optimistic placeholder via the bounded re-check when no store update arrives", async () => {
+    vi.useFakeTimers();
+    reassess.mockResolvedValue({ started: true });
+    reassessStatus.mockResolvedValue({ running: false });
+
+    const { result } = renderHook(() => useAnalystRun("NVDA"));
+
+    await act(async () => {
+      await result.current.start();
+    });
+    expect(result.current.running).toBe(true);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(RECONCILE_WINDOW_MS);
+    });
+
+    expect(reassessStatus).toHaveBeenCalledWith({ sym: "NVDA" });
+    expect(result.current.running).toBe(false);
+    expect(result.current.status).toBeNull();
+  });
+
+  it("re-arms the re-check when the server still reports running", async () => {
+    vi.useFakeTimers();
+    reassess.mockResolvedValue({ started: true });
+    reassessStatus.mockResolvedValueOnce({ running: true }).mockResolvedValueOnce({ running: false });
+
+    const { result } = renderHook(() => useAnalystRun("NVDA"));
+
+    await act(async () => {
+      await result.current.start();
+    });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(RECONCILE_WINDOW_MS);
+    });
+    expect(reassessStatus).toHaveBeenCalledTimes(1);
+    expect(result.current.running).toBe(true);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(RECONCILE_WINDOW_MS);
+    });
+    expect(reassessStatus).toHaveBeenCalledTimes(2);
+    expect(result.current.running).toBe(false);
+  });
+
+  it("clears the optimistic placeholder when the bounded re-check itself fails", async () => {
+    vi.useFakeTimers();
+    reassess.mockResolvedValue({ started: true });
+    reassessStatus.mockRejectedValue(new Error("network down"));
+
+    const { result } = renderHook(() => useAnalystRun("NVDA"));
+
+    await act(async () => {
+      await result.current.start();
+    });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(RECONCILE_WINDOW_MS);
     });
 
     expect(result.current.running).toBe(false);
