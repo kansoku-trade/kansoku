@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { buildResearchTools } from "../src/ai/agentTools.js";
+import { buildResearchTools, createDefaultExec, mergePathDirs } from "../src/ai/agentTools.js";
 import type { SkillMeta } from "../src/services/skills.js";
 
 let repoRoot: string;
@@ -19,6 +19,16 @@ function writeSkill(dir: string, name: string, content: string) {
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, "SKILL.md"), content);
 }
+
+describe("mergePathDirs", () => {
+  it("appends missing dirs and dedupes existing ones", () => {
+    expect(mergePathDirs("/usr/bin:/bin", ["/opt/homebrew/bin", "/usr/bin"])).toBe("/usr/bin:/bin:/opt/homebrew/bin");
+  });
+
+  it("handles an undefined base path", () => {
+    expect(mergePathDirs(undefined, ["/opt/homebrew/bin"])).toBe("/opt/homebrew/bin");
+  });
+});
 
 describe("buildResearchTools", () => {
   it("returns exactly read_skill, bash, read_file in that order", () => {
@@ -60,6 +70,14 @@ describe("buildResearchTools", () => {
 
     await readSkillTool.execute("c2", { name: "fake-skill" });
     expect(readNames).toEqual(["fake-skill"]);
+  });
+
+  it("default exec runs commands with an augmented PATH", async () => {
+    const exec = createDefaultExec(repoRoot);
+    const { stdout } = await exec("echo $PATH");
+    const dirs = stdout.trim().split(":");
+    expect(dirs).toContain("/opt/homebrew/bin");
+    expect(dirs).toContain("/usr/local/bin");
   });
 
   it("uses a custom exec for the bash tool", async () => {
