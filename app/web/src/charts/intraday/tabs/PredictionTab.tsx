@@ -3,6 +3,7 @@ import { TriangleAlert } from "lucide-react";
 import type { IntradayBuilt, TimeframeKey } from "../../../../../shared/types";
 import { fmt, signed } from "../../../format";
 import { TF_LABELS } from "../IntradayDashboard";
+import { conclusionOutdated, ReassessCta, type ConclusionReassess } from "../ConclusionCard";
 import { DIRECTION_COLOR, DIRECTION_LABEL } from "../directionLabels";
 import { AutoSignalItem, Pattern123Item, PriceZoneCard, TargetContextCard, TechRow } from "./predictionTabParts";
 import { theme } from "../../../theme";
@@ -21,9 +22,10 @@ interface PredictionTabProps {
   activeTf: TimeframeKey;
   predictionUpdatedAt?: string;
   predictionStale?: boolean;
+  reassess?: ConclusionReassess;
 }
 
-export function PredictionTab({ built, activeTf, predictionUpdatedAt, predictionStale }: PredictionTabProps) {
+export function PredictionTab({ built, activeTf, predictionUpdatedAt, predictionStale, reassess }: PredictionTabProps) {
   const s = built.sidebar;
   const p = s.prediction;
   const ep = s.entryPlan;
@@ -75,6 +77,10 @@ export function PredictionTab({ built, activeTf, predictionUpdatedAt, prediction
               <MarketTime value={p.anchor.time} /> · ${fmt(Number(p.anchor.price))}
             </div>
           )}
+          {reassess &&
+            conclusionOutdated(predictionUpdatedAt ?? p.anchor?.time, predictionStale, Date.now()) && (
+              <ReassessCta reassess={reassess} />
+            )}
         </div>
       ) : (
         <div className="verdict" style={{ "--vc": theme.textSecondary } as CSSProperties}>

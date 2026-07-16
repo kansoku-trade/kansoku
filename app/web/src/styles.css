@@ -521,6 +521,13 @@ a.zone-item:hover { text-decoration: none; background: var(--bg-hover); }
 
 .conclusion-card { margin-bottom: 14px; }
 .conclusion-action { color: var(--text-primary); font-weight: 500; }
+.conclusion-refresh {
+  margin-top: 10px; padding-top: 10px;
+  border-top: 1px dashed color-mix(in srgb, var(--vc) 40%, transparent);
+}
+.conclusion-refresh-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.conclusion-refresh .ai-run-status { margin-top: 8px; }
+.conclusion-refresh-note { font-size: var(--fs-sm); color: var(--accent); display: inline-flex; align-items: center; gap: 4px; }
 
 .event-card {
   margin-bottom: 14px; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius);

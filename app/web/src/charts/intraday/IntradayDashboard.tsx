@@ -5,6 +5,7 @@ import type { SidebarTab } from "../SidebarTabs";
 import { DrawingToolbar } from "../drawings/DrawingToolbar";
 import { useDrawings, type DrawingsHandle } from "../drawings/useDrawings";
 import { LayerPanel, type LayerGroup } from "../LayerPanel";
+import type { ConclusionReassess } from "./ConclusionCard";
 import { IntradaySidebar } from "./IntradaySidebar";
 import {
   INDICATOR_TOGGLE_COLORS,
@@ -31,6 +32,7 @@ interface IntradayDashboardProps {
   activeTf: TimeframeKey;
   predictionUpdatedAt?: string;
   predictionStale?: boolean;
+  conclusionReassess?: ConclusionReassess;
   onLoadHistory?: () => void;
   sidebarTabs?: SidebarTab[];
   extraTabs?: SidebarTab[];
@@ -160,6 +162,7 @@ export function IntradayDashboard({
   activeTf,
   predictionUpdatedAt,
   predictionStale,
+  conclusionReassess,
   onLoadHistory,
   sidebarTabs,
   extraTabs,
@@ -176,6 +179,7 @@ export function IntradayDashboard({
         activeTf={activeTf}
         predictionUpdatedAt={predictionUpdatedAt}
         predictionStale={predictionStale}
+        conclusionReassess={conclusionReassess}
         tabsOverride={sidebarTabs}
         extraTabs={extraTabs}
         active={activeTab}

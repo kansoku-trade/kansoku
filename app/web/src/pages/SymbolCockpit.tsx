@@ -11,14 +11,17 @@ import { recordRecentSymbol } from "../recentCharts";
 import { Dot, Empty, ErrorBox, MarketTime } from "../ui";
 import { useTitle } from "../useTitle";
 import { useLiveQuote } from "../useLiveQuote";
+import { AnalysisRunDetails } from "./cockpit/AnalysisRunDetails";
 import { AnalysisTimeline } from "./cockpit/AnalysisTimeline";
 import { ChatDock } from "./cockpit/chat/ChatDock";
 import { PreviewCockpit } from "./cockpit/PreviewCockpit";
+import { conclusionOutdated } from "../charts/intraday/ConclusionCard";
 import { PredictionTab } from "../charts/intraday/tabs/PredictionTab";
 import { buildSharedSidebarTabs } from "./cockpit/sharedSidebarTabs";
 import { useAiUnreadBadge } from "./cockpit/useAiUnreadBadge";
 import { useCockpitComments } from "./cockpit/useCockpitComments";
 import { useCockpitEnv } from "./cockpit/useCockpitEnv";
+import { useAnalystRun } from "./cockpit/useAnalystRun";
 import { useCockpitReviewState } from "./cockpit/useCockpitReviewState";
 import { useLatestAnalysis } from "./cockpit/useLatestAnalysis";
 
@@ -83,6 +86,23 @@ export function SymbolCockpit({ sym }: { sym: string }) {
   const [activeTab, setActiveTab] = useState("prediction");
   const { comments, error: commentsError, loaded: commentsLoaded } = useCockpitComments(sym);
   const { unread, latestAlert } = useAiUnreadBadge(sym, comments, commentsLoaded, activeTab);
+
+  const intradaySidebar = doc?.built.kind === "intraday" ? doc.built.sidebar : null;
+  const reassessNow = Date.now();
+  const reassessNeeded =
+    conclusionOutdated(intradaySidebar?.context?.generated_at, doc?.prediction_stale, reassessNow) ||
+    conclusionOutdated(
+      doc?.prediction_updated_at ?? intradaySidebar?.prediction?.anchor?.time,
+      doc?.prediction_stale,
+      reassessNow,
+    );
+  const conclusionRun = useAnalystRun(sym, reassessNeeded);
+  const conclusionReassess = {
+    start: conclusionRun.start,
+    busy: conclusionRun.pending || conclusionRun.running || conclusionRun.checking,
+    hint: conclusionRun.hint,
+    details: conclusionRun.status ? <AnalysisRunDetails status={conclusionRun.status} /> : null,
+  };
 
   if (mode === "live") {
     return (
@@ -181,6 +201,7 @@ export function SymbolCockpit({ sym }: { sym: string }) {
           activeTf={activeIntradayTf}
           predictionUpdatedAt={doc.prediction_updated_at}
           predictionStale={doc.prediction_stale}
+          reassess={conclusionReassess}
         />
       ),
     },
@@ -265,6 +286,7 @@ export function SymbolCockpit({ sym }: { sym: string }) {
           activeTf={activeIntradayTf}
           predictionUpdatedAt={doc.prediction_updated_at}
           predictionStale={doc.prediction_stale}
+          conclusionReassess={conclusionReassess}
           onLoadHistory={loadHistory}
           sidebarTabs={sidebarTabs}
           activeTab={activeTab}

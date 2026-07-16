@@ -6,7 +6,7 @@ import { marketOfSymbol } from "../../lib/market";
 import { MarketTime } from "../../ui";
 import type { SidebarTab } from "../SidebarTabs";
 import { SidebarTabs } from "../SidebarTabs";
-import { ConclusionCard } from "./ConclusionCard";
+import { ConclusionCard, type ConclusionReassess } from "./ConclusionCard";
 import { EventRiskCard } from "./EventRiskCard";
 import { NewsTab } from "./tabs/NewsTab";
 import { PositionTab } from "./tabs/PositionTab";
@@ -17,6 +17,7 @@ interface IntradaySidebarProps {
   activeTf: TimeframeKey;
   predictionUpdatedAt?: string;
   predictionStale?: boolean;
+  conclusionReassess?: ConclusionReassess;
   tabsOverride?: SidebarTab[];
   extraTabs?: SidebarTab[];
   active?: string;
@@ -38,6 +39,7 @@ export function IntradaySidebar({
   activeTf,
   predictionUpdatedAt,
   predictionStale,
+  conclusionReassess,
   tabsOverride,
   extraTabs,
   active: activeProp,
@@ -65,6 +67,7 @@ export function IntradaySidebar({
           activeTf={activeTf}
           predictionUpdatedAt={predictionUpdatedAt}
           predictionStale={predictionStale}
+          reassess={conclusionReassess}
         />
       ),
     },
@@ -95,7 +98,7 @@ export function IntradaySidebar({
           </div>
         </div>
 
-        <ConclusionCard context={s.context} predictionStale={predictionStale} />
+        <ConclusionCard context={s.context} predictionStale={predictionStale} reassess={conclusionReassess} />
 
         <EventRiskCard eventRisk={s.eventRisk} />
 
