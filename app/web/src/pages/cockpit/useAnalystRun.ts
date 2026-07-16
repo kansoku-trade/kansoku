@@ -1,10 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { ReassessStatus } from "../../../../packages/core/src/contract/symbols.js";
-import { usePollingQuery } from "../../apiHooks";
-import { client } from "../../client";
+import { useAnalystRuns } from "../../analystRunsStore.js";
 import { REASON_TEXT, useReassessSymbol } from "./useReassessSymbol";
-
-const STATUS_POLL_MS = 5_000;
 
 export type RunningReassessStatus = Extract<ReassessStatus, { running: true }>;
 
@@ -21,13 +18,8 @@ export function useAnalystRun(symbol: string, enabled = true): AnalystRunControl
   const [optimisticStartedAt, setOptimisticStartedAt] = useState<number | null>(null);
   const [hint, setHint] = useState<string | null>(null);
   const { pending, reassess } = useReassessSymbol(symbol);
-  const statusKey = enabled ? `symbols.reassessStatus:${symbol}` : null;
-  const { data: serverStatus, loading: statusLoading, reload: reloadStatus } = usePollingQuery<ReassessStatus>(
-    statusKey,
-    () => client.symbols.reassessStatus({ sym: symbol }),
-    STATUS_POLL_MS,
-    { cache: false },
-  );
+  const { runs } = useAnalystRuns();
+  const serverStatus = enabled ? (runs.get(symbol) ?? null) : null;
 
   useEffect(() => {
     setOptimisticStartedAt(null);
@@ -35,9 +27,9 @@ export function useAnalystRun(symbol: string, enabled = true): AnalystRunControl
   }, [symbol, enabled]);
 
   useEffect(() => {
-    if (!serverStatus) return;
+    if (!serverStatus?.running) return;
     setOptimisticStartedAt(null);
-    if (serverStatus.running) setHint(null);
+    setHint(null);
   }, [serverStatus]);
 
   const start = useCallback(async () => {
@@ -50,13 +42,12 @@ export function useAnalystRun(symbol: string, enabled = true): AnalystRunControl
 
     if (result.data.started || result.data.reason === "already running") {
       setOptimisticStartedAt(Date.now());
-      reloadStatus();
       return;
     }
 
     const reason = result.data.reason ?? "";
     setHint(REASON_TEXT[reason] ?? (reason || "未能启动分析"));
-  }, [reassess, reloadStatus]);
+  }, [reassess]);
 
   let status: RunningReassessStatus | null = serverStatus?.running ? serverStatus : null;
   if (!status && optimisticStartedAt !== null) {
@@ -71,10 +62,8 @@ export function useAnalystRun(symbol: string, enabled = true): AnalystRunControl
     };
   }
 
-  const checking = enabled && statusLoading && !serverStatus && optimisticStartedAt === null;
-
   return {
-    checking,
+    checking: false,
     hint,
     pending,
     running: status !== null,
