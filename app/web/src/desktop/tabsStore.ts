@@ -26,12 +26,6 @@ export function tabKind(route: string): TabKind {
   return "other";
 }
 
-export function symbolFromRoute(route: string): string | null {
-  if (tabKind(route) !== "symbol") return null;
-  const match = route.match(/^\/symbol\/(.+)$/);
-  return match ? decodeURIComponent(match[1]) : null;
-}
-
 function makeTab(route: string): TabState {
   return { id: crypto.randomUUID(), route, title: DEFAULT_TITLE, scrollY: 0 };
 }

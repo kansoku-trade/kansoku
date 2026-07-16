@@ -182,8 +182,11 @@ export const symbolsService: SymbolsApi = {
     const model = aiConfig().analystModel;
     if (!model) return { started: false, reason: "analyst layer disabled" };
     const result = runAnalyst({ symbol: sym, origin: "manual", deps: { model } });
-    void result.done?.catch(() => {});
-    return { started: result.started, ...(result.reason ? { reason: result.reason } : {}) };
+    if (result.started) {
+      void result.done.catch(() => {});
+      return { started: true };
+    }
+    return { started: false, reason: result.reason };
   },
 
   async reassessStatus(input) {

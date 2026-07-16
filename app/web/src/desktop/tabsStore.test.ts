@@ -10,7 +10,6 @@ import {
   openTab,
   prevTab,
   saveTabsSnapshot,
-  symbolFromRoute,
   tabKind,
   updateTabRoute,
   updateTabScroll,
@@ -183,23 +182,6 @@ describe("tabKind", () => {
 
   it("falls back to other for anything else", () => {
     expect(tabKind("/charts/abc123")).toBe("other");
-  });
-});
-
-describe("symbolFromRoute", () => {
-  it("extracts the symbol from a symbol route", () => {
-    expect(symbolFromRoute("/symbol/NVDA")).toBe("NVDA");
-  });
-
-  it("decodes an encoded symbol", () => {
-    expect(symbolFromRoute("/symbol/700.HK")).toBe("700.HK");
-    expect(symbolFromRoute(`/symbol/${encodeURIComponent("700.HK")}`)).toBe("700.HK");
-  });
-
-  it("returns null for non-symbol routes", () => {
-    expect(symbolFromRoute("/")).toBeNull();
-    expect(symbolFromRoute("/settings")).toBeNull();
-    expect(symbolFromRoute("/charts/abc123")).toBeNull();
   });
 });
 

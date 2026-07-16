@@ -1,7 +1,8 @@
 import { useEffect, useRef } from "react";
 import type { CockpitComment, Notice } from "../../shared/types";
 import { maybeNotify, requestNotificationPermissionOnce } from "./lib/notifications";
-import { routePathname, useRoute } from "./router";
+import { symbolFromRoute } from "./lib/symbol";
+import { useRoute } from "./router";
 import { subscribeChannel } from "./wsHub";
 
 interface NotificationEnvelope {
@@ -10,12 +11,7 @@ interface NotificationEnvelope {
   notice?: Notice;
 }
 
-export function activeSymbolFromRoute(route: string): string | null {
-  const match = routePathname(route).match(/^\/symbol\/(.+)$/);
-  if (!match) return null;
-  const symbol = decodeURIComponent(match[1]).trim().toUpperCase();
-  return symbol.includes(".") ? symbol : `${symbol}.US`;
-}
+export const activeSymbolFromRoute = symbolFromRoute;
 
 export function GlobalNotifications({ route }: { route: string }) {
   const activeSymbolRef = useRef<string | null>(activeSymbolFromRoute(route));

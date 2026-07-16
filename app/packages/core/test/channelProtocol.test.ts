@@ -1,4 +1,4 @@
-import { mkdtempSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { AgentEvent } from "@earendil-works/pi-agent-core";
@@ -10,10 +10,16 @@ import { createAssistantSession } from "../src/ai/assistantChatStore.js";
 import type { ReassessPack } from "../src/ai/datapack.js";
 import { createDb, type Db } from "../src/db/index.js";
 import type { Connection } from "../src/realtime/connection.js";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { handleConnection, parseWsMessage } from "../src/realtime/channelProtocol.js";
 
 const model = { provider: "anthropic", id: "test-model" } as unknown as AiModel;
+const analystSandboxes = new Set<string>();
+
+afterEach(() => {
+  for (const sandbox of analystSandboxes) rmSync(sandbox, { recursive: true, force: true });
+  analystSandboxes.clear();
+});
 
 function makeConnection(): Connection & { sent: string[]; emitMessage: (raw: string) => void; close: () => void } {
   const sent: string[] = [];
@@ -202,6 +208,7 @@ const validPrediction = {
 
 function makeAnalystDeps(script: (tools: Tools) => Promise<void>): AnalystDeps {
   const sandbox = mkdtempSync(join(tmpdir(), "analyst-channel-test-"));
+  analystSandboxes.add(sandbox);
   const agentFactory: AiAgentFactory = ({ tools }) => {
     const agent: AiAgentHandle = {
       prompt: async () => script(tools),
@@ -248,21 +255,25 @@ describe("analyst-runs channel", () => {
 
     const run = runAnalyst({ symbol, origin: "manual", deps });
     expect(run.started).toBe(true);
+    if (!run.started) return;
 
     const conn = makeConnection();
-    handleConnection(conn);
-    conn.emitMessage(JSON.stringify({ op: "sub", key: "runs1", kind: "analyst-runs" }));
-    await waitFor(() => conn.sent.length > 0);
+    try {
+      handleConnection(conn);
+      conn.emitMessage(JSON.stringify({ op: "sub", key: "runs1", kind: "analyst-runs" }));
+      await waitFor(() => conn.sent.length > 0);
 
-    const init = JSON.parse(conn.sent[0]);
-    expect(init.key).toBe("runs1");
-    expect(init.payload.type).toBe("init");
-    expect(init.payload.runs).toContainEqual(
-      expect.objectContaining({ symbol, status: expect.objectContaining({ running: true }) }),
-    );
-
-    release();
-    await run.done;
+      const init = JSON.parse(conn.sent[0]);
+      expect(init.key).toBe("runs1");
+      expect(init.payload.type).toBe("init");
+      expect(init.payload.runs).toContainEqual(
+        expect.objectContaining({ symbol, status: expect.objectContaining({ running: true }) }),
+      );
+    } finally {
+      conn.close();
+      release();
+      await run.done;
+    }
   });
 
   it("pushes update on phase change and running:false on run end, then stops after unsubscribe", async () => {
@@ -278,37 +289,49 @@ describe("analyst-runs channel", () => {
     });
 
     const conn = makeConnection();
-    handleConnection(conn);
-    conn.emitMessage(JSON.stringify({ op: "sub", key: "runs2", kind: "analyst-runs" }));
-    await waitFor(() => conn.sent.length > 0);
-    conn.sent.length = 0;
+    let run: ReturnType<typeof runAnalyst> | undefined;
+    let secondRun: ReturnType<typeof runAnalyst> | undefined;
+    try {
+      handleConnection(conn);
+      conn.emitMessage(JSON.stringify({ op: "sub", key: "runs2", kind: "analyst-runs" }));
+      await waitFor(() => conn.sent.length > 0);
+      conn.sent.length = 0;
 
-    const run = runAnalyst({ symbol, origin: "manual", deps });
-    await waitFor(() =>
-      conn.sent.some((raw) => {
-        const msg = JSON.parse(raw);
-        return msg.payload.type === "update" && msg.payload.symbol === symbol && msg.payload.status.phase === "researching";
-      }),
-    );
+      run = runAnalyst({ symbol, origin: "manual", deps });
+      expect(run.started).toBe(true);
+      if (!run.started) return;
+      await waitFor(() =>
+        conn.sent.some((raw) => {
+          const msg = JSON.parse(raw);
+          return msg.payload.type === "update" && msg.payload.symbol === symbol && msg.payload.status.phase === "researching";
+        }),
+      );
 
-    releaseTool();
-    await waitFor(() =>
-      conn.sent.some((raw) => {
-        const msg = JSON.parse(raw);
-        return msg.payload.type === "update" && msg.payload.symbol === symbol && msg.payload.status.running === false;
-      }),
-    );
-    await run.done;
+      releaseTool();
+      await waitFor(() =>
+        conn.sent.some((raw) => {
+          const msg = JSON.parse(raw);
+          return msg.payload.type === "update" && msg.payload.symbol === symbol && msg.payload.status.running === false;
+        }),
+      );
+      await run.done;
 
-    conn.emitMessage(JSON.stringify({ op: "unsub", key: "runs2" }));
-    conn.sent.length = 0;
+      conn.emitMessage(JSON.stringify({ op: "unsub", key: "runs2" }));
+      conn.sent.length = 0;
 
-    const secondSymbol = "AFTER-UNSUB.US";
-    const secondDeps = makeAnalystDeps(async () => {});
-    const secondRun = runAnalyst({ symbol: secondSymbol, origin: "manual", deps: secondDeps });
-    await secondRun.done;
-    await new Promise((resolve) => setTimeout(resolve, 20));
-    expect(conn.sent).toHaveLength(0);
+      const secondSymbol = "AFTER-UNSUB.US";
+      const secondDeps = makeAnalystDeps(async () => {});
+      secondRun = runAnalyst({ symbol: secondSymbol, origin: "manual", deps: secondDeps });
+      expect(secondRun.started).toBe(true);
+      if (secondRun.started) await secondRun.done;
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      expect(conn.sent).toHaveLength(0);
+    } finally {
+      conn.close();
+      releaseTool();
+      if (run?.started) await run.done;
+      if (secondRun?.started) await secondRun.done;
+    }
   });
 });
 

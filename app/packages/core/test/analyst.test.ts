@@ -410,6 +410,7 @@ describe("runAnalyst gating", () => {
     });
 
     expect(run.started).toBe(true);
+    if (!run.started) return;
     expect(analystRunStatus(symbol)).toEqual({
       running: true,
       origin: "manual",
@@ -438,6 +439,7 @@ describe("runAnalyst gating", () => {
 
     const run = runAnalyst({ symbol, origin: "manual", deps });
     expect(run.started).toBe(true);
+    if (!run.started) return;
     await run.done;
 
     expect(observed).toMatchObject([
@@ -455,7 +457,7 @@ describe("runAnalyst gating", () => {
     expect(first.started).toBe(true);
     const second = runAnalyst({ symbol, origin: "manual", deps });
     expect(second.started).toBe(false);
-    expect(second.reason).toBe("already running");
+    if (!second.started) expect(second.reason).toBe("already running");
   });
 
   it("rejects an escalation within cooldown but always allows manual", async () => {
@@ -467,7 +469,7 @@ describe("runAnalyst gating", () => {
       deps: { ...harness(async () => {}).deps, now: () => t0 },
     });
     expect(first.started).toBe(true);
-    await first.done;
+    if (first.started) await first.done;
 
     expect(escalationOnCooldown(symbol, t0 + 1000)).toBe(true);
 
@@ -477,7 +479,7 @@ describe("runAnalyst gating", () => {
       deps: { ...harness(async () => {}).deps, now: () => t0 + 1000 },
     });
     expect(blocked.started).toBe(false);
-    expect(blocked.reason).toContain("cooldown");
+    if (!blocked.started) expect(blocked.reason).toContain("cooldown");
 
     const manual = runAnalyst({
       symbol,
@@ -485,7 +487,7 @@ describe("runAnalyst gating", () => {
       deps: { ...harness(async () => {}).deps, now: () => t0 + 1000 },
     });
     expect(manual.started).toBe(true);
-    await manual.done;
+    if (manual.started) await manual.done;
 
     expect(escalationOnCooldown(symbol, t0 + ESCALATION_MS + 1)).toBe(false);
   });

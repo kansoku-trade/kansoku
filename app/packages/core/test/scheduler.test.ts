@@ -65,7 +65,7 @@ function harness(overrides: Partial<SchedulerDeps> = {}): { deps: SchedulerDeps;
     },
     runAnalyst: ({ symbol, origin }) => {
       rec.analystCalls.push({ symbol, origin });
-      return { started: true };
+      return { started: true, done: Promise.resolve() };
     },
     escalationOnCooldown: () => false,
     appendComment: async (comment) => {

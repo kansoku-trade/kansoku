@@ -24,6 +24,8 @@ export interface WindowLike {
   removeEventListener(type: "message", listener: (e: { source: unknown; data: unknown; ports: PortLike[] }) => void): void;
 }
 
+type HandshakeListener = (event: { source: unknown; data: unknown; ports: PortLike[] }) => void;
+
 export function isDesktopRealtime(win: unknown = typeof window === "undefined" ? undefined : window): boolean {
   return (win as { __DESKTOP_RT__?: boolean } | undefined)?.__DESKTOP_RT__ === true;
 }
@@ -40,6 +42,7 @@ export class PortTransport implements SocketLike {
   private port: PortLike | null = null;
   private win: WindowLike;
   private handshakeTimer: ReturnType<typeof setTimeout> | null = null;
+  private handshakeListener: HandshakeListener | null = null;
 
   constructor(win: WindowLike = window as unknown as WindowLike, handshakeTimeoutMs = DEFAULT_HANDSHAKE_TIMEOUT_MS) {
     this.win = win;
@@ -47,10 +50,9 @@ export class PortTransport implements SocketLike {
   }
 
   private handshake(timeoutMs: number): void {
-    const onMessage = (event: { source: unknown; data: unknown; ports: PortLike[] }) => {
+    const onMessage: HandshakeListener = (event) => {
       if (event.source !== this.win || event.data !== "desktop-rt-port") return;
-      this.win.removeEventListener("message", onMessage);
-      this.clearHandshakeTimer();
+      this.cancelHandshake();
       const port = event.ports[0];
       if (!port) {
         this.onerror?.();
@@ -59,17 +61,24 @@ export class PortTransport implements SocketLike {
       }
       this.bindPort(port);
     };
+    this.handshakeListener = onMessage;
     this.win.addEventListener("message", onMessage);
-    this.win.postMessage("desktop-rt-connect", "*");
     // The main-process handshake reply is a same-process IPC round trip that
     // should resolve near-instantly; if it never arrives, fail into the
     // reconnect path instead of leaving callers awaiting onopen forever.
     this.handshakeTimer = setTimeout(() => {
       this.handshakeTimer = null;
-      this.win.removeEventListener("message", onMessage);
+      this.clearHandshakeListener();
       this.onerror?.();
       this.transitionToClosed();
     }, timeoutMs);
+    this.win.postMessage("desktop-rt-connect", "*");
+  }
+
+  private clearHandshakeListener(): void {
+    if (!this.handshakeListener) return;
+    this.win.removeEventListener("message", this.handshakeListener);
+    this.handshakeListener = null;
   }
 
   private clearHandshakeTimer(): void {
@@ -78,7 +87,16 @@ export class PortTransport implements SocketLike {
     this.handshakeTimer = null;
   }
 
+  private cancelHandshake(): void {
+    this.clearHandshakeListener();
+    this.clearHandshakeTimer();
+  }
+
   private bindPort(port: PortLike): void {
+    if (this.readyState !== READY_STATE.CONNECTING) {
+      port.close();
+      return;
+    }
     this.port = port;
     port.addEventListener("message", (e) => this.onmessage?.({ data: String(e.data) }));
     port.addEventListener("close", () => this.transitionToClosed());
@@ -89,6 +107,7 @@ export class PortTransport implements SocketLike {
 
   private transitionToClosed(): void {
     if (this.readyState === READY_STATE.CLOSED) return;
+    this.cancelHandshake();
     this.readyState = READY_STATE.CLOSED;
     this.port = null;
     this.onclose?.();

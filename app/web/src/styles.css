@@ -1230,9 +1230,6 @@ a.zone-item:hover { text-decoration: none; background: var(--bg-hover); }
 @keyframes desktop-tab-status-pulse {
   50% { opacity: 0.45; transform: scale(0.8); }
 }
-@media (prefers-reduced-motion: reduce) {
-  .desktop-tab-status-dot--running { animation: none; }
-}
 .desktop-tab-title { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .desktop-tab-close {
   display: inline-flex; align-items: center; justify-content: center;
@@ -1331,6 +1328,7 @@ a.zone-item:hover { text-decoration: none; background: var(--bg-hover); }
 .desktop-titlebar-settings--active .desktop-titlebar-action-visual { background: rgba(255, 176, 0, 0.12); }
 .desktop-titlebar-settings:active { scale: 0.96; }
 @media (prefers-reduced-motion: reduce) {
+  .desktop-tab-status-dot--running { animation: none; }
   .desktop-tab-new,
   .desktop-new-tab-popup,
   .desktop-new-tab-menu button,

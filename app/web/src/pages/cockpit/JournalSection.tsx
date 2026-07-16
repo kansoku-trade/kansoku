@@ -74,9 +74,9 @@ export function JournalSection({
     <div className="journal-section">
       <div className="ai-run-control">
         <div className="ai-reassess">
-          <Button onClick={run.start} disabled={run.pending || run.running || run.checking}>
-            {(run.running || run.checking) && <Spinner />}
-            {run.checking ? "正在确认分析状态…" : run.running ? "分析进行中…" : "跑一次分析"}
+          <Button onClick={run.start} disabled={run.pending || run.running}>
+            {run.running && <Spinner />}
+            {run.running ? "分析进行中…" : "跑一次分析"}
           </Button>
           {run.hint && <span className="ai-hint">{run.hint}</span>}
         </div>

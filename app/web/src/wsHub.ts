@@ -28,7 +28,6 @@ const RECONNECT_MS = 2_000;
 export type HubStatus = "connecting" | "connected" | "reconnecting";
 
 let ws: SocketLike | null = null;
-let manualClose = false;
 let reconnectTimer: number | null = null;
 let nextKey = 0;
 const subs = new Map<string, ChannelSub>();
@@ -62,17 +61,37 @@ function broadcast(connected: boolean): void {
   for (const sub of subs.values()) sub.onConnected(connected);
 }
 
+function cancelReconnect(): void {
+  if (reconnectTimer === null) return;
+  window.clearTimeout(reconnectTimer);
+  reconnectTimer = null;
+}
+
+function closeCurrentSocket(): void {
+  const sock = ws;
+  if (!sock) return;
+  ws = null;
+  sock.onopen = null;
+  sock.onmessage = null;
+  sock.onclose = null;
+  sock.onerror = null;
+  sock.close();
+}
+
 function connect(): void {
   if (ws || subs.size === 0) return;
+  cancelReconnect();
   const sock = (isDesktopRealtime() ? new PortTransport() : new WebSocket(wsUrl())) as unknown as SocketLike;
   ws = sock;
   setHubStatus(hubStatus === "reconnecting" ? "reconnecting" : "connecting");
   sock.onopen = () => {
+    if (ws !== sock) return;
     for (const [key, sub] of subs) sock.send(JSON.stringify({ op: "sub", key, ...sub.spec }));
     setHubStatus("connected");
     broadcast(true);
   };
   sock.onmessage = (e) => {
+    if (ws !== sock) return;
     let msg: { key: string; payload: unknown };
     try {
       msg = JSON.parse(e.data as string) as { key: string; payload: unknown };
@@ -82,21 +101,23 @@ function connect(): void {
     subs.get(msg.key)?.onPayload(msg.payload);
   };
   sock.onclose = () => {
-    if (ws === sock) ws = null;
+    if (ws !== sock) return;
+    ws = null;
     broadcast(false);
-    if (!manualClose && subs.size > 0) {
+    if (subs.size > 0) {
       setHubStatus("reconnecting");
       scheduleReconnect();
     } else {
       setHubStatus("connecting");
     }
-    manualClose = false;
   };
-  sock.onerror = () => sock.close();
+  sock.onerror = () => {
+    if (ws === sock) sock.close();
+  };
 }
 
 function scheduleReconnect(): void {
-  if (reconnectTimer !== null) window.clearTimeout(reconnectTimer);
+  cancelReconnect();
   reconnectTimer = window.setTimeout(() => {
     reconnectTimer = null;
     connect();
@@ -119,10 +140,10 @@ export function subscribeChannel(
   return () => {
     subs.delete(key);
     if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ op: "unsub", key }));
-    if (subs.size === 0 && ws) {
-      manualClose = true;
-      ws.close();
-      ws = null;
+    if (subs.size === 0) {
+      cancelReconnect();
+      setHubStatus("connecting");
+      closeCurrentSocket();
     }
   };
 }

@@ -142,36 +142,32 @@ export interface RunAnalystInput {
   deps: AnalystDeps;
 }
 
-export interface StartResult {
-  started: boolean;
-  reason?: string;
-  done?: Promise<void>;
-}
+export type StartResult =
+  | { started: false; reason: "already running" | "escalation on cooldown" }
+  | { started: true; done: Promise<void> };
+
+type RunningAnalystRunStatus = Extract<ReassessStatus, { running: true }>;
 
 const analystRunLock = createRunLock();
-const analystRunStates = new Map<string, Extract<AnalystRunStatus, { running: true }>>();
+const analystRunStates = new Map<string, RunningAnalystRunStatus>();
 const lastEscalationStart = new Map<string, number>();
-const analystRunListeners = new Set<(symbol: string, status: AnalystRunStatus) => void>();
+const analystRunListeners = new Set<(symbol: string, status: ReassessStatus) => void>();
 
-export type AnalystRunPhase = ReassessPhase;
-
-export type AnalystRunStatus = ReassessStatus;
-
-export function analystRunStatus(symbol: string): AnalystRunStatus {
+export function analystRunStatus(symbol: string): ReassessStatus {
   if (!analystRunLock.isLocked(symbol)) return { running: false };
   return analystRunStates.get(symbol) ?? { running: false };
 }
 
-export function listAnalystRuns(): Array<{ symbol: string; status: AnalystRunStatus }> {
+export function listAnalystRuns(): Array<{ symbol: string; status: RunningAnalystRunStatus }> {
   return [...analystRunStates.entries()].map(([symbol, status]) => ({ symbol, status }));
 }
 
-export function onAnalystRunChange(listener: (symbol: string, status: AnalystRunStatus) => void): () => void {
+export function onAnalystRunChange(listener: (symbol: string, status: ReassessStatus) => void): () => void {
   analystRunListeners.add(listener);
   return () => analystRunListeners.delete(listener);
 }
 
-function emitAnalystRunChange(symbol: string, status: AnalystRunStatus): void {
+function emitAnalystRunChange(symbol: string, status: ReassessStatus): void {
   for (const listener of analystRunListeners) {
     try {
       listener(symbol, status);
@@ -183,13 +179,13 @@ function emitAnalystRunChange(symbol: string, status: AnalystRunStatus): void {
 
 function updateAnalystRunStatus(
   symbol: string,
-  phase: AnalystRunPhase,
+  phase: ReassessPhase,
   activity: string,
   now: () => number,
 ): void {
   const current = analystRunStates.get(symbol);
   if (!current) return;
-  const next: Extract<AnalystRunStatus, { running: true }> = {
+  const next: RunningAnalystRunStatus = {
     ...current,
     phase,
     activity,
@@ -276,7 +272,7 @@ function buildTools(
   },
   state: RunState,
   isDone: () => boolean,
-  reportProgress: (phase: AnalystRunPhase, activity: string) => void,
+  reportProgress: (phase: ReassessPhase, activity: string) => void,
 ): AgentTool[] {
   const readDataPack = buildDataPackTool(symbol, {
     buildPack: (symbol) => {
@@ -382,7 +378,7 @@ export async function executeAnalystRun(symbol: string, deps: AnalystDeps): Prom
   const append = deps.appendComment ?? defaultAppendComment;
   const timeoutMs = deps.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const now = deps.now ?? (() => Date.now());
-  const reportProgress = (phase: AnalystRunPhase, activity: string) =>
+  const reportProgress = (phase: ReassessPhase, activity: string) =>
     updateAnalystRunStatus(symbol, phase, activity, now);
 
   const writeError = (text: string) =>
@@ -509,7 +505,7 @@ export function runAnalyst({ symbol, origin, deps }: RunAnalystInput): StartResu
   if (origin === "escalation") lastEscalationStart.set(symbol, now);
 
   const startedAt = new Date(now).toISOString();
-  const initialStatus: Extract<AnalystRunStatus, { running: true }> = {
+  const initialStatus: RunningAnalystRunStatus = {
     running: true,
     origin,
     phase: "preparing",

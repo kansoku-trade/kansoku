@@ -22,7 +22,7 @@ const nodeExecAsync = promisify(nodeExec);
 
 const EXTRA_BIN_DIRS = ["/opt/homebrew/bin", "/usr/local/bin"];
 
-export function mergePathDirs(basePath: string | undefined, extraDirs: string[]): string {
+function mergePathDirs(basePath: string | undefined, extraDirs: string[]): string {
   const dirs = (basePath ?? "").split(delimiter).filter(Boolean);
   for (const dir of extraDirs) {
     if (!dirs.includes(dir)) dirs.push(dir);

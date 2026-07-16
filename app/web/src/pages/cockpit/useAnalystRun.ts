@@ -1,15 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { ReassessStatus } from "../../../../packages/core/src/contract/symbols.js";
-import { useAnalystRuns } from "../../analystRunsStore.js";
+import {
+  getAnalystRunStatus,
+  getLatestAnalystRunEvent,
+  type RunningReassessStatus,
+  useAnalystRunStatus,
+} from "../../analystRunsStore.js";
 import { client } from "../../client";
 import { REASON_TEXT, useReassessSymbol } from "./useReassessSymbol";
 
-export type RunningReassessStatus = Extract<ReassessStatus, { running: true }>;
+export type { RunningReassessStatus };
 
-export const RECONCILE_WINDOW_MS = 10_000;
+const RECONCILE_WINDOW_MS = 10_000;
 
 export interface AnalystRunController {
-  checking: boolean;
   hint: string | null;
   pending: boolean;
   running: boolean;
@@ -21,8 +24,8 @@ export function useAnalystRun(symbol: string, enabled = true): AnalystRunControl
   const [optimisticStartedAt, setOptimisticStartedAt] = useState<number | null>(null);
   const [hint, setHint] = useState<string | null>(null);
   const { pending, reassess } = useReassessSymbol(symbol);
-  const { runs } = useAnalystRuns();
-  const serverStatus = enabled ? (runs.get(symbol) ?? null) : null;
+  const serverStatus = useAnalystRunStatus(symbol, enabled);
+  const serverRunning = serverStatus !== null;
   const reconcileTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reconcileGenerationRef = useRef(0);
 
@@ -63,13 +66,14 @@ export function useAnalystRun(symbol: string, enabled = true): AnalystRunControl
   }, [symbol, enabled, clearReconcileTimer]);
 
   useEffect(() => {
-    if (!serverStatus?.running) return;
+    if (!serverRunning) return;
     setOptimisticStartedAt(null);
     setHint(null);
     clearReconcileTimer();
-  }, [serverStatus, clearReconcileTimer]);
+  }, [serverRunning, clearReconcileTimer]);
 
   const start = useCallback(async () => {
+    const eventBeforeStart = getLatestAnalystRunEvent(symbol);
     setHint(null);
     const result = await reassess();
     if (!result.ok) {
@@ -78,6 +82,16 @@ export function useAnalystRun(symbol: string, enabled = true): AnalystRunControl
     }
 
     if (result.data.started || result.data.reason === "already running") {
+      const eventAfterStart = getLatestAnalystRunEvent(symbol);
+      const observedTerminalDuringStart =
+        eventAfterStart !== null &&
+        eventAfterStart.revision !== eventBeforeStart?.revision &&
+        !eventAfterStart.running;
+      if (getAnalystRunStatus(symbol) !== null || observedTerminalDuringStart) {
+        setOptimisticStartedAt(null);
+        clearReconcileTimer();
+        return;
+      }
       setOptimisticStartedAt(Date.now());
       armReconcileTimer(symbol);
       return;
@@ -85,9 +99,9 @@ export function useAnalystRun(symbol: string, enabled = true): AnalystRunControl
 
     const reason = result.data.reason ?? "";
     setHint(REASON_TEXT[reason] ?? (reason || "未能启动分析"));
-  }, [reassess, armReconcileTimer, symbol]);
+  }, [reassess, armReconcileTimer, clearReconcileTimer, symbol]);
 
-  let status: RunningReassessStatus | null = serverStatus?.running ? serverStatus : null;
+  let status: RunningReassessStatus | null = serverStatus;
   if (!status && optimisticStartedAt !== null) {
     const startedAt = new Date(optimisticStartedAt).toISOString();
     status = {
@@ -101,7 +115,6 @@ export function useAnalystRun(symbol: string, enabled = true): AnalystRunControl
   }
 
   return {
-    checking: false,
     hint,
     pending,
     running: status !== null,

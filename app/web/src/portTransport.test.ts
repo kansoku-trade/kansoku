@@ -50,6 +50,15 @@ class FakeWindow implements WindowLike {
   }
 }
 
+class ImmediateResponseWindow extends FakeWindow {
+  readonly port = new FakePort();
+
+  override postMessage(message: unknown): void {
+    super.postMessage(message);
+    this.respondWithPort(this.port);
+  }
+}
+
 describe("isDesktopRealtime", () => {
   it("is true when __DESKTOP_RT__ is set", () => {
     expect(isDesktopRealtime({ __DESKTOP_RT__: true })).toBe(true);
@@ -61,6 +70,20 @@ describe("isDesktopRealtime", () => {
 });
 
 describe("PortTransport", () => {
+  it("handles a synchronous handshake response without leaving a timeout", () => {
+    vi.useFakeTimers();
+    try {
+      const win = new ImmediateResponseWindow();
+      const transport = new PortTransport(win);
+
+      expect(transport.readyState).toBe(READY_STATE.OPEN);
+      expect(win.port.started).toBe(true);
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("performs the desktop-rt-connect handshake and opens on a matching response", () => {
     const win = new FakeWindow();
     const transport = new PortTransport(win);
@@ -138,6 +161,30 @@ describe("PortTransport", () => {
     expect(port.closed).toBe(true);
     expect(transport.readyState).toBe(READY_STATE.CLOSED);
     expect(onclose).toHaveBeenCalledTimes(1);
+  });
+
+  it("close() cancels a pending handshake and ignores a late port response", () => {
+    vi.useFakeTimers();
+    try {
+      const win = new FakeWindow();
+      const transport = new PortTransport(win);
+      const onopen = vi.fn();
+      const onclose = vi.fn();
+      transport.onopen = onopen;
+      transport.onclose = onclose;
+
+      transport.close();
+      const latePort = new FakePort();
+      win.respondWithPort(latePort);
+
+      expect(transport.readyState).toBe(READY_STATE.CLOSED);
+      expect(onclose).toHaveBeenCalledTimes(1);
+      expect(onopen).not.toHaveBeenCalled();
+      expect(latePort.started).toBe(false);
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("does not double-fire onclose if close() runs after the port already reported closed", () => {

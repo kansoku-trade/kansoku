@@ -21,7 +21,7 @@ vi.mock("../../client", () => ({
 }));
 
 const { resetAnalystRunsStoreForTests } = await import("../../analystRunsStore");
-const { useAnalystRun, RECONCILE_WINDOW_MS } = await import("./useAnalystRun");
+const { useAnalystRun } = await import("./useAnalystRun");
 
 const runningStatus = (activity: string) => ({
   running: true as const,
@@ -32,16 +32,31 @@ const runningStatus = (activity: string) => ({
   updatedAt: "2026-07-16T00:00:00.000Z",
 });
 
+async function advanceReconcileTimer(): Promise<void> {
+  await act(async () => {
+    await vi.advanceTimersToNextTimerAsync();
+  });
+}
+
 describe("useAnalystRun", () => {
-  let subs: Array<{ onPayload: (payload: unknown) => void }>;
+  let subs: Array<{
+    onConnected: (connected: boolean) => void;
+    onPayload: (payload: unknown) => void;
+  }>;
 
   beforeEach(() => {
     subs = [];
     subscribeChannel.mockReset();
-    subscribeChannel.mockImplementation((_spec: ChannelSpec, onPayload: (payload: unknown) => void) => {
-      subs.push({ onPayload });
-      return vi.fn();
-    });
+    subscribeChannel.mockImplementation(
+      (
+        _spec: ChannelSpec,
+        onPayload: (payload: unknown) => void,
+        onConnected: (connected: boolean) => void,
+      ) => {
+        subs.push({ onConnected, onPayload });
+        return vi.fn();
+      },
+    );
     reassess.mockReset();
     reassessStatus.mockReset();
   });
@@ -57,7 +72,6 @@ describe("useAnalystRun", () => {
 
     expect(result.current.running).toBe(false);
     expect(result.current.status).toBeNull();
-    expect(result.current.checking).toBe(false);
   });
 
   it("shows the optimistic placeholder on start until the store confirms the run", async () => {
@@ -76,6 +90,76 @@ describe("useAnalystRun", () => {
     });
 
     expect(result.current.status?.activity).toBe("分析中");
+  });
+
+  it("does not restore an optimistic placeholder after WS events arrive before the POST response", async () => {
+    vi.useFakeTimers();
+    let resolveReassess: ((value: { started: boolean }) => void) | undefined;
+    reassess.mockReturnValue(
+      new Promise((resolve) => {
+        resolveReassess = resolve;
+      }),
+    );
+    const { result } = renderHook(() => useAnalystRun("NVDA"));
+    let startPromise: Promise<void> | undefined;
+
+    act(() => {
+      startPromise = result.current.start();
+    });
+    act(() => {
+      subs[0].onPayload({ type: "update", symbol: "NVDA", status: runningStatus("分析中") });
+    });
+    expect(result.current.running).toBe(true);
+
+    act(() => {
+      subs[0].onPayload({ type: "update", symbol: "NVDA", status: { running: false } });
+    });
+    expect(result.current.running).toBe(false);
+
+    await act(async () => {
+      resolveReassess?.({ started: true });
+      await startPromise;
+    });
+
+    expect(result.current.running).toBe(false);
+    expect(result.current.status).toBeNull();
+    expect(reassessStatus).not.toHaveBeenCalled();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("restores the optimistic placeholder when a running WS event is followed by a disconnect", async () => {
+    vi.useFakeTimers();
+    let resolveReassess: ((value: { started: boolean }) => void) | undefined;
+    reassess.mockReturnValue(
+      new Promise((resolve) => {
+        resolveReassess = resolve;
+      }),
+    );
+    const { result } = renderHook(() => useAnalystRun("NVDA"));
+    let startPromise: Promise<void> | undefined;
+
+    act(() => {
+      startPromise = result.current.start();
+    });
+    act(() => {
+      subs[0].onPayload({ type: "update", symbol: "NVDA", status: runningStatus("分析中") });
+    });
+    expect(result.current.running).toBe(true);
+
+    act(() => {
+      subs[0].onConnected(false);
+    });
+    expect(result.current.running).toBe(false);
+
+    await act(async () => {
+      resolveReassess?.({ started: true });
+      await startPromise;
+    });
+
+    expect(result.current.running).toBe(true);
+    expect(result.current.status?.activity).toBe("正在等待服务端确认任务");
+    expect(reassessStatus).not.toHaveBeenCalled();
+    expect(vi.getTimerCount()).toBe(1);
   });
 
   it("stops running once the store reports the symbol as no longer running", () => {
@@ -116,9 +200,7 @@ describe("useAnalystRun", () => {
     });
     expect(result.current.running).toBe(true);
 
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(RECONCILE_WINDOW_MS);
-    });
+    await advanceReconcileTimer();
 
     expect(reassessStatus).toHaveBeenCalledWith({ sym: "NVDA" });
     expect(result.current.running).toBe(false);
@@ -136,15 +218,11 @@ describe("useAnalystRun", () => {
       await result.current.start();
     });
 
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(RECONCILE_WINDOW_MS);
-    });
+    await advanceReconcileTimer();
     expect(reassessStatus).toHaveBeenCalledTimes(1);
     expect(result.current.running).toBe(true);
 
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(RECONCILE_WINDOW_MS);
-    });
+    await advanceReconcileTimer();
     expect(reassessStatus).toHaveBeenCalledTimes(2);
     expect(result.current.running).toBe(false);
   });
@@ -160,9 +238,7 @@ describe("useAnalystRun", () => {
       await result.current.start();
     });
 
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(RECONCILE_WINDOW_MS);
-    });
+    await advanceReconcileTimer();
 
     expect(result.current.running).toBe(false);
   });
@@ -183,9 +259,7 @@ describe("useAnalystRun", () => {
       await result.current.start();
     });
 
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(RECONCILE_WINDOW_MS);
-    });
+    await advanceReconcileTimer();
     expect(reassessStatus).toHaveBeenCalledTimes(1);
 
     unmount();
@@ -216,9 +290,7 @@ describe("useAnalystRun", () => {
       await result.current.start();
     });
 
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(RECONCILE_WINDOW_MS);
-    });
+    await advanceReconcileTimer();
     expect(reassessStatus).toHaveBeenCalledWith({ sym: "NVDA" });
 
     rerender({ symbol: "MU" });

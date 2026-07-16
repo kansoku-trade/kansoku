@@ -168,7 +168,7 @@ export function initAiSettings(
   const env = opts?.env ?? process.env;
   const lobehub = new WebApiLobeHubCloudGateway({
     baseUrl: env.LOBEHUB_CLOUD_URL || "https://app.lobehub.com",
-    clientId: env.LOBEHUB_OAUTH_CLIENT_ID,
+    clientId: env.LOBEHUB_OAUTH_CLIENT_ID || "lca_KhxAC5GNLjUTaArHuKx406Ck",
     credentials,
     fetch: opts?.fetch,
   });

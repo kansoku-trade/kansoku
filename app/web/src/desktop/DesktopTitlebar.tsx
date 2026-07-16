@@ -13,14 +13,15 @@ import {
 import { useHubStatus } from '../useHubStatus'
 import type { HubStatus } from '../wsHub'
 import { Dot, ScrollArea, showContextMenu, Tooltip, type ContextMenuItem } from '../ui'
-import { useAnalystRuns } from '../analystRunsStore'
+import { useAnalystRunIndicator } from '../analystRunsStore'
+import { symbolFromRoute } from '../lib/symbol'
 import { getOpenWindowBridge, getPopoutBridge } from './desktopWindowsBridge'
 import {
   getDesktopUpdaterBridge,
   isAvailableStatus,
   type UpdaterUiStatus,
 } from './desktopUpdater'
-import { symbolFromRoute, tabKind, type TabState } from './tabsStore'
+import { tabKind, type TabState } from './tabsStore'
 import type { TabsController } from './tabsController'
 import { NewTabLauncher } from './NewTabLauncher'
 
@@ -34,11 +35,8 @@ const TAB_ICONS: Record<ReturnType<typeof tabKind>, typeof House> = {
   other: Circle,
 }
 
-function TabStatusDots({ symbol }: { symbol: string | null }) {
-  const { runs, unseen } = useAnalystRuns()
-  if (!symbol) return null
-  const running = runs.has(symbol)
-  const isUnseen = unseen.has(symbol)
+function TabStatusDots({ symbol }: { symbol: string }) {
+  const [running, isUnseen] = useAnalystRunIndicator(symbol)
   if (!running && !isUnseen) return null
   return (
     <>
@@ -50,10 +48,11 @@ function TabStatusDots({ symbol }: { symbol: string | null }) {
 
 function TabIcon({ route }: { route: string }) {
   const Icon = TAB_ICONS[tabKind(route)]
+  const symbol = symbolFromRoute(route)
   return (
     <span className="desktop-tab-icon-wrap">
       <Icon className="desktop-tab-icon" size={12} />
-      <TabStatusDots symbol={symbolFromRoute(route)} />
+      {symbol && <TabStatusDots symbol={symbol} />}
     </span>
   )
 }

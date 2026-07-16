@@ -99,7 +99,7 @@ export function SymbolCockpit({ sym }: { sym: string }) {
   const conclusionRun = useAnalystRun(sym, reassessNeeded);
   const conclusionReassess = {
     start: conclusionRun.start,
-    busy: conclusionRun.pending || conclusionRun.running || conclusionRun.checking,
+    busy: conclusionRun.pending || conclusionRun.running,
     hint: conclusionRun.hint,
     details: conclusionRun.status ? <AnalysisRunDetails status={conclusionRun.status} /> : null,
   };

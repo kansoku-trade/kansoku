@@ -1,28 +1,25 @@
 import { useEffect } from "react";
 import { Router } from "../PageRouter";
 import { GlobalNotifications } from "../GlobalNotifications";
+import { symbolFromRoute } from "../lib/symbol";
 import { CommandPalette } from "../palette/CommandPalette";
 import { RestrictedBanner } from "../RestrictedBanner";
 import { ContextMenuHost, ModalHost } from "../ui";
-import { markSeen, setActiveSymbolProvider } from "../analystRunsStore";
+import { clearActiveSymbol, setActiveSymbol } from "../analystRunsStore";
 import { DesktopTitlebar } from "./DesktopTitlebar";
 import { LinkHoverStatus } from "./LinkHoverStatus";
 import { useTabsController } from "./tabsController";
-import { symbolFromRoute } from "./tabsStore";
 
 export function DesktopShell() {
   const controller = useTabsController();
   const activeRoute = controller.activeTab.route;
+  const activeSymbol = symbolFromRoute(activeRoute);
 
   useEffect(() => {
-    setActiveSymbolProvider(() => symbolFromRoute(activeRoute));
-    return () => setActiveSymbolProvider(null);
-  }, [activeRoute]);
+    setActiveSymbol(activeSymbol);
+  }, [activeSymbol]);
 
-  useEffect(() => {
-    const symbol = symbolFromRoute(activeRoute);
-    if (symbol) markSeen(symbol);
-  }, [activeRoute]);
+  useEffect(() => clearActiveSymbol, []);
 
   return (
     <>
