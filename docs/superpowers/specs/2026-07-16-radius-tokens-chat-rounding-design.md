@@ -39,7 +39,7 @@
 ### 3. chat dock（侧栏底部输入条）
 
 - **input 无边框**：仅 dock 模式下，`ChatComposer` 里的输入框去掉边框、背景透明，靠 `.chat-dock` 已有的 `border-top` 分隔线界定区域。作用域用 `.chat-dock` 后代选择器实现，不改 `ChatComposer` 组件接口。
-- **send button**：`border-radius: var(--radius-lg)`，贴合窗口右下圆角。
+- **send button**：正圆（`var(--radius-full)`），composer padding 收紧为 `6px 6px 6px 12px`。依据同心圆角规则：实测窗口圆角约 20px，按钮距窗口边缘 6px，理想内圆角 = 20 − 6 = 14px，恰为按钮高度（28px）之半，即正圆。
 - 浮动面板（float）与全屏（full）模式下的同一 composer **保留边框**——用户明确选择"无边框"只施于 dock；但其圆角跟随第 4 节改为 `var(--radius-md)`。
 
 ### 4. chat 浮动面板（`.chat-shell--float`）
