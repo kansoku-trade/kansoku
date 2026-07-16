@@ -58,11 +58,10 @@ function TabIcon({ route }: { route: string }) {
   )
 }
 
-const HUB_STATUS_META: Record<HubStatus, { label: string; tone?: 'accent' | 'ok'; pulse?: boolean; dim?: boolean }> = {
+const HUB_STATUS_META: Record<HubStatus, { label: string; tone?: 'accent' | 'ok'; pulse?: boolean }> = {
   connected: { label: '行情已连接', tone: 'ok' },
   connecting: { label: '行情连接中…', tone: 'accent' },
   reconnecting: { label: '行情已断开，重连中…', tone: 'accent', pulse: true },
-  idle: { label: '行情空闲（当前页面无订阅）', dim: true },
 }
 
 function HubStatusDot() {
@@ -70,7 +69,7 @@ function HubStatusDot() {
   const meta = HUB_STATUS_META[status]
   return (
     <Tooltip content={meta.label} placement="bottom">
-      <span className={`desktop-hub-status${meta.dim ? ' desktop-hub-status--dim' : ''}`}>
+      <span className="desktop-hub-status">
         <Dot tone={meta.tone} pulse={meta.pulse} aria-label={meta.label} role="status" />
       </span>
     </Tooltip>

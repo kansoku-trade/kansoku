@@ -25,7 +25,7 @@ interface ChannelSub {
 
 const RECONNECT_MS = 2_000;
 
-export type HubStatus = "idle" | "connecting" | "connected" | "reconnecting";
+export type HubStatus = "connecting" | "connected" | "reconnecting";
 
 let ws: SocketLike | null = null;
 let manualClose = false;
@@ -33,7 +33,7 @@ let reconnectTimer: number | null = null;
 let nextKey = 0;
 const subs = new Map<string, ChannelSub>();
 
-let hubStatus: HubStatus = "idle";
+let hubStatus: HubStatus = "connecting";
 const statusListeners = new Set<() => void>();
 
 function setHubStatus(next: HubStatus): void {
@@ -88,7 +88,7 @@ function connect(): void {
       setHubStatus("reconnecting");
       scheduleReconnect();
     } else {
-      setHubStatus("idle");
+      setHubStatus("connecting");
     }
     manualClose = false;
   };
