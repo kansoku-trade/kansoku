@@ -31,5 +31,6 @@
     "reflect-metadata": "0.2.2",
     "tsyringe": "4.10.0",
     "ws": "^8.21.0"
-  }
+  },
+  "license": "SEE LICENSE IN LICENSE"
 }

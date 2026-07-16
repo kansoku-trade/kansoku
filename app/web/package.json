@@ -38,5 +38,6 @@
     "typescript": "^6.0.3",
     "vite": "^8.1.4",
     "vitest": "^4.1.10"
-  }
+  },
+  "license": "SEE LICENSE IN LICENSE"
 }

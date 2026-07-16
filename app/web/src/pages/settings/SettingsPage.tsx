@@ -195,6 +195,9 @@ export function SettingsPage() {
         lobehubCredits={lobehubCredits}
         lobehubCreditsError={lobehubCreditsError}
       />
+      <div className="settings-about-link">
+        <a href="/about">关于 Kansoku · 版本 {__APP_VERSION__}</a>
+      </div>
     </div>
   );
 }

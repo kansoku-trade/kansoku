@@ -22,5 +22,6 @@
   },
   "devDependencies": {
     "skills": "^1.5.16"
-  }
+  },
+  "license": "SEE LICENSE IN LICENSE"
 }

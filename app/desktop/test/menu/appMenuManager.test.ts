@@ -4,6 +4,7 @@ import type { MenuActionDeps } from "../../src/menu/types.js";
 
 function makeDeps(overrides: Partial<MenuActionDeps> = {}): MenuActionDeps {
   return {
+    openAbout: vi.fn(),
     importFromRepo: vi.fn(),
     selectDataRoot: vi.fn(),
     openSettings: vi.fn(),
@@ -73,7 +74,8 @@ describe("buildAppMenuTemplate", () => {
   it("keeps about, check updates, settings, and quit in the app menu", () => {
     const deps = makeDeps();
     const appMenu = asSubmenu(buildAppMenuTemplate("Kansoku", deps)[0]);
-    expect(findByRole(appMenu, "about").role).toBe("about");
+    findByLabel(appMenu, "关于 Kansoku").click?.(undefined as never, undefined as never, undefined as never);
+    expect(deps.openAbout).toHaveBeenCalledOnce();
     expect(findByLabel(appMenu, "检查更新…").label).toBe("检查更新…");
     expect(findByLabel(appMenu, "设置…")).toMatchObject({
       label: "设置…",

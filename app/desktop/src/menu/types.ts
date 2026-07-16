@@ -1,4 +1,5 @@
 export type MenuActionDeps = {
+  openAbout: () => void;
   importFromRepo: () => void;
   selectDataRoot: () => void;
   openSettings: () => void;

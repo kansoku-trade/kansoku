@@ -8,7 +8,10 @@ export function buildAppSectionWithName(
   return {
     label: appName,
     submenu: [
-      { role: "about" },
+      {
+        label: `关于 ${appName}`,
+        click: () => deps.openAbout(),
+      },
       { type: "separator" },
       {
         label: "检查更新…",

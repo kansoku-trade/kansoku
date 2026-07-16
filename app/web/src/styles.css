@@ -2446,3 +2446,39 @@ a.zone-item:hover { text-decoration: none; background: var(--bg-hover); }
   .assistant-composer-reference button,
   .assistant-queue-remove { transition-duration: 0.01ms; }
 }
+
+.about-page { max-width: 720px; }
+.about-hero {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  margin: 24px 0 20px; text-align: center;
+}
+.about-hero h1 { margin: 8px 0 0; }
+.about-icon { border-radius: 16px; }
+.about-version { color: var(--text-secondary); font-size: var(--fs-sm); }
+.about-copyright { color: var(--text-muted); font-size: var(--fs-xs); }
+.about-links { margin-top: 6px; font-size: var(--fs-sm); }
+.about-page .about-card { margin-bottom: 14px; }
+.about-license-summary { color: var(--text-secondary); font-size: var(--fs-sm); margin: 8px 0; }
+.about-details summary {
+  cursor: pointer; color: var(--text-secondary); font-size: var(--fs-sm); user-select: none;
+}
+.about-details summary:hover { color: var(--text-primary); }
+.about-license-text {
+  max-height: 360px; overflow: auto; margin-top: 10px; padding: 12px;
+  font-size: var(--fs-xs); line-height: 1.5; white-space: pre-wrap;
+  background: var(--bg-sunken, rgba(0, 0, 0, 0.2)); border-radius: 8px;
+}
+.about-credits {
+  max-height: 360px; overflow: auto; margin: 10px 0 0; padding: 0; list-style: none;
+  font-size: var(--fs-xs);
+}
+.about-credits li {
+  display: flex; gap: 8px; padding: 3px 2px; align-items: baseline;
+}
+.about-credit-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.about-credit-version { color: var(--text-muted); }
+.about-credit-license { color: var(--text-secondary); min-width: 90px; text-align: right; }
+
+.settings-about-link { margin-top: 24px; text-align: center; font-size: var(--fs-xs); }
+.settings-about-link a { color: var(--text-muted); }
+.settings-about-link a:hover { color: var(--text-primary); }

@@ -19,6 +19,8 @@ files:
 extraResources:
   - from: ../web/dist
     to: web-dist
+  - from: build/icon.png
+    to: icon.png
   - from: ../packages/core/drizzle
     to: drizzle
   # Agent skill texts + scripts (intraday-signal, options-payoff, …). Linked

@@ -4,6 +4,7 @@ import { chartTargetPath } from "../../shared/chartUrl";
 import { useQuery } from "./apiHooks";
 import { client } from "./client";
 import { symbolFromRoute } from "./lib/symbol";
+import { AboutPage } from "./pages/about/AboutPage";
 import { AssistantChatPage } from "./pages/assistant/AssistantChatPage";
 import { Home } from "./pages/Home";
 import { LogsPage } from "./pages/logViewer/LogsPage";
@@ -58,6 +59,7 @@ export function Router() {
   if (pathname === "/research") return <ResearchPage />;
   if (pathname === "/chat") return <AssistantChatPage />;
   if (pathname === "/settings") return <SettingsPage />;
+  if (pathname === "/about") return <AboutPage />;
   if (pathname === "/logs") return <LogsPage />;
   return <Home />;
 }

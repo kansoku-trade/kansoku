@@ -35,6 +35,7 @@ import { registerTabsIpc } from "./tabs/ipc.js";
 import { initUpdater } from "./updater/updater.js";
 import { registerUpdaterIpc } from "./updater/ipc.js";
 import { isPopoutWindow } from "./window/popoutWindow.js";
+import { isAboutWindow, openAboutWindow } from "./window/aboutWindow.js";
 
 const fileLogger = createFileLogger({
   logFilePath: resolveMainLogPath(app.getPath("logs")),
@@ -52,6 +53,9 @@ function installAppMenu(checkForUpdates: () => void, openWindow: () => void): vo
   createAppMenuManager({
     appName: app.name,
     deps: {
+      openAbout: () => {
+        openAboutWindow();
+      },
       importFromRepo: () => {
         runImportFromRepoFlow(BrowserWindow.getFocusedWindow()).catch((error: unknown) => {
           console.error("[desktop] import-from-repo flow crashed", error);
@@ -71,7 +75,7 @@ function installAppMenu(checkForUpdates: () => void, openWindow: () => void): vo
       newTab: () => sendTabsCommand("new-tab"),
       closeTab: () => {
         const focused = BrowserWindow.getFocusedWindow();
-        if (focused && isPopoutWindow(focused)) {
+        if (focused && (isPopoutWindow(focused) || isAboutWindow(focused))) {
           focused.close();
           return;
         }

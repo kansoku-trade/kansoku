@@ -33,5 +33,6 @@
     "tsdown": "^0.22.5",
     "typescript": "^6.0.3",
     "vitest": "^4.1.10"
-  }
+  },
+  "license": "SEE LICENSE IN LICENSE"
 }

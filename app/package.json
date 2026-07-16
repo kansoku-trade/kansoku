@@ -14,9 +14,11 @@
     "test": "pnpm -r test",
     "test:desktop": "pnpm --filter @kansoku/desktop test",
     "typecheck": "pnpm -r typecheck",
-    "typecheck:desktop": "pnpm --filter @kansoku/desktop typecheck"
+    "typecheck:desktop": "pnpm --filter @kansoku/desktop typecheck",
+    "credits": "node scripts/generate-credits.mjs"
   },
   "devDependencies": {
     "concurrently": "^10.0.3"
-  }
+  },
+  "license": "SEE LICENSE IN LICENSE"
 }
