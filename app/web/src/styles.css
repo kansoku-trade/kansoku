@@ -1202,6 +1202,7 @@ a.zone-item:hover { text-decoration: none; background: var(--bg-hover); }
 .desktop-tab:not(.desktop-tab--active):hover { color: var(--text-secondary); background: var(--bg-element); }
 .desktop-tab--active { color: var(--accent); background: rgba(255, 176, 0, 0.12); font-weight: 600; }
 .desktop-tab-icon-wrap {
+  position: relative;
   display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
 }
 .desktop-tab--active .desktop-tab-icon-wrap {
@@ -1210,6 +1211,28 @@ a.zone-item:hover { text-decoration: none; background: var(--bg-hover); }
 }
 .desktop-tab-icon { flex: 0 0 auto; opacity: 0.65; }
 .desktop-tab--active .desktop-tab-icon { color: var(--accent); opacity: 1; }
+.desktop-tab-status-dot {
+  position: absolute;
+  width: 5px; height: 5px;
+  border-radius: var(--radius-full);
+  pointer-events: none;
+}
+.desktop-tab-status-dot--running {
+  right: -2px; bottom: -2px;
+  background: var(--accent);
+  box-shadow: 0 0 4px 1px var(--accent);
+  animation: desktop-tab-status-pulse 1.6s ease-in-out infinite;
+}
+.desktop-tab-status-dot--unseen {
+  right: -2px; top: -2px;
+  background: var(--text-secondary);
+}
+@keyframes desktop-tab-status-pulse {
+  50% { opacity: 0.45; transform: scale(0.8); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .desktop-tab-status-dot--running { animation: none; }
+}
 .desktop-tab-title { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .desktop-tab-close {
   display: inline-flex; align-items: center; justify-content: center;

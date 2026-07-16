@@ -13,13 +13,14 @@ import {
 import { useHubStatus } from '../useHubStatus'
 import type { HubStatus } from '../wsHub'
 import { Dot, ScrollArea, showContextMenu, Tooltip, type ContextMenuItem } from '../ui'
+import { useAnalystRuns } from '../analystRunsStore'
 import { getOpenWindowBridge, getPopoutBridge } from './desktopWindowsBridge'
 import {
   getDesktopUpdaterBridge,
   isAvailableStatus,
   type UpdaterUiStatus,
 } from './desktopUpdater'
-import { tabKind, type TabState } from './tabsStore'
+import { symbolFromRoute, tabKind, type TabState } from './tabsStore'
 import type { TabsController } from './tabsController'
 import { NewTabLauncher } from './NewTabLauncher'
 
@@ -33,11 +34,26 @@ const TAB_ICONS: Record<ReturnType<typeof tabKind>, typeof House> = {
   other: Circle,
 }
 
+function TabStatusDots({ symbol }: { symbol: string | null }) {
+  const { runs, unseen } = useAnalystRuns()
+  if (!symbol) return null
+  const running = runs.has(symbol)
+  const isUnseen = unseen.has(symbol)
+  if (!running && !isUnseen) return null
+  return (
+    <>
+      {running && <span className="desktop-tab-status-dot desktop-tab-status-dot--running" aria-hidden="true" />}
+      {isUnseen && <span className="desktop-tab-status-dot desktop-tab-status-dot--unseen" aria-hidden="true" />}
+    </>
+  )
+}
+
 function TabIcon({ route }: { route: string }) {
   const Icon = TAB_ICONS[tabKind(route)]
   return (
     <span className="desktop-tab-icon-wrap">
       <Icon className="desktop-tab-icon" size={12} />
+      <TabStatusDots symbol={symbolFromRoute(route)} />
     </span>
   )
 }
@@ -152,8 +168,8 @@ export function DesktopTitlebar({
     const tabId = tab.id
     const multi = snapshot.tabs.length > 1
     const isLast = index === snapshot.tabs.length - 1
-    const symbolMatch = tabKind(tab.route) === 'symbol' && tab.route.match(/^\/symbol\/(.+)$/)
-    const popoutBridge = symbolMatch ? getPopoutBridge() : null
+    const symbol = symbolFromRoute(tab.route)
+    const popoutBridge = symbol ? getPopoutBridge() : null
     const openWindowBridge = getOpenWindowBridge()
     const items: ContextMenuItem[] = [
       {
@@ -193,14 +209,14 @@ export function DesktopTitlebar({
             },
           ]
         : []),
-      ...(popoutBridge && symbolMatch
+      ...(popoutBridge && symbol
         ? [
             { type: 'divider' as const },
             {
               key: 'popout',
               label: '弹出盯盘小窗',
               onClick: () => {
-                void popoutBridge.openPopout(decodeURIComponent(symbolMatch[1]))
+                void popoutBridge.openPopout(symbol)
               },
             },
           ]
