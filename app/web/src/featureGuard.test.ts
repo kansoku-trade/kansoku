@@ -9,17 +9,17 @@ vi.mock("./capabilitiesStore", () => ({
 }));
 
 const { getLicenseModalStateForTests, resetLicenseModalStoreForTests } = await import("./licenseModalStore");
-const { useLicenseGuard } = await import("./useLicenseGuard");
+const { useFeatureGuard } = await import("./featureGuard");
 
 afterEach(() => {
   capabilities = { pro: null, licensed: false };
   resetLicenseModalStoreForTests();
 });
 
-describe("useLicenseGuard", () => {
+describe("useFeatureGuard", () => {
   it("runs the action directly when licensed", () => {
     capabilities = { pro: true, licensed: true };
-    const { result } = renderHook(() => useLicenseGuard());
+    const { result } = renderHook(() => useFeatureGuard());
     const action = vi.fn();
 
     result.current.guard(action);
@@ -31,7 +31,7 @@ describe("useLicenseGuard", () => {
 
   it("opens the license modal instead of running the action when pro but unlicensed", () => {
     capabilities = { pro: true, licensed: false };
-    const { result } = renderHook(() => useLicenseGuard());
+    const { result } = renderHook(() => useFeatureGuard());
     const action = vi.fn();
 
     result.current.guard(action);
@@ -43,7 +43,7 @@ describe("useLicenseGuard", () => {
 
   it("does nothing for a community build (pro:false)", () => {
     capabilities = { pro: false, licensed: false };
-    const { result } = renderHook(() => useLicenseGuard());
+    const { result } = renderHook(() => useFeatureGuard());
     const action = vi.fn();
 
     result.current.guard(action);
@@ -55,7 +55,7 @@ describe("useLicenseGuard", () => {
 
   it("does nothing while capabilities are still loading (pro:null)", () => {
     capabilities = { pro: null, licensed: false };
-    const { result } = renderHook(() => useLicenseGuard());
+    const { result } = renderHook(() => useFeatureGuard());
     const action = vi.fn();
 
     result.current.guard(action);

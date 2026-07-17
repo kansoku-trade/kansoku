@@ -7,6 +7,7 @@ export interface ModalOptions {
   title: ReactNode;
   body: ModalSlot;
   headerAction?: ModalSlot;
+  panelClassName?: string;
   onClose?: () => void;
 }
 
@@ -40,11 +41,15 @@ export function openModal(opts: ModalOptions): () => void {
   const id = nextId++;
   entries = [...entries, { id, ...opts, state: "entering" }];
   emit();
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      entries = entries.map((e) => (e.id === id && e.state === "entering" ? { ...e, state: "open" } : e));
-      emit();
-    });
+  // Double rAF lets the "entering" frame paint before the transition to
+  // "open"; non-DOM environments (node test runners) fall back to a timeout.
+  const nextFrame =
+    typeof requestAnimationFrame === "function"
+      ? (cb: () => void) => requestAnimationFrame(() => requestAnimationFrame(cb))
+      : (cb: () => void) => void setTimeout(cb, 0);
+  nextFrame(() => {
+    entries = entries.map((e) => (e.id === id && e.state === "entering" ? { ...e, state: "open" } : e));
+    emit();
   });
   return () => closeModal(id);
 }
@@ -54,9 +59,14 @@ export function closeModal(id: number): void {
   if (!target || target.state === "closing") return;
   entries = entries.map((e) => (e.id === id ? { ...e, state: "closing" } : e));
   emit();
-  window.setTimeout(() => {
+  setTimeout(() => {
     entries = entries.filter((e) => e.id !== id);
     emit();
     target.onClose?.();
   }, CLOSE_MS);
+}
+
+export function resetModalStoreForTests(): void {
+  entries = [];
+  listeners.clear();
 }

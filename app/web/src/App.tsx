@@ -1,6 +1,5 @@
 import { AppSkeleton } from "./AppSkeleton";
 import { DesktopShell } from "./desktop/DesktopShell";
-import { LicenseModal } from "./LicenseModal";
 import { Onboarding } from "./onboarding/Onboarding";
 import { useCredentialsGate } from "./onboarding/useCredentialsGate";
 import { CommandPalette } from "./palette/CommandPalette";
@@ -39,7 +38,6 @@ export function App() {
       <Router />
       <CommandPalette onOpenRoute={navigate} />
       <ModalHost />
-      <LicenseModal />
       <ContextMenuHost />
     </>
   );

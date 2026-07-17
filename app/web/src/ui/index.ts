@@ -32,5 +32,5 @@ export {
   updateContextMenuItems,
 } from "./contextMenu";
 export type { ContextMenuItem, ContextMenuCommandItem, ContextMenuDivider } from "./contextMenu";
-export { openModal, closeModal } from "./modalStore";
+export { openModal, closeModal, resetModalStoreForTests } from "./modalStore";
 export type { ModalOptions } from "./modalStore";

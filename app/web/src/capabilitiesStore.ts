@@ -1,7 +1,6 @@
 import { useSyncExternalStore } from "react";
 import type { LicenseSnapshot } from "../../packages/core/src/contract/license.js";
 import { client } from "./client";
-import { closeLicenseModal } from "./licenseModalStore";
 import { clearLicenseRequired, useLicenseRequiredMode } from "./licenseRequiredMode";
 
 export interface Capabilities {
@@ -38,7 +37,6 @@ function ensureLoaded(): void {
 
 export function refreshCapabilities(): Promise<void> {
   clearLicenseRequired();
-  closeLicenseModal();
   return client.capabilities
     .get()
     .then((data) => {

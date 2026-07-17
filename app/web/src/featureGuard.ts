@@ -1,7 +1,7 @@
 import { useCapabilities } from "./capabilitiesStore";
 import { openLicenseModal } from "./licenseModalStore";
 
-export function useLicenseGuard(): { locked: boolean; guard: (action: () => void) => void } {
+export function useFeatureGuard(): { locked: boolean; guard: (action: () => void) => void } {
   const { pro, licensed } = useCapabilities();
   const locked = pro === true && !licensed;
 

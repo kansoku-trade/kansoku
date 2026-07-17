@@ -1517,7 +1517,7 @@ a.zone-item:hover { text-decoration: none; background: var(--bg-hover); }
   gap: 12px; align-items: start;
 }
 .settings-main-column, .settings-side-column { display: grid; min-width: 0; gap: 12px; }
-.settings-roles-card, .settings-connections-card, .settings-display-card, .settings-provider-card { overflow: hidden; padding: 0; min-width: 0; }
+.settings-roles-card, .settings-connections-card, .settings-display-card, .settings-provider-card, .settings-license-card { overflow: hidden; padding: 0; min-width: 0; }
 .settings-card-heading {
   display: flex; min-height: 34px; align-items: center; justify-content: space-between;
   gap: 12px; padding: 0 11px; border-bottom: 1px solid var(--border);
@@ -1712,6 +1712,34 @@ a.zone-item:hover { text-decoration: none; background: var(--bg-hover); }
 .license-invalid-notice { color: var(--down); }
 .license-expired-notice { color: var(--accent); }
 .license-subscribe-link { color: var(--accent); font-size: var(--fs-sm); }
+
+.license-modal-panel { width: min(440px, 100%); }
+.license-paywall { display: flex; flex-direction: column; gap: 16px; }
+.license-paywall-hero { display: flex; flex-direction: column; gap: 4px; }
+.license-paywall-title { color: var(--text-primary); font-size: var(--fs-xl); font-weight: 700; }
+.license-paywall-tagline { color: var(--text-secondary); font-size: var(--fs-md); text-wrap: balance; }
+.license-paywall-features {
+  display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 12px 14px;
+  list-style: none; background: var(--bg-surface); border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+.license-paywall-features li { display: flex; flex-direction: column; gap: 2px; }
+.license-paywall-feature-name { color: var(--text-primary); font-size: var(--fs-base); font-weight: 600; }
+.license-paywall-feature-desc { color: var(--text-secondary); font-size: var(--fs-sm); }
+.license-paywall-cta {
+  display: flex; align-items: center; justify-content: center; height: var(--control-h);
+  color: #000; background: var(--accent); border-radius: var(--radius);
+  font-size: var(--fs-base); font-weight: 600; text-decoration: none;
+  transition-property: transform, opacity; transition-duration: 120ms;
+}
+.license-paywall-cta:hover { color: #000; opacity: 0.9; }
+.license-paywall-cta:active { transform: scale(0.96); }
+.license-paywall-hint { color: var(--text-muted); font-size: var(--fs-sm); text-wrap: pretty; }
+.license-paywall-toggle {
+  align-self: flex-start; padding: 4px 0; background: none; border: none;
+  color: var(--accent); font-size: var(--fs-sm); cursor: pointer;
+}
+.license-paywall-toggle:hover { text-decoration: underline; }
 
 .logs-page { display: flex; flex-direction: column; min-height: 0; gap: 10px; }
 .logs-page-header {

@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { Router } from "../PageRouter";
 import { GlobalNotifications } from "../GlobalNotifications";
-import { LicenseModal } from "../LicenseModal";
 import { symbolFromRoute } from "../lib/symbol";
 import { CommandPalette } from "../palette/CommandPalette";
 import { RestrictedBanner } from "../RestrictedBanner";
@@ -33,7 +32,6 @@ export function DesktopShell() {
       <CommandPalette onOpenRoute={controller.openTab} />
       <LinkHoverStatus />
       <ModalHost />
-      <LicenseModal />
       <ContextMenuHost />
     </>
   );

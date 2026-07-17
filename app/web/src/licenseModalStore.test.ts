@@ -1,11 +1,10 @@
-import { afterEach, describe, expect, it } from "vitest";
-import {
-  closeLicenseModal,
-  getLicenseModalStateForTests,
-  openLicenseModal,
-  resetLicenseModalStoreForTests,
-  subscribeForTests,
-} from "./licenseModalStore";
+// @vitest-environment jsdom
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("./client", () => ({ client: {} }));
+
+const { closeLicenseModal, getLicenseModalStateForTests, openLicenseModal, resetLicenseModalStoreForTests } =
+  await import("./licenseModalStore");
 
 describe("licenseModalStore", () => {
   afterEach(() => {
@@ -16,21 +15,14 @@ describe("licenseModalStore", () => {
     expect(getLicenseModalStateForTests()).toEqual({ open: false, trigger: null });
   });
 
-  it("openLicenseModal opens with the given trigger and notifies subscribers", () => {
-    let notified = 0;
-    const unsubscribe = subscribeForTests(() => notified++);
-
+  it("openLicenseModal opens with the given trigger", () => {
     openLicenseModal("guard");
-
     expect(getLicenseModalStateForTests()).toEqual({ open: true, trigger: "guard" });
-    expect(notified).toBe(1);
-    unsubscribe();
   });
 
-  it("openLicenseModal can switch the trigger on an already-open modal", () => {
+  it("openLicenseModal switches the trigger without stacking a second modal", () => {
     openLicenseModal("guard");
     openLicenseModal("runtime-403");
-
     expect(getLicenseModalStateForTests()).toEqual({ open: true, trigger: "runtime-403" });
   });
 
@@ -38,11 +30,7 @@ describe("licenseModalStore", () => {
     openLicenseModal("guard");
     closeLicenseModal();
     expect(getLicenseModalStateForTests()).toEqual({ open: false, trigger: null });
-
-    let notified = 0;
-    const unsubscribe = subscribeForTests(() => notified++);
     closeLicenseModal();
-    expect(notified).toBe(0);
-    unsubscribe();
+    expect(getLicenseModalStateForTests()).toEqual({ open: false, trigger: null });
   });
 });

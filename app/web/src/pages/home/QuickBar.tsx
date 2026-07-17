@@ -3,7 +3,7 @@ import { Library, Lock, MessageCircle, Settings } from "lucide-react";
 import { useCapabilities } from "../../capabilitiesStore";
 import { normalizeSymbol } from "../../lib/symbol";
 import { navigate } from "../../router";
-import { useLicenseGuard } from "../../useLicenseGuard";
+import { useFeatureGuard } from "../../featureGuard";
 import { listRecentSymbols } from "../../recentCharts";
 import { Chip, Input, Tooltip } from "../../ui";
 
@@ -16,7 +16,7 @@ export function QuickBar({
 }) {
   const [input, setInput] = useState("");
   const { pro } = useCapabilities();
-  const { locked, guard } = useLicenseGuard();
+  const { locked, guard } = useFeatureGuard();
   const shortcutSet = new Set(shortcuts);
   const recent = listRecentSymbols().filter((s) => !shortcutSet.has(s.symbol));
 

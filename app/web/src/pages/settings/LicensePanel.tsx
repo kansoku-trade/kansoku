@@ -45,11 +45,24 @@ function DeactivateConfirm({ closeModal }: { closeModal: () => void }) {
   );
 }
 
-function ActivateForm({ notice }: { notice?: "invalid" | "expired" }) {
+export function useSubscribeInfo() {
+  const { data } = useQuery("settings.getSubscribeUrl", () => client.settings.getSubscribeUrl());
+  return data ?? null;
+}
+
+export function ActivateForm({
+  notice,
+  showSubscribeLink = true,
+  onActivated,
+}: {
+  notice?: "invalid" | "expired";
+  showSubscribeLink?: boolean;
+  onActivated?: () => void;
+}) {
   const [key, setKey] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { data: subscribeData } = useQuery("settings.getSubscribeUrl", () => client.settings.getSubscribeUrl());
+  const subscribeData = useSubscribeInfo();
 
   const activate = async () => {
     const trimmed = key.trim();
@@ -64,6 +77,7 @@ function ActivateForm({ notice }: { notice?: "invalid" | "expired" }) {
       }
       await refreshCapabilities();
       setKey("");
+      onActivated?.();
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -98,7 +112,7 @@ function ActivateForm({ notice }: { notice?: "invalid" | "expired" }) {
         </Button>
       </div>
       {error ? <div className="settings-test-result settings-test-result--fail">{error}</div> : null}
-      {subscribeData?.subscribeUrl ? (
+      {showSubscribeLink && subscribeData?.subscribeUrl ? (
         <a className="license-subscribe-link" href={subscribeData.subscribeUrl} target="_blank" rel="noreferrer">
           还没有授权码？前往订阅
         </a>

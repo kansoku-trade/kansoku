@@ -22,7 +22,7 @@ vi.mock("./client", () => ({
   },
 }));
 
-const { LicenseModal } = await import("./LicenseModal");
+const { ModalHost } = await import("./ui");
 
 function renderWithClient(children: ReactNode) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -41,39 +41,54 @@ describe("LicenseModal", () => {
   });
 
   it("renders nothing when closed", () => {
-    renderWithClient(<LicenseModal />);
+    renderWithClient(<ModalHost />);
     expect(screen.queryByText("订阅与授权")).toBeNull();
   });
 
-  it("renders the license panel without the runtime notice when opened via guard", async () => {
+  it("renders the paywall without the runtime notice when opened via guard", async () => {
     capabilitiesGet.mockResolvedValue({ pro: true, licensed: false, license: { state: "unlicensed" } });
-    subscribeUrlGet.mockResolvedValue({ subscribeUrl: null });
+    subscribeUrlGet.mockResolvedValue({ subscribeUrl: "https://checkout.example/buy", priceLabel: "$9.9 / 月" });
     openLicenseModal("guard");
 
-    renderWithClient(<LicenseModal />);
+    renderWithClient(<ModalHost />);
 
     expect(screen.getByText("订阅与授权")).toBeTruthy();
-    expect(await screen.findByPlaceholderText("输入授权码")).toBeTruthy();
+    expect(screen.getByText("Kansoku AI")).toBeTruthy();
+    const cta = await screen.findByText(/前往订阅 · \$9\.9 \/ 月/);
+    expect(cta.closest("a")?.getAttribute("href")).toBe("https://checkout.example/buy");
+    expect(screen.queryByPlaceholderText("输入授权码")).toBeNull();
     expect(screen.queryByText(/本次操作因授权已失效/)).toBeNull();
+  });
+
+  it("reveals the activate form behind the toggle", async () => {
+    capabilitiesGet.mockResolvedValue({ pro: true, licensed: false, license: { state: "unlicensed" } });
+    subscribeUrlGet.mockResolvedValue({ subscribeUrl: null, priceLabel: null });
+    openLicenseModal("guard");
+
+    renderWithClient(<ModalHost />);
+    fireEvent.click(await screen.findByText("已有授权码？输入激活"));
+
+    expect(await screen.findByPlaceholderText("输入授权码")).toBeTruthy();
   });
 
   it("renders the runtime-403 notice when opened by a mid-session 403", async () => {
     capabilitiesGet.mockResolvedValue({ pro: true, licensed: false, license: { state: "unlicensed" } });
-    subscribeUrlGet.mockResolvedValue({ subscribeUrl: null });
+    subscribeUrlGet.mockResolvedValue({ subscribeUrl: null, priceLabel: null });
     openLicenseModal("runtime-403");
 
-    renderWithClient(<LicenseModal />);
+    renderWithClient(<ModalHost />);
 
     expect(await screen.findByText(/本次操作因授权已失效/)).toBeTruthy();
   });
 
   it("closes on a successful activation", async () => {
     capabilitiesGet.mockResolvedValue({ pro: true, licensed: false, license: { state: "unlicensed" } });
-    subscribeUrlGet.mockResolvedValue({ subscribeUrl: null });
+    subscribeUrlGet.mockResolvedValue({ subscribeUrl: null, priceLabel: null });
     activate.mockResolvedValue({ activated: true });
     openLicenseModal("guard");
 
-    renderWithClient(<LicenseModal />);
+    renderWithClient(<ModalHost />);
+    fireEvent.click(await screen.findByText("已有授权码？输入激活"));
     const input = await screen.findByPlaceholderText("输入授权码");
     fireEvent.change(input, { target: { value: "KEY-1234" } });
 
