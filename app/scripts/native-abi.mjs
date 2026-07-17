@@ -10,7 +10,7 @@ const appRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 // better-sqlite3); every workspace copy dedupes to the same .pnpm directory.
 const coreRequire = createRequire(join(appRoot, "packages", "core", "package.json"));
 
-const CACHE_DIR = join(homedir(), ".cache", "kansoku-native-abi");
+const CACHE_DIR = join(appRoot, "node_modules", ".abi-cache");
 
 function binaryPath() {
   let dir = dirname(coreRequire.resolve("better-sqlite3"));
