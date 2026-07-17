@@ -9,6 +9,7 @@ export interface JudgmentSummary {
   expectancyNorm: number;
   neutralAccuracy: number;
   judgment: number;
+  abstainRate: number;
 }
 
 export interface ToolCallStats {
@@ -32,6 +33,7 @@ export interface ModelAggregate extends JudgmentSummary {
   toolCalls: ToolCallStats;
   noiseDelta: number | null;
   consistency: number;
+  avgWinnerR: number | null;
   modes: Record<string, JudgmentSummary>;
   layers: Record<string, JudgmentSummary>;
   regimes: Record<string, JudgmentSummary>;
@@ -108,11 +110,19 @@ export function judgmentSummary(cells: CellVerdict[], neutralFallback: number): 
   const expectancyNorm = clamp((expectancy + 1) / 3, 0, 1);
   const neutralAccuracy = neutralTotal > 0 ? neutralCorrect / neutralTotal : neutralFallback;
   const judgment = 0.4 * winRate + 0.4 * expectancyNorm + 0.2 * neutralAccuracy;
+  const scored = cells.filter((c) => c.outcome !== "api_error");
+  const abstainRate = scored.length > 0 ? neutralTotal / scored.length : 0;
 
-  return { cellCount: cells.length, winRate, expectancy, expectancyNorm, neutralAccuracy, judgment };
+  return { cellCount: cells.length, winRate, expectancy, expectancyNorm, neutralAccuracy, judgment, abstainRate };
 }
 
-function groupBy<T>(items: T[], key: (item: T) => string): Map<string, T[]> {
+function avgWinnerROf(cells: CellVerdict[]): number | null {
+  const wins = cells.filter((c) => c.outcome === "win");
+  if (wins.length === 0) return null;
+  return wins.reduce((acc, c) => acc + (c.score ?? 0), 0) / wins.length;
+}
+
+export function groupBy<T>(items: T[], key: (item: T) => string): Map<string, T[]> {
   const map = new Map<string, T[]>();
   for (const item of items) {
     const bucket = map.get(key(item));
@@ -174,7 +184,7 @@ interface ModelDraft {
   rawNeutral: number | null;
 }
 
-function isReferenceModel(model: string): boolean {
+export function isReferenceModel(model: string): boolean {
   return model.startsWith("baseline/") || model.startsWith("gold/");
 }
 
@@ -236,6 +246,7 @@ export function aggregate(cells: CellVerdict[], weights: RunConfig["weights"]): 
       },
       noiseDelta: noiseDeltaOf(draft.cells, neutralMedian),
       consistency: consistencyOf(draft.cells),
+      avgWinnerR: avgWinnerROf(draft.cells),
       modes: summarizeGroups(draft.cells, (c) => c.mode, neutralMedian),
       layers: summarizeGroups(draft.cells, (c) => c.layer, neutralMedian),
       regimes: summarizeGroups(draft.cells, (c) => c.regime, neutralMedian),

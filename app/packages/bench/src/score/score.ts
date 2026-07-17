@@ -6,6 +6,7 @@ import type { Question } from "../schema/question.js";
 import { RUN_CONFIG_DEFAULTS, type RunConfig } from "../schema/runConfig.js";
 import { type Scores, scoresSchema } from "../schema/scores.js";
 import { aggregate } from "./aggregate.js";
+import { computeAnalysis } from "./analysis.js";
 import { scoreCell } from "./cell.js";
 import { loadPredictions } from "./predictions.js";
 
@@ -53,7 +54,8 @@ export async function runScore(options: RunScoreOptions): Promise<Scores> {
   }
 
   const models = aggregate(cells, weights);
-  const scores: Scores = { runId: options.runId, datasetVersion: options.datasetVersion, weights, cells, models };
+  const analysis = computeAnalysis(cells);
+  const scores: Scores = { runId: options.runId, datasetVersion: options.datasetVersion, weights, cells, models, analysis };
 
   if (!Value.Check(scoresSchema, scores)) {
     const first = Value.Errors(scoresSchema, scores)[0];

@@ -55,6 +55,7 @@ const judgmentSummarySchema = Type.Object(
     expectancyNorm: Type.Number(),
     neutralAccuracy: Type.Number(),
     judgment: Type.Number(),
+    abstainRate: Type.Number(),
   },
   { additionalProperties: false },
 );
@@ -68,6 +69,7 @@ const modelAggregateSchema = Type.Object(
     expectancyNorm: Type.Number(),
     neutralAccuracy: Type.Number(),
     judgment: Type.Number(),
+    abstainRate: Type.Number(),
     noFillRate: Type.Number(),
     formatViolationRate: Type.Number(),
     timeoutRate: Type.Number(),
@@ -84,9 +86,54 @@ const modelAggregateSchema = Type.Object(
     ),
     noiseDelta: Type.Union([Type.Number(), Type.Null()]),
     consistency: Type.Number(),
+    avgWinnerR: Type.Union([Type.Number(), Type.Null()]),
     modes: Type.Record(Type.String(), judgmentSummarySchema),
     layers: Type.Record(Type.String(), judgmentSummarySchema),
     regimes: Type.Record(Type.String(), judgmentSummarySchema),
+  },
+  { additionalProperties: false },
+);
+
+const questionDifficultyEntrySchema = Type.Object(
+  {
+    questionId: Type.String(),
+    nModels: Type.Number(),
+    meanScore: Type.Union([Type.Number(), Type.Null()]),
+  },
+  { additionalProperties: false },
+);
+
+const difficultyTiersSchema = Type.Object(
+  {
+    allCorrect: Type.Array(questionDifficultyEntrySchema),
+    allWrong: Type.Array(questionDifficultyEntrySchema),
+    split: Type.Array(questionDifficultyEntrySchema),
+  },
+  { additionalProperties: false },
+);
+
+const agreementPairSchema = Type.Object(
+  {
+    a: Type.String(),
+    b: Type.String(),
+    sharedCount: Type.Number(),
+    agreementRate: Type.Union([Type.Number(), Type.Null()]),
+  },
+  { additionalProperties: false },
+);
+
+const agreementMatrixSchema = Type.Object(
+  {
+    models: Type.Array(Type.String()),
+    pairs: Type.Array(agreementPairSchema),
+  },
+  { additionalProperties: false },
+);
+
+const analysisSchema = Type.Object(
+  {
+    difficultyTiers: difficultyTiersSchema,
+    agreementMatrix: agreementMatrixSchema,
   },
   { additionalProperties: false },
 );
@@ -98,6 +145,7 @@ export const scoresSchema = Type.Object(
     weights: weightsSchema,
     cells: Type.Array(cellVerdictSchema),
     models: Type.Array(modelAggregateSchema),
+    analysis: analysisSchema,
   },
   { additionalProperties: false },
 );

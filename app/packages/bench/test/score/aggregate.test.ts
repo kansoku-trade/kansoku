@@ -165,6 +165,76 @@ describe("aggregate reference models", () => {
   });
 });
 
+describe("abstainRate", () => {
+  it("counts neutral cells over all scored cells, excluding api_error", () => {
+    const cells = [
+      mkCell({ outcome: "win", score: 1 }),
+      mkCell({ outcome: "loss", score: -1 }),
+      mkCell({ outcome: "neutral_correct", direction: "neutral", score: null }),
+      mkCell({ outcome: "neutral_wrong", direction: "neutral", score: null }),
+      mkCell({
+        outcome: "api_error",
+        direction: null,
+        entry: null,
+        stop: null,
+        target: null,
+        score: null,
+        r: null,
+      }),
+    ];
+    const s = judgmentSummary(cells, 0);
+    expect(s.abstainRate).toBeCloseTo(2 / 4, 10);
+  });
+
+  it("is 0 when a model never abstains", () => {
+    const s = judgmentSummary([mkCell({ outcome: "win", score: 1 }), mkCell({ outcome: "loss", score: -1 })], 0);
+    expect(s.abstainRate).toBe(0);
+  });
+
+  it("is 0 when there are no scored cells at all", () => {
+    const s = judgmentSummary(
+      [
+        mkCell({
+          outcome: "api_error",
+          direction: null,
+          entry: null,
+          stop: null,
+          target: null,
+          score: null,
+          r: null,
+        }),
+      ],
+      0,
+    );
+    expect(s.abstainRate).toBe(0);
+  });
+});
+
+describe("avgWinnerR", () => {
+  it("is null when a model has zero wins", () => {
+    const [m] = aggregate([mkCell({ outcome: "loss", score: -1 })], WEIGHTS);
+    expect(m.avgWinnerR).toBeNull();
+  });
+
+  it("equals the single winning score when there is exactly one win", () => {
+    const [m] = aggregate([mkCell({ outcome: "win", score: 2.5 }), mkCell({ outcome: "loss", score: -1 })], WEIGHTS);
+    expect(m.avgWinnerR).toBeCloseTo(2.5, 10);
+  });
+
+  it("averages score over wins only, ignoring losses and neutrals", () => {
+    const [m] = aggregate(
+      [
+        mkCell({ outcome: "win", score: 2 }),
+        mkCell({ outcome: "win", score: 4 }),
+        mkCell({ outcome: "loss", score: -1 }),
+        mkCell({ outcome: "neutral_correct", direction: "neutral", score: null }),
+      ],
+      WEIGHTS,
+    );
+    expect(m.avgWinnerR).toBeCloseTo(3, 10);
+  });
+});
+
 describe("aggregate neutral median substitution", () => {
   it("a model with no neutral cells inherits the run median neutralAccuracy", () => {
     const cells = [

@@ -6,6 +6,8 @@ const rankingEntrySchema = Type.Object(
     total: Type.Number(),
     judgment: Type.Number(),
     efficiency: Type.Union([Type.Number(), Type.Null()]),
+    abstainRate: Type.Number(),
+    avgWinnerR: Type.Union([Type.Number(), Type.Null()]),
   },
   { additionalProperties: false },
 );
