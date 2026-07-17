@@ -55,6 +55,12 @@ jobs:
         working-directory: app
         run: pnpm -r typecheck
 
+      - name: build (web, desktop main — the compile step that would have caught a bundling regression)
+        working-directory: app
+        run: |
+          pnpm --filter @kansoku/web build
+          pnpm --filter @kansoku/desktop build
+
       - name: test — core, web, desktop
         working-directory: app
         run: |
