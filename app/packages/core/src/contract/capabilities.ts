@@ -1,8 +1,10 @@
+import type { LicenseSnapshot } from "@kansoku/pro-api";
 import { defineRoutes } from "./defineRoutes.js";
 
 export interface CapabilitiesOut {
   pro: boolean;
   licensed: boolean;
+  license?: LicenseSnapshot;
 }
 
 export interface CapabilitiesApi {

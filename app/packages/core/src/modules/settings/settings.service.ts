@@ -47,4 +47,12 @@ export const settingsService: SettingsApi = {
     store.set(validateWatchedMarkets(input.markets));
     return { markets: store.get() };
   },
+
+  async getSubscribeUrl() {
+    const subscription = getPro()?.subscription;
+    return {
+      subscribeUrl: subscription?.url ?? null,
+      priceLabel: subscription?.priceLabel ?? null,
+    };
+  },
 };

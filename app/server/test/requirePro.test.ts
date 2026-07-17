@@ -27,6 +27,12 @@ describe("requirePro guard", () => {
     expect(res.status).toBe(404);
   });
 
+  it("returns 404 for the license status route when pro is absent", async () => {
+    unregisterProModuleForTests();
+    const res = await tsukiRequest("/api/license/status");
+    expect(res.status).toBe(404);
+  });
+
   it("reports pro:false via /capabilities when pro is absent", async () => {
     unregisterProModuleForTests();
     const res = await tsukiRequest("/api/capabilities");

@@ -45,7 +45,7 @@ if (isPackaged) {
 }
 process.env.TRADE_PROJECT_ROOT = dataRoot;
 
-export const IS_DEV = process.env.ELECTRON_DEV === "1";
+export const IS_DEV = __DESKTOP_DEV__;
 
 function readConfiguredPath(userDataPath: string): string | null {
   try {

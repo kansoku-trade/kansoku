@@ -81,4 +81,10 @@ export class SettingsController {
     const data = await settingsService.putWatchedMarkets({ markets: body?.markets });
     return { ok: true, data };
   }
+
+  @Get("/subscribe-url")
+  async getSubscribeUrl() {
+    const data = await settingsService.getSubscribeUrl();
+    return { ok: true, data };
+  }
 }

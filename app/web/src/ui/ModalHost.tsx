@@ -21,7 +21,7 @@ function ModalFrame({ entry }: { entry: ModalEntry }) {
   return (
     <div className="modal-backdrop" data-state={entry.state} onClick={close}>
       <div
-        className="modal-panel"
+        className={entry.panelClassName ? `modal-panel ${entry.panelClassName}` : "modal-panel"}
         data-state={entry.state}
         role="dialog"
         aria-modal="true"

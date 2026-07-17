@@ -1,3 +1,8 @@
+// Loaded before the pro slot so global Reflect is patched when the pro slot's
+// Tsuki controller/module decorators run inside loadPro(); otherwise their
+// route metadata is written before reflect-metadata installs and Tsuki maps no
+// routes. bootstrap.js also imports it, but that runs after loadPro().
+import "reflect-metadata";
 import { join } from "node:path";
 import { app, ipcMain, safeStorage, shell } from "electron";
 import { createCredentialsBridgeHandlers, registerCredentialsIpc } from "../credentials/bridge.js";
@@ -5,6 +10,16 @@ import { createDesktopSecretBox } from "../credentials/secretBox.js";
 import { IS_DEV } from "./env.js";
 
 export async function bootKernel() {
+  if (__DESKTOP_DEV__) {
+    // The pro slot ships as TS and loads at runtime. tsx transforms it with the
+    // pro package's tsconfig (experimentalDecorators); tsx otherwise picks the
+    // desktop tsconfig, which lacks the flag. Packaged builds load built JS and
+    // skip this entirely (the branch is stripped by the __DESKTOP_DEV__ define).
+    process.env.TSX_TSCONFIG_PATH = join(app.getAppPath(), "..", "pro", "tsconfig.json");
+    const { register } = await import("tsx/esm/api");
+    register();
+  }
+
   const [{ initServerRuntime }, { attachRealtimeBridge }, { CHART_DATA_DIR }, { getPro }] = await Promise.all([
     import("../../../server/src/runtimeInit.js"),
     import("../realtime/bridge.js"),
@@ -28,6 +43,11 @@ export async function bootKernel() {
       shell.openExternal(url).catch(() => {});
     },
     proAppDir: app.getAppPath(),
+    productionHost: app.isPackaged,
+    // Packaged builds stage pro INSIDE app.asar (see desktop/scripts/
+    // stagePro.mjs) — an absolute entry, not the ../pro sibling that the
+    // appDir-relative form resolves; dev keeps the sibling slot checkout.
+    proEntry: app.isPackaged ? join(app.getAppPath(), "pro", "dist", "index.mjs") : "src/index.ts",
   });
   // bootstrap.js is imported lazily, after initServerRuntime() has awaited
   // loadPro() above, so AppModule's registry-derived AI module composition

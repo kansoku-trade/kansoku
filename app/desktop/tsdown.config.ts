@@ -1,11 +1,16 @@
 import { defineConfig } from "tsdown";
 
+const isDev = process.env.KANSOKU_DESKTOP_DEV === "1";
+
 export default defineConfig([
   {
     entry: "src/main.ts",
     outDir: "dist-main",
     format: "esm",
     platform: "node",
+    define: {
+      __DESKTOP_DEV__: JSON.stringify(isDev),
+    },
     deps: {
       alwaysBundle: ["electron-window-state"],
       neverBundle: [
@@ -15,6 +20,18 @@ export default defineConfig([
         "electron-dl",
         "electron-is-dev",
         "cli-truncate",
+        // tsx (dev-only, resolved at runtime from node_modules) must never be
+        // bundled: its internals rely on CJS __filename, which breaks inside
+        // an ESM bundle. The regex covers every subpath (tsx/esm/api), which a
+        // bare "tsx" entry would miss. In packaged builds the __DESKTOP_DEV__
+        // branch that imports it is stripped, so it is never referenced.
+        /^tsx($|\/)/,
+        // Keep Tsuki external so the bundled kernel and the tsx-loaded pro slot
+        // share ONE instance. Its @Module/@Controller decorators key metadata
+        // by module-local Symbol("…"); two bundled copies mint different
+        // symbols, so pro's controllers would write metadata the kernel can't
+        // read and no pro routes would map.
+        /^@tsuki-hono\//,
       ],
     },
     dts: false,

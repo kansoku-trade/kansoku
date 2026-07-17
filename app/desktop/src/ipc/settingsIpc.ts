@@ -88,4 +88,9 @@ export class SettingsIpc extends IpcService implements WrapEnvelope<SettingsApi>
   putWatchedMarkets(input: Parameters<SettingsApi["putWatchedMarkets"]>[0]) {
     return toEnvelope("settings.putWatchedMarkets", () => settingsService.putWatchedMarkets(input));
   }
+
+  @IpcMethod()
+  getSubscribeUrl() {
+    return toEnvelope("settings.getSubscribeUrl", () => settingsService.getSubscribeUrl());
+  }
 }

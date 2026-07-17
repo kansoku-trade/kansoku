@@ -1,11 +1,13 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { ApiError } from "../api";
+import { getLicenseRequiredModeSnapshotForTests, resetLicenseRequiredModeForTests } from "../licenseRequiredMode";
 import { getRestrictedModeSnapshotForTests, resetRestrictedModeForTests } from "../restrictedMode";
 import { unwrapEnvelope } from "./envelope";
 
 describe("unwrapEnvelope", () => {
   afterEach(() => {
     resetRestrictedModeForTests();
+    resetLicenseRequiredModeForTests();
   });
 
   it("returns data and meta for an ok envelope", () => {
@@ -40,5 +42,17 @@ describe("unwrapEnvelope", () => {
   it("does not mark restricted mode for an unrelated error", () => {
     expect(() => unwrapEnvelope({ ok: false, error: "nope" }, 404)).toThrow(ApiError);
     expect(getRestrictedModeSnapshotForTests().restricted).toBe(false);
+  });
+
+  it("marks license-required mode for a 403 LICENSE_REQUIRED", () => {
+    expect(() => unwrapEnvelope({ ok: false, error: "AI features require an active license", code: "LICENSE_REQUIRED" }, 403)).toThrow(
+      ApiError,
+    );
+    expect(getLicenseRequiredModeSnapshotForTests()).toBe(true);
+  });
+
+  it("does not mark license-required mode for an unrelated 403", () => {
+    expect(() => unwrapEnvelope({ ok: false, error: "forbidden" }, 403)).toThrow(ApiError);
+    expect(getLicenseRequiredModeSnapshotForTests()).toBe(false);
   });
 });

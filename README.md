@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./app/web/public/brand/kansoku-lockup.svg" alt="Kansoku" width="560">
+  <img src="./app/web/public/brand/kansoku-product-banner.png" alt="Kansoku — 本地优先的 AI 看盘与研究桌面应用" width="100%">
 </p>
 
 # Kansoku

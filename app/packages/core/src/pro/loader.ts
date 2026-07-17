@@ -1,3 +1,4 @@
+import { isAbsolute } from "node:path";
 import { pathToFileURL } from "node:url";
 import type { ProModule } from "@kansoku/pro-api";
 import { registerProModule } from "./registry.js";
@@ -15,11 +16,14 @@ import { registerProModule } from "./registry.js";
 // different directory depth (the Electron main process, via tsdown), that
 // relative arithmetic breaks — such hosts must pass their own app root as
 // `appDir` (e.g. Electron's `app.getAppPath()`) instead.
-function proEntryUrl(appDir?: string): string {
-  if (appDir) {
-    return pathToFileURL([appDir, "..", "pro", "src", "index.js"].join("/")).href;
+function proEntryUrl(appDir?: string, entryFile = "src/index.js"): string {
+  if (isAbsolute(entryFile)) {
+    return pathToFileURL(entryFile).href;
   }
-  return ["..", "..", "..", "..", "pro", "src", "index.js"].join("/");
+  if (appDir) {
+    return pathToFileURL([appDir, "..", "pro", entryFile].join("/")).href;
+  }
+  return ["..", "..", "..", "..", "pro", entryFile].join("/");
 }
 
 // Node's ERR_MODULE_NOT_FOUND message is "Cannot find module '<missing>' imported
@@ -32,11 +36,11 @@ function isProEntryNotFound(error: unknown): boolean {
   const code = (error as NodeJS.ErrnoException).code;
   if (code !== "ERR_MODULE_NOT_FOUND" && code !== "MODULE_NOT_FOUND") return false;
   const missing = /Cannot find module '([^']+)'/.exec(error.message)?.[1];
-  return missing !== undefined && missing.endsWith("/pro/src/index.js");
+  return missing !== undefined && /\/pro\/(src|dist)\/index\.m?[jt]s$/.test(missing);
 }
 
-export async function loadPro(appDir?: string): Promise<boolean> {
-  const entryUrl = proEntryUrl(appDir);
+export async function loadPro(appDir?: string, entryFile?: string): Promise<boolean> {
+  const entryUrl = proEntryUrl(appDir, entryFile);
   try {
     const mod = (await import(entryUrl)) as { default?: ProModule } & Partial<ProModule>;
     const proModule = mod.default ?? (mod as ProModule);

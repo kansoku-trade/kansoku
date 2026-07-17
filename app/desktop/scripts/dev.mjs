@@ -15,7 +15,11 @@ let electron = null;
 let restarting = false;
 let shuttingDown = false;
 
-const tsdown = spawn("pnpm", ["exec", "tsdown", "--watch"], { cwd: desktopRoot, stdio: "inherit" });
+const tsdown = spawn("pnpm", ["exec", "tsdown", "--watch"], {
+  cwd: desktopRoot,
+  stdio: "inherit",
+  env: { ...process.env, KANSOKU_DESKTOP_DEV: "1" },
+});
 tsdown.on("exit", (code) => {
   if (!shuttingDown) shutdown(code ?? 1);
 });
@@ -65,6 +69,10 @@ function watchBundles() {
   for (const dir of [dirname(MAIN_BUNDLE), dirname(PRELOAD_BUNDLE)]) {
     watch(dir, scheduleRestart);
   }
+  // The pro slot loads as TS at runtime (never bundled into main.mjs), so a
+  // bundle-dir watch can't see edits to it — watch the source tree directly.
+  const proSrc = join(desktopRoot, "..", "pro", "src");
+  if (existsSync(proSrc)) watch(proSrc, { recursive: true }, scheduleRestart);
 }
 
 // tsdown `clean: true` wipes both dist dirs on startup and the two configs

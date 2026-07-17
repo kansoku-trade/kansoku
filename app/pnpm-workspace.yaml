@@ -13,6 +13,7 @@ ignoredOptionalDependencies:
 allowBuilds:
   '@google/genai': false
   better-sqlite3: true
+  esbuild: true
   protobufjs: false
 minimumReleaseAgeExclude:
   - '@earendil-works/pi-ai@0.80.6'

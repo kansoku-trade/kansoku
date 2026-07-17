@@ -1,9 +1,12 @@
 import { useSyncExternalStore } from "react";
+import type { LicenseSnapshot } from "../../packages/core/src/contract/license.js";
 import { client } from "./client";
+import { clearLicenseRequired, useLicenseRequiredMode } from "./licenseRequiredMode";
 
 export interface Capabilities {
   pro: boolean | null;
   licensed: boolean;
+  license?: LicenseSnapshot;
 }
 
 const DEFAULT: Capabilities = { pro: null, licensed: false };
@@ -32,6 +35,17 @@ function ensureLoaded(): void {
     });
 }
 
+export function refreshCapabilities(): Promise<void> {
+  clearLicenseRequired();
+  return client.capabilities
+    .get()
+    .then((data) => {
+      capabilities = data;
+      emit();
+    })
+    .catch(() => {});
+}
+
 function subscribe(listener: () => void): () => void {
   listeners.add(listener);
   return () => listeners.delete(listener);
@@ -43,7 +57,10 @@ function getSnapshot(): Capabilities {
 
 export function useCapabilities(): Capabilities {
   ensureLoaded();
-  return useSyncExternalStore(subscribe, getSnapshot);
+  const snapshot = useSyncExternalStore(subscribe, getSnapshot);
+  const licenseRequired = useLicenseRequiredMode();
+  if (licenseRequired && snapshot.licensed) return { ...snapshot, licensed: false };
+  return snapshot;
 }
 
 export function resetCapabilitiesStoreForTests(): void {
