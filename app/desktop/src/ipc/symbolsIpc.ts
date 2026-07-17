@@ -1,6 +1,7 @@
 import { IpcMethod, IpcService } from "electron-ipc-decorator";
 import type { SymbolsApi } from "../../../packages/core/src/contract/index.js";
 import { symbolsService } from "../../../packages/core/src/modules/symbols/symbols.service.js";
+import { requirePro } from "../../../packages/core/src/pro/requirePro.js";
 import { toEnvelope, type WrapEnvelope } from "./envelope.js";
 
 export class SymbolsIpc extends IpcService implements WrapEnvelope<SymbolsApi> {
@@ -68,12 +69,18 @@ export class SymbolsIpc extends IpcService implements WrapEnvelope<SymbolsApi> {
 
   @IpcMethod()
   reassess(input: Parameters<SymbolsApi["reassess"]>[0]) {
-    return toEnvelope("symbols.reassess", () => symbolsService.reassess(input));
+    return toEnvelope("symbols.reassess", () => {
+      requirePro();
+      return symbolsService.reassess(input);
+    });
   }
 
   @IpcMethod()
   reassessStatus(input: Parameters<SymbolsApi["reassessStatus"]>[0]) {
-    return toEnvelope("symbols.reassessStatus", () => symbolsService.reassessStatus(input));
+    return toEnvelope("symbols.reassessStatus", () => {
+      requirePro();
+      return symbolsService.reassessStatus(input);
+    });
   }
 
   @IpcMethod()
@@ -83,12 +90,18 @@ export class SymbolsIpc extends IpcService implements WrapEnvelope<SymbolsApi> {
 
   @IpcMethod()
   deepDive(input: Parameters<SymbolsApi["deepDive"]>[0]) {
-    return toEnvelope("symbols.deepDive", () => symbolsService.deepDive(input));
+    return toEnvelope("symbols.deepDive", () => {
+      requirePro();
+      return symbolsService.deepDive(input);
+    });
   }
 
   @IpcMethod()
   deepDiveStatus(input: Parameters<SymbolsApi["deepDiveStatus"]>[0]) {
-    return toEnvelope("symbols.deepDiveStatus", () => symbolsService.deepDiveStatus(input));
+    return toEnvelope("symbols.deepDiveStatus", () => {
+      requirePro();
+      return symbolsService.deepDiveStatus(input);
+    });
   }
 
   @IpcMethod()

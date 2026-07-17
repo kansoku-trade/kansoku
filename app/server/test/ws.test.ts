@@ -34,6 +34,9 @@ vi.mock("../../packages/core/src/realtime/charts.js", () => ({ subscribeChart: v
 vi.mock("../../packages/core/src/realtime/position.js", () => ({ subscribePosition: vi.fn(() => () => {}) }));
 vi.mock("../../packages/core/src/realtime/quotes.js", () => ({ subscribeQuotes: vi.fn(() => () => {}) }));
 
+const { registerBuiltinPro } = await import("../../packages/core/src/pro/builtin.js");
+registerBuiltinPro();
+
 const { parseWsMessage, handleConnection } = await import("../../packages/core/src/realtime/channelProtocol.js");
 const { attachWs } = await import("../src/realtime/wsHost.js");
 const { emitNotice } = await import("../../packages/core/src/ai/notices.js");

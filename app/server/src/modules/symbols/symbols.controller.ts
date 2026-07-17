@@ -2,6 +2,7 @@ import { Controller, ContextParam, Delete, Get, Param, Post, Query } from "@tsuk
 import type { Context } from "hono";
 import { symbolsService } from "../../../../packages/core/src/modules/symbols/symbols.service.js";
 import { ClientError } from "../../../../packages/core/src/errors.js";
+import { requirePro } from "../../../../packages/core/src/pro/requirePro.js";
 
 @Controller("symbols")
 export class SymbolsController {
@@ -79,12 +80,14 @@ export class SymbolsController {
 
   @Post("/:sym/reassess")
   async reassess(@Param("sym") sym: string) {
+    requirePro();
     const data = await symbolsService.reassess({ sym });
     return { ok: true, data };
   }
 
   @Get("/:sym/reassess/status")
   async getReassessStatus(@Param("sym") sym: string) {
+    requirePro();
     const data = await symbolsService.reassessStatus({ sym });
     return { ok: true, data };
   }
@@ -96,6 +99,7 @@ export class SymbolsController {
 
   @Post("/:sym/deep-dive")
   async postDeepDive(@Param("sym") sym: string, @ContextParam() ctx: Context) {
+    requirePro();
     const result = await symbolsService.deepDive({ sym });
     if (result.started) return ctx.json({ ok: true }, 202);
     if (result.reason === "busy") {
@@ -106,6 +110,7 @@ export class SymbolsController {
 
   @Get("/:sym/deep-dive/status")
   async getDeepDiveStatus(@Param("sym") sym: string) {
+    requirePro();
     return symbolsService.deepDiveStatus({ sym });
   }
 

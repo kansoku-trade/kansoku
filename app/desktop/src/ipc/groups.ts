@@ -1,5 +1,6 @@
 export const IPC_GROUPS = [
   "assistant",
+  "capabilities",
   "charts",
   "chat",
   "symbols",

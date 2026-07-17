@@ -1,5 +1,6 @@
 import { annotationsRoutes, type AnnotationsApi } from "./annotations.js";
 import { assistantRoutes, type AssistantApi } from "./assistant.js";
+import { capabilitiesRoutes, type CapabilitiesApi } from "./capabilities.js";
 import { chartsRoutes, type ChartsApi } from "./charts.js";
 import { chatRoutes, type ChatApi } from "./chat.js";
 import { credentialsRoutes, type CredentialsApi } from "./credentials.js";
@@ -13,6 +14,7 @@ import { symbolsRoutes, type SymbolsApi } from "./symbols.js";
 
 export interface AppApi {
   assistant: AssistantApi;
+  capabilities: CapabilitiesApi;
   charts: ChartsApi;
   chat: ChatApi;
   symbols: SymbolsApi;
@@ -28,6 +30,7 @@ export interface AppApi {
 
 export const allRoutes = {
   assistant: assistantRoutes,
+  capabilities: capabilitiesRoutes,
   charts: chartsRoutes,
   chat: chatRoutes,
   symbols: symbolsRoutes,
@@ -43,6 +46,7 @@ export const allRoutes = {
 
 export * from "./annotations.js";
 export * from "./assistant.js";
+export * from "./capabilities.js";
 export * from "./charts.js";
 export * from "./chat.js";
 export * from "./credentials.js";

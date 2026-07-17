@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useQuery } from "../../apiHooks";
+import { useCapabilities } from "../../capabilitiesStore";
 import { client } from "../../client";
 import { navigate } from "../../router";
 import { Button, Card, ErrorBox, SectionTitle } from "../../ui";
@@ -101,6 +102,28 @@ function SettingsWorkspace({
   );
 }
 
+function SettingsWorkspaceNoAi() {
+  return (
+    <div className="settings-workspace">
+      <div className="settings-main-column">
+        <Card className="settings-provider-card">此构建不含 AI 功能</Card>
+      </div>
+      <div className="settings-side-column">
+        <TimeDisplaySettingsCard />
+        <WatchedMarketsCard />
+        <Card className="settings-connections-card">
+          <div className="settings-card-heading">
+            <SectionTitle>连接</SectionTitle>
+          </div>
+          <LongbridgeSection />
+          <DataRootSection />
+          <DiagnosticsSection />
+        </Card>
+      </div>
+    </div>
+  );
+}
+
 function SettingsBackLink() {
   return (
     <a
@@ -120,27 +143,28 @@ function SettingsBackLink() {
 
 export function SettingsPage() {
   useTitle("设置");
+  const { pro } = useCapabilities();
   const { data: settings, error: settingsError, reload: reloadSettings } = useQuery<AiSettings>(
-    "settings.getAi",
+    pro ? "settings.getAi" : null,
     () => client.settings.getAi(),
   );
   const { data: catalog, error: catalogError, reload: reloadCatalog } = useQuery<Catalog>(
-    "settings.getCatalog",
+    pro ? "settings.getCatalog" : null,
     () => client.settings.getCatalog(),
   );
   const { data: usage, error: usageError, reload: reloadUsage } = useQuery<UsageToday>(
-    "settings.getUsageToday",
+    pro ? "settings.getUsageToday" : null,
     () => client.settings.getUsageToday(),
   );
   const { data: lobehubAccount, reload: reloadLobeHubAccount } = useQuery<LobeHubAccount>(
-    "lobehub.getAccount",
+    pro ? "lobehub.getAccount" : null,
     () => client.lobehub.getAccount(),
   );
   const {
     data: lobehubCredits,
     error: lobehubCreditsError,
     reload: reloadLobeHubCredits,
-  } = useQuery<LobeHubCredits>("lobehub.getCredits", () => client.lobehub.getCredits());
+  } = useQuery<LobeHubCredits>(pro ? "lobehub.getCredits" : null, () => client.lobehub.getCredits());
 
   const reloadAll = () => {
     reloadSettings();
@@ -148,6 +172,20 @@ export function SettingsPage() {
     reloadLobeHubAccount();
     reloadLobeHubCredits();
   };
+
+  if (!pro) {
+    return (
+      <div className="page settings-page">
+        <SettingsBackLink />
+        <h1>设置</h1>
+        <div className="settings-page-subtitle">显示与连接</div>
+        <SettingsWorkspaceNoAi />
+        <div className="settings-about-link">
+          <a href="/about">关于 Kansoku · 版本 {__APP_VERSION__}</a>
+        </div>
+      </div>
+    );
+  }
 
   if (settingsError || catalogError) {
     return (

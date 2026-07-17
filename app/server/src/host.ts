@@ -5,7 +5,6 @@ import { join } from "node:path";
 import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { Hono } from "hono";
-import { createKernel } from "./bootstrap.js";
 import { BASE_URL, LEGACY_CHARTS_DIR, WEB_DIST } from "../../packages/core/src/env.js";
 import { attachWs } from "./realtime/wsHost.js";
 
@@ -14,6 +13,7 @@ export interface HostHandle {
 }
 
 export async function startHost(port: number, isDevKernel: boolean): Promise<HostHandle> {
+  const { createKernel } = await import("./bootstrap.js");
   const kernel = await createKernel();
   const apiApp = kernel.app.getInstance();
 
