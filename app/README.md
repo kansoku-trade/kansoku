@@ -219,6 +219,18 @@ pnpm typecheck      # 两个包的 tsc
 
 基准数据在 `server/test/fixtures/`。改指标算法前先想清楚：测试挂了说明和 Python 版行为不一致，要么是 bug，要么就该同步更新基准并在提交信息里说明。
 
+## 开源核心与 Pro 插槽（open-core）
+
+这个仓库是免费版（社区构建）：图表、实时行情、journal 全部功能齐全，从源码就能完整跑起来。AI 功能（点评员/分析员/deep-dive/追问/收盘小结/scheduler）是付费能力，代码不在这个公开仓库里——它们活在一个独立的私有仓库 `@kansoku/pro`，通过一个插槽机制接入。
+
+**插槽怎么接**：`app/pro/` 是一个 gitignored 目录，里面放的是 `@kansoku/pro` 这个独立 git 仓库（官方发行版打包时才会拉进来）。`packages/core/src/pro/loader.ts` 在 server（`runtimeInit.ts`）和 desktop（`boot/kernel.ts`）启动早期各自 await 一次动态 import；`app/pro` 不存在或包坏了，import 直接失败被 catch 住，落进免费模式（一行 info 日志，不报错不刷屏）。公开代码永远不会静态 import `@kansoku/pro`——一行都没有，这样社区 clone 下来正常 `pnpm install`/`typecheck`/`build`/`test`/`dev` 全部照常跑通，唯一区别是 AI 入口在 UI 上不出现。
+
+**接口约定**：`packages/pro-api`（`@kansoku/pro-api`，公开、纯类型包）定义了 pro 包要交出什么——`tsukiModules`（server 路由模块）、`ipcServiceClasses`（desktop IPC）、`channels`（realtime 频道注册）、`hooks`（非 AI 代码需要反查的东西，比如宏观事件过滤、跟进状态、点评列表）、`aiSettings`（设置页 AI 分节的委托对象）、`startScheduler`、`initRuntime`。`packages/core/src/pro/registry.ts` 持有当前注册的 pro 模块，`hooks` 每一项都有免费模式下的默认实现（宏观过滤直通、跟进/点评列表返回空、scheduler 空转）——所以就算 pro 缺失，调用这些 hook 的代码也不用到处判空。
+
+**能力广播**：`GET /api/capabilities` 返回 `{ pro, licensed }`（IPC 下同名方法），web 启动时拉一次存进 `capabilitiesStore`，QuickBar、cockpit 的 ChatDock、settings 的 AI 分节等入口都按这个 store 显隐——`pro` 为 false 时整个 AI 相关 UI 都不出现，不会看到一个点了没用的按钮。当前阶段 pro 包加载成功就直接 `{pro: true, licensed: true}`，订阅授权（licensed 的真实语义）是后续阶段的事。
+
+**官方构建怎么把 pro 接进来**：`app/scripts/fetch-pro.sh` 是一个幂等的 clone/pull 脚本，读 `KANSOKU_PRO_REPO_URL` 环境变量决定拉哪个仓库；变量没设时脚本直接退出、留在免费模式（这也是社区贡献者的默认状态）。`desktop-release.yml` 里挂了这一步，但门槛是这个变量——今天还没配置，所以桌面发行版目前也是社区构建。
+
 ## 后续规划
 
 多图对比、交互标注、日志浏览。
