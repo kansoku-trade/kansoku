@@ -186,17 +186,17 @@ export function ResearchAssistant({
   onDocumentChanged: (document?: ResearchDocument) => void;
 }) {
   const { locked } = useFeatureGuard();
-  const conversation = useResearchChatSession(document.path);
+  const conversation = useResearchChatSession(document.path, !locked);
   const [text, setText] = useState("");
   const previousBusyRef = useRef(false);
   const pendingCardRefs = useRef(new Map<string, HTMLButtonElement>());
   const [bannerVisible, setBannerVisible] = useState(false);
   const { data: edits, reload: reloadEdits } = useQuery<ResearchEditProposal[]>(
-    `research.edits:${document.path}`,
+    locked ? null : `research.edits:${document.path}`,
     () => client.research.listEdits({ path: document.path }),
     { cache: false },
   );
-  const refresh = useResearchRefresh(document.path, reloadEdits);
+  const refresh = useResearchRefresh(document.path, reloadEdits, !locked);
 
   useEffect(() => {
     if (conversation.loaded && !conversation.session) conversation.ensureSuggestions();
@@ -311,6 +311,7 @@ export function ResearchAssistant({
   if (locked) {
     return (
       <div className="research-assistant research-assistant--locked">
+        <RelatedMaterialsCard selected={selected} related={related} onSelect={onSelect} />
         <LockedAiNotice message="研究库 AI（刷新文档 / 编辑审阅 / 研究对话）需要有效授权" />
       </div>
     );

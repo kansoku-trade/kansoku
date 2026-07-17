@@ -123,7 +123,7 @@ export interface ChatSessionState {
   ensureSuggestions: () => void;
 }
 
-function useConversationSession(kind: ConversationKind, id: string): ChatSessionState {
+function useConversationSession(kind: ConversationKind, id: string, enabled = true): ChatSessionState {
   const adapter = conversationAdapters[kind];
   const [session, setSession] = useState<ChatSessionInfo | null>(null);
   const [rows, setRows] = useState<ChatRow[]>([]);
@@ -176,6 +176,7 @@ function useConversationSession(kind: ConversationKind, id: string): ChatSession
   );
 
   useEffect(() => {
+    if (!enabled) return;
     sendPendingRef.current = false;
     suggestionsRequestedRef.current = false;
     setSession(null);
@@ -189,9 +190,10 @@ function useConversationSession(kind: ConversationKind, id: string): ChatSession
     setSuggestions([]);
     setUsage(null);
     reload();
-  }, [id, reload, streamReset]);
+  }, [id, enabled, reload, streamReset]);
 
   useEffect(() => {
+    if (!enabled) return;
     let connectedOnce = false;
     const off = subscribeChannel(
       adapter.channel(id),
@@ -255,7 +257,7 @@ function useConversationSession(kind: ConversationKind, id: string): ChatSession
       },
     );
     return off;
-  }, [adapter, id, reload, streamFlush, streamFinish, streamPush, streamReset]);
+  }, [adapter, id, enabled, reload, streamFlush, streamFinish, streamPush, streamReset]);
 
   const send = useCallback(
     async (text: string): Promise<ChatSendResult> => {
@@ -341,8 +343,8 @@ export function useChatSession(chartId: string): ChatSessionState {
   return useConversationSession("chart", chartId);
 }
 
-export function useResearchChatSession(path: string): ChatSessionState {
-  return useConversationSession("research", path);
+export function useResearchChatSession(path: string, enabled = true): ChatSessionState {
+  return useConversationSession("research", path, enabled);
 }
 
 export function useAssistantChatSession(sessionId: string): ChatSessionState {

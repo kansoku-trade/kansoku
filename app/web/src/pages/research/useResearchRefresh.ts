@@ -9,9 +9,9 @@ type RefreshEnvelope =
   | { type: "init"; task: ResearchRefreshTask | null }
   | { type: "task"; task: ResearchRefreshTask };
 
-export function useResearchRefresh(path: string, onProposalReady: () => void) {
+export function useResearchRefresh(path: string, onProposalReady: () => void, enabled = true) {
   const query = useQuery<ResearchRefreshTask | null>(
-    `research.refresh:${path}`,
+    enabled ? `research.refresh:${path}` : null,
     () => client.research.getRefresh({ path }),
     { cache: false },
   );
@@ -21,6 +21,7 @@ export function useResearchRefresh(path: string, onProposalReady: () => void) {
   const seenProposalRef = useRef<string | null>(null);
 
   useEffect(() => {
+    if (!enabled) return;
     let connectedOnce = false;
     return subscribeChannel(
       { kind: "research-refresh", path },
@@ -34,7 +35,7 @@ export function useResearchRefresh(path: string, onProposalReady: () => void) {
         connectedOnce = true;
       },
     );
-  }, [path, query.reload]);
+  }, [path, enabled, query.reload]);
 
   const task = liveTask ?? query.data;
   const proposalId = task?.status === "completed" ? task.report?.proposalId ?? null : null;
