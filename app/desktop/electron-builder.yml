@@ -13,6 +13,10 @@ afterAllArtifactBuild: scripts/afterAllArtifactBuild.cjs
 files:
   - dist-main/**
   - dist-preload/**
+  # Pro slot build staged by scripts/stagePro.mjs — must live inside the asar
+  # so its external @tsuki-hono imports resolve to the same node_modules copy
+  # the main bundle uses (single instance). Matches nothing on free builds.
+  - pro/dist/**
   - native/sparkle-bridge/build/Release/sparkle_bridge.node
   - package.json
   - "!**/*.ts"

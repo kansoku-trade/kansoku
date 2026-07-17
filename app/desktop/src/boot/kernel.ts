@@ -43,7 +43,11 @@ export async function bootKernel() {
       shell.openExternal(url).catch(() => {});
     },
     proAppDir: app.getAppPath(),
-    proEntry: app.isPackaged ? "dist/index.js" : "src/index.ts",
+    productionHost: app.isPackaged,
+    // Packaged builds stage pro INSIDE app.asar (see desktop/scripts/
+    // stagePro.mjs) — an absolute entry, not the ../pro sibling that the
+    // appDir-relative form resolves; dev keeps the sibling slot checkout.
+    proEntry: app.isPackaged ? join(app.getAppPath(), "pro", "dist", "index.mjs") : "src/index.ts",
   });
   // bootstrap.js is imported lazily, after initServerRuntime() has awaited
   // loadPro() above, so AppModule's registry-derived AI module composition

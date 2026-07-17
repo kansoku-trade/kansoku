@@ -98,12 +98,12 @@ jobs:
             app/pnpm-lock.yaml
             pnpm-lock.yaml
 
-      # app/pro (@kansoku/pro, the AI slot) has no remote yet and CI has no
-      # deploy key for it — this step is a no-op today (KANSOKU_PRO_REPO_URL
-      # unset) and the release stays free-only. Once the private repo exists,
-      # set KANSOKU_PRO_REPO_URL + a deploy key as repo secrets and this step
-      # starts pulling app/pro in before install, so pnpm picks it up as a
-      # workspace member.
+      # app/pro (@kansoku/pro, the AI slot) lives in a private repo. Until
+      # KANSOKU_PRO_REPO_URL + a deploy key are configured as repo secrets,
+      # this step is a no-op and the release stays free-only. Once configured
+      # it pulls app/pro in before install, pnpm picks it up as a workspace
+      # member, and `pnpm package` (via scripts/stagePro.mjs) builds and
+      # stages pro into the asar.
       - name: fetch pro slot (optional — free build until KANSOKU_PRO_REPO_URL is configured)
         env:
           KANSOKU_PRO_REPO_URL: ${{ secrets.KANSOKU_PRO_REPO_URL }}

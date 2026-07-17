@@ -38,6 +38,9 @@ importers:
       electron-window-state:
         specifier: 5.0.3
         version: 5.0.3
+      hono:
+        specifier: 4.12.30
+        version: 4.12.30
       reflect-metadata:
         specifier: 0.2.2
         version: 0.2.2
@@ -158,6 +161,9 @@ importers:
       reflect-metadata:
         specifier: 0.2.2
         version: 0.2.2
+      tsdown:
+        specifier: ^0.22.8
+        version: 0.22.8(tsx@4.23.1)(typescript@7.0.2)
       typescript:
         specifier: ^7.0.2
         version: 7.0.2

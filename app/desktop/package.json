@@ -16,7 +16,7 @@
     "typecheck": "tsc --noEmit",
     "generate-icon": "bash scripts/generate-icon.sh",
     "prepackage": "pnpm --filter @kansoku/web build && (test -f ../web/dist/index.html || (echo 'web/dist/index.html missing after build' && exit 1))",
-    "package": "tsdown && node scripts/stageSkills.mjs && pnpm rebuild-native && pnpm build:native && electron-builder --mac dmg zip --arm64"
+    "package": "tsdown && node scripts/stageSkills.mjs && node scripts/stagePro.mjs && pnpm rebuild-native && pnpm build:native && electron-builder --mac dmg zip --arm64"
   },
   "dependencies": {
     "@kansoku/pro-api": "workspace:*",
@@ -26,6 +26,7 @@
     "electron-context-menu": "^4.1.2",
     "electron-ipc-decorator": "^1.0.1",
     "electron-window-state": "5.0.3",
+    "hono": "4.12.30",
     "reflect-metadata": "0.2.2"
   },
   "devDependencies": {
