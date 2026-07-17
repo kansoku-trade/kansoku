@@ -8,6 +8,8 @@ export interface Capabilities {
 
 const DEFAULT: Capabilities = { pro: null, licensed: false };
 
+const RETRY_DELAY_MS = 5000;
+
 let capabilities: Capabilities = DEFAULT;
 let inflight: Promise<void> | null = null;
 const listeners = new Set<() => void>();
@@ -24,7 +26,10 @@ function ensureLoaded(): void {
       capabilities = data;
       emit();
     })
-    .catch(() => {});
+    .catch(() => {
+      inflight = null;
+      setTimeout(ensureLoaded, RETRY_DELAY_MS);
+    });
 }
 
 function subscribe(listener: () => void): () => void {
