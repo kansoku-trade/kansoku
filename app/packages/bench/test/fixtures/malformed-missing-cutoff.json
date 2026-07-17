@@ -1,0 +1,67 @@
+{
+  "id": "swing-TEST-01",
+  "bank": "swing",
+  "symbol": "MU.US",
+  "layer": "high-vol-tech",
+  "adversarial": false,
+  "fixtures": {
+    "kline": {
+      "day": [
+        {
+          "time": "2026-03-19",
+          "open": "100",
+          "high": "102",
+          "low": "99",
+          "close": "101",
+          "volume": "1000000"
+        },
+        {
+          "time": "2026-03-20",
+          "open": "101",
+          "high": "103",
+          "low": "100",
+          "close": "102",
+          "volume": "1200000"
+        }
+      ],
+      "week": []
+    },
+    "indicators": {
+      "rsi14": 55.2
+    },
+    "quote": {
+      "last": 102,
+      "changePct": 1.5
+    },
+    "capitalFlow": {
+      "netInflowUsd": 12345
+    },
+    "news": [
+      {
+        "id": "n1",
+        "title": "MU beats estimates",
+        "published_at": "2026-03-19T21:00:00-04:00",
+        "url": "https://example.com/n1"
+      }
+    ],
+    "fundamentals": {
+      "peRatio": 18.4
+    },
+    "calendar": {
+      "nextEarnings": "2026-06-25"
+    }
+  },
+  "replay": {
+    "horizonBars": 20,
+    "bars": [
+      {
+        "time": "2026-03-23",
+        "open": "102",
+        "high": "104",
+        "low": "101",
+        "close": "103",
+        "volume": "1100000"
+      }
+    ]
+  }
+}
