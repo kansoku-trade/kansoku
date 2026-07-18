@@ -72,6 +72,21 @@ describe("WatchBoard follow toggle license gate", () => {
     expect(getLicenseModalStateForTests()).toEqual({ open: true, trigger: "guard" });
   });
 
+  it("allows turning off an already-on follow when pro but unlicensed", async () => {
+    capabilities = { features: { "symbol-follow": "locked" } };
+    stopFollow.mockResolvedValue({ following: false });
+    const followingRow: OverviewRow = { ...row, ai_following: true };
+    const followingBoard: OverviewBoard = { ...board, rows: [followingRow] };
+    renderWithClient(<WatchBoard board={followingBoard} error={null} compact={false} />);
+
+    const toggle = await screen.findByLabelText("持续跟进 MRVL.US 的 AI 点评");
+    fireEvent.click(toggle);
+
+    await waitFor(() => expect(stopFollow).toHaveBeenCalledWith({ sym: "MRVL.US" }));
+    expect(startFollow).not.toHaveBeenCalled();
+    expect(getLicenseModalStateForTests().open).toBe(false);
+  });
+
   it("toggles normally when licensed", async () => {
     capabilities = { features: { "symbol-follow": "active" } };
     startFollow.mockResolvedValue({ following: true });

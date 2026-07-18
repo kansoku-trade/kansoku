@@ -43,11 +43,12 @@ function FollowToggle({
     event.preventDefault();
     event.stopPropagation();
     if ((event.target as Element).closest(".ui-switch") || busy) return;
-    if (locked) {
+    const next = !active;
+    if (locked && next) {
       guard(() => {});
       return;
     }
-    void change(!active);
+    void change(next);
   };
 
   return (
@@ -67,7 +68,13 @@ function FollowToggle({
         ariaLabel={`持续跟进 ${symbol} 的 AI 点评`}
         checked={active}
         disabled={busy}
-        onCheckedChange={locked ? () => guard(() => {}) : (checked) => void change(checked)}
+        onCheckedChange={(checked) => {
+          if (locked && checked) {
+            guard(() => {});
+            return;
+          }
+          void change(checked);
+        }}
       />
     </span>
   );
