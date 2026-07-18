@@ -6,11 +6,20 @@ import { Value } from "typebox/value";
 import { runBackfillNews } from "./generate/backfillPipeline.js";
 import type { NewsSourceMode } from "./generate/backfillPipeline.js";
 import { fetchArchiveFileLive, readArchiveCsvLive } from "./generate/archiveSource.js";
+import { generateEpisodeCase } from "./episode/generate.js";
+import { auditEpisodeQuestionLive } from "./episode/audit.js";
+import { readEpisodeAnswers } from "./episode/results.js";
+import {
+  renderEpisodeReportHtml,
+  type EpisodeReportConfigSnapshot,
+  type EpisodeReportTraceLine,
+} from "./episode/report.js";
+import type { EpisodeDataAudit } from "./episode/audit.js";
 import { fetchGdeltArticlesLive, fetchEdgarFilingsLive } from "./generate/newsSource.js";
 import { runGenerate } from "./generate/pipeline.js";
 import { fetchCalendarLive, fetchKlineHistoryLive } from "./generate/source.js";
 import { DEFAULT_SYMBOLS, layerForSymbol, type SymbolSpec } from "./generate/symbols.js";
-import { listQuestions } from "./dataset/loader.js";
+import { listQuestions, loadQuestionForScorer } from "./dataset/loader.js";
 import { type ReportConfigSnapshot, renderReport } from "./report/render.js";
 import { parseBaselineArgs } from "./baseline/args.js";
 import { runBenchBaseline } from "./baseline/run.js";
@@ -18,13 +27,27 @@ import { type Scores, scoresSchema } from "./schema/scores.js";
 import { runGold } from "./score/gold.js";
 import { runScore } from "./score/score.js";
 
-const SUBCOMMANDS = ["generate", "run", "baseline", "score", "gold", "report", "backfill-news"] as const;
+const SUBCOMMANDS = [
+  "generate",
+  "generate-episode-case",
+  "verify-episode-case",
+  "run",
+  "baseline",
+  "score",
+  "gold",
+  "report",
+  "backfill-news",
+] as const;
 type Subcommand = (typeof SUBCOMMANDS)[number];
 
 const USAGE = `Usage: bench <command> [options]
 
 Commands:
   generate       Build benchmark question datasets
+  generate-episode-case
+                 Build one multi-timeframe episode case (1h/day/week)
+  verify-episode-case
+                 Audit one episode case against fresh Longbridge CLI data
   run            (moved) drive models against the question bank — run from app/pro
   baseline       Emit deterministic baseline answer sheets
   score          Score recorded answer sheets
@@ -244,6 +267,128 @@ async function runGenerateCommand(argv: string[]): Promise<void> {
   process.stdout.write(`\nwritten: ${result.written.length}, skipped: ${result.skipped.length}\n`);
 }
 
+interface GenerateEpisodeCaseArgs {
+  symbol: string;
+  cutoffDate: string;
+  version: string;
+  horizonSessions: number;
+}
+
+function parseGenerateEpisodeCaseArgs(argv: string[]): GenerateEpisodeCaseArgs {
+  let symbol: string | undefined;
+  let cutoffDate: string | undefined;
+  let version: string | undefined;
+  let horizonSessions = 40;
+
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i];
+    switch (arg) {
+      case "--symbol":
+        symbol = argv[++i];
+        break;
+      case "--cutoff":
+        cutoffDate = argv[++i];
+        break;
+      case "--version":
+        version = argv[++i];
+        break;
+      case "--horizon-sessions":
+        horizonSessions = Number(argv[++i]);
+        break;
+      default:
+        throw new Error(`unknown generate-episode-case option: ${arg}`);
+    }
+  }
+
+  if (!symbol) throw new Error("--symbol is required");
+  if (!cutoffDate) throw new Error("--cutoff is required");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(cutoffDate) || Number.isNaN(Date.parse(`${cutoffDate}T00:00:00Z`))) {
+    throw new Error(`--cutoff must be YYYY-MM-DD, got: ${cutoffDate}`);
+  }
+  if (!version) throw new Error("--version is required");
+  if (!Number.isInteger(horizonSessions) || horizonSessions < 1) {
+    throw new Error(`--horizon-sessions must be a positive integer, got: ${horizonSessions}`);
+  }
+
+  layerForSymbol(symbol);
+  return { symbol, cutoffDate, version, horizonSessions };
+}
+
+async function runGenerateEpisodeCaseCommand(argv: string[]): Promise<void> {
+  const args = parseGenerateEpisodeCaseArgs(argv);
+  const result = await generateEpisodeCase({
+    symbol: args.symbol,
+    layer: layerForSymbol(args.symbol),
+    cutoffDate: args.cutoffDate,
+    version: args.version,
+    horizonSessions: args.horizonSessions,
+    datasetsRoot: DEFAULT_DATASETS_ROOT,
+    fetchKlineHistory: fetchKlineHistoryLive,
+    fetchCalendar: fetchCalendarLive,
+    log: (line) => process.stdout.write(`${line}\n`),
+  });
+  process.stdout.write(`\nwritten: ${result.file}\n`);
+}
+
+interface VerifyEpisodeCaseArgs {
+  datasetVersion: string;
+  bank: string;
+  questionId: string;
+  runId?: string;
+}
+
+function parseVerifyEpisodeCaseArgs(argv: string[]): VerifyEpisodeCaseArgs {
+  let datasetVersion: string | undefined;
+  let bank = "swing";
+  let questionId: string | undefined;
+  let runId: string | undefined;
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i];
+    switch (arg) {
+      case "--dataset-version":
+        datasetVersion = argv[++i];
+        break;
+      case "--bank":
+        bank = argv[++i];
+        break;
+      case "--question":
+        questionId = argv[++i];
+        break;
+      case "--run-id":
+        runId = argv[++i];
+        break;
+      default:
+        throw new Error(`unknown verify-episode-case option: ${arg}`);
+    }
+  }
+  if (!datasetVersion) throw new Error("--dataset-version is required");
+  if (!questionId) throw new Error("--question is required");
+  return { datasetVersion, bank, questionId, runId };
+}
+
+async function runVerifyEpisodeCaseCommand(argv: string[]): Promise<void> {
+  const args = parseVerifyEpisodeCaseArgs(argv);
+  const question = await loadQuestionForScorer(
+    DEFAULT_DATASETS_ROOT,
+    args.datasetVersion,
+    args.bank,
+    args.questionId,
+  );
+  const audit = await auditEpisodeQuestionLive(question, fetchKlineHistoryLive);
+  if (args.runId) {
+    const output = join(DEFAULT_RESULTS_ROOT, args.runId, "data-audit.json");
+    await fs.mkdir(dirname(output), { recursive: true });
+    await fs.writeFile(output, `${JSON.stringify(audit, null, 2)}\n`, "utf8");
+    process.stdout.write(`audit written: ${output}\n`);
+  }
+  const failed = audit.checks.filter((check) => check.status === "fail");
+  process.stdout.write(
+    `audit ${audit.questionId}: ${audit.checks.length - failed.length}/${audit.checks.length} checks passed\n`,
+  );
+  for (const check of failed) process.stderr.write(`FAIL ${check.id}: ${check.detail ?? check.label}\n`);
+  if (failed.length > 0) process.exitCode = 1;
+}
+
 interface BackfillNewsArgs {
   version: string;
   bank: string;
@@ -346,9 +491,57 @@ async function readJsonFile(file: string): Promise<unknown> {
   return JSON.parse(raw) as unknown;
 }
 
+async function readEpisodeTraceLines(file: string): Promise<EpisodeReportTraceLine[]> {
+  const raw = await fs.readFile(file, "utf8").catch(() => null);
+  if (raw == null) return [];
+  const lines: EpisodeReportTraceLine[] = [];
+  for (const line of raw.split("\n")) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    try {
+      const parsed = JSON.parse(trimmed) as unknown;
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        lines.push(parsed as EpisodeReportTraceLine);
+      }
+    } catch {
+      // A malformed auxiliary trace line must not prevent the benchmark result report from rendering.
+    }
+  }
+  return lines;
+}
+
 async function runReportCommand(argv: string[]): Promise<void> {
   const args = parseReportArgs(argv);
   const runDir = join(DEFAULT_RESULTS_ROOT, args.runId);
+  const config = ((await readJsonFile(join(runDir, "config.json"))) ?? {}) as ReportConfigSnapshot & EpisodeReportConfigSnapshot;
+  const episodesFile = join(runDir, "episodes.jsonl");
+  const hasEpisodes = await fs.access(episodesFile).then(() => true, () => false);
+  if (hasEpisodes) {
+    const answers = await readEpisodeAnswers(episodesFile);
+    const datasetVersion = config.datasetVersion ?? config.config?.datasetVersion;
+    const bank = config.bank ?? config.config?.bank ?? "swing";
+    if (!datasetVersion) throw new Error(`datasetVersion missing from config.json for run ${args.runId}`);
+    const questions = new Map();
+    for (const questionId of new Set(answers.map((answer) => answer.questionId))) {
+      questions.set(
+        questionId,
+        await loadQuestionForScorer(DEFAULT_DATASETS_ROOT, datasetVersion, bank, questionId),
+      );
+    }
+    const rawAudit = await readJsonFile(join(runDir, "data-audit.json"));
+    const audits = rawAudit == null ? [] : (Array.isArray(rawAudit) ? rawAudit : [rawAudit]) as EpisodeDataAudit[];
+    const traces = new Map<string, EpisodeReportTraceLine[]>();
+    for (const traceRef of new Set(answers.map((answer) => answer.traceRef).filter(Boolean))) {
+      traces.set(traceRef, await readEpisodeTraceLines(join(runDir, traceRef)));
+    }
+    const { html, summary } = renderEpisodeReportHtml({ answers, questions, config, audits, traces });
+    await fs.writeFile(join(runDir, "report.html"), html, "utf8");
+    await fs.writeFile(join(runDir, "episode-report-summary.json"), `${JSON.stringify(summary, null, 2)}\n`, "utf8");
+    process.stdout.write(
+      `episode report ${args.runId}: ${answers.length} cases -> report.html, episode-report-summary.json\n`,
+    );
+    return;
+  }
   const rawScores = await readJsonFile(join(runDir, "scores.json"));
   if (rawScores == null) throw new Error(`scores.json not found for run ${args.runId} (run "bench score" first)`);
   if (!Value.Check(scoresSchema, rawScores)) {
@@ -356,8 +549,6 @@ async function runReportCommand(argv: string[]): Promise<void> {
     throw new Error(`invalid scores.json: ${first?.instancePath ?? "(root)"} ${first?.message ?? "schema mismatch"}`);
   }
   const scores = rawScores as Scores;
-  const config = ((await readJsonFile(join(runDir, "config.json"))) ?? {}) as ReportConfigSnapshot;
-
   const { markdown, summary } = renderReport(scores, config);
   await fs.writeFile(join(runDir, "report.md"), markdown, "utf8");
   await fs.writeFile(join(runDir, "report-summary.json"), `${JSON.stringify(summary, null, 2)}\n`, "utf8");
@@ -388,6 +579,8 @@ async function main(argv: string[]): Promise<void> {
 
   const handlers: Partial<Record<Subcommand, (argv: string[]) => Promise<void>>> = {
     generate: runGenerateCommand,
+    "generate-episode-case": runGenerateEpisodeCaseCommand,
+    "verify-episode-case": runVerifyEpisodeCaseCommand,
     run: async () => runRunCommand(),
     baseline: runBaselineCommand,
     score: runScoreCommand,

@@ -127,3 +127,63 @@ describe("bench generate argument validation", () => {
     expect(result.stderr).toContain("unknown generate option: --bogus");
   });
 });
+
+describe("bench generate-episode-case argument validation", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("requires a symbol", async () => {
+    const result = await runMain(["generate-episode-case", "--cutoff", "2026-03-25", "--version", "v2"]);
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("--symbol is required");
+  });
+
+  it("validates the cutoff format before fetching data", async () => {
+    const result = await runMain([
+      "generate-episode-case",
+      "--symbol",
+      "MU.US",
+      "--cutoff",
+      "03/25/2026",
+      "--version",
+      "v2",
+    ]);
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("--cutoff must be YYYY-MM-DD");
+  });
+
+  it("rejects a non-positive session horizon", async () => {
+    const result = await runMain([
+      "generate-episode-case",
+      "--symbol",
+      "MU.US",
+      "--cutoff",
+      "2026-03-25",
+      "--version",
+      "v2",
+      "--horizon-sessions",
+      "0",
+    ]);
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("--horizon-sessions must be a positive integer");
+  });
+});
+
+describe("bench verify-episode-case argument validation", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("requires a dataset version", async () => {
+    const result = await runMain(["verify-episode-case", "--question", "swing-MU-01"]);
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("--dataset-version is required");
+  });
+
+  it("requires a question id", async () => {
+    const result = await runMain(["verify-episode-case", "--dataset-version", "v2"]);
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("--question is required");
+  });
+});

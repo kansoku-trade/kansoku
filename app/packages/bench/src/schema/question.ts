@@ -7,6 +7,14 @@ const ISO_DATETIME_PATTERN =
 
 const jsonRecordSchema = Type.Record(Type.String(), Type.Unknown());
 
+const replayRollupSchema = Type.Object(
+  {
+    availableAt: Type.String({ pattern: ISO_DATETIME_PATTERN }),
+    bar: barSchema,
+  },
+  { additionalProperties: false },
+);
+
 const fixturesSchema = Type.Object(
   {
     kline: Type.Record(Type.String(), Type.Array(barSchema)),
@@ -22,8 +30,21 @@ const fixturesSchema = Type.Object(
 
 const replaySchema = Type.Object(
   {
+    basePeriod: Type.Optional(Type.Union([Type.Literal("1h"), Type.Literal("day")])),
+    decisionExpiryBars: Type.Optional(Type.Integer({ minimum: 1 })),
+    entryExpiryBars: Type.Optional(Type.Integer({ minimum: 1 })),
+    horizonSessions: Type.Optional(Type.Integer({ minimum: 1 })),
     horizonBars: Type.Integer({ minimum: 1 }),
     bars: Type.Array(barSchema),
+    rollups: Type.Optional(
+      Type.Object(
+        {
+          day: Type.Array(replayRollupSchema),
+          week: Type.Array(replayRollupSchema),
+        },
+        { additionalProperties: false },
+      ),
+    ),
   },
   { additionalProperties: false },
 );
