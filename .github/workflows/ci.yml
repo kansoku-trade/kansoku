@@ -62,6 +62,12 @@ jobs:
       - name: install dependencies
         run: pnpm install --frozen-lockfile
 
+      # the prepare script above creates .agents/skills (third-party copies only),
+      # which un-skips agentsSkillsParity.test.ts — link the first-party skills in
+      # so the guard sees the same layout it enforces locally.
+      - name: link first-party skills into .agents
+        run: python3 scripts/sync-agents-skills.py
+
       - name: typecheck (pro-api, core, server, web, desktop)
         run: pnpm -r typecheck
 
