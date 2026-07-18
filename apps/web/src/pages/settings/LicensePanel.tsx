@@ -114,7 +114,7 @@ export function ActivateForm({
       {error ? <div className="settings-test-result settings-test-result--fail">{error}</div> : null}
       {showSubscribeLink && subscribeData?.subscribeUrl ? (
         <a className="license-subscribe-link" href={subscribeData.subscribeUrl} target="_blank" rel="noreferrer">
-          还没有授权码？前往订阅
+          还没有授权码？{subscribeData.trialDays ? `免费试用 ${subscribeData.trialDays} 天` : "前往订阅"}
         </a>
       ) : null}
     </div>

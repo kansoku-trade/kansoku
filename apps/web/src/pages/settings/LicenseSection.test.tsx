@@ -49,6 +49,16 @@ describe("LicenseSection", () => {
     expect(screen.queryByText("停用本机")).toBeNull();
   });
 
+  it("shows the trial subscribe link when the subscription carries trial days", async () => {
+    capabilitiesGet.mockResolvedValue({ pro: true, licensed: false, license: { state: "unlicensed" } });
+    subscribeUrlGet.mockResolvedValue({ subscribeUrl: "https://buy.example.com", trialDays: 7 });
+
+    renderWithClient(<LicenseSection />);
+
+    expect(await screen.findByText("还没有授权码？免费试用 7 天")).toBeTruthy();
+    expect(screen.queryByText("还没有授权码？前往订阅")).toBeNull();
+  });
+
   it("shows the status row and deactivate button when licensed", async () => {
     capabilitiesGet.mockResolvedValue({
       pro: true,

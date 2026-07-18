@@ -35,7 +35,7 @@ export interface ProChannel {
 export interface ProModule {
   hooks: ProHooks;
   license?: LicenseService;
-  subscription?: { url: string; priceLabel?: string };
+  subscription?: { url: string; priceLabel?: string; trialDays?: number };
   tsukiModules?: unknown[];
   ipcServiceClasses?: unknown[];
   channels?: ProChannel[];

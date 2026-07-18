@@ -29,10 +29,14 @@ function Paywall({ notice, onActivated }: { notice?: "invalid" | "expired"; onAc
       </ul>
       {subscribe?.subscribeUrl ? (
         <a className="license-paywall-cta" href={subscribe.subscribeUrl} target="_blank" rel="noreferrer">
-          前往订阅{subscribe.priceLabel ? ` · ${subscribe.priceLabel}` : ""}
+          {subscribe.trialDays
+            ? `免费试用 ${subscribe.trialDays} 天${subscribe.priceLabel ? ` · 之后 ${subscribe.priceLabel}` : ""}，随时取消`
+            : `前往订阅${subscribe.priceLabel ? ` · ${subscribe.priceLabel}` : ""}`}
         </a>
       ) : null}
-      <div className="license-paywall-hint">订阅完成后，授权码会发送到你的邮箱，回来在下方粘贴激活即可。</div>
+      <div className="license-paywall-hint">
+        {subscribe?.trialDays ? "试用期内不会扣款；" : ""}订阅完成后，授权码会发送到你的邮箱，回来在下方粘贴激活即可。
+      </div>
       {showActivate ? (
         <ActivateForm notice={notice} showSubscribeLink={false} onActivated={onActivated} />
       ) : (

@@ -60,6 +60,23 @@ describe("LicenseModal", () => {
     expect(screen.queryByText(/本次操作因授权已失效/)).toBeNull();
   });
 
+  it("renders the trial CTA and no-charge hint when the subscription carries trial days", async () => {
+    capabilitiesGet.mockResolvedValue({ pro: true, licensed: false, license: { state: "unlicensed" } });
+    subscribeUrlGet.mockResolvedValue({
+      subscribeUrl: "https://checkout.example/buy",
+      priceLabel: "$9.9 / 月",
+      trialDays: 7,
+    });
+    openLicenseModal("guard");
+
+    renderWithClient(<ModalHost />);
+
+    const cta = await screen.findByText(/免费试用 7 天 · 之后 \$9\.9 \/ 月，随时取消/);
+    expect(cta.closest("a")?.getAttribute("href")).toBe("https://checkout.example/buy");
+    expect(screen.getByText(/试用期内不会扣款/)).toBeTruthy();
+    expect(screen.queryByText(/前往订阅/)).toBeNull();
+  });
+
   it("advertises exactly the three paid features, not the now-free ones", async () => {
     capabilitiesGet.mockResolvedValue({ pro: true, licensed: false, license: { state: "unlicensed" } });
     subscribeUrlGet.mockResolvedValue({ subscribeUrl: null, priceLabel: null });

@@ -47,6 +47,7 @@ export const settingsService: SettingsApi = {
     return {
       subscribeUrl: subscription?.url ?? null,
       priceLabel: subscription?.priceLabel ?? null,
+      trialDays: subscription?.trialDays ?? null,
     };
   },
 };
