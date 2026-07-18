@@ -9,15 +9,14 @@ import { reportSummarySchema } from "../../src/schema/reportSummary.js";
 import { runScore } from "../../src/score/score.js";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const REPO = join(HERE, "..", "..");
-const DATASETS = join(REPO, "datasets");
+const DATASETS = join(HERE, "..", "fixtures", "datasets");
 const FIXTURE = join(HERE, "..", "fixtures", "predictions", "predictions.jsonl");
-const DATASET_VERSION = "v1";
+const DATASET_VERSION = "integration-v1";
 const BANK = "swing";
 const MODELS = ["alpha/one", "beta/two"];
 const QUESTION_IDS = ["swing-AAPL-2026-01-02-01", "swing-MU-2026-01-02-01", "swing-NVDA-2026-01-02-01"];
 
-describe("score + report integration on the committed v1 dataset", () => {
+describe("score + report integration on the minimal fixture dataset", () => {
   const root = mkdtempSync(join(tmpdir(), "bench-int-"));
   const resultsRoot = join(root, "results");
   const runId = "run-int";
@@ -40,7 +39,7 @@ describe("score + report integration on the committed v1 dataset", () => {
     scores = await runScore({ runId, datasetVersion: DATASET_VERSION, resultsRoot, datasetsRoot: DATASETS, bank: BANK });
   });
 
-  it("scores every fixture prediction against the real dataset", () => {
+  it("scores every fixture prediction against the fixture dataset", () => {
     expect(scores.cells).toHaveLength(MODELS.length * QUESTION_IDS.length);
     for (const model of MODELS) {
       expect(scores.models.some((entry) => entry.model === model)).toBe(true);

@@ -6,3 +6,18 @@ export { questionSchema, type Question, type RunnerQuestion } from "./question.j
 export { answerLineSchema, type AnswerLine } from "./answerLine.js";
 export { runConfigSchema, weightsSchema, type RunConfig, RUN_CONFIG_DEFAULTS } from "./runConfig.js";
 export { scoresSchema, cellVerdictSchema, type Scores } from "./scores.js";
+export {
+  episodeActionSchema,
+  episodeTradeActionSchema,
+  episodeAnswerSchema,
+  episodeClosedTradeSchema,
+  episodeTradeResultSchema,
+  episodeTerminationReasonSchema,
+  type EpisodeAction,
+  type EpisodeTradeAction,
+  type EpisodeActionRecord,
+  type EpisodeAnswer,
+  type EpisodeClosedTrade,
+  type EpisodeTradeResult,
+  type EpisodeTerminationReason,
+} from "./episode.js";

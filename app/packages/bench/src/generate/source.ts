@@ -2,6 +2,7 @@ import { runLongbridgeJson } from "../../../core/src/services/longbridgeCli.js";
 import type { QuoteBar } from "./assemble.js";
 
 export type KlinePeriod = "day" | "week";
+export type EpisodeKlinePeriod = KlinePeriod | "1h";
 
 export type FetchKlineHistory = (
   symbol: string,
@@ -20,7 +21,7 @@ interface RawKlineRow {
   turnover?: string;
 }
 
-export const fetchKlineHistoryLive: FetchKlineHistory = async (symbol, period, start, end) => {
+export const fetchKlineHistoryLive = async (symbol: string, period: EpisodeKlinePeriod, start: string, end: string) => {
   const rows = await runLongbridgeJson<RawKlineRow[]>([
     "kline",
     "history",

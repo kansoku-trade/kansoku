@@ -85,6 +85,18 @@ describe("bench cli", () => {
     expect(result.stderr).toContain("--dataset-version is required");
   });
 
+  it("validates required options for the sync-dataset subcommand", async () => {
+    const result = await runMain(["sync-dataset"]);
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("--dataset-version is required");
+  });
+
+  it("validates global dataset path options before command dispatch", async () => {
+    const result = await runMain(["--dataset-dir"]);
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("--dataset-dir requires a path");
+  });
+
   it("rejects unknown commands with exit 1", async () => {
     const result = await runMain(["bogus"]);
     expect(result.exitCode).toBe(1);
@@ -125,5 +137,77 @@ describe("bench generate argument validation", () => {
     const result = await runMain(["generate", "--version", "v1", "--bogus"]);
     expect(result.exitCode).toBe(1);
     expect(result.stderr).toContain("unknown generate option: --bogus");
+  });
+});
+
+describe("bench generate-episode-case argument validation", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("requires a symbol", async () => {
+    const result = await runMain(["generate-episode-case", "--cutoff", "2026-03-25", "--version", "v2"]);
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("--symbol is required");
+  });
+
+  it("validates the cutoff format before fetching data", async () => {
+    const result = await runMain([
+      "generate-episode-case",
+      "--symbol",
+      "MU.US",
+      "--cutoff",
+      "03/25/2026",
+      "--version",
+      "v2",
+    ]);
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("--cutoff must be YYYY-MM-DD");
+  });
+
+  it("rejects a non-positive session horizon", async () => {
+    const result = await runMain([
+      "generate-episode-case",
+      "--symbol",
+      "MU.US",
+      "--cutoff",
+      "2026-03-25",
+      "--version",
+      "v2",
+      "--horizon-sessions",
+      "0",
+    ]);
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("--horizon-sessions must be a positive integer");
+  });
+});
+
+describe("bench generate-episode-dataset argument validation", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("requires a plan file", async () => {
+    const result = await runMain(["generate-episode-dataset"]);
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("--plan is required");
+  });
+});
+
+describe("bench verify-episode-case argument validation", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("requires a dataset version", async () => {
+    const result = await runMain(["verify-episode-case", "--question", "swing-MU-01"]);
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("--dataset-version is required");
+  });
+
+  it("requires a question id", async () => {
+    const result = await runMain(["verify-episode-case", "--dataset-version", "v2"]);
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("--question is required");
   });
 });

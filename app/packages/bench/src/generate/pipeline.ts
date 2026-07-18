@@ -24,6 +24,7 @@ export interface GenerateOptions {
   dryRun: boolean;
   fresh: boolean;
   datasetsRoot: string;
+  sourceCacheRoot?: string;
   fetchKlineHistory: FetchKlineHistory;
   fetchCalendar: FetchCalendar;
   now: () => Date;
@@ -62,7 +63,8 @@ async function loadSymbolPeriod(
   options: GenerateOptions,
   endDate: string,
 ): Promise<QuoteBar[]> {
-  const file = cacheFile(options.datasetsRoot, symbol, period);
+  const sourceCacheRoot = options.sourceCacheRoot ?? join(options.datasetsRoot, ".cache");
+  const file = cacheFile(sourceCacheRoot, symbol, period);
   if (!options.fresh) {
     const cached = await readCache<QuoteBar[]>(file);
     if (cached) return cached;

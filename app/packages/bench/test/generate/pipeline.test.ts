@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from "node:fs/promises";
+import { access, mkdtemp, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -119,16 +119,23 @@ describe("runGenerate", () => {
   });
 
   it("caches raw kline pulls across runs unless --fresh is passed", async () => {
-    const { options, klineCalls } = makeOptions({ datasetsRoot });
-    await runGenerate(options);
-    const firstCalls = klineCalls();
-    expect(firstCalls).toBe(2);
+    const sourceCacheRoot = await mkdtemp(join(tmpdir(), "bench-generate-sources-"));
+    try {
+      const { options, klineCalls } = makeOptions({ datasetsRoot, sourceCacheRoot });
+      await runGenerate(options);
+      const firstCalls = klineCalls();
+      expect(firstCalls).toBe(2);
+      expect((await readdir(sourceCacheRoot)).sort()).toEqual(["MU.US-day.json", "MU.US-week.json"]);
+      await expect(access(join(datasetsRoot, ".cache"))).rejects.toThrow();
 
-    await runGenerate(options);
-    expect(klineCalls()).toBe(firstCalls);
+      await runGenerate(options);
+      expect(klineCalls()).toBe(firstCalls);
 
-    await runGenerate({ ...options, fresh: true });
-    expect(klineCalls()).toBe(firstCalls * 2);
+      await runGenerate({ ...options, fresh: true });
+      expect(klineCalls()).toBe(firstCalls * 2);
+    } finally {
+      await rm(sourceCacheRoot, { recursive: true, force: true });
+    }
   });
 
   it("logs a skip reason and writes nothing when every candidate window is halted", async () => {

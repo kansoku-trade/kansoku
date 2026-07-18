@@ -19,7 +19,7 @@ export type NewsSourceMode = "doc" | "archive" | "auto";
 export const DEFAULT_ARCHIVE_THROTTLE_MS = 1000;
 
 export interface NewsBackfillDeps {
-  datasetsRoot: string;
+  sourceCacheRoot: string;
   fresh: boolean;
   fetchGdelt: FetchGdeltArticles;
   fetchEdgar: FetchEdgarFilings;
@@ -67,7 +67,7 @@ async function loadGdeltArticles(
   deps: NewsBackfillDeps,
 ): Promise<GdeltArticle[]> {
   const period = `news-gdelt-${toGdeltStamp(startIso)}-${toGdeltStamp(endIso)}`;
-  const file = cacheFile(deps.datasetsRoot, symbol, period);
+  const file = cacheFile(deps.sourceCacheRoot, symbol, period);
   if (!deps.fresh) {
     const cached = await readCache<GdeltArticle[]>(file);
     if (cached) return cached;
@@ -78,7 +78,7 @@ async function loadGdeltArticles(
 }
 
 async function loadEdgarFilings(symbol: string, cik: string, deps: NewsBackfillDeps): Promise<EdgarFiling[]> {
-  const file = cacheFile(deps.datasetsRoot, symbol, "news-edgar-full");
+  const file = cacheFile(deps.sourceCacheRoot, symbol, "news-edgar-full");
   if (!deps.fresh) {
     const cached = await readCache<EdgarFiling[]>(file);
     if (cached) return cached;
@@ -100,13 +100,13 @@ function sleep(ms: number): Promise<void> {
 }
 
 async function filterUncachedArchiveRequests(
-  datasetsRoot: string,
+  sourceCacheRoot: string,
   cutoffIso: string,
   requests: ArchiveWindowRequest[],
 ): Promise<ArchiveWindowRequest[]> {
   const pending: ArchiveWindowRequest[] = [];
   for (const request of requests) {
-    const file = cacheFile(datasetsRoot, request.symbol, archiveCachePeriod(cutoffIso));
+    const file = cacheFile(sourceCacheRoot, request.symbol, archiveCachePeriod(cutoffIso));
     const cached = await readCache<ArchiveMatch[]>(file);
     if (cached == null) pending.push(request);
   }
@@ -125,7 +125,7 @@ async function scanArchiveWindowAndCache(
   const readArchiveCsv = deps.readArchiveCsv;
   const throttleMs = deps.archiveThrottleMs ?? DEFAULT_ARCHIVE_THROTTLE_MS;
 
-  const zipCacheDir = join(deps.datasetsRoot, ".cache", "gdelt-arch");
+  const zipCacheDir = join(deps.sourceCacheRoot, "gdelt-arch");
   const stamps = enumerateArchiveGrid(cutoffIso);
   const bySymbol = new Map<string, ArchiveMatch[]>();
   for (const request of requests) bySymbol.set(request.symbol, []);
@@ -169,7 +169,7 @@ async function scanArchiveWindowAndCache(
   );
 
   for (const [symbol, rows] of bySymbol) {
-    const file = cacheFile(deps.datasetsRoot, symbol, archiveCachePeriod(cutoffIso));
+    const file = cacheFile(deps.sourceCacheRoot, symbol, archiveCachePeriod(cutoffIso));
     await writeCache(file, rows);
   }
 }
@@ -186,7 +186,9 @@ async function ensureArchiveWindowScanned(
   const requests = windowRequests.get(cutoffIso) ?? [];
   if (requests.length === 0) return;
 
-  const pending = deps.fresh ? requests : await filterUncachedArchiveRequests(deps.datasetsRoot, cutoffIso, requests);
+  const pending = deps.fresh
+    ? requests
+    : await filterUncachedArchiveRequests(deps.sourceCacheRoot, cutoffIso, requests);
   if (pending.length === 0) return;
 
   await scanArchiveWindowAndCache(cutoffIso, pending, deps);
@@ -200,7 +202,7 @@ async function loadArchiveNewsForSymbol(
   deps: NewsBackfillDeps,
 ): Promise<BenchNewsItem[]> {
   await ensureArchiveWindowScanned(cutoff, windowRequests, scannedWindows, deps);
-  const file = cacheFile(deps.datasetsRoot, symbol, archiveCachePeriod(cutoff));
+  const file = cacheFile(deps.sourceCacheRoot, symbol, archiveCachePeriod(cutoff));
   const matches = (await readCache<ArchiveMatch[]>(file)) ?? [];
   return mapArchiveMatches(matches, cutoff);
 }
@@ -301,6 +303,7 @@ function buildWindowRequests(questions: Question[]): Map<string, ArchiveWindowRe
 
 export interface BackfillNewsOptions {
   datasetsRoot: string;
+  sourceCacheRoot?: string;
   resultsRoot: string;
   version: string;
   bank: string;
@@ -380,7 +383,7 @@ export async function runBackfillNews(options: BackfillNewsOptions): Promise<Bac
 
   const processed: QuestionBackfillOutcome[] = [];
   const deps: NewsBackfillDeps = {
-    datasetsRoot: options.datasetsRoot,
+    sourceCacheRoot: options.sourceCacheRoot ?? join(options.datasetsRoot, ".cache"),
     fresh: options.fresh,
     fetchGdelt: options.fetchGdelt,
     fetchEdgar: options.fetchEdgar,

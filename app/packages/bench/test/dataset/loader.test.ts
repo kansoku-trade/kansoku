@@ -20,6 +20,12 @@ describe("dataset loader", () => {
     expect(ids).toEqual(["swing-TEST-01"]);
   });
 
+  it("explains how to install a missing dataset", async () => {
+    await expect(listQuestions(fixturesRoot, "missing", "swing")).rejects.toThrow(
+      /sync-dataset --dataset-version missing/,
+    );
+  });
+
   it("loadQuestionForScorer returns the full validated question including replay", async () => {
     const question = await loadQuestionForScorer(fixturesRoot, "v1", "swing", "swing-TEST-01");
     expect(question.id).toBe("swing-TEST-01");

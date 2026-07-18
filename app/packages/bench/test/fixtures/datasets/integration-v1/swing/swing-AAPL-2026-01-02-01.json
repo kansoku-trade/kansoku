@@ -1,0 +1,29 @@
+{
+  "id": "swing-AAPL-2026-01-02-01",
+  "bank": "swing",
+  "symbol": "AAPL.US",
+  "cutoff": "2026-01-02T20:00:00-04:00",
+  "layer": "mega-cap-tech",
+  "adversarial": false,
+  "fixtures": {
+    "kline": {
+      "day": [
+        { "time": "2026-01-02", "open": "271", "high": "272", "low": "269", "close": "270.495", "volume": "1000000" }
+      ],
+      "week": []
+    },
+    "indicators": {},
+    "quote": { "last": 270.495 },
+    "capitalFlow": {},
+    "news": [],
+    "fundamentals": {},
+    "calendar": {}
+  },
+  "replay": {
+    "horizonBars": 20,
+    "bars": [
+      { "time": "2026-01-05", "open": "270", "high": "271", "low": "250", "close": "252", "volume": "1100000" },
+      { "time": "2026-01-06", "open": "251", "high": "252", "low": "240", "close": "243", "volume": "1200000" }
+    ]
+  }
+}

@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { access, mkdir, mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -124,18 +124,25 @@ describe("runBackfillNews", () => {
   });
 
   it("hits cache on second run and does not call fetchers again unless --fresh", async () => {
-    const { options, counts } = makeDeps();
-    await runBackfillNews(options);
-    const firstGdelt = counts.gdeltCalls();
-    const firstEdgar = counts.edgarCalls();
+    const sourceCacheRoot = await mkdtemp(join(tmpdir(), "bench-backfill-sources-"));
+    try {
+      const { options, counts } = makeDeps({ sourceCacheRoot });
+      await runBackfillNews(options);
+      const firstGdelt = counts.gdeltCalls();
+      const firstEdgar = counts.edgarCalls();
+      expect((await readdir(sourceCacheRoot)).length).toBeGreaterThan(0);
+      await expect(access(join(datasetsRoot, ".cache"))).rejects.toThrow();
 
-    await runBackfillNews(options);
-    expect(counts.gdeltCalls()).toBe(firstGdelt);
-    expect(counts.edgarCalls()).toBe(firstEdgar);
+      await runBackfillNews(options);
+      expect(counts.gdeltCalls()).toBe(firstGdelt);
+      expect(counts.edgarCalls()).toBe(firstEdgar);
 
-    await runBackfillNews({ ...options, fresh: true });
-    expect(counts.gdeltCalls()).toBeGreaterThan(firstGdelt);
-    expect(counts.edgarCalls()).toBeGreaterThan(firstEdgar);
+      await runBackfillNews({ ...options, fresh: true });
+      expect(counts.gdeltCalls()).toBeGreaterThan(firstGdelt);
+      expect(counts.edgarCalls()).toBeGreaterThan(firstEdgar);
+    } finally {
+      await rm(sourceCacheRoot, { recursive: true, force: true });
+    }
   });
 
   it("filters by --symbols when provided", async () => {

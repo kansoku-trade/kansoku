@@ -1,8 +1,8 @@
 import { promises as fs } from "node:fs";
 import { dirname, join } from "node:path";
 
-export function cacheFile(datasetsRoot: string, symbol: string, period: string): string {
-  return join(datasetsRoot, ".cache", `${symbol}-${period}.json`);
+export function cacheFile(cacheRoot: string, symbol: string, period: string): string {
+  return join(cacheRoot, `${symbol}-${period}.json`);
 }
 
 export async function readCache<T>(file: string): Promise<T | null> {
