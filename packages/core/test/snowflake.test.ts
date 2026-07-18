@@ -1,10 +1,10 @@
-import { describe, expect, it } from "vitest";
-import { nextSnowflake, snowflakeToDate } from "../src/db/snowflake.js";
+import { describe, expect, it } from 'vitest';
+import { nextSnowflake, snowflakeToDate } from '../src/db/snowflake.js';
 
 const FAR_FUTURE_BASE = Date.now() + 1000 * 60 * 60 * 24 * 365 * 50;
 
-describe("nextSnowflake", () => {
-  it("produces unique, strictly increasing ids across a burst", () => {
+describe('nextSnowflake', () => {
+  it('produces unique, strictly increasing ids across a burst', () => {
     const ids: bigint[] = [];
     for (let i = 0; i < 10_000; i++) ids.push(BigInt(nextSnowflake()));
 
@@ -12,7 +12,7 @@ describe("nextSnowflake", () => {
     expect(new Set(ids.map(String)).size).toBe(ids.length);
   });
 
-  it("increments the sequence for repeated calls within the same millisecond", () => {
+  it('increments the sequence for repeated calls within the same millisecond', () => {
     const frozen = FAR_FUTURE_BASE + 1_000_000;
     const now = () => frozen;
 
@@ -26,7 +26,7 @@ describe("nextSnowflake", () => {
     expect(snowflakeToDate(String(c)).getTime()).toBe(frozen);
   });
 
-  it("rolls over to the next millisecond when the sequence overflows", () => {
+  it('rolls over to the next millisecond when the sequence overflows', () => {
     const base = FAR_FUTURE_BASE + 2_000_000;
     let calls = 0;
     let invocations = 0;
@@ -49,7 +49,7 @@ describe("nextSnowflake", () => {
     expect(rolledOverIndex).toBeLessThanOrEqual(4097);
   });
 
-  it("never emits a timestamp earlier than the last one used when the clock regresses", () => {
+  it('never emits a timestamp earlier than the last one used when the clock regresses', () => {
     const base = FAR_FUTURE_BASE + 3_000_000;
     let t = base;
     const now = () => t;
@@ -62,7 +62,7 @@ describe("nextSnowflake", () => {
     expect(snowflakeToDate(String(second)).getTime()).toBeGreaterThanOrEqual(base);
   });
 
-  it("round-trips the injected timestamp via snowflakeToDate", () => {
+  it('round-trips the injected timestamp via snowflakeToDate', () => {
     const ts = FAR_FUTURE_BASE + 4_000_000;
     const id = nextSnowflake(() => ts);
 

@@ -1,12 +1,12 @@
-import { useEffect, useRef } from "react";
-import type { CockpitComment, Notice } from "@kansoku/shared/types";
-import { maybeNotify, requestNotificationPermissionOnce } from "./lib/notifications";
-import { symbolFromRoute } from "./lib/symbol";
-import { useRoute } from "./router";
-import { subscribeChannel } from "./wsHub";
+import { useEffect, useRef } from 'react';
+import type { CockpitComment, Notice } from '@kansoku/shared/types';
+import { maybeNotify, requestNotificationPermissionOnce } from './lib/notifications';
+import { symbolFromRoute } from './lib/symbol';
+import { useRoute } from './router';
+import { subscribeChannel } from './wsHub';
 
 interface NotificationEnvelope {
-  type: "comment" | "notice";
+  type: 'comment' | 'notice';
   comment?: CockpitComment;
   notice?: Notice;
 }
@@ -20,17 +20,26 @@ export function GlobalNotifications({ route }: { route: string }) {
   useEffect(() => {
     requestNotificationPermissionOnce();
     return subscribeChannel(
-      { kind: "notifications" },
+      { kind: 'notifications' },
       (payload) => {
         const envelope = payload as NotificationEnvelope;
-        if (envelope.type === "comment" && envelope.comment) {
+        if (envelope.type === 'comment' && envelope.comment) {
           const comment = envelope.comment;
           maybeNotify(
-            { type: "comment", live: true, symbol: comment.symbol, level: comment.level, text: comment.text },
+            {
+              type: 'comment',
+              live: true,
+              symbol: comment.symbol,
+              level: comment.level,
+              text: comment.text,
+            },
             activeSymbolRef.current,
           );
-        } else if (envelope.type === "notice" && envelope.notice) {
-          maybeNotify({ type: "notice", live: true, notice: envelope.notice }, activeSymbolRef.current);
+        } else if (envelope.type === 'notice' && envelope.notice) {
+          maybeNotify(
+            { type: 'notice', live: true, notice: envelope.notice },
+            activeSymbolRef.current,
+          );
         }
       },
       () => {},

@@ -25,12 +25,14 @@
 ### Task A1: pro 仓 —— assistant / chat / lobehub 控制器摘 LicensedGuard
 
 **Files:**
+
 - Modify: `apps/pro/src/server/modules/assistant/assistant.controller.ts`（22 行 `@UseGuards(LicensedGuard)`）
 - Modify: `apps/pro/src/server/modules/chat/chat.controller.ts`（13 行）
 - Modify: `apps/pro/src/server/modules/lobehub/lobehub.controller.ts`（8 行）
 - Test: pro 仓现有 403 断言测试（`rg -l "LICENSE_REQUIRED" apps/pro/src --glob '*test*'` 定位）
 
 **Interfaces:**
+
 - Produces: 上述三组路由在 pro 在场、未订阅时直接可用（不再 403）。
 
 - [ ] **Step 1:** 三个 controller 删除 `@UseGuards(LicensedGuard)` 装饰器行和 `LicensedGuard` import 行。
@@ -41,9 +43,11 @@
 ### Task A2: pro 仓 —— research 控制器拆门（browse 免费，AI 收费）
 
 **Files:**
+
 - Modify: `apps/pro/src/server/modules/research/research.controller.ts`
 
 **Interfaces:**
+
 - Produces: `GET /api/research` 与 `GET /api/research/document` 无门；`/chat*`、`/refresh*`、`/edits*`、`/chat/suggestions` 未订阅时仍 403。
 
 - [ ] **Step 1:** 删除类级 `@UseGuards(LicensedGuard)` 与其 import；改为在每个 AI 方法体首行调用 `requireLicensed()`：
@@ -67,10 +71,12 @@ import { requireLicensed } from "../../../license/licenseGate.js";
 ### Task A3: pro 仓 —— 服务与 hooks 摘门
 
 **Files:**
+
 - Modify: `apps/pro/src/modules/settings/aiSettings.service.ts`（33/45/54/62/81/93/144/149/171 行的 9 处 `requireLicensed();`）
 - Modify: `apps/pro/src/index.ts`（`reassessSymbol` 的 `requireLicensed()`，约 151 行；`usageSummary` 的 `isLicensed()` 空返回分支，约 187 行）
 
 **Interfaces:**
+
 - Produces: AI 设置基座、手动复评、用量统计不再受 license 限制。`deepDive.ts`、`scheduler.ts` 的门保持不变。
 
 - [ ] **Step 1:** 删除 aiSettings.service 的 9 处 `requireLicensed();` 及（若已无引用）import。
@@ -82,10 +88,12 @@ import { requireLicensed } from "../../../license/licenseGate.js";
 ### Task A4: pro 仓 —— desktop IPC 选择性摘门
 
 **Files:**
+
 - Modify: `apps/pro/src/ipc/licenseGateIpc.ts`
 - Modify: `apps/pro/src/ipc/index.ts`
 
 **Interfaces:**
+
 - Produces: `gateLicensedIpc(Ctor, methods?: string[])` —— 提供 `methods` 时只包裹这些方法，省略时包裹全部（保持旧行为）。
 
 - [ ] **Step 1:** `licenseGateIpc.ts` 增加可选方法白名单参数：
@@ -107,9 +115,17 @@ export const ipcServiceClasses = [
   ChatIpc,
   LobeHubIpc,
   gateLicensedIpc(ResearchIpc, [
-    "getChat", "postMessage", "abortChat", "suggestions",
-    "getRefresh", "startRefresh", "abortRefresh",
-    "listEdits", "applyEdit", "rejectEdit", "undoEdit",
+    'getChat',
+    'postMessage',
+    'abortChat',
+    'suggestions',
+    'getRefresh',
+    'startRefresh',
+    'abortRefresh',
+    'listEdits',
+    'applyEdit',
+    'rejectEdit',
+    'undoEdit',
   ]),
   LicenseIpc,
 ];
@@ -122,6 +138,7 @@ export const ipcServiceClasses = [
 ### Task A5: core 仓 —— web 解锁 licensed 维度
 
 **Files:**
+
 - Modify: `apps/web/src/pages/home/QuickBar.tsx`（研究库/AI 对话图标的 `locked` 分支）
 - Modify: `apps/web/src/PageRouter.tsx`（66、71 行的 `licensed ? … : <LicenseGateEmptyState />`）
 - Modify: `apps/web/src/pages/SymbolCockpit.tsx`（297 行 ChatDock 三元）
@@ -129,6 +146,7 @@ export const ipcServiceClasses = [
 - Test: `apps/web/src/pages/home/QuickBar.test.tsx`、`apps/web/src/PageRouter.license.test.tsx`
 
 **Interfaces:**
+
 - Consumes: `useCapabilities()` 的 `{pro, licensed}`；`useFeatureGuard()` 保持现签名，仅付费入口继续使用。
 - Produces: 免费 AI UI 只看 `pro`；`licensed` 只被付费入口消费。
 
@@ -143,6 +161,7 @@ export const ipcServiceClasses = [
 ### Task A6: core 仓 —— 付费入口上锁 + 订阅文案对准
 
 **Files:**
+
 - Modify: `apps/web/src/pages/cockpit/FollowAction.tsx`（「AI 跟进」开关）
 - Modify: `apps/web/src/pages/cockpit/NoteTab.tsx`（deep-dive 启动按钮）
 - Modify: `apps/web/src/pages/research/ResearchAssistant.tsx`、`ResearchRefreshPanel.tsx`、`ResearchEditReview.tsx`（AI 面板入口）
@@ -150,6 +169,7 @@ export const ipcServiceClasses = [
 - Test: `apps/web/src/featureGuard.test.ts` 及上述组件测试
 
 **Interfaces:**
+
 - Consumes: `useFeatureGuard()` 的 `{locked, guard}`（语义已收窄为「付费功能锁」）。
 
 - [ ] **Step 1:** FollowAction：`const { locked, guard } = useFeatureGuard()`；`locked` 时开关显示锁标并 `onChange={() => guard(noop)}`（触发 LicenseModal），解锁态行为不变。
@@ -173,11 +193,13 @@ export const ipcServiceClasses = [
 > **范围修正（2026-07-18 侦察后）**：基座是原子搬迁——ai/ 一旦移走，pro 里**所有**消费者（bench 7 文件、modules 服务、index.ts、留在 pro 的 ai 文件、以及 pro/test 里 ~43 个测试）同一刻全断，因为它们都以 `./models.js` 引 sibling。故 B1 不能只移文件，必须在**同一步**把 pro 全部消费者的 import 一起 rewire，否则 pro 无法编译、拿不到「pro 测试通过」的门。原计划把 bench import 改动放 B5、把消费者 rewire 分散到 B2/B5 的设想物理上不成立。**B5 因此退化为纯 bench 冒烟验证。**
 >
 > **侦察已确认的事实（写进实施 brief）**：
+>
 > - 搬迁集（36 源文件）**无任何反向依赖**留在 pro 的付费模块（scheduler/deepDive/researchChat/researchRefresh/recap/triggers/license）——干净下层。
 > - 搬迁集只用 core 的 package.json **已有**的包（typebox / @earendil-works/pi-agent-core / @earendil-works/pi-ai / drizzle-orm / better-sqlite3）——**core 无需加依赖**。pro-only 的包（quickjs-emscripten / reflect-metadata / @tsuki-hono / electron-ipc-decorator）只被留在 pro 的文件用。
 > - `packages/shared/` 是 workspace 级共享目录，core 已在用（`../../../shared/`）——**不搬**。
 >
 > **纠缠边修正（2026-07-18 B1 首次 BLOCKED 后，正确扫描发现 4 条边——原扫描因 shell 分词 bug 假阴性）**：
+>
 > - **#3 chat.ts→`packages/core/src/modules/annotations`**：假警报，是 core 自己的模块，搬后 core→core，仅路径改写。
 > - **#1 credentialStore→`LICENSE_PROVIDER_KEY`（pro/license/licenseStore）**：真反向边。该常量 = `"kansoku-license"`，是「保留凭证行」的键。**解法**：把 `LICENSE_PROVIDER_KEY` 定义搬进 core 的 `credentialStore.ts` 并 export；pro 的 `licenseStore.ts` 反向从 core 引（pro→core）。
 > - **#2 commentator→`Trigger`（type，来自 triggers.ts）**：triggers.ts **零 import**、纯类型+纯检测函数，被免费的 commentator 与付费的 scheduler 共用——**它是免费基座，原计划划到 stay-pro 是分类错**。**解法**：triggers.ts 并入搬迁集；scheduler 从 core 引。
@@ -187,11 +209,13 @@ export const ipcServiceClasses = [
 > **额外 rewire 的 pro 消费者**：`ai/researchChat.ts` `ai/researchRefresh.ts` `ipc/researchIpc.ts` `server/modules/research/research.controller.ts`（research.service 消费者，改从 core 引）、`ai/scheduler.ts`（triggers 消费者）、`license/licenseStore.ts`（改从 core 引 LICENSE_PROVIDER_KEY）。
 
 **Files:**
+
 - Create: `packages/core/src/ai/`（36 源文件：30 顶层 + `messages/`3 + `lobehub/`3）
 - Move: 测被搬模块的测试（如 `settingsStore.test.ts commentator.test.ts conversationEngine.test.ts chat-suggestions.test.ts` 等）从 `apps/pro/test/` 到 `packages/core/test/`（或 core 既有测试位置）；测 pro 侧路由/门的测试（`assistant-routes.test.ts follow-routes.test.ts reassess-license-gate.test.ts` 等）留在 pro，只 rewire import。
 - Modify（rewire，import 改指 core）：pro 消费者 `index.ts`、`bench/**`、`modules/{assistant,chat,lobehub,research,settings}/*.service.ts` 与 `settings.deps.ts settings.testConnection.ts settingsValidation.ts`、留在 pro 的 ai 文件 `scheduler.ts triggers.ts recap.ts deepDive.ts deepDiveTools.ts researchChat.ts researchChatStore.ts researchRefresh.ts researchLibraryTools.ts`。
 
 **Interfaces:**
+
 - Produces: core 内 `packages/core/src/ai/*` 提供基座与免费功能层。pro 消费者按各自深度以相对路径 `…/packages/core/src/ai/<mod>.js` 导入（从 `pro/src/ai/` 是 `../../../packages/core/src/ai/`；从 `pro/src/modules/<x>/` 是 `../../../../packages/core/src/ai/`）。
 
 - [ ] **Step 1（确定性移动，run brief 内脚本 verbatim）:** 用纯 `mv` 把 36 源文件从 `pro/src/ai/{,messages/,lobehub/}` 移到 `packages/core/src/ai/{,messages/,lobehub/}`；两仓各 `git add -A` 暂存（pro 记删除、公开仓记新增）。内容不改。
@@ -205,6 +229,7 @@ export const ipcServiceClasses = [
 ### Task B2: 免费服务/控制器/IPC 搬迁 + 摘 requirePro + AI 运行时启动接线
 
 > **侦察补充（2026-07-18，B1 之后）**：
+>
 > - pro 的四组免费 service（assistant/chat/lobehub/settings-AI）B1 后已是薄壳，全部 import 指向 core——搬迁即「移动 + import 缩短」。
 > - server 挂载点：`apps/server/src/modules/app.module.ts:14` 由 `getPro()?.tsukiModules` 合并 AI 模块——free 控制器搬入 server 后改为一等模块注册，pro 的 `tsukiModules` 剩 `[ResearchModule, LicenseModule]`。
 > - desktop 合并点：`apps/desktop/src/ipc/index.ts` 的 `nonAiIpcServiceClasses ⊕ getPro()?.ipcServiceClasses`——Assistant/Chat/LobeHub IPC 搬入 desktop 后加入前者，pro 的 `ipcServiceClasses` 剩 `[gateLicensedIpc(ResearchIpc,[11 AI 方法]), LicenseIpc]`。`groups.ts` 是纯名字白名单，组名不变则无需改（以 contract-parity 测试为准）。
@@ -214,6 +239,7 @@ export const ipcServiceClasses = [
 > - reassess 路由摘 `requirePro()` 后，pro 缺席时经 `freeHooks.reassessSymbol` 返回 `{started:false}`（不 404 不崩）；真正 pro 缺席可用要等 B4 hooks 直调化——可接受的中间态。
 
 **Files:**
+
 - Create: `packages/core/src/modules/{settings-ai,chat,assistant,lobehub}/*.service.ts`（自 pro `modules/`）
 - Create: `apps/server/src/modules/{chat,assistant,lobehub}/`（controller + module，自 pro `server/modules/`，去掉所有 license 引用）
 - Modify: `apps/server/src/modules/settings/settings.controller.ts`（AI 路由删 9 处 `requirePro()`）
@@ -223,6 +249,7 @@ export const ipcServiceClasses = [
 - Modify: `apps/desktop/src/**/groups.ts`（allowlist：chat/assistant/lobehub 组改为 core 常驻）
 
 **Interfaces:**
+
 - Consumes: B1 的 `packages/core/src/ai/*`。
 - Produces: 免费 AI 的 HTTP + IPC 全部由公开仓提供，pro 缺席也可用。
 
@@ -239,6 +266,7 @@ export const ipcServiceClasses = [
 > **必须实证的风险**：HTTP 两个 controller 共享 `research` 前缀、IPC 两个服务共享 `research` groupName 是否被 tsuki-hono / electron-ipc-decorator 允许（路由合并 vs 注册冲突）——用测试验证；若框架不允许，回退方案 = contract 拆 `researchBrowse` 新组（并改 web/desktop 客户端调用点），在报告里说明选了哪条。
 
 **Files:**
+
 - Create: `packages/core/src/modules/research/researchBrowse.service.ts`（自 pro `research.service.ts` 的 list/get 与文件系统读取，整段搬移）
 - Create: `apps/server/src/modules/research/research.controller.ts`（只含 `GET /`、`GET /document`，无门）
 - Modify: `packages/core/src/contract/research.ts`（拆 public browse 组与 pro AI 组）
@@ -246,6 +274,7 @@ export const ipcServiceClasses = [
 - Modify: pro `ipc/researchIpc.ts`（删 `list`/`get`；公开仓新增 browse IPC）
 
 **Interfaces:**
+
 - Produces: `researchBrowse.service` 导出 `list(input: {kind?, query?})` 与 `get(input: {path})`，签名与现 `ResearchApi["list"|"get"]` 一致。
 
 - [ ] **Step 1:** browse 逻辑搬 core，路径校验（stocks/journal 白名单）随行；pro 的 researchChat/refresh/edit service 改从 core 导入需要的公共工具。
@@ -257,6 +286,7 @@ export const ipcServiceClasses = [
 ### Task B4: pro-api 契约收窄 + hooks 直调化 + 免费频道归 core + desktop IPC 平权
 
 > **侦察补充（2026-07-18，B3 之后）**：
+>
 > - core 内 15 个 `getProHooks().` 调用点：**直调化 12 个**——`usageSummary/listUsageDates`（usage*）、`listComments/listCommentDates/listAllCommentDates`（comments）、`symbolFollowState/setSymbolFollowing/listFollowedSymbols`（follows；含 `store.ts:168` 与 `cockpit/board.ts`）、`reassessSymbol/analystRunStatus`（body 从 pro index.ts 移入 core：`aiConfig().analystModel` + `runAnalyst`，与 `listAnalystRuns` 状态同在 core analyst）、`activeSettingsRevision`（settingsStore）、`filterMacroForSymbol`（eventFilter；无模型时原样返回，pro 缺席行为不变）。**保留 hook 3 个**：`requestImmediateFollow`、`startDeepDiveForNote`、`deepDiveStatus`（付费）。
 > - `store.ts:168` 的 intraday 建图自动 setSymbolFollowing 保持现状（服务端写标记 = 纵深防御层面免费，付费引擎 scheduler 自守门）。
 > - **频道**：`channelProtocol.ts:83,129` 目前只查 `getPro()?.channels`。改为 core 频道优先合并：`[...coreAiChannels, ...(getPro()?.channels ?? [])]`。免费频道（comments/notifications/analyst-runs/chat/assistant-chat 及其 attach 逻辑）从 pro index.ts 移入 core（新文件如 `packages/core/src/realtime/aiChannels.ts`）;pro 只留 `research-chat`、`research-refresh`（付费）。
@@ -264,12 +294,14 @@ export const ipcServiceClasses = [
 > - **desktop IPC 平权（B2 遗留）**：`desktop/src/ipc/{settingsIpc,overviewIpc,symbolsIpc}.ts` 摘免费面的 `requirePro()`（settings AI 全部、overview usage、symbols reassess），deep-dive 的保留;顺带补 IPC 侧付费门等价断言（B2 review 的 Minor）。
 
 **Files:**
+
 - Modify: `packages/pro-api/aiTypes.ts`、`index.ts`（`ProHooks` 只剩：`requestImmediateFollow`、`startDeepDiveForNote`、`deepDiveStatus`、`filterMacroForSymbol` 若经确认仍走 hook 则保留否则删除——core 已有 eventFilter，删除）
 - Modify: `packages/core/src/pro/registry.ts`（`freeHooks` 相应删除；付费钩子空实现保留）
 - Modify: core 内原 hook 调用点改直调：`services/cockpit/board.ts`（`hooks.listFollowedSymbols`/`hooks.listComments` → `ai/follows.js`、`ai/comments.js` 直接 import）、`modules/symbols/symbols.service.ts`（follow 三连改直调，`requestImmediateFollow` 留 hook）
 - Modify: pro `index.ts`（`ProModule` 精简：hooks 收窄、`tsukiModules` 只剩 `[ResearchModule, LicenseModule]`、channels 只剩付费相关、免费频道定义搬 core）
 
 **Interfaces:**
+
 - Produces: 收窄后的 `ProHooks`；core WS 层承接免费频道（comments/notifications/analyst-runs/chat/research-chat/assistant-chat），pro 只注册 `research-refresh`。
 
 - [ ] **Step 1:** 按上述清单改 pro-api 类型与 registry；破坏性变更，pro 与 core 同一批次落地。
@@ -282,6 +314,7 @@ export const ipcServiceClasses = [
 > **范围修正**：bench 的 import 改动已在 B1 的原子 rewire 里完成（bench 是 pro 消费者之一）。B5 因此退化为 pro 侧打包与依赖核对的收尾验证。
 
 **Files:**
+
 - Modify（仅按需）: `apps/pro/tsdown.config.ts`、`apps/pro/package.json`（入口与依赖核对——B1 后 pro 可能有不再直接使用、可清理的 dep；不强制删除，只核对不缺）
 
 - [ ] **Step 1:** 确认 bench 单测在 B1 后仍绿：`cd apps/pro && pnpm test`。
@@ -291,6 +324,7 @@ export const ipcServiceClasses = [
 ### Task B6: web 终态 —— 免费 AI UI 无条件渲染
 
 **Files:**
+
 - Modify: `apps/web/src/pages/home/QuickBar.tsx`（去掉 `pro &&`）
 - Modify: `apps/web/src/PageRouter.tsx`（/research、/chat 无条件路由）
 - Modify: `apps/web/src/pages/SymbolCockpit.tsx`（ChatDock 无条件）

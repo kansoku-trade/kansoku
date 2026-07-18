@@ -1,10 +1,10 @@
-import { useRef } from "react";
-import type { SepaBuilt } from "@kansoku/shared/types";
-import { fmt } from "@web/format";
-import { LayerPanel } from "../LayerPanel";
-import { SepaSidebar } from "./SepaSidebar";
-import { useSepaCharts } from "./useSepaCharts";
-import { seriesPalette } from "@web/theme";
+import { useRef } from 'react';
+import type { SepaBuilt } from '@kansoku/shared/types';
+import { fmt } from '@web/format';
+import { LayerPanel } from '../LayerPanel';
+import { SepaSidebar } from './SepaSidebar';
+import { useSepaCharts } from './useSepaCharts';
+import { seriesPalette } from '@web/theme';
 
 export function SepaDashboard({ built }: { built: SepaBuilt }) {
   const mainRef = useRef<HTMLDivElement>(null);

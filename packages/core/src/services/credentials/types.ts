@@ -5,8 +5,7 @@ export interface LongbridgeCredentials {
 }
 
 export type LongbridgeAuth =
-  | ({ kind: "apikey" } & LongbridgeCredentials)
-  | { kind: "oauth"; clientId: string };
+  ({ kind: 'apikey' } & LongbridgeCredentials) | { kind: 'oauth'; clientId: string };
 
 export interface CredentialProvider {
   getLongbridgeAuth(): Promise<LongbridgeAuth | null>;

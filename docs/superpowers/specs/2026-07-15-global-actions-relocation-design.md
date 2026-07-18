@@ -41,11 +41,11 @@ Web 端右上角有一个固定悬浮栏（`apps/web/src/App.tsx` 中的 `Global
 
 ## 改造后各入口的可达路径
 
-| 入口 | Web | Electron |
-|---|---|---|
-| 研究库 | 首页 QuickBar、⌘K | 菜单、⌘⇧L、⌘K、QuickBar |
-| AI 对话 | 首页 QuickBar、⌘K | 菜单、⌘L、⌘K、QuickBar |
-| 设置 | 首页 QuickBar、⌘K | 菜单、⌘,、⌘K、QuickBar |
+| 入口    | Web               | Electron                |
+| ------- | ----------------- | ----------------------- |
+| 研究库  | 首页 QuickBar、⌘K | 菜单、⌘⇧L、⌘K、QuickBar |
+| AI 对话 | 首页 QuickBar、⌘K | 菜单、⌘L、⌘K、QuickBar  |
+| 设置    | 首页 QuickBar、⌘K | 菜单、⌘,、⌘K、QuickBar  |
 
 ## 涉及文件（定位参考）
 

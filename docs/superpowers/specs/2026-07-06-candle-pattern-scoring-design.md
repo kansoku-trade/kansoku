@@ -34,27 +34,32 @@ detectCandlePatterns → scorePatterns(打分 + 状态判定 + 历史统计) →
 `score = clamp(底分 + 时段调整 + 成交量调整 + 位置调整, 0, 100)`
 
 **底分（按形态强度）**
+
 - 强多根组合（吞没、启明星/黄昏星、红三兵/三只乌鸦，即 meta 中 `strong: true`）：55
 - 弱单根/双根形态（针线、锤子、孕线、乌云盖顶、镊子、光头大阳等）：30
 - 中性十字星类：20
 
 **时段调整**（用现有 `classifySession`）
+
 - regular：+10
 - pre / post：-10
 - overnight：弱形态与中性形态**直接丢弃**（不进入输出）；强形态 -25
 
 **成交量调整**（信号 K 线的量 / 近 20 根均量；多根形态取组合内最大值）
+
 - ≥ 1.5 倍：+15
 - ≥ 1.0 倍：+5
 - < 0.7 倍：-15
 - 其余：0
 
 **位置调整**（距离以近 14 根平均波幅 avgRange 为尺度）
+
 - 看涨形态的最低点、或看跌形态的最高点，落在任一关键位 0.5×avgRange 范围内：+15
 - 关键位集合：摆动高低点（`findSwings` 结果）、各条 EMA 当根数值、FVG 缺口上下沿
 - 不贴关键位：0
 
 **渲染分档**
+
 - score ≥ 65：完整箭头标注
 - 45 ≤ score < 65：小圆点（悬停看详情）
 - score < 45：不上图（数据保留，`summary.candle_patterns` 仍带分数喂给 AI）
@@ -88,15 +93,15 @@ detectCandlePatterns → scorePatterns(打分 + 状态判定 + 历史统计) →
 
 ## 改动清单
 
-| 文件 | 改动 |
-|---|---|
-| `packages/shared/types.ts` | `CandlePattern` 加 `score`、`status`、`confirm_price`、`invalidate_price`、`stats` 字段 |
-| `apps/server/src/services/candlePatterns.ts` | 检测输出附带 confirm/invalidate 价位与形态跨度（span） |
-| `apps/server/src/services/patternScoring.ts`（新增） | 打分、状态机、历史统计 |
-| `apps/server/src/services/intraday.ts` | `coerceIntradayTimeframe` 里接入打分层（FVG 检测提前到打分之前）；marker 构建按分档 + 状态渲染，tooltip 加确认价/失效价/分数/统计 |
-| `apps/server/test/candlePatterns.test.ts` | 补确认价/失效价断言 |
-| `apps/server/test/patternScoring.test.ts`（新增） | 时段丢弃、量能加减分、位置加分、状态流转、统计口径 |
-| `apps/server/test/intraday.test.ts` | 分档渲染与 tooltip 相关断言更新 |
+| 文件                                                 | 改动                                                                                                                              |
+| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `packages/shared/types.ts`                           | `CandlePattern` 加 `score`、`status`、`confirm_price`、`invalidate_price`、`stats` 字段                                           |
+| `apps/server/src/services/candlePatterns.ts`         | 检测输出附带 confirm/invalidate 价位与形态跨度（span）                                                                            |
+| `apps/server/src/services/patternScoring.ts`（新增） | 打分、状态机、历史统计                                                                                                            |
+| `apps/server/src/services/intraday.ts`               | `coerceIntradayTimeframe` 里接入打分层（FVG 检测提前到打分之前）；marker 构建按分档 + 状态渲染，tooltip 加确认价/失效价/分数/统计 |
+| `apps/server/test/candlePatterns.test.ts`            | 补确认价/失效价断言                                                                                                               |
+| `apps/server/test/patternScoring.test.ts`（新增）    | 时段丢弃、量能加减分、位置加分、状态流转、统计口径                                                                                |
+| `apps/server/test/intraday.test.ts`                  | 分档渲染与 tooltip 相关断言更新                                                                                                   |
 
 web 端无需改动：形态标注全部由服务端生成 marker，前端只负责渲染。
 

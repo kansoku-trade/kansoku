@@ -27,13 +27,13 @@
 
 ### 4.1 选股（20 只，五层）
 
-| 层 | 标的 | 作用 |
-|---|---|---|
-| 高波动科技/半导体 | MU NVDA MRVL AMD PLTR TSLA | 趋势与杀跌极端，拉开模型差距 |
-| 大盘蓝筹 | MSFT AAPL GOOGL JPM UNH | 考克制力 |
-| 防御型 | KO PG | 考「不硬找信号」（对应 TD-NOISE-01），构成观望率对照组 |
-| 周期/资源 | XOM CAT FCX | 图形逻辑与科技股不同 |
-| 指数 ETF | SPY QQQ SMH IWM | 无个股消息干扰的纯图形题 |
+| 层                | 标的                       | 作用                                                   |
+| ----------------- | -------------------------- | ------------------------------------------------------ |
+| 高波动科技/半导体 | MU NVDA MRVL AMD PLTR TSLA | 趋势与杀跌极端，拉开模型差距                           |
+| 大盘蓝筹          | MSFT AAPL GOOGL JPM UNH    | 考克制力                                               |
+| 防御型            | KO PG                      | 考「不硬找信号」（对应 TD-NOISE-01），构成观望率对照组 |
+| 周期/资源         | XOM CAT FCX                | 图形逻辑与科技股不同                                   |
+| 指数 ETF          | SPY QQQ SMH IWM            | 无个股消息干扰的纯图形题                               |
 
 刻意排除 SMCI（低价妖股跳空多，回放判分失真）、JNJ（与 KO/PG 重复）。
 
@@ -52,12 +52,9 @@
 
 ```json
 {
-  "id": "swing-MU-2026-03-20-01",
-  "bank": "swing",
-  "symbol": "MU.US",
-  "cutoff": "2026-03-20T20:00:00-04:00",
-  "layer": "high-vol-tech",
   "adversarial": false,
+  "bank": "swing",
+  "cutoff": "2026-03-20T20:00:00-04:00",
   "fixtures": {
     "kline": { "day": [], "week": [] },
     "indicators": {},
@@ -67,7 +64,10 @@
     "fundamentals": {},
     "calendar": {}
   },
-  "replay": { "horizonBars": 20, "bars": [] }
+  "id": "swing-MU-2026-03-20-01",
+  "layer": "high-vol-tech",
+  "replay": { "horizonBars": 20, "bars": [] },
+  "symbol": "MU.US"
 }
 ```
 
@@ -162,7 +162,7 @@ pnpm bench run --models anthropic/claude-sonnet-5,deepseek/deepseek-chat \
 
 ## 10. 一期范围
 
-1. 波段题库：20 只 × 每只 2~3 个不重叠窗口 ≈ 40~50 题。
+1. 波段题库：20 只 × 每只 2~~3 个不重叠窗口 ≈ 40~~50 题。
 2. 模型 3 个（Claude / DeepSeek / Kimi 各一档），盲/实 × 3 重复 ≈ 每模型 300 次会话，验证成本与稳定性。
 3. 管线全链路：generate → datasets → runner（含 trace、断点续跑、错误分类）→ score（含 gold 自检）→ report。
 

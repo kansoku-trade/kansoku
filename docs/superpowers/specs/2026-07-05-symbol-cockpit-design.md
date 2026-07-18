@@ -26,11 +26,13 @@
 顶部报价条（现有 SSE 实时报价 + 分析时间 / stale 徽章），下面左图右栏。
 
 **左侧图表区**：
+
 - 现有 m5 / m15 / h1 周期 tab，K线 + MACD 副图。
 - 新增指标开关栏（图表顶部一排按钮），每项单独显示/隐藏：金叉/死叉、自动背离（紫）、自动背驰（橙）、123 反转结构、AI 信号标注（Pin Bar / 手动背离线）、入场/止损/目标价位线、swing 高低点。
 - 开关状态存 localStorage，默认全开。
 
 **右侧栏**：
+
 - 最上方固定"AI 综合结论"卡（不进 tab）：方向徽章 + 一两句"现在该怎么办" + 生成时间。
 - 下方五个 tab：
   1. **预测**（默认）——锚点、情景推演、震荡打法、入场计划 R/R、支撑信号列表（现有内容）
@@ -48,13 +50,13 @@
 
 新增 `apps/server/src/routes/symbols.ts`，全部按 symbol 现取、不落盘：
 
-| 路由 | 内容 | 来源 |
-|---|---|---|
-| `GET /api/symbols/:sym/flow` | 当天资金流曲线 + 大中小单分布 | longbridge CLI `capital` |
-| `GET /api/symbols/:sym/benchmark` | SMH/QQQ 同期分时对比（归一化涨跌幅） | longbridge CLI `kline` |
-| `GET /api/symbols/:sym/position` | 持仓、成本、浮盈浮亏、离止损/目标距离 | longbridge CLI `positions` + 最新分析的 entry_plan |
-| `GET /api/symbols/:sym/analyses` | 历史 intraday 分析列表 + 事后判定 | `listCharts({symbol})` + kline 复核 |
-| `GET /api/symbols/:sym/latest` | 最新一次 intraday 分析全文 | store 现有能力 |
+| 路由                              | 内容                                  | 来源                                               |
+| --------------------------------- | ------------------------------------- | -------------------------------------------------- |
+| `GET /api/symbols/:sym/flow`      | 当天资金流曲线 + 大中小单分布         | longbridge CLI `capital`                           |
+| `GET /api/symbols/:sym/benchmark` | SMH/QQQ 同期分时对比（归一化涨跌幅）  | longbridge CLI `kline`                             |
+| `GET /api/symbols/:sym/position`  | 持仓、成本、浮盈浮亏、离止损/目标距离 | longbridge CLI `positions` + 最新分析的 entry_plan |
+| `GET /api/symbols/:sym/analyses`  | 历史 intraday 分析列表 + 事后判定     | `listCharts({symbol})` + kline 复核                |
+| `GET /api/symbols/:sym/latest`    | 最新一次 intraday 分析全文            | store 现有能力                                     |
 
 **事后判定（机械算）**：取分析锚点时间之后的 K 线，按方向判断先触及止损还是目标，得 `hit_target / hit_stop / open` 三态 + 锚点至今涨跌幅。server 计算，非 AI 回忆。
 

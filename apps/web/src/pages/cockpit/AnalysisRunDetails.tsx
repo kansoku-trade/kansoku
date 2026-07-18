@@ -1,17 +1,17 @@
-import { useEffect, useState } from "react";
-import { Dot, MarketTime } from "@web/ui";
-import type { RunningReassessStatus } from "./useAnalystRun";
+import { useEffect, useState } from 'react';
+import { Dot, MarketTime } from '@web/ui';
+import type { RunningReassessStatus } from './useAnalystRun';
 
-const PHASE_LABEL: Record<RunningReassessStatus["phase"], string> = {
-  preparing: "准备环境",
-  researching: "收集资料",
-  writing: "写入复盘",
-  finalizing: "生成结论",
+const PHASE_LABEL: Record<RunningReassessStatus['phase'], string> = {
+  preparing: '准备环境',
+  researching: '收集资料',
+  writing: '写入复盘',
+  finalizing: '生成结论',
 };
 
-const ORIGIN_LABEL: Record<RunningReassessStatus["origin"], string> = {
-  manual: "手动分析",
-  escalation: "自动升级分析",
+const ORIGIN_LABEL: Record<RunningReassessStatus['origin'], string> = {
+  manual: '手动分析',
+  escalation: '自动升级分析',
 };
 
 export function formatElapsedDuration(elapsedMs: number): string {
@@ -21,8 +21,8 @@ export function formatElapsedDuration(elapsedMs: number): string {
   if (totalMinutes === 0) return `${seconds} 秒`;
   const minutes = totalMinutes % 60;
   const hours = Math.floor(totalMinutes / 60);
-  if (hours === 0) return `${minutes} 分 ${String(seconds).padStart(2, "0")} 秒`;
-  return `${hours} 小时 ${String(minutes).padStart(2, "0")} 分 ${String(seconds).padStart(2, "0")} 秒`;
+  if (hours === 0) return `${minutes} 分 ${String(seconds).padStart(2, '0')} 秒`;
+  return `${hours} 小时 ${String(minutes).padStart(2, '0')} 分 ${String(seconds).padStart(2, '0')} 秒`;
 }
 
 export function AnalysisRunDetails({ status }: { status: RunningReassessStatus }) {
@@ -35,7 +35,7 @@ export function AnalysisRunDetails({ status }: { status: RunningReassessStatus }
   }, [status.startedAt]);
 
   const startedAt = Date.parse(status.startedAt);
-  const elapsed = Number.isFinite(startedAt) ? formatElapsedDuration(now - startedAt) : "时间未知";
+  const elapsed = Number.isFinite(startedAt) ? formatElapsedDuration(now - startedAt) : '时间未知';
 
   return (
     <div className="ai-run-status">
@@ -52,7 +52,7 @@ export function AnalysisRunDetails({ status }: { status: RunningReassessStatus }
         {status.activity}
       </div>
       <div className="ai-run-status-meta">
-        开始于 <MarketTime value={status.startedAt} format="clock" includeZone /> · 最近动作{" "}
+        开始于 <MarketTime value={status.startedAt} format="clock" includeZone /> · 最近动作{' '}
         <MarketTime value={status.updatedAt} format="clock" includeZone />
       </div>
     </div>

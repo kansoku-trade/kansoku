@@ -1,6 +1,6 @@
-import type { RunConfig } from "../schema/runConfig.js";
-import type { CellVerdict } from "./cell.js";
-import { clamp } from "./replay.js";
+import type { RunConfig } from '../schema/runConfig.js';
+import type { CellVerdict } from './cell.js';
+import { clamp } from './replay.js';
 
 export interface JudgmentSummary {
   cellCount: number;
@@ -57,10 +57,10 @@ function rawNeutralAccuracy(cells: CellVerdict[]): number | null {
   let correct = 0;
   let total = 0;
   for (const cell of cells) {
-    if (cell.outcome === "neutral_correct") {
+    if (cell.outcome === 'neutral_correct') {
       correct += 1;
       total += 1;
-    } else if (cell.outcome === "neutral_wrong") {
+    } else if (cell.outcome === 'neutral_wrong') {
       total += 1;
     }
   }
@@ -77,31 +77,37 @@ export function judgmentSummary(cells: CellVerdict[], neutralFallback: number): 
 
   for (const cell of cells) {
     switch (cell.outcome) {
-      case "win":
+      case 'win': {
         winCount += 1;
         scoreSum += cell.score ?? 0;
         filled += 1;
         break;
-      case "loss":
+      }
+      case 'loss': {
         lossCount += 1;
         scoreSum += cell.score ?? 0;
         filled += 1;
         break;
-      case "timeout_flat":
+      }
+      case 'timeout_flat': {
         if ((cell.score ?? 0) > 0) winCount += 1;
         else lossCount += 1;
         scoreSum += cell.score ?? 0;
         filled += 1;
         break;
-      case "neutral_correct":
+      }
+      case 'neutral_correct': {
         neutralCorrect += 1;
         neutralTotal += 1;
         break;
-      case "neutral_wrong":
+      }
+      case 'neutral_wrong': {
         neutralTotal += 1;
         break;
-      default:
+      }
+      default: {
         break;
+      }
     }
   }
 
@@ -110,14 +116,22 @@ export function judgmentSummary(cells: CellVerdict[], neutralFallback: number): 
   const expectancyNorm = clamp((expectancy + 1) / 3, 0, 1);
   const neutralAccuracy = neutralTotal > 0 ? neutralCorrect / neutralTotal : neutralFallback;
   const judgment = 0.4 * winRate + 0.4 * expectancyNorm + 0.2 * neutralAccuracy;
-  const scored = cells.filter((c) => c.outcome !== "api_error");
+  const scored = cells.filter((c) => c.outcome !== 'api_error');
   const abstainRate = scored.length > 0 ? neutralTotal / scored.length : 0;
 
-  return { cellCount: cells.length, winRate, expectancy, expectancyNorm, neutralAccuracy, judgment, abstainRate };
+  return {
+    cellCount: cells.length,
+    winRate,
+    expectancy,
+    expectancyNorm,
+    neutralAccuracy,
+    judgment,
+    abstainRate,
+  };
 }
 
 function avgWinnerROf(cells: CellVerdict[]): number | null {
-  const wins = cells.filter((c) => c.outcome === "win");
+  const wins = cells.filter((c) => c.outcome === 'win');
   if (wins.length === 0) return null;
   return wins.reduce((acc, c) => acc + (c.score ?? 0), 0) / wins.length;
 }
@@ -138,21 +152,22 @@ function summarizeGroups(
   neutralFallback: number,
 ): Record<string, JudgmentSummary> {
   const out: Record<string, JudgmentSummary> = {};
-  for (const [name, group] of groupBy(cells, key)) out[name] = judgmentSummary(group, neutralFallback);
+  for (const [name, group] of groupBy(cells, key))
+    out[name] = judgmentSummary(group, neutralFallback);
   return out;
 }
 
 function noiseDeltaOf(cells: CellVerdict[], neutralFallback: number): number | null {
-  const blindQ = new Set(cells.filter((c) => c.mode === "blind").map((c) => c.questionId));
-  const liveQ = new Set(cells.filter((c) => c.mode === "live").map((c) => c.questionId));
+  const blindQ = new Set(cells.filter((c) => c.mode === 'blind').map((c) => c.questionId));
+  const liveQ = new Set(cells.filter((c) => c.mode === 'live').map((c) => c.questionId));
   const shared = new Set([...blindQ].filter((q) => liveQ.has(q)));
   if (shared.size === 0) return null;
   const blind = judgmentSummary(
-    cells.filter((c) => c.mode === "blind" && shared.has(c.questionId)),
+    cells.filter((c) => c.mode === 'blind' && shared.has(c.questionId)),
     neutralFallback,
   );
   const live = judgmentSummary(
-    cells.filter((c) => c.mode === "live" && shared.has(c.questionId)),
+    cells.filter((c) => c.mode === 'live' && shared.has(c.questionId)),
     neutralFallback,
   );
   return blind.judgment - live.judgment;
@@ -171,7 +186,7 @@ function consistencyOf(cells: CellVerdict[]): number {
   return denom > 0 ? disagree / denom : 0;
 }
 
-function rateOf(cells: CellVerdict[], outcome: CellVerdict["outcome"]): number {
+function rateOf(cells: CellVerdict[], outcome: CellVerdict['outcome']): number {
   if (cells.length === 0) return 0;
   return cells.filter((c) => c.outcome === outcome).length / cells.length;
 }
@@ -185,23 +200,30 @@ interface ModelDraft {
 }
 
 export function isReferenceModel(model: string): boolean {
-  return model.startsWith("baseline/") || model.startsWith("gold/");
+  return model.startsWith('baseline/') || model.startsWith('gold/');
 }
 
-export function aggregate(cells: CellVerdict[], weights: RunConfig["weights"]): ModelAggregate[] {
+export function aggregate(cells: CellVerdict[], weights: RunConfig['weights']): ModelAggregate[] {
   const byModel = groupBy(cells, (c) => c.model);
   const drafts: ModelDraft[] = [];
   for (const [model, modelCells] of byModel) {
     // Cost/time means exclude api_error cells: those never ran the model, so their ~0 cost
     // would otherwise flatter a flaky provider on the efficiency axis.
-    const priced = modelCells.filter((c) => c.outcome !== "api_error");
+    const priced = modelCells.filter((c) => c.outcome !== 'api_error');
     const n = priced.length;
     const meanCostUsd = n > 0 ? priced.reduce((acc, c) => acc + c.metrics.costUsd, 0) / n : 0;
     const meanDurationMs = n > 0 ? priced.reduce((acc, c) => acc + c.metrics.durationMs, 0) / n : 0;
-    drafts.push({ model, cells: modelCells, meanCostUsd, meanDurationMs, rawNeutral: rawNeutralAccuracy(modelCells) });
+    drafts.push({
+      model,
+      cells: modelCells,
+      meanCostUsd,
+      meanDurationMs,
+      rawNeutral: rawNeutralAccuracy(modelCells),
+    });
   }
 
-  const neutralMedian = median(drafts.map((d) => d.rawNeutral).filter((v): v is number => v != null)) ?? 0;
+  const neutralMedian =
+    median(drafts.map((d) => d.rawNeutral).filter((v): v is number => v != null)) ?? 0;
 
   // baseline/* and gold/* rows carry cost/duration 0 by construction; keeping them in the
   // min-max pool pins them at efficiency 1.0 and compresses the real models. They are scored
@@ -218,21 +240,33 @@ export function aggregate(cells: CellVerdict[], weights: RunConfig["weights"]): 
   const models: ModelAggregate[] = drafts.map((draft) => {
     const summary = judgmentSummary(draft.cells, neutralMedian);
     const reference = isReferenceModel(draft.model);
-    const costScore = reference ? null : single || maxCost === minCost ? 1 : (maxCost - draft.meanCostUsd) / (maxCost - minCost);
-    const timeScore = reference ? null : single || maxTime === minTime ? 1 : (maxTime - draft.meanDurationMs) / (maxTime - minTime);
+    const costScore = reference
+      ? null
+      : single || maxCost === minCost
+        ? 1
+        : (maxCost - draft.meanCostUsd) / (maxCost - minCost);
+    const timeScore = reference
+      ? null
+      : single || maxTime === minTime
+        ? 1
+        : (maxTime - draft.meanDurationMs) / (maxTime - minTime);
     const efficiency = reference ? null : 0.5 * (costScore as number) + 0.5 * (timeScore as number);
-    const total = reference ? summary.judgment : weights.judgment * summary.judgment + weights.efficiency * (efficiency as number);
+    const total = reference
+      ? summary.judgment
+      : weights.judgment * summary.judgment + weights.efficiency * (efficiency as number);
     const toolCallValues = draft.cells.map((c) => c.metrics.toolCalls);
     const toolCallMean =
-      toolCallValues.length > 0 ? toolCallValues.reduce((acc, v) => acc + v, 0) / toolCallValues.length : 0;
+      toolCallValues.length > 0
+        ? toolCallValues.reduce((acc, v) => acc + v, 0) / toolCallValues.length
+        : 0;
 
     return {
       model: draft.model,
       ...summary,
-      noFillRate: rateOf(draft.cells, "no_fill"),
-      formatViolationRate: rateOf(draft.cells, "format_violation"),
-      timeoutRate: rateOf(draft.cells, "agent_timeout"),
-      apiErrorRate: rateOf(draft.cells, "api_error"),
+      noFillRate: rateOf(draft.cells, 'no_fill'),
+      formatViolationRate: rateOf(draft.cells, 'format_violation'),
+      timeoutRate: rateOf(draft.cells, 'agent_timeout'),
+      apiErrorRate: rateOf(draft.cells, 'api_error'),
       costScore,
       timeScore,
       efficiency,

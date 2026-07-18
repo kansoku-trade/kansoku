@@ -1,14 +1,14 @@
-import { useEffect } from "react";
-import { Router } from "../PageRouter";
-import { GlobalNotifications } from "../GlobalNotifications";
-import { symbolFromRoute } from "../lib/symbol";
-import { CommandPalette } from "../palette/CommandPalette";
-import { RestrictedBanner } from "../RestrictedBanner";
-import { ContextMenuHost, ModalHost } from "../ui";
-import { clearActiveSymbol, setActiveSymbol } from "../analystRunsStore";
-import { DesktopTitlebar } from "./DesktopTitlebar";
-import { LinkHoverStatus } from "./LinkHoverStatus";
-import { useTabsController } from "./tabsController";
+import { useEffect } from 'react';
+import { Router } from '../PageRouter';
+import { GlobalNotifications } from '../GlobalNotifications';
+import { symbolFromRoute } from '../lib/symbol';
+import { CommandPalette } from '../palette/CommandPalette';
+import { RestrictedBanner } from '../RestrictedBanner';
+import { ContextMenuHost, ModalHost } from '../ui';
+import { clearActiveSymbol, setActiveSymbol } from '../analystRunsStore';
+import { DesktopTitlebar } from './DesktopTitlebar';
+import { LinkHoverStatus } from './LinkHoverStatus';
+import { useTabsController } from './tabsController';
 
 export function DesktopShell() {
   const controller = useTabsController();

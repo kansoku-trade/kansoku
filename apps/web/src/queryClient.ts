@@ -1,9 +1,9 @@
-import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
-import type { Query } from "@tanstack/react-query";
-import { QueryClient } from "@tanstack/react-query";
-import type { PersistedClient, Persister } from "@tanstack/react-query-persist-client";
+import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
+import type { Query } from '@tanstack/react-query';
+import { QueryClient } from '@tanstack/react-query';
+import type { PersistedClient, Persister } from '@tanstack/react-query-persist-client';
 
-declare module "@tanstack/react-query" {
+declare module '@tanstack/react-query' {
   interface Register {
     queryMeta: { persist?: boolean };
   }
@@ -37,13 +37,14 @@ function createPersister(): Persister {
 
 export const persister = createPersister();
 
-export const PERSIST_BUSTER = "v1";
+export const PERSIST_BUSTER = 'v1';
 
 export const persistOptions = {
   persister,
   maxAge: 1000 * 60 * 60 * 24 * 7,
   buster: PERSIST_BUSTER,
   dehydrateOptions: {
-    shouldDehydrateQuery: (query: Query) => query.state.status === "success" && query.meta?.persist !== false,
+    shouldDehydrateQuery: (query: Query) =>
+      query.state.status === 'success' && query.meta?.persist !== false,
   },
 };

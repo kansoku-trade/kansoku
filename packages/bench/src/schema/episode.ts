@@ -1,6 +1,6 @@
-import { type Static, Type } from "typebox";
-import { submissionSchema } from "./submission.js";
-import { episodeTradeReasonSchema } from "./tradeReason.js";
+import { type Static, Type } from 'typebox';
+import { submissionSchema } from './submission.js';
+import { episodeTradeReasonSchema } from './tradeReason.js';
 
 const nullableNumber = Type.Union([Type.Number(), Type.Null()]);
 
@@ -18,28 +18,31 @@ export const episodeSubmissionSchema = Type.Object(
 export type EpisodeSubmission = Static<typeof episodeSubmissionSchema>;
 
 export const episodeTradeActionSchema = Type.Union([
-  Type.Object({ type: Type.Literal("hold"), ...requiredReason }, { additionalProperties: false }),
+  Type.Object({ type: Type.Literal('hold'), ...requiredReason }, { additionalProperties: false }),
   Type.Object(
     {
-      type: Type.Literal("amend"),
+      type: Type.Literal('amend'),
       stop: Type.Optional(Type.Number()),
       target: Type.Optional(Type.Number()),
       ...requiredReason,
     },
     { additionalProperties: false },
   ),
-  Type.Object({ type: Type.Literal("cancel"), ...requiredReason }, { additionalProperties: false }),
-  Type.Object({ type: Type.Literal("exit_next_open"), ...requiredReason }, { additionalProperties: false }),
+  Type.Object({ type: Type.Literal('cancel'), ...requiredReason }, { additionalProperties: false }),
+  Type.Object(
+    { type: Type.Literal('exit_next_open'), ...requiredReason },
+    { additionalProperties: false },
+  ),
 ]);
 
 export type EpisodeTradeAction = Static<typeof episodeTradeActionSchema>;
 
 export const episodeActionSchema = Type.Union([
-  Type.Object({ type: Type.Literal("observe") }, { additionalProperties: false }),
+  Type.Object({ type: Type.Literal('observe') }, { additionalProperties: false }),
   Type.Object(
     {
-      type: Type.Literal("submit"),
-      direction: Type.Union([Type.Literal("long"), Type.Literal("short"), Type.Literal("neutral")]),
+      type: Type.Literal('submit'),
+      direction: Type.Union([Type.Literal('long'), Type.Literal('short'), Type.Literal('neutral')]),
       entry: Type.Optional(Type.Number()),
       stop: Type.Optional(Type.Number()),
       target: Type.Optional(Type.Number()),
@@ -53,26 +56,29 @@ export const episodeActionSchema = Type.Union([
 export type EpisodeAction = Static<typeof episodeActionSchema>;
 
 const episodeRecordedTradeActionSchema = Type.Union([
-  Type.Object({ type: Type.Literal("hold"), ...optionalReason }, { additionalProperties: false }),
+  Type.Object({ type: Type.Literal('hold'), ...optionalReason }, { additionalProperties: false }),
   Type.Object(
     {
-      type: Type.Literal("amend"),
+      type: Type.Literal('amend'),
       stop: Type.Optional(Type.Number()),
       target: Type.Optional(Type.Number()),
       ...optionalReason,
     },
     { additionalProperties: false },
   ),
-  Type.Object({ type: Type.Literal("cancel"), ...optionalReason }, { additionalProperties: false }),
-  Type.Object({ type: Type.Literal("exit_next_open"), ...optionalReason }, { additionalProperties: false }),
+  Type.Object({ type: Type.Literal('cancel'), ...optionalReason }, { additionalProperties: false }),
+  Type.Object(
+    { type: Type.Literal('exit_next_open'), ...optionalReason },
+    { additionalProperties: false },
+  ),
 ]);
 
 const episodeRecordedActionSchema = Type.Union([
-  Type.Object({ type: Type.Literal("observe") }, { additionalProperties: false }),
+  Type.Object({ type: Type.Literal('observe') }, { additionalProperties: false }),
   Type.Object(
     {
-      type: Type.Literal("submit"),
-      direction: Type.Union([Type.Literal("long"), Type.Literal("short"), Type.Literal("neutral")]),
+      type: Type.Literal('submit'),
+      direction: Type.Union([Type.Literal('long'), Type.Literal('short'), Type.Literal('neutral')]),
       entry: Type.Optional(Type.Number()),
       stop: Type.Optional(Type.Number()),
       target: Type.Optional(Type.Number()),
@@ -84,15 +90,15 @@ const episodeRecordedActionSchema = Type.Union([
 ]);
 
 export const episodeTerminationReasonSchema = Type.Union([
-  Type.Literal("abstain"),
-  Type.Literal("no_decision"),
-  Type.Literal("cancelled"),
-  Type.Literal("no_fill"),
-  Type.Literal("stop"),
-  Type.Literal("target"),
-  Type.Literal("manual"),
-  Type.Literal("horizon"),
-  Type.Literal("no_trade"),
+  Type.Literal('abstain'),
+  Type.Literal('no_decision'),
+  Type.Literal('cancelled'),
+  Type.Literal('no_fill'),
+  Type.Literal('stop'),
+  Type.Literal('target'),
+  Type.Literal('manual'),
+  Type.Literal('horizon'),
+  Type.Literal('no_trade'),
 ]);
 
 export type EpisodeTerminationReason = Static<typeof episodeTerminationReasonSchema>;
@@ -118,16 +124,16 @@ export type EpisodeActionRecord = Static<typeof episodeActionRecordSchema>;
 export const episodeClosedTradeSchema = Type.Object(
   {
     tradeId: Type.Integer({ minimum: 1 }),
-    direction: Type.Union([Type.Literal("long"), Type.Literal("short")]),
+    direction: Type.Union([Type.Literal('long'), Type.Literal('short')]),
     decisionBar: Type.Integer({ minimum: 0 }),
     decisionTime: Type.String(),
     entry: executionPointSchema,
     exit: executionPointSchema,
     exitReason: Type.Union([
-      Type.Literal("stop"),
-      Type.Literal("target"),
-      Type.Literal("manual"),
-      Type.Literal("horizon"),
+      Type.Literal('stop'),
+      Type.Literal('target'),
+      Type.Literal('manual'),
+      Type.Literal('horizon'),
     ]),
     initialStop: Type.Number(),
     finalStop: Type.Number(),
@@ -149,7 +155,7 @@ export type EpisodeClosedTrade = Static<typeof episodeClosedTradeSchema>;
 export const episodeTradeResultSchema = Type.Object(
   {
     terminationReason: episodeTerminationReasonSchema,
-    direction: Type.Union([Type.Literal("long"), Type.Literal("short"), Type.Literal("neutral")]),
+    direction: Type.Union([Type.Literal('long'), Type.Literal('short'), Type.Literal('neutral')]),
     entry: Type.Union([executionPointSchema, Type.Null()]),
     exit: Type.Union([executionPointSchema, Type.Null()]),
     initialRisk: nullableNumber,
@@ -192,14 +198,14 @@ export const episodeAnswerSchema = Type.Object(
     symbol: Type.String(),
     layer: Type.String(),
     model: Type.String(),
-    mode: Type.Union([Type.Literal("blind"), Type.Literal("live")]),
+    mode: Type.Union([Type.Literal('blind'), Type.Literal('live')]),
     rep: Type.Integer({ minimum: 0 }),
     status: Type.Union([
-      Type.Literal("completed"),
-      Type.Literal("format_violation"),
-      Type.Literal("timeout"),
-      Type.Literal("api_error"),
-      Type.Literal("protocol_violation"),
+      Type.Literal('completed'),
+      Type.Literal('format_violation'),
+      Type.Literal('timeout'),
+      Type.Literal('api_error'),
+      Type.Literal('protocol_violation'),
     ]),
     initialSubmission: Type.Union([submissionSchema, Type.Null()]),
     result: Type.Union([episodeTradeResultSchema, Type.Null()]),

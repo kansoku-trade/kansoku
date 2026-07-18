@@ -1,5 +1,5 @@
-import { Type } from "typebox";
-import type { NewsItem } from "@kansoku/shared/types";
+import { Type } from 'typebox';
+import type { NewsItem } from '@kansoku/shared/types';
 
 export const newsItemSchema = Type.Object(
   {

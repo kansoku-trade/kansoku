@@ -1,4 +1,4 @@
-import type { MentionCandidate } from "./atMention.js";
+import type { MentionCandidate } from './atMention.js';
 
 export function AtMentionPopover({
   candidates,
@@ -25,7 +25,7 @@ export function AtMentionPopover({
           key={candidate.path}
           role="option"
           aria-selected={index === activeIndex}
-          className={`assistant-mention-item${index === activeIndex ? " active" : ""}`}
+          className={`assistant-mention-item${index === activeIndex ? ' active' : ''}`}
           onMouseDown={(event) => {
             event.preventDefault();
             onPick(candidate);

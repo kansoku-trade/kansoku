@@ -1,6 +1,6 @@
-import type { ChannelSpec } from "./wsHub";
+import type { ChannelSpec } from './wsHub';
 
-const PREFIX = "ws-snapshot:";
+const PREFIX = 'ws-snapshot:';
 const THROTTLE_MS = 5_000;
 
 export interface WsSnapshot {
@@ -11,19 +11,21 @@ export interface WsSnapshot {
 const lastWriteAt = new Map<string, number>();
 
 function isWhitelisted(spec: ChannelSpec): boolean {
-  if (spec.kind === "board") return true;
-  if (spec.kind === "quotes" && !spec.extra) return true;
+  if (spec.kind === 'board') return true;
+  if (spec.kind === 'quotes' && !spec.extra) return true;
   return false;
 }
 
 function stableStringify(value: unknown): string {
   if (Array.isArray(value)) {
-    return `[${value.map(stableStringify).join(",")}]`;
+    return `[${value.map(stableStringify).join(',')}]`;
   }
-  if (value && typeof value === "object") {
+  if (value && typeof value === 'object') {
     const keys = Object.keys(value as Record<string, unknown>).sort();
-    const entries = keys.map((k) => `${JSON.stringify(k)}:${stableStringify((value as Record<string, unknown>)[k])}`);
-    return `{${entries.join(",")}}`;
+    const entries = keys.map(
+      (k) => `${JSON.stringify(k)}:${stableStringify((value as Record<string, unknown>)[k])}`,
+    );
+    return `{${entries.join(',')}}`;
   }
   return JSON.stringify(value);
 }
@@ -52,7 +54,7 @@ export function loadSnapshot(spec: ChannelSpec): WsSnapshot | null {
     const raw = localStorage.getItem(keyFor(spec));
     if (!raw) return null;
     const parsed = JSON.parse(raw);
-    if (!parsed || typeof parsed.at !== "number" || !("data" in parsed)) return null;
+    if (!parsed || typeof parsed.at !== 'number' || !('data' in parsed)) return null;
     return parsed as WsSnapshot;
   } catch {
     return null;

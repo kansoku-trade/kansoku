@@ -1,33 +1,33 @@
-import { afterEach, describe, expect, it } from "vitest";
-import { loadPro } from "@kansoku/core/pro/loader";
-import { unregisterProModuleForTests } from "@kansoku/core/pro/registry";
-import { tsukiRequest } from "./helpers.js";
+import { afterEach, describe, expect, it } from 'vitest';
+import { loadPro } from '@kansoku/core/pro/loader';
+import { unregisterProModuleForTests } from '@kansoku/core/pro/registry';
+import { tsukiRequest } from './helpers.js';
 
-describe("pro-absent HTTP surface", () => {
+describe('pro-absent HTTP surface', () => {
   afterEach(async () => {
     await loadPro();
   });
 
-  it("returns 404 for the symbols deep-dive route when pro is absent", async () => {
+  it('returns 404 for the symbols deep-dive route when pro is absent', async () => {
     unregisterProModuleForTests();
-    const res = await tsukiRequest("/api/symbols/MU/deep-dive/status");
+    const res = await tsukiRequest('/api/symbols/MU/deep-dive/status');
     expect(res.status).toBe(404);
   });
 
-  it("returns 404 for the license status route when pro is absent", async () => {
+  it('returns 404 for the license status route when pro is absent', async () => {
     unregisterProModuleForTests();
-    const res = await tsukiRequest("/api/license/status");
+    const res = await tsukiRequest('/api/license/status');
     expect(res.status).toBe(404);
   });
 
-  it("reports pro:false via /capabilities when pro is absent", async () => {
+  it('reports pro:false via /capabilities when pro is absent', async () => {
     unregisterProModuleForTests();
-    const res = await tsukiRequest("/api/capabilities");
+    const res = await tsukiRequest('/api/capabilities');
     expect(res.status).toBe(200);
     expect((await res.json()).data).toEqual({
       pro: false,
       licensed: false,
-      features: { "symbol-follow": "absent", "deep-dive": "absent", "research-ai": "absent" },
+      features: { 'symbol-follow': 'absent', 'deep-dive': 'absent', 'research-ai': 'absent' },
     });
   });
 });

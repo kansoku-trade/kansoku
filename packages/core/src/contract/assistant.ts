@@ -1,5 +1,5 @@
-import type { ChatDisplayMessage } from "@kansoku/pro-api";
-import { defineRoutes } from "./defineRoutes.js";
+import type { ChatDisplayMessage } from '@kansoku/pro-api';
+import { defineRoutes } from './defineRoutes.js';
 
 export interface AssistantSessionMeta {
   id: string;
@@ -37,11 +37,11 @@ export interface AssistantApi {
   abortChat(input: { id: string }): Promise<{ ok: boolean }>;
 }
 
-export const assistantRoutes = defineRoutes<AssistantApi>("assistant", {
-  listSessions: { method: "GET", path: "/sessions" },
-  createSession: { method: "POST", path: "/sessions" },
-  deleteSession: { method: "DELETE", path: "/sessions/:id" },
-  getChat: { method: "GET", path: "/sessions/:id/chat", raw: "body" },
-  postMessage: { method: "POST", path: "/sessions/:id/chat/messages", raw: "statusBody" },
-  abortChat: { method: "POST", path: "/sessions/:id/chat/abort" },
+export const assistantRoutes = defineRoutes<AssistantApi>('assistant', {
+  listSessions: { method: 'GET', path: '/sessions' },
+  createSession: { method: 'POST', path: '/sessions' },
+  deleteSession: { method: 'DELETE', path: '/sessions/:id' },
+  getChat: { method: 'GET', path: '/sessions/:id/chat', raw: 'body' },
+  postMessage: { method: 'POST', path: '/sessions/:id/chat/messages', raw: 'statusBody' },
+  abortChat: { method: 'POST', path: '/sessions/:id/chat/abort' },
 });

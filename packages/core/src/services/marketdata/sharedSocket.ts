@@ -1,4 +1,4 @@
-import { LongbridgeQuoteSocket } from "./longbridgeSocket.js";
+import { LongbridgeQuoteSocket } from './longbridgeSocket.js';
 
 let instance: LongbridgeQuoteSocket | null = null;
 

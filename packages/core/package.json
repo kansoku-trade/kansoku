@@ -1,6 +1,7 @@
 {
   "name": "@kansoku/core",
   "private": true,
+  "license": "SEE LICENSE IN LICENSE",
   "type": "module",
   "exports": {
     "./*": {
@@ -13,12 +14,6 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
-  "devDependencies": {
-    "@types/better-sqlite3": "^7.6.13",
-    "@types/node": "^26.1.1",
-    "typescript": "^7.0.2",
-    "vitest": "^4.1.10"
-  },
   "dependencies": {
     "@earendil-works/pi-agent-core": "^0.80.7",
     "@earendil-works/pi-ai": "^0.80.7",
@@ -28,5 +23,10 @@
     "drizzle-orm": "^0.45.2",
     "typebox": "1.3.6"
   },
-  "license": "SEE LICENSE IN LICENSE"
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^26.1.1",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
+  }
 }

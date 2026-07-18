@@ -1,5 +1,5 @@
-import type { QuoteCell } from "@kansoku/shared/types";
-import type { CandleBar, CandlePeriod } from "./candleAggregator.js";
+import type { QuoteCell } from '@kansoku/shared/types';
+import type { CandleBar, CandlePeriod } from './candleAggregator.js';
 
 export type { CandleBar, CandlePeriod };
 

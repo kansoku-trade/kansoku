@@ -12,23 +12,23 @@ The logo uses a **Minimal Observer** symbol:
 
 ## Palette
 
-| Role | Color |
-| --- | --- |
-| Observation yellow | `#FACC15` |
-| Highlight yellow | `#FEF08A` |
-| Observatory black | `#080D14` |
-| Muted path | `#E2E8F0` at reduced opacity |
+| Role               | Color                        |
+| ------------------ | ---------------------------- |
+| Observation yellow | `#FACC15`                    |
+| Highlight yellow   | `#FEF08A`                    |
+| Observatory black  | `#080D14`                    |
+| Muted path         | `#E2E8F0` at reduced opacity |
 
 ## Assets
 
-| File | Purpose |
-| --- | --- |
-| `apps/web/public/brand/kansoku-mark.svg` | Standalone symbol on transparent background |
-| `apps/web/public/brand/kansoku-icon.svg` | Square icon with dark background |
-| `apps/web/public/brand/kansoku-lockup.svg` | Horizontal lockup with wordmark |
-| `apps/web/public/brand/kansoku-lockup.png` | 2x PNG export of the horizontal lockup |
+| File                                               | Purpose                                               |
+| -------------------------------------------------- | ----------------------------------------------------- |
+| `apps/web/public/brand/kansoku-mark.svg`           | Standalone symbol on transparent background           |
+| `apps/web/public/brand/kansoku-icon.svg`           | Square icon with dark background                      |
+| `apps/web/public/brand/kansoku-lockup.svg`         | Horizontal lockup with wordmark                       |
+| `apps/web/public/brand/kansoku-lockup.png`         | 2x PNG export of the horizontal lockup                |
 | `apps/web/public/brand/kansoku-product-banner.png` | README product banner with the real cockpit interface |
-| `apps/web/public/favicon.svg` | Browser favicon |
+| `apps/web/public/favicon.svg`                      | Browser favicon                                       |
 
 ## Usage Rules
 

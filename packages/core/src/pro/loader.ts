@@ -1,7 +1,7 @@
-import { isAbsolute } from "node:path";
-import { pathToFileURL } from "node:url";
-import type { ProModule } from "@kansoku/pro-api";
-import { registerProModule } from "./registry.js";
+import { isAbsolute } from 'node:path';
+import { pathToFileURL } from 'node:url';
+import type { ProModule } from '@kansoku/pro-api';
+import { registerProModule } from './registry.js';
 
 // Relative filesystem path to the gitignored slot rather than a bare package
 // specifier: nothing declares @kansoku/pro as a dependency (public code must
@@ -16,14 +16,14 @@ import { registerProModule } from "./registry.js";
 // different directory depth (the Electron main process, via tsdown), that
 // relative arithmetic breaks — such hosts must pass their own app root as
 // `appDir` (e.g. Electron's `app.getAppPath()`) instead.
-function proEntryUrl(appDir?: string, entryFile = "src/index.js"): string {
+function proEntryUrl(appDir?: string, entryFile = 'src/index.js'): string {
   if (isAbsolute(entryFile)) {
     return pathToFileURL(entryFile).href;
   }
   if (appDir) {
-    return pathToFileURL([appDir, "..", "pro", entryFile].join("/")).href;
+    return pathToFileURL([appDir, '..', 'pro', entryFile].join('/')).href;
   }
-  return ["..", "..", "..", "..", "apps", "pro", entryFile].join("/");
+  return ['..', '..', '..', '..', 'apps', 'pro', entryFile].join('/');
 }
 
 // Node's ERR_MODULE_NOT_FOUND message is "Cannot find module '<missing>' imported
@@ -34,7 +34,7 @@ function proEntryUrl(appDir?: string, entryFile = "src/index.js"): string {
 function isProEntryNotFound(error: unknown): boolean {
   if (!(error instanceof Error)) return false;
   const code = (error as NodeJS.ErrnoException).code;
-  if (code !== "ERR_MODULE_NOT_FOUND" && code !== "MODULE_NOT_FOUND") return false;
+  if (code !== 'ERR_MODULE_NOT_FOUND' && code !== 'MODULE_NOT_FOUND') return false;
   const missing = /Cannot find module '([^']+)'/.exec(error.message)?.[1];
   return missing !== undefined && /\/pro\/(src|dist)\/index\.m?[jt]s$/.test(missing);
 }
@@ -48,7 +48,7 @@ export async function loadPro(appDir?: string, entryFile?: string): Promise<bool
     return true;
   } catch (error) {
     if (isProEntryNotFound(error)) {
-      console.info("pro slot: @kansoku/pro not found, running in free mode");
+      console.info('pro slot: @kansoku/pro not found, running in free mode');
     } else {
       const message = error instanceof Error ? error.message : String(error);
       console.warn(`pro slot: @kansoku/pro failed to load, running in free mode: ${message}`);

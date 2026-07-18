@@ -1,6 +1,6 @@
-import { chmod, readFile, writeFile } from "node:fs/promises";
-import { join } from "node:path";
-import { app } from "electron";
+import { chmod, readFile, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
+import { app } from 'electron';
 
 export interface OnboardingState {
   completed: boolean;
@@ -14,7 +14,7 @@ export interface OnboardingStore {
 export function createOnboardingFileStore(filePath: string): OnboardingStore {
   async function read(): Promise<OnboardingState> {
     try {
-      const raw = await readFile(filePath, "utf8");
+      const raw = await readFile(filePath, 'utf8');
       const parsed = JSON.parse(raw) as Partial<OnboardingState>;
       return { completed: parsed.completed === true };
     } catch {
@@ -34,5 +34,5 @@ export function createOnboardingFileStore(filePath: string): OnboardingStore {
 }
 
 export function createOnboardingStore(): OnboardingStore {
-  return createOnboardingFileStore(join(app.getPath("userData"), "onboarding-state.json"));
+  return createOnboardingFileStore(join(app.getPath('userData'), 'onboarding-state.json'));
 }

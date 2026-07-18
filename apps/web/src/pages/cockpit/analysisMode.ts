@@ -1,17 +1,20 @@
-import { symbolAnalysisPath, symbolLivePath } from "@kansoku/shared/chartUrl";
+import { symbolAnalysisPath, symbolLivePath } from '@kansoku/shared/chartUrl';
 
 export {
   sameSymbol,
   applyAnalysisBroadcast,
   INITIAL_FEED_STATE,
   type AnalysisFeedState,
-} from "@kansoku/shared/analysisFeed";
+} from '@kansoku/shared/analysisFeed';
 
-export type AnalysisViewMode = "live" | "latest" | "pinned";
+export type AnalysisViewMode = 'live' | 'latest' | 'pinned';
 
-export function resolveAnalysisViewMode(view: string | null, analysisId: string | null): AnalysisViewMode {
-  if (view === "live") return "live";
-  return analysisId ? "pinned" : "latest";
+export function resolveAnalysisViewMode(
+  view: string | null,
+  analysisId: string | null,
+): AnalysisViewMode {
+  if (view === 'live') return 'live';
+  return analysisId ? 'pinned' : 'latest';
 }
 
 export const symbolUrl = symbolAnalysisPath;

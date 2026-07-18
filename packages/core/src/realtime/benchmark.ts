@@ -1,12 +1,16 @@
-import { buildBenchmark } from "../services/cockpit/benchmark.js";
-import { toTs } from "../services/indicators.js";
-import { getProvider } from "../services/marketdata/registry.js";
-import { distinctStreams, releaseSymbols, retainSymbols } from "../services/marketdata/streamRouting.js";
-import { classifySession } from "../services/session.js";
-import { marketOf } from "../services/symbol.utils.js";
-import { createEmitter, emitData, emitStatus, replay } from "./emitter.js";
+import { buildBenchmark } from '../services/cockpit/benchmark.js';
+import { toTs } from '../services/indicators.js';
+import { getProvider } from '../services/marketdata/registry.js';
+import {
+  distinctStreams,
+  releaseSymbols,
+  retainSymbols,
+} from '../services/marketdata/streamRouting.js';
+import { classifySession } from '../services/session.js';
+import { marketOf } from '../services/symbol.utils.js';
+import { createEmitter, emitData, emitStatus, replay } from './emitter.js';
 
-const BENCHMARK_SYMBOLS = ["SMH.US", "QQQ.US"];
+const BENCHMARK_SYMBOLS = ['SMH.US', 'QQQ.US'];
 const BAR_COUNT = 100;
 const THROTTLE_MS = 5_000;
 
@@ -25,9 +29,11 @@ async function refresh(symbol: string, state: State): Promise<void> {
   state.refreshing = (async () => {
     try {
       const { symbols } = state;
-      const barsList = await Promise.all(symbols.map((s) => getProvider(marketOf(s)).getKline(s, "5m", BAR_COUNT)));
+      const barsList = await Promise.all(
+        symbols.map((s) => getProvider(marketOf(s)).getKline(s, '5m', BAR_COUNT)),
+      );
       const regularBars = symbols.map((s, i) =>
-        barsList[i].filter((b) => classifySession(toTs(b.time), marketOf(s)) === "regular"),
+        barsList[i].filter((b) => classifySession(toTs(b.time), marketOf(s)) === 'regular'),
       );
       const data = buildBenchmark(symbols.map((s, i) => ({ symbol: s, bars: regularBars[i] })));
       emitStatus(state.emitter, false);
@@ -59,7 +65,7 @@ export function subscribeBenchmark(symbol: string, push: (envelope: string) => v
   }
   state.emitter.listeners.add(push);
 
-  if (marketOf(symbol) !== "US") {
+  if (marketOf(symbol) !== 'US') {
     if (fresh) emitData(state.emitter, []);
     else replay(state.emitter, push);
     return () => {
@@ -71,7 +77,9 @@ export function subscribeBenchmark(symbol: string, push: (envelope: string) => v
   }
 
   if (fresh) {
-    void retainSymbols(state.symbols).catch((err) => console.warn("[ws-benchmark] retain failed", err));
+    void retainSymbols(state.symbols).catch((err) =>
+      console.warn('[ws-benchmark] retain failed', err),
+    );
     state.quoteUnsubs = distinctStreams().map((stream) =>
       stream.onUpdate((cell) => {
         if ((state as State).symbols.includes(cell.symbol)) scheduleRefresh(symbol, state as State);

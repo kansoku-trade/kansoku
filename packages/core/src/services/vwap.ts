@@ -1,12 +1,12 @@
-import type { LinePoint, RawBar } from "@kansoku/shared/types";
-import { toTs } from "./indicators.js";
-import { easternDate } from "./session.js";
+import type { LinePoint, RawBar } from '@kansoku/shared/types';
+import { toTs } from './indicators.js';
+import { easternDate } from './session.js';
 
 // Anchored per US-Eastern trading day, extended hours included — matches how
 // the chart displays ETH bars, so the line never jumps mid-view.
 export function sessionVwap(bars: RawBar[]): LinePoint[] {
   const out: LinePoint[] = [];
-  let day = "";
+  let day = '';
   let pv = 0;
   let vol = 0;
   for (const bar of bars) {
@@ -33,5 +33,5 @@ export function sessionVwap(bars: RawBar[]): LinePoint[] {
 }
 
 export function lastVwap(points: LinePoint[]): number | null {
-  return points.length ? points[points.length - 1].value : null;
+  return points.length ? points.at(-1)!.value : null;
 }

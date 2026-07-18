@@ -1,4 +1,4 @@
-import type { ContextMenuItem, ContextMenuPoint } from "./types";
+import type { ContextMenuItem, ContextMenuPoint } from './types';
 
 export interface ContextMenuAnchor {
   getBoundingClientRect: () => DOMRect;
@@ -42,7 +42,7 @@ export function updateLastPointer(event: MouseEvent | PointerEvent): void {
 }
 
 export function getLastPointer(): ContextMenuPoint {
-  if (typeof window === "undefined") return { x: 0, y: 0 };
+  if (typeof window === 'undefined') return { x: 0, y: 0 };
   if (!lastPointer.ready) {
     return { x: window.innerWidth / 2, y: window.innerHeight / 2 };
   }

@@ -39,6 +39,6 @@ export function nextQueueAction(prevBusy: boolean, busy: boolean, queue: QueueIt
   return { send: head, queue };
 }
 
-export function decideSubmitAction(busy: boolean, queueLength: number): "send" | "enqueue" {
-  return busy || queueLength > 0 ? "enqueue" : "send";
+export function decideSubmitAction(busy: boolean, queueLength: number): 'send' | 'enqueue' {
+  return busy || queueLength > 0 ? 'enqueue' : 'send';
 }

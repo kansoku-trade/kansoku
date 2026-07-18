@@ -1,7 +1,7 @@
-import { createIpcProxy } from "electron-ipc-decorator/client";
-import type { IpcRenderer } from "electron";
-import { allRoutes, type AppApi, type TransportEnvelope } from "@kansoku/core/contract/index";
-import { unwrapEnvelope } from "./envelope";
+import { createIpcProxy } from 'electron-ipc-decorator/client';
+import type { IpcRenderer } from 'electron';
+import { allRoutes, type AppApi, type TransportEnvelope } from '@kansoku/core/contract/index';
+import { unwrapEnvelope } from './envelope';
 
 type RawIpcServices = {
   [G in keyof AppApi]: {
@@ -14,7 +14,7 @@ interface MinimalIpcRenderer {
 }
 
 function getDesktopRpc(): IpcRenderer | null {
-  if (typeof window === "undefined") return null;
+  if (typeof window === 'undefined') return null;
   const rpc = (window as unknown as { desktop?: { rpc?: MinimalIpcRenderer } }).desktop?.rpc;
   return (rpc ?? null) as unknown as IpcRenderer | null;
 }
@@ -28,9 +28,12 @@ export function createIpcClient(): AppApi | null {
     const methods: Record<string, (input?: unknown) => Promise<unknown>> = {};
     for (const methodName of Object.keys(group.routes)) {
       methods[methodName] = async (input?: unknown) => {
-        const envelope = await (raw as Record<string, Record<string, (input?: unknown) => Promise<TransportEnvelope<unknown>>>>)[
-          groupName
-        ][methodName](input);
+        const envelope = await (
+          raw as Record<
+            string,
+            Record<string, (input?: unknown) => Promise<TransportEnvelope<unknown>>>
+          >
+        )[groupName][methodName](input);
         return unwrapEnvelope(envelope, envelope.ok ? 0 : (envelope.status ?? 0)).data;
       };
     }

@@ -1,9 +1,6 @@
-import { BrowserWindow, Menu, ipcMain } from "electron";
-import { CONTEXT_MENU_CHANNELS } from "./channels.js";
-import {
-  buildNativeContextMenuTemplate,
-  type NativeContextMenuItem,
-} from "./buildTemplate.js";
+import { BrowserWindow, Menu, ipcMain } from 'electron';
+import { CONTEXT_MENU_CHANNELS } from './channels.js';
+import { buildNativeContextMenuTemplate, type NativeContextMenuItem } from './buildTemplate.js';
 
 export type ContextMenuPopupRequest = {
   items: NativeContextMenuItem[];

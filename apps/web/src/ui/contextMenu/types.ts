@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactNode } from 'react';
 
 /**
  * Command-layer menu item. Platform adapters map this to Base UI (web) or
@@ -33,7 +33,7 @@ export type ContextMenuCommandItem = {
 };
 
 export type ContextMenuDivider = {
-  type: "divider";
+  type: 'divider';
   key?: string;
   visible?: boolean;
 };
@@ -48,7 +48,7 @@ export type ContextMenuPoint = {
 /** Wire-safe menu payload (no functions / React nodes). */
 export type SerializableContextMenuItem =
   | {
-      type: "item";
+      type: 'item';
       key: string;
       label: string;
       enabled: boolean;
@@ -59,11 +59,11 @@ export type SerializableContextMenuItem =
       danger?: boolean;
     }
   | {
-      type: "divider";
+      type: 'divider';
       key: string;
     }
   | {
-      type: "submenu";
+      type: 'submenu';
       key: string;
       label: string;
       enabled: boolean;
@@ -81,13 +81,13 @@ export type ElectronContextMenuPopupResult = {
 };
 
 export type ContextMenuAdapter = {
-  readonly kind: "web" | "electron";
+  readonly kind: 'web' | 'electron';
   show(items: ContextMenuItem[], point: ContextMenuPoint): void | Promise<void>;
   close(): void;
 };
 
 export function isContextMenuDivider(item: ContextMenuItem): item is ContextMenuDivider {
-  return "type" in item && item.type === "divider";
+  return 'type' in item && item.type === 'divider';
 }
 
 export function isContextMenuSubmenu(

@@ -6,13 +6,13 @@ import type {
   PrimitivePaneViewZOrder,
   SeriesAttachedParameter,
   Time,
-} from "lightweight-charts";
-import type { OffSessionSegment } from "@kansoku/shared/types";
+} from 'lightweight-charts';
+import type { OffSessionSegment } from '@kansoku/shared/types';
 
-type DrawTarget = Parameters<IPrimitivePaneRenderer["draw"]>[0];
+type DrawTarget = Parameters<IPrimitivePaneRenderer['draw']>[0];
 
-const colorFor = (kind: OffSessionSegment["kind"]): string =>
-  kind === "overnight" ? "rgba(70, 100, 180, 0.22)" : "rgba(232, 232, 232, 0.08)";
+const colorFor = (kind: OffSessionSegment['kind']): string =>
+  kind === 'overnight' ? 'rgba(70, 100, 180, 0.22)' : 'rgba(232, 232, 232, 0.08)';
 
 interface BandPx {
   x: number;
@@ -64,7 +64,7 @@ class SessionPaneView implements IPrimitivePaneView {
   }
 
   zOrder(): PrimitivePaneViewZOrder {
-    return "bottom";
+    return 'bottom';
   }
 }
 

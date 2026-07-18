@@ -18,19 +18,19 @@
 ### 1. 圆角 token（`styles.css` 的 `:root`）
 
 ```css
---radius:      2px;    /* 现有，不动 —— 全局默认直角语言 */
---radius-md:   6px;    /* 新增 */
---radius-lg:   10px;   /* 新增 —— 与 macOS 窗口边缘圆角一致 */
---radius-full: 999px;  /* 新增 —— 胶囊 */
+--radius: 2px; /* 现有，不动 —— 全局默认直角语言 */
+--radius-md: 6px; /* 新增 */
+--radius-lg: 10px; /* 新增 —— 与 macOS 窗口边缘圆角一致 */
+--radius-full: 999px; /* 新增 —— 胶囊 */
 ```
 
 ### 2. 存量硬编码归并（纯替换，不改布局尺寸）
 
-| 现值 | 归并到 | 涉及元素 |
-|---|---|---|
-| `5px` `6px` `7px` | `var(--radius-md)` | `.desktop-tab`、`.desktop-tab--active .desktop-tab-icon-wrap`、`.desktop-tab-new-visual`、`.palette-option`、`.onboarding-logo`、`.research-title-icon` |
-| `8px` | `var(--radius-lg)` | `.modal-panel`、命令面板容器（约 721/744 行两处）、`.settings-device-code`、`.logs-viewer` |
-| `999px` | `var(--radius-full)` | 全部胶囊徽章（约 6 处：`.chat-typing-dot` 容器、tool 计数、onboarding-rec-tag 等） |
+| 现值              | 归并到               | 涉及元素                                                                                                                                                |
+| ----------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `5px` `6px` `7px` | `var(--radius-md)`   | `.desktop-tab`、`.desktop-tab--active .desktop-tab-icon-wrap`、`.desktop-tab-new-visual`、`.palette-option`、`.onboarding-logo`、`.research-title-icon` |
+| `8px`             | `var(--radius-lg)`   | `.modal-panel`、命令面板容器（约 721/744 行两处）、`.settings-device-code`、`.logs-viewer`                                                              |
+| `999px`           | `var(--radius-full)` | 全部胶囊徽章（约 6 处：`.chat-typing-dot` 容器、tool 计数、onboarding-rec-tag 等）                                                                      |
 
 **白名单（不动）**：`50%`（正圆语义）、`1px`（热力图小方块）、`typeset.css`（em 基准的独立排版体系）、`border-radius: 0`（显式清零）。
 

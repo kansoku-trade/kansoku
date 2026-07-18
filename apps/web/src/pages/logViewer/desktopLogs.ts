@@ -20,7 +20,7 @@ interface DesktopGlobal {
 }
 
 export function getDesktopLogsBridge(
-  win: unknown = typeof window === "undefined" ? undefined : window,
+  win: unknown = typeof window === 'undefined' ? undefined : window,
 ): DesktopLogsBridge | null {
   return (win as { desktop?: DesktopGlobal } | undefined)?.desktop?.logs ?? null;
 }

@@ -1,33 +1,33 @@
-import { Controller, Get, Module } from "@tsuki-hono/common";
-import { createApplication } from "@tsuki-hono/core";
-import { afterAll, describe, expect, it, vi } from "vitest";
-import { AppExceptionFilter } from "../src/filters/app-exception.filter.js";
-import { ClientError } from "@kansoku/core/errors";
-import { CHART_DATA_DIR, PORT } from "@kansoku/core/env";
-import { tsukiRequest } from "./helpers.js";
+import { Controller, Get, Module } from '@tsuki-hono/common';
+import { createApplication } from '@tsuki-hono/core';
+import { afterAll, describe, expect, it, vi } from 'vitest';
+import { AppExceptionFilter } from '../src/filters/app-exception.filter.js';
+import { ClientError } from '@kansoku/core/errors';
+import { CHART_DATA_DIR, PORT } from '@kansoku/core/env';
+import { tsukiRequest } from './helpers.js';
 
-describe("tsuki bootstrap", () => {
-  it("GET /api/health returns the status envelope", async () => {
-    const res = await tsukiRequest("/api/health");
+describe('tsuki bootstrap', () => {
+  it('GET /api/health returns the status envelope', async () => {
+    const res = await tsukiRequest('/api/health');
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({
       ok: true,
-      data: { status: "up", port: PORT, dataDir: CHART_DATA_DIR },
+      data: { status: 'up', port: PORT, dataDir: CHART_DATA_DIR },
     });
   });
 });
 
-describe("tsuki exception filter", () => {
-  @Controller("test-errors")
+describe('tsuki exception filter', () => {
+  @Controller('test-errors')
   class TestErrorsController {
-    @Get("/client")
+    @Get('/client')
     throwClient() {
-      throw new ClientError("bad input", "try again", 422);
+      throw new ClientError('bad input', 'try again', 422);
     }
 
-    @Get("/unknown")
+    @Get('/unknown')
     throwUnknown() {
-      throw new Error("boom");
+      throw new Error('boom');
     }
   }
 
@@ -40,23 +40,23 @@ describe("tsuki exception filter", () => {
     await app?.close?.();
   });
 
-  it("maps ClientError to its status and envelope", async () => {
-    app = await createApplication(TestErrorsModule, { globalPrefix: "/api" });
+  it('maps ClientError to its status and envelope', async () => {
+    app = await createApplication(TestErrorsModule, { globalPrefix: '/api' });
     app.useGlobalFilters(new AppExceptionFilter());
 
-    const res = await app.getInstance().request("/api/test-errors/client");
+    const res = await app.getInstance().request('/api/test-errors/client');
     expect(res.status).toBe(422);
-    expect(await res.json()).toEqual({ ok: false, error: "bad input", hint: "try again" });
+    expect(await res.json()).toEqual({ ok: false, error: 'bad input', hint: 'try again' });
   });
 
-  it("maps unknown errors to a 500 envelope", async () => {
-    app = await createApplication(TestErrorsModule, { globalPrefix: "/api" });
+  it('maps unknown errors to a 500 envelope', async () => {
+    app = await createApplication(TestErrorsModule, { globalPrefix: '/api' });
     app.useGlobalFilters(new AppExceptionFilter());
 
-    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    const res = await app.getInstance().request("/api/test-errors/unknown");
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const res = await app.getInstance().request('/api/test-errors/unknown');
     expect(res.status).toBe(500);
-    expect(await res.json()).toEqual({ ok: false, error: "boom" });
+    expect(await res.json()).toEqual({ ok: false, error: 'boom' });
     expect(errorSpy).toHaveBeenCalled();
     errorSpy.mockRestore();
   });

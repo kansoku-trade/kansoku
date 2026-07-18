@@ -86,13 +86,13 @@ rm ~/Library/LaunchAgents/dev.innei.trade.weekly-watch.plist
 
 ## 故障排查
 
-| 症状 | 检查 |
-|---|---|
-| `launchctl list` 没看到 weekly-watch | plist 路径或语法错误。`plutil ~/Library/LaunchAgents/dev.innei.trade.weekly-watch.plist` 验证 |
-| stderr.log 出现 `longbridge: command not found` | `EnvironmentVariables.PATH` 没包含 longbridge 二进制路径。`which longbridge` 找到路径加进去 |
-| stderr.log 出现 connect timeout | 长桥 API 临时故障。脚本内置 2 次重试，仍失败则当周跳过即可 |
-| 输出的 journal 文件没生成 | 检查 `--no-write` 是否误传；检查 `journal/` 目录权限 |
-| Mac 睡眠时错过触发 | launchd 默认不会唤醒系统执行。需要在「系统设置 → 节能」里加唤醒计划，或接受偶尔错过 |
+| 症状                                            | 检查                                                                                          |
+| ----------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `launchctl list` 没看到 weekly-watch            | plist 路径或语法错误。`plutil ~/Library/LaunchAgents/dev.innei.trade.weekly-watch.plist` 验证 |
+| stderr.log 出现 `longbridge: command not found` | `EnvironmentVariables.PATH` 没包含 longbridge 二进制路径。`which longbridge` 找到路径加进去   |
+| stderr.log 出现 connect timeout                 | 长桥 API 临时故障。脚本内置 2 次重试，仍失败则当周跳过即可                                    |
+| 输出的 journal 文件没生成                       | 检查 `--no-write` 是否误传；检查 `journal/` 目录权限                                          |
+| Mac 睡眠时错过触发                              | launchd 默认不会唤醒系统执行。需要在「系统设置 → 节能」里加唤醒计划，或接受偶尔错过           |
 
 ---
 

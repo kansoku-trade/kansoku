@@ -1,23 +1,23 @@
-import { promises as fs } from "node:fs";
-import { join } from "node:path";
-import { loadQuestionForScorer } from "../dataset/loader.js";
-import type { Question } from "../schema/question.js";
-import { assembleQuestion, type QuoteBar } from "./assemble.js";
-import { cacheFile, readCache, writeCache } from "./cache.js";
-import { checkAnomalies } from "./filters.js";
-import type { SymbolSpec } from "./symbols.js";
-import type { FetchCalendar, FetchKlineHistory } from "./source.js";
-import { firstIndexOnOrAfter, hasSufficientWeekHistory, planCutoffIndices } from "./windowing.js";
+import { promises as fs } from 'node:fs';
+import { join } from 'node:path';
+import { loadQuestionForScorer } from '../dataset/loader.js';
+import type { Question } from '../schema/question.js';
+import { assembleQuestion, type QuoteBar } from './assemble.js';
+import { cacheFile, readCache, writeCache } from './cache.js';
+import { checkAnomalies } from './filters.js';
+import type { SymbolSpec } from './symbols.js';
+import type { FetchCalendar, FetchKlineHistory } from './source.js';
+import { firstIndexOnOrAfter, hasSufficientWeekHistory, planCutoffIndices } from './windowing.js';
 
 export const REQUIRED_BEFORE_DAY = 250;
 export const REQUIRED_BEFORE_WEEK = 104;
 export const HORIZON_BARS = 20;
-export const MIN_CUTOFF_DATE = "2026-01-01";
-export const HISTORY_START = "2022-01-01";
+export const MIN_CUTOFF_DATE = '2026-01-01';
+export const HISTORY_START = '2022-01-01';
 const CALENDAR_LOOKAHEAD_DAYS = 180;
 
 export interface GenerateOptions {
-  bank: "swing";
+  bank: 'swing';
   symbols: SymbolSpec[];
   version: string;
   windowsPerSymbol: number;
@@ -59,11 +59,11 @@ function addDays(dateStr: string, days: number): string {
 
 async function loadSymbolPeriod(
   symbol: string,
-  period: "day" | "week",
+  period: 'day' | 'week',
   options: GenerateOptions,
   endDate: string,
 ): Promise<QuoteBar[]> {
-  const sourceCacheRoot = options.sourceCacheRoot ?? join(options.datasetsRoot, ".cache");
+  const sourceCacheRoot = options.sourceCacheRoot ?? join(options.datasetsRoot, '.cache');
   const file = cacheFile(sourceCacheRoot, symbol, period);
   if (!options.fresh) {
     const cached = await readCache<QuoteBar[]>(file);
@@ -80,10 +80,16 @@ async function fetchCalendarFixture(
   options: GenerateOptions,
 ): Promise<Record<string, unknown>> {
   try {
-    const events = await options.fetchCalendar(symbol, cutoffDate, addDays(cutoffDate, CALENDAR_LOOKAHEAD_DAYS));
+    const events = await options.fetchCalendar(
+      symbol,
+      cutoffDate,
+      addDays(cutoffDate, CALENDAR_LOOKAHEAD_DAYS),
+    );
     return { events };
   } catch (error) {
-    options.log(`  calendar fetch failed for ${symbol}: ${error instanceof Error ? error.message : String(error)}`);
+    options.log(
+      `  calendar fetch failed for ${symbol}: ${error instanceof Error ? error.message : String(error)}`,
+    );
     return {};
   }
 }
@@ -97,7 +103,7 @@ async function writeQuestionFile(
   const dir = join(datasetsRoot, version, bank);
   await fs.mkdir(dir, { recursive: true });
   const file = join(dir, `${question.id}.json`);
-  await fs.writeFile(file, `${JSON.stringify(question, null, 2)}\n`, "utf8");
+  await fs.writeFile(file, `${JSON.stringify(question, null, 2)}\n`, 'utf8');
   return file;
 }
 
@@ -107,8 +113,8 @@ export async function runGenerate(options: GenerateOptions): Promise<GenerateRes
   const endDate = formatDate(options.now());
 
   for (const spec of options.symbols) {
-    const dayBars = await loadSymbolPeriod(spec.symbol, "day", options, endDate);
-    const weekBars = await loadSymbolPeriod(spec.symbol, "week", options, endDate);
+    const dayBars = await loadSymbolPeriod(spec.symbol, 'day', options, endDate);
+    const weekBars = await loadSymbolPeriod(spec.symbol, 'week', options, endDate);
 
     const minCandidateIndex = firstIndexOnOrAfter(dayBars, MIN_CUTOFF_DATE);
     const cutoffIndices = planCutoffIndices({
@@ -133,17 +139,19 @@ export async function runGenerate(options: GenerateOptions): Promise<GenerateRes
         requiredAfter: HORIZON_BARS,
       });
       if (!hasSufficientWeekHistory(weekBars, cutoffDate, REQUIRED_BEFORE_WEEK)) {
-        reasons.push("insufficient_week_history");
+        reasons.push('insufficient_week_history');
       }
 
       if (reasons.length > 0) {
-        options.log(`  skip ${spec.symbol} ${cutoffDate}: ${reasons.join(", ")}`);
+        options.log(`  skip ${spec.symbol} ${cutoffDate}: ${reasons.join(', ')}`);
         skipped.push({ symbol: spec.symbol, cutoffDate, reasons });
         continue;
       }
 
       seq += 1;
-      const calendar = options.dryRun ? {} : await fetchCalendarFixture(spec.symbol, cutoffDate, options);
+      const calendar = options.dryRun
+        ? {}
+        : await fetchCalendarFixture(spec.symbol, cutoffDate, options);
 
       const question = assembleQuestion({
         symbol: spec.symbol,
@@ -162,7 +170,12 @@ export async function runGenerate(options: GenerateOptions): Promise<GenerateRes
 
       if (options.dryRun) continue;
 
-      const file = await writeQuestionFile(options.datasetsRoot, options.version, options.bank, question);
+      const file = await writeQuestionFile(
+        options.datasetsRoot,
+        options.version,
+        options.bank,
+        question,
+      );
       await loadQuestionForScorer(options.datasetsRoot, options.version, options.bank, question.id);
       written.push({ id: question.id, path: file });
     }

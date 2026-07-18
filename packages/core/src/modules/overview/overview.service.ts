@@ -1,18 +1,27 @@
-import type { IntradayPrediction, OverviewRecap, RawBar, RecapSettlementRow } from "@kansoku/shared/types";
-import { chartUrl } from "../../chartUrl.js";
-import { listAllCommentDates, listComments } from "../../ai/comments.js";
-import { listUsage, listUsageDates, summarizeUsage } from "../../ai/usageStore.js";
-import type { OverviewApi } from "../../contract/overview.js";
-import { ClientError } from "../../errors.js";
-import { normalizeQuote } from "../../realtime/quotes.js";
-import { buildOverviewBoard, latestPerSymbol } from "../../services/cockpit/board.js";
-import { attachRMultiple, judgeOutcome, zoneFromPrediction } from "../../services/cockpit/outcome.js";
-import { getResolvedOutcomes, saveResolvedOutcome } from "../../services/cockpit/outcomeCache.js";
-import { aggregateStats, type StatsRow } from "../../services/cockpit/stats.js";
-import { getProvider } from "../../services/marketdata/registry.js";
-import { easternDate } from "../../services/session.js";
-import { listCharts, loadChart } from "../../services/store.js";
-import { marketOf } from "../../services/symbol.utils.js";
+import type {
+  IntradayPrediction,
+  OverviewRecap,
+  RawBar,
+  RecapSettlementRow,
+} from '@kansoku/shared/types';
+import { chartUrl } from '../../chartUrl.js';
+import { listAllCommentDates, listComments } from '../../ai/comments.js';
+import { listUsage, listUsageDates, summarizeUsage } from '../../ai/usageStore.js';
+import type { OverviewApi } from '../../contract/overview.js';
+import { ClientError } from '../../errors.js';
+import { normalizeQuote } from '../../realtime/quotes.js';
+import { buildOverviewBoard, latestPerSymbol } from '../../services/cockpit/board.js';
+import {
+  attachRMultiple,
+  judgeOutcome,
+  zoneFromPrediction,
+} from '../../services/cockpit/outcome.js';
+import { getResolvedOutcomes, saveResolvedOutcome } from '../../services/cockpit/outcomeCache.js';
+import { aggregateStats, type StatsRow } from '../../services/cockpit/stats.js';
+import { getProvider } from '../../services/marketdata/registry.js';
+import { easternDate } from '../../services/session.js';
+import { listCharts, loadChart } from '../../services/store.js';
+import { marketOf } from '../../services/symbol.utils.js';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const OUTCOME_BARS = 300;
@@ -42,7 +51,7 @@ function cacheRecap(date: string, data: OverviewRecap): void {
 
 async function computeHistoricalDayPct(symbol: string, date: string): Promise<number | null> {
   const bars = await getProvider(marketOf(symbol))
-    .getKline(symbol, "day", DAILY_BARS)
+    .getKline(symbol, 'day', DAILY_BARS)
     .catch(() => null);
   if (!bars) return null;
   const idx = bars.findIndex((bar) => easternDate(new Date(bar.time)) === date);
@@ -55,7 +64,9 @@ async function computeHistoricalDayPct(symbol: string, date: string): Promise<nu
 
 async function buildRecap(date: string): Promise<OverviewRecap> {
   const isToday = date === easternDate();
-  const metas = (await listCharts({ type: "intraday" })).filter((m) => easternDate(new Date(m.created_at)) === date);
+  const metas = (await listCharts({ type: 'intraday' })).filter(
+    (m) => easternDate(new Date(m.created_at)) === date,
+  );
   const bySymbol = latestPerSymbol(metas);
   const symbols = [...bySymbol.keys()];
   const usage = summarizeUsage(date, await listUsage(date));
@@ -81,9 +92,9 @@ async function buildRecap(date: string): Promise<OverviewRecap> {
       : Promise.resolve(new Map<string, ReturnType<typeof normalizeQuote>>()),
     isToday
       ? Promise.resolve(new Map<string, number | null>())
-      : Promise.all(symbols.map(async (s) => [s, await computeHistoricalDayPct(s, date)] as const)).then(
-          (entries) => new Map(entries),
-        ),
+      : Promise.all(
+          symbols.map(async (s) => [s, await computeHistoricalDayPct(s, date)] as const),
+        ).then((entries) => new Map(entries)),
     Promise.all(latestMetas.map((m) => loadChart(m.id))),
     Promise.all(symbols.map((s) => listComments(s, date))),
     getResolvedOutcomes(latestMetas.map((m) => m.id)),
@@ -94,23 +105,36 @@ async function buildRecap(date: string): Promise<OverviewRecap> {
       const doc = docs[i];
       const prediction = (doc?.input.prediction as IntradayPrediction | null | undefined) ?? null;
       const direction = prediction?.direction ?? null;
-      const anchor = prediction?.anchor ? { time: prediction.anchor.time, price: prediction.anchor.price } : null;
+      const anchor = prediction?.anchor
+        ? { time: prediction.anchor.time, price: prediction.anchor.price }
+        : null;
       const plan =
-        doc && doc.built.kind === "intraday" && doc.built.entryPlan
-          ? { entry: doc.built.entryPlan.entry, stop: doc.built.entryPlan.stop, target1: doc.built.entryPlan.target1 }
+        doc && doc.built.kind === 'intraday' && doc.built.entryPlan
+          ? {
+              entry: doc.built.entryPlan.entry,
+              stop: doc.built.entryPlan.stop,
+              target1: doc.built.entryPlan.target1,
+            }
           : null;
       let outcome = attachRMultiple(cached.get(meta.id) ?? null, direction, plan);
       if (!outcome && direction && anchor) {
         const bars = await getProvider(marketOf(meta.symbol!))
-          .getKline(meta.symbol!, "15m", OUTCOME_BARS)
+          .getKline(meta.symbol!, '15m', OUTCOME_BARS)
           .catch(() => null);
-        outcome = bars ? judgeOutcome(direction, anchor, plan, bars, zoneFromPrediction(prediction)) : null;
-        if (outcome && outcome.status !== "open") {
-          void saveResolvedOutcome({ chartId: meta.id, symbol: meta.symbol!, direction }, outcome).catch(() => {});
+        outcome = bars
+          ? judgeOutcome(direction, anchor, plan, bars, zoneFromPrediction(prediction))
+          : null;
+        if (outcome && outcome.status !== 'open') {
+          void saveResolvedOutcome(
+            { chartId: meta.id, symbol: meta.symbol!, direction },
+            outcome,
+          ).catch(() => {});
         }
       }
       const day_pct = isToday
-        ? (quoteBySymbol.get(meta.symbol!)?.regularPct ?? quoteBySymbol.get(meta.symbol!)?.pct ?? null)
+        ? (quoteBySymbol.get(meta.symbol!)?.regularPct ??
+          quoteBySymbol.get(meta.symbol!)?.pct ??
+          null)
         : (dayPctBySymbol.get(meta.symbol!) ?? null);
       return {
         symbol: meta.symbol!,
@@ -124,7 +148,7 @@ async function buildRecap(date: string): Promise<OverviewRecap> {
 
   const alerts = commentsList
     .flat()
-    .filter((c) => c.level === "alert")
+    .filter((c) => c.level === 'alert')
     .sort((a, b) => (a.ts < b.ts ? -1 : 1))
     .map((c) => ({ ts: c.ts, symbol: c.symbol, level: c.level, text: c.text }));
 
@@ -133,7 +157,7 @@ async function buildRecap(date: string): Promise<OverviewRecap> {
 
 function assertDate(date: string): void {
   if (!DATE_RE.test(date)) {
-    throw new ClientError(`invalid date: ${date}`, "expected YYYY-MM-DD");
+    throw new ClientError(`invalid date: ${date}`, 'expected YYYY-MM-DD');
   }
 }
 
@@ -171,16 +195,18 @@ export const overviewService: OverviewApi = {
   },
 
   async stats() {
-    const metas = (await listCharts({ type: "intraday" })).filter((m) => m.symbol);
+    const metas = (await listCharts({ type: 'intraday' })).filter((m) => m.symbol);
     const docs = await Promise.all(metas.map((m) => loadChart(m.id)));
     const cached = await getResolvedOutcomes(metas.map((m) => m.id));
 
-    const symbolsNeedingBars = [...new Set(metas.filter((m) => !cached.has(m.id)).map((m) => m.symbol!))];
+    const symbolsNeedingBars = [
+      ...new Set(metas.filter((m) => !cached.has(m.id)).map((m) => m.symbol!)),
+    ];
     const barsBySymbol = new Map<string, RawBar[] | null>();
     await Promise.all(
       symbolsNeedingBars.map(async (symbol) => {
         const bars = await getProvider(marketOf(symbol))
-          .getKline(symbol, "15m", OUTCOME_BARS)
+          .getKline(symbol, '15m', OUTCOME_BARS)
           .catch(() => null);
         barsBySymbol.set(symbol, bars);
       }),
@@ -191,16 +217,25 @@ export const overviewService: OverviewApi = {
       const doc = docs[i];
       const prediction = (doc?.input.prediction as IntradayPrediction | null | undefined) ?? null;
       if (!prediction?.direction) return;
-      const anchor = prediction.anchor ? { time: prediction.anchor.time, price: prediction.anchor.price } : null;
+      const anchor = prediction.anchor
+        ? { time: prediction.anchor.time, price: prediction.anchor.price }
+        : null;
       const plan =
-        doc && doc.built.kind === "intraday" && doc.built.entryPlan
-          ? { entry: doc.built.entryPlan.entry, stop: doc.built.entryPlan.stop, target1: doc.built.entryPlan.target1 }
+        doc && doc.built.kind === 'intraday' && doc.built.entryPlan
+          ? {
+              entry: doc.built.entryPlan.entry,
+              stop: doc.built.entryPlan.stop,
+              target1: doc.built.entryPlan.target1,
+            }
           : null;
       let outcome = attachRMultiple(cached.get(meta.id) ?? null, prediction.direction, plan);
       if (!outcome) {
         const bars = barsBySymbol.get(meta.symbol!) ?? null;
-        outcome = anchor && bars ? judgeOutcome(prediction.direction, anchor, plan, bars, zoneFromPrediction(prediction)) : null;
-        if (outcome && outcome.status !== "open") {
+        outcome =
+          anchor && bars
+            ? judgeOutcome(prediction.direction, anchor, plan, bars, zoneFromPrediction(prediction))
+            : null;
+        if (outcome && outcome.status !== 'open') {
           void saveResolvedOutcome(
             { chartId: meta.id, symbol: meta.symbol!, direction: prediction.direction },
             outcome,
@@ -209,7 +244,7 @@ export const overviewService: OverviewApi = {
       }
       rows.push({
         direction: prediction.direction,
-        origin: doc?.input.origin === "analyst" ? "analyst" : "manual",
+        origin: doc?.input.origin === 'analyst' ? 'analyst' : 'manual',
         outcome,
       });
     });
@@ -227,9 +262,12 @@ export const overviewService: OverviewApi = {
     const [usageDates, commentDates, intradayMetas] = await Promise.all([
       listUsageDates(RECAP_DATES_LIMIT),
       listAllCommentDates(RECAP_DATES_LIMIT),
-      listCharts({ type: "intraday" }),
+      listCharts({ type: 'intraday' }),
     ]);
     const chartDates = intradayMetas.map((m) => easternDate(new Date(m.created_at)));
-    return [...new Set([...usageDates, ...commentDates, ...chartDates])].sort().reverse().slice(0, RECAP_DATES_LIMIT);
+    return [...new Set([...usageDates, ...commentDates, ...chartDates])]
+      .sort()
+      .reverse()
+      .slice(0, RECAP_DATES_LIMIT);
   },
 };

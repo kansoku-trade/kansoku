@@ -15,6 +15,7 @@
 ### Task 1: 接入窗口状态管理
 
 **Files:**
+
 - Modify: `apps/desktop/package.json`
 - Modify: `pnpm-lock.yaml`
 - Modify: `apps/desktop/src/main.ts`
@@ -66,6 +67,7 @@ windowState.manage(win);
 ### Task 2: 静态与构建验证
 
 **Files:**
+
 - Verify: `apps/desktop/src/main.ts`
 - Verify: `apps/desktop/package.json`
 - Verify: `pnpm-lock.yaml`

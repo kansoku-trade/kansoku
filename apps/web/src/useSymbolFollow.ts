@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
-import type { SymbolFollowStatus } from "@kansoku/core/contract/symbols";
-import { errorMessage } from "./api";
-import { useQuery } from "./apiHooks";
-import { client } from "./client";
+import { useEffect, useState } from 'react';
+import type { SymbolFollowStatus } from '@kansoku/core/contract/symbols';
+import { errorMessage } from './api';
+import { useQuery } from './apiHooks';
+import { client } from './client';
 
 export function useSymbolFollow({
   symbol,
@@ -15,7 +15,7 @@ export function useSymbolFollow({
 }) {
   const needsStatus = initialFollowing === undefined;
   const { data, error, loading } = useQuery<SymbolFollowStatus>(
-    needsStatus ? `symbols.followStatus:${symbol}:${revision ?? ""}` : null,
+    needsStatus ? `symbols.followStatus:${symbol}:${revision ?? ''}` : null,
     () => client.symbols.followStatus({ sym: symbol }),
     { cache: false },
   );

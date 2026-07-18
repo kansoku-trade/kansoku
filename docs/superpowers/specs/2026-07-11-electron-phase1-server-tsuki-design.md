@@ -24,12 +24,12 @@
 
 Fastify 耦合集中在：
 
-| 文件 | 内容 | 迁移方式 |
-|---|---|---|
-| `src/app.ts` | Fastify 实例、错误处理、Vite middleware 挂载、静态托管 | 重写为 Tsuki `AppModule` + 异常 filter |
-| `src/index.ts` | listen 入口 | 拆成 `bootstrap.ts` + `main.node.ts` |
+| 文件                      | 内容                                                                                              | 迁移方式                                         |
+| ------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| `src/app.ts`              | Fastify 实例、错误处理、Vite middleware 挂载、静态托管                                            | 重写为 Tsuki `AppModule` + 异常 filter           |
+| `src/index.ts`            | listen 入口                                                                                       | 拆成 `bootstrap.ts` + `main.node.ts`             |
 | `src/routes/*.ts`（9 个） | charts / symbols / positions / overview / settings / chat / annotations / settingsValidation / ws | 每个改写成一个 `@Controller`，归入对应 `@Module` |
-| `src/routes/ws.ts` | `@fastify/websocket` 注册 + `handleSocket` | 见「实时通道」 |
+| `src/routes/ws.ts`        | `@fastify/websocket` 注册 + `handleSocket`                                                        | 见「实时通道」                                   |
 
 `services/`、`ai/`、`realtime/`、`db/`、`shared/` 不动。
 

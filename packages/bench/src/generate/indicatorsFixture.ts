@@ -1,5 +1,5 @@
-import type { RawBar } from "@kansoku/shared/types";
-import { macd, sma } from "../../../core/src/services/indicators.js";
+import type { RawBar } from '@kansoku/shared/types';
+import { macd, sma } from '../../../core/src/services/indicators.js';
 
 export interface DayIndicators {
   sma20: number | null;
@@ -14,7 +14,7 @@ export interface WeekIndicators {
 }
 
 function lastValue(values: (number | null)[]): number | null {
-  return values.length > 0 ? values[values.length - 1] : null;
+  return values.at(-1) ?? null;
 }
 
 function closes(bars: RawBar[]): number[] {

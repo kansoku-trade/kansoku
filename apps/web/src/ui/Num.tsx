@@ -1,4 +1,4 @@
-import type { HTMLAttributes } from "react";
+import type { HTMLAttributes } from 'react';
 
 type NumProps = {
   value: number;
@@ -8,9 +8,9 @@ type NumProps = {
 } & HTMLAttributes<HTMLSpanElement>;
 
 export function Num({ value, diff, digits = 2, suffix, className, ...rest }: NumProps) {
-  const tone = diff ? (value >= 0 ? " up" : " down") : "";
-  const sign = diff && value >= 0 ? "+" : "";
-  const cls = `num${tone}${className ? ` ${className}` : ""}`;
+  const tone = diff ? (value >= 0 ? ' up' : ' down') : '';
+  const sign = diff && value >= 0 ? '+' : '';
+  const cls = `num${tone}${className ? ` ${className}` : ''}`;
 
   return (
     <span className={cls} {...rest}>

@@ -20,12 +20,12 @@ If the user wants tweet **history beyond ~5 days**, this skill is insufficient �
 
 **trumpstruth.org/feed** — a public third-party mirror of @realDonaldTrump on Truth Social. RSS 2.0 XML with these fields per item:
 
-| Field | Meaning |
-|---|---|
-| `<pubDate>` | RFC 2822, original Truth Social post timestamp |
-| `<link>` | trumpstruth.org/statuses/{mirror_id} |
+| Field                 | Meaning                                                              |
+| --------------------- | -------------------------------------------------------------------- |
+| `<pubDate>`           | RFC 2822, original Truth Social post timestamp                       |
+| `<link>`              | trumpstruth.org/statuses/{mirror_id}                                 |
 | `<truth:originalUrl>` | truthsocial.com/@realDonaldTrump/{truth_id} — **the primary source** |
-| `<description>` | Full post body with HTML (links + ellipsis spans) |
+| `<description>`       | Full post body with HTML (links + ellipsis spans)                    |
 
 The mirror typically lags the original by ≤2 minutes. Single feed pull returns ~100 most recent posts, covering ~5 days at Trump's typical cadence.
 
@@ -72,7 +72,7 @@ The archive de-dupes by mirror status_id — re-running on the same feed is a no
 1. **Decide window**. Default 24h. Use 48–72h when investigating a multi-day move. Use `--all` when context-grazing.
 2. **Decide scope**. If user asks generally → no `--topic`. If user names a domain (关税 / 半导体 / 油 / 加密) → pass `--topic`.
 3. **Pull feed**. Run `fetch.py` with chosen flags. **Always include `--hours`** — never default to "all of feed" silently.
-4. **Second-pass grading**. Script output is *candidates*, not signals. For each post:
+4. **Second-pass grading**. Script output is _candidates_, not signals. For each post:
    - **Read the full text** before assigning impact. Headlines and keyword tags lie.
    - Assign a **market-impact tier**: `high` / `med` / `low` / `noise`
    - **high** = concrete action with $ figure, %, date, named country/company (e.g. "25% tariff on Mexican imports effective June 1", "Section 232 on chips")
@@ -105,13 +105,13 @@ The archive de-dupes by mirror status_id — re-running on the same feed is a no
 
 ## Anti-patterns
 
-| Mistake | Reality |
-|---|---|
-| Treating script output as "market signal" | Script is a keyword filter. LLM must read each post and tier. |
-| Quoting a mirror URL as the source | Always link `truth:originalUrl` (truthsocial.com). Mirror is a convenience. |
-| Reporting Senate endorsements as "policy news" | Politics-only posts with `military` / `energy` keywords are noise — filter at tier=noise. |
-| "Trump said X about Y" with no link | Always include the truthsocial.com link. User must be able to verify. |
-| Pretending tweets are durable | Trump posts can be deleted or retracted within hours. If consulted >12h after, note staleness. |
+| Mistake                                        | Reality                                                                                        |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Treating script output as "market signal"      | Script is a keyword filter. LLM must read each post and tier.                                  |
+| Quoting a mirror URL as the source             | Always link `truth:originalUrl` (truthsocial.com). Mirror is a convenience.                    |
+| Reporting Senate endorsements as "policy news" | Politics-only posts with `military` / `energy` keywords are noise — filter at tier=noise.      |
+| "Trump said X about Y" with no link            | Always include the truthsocial.com link. User must be able to verify.                          |
+| Pretending tweets are durable                  | Trump posts can be deleted or retracted within hours. If consulted >12h after, note staleness. |
 
 ## Integration
 

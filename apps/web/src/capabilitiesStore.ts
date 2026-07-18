@@ -1,8 +1,8 @@
-import { useSyncExternalStore } from "react";
-import type { LicenseSnapshot } from "@kansoku/core/contract/license";
-import type { FeatureKey, FeatureState } from "@kansoku/pro-api/features";
-import { client } from "./client";
-import { clearLicenseRequired, useLicenseRequiredMode } from "./licenseRequiredMode";
+import { useSyncExternalStore } from 'react';
+import type { LicenseSnapshot } from '@kansoku/core/contract/license';
+import type { FeatureKey, FeatureState } from '@kansoku/pro-api/features';
+import { client } from './client';
+import { clearLicenseRequired, useLicenseRequiredMode } from './licenseRequiredMode';
 
 export interface Capabilities {
   pro: boolean | null;

@@ -1,13 +1,13 @@
-import { beforeEach, describe, expect, it } from "vitest";
-import type { AiAgentFactory } from "@kansoku/core/ai/agentSession";
-import type { AssistantChatDeps } from "@kansoku/core/ai/assistantChat";
-import type { AiModel } from "@kansoku/core/ai/models";
-import { createDb, type Db } from "@kansoku/core/db/index";
-import { setAssistantChatDepsForTests } from "@kansoku/core/modules/assistant/assistantChat.service";
-import { tsukiRequest } from "./helpers.js";
+import { beforeEach, describe, expect, it } from 'vitest';
+import type { AiAgentFactory } from '@kansoku/core/ai/agentSession';
+import type { AssistantChatDeps } from '@kansoku/core/ai/assistantChat';
+import type { AiModel } from '@kansoku/core/ai/models';
+import { createDb, type Db } from '@kansoku/core/db/index';
+import { setAssistantChatDepsForTests } from '@kansoku/core/modules/assistant/assistantChat.service';
+import { tsukiRequest } from './helpers.js';
 
-const fakeModel = { provider: "anthropic", id: "test-model" } as unknown as AiModel;
-const DISCIPLINE = "# trading-discipline\n测试纪律。";
+const fakeModel = { provider: 'anthropic', id: 'test-model' } as unknown as AiModel;
+const DISCIPLINE = '# trading-discipline\n测试纪律。';
 
 let db: Db;
 
@@ -26,35 +26,35 @@ function baseDeps(overrides: Partial<AssistantChatDeps> = {}): AssistantChatDeps
 }
 
 beforeEach(() => {
-  db = createDb(":memory:");
+  db = createDb(':memory:');
   setAssistantChatDepsForTests(baseDeps());
 });
 
 async function createSession(title?: string): Promise<{ id: string }> {
-  const res = await tsukiRequest("/api/assistant/sessions", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
+  const res = await tsukiRequest('/api/assistant/sessions', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
     body: JSON.stringify(title ? { title } : {}),
   });
   const body = await res.json();
   return body.session;
 }
 
-describe("assistant routes", () => {
-  it("runs the full session + chat lifecycle", async () => {
+describe('assistant routes', () => {
+  it('runs the full session + chat lifecycle', async () => {
     const created = await (async () => {
-      const res = await tsukiRequest("/api/assistant/sessions", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ title: "研究会话" }),
+      const res = await tsukiRequest('/api/assistant/sessions', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ title: '研究会话' }),
       });
       expect(res.status).toBe(200);
       const body = await res.json();
-      expect(body.session.title).toBe("研究会话");
+      expect(body.session.title).toBe('研究会话');
       return body.session;
     })();
 
-    const listRes = await tsukiRequest("/api/assistant/sessions");
+    const listRes = await tsukiRequest('/api/assistant/sessions');
     expect(listRes.status).toBe(200);
     const listBody = await listRes.json();
     expect(listBody.sessions.some((s: { id: string }) => s.id === created.id)).toBe(true);
@@ -90,22 +90,22 @@ describe("assistant routes", () => {
     );
 
     const firstPost = tsukiRequest(`/api/assistant/sessions/${created.id}/chat/messages`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ text: "你好" }),
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ text: '你好' }),
     });
     await started;
 
     const busyRes = await tsukiRequest(`/api/assistant/sessions/${created.id}/chat/messages`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ text: "第二条" }),
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ text: '第二条' }),
     });
     expect(busyRes.status).toBe(409);
-    expect(await busyRes.json()).toEqual({ error: "上一条还在回答中" });
+    expect(await busyRes.json()).toEqual({ error: '上一条还在回答中' });
 
     const abortRes = await tsukiRequest(`/api/assistant/sessions/${created.id}/chat/abort`, {
-      method: "POST",
+      method: 'POST',
     });
     expect(abortRes.status).toBe(200);
     expect(await abortRes.json()).toEqual({ ok: true });
@@ -115,7 +115,9 @@ describe("assistant routes", () => {
     expect(firstRes.status).toBe(202);
     expect(await firstRes.json()).toEqual({ accepted: true });
 
-    const deleteRes = await tsukiRequest(`/api/assistant/sessions/${created.id}`, { method: "DELETE" });
+    const deleteRes = await tsukiRequest(`/api/assistant/sessions/${created.id}`, {
+      method: 'DELETE',
+    });
     expect(deleteRes.status).toBe(200);
     expect(await deleteRes.json()).toEqual({ ok: true });
 
@@ -123,53 +125,53 @@ describe("assistant routes", () => {
     expect(notFoundChat.status).toBe(404);
   });
 
-  it("returns 503 when no chat model is configured", async () => {
+  it('returns 503 when no chat model is configured', async () => {
     const session = await createSession();
     setAssistantChatDepsForTests(baseDeps({ model: null }));
 
     const res = await tsukiRequest(`/api/assistant/sessions/${session.id}/chat/messages`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ text: "你好" }),
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ text: '你好' }),
     });
     expect(res.status).toBe(503);
-    expect(await res.json()).toEqual({ error: "未配置追问模型，请在 /settings 配置" });
+    expect(await res.json()).toEqual({ error: '未配置追问模型，请在 /settings 配置' });
   });
 
-  it("returns 404 when posting to an unknown session id", async () => {
-    const res = await tsukiRequest("/api/assistant/sessions/does-not-exist/chat/messages", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ text: "你好" }),
+  it('returns 404 when posting to an unknown session id', async () => {
+    const res = await tsukiRequest('/api/assistant/sessions/does-not-exist/chat/messages', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ text: '你好' }),
     });
     expect(res.status).toBe(404);
-    expect(await res.json()).toEqual({ error: "会话不存在" });
+    expect(await res.json()).toEqual({ error: '会话不存在' });
   });
 
-  it("rejects empty, whitespace-only, or overly long text with 400", async () => {
+  it('rejects empty, whitespace-only, or overly long text with 400', async () => {
     const session = await createSession();
     const empty = await tsukiRequest(`/api/assistant/sessions/${session.id}/chat/messages`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ text: "" }),
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ text: '' }),
     });
     expect(empty.status).toBe(400);
 
     const tooLong = await tsukiRequest(`/api/assistant/sessions/${session.id}/chat/messages`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ text: "a".repeat(4001) }),
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ text: 'a'.repeat(4001) }),
     });
     expect(tooLong.status).toBe(400);
   });
 
-  it("404s when deleting an unknown session id", async () => {
-    const res = await tsukiRequest("/api/assistant/sessions/does-not-exist", { method: "DELETE" });
+  it('404s when deleting an unknown session id', async () => {
+    const res = await tsukiRequest('/api/assistant/sessions/does-not-exist', { method: 'DELETE' });
     expect(res.status).toBe(404);
   });
 
-  it("404s when getting chat state for an unknown session id", async () => {
-    const res = await tsukiRequest("/api/assistant/sessions/does-not-exist/chat");
+  it('404s when getting chat state for an unknown session id', async () => {
+    const res = await tsukiRequest('/api/assistant/sessions/does-not-exist/chat');
     expect(res.status).toBe(404);
   });
 });

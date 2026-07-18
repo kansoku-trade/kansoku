@@ -1,4 +1,4 @@
-import { assertNoElectronDev, ensureNodeAbi } from "../../../scripts/native-abi.mjs";
+import { assertNoElectronDev, ensureNodeAbi } from '../../../scripts/native-abi.mjs';
 
-assertNoElectronDev("ensureNativeAbi");
-ensureNodeAbi("ensureNativeAbi");
+assertNoElectronDev('ensureNativeAbi');
+ensureNodeAbi('ensureNativeAbi');

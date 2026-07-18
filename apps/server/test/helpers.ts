@@ -1,4 +1,4 @@
-import { createKernel, type Kernel } from "../src/bootstrap.js";
+import { createKernel, type Kernel } from '../src/bootstrap.js';
 
 let kernelPromise: Promise<Kernel> | undefined;
 

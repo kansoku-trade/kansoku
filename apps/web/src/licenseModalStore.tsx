@@ -1,8 +1,8 @@
-import { useSyncExternalStore } from "react";
-import { LicenseModalBody } from "./LicenseModal";
-import { openModal, resetModalStoreForTests } from "./ui";
+import { useSyncExternalStore } from 'react';
+import { LicenseModalBody } from './LicenseModal';
+import { openModal, resetModalStoreForTests } from './ui';
 
-export type LicenseModalTrigger = "guard" | "runtime-403";
+export type LicenseModalTrigger = 'guard' | 'runtime-403';
 
 let closeFn: (() => void) | null = null;
 let trigger: LicenseModalTrigger | null = null;
@@ -30,8 +30,8 @@ export function openLicenseModal(nextTrigger: LicenseModalTrigger): void {
   emit();
   if (closeFn) return;
   const close = openModal({
-    title: "订阅与授权",
-    panelClassName: "license-modal-panel",
+    title: '订阅与授权',
+    panelClassName: 'license-modal-panel',
     body: (closeModal) => <LicenseModalBody close={closeModal} />,
     onClose: () => {
       if (closeFn !== close) return;
@@ -58,6 +58,9 @@ export function resetLicenseModalStoreForTests(): void {
   resetModalStoreForTests();
 }
 
-export function getLicenseModalStateForTests(): { open: boolean; trigger: LicenseModalTrigger | null } {
+export function getLicenseModalStateForTests(): {
+  open: boolean;
+  trigger: LicenseModalTrigger | null;
+} {
   return { open: closeFn !== null, trigger };
 }

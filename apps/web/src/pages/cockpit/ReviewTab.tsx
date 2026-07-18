@@ -1,14 +1,14 @@
-import type { SymbolAnalysisRow } from "@kansoku/shared/types";
-import { HistoryTab } from "./HistoryTab";
-import { JournalSection, type JournalEntryMeta } from "./JournalSection";
-import { NoteTab } from "./NoteTab";
+import type { SymbolAnalysisRow } from '@kansoku/shared/types';
+import { HistoryTab } from './HistoryTab';
+import { JournalSection, type JournalEntryMeta } from './JournalSection';
+import { NoteTab } from './NoteTab';
 
-export type ReviewSection = "history" | "journal" | "note";
+export type ReviewSection = 'history' | 'journal' | 'note';
 
 const SECTIONS: { key: ReviewSection; label: string }[] = [
-  { key: "history", label: "历史" },
-  { key: "journal", label: "日志" },
-  { key: "note", label: "笔记" },
+  { key: 'history', label: '历史' },
+  { key: 'journal', label: '日志' },
+  { key: 'note', label: '笔记' },
 ];
 
 export function ReviewTab({
@@ -35,7 +35,7 @@ export function ReviewTab({
   const journalByDate = new Map(journal.map((e) => [e.date, e.name] as [string, string]));
   const openJournal = (name: string) => {
     onSelectJournal(name);
-    onSectionChange("journal");
+    onSectionChange('journal');
   };
 
   return (
@@ -44,14 +44,14 @@ export function ReviewTab({
         {SECTIONS.map((s) => (
           <button
             key={s.key}
-            className={`review-switch-item${section === s.key ? " active" : ""}`}
+            className={`review-switch-item${section === s.key ? ' active' : ''}`}
             onClick={() => onSectionChange(s.key)}
           >
             {s.label}
           </button>
         ))}
       </div>
-      {section === "history" &&
+      {section === 'history' &&
         (rows.length === 0 ? (
           <p className="note-block">还没有历史分析</p>
         ) : (
@@ -63,7 +63,7 @@ export function ReviewTab({
             onOpenJournal={openJournal}
           />
         ))}
-      {section === "journal" && (
+      {section === 'journal' && (
         <JournalSection
           symbol={symbol}
           entries={journal}
@@ -72,7 +72,7 @@ export function ReviewTab({
           reloadJournal={reloadJournal}
         />
       )}
-      {section === "note" && <NoteTab symbol={symbol} />}
+      {section === 'note' && <NoteTab symbol={symbol} />}
     </div>
   );
 }

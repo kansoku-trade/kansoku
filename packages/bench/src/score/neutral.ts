@@ -1,8 +1,8 @@
-import type { RawBar } from "@kansoku/shared/types";
-import { sma } from "../../../core/src/services/indicators.js";
-import { num } from "./replay.js";
+import type { RawBar } from '@kansoku/shared/types';
+import { sma } from '../../../core/src/services/indicators.js';
+import { num } from './replay.js';
 
-export type Regime = "up" | "down";
+export type Regime = 'up' | 'down';
 
 export function atr14(dayBars: RawBar[]): number | null {
   const window = dayBars.slice(-15);
@@ -21,7 +21,7 @@ export function atr14(dayBars: RawBar[]): number | null {
 }
 
 export function cutoffCloseOf(dayBars: RawBar[]): number {
-  const last = dayBars[dayBars.length - 1];
+  const last = dayBars.at(-1);
   return last ? num(last.close) : Number.NaN;
 }
 
@@ -32,10 +32,10 @@ export function neutralCorrect(cutoffClose: number, atr: number, replayBars: Raw
 
 export function regimeOf(dayBars: RawBar[]): Regime {
   const closes = dayBars.map((bar) => num(bar.close));
-  if (closes.length === 0) return "down";
+  if (closes.length === 0) return 'down';
   const series = sma(closes, 50);
-  const last = series[series.length - 1];
-  const close = closes[closes.length - 1];
+  const last = series.at(-1);
+  const close = closes.at(-1)!;
   const threshold = last ?? closes.reduce((acc, value) => acc + value, 0) / closes.length;
-  return close > threshold ? "up" : "down";
+  return close > threshold ? 'up' : 'down';
 }

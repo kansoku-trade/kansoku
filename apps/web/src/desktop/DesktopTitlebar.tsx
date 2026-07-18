@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react';
 import {
   ArrowUpCircle,
   Circle,
@@ -9,21 +9,17 @@ import {
   Settings,
   TrendingUp,
   X,
-} from 'lucide-react'
-import { useHubStatus } from '../useHubStatus'
-import type { HubStatus } from '../wsHub'
-import { Dot, ScrollArea, showContextMenu, Tooltip, type ContextMenuItem } from '../ui'
-import { useAnalystRunIndicator } from '../analystRunsStore'
-import { symbolFromRoute } from '../lib/symbol'
-import { getOpenWindowBridge, getPopoutBridge } from './desktopWindowsBridge'
-import {
-  getDesktopUpdaterBridge,
-  isAvailableStatus,
-  type UpdaterUiStatus,
-} from './desktopUpdater'
-import { tabKind, type TabState } from './tabsStore'
-import type { TabsController } from './tabsController'
-import { NewTabLauncher } from './NewTabLauncher'
+} from 'lucide-react';
+import { useHubStatus } from '../useHubStatus';
+import type { HubStatus } from '../wsHub';
+import { Dot, ScrollArea, showContextMenu, Tooltip, type ContextMenuItem } from '../ui';
+import { useAnalystRunIndicator } from '../analystRunsStore';
+import { symbolFromRoute } from '../lib/symbol';
+import { getOpenWindowBridge, getPopoutBridge } from './desktopWindowsBridge';
+import { getDesktopUpdaterBridge, isAvailableStatus, type UpdaterUiStatus } from './desktopUpdater';
+import { tabKind, type TabState } from './tabsStore';
+import type { TabsController } from './tabsController';
+import { NewTabLauncher } from './NewTabLauncher';
 
 const TAB_ICONS: Record<ReturnType<typeof tabKind>, typeof House> = {
   home: House,
@@ -33,46 +29,59 @@ const TAB_ICONS: Record<ReturnType<typeof tabKind>, typeof House> = {
   logs: ScrollText,
   symbol: TrendingUp,
   other: Circle,
-}
+};
 
 function TabStatusDots({ symbol }: { symbol: string }) {
-  const [running, isUnseen] = useAnalystRunIndicator(symbol)
-  if (!running && !isUnseen) return null
+  const [running, isUnseen] = useAnalystRunIndicator(symbol);
+  if (!running && !isUnseen) return null;
   return (
     <>
-      {running && <span className="desktop-tab-status-dot desktop-tab-status-dot--running" aria-hidden="true" />}
-      {isUnseen && <span className="desktop-tab-status-dot desktop-tab-status-dot--unseen" aria-hidden="true" />}
+      {running && (
+        <span
+          className="desktop-tab-status-dot desktop-tab-status-dot--running"
+          aria-hidden="true"
+        />
+      )}
+      {isUnseen && (
+        <span
+          className="desktop-tab-status-dot desktop-tab-status-dot--unseen"
+          aria-hidden="true"
+        />
+      )}
     </>
-  )
+  );
 }
 
 function TabIcon({ route }: { route: string }) {
-  const Icon = TAB_ICONS[tabKind(route)]
-  const symbol = symbolFromRoute(route)
+  const Icon = TAB_ICONS[tabKind(route)];
+  const symbol = symbolFromRoute(route);
   return (
     <span className="desktop-tab-icon-wrap">
       <Icon className="desktop-tab-icon" size={12} />
       {symbol && <TabStatusDots symbol={symbol} />}
     </span>
-  )
+  );
 }
 
-const HUB_STATUS_META: Record<HubStatus, { label: string; tone?: 'accent' | 'ok'; pulse?: boolean }> = {
+const HUB_STATUS_META: Record<
+  HubStatus,
+  { label: string; tone?: 'accent' | 'ok'; pulse?: boolean }
+> = {
   connected: { label: '行情已连接', tone: 'ok' },
   connecting: { label: '行情连接中…', tone: 'accent' },
   reconnecting: { label: '行情已断开，重连中…', tone: 'accent', pulse: true },
-}
+};
 
 function HubStatusDot() {
-  const status = useHubStatus()
-  const meta = HUB_STATUS_META[status]
+  const status = useHubStatus();
+  const meta = HUB_STATUS_META[status];
   return (
     <Tooltip content={meta.label} placement="bottom">
       <span className="desktop-hub-status">
         <Dot tone={meta.tone} pulse={meta.pulse} aria-label={meta.label} role="status" />
       </span>
     </Tooltip>
-  )
+  );
 }
 
 function Tab({
@@ -83,12 +92,12 @@ function Tab({
   onClose,
   onContextMenu,
 }: {
-  tab: TabState
-  active: boolean
-  closable: boolean
-  onActivate: () => void
-  onClose: () => void
-  onContextMenu: () => void
+  tab: TabState;
+  active: boolean;
+  closable: boolean;
+  onActivate: () => void;
+  onClose: () => void;
+  onContextMenu: () => void;
 }) {
   return (
     <button
@@ -96,8 +105,8 @@ function Tab({
       className={`desktop-tab${active ? ' desktop-tab--active' : ''}`}
       onClick={onActivate}
       onContextMenu={(event) => {
-        event.preventDefault()
-        onContextMenu()
+        event.preventDefault();
+        onContextMenu();
       }}
     >
       <TabIcon route={tab.route} />
@@ -108,44 +117,40 @@ function Tab({
           role="button"
           aria-label="关闭标签页"
           onClick={(event) => {
-            event.stopPropagation()
-            onClose()
+            event.stopPropagation();
+            onClose();
           }}
         >
           <X size={11} />
         </span>
       )}
     </button>
-  )
+  );
 }
 
 function useUpdaterStatus(): UpdaterUiStatus | null {
-  const [status, setStatus] = useState<UpdaterUiStatus | null>(null)
+  const [status, setStatus] = useState<UpdaterUiStatus | null>(null);
 
   useEffect(() => {
-    const bridge = getDesktopUpdaterBridge()
-    if (!bridge) return
-    let cancelled = false
+    const bridge = getDesktopUpdaterBridge();
+    if (!bridge) return;
+    let cancelled = false;
     void bridge.getStatus().then((next) => {
-      if (!cancelled) setStatus(next)
-    })
+      if (!cancelled) setStatus(next);
+    });
     const unsubscribe = bridge.onStatus((next) => {
-      if (!cancelled) setStatus(next)
-    })
+      if (!cancelled) setStatus(next);
+    });
     return () => {
-      cancelled = true
-      unsubscribe()
-    }
-  }, [])
+      cancelled = true;
+      unsubscribe();
+    };
+  }, []);
 
-  return status
+  return status;
 }
 
-export function DesktopTitlebar({
-  controller,
-}: {
-  controller: TabsController
-}) {
+export function DesktopTitlebar({ controller }: { controller: TabsController }) {
   const {
     snapshot,
     activateTab,
@@ -158,17 +163,17 @@ export function DesktopTitlebar({
     focusOrOpenResearch,
     focusOrOpenSettings,
     focusOrOpenChat,
-  } = controller
-  const updaterStatus = useUpdaterStatus()
-  const showUpdateBadge = isAvailableStatus(updaterStatus)
+  } = controller;
+  const updaterStatus = useUpdaterStatus();
+  const showUpdateBadge = isAvailableStatus(updaterStatus);
 
   const openTabMenu = (tab: TabState, index: number) => {
-    const tabId = tab.id
-    const multi = snapshot.tabs.length > 1
-    const isLast = index === snapshot.tabs.length - 1
-    const symbol = symbolFromRoute(tab.route)
-    const popoutBridge = symbol ? getPopoutBridge() : null
-    const openWindowBridge = getOpenWindowBridge()
+    const tabId = tab.id;
+    const multi = snapshot.tabs.length > 1;
+    const isLast = index === snapshot.tabs.length - 1;
+    const symbol = symbolFromRoute(tab.route);
+    const popoutBridge = symbol ? getPopoutBridge() : null;
+    const openWindowBridge = getOpenWindowBridge();
     const items: ContextMenuItem[] = [
       {
         key: 'close',
@@ -202,7 +207,7 @@ export function DesktopTitlebar({
               key: 'open-in-window',
               label: '在新窗口中打开',
               onClick: () => {
-                void openWindowBridge.openWindow(tabId)
+                void openWindowBridge.openWindow(tabId);
               },
             },
           ]
@@ -214,14 +219,14 @@ export function DesktopTitlebar({
               key: 'popout',
               label: '弹出盯盘小窗',
               onClick: () => {
-                void popoutBridge.openPopout(symbol)
+                void popoutBridge.openPopout(symbol);
               },
             },
           ]
         : []),
-    ]
-    showContextMenu(items)
-  }
+    ];
+    showContextMenu(items);
+  };
 
   return (
     <div className="desktop-titlebar">
@@ -258,7 +263,7 @@ export function DesktopTitlebar({
             aria-label="有更新可用"
             title="有更新可用"
             onClick={() => {
-              void getDesktopUpdaterBridge()?.installNow()
+              void getDesktopUpdaterBridge()?.installNow();
             }}
           >
             <ArrowUpCircle size={16} />
@@ -278,5 +283,5 @@ export function DesktopTitlebar({
         <HubStatusDot />
       </div>
     </div>
-  )
+  );
 }

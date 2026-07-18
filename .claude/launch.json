@@ -1,5 +1,4 @@
 {
-  "version": "0.0.1",
   "configurations": [
     {
       "name": "app",
@@ -8,5 +7,6 @@
       "cwd": "app",
       "port": 5199
     }
-  ]
+  ],
+  "version": "0.0.1"
 }

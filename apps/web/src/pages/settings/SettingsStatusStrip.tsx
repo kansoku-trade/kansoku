@@ -1,6 +1,6 @@
-import type { SettingsViewModel } from "./settingsViewModel";
+import type { SettingsViewModel } from './settingsViewModel';
 
-type Summary = SettingsViewModel["summary"];
+type Summary = SettingsViewModel['summary'];
 
 export function SettingsStatusStrip({
   summary,
@@ -13,7 +13,9 @@ export function SettingsStatusStrip({
 }) {
   return (
     <div className="settings-statusline" aria-label="设置状态总览">
-      <span className={"settings-statusline-state settings-statusline-state--" + summary.statusTone}>
+      <span
+        className={'settings-statusline-state settings-statusline-state--' + summary.statusTone}
+      >
         {summary.statusLabel}
       </span>
       <span className="settings-statusline-sep">·</span>
@@ -26,10 +28,10 @@ export function SettingsStatusStrip({
               重试
             </button>
           </>
-        ) : summary.usageLabel === "暂不可用" ? (
-          "今日用量暂不可用"
+        ) : summary.usageLabel === '暂不可用' ? (
+          '今日用量暂不可用'
         ) : (
-          "今日 " + summary.usageLabel
+          '今日 ' + summary.usageLabel
         )}
       </span>
     </div>

@@ -1,14 +1,14 @@
-import { useSyncExternalStore } from "react";
+import { useSyncExternalStore } from 'react';
 
-export type TimeDisplayPreference = "market" | "local";
+export type TimeDisplayPreference = 'market' | 'local';
 
-export const DEFAULT_TIME_DISPLAY_PREFERENCE: TimeDisplayPreference = "market";
-export const TIME_DISPLAY_PREFERENCE_STORAGE_KEY = "trade.time-display-preference";
+export const DEFAULT_TIME_DISPLAY_PREFERENCE: TimeDisplayPreference = 'market';
+export const TIME_DISPLAY_PREFERENCE_STORAGE_KEY = 'trade.time-display-preference';
 
-type ReadableStorage = Pick<Storage, "getItem">;
+type ReadableStorage = Pick<Storage, 'getItem'>;
 
 function browserStorage(): Storage | null {
-  if (typeof window === "undefined") return null;
+  if (typeof window === 'undefined') return null;
   try {
     return window.localStorage;
   } catch {
@@ -16,10 +16,12 @@ function browserStorage(): Storage | null {
   }
 }
 
-export function readTimeDisplayPreference(storage: ReadableStorage | null = browserStorage()): TimeDisplayPreference {
+export function readTimeDisplayPreference(
+  storage: ReadableStorage | null = browserStorage(),
+): TimeDisplayPreference {
   if (!storage) return DEFAULT_TIME_DISPLAY_PREFERENCE;
   try {
-    return storage.getItem(TIME_DISPLAY_PREFERENCE_STORAGE_KEY) === "local" ? "local" : "market";
+    return storage.getItem(TIME_DISPLAY_PREFERENCE_STORAGE_KEY) === 'local' ? 'local' : 'market';
   } catch {
     return DEFAULT_TIME_DISPLAY_PREFERENCE;
   }
@@ -35,7 +37,7 @@ function emit(): void {
 
 function handleStorageChange(event: StorageEvent): void {
   if (event.key !== TIME_DISPLAY_PREFERENCE_STORAGE_KEY) return;
-  const next = event.newValue === "local" ? "local" : "market";
+  const next = event.newValue === 'local' ? 'local' : 'market';
   if (next === preference) return;
   preference = next;
   emit();
@@ -43,8 +45,8 @@ function handleStorageChange(event: StorageEvent): void {
 
 function subscribe(listener: () => void): () => void {
   listeners.add(listener);
-  if (!listeningForStorageChanges && typeof window !== "undefined") {
-    window.addEventListener("storage", handleStorageChange);
+  if (!listeningForStorageChanges && typeof window !== 'undefined') {
+    window.addEventListener('storage', handleStorageChange);
     listeningForStorageChanges = true;
   }
   return () => listeners.delete(listener);
@@ -66,5 +68,9 @@ export function setTimeDisplayPreference(next: TimeDisplayPreference): void {
 }
 
 export function useTimeDisplayPreference(): TimeDisplayPreference {
-  return useSyncExternalStore(subscribe, getTimeDisplayPreference, () => DEFAULT_TIME_DISPLAY_PREFERENCE);
+  return useSyncExternalStore(
+    subscribe,
+    getTimeDisplayPreference,
+    () => DEFAULT_TIME_DISPLAY_PREFERENCE,
+  );
 }

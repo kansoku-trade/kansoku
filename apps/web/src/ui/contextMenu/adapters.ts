@@ -1,11 +1,11 @@
-import { getDesktopContextMenuBridge } from "./electronBridge";
-import { prepareContextMenuItems } from "./serialize";
-import type { ContextMenuAdapter, ContextMenuItem, ContextMenuPoint } from "./types";
-import { closeWebContextMenu, openWebContextMenu } from "./webHost";
+import { getDesktopContextMenuBridge } from './electronBridge';
+import { prepareContextMenuItems } from './serialize';
+import type { ContextMenuAdapter, ContextMenuItem, ContextMenuPoint } from './types';
+import { closeWebContextMenu, openWebContextMenu } from './webHost';
 
 export function createWebContextMenuAdapter(): ContextMenuAdapter {
   return {
-    kind: "web",
+    kind: 'web',
     show(items, point) {
       openWebContextMenu(items, point);
     },
@@ -17,13 +17,13 @@ export function createWebContextMenuAdapter(): ContextMenuAdapter {
 
 export function createElectronContextMenuAdapter(
   popup: (request: {
-    items: ReturnType<typeof prepareContextMenuItems>["serializable"];
+    items: ReturnType<typeof prepareContextMenuItems>['serializable'];
     x: number;
     y: number;
   }) => Promise<{ selectedKey: string | null }>,
 ): ContextMenuAdapter {
   return {
-    kind: "electron",
+    kind: 'electron',
     async show(items, point) {
       const prepared = prepareContextMenuItems(items);
       if (prepared.serializable.length === 0) return;
@@ -44,7 +44,7 @@ export function createElectronContextMenuAdapter(
 }
 
 export function resolveContextMenuAdapter(
-  win: unknown = typeof window === "undefined" ? undefined : window,
+  win: unknown = typeof window === 'undefined' ? undefined : window,
 ): ContextMenuAdapter {
   const bridge = getDesktopContextMenuBridge(win);
   if (bridge) return createElectronContextMenuAdapter((request) => bridge.popup(request));

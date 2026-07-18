@@ -1,6 +1,6 @@
-import { describe, expect, it, vi } from "vitest";
-import { buildAppMenuTemplate, createAppMenuManager } from "@desktop/menu/appMenuManager.js";
-import type { MenuActionDeps } from "@desktop/menu/types.js";
+import { describe, expect, it, vi } from 'vitest';
+import { buildAppMenuTemplate, createAppMenuManager } from '@desktop/menu/appMenuManager.js';
+import type { MenuActionDeps } from '@desktop/menu/types.js';
 
 function makeDeps(overrides: Partial<MenuActionDeps> = {}): MenuActionDeps {
   return {
@@ -25,7 +25,7 @@ function asSubmenu(
   item: Electron.MenuItemConstructorOptions,
 ): Electron.MenuItemConstructorOptions[] {
   const submenu = item.submenu;
-  if (!Array.isArray(submenu)) throw new Error("expected array submenu");
+  if (!Array.isArray(submenu)) throw new Error('expected array submenu');
   return submenu;
 }
 
@@ -47,69 +47,93 @@ function findByRole(
   return found;
 }
 
-describe("buildAppMenuTemplate", () => {
-  it("builds app / edit / view / go / window / help top-level sections", () => {
-    const template = buildAppMenuTemplate("Kansoku", makeDeps());
+describe('buildAppMenuTemplate', () => {
+  it('builds app / edit / view / go / window / help top-level sections', () => {
+    const template = buildAppMenuTemplate('Kansoku', makeDeps());
     expect(template.map((item) => item.label ?? item.role)).toEqual([
-      "Kansoku",
-      "编辑",
-      "显示",
-      "前往",
-      "窗口",
-      "帮助",
+      'Kansoku',
+      '编辑',
+      '显示',
+      '前往',
+      '窗口',
+      '帮助',
     ]);
   });
 
-  it("puts chat and research in the go menu and wires clicks to deps", () => {
+  it('puts chat and research in the go menu and wires clicks to deps', () => {
     const deps = makeDeps();
-    const goMenu = asSubmenu(buildAppMenuTemplate("Kansoku", deps)[3]);
-    expect(findByLabel(goMenu, "AI 对话").accelerator).toBe("CmdOrCtrl+L");
-    expect(findByLabel(goMenu, "研究库").accelerator).toBe("CmdOrCtrl+Shift+L");
-    findByLabel(goMenu, "AI 对话").click?.(undefined as never, undefined as never, undefined as never);
-    findByLabel(goMenu, "研究库").click?.(undefined as never, undefined as never, undefined as never);
-    expect(deps.openChat).toHaveBeenCalledOnce();
-    expect(deps.openResearch).toHaveBeenCalledOnce();
-  });
-
-  it("keeps about, check updates, settings, and quit in the app menu", () => {
-    const deps = makeDeps();
-    const appMenu = asSubmenu(buildAppMenuTemplate("Kansoku", deps)[0]);
-    findByLabel(appMenu, "关于 Kansoku").click?.(undefined as never, undefined as never, undefined as never);
-    expect(deps.openAbout).toHaveBeenCalledOnce();
-    expect(findByLabel(appMenu, "检查更新…").label).toBe("检查更新…");
-    expect(findByLabel(appMenu, "设置…")).toMatchObject({
-      label: "设置…",
-      accelerator: "CmdOrCtrl+,",
-    });
-    expect(findByRole(appMenu, "quit").role).toBe("quit");
-    expect(appMenu.some((item) => item.label === "查看日志…")).toBe(false);
-    expect(appMenu.some((item) => item.label === "选择数据目录…")).toBe(false);
-    expect(appMenu.some((item) => item.label === "从 repo 导入数据…")).toBe(false);
-  });
-
-  it("wires app menu clicks to deps", () => {
-    const deps = makeDeps();
-    const appMenu = asSubmenu(buildAppMenuTemplate("Kansoku", deps)[0]);
-    findByLabel(appMenu, "检查更新…").click?.(undefined as never, undefined as never, undefined as never);
-    findByLabel(appMenu, "设置…").click?.(undefined as never, undefined as never, undefined as never);
-    expect(deps.checkForUpdates).toHaveBeenCalledOnce();
-    expect(deps.openSettings).toHaveBeenCalledOnce();
-  });
-
-  it("puts logs and data tools in the help menu", () => {
-    const deps = makeDeps();
-    const helpMenu = asSubmenu(buildAppMenuTemplate("Kansoku", deps)[5]);
-    expect(findByLabel(helpMenu, "查看日志…").label).toBe("查看日志…");
-    expect(findByLabel(helpMenu, "选择数据目录…").label).toBe("选择数据目录…");
-    expect(findByLabel(helpMenu, "从 repo 导入数据…").label).toBe("从 repo 导入数据…");
-
-    findByLabel(helpMenu, "查看日志…").click?.(undefined as never, undefined as never, undefined as never);
-    findByLabel(helpMenu, "选择数据目录…").click?.(
+    const goMenu = asSubmenu(buildAppMenuTemplate('Kansoku', deps)[3]);
+    expect(findByLabel(goMenu, 'AI 对话').accelerator).toBe('CmdOrCtrl+L');
+    expect(findByLabel(goMenu, '研究库').accelerator).toBe('CmdOrCtrl+Shift+L');
+    findByLabel(goMenu, 'AI 对话').click?.(
       undefined as never,
       undefined as never,
       undefined as never,
     );
-    findByLabel(helpMenu, "从 repo 导入数据…").click?.(
+    findByLabel(goMenu, '研究库').click?.(
+      undefined as never,
+      undefined as never,
+      undefined as never,
+    );
+    expect(deps.openChat).toHaveBeenCalledOnce();
+    expect(deps.openResearch).toHaveBeenCalledOnce();
+  });
+
+  it('keeps about, check updates, settings, and quit in the app menu', () => {
+    const deps = makeDeps();
+    const appMenu = asSubmenu(buildAppMenuTemplate('Kansoku', deps)[0]);
+    findByLabel(appMenu, '关于 Kansoku').click?.(
+      undefined as never,
+      undefined as never,
+      undefined as never,
+    );
+    expect(deps.openAbout).toHaveBeenCalledOnce();
+    expect(findByLabel(appMenu, '检查更新…').label).toBe('检查更新…');
+    expect(findByLabel(appMenu, '设置…')).toMatchObject({
+      label: '设置…',
+      accelerator: 'CmdOrCtrl+,',
+    });
+    expect(findByRole(appMenu, 'quit').role).toBe('quit');
+    expect(appMenu.some((item) => item.label === '查看日志…')).toBe(false);
+    expect(appMenu.some((item) => item.label === '选择数据目录…')).toBe(false);
+    expect(appMenu.some((item) => item.label === '从 repo 导入数据…')).toBe(false);
+  });
+
+  it('wires app menu clicks to deps', () => {
+    const deps = makeDeps();
+    const appMenu = asSubmenu(buildAppMenuTemplate('Kansoku', deps)[0]);
+    findByLabel(appMenu, '检查更新…').click?.(
+      undefined as never,
+      undefined as never,
+      undefined as never,
+    );
+    findByLabel(appMenu, '设置…').click?.(
+      undefined as never,
+      undefined as never,
+      undefined as never,
+    );
+    expect(deps.checkForUpdates).toHaveBeenCalledOnce();
+    expect(deps.openSettings).toHaveBeenCalledOnce();
+  });
+
+  it('puts logs and data tools in the help menu', () => {
+    const deps = makeDeps();
+    const helpMenu = asSubmenu(buildAppMenuTemplate('Kansoku', deps)[5]);
+    expect(findByLabel(helpMenu, '查看日志…').label).toBe('查看日志…');
+    expect(findByLabel(helpMenu, '选择数据目录…').label).toBe('选择数据目录…');
+    expect(findByLabel(helpMenu, '从 repo 导入数据…').label).toBe('从 repo 导入数据…');
+
+    findByLabel(helpMenu, '查看日志…').click?.(
+      undefined as never,
+      undefined as never,
+      undefined as never,
+    );
+    findByLabel(helpMenu, '选择数据目录…').click?.(
+      undefined as never,
+      undefined as never,
+      undefined as never,
+    );
+    findByLabel(helpMenu, '从 repo 导入数据…').click?.(
       undefined as never,
       undefined as never,
       undefined as never,
@@ -119,28 +143,48 @@ describe("buildAppMenuTemplate", () => {
     expect(deps.importFromRepo).toHaveBeenCalledOnce();
   });
 
-  it("includes tab actions and avoids role close on close-tab", () => {
+  it('includes tab actions and avoids role close on close-tab', () => {
     const deps = makeDeps();
-    const windowMenu = asSubmenu(buildAppMenuTemplate("Kansoku", deps)[4]);
-    const closeTab = findByLabel(windowMenu, "关闭标签页");
+    const windowMenu = asSubmenu(buildAppMenuTemplate('Kansoku', deps)[4]);
+    const closeTab = findByLabel(windowMenu, '关闭标签页');
     expect(closeTab).toMatchObject({
-      label: "关闭标签页",
-      accelerator: "CmdOrCtrl+W",
+      label: '关闭标签页',
+      accelerator: 'CmdOrCtrl+W',
     });
     expect(closeTab.role).toBeUndefined();
-    expect(findByLabel(windowMenu, "新建标签页").accelerator).toBe("CmdOrCtrl+T");
-    expect(findByRole(windowMenu, "minimize").role).toBe("minimize");
-    expect(findByRole(windowMenu, "front").role).toBe("front");
+    expect(findByLabel(windowMenu, '新建标签页').accelerator).toBe('CmdOrCtrl+T');
+    expect(findByRole(windowMenu, 'minimize').role).toBe('minimize');
+    expect(findByRole(windowMenu, 'front').role).toBe('front');
   });
 
-  it("wires window tab clicks to deps", () => {
+  it('wires window tab clicks to deps', () => {
     const deps = makeDeps();
-    const windowMenu = asSubmenu(buildAppMenuTemplate("Kansoku", deps)[4]);
-    findByLabel(windowMenu, "新建窗口").click?.(undefined as never, undefined as never, undefined as never);
-    findByLabel(windowMenu, "新建标签页").click?.(undefined as never, undefined as never, undefined as never);
-    findByLabel(windowMenu, "关闭标签页").click?.(undefined as never, undefined as never, undefined as never);
-    findByLabel(windowMenu, "下一个标签页").click?.(undefined as never, undefined as never, undefined as never);
-    findByLabel(windowMenu, "上一个标签页").click?.(undefined as never, undefined as never, undefined as never);
+    const windowMenu = asSubmenu(buildAppMenuTemplate('Kansoku', deps)[4]);
+    findByLabel(windowMenu, '新建窗口').click?.(
+      undefined as never,
+      undefined as never,
+      undefined as never,
+    );
+    findByLabel(windowMenu, '新建标签页').click?.(
+      undefined as never,
+      undefined as never,
+      undefined as never,
+    );
+    findByLabel(windowMenu, '关闭标签页').click?.(
+      undefined as never,
+      undefined as never,
+      undefined as never,
+    );
+    findByLabel(windowMenu, '下一个标签页').click?.(
+      undefined as never,
+      undefined as never,
+      undefined as never,
+    );
+    findByLabel(windowMenu, '上一个标签页').click?.(
+      undefined as never,
+      undefined as never,
+      undefined as never,
+    );
     expect(deps.newWindow).toHaveBeenCalledOnce();
     expect(deps.newTab).toHaveBeenCalledOnce();
     expect(deps.closeTab).toHaveBeenCalledOnce();
@@ -148,25 +192,25 @@ describe("buildAppMenuTemplate", () => {
     expect(deps.prevTab).toHaveBeenCalledOnce();
   });
 
-  it("includes standard edit and view roles", () => {
-    const template = buildAppMenuTemplate("Kansoku", makeDeps());
+  it('includes standard edit and view roles', () => {
+    const template = buildAppMenuTemplate('Kansoku', makeDeps());
     const edit = asSubmenu(template[1]);
     const view = asSubmenu(template[2]);
-    expect(findByRole(edit, "copy").role).toBe("copy");
-    expect(findByRole(edit, "paste").role).toBe("paste");
-    expect(findByRole(view, "reload").role).toBe("reload");
-    expect(findByRole(view, "toggleDevTools").role).toBe("toggleDevTools");
-    expect(findByRole(view, "togglefullscreen").role).toBe("togglefullscreen");
+    expect(findByRole(edit, 'copy').role).toBe('copy');
+    expect(findByRole(edit, 'paste').role).toBe('paste');
+    expect(findByRole(view, 'reload').role).toBe('reload');
+    expect(findByRole(view, 'toggleDevTools').role).toBe('toggleDevTools');
+    expect(findByRole(view, 'togglefullscreen').role).toBe('togglefullscreen');
   });
 });
 
-describe("createAppMenuManager", () => {
-  it("install and rebuild both set the application menu from the template", () => {
+describe('createAppMenuManager', () => {
+  it('install and rebuild both set the application menu from the template', () => {
     const setApplicationMenu = vi.fn();
-    const fakeMenu = { id: "menu" } as unknown as Electron.Menu;
+    const fakeMenu = { id: 'menu' } as unknown as Electron.Menu;
     const buildFromTemplate = vi.fn().mockReturnValue(fakeMenu);
     const manager = createAppMenuManager({
-      appName: "Kansoku",
+      appName: 'Kansoku',
       deps: makeDeps(),
       setApplicationMenu,
       buildFromTemplate,

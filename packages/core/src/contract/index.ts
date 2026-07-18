@@ -1,17 +1,17 @@
-import { annotationsRoutes, type AnnotationsApi } from "./annotations.js";
-import { assistantRoutes, type AssistantApi } from "./assistant.js";
-import { capabilitiesRoutes, type CapabilitiesApi } from "./capabilities.js";
-import { chartsRoutes, type ChartsApi } from "./charts.js";
-import { chatRoutes, type ChatApi } from "./chat.js";
-import { credentialsRoutes, type CredentialsApi } from "./credentials.js";
-import { healthRoutes, type HealthApi } from "./health.js";
-import { licenseRoutes, type LicenseApi } from "./license.js";
-import { lobehubRoutes, type LobeHubApi } from "./lobehub.js";
-import { overviewRoutes, type OverviewApi } from "./overview.js";
-import { positionsRoutes, type PositionsApi } from "./positions.js";
-import { researchRoutes, type ResearchApi } from "./research.js";
-import { settingsRoutes, type SettingsApi } from "./settings.js";
-import { symbolsRoutes, type SymbolsApi } from "./symbols.js";
+import { annotationsRoutes, type AnnotationsApi } from './annotations.js';
+import { assistantRoutes, type AssistantApi } from './assistant.js';
+import { capabilitiesRoutes, type CapabilitiesApi } from './capabilities.js';
+import { chartsRoutes, type ChartsApi } from './charts.js';
+import { chatRoutes, type ChatApi } from './chat.js';
+import { credentialsRoutes, type CredentialsApi } from './credentials.js';
+import { healthRoutes, type HealthApi } from './health.js';
+import { licenseRoutes, type LicenseApi } from './license.js';
+import { lobehubRoutes, type LobeHubApi } from './lobehub.js';
+import { overviewRoutes, type OverviewApi } from './overview.js';
+import { positionsRoutes, type PositionsApi } from './positions.js';
+import { researchRoutes, type ResearchApi } from './research.js';
+import { settingsRoutes, type SettingsApi } from './settings.js';
+import { symbolsRoutes, type SymbolsApi } from './symbols.js';
 
 export interface AppApi {
   assistant: AssistantApi;
@@ -47,18 +47,18 @@ export const allRoutes = {
   license: licenseRoutes,
 };
 
-export * from "./annotations.js";
-export * from "./assistant.js";
-export * from "./capabilities.js";
-export * from "./charts.js";
-export * from "./chat.js";
-export * from "./credentials.js";
-export * from "./defineRoutes.js";
-export * from "./health.js";
-export * from "./license.js";
-export * from "./lobehub.js";
-export * from "./overview.js";
-export * from "./positions.js";
-export * from "./research.js";
-export * from "./settings.js";
-export * from "./symbols.js";
+export * from './annotations.js';
+export * from './assistant.js';
+export * from './capabilities.js';
+export * from './charts.js';
+export * from './chat.js';
+export * from './credentials.js';
+export * from './defineRoutes.js';
+export * from './health.js';
+export * from './license.js';
+export * from './lobehub.js';
+export * from './overview.js';
+export * from './positions.js';
+export * from './research.js';
+export * from './settings.js';
+export * from './symbols.js';

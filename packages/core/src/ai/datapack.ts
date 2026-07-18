@@ -14,24 +14,30 @@ import type {
   RawBar,
   RelativeVolume,
   TimeframeKey,
-} from "@kansoku/shared/types";
-import { ClientError } from "../errors.js";
-import { normalizeQuote } from "../realtime/quotes.js";
-import { buildCockpitPosition } from "../services/cockpit/position.js";
-import { buildDayContext, openingRange, preMarketRange, prevDayLevels, type DayLevels } from "../services/dayLevels.js";
-import { lastVwap, sessionVwap } from "../services/vwap.js";
-import { macd } from "../services/indicators.js";
-import { getEventRisk } from "../services/events.js";
-import { coerceIntradayTimeframe } from "../services/intraday.js";
-import { computeRelativeVolume } from "../services/relvol.js";
-import { readActiveLessons } from "../services/lessons.js";
-import { getProvider } from "../services/marketdata/registry.js";
-import { getOptionsLevels } from "../services/optionsLevels.js";
-import type { RawPosition } from "../services/marketdata/types.js";
-import { easternDate } from "../services/session.js";
-import { listCharts, loadChart, type ListFilter } from "../services/store.js";
-import { marketOf } from "../services/symbol.utils.js";
-import { listComments } from "./comments.js";
+} from '@kansoku/shared/types';
+import { ClientError } from '../errors.js';
+import { normalizeQuote } from '../realtime/quotes.js';
+import { buildCockpitPosition } from '../services/cockpit/position.js';
+import {
+  buildDayContext,
+  openingRange,
+  preMarketRange,
+  prevDayLevels,
+  type DayLevels,
+} from '../services/dayLevels.js';
+import { lastVwap, sessionVwap } from '../services/vwap.js';
+import { macd } from '../services/indicators.js';
+import { getEventRisk } from '../services/events.js';
+import { coerceIntradayTimeframe } from '../services/intraday.js';
+import { computeRelativeVolume } from '../services/relvol.js';
+import { readActiveLessons } from '../services/lessons.js';
+import { getProvider } from '../services/marketdata/registry.js';
+import { getOptionsLevels } from '../services/optionsLevels.js';
+import type { RawPosition } from '../services/marketdata/types.js';
+import { easternDate } from '../services/session.js';
+import { listCharts, loadChart, type ListFilter } from '../services/store.js';
+import { marketOf } from '../services/symbol.utils.js';
+import { listComments } from './comments.js';
 
 const KLINE_COUNT = 150;
 const REASSESS_DAY_KLINE_COUNT = 60;
@@ -42,9 +48,9 @@ const COMMENT_M5_BARS = 48;
 const REASSESS_TF_BARS = 60;
 const RECENT_COMMENTS = 5;
 const REASSESS_TIMEFRAMES: { key: TimeframeKey; period: string }[] = [
-  { key: "m5", period: "5m" },
-  { key: "m15", period: "15m" },
-  { key: "h1", period: "1h" },
+  { key: 'm5', period: '5m' },
+  { key: 'm15', period: '15m' },
+  { key: 'h1', period: '1h' },
 ];
 
 export interface DatapackDeps {
@@ -68,7 +74,8 @@ export const defaultDatapackDeps: DatapackDeps = {
     if (!quotes.length) throw new ClientError(`no quote data for ${symbol}`, undefined, 502);
     return normalizeQuote(quotes[0], Date.now());
   },
-  fetchKline: (symbol, period, count) => getProvider(marketOf(symbol)).getKline(symbol, period, count),
+  fetchKline: (symbol, period, count) =>
+    getProvider(marketOf(symbol)).getKline(symbol, period, count),
   fetchFlow: (symbol) => getProvider(marketOf(symbol)).getFlow?.(symbol) ?? Promise.resolve([]),
   fetchNews: (symbol) => getProvider(marketOf(symbol)).getNews(symbol),
   fetchPositions: () => getProvider().getPositions?.() ?? Promise.resolve([]),
@@ -83,8 +90,8 @@ export const defaultDatapackDeps: DatapackDeps = {
 
 export interface PredictionSummary {
   chartId: string;
-  direction: IntradayPrediction["direction"] | null;
-  anchor: IntradayPrediction["anchor"] | null;
+  direction: IntradayPrediction['direction'] | null;
+  anchor: IntradayPrediction['anchor'] | null;
   entry: number | null;
   stop: number | null;
   target1: number | null;
@@ -96,7 +103,10 @@ export interface CommentPack {
   symbol: string;
   as_of: string;
   quote: QuoteCell;
-  m5: { bars: RawBar[]; macd: { dif: (number | null)[]; dea: (number | null)[]; hist: (number | null)[] } };
+  m5: {
+    bars: RawBar[];
+    macd: { dif: (number | null)[]; dea: (number | null)[]; hist: (number | null)[] };
+  };
   flow: FlowRow[];
   prediction: PredictionSummary | null;
   recent_comments: CockpitComment[];
@@ -129,10 +139,10 @@ export interface ReassessPack {
 
 export async function findTodayLatestIntradayDoc(
   symbol: string,
-  deps: Pick<DatapackDeps, "listCharts" | "loadChart" | "now">,
+  deps: Pick<DatapackDeps, 'listCharts' | 'loadChart' | 'now'>,
 ): Promise<ChartDoc | null> {
   const today = easternDate(deps.now());
-  const metas = await deps.listCharts({ symbol, type: "intraday" });
+  const metas = await deps.listCharts({ symbol, type: 'intraday' });
   const todays = metas
     .filter((m) => easternDate(new Date(m.created_at)) === today)
     .sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
@@ -140,14 +150,16 @@ export async function findTodayLatestIntradayDoc(
   return deps.loadChart(todays[0].id);
 }
 
-const PLAN_ZONE_KINDS = new Set(["entry", "stop", "target"]);
+const PLAN_ZONE_KINDS = new Set(['entry', 'stop', 'target']);
 
 function predictionSummary(doc: ChartDoc | null): PredictionSummary | null {
   if (!doc) return null;
   const prediction = (doc.input.prediction as IntradayPrediction | undefined) ?? null;
-  const plan = doc.built.kind === "intraday" ? doc.built.entryPlan : null;
+  const plan = doc.built.kind === 'intraday' ? doc.built.entryPlan : null;
   const zones = (plan?.price_zones ?? [])
-    .filter((z) => !PLAN_ZONE_KINDS.has(z.kind) && Number.isFinite(z.low) && Number.isFinite(z.high))
+    .filter(
+      (z) => !PLAN_ZONE_KINDS.has(z.kind) && Number.isFinite(z.low) && Number.isFinite(z.high),
+    )
     .map((z) => ({ label: z.label, low: z.low, high: z.high }));
   return {
     chartId: doc.id,
@@ -176,12 +188,12 @@ export async function buildCommentPack(
   const now = deps.now();
   const [quote, m5Bars, flow, doc, comments, dayBars, m15Bars] = await Promise.all([
     deps.fetchQuote(symbol),
-    deps.fetchKline(symbol, "5m", COMMENT_M5_FETCH),
+    deps.fetchKline(symbol, '5m', COMMENT_M5_FETCH),
     deps.fetchFlow(symbol),
     findTodayLatestIntradayDoc(symbol, deps),
     deps.listComments(symbol, easternDate(now)),
-    deps.fetchKline(symbol, "day", DAY_KLINE_COUNT).catch(() => [] as RawBar[]),
-    deps.fetchKline(symbol, "15m", RELVOL_M15_BARS).catch(() => [] as RawBar[]),
+    deps.fetchKline(symbol, 'day', DAY_KLINE_COUNT).catch(() => [] as RawBar[]),
+    deps.fetchKline(symbol, '15m', RELVOL_M15_BARS).catch(() => [] as RawBar[]),
   ]);
 
   const closes = m5Bars.map((b) => Number(b.close));
@@ -211,9 +223,9 @@ export interface CommentUpdate {
   symbol: string;
   as_of: string;
   quote: QuoteCell;
-  m5: CommentPack["m5"];
+  m5: CommentPack['m5'];
   flow: FlowRow[];
-  day_levels: Pick<DayLevels, "opening_range">;
+  day_levels: Pick<DayLevels, 'opening_range'>;
   rel_volume: RelativeVolume | null;
 }
 
@@ -231,7 +243,10 @@ export function buildCommentUpdate(pack: CommentPack, lastBarTime: string | null
     symbol: pack.symbol,
     as_of: pack.as_of,
     quote: pack.quote,
-    m5: { bars: newBars, macd: { dif: tail(macd.dif), dea: tail(macd.dea), hist: tail(macd.hist) } },
+    m5: {
+      bars: newBars,
+      macd: { dif: tail(macd.dif), dea: tail(macd.dea), hist: tail(macd.hist) },
+    },
     flow: pack.flow.slice(-UPDATE_FLOW_ROWS),
     day_levels: { opening_range: pack.day_levels.opening_range },
     rel_volume: pack.rel_volume,
@@ -243,32 +258,47 @@ export async function buildReassessPack(
   deps: DatapackDeps = defaultDatapackDeps,
 ): Promise<ReassessPack> {
   const now = deps.now();
-  const [barsList, flow, doc, positions, relvolBars, dayBars, news, spy, qqq, optionsLevels, eventRisk, lessons] =
-    await Promise.all([
-      Promise.all(REASSESS_TIMEFRAMES.map((tf) => deps.fetchKline(symbol, tf.period, KLINE_COUNT))),
-      deps.fetchFlow(symbol),
-      findTodayLatestIntradayDoc(symbol, deps),
-      deps.fetchPositions().catch(() => [] as RawPosition[]),
-      deps.fetchKline(symbol, "15m", RELVOL_M15_BARS).catch(() => [] as RawBar[]),
-      deps.fetchKline(symbol, "day", REASSESS_DAY_KLINE_COUNT).catch(() => [] as RawBar[]),
-      deps.fetchNews(symbol).catch(() => [] as NewsItem[]),
-      deps.fetchQuote("SPY.US").catch(() => null),
-      deps.fetchQuote("QQQ.US").catch(() => null),
-      deps.fetchOptionsLevels(symbol).catch(() => null),
-      deps.fetchEventRisk(symbol).catch(() => null),
-      deps.readLessons().catch(() => [] as string[]),
-    ]);
+  const [
+    barsList,
+    flow,
+    doc,
+    positions,
+    relvolBars,
+    dayBars,
+    news,
+    spy,
+    qqq,
+    optionsLevels,
+    eventRisk,
+    lessons,
+  ] = await Promise.all([
+    Promise.all(REASSESS_TIMEFRAMES.map((tf) => deps.fetchKline(symbol, tf.period, KLINE_COUNT))),
+    deps.fetchFlow(symbol),
+    findTodayLatestIntradayDoc(symbol, deps),
+    deps.fetchPositions().catch(() => [] as RawPosition[]),
+    deps.fetchKline(symbol, '15m', RELVOL_M15_BARS).catch(() => [] as RawBar[]),
+    deps.fetchKline(symbol, 'day', REASSESS_DAY_KLINE_COUNT).catch(() => [] as RawBar[]),
+    deps.fetchNews(symbol).catch(() => [] as NewsItem[]),
+    deps.fetchQuote('SPY.US').catch(() => null),
+    deps.fetchQuote('QQQ.US').catch(() => null),
+    deps.fetchOptionsLevels(symbol).catch(() => null),
+    deps.fetchEventRisk(symbol).catch(() => null),
+    deps.readLessons().catch(() => [] as string[]),
+  ]);
 
   const timeframes = {} as Record<TimeframeKey, ReassessTimeframe>;
   REASSESS_TIMEFRAMES.forEach((tf, i) => {
     const bars = barsList[i];
-    timeframes[tf.key] = { bars: bars.slice(-REASSESS_TF_BARS), summary: summarizeTimeframe(bars, tf.key) };
+    timeframes[tf.key] = {
+      bars: bars.slice(-REASSESS_TF_BARS),
+      summary: summarizeTimeframe(bars, tf.key),
+    };
   });
 
   const prediction = (doc?.input.prediction as IntradayPrediction | undefined) ?? null;
-  const plan = doc && doc.built.kind === "intraday" ? doc.built.entryPlan : null;
+  const plan = doc && doc.built.kind === 'intraday' ? doc.built.entryPlan : null;
   const m5Closes = barsList[0].map((b) => Number(b.close));
-  const last = m5Closes[m5Closes.length - 1];
+  const last = m5Closes.at(-1);
   const position =
     last != null && Number.isFinite(last)
       ? buildCockpitPosition(

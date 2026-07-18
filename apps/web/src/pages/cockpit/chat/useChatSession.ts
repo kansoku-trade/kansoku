@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { errorMessage } from "@web/api";
-import { client } from "@web/client";
-import { subscribeChannel } from "@web/wsHub";
-import { useSmoothStream } from "./useSmoothStream.js";
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { errorMessage } from '@web/api';
+import { client } from '@web/client';
+import { subscribeChannel } from '@web/wsHub';
+import { useSmoothStream } from './useSmoothStream.js';
 
 export interface ChatSessionInfo {
   id: string;
@@ -14,7 +14,7 @@ export interface ChatSessionInfo {
   updatedAt: string;
 }
 
-export type ChatRowKind = "user" | "assistant" | "tool" | "error";
+export type ChatRowKind = 'user' | 'assistant' | 'tool' | 'error';
 
 export interface ChatRow {
   id: string;
@@ -35,7 +35,7 @@ export interface ChatRow {
 export interface ChatLiveTool {
   id: string;
   label: string;
-  status: "start" | "end";
+  status: 'start' | 'end';
   input?: string;
   output?: string;
 }
@@ -55,20 +55,24 @@ interface ChatEnvelope {
 }
 
 type ChatWsEvent =
-  | { event: "delta"; text: string }
-  | { event: "tool"; label: string; status: "start" | "end"; input?: string; output?: string }
-  | { event: "done" }
-  | { event: "aborted" }
-  | { event: "error"; message: string };
+  | { event: 'delta'; text: string }
+  | { event: 'tool'; label: string; status: 'start' | 'end'; input?: string; output?: string }
+  | { event: 'done' }
+  | { event: 'aborted' }
+  | { event: 'error'; message: string };
 
-type ChatWsEnvelope = { type: "init"; busy: boolean; partial: string } | { type: "event"; event: ChatWsEvent };
+type ChatWsEnvelope =
+  { type: 'init'; busy: boolean; partial: string } | { type: 'event'; event: ChatWsEvent };
 
 const isErrorBody = (value: unknown): value is { error: string; hint?: string } =>
-  typeof value === "object" && value !== null && typeof (value as { error?: unknown }).error === "string";
+  typeof value === 'object' &&
+  value !== null &&
+  typeof (value as { error?: unknown }).error === 'string';
 
-export const usageFromEnvelope = (env: { usage?: ChatUsage }): ChatUsage | null => env.usage ?? null;
+export const usageFromEnvelope = (env: { usage?: ChatUsage }): ChatUsage | null =>
+  env.usage ?? null;
 
-type ConversationKind = "chart" | "research" | "assistant";
+type ConversationKind = 'chart' | 'research' | 'assistant';
 
 interface ConversationAdapter {
   fetchChat: (id: string) => Promise<ChatEnvelope>;
@@ -83,21 +87,22 @@ export const conversationAdapters: Record<ConversationKind, ConversationAdapter>
     fetchChat: async (id) => (await client.chat.get({ id })) as unknown as ChatEnvelope,
     send: (id, text) => client.chat.postMessage({ id, text }),
     abort: (id) => client.chat.abort({ id }),
-    channel: (id) => ({ kind: "chat", id }),
+    channel: (id) => ({ kind: 'chat', id }),
     suggest: (id) => client.chat.suggestions({ id }),
   },
   research: {
-    fetchChat: async (id) => (await client.research.getChat({ path: id })) as unknown as ChatEnvelope,
+    fetchChat: async (id) =>
+      (await client.research.getChat({ path: id })) as unknown as ChatEnvelope,
     send: (id, text) => client.research.postMessage({ path: id, text }),
     abort: (id) => client.research.abortChat({ path: id }),
-    channel: (id) => ({ kind: "research-chat", path: id }),
+    channel: (id) => ({ kind: 'research-chat', path: id }),
     suggest: (id) => client.research.suggestions({ path: id }),
   },
   assistant: {
     fetchChat: async (id) => (await client.assistant.getChat({ id })) as unknown as ChatEnvelope,
     send: (id, text) => client.assistant.postMessage({ id, text }),
     abort: (id) => client.assistant.abortChat({ id }),
-    channel: (id) => ({ kind: "assistant-chat", id }),
+    channel: (id) => ({ kind: 'assistant-chat', id }),
     suggest: null,
   },
 };
@@ -123,13 +128,23 @@ export interface ChatSessionState {
   ensureSuggestions: () => void;
 }
 
-function useConversationSession(kind: ConversationKind, id: string, enabled = true): ChatSessionState {
+function useConversationSession(
+  kind: ConversationKind,
+  id: string,
+  enabled = true,
+): ChatSessionState {
   const adapter = conversationAdapters[kind];
   const [session, setSession] = useState<ChatSessionInfo | null>(null);
   const [rows, setRows] = useState<ChatRow[]>([]);
   const [busy, setBusy] = useState(false);
   const [aborting, setAborting] = useState(false);
-  const { text: streamText, push: streamPush, flush: streamFlush, finish: streamFinish, reset: streamReset } = useSmoothStream();
+  const {
+    text: streamText,
+    push: streamPush,
+    flush: streamFlush,
+    finish: streamFinish,
+    reset: streamReset,
+  } = useSmoothStream();
   const [liveTools, setLiveTools] = useState<ChatLiveTool[]>([]);
   const [hint, setHint] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
@@ -154,7 +169,15 @@ function useConversationSession(kind: ConversationKind, id: string, enabled = tr
           setSession(env.session);
           setRows(
             markError
-              ? [...env.messages, { id: `error-${id}-${errorSeqRef.current++}`, ts: new Date().toISOString(), kind: "error", text: markError }]
+              ? [
+                  ...env.messages,
+                  {
+                    id: `error-${id}-${errorSeqRef.current++}`,
+                    ts: new Date().toISOString(),
+                    kind: 'error',
+                    text: markError,
+                  },
+                ]
               : env.messages,
           );
           setBusy(env.busy);
@@ -162,14 +185,14 @@ function useConversationSession(kind: ConversationKind, id: string, enabled = tr
           else streamReset();
           setUsage(usageFromEnvelope(env));
           setLoaded(true);
-          setHint((prev) => (prev === "对话记录加载失败" ? null : prev));
+          setHint((prev) => (prev === '对话记录加载失败' ? null : prev));
           after?.();
         })
         .catch(() => {
           after?.();
           if (requestSeqRef.current !== seq || sendPendingRef.current) return;
           setLoaded(true);
-          setHint("对话记录加载失败");
+          setHint('对话记录加载失败');
         });
     },
     [adapter, id, streamFlush, streamReset],
@@ -199,8 +222,8 @@ function useConversationSession(kind: ConversationKind, id: string, enabled = tr
       adapter.channel(id),
       (payload) => {
         const env = payload as ChatWsEnvelope;
-        if (env.type !== "init" && env.type !== "event") return;
-        if (env.type === "init") {
+        if (env.type !== 'init' && env.type !== 'event') return;
+        if (env.type === 'init') {
           setBusy(env.busy);
           if (env.busy) streamFlush(env.partial);
           else {
@@ -210,27 +233,36 @@ function useConversationSession(kind: ConversationKind, id: string, enabled = tr
           return;
         }
         const evt = env.event;
-        if (evt.event === "delta") {
+        if (evt.event === 'delta') {
           setBusy(true);
           streamPush(evt.text);
           return;
         }
-        if (evt.event === "tool") {
-          if (evt.status === "start") {
+        if (evt.event === 'tool') {
+          if (evt.status === 'start') {
             setLiveTools((prev) => [
               ...prev,
-              { id: `tool-${toolSeqRef.current++}`, label: evt.label, status: "start", input: evt.input },
+              {
+                id: `tool-${toolSeqRef.current++}`,
+                label: evt.label,
+                status: 'start',
+                input: evt.input,
+              },
             ]);
             return;
           }
           setLiveTools((prev) => {
-            const idx = prev.map((t) => t.label === evt.label && t.status === "start").lastIndexOf(true);
+            const idx = prev
+              .map((t) => t.label === evt.label && t.status === 'start')
+              .lastIndexOf(true);
             if (idx === -1) return prev;
-            return prev.map((t, i) => (i === idx ? { ...t, status: "end", output: evt.output } : t));
+            return prev.map((t, i) =>
+              i === idx ? { ...t, status: 'end', output: evt.output } : t,
+            );
           });
           return;
         }
-        if (evt.event === "aborted") {
+        if (evt.event === 'aborted') {
           streamFlush();
           setBusy(false);
           setAborting(false);
@@ -240,7 +272,7 @@ function useConversationSession(kind: ConversationKind, id: string, enabled = tr
           });
           return;
         }
-        const markError = evt.event === "done" ? undefined : evt.message;
+        const markError = evt.event === 'done' ? undefined : evt.message;
         streamFinish(() => {
           setAborting(false);
           reload(markError, () => {
@@ -262,13 +294,16 @@ function useConversationSession(kind: ConversationKind, id: string, enabled = tr
   const send = useCallback(
     async (text: string): Promise<ChatSendResult> => {
       const trimmed = text.trim();
-      if (!trimmed) return { ok: false, error: "内容不能为空" };
+      if (!trimmed) return { ok: false, error: '内容不能为空' };
       const optimisticId = `optimistic-${Date.now()}`;
       sendPendingRef.current = true;
       setHint(null);
       setBusy(true);
       setSuggestions([]);
-      setRows((prev) => [...prev, { id: optimisticId, ts: new Date().toISOString(), kind: "user", text: trimmed }]);
+      setRows((prev) => [
+        ...prev,
+        { id: optimisticId, ts: new Date().toISOString(), kind: 'user', text: trimmed },
+      ]);
       try {
         const result = await adapter.send(id, trimmed);
         if (result.status === 202) {
@@ -340,13 +375,13 @@ function useConversationSession(kind: ConversationKind, id: string, enabled = tr
 }
 
 export function useChatSession(chartId: string): ChatSessionState {
-  return useConversationSession("chart", chartId);
+  return useConversationSession('chart', chartId);
 }
 
 export function useResearchChatSession(path: string, enabled = true): ChatSessionState {
-  return useConversationSession("research", path, enabled);
+  return useConversationSession('research', path, enabled);
 }
 
 export function useAssistantChatSession(sessionId: string): ChatSessionState {
-  return useConversationSession("assistant", sessionId);
+  return useConversationSession('assistant', sessionId);
 }

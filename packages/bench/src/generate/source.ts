@@ -1,8 +1,8 @@
-import { runLongbridgeJson } from "../../../core/src/services/longbridgeCli.js";
-import type { QuoteBar } from "./assemble.js";
+import { runLongbridgeJson } from '../../../core/src/services/longbridgeCli.js';
+import type { QuoteBar } from './assemble.js';
 
-export type KlinePeriod = "day" | "week";
-export type EpisodeKlinePeriod = KlinePeriod | "1h";
+export type KlinePeriod = 'day' | 'week';
+export type EpisodeKlinePeriod = KlinePeriod | '1h';
 
 export type FetchKlineHistory = (
   symbol: string,
@@ -21,19 +21,24 @@ interface RawKlineRow {
   turnover?: string;
 }
 
-export const fetchKlineHistoryLive = async (symbol: string, period: EpisodeKlinePeriod, start: string, end: string) => {
+export const fetchKlineHistoryLive = async (
+  symbol: string,
+  period: EpisodeKlinePeriod,
+  start: string,
+  end: string,
+) => {
   const rows = await runLongbridgeJson<RawKlineRow[]>([
-    "kline",
-    "history",
+    'kline',
+    'history',
     symbol,
-    "--period",
+    '--period',
     period,
-    "--start",
+    '--start',
     start,
-    "--end",
+    '--end',
     end,
-    "--adjust",
-    "forward",
+    '--adjust',
+    'forward',
   ]);
   return rows
     .map((row) => ({
@@ -53,7 +58,11 @@ export interface CalendarEvent {
   content: string;
 }
 
-export type FetchCalendar = (symbol: string, start: string, end: string) => Promise<CalendarEvent[]>;
+export type FetchCalendar = (
+  symbol: string,
+  start: string,
+  end: string,
+) => Promise<CalendarEvent[]>;
 
 interface CalendarReportRow {
   date: string;
@@ -62,15 +71,17 @@ interface CalendarReportRow {
 
 export const fetchCalendarLive: FetchCalendar = async (symbol, start, end) => {
   const res = await runLongbridgeJson<{ list?: CalendarReportRow[] }>([
-    "finance-calendar",
-    "report",
-    "--symbol",
+    'finance-calendar',
+    'report',
+    '--symbol',
     symbol,
-    "--start",
+    '--start',
     start,
-    "--end",
+    '--end',
     end,
   ]);
   const list = res.list ?? [];
-  return list.flatMap((row) => (row.infos ?? []).map((info) => ({ date: row.date, content: info.content ?? "" })));
+  return list.flatMap((row) =>
+    (row.infos ?? []).map((info) => ({ date: row.date, content: info.content ?? '' })),
+  );
 };

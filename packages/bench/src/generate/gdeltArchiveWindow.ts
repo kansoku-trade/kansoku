@@ -2,7 +2,7 @@ const GRID_STEP_MS = 15 * 60 * 1000;
 export const ARCHIVE_WINDOW_HOURS = 48;
 
 function pad(value: number): string {
-  return String(value).padStart(2, "0");
+  return String(value).padStart(2, '0');
 }
 
 export function formatArchiveStamp(ms: number): string {
@@ -10,7 +10,10 @@ export function formatArchiveStamp(ms: number): string {
   return `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}`;
 }
 
-export function enumerateArchiveGrid(cutoffIso: string, windowHours: number = ARCHIVE_WINDOW_HOURS): string[] {
+export function enumerateArchiveGrid(
+  cutoffIso: string,
+  windowHours: number = ARCHIVE_WINDOW_HOURS,
+): string[] {
   const cutoffMs = Date.parse(cutoffIso);
   if (cutoffMs % GRID_STEP_MS !== 0) {
     throw new Error(`cutoff is not aligned to the GDELT 15-minute grid: ${cutoffIso}`);

@@ -1,14 +1,20 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { ApiError, errorMessage } from "@web/api";
-import { client } from "@web/client";
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ApiError, errorMessage } from '@web/api';
+import { client } from '@web/client';
 
-export const bareSymbol = (value: string) => value.toUpperCase().replace(/\.US$/, "");
+export const bareSymbol = (value: string) => value.toUpperCase().replace(/\.US$/, '');
 
 export interface DeepDiveStatus {
   running: boolean;
   symbol?: string;
   startedAt?: string;
-  lastResult?: { symbol: string; ok: boolean; finishedAt: string; error?: string; dirtyWarning?: boolean };
+  lastResult?: {
+    symbol: string;
+    ok: boolean;
+    finishedAt: string;
+    error?: string;
+    dirtyWarning?: boolean;
+  };
 }
 
 const STATUS_POLL_MS = 10_000;
@@ -64,13 +70,17 @@ export function useDeepDive(symbol: string, onNoteReady: () => void) {
         setRunningSymbol(null);
         setStartedAt(null);
         const result = status.lastResult;
-        if (result && bareSymbol(result.symbol) === bareSymbol(symbol) && result.finishedAt !== seenFinishedAtRef.current) {
+        if (
+          result &&
+          bareSymbol(result.symbol) === bareSymbol(symbol) &&
+          result.finishedAt !== seenFinishedAtRef.current
+        ) {
           seenFinishedAtRef.current = result.finishedAt;
           if (result.ok) {
-            setSuccessNote(result.dirtyWarning ? "分析完成 ⚠️ 检测到笔记之外的改动" : "分析完成");
+            setSuccessNote(result.dirtyWarning ? '分析完成 ⚠️ 检测到笔记之外的改动' : '分析完成');
             onNoteReady();
           } else {
-            setInlineMessage(result.error ?? "分析失败");
+            setInlineMessage(result.error ?? '分析失败');
           }
         }
       } catch {
@@ -96,10 +106,10 @@ export function useDeepDive(symbol: string, onNoteReady: () => void) {
       setStartedAt(new Date().toISOString());
     } catch (error) {
       if (error instanceof ApiError && error.status === 409) {
-        setInlineMessage("已有分析进行中");
+        setInlineMessage('已有分析进行中');
       } else if (error instanceof ApiError && error.status === 503) {
         setDisabled(true);
-        setInlineMessage("未配置深度研究模型，请在 /settings 配置");
+        setInlineMessage('未配置深度研究模型，请在 /settings 配置');
       } else {
         setInlineMessage(errorMessage(error));
       }

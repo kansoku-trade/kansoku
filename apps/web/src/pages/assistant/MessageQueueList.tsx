@@ -1,7 +1,13 @@
-import { X } from "lucide-react";
-import type { QueueItem } from "./messageQueue.js";
+import { X } from 'lucide-react';
+import type { QueueItem } from './messageQueue.js';
 
-export function MessageQueueList({ queue, onRemove }: { queue: QueueItem[]; onRemove: (id: string) => void }) {
+export function MessageQueueList({
+  queue,
+  onRemove,
+}: {
+  queue: QueueItem[];
+  onRemove: (id: string) => void;
+}) {
   if (queue.length === 0) return null;
 
   return (
@@ -15,7 +21,12 @@ export function MessageQueueList({ queue, onRemove }: { queue: QueueItem[]; onRe
           <div key={item.id} className="assistant-queue-row">
             <span className="assistant-queue-text">{item.text}</span>
             {item.error ? <span className="assistant-queue-error">{item.error}</span> : null}
-            <button type="button" className="assistant-queue-remove" aria-label="移出队列" onClick={() => onRemove(item.id)}>
+            <button
+              type="button"
+              className="assistant-queue-remove"
+              aria-label="移出队列"
+              onClick={() => onRemove(item.id)}
+            >
               <X size={12} aria-hidden="true" />
             </button>
           </div>

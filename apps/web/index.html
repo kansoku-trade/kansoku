@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh">
   <head>
     <meta charset="UTF-8" />
@@ -25,7 +25,7 @@
         --fs-base: 12px;
         --fs-sm: 11px;
         --fs-xl: 20px;
-        --font-ui: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
+        --font-ui: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', sans-serif;
       }
       html,
       body {
@@ -439,7 +439,7 @@
     </div>
     <script>
       if (/\bElectron\b/.test(navigator.userAgent)) {
-        document.getElementById("app-boot-skeleton")?.classList.add("app-skeleton--desktop");
+        document.getElementById('app-boot-skeleton')?.classList.add('app-skeleton--desktop');
       }
     </script>
     <script type="module" src="/src/main.tsx"></script>

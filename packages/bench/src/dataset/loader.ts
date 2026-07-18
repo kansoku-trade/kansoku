@@ -1,7 +1,7 @@
-import { promises as fs } from "node:fs";
-import { join } from "node:path";
-import { Value } from "typebox/value";
-import { type Question, questionSchema, type RunnerQuestion } from "../schema/question.js";
+import { promises as fs } from 'node:fs';
+import { join } from 'node:path';
+import { Value } from 'typebox/value';
+import { type Question, questionSchema, type RunnerQuestion } from '../schema/question.js';
 
 export class DatasetValidationError extends Error {}
 
@@ -23,7 +23,7 @@ export async function listQuestions(
   try {
     entries = await fs.readdir(dir, { withFileTypes: true });
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
       throw new DatasetValidationError(
         `dataset ${version}/${bank} is not installed under ${datasetsRoot}; run "bench sync-dataset --dataset-version ${version}" first`,
       );
@@ -31,19 +31,19 @@ export async function listQuestions(
     throw error;
   }
   return entries
-    .filter((entry) => entry.isFile() && entry.name.endsWith(".json"))
-    .map((entry) => entry.name.slice(0, -".json".length))
+    .filter((entry) => entry.isFile() && entry.name.endsWith('.json'))
+    .map((entry) => entry.name.slice(0, -'.json'.length))
     .sort();
 }
 
 export async function loadQuestionFile(file: string): Promise<Question> {
-  const raw = await fs.readFile(file, "utf8");
+  const raw = await fs.readFile(file, 'utf8');
   const parsed: unknown = JSON.parse(raw);
   if (Value.Check(questionSchema, parsed)) return parsed;
   const errors = Value.Errors(questionSchema, parsed);
   const firstError = errors[0];
-  const path = firstError?.instancePath || "(root)";
-  const message = firstError?.message ?? "does not match Question schema";
+  const path = firstError?.instancePath || '(root)';
+  const message = firstError?.message ?? 'does not match Question schema';
   throw new DatasetValidationError(`invalid question in ${file}: ${path} ${message}`);
 }
 

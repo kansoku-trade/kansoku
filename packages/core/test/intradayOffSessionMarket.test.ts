@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest";
-import type { RawBar } from "@kansoku/shared/types";
-import { buildIntraday, type IntradayInput } from "../src/services/intraday.js";
+import { describe, expect, it } from 'vitest';
+import type { RawBar } from '@kansoku/shared/types';
+import { buildIntraday, type IntradayInput } from '../src/services/intraday.js';
 
 const DAY = { y: 2026, m: 6, d: 8 };
 
@@ -42,10 +42,10 @@ function paddedSeries(stepMin: number, count: number): RawBar[] {
   return out;
 }
 
-describe("buildIntraday off-session mask is market-aware for HK symbols", () => {
-  it("masks only the HK lunch gap, never the two regular trading blocks", () => {
+describe('buildIntraday off-session mask is market-aware for HK symbols', () => {
+  it('masks only the HK lunch gap, never the two regular trading blocks', () => {
     const input: IntradayInput = {
-      symbol: "700.HK",
+      symbol: '700.HK',
       timeframes: {
         m5: hkDayBars(5),
         m15: paddedSeries(15, 70),

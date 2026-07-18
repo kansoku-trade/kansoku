@@ -1,6 +1,6 @@
-import { useQuery as useReactQuery } from "@tanstack/react-query";
-import { useRef } from "react";
-import { ApiError, errorMessage } from "./api";
+import { useQuery as useReactQuery } from '@tanstack/react-query';
+import { useRef } from 'react';
+import { ApiError, errorMessage } from './api';
 
 export interface QueryFailure {
   message: string;
@@ -65,7 +65,11 @@ function useQueryState<T>(
   };
 }
 
-export function useQuery<T>(key: string | null, fetch: () => Promise<T>, options: QueryOptions = {}): QueryState<T> {
+export function useQuery<T>(
+  key: string | null,
+  fetch: () => Promise<T>,
+  options: QueryOptions = {},
+): QueryState<T> {
   return useQueryState(key, fetch, options);
 }
 

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 type Handler = (...args: never[]) => unknown;
 
@@ -24,11 +24,11 @@ class FakeWindow {
   }
 
   on(event: string, cb: Handler): void {
-    if (event === "closed") this.closedHandlers.push(cb);
+    if (event === 'closed') this.closedHandlers.push(cb);
   }
 
   once(event: string, cb: Handler): void {
-    if (event === "ready-to-show") this.readyHandlers.push(cb);
+    if (event === 'ready-to-show') this.readyHandlers.push(cb);
   }
 
   loadURL(url: string): void {
@@ -49,53 +49,61 @@ const BrowserWindow = vi.fn(function (this: unknown, options: Record<string, unk
   return win;
 });
 
-const app = { getAppPath: vi.fn(() => "/app") };
-const screen = { getPrimaryDisplay: vi.fn(() => ({ workArea: { x: 0, y: 0, width: 1920, height: 1080 } })) };
+const app = { getAppPath: vi.fn(() => '/app') };
+const screen = {
+  getPrimaryDisplay: vi.fn(() => ({ workArea: { x: 0, y: 0, width: 1920, height: 1080 } })),
+};
 
-vi.mock("electron", () => ({ app, BrowserWindow, screen }));
-vi.mock("@desktop/boot/env.js", () => ({ IS_DEV: false }));
+vi.mock('electron', () => ({ app, BrowserWindow, screen }));
+vi.mock('@desktop/boot/env.js', () => ({ IS_DEV: false }));
 
-const { createPopoutWindow, cascadePosition, isPopoutWindow, isValidPopoutSymbol, popoutRoute, popoutUrl } =
-  await import("@desktop/window/popoutWindow.js");
+const {
+  createPopoutWindow,
+  cascadePosition,
+  isPopoutWindow,
+  isValidPopoutSymbol,
+  popoutRoute,
+  popoutUrl,
+} = await import('@desktop/window/popoutWindow.js');
 
-describe("isValidPopoutSymbol", () => {
-  it("accepts plain tickers and dotted/suffixed forms", () => {
-    expect(isValidPopoutSymbol("NVDA")).toBe(true);
-    expect(isValidPopoutSymbol("nvda")).toBe(true);
-    expect(isValidPopoutSymbol("BRK.B")).toBe(true);
-    expect(isValidPopoutSymbol("700.HK")).toBe(true);
-    expect(isValidPopoutSymbol("SPX-500")).toBe(true);
+describe('isValidPopoutSymbol', () => {
+  it('accepts plain tickers and dotted/suffixed forms', () => {
+    expect(isValidPopoutSymbol('NVDA')).toBe(true);
+    expect(isValidPopoutSymbol('nvda')).toBe(true);
+    expect(isValidPopoutSymbol('BRK.B')).toBe(true);
+    expect(isValidPopoutSymbol('700.HK')).toBe(true);
+    expect(isValidPopoutSymbol('SPX-500')).toBe(true);
   });
 
-  it("rejects empty, oversized, or shell-hostile input", () => {
-    expect(isValidPopoutSymbol("")).toBe(false);
-    expect(isValidPopoutSymbol("A".repeat(21))).toBe(false);
-    expect(isValidPopoutSymbol("NVDA; rm -rf /")).toBe(false);
-    expect(isValidPopoutSymbol("../../etc/passwd")).toBe(false);
-    expect(isValidPopoutSymbol("<script>")).toBe(false);
+  it('rejects empty, oversized, or shell-hostile input', () => {
+    expect(isValidPopoutSymbol('')).toBe(false);
+    expect(isValidPopoutSymbol('A'.repeat(21))).toBe(false);
+    expect(isValidPopoutSymbol('NVDA; rm -rf /')).toBe(false);
+    expect(isValidPopoutSymbol('../../etc/passwd')).toBe(false);
+    expect(isValidPopoutSymbol('<script>')).toBe(false);
   });
 
-  it("rejects dot-only input that URL normalization would escape the popout route with", () => {
-    expect(isValidPopoutSymbol("..")).toBe(false);
-    expect(isValidPopoutSymbol(".")).toBe(false);
-    expect(isValidPopoutSymbol("...")).toBe(false);
-    expect(isValidPopoutSymbol("--")).toBe(false);
-  });
-});
-
-describe("popoutRoute / popoutUrl", () => {
-  it("builds an encoded /popout/symbol route", () => {
-    expect(popoutRoute("BRK.B")).toBe("/popout/symbol/BRK.B");
-    expect(popoutRoute("700.HK")).toBe("/popout/symbol/700.HK");
-  });
-
-  it("resolves against the prod app:// origin outside dev", () => {
-    expect(popoutUrl("NVDA.US")).toBe("app://-/popout/symbol/NVDA.US");
+  it('rejects dot-only input that URL normalization would escape the popout route with', () => {
+    expect(isValidPopoutSymbol('..')).toBe(false);
+    expect(isValidPopoutSymbol('.')).toBe(false);
+    expect(isValidPopoutSymbol('...')).toBe(false);
+    expect(isValidPopoutSymbol('--')).toBe(false);
   });
 });
 
-describe("cascadePosition", () => {
-  it("offsets each successive popout by the given step from the anchor", () => {
+describe('popoutRoute / popoutUrl', () => {
+  it('builds an encoded /popout/symbol route', () => {
+    expect(popoutRoute('BRK.B')).toBe('/popout/symbol/BRK.B');
+    expect(popoutRoute('700.HK')).toBe('/popout/symbol/700.HK');
+  });
+
+  it('resolves against the prod app:// origin outside dev', () => {
+    expect(popoutUrl('NVDA.US')).toBe('app://-/popout/symbol/NVDA.US');
+  });
+});
+
+describe('cascadePosition', () => {
+  it('offsets each successive popout by the given step from the anchor', () => {
     const anchor = { x: 100, y: 80 };
     expect(cascadePosition(anchor, 0)).toEqual({ x: 100, y: 80 });
     expect(cascadePosition(anchor, 1)).toEqual({ x: 124, y: 104 });
@@ -103,19 +111,19 @@ describe("cascadePosition", () => {
   });
 });
 
-describe("createPopoutWindow", () => {
+describe('createPopoutWindow', () => {
   beforeEach(() => {
     createdWindows.length = 0;
     BrowserWindow.mockClear();
   });
 
-  it("throws for a symbol that fails validation before touching BrowserWindow", () => {
-    expect(() => createPopoutWindow("../evil")).toThrow(/invalid popout symbol/);
+  it('throws for a symbol that fails validation before touching BrowserWindow', () => {
+    expect(() => createPopoutWindow('../evil')).toThrow(/invalid popout symbol/);
     expect(BrowserWindow).not.toHaveBeenCalled();
   });
 
-  it("creates a sandboxed window sized per contract and loads the popout route", () => {
-    const win = createPopoutWindow("NVDA.US");
+  it('creates a sandboxed window sized per contract and loads the popout route', () => {
+    const win = createPopoutWindow('NVDA.US');
 
     expect(BrowserWindow).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -123,16 +131,20 @@ describe("createPopoutWindow", () => {
         height: 420,
         minWidth: 360,
         minHeight: 300,
-        webPreferences: expect.objectContaining({ sandbox: true, contextIsolation: true, nodeIntegration: false }),
+        webPreferences: expect.objectContaining({
+          sandbox: true,
+          contextIsolation: true,
+          nodeIntegration: false,
+        }),
       }),
     );
-    expect((win as unknown as FakeWindow).loadedUrl).toBe("app://-/popout/symbol/NVDA.US");
+    expect((win as unknown as FakeWindow).loadedUrl).toBe('app://-/popout/symbol/NVDA.US');
     expect(isPopoutWindow(win)).toBe(true);
   });
 
-  it("cascades successive popouts and forgets them once closed", () => {
-    const win1 = createPopoutWindow("NVDA.US");
-    const win2 = createPopoutWindow("MU.US");
+  it('cascades successive popouts and forgets them once closed', () => {
+    const win1 = createPopoutWindow('NVDA.US');
+    const win2 = createPopoutWindow('MU.US');
 
     const opts1 = (win1 as unknown as FakeWindow).options;
     const opts2 = (win2 as unknown as FakeWindow).options;

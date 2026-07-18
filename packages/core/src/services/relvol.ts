@@ -1,15 +1,18 @@
-import type { RawBar, RelativeVolume } from "@kansoku/shared/types";
-import { toTs } from "./indicators.js";
-import { classifySession, easternDate, easternMinuteOfDay } from "./session.js";
+import type { RawBar, RelativeVolume } from '@kansoku/shared/types';
+import { toTs } from './indicators.js';
+import { classifySession, easternDate, easternMinuteOfDay } from './session.js';
 
 const BASELINE_DAYS = 5;
 
-export function computeRelativeVolume(bars: RawBar[], now: Date = new Date()): RelativeVolume | null {
+export function computeRelativeVolume(
+  bars: RawBar[],
+  now: Date = new Date(),
+): RelativeVolume | null {
   const today = easternDate(now);
   const byDay = new Map<string, { minute: number; volume: number }[]>();
   for (const bar of bars) {
     const ts = toTs(bar.time);
-    if (classifySession(ts) !== "regular") continue;
+    if (classifySession(ts) !== 'regular') continue;
     const volume = Number(bar.volume);
     if (!Number.isFinite(volume)) continue;
     const date = easternDate(new Date(ts * 1000));

@@ -1,16 +1,17 @@
-import { useState } from "react";
-import { useQuery } from "@web/apiHooks";
-import { client } from "@web/client";
-import { Card, SectionTitle, Switch } from "@web/ui";
-import { MARKET_LABEL, type Market } from "./types";
-import { toggleMarket } from "./watchedMarkets";
-import { useSaveQueue } from "./useSaveQueue";
+import { useState } from 'react';
+import { useQuery } from '@web/apiHooks';
+import { client } from '@web/client';
+import { Card, SectionTitle, Switch } from '@web/ui';
+import { MARKET_LABEL, type Market } from './types';
+import { toggleMarket } from './watchedMarkets';
+import { useSaveQueue } from './useSaveQueue';
 
-const MARKET_ORDER: Market[] = ["US", "HK", "CN"];
+const MARKET_ORDER: Market[] = ['US', 'HK', 'CN'];
 
 export function WatchedMarketsCard() {
-  const { data, error, reload } = useQuery<{ markets: Market[] }>("settings.getWatchedMarkets", () =>
-    client.settings.getWatchedMarkets(),
+  const { data, error, reload } = useQuery<{ markets: Market[] }>(
+    'settings.getWatchedMarkets',
+    () => client.settings.getWatchedMarkets(),
   );
 
   if (!data) return null;

@@ -1,4 +1,4 @@
-import { type Static, Type } from "typebox";
+import { type Static, Type } from 'typebox';
 
 const rankingEntrySchema = Type.Object(
   {

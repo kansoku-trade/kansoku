@@ -9,14 +9,14 @@
 
 ### 已确认的约束
 
-| 决策点 | 结论 |
-|---|---|
-| 目标用户 | 对外分发（不只自用） |
-| 桌面平台 | 先只做 macOS，CI 架子留扩展空间 |
-| 数据源 | 用户自带 Longbridge 开放平台凭证，App 内设置页填写 |
-| 签名 | 先不买 Apple 开发者账号：无签名 + 弱更新，架构按可升级到签名 + 自动更新设计 |
-| 仓库 | 留在本仓库（workspace 即仓库根），接受目录与架构重构 |
-| 运行形态 | 双模式共存：① Server + Web（Linux 自部署）② Electron 桌面分发 |
+| 决策点     | 结论                                                                                                                 |
+| ---------- | -------------------------------------------------------------------------------------------------------------------- |
+| 目标用户   | 对外分发（不只自用）                                                                                                 |
+| 桌面平台   | 先只做 macOS，CI 架子留扩展空间                                                                                      |
+| 数据源     | 用户自带 Longbridge 开放平台凭证，App 内设置页填写                                                                   |
+| 签名       | 先不买 Apple 开发者账号：无签名 + 弱更新，架构按可升级到签名 + 自动更新设计                                          |
+| 仓库       | 留在本仓库（workspace 即仓库根），接受目录与架构重构                                                                 |
+| 运行形态   | 双模式共存：① Server + Web（Linux 自部署）② Electron 桌面分发                                                        |
 | 服务端框架 | Fastify → Tsuki（https://github.com/Innei/Tsuki ，Hono 上的 NestJS 风格框架：装饰器 + tsyringe DI + 模块 + OpenAPI） |
 
 ## 产品形态
@@ -46,11 +46,11 @@
 └─ packages/shared/
 ```
 
-| 运行态 | 宿主 | Vite | 说明 |
-|---|---|---|---|
-| 开发 | Vite dev server（`@hono/vite-dev-server` 内嵌 hono app） | 热更新 | 单进程，web 与 server 代码都热重载 |
-| Linux 自部署 | `@hono/node-server` | 预构建静态 | Docker 化按 Tsuki starter 减掉 postgres/redis，继续 better-sqlite3 + drizzle |
-| 桌面 App | Electron `protocol.handle('app')` | 预构建静态 | 零端口零监听，渲染进程 `fetch('app://…')` 直达内核 |
+| 运行态       | 宿主                                                     | Vite       | 说明                                                                         |
+| ------------ | -------------------------------------------------------- | ---------- | ---------------------------------------------------------------------------- |
+| 开发         | Vite dev server（`@hono/vite-dev-server` 内嵌 hono app） | 热更新     | 单进程，web 与 server 代码都热重载                                           |
+| Linux 自部署 | `@hono/node-server`                                      | 预构建静态 | Docker 化按 Tsuki starter 减掉 postgres/redis，继续 better-sqlite3 + drizzle |
+| 桌面 App     | Electron `protocol.handle('app')`                        | 预构建静态 | 零端口零监听，渲染进程 `fetch('app://…')` 直达内核                           |
 
 ### 关键设计点
 

@@ -9,7 +9,7 @@ description: Use when the user asks for an end-to-end orientation on a listed co
 
 A six-lens onboarding workflow for getting up to speed on one listed company in a single pass. Built from a live session where the author repeatedly failed by quoting community-post numbers as if they were company guidance, by trusting GAAP EPS fields when the market quoted non-GAAP, and by reading YoY % deceleration as business slowdown without checking the base.
 
-**Core principle: anchor every numeric claim on a primary source.** Press release, 8-K, real OHLCV are primary. Community topic titles, truncated news headlines, and aggregated provider fields are *leads*, not sources. Verify before quoting.
+**Core principle: anchor every numeric claim on a primary source.** Press release, 8-K, real OHLCV are primary. Community topic titles, truncated news headlines, and aggregated provider fields are _leads_, not sources. Verify before quoting.
 
 ## When to use
 
@@ -24,14 +24,14 @@ If the user wants only one lens (e.g., just real-time price), do NOT load this s
 
 Lenses 1–5 are independent. Dispatch their Longbridge calls **in parallel**. Lens 6 (audit) runs last, against all collected data.
 
-| # | Lens | Sub-skills | Output anchor |
-|---|---|---|---|
-| 1 | Business identity | `longbridge-company-profile` + `longbridge-business-query` | 1-line "what" + segment revenue mix table |
-| 2 | Fundamentals | `longbridge-fundamental` | Quarterly revenue series (YoY *and* QoQ) + OpInc trajectory + reconciled EPS |
-| 3 | Technicals | `longbridge-technical` + `longbridge-kline` | Last-5-day OHLCV + week summary + pivot S/R + indicator vote + ATR14 |
-| 4 | Catalysts | `longbridge-news` + `trump-truth-monitor` (if policy-exposed) | Classified news/filings + community sentiment skew + pre-market range + Trump-policy hits |
-| 5 | Supply chain & peers | `longbridge-supply-chain` + `longbridge-competitive-analysis` | Upstream → company → downstream flow + peer valuation table + paired-trade logic |
-| 6 | Narrative audit | (this skill, see below) | Reconciliation: official vs community, GAAP vs non-GAAP, YoY vs QoQ, mix vs aggregate |
+| #   | Lens                 | Sub-skills                                                    | Output anchor                                                                             |
+| --- | -------------------- | ------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| 1   | Business identity    | `longbridge-company-profile` + `longbridge-business-query`    | 1-line "what" + segment revenue mix table                                                 |
+| 2   | Fundamentals         | `longbridge-fundamental`                                      | Quarterly revenue series (YoY _and_ QoQ) + OpInc trajectory + reconciled EPS              |
+| 3   | Technicals           | `longbridge-technical` + `longbridge-kline`                   | Last-5-day OHLCV + week summary + pivot S/R + indicator vote + ATR14                      |
+| 4   | Catalysts            | `longbridge-news` + `trump-truth-monitor` (if policy-exposed) | Classified news/filings + community sentiment skew + pre-market range + Trump-policy hits |
+| 5   | Supply chain & peers | `longbridge-supply-chain` + `longbridge-competitive-analysis` | Upstream → company → downstream flow + peer valuation table + paired-trade logic          |
+| 6   | Narrative audit      | (this skill, see below)                                       | Reconciliation: official vs community, GAAP vs non-GAAP, YoY vs QoQ, mix vs aggregate     |
 
 ## Mandatory verification — the recurring traps
 
@@ -104,14 +104,14 @@ A pre-market range > 1× ATR14 (e.g., $188 – $211 vs ATR14 $12) means institut
 
 ## Anti-pattern table
 
-| Excuse | Reality |
-|---|---|
-| "The community post said the FY28 guide is $X" | Community ≠ company. Find the press release. |
-| "The CEO said +40% YoY" (from a "…"-truncated headline) | Pull the article body. Attribute as unverified if you can't. |
-| "EPS is 0.04, missed badly" (from the IS feed) | That's GAAP. Non-GAAP is what consensus measures. |
-| "YoY dropped from 63% to 22%, growth is slowing" | Check QoQ. Check the base. Check next quarter's implied YoY. |
-| "Revenue is +28%, no big deal" | If 75% of revenue is hyper-growth segment masking 25% in decline, the hot segment is +60%+. |
-| "Pre-market is volatile, ignore" | A pre-market range > 1× ATR is institutional disagreement — a signal. Note it. |
+| Excuse                                                  | Reality                                                                                     |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| "The community post said the FY28 guide is $X"          | Community ≠ company. Find the press release.                                                |
+| "The CEO said +40% YoY" (from a "…"-truncated headline) | Pull the article body. Attribute as unverified if you can't.                                |
+| "EPS is 0.04, missed badly" (from the IS feed)          | That's GAAP. Non-GAAP is what consensus measures.                                           |
+| "YoY dropped from 63% to 22%, growth is slowing"        | Check QoQ. Check the base. Check next quarter's implied YoY.                                |
+| "Revenue is +28%, no big deal"                          | If 75% of revenue is hyper-growth segment masking 25% in decline, the hot segment is +60%+. |
+| "Pre-market is volatile, ignore"                        | A pre-market range > 1× ATR is institutional disagreement — a signal. Note it.              |
 
 ## Red flags — STOP and reverify
 
@@ -129,6 +129,7 @@ Lenses 1–5 each call multiple Longbridge endpoints. Within a single user turn,
 ## Related skills
 
 Required (load on demand):
+
 - `longbridge-company-profile`, `longbridge-business-query`
 - `longbridge-fundamental`
 - `longbridge-technical`, `longbridge-kline`
@@ -136,6 +137,7 @@ Required (load on demand):
 - `longbridge-supply-chain`, `longbridge-competitive-analysis`
 
 Optional (deeper drilldown):
+
 - `longbridge-peer-comparison` — pure peer-matrix
 - `longbridge-valuation` — historical PE/PB percentile
 - `longbridge-earnings` — earnings-day specific

@@ -1,13 +1,13 @@
-import { useDeferredValue, useEffect, useState } from "react";
-import { BookOpen, ChartCandlestick, FileText, Library, RefreshCw, Search } from "lucide-react";
-import type { ResearchDocument, ResearchDocumentMeta } from "@kansoku/core/contract/index";
-import { useQuery } from "@web/apiHooks";
-import { client } from "@web/client";
-import { navigate, useQueryParam } from "@web/router";
-import { Badge, Empty, ErrorBox, Input, MarketTime, ResizablePanel, Spinner } from "@web/ui";
-import { useTitle } from "@web/useTitle";
-import { Markdown } from "../cockpit/markdown";
-import { ResearchAssistant } from "./ResearchAssistant";
+import { useDeferredValue, useEffect, useState } from 'react';
+import { BookOpen, ChartCandlestick, FileText, Library, RefreshCw, Search } from 'lucide-react';
+import type { ResearchDocument, ResearchDocumentMeta } from '@kansoku/core/contract/index';
+import { useQuery } from '@web/apiHooks';
+import { client } from '@web/client';
+import { navigate, useQueryParam } from '@web/router';
+import { Badge, Empty, ErrorBox, Input, MarketTime, ResizablePanel, Spinner } from '@web/ui';
+import { useTitle } from '@web/useTitle';
+import { Markdown } from '../cockpit/markdown';
+import { ResearchAssistant } from './ResearchAssistant';
 import {
   kindForView,
   parseResearchView,
@@ -18,19 +18,19 @@ import {
   researchTypeLabel,
   type ResearchView,
   viewForKind,
-} from "./researchModel";
+} from './researchModel';
 
 const VIEW_OPTIONS: { key: ResearchView; label: string }[] = [
-  { key: "stocks", label: "股票档案" },
-  { key: "journal", label: "研究日志" },
+  { key: 'stocks', label: '股票档案' },
+  { key: 'journal', label: '研究日志' },
 ];
 
 const EXPLORER_MIN_WIDTH = 240;
 const EXPLORER_MAX_WIDTH = 520;
-const EXPLORER_WIDTH_STORAGE_KEY = "kansoku.research.explorer-width";
+const EXPLORER_WIDTH_STORAGE_KEY = 'kansoku.research.explorer-width';
 
 function defaultExplorerWidth(): number {
-  const viewportWidth = typeof window === "undefined" ? 1440 : window.innerWidth;
+  const viewportWidth = typeof window === 'undefined' ? 1440 : window.innerWidth;
   return Math.min(EXPLORER_MAX_WIDTH, Math.max(EXPLORER_MIN_WIDTH, viewportWidth * 0.215));
 }
 
@@ -65,7 +65,7 @@ function ResearchExplorer({
         <button
           type="button"
           key={document.path}
-          className={`research-document-row${document.path === selectedPath ? " active" : ""}`}
+          className={`research-document-row${document.path === selectedPath ? ' active' : ''}`}
           aria-pressed={document.path === selectedPath}
           onClick={() => onSelect(document)}
         >
@@ -73,7 +73,9 @@ function ResearchExplorer({
             <span className="research-document-row-title" title={document.title}>
               {researchListTitle(document)}
             </span>
-            {document.date && <span className="research-document-row-date">{document.date.slice(5)}</span>}
+            {document.date && (
+              <span className="research-document-row-date">{document.date.slice(5)}</span>
+            )}
           </span>
           <span className="research-document-row-meta">{researchListSecondary(document)}</span>
           {showExcerpts && document.excerpt && (
@@ -85,7 +87,15 @@ function ResearchExplorer({
   );
 }
 
-function ResearchReader({ document, loading, error }: { document: ResearchDocument | null; loading: boolean; error: string | null }) {
+function ResearchReader({
+  document,
+  loading,
+  error,
+}: {
+  document: ResearchDocument | null;
+  loading: boolean;
+  error: string | null;
+}) {
   if (loading && !document) {
     return (
       <div className="research-reader-state">
@@ -96,12 +106,14 @@ function ResearchReader({ document, loading, error }: { document: ResearchDocume
   if (error) return <ErrorBox className="research-reader-error">{error}</ErrorBox>;
   if (!document) return <Empty>选择一份研究资料开始阅读</Empty>;
 
-  const cockpitSymbol = document.kind === "stock" ? document.symbols[0] : null;
+  const cockpitSymbol = document.kind === 'stock' ? document.symbols[0] : null;
   return (
     <article className="research-reader-document">
       <header className="research-reader-head">
         <div className="research-reader-heading">
-          <Badge tone={document.kind === "stock" ? "accent" : undefined}>{researchTypeLabel(document.type)}</Badge>
+          <Badge tone={document.kind === 'stock' ? 'accent' : undefined}>
+            {researchTypeLabel(document.type)}
+          </Badge>
           <h2>{document.title}</h2>
           <div className="research-reader-meta">
             <code>{document.path}</code>
@@ -111,7 +123,10 @@ function ResearchReader({ document, loading, error }: { document: ResearchDocume
           </div>
         </div>
         {cockpitSymbol && (
-          <a className="btn research-cockpit-link" href={`/symbol/${encodeURIComponent(`${cockpitSymbol}.US`)}`}>
+          <a
+            className="btn research-cockpit-link"
+            href={`/symbol/${encodeURIComponent(`${cockpitSymbol}.US`)}`}
+          >
             <ChartCandlestick size={14} /> 打开驾驶舱
           </a>
         )}
@@ -151,17 +166,19 @@ function ResearchContext({
           onDocumentChanged={onDocumentChanged}
         />
       ) : (
-        <div className="research-reader-state"><Spinner /> 正在加载正文…</div>
+        <div className="research-reader-state">
+          <Spinner /> 正在加载正文…
+        </div>
       )}
     </aside>
   );
 }
 
 export function ResearchPage() {
-  useTitle("研究库");
-  const view = parseResearchView(useQueryParam("view"));
-  const selectedPath = useQueryParam("path");
-  const [query, setQuery] = useState("");
+  useTitle('研究库');
+  const view = parseResearchView(useQueryParam('view'));
+  const selectedPath = useQueryParam('path');
+  const [query, setQuery] = useState('');
   const deferredQuery = useDeferredValue(query.trim());
   const kind = kindForView(view);
 
@@ -170,7 +187,9 @@ export function ResearchPage() {
     error: allError,
     loading: allLoading,
     reload: reloadAll,
-  } = useQuery<ResearchDocumentMeta[]>("research.list:all", () => client.research.list({}), { cache: false });
+  } = useQuery<ResearchDocumentMeta[]>('research.list:all', () => client.research.list({}), {
+    cache: false,
+  });
   const {
     data: searchDocuments,
     error: searchError,
@@ -184,7 +203,10 @@ export function ResearchPage() {
 
   const baseDocuments = (allDocuments ?? []).filter((document) => document.kind === kind);
   const visibleDocuments = deferredQuery ? (searchDocuments ?? []) : baseDocuments;
-  const selected = visibleDocuments.find((document) => document.path === selectedPath) ?? visibleDocuments[0] ?? null;
+  const selected =
+    visibleDocuments.find((document) => document.path === selectedPath) ??
+    visibleDocuments[0] ??
+    null;
   const selectedDocumentPath = selected?.path ?? null;
   const {
     data: document,
@@ -196,7 +218,7 @@ export function ResearchPage() {
     () =>
       selectedDocumentPath
         ? client.research.get({ path: selectedDocumentPath })
-        : Promise.reject(new Error("No research document selected")),
+        : Promise.reject(new Error('No research document selected')),
     { cache: false },
   );
 
@@ -206,11 +228,11 @@ export function ResearchPage() {
   }, [selectedDocumentPath, selectedPath, view]);
 
   const selectDocument = (next: ResearchDocumentMeta) => {
-    setQuery("");
+    setQuery('');
     navigate(researchRoute(viewForKind(next.kind), next.path));
   };
   const changeView = (next: ResearchView) => {
-    setQuery("");
+    setQuery('');
     navigate(researchRoute(next));
   };
   const refresh = () => {
@@ -219,8 +241,8 @@ export function ResearchPage() {
     reloadDocument();
   };
 
-  const stockCount = (allDocuments ?? []).filter((item) => item.kind === "stock").length;
-  const journalCount = (allDocuments ?? []).filter((item) => item.kind === "journal").length;
+  const stockCount = (allDocuments ?? []).filter((item) => item.kind === 'stock').length;
+  const journalCount = (allDocuments ?? []).filter((item) => item.kind === 'journal').length;
   const listLoading = deferredQuery ? searchLoading : allLoading;
   const listError = deferredQuery ? searchError : allError;
 
@@ -228,10 +250,14 @@ export function ResearchPage() {
     <div className="fullpage research-page">
       <header className="research-header">
         <div className="research-title">
-          <span className="research-title-icon"><Library size={18} /></span>
+          <span className="research-title-icon">
+            <Library size={18} />
+          </span>
           <div>
             <h1>研究库</h1>
-            <p>{stockCount} 篇股票档案 · {journalCount} 篇研究日志</p>
+            <p>
+              {stockCount} 篇股票档案 · {journalCount} 篇研究日志
+            </p>
           </div>
         </div>
         <div className="research-controls">
@@ -240,11 +266,11 @@ export function ResearchPage() {
               <button
                 type="button"
                 key={option.key}
-                className={option.key === view ? "active" : ""}
+                className={option.key === view ? 'active' : ''}
                 aria-pressed={option.key === view}
                 onClick={() => changeView(option.key)}
               >
-                {option.key === "stocks" ? <BookOpen size={13} /> : <FileText size={13} />}
+                {option.key === 'stocks' ? <BookOpen size={13} /> : <FileText size={13} />}
                 {option.label}
               </button>
             ))}
@@ -256,11 +282,16 @@ export function ResearchPage() {
               <Input
                 type="search"
                 value={query}
-                placeholder={view === "stocks" ? "搜索股票或正文" : "搜索日期、标的或主题"}
+                placeholder={view === 'stocks' ? '搜索股票或正文' : '搜索日期、标的或主题'}
                 onChange={(event) => setQuery(event.target.value)}
               />
             </label>
-            <button type="button" className="research-refresh" aria-label="刷新研究资料" onClick={refresh}>
+            <button
+              type="button"
+              className="research-refresh"
+              aria-label="刷新研究资料"
+              onClick={refresh}
+            >
               <RefreshCw size={14} />
             </button>
           </div>
@@ -279,7 +310,7 @@ export function ResearchPage() {
         >
           <aside className="research-explorer">
             <div className="research-explorer-head">
-              <span>{view === "stocks" ? "股票档案" : "研究时间线"}</span>
+              <span>{view === 'stocks' ? '股票档案' : '研究时间线'}</span>
               <span>{visibleDocuments.length}</span>
             </div>
             <ResearchExplorer

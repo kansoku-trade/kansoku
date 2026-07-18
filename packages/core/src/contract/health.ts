@@ -1,4 +1,4 @@
-import { defineRoutes } from "./defineRoutes.js";
+import { defineRoutes } from './defineRoutes.js';
 
 export interface HealthStatus {
   status: string;
@@ -10,6 +10,6 @@ export interface HealthApi {
   get(): Promise<HealthStatus>;
 }
 
-export const healthRoutes = defineRoutes<HealthApi>("health", {
-  get: { method: "GET", path: "/" },
+export const healthRoutes = defineRoutes<HealthApi>('health', {
+  get: { method: 'GET', path: '/' },
 });

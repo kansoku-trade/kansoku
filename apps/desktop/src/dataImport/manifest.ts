@@ -1,10 +1,10 @@
-import { copyFileSync, existsSync, mkdirSync, readdirSync, realpathSync } from "node:fs";
-import { join } from "node:path";
+import { copyFileSync, existsSync, mkdirSync, readdirSync, realpathSync } from 'node:fs';
+import { join } from 'node:path';
 
-const CHART_DATA_REL = join("journal", "charts", "data");
+const CHART_DATA_REL = join('journal', 'charts', 'data');
 
 function isChartJson(name: string): boolean {
-  return name.endsWith(".json") && name !== "index.json";
+  return name.endsWith('.json') && name !== 'index.json';
 }
 
 // app.db is deliberately never part of the import scope: the packaged
@@ -14,20 +14,19 @@ function isChartJson(name: string): boolean {
 // corrupting the WAL. Only chart JSONs, which nothing holds open, are safe
 // to import this way.
 export type SourceValidation =
-  | { ok: true }
-  | { ok: false; reason: "self" | "missing-journal" | "empty" };
+  { ok: true } | { ok: false; reason: 'self' | 'missing-journal' | 'empty' };
 
 export function validateImportSource(sourceRoot: string, destRoot: string): SourceValidation {
   if (realpathOrSelf(sourceRoot) === realpathOrSelf(destRoot)) {
-    return { ok: false, reason: "self" };
+    return { ok: false, reason: 'self' };
   }
   const chartDataDir = join(sourceRoot, CHART_DATA_REL);
   if (!existsSync(chartDataDir)) {
-    return { ok: false, reason: "missing-journal" };
+    return { ok: false, reason: 'missing-journal' };
   }
   const hasJson = readdirSync(chartDataDir).some(isChartJson);
   if (!hasJson) {
-    return { ok: false, reason: "empty" };
+    return { ok: false, reason: 'empty' };
   }
   return { ok: true };
 }
@@ -86,7 +85,10 @@ export interface CopyImportResult {
 // denied, etc.) never aborts the rest of the batch — the caller gets a full
 // per-file account of what actually landed instead of a half-populated dest
 // dir plus an unhandled rejection.
-export function copyImportManifest(manifest: ImportManifest, opts: CopyImportOptions): CopyImportResult {
+export function copyImportManifest(
+  manifest: ImportManifest,
+  opts: CopyImportOptions,
+): CopyImportResult {
   let copied = 0;
   let skipped = 0;
   const failures: CopyImportFailure[] = [];
@@ -96,11 +98,14 @@ export function copyImportManifest(manifest: ImportManifest, opts: CopyImportOpt
       continue;
     }
     try {
-      mkdirSync(join(entry.destPath, ".."), { recursive: true });
+      mkdirSync(join(entry.destPath, '..'), { recursive: true });
       copyFileSync(entry.sourcePath, entry.destPath);
       copied++;
     } catch (error) {
-      failures.push({ relPath: entry.relPath, error: error instanceof Error ? error.message : String(error) });
+      failures.push({
+        relPath: entry.relPath,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
   return { copied, skipped, failed: failures.length, failures };

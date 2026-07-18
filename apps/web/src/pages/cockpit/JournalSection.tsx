@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from "react";
-import { errorMessage } from "@web/api";
-import { client } from "@web/client";
-import { Button, ErrorBox, Spinner } from "@web/ui";
-import { AnalysisRunDetails } from "./AnalysisRunDetails";
-import { openMarkdownModal } from "./markdown";
-import { useAnalystRun } from "./useAnalystRun";
+import { useEffect, useRef, useState } from 'react';
+import { errorMessage } from '@web/api';
+import { client } from '@web/client';
+import { Button, ErrorBox, Spinner } from '@web/ui';
+import { AnalysisRunDetails } from './AnalysisRunDetails';
+import { openMarkdownModal } from './markdown';
+import { useAnalystRun } from './useAnalystRun';
 
 const RUN_POLL_MS = 5_000;
 
@@ -76,7 +76,7 @@ export function JournalSection({
         <div className="ai-reassess">
           <Button onClick={run.start} disabled={run.pending || run.running}>
             {run.running && <Spinner />}
-            {run.running ? "分析进行中…" : "跑一次分析"}
+            {run.running ? '分析进行中…' : '跑一次分析'}
           </Button>
           {run.hint && <span className="ai-hint">{run.hint}</span>}
         </div>
@@ -91,7 +91,7 @@ export function JournalSection({
             return (
               <button
                 key={e.name}
-                className={`journal-entry${busy ? " loading" : ""}`}
+                className={`journal-entry${busy ? ' loading' : ''}`}
                 onClick={() => onSelect(e.name)}
                 disabled={busy}
               >

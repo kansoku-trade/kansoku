@@ -1,9 +1,9 @@
-import type { ProHooks, ProModule } from "@kansoku/pro-api";
+import type { ProHooks, ProModule } from '@kansoku/pro-api';
 
 export const freeHooks: ProHooks = {
   requestImmediateFollow() {},
   startDeepDiveForNote() {
-    return { started: false, reason: "disabled" };
+    return { started: false, reason: 'disabled' };
   },
   deepDiveStatus() {
     return { running: false };

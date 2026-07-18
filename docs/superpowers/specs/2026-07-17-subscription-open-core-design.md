@@ -50,17 +50,18 @@ Dodo 的 activate / validate / deactivate 是公开端点,客户端直连,不需
 
 **唯一真源在 `apps/pro/src/license/licenseState.ts`(`LicenseManager`),公开侧不复制任何一条判断逻辑。**
 
-| 状态 | 触发条件 | `capabilities.licensed` | 说明 |
-|---|---|---|---|
-| `unlicensed` | 本地无 license 记录 | `false` | 从未激活,或已 `deactivate` |
-| `licensed` | 上次 `validate`/`activate` 成功(`lastOutcome:"success"`) | `true` | 正常订阅中 |
-| `grace` | 上次成功验证距今 ≤ **14 天**,但期间的复验因网络原因失败(`lastOutcome:"network_fail"`) | `true`(**对外等同已订阅**,附带 `graceUntil`) | 离线宽限,不因断网误判为过期 |
-| `expired` | 距上次成功验证 > 14 天仍未验证成功 | `false` | 宽限期耗尽;**只要之后一次 `validate` 成功,自动回到 `licensed`——无需重新输入 key、无需人工干预**(状态由 `lastOutcome`/时间戳纯函数派生,不是一次性状态迁移) |
-| `invalid` | `validate` 返回 `valid:false`(key 被作废、`plan_changed`、退订等) | `false` | 立即生效;需要用户重新输入新 key 走 `activate` 才能恢复 |
+| 状态         | 触发条件                                                                              | `capabilities.licensed`                      | 说明                                                                                                                                                      |
+| ------------ | ------------------------------------------------------------------------------------- | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `unlicensed` | 本地无 license 记录                                                                   | `false`                                      | 从未激活,或已 `deactivate`                                                                                                                                |
+| `licensed`   | 上次 `validate`/`activate` 成功(`lastOutcome:"success"`)                              | `true`                                       | 正常订阅中                                                                                                                                                |
+| `grace`      | 上次成功验证距今 ≤ **14 天**,但期间的复验因网络原因失败(`lastOutcome:"network_fail"`) | `true`(**对外等同已订阅**,附带 `graceUntil`) | 离线宽限,不因断网误判为过期                                                                                                                               |
+| `expired`    | 距上次成功验证 > 14 天仍未验证成功                                                    | `false`                                      | 宽限期耗尽;**只要之后一次 `validate` 成功,自动回到 `licensed`——无需重新输入 key、无需人工干预**(状态由 `lastOutcome`/时间戳纯函数派生,不是一次性状态迁移) |
+| `invalid`    | `validate` 返回 `valid:false`(key 被作废、`plan_changed`、退订等)                     | `false`                                      | 立即生效;需要用户重新输入新 key 走 `activate` 才能恢复                                                                                                    |
 
 `snapshotFromRecord()` 是纯函数,每次读时用 `now()` 和 `lastValidatedAt` 现算 `grace`/`expired` 边界,不持久化这两个态本身——这正是"expired 自动恢复"的实现方式:下一次 revalidate 成功写回 `lastOutcome:"success"`,下一次读快照就直接落回 `licensed`。
 
 **降级语义(pro 内实现,公开代码零判断)**:
+
 - AI 相关 HTTP 路由(`assistant`/`chat`/`research`/`lobehub` 等 controller)统一挂 `@UseGuards(LicensedGuard)`;`reassess`、`deep-dive`、`aiSettings` 的 9 个委托方法在方法体最上方手动 `requireLicensed()`。未通过一律 **403**,响应体固定为 `{ok:false, error:"AI features require an active license", code:"LICENSE_REQUIRED"}`。
 - IPC 没有 guard 原语,改用 `gateLicensedIpc()` 在模块注册时整体包一层每个 IPC service 的原型方法,未通过时返回同构的 `{ok:false, code:"LICENSE_REQUIRED", status:403}` 信封,不必逐个 handler 里插判断。
 - `GET /overview/usage` 未授权直接 403;但 `GET /overview/recap` 会把 usage 折进一个必须成功返回的聚合响应里,所以未授权时**不抛错**,usage 字段降级为免费模式同款的全零形状(`{runs:0, calls:0, total_tokens:0, cost_total:0, by_layer:{}}`),其余字段(settlements/alerts)正常返回。

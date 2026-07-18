@@ -1,5 +1,5 @@
-import type { AgentEvent, AgentMessage, AgentTool } from "@earendil-works/pi-agent-core";
-import { AgentTimeoutError, type AiAgentFactory, createAgentSession } from "./agentSession.js";
+import type { AgentEvent, AgentMessage, AgentTool } from '@earendil-works/pi-agent-core';
+import { AgentTimeoutError, type AiAgentFactory, createAgentSession } from './agentSession.js';
 import {
   agentToolResultText,
   concatAssistantText,
@@ -8,20 +8,20 @@ import {
   persistIncrement,
   stringifyPayload,
   synthesizePartialAssistantMessage,
-} from "./conversationShared.js";
-import { type ConversationMessageRow, titleFromText } from "./conversationStore.js";
-import type { AiModel } from "./models.js";
-import { createRunLock } from "./runLock.js";
-import type { AiUsageLogContext } from "./usage.js";
+} from './conversationShared.js';
+import { type ConversationMessageRow, titleFromText } from './conversationStore.js';
+import type { AiModel } from './models.js';
+import { createRunLock } from './runLock.js';
+import type { AiUsageLogContext } from './usage.js';
 
 const DEFAULT_TIMEOUT_MS = 180_000;
 
 export type ConversationEvent =
-  | { event: "delta"; text: string }
-  | { event: "tool"; label: string; status: "start" | "end"; input?: string; output?: string }
-  | { event: "done" }
-  | { event: "aborted" }
-  | { event: "error"; message: string };
+  | { event: 'delta'; text: string }
+  | { event: 'tool'; label: string; status: 'start' | 'end'; input?: string; output?: string }
+  | { event: 'done' }
+  | { event: 'aborted' }
+  | { event: 'error'; message: string };
 
 // Methods are passed around as free functions — implementations must not depend on `this`.
 export interface ConversationTurnStore {
@@ -57,15 +57,13 @@ export interface ConversationPreparedTurn {
 }
 
 export type ConversationPrepareResult<TReason extends string> =
-  | { ok: false; reason: TReason }
-  | { ok: true; turn: ConversationPreparedTurn };
+  { ok: false; reason: TReason } | { ok: true; turn: ConversationPreparedTurn };
 
 export type ConversationStartResult<TReason extends string> =
-  | { started: false; reason: "busy" | TReason }
-  | { started: true; done: Promise<void> };
+  { started: false; reason: 'busy' | TReason } | { started: true; done: Promise<void> };
 
 export interface ConversationEngineConfig<TInput, TReason extends string> {
-  layer: AiUsageLogContext["layer"];
+  layer: AiUsageLogContext['layer'];
   logLabels: { persistFailure: string; preTurnFailure: string };
   defaultTimeoutMs?: number;
   prepare(key: string, text: string, input: TInput): Promise<ConversationPrepareResult<TReason>>;
@@ -102,38 +100,38 @@ function translateEvent(
   emit: (event: ConversationEvent) => void,
 ): void {
   if (ctx.settled) return;
-  if (event.type === "message_start") {
-    if (event.message.role === "assistant") {
+  if (event.type === 'message_start') {
+    if (event.message.role === 'assistant') {
       ctx.emittedLen = 0;
-      state.partial = "";
+      state.partial = '';
     }
     return;
   }
-  if (event.type === "message_update") {
-    if (event.message.role !== "assistant") return;
+  if (event.type === 'message_update') {
+    if (event.message.role !== 'assistant') return;
     const full = concatAssistantText(event.message);
     if (full.length > ctx.emittedLen) {
       const delta = full.slice(ctx.emittedLen);
       ctx.emittedLen = full.length;
       state.partial = full;
-      if (!ctx.buffered) emit({ event: "delta", text: delta });
+      if (!ctx.buffered) emit({ event: 'delta', text: delta });
     }
     return;
   }
-  if (event.type === "tool_execution_start") {
+  if (event.type === 'tool_execution_start') {
     emit({
-      event: "tool",
+      event: 'tool',
       label: toolLabels.get(event.toolName) ?? event.toolName,
-      status: "start",
+      status: 'start',
       input: stringifyPayload(event.args),
     });
     return;
   }
-  if (event.type === "tool_execution_end") {
+  if (event.type === 'tool_execution_end') {
     emit({
-      event: "tool",
+      event: 'tool',
       label: toolLabels.get(event.toolName) ?? event.toolName,
-      status: "end",
+      status: 'end',
       output: stringifyPayload(agentToolResultText(event.result)),
     });
   }
@@ -164,7 +162,7 @@ export function createConversationEngine<TInput, TReason extends string>(
   function broadcast(key: string, event: ConversationEvent): void {
     const set = listeners.get(key);
     if (!set) return;
-    for (const listener of [...set]) {
+    for (const listener of set) {
       try {
         listener(event);
       } catch {
@@ -175,7 +173,7 @@ export function createConversationEngine<TInput, TReason extends string>(
 
   function turnState(key: string): { busy: boolean; partial: string } {
     const state = turnStates.get(key);
-    return state ? { busy: state.busy, partial: state.partial } : { busy: false, partial: "" };
+    return state ? { busy: state.busy, partial: state.partial } : { busy: false, partial: '' };
   }
 
   function abort(key: string): boolean {
@@ -186,7 +184,12 @@ export function createConversationEngine<TInput, TReason extends string>(
     return true;
   }
 
-  async function executeTurn(key: string, text: string, turn: ConversationPreparedTurn, state: TurnState): Promise<void> {
+  async function executeTurn(
+    key: string,
+    text: string,
+    turn: ConversationPreparedTurn,
+    state: TurnState,
+  ): Promise<void> {
     const timeoutMs = turn.timeoutMs ?? config.defaultTimeoutMs ?? DEFAULT_TIMEOUT_MS;
     try {
       const nowFn = turn.now ?? Date.now;
@@ -197,12 +200,16 @@ export function createConversationEngine<TInput, TReason extends string>(
       const history = await turn.store.listMessages(session.id);
       const historyPayloads = history.map((row) => row.payload);
 
-      const userMessage: AgentMessage = { role: "user", content: text, timestamp: nowFn() };
+      const userMessage: AgentMessage = { role: 'user', content: text, timestamp: nowFn() };
       await turn.store.appendMessages(session.id, [userMessage]);
 
       const plan = await turn.buildTurn(session.id);
       const toolLabels = new Map(plan.tools.map((tool) => [tool.name, tool.label]));
-      const translatorCtx: TranslatorCtx = { emittedLen: 0, settled: false, buffered: Boolean(plan.gate) };
+      const translatorCtx: TranslatorCtx = {
+        emittedLen: 0,
+        settled: false,
+        buffered: Boolean(plan.gate),
+      };
 
       const agentSession = createAgentSession({
         layer: config.layer,
@@ -214,7 +221,8 @@ export function createConversationEngine<TInput, TReason extends string>(
         messages: historyPayloads,
         transformContext: plan.transformContext,
         agentFactory: turn.agentFactory,
-        onEvent: (event) => translateEvent(event, translatorCtx, toolLabels, state, (e) => broadcast(key, e)),
+        onEvent: (event) =>
+          translateEvent(event, translatorCtx, toolLabels, state, (e) => broadcast(key, e)),
       });
 
       state.abort = () => agentSession.agent.abort();
@@ -230,15 +238,23 @@ export function createConversationEngine<TInput, TReason extends string>(
           turn.model,
           nowFn(),
         );
-        broadcast(key, { event: "aborted" });
+        broadcast(key, { event: 'aborted' });
       };
 
       try {
-        await agentSession.runTurn(plan.gate ? `${text}\n\n${plan.gate.instruction}` : text, timeoutMs);
+        await agentSession.runTurn(
+          plan.gate ? `${text}\n\n${plan.gate.instruction}` : text,
+          timeoutMs,
+        );
 
         // One explicit retry: a rejected submit only returns a tool result, so without an outer
         // nudge the model is free to give up and ship nothing.
-        if (plan.gate && !plan.gate.answer() && !state.aborted && !agentSession.agent.state?.errorMessage) {
+        if (
+          plan.gate &&
+          !plan.gate.answer() &&
+          !state.aborted &&
+          !agentSession.agent.state?.errorMessage
+        ) {
           await agentSession.runTurn(plan.gate.retryInstruction, timeoutMs);
         }
 
@@ -247,30 +263,37 @@ export function createConversationEngine<TInput, TReason extends string>(
           await settleAborted();
           return;
         }
-        const increment = await persistIncrement(turn.store.appendMessages, session.id, agentSession.agent, history.length);
+        const increment = await persistIncrement(
+          turn.store.appendMessages,
+          session.id,
+          agentSession.agent,
+          history.length,
+        );
         const errorMessage = agentSession.agent.state?.errorMessage;
 
         if (plan.gate) {
           if (errorMessage) {
-            broadcast(key, { event: "error", message: errorMessage });
+            broadcast(key, { event: 'error', message: errorMessage });
             return;
           }
           const answer = plan.gate.answer();
           if (!answer) {
             // Fail closed. An unverified answer is worse than no answer.
-            broadcast(key, { event: "error", message: plan.gate.failClosedMessage });
+            broadcast(key, { event: 'error', message: plan.gate.failClosedMessage });
             return;
           }
-          await turn.store.appendMessages(session.id, [synthesizePartialAssistantMessage(turn.model, answer, nowFn(), "stop")]);
-          broadcast(key, { event: "delta", text: answer });
-          broadcast(key, { event: "done" });
+          await turn.store.appendMessages(session.id, [
+            synthesizePartialAssistantMessage(turn.model, answer, nowFn(), 'stop'),
+          ]);
+          broadcast(key, { event: 'delta', text: answer });
+          broadcast(key, { event: 'done' });
           return;
         }
 
         if (errorMessage || !hasAssistantText(increment)) {
-          broadcast(key, { event: "error", message: errorMessage ?? "模型未产出回答" });
+          broadcast(key, { event: 'error', message: errorMessage ?? '模型未产出回答' });
         } else {
-          broadcast(key, { event: "done" });
+          broadcast(key, { event: 'done' });
         }
       } catch (err) {
         translatorCtx.settled = true;
@@ -294,17 +317,21 @@ export function createConversationEngine<TInput, TReason extends string>(
             : err instanceof Error
               ? err.message
               : String(err);
-        broadcast(key, { event: "error", message });
+        broadcast(key, { event: 'error', message });
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       console.error(config.logLabels.preTurnFailure, err);
-      broadcast(key, { event: "error", message });
+      broadcast(key, { event: 'error', message });
     }
   }
 
-  async function run(key: string, text: string, input: TInput): Promise<ConversationStartResult<TReason>> {
-    if (!lock.tryAcquire(key)) return { started: false, reason: "busy" };
+  async function run(
+    key: string,
+    text: string,
+    input: TInput,
+  ): Promise<ConversationStartResult<TReason>> {
+    if (!lock.tryAcquire(key)) return { started: false, reason: 'busy' };
 
     let prepared: ConversationPrepareResult<TReason>;
     try {
@@ -318,7 +345,7 @@ export function createConversationEngine<TInput, TReason extends string>(
       return { started: false, reason: prepared.reason };
     }
 
-    const state: TurnState = { busy: true, partial: "", aborted: false, abort: null };
+    const state: TurnState = { busy: true, partial: '', aborted: false, abort: null };
     turnStates.set(key, state);
 
     const done = executeTurn(key, text, prepared.turn, state).finally(() => {

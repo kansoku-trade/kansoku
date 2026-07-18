@@ -29,13 +29,13 @@ interface Annotation {
   kind: AnnotationKind;
   points: AnnotationPoint[];
   createdAt: number;
-  source?: "user" | "ai";   // 缺省按 "user" 处理
-  label?: string;            // 一句话说明，悬停显示，≤120 字
+  source?: 'user' | 'ai'; // 缺省按 "user" 处理
+  label?: string; // 一句话说明，悬停显示，≤120 字
   style?: AnnotationStyle;
 }
 
 interface AnnotationStyle {
-  color?: string;            // 只接受预设色板内的值
+  color?: string; // 只接受预设色板内的值
   width?: 1 | 2 | 3;
   dash?: boolean;
 }

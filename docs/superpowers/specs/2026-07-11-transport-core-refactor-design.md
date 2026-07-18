@@ -66,13 +66,13 @@ export interface ChartsApi {
   built(input: { id: string; count?: number }): Promise<BuiltChart>;
 }
 
-export const chartsRoutes = defineRoutes<ChartsApi>("charts", {
-  list:   { method: "GET",    path: "/" },
-  get:    { method: "GET",    path: "/:id" },
-  create: { method: "POST",   path: "/" },
-  update: { method: "PATCH",  path: "/:id" },
-  remove: { method: "DELETE", path: "/:id" },
-  built:  { method: "GET",    path: "/:id/built" },
+export const chartsRoutes = defineRoutes<ChartsApi>('charts', {
+  list: { method: 'GET', path: '/' },
+  get: { method: 'GET', path: '/:id' },
+  create: { method: 'POST', path: '/' },
+  update: { method: 'PATCH', path: '/:id' },
+  remove: { method: 'DELETE', path: '/:id' },
+  built: { method: 'GET', path: '/:id/built' },
 });
 ```
 

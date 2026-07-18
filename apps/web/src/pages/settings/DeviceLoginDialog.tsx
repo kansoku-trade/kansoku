@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
-import { errorMessage } from "@web/api";
-import { client } from "@web/client";
-import { Button } from "@web/ui";
-import type { LobeHubDeviceLogin } from "./types";
+import { useEffect, useState } from 'react';
+import { errorMessage } from '@web/api';
+import { client } from '@web/client';
+import { Button } from '@web/ui';
+import type { LobeHubDeviceLogin } from './types';
 
 export function DeviceLoginDialog({
   login,
@@ -13,7 +13,7 @@ export function DeviceLoginDialog({
   closeModal: () => void;
   onConnected: () => void;
 }) {
-  const [status, setStatus] = useState("等待在浏览器中确认…");
+  const [status, setStatus] = useState('等待在浏览器中确认…');
 
   useEffect(() => {
     let cancelled = false;
@@ -22,17 +22,17 @@ export function DeviceLoginDialog({
       try {
         const result = await client.lobehub.pollDeviceLogin();
         if (cancelled) return;
-        if (result.status === "connected") {
+        if (result.status === 'connected') {
           onConnected();
           closeModal();
           return;
         }
-        if (result.status === "denied") {
-          setStatus("授权已拒绝，请重新发起登录");
+        if (result.status === 'denied') {
+          setStatus('授权已拒绝，请重新发起登录');
           return;
         }
-        if (result.status === "expired") {
-          setStatus("验证码已过期，请重新发起登录");
+        if (result.status === 'expired') {
+          setStatus('验证码已过期，请重新发起登录');
           return;
         }
         timer = setTimeout(poll, result.intervalSeconds * 1000);
@@ -54,8 +54,10 @@ export function DeviceLoginDialog({
       <div className="settings-device-code">{login.userCode}</div>
       <div className="settings-provider-meta">{status}</div>
       <div className="settings-cred-actions">
-        <Button onClick={() => void navigator.clipboard.writeText(login.userCode)}>复制验证码</Button>
-        <Button accent onClick={() => window.open(url, "_blank", "noopener,noreferrer")}>
+        <Button onClick={() => void navigator.clipboard.writeText(login.userCode)}>
+          复制验证码
+        </Button>
+        <Button accent onClick={() => window.open(url, '_blank', 'noopener,noreferrer')}>
           打开 LobeHub Cloud
         </Button>
       </div>

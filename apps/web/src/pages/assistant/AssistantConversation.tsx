@@ -1,26 +1,26 @@
-import { gsap } from "gsap";
-import { AtSign } from "lucide-react";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import type { SyntheticEvent } from "react";
-import { Kbd, Select } from "@web/ui";
-import { ChatComposer } from "../cockpit/chat/ChatComposer";
-import { ConversationTranscript } from "../cockpit/chat/ConversationTranscript";
-import { useAssistantChatSession } from "../cockpit/chat/useChatSession";
-import type { MentionCandidate, MentionTrigger } from "./atMention.js";
-import type { AssistantModelChoice } from "./assistantModels";
+import { gsap } from 'gsap';
+import { AtSign } from 'lucide-react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import type { SyntheticEvent } from 'react';
+import { Kbd, Select } from '@web/ui';
+import { ChatComposer } from '../cockpit/chat/ChatComposer';
+import { ConversationTranscript } from '../cockpit/chat/ConversationTranscript';
+import { useAssistantChatSession } from '../cockpit/chat/useChatSession';
+import type { MentionCandidate, MentionTrigger } from './atMention.js';
+import type { AssistantModelChoice } from './assistantModels';
 import {
   detectMentionTrigger,
   filterMentionCandidates,
   findMentionedCandidates,
   insertMention,
   removeMention,
-} from "./atMention.js";
-import { AtMentionPopover } from "./AtMentionPopover";
-import { shouldExpandComposer } from "./composerExpansion";
-import { ComposerReferences } from "./ComposerReferences";
-import { MessageQueueList } from "./MessageQueueList";
-import { decideSubmitAction } from "./messageQueue.js";
-import { useMessageQueue } from "./useMessageQueue.js";
+} from './atMention.js';
+import { AtMentionPopover } from './AtMentionPopover';
+import { shouldExpandComposer } from './composerExpansion';
+import { ComposerReferences } from './ComposerReferences';
+import { MessageQueueList } from './MessageQueueList';
+import { decideSubmitAction } from './messageQueue.js';
+import { useMessageQueue } from './useMessageQueue.js';
 
 interface MentionState {
   trigger: MentionTrigger;
@@ -48,8 +48,9 @@ export function AssistantConversation({
   modelLabels: Readonly<Record<string, string>>;
   onModelChange: (value: string) => void;
 }) {
-  const { session, rows, busy, aborting, streamText, liveTools, hint, send, abort } = useAssistantChatSession(sessionId);
-  const [text, setText] = useState("");
+  const { session, rows, busy, aborting, streamText, liveTools, hint, send, abort } =
+    useAssistantChatSession(sessionId);
+  const [text, setText] = useState('');
   const [mentionState, setMentionState] = useState<MentionState | null>(null);
   const [composerFocused, setComposerFocused] = useState(false);
   const [modelPickerOpen, setModelPickerOpen] = useState(false);
@@ -66,13 +67,15 @@ export function AssistantConversation({
 
   const doSend = async (value: string) => {
     const trimmed = value.trim();
-    if (!trimmed) return { ok: false, error: "内容不能为空" };
+    if (!trimmed) return { ok: false, error: '内容不能为空' };
     return send(trimmed);
   };
 
   const queue = useMessageQueue({ busy, onSend: doSend });
 
-  const filteredMentions = mentionState ? filterMentionCandidates(mentionCandidates, mentionState.trigger.query) : [];
+  const filteredMentions = mentionState
+    ? filterMentionCandidates(mentionCandidates, mentionState.trigger.query)
+    : [];
   const mentionedCandidates = useMemo(
     () => findMentionedCandidates(text, mentionCandidates),
     [mentionCandidates, text],
@@ -94,41 +97,45 @@ export function AssistantConversation({
     const previousTarget = composerTargetHeightRef.current;
     const inlineHeight = element.style.height;
     const renderedHeight = element.getBoundingClientRect().height;
-    const fromHeight = inlineHeight && inlineHeight !== "auto" ? renderedHeight : (previousTarget ?? renderedHeight);
+    const fromHeight =
+      inlineHeight && inlineHeight !== 'auto' ? renderedHeight : (previousTarget ?? renderedHeight);
 
     gsap.killTweensOf(element);
-    gsap.set(element, { height: "auto" });
+    gsap.set(element, { height: 'auto' });
     const targetHeight = element.getBoundingClientRect().height;
     composerTargetHeightRef.current = targetHeight;
 
-    if (previousTarget === null || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      gsap.set(element, { clearProps: "height,overflow" });
+    if (previousTarget === null || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      gsap.set(element, { clearProps: 'height,overflow' });
       return;
     }
 
     gsap.fromTo(
       element,
-      { height: fromHeight, overflow: "hidden" },
+      { height: fromHeight, overflow: 'hidden' },
       {
         height: targetHeight,
         duration: 0.24,
-        ease: "power2.out",
+        ease: 'power2.out',
         overwrite: true,
-        onComplete: () => gsap.set(element, { clearProps: "height,overflow" }),
+        onComplete: () => gsap.set(element, { clearProps: 'height,overflow' }),
       },
     );
   }, [composerExpanded]);
 
-  useEffect(() => () => {
-    if (composerRef.current) gsap.killTweensOf(composerRef.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (composerRef.current) gsap.killTweensOf(composerRef.current);
+    },
+    [],
+  );
 
   const submit = (value: string) => {
     const trimmed = value.trim();
     if (!trimmed) return;
-    setText("");
+    setText('');
     setMentionState(null);
-    if (decideSubmitAction(busy, queue.queue.length) === "enqueue") {
+    if (decideSubmitAction(busy, queue.queue.length) === 'enqueue') {
       queue.enqueue(trimmed);
       return;
     }
@@ -143,7 +150,8 @@ export function AssistantConversation({
     setMentionState((current) => {
       const trigger = detectMentionTrigger(value, cursor);
       if (!trigger) return null;
-      if (current && current.trigger.start === trigger.start) return { trigger, activeIndex: current.activeIndex };
+      if (current && current.trigger.start === trigger.start)
+        return { trigger, activeIndex: current.activeIndex };
       return { trigger, activeIndex: 0 };
     });
   };
@@ -166,8 +174,8 @@ export function AssistantConversation({
 
   const openMentionPicker = () => {
     const cursor = textareaRef.current?.selectionStart ?? text.length;
-    const needsLeadingSpace = cursor > 0 && !/\s/.test(text[cursor - 1] ?? "");
-    const inserted = `${needsLeadingSpace ? " " : ""}@`;
+    const needsLeadingSpace = cursor > 0 && !/\s/.test(text[cursor - 1] ?? '');
+    const inserted = `${needsLeadingSpace ? ' ' : ''}@`;
     const next = text.slice(0, cursor) + inserted + text.slice(cursor);
     const nextCursor = cursor + inserted.length;
     setText(next);
@@ -192,7 +200,7 @@ export function AssistantConversation({
   return (
     <div className="assistant-conversation">
       <div className="assistant-conversation-head">
-        <span className="assistant-conversation-title">{session?.title ?? "新的会话"}</span>
+        <span className="assistant-conversation-title">{session?.title ?? '新的会话'}</span>
       </div>
       <ConversationTranscript
         className="assistant-conversation-body"
@@ -211,13 +219,17 @@ export function AssistantConversation({
           <div className="assistant-conversation-composer-wrap">
             {mentionState ? (
               <div className="assistant-mention-layer">
-                <AtMentionPopover candidates={filteredMentions} activeIndex={mentionState.activeIndex} onPick={pickMention} />
+                <AtMentionPopover
+                  candidates={filteredMentions}
+                  activeIndex={mentionState.activeIndex}
+                  onPick={pickMention}
+                />
               </div>
             ) : null}
             <div
               ref={composerRef}
               className="assistant-conversation-composer"
-              data-expanded={composerExpanded ? "" : undefined}
+              data-expanded={composerExpanded ? '' : undefined}
               onFocusCapture={() => setComposerFocused(true)}
               onBlurCapture={(event) => {
                 const nextTarget = event.relatedTarget;
@@ -248,26 +260,36 @@ export function AssistantConversation({
                 }}
                 onKeyDownIntercept={(event) => {
                   if (!mentionState || filteredMentions.length === 0) return false;
-                  if (event.key === "Escape") {
+                  if (event.key === 'Escape') {
                     setMentionState(null);
                     event.preventDefault();
                     return true;
                   }
-                  if (event.key === "ArrowDown") {
+                  if (event.key === 'ArrowDown') {
                     setMentionState((current) =>
-                      current ? { ...current, activeIndex: Math.min(current.activeIndex + 1, filteredMentions.length - 1) } : current,
+                      current
+                        ? {
+                            ...current,
+                            activeIndex: Math.min(
+                              current.activeIndex + 1,
+                              filteredMentions.length - 1,
+                            ),
+                          }
+                        : current,
                     );
                     event.preventDefault();
                     return true;
                   }
-                  if (event.key === "ArrowUp") {
+                  if (event.key === 'ArrowUp') {
                     setMentionState((current) =>
-                      current ? { ...current, activeIndex: Math.max(current.activeIndex - 1, 0) } : current,
+                      current
+                        ? { ...current, activeIndex: Math.max(current.activeIndex - 1, 0) }
+                        : current,
                     );
                     event.preventDefault();
                     return true;
                   }
-                  if (event.key === "Enter") {
+                  if (event.key === 'Enter') {
                     event.preventDefault();
                     const candidate = filteredMentions[mentionState.activeIndex];
                     if (candidate) pickMention(candidate);
@@ -276,7 +298,11 @@ export function AssistantConversation({
                   return false;
                 }}
               />
-              <div className="assistant-conversation-composer-meta" aria-hidden={!composerExpanded} inert={!composerExpanded}>
+              <div
+                className="assistant-conversation-composer-meta"
+                aria-hidden={!composerExpanded}
+                inert={!composerExpanded}
+              >
                 <div className="assistant-composer-tools">
                   <Select
                     value={selectedModelValue}
@@ -285,7 +311,7 @@ export function AssistantConversation({
                     className="assistant-model-select"
                     disabled={modelSaving || modelChoices.length === 0}
                     ariaLabel="选择对话模型"
-                    placeholder={modelChoices.length === 0 ? "未配置模型" : "选择模型"}
+                    placeholder={modelChoices.length === 0 ? '未配置模型' : '选择模型'}
                     onOpenChange={setModelPickerOpen}
                   />
                   <button
@@ -304,7 +330,7 @@ export function AssistantConversation({
                     </span>
                   ) : null}
                   <span className="assistant-composer-shortcut">
-                    <Kbd keys={["enter"]} /> 发送 · <Kbd keys={["shift", "enter"]} /> 换行
+                    <Kbd keys={['enter']} /> 发送 · <Kbd keys={['shift', 'enter']} /> 换行
                   </span>
                 </div>
               </div>

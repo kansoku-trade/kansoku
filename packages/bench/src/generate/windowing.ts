@@ -1,4 +1,4 @@
-import type { RawBar } from "@kansoku/shared/types";
+import type { RawBar } from '@kansoku/shared/types';
 
 export interface PlanCutoffsInput {
   totalBars: number;

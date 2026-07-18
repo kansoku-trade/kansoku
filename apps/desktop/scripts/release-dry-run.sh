@@ -14,9 +14,9 @@ log() { echo "[dry-run] $*"; }
 cleanup() {
   log "cleaning up"
   if [ -n "$RAM_DEV" ]; then
-    hdiutil detach "$RAM_DEV" >/dev/null 2>&1 || true
+    hdiutil detach "$RAM_DEV" > /dev/null 2>&1 || true
   fi
-  security delete-generic-password -a "$ACCOUNT" -s "https://sparkle-project.org" >/dev/null 2>&1 || true
+  security delete-generic-password -a "$ACCOUNT" -s "https://sparkle-project.org" > /dev/null 2>&1 || true
   if [ -n "${KEEP_WORK_DIR:-}" ]; then
     log "KEEP_WORK_DIR set, leaving artifacts at $WORK_DIR"
   else
@@ -24,7 +24,7 @@ cleanup() {
   fi
   # electron-builder.yml is restored even on failure so a dry run never leaves
   # a real key or a broken placeholder in the working tree.
-  git -C "$DESKTOP_DIR" checkout -- electron-builder.yml package.json 2>/dev/null || true
+  git -C "$DESKTOP_DIR" checkout -- electron-builder.yml package.json 2> /dev/null || true
 }
 trap cleanup EXIT
 
@@ -69,7 +69,7 @@ chmod +x "$SPARKLE_BIN"/*
 export PATH="$SPARKLE_BIN:$PATH"
 
 log "== generate throwaway EdDSA keypair (Keychain account: $ACCOUNT) =="
-generate_keys --account "$ACCOUNT" >/dev/null
+generate_keys --account "$ACCOUNT" > /dev/null
 PUBLIC_KEY="$(generate_keys --account "$ACCOUNT" -p)"
 generate_keys --account "$ACCOUNT" -x "$WORK_DIR/ed_private_key"
 log "public key: $PUBLIC_KEY"
@@ -95,7 +95,7 @@ pkg.version = '$OLD_VERSION';
 fs.writeFileSync(p, JSON.stringify(pkg, null, 2) + '\n');
 "
 rm -rf "$DESKTOP_DIR/node_modules/better-sqlite3/build" "$HOME/Library/Caches/electron-rebuild"
-( cd "$DESKTOP_DIR" && pnpm package )
+(cd "$DESKTOP_DIR" && pnpm package)
 OLD_ZIP_PATH="$(ls "$DESKTOP_DIR"/release/*.zip)"
 verify_zip "$OLD_ZIP_PATH"
 mkdir -p "$WORK_DIR/archive"
@@ -111,7 +111,7 @@ pkg.version = '$NODE_VERSION';
 fs.writeFileSync(p, JSON.stringify(pkg, null, 2) + '\n');
 "
 rm -rf "$DESKTOP_DIR/node_modules/better-sqlite3/build" "$HOME/Library/Caches/electron-rebuild"
-( cd "$DESKTOP_DIR" && pnpm package )
+(cd "$DESKTOP_DIR" && pnpm package)
 NEW_ZIP_PATH="$(ls "$DESKTOP_DIR"/release/*.zip)"
 NEW_DMG_PATH="$(ls "$DESKTOP_DIR"/release/*.dmg)"
 verify_zip "$NEW_ZIP_PATH"
@@ -126,7 +126,7 @@ log "built: $NEW_DMG, $NEW_ZIP (delta base: $(ls "$WORK_DIR/archive"/*.zip | wc 
 
 log "== sign + generate appcast on a RAM disk (private key never touches persistent storage) =="
 RAM_DEV="$(hdiutil attach -nomount ram://16384 | awk '{print $1}')"
-diskutil erasevolume HFS+ SparkleKeyDryRun "$RAM_DEV" >/dev/null
+diskutil erasevolume HFS+ SparkleKeyDryRun "$RAM_DEV" > /dev/null
 KEY_FILE="/Volumes/SparkleKeyDryRun/ed_private_key"
 cp "$WORK_DIR/ed_private_key" "$KEY_FILE"
 
@@ -135,14 +135,17 @@ generate_appcast \
   --download-url-prefix "https://github.com/${REPO_SLUG}/releases/download/desktop-v${NODE_VERSION}/" \
   "$WORK_DIR/archive"
 
-dd if=/dev/urandom of="$KEY_FILE" bs=1024 count=4 conv=notrunc 2>/dev/null
+dd if=/dev/urandom of="$KEY_FILE" bs=1024 count=4 conv=notrunc 2> /dev/null
 rm -f "$KEY_FILE"
-hdiutil detach "$RAM_DEV" >/dev/null
+hdiutil detach "$RAM_DEV" > /dev/null
 RAM_DEV=""
 
 log "== validate appcast.xml =="
 APPCAST="$WORK_DIR/archive/appcast.xml"
-test -f "$APPCAST" || { log "FAIL: appcast.xml not produced"; exit 1; }
+test -f "$APPCAST" || {
+  log "FAIL: appcast.xml not produced"
+  exit 1
+}
 if xmllint --noout "$APPCAST"; then
   log "appcast.xml is well-formed XML"
 else
@@ -150,7 +153,7 @@ else
   exit 1
 fi
 
-python3 - "$APPCAST" "$REPO_SLUG" <<'PY'
+python3 - "$APPCAST" "$REPO_SLUG" << 'PY'
 import sys
 import xml.etree.ElementTree as ET
 

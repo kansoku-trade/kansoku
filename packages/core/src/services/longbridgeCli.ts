@@ -1,21 +1,25 @@
-import { execFile } from "node:child_process";
-import { access, constants, stat } from "node:fs/promises";
-import { delimiter, isAbsolute } from "node:path";
-import { promisify } from "node:util";
+import { execFile } from 'node:child_process';
+import { access, constants, stat } from 'node:fs/promises';
+import { delimiter, isAbsolute } from 'node:path';
+import { promisify } from 'node:util';
 
 const execFileAsync = promisify(execFile);
 const DEFAULT_TIMEOUT_MS = 60_000;
 const DEFAULT_MAX_BUFFER = 32 * 1024 * 1024;
-const STANDARD_PATHS = ["/opt/homebrew/bin/longbridge", "/usr/local/bin/longbridge", "/usr/bin/longbridge"];
+const STANDARD_PATHS = [
+  '/opt/homebrew/bin/longbridge',
+  '/usr/local/bin/longbridge',
+  '/usr/bin/longbridge',
+];
 
 export class LongbridgeCliError extends Error {
   constructor(
     message: string,
-    readonly code: "CLI_NOT_FOUND" | "CLI_FAILED" | "CLI_INVALID_JSON",
+    readonly code: 'CLI_NOT_FOUND' | 'CLI_FAILED' | 'CLI_INVALID_JSON',
     readonly detail?: string,
   ) {
     super(message);
-    this.name = "LongbridgeCliError";
+    this.name = 'LongbridgeCliError';
   }
 }
 
@@ -44,24 +48,24 @@ async function isExecutable(path: string): Promise<boolean> {
 }
 
 function pathCandidates(env: NodeJS.ProcessEnv, standardPaths: string[]): string[] {
-  const entries = (env.PATH ?? "")
+  const entries = (env.PATH ?? '')
     .split(delimiter)
     .filter(Boolean)
     .map((dir) => `${dir}/longbridge`);
   return [env.LONGBRIDGE_CLI_PATH, ...entries, ...standardPaths].filter(
-    (value): value is string => typeof value === "string" && value.length > 0,
+    (value): value is string => typeof value === 'string' && value.length > 0,
   );
 }
 
 async function loginShellCandidate(deps: LongbridgeCliDeps): Promise<string | null> {
   const exec = deps.exec ?? execFileAsync;
-  const shell = deps.shell ?? deps.env?.SHELL ?? process.env.SHELL ?? "/bin/zsh";
+  const shell = deps.shell ?? deps.env?.SHELL ?? process.env.SHELL ?? '/bin/zsh';
   try {
-    const { stdout } = await exec(shell, ["-lc", "command -v longbridge"], {
+    const { stdout } = await exec(shell, ['-lc', 'command -v longbridge'], {
       timeout: 5_000,
       maxBuffer: 64 * 1024,
     });
-    const candidate = stdout.trim().split("\n")[0];
+    const candidate = stdout.trim().split('\n')[0];
     return candidate && isAbsolute(candidate) ? candidate : null;
   } catch {
     return null;
@@ -86,9 +90,9 @@ export async function locateLongbridgeCli(deps: LongbridgeCliDeps = {}): Promise
     return shellCandidate;
   }
   throw new LongbridgeCliError(
-    "未找到 longbridge CLI",
-    "CLI_NOT_FOUND",
-    "请先安装 longbridge CLI，或通过 LONGBRIDGE_CLI_PATH 指定可执行文件路径。",
+    '未找到 longbridge CLI',
+    'CLI_NOT_FOUND',
+    '请先安装 longbridge CLI，或通过 LONGBRIDGE_CLI_PATH 指定可执行文件路径。',
   );
 }
 
@@ -97,11 +101,14 @@ export interface RunLongbridgeOptions extends LongbridgeCliDeps {
   maxBuffer?: number;
 }
 
-export async function runLongbridgeJson<T>(args: string[], options: RunLongbridgeOptions = {}): Promise<T> {
+export async function runLongbridgeJson<T>(
+  args: string[],
+  options: RunLongbridgeOptions = {},
+): Promise<T> {
   const cli = await locateLongbridgeCli(options);
   const exec = options.exec ?? execFileAsync;
   try {
-    const { stdout } = await exec(cli, [...args, "--format", "json"], {
+    const { stdout } = await exec(cli, [...args, '--format', 'json'], {
       timeout: options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
       maxBuffer: options.maxBuffer ?? DEFAULT_MAX_BUFFER,
       env: options.env ?? process.env,
@@ -109,12 +116,12 @@ export async function runLongbridgeJson<T>(args: string[], options: RunLongbridg
     try {
       return JSON.parse(stdout) as T;
     } catch {
-      throw new LongbridgeCliError("longbridge CLI 返回了无法识别的数据", "CLI_INVALID_JSON");
+      throw new LongbridgeCliError('longbridge CLI 返回了无法识别的数据', 'CLI_INVALID_JSON');
     }
   } catch (error) {
     if (error instanceof LongbridgeCliError) throw error;
     const message = error instanceof Error ? error.message : String(error);
-    throw new LongbridgeCliError("longbridge CLI 执行失败", "CLI_FAILED", message);
+    throw new LongbridgeCliError('longbridge CLI 执行失败', 'CLI_FAILED', message);
   }
 }
 
@@ -126,6 +133,8 @@ export interface LongbridgeAuthStatus {
   };
 }
 
-export function getLongbridgeAuthStatus(options: RunLongbridgeOptions = {}): Promise<LongbridgeAuthStatus> {
-  return runLongbridgeJson<LongbridgeAuthStatus>(["auth", "status"], options);
+export function getLongbridgeAuthStatus(
+  options: RunLongbridgeOptions = {},
+): Promise<LongbridgeAuthStatus> {
+  return runLongbridgeJson<LongbridgeAuthStatus>(['auth', 'status'], options);
 }

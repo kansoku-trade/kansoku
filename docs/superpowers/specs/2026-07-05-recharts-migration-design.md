@@ -24,8 +24,8 @@ ECharts 有两条使用路径：
 
 ```ts
 export interface SimpleBuilt {
-  kind: "simple";
-  chartType: "flow" | "cohort";
+  kind: 'simple';
+  chartType: 'flow' | 'cohort';
   rows: FlowRow[] | CohortRow[];
   subtitle: string;
 }

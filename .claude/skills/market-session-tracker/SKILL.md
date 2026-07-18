@@ -9,11 +9,11 @@ Real-time US-market analysis pattern. Sits on top of `longbridge-quote`, `longbr
 
 ## Standard symbol sets
 
-| Theme | Symbols |
-|---|---|
-| Semi / memory | `MU.US`, `TSM.US`, `DRAM.US` (Roundhill Memory ETF), `SMH.US`, `SOXX.US` |
-| Indices | `QQQ.US`, `SPY.US`, `DIA.US`, `IWM.US` |
-| Vol / risk-off | `VXX.US`, `UVXY.US`, `TLT.US`, `GLD.US` |
+| Theme          | Symbols                                                                  |
+| -------------- | ------------------------------------------------------------------------ |
+| Semi / memory  | `MU.US`, `TSM.US`, `DRAM.US` (Roundhill Memory ETF), `SMH.US`, `SOXX.US` |
+| Indices        | `QQQ.US`, `SPY.US`, `DIA.US`, `IWM.US`                                   |
+| Vol / risk-off | `VXX.US`, `UVXY.US`, `TLT.US`, `GLD.US`                                  |
 
 `.SOX.US` is unavailable on Longbridge — use `SMH`/`SOXX` ETF proxies.
 
@@ -24,6 +24,7 @@ Real-time US-market analysis pattern. Sits on top of `longbridge-quote`, `longbr
 **1. Pre-market verification** — compute pre vol % of prev day full vol, and pre high % over `prev_close`. Flag **exuberance** when pre vol > 5% of prev day **and** pre high > `prev_close × 1.07`.
 
 **2. Failed-breakout 6-signal stack** — count how many fire in the cash session:
+
 1. Pre-market high NOT touched in first 30 min of cash
 2. New intraday high breaks → price falls back below the broken level within minutes
 3. Volume does NOT expand at the breakout
@@ -37,27 +38,28 @@ Real-time US-market analysis pattern. Sits on top of `longbridge-quote`, `longbr
 
 **4. Cross-asset sentiment matrix**
 
-| Pattern | Interpretation |
-|---|---|
-| DIA > SPY > QQQ + VXX down | Rotation (defensive), **not panic** |
-| VXX up + GLD up + TLT up | **True risk-off** |
-| Sector red + SPY flat + VXX down | **Isolated** distribution |
+| Pattern                               | Interpretation                          |
+| ------------------------------------- | --------------------------------------- |
+| DIA > SPY > QQQ + VXX down            | Rotation (defensive), **not panic**     |
+| VXX up + GLD up + TLT up              | **True risk-off**                       |
+| Sector red + SPY flat + VXX down      | **Isolated** distribution               |
 | HK/CN valuation ≥ 80 + sentiment ≤ 35 | Known-bubble (overvalued, retail knows) |
 
 **5. Pullback tier classification**
 
-| Tier | Triggers |
-|---|---|
-| 1 震荡 | Stock −2% from intraday high; closes green |
-| 2 实质回调 | Stock −5% from peak; sector ETF turns red |
-| 3 板块下跌 | Sector −3%+; broad indices flat-to-red |
-| 4 风险传染 | SPY −1%+; VXX +5%+; defensives also fall |
+| Tier       | Triggers                                   |
+| ---------- | ------------------------------------------ |
+| 1 震荡     | Stock −2% from intraday high; closes green |
+| 2 实质回调 | Stock −5% from peak; sector ETF turns red  |
+| 3 板块下跌 | Sector −3%+; broad indices flat-to-red     |
+| 4 风险传染 | SPY −1%+; VXX +5%+; defensives also fall   |
 
 Always **name the tier explicitly** — never vague "weakening".
 
 **6. Scenario probabilities** — always 3 scenarios (Bull / Base / Bear) with explicit % (sum=100) and trigger conditions. Mark probabilities as subjective. **Revise as data flows** with timestamps: `09:30 初判 → 09:54 修正 → 09:56 再修正`.
 
 **7. Thesis revision discipline** — when user says "突破"/"冲高"/"回调":
+
 1. Re-pull live quote + intraday minute tail — do NOT auto-agree
 2. Check cash intraday high vs **pre-market high** vs prior intraday high
 3. Distinguish: **true breakout** (new high > pre high, holds 5+ min) vs **partial** (breaks prior intra high but not pre high) vs **recovery** (only bounces from intra low)
@@ -79,6 +81,7 @@ After a session, write a structured log using **`templates/session-report.md`** 
 ## Optional: position context
 
 When user provides positions or asks via `longbridge positions`:
+
 - Show symbol, qty, avg cost, current price, unrealized P&L, % of book
 - Cross-reference which positions are exposed to the current move
 - **Do NOT recommend buy/sell** — defer to user

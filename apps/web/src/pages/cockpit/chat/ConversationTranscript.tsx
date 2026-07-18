@@ -1,21 +1,31 @@
-import { memo, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowDown, ChevronRight } from "lucide-react";
-import { ScrollArea } from "@web/ui";
-import { Markdown } from "../markdown";
-import { mergeTimeline, type TranscriptInsert } from "./transcriptTimeline.js";
-import { summarizeToolInput, toolRowKey } from "./toolSummary.js";
-import type { ChatLiveTool, ChatRow } from "./useChatSession";
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { ArrowDown, ChevronRight } from 'lucide-react';
+import { ScrollArea } from '@web/ui';
+import { Markdown } from '../markdown';
+import { mergeTimeline, type TranscriptInsert } from './transcriptTimeline.js';
+import { summarizeToolInput, toolRowKey } from './toolSummary.js';
+import type { ChatLiveTool, ChatRow } from './useChatSession';
 
 const SCROLL_STICK_THRESHOLD = 48;
-const tokenFormatter = new Intl.NumberFormat("en-US");
-const costFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
+const tokenFormatter = new Intl.NumberFormat('en-US');
+const costFormatter = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
   minimumFractionDigits: 2,
   maximumFractionDigits: 6,
 });
 
-function ToolRow({ label, running, input, output }: { label: string; running: boolean; input?: string; output?: string }) {
+function ToolRow({
+  label,
+  running,
+  input,
+  output,
+}: {
+  label: string;
+  running: boolean;
+  input?: string;
+  output?: string;
+}) {
   const [open, setOpen] = useState(false);
   const hasDetail = Boolean(input || output);
   const summary = summarizeToolInput(input);
@@ -29,14 +39,16 @@ function ToolRow({ label, running, input, output }: { label: string; running: bo
         disabled={!hasDetail}
         aria-expanded={open}
       >
-        <span className={`chat-tool-dot${running ? " running" : ""}`} />
+        <span className={`chat-tool-dot${running ? ' running' : ''}`} />
         <span>
-          {running ? "正在" : "已调用 "}
+          {running ? '正在' : '已调用 '}
           {label}
-          {running ? "…" : ""}
+          {running ? '…' : ''}
         </span>
         {summary ? <span className="chat-tool-summary">{summary}</span> : null}
-        {hasDetail ? <ChevronRight size={12} className={`chat-tool-caret${open ? " open" : ""}`} /> : null}
+        {hasDetail ? (
+          <ChevronRight size={12} className={`chat-tool-caret${open ? ' open' : ''}`} />
+        ) : null}
       </button>
       {open && hasDetail ? (
         <div className="chat-tool-detail">
@@ -58,24 +70,31 @@ function ToolRow({ label, running, input, output }: { label: string; running: bo
   );
 }
 
-function ChatRowView({ row, modelLabels }: { row: ChatRow; modelLabels?: Readonly<Record<string, string>> }) {
-  if (row.kind === "user") {
+function ChatRowView({
+  row,
+  modelLabels,
+}: {
+  row: ChatRow;
+  modelLabels?: Readonly<Record<string, string>>;
+}) {
+  if (row.kind === 'user') {
     return (
       <div className="chat-row chat-row--user">
         <div className="chat-bubble chat-bubble--user">{row.text}</div>
       </div>
     );
   }
-  if (row.kind === "assistant") {
+  if (row.kind === 'assistant') {
     const meta = row.meta;
     const modelLabel = meta
-      ? (modelLabels?.[JSON.stringify([meta.provider, meta.model])] ?? `${meta.provider}/${meta.model}`)
+      ? (modelLabels?.[JSON.stringify([meta.provider, meta.model])] ??
+        `${meta.provider}/${meta.model}`)
       : null;
     return (
       <div className="chat-row">
         <div className="chat-assistant-message">
           <div className="chat-bubble chat-bubble--assistant">
-            <Markdown variant="chat">{row.text ?? ""}</Markdown>
+            <Markdown variant="chat">{row.text ?? ''}</Markdown>
           </div>
           {meta && modelLabels ? (
             <div className="chat-message-meta">
@@ -88,8 +107,10 @@ function ChatRowView({ row, modelLabels }: { row: ChatRow; modelLabels?: Readonl
       </div>
     );
   }
-  if (row.kind === "tool") {
-    return <ToolRow label={row.label ?? ""} running={false} input={row.input} output={row.output} />;
+  if (row.kind === 'tool') {
+    return (
+      <ToolRow label={row.label ?? ''} running={false} input={row.input} output={row.output} />
+    );
   }
   return <div className="chat-error-row">{row.text}</div>;
 }
@@ -129,7 +150,8 @@ function ConversationTranscriptView({
 
   const timeline = useMemo(() => mergeTimeline(rows, inserts), [rows, inserts]);
 
-  const isEmpty = rows.length === 0 && inserts.length === 0 && liveTools.length === 0 && !streamText;
+  const isEmpty =
+    rows.length === 0 && inserts.length === 0 && liveTools.length === 0 && !streamText;
 
   return (
     <ScrollArea
@@ -140,7 +162,8 @@ function ConversationTranscriptView({
       onScroll={() => {
         const element = bodyRef.current;
         if (!element) return;
-        const next = element.scrollHeight - element.scrollTop - element.clientHeight < SCROLL_STICK_THRESHOLD;
+        const next =
+          element.scrollHeight - element.scrollTop - element.clientHeight < SCROLL_STICK_THRESHOLD;
         stickRef.current = next;
         setStuck(next);
       }}
@@ -151,7 +174,12 @@ function ConversationTranscriptView({
           {suggestions.length > 0 ? (
             <div className="chat-suggestions">
               {suggestions.map((question) => (
-                <button type="button" key={question} className="chat-suggestion" onClick={() => onPickSuggestion(question)}>
+                <button
+                  type="button"
+                  key={question}
+                  className="chat-suggestion"
+                  onClick={() => onPickSuggestion(question)}
+                >
                   {question}
                 </button>
               ))}
@@ -160,7 +188,7 @@ function ConversationTranscriptView({
         </div>
       ) : null}
       {timeline.map((entry) =>
-        entry.kind === "row" ? (
+        entry.kind === 'row' ? (
           <ChatRowView key={entry.row.id} row={entry.row} modelLabels={modelLabels} />
         ) : (
           <div key={entry.insert.id} className="chat-insert">
@@ -170,9 +198,9 @@ function ConversationTranscriptView({
       )}
       {liveTools.map((tool) => (
         <ToolRow
-          key={toolRowKey("live", tool.id)}
+          key={toolRowKey('live', tool.id)}
           label={tool.label}
-          running={tool.status === "start"}
+          running={tool.status === 'start'}
           input={tool.input}
           output={tool.output}
         />
@@ -186,7 +214,7 @@ function ConversationTranscriptView({
           </div>
         </div>
       ) : null}
-      {busy && !streamText && !liveTools.some((tool) => tool.status === "start") ? (
+      {busy && !streamText && !liveTools.some((tool) => tool.status === 'start') ? (
         <div className="chat-row">
           <div className="chat-bubble chat-bubble--assistant chat-thinking" aria-label="正在思考">
             <span className="chat-thinking-dot" />

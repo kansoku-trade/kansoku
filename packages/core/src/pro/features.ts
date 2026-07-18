@@ -1,13 +1,18 @@
-import { FEATURES, type FeatureKey, type FeatureState, type FeatureTier } from "@kansoku/pro-api/features";
-import { ClientError } from "../errors.js";
-import { getPro } from "./registry.js";
+import {
+  FEATURES,
+  type FeatureKey,
+  type FeatureState,
+  type FeatureTier,
+} from '@kansoku/pro-api/features';
+import { ClientError } from '../errors.js';
+import { getPro } from './registry.js';
 
 const featureCatalog: Record<FeatureKey, { tier: FeatureTier }> = FEATURES;
 
 function resolveState(tier: FeatureTier, proPresent: boolean, licensed: boolean): FeatureState {
-  if (tier === "free") return "active";
-  if (!proPresent) return "absent";
-  return licensed ? "active" : "locked";
+  if (tier === 'free') return 'active';
+  if (!proPresent) return 'absent';
+  return licensed ? 'active' : 'locked';
 }
 
 async function currentLicensed(): Promise<boolean> {
@@ -18,7 +23,7 @@ async function currentLicensed(): Promise<boolean> {
 
 export async function featureState(key: FeatureKey): Promise<FeatureState> {
   const tier = featureCatalog[key].tier;
-  if (tier === "free") return "active";
+  if (tier === 'free') return 'active';
   return resolveState(tier, getPro() != null, await currentLicensed());
 }
 
@@ -32,15 +37,20 @@ export async function featureStates(): Promise<Record<FeatureKey, FeatureState>>
 }
 
 export async function isFeatureActive(key: FeatureKey): Promise<boolean> {
-  return (await featureState(key)) === "active";
+  return (await featureState(key)) === 'active';
 }
 
 export async function requireFeature(key: FeatureKey): Promise<void> {
   const state = await featureState(key);
-  if (state === "absent") {
-    throw new ClientError("AI features are not available in this build", undefined, 404);
+  if (state === 'absent') {
+    throw new ClientError('AI features are not available in this build', undefined, 404);
   }
-  if (state === "locked") {
-    throw new ClientError("AI features require an active license", `feature: ${key}`, 403, "LICENSE_REQUIRED");
+  if (state === 'locked') {
+    throw new ClientError(
+      'AI features require an active license',
+      `feature: ${key}`,
+      403,
+      'LICENSE_REQUIRED',
+    );
   }
 }

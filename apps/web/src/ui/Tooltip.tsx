@@ -1,7 +1,7 @@
-import { Tooltip as BaseTooltip } from "@base-ui/react/tooltip";
-import type { ReactNode } from "react";
+import { Tooltip as BaseTooltip } from '@base-ui/react/tooltip';
+import type { ReactNode } from 'react';
 
-type TooltipPlacement = "top" | "bottom";
+type TooltipPlacement = 'top' | 'bottom';
 
 interface TooltipProps {
   children: ReactNode;
@@ -13,7 +13,7 @@ interface TooltipProps {
 }
 
 function hasContent(content: ReactNode): boolean {
-  return content !== null && content !== undefined && content !== false && content !== "";
+  return content !== null && content !== undefined && content !== false && content !== '';
 }
 
 export function Tooltip({
@@ -22,7 +22,7 @@ export function Tooltip({
   content,
   disabled,
   focusable = false,
-  placement = "top",
+  placement = 'top',
 }: TooltipProps) {
   if (disabled || !hasContent(content)) return <>{children}</>;
 
@@ -32,7 +32,7 @@ export function Tooltip({
         delay={100}
         render={
           <span
-            className={`tooltip-anchor${className ? ` ${className}` : ""}`}
+            className={`tooltip-anchor${className ? ` ${className}` : ''}`}
             tabIndex={focusable ? 0 : undefined}
           />
         }

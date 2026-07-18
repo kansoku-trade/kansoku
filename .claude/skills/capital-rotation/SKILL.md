@@ -22,13 +22,13 @@ Scans capital flow across standard US cohorts in one session, identifies rotatio
 
 ## Standard cohorts
 
-| Cohort | Symbols |
-|---|---|
-| **Indices** | `SPY`, `QQQ`, `DIA`, `IWM` |
-| **Semis** | `NVDA`, `AMD`, `MU`, `MRVL`, `TSM`, `AVGO`, `SMH`, `SOXX`, `AMKR`, `ASX` |
+| Cohort               | Symbols                                                                                           |
+| -------------------- | ------------------------------------------------------------------------------------------------- |
+| **Indices**          | `SPY`, `QQQ`, `DIA`, `IWM`                                                                        |
+| **Semis**            | `NVDA`, `AMD`, `MU`, `MRVL`, `TSM`, `AVGO`, `SMH`, `SOXX`, `AMKR`, `ASX`                          |
 | **Software / Cloud** | `NOW`, `ORCL`, `CRM`, `ADBE`, `SNOW`, `DDOG`, `MDB`, `PLTR`, `PANW`, `CRWD`, `NET`, `IGV`, `CLOU` |
-| **Mega-tech** | `AAPL`, `MSFT`, `GOOGL`, `AMZN`, `META`, `TSLA` |
-| **Risk-off proxy** | `VXX`, `TLT`, `GLD` (optional, for cross-asset confirmation) |
+| **Mega-tech**        | `AAPL`, `MSFT`, `GOOGL`, `AMZN`, `META`, `TSLA`                                                   |
+| **Risk-off proxy**   | `VXX`, `TLT`, `GLD` (optional, for cross-asset confirmation)                                      |
 
 User watchlist override: read `stocks/` directory for symbols the user already tracks; promote those to first-tier in their respective cohort.
 
@@ -37,16 +37,20 @@ User watchlist override: read `stocks/` directory for symbols the user already t
 1. **Time check** — `date` + confirm US session state (pre / intraday / post / closed). Adjust analysis date in filename: use the **US session date**, not Asia local date.
 
 2. **Market temperature** — single call:
+
    ```bash
    longbridge market-temp US --format json
    ```
+
    Report Temperature / Valuation / Sentiment.
 
 3. **Index baseline** — snapshot mode (gives large/medium/small breakdown):
+
    ```bash
    longbridge capital SPY.US --format json
    longbridge capital QQQ.US --format json
    ```
+
    Net large = `capital_in.large - capital_out.large`. Flag distribution if large net ≪ 0 while small net > 0 (主力—散户背离).
 
 4. **Cohort scan** — for each cohort, `longbridge capital <SYM> --flow --format json | tail -8` to grab the latest cumulative `inflow` value (the last array element is the running total in 万 USD). Parallelize across symbols.
@@ -74,13 +78,13 @@ User watchlist override: read `stocks/` directory for symbols the user already t
 
 Use these triggers to label index behavior:
 
-| Pattern | Label |
-|---|---|
-| SPY large net < 0 AND `\|large net\|` > 5 × small net | **机构派发** |
-| All 3 buckets (large / medium / small) net < 0 | **全档抛压** |
-| Large net < 0, small net > 0, magnitudes similar | **主力—散户背离** |
-| Large net > 0, small net < 0 | **主力吸筹** |
-| All 3 buckets > 0 | **全档吸金** |
+| Pattern                                               | Label             |
+| ----------------------------------------------------- | ----------------- |
+| SPY large net < 0 AND `\|large net\|` > 5 × small net | **机构派发**      |
+| All 3 buckets (large / medium / small) net < 0        | **全档抛压**      |
+| Large net < 0, small net > 0, magnitudes similar      | **主力—散户背离** |
+| Large net > 0, small net < 0                          | **主力吸筹**      |
+| All 3 buckets > 0                                     | **全档吸金**      |
 
 Always state the pattern explicitly; do not say "weak / strong" vaguely.
 
@@ -97,9 +101,9 @@ When flow winners cluster in "已变现" and losers in "未变现", call out **"
 
 ```bash
 longbridge market-temp US --format json
-longbridge capital SPY.US --format json                    # snapshot (large/med/small)
-longbridge capital QQQ.US --flow --format json | tail -8   # time-series cumulative
-longbridge capital <SYM>.US --flow --format json | tail -8 # per-symbol
+longbridge capital SPY.US --format json                       # snapshot (large/med/small)
+longbridge capital QQQ.US --flow --format json | tail -8      # time-series cumulative
+longbridge capital --flow --format json < SYM > .US | tail -8 # per-symbol
 ```
 
 The `--flow` last-row `inflow` field is the cumulative net for the session in 万 USD. No date parameter — today's data only.

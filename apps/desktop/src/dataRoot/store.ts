@@ -1,4 +1,4 @@
-import { chmod, readFile, writeFile } from "node:fs/promises";
+import { chmod, readFile, writeFile } from 'node:fs/promises';
 
 export interface DataRootPreference {
   path: string | null;
@@ -13,9 +13,9 @@ export interface DataRootStore {
 export function createDataRootFileStore(filePath: string): DataRootStore {
   async function read(): Promise<DataRootPreference> {
     try {
-      const raw = await readFile(filePath, "utf8");
+      const raw = await readFile(filePath, 'utf8');
       const parsed = JSON.parse(raw) as Partial<DataRootPreference>;
-      return { path: typeof parsed.path === "string" ? parsed.path : null };
+      return { path: typeof parsed.path === 'string' ? parsed.path : null };
     } catch {
       return { path: null };
     }

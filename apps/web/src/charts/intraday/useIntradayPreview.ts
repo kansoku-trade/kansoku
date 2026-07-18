@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from "react";
-import type { IntradayBuilt, TimeframeKey } from "@kansoku/shared/types";
-import { subscribeChannel } from "@web/wsHub";
+import { useEffect, useRef, useState } from 'react';
+import type { IntradayBuilt, TimeframeKey } from '@kansoku/shared/types';
+import { subscribeChannel } from '@web/wsHub';
 
 interface PreviewEnvelope {
-  type: "data" | "status";
+  type: 'data' | 'status';
   data?: { built: IntradayBuilt };
   degraded?: boolean;
   error?: string;
@@ -17,8 +17,8 @@ export interface DecodedPreviewEnvelope {
 
 export function decodePreviewEnvelope(payload: unknown, hadBuilt: boolean): DecodedPreviewEnvelope {
   const env = payload as PreviewEnvelope;
-  if (env?.type === "data" && env.data) return { built: env.data.built, degraded: false };
-  if (env?.type === "status") {
+  if (env?.type === 'data' && env.data) return { built: env.data.built, degraded: false };
+  if (env?.type === 'status') {
     if (!hadBuilt && env.error) return { error: env.error };
     return { degraded: Boolean(env.degraded) };
   }
@@ -48,7 +48,7 @@ export function useIntradayPreview(sym: string): IntradayPreviewState {
     hadBuiltRef.current = false;
 
     const off = subscribeChannel(
-      { kind: "preview", symbol: sym },
+      { kind: 'preview', symbol: sym },
       (payload) => {
         const result = decodePreviewEnvelope(payload, hadBuiltRef.current);
         if (result.built) {

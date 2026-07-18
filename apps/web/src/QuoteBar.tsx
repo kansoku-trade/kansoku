@@ -1,31 +1,33 @@
-import { useState } from "react";
-import type { QuoteCell, QuoteSnapshot } from "@kansoku/shared/types";
-import { signed, upDown } from "./format";
-import { useWsChannel } from "./useWsChannel";
-import { Badge, DataAgeBadge, Dot } from "./ui";
+import { useState } from 'react';
+import type { QuoteCell, QuoteSnapshot } from '@kansoku/shared/types';
+import { signed, upDown } from './format';
+import { useWsChannel } from './useWsChannel';
+import { Badge, DataAgeBadge, Dot } from './ui';
 
 function pctTone(pct: number | null): string {
-  return pct == null ? "" : upDown(pct);
+  return pct == null ? '' : upDown(pct);
 }
 
 function pctText(pct: number | null): string {
-  return pct == null ? "—" : `${signed(pct)}%`;
+  return pct == null ? '—' : `${signed(pct)}%`;
 }
 
 function Cell({ q }: { q: QuoteCell }) {
   return (
     <a className="quote-cell" href={`/symbol/${encodeURIComponent(q.symbol)}`}>
-      <span className="qc-symbol">{q.symbol.replace(/\.US$/, "")}</span>
-      <span className={`num qc-price ${pctTone(q.pct)}`}>${q.last < 10 ? q.last.toFixed(3) : q.last.toFixed(2)}</span>
+      <span className="qc-symbol">{q.symbol.replace(/\.US$/, '')}</span>
+      <span className={`num qc-price ${pctTone(q.pct)}`}>
+        ${q.last < 10 ? q.last.toFixed(3) : q.last.toFixed(2)}
+      </span>
       <span className={`num qc-pct ${pctTone(q.pct)}`}>{pctText(q.pct)}</span>
-      {q.session !== "日盘" && <Badge className="qc-session">{q.session}</Badge>}
+      {q.session !== '日盘' && <Badge className="qc-session">{q.session}</Badge>}
     </a>
   );
 }
 
 export function QuoteBar() {
   const [snap, setSnap] = useState<QuoteSnapshot | null>(null);
-  const { degraded, snapshotAt } = useWsChannel<QuoteSnapshot>({ kind: "quotes" }, setSnap);
+  const { degraded, snapshotAt } = useWsChannel<QuoteSnapshot>({ kind: 'quotes' }, setSnap);
   const quotes = snap?.quotes ?? [];
 
   return (

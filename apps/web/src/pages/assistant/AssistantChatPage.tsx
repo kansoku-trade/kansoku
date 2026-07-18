@@ -1,45 +1,50 @@
-import { useEffect, useMemo, useState } from "react";
-import type { ResearchDocumentMeta } from "@kansoku/core/contract/index";
-import { errorMessage } from "@web/api";
-import { useQuery } from "@web/apiHooks";
-import { client } from "@web/client";
-import { navigate, useQueryParam } from "@web/router";
-import { Button, Empty, Spinner } from "@web/ui";
-import { useTitle } from "@web/useTitle";
-import { saveRole } from "../settings/roleShared";
-import type { AiSettings, Catalog } from "../settings/types";
-import { AssistantConversation } from "./AssistantConversation";
-import { AssistantSessionList } from "./AssistantSessionList";
+import { useEffect, useMemo, useState } from 'react';
+import type { ResearchDocumentMeta } from '@kansoku/core/contract/index';
+import { errorMessage } from '@web/api';
+import { useQuery } from '@web/apiHooks';
+import { client } from '@web/client';
+import { navigate, useQueryParam } from '@web/router';
+import { Button, Empty, Spinner } from '@web/ui';
+import { useTitle } from '@web/useTitle';
+import { saveRole } from '../settings/roleShared';
+import type { AiSettings, Catalog } from '../settings/types';
+import { AssistantConversation } from './AssistantConversation';
+import { AssistantSessionList } from './AssistantSessionList';
 import {
   assistantModelLabels,
   buildAssistantModelChoices,
   resolveAssistantModelValue,
   roleSettingForAssistantModel,
-} from "./assistantModels";
-import { resolveActiveSessionId } from "./assistantPageState.js";
-import { useAssistantSessions } from "./useAssistantSessions";
+} from './assistantModels';
+import { resolveActiveSessionId } from './assistantPageState.js';
+import { useAssistantSessions } from './useAssistantSessions';
 
 function assistantRoute(id: string | null): string {
-  return id ? `/chat?session=${encodeURIComponent(id)}` : "/chat";
+  return id ? `/chat?session=${encodeURIComponent(id)}` : '/chat';
 }
 
 export function AssistantChatPage() {
-  useTitle("AI 对话");
+  useTitle('AI 对话');
   const { sessions, loading, error, refresh, create, remove } = useAssistantSessions();
-  const requestedId = useQueryParam("session");
+  const requestedId = useQueryParam('session');
   const activeId = resolveActiveSessionId(requestedId, sessions);
 
-  const aiSettingsQuery = useQuery<AiSettings>("settings.getAi", () => client.settings.getAi());
-  const catalogQuery = useQuery<Catalog>("settings.getCatalog", () => client.settings.getCatalog());
-  const { data: library } = useQuery<ResearchDocumentMeta[]>("assistant.researchLibrary", () => client.research.list({}));
+  const aiSettingsQuery = useQuery<AiSettings>('settings.getAi', () => client.settings.getAi());
+  const catalogQuery = useQuery<Catalog>('settings.getCatalog', () => client.settings.getCatalog());
+  const { data: library } = useQuery<ResearchDocumentMeta[]>('assistant.researchLibrary', () =>
+    client.research.list({}),
+  );
   const aiSettings = aiSettingsQuery.data;
   const catalog = catalogQuery.data;
   const [pendingModelValue, setPendingModelValue] = useState<string | null>(null);
   const [modelSaving, setModelSaving] = useState(false);
   const [modelError, setModelError] = useState<string | null>(null);
 
-  const modelChoices = useMemo(() => (catalog ? buildAssistantModelChoices(catalog) : []), [catalog]);
-  const configuredModelValue = aiSettings ? resolveAssistantModelValue(aiSettings.roles) : "";
+  const modelChoices = useMemo(
+    () => (catalog ? buildAssistantModelChoices(catalog) : []),
+    [catalog],
+  );
+  const configuredModelValue = aiSettings ? resolveAssistantModelValue(aiSettings.roles) : '';
   const selectedModelValue = pendingModelValue ?? configuredModelValue;
   const modelLabels = useMemo(() => (catalog ? assistantModelLabels(catalog) : {}), [catalog]);
   const mentionCandidates = useMemo(
@@ -66,7 +71,7 @@ export function AssistantChatPage() {
     setModelSaving(true);
     setModelError(null);
     try {
-      await saveRole("chat", roleSettingForAssistantModel(choice));
+      await saveRole('chat', roleSettingForAssistantModel(choice));
       aiSettingsQuery.reload();
     } catch (error) {
       setPendingModelValue(null);

@@ -24,38 +24,56 @@
   "name": "Micron Technology",
   "as_of": "2026-07-01T17:18:00Z",
   "timeframes": {
-    "m5":  [ /* ≥60 根 5分钟 OHLCV，longbridge kline 原生格式 */ ],
-    "m15": [ /* ≥60 根 15分钟 OHLCV */ ],
-    "h1":  [ /* ≥60 根 1小时 OHLCV */ ]
+    "m5": [/* ≥60 根 5分钟 OHLCV，longbridge kline 原生格式 */],
+    "m15": [/* ≥60 根 15分钟 OHLCV */],
+    "h1": [/* ≥60 根 1小时 OHLCV */],
   },
-  "position": { "shares": 6, "cost": 303.64 },      // 可选，复用 sepa 的持仓视角
-  "prediction": {                                    // 可选——省略则为"预览模式"，只看技术面不给结论
-    "direction": "short",                            // long | short | neutral
+  "position": { "shares": 6, "cost": 303.64 }, // 可选，复用 sepa 的持仓视角
+  "prediction": {
+    // 可选——省略则为"预览模式"，只看技术面不给结论
+    "direction": "short", // long | short | neutral
     "anchor": { "timeframe": "m15", "time": "2026-07-01T17:00:00Z", "price": 1049.81 },
-    "scenarios": [                                    // 至少2个，probability 必须凑够100
+    "scenarios": [
+      // 至少2个，probability 必须凑够100
       { "label": "继续探底", "probability": 45, "path": "...", "trigger": "..." },
       { "label": "区间震荡", "probability": 40, "path": "...", "trigger": "..." },
-      { "label": "尾盘反弹", "probability": 15, "path": "...", "trigger": "..." }
+      { "label": "尾盘反弹", "probability": 15, "path": "...", "trigger": "..." },
     ],
-    "range_bound_plan": {                             // 有"震荡"情景时才需要
+    "range_bound_plan": {
+      // 有"震荡"情景时才需要
       "condition": "若在 1045-1085 之间来回",
-      "long_tactic": "...", "short_tactic": "..."
+      "long_tactic": "...",
+      "short_tactic": "...",
     },
-    "entry_plan": {                                    // 按 direction 计算 R/R，方向敏感
-      "entry": 1049.81, "stop": 1030.00,
-      "target1_pct": 3, "target2_pct": 6, "note": "..."
+    "entry_plan": {
+      // 按 direction 计算 R/R，方向敏感
+      "entry": 1049.81,
+      "stop": 1030.0,
+      "target1_pct": 3,
+      "target2_pct": 6,
+      "note": "...",
     },
-    "signals": [                                       // 画成图上标记 + 侧栏列表
-      { "type": "pin_bar", "timeframe": "m15", "time": "...", "price": 1044.17,
-        "bias": "bullish", "label": "看涨 Pin Bar" },
-      { "type": "macd_divergence", "timeframe": "h1",
+    "signals": [
+      // 画成图上标记 + 侧栏列表
+      {
+        "type": "pin_bar",
+        "timeframe": "m15",
+        "time": "...",
+        "price": 1044.17,
+        "bias": "bullish",
+        "label": "看涨 Pin Bar",
+      },
+      {
+        "type": "macd_divergence",
+        "timeframe": "h1",
         "points": [
-          {"time": "...", "price": 1097.0, "macd_value": 12.3},
-          {"time": "...", "price": 1085.0, "macd_value": -4.1}
+          { "time": "...", "price": 1097.0, "macd_value": 12.3 },
+          { "time": "...", "price": 1085.0, "macd_value": -4.1 },
         ],
-        "label": "顶背离：价格新高但 MACD 走弱" }
-    ]
-  }
+        "label": "顶背离：价格新高但 MACD 走弱",
+      },
+    ],
+  },
 }
 ```
 
@@ -85,6 +103,7 @@
 7. 写 journal：`journal/YYYY-MM-DD-<symbol>-intraday.md`（同日重跑则追加新的带时间戳的小节，不覆盖），符合仓库"每个 workflow 最后都要落地 markdown"的规矩
 
 护栏（写进 skill 的 anti-pattern）：
+
 - 不给裸判断——方向必须配一个具体锚点价位
 - 情景概率必须凑够100%，至少2个
 - R:R 必须写明，<2:1 要显式标红警告，不能悄悄略过

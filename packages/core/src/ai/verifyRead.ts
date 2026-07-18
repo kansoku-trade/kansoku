@@ -1,7 +1,7 @@
-import type { RawBar } from "@kansoku/shared/types";
-import { preMarketRange, regularRange } from "../services/dayLevels.js";
-import { toTs } from "../services/indicators.js";
-import type { ReassessPack } from "./datapack.js";
+import type { RawBar } from '@kansoku/shared/types';
+import { preMarketRange, regularRange } from '../services/dayLevels.js';
+import { toTs } from '../services/indicators.js';
+import type { ReassessPack } from './datapack.js';
 
 /**
  * Directional claims the user makes about the tape ("是不是突破了", "见底了吧", "主力在砸盘").
@@ -34,7 +34,7 @@ export function isDirectionalClaim(text: string): boolean {
   return CLAIM_PATTERNS.some((re) => re.test(text));
 }
 
-export type ClaimStatus = "supported" | "partial" | "contradicted" | "insufficient";
+export type ClaimStatus = 'supported' | 'partial' | 'contradicted' | 'insufficient';
 
 export interface DirectionalVerification {
   verification_id: string;
@@ -63,14 +63,18 @@ export interface DirectionalVerification {
 }
 
 function lastBar(bars: RawBar[]): RawBar | null {
-  return bars.length ? bars[bars.length - 1] : null;
+  return bars.at(-1) ?? null;
 }
 
 function pct(from: number, to: number): number {
   return Number((((to - from) / from) * 100).toFixed(2));
 }
 
-export function verifyDirectionalRead(pack: ReassessPack, verificationId: string, now: Date): DirectionalVerification {
+export function verifyDirectionalRead(
+  pack: ReassessPack,
+  verificationId: string,
+  now: Date,
+): DirectionalVerification {
   const m5 = pack.timeframes.m5?.bars ?? [];
 
   const tail = lastBar(m5);
@@ -82,10 +86,10 @@ export function verifyDirectionalRead(pack: ReassessPack, verificationId: string
   const prev = pack.day_levels?.prev_day ?? null;
 
   const notes: string[] = [];
-  if (!tail) notes.push("没有 5 分钟 K 线，无法核验现价。");
-  if (!pre) notes.push("拿不到今日盘前区间——无法判断是否真突破（TD-VERIFY-01 要求对比盘前高）。");
-  if (!prev) notes.push("拿不到前一日高/收，无法对比前高。");
-  if (!cash) notes.push("今日尚无正常盘 K 线（盘前/盘后/休市）。");
+  if (!tail) notes.push('没有 5 分钟 K 线，无法核验现价。');
+  if (!pre) notes.push('拿不到今日盘前区间——无法判断是否真突破（TD-VERIFY-01 要求对比盘前高）。');
+  if (!prev) notes.push('拿不到前一日高/收，无法对比前高。');
+  if (!cash) notes.push('今日尚无正常盘 K 线（盘前/盘后/休市）。');
 
   const dataComplete = Boolean(tail && pre && prev);
 
@@ -95,21 +99,21 @@ export function verifyDirectionalRead(pack: ReassessPack, verificationId: string
 
   let breakoutVerdict: ClaimStatus;
   if (!dataComplete) {
-    breakoutVerdict = "insufficient";
+    breakoutVerdict = 'insufficient';
   } else if (abovePre && abovePrevHigh) {
-    breakoutVerdict = "supported";
+    breakoutVerdict = 'supported';
   } else if (abovePre || abovePrevHigh || cashCleared) {
-    breakoutVerdict = "partial";
+    breakoutVerdict = 'partial';
     if (cashCleared && !abovePre) {
-      notes.push("盘中一度上破盘前高但没守住——是假突破的形态，不是突破。");
+      notes.push('盘中一度上破盘前高但没守住——是假突破的形态，不是突破。');
     }
     if (!cashCleared && abovePrevHigh) {
-      notes.push("过了前一日高点，但没过今天的盘前高——只算部分成立。");
+      notes.push('过了前一日高点，但没过今天的盘前高——只算部分成立。');
     }
   } else {
-    breakoutVerdict = "contradicted";
+    breakoutVerdict = 'contradicted';
     if (cash && pre && cash.high <= pre.high) {
-      notes.push("今天正常盘的最高价从未触及盘前高——把这段涨幅叫「突破」与数据不符。");
+      notes.push('今天正常盘的最高价从未触及盘前高——把这段涨幅叫「突破」与数据不符。');
     }
   }
 
@@ -146,17 +150,17 @@ export function rejectAnswer(
   minted: Map<string, DirectionalVerification>,
 ): string | null {
   if (!submitted.verification_id) {
-    return "rejected: 这一轮用户对走势下了判断，必须先调用 verify_directional_read，并把它返回的 verification_id 填进来。";
+    return 'rejected: 这一轮用户对走势下了判断，必须先调用 verify_directional_read，并把它返回的 verification_id 填进来。';
   }
   const verification = minted.get(submitted.verification_id);
   if (!verification) {
-    return "rejected: verification_id 不是本轮 verify_directional_read 返回的——不接受凭空捏造或复用旧的核验。";
+    return 'rejected: verification_id 不是本轮 verify_directional_read 返回的——不接受凭空捏造或复用旧的核验。';
   }
-  if (!verification.data_complete && submitted.claim_status !== "insufficient") {
-    return `rejected: 核验数据不完整（${verification.notes.join(" ")}），此时只能提交 insufficient，不得站队。`;
+  if (!verification.data_complete && submitted.claim_status !== 'insufficient') {
+    return `rejected: 核验数据不完整（${verification.notes.join(' ')}），此时只能提交 insufficient，不得站队。`;
   }
-  if (verification.breakout_verdict === "contradicted" && submitted.claim_status === "supported") {
-    return "rejected: 机械核验判定为 contradicted（现价与盘中高点都没过盘前高），不能提交 supported。数据冲突时必须明确纠正用户。";
+  if (verification.breakout_verdict === 'contradicted' && submitted.claim_status === 'supported') {
+    return 'rejected: 机械核验判定为 contradicted（现价与盘中高点都没过盘前高），不能提交 supported。数据冲突时必须明确纠正用户。';
   }
   return null;
 }

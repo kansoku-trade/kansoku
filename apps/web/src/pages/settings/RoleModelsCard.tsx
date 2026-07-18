@@ -1,7 +1,7 @@
-import { Card, SectionTitle } from "@web/ui";
-import { PrimaryRow } from "./PrimaryRow";
-import { RoleRow } from "./RoleRow";
-import type { SettingsViewModel } from "./settingsViewModel";
+import { Card, SectionTitle } from '@web/ui';
+import { PrimaryRow } from './PrimaryRow';
+import { RoleRow } from './RoleRow';
+import type { SettingsViewModel } from './settingsViewModel';
 import {
   ROLES,
   type AiRoles,
@@ -9,7 +9,7 @@ import {
   type CredentialEntry,
   type Role,
   type RoleSetting,
-} from "./types";
+} from './types';
 
 export function RoleModelsCard({
   initialRoles,
@@ -24,7 +24,7 @@ export function RoleModelsCard({
   catalog: Catalog;
   credentials: CredentialEntry[];
   view: SettingsViewModel;
-  onDraftChange: (role: Role | "primary", next: RoleSetting) => void;
+  onDraftChange: (role: Role | 'primary', next: RoleSetting) => void;
 }) {
   return (
     <Card className="settings-roles-card">
@@ -37,7 +37,7 @@ export function RoleModelsCard({
         draft={roles.primary}
         catalog={catalog}
         credentials={credentials}
-        onDraftChange={(next) => onDraftChange("primary", next)}
+        onDraftChange={(next) => onDraftChange('primary', next)}
       />
       <div className="settings-role-list">
         {ROLES.map((role) => (

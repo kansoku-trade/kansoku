@@ -1,8 +1,8 @@
-import type { RawBar } from "@kansoku/shared/types";
-import type { Question } from "../schema/question.js";
-import { buildDayIndicators, buildWeekIndicators } from "./indicatorsFixture.js";
-import { buildQuestionId } from "./id.js";
-import { lastCompletedWeekIndex } from "./windowing.js";
+import type { RawBar } from '@kansoku/shared/types';
+import type { Question } from '../schema/question.js';
+import { buildDayIndicators, buildWeekIndicators } from './indicatorsFixture.js';
+import { buildQuestionId } from './id.js';
+import { lastCompletedWeekIndex } from './windowing.js';
 
 export interface QuoteBar extends RawBar {
   turnover?: string;
@@ -22,7 +22,14 @@ export interface AssembleQuestionInput {
 }
 
 function stripToRawBar(bar: QuoteBar): RawBar {
-  return { time: bar.time, open: bar.open, high: bar.high, low: bar.low, close: bar.close, volume: bar.volume };
+  return {
+    time: bar.time,
+    open: bar.open,
+    high: bar.high,
+    low: bar.low,
+    close: bar.close,
+    volume: bar.volume,
+  };
 }
 
 export function assembleQuestion(input: AssembleQuestionInput): Question {
@@ -48,7 +55,10 @@ export function assembleQuestion(input: AssembleQuestionInput): Question {
   const replayBars = dayBars.slice(cutoffIndex + 1, cutoffIndex + 1 + horizonBars);
 
   const weekCutoffIndex = lastCompletedWeekIndex(weekBars, cutoffDate);
-  const weekWindow = weekBars.slice(Math.max(0, weekCutoffIndex - requiredBeforeWeek + 1), weekCutoffIndex + 1);
+  const weekWindow = weekBars.slice(
+    Math.max(0, weekCutoffIndex - requiredBeforeWeek + 1),
+    weekCutoffIndex + 1,
+  );
 
   const quote = {
     last: Number(cutoffBar.close),
@@ -62,7 +72,7 @@ export function assembleQuestion(input: AssembleQuestionInput): Question {
 
   return {
     id: buildQuestionId(symbol, cutoffDate, seq),
-    bank: "swing",
+    bank: 'swing',
     symbol,
     cutoff: cutoffIso,
     layer,

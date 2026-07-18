@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import type { AssistantSessionMeta } from "@kansoku/core/contract/index";
-import { useQuery } from "@web/apiHooks";
-import { client } from "@web/client";
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { AssistantSessionMeta } from '@kansoku/core/contract/index';
+import { useQuery } from '@web/apiHooks';
+import { client } from '@web/client';
 
 export interface AssistantSessionsState {
   sessions: AssistantSessionMeta[];
@@ -16,7 +16,9 @@ export function mergeOptimisticSessions(
   sessions: AssistantSessionMeta[],
   pending: AssistantSessionMeta[],
 ): AssistantSessionMeta[] {
-  const missing = pending.filter((session) => !sessions.some((existing) => existing.id === session.id));
+  const missing = pending.filter(
+    (session) => !sessions.some((existing) => existing.id === session.id),
+  );
   return missing.length ? [...missing, ...sessions] : sessions;
 }
 
@@ -26,13 +28,17 @@ export function useAssistantSessions(): AssistantSessionsState {
     error,
     loading,
     reload: refresh,
-  } = useQuery<AssistantSessionMeta[]>("assistant.sessions", () => client.assistant.listSessions().then((res) => res.sessions));
+  } = useQuery<AssistantSessionMeta[]>('assistant.sessions', () =>
+    client.assistant.listSessions().then((res) => res.sessions),
+  );
 
   const [pending, setPending] = useState<AssistantSessionMeta[]>([]);
 
   useEffect(() => {
     if (!data) return;
-    setPending((prev) => prev.filter((session) => !data.some((existing) => existing.id === session.id)));
+    setPending((prev) =>
+      prev.filter((session) => !data.some((existing) => existing.id === session.id)),
+    );
   }, [data]);
 
   const sessions = useMemo(() => mergeOptimisticSessions(data ?? [], pending), [data, pending]);

@@ -1,4 +1,4 @@
-import type { ChartUrlDoc } from "@kansoku/shared/chartUrl";
+import type { ChartUrlDoc } from '@kansoku/shared/chartUrl';
 import type {
   ChartDoc,
   ChartMeta,
@@ -6,14 +6,14 @@ import type {
   IntradayPrediction,
   OverviewBoard,
   OverviewRow,
-} from "@kansoku/shared/types";
-import { listComments } from "../../ai/comments.js";
-import { listFollowedSymbols } from "../../ai/follows.js";
-import { getProvider } from "../marketdata/registry.js";
-import { classifySession, easternDate } from "../session.js";
-import { predictionStale } from "../staleness.js";
-import { listCharts, loadChart } from "../store.js";
-import { normalizeQuote } from "../../realtime/quotes.js";
+} from '@kansoku/shared/types';
+import { listComments } from '../../ai/comments.js';
+import { listFollowedSymbols } from '../../ai/follows.js';
+import { getProvider } from '../marketdata/registry.js';
+import { classifySession, easternDate } from '../session.js';
+import { predictionStale } from '../staleness.js';
+import { listCharts, loadChart } from '../store.js';
+import { normalizeQuote } from '../../realtime/quotes.js';
 
 function distancePct(level: number | null | undefined, last: number | null): number | null {
   if (level == null || last == null || !Number.isFinite(last) || last <= 0) return null;
@@ -37,9 +37,9 @@ export function boardRow(
   chartUrl: (doc: ChartUrlDoc) => string,
 ): OverviewRow {
   const prediction = (doc?.input.prediction as IntradayPrediction | null | undefined) ?? null;
-  const plan = doc && doc.built.kind === "intraday" ? doc.built.entryPlan : null;
+  const plan = doc && doc.built.kind === 'intraday' ? doc.built.entryPlan : null;
   const last = quote?.last ?? null;
-  const latest = comments.length ? comments[comments.length - 1] : null;
+  const latest = comments.length ? comments.at(-1) : null;
   return {
     symbol: meta.symbol!,
     chart_id: meta.id,
@@ -57,13 +57,15 @@ export function boardRow(
     prediction_stale: doc ? predictionStale(doc, new Date()) : false,
     ai_following: following,
     latest_comment: latest ? { ts: latest.ts, level: latest.level, text: latest.text } : null,
-    alert_count: comments.reduce((n, c) => (c.level === "alert" ? n + 1 : n), 0),
+    alert_count: comments.reduce((n, c) => (c.level === 'alert' ? n + 1 : n), 0),
   };
 }
 
-export async function buildOverviewBoard(chartUrl: (doc: ChartUrlDoc) => string): Promise<OverviewBoard> {
+export async function buildOverviewBoard(
+  chartUrl: (doc: ChartUrlDoc) => string,
+): Promise<OverviewBoard> {
   const today = easternDate();
-  const metas = (await listCharts({ type: "intraday" })).filter(
+  const metas = (await listCharts({ type: 'intraday' })).filter(
     (m) => easternDate(new Date(m.created_at)) === today,
   );
   const session = classifySession(Math.floor(Date.now() / 1000));

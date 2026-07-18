@@ -19,16 +19,16 @@
 
 `marketdata/longbridge.ts` 的 8 个方法:
 
-| 方法 | SDK 调用 | 上下文 |
-|---|---|---|
-| `getKline` | `candlesticks(symbol, period, count, adjust, sessions)`;深历史用 `historyCandlesticksByOffset` | QuoteContext |
-| `getQuotes` | `quote(symbols)` | QuoteContext |
-| `getFlow` | `capitalFlow(symbol)` | QuoteContext |
-| `getCapitalDistribution` | `capitalDistribution(symbol)` | QuoteContext |
-| `getWatchlistSymbols` | `watchlist()` | QuoteContext |
-| `getPositions` | `stockPositions()` | TradeContext(新增单例) |
-| `getPortfolio` | `accountBalance()`(需要时补 `fundPositions`) | TradeContext |
-| `getNews` | 保留 CLI(唯一来源) | — |
+| 方法                     | SDK 调用                                                                                       | 上下文                 |
+| ------------------------ | ---------------------------------------------------------------------------------------------- | ---------------------- |
+| `getKline`               | `candlesticks(symbol, period, count, adjust, sessions)`;深历史用 `historyCandlesticksByOffset` | QuoteContext           |
+| `getQuotes`              | `quote(symbols)`                                                                               | QuoteContext           |
+| `getFlow`                | `capitalFlow(symbol)`                                                                          | QuoteContext           |
+| `getCapitalDistribution` | `capitalDistribution(symbol)`                                                                  | QuoteContext           |
+| `getWatchlistSymbols`    | `watchlist()`                                                                                  | QuoteContext           |
+| `getPositions`           | `stockPositions()`                                                                             | TradeContext(新增单例) |
+| `getPortfolio`           | `accountBalance()`(需要时补 `fundPositions`)                                                   | TradeContext           |
+| `getNews`                | 保留 CLI(唯一来源)                                                                             | —                      |
 
 - QuoteContext / TradeContext 单例同居一个 SDK 模块(现 `longbridgeStream.ts`,可改名 `longbridgeSdk.ts`),复用同一 Config(OAuth 优先、API key 兜底,沿用现有凭据逻辑)。
 - provider 接口签名不变,消费方(build.ts、analyst、routes 等)零改动;SDK 返回值在 provider 层映射为现有 Raw* 类型。
@@ -44,11 +44,11 @@
 
 现有 multiplex 协议(`routes/ws.ts`,kind: `quotes` / `chart` / `comments` / `analyses`)新增:
 
-| kind | 参数 | 数据 | 实时来源 |
-|---|---|---|---|
-| `position` | `{ symbol }` | 持仓数量、成本、实时盈亏、相对成交量 | stockPositions 快照(低频)× quote 推送(高频)服务端合成 |
-| `benchmark` | `{ symbol }` | SMH/QQQ 对照序列 | 已有 quote 推送,服务端聚合 |
-| `board` | 无 | 盘面看板行(watchlist ∪ positions) | quote 推送 + 定期快照合成 |
+| kind        | 参数         | 数据                                 | 实时来源                                              |
+| ----------- | ------------ | ------------------------------------ | ----------------------------------------------------- |
+| `position`  | `{ symbol }` | 持仓数量、成本、实时盈亏、相对成交量 | stockPositions 快照(低频)× quote 推送(高频)服务端合成 |
+| `benchmark` | `{ symbol }` | SMH/QQQ 对照序列                     | 已有 quote 推送,服务端聚合                            |
+| `board`     | 无           | 盘面看板行(watchlist ∪ positions)    | quote 推送 + 定期快照合成                             |
 
 - 前端四处 `useIntervalFetch` 改为现有 WS hook 订阅对应频道;`useIntervalFetch` 保留给未迁移的边角。
 - relvol 不单独开频道,作为 `position` / `board` 的附带字段。

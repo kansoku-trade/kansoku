@@ -1,7 +1,7 @@
-import type { CredentialsApi } from "../../contract/credentials.js";
-import { locateLongbridgeCli } from "../../services/longbridgeCli.js";
-import { readLongbridgeToken, LongbridgeTokenError } from "../../services/longbridgeToken.js";
-import { probeOpencli } from "../../services/opencli.js";
+import type { CredentialsApi } from '../../contract/credentials.js';
+import { locateLongbridgeCli } from '../../services/longbridgeCli.js';
+import { readLongbridgeToken, LongbridgeTokenError } from '../../services/longbridgeToken.js';
+import { probeOpencli } from '../../services/opencli.js';
 
 export const credentialsService: CredentialsApi = {
   async status() {
@@ -10,18 +10,24 @@ export const credentialsService: CredentialsApi = {
       cliPath = await locateLongbridgeCli();
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      return { configured: false, method: "cli", lastError: message, state: "cli_missing" as const, cliPath: null };
+      return {
+        configured: false,
+        method: 'cli',
+        lastError: message,
+        state: 'cli_missing' as const,
+        cliPath: null,
+      };
     }
     try {
       await readLongbridgeToken();
-      return { configured: true, method: "cli", lastError: null, state: "ready" as const, cliPath };
+      return { configured: true, method: 'cli', lastError: null, state: 'ready' as const, cliPath };
     } catch (error) {
       const state =
-        error instanceof LongbridgeTokenError && error.code === "NOT_LOGGED_IN"
-          ? ("login_required" as const)
-          : ("token_unreadable" as const);
+        error instanceof LongbridgeTokenError && error.code === 'NOT_LOGGED_IN'
+          ? ('login_required' as const)
+          : ('token_unreadable' as const);
       const message = error instanceof Error ? error.message : String(error);
-      return { configured: false, method: "cli", lastError: message, state, cliPath };
+      return { configured: false, method: 'cli', lastError: message, state, cliPath };
     }
   },
   opencliStatus() {

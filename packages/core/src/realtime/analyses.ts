@@ -1,5 +1,5 @@
 export interface AnalysisCreatedMessage {
-  type: "analysis-created";
+  type: 'analysis-created';
   symbol: string;
   chartId: string;
   chartType: string;
@@ -36,12 +36,12 @@ export function publishAnalysisCreated({
   const set = listeners.get(symbol);
   if (!set) return;
   const envelope = JSON.stringify({
-    type: "analysis-created",
+    type: 'analysis-created',
     symbol,
     chartId,
     chartType: type,
   } satisfies AnalysisCreatedMessage);
-  for (const push of [...set]) {
+  for (const push of set) {
     try {
       push(envelope);
     } catch {

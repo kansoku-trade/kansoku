@@ -1,4 +1,4 @@
-export type DataRootMode = "default" | "custom" | "env" | "dev-repo";
+export type DataRootMode = 'default' | 'custom' | 'env' | 'dev-repo';
 
 export interface DataRootStatus {
   effectivePath: string;
@@ -20,13 +20,13 @@ export function buildDataRootStatus(input: {
 
   let mode: DataRootMode;
   if (envOverride) {
-    mode = "env";
+    mode = 'env';
   } else if (!isPackaged) {
-    mode = "dev-repo";
+    mode = 'dev-repo';
   } else if (configuredPath && customPathUsable) {
-    mode = "custom";
+    mode = 'custom';
   } else {
-    mode = "default";
+    mode = 'default';
   }
 
   const degraded = Boolean(configuredPath) && !customPathUsable && !envOverride && isPackaged;
@@ -37,7 +37,7 @@ export function buildDataRootStatus(input: {
       configuredPath,
       mode,
       degraded: true,
-      degradedReason: "configured data root is missing or not writable",
+      degradedReason: 'configured data root is missing or not writable',
     };
   }
 

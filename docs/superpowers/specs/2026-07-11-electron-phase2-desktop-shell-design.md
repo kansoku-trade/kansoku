@@ -46,12 +46,12 @@ apps/desktop/
 
 不引入 forge / electron-vite，管线四条薄脚本：
 
-| 命令 | 内容 |
-|---|---|
-| `dev` | tsdown --watch（main ESM / preload CJS）+ electron 自动重启；窗口加载 web 的 Vite dev URL |
-| `build` | `vite build`（web/）+ tsdown 三入口（main、preload、server 内核单文件，原生模块 external） |
-| `package` | electron-builder（dmg + zip，arm64） |
-| `release` | CI 串 build + package + Sparkle 签名 + appcast（见 CI 节） |
+| 命令      | 内容                                                                                       |
+| --------- | ------------------------------------------------------------------------------------------ |
+| `dev`     | tsdown --watch（main ESM / preload CJS）+ electron 自动重启；窗口加载 web 的 Vite dev URL  |
+| `build`   | `vite build`（web/）+ tsdown 三入口（main、preload、server 内核单文件，原生模块 external） |
+| `package` | electron-builder（dmg + zip，arm64）                                                       |
+| `release` | CI 串 build + package + Sparkle 签名 + appcast（见 CI 节）                                 |
 
 - tsdown（rolldown 内核，与 Vite 8 同源）：main 与 server 内核出 ESM；preload 出 CJS（sandbox 下 preload 必须单文件 CJS）。
 - electron-builder 的 `files` 用白名单：只带构建产物入口 + 原生模块，`asarUnpack` better-sqlite3 与 longbridge，压最小包体，也绕开 pnpm 依赖树遍历的坑。

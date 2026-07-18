@@ -1,19 +1,29 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import type { IChartApi, ISeriesApi } from "lightweight-charts";
-import type { Annotation, AnnotationKind, AnnotationPoint, AnnotationStyle } from "@kansoku/shared/types";
-import type { HitRegion, Pt } from "@kansoku/shared/drawings";
-import { client } from "@web/client";
-import { subscribeChannel } from "@web/wsHub";
-import { DrawingsPrimitive, type HoverLabel, type MeasureShape, type PreviewShape } from "./drawingsPrimitive";
-import { type DrawingTool, type MultiPointTool } from "./drawingsMachine";
-import { useDrawingsInteraction } from "./useDrawingsInteraction";
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { IChartApi, ISeriesApi } from 'lightweight-charts';
+import type {
+  Annotation,
+  AnnotationKind,
+  AnnotationPoint,
+  AnnotationStyle,
+} from '@kansoku/shared/types';
+import type { HitRegion, Pt } from '@kansoku/shared/drawings';
+import { client } from '@web/client';
+import { subscribeChannel } from '@web/wsHub';
+import type {
+  DrawingsPrimitive,
+  HoverLabel,
+  MeasureShape,
+  PreviewShape,
+} from './drawingsPrimitive';
+import { type DrawingTool, type MultiPointTool } from './drawingsMachine';
+import { useDrawingsInteraction } from './useDrawingsInteraction';
 
 export function decodeAnnotationsFrame(payload: unknown, ownClientId: string): Annotation[] | null {
-  if (typeof payload !== "object" || payload === null) return null;
+  if (typeof payload !== 'object' || payload === null) return null;
   const frame = payload as { type?: unknown; annotations?: unknown; clientId?: unknown };
-  if (frame.type !== "init" && frame.type !== "update") return null;
+  if (frame.type !== 'init' && frame.type !== 'update') return null;
   if (!Array.isArray(frame.annotations)) return null;
-  if (frame.type === "update" && frame.clientId === ownClientId) return null;
+  if (frame.type === 'update' && frame.clientId === ownClientId) return null;
   return frame.annotations as Annotation[];
 }
 
@@ -22,11 +32,11 @@ export function mergePendingRemote(remote: Annotation[], local: Annotation[]): A
   return [...remote, ...local.filter((a) => !remoteIds.has(a.id))];
 }
 
-export type { DrawingTool } from "./drawingsMachine";
+export type { DrawingTool } from './drawingsMachine';
 
 export interface DrawingsHandle {
   chart: IChartApi;
-  series: ISeriesApi<"Candlestick">;
+  series: ISeriesApi<'Candlestick'>;
   container: HTMLElement;
 }
 
@@ -68,11 +78,19 @@ interface PendingSave {
 
 const SAVE_DEBOUNCE_MS = 1000;
 
-export function useDrawings(handle: DrawingsHandle | null, symbol: string, barTimes: number[]): DrawingsApi {
+export function useDrawings(
+  handle: DrawingsHandle | null,
+  symbol: string,
+  barTimes: number[],
+): DrawingsApi {
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
-  const [activeTool, setActiveToolState] = useState<DrawingTool>(() => toolMemory.get(symbol) ?? "cursor");
+  const [activeTool, setActiveToolState] = useState<DrawingTool>(
+    () => toolMemory.get(symbol) ?? 'cursor',
+  );
   const [selectedId, setSelectedIdState] = useState<string | null>(null);
-  const [draftStyle, setDraftStyle] = useState<AnnotationStyle>(() => draftStyleMemory.get(symbol) ?? {});
+  const [draftStyle, setDraftStyle] = useState<AnnotationStyle>(
+    () => draftStyleMemory.get(symbol) ?? {},
+  );
 
   const handleRef = useRef<DrawingsHandle | null>(handle);
   handleRef.current = handle;
@@ -82,7 +100,7 @@ export function useDrawings(handle: DrawingsHandle | null, symbol: string, barTi
   barTimesRef.current = barTimes;
 
   const annotationsRef = useRef<Annotation[]>([]);
-  const toolRef = useRef<DrawingTool>(toolMemory.get(symbol) ?? "cursor");
+  const toolRef = useRef<DrawingTool>(toolMemory.get(symbol) ?? 'cursor');
   const draftStyleRef = useRef<AnnotationStyle>(draftStyleMemory.get(symbol) ?? {});
   const selectedIdRef = useRef<string | null>(null);
   const dragRef = useRef<DragState | null>(null);
@@ -99,7 +117,10 @@ export function useDrawings(handle: DrawingsHandle | null, symbol: string, barTi
   const clientIdRef = useRef<string | null>(null);
   if (clientIdRef.current === null) clientIdRef.current = crypto.randomUUID();
 
-  const isInteracting = useCallback(() => drawingRef.current !== null || dragRef.current !== null, []);
+  const isInteracting = useCallback(
+    () => drawingRef.current !== null || dragRef.current !== null,
+    [],
+  );
 
   const pushState = useCallback(() => {
     const primitive = primitiveRef.current;
@@ -109,7 +130,7 @@ export function useDrawings(handle: DrawingsHandle | null, symbol: string, barTi
     let preview: PreviewShape | null = null;
     let measure: MeasureShape | null = measureRef.current;
     if (drawing && hover) {
-      if (drawing.tool === "measure") {
+      if (drawing.tool === 'measure') {
         measure = { p1: drawing.points[0], p2: hover };
       } else {
         preview = { kind: drawing.tool as AnnotationKind, points: [...drawing.points, hover] };
@@ -133,7 +154,7 @@ export function useDrawings(handle: DrawingsHandle | null, symbol: string, barTi
   const updateScrollLock = useCallback(() => {
     const chart = handleRef.current?.chart;
     if (!chart) return;
-    const locked = toolRef.current !== "cursor" || dragRef.current !== null;
+    const locked = toolRef.current !== 'cursor' || dragRef.current !== null;
     try {
       chart.applyOptions({ handleScroll: !locked, handleScale: !locked });
     } catch {
@@ -150,9 +171,13 @@ export function useDrawings(handle: DrawingsHandle | null, symbol: string, barTi
     if (!pending) return;
     pendingSaveRef.current = null;
     void client.annotations
-      .replace({ symbol: pending.symbol, annotations: pending.annotations, clientId: clientIdRef.current ?? undefined })
+      .replace({
+        symbol: pending.symbol,
+        annotations: pending.annotations,
+        clientId: clientIdRef.current ?? undefined,
+      })
       .catch((err: unknown) => {
-        console.error("failed to save annotations", err);
+        console.error('failed to save annotations', err);
       });
   }, []);
 
@@ -213,7 +238,7 @@ export function useDrawings(handle: DrawingsHandle | null, symbol: string, barTi
 
   const handleAnnotationsFrame = useCallback(
     (payload: unknown) => {
-      const next = decodeAnnotationsFrame(payload, clientIdRef.current ?? "");
+      const next = decodeAnnotationsFrame(payload, clientIdRef.current ?? '');
       if (!next) return;
       if (isInteracting()) {
         pendingRemoteRef.current = next;
@@ -252,7 +277,7 @@ export function useDrawings(handle: DrawingsHandle | null, symbol: string, barTi
   }, [commitAnnotations, setSelected]);
 
   const clearAi = useCallback(() => {
-    const next = annotationsRef.current.filter((a) => a.source !== "ai");
+    const next = annotationsRef.current.filter((a) => a.source !== 'ai');
     if (selectedIdRef.current && !next.some((a) => a.id === selectedIdRef.current)) {
       setSelected(null);
     }
@@ -261,7 +286,9 @@ export function useDrawings(handle: DrawingsHandle | null, symbol: string, barTi
 
   const updateStyle = useCallback(
     (id: string, patch: Partial<AnnotationStyle>) => {
-      const next = annotationsRef.current.map((a) => (a.id === id ? { ...a, style: { ...a.style, ...patch } } : a));
+      const next = annotationsRef.current.map((a) =>
+        a.id === id ? { ...a, style: { ...a.style, ...patch } } : a,
+      );
       commitAnnotations(next, true);
     },
     [commitAnnotations],
@@ -313,7 +340,7 @@ export function useDrawings(handle: DrawingsHandle | null, symbol: string, barTi
     const rememberedDraft = draftStyleMemory.get(symbol) ?? {};
     draftStyleRef.current = rememberedDraft;
     setDraftStyle(rememberedDraft);
-    applyTool(toolMemory.get(symbol) ?? "cursor", false);
+    applyTool(toolMemory.get(symbol) ?? 'cursor', false);
     pushState();
 
     client.annotations
@@ -332,10 +359,14 @@ export function useDrawings(handle: DrawingsHandle | null, symbol: string, barTi
       })
       .catch((err: unknown) => {
         if (!active) return;
-        console.error("failed to load annotations", err);
+        console.error('failed to load annotations', err);
       });
 
-    const unsubscribe = subscribeChannel({ kind: "annotations", symbol }, handleAnnotationsFrame, () => {});
+    const unsubscribe = subscribeChannel(
+      { kind: 'annotations', symbol },
+      handleAnnotationsFrame,
+      () => {},
+    );
 
     return () => {
       active = false;
@@ -355,7 +386,7 @@ export function useDrawings(handle: DrawingsHandle | null, symbol: string, barTi
   }, [flushSave]);
 
   const selected = selectedId ? (annotations.find((a) => a.id === selectedId) ?? null) : null;
-  const hasAi = annotations.some((a) => a.source === "ai");
+  const hasAi = annotations.some((a) => a.source === 'ai');
 
   return {
     activeTool,

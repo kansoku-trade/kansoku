@@ -1,12 +1,13 @@
 {
   "name": "@kansoku/web",
   "private": true,
+  "license": "SEE LICENSE IN LICENSE",
   "type": "module",
   "scripts": {
-    "dev": "vite",
     "build": "vite build",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "dev": "vite",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
@@ -40,6 +41,5 @@
     "typescript": "^7.0.2",
     "vite": "^8.1.4",
     "vitest": "^4.1.10"
-  },
-  "license": "SEE LICENSE IN LICENSE"
+  }
 }

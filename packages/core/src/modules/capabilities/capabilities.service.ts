@@ -1,6 +1,6 @@
-import type { CapabilitiesApi } from "../../contract/capabilities.js";
-import { featureStates } from "../../pro/features.js";
-import { getPro } from "../../pro/registry.js";
+import type { CapabilitiesApi } from '../../contract/capabilities.js';
+import { featureStates } from '../../pro/features.js';
+import { getPro } from '../../pro/registry.js';
 
 export const capabilitiesService: CapabilitiesApi = {
   async get() {

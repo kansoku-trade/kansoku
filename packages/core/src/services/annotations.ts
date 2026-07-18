@@ -1,15 +1,18 @@
-import { promises as fs } from "node:fs";
-import { join } from "node:path";
-import type { Annotation } from "@kansoku/shared/types";
-import { ANNOTATIONS_DIR } from "../env.js";
-import { ClientError } from "../errors.js";
+import { promises as fs } from 'node:fs';
+import { join } from 'node:path';
+import type { Annotation } from '@kansoku/shared/types';
+import { ANNOTATIONS_DIR } from '../env.js';
+import { ClientError } from '../errors.js';
 
-const SYMBOL_RE = /^[A-Z0-9.\-]+$/;
+const SYMBOL_RE = /^[\d.A-Z\-]+$/;
 
 function normalizeSymbol(symbol: string): string {
   const normalized = symbol.trim().toUpperCase();
   if (!SYMBOL_RE.test(normalized)) {
-    throw new ClientError(`invalid symbol: ${symbol}`, "symbols may only contain letters, digits, '.' and '-'");
+    throw new ClientError(
+      `invalid symbol: ${symbol}`,
+      "symbols may only contain letters, digits, '.' and '-'",
+    );
   }
   return normalized;
 }
@@ -47,7 +50,7 @@ export function onAnnotationsChanged(symbol: string, listener: Listener): () => 
 function broadcast(event: AnnotationsChangedEvent): void {
   const set = listeners.get(event.symbol);
   if (!set) return;
-  for (const listener of [...set]) {
+  for (const listener of set) {
     try {
       listener(event);
     } catch {
@@ -60,9 +63,9 @@ export async function loadAnnotations(symbol: string): Promise<Annotation[]> {
   const path = annotationPath(symbol);
   let raw: string;
   try {
-    raw = await fs.readFile(path, "utf8");
+    raw = await fs.readFile(path, 'utf8');
   } catch (err) {
-    if (err && typeof err === "object" && "code" in err && err.code === "ENOENT") return [];
+    if (err && typeof err === 'object' && 'code' in err && err.code === 'ENOENT') return [];
     throw err;
   }
   try {
@@ -73,7 +76,11 @@ export async function loadAnnotations(symbol: string): Promise<Annotation[]> {
   }
 }
 
-export async function saveAnnotations(symbol: string, annotations: Annotation[], clientId?: string): Promise<void> {
+export async function saveAnnotations(
+  symbol: string,
+  annotations: Annotation[],
+  clientId?: string,
+): Promise<void> {
   const normalized = normalizeSymbol(symbol);
   const path = annotationPath(symbol);
   await fs.mkdir(ANNOTATIONS_DIR, { recursive: true });

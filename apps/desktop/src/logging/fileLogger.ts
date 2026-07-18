@@ -9,11 +9,11 @@ import {
   renameSync,
   unlinkSync,
   writeFileSync,
-} from "node:fs";
-import { dirname, join } from "node:path";
-import { inspect } from "node:util";
+} from 'node:fs';
+import { dirname, join } from 'node:path';
+import { inspect } from 'node:util';
 
-export type LogLevel = "log" | "info" | "warn" | "error" | "debug";
+export type LogLevel = 'log' | 'info' | 'warn' | 'error' | 'debug';
 
 export type FileLoggerOptions = {
   logFilePath: string;
@@ -33,16 +33,16 @@ const DEFAULT_MAX_BYTES = 5 * 1024 * 1024;
 const DEFAULT_TAIL_BYTES = 256 * 1024;
 
 const SECRET_PATTERNS: RegExp[] = [
-  /\bBearer\s+[A-Za-z0-9._\-+=/]+/gi,
-  /\bsk-[A-Za-z0-9]{10,}/g,
-  /\bOidc-Auth:\s*\S+/gi,
-  /\b(api[_-]?key|access[_-]?token|refresh[_-]?token)\s*[:=]\s*["']?[^"'\s,}]+/gi,
+  /\bbearer\s+[\w+./=-]+/gi,
+  /\bsk-[\dA-Za-z]{10,}/g,
+  /\boidc-auth:\s*\S+/gi,
+  /\b(api[_-]?key|access[_-]?token|refresh[_-]?token)\s*[:=]\s*["']?[^\s"',}]+/gi,
 ];
 
 export function redactSecrets(text: string): string {
   let out = text;
   for (const pattern of SECRET_PATTERNS) {
-    out = out.replace(pattern, "[redacted]");
+    out = out.replace(pattern, '[redacted]');
   }
   return out;
 }
@@ -50,7 +50,7 @@ export function redactSecrets(text: string): string {
 export function formatLogArgs(args: unknown[]): string {
   return args
     .map((arg) => {
-      if (typeof arg === "string") return arg;
+      if (typeof arg === 'string') return arg;
       if (arg instanceof Error) return arg.stack ?? arg.message;
       try {
         return inspect(arg, { depth: 4, breakLength: 120, colors: false });
@@ -58,7 +58,7 @@ export function formatLogArgs(args: unknown[]): string {
         return String(arg);
       }
     })
-    .join(" ");
+    .join(' ');
 }
 
 export function formatLogLine(level: LogLevel, args: unknown[], now: Date): string {
@@ -68,7 +68,7 @@ export function formatLogLine(level: LogLevel, args: unknown[], now: Date): stri
 }
 
 export function resolveMainLogPath(logsDir: string): string {
-  return join(logsDir, "main.log");
+  return join(logsDir, 'main.log');
 }
 
 export function createFileLogger(options: FileLoggerOptions): FileLogger {
@@ -78,13 +78,13 @@ export function createFileLogger(options: FileLoggerOptions): FileLogger {
 
   mkdirSync(dirname(logFilePath), { recursive: true });
   if (!existsSync(logFilePath)) {
-    writeFileSync(logFilePath, "", "utf8");
+    writeFileSync(logFilePath, '', 'utf8');
   }
 
   const writeLine = (line: string): void => {
     try {
-      rotateIfNeeded(logFilePath, maxBytes, Buffer.byteLength(line, "utf8"));
-      appendFileSync(logFilePath, line, "utf8");
+      rotateIfNeeded(logFilePath, maxBytes, Buffer.byteLength(line, 'utf8'));
+      appendFileSync(logFilePath, line, 'utf8');
     } catch {
       // Never let logging take down the app.
     }
@@ -104,7 +104,7 @@ export function createFileLogger(options: FileLoggerOptions): FileLogger {
 }
 
 export function installConsoleBridge(logger: FileLogger): () => void {
-  const levels: LogLevel[] = ["log", "info", "warn", "error", "debug"];
+  const levels: LogLevel[] = ['log', 'info', 'warn', 'error', 'debug'];
   const originals = new Map<LogLevel, (...args: unknown[]) => void>();
 
   for (const level of levels) {
@@ -128,7 +128,7 @@ function rotateIfNeeded(logFilePath: string, maxBytes: number, nextWriteBytes: n
   if (!existsSync(logFilePath)) return;
   let size = 0;
   try {
-    const fd = openSync(logFilePath, "r");
+    const fd = openSync(logFilePath, 'r');
     try {
       size = fstatSync(fd).size;
     } finally {
@@ -145,7 +145,7 @@ function rotateIfNeeded(logFilePath: string, maxBytes: number, nextWriteBytes: n
     renameSync(logFilePath, backup);
   } catch {
     try {
-      writeFileSync(logFilePath, "", "utf8");
+      writeFileSync(logFilePath, '', 'utf8');
     } catch {
       // ignore
     }
@@ -153,18 +153,18 @@ function rotateIfNeeded(logFilePath: string, maxBytes: number, nextWriteBytes: n
 }
 
 export function readTail(filePath: string, maxBytes: number): string {
-  if (!existsSync(filePath)) return "";
-  const fd = openSync(filePath, "r");
+  if (!existsSync(filePath)) return '';
+  const fd = openSync(filePath, 'r');
   try {
     const size = fstatSync(fd).size;
-    if (size === 0) return "";
+    if (size === 0) return '';
     const start = Math.max(0, size - maxBytes);
     const length = size - start;
     const buf = Buffer.alloc(length);
     readSync(fd, buf, 0, length, start);
-    let text = buf.toString("utf8");
+    let text = buf.toString('utf8');
     if (start > 0) {
-      const nl = text.indexOf("\n");
+      const nl = text.indexOf('\n');
       if (nl >= 0 && nl < text.length - 1) text = text.slice(nl + 1);
     }
     return text;

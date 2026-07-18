@@ -1,5 +1,5 @@
-import { Module } from "@tsuki-hono/common";
-import { SymbolsController } from "./symbols.controller.js";
+import { Module } from '@tsuki-hono/common';
+import { SymbolsController } from './symbols.controller.js';
 
 @Module({
   controllers: [SymbolsController],

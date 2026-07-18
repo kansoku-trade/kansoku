@@ -1,5 +1,5 @@
-import { Module } from "@tsuki-hono/common";
-import { LobeHubController } from "./lobehub.controller.js";
+import { Module } from '@tsuki-hono/common';
+import { LobeHubController } from './lobehub.controller.js';
 
 @Module({
   controllers: [LobeHubController],

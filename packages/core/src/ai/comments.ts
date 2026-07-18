@@ -1,9 +1,9 @@
-import { and, asc, desc, eq } from "drizzle-orm";
-import type { CockpitComment, CommentLevel, CommentSource } from "@kansoku/shared/types";
-import { getDb, type Db } from "../db/index.js";
-import { comments } from "../db/schema.js";
-import { nextSnowflake } from "../db/snowflake.js";
-import { easternDate } from "../services/session.js";
+import { and, asc, desc, eq } from 'drizzle-orm';
+import type { CockpitComment, CommentLevel, CommentSource } from '@kansoku/shared/types';
+import { getDb, type Db } from '../db/index.js';
+import { comments } from '../db/schema.js';
+import { nextSnowflake } from '../db/snowflake.js';
+import { easternDate } from '../services/session.js';
 
 type Listener = (comment: CockpitComment) => void;
 
@@ -54,7 +54,11 @@ function toComment(row: typeof comments.$inferSelect): CockpitComment {
   };
 }
 
-export async function listComments(symbol: string, date: string, db: Db = getDb()): Promise<CockpitComment[]> {
+export async function listComments(
+  symbol: string,
+  date: string,
+  db: Db = getDb(),
+): Promise<CockpitComment[]> {
   const rows = await db
     .select()
     .from(comments)
@@ -63,7 +67,11 @@ export async function listComments(symbol: string, date: string, db: Db = getDb(
   return rows.map(toComment);
 }
 
-export async function listCommentDates(symbol: string, db: Db = getDb(), limit = 30): Promise<string[]> {
+export async function listCommentDates(
+  symbol: string,
+  db: Db = getDb(),
+  limit = 30,
+): Promise<string[]> {
   const rows = await db
     .selectDistinct({ date: comments.easternDate })
     .from(comments)
@@ -82,7 +90,11 @@ export async function listAllCommentDates(limit = 30, db: Db = getDb()): Promise
   return rows.map((r) => r.date);
 }
 
-export async function latestCommentatorRunAt(symbol: string, date: string, db: Db = getDb()): Promise<number | null> {
+export async function latestCommentatorRunAt(
+  symbol: string,
+  date: string,
+  db: Db = getDb(),
+): Promise<number | null> {
   const [row] = await db
     .select({ ts: comments.ts })
     .from(comments)
@@ -90,7 +102,7 @@ export async function latestCommentatorRunAt(symbol: string, date: string, db: D
       and(
         eq(comments.symbol, symbol),
         eq(comments.easternDate, date),
-        eq(comments.source, "commentator"),
+        eq(comments.source, 'commentator'),
       ),
     )
     .orderBy(desc(comments.ts), desc(comments.id))

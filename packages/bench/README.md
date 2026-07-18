@@ -57,10 +57,10 @@ pnpm --filter @kansoku/bench cli gold --dataset-version v1 --check
 
 默认目录如下：
 
-| 用途 | 默认路径 | 显式覆盖 | 环境变量 |
-| --- | --- | --- | --- |
-| 已发布题库 | `~/.cache/kansoku/bench/datasets` | `--dataset-dir` | `KANSOKU_BENCH_DATA_DIR` |
-| 行情与新闻源缓存 | `~/.cache/kansoku/bench/sources` | `--source-cache-dir` | `KANSOKU_BENCH_SOURCE_CACHE_DIR` |
+| 用途             | 默认路径                          | 显式覆盖             | 环境变量                         |
+| ---------------- | --------------------------------- | -------------------- | -------------------------------- |
+| 已发布题库       | `~/.cache/kansoku/bench/datasets` | `--dataset-dir`      | `KANSOKU_BENCH_DATA_DIR`         |
+| 行情与新闻源缓存 | `~/.cache/kansoku/bench/sources`  | `--source-cache-dir` | `KANSOKU_BENCH_SOURCE_CACHE_DIR` |
 
 解析优先级为“命令行参数 > 环境变量 > 默认路径”。题目仍按 `<dataset-dir>/<id>/<bank>/<questionId>.json` 组织；报告必须记录数据集 id。manifest 中的 `revision`、Release tag、资产文件名、SHA-256、生成器 commit 和 bank 题数共同定义可复现版本。
 
@@ -86,10 +86,10 @@ pnpm --filter @kansoku/bench cli backfill-news \
 
 V2 pilot 分为两个不可混用的数据集：
 
-| Dataset | 允许模式 | Case | 时间与身份规则 |
-| --- | --- | ---: | --- |
-| `v2-live-pilot` | `live` | 12 | cutoff、40 日回放和事件均为 2026 年；保留真实代码 |
-| `v2-blind-pilot` | `blind` | 12 | 源行情可来自 2023—2025 年；发布题面使用合成代码、合成 2026 时间轴，并归一化价量 |
+| Dataset          | 允许模式 | Case | 时间与身份规则                                                                  |
+| ---------------- | -------- | ---: | ------------------------------------------------------------------------------- |
+| `v2-live-pilot`  | `live`   |   12 | cutoff、40 日回放和事件均为 2026 年；保留真实代码                               |
+| `v2-blind-pilot` | `blind`  |   12 | 源行情可来自 2023—2025 年；发布题面使用合成代码、合成 2026 时间轴，并归一化价量 |
 
 Live 的 250 根日线和 104 根周线历史窗口可以早于 2026 年；这些数据只构成 B0 的历史上下文。Blind 会清空新闻、日历、基本面和资金流，并重新计算指标。源代码、源日期和缩放参数只保存在 bank 目录外的私有审计文件中，不进入模型输入。
 

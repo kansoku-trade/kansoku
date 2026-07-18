@@ -1,4 +1,4 @@
-export type ChartType = "flow" | "cohort" | "sepa" | "intraday";
+export type ChartType = 'flow' | 'cohort' | 'sepa' | 'intraday';
 
 export interface RawBar {
   time: string;
@@ -26,9 +26,9 @@ export interface Candle {
   close: number;
 }
 
-export type MarkerPosition = "aboveBar" | "belowBar" | "inBar";
-export type MarkerShape = "circle" | "arrowUp" | "arrowDown" | "square";
-export type OverlayGroup = "ai" | "divergence" | "beichi" | "pattern123" | "candle";
+export type MarkerPosition = 'aboveBar' | 'belowBar' | 'inBar';
+export type MarkerShape = 'circle' | 'arrowUp' | 'arrowDown' | 'square';
+export type OverlayGroup = 'ai' | 'divergence' | 'beichi' | 'pattern123' | 'candle';
 
 export interface SeriesMarker {
   time: number;
@@ -42,25 +42,25 @@ export interface SeriesMarker {
 }
 
 export const AUTO_SIGNAL_META: Record<string, { icon: string; title: string; impact: string }> = {
-  "divergence-top": {
-    icon: "⚡",
-    title: "顶背离",
-    impact: "价格创新高但 MACD 动能走弱——上涨动力在衰减，警惕滞涨回调；若随后跌破前低即确认转弱",
+  'divergence-top': {
+    icon: '⚡',
+    title: '顶背离',
+    impact: '价格创新高但 MACD 动能走弱——上涨动力在衰减，警惕滞涨回调；若随后跌破前低即确认转弱',
   },
-  "divergence-bottom": {
-    icon: "⚡",
-    title: "底背离",
-    impact: "价格创新低但 MACD 动能走强——抛压在衰减，反弹概率上升；若放量收复前高即确认反转",
+  'divergence-bottom': {
+    icon: '⚡',
+    title: '底背离',
+    impact: '价格创新低但 MACD 动能走强——抛压在衰减，反弹概率上升；若放量收复前高即确认反转',
   },
-  "beichi-top": {
-    icon: "🌀",
-    title: "顶背驰",
-    impact: "这波上冲的推动力比前一波明显缩小——趋势进入末段，追高风险大",
+  'beichi-top': {
+    icon: '🌀',
+    title: '顶背驰',
+    impact: '这波上冲的推动力比前一波明显缩小——趋势进入末段，追高风险大',
   },
-  "beichi-bottom": {
-    icon: "🌀",
-    title: "底背驰",
-    impact: "这波下杀的推动力比前一波明显缩小——下跌动能趋于枯竭，接近阶段性底部",
+  'beichi-bottom': {
+    icon: '🌀',
+    title: '底背驰',
+    impact: '这波下杀的推动力比前一波明显缩小——下跌动能趋于枯竭，接近阶段性底部',
   },
 };
 
@@ -111,7 +111,7 @@ export interface SepaEntryPlan {
   hypothetical: boolean;
 }
 
-export type CheckStatus = "pass" | "fail" | "unknown";
+export type CheckStatus = 'pass' | 'fail' | 'unknown';
 
 export interface SepaCheck {
   label: string;
@@ -187,24 +187,24 @@ export interface SepaSidebar {
 }
 
 export interface SepaBuilt {
-  kind: "sepa";
+  kind: 'sepa';
   chart: SepaChartData;
   sidebar: SepaSidebar;
 }
 
-export type TimeframeKey = "m5" | "m15" | "h1";
+export type TimeframeKey = 'm5' | 'm15' | 'h1';
 
 export interface EmaLine {
   period: number;
   data: LinePoint[];
 }
 
-export type SessionKind = "regular" | "pre" | "post" | "overnight";
+export type SessionKind = 'regular' | 'pre' | 'post' | 'overnight';
 
 export interface OffSessionSegment {
   startTime: number;
   endTime: number;
-  kind: Exclude<SessionKind, "regular">;
+  kind: Exclude<SessionKind, 'regular'>;
 }
 
 export interface IntradayTfData {
@@ -230,7 +230,7 @@ export interface IntradayFvgZone {
   startTime: number;
   low: number;
   high: number;
-  kind: "bullish" | "bearish";
+  kind: 'bullish' | 'bearish';
 }
 
 export interface SwingPoint {
@@ -243,65 +243,65 @@ export interface DivergencePoint extends SwingPoint {
 }
 
 export interface DivergencePair {
-  kind: "top" | "bottom";
+  kind: 'top' | 'bottom';
   a: DivergencePoint;
   b: DivergencePoint;
 }
 
 export interface MacdCross {
   time: number;
-  type: "golden" | "death";
+  type: 'golden' | 'death';
 }
 
 export type MacdStructureKind =
-  | "golden_above"
-  | "golden_below"
-  | "death_above"
-  | "death_below"
-  | "double_golden_below"
-  | "double_golden_above"
-  | "double_death_above"
-  | "double_death_below"
-  | "zero_cross_up"
-  | "zero_cross_down";
+  | 'golden_above'
+  | 'golden_below'
+  | 'death_above'
+  | 'death_below'
+  | 'double_golden_below'
+  | 'double_golden_above'
+  | 'double_death_above'
+  | 'double_death_below'
+  | 'zero_cross_up'
+  | 'zero_cross_down';
 
 export interface MacdStructureSignal {
   kind: MacdStructureKind;
   time: number;
   dif: number;
-  bias: "bullish" | "bearish";
+  bias: 'bullish' | 'bearish';
   label: string;
   implication: string;
   confirmed: boolean;
 }
 
 export type CandlePatternKind =
-  | "bullish_engulfing"
-  | "bearish_engulfing"
-  | "morning_star"
-  | "evening_star"
-  | "hammer"
-  | "hanging_man"
-  | "inverted_hammer"
-  | "shooting_star"
-  | "pin_bar_lower"
-  | "pin_bar_upper"
-  | "dark_cloud_cover"
-  | "piercing_line"
-  | "bullish_harami"
-  | "bearish_harami"
-  | "three_white_soldiers"
-  | "three_black_crows"
-  | "doji"
-  | "long_legged_doji"
-  | "gravestone_doji"
-  | "dragonfly_doji"
-  | "tweezer_top"
-  | "tweezer_bottom"
-  | "bullish_marubozu"
-  | "bearish_marubozu";
+  | 'bullish_engulfing'
+  | 'bearish_engulfing'
+  | 'morning_star'
+  | 'evening_star'
+  | 'hammer'
+  | 'hanging_man'
+  | 'inverted_hammer'
+  | 'shooting_star'
+  | 'pin_bar_lower'
+  | 'pin_bar_upper'
+  | 'dark_cloud_cover'
+  | 'piercing_line'
+  | 'bullish_harami'
+  | 'bearish_harami'
+  | 'three_white_soldiers'
+  | 'three_black_crows'
+  | 'doji'
+  | 'long_legged_doji'
+  | 'gravestone_doji'
+  | 'dragonfly_doji'
+  | 'tweezer_top'
+  | 'tweezer_bottom'
+  | 'bullish_marubozu'
+  | 'bearish_marubozu';
 
-export type CandlePatternStatus = "pending" | "confirmed" | "invalidated" | "expired";
+export type CandlePatternStatus = 'pending' | 'confirmed' | 'invalidated' | 'expired';
 
 export interface CandlePatternStats {
   sample: number;
@@ -312,7 +312,7 @@ export interface CandlePattern {
   kind: CandlePatternKind;
   time: number;
   price: number;
-  bias: "bullish" | "bearish" | "neutral";
+  bias: 'bullish' | 'bearish' | 'neutral';
   label: string;
   implication: string;
   span?: number;
@@ -324,8 +324,8 @@ export interface CandlePattern {
 }
 
 export interface Pattern123 {
-  kind: "bullish" | "bearish";
-  status: "forming" | "confirmed";
+  kind: 'bullish' | 'bearish';
+  status: 'forming' | 'confirmed';
   p1: SwingPoint;
   p2: SwingPoint;
   p3: SwingPoint;
@@ -373,16 +373,10 @@ export interface IntradayEntryPlan {
   entry_status_note?: string | null;
 }
 
-export type EntryPlanStatus = "waiting" | "triggered" | "invalidated" | "stopped";
+export type EntryPlanStatus = 'waiting' | 'triggered' | 'invalidated' | 'stopped';
 
 export type IntradayPriceZoneKind =
-  | "entry"
-  | "stop"
-  | "target"
-  | "support"
-  | "resistance"
-  | "invalidation"
-  | "watch";
+  'entry' | 'stop' | 'target' | 'support' | 'resistance' | 'invalidation' | 'watch';
 
 export interface IntradayPriceZone {
   kind: IntradayPriceZoneKind;
@@ -396,7 +390,7 @@ export interface IntradayPriceZone {
 }
 
 export interface IntradayTargetContext {
-  key: "target1" | "target2";
+  key: 'target1' | 'target2';
   label: string;
   price: number;
   zone: IntradayPriceZone | null;
@@ -417,7 +411,7 @@ export interface PredictionSignal {
   timeframe: TimeframeKey;
   time?: string;
   price?: number;
-  bias?: "bullish" | "bearish" | "neutral";
+  bias?: 'bullish' | 'bearish' | 'neutral';
   label?: string;
   points?: { time: string; price: number; macd_value?: number }[];
 }
@@ -431,7 +425,7 @@ export interface RangeBoundPlan {
 }
 
 export interface IntradayPrediction {
-  direction: "long" | "short" | "neutral";
+  direction: 'long' | 'short' | 'neutral';
   anchor?: { timeframe: TimeframeKey; time: string; price: number };
   scenarios?: PredictionScenario[];
   range_bound_plan?: RangeBoundPlan;
@@ -460,9 +454,9 @@ export interface IntradayPrediction {
   signals?: PredictionSignal[];
 }
 
-export type ContextStance = "long" | "short" | "neutral";
-export type ContextNewsSource = "longbridge" | "x" | "trump" | "sec" | "gdelt";
-export type ContextNewsTag = "catalyst" | "regulatory" | "sentiment" | "macro";
+export type ContextStance = 'long' | 'short' | 'neutral';
+export type ContextNewsSource = 'longbridge' | 'x' | 'trump' | 'sec' | 'gdelt';
+export type ContextNewsTag = 'catalyst' | 'regulatory' | 'sentiment' | 'macro';
 
 export interface ContextConclusion {
   stance: ContextStance;
@@ -492,7 +486,7 @@ export interface DayLevelRange {
 }
 
 export interface IntradayDayContext {
-  daily_trend: "up" | "down" | "range" | null;
+  daily_trend: 'up' | 'down' | 'range' | null;
   daily_close: number | null;
   daily_ma20: number | null;
   daily_ma50: number | null;
@@ -508,7 +502,7 @@ export interface OptionsWallLevel {
   strike: number;
   call_oi: number;
   put_oi: number;
-  dominant: "call" | "put";
+  dominant: 'call' | 'put';
 }
 
 export interface IntradayOptionsLevels {
@@ -549,7 +543,7 @@ export interface IntradaySidebar {
 }
 
 export interface IntradayBuilt {
-  kind: "intraday";
+  kind: 'intraday';
   timeframes: Record<TimeframeKey, IntradayTfData>;
   defaultTf: TimeframeKey;
   entryPlan: IntradayEntryPlan | null;
@@ -567,8 +561,8 @@ export interface CohortPoint {
 }
 
 export type SimpleBuilt =
-  | { kind: "simple"; chartType: "flow"; rows: FlowRow[]; subtitle: string }
-  | { kind: "simple"; chartType: "cohort"; rows: CohortPoint[]; subtitle: string };
+  | { kind: 'simple'; chartType: 'flow'; rows: FlowRow[]; subtitle: string }
+  | { kind: 'simple'; chartType: 'cohort'; rows: CohortPoint[]; subtitle: string };
 
 export type ChartBuilt = SimpleBuilt | SepaBuilt | IntradayBuilt;
 
@@ -656,10 +650,14 @@ export interface CockpitPosition {
   last: number;
   unrealized: number;
   unrealizedPct: number;
-  distances: { stop_pct: number | null; target1_pct: number | null; target2_pct: number | null } | null;
+  distances: {
+    stop_pct: number | null;
+    target1_pct: number | null;
+    target2_pct: number | null;
+  } | null;
 }
 
-export type OutcomeStatus = "hit_target" | "hit_stop" | "held_range" | "broke_range" | "open";
+export type OutcomeStatus = 'hit_target' | 'hit_stop' | 'held_range' | 'broke_range' | 'open';
 
 export interface AnalysisOutcome {
   status: OutcomeStatus;
@@ -670,7 +668,7 @@ export interface AnalysisOutcome {
 
 export interface SymbolAnalysisRow extends ChartMeta {
   url: string;
-  direction: "long" | "short" | "neutral" | null;
+  direction: 'long' | 'short' | 'neutral' | null;
   anchor: { time: string; price: number } | null;
   outcome: AnalysisOutcome | null;
 }
@@ -723,7 +721,7 @@ export interface OverviewRow {
   chart_id: string;
   url: string;
   title: string;
-  direction: "long" | "short" | "neutral" | null;
+  direction: 'long' | 'short' | 'neutral' | null;
   last: number | null;
   pct: number | null;
   session: string | null;
@@ -768,7 +766,7 @@ export interface PortfolioSummary {
 export interface RecapSettlementRow {
   symbol: string;
   chart_id: string;
-  direction: "long" | "short" | "neutral" | null;
+  direction: 'long' | 'short' | 'neutral' | null;
   day_pct: number | null;
   outcome: AnalysisOutcome | null;
 }
@@ -780,8 +778,8 @@ export interface OverviewRecap {
   usage: AiUsageSummary;
 }
 
-export type CommentLevel = "info" | "warn" | "alert" | "error";
-export type CommentSource = "commentator" | "analyst" | "system";
+export type CommentLevel = 'info' | 'warn' | 'alert' | 'error';
+export type CommentSource = 'commentator' | 'analyst' | 'system';
 
 export interface CockpitComment {
   ts: string;
@@ -794,7 +792,7 @@ export interface CockpitComment {
   chartId?: string;
 }
 
-export type NoticeKind = "analysis_done" | "deep_dive_done" | "deep_dive_failed";
+export type NoticeKind = 'analysis_done' | 'deep_dive_done' | 'deep_dive_failed';
 
 export interface Notice {
   symbol: string;
@@ -804,7 +802,7 @@ export interface Notice {
   at: string;
 }
 
-export type AnnotationKind = "trendline" | "hline" | "rect" | "fib" | "polyline";
+export type AnnotationKind = 'trendline' | 'hline' | 'rect' | 'fib' | 'polyline';
 
 export interface AnnotationPoint {
   time: number;
@@ -823,7 +821,7 @@ export interface Annotation {
   kind: AnnotationKind;
   points: AnnotationPoint[];
   createdAt: number;
-  source?: "user" | "ai";
+  source?: 'user' | 'ai';
   label?: string;
   style?: AnnotationStyle;
 }

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { useState } from 'react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 
 export interface LayerItem {
   key: string;
@@ -25,7 +25,7 @@ export function LayerPanel({
   groups,
   checked: checkedProp,
   defaultChecked = true,
-  title = "图层",
+  title = '图层',
   defaultCollapsed = true,
 }: LayerPanelProps) {
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
@@ -47,7 +47,7 @@ export function LayerPanel({
   const toggleCollapsed = () => setCollapsed((c) => !c);
 
   return (
-    <div className={`layer-panel${collapsed ? " collapsed" : ""}`} aria-label={title}>
+    <div className={`layer-panel${collapsed ? ' collapsed' : ''}`} aria-label={title}>
       <div
         className="lp-header"
         role="button"
@@ -55,7 +55,7 @@ export function LayerPanel({
         aria-expanded={!collapsed}
         onClick={toggleCollapsed}
         onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
+          if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
             toggleCollapsed();
           }
@@ -63,7 +63,11 @@ export function LayerPanel({
       >
         <span>{headerLabel}</span>
         <span className="lp-arrow">
-          {collapsed ? <ChevronRight className="icon" size={12} /> : <ChevronDown className="icon" size={12} />}
+          {collapsed ? (
+            <ChevronRight className="icon" size={12} />
+          ) : (
+            <ChevronDown className="icon" size={12} />
+          )}
         </span>
       </div>
       <div className="lp-body">

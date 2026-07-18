@@ -1,6 +1,6 @@
-import type { ReactNode } from "react";
-import type { FeatureKey } from "@kansoku/pro-api/features";
-import { useFeature } from "./useFeature";
+import type { ReactNode } from 'react';
+import type { FeatureKey } from '@kansoku/pro-api/features';
+import { useFeature } from './useFeature';
 
 export function FeatureGate({
   feature,
@@ -12,7 +12,7 @@ export function FeatureGate({
   children: ReactNode;
 }) {
   const { state } = useFeature(feature);
-  if (state === "absent") return null;
-  if (state === "locked") return <>{locked}</>;
+  if (state === 'absent') return null;
+  if (state === 'locked') return <>{locked}</>;
   return <>{children}</>;
 }

@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactNode } from 'react';
 import {
   formatClockInZone,
   formatDateTimeInZone,
@@ -11,14 +11,11 @@ import {
   shouldShowLocalTime,
   type Market,
   type TimeInput,
-} from "@kansoku/shared/time";
-import {
-  type TimeDisplayPreference,
-  useTimeDisplayPreference,
-} from "../timeDisplayPreference";
-import { Tooltip } from "./Tooltip";
+} from '@kansoku/shared/time';
+import { type TimeDisplayPreference, useTimeDisplayPreference } from '../timeDisplayPreference';
+import { Tooltip } from './Tooltip';
 
-type MarketTimeFormat = "clock" | "date-time" | "month-day-time";
+type MarketTimeFormat = 'clock' | 'date-time' | 'month-day-time';
 
 interface MarketTimePresentation {
   label: string;
@@ -36,14 +33,20 @@ interface MarketTimeProps {
 }
 
 const MARKET_TOOLTIP_LABEL: Record<Market, string> = {
-  US: "美东时间",
-  HK: "港股（香港时间）",
-  CN: "北京时间",
+  US: '美东时间',
+  HK: '港股（香港时间）',
+  CN: '北京时间',
 };
 
-function formatTime(value: TimeInput, format: MarketTimeFormat, includeZone: boolean | undefined, market: Market): string {
-  if (format === "clock") return formatMarketClock(value, includeZone ?? false, market);
-  if (format === "month-day-time") return formatMarketMonthDayTime(value, includeZone ?? false, market);
+function formatTime(
+  value: TimeInput,
+  format: MarketTimeFormat,
+  includeZone: boolean | undefined,
+  market: Market,
+): string {
+  if (format === 'clock') return formatMarketClock(value, includeZone ?? false, market);
+  if (format === 'month-day-time')
+    return formatMarketMonthDayTime(value, includeZone ?? false, market);
   return formatMarketDateTime(value, includeZone ?? true, market);
 }
 
@@ -53,8 +56,9 @@ function formatLocalTime(
   format: MarketTimeFormat,
   includeZone?: boolean,
 ): string {
-  if (format === "clock") return formatClockInZone(value, timeZone, includeZone ?? false);
-  if (format === "month-day-time") return formatMonthDayTimeInZone(value, timeZone, includeZone ?? false);
+  if (format === 'clock') return formatClockInZone(value, timeZone, includeZone ?? false);
+  if (format === 'month-day-time')
+    return formatMonthDayTimeInZone(value, timeZone, includeZone ?? false);
   return formatDateTimeInZone(value, timeZone, includeZone ?? true);
 }
 
@@ -62,9 +66,9 @@ export function resolveMarketTimePresentation({
   value,
   preference,
   timeZone,
-  format = "date-time",
+  format = 'date-time',
   includeZone,
-  market = "US",
+  market = 'US',
 }: {
   value: TimeInput;
   preference: TimeDisplayPreference;
@@ -74,9 +78,10 @@ export function resolveMarketTimePresentation({
   market?: Market;
 }): MarketTimePresentation {
   const marketLabel = formatTime(value, format, includeZone, market);
-  if (!shouldShowLocalTime(value, timeZone, marketTimeZone(market))) return { label: marketLabel, tooltip: null };
+  if (!shouldShowLocalTime(value, timeZone, marketTimeZone(market)))
+    return { label: marketLabel, tooltip: null };
 
-  if (preference === "local") {
+  if (preference === 'local') {
     return {
       label: formatLocalTime(value, timeZone, format, includeZone),
       tooltip: `${MARKET_TOOLTIP_LABEL[market]} ${formatMarketDateTime(value, true, market)}`,
@@ -93,9 +98,9 @@ export function MarketTime({
   children,
   className,
   focusable,
-  format = "date-time",
+  format = 'date-time',
   includeZone,
-  market = "US",
+  market = 'US',
   value,
 }: MarketTimeProps) {
   const preference = useTimeDisplayPreference();
@@ -107,7 +112,7 @@ export function MarketTime({
     includeZone,
     market,
   });
-  const label = preference === "local" ? presentation.label : (children ?? presentation.label);
+  const label = preference === 'local' ? presentation.label : (children ?? presentation.label);
 
   if (!presentation.tooltip) return <span className={className}>{label}</span>;
 

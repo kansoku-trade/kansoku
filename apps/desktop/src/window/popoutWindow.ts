@@ -1,16 +1,16 @@
-import { existsSync } from "node:fs";
-import { join } from "node:path";
-import { app, BrowserWindow, screen } from "electron";
-import { IS_DEV } from "../boot/env.js";
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
+import { app, BrowserWindow, screen } from 'electron';
+import { IS_DEV } from '../boot/env.js';
 import {
   APP_ICON_PNG,
   applyWindowSecurity,
   DEV_WEB_URL,
   PROD_APP_URL,
   WINDOW_BG,
-} from "./mainWindow.js";
+} from './mainWindow.js';
 
-export const SYMBOL_PATTERN = /^(?=.*[A-Z0-9])[A-Z0-9.\-]{1,20}$/i;
+export const SYMBOL_PATTERN = /^(?=.*[\da-z])[\d.a-z\-]{1,20}$/i;
 
 export const POPOUT_DEFAULT_WIDTH = 520;
 export const POPOUT_DEFAULT_HEIGHT = 420;
@@ -73,23 +73,23 @@ export function createPopoutWindow(symbol: string): BrowserWindow {
     minHeight: POPOUT_MIN_HEIGHT,
     backgroundColor: WINDOW_BG,
     show: false,
-    titleBarStyle: "hiddenInset",
+    titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 12, y: 12 },
     ...(existsSync(APP_ICON_PNG) ? { icon: APP_ICON_PNG } : {}),
     webPreferences: {
       sandbox: true,
       contextIsolation: true,
       nodeIntegration: false,
-      preload: join(app.getAppPath(), "dist-preload", "preload.cjs"),
+      preload: join(app.getAppPath(), 'dist-preload', 'preload.cjs'),
     },
   });
 
   popoutWindows.add(win);
-  win.on("closed", () => {
+  win.on('closed', () => {
     popoutWindows.delete(win);
   });
 
-  win.once("ready-to-show", () => {
+  win.once('ready-to-show', () => {
     win.show();
   });
 

@@ -1,14 +1,17 @@
 {
   "$schema": "./schema.json",
-  "schemaVersion": 1,
-  "id": "v2-live-pilot",
-  "revision": "r1",
-  "kind": "episode",
-  "status": "pilot",
-  "modes": ["live"],
+  "banks": {
+    "swing": 12
+  },
   "cohort": "live-2026",
-  "visibility": "private",
-  "repository": "kansoku-trade/kansoku-bench-data",
+  "generator": {
+    "repository": "kansoku-trade/kansoku",
+    "commit": "36987d43be22df9fd81b341f87292c2e3ad8e4aa"
+  },
+  "id": "v2-live-pilot",
+  "kind": "episode",
+  "modes": ["live"],
+  "publishedAt": "2026-07-18T07:57:56Z",
   "release": {
     "tag": "dataset-v2-live-pilot-r1",
     "asset": "kansoku-bench-v2-live-pilot-r1.tar.zst",
@@ -16,12 +19,9 @@
     "sizeBytes": 280770,
     "archiveRoot": "v2-live-pilot"
   },
-  "banks": {
-    "swing": 12
-  },
-  "generator": {
-    "repository": "kansoku-trade/kansoku",
-    "commit": "36987d43be22df9fd81b341f87292c2e3ad8e4aa"
-  },
-  "publishedAt": "2026-07-18T07:57:56Z"
+  "repository": "kansoku-trade/kansoku-bench-data",
+  "revision": "r1",
+  "schemaVersion": 1,
+  "status": "pilot",
+  "visibility": "private"
 }

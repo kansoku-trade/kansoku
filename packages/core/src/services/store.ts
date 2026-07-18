@@ -1,15 +1,15 @@
-import { promises as fs } from "node:fs";
-import { join } from "node:path";
-import { desc, eq, sql } from "drizzle-orm";
-import { SYMBOL_TYPES } from "@kansoku/shared/chartUrl";
-import { CURRENT_SCHEMA_VERSION, type ChartDoc, type ChartMeta } from "@kansoku/shared/types";
-import { getDb, type Db } from "../db/index.js";
-import { chartMeta, outcomes } from "../db/schema.js";
-import { CHART_DATA_DIR } from "../env.js";
-import { setSymbolFollowing } from "../ai/follows.js";
-import { isFeatureActive } from "../pro/features.js";
-import { publishAnalysisCreated } from "../realtime/analyses.js";
-import { migrateLegacyDoc, type BuildResult } from "./build.js";
+import { promises as fs } from 'node:fs';
+import { join } from 'node:path';
+import { desc, eq, sql } from 'drizzle-orm';
+import { SYMBOL_TYPES } from '@kansoku/shared/chartUrl';
+import { CURRENT_SCHEMA_VERSION, type ChartDoc, type ChartMeta } from '@kansoku/shared/types';
+import { getDb, type Db } from '../db/index.js';
+import { chartMeta, outcomes } from '../db/schema.js';
+import { CHART_DATA_DIR } from '../env.js';
+import { setSymbolFollowing } from '../ai/follows.js';
+import { isFeatureActive } from '../pro/features.js';
+import { publishAnalysisCreated } from '../realtime/analyses.js';
+import { migrateLegacyDoc, type BuildResult } from './build.js';
 
 function toMeta(doc: ChartDoc): ChartMeta {
   return {
@@ -28,7 +28,7 @@ function rowToMeta(row: typeof chartMeta.$inferSelect): ChartMeta {
   return {
     id: row.id,
     schema_version: row.schemaVersion,
-    type: row.type as ChartMeta["type"],
+    type: row.type as ChartMeta['type'],
     title: row.title,
     symbol: row.symbol,
     created_at: row.createdAt,
@@ -70,15 +70,15 @@ export interface ChartIndexRefreshResult {
 export async function refreshChartIndex(db: Db = getDb()): Promise<ChartIndexRefreshResult> {
   await ensureDir();
   const files = (await fs.readdir(CHART_DATA_DIR)).filter(
-    (file) => file.endsWith(".json") && file !== "index.json",
+    (file) => file.endsWith('.json') && file !== 'index.json',
   );
   let indexed = 0;
-  const failures: ChartIndexRefreshResult["failures"] = [];
+  const failures: ChartIndexRefreshResult['failures'] = [];
 
   for (const file of files) {
     try {
-      const doc = JSON.parse(await fs.readFile(join(CHART_DATA_DIR, file), "utf-8")) as ChartDoc;
-      if (!doc.id || !doc.type) throw new Error("缺少图表 id 或 type");
+      const doc = JSON.parse(await fs.readFile(join(CHART_DATA_DIR, file), 'utf8')) as ChartDoc;
+      if (!doc.id || !doc.type) throw new Error('缺少图表 id 或 type');
       const row = metaToRow(toMeta(doc));
       await db.insert(chartMeta).values(row).onConflictDoUpdate({ target: chartMeta.id, set: row });
       indexed++;
@@ -114,7 +114,7 @@ export async function listCharts(filter: ListFilter = {}, db: Db = getDb()): Pro
   }
   if (filter.symbol) {
     const s = filter.symbol.toUpperCase();
-    metas = metas.filter((m) => (m.symbol ?? "").toUpperCase().includes(s));
+    metas = metas.filter((m) => (m.symbol ?? '').toUpperCase().includes(s));
   }
   if (filter.limit && filter.limit > 0) metas = metas.slice(0, filter.limit);
   return metas;
@@ -123,7 +123,7 @@ export async function listCharts(filter: ListFilter = {}, db: Db = getDb()): Pro
 export async function loadChart(id: string): Promise<ChartDoc | null> {
   if (!/^[\p{L}\p{N}._-]+$/u.test(id)) return null;
   try {
-    const doc = JSON.parse(await fs.readFile(docPath(id), "utf-8")) as ChartDoc;
+    const doc = JSON.parse(await fs.readFile(docPath(id), 'utf8')) as ChartDoc;
     return migrateLegacyDoc(doc);
   } catch {
     return null;
@@ -166,16 +166,21 @@ export async function createChart(result: BuildResult, db: Db = getDb()): Promis
     built: result.built,
   };
   await saveChart(doc, db);
-  if (doc.type === "intraday" && doc.symbol && (await isFeatureActive("symbol-follow"))) {
+  if (doc.type === 'intraday' && doc.symbol && (await isFeatureActive('symbol-follow'))) {
     setSymbolFollowing(doc.symbol, true);
   }
-  if (doc.symbol && SYMBOL_TYPES.has(doc.type)) publishAnalysisCreated({ symbol: doc.symbol, chartId: doc.id, type: doc.type });
+  if (doc.symbol && SYMBOL_TYPES.has(doc.type))
+    publishAnalysisCreated({ symbol: doc.symbol, chartId: doc.id, type: doc.type });
   return doc;
 }
 
 export async function deleteChart(id: string, db: Db = getDb()): Promise<boolean> {
   const doc = await loadChart(id);
-  const indexed = await db.select({ id: chartMeta.id }).from(chartMeta).where(eq(chartMeta.id, id)).limit(1);
+  const indexed = await db
+    .select({ id: chartMeta.id })
+    .from(chartMeta)
+    .where(eq(chartMeta.id, id))
+    .limit(1);
   if (!doc && indexed.length === 0) return false;
   if (doc) await fs.rm(docPath(id));
   await db.delete(chartMeta).where(eq(chartMeta.id, id));

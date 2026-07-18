@@ -15,11 +15,11 @@ if [[ ! -f "$SRC" ]]; then
   echo "source SVG missing: $SRC" >&2
   exit 1
 fi
-if ! command -v magick >/dev/null 2>&1; then
+if ! command -v magick > /dev/null 2>&1; then
   echo "ImageMagick (magick) required" >&2
   exit 1
 fi
-if ! command -v iconutil >/dev/null 2>&1; then
+if ! command -v iconutil > /dev/null 2>&1; then
   echo "macOS iconutil required" >&2
   exit 1
 fi
@@ -37,7 +37,7 @@ BODY_SIZE=824
 # (rx=112 within a 512 viewBox). Color-keying white out of the corners aliases
 # the arc and leaves a gray fringe; instead we cut the corners with a
 # supersampled rounded-rect mask so the edge is anti-aliased and the base pure.
-CORNER_RADIUS=$(( BODY_SIZE * 112 / 512 ))
+CORNER_RADIUS=$((BODY_SIZE * 112 / 512))
 MASK="$TMP_DIR/mask.png"
 magick -size "$((BODY_SIZE * 4))x$((BODY_SIZE * 4))" xc:black \
   -fill white -draw "roundrectangle 0,0 $((BODY_SIZE * 4 - 1)),$((BODY_SIZE * 4 - 1)) $((CORNER_RADIUS * 4)),$((CORNER_RADIUS * 4))" \
@@ -47,8 +47,8 @@ BODY="$TMP_DIR/body.png"
 # qlmanage writes <basename>.png into -o dir; it renders the mark on an opaque
 # white canvas. We keep its stroke fidelity (ImageMagick's SVG renderer drops
 # the yellow mid-stroke) and punch the transparent corners with the mask above.
-if command -v qlmanage >/dev/null 2>&1; then
-  qlmanage -t -s "$BODY_SIZE" -o "$TMP_DIR" "$SRC" >/dev/null
+if command -v qlmanage > /dev/null 2>&1; then
+  qlmanage -t -s "$BODY_SIZE" -o "$TMP_DIR" "$SRC" > /dev/null
   RAW="$TMP_DIR/$(basename "$SRC").png"
   if [[ ! -f "$RAW" ]]; then
     echo "qlmanage did not produce a thumbnail" >&2

@@ -1,9 +1,9 @@
-import type { AnalysisOutcome, PredictionStats, StatsBucket } from "@kansoku/shared/types";
+import type { AnalysisOutcome, PredictionStats, StatsBucket } from '@kansoku/shared/types';
 
-export type StatsOrigin = "analyst" | "manual";
+export type StatsOrigin = 'analyst' | 'manual';
 
 export interface StatsRow {
-  direction: "long" | "short" | "neutral" | null;
+  direction: 'long' | 'short' | 'neutral' | null;
   origin: StatsOrigin;
   outcome: AnalysisOutcome | null;
 }
@@ -40,12 +40,12 @@ function addRow(bucket: MutableBucket, outcome: AnalysisOutcome | null): void {
     bucket.unjudged += 1;
     return;
   }
-  if (outcome.status === "hit_target") bucket.hit_target += 1;
-  else if (outcome.status === "hit_stop") bucket.hit_stop += 1;
-  else if (outcome.status === "held_range") bucket.held_range += 1;
-  else if (outcome.status === "broke_range") bucket.broke_range += 1;
+  if (outcome.status === 'hit_target') bucket.hit_target += 1;
+  else if (outcome.status === 'hit_stop') bucket.hit_stop += 1;
+  else if (outcome.status === 'held_range') bucket.held_range += 1;
+  else if (outcome.status === 'broke_range') bucket.broke_range += 1;
   else bucket.open += 1;
-  if (outcome.status !== "open") {
+  if (outcome.status !== 'open') {
     bucket.resolved_pct_sum += outcome.pct_since_anchor;
     bucket.resolved_count += 1;
   }
@@ -81,10 +81,10 @@ export function aggregateStats(rows: StatsRow[]): PredictionStats {
 
   for (const row of rows) {
     addRow(overall, row.outcome);
-    if (row.direction === "long") addRow(long, row.outcome);
-    else if (row.direction === "short") addRow(short, row.outcome);
-    else if (row.direction === "neutral") addRow(neutral, row.outcome);
-    addRow(row.origin === "analyst" ? analyst : manual, row.outcome);
+    if (row.direction === 'long') addRow(long, row.outcome);
+    else if (row.direction === 'short') addRow(short, row.outcome);
+    else if (row.direction === 'neutral') addRow(neutral, row.outcome);
+    addRow(row.origin === 'analyst' ? analyst : manual, row.outcome);
   }
 
   return {

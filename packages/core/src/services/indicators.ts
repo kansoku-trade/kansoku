@@ -1,5 +1,5 @@
-import type { Candle, LinePoint, RawBar, SwingPoint } from "@kansoku/shared/types";
-import { ClientError } from "../errors.js";
+import type { Candle, LinePoint, RawBar, SwingPoint } from '@kansoku/shared/types';
+import { ClientError } from '../errors.js';
 
 export function sma(arr: number[], n: number): (number | null)[] {
   const out: (number | null)[] = [];
@@ -49,7 +49,7 @@ export function macd(
     return f !== null && s !== null ? f - s : null;
   });
   const start = dif.findIndex((v) => v !== null);
-  const dea: (number | null)[] = new Array(dif.length).fill(null);
+  const dea: (number | null)[] = Array.from({ length: dif.length }, () => null);
   if (start >= 0) {
     const deaTail = ema(dif.slice(start) as number[], signal);
     deaTail.forEach((v, i) => {
@@ -103,7 +103,7 @@ export function coerceKlines(kline: RawBar[], label: string, minBars = 50): Coer
   if (!kline || kline.length < minBars) {
     throw new ClientError(
       `sepa: ${label} needs at least ${minBars} bars (got ${kline?.length ?? 0}); SEPA computes MA50/150/200.`,
-      "Pull more history: `longbridge kline <SYM> --period day --count 260`.",
+      'Pull more history: `longbridge kline <SYM> --period day --count 260`.',
     );
   }
   return {

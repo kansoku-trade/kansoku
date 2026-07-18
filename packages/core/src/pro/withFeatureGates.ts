@@ -1,5 +1,5 @@
-import type { RouteGroup } from "../contract/defineRoutes.js";
-import { requireFeature } from "./features.js";
+import type { RouteGroup } from '../contract/defineRoutes.js';
+import { requireFeature } from './features.js';
 
 export function withFeatureGates<Api>(group: RouteGroup<Api>, impl: Api): Api {
   const result = { ...impl };

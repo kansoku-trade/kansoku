@@ -1,6 +1,6 @@
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
-import { archiveFileUrl } from "./gdeltArchiveWindow.js";
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import { archiveFileUrl } from './gdeltArchiveWindow.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -15,8 +15,8 @@ export const fetchArchiveFileLive: FetchArchiveFile = async (stamp) => {
 };
 
 export const readArchiveCsvLive: ReadArchiveCsv = async (zipPath) => {
-  const { stdout } = await execFileAsync("unzip", ["-p", zipPath], {
-    encoding: "utf8",
+  const { stdout } = await execFileAsync('unzip', ['-p', zipPath], {
+    encoding: 'utf8',
     maxBuffer: 1024 * 1024 * 256,
   });
   return stdout;

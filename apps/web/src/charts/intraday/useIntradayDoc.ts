@@ -1,16 +1,16 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import type { ChartBuilt, ChartDoc, IntradayBuilt, TimeframeKey } from "@kansoku/shared/types";
-import { useQuery } from "@web/apiHooks";
-import { client } from "@web/client";
-import { useWsChannel } from "@web/useWsChannel";
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { ChartBuilt, ChartDoc, IntradayBuilt, TimeframeKey } from '@kansoku/shared/types';
+import { useQuery } from '@web/apiHooks';
+import { client } from '@web/client';
+import { useWsChannel } from '@web/useWsChannel';
 
-const LIVE_TYPES = new Set(["flow", "intraday"]);
+const LIVE_TYPES = new Set(['flow', 'intraday']);
 
-const easternDateFormatter = new Intl.DateTimeFormat("en-CA", {
-  timeZone: "America/New_York",
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
+const easternDateFormatter = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'America/New_York',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
 });
 
 function isCurrentSessionId(id: string): boolean {
@@ -19,10 +19,13 @@ function isCurrentSessionId(id: string): boolean {
 
 export type ChartDocView = ChartDoc & { prediction_stale?: boolean };
 
-export function resolveIntradayTf(built: IntradayBuilt, preferred: TimeframeKey | null): TimeframeKey {
+export function resolveIntradayTf(
+  built: IntradayBuilt,
+  preferred: TimeframeKey | null,
+): TimeframeKey {
   if (preferred && preferred in built.timeframes) return preferred;
   if (built.defaultTf in built.timeframes) return built.defaultTf;
-  return "m15";
+  return 'm15';
 }
 
 export function useIntradayDoc(id: string | null) {
@@ -60,22 +63,32 @@ export function useIntradayDoc(id: string | null) {
   const live = Boolean(id && doc && LIVE_TYPES.has(doc.type) && doc.symbol && isCurrent);
   const canLoadForward = Boolean(id && doc && LIVE_TYPES.has(doc.type) && doc.symbol && !isCurrent);
   const [forwardBusy, setForwardBusy] = useState(false);
-  const { degraded } = useWsChannel<{ built: ChartBuilt; prediction_updated_at?: string; prediction_stale?: boolean }>(
-    live && id ? { kind: "chart", id, ...(viewCount ? { count: viewCount } : {}) } : null,
-    (d) =>
-      setDoc((prev) =>
-        prev
-          ? { ...prev, built: d.built, prediction_updated_at: d.prediction_updated_at, prediction_stale: d.prediction_stale }
-          : prev,
-      ),
+  const { degraded } = useWsChannel<{
+    built: ChartBuilt;
+    prediction_updated_at?: string;
+    prediction_stale?: boolean;
+  }>(live && id ? { kind: 'chart', id, ...(viewCount ? { count: viewCount } : {}) } : null, (d) =>
+    setDoc((prev) =>
+      prev
+        ? {
+            ...prev,
+            built: d.built,
+            prediction_updated_at: d.prediction_updated_at,
+            prediction_stale: d.prediction_stale,
+          }
+        : prev,
+    ),
   );
 
   const loadHistory = useCallback(() => {
     if (!id) return;
     if (historyBusyRef.current || historyExhaustedRef.current) return;
     const docNow = docRef.current;
-    if (!docNow || docNow.built.kind !== "intraday") return;
-    const bars = Math.max(...Object.values(docNow.built.timeframes).map((t) => t.candles.length), 0);
+    if (!docNow || docNow.built.kind !== 'intraday') return;
+    const bars = Math.max(
+      ...Object.values(docNow.built.timeframes).map((t) => t.candles.length),
+      0,
+    );
     const current = viewCountRef.current ?? bars;
     if (current <= 0) return;
     historyBusyRef.current = true;
@@ -86,8 +99,11 @@ export function useIntradayDoc(id: string | null) {
       .then((d) => {
         if (historyTokenRef.current !== token) return;
         const built = d.built as ChartBuilt;
-        if (built.kind === "intraday") {
-          const grown = Math.max(...Object.values(built.timeframes).map((t) => t.candles.length), 0);
+        if (built.kind === 'intraday') {
+          const grown = Math.max(
+            ...Object.values(built.timeframes).map((t) => t.candles.length),
+            0,
+          );
           if (grown <= bars) historyExhaustedRef.current = true;
         }
         setViewCount(d.count);
@@ -107,7 +123,7 @@ export function useIntradayDoc(id: string | null) {
     setForwardBusy(true);
     const count = viewCountRef.current;
     client.charts
-      .built({ id, mode: "forward", ...(count ? { count } : {}) })
+      .built({ id, mode: 'forward', ...(count ? { count } : {}) })
       .then((d) => {
         setViewCount(d.count);
         setDoc((p) => (p ? { ...p, built: d.built as ChartBuilt } : p));
@@ -116,5 +132,16 @@ export function useIntradayDoc(id: string | null) {
       .finally(() => setForwardBusy(false));
   }, [id, forwardBusy]);
 
-  return { doc, error, degraded, live, canLoadForward, loadForward, forwardBusy, intradayTf, setIntradayTf, loadHistory };
+  return {
+    doc,
+    error,
+    degraded,
+    live,
+    canLoadForward,
+    loadForward,
+    forwardBusy,
+    intradayTf,
+    setIntradayTf,
+    loadHistory,
+  };
 }

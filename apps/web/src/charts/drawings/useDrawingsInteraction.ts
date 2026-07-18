@@ -1,10 +1,18 @@
-import { useEffect, type MutableRefObject } from "react";
-import type { Logical } from "lightweight-charts";
-import type { Annotation, AnnotationPoint, AnnotationStyle } from "@kansoku/shared/types";
-import { logicalToTime, timeToLogical, type HitRegion, type Pt } from "@kansoku/shared/drawings";
-import { DrawingsPrimitive, type HoverLabel, type MeasureShape } from "./drawingsPrimitive";
-import { dragPoints, isMultiPointTool, makeAnnotation, MAX_POLYLINE_POINTS, pickHit, pixelDistance, type DrawingTool } from "./drawingsMachine";
-import type { DrawingsHandle } from "./useDrawings";
+import { useEffect, type MutableRefObject } from 'react';
+import type { Logical } from 'lightweight-charts';
+import type { Annotation, AnnotationPoint, AnnotationStyle } from '@kansoku/shared/types';
+import { logicalToTime, timeToLogical, type HitRegion, type Pt } from '@kansoku/shared/drawings';
+import { DrawingsPrimitive, type HoverLabel, type MeasureShape } from './drawingsPrimitive';
+import {
+  dragPoints,
+  isMultiPointTool,
+  makeAnnotation,
+  MAX_POLYLINE_POINTS,
+  pickHit,
+  pixelDistance,
+  type DrawingTool,
+} from './drawingsMachine';
+import type { DrawingsHandle } from './useDrawings';
 
 interface DragState {
   id: string;
@@ -17,7 +25,7 @@ interface DragState {
 }
 
 interface InProgress {
-  tool: import("./drawingsMachine").MultiPointTool;
+  tool: import('./drawingsMachine').MultiPointTool;
   points: AnnotationPoint[];
 }
 
@@ -26,7 +34,7 @@ const DRAG_THRESHOLD_PX = 3;
 const isEditableTarget = (target: EventTarget | null): boolean => {
   if (!(target instanceof HTMLElement)) return false;
   const tag = target.tagName;
-  return tag === "INPUT" || tag === "TEXTAREA" || target.isContentEditable;
+  return tag === 'INPUT' || tag === 'TEXTAREA' || target.isContentEditable;
 };
 
 export interface DrawingsInteractionContext {
@@ -51,7 +59,10 @@ export interface DrawingsInteractionContext {
   applyTool: (next: DrawingTool, keepMeasure: boolean) => void;
 }
 
-export function useDrawingsInteraction(handle: DrawingsHandle | null, ctx: DrawingsInteractionContext): void {
+export function useDrawingsInteraction(
+  handle: DrawingsHandle | null,
+  ctx: DrawingsInteractionContext,
+): void {
   const {
     primitiveRef,
     barTimesRef,
@@ -114,7 +125,9 @@ export function useDrawingsInteraction(handle: DrawingsHandle | null, ctx: Drawi
       drawingRef.current = null;
       hoverRef.current = null;
       if (points.length >= 2) {
-        const ann = withDraftStyle(makeAnnotation("polyline", points, crypto.randomUUID(), Date.now()));
+        const ann = withDraftStyle(
+          makeAnnotation('polyline', points, crypto.randomUUID(), Date.now()),
+        );
         setSelected(ann.id);
         commitAnnotations([...annotationsRef.current, ann], true);
       } else {
@@ -129,7 +142,7 @@ export function useDrawingsInteraction(handle: DrawingsHandle | null, ctx: Drawi
       if (measureRef.current) measureRef.current = null;
       const tool = toolRef.current;
 
-      if (tool === "cursor") {
+      if (tool === 'cursor') {
         const hit = pickHit(annotationsRef.current, toPx, pointerPx(e));
         if (hit) {
           setSelected(hit.id);
@@ -153,8 +166,8 @@ export function useDrawingsInteraction(handle: DrawingsHandle | null, ctx: Drawi
         return;
       }
 
-      if (tool === "hline") {
-        const ann = withDraftStyle(makeAnnotation("hline", [pt], crypto.randomUUID(), Date.now()));
+      if (tool === 'hline') {
+        const ann = withDraftStyle(makeAnnotation('hline', [pt], crypto.randomUUID(), Date.now()));
         setSelected(ann.id);
         commitAnnotations([...annotationsRef.current, ann], true);
         flushPendingRemote();
@@ -171,13 +184,13 @@ export function useDrawingsInteraction(handle: DrawingsHandle | null, ctx: Drawi
         return;
       }
 
-      if (drawing.tool === "polyline") {
+      if (drawing.tool === 'polyline') {
         const points = [...drawing.points, pt];
         if (points.length >= MAX_POLYLINE_POINTS) {
           endPolyline(points);
           return;
         }
-        drawingRef.current = { tool: "polyline", points };
+        drawingRef.current = { tool: 'polyline', points };
         hoverRef.current = pt;
         pushState();
         return;
@@ -187,13 +200,15 @@ export function useDrawingsInteraction(handle: DrawingsHandle | null, ctx: Drawi
       const p1 = points[0];
       drawingRef.current = null;
       hoverRef.current = null;
-      if (startedTool === "measure") {
+      if (startedTool === 'measure') {
         measureRef.current = { p1, p2: pt };
-        applyTool("cursor", true);
+        applyTool('cursor', true);
         flushPendingRemote();
         return;
       }
-      const ann = withDraftStyle(makeAnnotation(startedTool, [p1, pt], crypto.randomUUID(), Date.now()));
+      const ann = withDraftStyle(
+        makeAnnotation(startedTool, [p1, pt], crypto.randomUUID(), Date.now()),
+      );
       setSelected(ann.id);
       commitAnnotations([...annotationsRef.current, ann], true);
       flushPendingRemote();
@@ -201,7 +216,7 @@ export function useDrawingsInteraction(handle: DrawingsHandle | null, ctx: Drawi
 
     const onDoubleClick = (e: MouseEvent) => {
       const drawing = drawingRef.current;
-      if (!drawing || drawing.tool !== "polyline") return;
+      if (!drawing || drawing.tool !== 'polyline') return;
       e.preventDefault();
       endPolyline(drawing.points.slice(0, -1));
     };
@@ -215,7 +230,13 @@ export function useDrawingsInteraction(handle: DrawingsHandle | null, ctx: Drawi
           if (pixelDistance(pointerPx(e), drag.startPx) <= DRAG_THRESHOLD_PX) return;
           drag.moved = true;
         }
-        const nextPoints = dragPoints(drag.origPoints, drag.region, drag.startTime, drag.startPrice, pt);
+        const nextPoints = dragPoints(
+          drag.origPoints,
+          drag.region,
+          drag.startTime,
+          drag.startPrice,
+          pt,
+        );
         annotationsRef.current = annotationsRef.current.map((a) =>
           a.id === drag.id ? { ...a, points: nextPoints } : a,
         );
@@ -230,7 +251,7 @@ export function useDrawingsInteraction(handle: DrawingsHandle | null, ctx: Drawi
         pushState();
         return;
       }
-      if (toolRef.current !== "cursor") {
+      if (toolRef.current !== 'cursor') {
         if (hoverLabelRef.current) {
           hoverLabelRef.current = null;
           pushState();
@@ -238,7 +259,12 @@ export function useDrawingsInteraction(handle: DrawingsHandle | null, ctx: Drawi
         return;
       }
       const rect = container.getBoundingClientRect();
-      if (e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom) {
+      if (
+        e.clientX < rect.left ||
+        e.clientX > rect.right ||
+        e.clientY < rect.top ||
+        e.clientY > rect.bottom
+      ) {
         if (hoverLabelRef.current) {
           hoverLabelRef.current = null;
           pushState();
@@ -248,7 +274,9 @@ export function useDrawingsInteraction(handle: DrawingsHandle | null, ctx: Drawi
       const p = pointerPx(e);
       const hit = pickHit(annotationsRef.current, toPx, p);
       const hitAnn = hit ? annotationsRef.current.find((a) => a.id === hit.id) : undefined;
-      const nextHover: HoverLabel | null = hitAnn?.label ? { x: p.x, y: p.y, text: hitAnn.label } : null;
+      const nextHover: HoverLabel | null = hitAnn?.label
+        ? { x: p.x, y: p.y, text: hitAnn.label }
+        : null;
       const prevHover = hoverLabelRef.current;
       const hoverChanged =
         (prevHover === null) !== (nextHover === null) ||
@@ -273,11 +301,11 @@ export function useDrawingsInteraction(handle: DrawingsHandle | null, ctx: Drawi
     };
 
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
+      if (e.key === 'Escape') {
         const drawing = drawingRef.current;
-        if (drawing && drawing.tool === "polyline") {
+        if (drawing && drawing.tool === 'polyline') {
           endPolyline(drawing.points);
-          applyTool("cursor", false);
+          applyTool('cursor', false);
           return;
         }
         const drag = dragRef.current;
@@ -289,11 +317,11 @@ export function useDrawingsInteraction(handle: DrawingsHandle | null, ctx: Drawi
         }
         setSelected(null);
         dragRef.current = null;
-        applyTool("cursor", false);
+        applyTool('cursor', false);
         flushPendingRemote();
         return;
       }
-      if (e.key === "Delete" || e.key === "Backspace") {
+      if (e.key === 'Delete' || e.key === 'Backspace') {
         if (isEditableTarget(e.target)) return;
         const id = selectedIdRef.current;
         if (!id) return;
@@ -306,22 +334,31 @@ export function useDrawingsInteraction(handle: DrawingsHandle | null, ctx: Drawi
       }
     };
 
-    container.addEventListener("pointerdown", onPointerDown);
-    container.addEventListener("dblclick", onDoubleClick);
-    window.addEventListener("pointermove", onPointerMove);
-    window.addEventListener("pointerup", onPointerUp);
-    window.addEventListener("keydown", onKeyDown);
+    container.addEventListener('pointerdown', onPointerDown);
+    container.addEventListener('dblclick', onDoubleClick);
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+    window.addEventListener('keydown', onKeyDown);
 
     updateScrollLock();
     pushState();
 
     return () => {
-      container.removeEventListener("pointerdown", onPointerDown);
-      container.removeEventListener("dblclick", onDoubleClick);
-      window.removeEventListener("pointermove", onPointerMove);
-      window.removeEventListener("pointerup", onPointerUp);
-      window.removeEventListener("keydown", onKeyDown);
+      container.removeEventListener('pointerdown', onPointerDown);
+      container.removeEventListener('dblclick', onDoubleClick);
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('keydown', onKeyDown);
       primitiveRef.current = null;
     };
-  }, [handle, applyTool, commitAnnotations, flushPendingRemote, pushState, scheduleSave, setSelected, updateScrollLock]);
+  }, [
+    handle,
+    applyTool,
+    commitAnnotations,
+    flushPendingRemote,
+    pushState,
+    scheduleSave,
+    setSelected,
+    updateScrollLock,
+  ]);
 }

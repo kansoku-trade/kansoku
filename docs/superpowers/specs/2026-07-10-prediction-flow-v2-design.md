@@ -1,9 +1,9 @@
 # 预测流 v2：不可变预测版本与可审计结算设计
 
-| 项目 | 内容 |
-| --- | --- |
-| 日期 | 2026-07-10 |
-| 状态 | 设计已由用户确认，等待书面复核 |
+| 项目 | 内容                                                    |
+| ---- | ------------------------------------------------------- |
+| 日期 | 2026-07-10                                              |
+| 状态 | 设计已由用户确认，等待书面复核                          |
 | 范围 | `intraday` 短线预测、修订、机械结算、统计、journal 闭环 |
 
 ## 1. 背景
@@ -100,26 +100,26 @@ interface PredictionRevisionMeta {
   revision: number;
   supersedes_id: string | null;
   session_date: string;
-  rule_version: "intraday-v2";
-  origin: "manual" | "analyst";
+  rule_version: 'intraday-v2';
+  origin: 'manual' | 'analyst';
   decision: {
     server_time: string;
     quote_time: string;
     price: number;
-    market_session: "regular" | "pre" | "post" | "overnight";
+    market_session: 'regular' | 'pre' | 'post' | 'overnight';
   };
   signal_anchor: {
-    timeframe: "m5" | "m15" | "h1";
+    timeframe: 'm5' | 'm15' | 'h1';
     closed_bar_time: string;
     closed_bar_price: number;
   };
   horizon: {
-    timeframe: "m5" | "m15" | "h1";
+    timeframe: 'm5' | 'm15' | 'h1';
     bars: number;
-    session: "regular" | "all";
+    session: 'regular' | 'all';
   };
   day_type: {
-    value: "catalyst" | "calm" | "unknown";
+    value: 'catalyst' | 'calm' | 'unknown';
     sources: string[];
     observed_at: string;
   };
@@ -147,13 +147,13 @@ interface PredictionRevisionMeta {
 
 ```ts
 interface ForecastV2 {
-  direction: "long" | "short" | "neutral";
+  direction: 'long' | 'short' | 'neutral';
   scenario_band: {
     bear_below: number;
     bull_above: number;
   };
   band_context: {
-    policy_version: "scenario-band-v1";
+    policy_version: 'scenario-band-v1';
     width_pct: number;
     recent_volatility_pct: number;
     width_in_volatility_units: number;
@@ -193,32 +193,32 @@ interface ForecastV2 {
 
 ```ts
 interface TradeDecisionV2 {
-  action: "enter" | "wait" | "avoid" | "manage_existing";
+  action: 'enter' | 'wait' | 'avoid' | 'manage_existing';
   reason: string;
 }
 
 interface TradePlanV2 {
-  direction: "long" | "short";
-  entry_order: "stop" | "limit" | "close_confirmation";
-  trigger_timeframe: "m5" | "m15" | "h1";
+  direction: 'long' | 'short';
+  entry_order: 'stop' | 'limit' | 'close_confirmation';
+  trigger_timeframe: 'm5' | 'm15' | 'h1';
   entry: number;
   entry_expiry: {
-    timeframe: "m5" | "m15" | "h1";
+    timeframe: 'm5' | 'm15' | 'h1';
     bars: number;
   };
   invalidation_before_entry: {
     price: number;
-    mode: "touch" | "close";
-    timeframe: "m5" | "m15" | "h1";
+    mode: 'touch' | 'close';
+    timeframe: 'm5' | 'm15' | 'h1';
   };
   stop: number;
   target1: number;
   target2: number;
   target1_close_fraction: number;
-  remainder_stop_after_target1: "breakeven";
-  time_exit_price_basis: "bar_close";
+  remainder_stop_after_target1: 'breakeven';
+  time_exit_price_basis: 'bar_close';
   time_stop: {
-    timeframe: "m5" | "m15" | "h1";
+    timeframe: 'm5' | 'm15' | 'h1';
     bars: number;
   };
   requested_risk_pct: number;
@@ -231,7 +231,7 @@ interface TradePlanV2 {
     cash: number;
     buying_power: number;
     captured_at: string;
-    provider: "longbridge";
+    provider: 'longbridge';
   };
   stop_note: string;
   management_note: string;
@@ -408,21 +408,21 @@ range_active
 
 ```ts
 interface NormalizedOutcomeBarV1 {
-  timeframe: "m5" | "m15" | "h1";
-  session: "regular" | "all";
+  timeframe: 'm5' | 'm15' | 'h1';
+  session: 'regular' | 'all';
   open_time: string;
   close_time: string;
   open: number;
   high: number;
   low: number;
   close: number;
-  source: "longbridge";
+  source: 'longbridge';
   captured_at: string;
 }
 
 interface OutcomeProgressV2 {
-  timeframe: "m5" | "m15" | "h1";
-  session: "regular" | "all";
+  timeframe: 'm5' | 'm15' | 'h1';
+  session: 'regular' | 'all';
   eligible_from: string;
   first_time: string | null;
   last_time: string | null;
@@ -433,27 +433,27 @@ interface PredictionOutcomeV2 {
   chart_id: string;
   prediction_hash: string;
   outcome_sha256: string;
-  evaluator_version: "outcome-v2";
+  evaluator_version: 'outcome-v2';
   symbol: string;
   series_id: string;
   revision: number;
   decision_time: string;
   resolved_at: string | null;
-  status: "active" | "resolved" | "unjudged_data_gap";
+  status: 'active' | 'resolved' | 'unjudged_data_gap';
   forecast: {
-    status: "active" | "resolved" | "unjudged_data_gap";
+    status: 'active' | 'resolved' | 'unjudged_data_gap';
     resolved_at: string | null;
-    realized_scenario: "bear" | "base" | "bull" | null;
+    realized_scenario: 'bear' | 'base' | 'bull' | null;
     raw_return_pct: number | null;
     signed_return_pct: number | null;
     probability_score: number | null;
     progress: OutcomeProgressV2;
   };
   neutral: {
-    status: "active" | "held_range" | "broke_range" | "unjudged_data_gap";
+    status: 'active' | 'held_range' | 'broke_range' | 'unjudged_data_gap';
     resolved_at: string | null;
     breached_at: string | null;
-    breached_side: "below" | "above" | null;
+    breached_side: 'below' | 'above' | null;
     progress: OutcomeProgressV2;
   } | null;
   trade: {
@@ -465,33 +465,33 @@ interface PredictionOutcomeV2 {
     t1_at: string | null;
     t2_at: string | null;
     gross_r: number | null;
-    pending_exit_reason: "revision" | null;
+    pending_exit_reason: 'revision' | null;
     entry_expiry_bars_observed: number;
     time_stop_bars_observed: number;
     progress: OutcomeProgressV2;
     status:
-      | "waiting_entry"
-      | "active"
-      | "t1_reached"
-      | "revised_exit_pending"
-      | "t1_then_revised_exit_pending"
-      | "invalid_before_entry"
-      | "gap_invalid_before_entry"
-      | "cancelled_before_entry"
-      | "no_fill"
-      | "hit_stop"
-      | "time_exit"
-      | "revised_exit"
-      | "ambiguous"
-      | "t1_then_t2"
-      | "t1_then_breakeven"
-      | "t1_then_gap_stop"
-      | "t1_then_time_exit"
-      | "t1_then_revised_exit"
-      | "unjudged_data_gap";
+      | 'waiting_entry'
+      | 'active'
+      | 't1_reached'
+      | 'revised_exit_pending'
+      | 't1_then_revised_exit_pending'
+      | 'invalid_before_entry'
+      | 'gap_invalid_before_entry'
+      | 'cancelled_before_entry'
+      | 'no_fill'
+      | 'hit_stop'
+      | 'time_exit'
+      | 'revised_exit'
+      | 'ambiguous'
+      | 't1_then_t2'
+      | 't1_then_breakeven'
+      | 't1_then_gap_stop'
+      | 't1_then_time_exit'
+      | 't1_then_revised_exit'
+      | 'unjudged_data_gap';
   } | null;
   evidence: {
-    schema_version: "normalized-bar-v1";
+    schema_version: 'normalized-bar-v1';
     bars: NormalizedOutcomeBarV1[];
     sha256: string;
   };
@@ -499,13 +499,9 @@ interface PredictionOutcomeV2 {
     calendar_version: string;
     expected_intervals_sha256: string;
     gaps: Array<{
-      timeframe: "m5" | "m15" | "h1";
+      timeframe: 'm5' | 'm15' | 'h1';
       open_time: string;
-      status:
-        | "pending"
-        | "confirmed_halt"
-        | "confirmed_no_trade"
-        | "unresolved_missing";
+      status: 'pending' | 'confirmed_halt' | 'confirmed_no_trade' | 'unresolved_missing';
     }>;
   };
   ambiguity: string | null;

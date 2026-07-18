@@ -1,24 +1,24 @@
-import type { RawBar } from "@kansoku/shared/types";
-import { buildDayIndicators, buildWeekIndicators } from "../generate/indicatorsFixture.js";
-import type { EpisodeState } from "./engine.js";
-import type { Question, RunnerQuestion } from "../schema/question.js";
+import type { RawBar } from '@kansoku/shared/types';
+import { buildDayIndicators, buildWeekIndicators } from '../generate/indicatorsFixture.js';
+import type { EpisodeState } from './engine.js';
+import type { Question, RunnerQuestion } from '../schema/question.js';
 
-const MARKET_DATE_FORMATTER = new Intl.DateTimeFormat("en-CA", {
-  timeZone: "America/New_York",
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
+const MARKET_DATE_FORMATTER = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'America/New_York',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
 });
 
 function numberOf(value: string | number): number {
-  return typeof value === "number" ? value : Number(value);
+  return typeof value === 'number' ? value : Number(value);
 }
 
 function marketDate(time: string): string {
   if (/^\d{4}-\d{2}-\d{2}$/.test(time)) return time;
   const parts = MARKET_DATE_FORMATTER.formatToParts(new Date(time));
-  const part = (type: string) => parts.find((entry) => entry.type === type)?.value ?? "";
-  return `${part("year")}-${part("month")}-${part("day")}`;
+  const part = (type: string) => parts.find((entry) => entry.type === type)?.value ?? '';
+  return `${part('year')}-${part('month')}-${part('day')}`;
 }
 
 function weekKey(date: string): string {
@@ -59,7 +59,7 @@ function mergeByTime(base: RawBar[], updates: RawBar[]): RawBar[] {
   return [...merged.values()].sort((a, b) => Date.parse(a.time) - Date.parse(b.time));
 }
 
-function visibleRollups(question: Question, period: "day" | "week", asOf: string): RawBar[] {
+function visibleRollups(question: Question, period: 'day' | 'week', asOf: string): RawBar[] {
   const asOfMs = Date.parse(asOf);
   return (question.replay.rollups?.[period] ?? [])
     .filter((item) => Date.parse(item.availableAt) <= asOfMs)
@@ -68,22 +68,27 @@ function visibleRollups(question: Question, period: "day" | "week", asOf: string
 
 function dayView(question: Question, revealed: RawBar[], asOf: string): RawBar[] {
   const initial = question.fixtures.kline.day ?? [];
-  if (question.replay.basePeriod !== "1h") return [...initial, ...revealed];
+  if (question.replay.basePeriod !== '1h') return [...initial, ...revealed];
   const updates = groupBars(revealed, (bar) => marketDate(bar.time));
-  return mergeByTime(mergeByTime(initial, updates), visibleRollups(question, "day", asOf));
+  return mergeByTime(mergeByTime(initial, updates), visibleRollups(question, 'day', asOf));
 }
 
 function weekView(question: Question, days: RawBar[], asOf: string): RawBar[] {
   const initial = question.fixtures.kline.week ?? [];
   const updates = groupBars(days, (bar) => weekKey(marketDate(bar.time)));
-  return mergeByTime(mergeByTime(initial, updates), visibleRollups(question, "week", asOf));
+  return mergeByTime(mergeByTime(initial, updates), visibleRollups(question, 'week', asOf));
 }
 
-function quoteView(question: Question, days: RawBar[], revealed: RawBar[]): Record<string, unknown> {
+function quoteView(
+  question: Question,
+  days: RawBar[],
+  revealed: RawBar[],
+): Record<string, unknown> {
   const current = revealed.at(-1) ?? days.at(-1);
   if (!current) return question.fixtures.quote;
   const currentDay = marketDate(current.time);
-  const currentDayBar = [...days].reverse().find((bar) => marketDate(bar.time) === currentDay) ?? current;
+  const currentDayBar =
+    [...days].reverse().find((bar) => marketDate(bar.time) === currentDay) ?? current;
   const previousDay = [...days].reverse().find((bar) => marketDate(bar.time) < currentDay);
   return {
     last: numberOf(currentDayBar.close),
@@ -95,14 +100,18 @@ function quoteView(question: Question, days: RawBar[], revealed: RawBar[]): Reco
   };
 }
 
-export function buildEpisodeQuestionViewAtCursor(question: Question, cursor: number): RunnerQuestion {
+export function buildEpisodeQuestionViewAtCursor(
+  question: Question,
+  cursor: number,
+): RunnerQuestion {
   const revealed = cursor >= 0 ? question.replay.bars.slice(0, cursor + 1) : [];
   const cutoff = revealed.at(-1)?.time ?? question.cutoff;
   const days = dayView(question, revealed, cutoff);
   const weeks = weekView(question, days, cutoff);
-  const oneHour = question.replay.basePeriod === "1h"
-    ? [...(question.fixtures.kline["1h"] ?? []), ...revealed]
-    : question.fixtures.kline["1h"];
+  const oneHour =
+    question.replay.basePeriod === '1h'
+      ? [...(question.fixtures.kline['1h'] ?? []), ...revealed]
+      : question.fixtures.kline['1h'];
   return {
     id: question.id,
     bank: question.bank,
@@ -114,7 +123,7 @@ export function buildEpisodeQuestionViewAtCursor(question: Question, cursor: num
       ...question.fixtures,
       kline: {
         ...question.fixtures.kline,
-        ...(oneHour ? { "1h": oneHour } : {}),
+        ...(oneHour ? { '1h': oneHour } : {}),
         day: days,
         week: weeks,
       },

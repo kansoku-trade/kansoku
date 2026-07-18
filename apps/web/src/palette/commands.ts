@@ -1,4 +1,4 @@
-import { normalizeSymbol } from "../lib/symbol";
+import { normalizeSymbol } from '../lib/symbol';
 
 export interface PaletteCommand {
   id: string;
@@ -11,15 +11,25 @@ export interface PaletteCommand {
 const MAX_COMMANDS = 12;
 
 const STATIC_COMMANDS: PaletteCommand[] = [
-  { id: "nav:home", title: "回首页", keywords: ["home"], route: "/" },
-  { id: "nav:research", title: "打开研究库", keywords: ["research", "stocks", "journal", "研究", "日志", "笔记"], route: "/research?view=journal" },
-  { id: "nav:chat", title: "打开 AI 对话", keywords: ["chat", "ai", "assistant", "对话", "助手"], route: "/chat" },
-  { id: "nav:settings", title: "打开设置", keywords: ["settings", "config"], route: "/settings" },
-  { id: "nav:logs", title: "查看日志", keywords: ["logs", "log", "日志", "debug"], route: "/logs" },
+  { id: 'nav:home', title: '回首页', keywords: ['home'], route: '/' },
+  {
+    id: 'nav:research',
+    title: '打开研究库',
+    keywords: ['research', 'stocks', 'journal', '研究', '日志', '笔记'],
+    route: '/research?view=journal',
+  },
+  {
+    id: 'nav:chat',
+    title: '打开 AI 对话',
+    keywords: ['chat', 'ai', 'assistant', '对话', '助手'],
+    route: '/chat',
+  },
+  { id: 'nav:settings', title: '打开设置', keywords: ['settings', 'config'], route: '/settings' },
+  { id: 'nav:logs', title: '查看日志', keywords: ['logs', 'log', '日志', 'debug'], route: '/logs' },
 ];
 
 function symbolCommand(sym: string): PaletteCommand {
-  const short = sym.replace(/\.US$/, "");
+  const short = sym.replace(/\.US$/, '');
   return {
     id: `symbol:${sym}`,
     title: `前往 ${short}`,
@@ -40,7 +50,9 @@ export function buildPaletteCommands(query: string, symbols: string[]): PaletteC
   }
 
   const matches = (cmd: PaletteCommand) =>
-    !q || cmd.title.toLowerCase().includes(q) || cmd.keywords.some((k) => k.toLowerCase().includes(q));
+    !q ||
+    cmd.title.toLowerCase().includes(q) ||
+    cmd.keywords.some((k) => k.toLowerCase().includes(q));
   const out = [...symbolCommands, ...STATIC_COMMANDS].filter(matches);
 
   const direct = q ? normalizeSymbol(query) : null;

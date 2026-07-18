@@ -1,18 +1,18 @@
-import { useState } from "react";
-import { Check, Lock, RadioTower } from "lucide-react";
-import type { OverviewBoard, OverviewRow } from "@kansoku/shared/types";
-import { errorMessage } from "@web/api";
-import { client } from "@web/client";
-import { fmt, signed } from "@web/format";
-import { Badge, Button, Card, Dot, Empty, ErrorBox, MarketTime, Num, Switch } from "@web/ui";
-import { useFeature } from "@web/useFeature";
-import { useSymbolFollow } from "@web/useSymbolFollow";
-import { directionTone } from "@web/charts/intraday/directionLabels";
+import { useState } from 'react';
+import { Check, Lock, RadioTower } from 'lucide-react';
+import type { OverviewBoard, OverviewRow } from '@kansoku/shared/types';
+import { errorMessage } from '@web/api';
+import { client } from '@web/client';
+import { fmt, signed } from '@web/format';
+import { Badge, Button, Card, Dot, Empty, ErrorBox, MarketTime, Num, Switch } from '@web/ui';
+import { useFeature } from '@web/useFeature';
+import { useSymbolFollow } from '@web/useSymbolFollow';
+import { directionTone } from '@web/charts/intraday/directionLabels';
 
-const DIRECTION_LABEL: Record<string, string> = { long: "做多", short: "做空", neutral: "观望" };
+const DIRECTION_LABEL: Record<string, string> = { long: '做多', short: '做空', neutral: '观望' };
 
 function pctCell(value: number | null): string {
-  return value == null ? "—" : `${signed(value)}%`;
+  return value == null ? '—' : `${signed(value)}%`;
 }
 
 function FollowToggle({
@@ -24,25 +24,25 @@ function FollowToggle({
   initialFollowing: boolean;
   compact?: boolean;
 }) {
-  const { state, guard } = useFeature("symbol-follow");
+  const { state, guard } = useFeature('symbol-follow');
   const { following, busy, statusError, change } = useSymbolFollow({ symbol, initialFollowing });
   const active = following ?? initialFollowing;
-  if (state === "absent") return null;
-  const locked = state === "locked";
+  if (state === 'absent') return null;
+  const locked = state === 'locked';
   const className = [
-    "symbol-card-follow",
-    active && "symbol-card-follow--active",
-    statusError && "symbol-card-follow--error",
-    locked && "symbol-card-follow--locked",
-    compact && "symbol-card-follow--compact",
+    'symbol-card-follow',
+    active && 'symbol-card-follow--active',
+    statusError && 'symbol-card-follow--error',
+    locked && 'symbol-card-follow--locked',
+    compact && 'symbol-card-follow--compact',
   ]
     .filter(Boolean)
-    .join(" ");
+    .join(' ');
 
   const onControlClick = (event: React.MouseEvent<HTMLSpanElement>) => {
     event.preventDefault();
     event.stopPropagation();
-    if ((event.target as Element).closest(".ui-switch") || busy) return;
+    if ((event.target as Element).closest('.ui-switch') || busy) return;
     const next = !active;
     if (locked && next) {
       guard(() => {});
@@ -57,14 +57,14 @@ function FollowToggle({
       title={
         locked
           ? active
-            ? "授权已失效，AI 跟进已暂停；可关闭开关，重新开启需订阅"
-            : "AI 跟进需要有效授权，点击开关订阅解锁"
-          : statusError ?? (active ? "AI 评论员正在后台持续跟进" : "AI 评论员未在后台跟进")
+            ? '授权已失效，AI 跟进已暂停；可关闭开关，重新开启需订阅'
+            : 'AI 跟进需要有效授权，点击开关订阅解锁'
+          : (statusError ?? (active ? 'AI 评论员正在后台持续跟进' : 'AI 评论员未在后台跟进'))
       }
       onClick={onControlClick}
     >
       <RadioTower aria-hidden="true" size={compact ? 12 : 11} />
-      <span className={compact ? "sr-only" : undefined}>AI 跟进</span>
+      <span className={compact ? 'sr-only' : undefined}>AI 跟进</span>
       {locked && <Lock className="follow-control-lock" size={compact ? 12 : 11} />}
       <Switch
         ariaLabel={`持续跟进 ${symbol} 的 AI 点评`}
@@ -83,43 +83,48 @@ function FollowToggle({
 }
 
 function ReassessButton({ symbol }: { symbol: string }) {
-  const [state, setState] = useState<"idle" | "running" | "done" | "failed">("idle");
+  const [state, setState] = useState<'idle' | 'running' | 'done' | 'failed'>('idle');
 
   const run = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (state === "running") return;
-    setState("running");
+    if (state === 'running') return;
+    setState('running');
     try {
       const res = await client.symbols.reassess({ sym: symbol });
-      setState(res.started ? "done" : "failed");
+      setState(res.started ? 'done' : 'failed');
     } catch (err) {
       console.warn(`reassess ${symbol}: ${errorMessage(err)}`);
-      setState("failed");
+      setState('failed');
     }
-    window.setTimeout(() => setState("idle"), 4000);
+    window.setTimeout(() => setState('idle'), 4000);
   };
 
   const labels: Record<typeof state, React.ReactNode> = {
-    idle: "重新分析",
-    running: "分析中…",
+    idle: '重新分析',
+    running: '分析中…',
     done: (
       <>
         已触发 <Check className="icon" size={13} />
       </>
     ),
-    failed: "未启动",
+    failed: '未启动',
   };
   const label = labels[state];
-  const btnStates: Record<typeof state, "busy" | "done" | "failed" | undefined> = {
+  const btnStates: Record<typeof state, 'busy' | 'done' | 'failed' | undefined> = {
     idle: undefined,
-    running: "busy",
-    done: "done",
-    failed: "failed",
+    running: 'busy',
+    done: 'done',
+    failed: 'failed',
   };
   const btnState = btnStates[state];
   return (
-    <Button className="reassess-action" state={btnState} onClick={run} disabled={state === "running"}>
+    <Button
+      className="reassess-action"
+      state={btnState}
+      onClick={run}
+      disabled={state === 'running'}
+    >
       {label}
     </Button>
   );
@@ -132,19 +137,26 @@ function SymbolCard({ row }: { row: OverviewRow }) {
       <div className="symbol-card-head">
         <span className="sym">{row.symbol}</span>
         {row.direction && (
-          <Badge tone={directionTone(row.direction)}>
-            {DIRECTION_LABEL[row.direction]}
-          </Badge>
+          <Badge tone={directionTone(row.direction)}>{DIRECTION_LABEL[row.direction]}</Badge>
         )}
         {row.last != null && (
           <span className="quote">
             {fmt(row.last)}
-            {row.pct != null && <>{" "}<Num value={row.pct} diff suffix="%" /></>}
+            {row.pct != null && (
+              <>
+                {' '}
+                <Num value={row.pct} diff suffix="%" />
+              </>
+            )}
           </span>
         )}
         <FollowToggle symbol={row.symbol} initialFollowing={row.ai_following} />
         {row.prediction_stale && <Dot tone="accent" title="预测已过期" />}
-        {row.alert_count > 0 && <Badge tone="down" className="unread-badge">{row.alert_count}</Badge>}
+        {row.alert_count > 0 && (
+          <Badge tone="down" className="unread-badge">
+            {row.alert_count}
+          </Badge>
+        )}
       </div>
       <div className="symbol-card-levels">
         <span>止损 {pctCell(row.stop_distance_pct)}</span>
@@ -179,12 +191,15 @@ export function WatchBoard({
     return (
       <div className="watch-strip">
         {board.rows.map((row) => (
-          <Card link className="watch-strip-cell" key={row.symbol} href={`/symbol/${encodeURIComponent(row.symbol)}`}>
-            <span className="sym">{row.symbol.replace(/\.US$/, "")}</span>
+          <Card
+            link
+            className="watch-strip-cell"
+            key={row.symbol}
+            href={`/symbol/${encodeURIComponent(row.symbol)}`}
+          >
+            <span className="sym">{row.symbol.replace(/\.US$/, '')}</span>
             {row.direction && (
-              <Badge tone={directionTone(row.direction)}>
-                {DIRECTION_LABEL[row.direction]}
-              </Badge>
+              <Badge tone={directionTone(row.direction)}>{DIRECTION_LABEL[row.direction]}</Badge>
             )}
             {row.pct != null && <Num value={row.pct} diff suffix="%" />}
             <FollowToggle symbol={row.symbol} initialFollowing={row.ai_following} compact />

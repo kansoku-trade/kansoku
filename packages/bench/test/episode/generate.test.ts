@@ -1,14 +1,14 @@
-import { describe, expect, it } from "vitest";
-import type { QuoteBar } from "../../src/generate/assemble.js";
+import { describe, expect, it } from 'vitest';
+import type { QuoteBar } from '../../src/generate/assemble.js';
 import {
   EPISODE_REQUIRED_DAY,
   EPISODE_REQUIRED_H1,
   EPISODE_REQUIRED_WEEK,
   assembleEpisodeQuestion,
   marketCloseIso,
-} from "../../src/episode/generate.js";
-import { Value } from "typebox/value";
-import { questionSchema } from "../../src/schema/question.js";
+} from '../../src/episode/generate.js';
+import { Value } from 'typebox/value';
+import { questionSchema } from '../../src/schema/question.js';
 
 function dateOffset(date: string, days: number): string {
   const value = new Date(`${date}T00:00:00Z`);
@@ -44,8 +44,8 @@ function hourBarsForCutoff(cutoff: string, futureSessions: number): QuoteBar[] {
   const future = dates.filter((date) => date > cutoff).slice(0, futureSessions);
   return [...initial, ...future].flatMap((date, dateIndex) =>
     Array.from({ length: 7 }, (_, hourIndex) => {
-      const hour = String(9 + hourIndex).padStart(2, "0");
-      const minute = hourIndex === 0 ? "30" : "30";
+      const hour = String(9 + hourIndex).padStart(2, '0');
+      const minute = hourIndex === 0 ? '30' : '30';
       return bar(`${date}T${hour}:${minute}:00-04:00`, dateIndex * 7 + hourIndex);
     }),
   );
@@ -63,14 +63,14 @@ function weeklyBars(cutoff: string): QuoteBar[] {
   );
 }
 
-describe("assembleEpisodeQuestion", () => {
-  it("builds a schema-valid 1h/day/week case with a session-based replay horizon", () => {
-    const cutoffDate = "2026-03-25";
+describe('assembleEpisodeQuestion', () => {
+  it('builds a schema-valid 1h/day/week case with a session-based replay horizon', () => {
+    const cutoffDate = '2026-03-25';
     const days = dailyBars(cutoffDate);
-    const poisonedCurrentWeek = bar("2026-03-23T20:00:00Z", 9_999);
+    const poisonedCurrentWeek = bar('2026-03-23T20:00:00Z', 9_999);
     const question = assembleEpisodeQuestion({
-      symbol: "MU.US",
-      layer: "high-vol-tech",
+      symbol: 'MU.US',
+      layer: 'high-vol-tech',
       cutoffDate,
       hourBars: hourBarsForCutoff(cutoffDate, 4),
       dayBars: days,
@@ -80,15 +80,15 @@ describe("assembleEpisodeQuestion", () => {
     });
 
     expect(Value.Check(questionSchema, question)).toBe(true);
-    expect(question.fixtures.kline["1h"]).toHaveLength(EPISODE_REQUIRED_H1);
+    expect(question.fixtures.kline['1h']).toHaveLength(EPISODE_REQUIRED_H1);
     expect(question.fixtures.kline.day).toHaveLength(EPISODE_REQUIRED_DAY);
     expect(question.fixtures.kline.week).toHaveLength(EPISODE_REQUIRED_WEEK);
     const cutoffDay = days.find((value) => value.time.startsWith(cutoffDate))!;
     expect(question.fixtures.kline.week.at(-1)).toMatchObject({
-      time: "2026-03-23",
+      time: '2026-03-23',
       close: Number(cutoffDay.close),
     });
-    expect(question.replay.basePeriod).toBe("1h");
+    expect(question.replay.basePeriod).toBe('1h');
     expect(question.replay.horizonSessions).toBe(4);
     expect(question.replay.horizonBars).toBe(28);
     expect(question.replay.decisionExpiryBars).toBeUndefined();
@@ -97,28 +97,30 @@ describe("assembleEpisodeQuestion", () => {
     expect(question.replay.rollups?.day).toHaveLength(4);
     expect(question.replay.rollups?.week).toHaveLength(1);
     expect(question.replay.rollups?.week[0].bar.close).toBe(poisonedCurrentWeek.close);
-    expect(question.fixtures.kline["1h"].every((value) => Date.parse(value.time) < Date.parse(question.cutoff))).toBe(
-      true,
-    );
+    expect(
+      question.fixtures.kline['1h'].every(
+        (value) => Date.parse(value.time) < Date.parse(question.cutoff),
+      ),
+    ).toBe(true);
   });
 
-  it("uses the correct New York close offset across daylight-saving time", () => {
-    expect(marketCloseIso("2026-01-02")).toBe("2026-01-02T16:00:00-05:00");
-    expect(marketCloseIso("2026-06-15")).toBe("2026-06-15T16:00:00-04:00");
+  it('uses the correct New York close offset across daylight-saving time', () => {
+    expect(marketCloseIso('2026-01-02')).toBe('2026-01-02T16:00:00-05:00');
+    expect(marketCloseIso('2026-06-15')).toBe('2026-06-15T16:00:00-04:00');
   });
 
-  it("rejects a replay that does not cover the requested number of sessions", () => {
-    const cutoffDate = "2026-03-25";
+  it('rejects a replay that does not cover the requested number of sessions', () => {
+    const cutoffDate = '2026-03-25';
     expect(() =>
       assembleEpisodeQuestion({
-        symbol: "MU.US",
-        layer: "high-vol-tech",
+        symbol: 'MU.US',
+        layer: 'high-vol-tech',
         cutoffDate,
         hourBars: hourBarsForCutoff(cutoffDate, 2),
         dayBars: dailyBars(cutoffDate),
         weekBars: weeklyBars(cutoffDate),
         horizonSessions: 4,
       }),
-    ).toThrow("insufficient replay sessions");
+    ).toThrow('insufficient replay sessions');
   });
 });

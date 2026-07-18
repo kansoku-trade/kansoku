@@ -1,7 +1,15 @@
 {
-  "version": "6",
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  },
   "dialect": "sqlite",
+  "enums": {},
   "id": "e0cd4bd7-9a91-4a7e-b0a8-cfd3595e6e08",
+  "internal": {
+    "indexes": {}
+  },
   "prevId": "e1babb00-0b8c-46f0-9e19-967774101d34",
   "tables": {
     "ai_role_settings": {
@@ -161,9 +169,7 @@
       "indexes": {
         "ai_usage_date": {
           "name": "ai_usage_date",
-          "columns": [
-            "eastern_date"
-          ],
+          "columns": ["eastern_date"],
           "isUnique": false
         }
       },
@@ -259,16 +265,12 @@
       "indexes": {
         "chart_meta_type": {
           "name": "chart_meta_type",
-          "columns": [
-            "type"
-          ],
+          "columns": ["type"],
           "isUnique": false
         },
         "chart_meta_symbol": {
           "name": "chart_meta_symbol",
-          "columns": [
-            "symbol"
-          ],
+          "columns": ["symbol"],
           "isUnique": false
         }
       },
@@ -319,9 +321,7 @@
       "indexes": {
         "chat_messages_session": {
           "name": "chat_messages_session",
-          "columns": [
-            "session_id"
-          ],
+          "columns": ["session_id"],
           "isUnique": false
         }
       },
@@ -379,16 +379,12 @@
       "indexes": {
         "chat_sessions_chart_id_unique": {
           "name": "chat_sessions_chart_id_unique",
-          "columns": [
-            "chart_id"
-          ],
+          "columns": ["chart_id"],
           "isUnique": true
         },
         "chat_sessions_symbol": {
           "name": "chat_sessions_symbol",
-          "columns": [
-            "symbol"
-          ],
+          "columns": ["symbol"],
           "isUnique": false
         }
       },
@@ -474,10 +470,7 @@
       "indexes": {
         "comments_symbol_date": {
           "name": "comments_symbol_date",
-          "columns": [
-            "symbol",
-            "eastern_date"
-          ],
+          "columns": ["symbol", "eastern_date"],
           "isUnique": false
         }
       },
@@ -577,14 +570,6 @@
       "checkConstraints": {}
     }
   },
-  "views": {},
-  "enums": {},
-  "_meta": {
-    "schemas": {},
-    "tables": {},
-    "columns": {}
-  },
-  "internal": {
-    "indexes": {}
-  }
+  "version": "6",
+  "views": {}
 }

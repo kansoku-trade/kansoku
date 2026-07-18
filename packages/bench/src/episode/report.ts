@@ -1,9 +1,9 @@
-import type { RawBar } from "@kansoku/shared/types";
-import type { EpisodeActionRecord, EpisodeAnswer, EpisodeClosedTrade } from "../schema/episode.js";
-import type { Question } from "../schema/question.js";
-import type { EpisodeTradeReason, EpisodeTradeReasonCategory } from "../schema/tradeReason.js";
-import type { EpisodeDataAudit } from "./audit.js";
-import { buildEpisodeQuestionViewAtCursor } from "./view.js";
+import type { RawBar } from '@kansoku/shared/types';
+import type { EpisodeActionRecord, EpisodeAnswer, EpisodeClosedTrade } from '../schema/episode.js';
+import type { Question } from '../schema/question.js';
+import type { EpisodeTradeReason, EpisodeTradeReasonCategory } from '../schema/tradeReason.js';
+import type { EpisodeDataAudit } from './audit.js';
+import { buildEpisodeQuestionViewAtCursor } from './view.js';
 
 export interface EpisodeReportConfigSnapshot {
   runId?: string;
@@ -61,7 +61,7 @@ export interface EpisodeReportTraceLine {
   tradeCount?: number;
   episodeNetR?: number;
   warningInjected?: boolean;
-  warningPriority?: "high" | "critical" | null;
+  warningPriority?: 'high' | 'critical' | null;
 }
 
 export interface EpisodeReportSummary {
@@ -77,7 +77,7 @@ export interface EpisodeReportSummary {
   directionAccuracy: number | null;
   participationRate: number | null;
   fillRate: number | null;
-  profitFactor: number | "infinite" | null;
+  profitFactor: number | 'infinite' | null;
   averageHoldingBars: number | null;
   averageMfeR: number | null;
   averageMaeR: number | null;
@@ -121,7 +121,7 @@ interface ReportRow {
   trace: EpisodeReportTraceLine[];
   processEvents: ProcessEvent[];
   directionHit: boolean | null;
-  horizonDirection: "long" | "short" | "flat" | null;
+  horizonDirection: 'long' | 'short' | 'flat' | null;
   plannedRr: number | null;
   stopDistancePct: number | null;
   captureRate: number | null;
@@ -143,7 +143,7 @@ interface AggregateMetrics {
   avgNetRPerCase: number | null;
   expectancy: number | null;
   totalNetR: number;
-  profitFactor: number | "infinite" | null;
+  profitFactor: number | 'infinite' | null;
   directionAccuracy: number | null;
   avgHoldingBars: number | null;
   avgMfeR: number | null;
@@ -157,7 +157,7 @@ interface AggregateMetrics {
   avgDecisionBars: number | null;
 }
 
-type ChartTimeframe = "h1" | "day" | "week";
+type ChartTimeframe = 'h1' | 'day' | 'week';
 
 interface ChartBar {
   time: number | string;
@@ -170,9 +170,9 @@ interface ChartBar {
 
 interface ChartMarker {
   time: number | string;
-  position: "aboveBar" | "belowBar";
+  position: 'aboveBar' | 'belowBar';
   color: string;
-  shape: "arrowUp" | "arrowDown" | "circle" | "square";
+  shape: 'arrowUp' | 'arrowDown' | 'circle' | 'square';
   text: string;
 }
 
@@ -187,7 +187,7 @@ interface ChartPayload {
   levels: Array<{ title: string; price: number; color: string }>;
 }
 
-type ProcessKind = "data" | "observe" | "decision" | "manage" | "warning" | "other";
+type ProcessKind = 'data' | 'observe' | 'decision' | 'manage' | 'warning' | 'other';
 
 interface ProcessEvent {
   sequence: number;
@@ -206,87 +206,87 @@ interface ProcessEvent {
 }
 
 const TERMINATION_LABELS: Record<string, string> = {
-  abstain: "观望",
-  no_decision: "未决策",
-  cancelled: "取消订单",
-  no_fill: "未成交",
-  stop: "止损",
-  target: "止盈",
-  manual: "主动退出",
-  horizon: "到期平仓",
-  no_trade: "全程空仓",
+  abstain: '观望',
+  no_decision: '未决策',
+  cancelled: '取消订单',
+  no_fill: '未成交',
+  stop: '止损',
+  target: '止盈',
+  manual: '主动退出',
+  horizon: '到期平仓',
+  no_trade: '全程空仓',
 };
 
-const DIRECTION_LABELS: Record<string, string> = { long: "做多", short: "做空", neutral: "观望" };
-const MODE_LABELS: Record<string, string> = { blind: "盲盘", live: "实盘" };
+const DIRECTION_LABELS: Record<string, string> = { long: '做多', short: '做空', neutral: '观望' };
+const MODE_LABELS: Record<string, string> = { blind: '盲盘', live: '实盘' };
 const REASON_LABELS: Record<EpisodeTradeReasonCategory, string> = {
-  trend_following: "趋势跟随",
-  breakout: "突破",
-  pullback: "回调入场",
-  mean_reversion: "均值回归",
-  support_resistance: "支撑阻力",
-  momentum: "动量",
-  volume_flow: "量价与资金流",
-  volatility: "波动率",
-  news_event: "新闻事件",
-  fundamental: "基本面",
-  risk_management: "风险管理",
-  thesis_invalidated: "逻辑失效",
-  profit_protection: "利润保护",
-  time_horizon: "时间窗口",
-  no_setup: "无有效机会",
-  other: "其他",
+  trend_following: '趋势跟随',
+  breakout: '突破',
+  pullback: '回调入场',
+  mean_reversion: '均值回归',
+  support_resistance: '支撑阻力',
+  momentum: '动量',
+  volume_flow: '量价与资金流',
+  volatility: '波动率',
+  news_event: '新闻事件',
+  fundamental: '基本面',
+  risk_management: '风险管理',
+  thesis_invalidated: '逻辑失效',
+  profit_protection: '利润保护',
+  time_horizon: '时间窗口',
+  no_setup: '无有效机会',
+  other: '其他',
 };
 const ACTION_LABELS: Record<string, string> = {
-  submit: "提交",
-  hold: "持有",
-  amend: "改单",
-  cancel: "撤单",
-  exit_next_open: "主动退出",
+  submit: '提交',
+  hold: '持有',
+  amend: '改单',
+  cancel: '撤单',
+  exit_next_open: '主动退出',
 };
 const EVENT_LABELS: Record<string, string> = {
-  observed: "已公开下一根",
-  decision_due: "决策窗口即将截止",
-  no_decision: "决策窗口已截止",
-  waiting_fill: "挂单等待成交",
-  filled: "订单已成交",
-  holding: "继续持仓",
-  amended: "计划已调整",
-  cancelled: "订单已取消",
-  target_hit: "止盈命中",
-  stop_hit: "止损命中",
-  manual_exit: "主动退出",
-  horizon_exit: "回放到期退出",
-  abstained: "选择观望",
+  observed: '已公开下一根',
+  decision_due: '决策窗口即将截止',
+  no_decision: '决策窗口已截止',
+  waiting_fill: '挂单等待成交',
+  filled: '订单已成交',
+  holding: '继续持仓',
+  amended: '计划已调整',
+  cancelled: '订单已取消',
+  target_hit: '止盈命中',
+  stop_hit: '止损命中',
+  manual_exit: '主动退出',
+  horizon_exit: '回放到期退出',
+  abstained: '选择观望',
 };
 
-const MARKET_DATE_FORMATTER = new Intl.DateTimeFormat("en-CA", {
-  timeZone: "America/New_York",
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
+const MARKET_DATE_FORMATTER = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'America/New_York',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
 });
 
 function escapeHtml(value: unknown): string {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
 }
 
 function serializeForScript(value: unknown): string {
   return JSON.stringify(value)
-    .replaceAll("<", "\\u003c")
-    .replaceAll(">", "\\u003e")
-    .replaceAll("&", "\\u0026")
-    .replaceAll("\u2028", "\\u2028")
-    .replaceAll("\u2029", "\\u2029");
+    .replaceAll('<', '\\u003c')
+    .replaceAll('>', '\\u003e')
+    .replaceAll('&', '\\u0026')
+    .replaceAll('\u2028', '\\u2028')
+    .replaceAll('\u2029', '\\u2029');
 }
 
 function finite(value: unknown): number | null {
-  const parsed = typeof value === "number" ? value : Number(value);
+  const parsed = typeof value === 'number' ? value : Number(value);
   return Number.isFinite(parsed) ? parsed : null;
 }
 
@@ -300,43 +300,43 @@ function ratio(numerator: number, denominator: number): number | null {
 }
 
 function fmt(value: number | null | undefined, digits = 2): string {
-  return value == null || !Number.isFinite(value) ? "—" : value.toFixed(digits);
+  return value == null || !Number.isFinite(value) ? '—' : value.toFixed(digits);
 }
 
 function fmtSigned(value: number | null | undefined, digits = 2): string {
-  if (value == null || !Number.isFinite(value)) return "—";
-  return `${value > 0 ? "+" : ""}${value.toFixed(digits)}`;
+  if (value == null || !Number.isFinite(value)) return '—';
+  return `${value > 0 ? '+' : ''}${value.toFixed(digits)}`;
 }
 
 function fmtPercent(value: number | null | undefined, digits = 1): string {
-  return value == null || !Number.isFinite(value) ? "—" : `${(value * 100).toFixed(digits)}%`;
+  return value == null || !Number.isFinite(value) ? '—' : `${(value * 100).toFixed(digits)}%`;
 }
 
 function fmtUsd(value: number | null | undefined): string {
-  return value == null || !Number.isFinite(value) ? "—" : `$${value.toFixed(value < 1 ? 3 : 2)}`;
+  return value == null || !Number.isFinite(value) ? '—' : `$${value.toFixed(value < 1 ? 3 : 2)}`;
 }
 
 function fmtDuration(value: number | null | undefined): string {
-  if (value == null || !Number.isFinite(value)) return "—";
+  if (value == null || !Number.isFinite(value)) return '—';
   return value < 1_000 ? `${Math.round(value)} ms` : `${(value / 1_000).toFixed(1)} s`;
 }
 
-function horizonDirection(question: Question | undefined): ReportRow["horizonDirection"] {
+function horizonDirection(question: Question | undefined): ReportRow['horizonDirection'] {
   if (!question) return null;
   const initial = finite((question.fixtures.quote as { last?: unknown }).last);
   const final = finite(question.replay.bars.at(-1)?.close);
   if (initial == null || final == null) return null;
-  if (Math.abs(final - initial) < 1e-9) return "flat";
-  return final > initial ? "long" : "short";
+  if (Math.abs(final - initial) < 1e-9) return 'flat';
+  return final > initial ? 'long' : 'short';
 }
 
 function plannedRr(answer: EpisodeAnswer): number | null {
   const plan = answer.initialSubmission?.entry_plan;
   const direction = answer.initialSubmission?.direction;
-  if (!plan || plan.target1 == null || direction === "neutral" || direction == null) return null;
+  if (!plan || plan.target1 == null || direction === 'neutral' || direction == null) return null;
   const risk = Math.abs(plan.entry - plan.stop);
   if (risk <= 0) return null;
-  const reward = direction === "long" ? plan.target1 - plan.entry : plan.entry - plan.target1;
+  const reward = direction === 'long' ? plan.target1 - plan.entry : plan.entry - plan.target1;
   return reward / risk;
 }
 
@@ -353,7 +353,9 @@ function parseResultSummary(line: EpisodeReportTraceLine): Record<string, unknow
   if (!line.resultSummary) return null;
   try {
     const parsed = JSON.parse(line.resultSummary) as unknown;
-    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as Record<string, unknown> : null;
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+      ? (parsed as Record<string, unknown>)
+      : null;
   } catch {
     return null;
   }
@@ -369,40 +371,46 @@ function summaryNumber(line: EpisodeReportTraceLine, key: string): number | null
 
 function summaryString(line: EpisodeReportTraceLine, key: string): string | null {
   const parsed = parseResultSummary(line);
-  if (typeof parsed?.[key] === "string") return parsed[key];
+  if (typeof parsed?.[key] === 'string') return parsed[key];
   const match = line.resultSummary?.match(new RegExp(`"${key}"\\s*:\\s*"([^"]+)"`));
   return match?.[1] ?? null;
 }
 
 function summaryBoolean(line: EpisodeReportTraceLine, key: string): boolean | null {
   const parsed = parseResultSummary(line);
-  if (typeof parsed?.[key] === "boolean") return parsed[key];
+  if (typeof parsed?.[key] === 'boolean') return parsed[key];
   const match = line.resultSummary?.match(new RegExp(`"${key}"\\s*:\\s*(true|false)`));
-  return match ? match[1] === "true" : null;
+  return match ? match[1] === 'true' : null;
 }
 
 function traceTimeframe(value: unknown): ChartTimeframe | null {
-  return value === "h1" || value === "day" || value === "week" ? value : null;
+  return value === 'h1' || value === 'day' || value === 'week' ? value : null;
 }
 
 function toolKind(name: string): ProcessKind {
-  if (name === "fetch_kline" || name === "read_data_pack" || name === "fetch_news" || name === "run_code") return "data";
-  if (name === "observe_next_bar") return "observe";
-  if (name === "submit_prediction") return "decision";
-  if (name === "advance_trade") return "manage";
-  return "other";
+  if (
+    name === 'fetch_kline' ||
+    name === 'read_data_pack' ||
+    name === 'fetch_news' ||
+    name === 'run_code'
+  )
+    return 'data';
+  if (name === 'observe_next_bar') return 'observe';
+  if (name === 'submit_prediction') return 'decision';
+  if (name === 'advance_trade') return 'manage';
+  return 'other';
 }
 
 function inferPhaseAfter(line: EpisodeReportTraceLine, current: string): string {
   if (line.contextAfter?.phase) return line.contextAfter.phase;
-  if (summaryBoolean(line, "terminal")) return "terminal";
-  if (line.name === "submit_prediction") {
-    return summaryString(line, "event") === "abstained" ? "flat" : "pending";
+  if (summaryBoolean(line, 'terminal')) return 'terminal';
+  if (line.name === 'submit_prediction') {
+    return summaryString(line, 'event') === 'abstained' ? 'flat' : 'pending';
   }
-  if (line.name === "advance_trade") {
-    const result = line.resultSummary ?? "";
-    if (/"position"\s*:\s*\{/.test(result)) return "position";
-    if (/"order"\s*:\s*\{/.test(result)) return "waiting_fill";
+  if (line.name === 'advance_trade') {
+    const result = line.resultSummary ?? '';
+    if (/"position"\s*:\s*{/.test(result)) return 'position';
+    if (/"order"\s*:\s*{/.test(result)) return 'waiting_fill';
   }
   return current;
 }
@@ -410,18 +418,20 @@ function inferPhaseAfter(line: EpisodeReportTraceLine, current: string): string 
 function inferBarAfter(line: EpisodeReportTraceLine, before: number): number {
   const contextual = nonNegativeInteger(line.contextAfter?.barIndex);
   if (contextual != null) return contextual;
-  const summarized = summaryNumber(line, "barIndex");
+  const summarized = summaryNumber(line, 'barIndex');
   if (summarized != null) return summarized;
-  if (line.name === "observe_next_bar" || line.name === "advance_trade") {
-    if (/"bar"\s*:\s*\{/.test(line.resultSummary ?? "")) return before + 1;
-  }
+  if (
+    (line.name === 'observe_next_bar' || line.name === 'advance_trade') &&
+    /"bar"\s*:\s*{/.test(line.resultSummary ?? '')
+  )
+    return before + 1;
   return before;
 }
 
 function traceReason(args: Record<string, unknown>): EpisodeTradeReason | null {
   const candidate = (args.decision_reason ?? args.reason) as Record<string, unknown> | undefined;
-  if (!candidate || typeof candidate !== "object") return null;
-  if (typeof candidate.category !== "string" || typeof candidate.summary !== "string") return null;
+  if (!candidate || typeof candidate !== 'object') return null;
+  if (typeof candidate.category !== 'string' || typeof candidate.summary !== 'string') return null;
   return candidate as EpisodeTradeReason;
 }
 
@@ -432,55 +442,89 @@ function reasonDetail(args: Record<string, unknown>): string | null {
   return `${label}：${reason.summary}`;
 }
 
-function processLabel(line: EpisodeReportTraceLine): { label: string; detail: string; timeframe: ChartTimeframe | null } {
-  const name = line.name ?? "unknown_tool";
+function processLabel(line: EpisodeReportTraceLine): {
+  label: string;
+  detail: string;
+  timeframe: ChartTimeframe | null;
+} {
+  const name = line.name ?? 'unknown_tool';
   const args = line.args ?? {};
-  const event = summaryString(line, "event");
-  const eventText = event ? EVENT_LABELS[event] ?? event : null;
-  if (name === "read_data_pack") return { label: "读取数据包", detail: "查看当前多周期摘要", timeframe: null };
-  if (name === "fetch_news") return { label: "读取新闻", detail: "查看当前时点以前的新闻", timeframe: null };
-  if (name === "run_code") return { label: "运行计算", detail: "基于当前可见数据计算", timeframe: null };
-  if (name === "fetch_kline") {
+  const event = summaryString(line, 'event');
+  const eventText = event ? (EVENT_LABELS[event] ?? event) : null;
+  if (name === 'read_data_pack')
+    return { label: '读取数据包', detail: '查看当前多周期摘要', timeframe: null };
+  if (name === 'fetch_news')
+    return { label: '读取新闻', detail: '查看当前时点以前的新闻', timeframe: null };
+  if (name === 'run_code')
+    return { label: '运行计算', detail: '基于当前可见数据计算', timeframe: null };
+  if (name === 'fetch_kline') {
     const timeframe = traceTimeframe(args.period);
-    const period = timeframe === "h1" ? "1 小时" : timeframe === "day" ? "日线" : timeframe === "week" ? "周线" : "K 线";
+    const period =
+      timeframe === 'h1'
+        ? '1 小时'
+        : timeframe === 'day'
+          ? '日线'
+          : timeframe === 'week'
+            ? '周线'
+            : 'K 线';
     const count = nonNegativeInteger(args.count);
-    return { label: `${period}${count == null ? "" : ` × ${count}`}`, detail: "只读，不推进回放", timeframe };
+    return {
+      label: `${period}${count == null ? '' : ` × ${count}`}`,
+      detail: '只读，不推进回放',
+      timeframe,
+    };
   }
-  if (name === "observe_next_bar") {
-    return { label: "观察下一根", detail: eventText ? `回放事件：${eventText}` : "公开一根 1 小时 K 线", timeframe: "h1" };
+  if (name === 'observe_next_bar') {
+    return {
+      label: '观察下一根',
+      detail: eventText ? `回放事件：${eventText}` : '公开一根 1 小时 K 线',
+      timeframe: 'h1',
+    };
   }
-  if (name === "submit_prediction") {
-    const direction = typeof args.direction === "string" ? DIRECTION_LABELS[args.direction] ?? args.direction : "未知方向";
+  if (name === 'submit_prediction') {
+    const direction =
+      typeof args.direction === 'string'
+        ? (DIRECTION_LABELS[args.direction] ?? args.direction)
+        : '未知方向';
     const reason = reasonDetail(args);
-    return { label: `交易计划 · ${direction}`, detail: reason ?? (eventText ? `引擎事件：${eventText}` : "空仓时提交计划，可在后续重新入场"), timeframe: "h1" };
+    return {
+      label: `交易计划 · ${direction}`,
+      detail: reason ?? (eventText ? `引擎事件：${eventText}` : '空仓时提交计划，可在后续重新入场'),
+      timeframe: 'h1',
+    };
   }
-  if (name === "advance_trade") {
-    const action = typeof args.type === "string" ? args.type.toUpperCase() : "ACTION";
+  if (name === 'advance_trade') {
+    const action = typeof args.type === 'string' ? args.type.toUpperCase() : 'ACTION';
     const reason = reasonDetail(args);
-    return { label: `推进 · ${action}`, detail: reason ?? (eventText ? `引擎事件：${eventText}` : "提交管理动作并公开下一根"), timeframe: "h1" };
+    return {
+      label: `推进 · ${action}`,
+      detail: reason ?? (eventText ? `引擎事件：${eventText}` : '提交管理动作并公开下一根'),
+      timeframe: 'h1',
+    };
   }
-  return { label: name, detail: "工具调用", timeframe: null };
+  return { label: name, detail: '工具调用', timeframe: null };
 }
 
 function buildProcessEvents(trace: EpisodeReportTraceLine[]): ProcessEvent[] {
   const events: ProcessEvent[] = [];
   let inferredBar = 0;
-  let inferredPhase = "flat";
+  let inferredPhase = 'flat';
   for (const line of trace) {
-    if (line.type === "prompt_context" && line.warningInjected === true) {
+    if (line.type === 'prompt_context' && line.warningInjected === true) {
       const bar = nonNegativeInteger(line.barIndex) ?? inferredBar;
       const remaining = nonNegativeInteger(line.remainingBars) ?? 0;
       const phase = line.phase ?? inferredPhase;
       events.push({
         sequence: events.length + 1,
-        tool: "message_engine",
+        tool: 'message_engine',
         label: `T-${remaining} 强平提醒`,
-        detail: remaining === 1 ? "下一根为最后一根，随后强制结算" : `距离强制结算还有 ${remaining} 根`,
-        kind: "warning",
+        detail:
+          remaining === 1 ? '下一根为最后一根，随后强制结算' : `距离强制结算还有 ${remaining} 根`,
+        kind: 'warning',
         barBefore: bar,
         barAfter: bar,
         snapshotBar: bar,
-        timeframe: "h1",
+        timeframe: 'h1',
         phaseBefore: phase,
         phaseAfter: phase,
         durationMs: null,
@@ -490,7 +534,7 @@ function buildProcessEvents(trace: EpisodeReportTraceLine[]): ProcessEvent[] {
       inferredPhase = phase;
       continue;
     }
-    if (line.type !== "tool_call" || !line.name) continue;
+    if (line.type !== 'tool_call' || !line.name) continue;
     const contextualBefore = nonNegativeInteger(line.contextBefore?.barIndex);
     const barBefore = contextualBefore ?? inferredBar;
     const barAfter = inferBarAfter(line, barBefore);
@@ -505,12 +549,13 @@ function buildProcessEvents(trace: EpisodeReportTraceLine[]): ProcessEvent[] {
       kind: toolKind(line.name),
       barBefore,
       barAfter,
-      snapshotBar: line.name === "observe_next_bar" || line.name === "advance_trade" ? barAfter : barBefore,
+      snapshotBar:
+        line.name === 'observe_next_bar' || line.name === 'advance_trade' ? barAfter : barBefore,
       timeframe: presentation.timeframe,
       phaseBefore,
       phaseAfter,
       durationMs: finite(line.durationMs),
-      isError: line.isError === true || /^rejected:/i.test(line.resultSummary ?? ""),
+      isError: line.isError === true || /^rejected:/i.test(line.resultSummary ?? ''),
     });
     inferredBar = barAfter;
     inferredPhase = phaseAfter;
@@ -524,64 +569,72 @@ function decisionBar(answer: EpisodeAnswer): number | null {
 }
 
 function observationBars(answer: EpisodeAnswer): number {
-  return answer.result?.observationBars
-    ?? answer.result?.actions.filter((action) => action.action.type === "observe").length
-    ?? 0;
+  return (
+    answer.result?.observationBars ??
+    answer.result?.actions.filter((action) => action.action.type === 'observe').length ??
+    0
+  );
 }
 
 function closedTrades(answer: EpisodeAnswer): EpisodeClosedTrade[] {
   const result = answer.result;
   if (!result) return [];
   if (result.trades) return result.trades;
-  if (!result.entry || !result.exit || result.initialRisk == null || result.direction === "neutral") return [];
-  const exitReason = result.terminationReason === "stop"
-    || result.terminationReason === "target"
-    || result.terminationReason === "manual"
-    ? result.terminationReason
-    : "horizon";
+  if (!result.entry || !result.exit || result.initialRisk == null || result.direction === 'neutral')
+    return [];
+  const exitReason =
+    result.terminationReason === 'stop' ||
+    result.terminationReason === 'target' ||
+    result.terminationReason === 'manual'
+      ? result.terminationReason
+      : 'horizon';
   const plan = answer.initialSubmission?.entry_plan;
-  const inferredStop = result.direction === "long"
-    ? result.entry.price - result.initialRisk
-    : result.entry.price + result.initialRisk;
-  return [{
-    tradeId: 1,
-    direction: result.direction,
-    decisionBar: decisionBar(answer) ?? 0,
-    decisionTime: result.decisionTime ?? answer.initialSubmission?.anchor.time ?? result.entry.time,
-    entry: result.entry,
-    exit: result.exit,
-    exitReason,
-    initialStop: plan?.stop ?? inferredStop,
-    finalStop: plan?.stop ?? inferredStop,
-    target: plan?.target1 ?? result.exit.price,
-    initialRisk: result.initialRisk,
-    grossR: result.grossR ?? 0,
-    frictionR: result.frictionR ?? 0,
-    netR: result.netR ?? 0,
-    mfeR: result.mfeR ?? 0,
-    maeR: result.maeR ?? 0,
-    holdingBars: result.holdingBars,
-  }];
+  const inferredStop =
+    result.direction === 'long'
+      ? result.entry.price - result.initialRisk
+      : result.entry.price + result.initialRisk;
+  return [
+    {
+      tradeId: 1,
+      direction: result.direction,
+      decisionBar: decisionBar(answer) ?? 0,
+      decisionTime:
+        result.decisionTime ?? answer.initialSubmission?.anchor.time ?? result.entry.time,
+      entry: result.entry,
+      exit: result.exit,
+      exitReason,
+      initialStop: plan?.stop ?? inferredStop,
+      finalStop: plan?.stop ?? inferredStop,
+      target: plan?.target1 ?? result.exit.price,
+      initialRisk: result.initialRisk,
+      grossR: result.grossR ?? 0,
+      frictionR: result.frictionR ?? 0,
+      netR: result.netR ?? 0,
+      mfeR: result.mfeR ?? 0,
+      maeR: result.maeR ?? 0,
+      holdingBars: result.holdingBars,
+    },
+  ];
 }
 
 function tradeExitLabel(trade: EpisodeClosedTrade): string {
-  const sameOpen = trade.entry.time === trade.exit.time
-    && Math.abs(trade.entry.price - trade.exit.price) < 1e-9;
-  const crossedAtFill = sameOpen && (
-    trade.exitReason === "target"
-      ? trade.direction === "long"
+  const sameOpen =
+    trade.entry.time === trade.exit.time && Math.abs(trade.entry.price - trade.exit.price) < 1e-9;
+  const crossedAtFill =
+    sameOpen &&
+    (trade.exitReason === 'target'
+      ? trade.direction === 'long'
         ? trade.entry.price >= trade.target
         : trade.entry.price <= trade.target
-      : trade.exitReason === "stop"
-        ? trade.direction === "long"
+      : trade.exitReason === 'stop'
+        ? trade.direction === 'long'
           ? trade.entry.price <= trade.initialStop
           : trade.entry.price >= trade.initialStop
-        : false
-  );
-  if (trade.exitReason === "target") return crossedAtFill ? "止盈（开盘越过）" : "止盈";
-  if (trade.exitReason === "stop") return crossedAtFill ? "止损（开盘越过）" : "止损";
-  if (trade.exitReason === "manual") return "主动退出";
-  return "强平";
+        : false);
+  if (trade.exitReason === 'target') return crossedAtFill ? '止盈（开盘越过）' : '止盈';
+  if (trade.exitReason === 'stop') return crossedAtFill ? '止损（开盘越过）' : '止损';
+  if (trade.exitReason === 'manual') return '主动退出';
+  return '强平';
 }
 
 function replayBarIndex(question: Question | undefined, time: string | undefined): number | null {
@@ -600,9 +653,12 @@ function buildRows(
     const trace = traces.get(answer.traceRef) ?? [];
     const direction = answer.initialSubmission?.direction;
     const horizon = horizonDirection(question);
-    const directionHit = direction === "long" || direction === "short"
-      ? horizon === "flat" || horizon == null ? null : direction === horizon
-      : null;
+    const directionHit =
+      direction === 'long' || direction === 'short'
+        ? horizon === 'flat' || horizon == null
+          ? null
+          : direction === horizon
+        : null;
     const mfe = answer.result?.mfeR;
     const net = answer.result?.netR;
     return {
@@ -613,17 +669,20 @@ function buildRows(
       directionHit,
       horizonDirection: horizon,
       plannedRr: plannedRr(answer),
-      stopDistancePct: distancePct(answer.initialSubmission?.entry_plan?.entry, answer.initialSubmission?.entry_plan?.stop),
+      stopDistancePct: distancePct(
+        answer.initialSubmission?.entry_plan?.entry,
+        answer.initialSubmission?.entry_plan?.stop,
+      ),
       captureRate: mfe != null && mfe > 0 && net != null ? net / mfe : null,
     };
   });
 }
 
 function aggregate(rows: ReportRow[]): AggregateMetrics {
-  const completed = rows.filter((row) => row.answer.status === "completed");
+  const completed = rows.filter((row) => row.answer.status === 'completed');
   const directional = completed.filter((row) => {
     const direction = row.answer.initialSubmission?.direction;
-    return direction === "long" || direction === "short";
+    return direction === 'long' || direction === 'short';
   });
   const filled = completed.filter((row) => closedTrades(row.answer).length > 0);
   const episodeNetValues = completed.map((row) => row.answer.result?.netR ?? 0);
@@ -632,7 +691,9 @@ function aggregate(rows: ReportRow[]): AggregateMetrics {
   const tradeNetValues = trades.map((trade) => trade.netR);
   const positiveTrades = tradeNetValues.filter((value) => value > 0);
   const grossProfit = positiveTrades.reduce((sum, value) => sum + value, 0);
-  const grossLoss = Math.abs(tradeNetValues.filter((value) => value < 0).reduce((sum, value) => sum + value, 0));
+  const grossLoss = Math.abs(
+    tradeNetValues.filter((value) => value < 0).reduce((sum, value) => sum + value, 0),
+  );
   const directionRows = directional.filter((row) => row.directionHit != null);
   return {
     cases: rows.length,
@@ -650,10 +711,11 @@ function aggregate(rows: ReportRow[]): AggregateMetrics {
     avgNetRPerCase: mean(completed.map((row) => row.answer.result?.netR ?? 0)),
     expectancy: mean(tradeNetValues),
     totalNetR: episodeNetValues.reduce((sum, value) => sum + value, 0),
-    profitFactor: grossLoss > 0 ? grossProfit / grossLoss : grossProfit > 0 ? "infinite" : null,
-    directionAccuracy: directionRows.length > 0
-      ? directionRows.filter((row) => row.directionHit).length / directionRows.length
-      : null,
+    profitFactor: grossLoss > 0 ? grossProfit / grossLoss : grossProfit > 0 ? 'infinite' : null,
+    directionAccuracy:
+      directionRows.length > 0
+        ? directionRows.filter((row) => row.directionHit).length / directionRows.length
+        : null,
     avgHoldingBars: mean(trades.map((trade) => trade.holdingBars)),
     avgMfeR: mean(trades.map((trade) => trade.mfeR)),
     avgMaeR: mean(trades.map((trade) => trade.maeR)),
@@ -662,23 +724,25 @@ function aggregate(rows: ReportRow[]): AggregateMetrics {
     avgCostUsd: mean(rows.map((row) => row.answer.metrics.costUsd)),
     avgDurationMs: mean(rows.map((row) => row.answer.metrics.durationMs)),
     avgToolCalls: mean(rows.map((row) => row.answer.metrics.toolCalls)),
-    avgTokens: mean(rows.map((row) => row.answer.metrics.inputTokens + row.answer.metrics.outputTokens)),
+    avgTokens: mean(
+      rows.map((row) => row.answer.metrics.inputTokens + row.answer.metrics.outputTokens),
+    ),
     avgDecisionBars: mean(completed.map((row) => decisionBar(row.answer))),
   };
 }
 
 function actionReason(record: EpisodeActionRecord): EpisodeTradeReason | null {
-  return "reason" in record.action ? record.action.reason ?? null : null;
+  return 'reason' in record.action ? (record.action.reason ?? null) : null;
 }
 
 function isDecisionAction(record: EpisodeActionRecord): boolean {
-  return record.action.type !== "observe";
+  return record.action.type !== 'observe';
 }
 
 function tradeEntryReason(row: ReportRow, trade: EpisodeClosedTrade): EpisodeTradeReason | null {
   if (trade.entryReason) return trade.entryReason;
-  const submitted = row.answer.result?.actions.find((record) =>
-    record.tradeId === trade.tradeId && record.action.type === "submit"
+  const submitted = row.answer.result?.actions.find(
+    (record) => record.tradeId === trade.tradeId && record.action.type === 'submit',
   );
   return submitted ? actionReason(submitted) : null;
 }
@@ -692,9 +756,11 @@ interface ReasonMetrics {
 }
 
 function aggregateReasons(rows: ReportRow[]): ReasonMetrics {
-  const completed = rows.filter((row) => row.answer.status === "completed");
+  const completed = rows.filter((row) => row.answer.status === 'completed');
   const actions = completed.flatMap((row) =>
-    (row.answer.result?.actions ?? []).filter(isDecisionAction).map((record) => ({ model: row.answer.model, record }))
+    (row.answer.result?.actions ?? [])
+      .filter(isDecisionAction)
+      .map((record) => ({ model: row.answer.model, record })),
   );
   const reasoned = actions.flatMap(({ model, record }) => {
     const reason = actionReason(record);
@@ -725,7 +791,7 @@ function aggregateReasons(rows: ReportRow[]): ReasonMetrics {
     const stat = ensure(model, reason.category);
     stat.actions += 1;
     stat.actionBreakdown[record.action.type] = (stat.actionBreakdown[record.action.type] ?? 0) + 1;
-    if (record.action.type === "submit" && record.tradeId != null) stat.entries += 1;
+    if (record.action.type === 'submit' && record.tradeId != null) stat.entries += 1;
   }
 
   const netByCategory = new Map<string, number[]>();
@@ -766,25 +832,26 @@ function aggregateReasons(rows: ReportRow[]): ReasonMetrics {
     reasonedActions: reasoned.length,
     coverage: ratio(reasoned.length, actions.length),
     coverageByModel,
-    stats: [...byCategory.values()].sort((a, b) =>
-      a.model.localeCompare(b.model)
-      || b.actions - a.actions
-      || b.trades - a.trades
-      || a.category.localeCompare(b.category)
+    stats: [...byCategory.values()].sort(
+      (a, b) =>
+        a.model.localeCompare(b.model) ||
+        b.actions - a.actions ||
+        b.trades - a.trades ||
+        a.category.localeCompare(b.category),
     ),
   };
 }
 
 function valueClass(value: number | null | undefined): string {
-  if (value == null || value === 0) return "neutral";
-  return value > 0 ? "positive" : "negative";
+  if (value == null || value === 0) return 'neutral';
+  return value > 0 ? 'positive' : 'negative';
 }
 
 function marketDate(time: string): string {
   if (/^\d{4}-\d{2}-\d{2}$/.test(time)) return time;
   const parts = MARKET_DATE_FORMATTER.formatToParts(new Date(time));
-  const part = (type: string) => parts.find((entry) => entry.type === type)?.value ?? "";
-  return `${part("year")}-${part("month")}-${part("day")}`;
+  const part = (type: string) => parts.find((entry) => entry.type === type)?.value ?? '';
+  return `${part('year')}-${part('month')}-${part('day')}`;
 }
 
 function weekKey(time: string): string {
@@ -796,7 +863,11 @@ function weekKey(time: string): string {
 }
 
 function chartTime(time: string, timeframe: ChartTimeframe): number | string {
-  return timeframe === "h1" ? Math.floor(Date.parse(time) / 1_000) : timeframe === "day" ? marketDate(time) : weekKey(time);
+  return timeframe === 'h1'
+    ? Math.floor(Date.parse(time) / 1_000)
+    : timeframe === 'day'
+      ? marketDate(time)
+      : weekKey(time);
 }
 
 function toChartBar(bar: RawBar, timeframe: ChartTimeframe): ChartBar | null {
@@ -807,7 +878,7 @@ function toChartBar(bar: RawBar, timeframe: ChartTimeframe): ChartBar | null {
   const volume = finite(bar.volume);
   const time = chartTime(bar.time, timeframe);
   if (open == null || high == null || low == null || close == null || volume == null) return null;
-  if (typeof time === "number" && !Number.isFinite(time)) return null;
+  if (typeof time === 'number' && !Number.isFinite(time)) return null;
   return { time, open, high, low, close, volume };
 }
 
@@ -818,7 +889,7 @@ function toChartBars(bars: RawBar[], timeframe: ChartTimeframe): ChartBar[] {
     if (converted) deduped.set(String(converted.time), converted);
   }
   return [...deduped.values()].sort((a, b) => {
-    if (typeof a.time === "number" && typeof b.time === "number") return a.time - b.time;
+    if (typeof a.time === 'number' && typeof b.time === 'number') return a.time - b.time;
     return String(a.time).localeCompare(String(b.time));
   });
 }
@@ -837,24 +908,33 @@ function visibleCursor(row: ReportRow): number {
   return cursor;
 }
 
-function rangesAtBarIndex(question: Question, barIndex: number): Record<ChartTimeframe, ChartBar[]> {
+function rangesAtBarIndex(
+  question: Question,
+  barIndex: number,
+): Record<ChartTimeframe, ChartBar[]> {
   const clamped = Math.max(0, Math.min(question.replay.bars.length, Math.floor(barIndex)));
   const view = buildEpisodeQuestionViewAtCursor(question, clamped - 1);
   return {
-    h1: toChartBars(view.fixtures.kline["1h"] ?? [], "h1"),
-    day: toChartBars(view.fixtures.kline.day ?? [], "day"),
-    week: toChartBars(view.fixtures.kline.week ?? [], "week"),
+    h1: toChartBars(view.fixtures.kline['1h'] ?? [], 'h1'),
+    day: toChartBars(view.fixtures.kline.day ?? [], 'day'),
+    week: toChartBars(view.fixtures.kline.week ?? [], 'week'),
   };
 }
 
 function finalVisibleBarIndex(row: ReportRow): number {
   if (!row.question) return 0;
-  if (row.answer.status === "completed"
-    && (row.answer.result?.terminationReason === "horizon" || row.answer.result?.terminationReason === "no_trade")) {
+  if (
+    row.answer.status === 'completed' &&
+    (row.answer.result?.terminationReason === 'horizon' ||
+      row.answer.result?.terminationReason === 'no_trade')
+  ) {
     return row.question.replay.bars.length;
   }
   const fromActions = visibleCursor(row) + 1;
-  const fromTrace = row.processEvents.reduce((maximum, event) => Math.max(maximum, event.snapshotBar), 0);
+  const fromTrace = row.processEvents.reduce(
+    (maximum, event) => Math.max(maximum, event.snapshotBar),
+    0,
+  );
   return Math.max(0, Math.min(row.question.replay.bars.length, Math.max(fromActions, fromTrace)));
 }
 
@@ -862,12 +942,14 @@ function changedChartBars(previous: ChartBar[], current: ChartBar[]): ChartBar[]
   const prior = new Map(previous.map((bar) => [String(bar.time), bar]));
   return current.filter((bar) => {
     const before = prior.get(String(bar.time));
-    return !before
-      || before.open !== bar.open
-      || before.high !== bar.high
-      || before.low !== bar.low
-      || before.close !== bar.close
-      || before.volume !== bar.volume;
+    return (
+      !before ||
+      before.open !== bar.open ||
+      before.high !== bar.high ||
+      before.low !== bar.low ||
+      before.close !== bar.close ||
+      before.volume !== bar.volume
+    );
   });
 }
 
@@ -877,7 +959,7 @@ function buildChartPayload(row: ReportRow, index: number): ChartPayload | null {
   const baseRanges = rangesAtBarIndex(row.question, 0);
   const finalRanges = rangesAtBarIndex(row.question, finalBarIndex);
   const replayH1 = finalRanges.h1.slice(baseRanges.h1.length);
-  const snapshotPatches: ChartPayload["snapshotPatches"] = {};
+  const snapshotPatches: ChartPayload['snapshotPatches'] = {};
   let previousRanges = baseRanges;
   for (let barIndex = 1; barIndex <= finalBarIndex; barIndex += 1) {
     const currentRanges = rangesAtBarIndex(row.question, barIndex);
@@ -889,61 +971,60 @@ function buildChartPayload(row: ReportRow, index: number): ChartPayload | null {
   }
   const trades = closedTrades(row.answer);
   const markers = { h1: [], day: [], week: [] } as Record<ChartTimeframe, ChartMarker[]>;
-  const initialH1 = row.question.fixtures.kline["1h"] ?? [];
+  const initialH1 = row.question.fixtures.kline['1h'] ?? [];
   const caseStart = initialH1.at(-1);
   if (caseStart) {
     markers.h1.push({
-      time: chartTime(caseStart.time, "h1"),
-      position: "belowBar",
-      color: "#111827",
-      shape: "square",
-      text: "CASE START · B0",
+      time: chartTime(caseStart.time, 'h1'),
+      position: 'belowBar',
+      color: '#111827',
+      shape: 'square',
+      text: 'CASE START · B0',
     });
   }
   const firstReplay = row.question.replay.bars[0];
   if (firstReplay && finalBarIndex >= 1) {
     markers.h1.push({
-      time: chartTime(firstReplay.time, "h1"),
-      position: "belowBar",
-      color: "#64748b",
-      shape: "circle",
-      text: "B1 · 首根回放",
+      time: chartTime(firstReplay.time, 'h1'),
+      position: 'belowBar',
+      color: '#64748b',
+      shape: 'circle',
+      text: 'B1 · 首根回放',
     });
   }
   const finalReplay = row.question.replay.bars.at(finalBarIndex - 1);
   if (finalReplay && finalBarIndex === row.question.replay.bars.length) {
     markers.h1.push({
-      time: chartTime(finalReplay.time, "h1"),
-      position: "aboveBar",
-      color: "#111827",
-      shape: "square",
+      time: chartTime(finalReplay.time, 'h1'),
+      position: 'aboveBar',
+      color: '#111827',
+      shape: 'square',
       text: `B${finalBarIndex} · 强制结算`,
     });
   }
   for (const trade of trades) {
-    const decisionSourceForTrade = trade.decisionBar === 0
-      ? caseStart
-      : row.question.replay.bars[trade.decisionBar - 1];
+    const decisionSourceForTrade =
+      trade.decisionBar === 0 ? caseStart : row.question.replay.bars[trade.decisionBar - 1];
     if (decisionSourceForTrade && trade.decisionBar <= finalBarIndex) {
       markers.h1.push({
-        time: chartTime(decisionSourceForTrade.time, "h1"),
-        position: trade.direction === "short" ? "aboveBar" : "belowBar",
-        color: "#7c3aed",
-        shape: trade.direction === "short" ? "arrowDown" : "arrowUp",
+        time: chartTime(decisionSourceForTrade.time, 'h1'),
+        position: trade.direction === 'short' ? 'aboveBar' : 'belowBar',
+        color: '#7c3aed',
+        shape: trade.direction === 'short' ? 'arrowDown' : 'arrowUp',
         text: `T${trade.tradeId} 决策 B${trade.decisionBar}`,
       });
     }
   }
-  for (const timeframe of ["h1", "day", "week"] as const) {
+  for (const timeframe of ['h1', 'day', 'week'] as const) {
     const available = new Set(finalRanges[timeframe].map((bar) => String(bar.time)));
     for (const trade of trades) {
       const entryTime = chartTime(trade.entry.time, timeframe);
       if (available.has(String(entryTime))) {
         markers[timeframe].push({
           time: entryTime,
-          position: trade.direction === "short" ? "aboveBar" : "belowBar",
-          color: "#2563eb",
-          shape: trade.direction === "short" ? "arrowDown" : "arrowUp",
+          position: trade.direction === 'short' ? 'aboveBar' : 'belowBar',
+          color: '#2563eb',
+          shape: trade.direction === 'short' ? 'arrowDown' : 'arrowUp',
           text: `T${trade.tradeId} 成交 ${fmt(trade.entry.price)} · S ${fmt(trade.initialStop)} · T ${fmt(trade.target)}`,
         });
       }
@@ -952,9 +1033,9 @@ function buildChartPayload(row: ReportRow, index: number): ChartPayload | null {
       if (available.has(String(exitTime))) {
         markers[timeframe].push({
           time: exitTime,
-          position: trade.direction === "short" ? "belowBar" : "aboveBar",
-          color: trade.netR >= 0 ? "#059669" : "#dc2626",
-          shape: "circle",
+          position: trade.direction === 'short' ? 'belowBar' : 'aboveBar',
+          color: trade.netR >= 0 ? '#059669' : '#dc2626',
+          shape: 'circle',
           text: `T${trade.tradeId} ${exitLabel} ${fmt(trade.exit.price)} · ${fmtSigned(trade.netR, 2)}R`,
         });
       }
@@ -962,10 +1043,10 @@ function buildChartPayload(row: ReportRow, index: number): ChartPayload | null {
     markers[timeframe].sort((a, b) => String(a.time).localeCompare(String(b.time)));
   }
   const plan = row.answer.initialSubmission?.entry_plan;
-  const levels: ChartPayload["levels"] = [];
-  if (plan?.entry != null) levels.push({ title: "计划入场", price: plan.entry, color: "#2563eb" });
-  if (plan?.stop != null) levels.push({ title: "止损", price: plan.stop, color: "#dc2626" });
-  if (plan?.target1 != null) levels.push({ title: "止盈", price: plan.target1, color: "#059669" });
+  const levels: ChartPayload['levels'] = [];
+  if (plan?.entry != null) levels.push({ title: '计划入场', price: plan.entry, color: '#2563eb' });
+  if (plan?.stop != null) levels.push({ title: '止损', price: plan.stop, color: '#dc2626' });
+  if (plan?.target1 != null) levels.push({ title: '止盈', price: plan.target1, color: '#059669' });
   return {
     id: `trade-chart-${index}`,
     symbol: row.answer.symbol,
@@ -978,113 +1059,150 @@ function buildChartPayload(row: ReportRow, index: number): ChartPayload | null {
   };
 }
 
-function metricCell(label: string, value: string, note: string, tone = "neutral"): string {
+function metricCell(label: string, value: string, note: string, tone = 'neutral'): string {
   return `<div class="metric ${tone}"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong><small>${escapeHtml(note)}</small></div>`;
 }
 
 function renderReasonTable(rows: ReportRow[]): string {
   const metrics = aggregateReasons(rows);
-  const coverage = metrics.coverage == null ? "—" : fmtPercent(metrics.coverage);
+  const coverage = metrics.coverage == null ? '—' : fmtPercent(metrics.coverage);
   if (metrics.stats.length === 0) {
     return `<section class="panel reason-panel"><div class="panel-title"><h2>交易原因统计</h2><span>理由覆盖 ${metrics.reasonedActions}/${metrics.decisionActions} · ${coverage}</span></div><p class="reason-empty">该运行没有结构化交易理由；历史结果仍可读取，但不进入原因表现统计。</p></section>`;
   }
   return `<section class="panel reason-panel"><div class="panel-title"><h2>交易原因统计</h2><span>理由覆盖 ${metrics.reasonedActions}/${metrics.decisionActions} · ${coverage}</span></div>
-    <div class="table-scroll"><table class="compact-table reason-table"><thead><tr><th>模型</th><th>主原因</th><th>动作</th><th>入场 / 成交</th><th>胜率</th><th>AVG NET R</th><th>TOTAL NET R</th></tr></thead><tbody>${metrics.stats.map((stat) => {
-      const breakdown = Object.entries(stat.actionBreakdown)
-        .map(([action, count]) => `${ACTION_LABELS[action] ?? action} ${count}`)
-        .join(" · ");
-      return `<tr><td><strong>${escapeHtml(stat.model)}</strong></td><td><strong>${escapeHtml(REASON_LABELS[stat.category])}</strong><small>${escapeHtml(stat.category)}</small></td><td><strong>${stat.actions}</strong><small>${escapeHtml(breakdown || "—")}</small></td><td>${stat.entries} / ${stat.trades}</td><td>${fmtPercent(stat.winRate)}</td><td class="mono ${valueClass(stat.averageNetR)}">${fmtSigned(stat.averageNetR, 3)}</td><td class="mono ${valueClass(stat.totalNetR)}">${fmtSigned(stat.totalNetR, 3)}</td></tr>`;
-    }).join("")}</tbody></table></div></section>`;
+    <div class="table-scroll"><table class="compact-table reason-table"><thead><tr><th>模型</th><th>主原因</th><th>动作</th><th>入场 / 成交</th><th>胜率</th><th>AVG NET R</th><th>TOTAL NET R</th></tr></thead><tbody>${metrics.stats
+      .map((stat) => {
+        const breakdown = Object.entries(stat.actionBreakdown)
+          .map(([action, count]) => `${ACTION_LABELS[action] ?? action} ${count}`)
+          .join(' · ');
+        return `<tr><td><strong>${escapeHtml(stat.model)}</strong></td><td><strong>${escapeHtml(REASON_LABELS[stat.category])}</strong><small>${escapeHtml(stat.category)}</small></td><td><strong>${stat.actions}</strong><small>${escapeHtml(breakdown || '—')}</small></td><td>${stat.entries} / ${stat.trades}</td><td>${fmtPercent(stat.winRate)}</td><td class="mono ${valueClass(stat.averageNetR)}">${fmtSigned(stat.averageNetR, 3)}</td><td class="mono ${valueClass(stat.totalNetR)}">${fmtSigned(stat.totalNetR, 3)}</td></tr>`;
+      })
+      .join('')}</tbody></table></div></section>`;
 }
 
 function renderModelTable(rows: ReportRow[]): string {
   const groups = new Map<string, ReportRow[]>();
-  for (const row of rows) groups.set(row.answer.model, [...(groups.get(row.answer.model) ?? []), row]);
+  for (const row of rows)
+    groups.set(row.answer.model, [...(groups.get(row.answer.model) ?? []), row]);
   const models = [...groups.entries()]
     .map(([model, modelRows]) => ({ model, metrics: aggregate(modelRows) }))
-    .sort((a, b) => (b.metrics.avgNetRPerCase ?? -Infinity) - (a.metrics.avgNetRPerCase ?? -Infinity));
+    .sort(
+      (a, b) => (b.metrics.avgNetRPerCase ?? -Infinity) - (a.metrics.avgNetRPerCase ?? -Infinity),
+    );
   return `<section class="panel model-panel"><div class="panel-title"><h2>模型汇总</h2><span>按平均净 R / case 排序</span></div>
     <div class="table-scroll"><table class="compact-table"><thead><tr><th>#</th><th>模型</th><th>CASE / TRADE</th><th>AVG NET R</th><th>EPISODE / 交易胜率</th><th>方向命中</th><th>成交率</th><th>成本</th></tr></thead>
-    <tbody>${models.map((entry, index) => `<tr><td>${index + 1}</td><td><strong>${escapeHtml(entry.model)}</strong></td><td>${entry.metrics.cases} / ${entry.metrics.trades}</td><td class="mono ${valueClass(entry.metrics.avgNetRPerCase)}">${fmtSigned(entry.metrics.avgNetRPerCase, 3)}</td><td>${fmtPercent(entry.metrics.winRate)} / ${fmtPercent(entry.metrics.tradeWinRate)}</td><td>${fmtPercent(entry.metrics.directionAccuracy)}</td><td>${fmtPercent(entry.metrics.fillRate)}</td><td>${fmtUsd(entry.metrics.avgCostUsd)}</td></tr>`).join("")}</tbody></table></div></section>`;
+    <tbody>${models.map((entry, index) => `<tr><td>${index + 1}</td><td><strong>${escapeHtml(entry.model)}</strong></td><td>${entry.metrics.cases} / ${entry.metrics.trades}</td><td class="mono ${valueClass(entry.metrics.avgNetRPerCase)}">${fmtSigned(entry.metrics.avgNetRPerCase, 3)}</td><td>${fmtPercent(entry.metrics.winRate)} / ${fmtPercent(entry.metrics.tradeWinRate)}</td><td>${fmtPercent(entry.metrics.directionAccuracy)}</td><td>${fmtPercent(entry.metrics.fillRate)}</td><td>${fmtUsd(entry.metrics.avgCostUsd)}</td></tr>`).join('')}</tbody></table></div></section>`;
 }
 
 function renderCasesTable(rows: ReportRow[]): string {
   const models = [...new Set(rows.map((row) => row.answer.model))].sort();
   const modes = [...new Set(rows.map((row) => row.answer.mode))].sort();
-  const outcomes = [...new Set(rows.map((row) => row.answer.result?.terminationReason ?? row.answer.status))].sort();
+  const outcomes = [
+    ...new Set(rows.map((row) => row.answer.result?.terminationReason ?? row.answer.status)),
+  ].sort();
   return `<section class="panel cases-panel"><div class="panel-title"><h2>Case 列表</h2><span>选择记录查看三周期 K 线和交易标注</span></div>
-    <div class="filters"><select id="model-filter" aria-label="模型"><option value="">全部模型</option>${models.map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("")}</select><select id="mode-filter" aria-label="模式"><option value="">全部模式</option>${modes.map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(MODE_LABELS[value] ?? value)}</option>`).join("")}</select><select id="outcome-filter" aria-label="结果"><option value="">全部结果</option>${outcomes.map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(TERMINATION_LABELS[value] ?? value)}</option>`).join("")}</select><input id="case-search" type="search" placeholder="搜索 symbol / case id"/><span id="visible-count">${rows.length} / ${rows.length}</span></div>
-    <div class="table-scroll"><table class="compact-table case-table"><thead><tr><th>CASE</th><th>模型 / 模式</th><th>方向 / 决策</th><th>计划 E / S / T</th><th>实际 E / X</th><th>结果</th><th>NET R</th><th>MFE / MAE</th><th>成本 / 耗时</th></tr></thead><tbody>${rows.map((row, index) => {
-      const answer = row.answer;
-      const plan = answer.initialSubmission?.entry_plan;
-      const result = answer.result;
-      const outcome = result?.terminationReason ?? answer.status;
-      const submittedAt = decisionBar(answer);
-      return `<tr class="case-row" data-model="${escapeHtml(answer.model)}" data-mode="${escapeHtml(answer.mode)}" data-outcome="${escapeHtml(outcome)}" data-search="${escapeHtml(`${answer.symbol} ${answer.questionId}`.toLowerCase())}"><td><a href="#case-${index}"><strong>${escapeHtml(answer.symbol)}</strong><small>${escapeHtml(answer.questionId)}</small></a></td><td><strong>${escapeHtml(answer.model)}</strong><small>${escapeHtml(MODE_LABELS[answer.mode] ?? answer.mode)} · REP ${answer.rep}</small></td><td><strong>${escapeHtml(DIRECTION_LABELS[answer.initialSubmission?.direction ?? ""] ?? "—")}</strong><small>${submittedAt == null ? "未决策" : `B${submittedAt} 首次决策`}</small></td><td class="mono">${fmt(plan?.entry)} / <span class="negative">${fmt(plan?.stop)}</span> / <span class="positive">${fmt(plan?.target1)}</span></td><td class="mono"><span>${fmt(result?.entry?.price)} / ${fmt(result?.exit?.price)}</span><small>${closedTrades(answer).length} 笔完整交易</small></td><td><span class="status ${valueClass(result?.netR)}">${escapeHtml(TERMINATION_LABELS[outcome] ?? outcome)}</span></td><td class="mono ${valueClass(result?.netR)}">${fmtSigned(result?.netR, 3)}</td><td class="mono">${fmt(result?.mfeR)} / ${fmt(result?.maeR)}</td><td><span>${fmtUsd(answer.metrics.costUsd)}</span><small>${fmtDuration(answer.metrics.durationMs)}</small></td></tr>`;
-    }).join("")}</tbody></table></div></section>`;
+    <div class="filters"><select id="model-filter" aria-label="模型"><option value="">全部模型</option>${models.map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join('')}</select><select id="mode-filter" aria-label="模式"><option value="">全部模式</option>${modes.map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(MODE_LABELS[value] ?? value)}</option>`).join('')}</select><select id="outcome-filter" aria-label="结果"><option value="">全部结果</option>${outcomes.map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(TERMINATION_LABELS[value] ?? value)}</option>`).join('')}</select><input id="case-search" type="search" placeholder="搜索 symbol / case id"/><span id="visible-count">${rows.length} / ${rows.length}</span></div>
+    <div class="table-scroll"><table class="compact-table case-table"><thead><tr><th>CASE</th><th>模型 / 模式</th><th>方向 / 决策</th><th>计划 E / S / T</th><th>实际 E / X</th><th>结果</th><th>NET R</th><th>MFE / MAE</th><th>成本 / 耗时</th></tr></thead><tbody>${rows
+      .map((row, index) => {
+        const answer = row.answer;
+        const plan = answer.initialSubmission?.entry_plan;
+        const result = answer.result;
+        const outcome = result?.terminationReason ?? answer.status;
+        const submittedAt = decisionBar(answer);
+        return `<tr class="case-row" data-model="${escapeHtml(answer.model)}" data-mode="${escapeHtml(answer.mode)}" data-outcome="${escapeHtml(outcome)}" data-search="${escapeHtml(`${answer.symbol} ${answer.questionId}`.toLowerCase())}"><td><a href="#case-${index}"><strong>${escapeHtml(answer.symbol)}</strong><small>${escapeHtml(answer.questionId)}</small></a></td><td><strong>${escapeHtml(answer.model)}</strong><small>${escapeHtml(MODE_LABELS[answer.mode] ?? answer.mode)} · REP ${answer.rep}</small></td><td><strong>${escapeHtml(DIRECTION_LABELS[answer.initialSubmission?.direction ?? ''] ?? '—')}</strong><small>${submittedAt == null ? '未决策' : `B${submittedAt} 首次决策`}</small></td><td class="mono">${fmt(plan?.entry)} / <span class="negative">${fmt(plan?.stop)}</span> / <span class="positive">${fmt(plan?.target1)}</span></td><td class="mono"><span>${fmt(result?.entry?.price)} / ${fmt(result?.exit?.price)}</span><small>${closedTrades(answer).length} 笔完整交易</small></td><td><span class="status ${valueClass(result?.netR)}">${escapeHtml(TERMINATION_LABELS[outcome] ?? outcome)}</span></td><td class="mono ${valueClass(result?.netR)}">${fmtSigned(result?.netR, 3)}</td><td class="mono">${fmt(result?.mfeR)} / ${fmt(result?.maeR)}</td><td><span>${fmtUsd(answer.metrics.costUsd)}</span><small>${fmtDuration(answer.metrics.durationMs)}</small></td></tr>`;
+      })
+      .join('')}</tbody></table></div></section>`;
 }
 
-function fact(label: string, value: string, tone = ""): string {
+function fact(label: string, value: string, tone = ''): string {
   return `<div><dt>${escapeHtml(label)}</dt><dd class="${tone}">${escapeHtml(value)}</dd></div>`;
 }
 
 const PHASE_LABELS: Record<string, string> = {
-  flat: "空仓",
-  observing: "观察期",
-  awaiting_submission: "等待决策",
-  waiting_fill: "待成交",
-  pending: "待成交",
-  submitted: "已提交",
-  active: "持仓中",
-  open: "持仓中",
-  position: "持仓中",
-  terminal: "已终结",
-  completed: "已完成",
+  flat: '空仓',
+  observing: '观察期',
+  awaiting_submission: '等待决策',
+  waiting_fill: '待成交',
+  pending: '待成交',
+  submitted: '已提交',
+  active: '持仓中',
+  open: '持仓中',
+  position: '持仓中',
+  terminal: '已终结',
+  completed: '已完成',
 };
 
 function phaseLabel(phase: string | null): string {
-  if (!phase) return "—";
+  if (!phase) return '—';
   return PHASE_LABELS[phase] ?? phase;
 }
 
 function processChecks(row: ReportRow): Array<{ label: string; pass: boolean; detail: string }> {
   const events = row.processEvents;
-  const submissionIndex = events.findIndex((event) => event.tool === "submit_prediction");
+  const submissionIndex = events.findIndex((event) => event.tool === 'submit_prediction');
   const beforeSubmission = submissionIndex >= 0 ? events.slice(0, submissionIndex) : events;
   const periods = new Set(
     beforeSubmission
-      .filter((event): event is ProcessEvent & { timeframe: ChartTimeframe } => event.tool === "fetch_kline" && event.timeframe != null)
+      .filter(
+        (event): event is ProcessEvent & { timeframe: ChartTimeframe } =>
+          event.tool === 'fetch_kline' && event.timeframe != null,
+      )
       .map((event) => event.timeframe),
   );
-  const submitCount = events.filter((event) => event.tool === "submit_prediction").length;
+  const submitCount = events.filter((event) => event.tool === 'submit_prediction').length;
   const submissionsWhileFlat = events
-    .filter((event) => event.tool === "submit_prediction")
-    .every((event) => event.phaseBefore === "flat" || event.phaseBefore === "observing");
+    .filter((event) => event.tool === 'submit_prediction')
+    .every((event) => event.phaseBefore === 'flat' || event.phaseBefore === 'observing');
   const dataReadOnly = events
-    .filter((event) => event.kind === "data")
+    .filter((event) => event.kind === 'data')
     .every((event) => event.barBefore === event.barAfter);
   const replayStepSafe = events
-    .filter((event) => event.kind === "observe" || event.kind === "manage")
+    .filter((event) => event.kind === 'observe' || event.kind === 'manage')
     .every((event) => event.barAfter >= event.barBefore && event.barAfter - event.barBefore <= 1);
   const finalBar = row.question?.replay.horizonBars ?? 0;
-  const fullHorizon = row.answer.status !== "completed"
-    || row.answer.result?.terminationReason !== "horizon" && row.answer.result?.terminationReason !== "no_trade"
-    || events.some((event) => event.barAfter === finalBar && event.phaseAfter === "terminal");
+  const fullHorizon =
+    row.answer.status !== 'completed' ||
+    (row.answer.result?.terminationReason !== 'horizon' &&
+      row.answer.result?.terminationReason !== 'no_trade') ||
+    events.some((event) => event.barAfter === finalBar && event.phaseAfter === 'terminal');
   const requiredWarnings = Array.from({ length: Math.min(5, finalBar) }, (_, index) => index + 1);
   const warningCounts = new Set(
     row.trace
-      .filter((line) => line.type === "prompt_context" && line.warningInjected === true)
+      .filter((line) => line.type === 'prompt_context' && line.warningInjected === true)
       .map((line) => nonNegativeInteger(line.remainingBars))
       .filter((value): value is number => value != null),
   );
   const countdownComplete = requiredWarnings.every((remaining) => warningCounts.has(remaining));
   const errors = events.filter((event) => event.isError).length;
   return [
-    { label: "三周期检查", pass: periods.has("h1") && periods.has("day") && periods.has("week"), detail: `${periods.size}/3` },
-    { label: "重复交易边界", pass: submissionsWhileFlat, detail: `${submitCount} 次提交，均从空仓发起` },
-    { label: "完整时域", pass: dataReadOnly && replayStepSafe && fullHorizon, detail: `只读不推进；终局 B${finalBar}` },
-    { label: "T-5 强平提醒", pass: countdownComplete, detail: countdownComplete ? "T-5 至 T-1 完整" : `已记录 ${[...warningCounts].sort((a, b) => b - a).map((value) => `T-${value}`).join(" / ") || "无"}` },
-    { label: "工具执行", pass: errors === 0, detail: errors === 0 ? "无错误" : `${errors} 个错误` },
+    {
+      label: '三周期检查',
+      pass: periods.has('h1') && periods.has('day') && periods.has('week'),
+      detail: `${periods.size}/3`,
+    },
+    {
+      label: '重复交易边界',
+      pass: submissionsWhileFlat,
+      detail: `${submitCount} 次提交，均从空仓发起`,
+    },
+    {
+      label: '完整时域',
+      pass: dataReadOnly && replayStepSafe && fullHorizon,
+      detail: `只读不推进；终局 B${finalBar}`,
+    },
+    {
+      label: 'T-5 强平提醒',
+      pass: countdownComplete,
+      detail: countdownComplete
+        ? 'T-5 至 T-1 完整'
+        : `已记录 ${
+            [...warningCounts]
+              .sort((a, b) => b - a)
+              .map((value) => `T-${value}`)
+              .join(' / ') || '无'
+          }`,
+    },
+    { label: '工具执行', pass: errors === 0, detail: errors === 0 ? '无错误' : `${errors} 个错误` },
   ];
 }
 
@@ -1096,25 +1214,31 @@ function renderProcessChain(row: ReportRow, index: number): string {
   const entryAt = replayBarIndex(row.question, row.answer.result?.entry?.time);
   const exitAt = replayBarIndex(row.question, row.answer.result?.exit?.time);
   const timing = [
-    submittedAt == null ? "未提交决策" : `决策 B${submittedAt}`,
-    trades.length === 0 ? "全程空仓" : `${trades.length} 笔完整交易`,
-    entryAt == null || exitAt == null ? "无成交区间" : `首次成交 B${entryAt} · 最后退出 B${exitAt}`,
+    submittedAt == null ? '未提交决策' : `决策 B${submittedAt}`,
+    trades.length === 0 ? '全程空仓' : `${trades.length} 笔完整交易`,
+    entryAt == null || exitAt == null ? '无成交区间' : `首次成交 B${entryAt} · 最后退出 B${exitAt}`,
   ];
   if (events.length === 0) {
-    return `<section class="process-panel"><div class="process-head"><div><strong>可观察决策链</strong><span>${escapeHtml(timing.join(" · "))}</span></div></div><p class="process-empty">该结果未附加工具 trace；K 线仍显示可验证的 case 起点、决策与成交结果。</p></section>`;
+    return `<section class="process-panel"><div class="process-head"><div><strong>可观察决策链</strong><span>${escapeHtml(timing.join(' · '))}</span></div></div><p class="process-empty">该结果未附加工具 trace；K 线仍显示可验证的 case 起点、决策与成交结果。</p></section>`;
   }
   const checks = processChecks(row);
   const passed = checks.filter((check) => check.pass).length;
-  return `<section class="process-panel"><div class="process-head"><div><strong>可观察决策链</strong><span>${escapeHtml(timing.join(" · "))}</span></div><div><span class="process-score ${passed === checks.length ? "pass" : "fail"}">过程检查 ${passed}/${checks.length}</span><button type="button" class="process-reset" data-process-reset data-chart="${chartId}">查看终局</button></div></div>
-    <div class="process-rail" role="list" aria-label="工具调用链">${events.map((event) => {
-      const bar = event.barBefore === event.barAfter ? `B${event.snapshotBar}` : `B${event.barBefore} → B${event.barAfter}`;
-      const transition = event.phaseBefore === event.phaseAfter
-        ? phaseLabel(event.phaseAfter)
-        : `${phaseLabel(event.phaseBefore)} → ${phaseLabel(event.phaseAfter)}`;
-      const timeframe = event.timeframe ?? "h1";
-      return `<button type="button" role="listitem" class="process-node ${event.kind}${event.isError ? " error" : ""}" data-process-node data-chart="${chartId}" data-timeframe="${timeframe}" data-bar-index="${event.snapshotBar}" title="${escapeHtml(event.tool)}"><span class="process-index">${String(event.sequence).padStart(2, "0")}</span><span class="process-bar">${escapeHtml(bar)}</span><strong>${escapeHtml(event.label)}</strong><small>${escapeHtml(event.detail)}</small><em>${escapeHtml(transition)}${event.durationMs == null ? "" : ` · ${escapeHtml(fmtDuration(event.durationMs))}`}</em></button>`;
-    }).join("")}</div>
-    <div class="process-checks">${checks.map((check) => `<span class="${check.pass ? "pass" : "fail"}" title="${escapeHtml(check.detail)}"><i>${check.pass ? "✓" : "!"}</i>${escapeHtml(check.label)} <small>${escapeHtml(check.detail)}</small></span>`).join("")}</div></section>`;
+  return `<section class="process-panel"><div class="process-head"><div><strong>可观察决策链</strong><span>${escapeHtml(timing.join(' · '))}</span></div><div><span class="process-score ${passed === checks.length ? 'pass' : 'fail'}">过程检查 ${passed}/${checks.length}</span><button type="button" class="process-reset" data-process-reset data-chart="${chartId}">查看终局</button></div></div>
+    <div class="process-rail" role="list" aria-label="工具调用链">${events
+      .map((event) => {
+        const bar =
+          event.barBefore === event.barAfter
+            ? `B${event.snapshotBar}`
+            : `B${event.barBefore} → B${event.barAfter}`;
+        const transition =
+          event.phaseBefore === event.phaseAfter
+            ? phaseLabel(event.phaseAfter)
+            : `${phaseLabel(event.phaseBefore)} → ${phaseLabel(event.phaseAfter)}`;
+        const timeframe = event.timeframe ?? 'h1';
+        return `<button type="button" role="listitem" class="process-node ${event.kind}${event.isError ? ' error' : ''}" data-process-node data-chart="${chartId}" data-timeframe="${timeframe}" data-bar-index="${event.snapshotBar}" title="${escapeHtml(event.tool)}"><span class="process-index">${String(event.sequence).padStart(2, '0')}</span><span class="process-bar">${escapeHtml(bar)}</span><strong>${escapeHtml(event.label)}</strong><small>${escapeHtml(event.detail)}</small><em>${escapeHtml(transition)}${event.durationMs == null ? '' : ` · ${escapeHtml(fmtDuration(event.durationMs))}`}</em></button>`;
+      })
+      .join('')}</div>
+    <div class="process-checks">${checks.map((check) => `<span class="${check.pass ? 'pass' : 'fail'}" title="${escapeHtml(check.detail)}"><i>${check.pass ? '✓' : '!'}</i>${escapeHtml(check.label)} <small>${escapeHtml(check.detail)}</small></span>`).join('')}</div></section>`;
 }
 
 function renderTradeLedger(row: ReportRow): string {
@@ -1122,20 +1246,22 @@ function renderTradeLedger(row: ReportRow): string {
   if (trades.length === 0) {
     return `<section class="trade-ledger"><h4>交易明细</h4><p>该 Episode 全程没有成交。</p></section>`;
   }
-  return `<details class="trade-ledger" open><summary>交易明细 <span>${trades.length}</span></summary><ol>${trades.map((trade) => {
-    const entryBar = replayBarIndex(row.question, trade.entry.time);
-    const exitBar = replayBarIndex(row.question, trade.exit.time);
-    const reason = tradeExitLabel(trade);
-    const entryReason = tradeEntryReason(row, trade);
-    return `<li><div><strong>T${trade.tradeId} · ${escapeHtml(DIRECTION_LABELS[trade.direction])}</strong><small>B${trade.decisionBar} 决策 · ${entryBar == null ? "—" : `B${entryBar}`} → ${exitBar == null ? "—" : `B${exitBar}`} · ${escapeHtml(reason)}</small>${entryReason ? `<small class="trade-reason"><b>${escapeHtml(REASON_LABELS[entryReason.category])}</b>${escapeHtml(entryReason.summary)}</small>` : ""}</div><div class="trade-prices"><span>E ${fmt(trade.entry.price)}</span><span>S ${fmt(trade.initialStop)}${trade.finalStop === trade.initialStop ? "" : ` → ${fmt(trade.finalStop)}`}</span><span>T ${fmt(trade.target)}</span><span>X ${fmt(trade.exit.price)}</span></div><strong class="${valueClass(trade.netR)}">${fmtSigned(trade.netR, 3)} R</strong></li>`;
-  }).join("")}</ol></details>`;
+  return `<details class="trade-ledger" open><summary>交易明细 <span>${trades.length}</span></summary><ol>${trades
+    .map((trade) => {
+      const entryBar = replayBarIndex(row.question, trade.entry.time);
+      const exitBar = replayBarIndex(row.question, trade.exit.time);
+      const reason = tradeExitLabel(trade);
+      const entryReason = tradeEntryReason(row, trade);
+      return `<li><div><strong>T${trade.tradeId} · ${escapeHtml(DIRECTION_LABELS[trade.direction])}</strong><small>B${trade.decisionBar} 决策 · ${entryBar == null ? '—' : `B${entryBar}`} → ${exitBar == null ? '—' : `B${exitBar}`} · ${escapeHtml(reason)}</small>${entryReason ? `<small class="trade-reason"><b>${escapeHtml(REASON_LABELS[entryReason.category])}</b>${escapeHtml(entryReason.summary)}</small>` : ''}</div><div class="trade-prices"><span>E ${fmt(trade.entry.price)}</span><span>S ${fmt(trade.initialStop)}${trade.finalStop === trade.initialStop ? '' : ` → ${fmt(trade.finalStop)}`}</span><span>T ${fmt(trade.target)}</span><span>X ${fmt(trade.exit.price)}</span></div><strong class="${valueClass(trade.netR)}">${fmtSigned(trade.netR, 3)} R</strong></li>`;
+    })
+    .join('')}</ol></details>`;
 }
 
 function renderActionRecord(record: EpisodeActionRecord): string {
   const reason = actionReason(record);
   const label = ACTION_LABELS[record.action.type] ?? record.action.type;
-  const reasonLabel = reason ? REASON_LABELS[reason.category] : "未记录理由";
-  return `<li><span>${String(record.step).padStart(2, "0")}</span><div><strong>${escapeHtml(label)} · ${escapeHtml(reasonLabel)}</strong>${reason ? `<small>${escapeHtml(reason.summary)}</small>` : ""}<em>${escapeHtml(record.effectiveBarTime ?? record.at)}</em></div></li>`;
+  const reasonLabel = reason ? REASON_LABELS[reason.category] : '未记录理由';
+  return `<li><span>${String(record.step).padStart(2, '0')}</span><div><strong>${escapeHtml(label)} · ${escapeHtml(reasonLabel)}</strong>${reason ? `<small>${escapeHtml(reason.summary)}</small>` : ''}<em>${escapeHtml(record.effectiveBarTime ?? record.at)}</em></div></li>`;
 }
 
 function renderCaseDetail(row: ReportRow, index: number): string {
@@ -1152,17 +1278,18 @@ function renderCaseDetail(row: ReportRow, index: number): string {
   return `<article class="trade-case" id="case-${index}" data-model="${escapeHtml(answer.model)}" data-mode="${escapeHtml(answer.mode)}" data-outcome="${escapeHtml(outcome)}">
     <header class="case-head"><div><h3>${escapeHtml(answer.symbol)}</h3><span>${escapeHtml(answer.questionId)} · ${escapeHtml(answer.model)} · ${escapeHtml(MODE_LABELS[answer.mode] ?? answer.mode)}</span></div><div class="case-result"><span class="status ${valueClass(result?.netR)}">${escapeHtml(TERMINATION_LABELS[outcome] ?? outcome)}</span><strong class="${valueClass(result?.netR)}">${escapeHtml(fmtSigned(result?.netR, 3))} R</strong></div></header>
     <div class="case-layout"><section class="chart-panel"><div class="chart-toolbar"><div><strong>K 线与成交量</strong><span>点击工具节点可回看该 B 编号当时可见的数据</span></div><div class="timeframe-tabs" role="tablist" aria-label="K 线周期"><button type="button" class="active" data-timeframe-tab data-chart="trade-chart-${index}" data-timeframe="h1">1 小时</button><button type="button" data-timeframe-tab data-chart="trade-chart-${index}" data-timeframe="day">日线</button><button type="button" data-timeframe-tab data-chart="trade-chart-${index}" data-timeframe="week">周线</button></div></div><div class="tv-chart" id="trade-chart-${index}" data-chart-id="trade-chart-${index}"><span class="chart-loading">加载图表…</span></div><div class="chart-legend"><span><i class="entry"></i>计划入场</span><span><i class="target"></i>止盈</span><span><i class="stop"></i>止损</span><span><i class="decision"></i>决策位置</span><span class="chart-range" data-chart-range="trade-chart-${index}"></span></div>${renderProcessChain(row, index)}</section>
-      <aside class="trade-sidebar"><section><h4>首次计划</h4><dl class="facts">${fact("方向", DIRECTION_LABELS[answer.initialSubmission?.direction ?? ""] ?? "—")}${fact("首次决策", submittedAt == null ? "—" : `B${submittedAt}`)}${fact("自主观察", `${observationBars(answer)} bars`)}${fact("计划入场", fmt(plan?.entry), "entry-text")}${fact("止损", fmt(plan?.stop), "negative")}${fact("止盈", fmt(plan?.target1), "positive")}${fact("计划盈亏比", `${fmt(row.plannedRr)} R`)}${fact("止损距离", fmtPercent(row.stopDistancePct))}</dl>${initialReason ? `<p class="decision-reason"><b>${escapeHtml(REASON_LABELS[initialReason.category])}</b>${escapeHtml(initialReason.summary)}</p>` : plan?.rationale ? `<p class="rationale">${escapeHtml(plan.rationale)}</p>` : ""}</section>
-      <section><h4>Episode 结果</h4><dl class="facts">${fact("完整交易", `${trades.length} 笔`)}${fact("盈利 / 亏损", `${result?.winCount ?? trades.filter((trade) => trade.netR > 0).length} / ${result?.lossCount ?? trades.filter((trade) => trade.netR < 0).length}`)}${fact("Gross / Net R", `${fmtSigned(result?.grossR, 3)} / ${fmtSigned(result?.netR, 3)}`, valueClass(result?.netR))}${fact("最大回撤", `${fmt(result?.maxDrawdownR)} R`)}${fact("MFE / MAE", `${fmt(result?.mfeR)} / ${fmt(result?.maeR)}`)}${fact("首次成交 / 末次退出", `${entryAt == null ? "—" : `B${entryAt}`} / ${exitAt == null ? "—" : `B${exitAt}`}`)}${fact("累计持有", `${result?.holdingBars ?? 0} bars`)}${fact("方向命中", row.directionHit == null ? "—" : row.directionHit ? "是" : "否")}</dl></section>
-      ${renderTradeLedger(row)}<details class="actions"><summary>回放动作与理由 <span>${actions.length}</span></summary>${actions.length === 0 ? `<p>没有动作记录</p>` : `<ol>${actions.map(renderActionRecord).join("")}</ol>`}</details></aside></div>
+      <aside class="trade-sidebar"><section><h4>首次计划</h4><dl class="facts">${fact('方向', DIRECTION_LABELS[answer.initialSubmission?.direction ?? ''] ?? '—')}${fact('首次决策', submittedAt == null ? '—' : `B${submittedAt}`)}${fact('自主观察', `${observationBars(answer)} bars`)}${fact('计划入场', fmt(plan?.entry), 'entry-text')}${fact('止损', fmt(plan?.stop), 'negative')}${fact('止盈', fmt(plan?.target1), 'positive')}${fact('计划盈亏比', `${fmt(row.plannedRr)} R`)}${fact('止损距离', fmtPercent(row.stopDistancePct))}</dl>${initialReason ? `<p class="decision-reason"><b>${escapeHtml(REASON_LABELS[initialReason.category])}</b>${escapeHtml(initialReason.summary)}</p>` : plan?.rationale ? `<p class="rationale">${escapeHtml(plan.rationale)}</p>` : ''}</section>
+      <section><h4>Episode 结果</h4><dl class="facts">${fact('完整交易', `${trades.length} 笔`)}${fact('盈利 / 亏损', `${result?.winCount ?? trades.filter((trade) => trade.netR > 0).length} / ${result?.lossCount ?? trades.filter((trade) => trade.netR < 0).length}`)}${fact('Gross / Net R', `${fmtSigned(result?.grossR, 3)} / ${fmtSigned(result?.netR, 3)}`, valueClass(result?.netR))}${fact('最大回撤', `${fmt(result?.maxDrawdownR)} R`)}${fact('MFE / MAE', `${fmt(result?.mfeR)} / ${fmt(result?.maeR)}`)}${fact('首次成交 / 末次退出', `${entryAt == null ? '—' : `B${entryAt}`} / ${exitAt == null ? '—' : `B${exitAt}`}`)}${fact('累计持有', `${result?.holdingBars ?? 0} bars`)}${fact('方向命中', row.directionHit == null ? '—' : row.directionHit ? '是' : '否')}</dl></section>
+      ${renderTradeLedger(row)}<details class="actions"><summary>回放动作与理由 <span>${actions.length}</span></summary>${actions.length === 0 ? `<p>没有动作记录</p>` : `<ol>${actions.map(renderActionRecord).join('')}</ol>`}</details></aside></div>
   </article>`;
 }
 
 function renderAudit(audits: EpisodeDataAudit[]): string {
-  if (audits.length === 0) return `<details class="panel audit-panel"><summary><span>长桥数据审计</span><strong>未附加</strong></summary></details>`;
+  if (audits.length === 0)
+    return `<details class="panel audit-panel"><summary><span>长桥数据审计</span><strong>未附加</strong></summary></details>`;
   const checks = audits.flatMap((audit) => audit.checks.map((check) => ({ audit, check })));
-  const passed = checks.filter((entry) => entry.check.status === "pass").length;
-  return `<details class="panel audit-panel" ${passed === checks.length ? "" : "open"}><summary><span>长桥数据审计 <small>逐字段校验 K 线、cutoff、时区与未来数据边界</small></span><strong class="${passed === checks.length ? "positive" : "negative"}">${passed}/${checks.length} 通过</strong></summary><div class="audit-grid">${checks.map(({ audit, check }) => `<div class="audit-check ${check.status}"><i>${check.status === "pass" ? "✓" : "!"}</i><span><strong>${escapeHtml(check.label)}</strong><small>${escapeHtml(audit.questionId)} · ${escapeHtml(check.id)}</small>${check.detail ? `<em>${escapeHtml(check.detail)}</em>` : ""}</span></div>`).join("")}</div></details>`;
+  const passed = checks.filter((entry) => entry.check.status === 'pass').length;
+  return `<details class="panel audit-panel" ${passed === checks.length ? '' : 'open'}><summary><span>长桥数据审计 <small>逐字段校验 K 线、cutoff、时区与未来数据边界</small></span><strong class="${passed === checks.length ? 'positive' : 'negative'}">${passed}/${checks.length} 通过</strong></summary><div class="audit-grid">${checks.map(({ audit, check }) => `<div class="audit-check ${check.status}"><i>${check.status === 'pass' ? '✓' : '!'}</i><span><strong>${escapeHtml(check.label)}</strong><small>${escapeHtml(audit.questionId)} · ${escapeHtml(check.id)}</small>${check.detail ? `<em>${escapeHtml(check.detail)}</em>` : ''}</span></div>`).join('')}</div></details>`;
 }
 
 const STYLES = String.raw`
@@ -1332,27 +1459,33 @@ const SCRIPT = String.raw`
   })();
 `;
 
-export function renderEpisodeReportHtml(input: EpisodeReportInput): { html: string; summary: EpisodeReportSummary } {
+export function renderEpisodeReportHtml(input: EpisodeReportInput): {
+  html: string;
+  summary: EpisodeReportSummary;
+} {
   const generatedAt = (input.now ?? (() => new Date()))().toISOString();
   const rows = buildRows(input.answers, input.questions, input.traces);
   const metrics = aggregate(rows);
   const reasonMetrics = aggregateReasons(rows);
-  const runId = input.config.runId ?? "episode-run";
+  const runId = input.config.runId ?? 'episode-run';
   const audits = input.audits ?? [];
   const auditChecks = audits.flatMap((audit) => audit.checks);
-  const auditPassed = audits.length > 0 ? auditChecks.every((check) => check.status === "pass") : null;
+  const auditPassed =
+    audits.length > 0 ? auditChecks.every((check) => check.status === 'pass') : null;
   const firstQuestion = rows[0]?.question;
-  const config = firstQuestion ? {
-    h1: firstQuestion.fixtures.kline["1h"]?.length ?? 0,
-    day: firstQuestion.fixtures.kline.day?.length ?? 0,
-    week: firstQuestion.fixtures.kline.week?.length ?? 0,
-    sessions: firstQuestion.replay.horizonSessions ?? null,
-    bars: firstQuestion.replay.horizonBars,
-    decisionExpiry: firstQuestion.replay.decisionExpiryBars ?? null,
-    expiry: firstQuestion.replay.entryExpiryBars ?? null,
-    dayRollups: firstQuestion.replay.rollups?.day.length ?? 0,
-    weekRollups: firstQuestion.replay.rollups?.week.length ?? 0,
-  } : null;
+  const config = firstQuestion
+    ? {
+        h1: firstQuestion.fixtures.kline['1h']?.length ?? 0,
+        day: firstQuestion.fixtures.kline.day?.length ?? 0,
+        week: firstQuestion.fixtures.kline.week?.length ?? 0,
+        sessions: firstQuestion.replay.horizonSessions ?? null,
+        bars: firstQuestion.replay.horizonBars,
+        decisionExpiry: firstQuestion.replay.decisionExpiryBars ?? null,
+        expiry: firstQuestion.replay.entryExpiryBars ?? null,
+        dayRollups: firstQuestion.replay.rollups?.day.length ?? 0,
+        weekRollups: firstQuestion.replay.rollups?.week.length ?? 0,
+      }
+    : null;
   const summary: EpisodeReportSummary = {
     runId,
     generatedAt,
@@ -1383,27 +1516,33 @@ export function renderEpisodeReportHtml(input: EpisodeReportInput): { html: stri
     reasonStats: reasonMetrics.stats,
     dataAuditPassed: auditPassed,
   };
-  const charts = rows.map(buildChartPayload).filter((payload): payload is ChartPayload => payload != null);
-  const models = input.config.config?.models ?? [...new Set(input.answers.map((answer) => answer.model))];
-  const modes = input.config.config?.modes ?? [...new Set(input.answers.map((answer) => answer.mode))];
+  const charts = rows
+    .map(buildChartPayload)
+    .filter((payload): payload is ChartPayload => payload != null);
+  const models = input.config.config?.models ?? [
+    ...new Set(input.answers.map((answer) => answer.model)),
+  ];
+  const modes = input.config.config?.modes ?? [
+    ...new Set(input.answers.map((answer) => answer.mode)),
+  ];
   const html = `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="color-scheme" content="light"/><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%232563eb'/%3E%3Cpath d='M8 7h4v7l7-7h5l-8 8 9 10h-5l-8-9v9H8z' fill='white'/%3E%3C/svg%3E"/><title>${escapeHtml(runId)} · Episode Bench Report</title><style>${STYLES}${PROCESS_STYLES}${REASON_STYLES}</style></head><body><main class="report">
-    <header class="report-header"><div class="report-title"><h1>Episode Bench Report</h1><p>${escapeHtml(runId)}</p></div><div class="header-meta"><span class="chip">${escapeHtml(input.config.datasetVersion ?? input.config.config?.datasetVersion ?? "—")}</span><span class="chip">${escapeHtml(models.join(" · "))}</span><span class="chip">${escapeHtml(modes.map((mode) => MODE_LABELS[mode] ?? mode).join(" / "))}</span><span class="chip">${input.config.costBps ?? 0} bps</span><span class="chip audit-state ${auditPassed === true ? "pass" : auditPassed === false ? "fail" : ""}">${auditPassed === true ? "长桥数据已校验" : auditPassed === false ? "数据审计失败" : "未附加数据审计"}</span><span class="generated">${escapeHtml(generatedAt)}</span></div></header>
+    <header class="report-header"><div class="report-title"><h1>Episode Bench Report</h1><p>${escapeHtml(runId)}</p></div><div class="header-meta"><span class="chip">${escapeHtml(input.config.datasetVersion ?? input.config.config?.datasetVersion ?? '—')}</span><span class="chip">${escapeHtml(models.join(' · '))}</span><span class="chip">${escapeHtml(modes.map((mode) => MODE_LABELS[mode] ?? mode).join(' / '))}</span><span class="chip">${input.config.costBps ?? 0} bps</span><span class="chip audit-state ${auditPassed === true ? 'pass' : auditPassed === false ? 'fail' : ''}">${auditPassed === true ? '长桥数据已校验' : auditPassed === false ? '数据审计失败' : '未附加数据审计'}</span><span class="generated">${escapeHtml(generatedAt)}</span></div></header>
     <section class="panel summary"><div class="panel-title"><h2>运行总览</h2><span>${metrics.completed}/${metrics.cases} 完成 · ${metrics.trades} 笔完整交易</span></div><div class="metrics">
-      ${metricCell("平均净 R / case", `${fmtSigned(metrics.avgNetRPerCase, 3)} R`, `累计 ${fmtSigned(metrics.totalNetR, 3)} R`, valueClass(metrics.avgNetRPerCase))}
-      ${metricCell("Episode 胜率", fmtPercent(metrics.winRate), `${metrics.wins} / ${metrics.completed} cases`, "positive")}
-      ${metricCell("交易胜率", fmtPercent(metrics.tradeWinRate), `${metrics.tradeWins} / ${metrics.trades} 笔`, "positive")}
-      ${metricCell("方向命中", fmtPercent(metrics.directionAccuracy), "cutoff → horizon")}
-      ${metricCell("Profit Factor", metrics.profitFactor === "infinite" ? "∞" : fmt(metrics.profitFactor), "盈利 R / 亏损 R")}
-      ${metricCell("参与 / 成交", `${fmtPercent(metrics.participationRate)} / ${fmtPercent(metrics.fillRate)}`, `${metrics.directional} 个方向订单`)}
-      ${metricCell("单笔期望", `${fmtSigned(metrics.expectancy, 3)} R`, "已成交交易", valueClass(metrics.expectancy))}
-      ${metricCell("MFE / MAE", `${fmt(metrics.avgMfeR)} / ${fmt(metrics.avgMaeR)}`, `捕获 ${fmtPercent(metrics.avgCaptureRate)}`)}
-      ${metricCell("持有 / 回撤", `${fmt(metrics.avgHoldingBars, 1)} / ${fmt(metrics.avgMaxDrawdownR)} R`, "bars / max DD")}
-      ${metricCell("完成率", fmtPercent(metrics.completionRate), `${metrics.completed} / ${metrics.cases}`)}
-      ${metricCell("执行成本", fmtUsd(metrics.avgCostUsd), `${input.config.costBps ?? 0} bps`)}
-      ${metricCell("耗时 / 首次决策", `${fmtDuration(metrics.avgDurationMs)} / ${metrics.avgDecisionBars == null ? "—" : `B${fmt(metrics.avgDecisionBars, 1)}`}`, `${fmt(metrics.avgToolCalls, 1)} tools · ${fmt(metrics.avgTokens, 0)} tokens`)}
-    </div><div class="config-strip"><div><span>初始 1H</span><strong>${config?.h1 ?? "—"} bars</strong></div><div><span>初始日线</span><strong>${config?.day ?? "—"} bars</strong></div><div><span>初始周线</span><strong>${config?.week ?? "—"} bars</strong></div><div><span>回放窗口</span><strong>${config?.sessions ?? "—"} sessions</strong></div><div><span>回放 1H</span><strong>${config?.bars ?? "—"} bars</strong></div><div><span>首次决策</span><strong>B0 起自主决定</strong></div><div><span>待成交窗口</span><strong>${config?.expiry ?? "—"} bars</strong></div><div><span>强平提醒</span><strong>T-5 → T-1</strong></div><div><span>长桥日 / 周回填</span><strong>${config?.dayRollups ?? "—"} / ${config?.weekRollups ?? "—"}</strong></div></div></section>
-    ${renderReasonTable(rows)}${renderModelTable(rows)}${renderCasesTable(rows)}<section class="case-details">${rows.map(renderCaseDetail).join("")}</section>${renderAudit(audits)}
-    <footer class="footer"><span>KANSOKU BENCH · Git ${escapeHtml(input.config.gitSha ?? "—")}</span><span>图表由 <a href="https://www.tradingview.com/" target="_blank" rel="noreferrer">TradingView Lightweight Charts™</a> 提供 · 行情数据源：长桥</span></footer>
+      ${metricCell('平均净 R / case', `${fmtSigned(metrics.avgNetRPerCase, 3)} R`, `累计 ${fmtSigned(metrics.totalNetR, 3)} R`, valueClass(metrics.avgNetRPerCase))}
+      ${metricCell('Episode 胜率', fmtPercent(metrics.winRate), `${metrics.wins} / ${metrics.completed} cases`, 'positive')}
+      ${metricCell('交易胜率', fmtPercent(metrics.tradeWinRate), `${metrics.tradeWins} / ${metrics.trades} 笔`, 'positive')}
+      ${metricCell('方向命中', fmtPercent(metrics.directionAccuracy), 'cutoff → horizon')}
+      ${metricCell('Profit Factor', metrics.profitFactor === 'infinite' ? '∞' : fmt(metrics.profitFactor), '盈利 R / 亏损 R')}
+      ${metricCell('参与 / 成交', `${fmtPercent(metrics.participationRate)} / ${fmtPercent(metrics.fillRate)}`, `${metrics.directional} 个方向订单`)}
+      ${metricCell('单笔期望', `${fmtSigned(metrics.expectancy, 3)} R`, '已成交交易', valueClass(metrics.expectancy))}
+      ${metricCell('MFE / MAE', `${fmt(metrics.avgMfeR)} / ${fmt(metrics.avgMaeR)}`, `捕获 ${fmtPercent(metrics.avgCaptureRate)}`)}
+      ${metricCell('持有 / 回撤', `${fmt(metrics.avgHoldingBars, 1)} / ${fmt(metrics.avgMaxDrawdownR)} R`, 'bars / max DD')}
+      ${metricCell('完成率', fmtPercent(metrics.completionRate), `${metrics.completed} / ${metrics.cases}`)}
+      ${metricCell('执行成本', fmtUsd(metrics.avgCostUsd), `${input.config.costBps ?? 0} bps`)}
+      ${metricCell('耗时 / 首次决策', `${fmtDuration(metrics.avgDurationMs)} / ${metrics.avgDecisionBars == null ? '—' : `B${fmt(metrics.avgDecisionBars, 1)}`}`, `${fmt(metrics.avgToolCalls, 1)} tools · ${fmt(metrics.avgTokens, 0)} tokens`)}
+    </div><div class="config-strip"><div><span>初始 1H</span><strong>${config?.h1 ?? '—'} bars</strong></div><div><span>初始日线</span><strong>${config?.day ?? '—'} bars</strong></div><div><span>初始周线</span><strong>${config?.week ?? '—'} bars</strong></div><div><span>回放窗口</span><strong>${config?.sessions ?? '—'} sessions</strong></div><div><span>回放 1H</span><strong>${config?.bars ?? '—'} bars</strong></div><div><span>首次决策</span><strong>B0 起自主决定</strong></div><div><span>待成交窗口</span><strong>${config?.expiry ?? '—'} bars</strong></div><div><span>强平提醒</span><strong>T-5 → T-1</strong></div><div><span>长桥日 / 周回填</span><strong>${config?.dayRollups ?? '—'} / ${config?.weekRollups ?? '—'}</strong></div></div></section>
+    ${renderReasonTable(rows)}${renderModelTable(rows)}${renderCasesTable(rows)}<section class="case-details">${rows.map(renderCaseDetail).join('')}</section>${renderAudit(audits)}
+    <footer class="footer"><span>KANSOKU BENCH · Git ${escapeHtml(input.config.gitSha ?? '—')}</span><span>图表由 <a href="https://www.tradingview.com/" target="_blank" rel="noreferrer">TradingView Lightweight Charts™</a> 提供 · 行情数据源：长桥</span></footer>
   </main><script src="https://unpkg.com/lightweight-charts@5.2.0/dist/lightweight-charts.standalone.production.js"></script><script>const REPORT_CHARTS=${serializeForScript(charts)};${SCRIPT}</script></body></html>`;
   return { html, summary };
 }

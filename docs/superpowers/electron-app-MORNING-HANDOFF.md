@@ -13,7 +13,7 @@ main 当前 HEAD：`7242182`
 
 ```bash
 cd ~/git/trade
-git stash pop          # 会在 SettingsPage.tsx + styles.css 上报冲突
+git stash pop # 会在 SettingsPage.tsx + styles.css 上报冲突
 # 手动合：你的 settings-ui 改造 + 新增的 <CredentialsSettingsCard />
 ```
 

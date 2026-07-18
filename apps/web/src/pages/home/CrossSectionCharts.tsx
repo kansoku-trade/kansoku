@@ -1,19 +1,23 @@
-import type { ChartDoc, ChartMeta } from "@kansoku/shared/types";
-import { marketDate } from "@kansoku/shared/time";
-import { useQuery } from "@web/apiHooks";
-import { SimpleChartView } from "@web/charts/simple/SimpleChartView";
-import { client } from "@web/client";
-import { useQueryParam } from "@web/router";
-import { Card, Empty, ErrorBox, SectionTitle } from "@web/ui";
+import type { ChartDoc, ChartMeta } from '@kansoku/shared/types';
+import { marketDate } from '@kansoku/shared/time';
+import { useQuery } from '@web/apiHooks';
+import { SimpleChartView } from '@web/charts/simple/SimpleChartView';
+import { client } from '@web/client';
+import { useQueryParam } from '@web/router';
+import { Card, Empty, ErrorBox, SectionTitle } from '@web/ui';
 
-export const CROSS_SECTION_TYPES = "flow,cohort";
+export const CROSS_SECTION_TYPES = 'flow,cohort';
 
 function ChartCard({ id }: { id: string }) {
-  const { data: doc, error } = useQuery<ChartDoc>(`charts.get:${id}`, () => client.charts.get({ id }), {
-    persist: false,
-  });
+  const { data: doc, error } = useQuery<ChartDoc>(
+    `charts.get:${id}`,
+    () => client.charts.get({ id }),
+    {
+      persist: false,
+    },
+  );
   if (error) return <ErrorBox>{error}</ErrorBox>;
-  if (!doc || doc.built.kind !== "simple") return null;
+  if (!doc || doc.built.kind !== 'simple') return null;
 
   return (
     <Card className="cross-section-card">
@@ -26,7 +30,7 @@ function ChartCard({ id }: { id: string }) {
 }
 
 export function CrossSectionCharts({ date }: { date?: string } = {}) {
-  const dateParam = useQueryParam("date");
+  const dateParam = useQueryParam('date');
   const { data: metas, error } = useQuery<ChartMeta[]>(`charts.list:${CROSS_SECTION_TYPES}`, () =>
     client.charts.list({ type: CROSS_SECTION_TYPES }),
   );

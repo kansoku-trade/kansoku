@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from 'react';
 
-const STORAGE_KEY = "chat-panel-rect";
+const STORAGE_KEY = 'chat-panel-rect';
 const MIN_W = 320;
 const MIN_H = 240;
 const MARGIN = 16;
@@ -15,7 +15,7 @@ export interface FloatRect {
   h: number;
 }
 
-export type ResizeEdge = "w" | "n" | "nw";
+export type ResizeEdge = 'w' | 'n' | 'nw';
 
 export function clampRect(rect: FloatRect, vw: number, vh: number): FloatRect {
   const w = Math.min(Math.max(rect.w, MIN_W), Math.max(MIN_W, vw - MARGIN * 2));
@@ -38,9 +38,9 @@ export function defaultRect(vw: number, vh: number): FloatRect {
 }
 
 function isRect(value: unknown): value is FloatRect {
-  if (typeof value !== "object" || value === null) return false;
+  if (typeof value !== 'object' || value === null) return false;
   const r = value as Record<string, unknown>;
-  return ["x", "y", "w", "h"].every((k) => typeof r[k] === "number" && Number.isFinite(r[k]));
+  return ['x', 'y', 'w', 'h'].every((k) => typeof r[k] === 'number' && Number.isFinite(r[k]));
 }
 
 function loadRect(vw: number, vh: number): FloatRect {
@@ -70,35 +70,40 @@ export interface FloatingRectHandle {
 }
 
 export function useFloatingRect(): FloatingRectHandle {
-  const [rect, setRect] = useState<FloatRect>(() => loadRect(window.innerWidth, window.innerHeight));
+  const [rect, setRect] = useState<FloatRect>(() =>
+    loadRect(window.innerWidth, window.innerHeight),
+  );
   const [dragging, setDragging] = useState(false);
 
   useEffect(() => {
     const onResize = () => {
       setRect((prev) => clampRect(prev, window.innerWidth, window.innerHeight));
     };
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
   }, []);
 
-  const track = useCallback((compute: (dx: number, dy: number) => FloatRect, startX: number, startY: number) => {
-    setDragging(true);
-    const onMove = (ev: PointerEvent) => {
-      const next = compute(ev.clientX - startX, ev.clientY - startY);
-      setRect(clampRect(next, window.innerWidth, window.innerHeight));
-    };
-    const onUp = () => {
-      window.removeEventListener("pointermove", onMove, true);
-      window.removeEventListener("pointerup", onUp, true);
-      setDragging(false);
-      setRect((current) => {
-        saveRect(current);
-        return current;
-      });
-    };
-    window.addEventListener("pointermove", onMove, true);
-    window.addEventListener("pointerup", onUp, true);
-  }, []);
+  const track = useCallback(
+    (compute: (dx: number, dy: number) => FloatRect, startX: number, startY: number) => {
+      setDragging(true);
+      const onMove = (ev: PointerEvent) => {
+        const next = compute(ev.clientX - startX, ev.clientY - startY);
+        setRect(clampRect(next, window.innerWidth, window.innerHeight));
+      };
+      const onUp = () => {
+        window.removeEventListener('pointermove', onMove, true);
+        window.removeEventListener('pointerup', onUp, true);
+        setDragging(false);
+        setRect((current) => {
+          saveRect(current);
+          return current;
+        });
+      };
+      window.addEventListener('pointermove', onMove, true);
+      window.addEventListener('pointerup', onUp, true);
+    },
+    [],
+  );
 
   const onDragStart = useCallback(
     (e: React.PointerEvent) => {
@@ -119,11 +124,11 @@ export function useFloatingRect(): FloatingRectHandle {
       track(
         (dx, dy) => {
           const next = { ...start };
-          if (edge === "w" || edge === "nw") {
+          if (edge === 'w' || edge === 'nw') {
             next.w = Math.max(MIN_W, start.w - dx);
             next.x = right - next.w;
           }
-          if (edge === "n" || edge === "nw") {
+          if (edge === 'n' || edge === 'nw') {
             next.h = Math.max(MIN_H, start.h - dy);
             next.y = bottom - next.h;
           }

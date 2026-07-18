@@ -1,14 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 
 interface TimeAgoProps {
   since: string | null | undefined;
-  format?: "ago" | "duration";
+  format?: 'ago' | 'duration';
 }
 
 // The clock must be state the render reads: React Compiler memoizes render
 // output by consumed values, so a write-only tick never refreshes the label.
-export function TimeAgo({ since, format = "ago" }: TimeAgoProps) {
-  const tickMs = format === "duration" ? 1000 : 30_000;
+export function TimeAgo({ since, format = 'ago' }: TimeAgoProps) {
+  const tickMs = format === 'duration' ? 1000 : 30_000;
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -20,7 +20,7 @@ export function TimeAgo({ since, format = "ago" }: TimeAgoProps) {
 
   if (!since) return null;
   const seconds = Math.max(0, Math.floor((now - Date.parse(since)) / 1000));
-  if (format === "ago") return <>{formatAgo(seconds)}</>;
+  if (format === 'ago') return <>{formatAgo(seconds)}</>;
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
   return <>{m > 0 ? `${m}分${s}秒` : `${s}秒`}</>;

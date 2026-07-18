@@ -1,5 +1,5 @@
-import { Card, SectionTitle } from "@web/ui";
-import { LicensePanel } from "./LicensePanel";
+import { Card, SectionTitle } from '@web/ui';
+import { LicensePanel } from './LicensePanel';
 
 export function LicenseSection() {
   return (

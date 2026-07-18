@@ -1,10 +1,14 @@
-import { toGdeltStamp } from "./newsWindow.js";
-import type { EdgarFiling, GdeltArticle } from "./newsMapping.js";
+import { toGdeltStamp } from './newsWindow.js';
+import type { EdgarFiling, GdeltArticle } from './newsMapping.js';
 
-export type FetchGdeltArticles = (companyQuery: string, startIso: string, endIso: string) => Promise<GdeltArticle[]>;
+export type FetchGdeltArticles = (
+  companyQuery: string,
+  startIso: string,
+  endIso: string,
+) => Promise<GdeltArticle[]>;
 export type FetchEdgarFilings = (cik: string) => Promise<EdgarFiling[]>;
 
-const SEC_USER_AGENT = "kansoku-bench i@innei.dev";
+const SEC_USER_AGENT = 'kansoku-bench i@innei.dev';
 const GDELT_THROTTLE_MS = 30_000;
 const GDELT_BACKOFF_MS = 60_000;
 const GDELT_MAX_RETRIES = 3;
@@ -26,12 +30,16 @@ interface GdeltDocResponse {
   articles?: GdeltArticle[];
 }
 
-export const fetchGdeltArticlesLive: FetchGdeltArticles = async (companyQuery, startIso, endIso) => {
+export const fetchGdeltArticlesLive: FetchGdeltArticles = async (
+  companyQuery,
+  startIso,
+  endIso,
+) => {
   const query = `${companyQuery} sourcelang:eng`;
   const params = new URLSearchParams({
     query,
-    mode: "artlist",
-    format: "json",
+    mode: 'artlist',
+    format: 'json',
     startdatetime: toGdeltStamp(startIso),
     enddatetime: toGdeltStamp(endIso),
     maxrecords: String(GDELT_MAX_RECORDS),
@@ -69,8 +77,9 @@ interface SecSubmissionsResponse {
 
 export const fetchEdgarFilingsLive: FetchEdgarFilings = async (cik) => {
   const url = `https://data.sec.gov/submissions/CIK${cik}.json`;
-  const response = await fetch(url, { headers: { "User-Agent": SEC_USER_AGENT } });
-  if (!response.ok) throw new Error(`EDGAR submissions fetch failed for CIK${cik}: ${response.status}`);
+  const response = await fetch(url, { headers: { 'User-Agent': SEC_USER_AGENT } });
+  if (!response.ok)
+    throw new Error(`EDGAR submissions fetch failed for CIK${cik}: ${response.status}`);
   const parsed = (await response.json()) as SecSubmissionsResponse;
   const recent = parsed.filings?.recent;
   if (!recent) return [];

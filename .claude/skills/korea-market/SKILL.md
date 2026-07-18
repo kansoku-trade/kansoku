@@ -23,8 +23,8 @@ The tempting workaround — read Korea through the US-listed proxies **EWY** (Ko
 
 **The 2026-07-14 proof.** Reading the proxies, EWY looked ~flat (−0.13%) — nothing to see. The real Seoul tape that same session:
 
-| | Seoul (real) | Proxy said |
-|---|---|---|
+|          | Seoul (real)                                                                           | Proxy said |
+| -------- | -------------------------------------------------------------------------------------- | ---------- |
 | SK Hynix | low −9.1% intraday → **closed +2.9% on 1.55× volume** (heaviest of the entire selloff) | EWY "flat" |
 
 **That was a textbook capitulation bottom, and the proxy hid it completely.** Anyone watching EWY would have missed the exact session they were waiting for.
@@ -34,11 +34,11 @@ The tempting workaround — read Korea through the US-listed proxies **EWY** (Ko
 ## Usage
 
 ```bash
-python3 .claude/skills/korea-market/scripts/quote.py --smoke          # connectivity self-test
-python3 .claude/skills/korea-market/scripts/quote.py                  # default: KOSPI, KOSDAQ, SK Hynix, Samsung
-python3 .claude/skills/korea-market/scripts/quote.py --fresh          # bypass 5-min cache (use intraday)
-python3 .claude/skills/korea-market/scripts/quote.py 000660.KS        # single name
-python3 .claude/skills/korea-market/scripts/quote.py --range 6mo      # longer history
+python3 .claude/skills/korea-market/scripts/quote.py --smoke     # connectivity self-test
+python3 .claude/skills/korea-market/scripts/quote.py             # default: KOSPI, KOSDAQ, SK Hynix, Samsung
+python3 .claude/skills/korea-market/scripts/quote.py --fresh     # bypass 5-min cache (use intraday)
+python3 .claude/skills/korea-market/scripts/quote.py 000660.KS   # single name
+python3 .claude/skills/korea-market/scripts/quote.py --range 6mo # longer history
 ```
 
 Yahoo symbols: KRX stocks are `NNNNNN.KS` (SK Hynix `000660.KS`, Samsung `005930.KS`); indices are `^KS11` (KOSPI), `^KQ11` (KOSDAQ).
@@ -47,16 +47,16 @@ Yahoo symbols: KRX stocks are `NNNNNN.KS` (SK Hynix `000660.KS`, Samsung `005930
 
 **A capitulation bottom BY DEFINITION prints a new low.** Testing for "no new low for two sessions" — the obvious naive rule — **skips the exact session you are waiting for**. That mistake was made on 2026-07-13 and corrected the next day by the data.
 
-Look for **exhaustion** instead: heaviest selling *into* a new low, then buyers taking the other side.
+Look for **exhaustion** instead: heaviest selling _into_ a new low, then buyers taking the other side.
 
-| Condition | Field | Reference |
-|---|---|---|
-| **New low** — sellers pushed below the prior floor | `made_new_low` | `low < prior low` |
-| **Heavy volume** — selling was maximal, not a drift | `heavy_volume` | `rel_volume ≥ 1.3×` (20-session avg) |
-| **Green close** — buyers won the session | `green_close` | `close > prev_close` |
-| **Closed strong** — decisively, not on a last-minute bell bounce | `closed_strong` | `(close−low)/(high−low) ≥ 0.6` |
+| Condition                                                        | Field           | Reference                            |
+| ---------------------------------------------------------------- | --------------- | ------------------------------------ |
+| **New low** — sellers pushed below the prior floor               | `made_new_low`  | `low < prior low`                    |
+| **Heavy volume** — selling was maximal, not a drift              | `heavy_volume`  | `rel_volume ≥ 1.3×` (20-session avg) |
+| **Green close** — buyers won the session                         | `green_close`   | `close > prev_close`                 |
+| **Closed strong** — decisively, not on a last-minute bell bounce | `closed_strong` | `(close−low)/(high−low) ≥ 0.6`       |
 
-**A washout on light volume is not capitulation** — it is a drift lower with nobody home, which has no natural floor. Volume is what separates *"sellers are done"* from *"buyers left."*
+**A washout on light volume is not capitulation** — it is a drift lower with nobody home, which has no natural floor. Volume is what separates _"sellers are done"_ from _"buyers left."_
 
 ### These are references, not a rule. **You judge.**
 
@@ -72,7 +72,7 @@ Read the numbers. Weigh them against the tape. Then decide.
 
 ## Interpretation rules
 
-- **Korea leads, the US follows.** Read the Seoul close *before* forming a view on MU / DRAM / SNDK / SMH. Two instances on record: 2026-07-02 (KOSPI −7.9%, sidecar halt) and 2026-07-13 (SK Hynix −15.4%, its biggest one-day drop ever) — the US memory complex followed both times.
+- **Korea leads, the US follows.** Read the Seoul close _before_ forming a view on MU / DRAM / SNDK / SMH. Two instances on record: 2026-07-02 (KOSPI −7.9%, sidecar halt) and 2026-07-13 (SK Hynix −15.4%, its biggest one-day drop ever) — the US memory complex followed both times.
 - **Forced liquidation ≠ informed selling.** A margin cascade dumps at market regardless of price or fundamentals, so a big slice of the move carries **no information** about memory fundamentals. See `journal/lessons.md`.
 - **A leverage flush burns out in days, not weeks** — leveraged money self-destructs (a 3× ETF down 24% only needs two more such days to be gone). Do not wait weeks for it. See `stocks/_leveraged-etf-mechanics.md`.
 - **But leverage explains the VIOLENCE, not the DIRECTION.** A capitulation bottom in Korea does not un-announce SK Hynix's $51B fab or MU's $250B plan. Do not let a washout signal overwrite a real supply-side signal.

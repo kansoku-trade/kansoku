@@ -1,13 +1,29 @@
-import { Bar, BarChart, CartesianGrid, Cell, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import type { CapitalBucket, CockpitFlow } from "@kansoku/shared/types";
-import { hhmm, tooltipContentStyle, tooltipItemStyle, tooltipLabelStyle, tooltipTime } from "@web/charts/simple/theme";
-import { client } from "@web/client";
-import { signed, upDown } from "@web/format";
-import { theme } from "@web/theme";
-import { SectionTitle } from "@web/ui";
-import { useIntervalFetch } from "./useIntervalFetch";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  ReferenceLine,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
+import type { CapitalBucket, CockpitFlow } from '@kansoku/shared/types';
+import {
+  hhmm,
+  tooltipContentStyle,
+  tooltipItemStyle,
+  tooltipLabelStyle,
+  tooltipTime,
+} from '@web/charts/simple/theme';
+import { client } from '@web/client';
+import { signed, upDown } from '@web/format';
+import { theme } from '@web/theme';
+import { SectionTitle } from '@web/ui';
+import { useIntervalFetch } from './useIntervalFetch';
 
-const BUCKET_LABEL: Record<string, string> = { large: "大单", medium: "中单", small: "小单" };
+const BUCKET_LABEL: Record<string, string> = { large: '大单', medium: '中单', small: '小单' };
 
 function BucketRow({ label, bucket }: { label: string; bucket: CapitalBucket }) {
   return (
@@ -23,7 +39,7 @@ function FlowMiniChart({ flow }: { flow: CockpitFlow }) {
     .map((p) => ({ t: p.time, v: p.value }))
     .filter((d) => Number.isFinite(d.t) && Number.isFinite(d.v));
   return (
-    <div style={{ width: "100%", height: 180 }}>
+    <div style={{ width: '100%', height: 180 }}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 8, right: 16, bottom: 0, left: 0 }}>
           <CartesianGrid stroke={theme.border} vertical={false} />
@@ -35,14 +51,19 @@ function FlowMiniChart({ flow }: { flow: CockpitFlow }) {
             axisLine={{ stroke: theme.borderStrong }}
             minTickGap={40}
           />
-          <YAxis tick={{ fill: theme.textSecondary, fontSize: 10 }} tickLine={false} axisLine={false} width={50} />
+          <YAxis
+            tick={{ fill: theme.textSecondary, fontSize: 10 }}
+            tickLine={false}
+            axisLine={false}
+            width={50}
+          />
           <Tooltip
-            cursor={{ fill: "rgba(255,255,255,0.04)" }}
+            cursor={{ fill: 'rgba(255,255,255,0.04)' }}
             contentStyle={tooltipContentStyle}
             labelStyle={tooltipLabelStyle}
             itemStyle={tooltipItemStyle}
             labelFormatter={(t) => tooltipTime(Number(t))}
-            formatter={(value) => [Number(value).toLocaleString(), "净流入"]}
+            formatter={(value) => [Number(value).toLocaleString(), '净流入']}
           />
           <ReferenceLine y={0} stroke={theme.borderStrong} />
           <Bar dataKey="v" isAnimationActive={false}>

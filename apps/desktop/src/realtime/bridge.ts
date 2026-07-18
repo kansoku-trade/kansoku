@@ -1,13 +1,13 @@
-import { ipcMain } from "electron";
-import { handleConnection } from "@kansoku/core/realtime/channelProtocol";
-import type { Connection } from "@kansoku/core/realtime/connection";
+import { ipcMain } from 'electron';
+import { handleConnection } from '@kansoku/core/realtime/channelProtocol';
+import type { Connection } from '@kansoku/core/realtime/connection';
 
-const HANDSHAKE_CHANNEL = "desktop-rt-connect";
+const HANDSHAKE_CHANNEL = 'desktop-rt-connect';
 
 export interface PortLike {
   postMessage(message: unknown): void;
-  on(event: "message", listener: (e: { data: unknown }) => void): unknown;
-  on(event: "close", listener: () => void): unknown;
+  on(event: 'message', listener: (e: { data: unknown }) => void): unknown;
+  on(event: 'close', listener: () => void): unknown;
   start(): void;
 }
 
@@ -21,10 +21,10 @@ export function wrapMessagePort(port: PortLike): Connection {
       } catch {}
     },
     onMessage(cb) {
-      port.on("message", (e) => cb(String(e.data)));
+      port.on('message', (e) => cb(String(e.data)));
     },
     onClose(cb) {
-      port.on("close", cb);
+      port.on('close', cb);
     },
   };
 }

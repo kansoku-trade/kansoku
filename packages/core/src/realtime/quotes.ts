@@ -1,11 +1,15 @@
-import type { QuoteCell, QuoteSnapshot } from "@kansoku/shared/types";
-import { getProvider, getStream } from "../services/marketdata/registry.js";
-import { distinctStreams, releaseSymbols, retainSymbols } from "../services/marketdata/streamRouting.js";
-import type { ExtendedQuote, RawQuote } from "../services/marketdata/types.js";
-import { classifySession, sessionLabel } from "../services/session.js";
-import { marketOf } from "../services/symbol.utils.js";
+import type { QuoteCell, QuoteSnapshot } from '@kansoku/shared/types';
+import { getProvider, getStream } from '../services/marketdata/registry.js';
+import {
+  distinctStreams,
+  releaseSymbols,
+  retainSymbols,
+} from '../services/marketdata/streamRouting.js';
+import type { ExtendedQuote, RawQuote } from '../services/marketdata/types.js';
+import { classifySession, sessionLabel } from '../services/session.js';
+import { marketOf } from '../services/symbol.utils.js';
 
-export type { RawQuote } from "../services/marketdata/types.js";
+export type { RawQuote } from '../services/marketdata/types.js';
 
 const EXTENDED_FRESH_MS = 15 * 60_000;
 
@@ -14,12 +18,19 @@ export function normalizeQuote(q: RawQuote, nowMs: number): QuoteCell {
   const regularPct = Number(q.change_percentage);
   const market = marketOf(q.symbol);
   const clock = classifySession(Math.floor(nowMs / 1000), market);
-  if (clock === "regular") {
-    return { symbol: q.symbol, session: "日盘", last: regularLast, pct: regularPct, regularLast, regularPct };
+  if (clock === 'regular') {
+    return {
+      symbol: q.symbol,
+      session: '日盘',
+      last: regularLast,
+      pct: regularPct,
+      regularLast,
+      regularPct,
+    };
   }
   const label = sessionLabel(clock, market);
   const preferred: ExtendedQuote | undefined =
-    clock === "pre" ? q.pre_market : clock === "post" ? q.post_market : q.overnight;
+    clock === 'pre' ? q.pre_market : clock === 'post' ? q.post_market : q.overnight;
   if (preferred?.last && preferred.prev_close && preferred.timestamp) {
     const ts = Date.parse(preferred.timestamp);
     if (nowMs - ts <= EXTENDED_FRESH_MS) {
@@ -37,7 +48,7 @@ export function normalizeQuote(q: RawQuote, nowMs: number): QuoteCell {
   }
   return {
     symbol: q.symbol,
-    session: market === "US" ? "日盘" : label,
+    session: market === 'US' ? '日盘' : label,
     last: regularLast,
     pct: regularPct,
     regularLast,
@@ -62,10 +73,10 @@ async function refreshBaseSymbols(): Promise<void> {
       provider.getWatchlistSymbols?.() ?? Promise.resolve([]),
       provider.getPositions?.() ?? Promise.resolve([]),
     ]);
-    if (watchlist.status === "fulfilled") {
+    if (watchlist.status === 'fulfilled') {
       for (const s of watchlist.value) set.add(s);
     }
-    if (positions.status === "fulfilled") {
+    if (positions.status === 'fulfilled') {
       for (const p of positions.value) set.add(p.symbol);
     }
     if (set.size) {
@@ -118,7 +129,7 @@ function flushCoalesced(): void {
   coalesceTimer = null;
   dedup.clear();
   const snap = buildSnapshot();
-  const env = JSON.stringify({ type: "data", data: snap });
+  const env = JSON.stringify({ type: 'data', data: snap });
   if (env === lastEnvelope) return;
   lastEnvelope = env;
   emit(env);
@@ -133,7 +144,9 @@ function scheduleFlush(symbol: string): void {
 
 function ensureListener(): void {
   if (listenerHandles) return;
-  listenerHandles = distinctStreams().map((stream) => stream.onUpdate((cell) => scheduleFlush(cell.symbol)));
+  listenerHandles = distinctStreams().map((stream) =>
+    stream.onUpdate((cell) => scheduleFlush(cell.symbol)),
+  );
 }
 
 async function ensureBase(): Promise<void> {
@@ -141,7 +154,10 @@ async function ensureBase(): Promise<void> {
   if (!baseRetained && baseSymbols.length) {
     await retainSymbols(baseSymbols).catch((err) => {
       degraded = true;
-      console.warn("[longbridge-stream] base retain failed:", err instanceof Error ? err.message : err);
+      console.warn(
+        '[longbridge-stream] base retain failed:',
+        err instanceof Error ? err.message : err,
+      );
     });
     baseRetained = true;
   }
@@ -201,7 +217,10 @@ function removeExtras(symbols: string[]): string[] {
   return drop;
 }
 
-export function subscribeQuotes(push: (envelope: string) => void, extraSymbols: string[] = []): () => void {
+export function subscribeQuotes(
+  push: (envelope: string) => void,
+  extraSymbols: string[] = [],
+): () => void {
   const cleaned = extraSymbols.filter((s) => /^[\w.]+$/.test(s));
   const fresh = addExtras(cleaned);
 
@@ -210,13 +229,15 @@ export function subscribeQuotes(push: (envelope: string) => void, extraSymbols: 
   startBaseRefreshTimer();
 
   if (fresh.length) {
-    void retainSymbols(fresh).catch((err) => console.warn("[longbridge-stream] retain extras failed", err));
+    void retainSymbols(fresh).catch((err) =>
+      console.warn('[longbridge-stream] retain extras failed', err),
+    );
   }
   void ensureBase().then(() => {
     if (lastEnvelope) push(lastEnvelope);
-    else scheduleFlush(cleaned[0] ?? baseSymbols[0] ?? "");
+    else scheduleFlush(cleaned[0] ?? baseSymbols[0] ?? '');
   });
-  if (degraded) push(JSON.stringify({ type: "status", degraded: true }));
+  if (degraded) push(JSON.stringify({ type: 'status', degraded: true }));
   if (lastEnvelope) push(lastEnvelope);
 
   return () => {

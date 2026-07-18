@@ -1,5 +1,5 @@
-import { Module } from "@tsuki-hono/common";
-import { ChatController } from "./chat.controller.js";
+import { Module } from '@tsuki-hono/common';
+import { ChatController } from './chat.controller.js';
 
 @Module({
   controllers: [ChatController],

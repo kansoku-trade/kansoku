@@ -46,16 +46,16 @@ Pin bar 放宽:
 
 ### 2. 新增 8 种形态
 
-| kind | 中文名 | 根数 | bias | 触发要点 |
-|---|---|---|---|---|
-| `doji` | 十字星 | 1 | neutral | 实体 ≤ 5% 振幅;仅在趋势末端标注(uptrendInto 或 downtrendInto 成立),横盘中不标 |
-| `long_legged_doji` | 长腿十字 | 1 | neutral | 十字 + 上下影各 ≥ 35% 振幅;同样仅趋势末端 |
-| `gravestone_doji` | 墓碑十字 | 1 | bearish | 十字 + 上影 ≥ 70% 振幅,上涨末端 |
-| `dragonfly_doji` | 蜻蜓十字 | 1 | bullish | 十字 + 下影 ≥ 70% 振幅,下跌末端 |
-| `tweezer_top` | 镊子顶 | 2 | bearish | 上涨末端,两根高点差 ≤ 10% 平均振幅,前阳后阴 |
-| `tweezer_bottom` | 镊子底 | 2 | bullish | 下跌末端,两根低点差 ≤ 10% 平均振幅,前阴后阳 |
-| `bullish_marubozu` | 光头大阳 | 1 | bullish | 阳线,实体 ≥ 85% 振幅且 ≥ 1.3 倍平均实体 |
-| `bearish_marubozu` | 光头大阴 | 1 | bearish | 阴线,实体 ≥ 85% 振幅且 ≥ 1.3 倍平均实体 |
+| kind               | 中文名   | 根数 | bias    | 触发要点                                                                      |
+| ------------------ | -------- | ---- | ------- | ----------------------------------------------------------------------------- |
+| `doji`             | 十字星   | 1    | neutral | 实体 ≤ 5% 振幅;仅在趋势末端标注(uptrendInto 或 downtrendInto 成立),横盘中不标 |
+| `long_legged_doji` | 长腿十字 | 1    | neutral | 十字 + 上下影各 ≥ 35% 振幅;同样仅趋势末端                                     |
+| `gravestone_doji`  | 墓碑十字 | 1    | bearish | 十字 + 上影 ≥ 70% 振幅,上涨末端                                               |
+| `dragonfly_doji`   | 蜻蜓十字 | 1    | bullish | 十字 + 下影 ≥ 70% 振幅,下跌末端                                               |
+| `tweezer_top`      | 镊子顶   | 2    | bearish | 上涨末端,两根高点差 ≤ 10% 平均振幅,前阳后阴                                   |
+| `tweezer_bottom`   | 镊子底   | 2    | bullish | 下跌末端,两根低点差 ≤ 10% 平均振幅,前阴后阳                                   |
+| `bullish_marubozu` | 光头大阳 | 1    | bullish | 阳线,实体 ≥ 85% 振幅且 ≥ 1.3 倍平均实体                                       |
+| `bearish_marubozu` | 光头大阴 | 1    | bearish | 阴线,实体 ≥ 85% 振幅且 ≥ 1.3 倍平均实体                                       |
 
 不加 inside bar(与孕线重复)。
 

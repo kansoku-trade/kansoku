@@ -1,4 +1,4 @@
-import type { Candle, IntradayFvgZone } from "@kansoku/shared/types";
+import type { Candle, IntradayFvgZone } from '@kansoku/shared/types';
 
 const ATR_PERIOD = 14;
 export const FVG_ATR_RATIO = 0.25;
@@ -38,15 +38,15 @@ export function detectFvgZones(candles: Candle[]): IntradayFvgZone[] {
   for (let i = 1; i < n - 1; i++) {
     const prev = candles[i - 1];
     const next = candles[i + 1];
-    let kind: IntradayFvgZone["kind"] | null = null;
+    let kind: IntradayFvgZone['kind'] | null = null;
     let low = 0;
     let high = 0;
     if (prev.high < next.low) {
-      kind = "bullish";
+      kind = 'bullish';
       low = prev.high;
       high = next.low;
     } else if (prev.low > next.high) {
-      kind = "bearish";
+      kind = 'bearish';
       low = next.high;
       high = prev.low;
     }
@@ -60,7 +60,7 @@ export function detectFvgZones(candles: Candle[]): IntradayFvgZone[] {
 
     let filled = false;
     for (let j = i + 2; j < n; j++) {
-      if (kind === "bullish" ? candles[j].low <= low : candles[j].high >= high) {
+      if (kind === 'bullish' ? candles[j].low <= low : candles[j].high >= high) {
         filled = true;
         break;
       }

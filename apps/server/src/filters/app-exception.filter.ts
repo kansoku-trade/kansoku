@@ -1,11 +1,13 @@
-import { BadRequestException, type ArgumentsHost, type ExceptionFilter } from "@tsuki-hono/common";
-import { ClientError } from "@kansoku/core/errors";
-import { jsonResponse } from "../httpResponse.js";
+import { BadRequestException, type ArgumentsHost, type ExceptionFilter } from '@tsuki-hono/common';
+import { ClientError } from '@kansoku/core/errors';
+import { jsonResponse } from '../httpResponse.js';
 
 function isMalformedJsonBody(exception: unknown): boolean {
   if (!(exception instanceof BadRequestException)) return false;
   const response = exception.getResponse<{ message?: unknown }>();
-  return typeof response === "object" && response !== null && response.message === "Invalid JSON payload";
+  return (
+    typeof response === 'object' && response !== null && response.message === 'Invalid JSON payload'
+  );
 }
 
 export class AppExceptionFilter implements ExceptionFilter {
@@ -23,7 +25,7 @@ export class AppExceptionFilter implements ExceptionFilter {
     if (isMalformedJsonBody(exception)) {
       return jsonResponse(400, {
         ok: false,
-        error: "request body must be JSON",
+        error: 'request body must be JSON',
         hint: 'e.g. {"type": "sepa", "symbol": "MRVL.US"}',
       });
     }

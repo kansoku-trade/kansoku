@@ -2,13 +2,12 @@ import type {
   AiRole,
   CatalogProvider,
   RoleSetting,
-  RoleSettingOut,
   SettingsAiOut,
   TestConnectionResult,
   UsageTodayOut,
-} from "@kansoku/pro-api";
-import type { Market } from "../services/symbol.utils.js";
-import { defineRoutes } from "./defineRoutes.js";
+} from '@kansoku/pro-api';
+import type { Market } from '../services/symbol.utils.js';
+import { defineRoutes } from './defineRoutes.js';
 
 export type {
   CatalogModel,
@@ -17,7 +16,7 @@ export type {
   SettingsAiOut,
   TestConnectionResult,
   UsageTodayOut,
-} from "@kansoku/pro-api";
+} from '@kansoku/pro-api';
 
 export interface SettingsApi {
   getAi(): Promise<SettingsAiOut>;
@@ -28,8 +27,11 @@ export interface SettingsApi {
     modelId?: unknown;
     thinkingLevel?: unknown;
   }): Promise<{ role: AiRole } & RoleSetting>;
-  deleteRole(input: { role: string }): Promise<{ role: AiRole; mode: "disabled" }>;
-  putCredential(input: { provider: string; key?: unknown }): Promise<{ provider: string; masked: string | null }>;
+  deleteRole(input: { role: string }): Promise<{ role: AiRole; mode: 'disabled' }>;
+  putCredential(input: {
+    provider: string;
+    key?: unknown;
+  }): Promise<{ provider: string; masked: string | null }>;
   deleteCredential(input: { provider: string }): Promise<{ provider: string; deleted: true }>;
   getCatalog(): Promise<{ providers: CatalogProvider[] }>;
   testConnection(input: Record<string, unknown>): Promise<TestConnectionResult>;
@@ -50,17 +52,17 @@ export interface SettingsApi {
   }>;
 }
 
-export const settingsRoutes = defineRoutes<SettingsApi>("settings", {
-  getAi: { method: "GET", path: "/ai" },
-  putRole: { method: "PUT", path: "/ai/roles/:role" },
-  deleteRole: { method: "DELETE", path: "/ai/roles/:role" },
-  putCredential: { method: "PUT", path: "/ai/credentials/:provider" },
-  deleteCredential: { method: "DELETE", path: "/ai/credentials/:provider" },
-  getCatalog: { method: "GET", path: "/ai/catalog" },
-  testConnection: { method: "POST", path: "/ai/test" },
-  getUsageToday: { method: "GET", path: "/ai/usage-today" },
-  resetCredentials: { method: "POST", path: "/ai/reset-credentials" },
-  getWatchedMarkets: { method: "GET", path: "/watched-markets" },
-  putWatchedMarkets: { method: "PUT", path: "/watched-markets" },
-  getSubscribeUrl: { method: "GET", path: "/subscribe-url" },
+export const settingsRoutes = defineRoutes<SettingsApi>('settings', {
+  getAi: { method: 'GET', path: '/ai' },
+  putRole: { method: 'PUT', path: '/ai/roles/:role' },
+  deleteRole: { method: 'DELETE', path: '/ai/roles/:role' },
+  putCredential: { method: 'PUT', path: '/ai/credentials/:provider' },
+  deleteCredential: { method: 'DELETE', path: '/ai/credentials/:provider' },
+  getCatalog: { method: 'GET', path: '/ai/catalog' },
+  testConnection: { method: 'POST', path: '/ai/test' },
+  getUsageToday: { method: 'GET', path: '/ai/usage-today' },
+  resetCredentials: { method: 'POST', path: '/ai/reset-credentials' },
+  getWatchedMarkets: { method: 'GET', path: '/watched-markets' },
+  putWatchedMarkets: { method: 'PUT', path: '/watched-markets' },
+  getSubscribeUrl: { method: 'GET', path: '/subscribe-url' },
 });

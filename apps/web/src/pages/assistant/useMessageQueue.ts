@@ -1,5 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { enqueueMessage, markQueueItemError, nextQueueAction, removeQueueItem, type QueueItem } from "./messageQueue.js";
+import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  enqueueMessage,
+  markQueueItemError,
+  nextQueueAction,
+  removeQueueItem,
+  type QueueItem,
+} from './messageQueue.js';
 
 let queueIdSeq = 0;
 
@@ -52,11 +58,13 @@ export function useMessageQueue({ busy, onSend }: UseMessageQueueOptions): Messa
         if (result.ok) {
           setQueue((latest) => removeQueueItem(latest, head.id));
         } else {
-          setQueue((latest) => markQueueItemError(latest, head.id, result.error ?? "发送失败"));
+          setQueue((latest) => markQueueItemError(latest, head.id, result.error ?? '发送失败'));
         }
       })
       .catch((err) => {
-        setQueue((latest) => markQueueItemError(latest, head.id, err instanceof Error ? err.message : "发送失败"));
+        setQueue((latest) =>
+          markQueueItemError(latest, head.id, err instanceof Error ? err.message : '发送失败'),
+        );
       })
       .finally(() => {
         flushingRef.current = false;

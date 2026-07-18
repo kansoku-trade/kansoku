@@ -15,7 +15,10 @@ export function gdeltWindow(cutoffIso: string): GdeltWindow {
 }
 
 export function toGdeltStamp(iso: string): string {
-  return iso.replace(/[-:]/g, "").replace(/\.\d+Z$/, "Z").replace("Z", "");
+  return iso
+    .replaceAll(/[:-]/g, '')
+    .replace(/\.\d+Z$/, 'Z')
+    .replace('Z', '');
 }
 
 export interface EdgarWindow {

@@ -1,7 +1,4 @@
-import type {
-  ElectronContextMenuPopupRequest,
-  ElectronContextMenuPopupResult,
-} from "./types";
+import type { ElectronContextMenuPopupRequest, ElectronContextMenuPopupResult } from './types';
 
 export interface DesktopContextMenuBridge {
   popup(request: ElectronContextMenuPopupRequest): Promise<ElectronContextMenuPopupResult>;
@@ -12,7 +9,7 @@ interface DesktopGlobal {
 }
 
 export function getDesktopContextMenuBridge(
-  win: unknown = typeof window === "undefined" ? undefined : window,
+  win: unknown = typeof window === 'undefined' ? undefined : window,
 ): DesktopContextMenuBridge | null {
   return (win as { desktop?: DesktopGlobal } | undefined)?.desktop?.contextMenu ?? null;
 }

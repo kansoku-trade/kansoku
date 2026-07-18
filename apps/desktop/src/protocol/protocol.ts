@@ -1,14 +1,14 @@
-import { readFile } from "node:fs/promises";
-import { extname, join, normalize, sep } from "node:path";
-import { app, protocol } from "electron";
-import { resolveRepoRoot } from "../boot/paths.js";
+import { readFile } from 'node:fs/promises';
+import { extname, join, normalize, sep } from 'node:path';
+import { app, protocol } from 'electron';
+import { resolveRepoRoot } from '../boot/paths.js';
 
-export const APP_SCHEME = "app";
+export const APP_SCHEME = 'app';
 
 export function resolveWebDistRoot(): string {
   return app.isPackaged
-    ? join(process.resourcesPath, "web-dist")
-    : join(resolveRepoRoot(), "apps", "web", "dist");
+    ? join(process.resourcesPath, 'web-dist')
+    : join(resolveRepoRoot(), 'apps', 'web', 'dist');
 }
 
 export function registerAppScheme(): void {
@@ -26,7 +26,7 @@ export function registerAppScheme(): void {
   ]);
 }
 
-export type RouteDecision = { kind: "static"; relativePath: string } | { kind: "blocked" };
+export type RouteDecision = { kind: 'static'; relativePath: string } | { kind: 'blocked' };
 
 // app://-/... always carries a host of "-"; the pathname after it is the
 // real route, resolved against the static web build with SPA fallback for
@@ -42,13 +42,13 @@ export function decideRoute(requestUrl: string): RouteDecision {
   try {
     pathname = decodeURIComponent(url.pathname);
   } catch {
-    return { kind: "blocked" };
+    return { kind: 'blocked' };
   }
 
   const guarded = guardStaticPath(pathname);
-  if (guarded === null) return { kind: "blocked" };
+  if (guarded === null) return { kind: 'blocked' };
 
-  return { kind: "static", relativePath: applySpaFallback(guarded) };
+  return { kind: 'static', relativePath: applySpaFallback(guarded) };
 }
 
 // Rejects any path that would escape the dist root after normalization —
@@ -56,44 +56,44 @@ export function decideRoute(requestUrl: string): RouteDecision {
 // collapse to this same check since `pathname` is already decoded and
 // path-separator-normalized by `normalize`.
 export function guardStaticPath(pathname: string): string | null {
-  const withoutLeadingSlash = pathname.replace(/^\/+/, "");
-  const withForwardSlashes = withoutLeadingSlash.replace(/\\/g, "/");
+  const withoutLeadingSlash = pathname.replace(/^\/+/, '');
+  const withForwardSlashes = withoutLeadingSlash.replaceAll('\\', '/');
   const normalized = normalize(withForwardSlashes);
 
-  if (normalized === "." || normalized === "") return "index.html";
-  if (normalized.startsWith("..") || normalized.split(sep).includes("..")) return null;
-  if (normalized.startsWith("/") || /^[a-zA-Z]:/.test(normalized)) return null;
+  if (normalized === '.' || normalized === '') return 'index.html';
+  if (normalized.startsWith('..') || normalized.split(sep).includes('..')) return null;
+  if (normalized.startsWith('/') || /^[A-Za-z]:/.test(normalized)) return null;
 
   return normalized;
 }
 
 export function applySpaFallback(relativePath: string): string {
-  const [firstSegment] = relativePath.split("/");
-  if (firstSegment === "popout") return "index.html";
-  if (extname(relativePath) !== "") return relativePath;
-  return "index.html";
+  const [firstSegment] = relativePath.split('/');
+  if (firstSegment === 'popout') return 'index.html';
+  if (extname(relativePath) !== '') return relativePath;
+  return 'index.html';
 }
 
 const MIME_TYPES: Record<string, string> = {
-  ".html": "text/html; charset=utf-8",
-  ".js": "text/javascript; charset=utf-8",
-  ".mjs": "text/javascript; charset=utf-8",
-  ".css": "text/css; charset=utf-8",
-  ".json": "application/json; charset=utf-8",
-  ".svg": "image/svg+xml",
-  ".png": "image/png",
-  ".jpg": "image/jpeg",
-  ".jpeg": "image/jpeg",
-  ".gif": "image/gif",
-  ".ico": "image/x-icon",
-  ".woff": "font/woff",
-  ".woff2": "font/woff2",
-  ".ttf": "font/ttf",
-  ".map": "application/json; charset=utf-8",
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.mjs': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.svg': 'image/svg+xml',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.ico': 'image/x-icon',
+  '.woff': 'font/woff',
+  '.woff2': 'font/woff2',
+  '.ttf': 'font/ttf',
+  '.map': 'application/json; charset=utf-8',
 };
 
 export function lookupMimeType(pathname: string): string {
-  return MIME_TYPES[extname(pathname).toLowerCase()] ?? "application/octet-stream";
+  return MIME_TYPES[extname(pathname).toLowerCase()] ?? 'application/octet-stream';
 }
 
 export function missingDistErrorHtml(distRoot: string): string {
@@ -114,18 +114,18 @@ export function createAppProtocolHandler(deps: ProtocolHostDeps) {
   return async function handleAppRequest(request: Request): Promise<Response> {
     const decision = decideRoute(request.url);
 
-    if (decision.kind === "blocked") {
-      return new Response("Forbidden", { status: 403 });
+    if (decision.kind === 'blocked') {
+      return new Response('Forbidden', { status: 403 });
     }
 
-    if (request.method !== "GET" && request.method !== "HEAD") {
-      return new Response("Method Not Allowed", { status: 405 });
+    if (request.method !== 'GET' && request.method !== 'HEAD') {
+      return new Response('Method Not Allowed', { status: 405 });
     }
 
     if (!deps.distRootExists()) {
       return new Response(missingDistErrorHtml(deps.distRoot), {
         status: 503,
-        headers: { "content-type": "text/html; charset=utf-8" },
+        headers: { 'content-type': 'text/html; charset=utf-8' },
       });
     }
 
@@ -134,10 +134,10 @@ export function createAppProtocolHandler(deps: ProtocolHostDeps) {
       const body = await readFile(filePath);
       return new Response(new Uint8Array(body), {
         status: 200,
-        headers: { "content-type": lookupMimeType(filePath) },
+        headers: { 'content-type': lookupMimeType(filePath) },
       });
     } catch {
-      return new Response("Not Found", { status: 404 });
+      return new Response('Not Found', { status: 404 });
     }
   };
 }

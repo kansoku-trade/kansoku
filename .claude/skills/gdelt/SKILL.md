@@ -16,6 +16,7 @@ description: Global multilingual news event stream with tone scoring via GDELT 2
 ## When to use
 
 Trigger phrases:
+
 - 全球新闻 / 全球事件 / 多语种新闻
 - 媒体 tone / sentiment trend / 国际关系
 - geopolitical / event tone
@@ -60,7 +61,6 @@ python3 .claude/skills/gdelt/scripts/doc.py "AI chips" --start 20260501000000 --
 
 ```json
 {
-  "ok": true,
   "data": [
     {
       "url": "https://...",
@@ -75,9 +75,10 @@ python3 .claude/skills/gdelt/scripts/doc.py "AI chips" --start 20260501000000 --
   "meta": {
     "mode": "artlist",
     "query": "Nvidia",
-    "window": {"start": "20260527071804", "end": "20260528071804"},
+    "window": { "start": "20260527071804", "end": "20260528071804" },
     "max_records": 75
-  }
+  },
+  "ok": true
 }
 ```
 
@@ -97,12 +98,12 @@ python3 .claude/skills/gdelt/scripts/doc.py "AI chips" --start 20260501000000 --
 
 ## Error handling
 
-| Exit code | Meaning | LLM action |
-|---|---|---|
-| 0 | Success | Parse `data`. |
-| 1 | Invalid args (e.g. bad timespan / lang) | Read `hint`. |
-| 3 | HTTP 4xx / non-JSON response | If body contains "Please limit requests", the throttle was tripped — wait and retry. |
-| 4 | Network | Suggest retry. |
+| Exit code | Meaning                                 | LLM action                                                                           |
+| --------- | --------------------------------------- | ------------------------------------------------------------------------------------ |
+| 0         | Success                                 | Parse `data`.                                                                        |
+| 1         | Invalid args (e.g. bad timespan / lang) | Read `hint`.                                                                         |
+| 3         | HTTP 4xx / non-JSON response            | If body contains "Please limit requests", the throttle was tripped — wait and retry. |
+| 4         | Network                                 | Suggest retry.                                                                       |
 
 ## Known limitations
 

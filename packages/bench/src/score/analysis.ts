@@ -1,5 +1,5 @@
-import { groupBy, isReferenceModel } from "./aggregate.js";
-import type { CellVerdict } from "./cell.js";
+import { groupBy, isReferenceModel } from './aggregate.js';
+import type { CellVerdict } from './cell.js';
 
 export interface QuestionDifficultyEntry {
   questionId: string;
@@ -35,10 +35,10 @@ function competitorCellsOf(cells: CellVerdict[]): CellVerdict[] {
 }
 
 function modelQuestionCorrect(cells: CellVerdict[]): boolean | null {
-  const answered = cells.filter((c) => c.outcome !== "api_error");
+  const answered = cells.filter((c) => c.outcome !== 'api_error');
   if (answered.length === 0) return null;
   const correctFlags = answered.map((c) =>
-    c.direction === "neutral" ? c.outcome === "neutral_correct" : c.score != null && c.score > 0,
+    c.direction === 'neutral' ? c.outcome === 'neutral_correct' : c.score != null && c.score > 0,
   );
   const correctCount = correctFlags.filter(Boolean).length;
   return correctCount * 2 > correctFlags.length;
@@ -68,7 +68,8 @@ export function difficultyTiersOf(cells: CellVerdict[]): DifficultyTiers {
     else split.push(entry);
   }
 
-  const byId = (a: QuestionDifficultyEntry, b: QuestionDifficultyEntry) => a.questionId.localeCompare(b.questionId);
+  const byId = (a: QuestionDifficultyEntry, b: QuestionDifficultyEntry) =>
+    a.questionId.localeCompare(b.questionId);
   return {
     allCorrect: allCorrect.sort(byId),
     allWrong: allWrong.sort(byId),
@@ -76,10 +77,12 @@ export function difficultyTiersOf(cells: CellVerdict[]): DifficultyTiers {
   };
 }
 
-type MajorityDirection = "long" | "short" | "neutral" | "tie";
+type MajorityDirection = 'long' | 'short' | 'neutral' | 'tie';
 
 function majorityDirection(cells: CellVerdict[]): MajorityDirection | null {
-  const directions = cells.map((c) => c.direction).filter((d): d is "long" | "short" | "neutral" => d != null);
+  const directions = cells
+    .map((c) => c.direction)
+    .filter((d): d is 'long' | 'short' | 'neutral' => d != null);
   if (directions.length === 0) return null;
 
   const counts = new Map<string, number>();
@@ -97,7 +100,7 @@ function majorityDirection(cells: CellVerdict[]): MajorityDirection | null {
       tie = true;
     }
   }
-  return tie ? "tie" : (best as MajorityDirection);
+  return tie ? 'tie' : (best as MajorityDirection);
 }
 
 export function agreementMatrixOf(cells: CellVerdict[]): AgreementMatrix {
@@ -131,7 +134,7 @@ export function agreementMatrixOf(cells: CellVerdict[]): AgreementMatrix {
         const agreeCount = sharedUnits.filter((unit) => {
           const da = unitsA.get(unit);
           const db = unitsB.get(unit);
-          return da !== "tie" && db !== "tie" && da === db;
+          return da !== 'tie' && db !== 'tie' && da === db;
         }).length;
         agreementRate = agreeCount / sharedCount;
       }

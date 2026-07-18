@@ -1,8 +1,8 @@
-import { Popover } from "@base-ui/react/popover";
-import { House, Library, MessageCircle, Plus, Search } from "lucide-react";
-import { useState } from "react";
-import { normalizeSymbol } from "../lib/symbol";
-import { Kbd } from "../ui";
+import { Popover } from '@base-ui/react/popover';
+import { House, Library, MessageCircle, Plus, Search } from 'lucide-react';
+import { useState } from 'react';
+import { normalizeSymbol } from '../lib/symbol';
+import { Kbd } from '../ui';
 
 interface NewTabLauncherProps {
   onOpenChat(): void;
@@ -18,11 +18,11 @@ export function NewTabLauncher({
   onOpenSymbol,
 }: NewTabLauncherProps) {
   const [open, setOpen] = useState(false);
-  const [symbol, setSymbol] = useState("");
+  const [symbol, setSymbol] = useState('');
 
   const close = () => {
     setOpen(false);
-    setSymbol("");
+    setSymbol('');
   };
 
   const run = (action: () => void) => {
@@ -41,11 +41,11 @@ export function NewTabLauncher({
       open={open}
       onOpenChange={(nextOpen) => {
         setOpen(nextOpen);
-        if (!nextOpen) setSymbol("");
+        if (!nextOpen) setSymbol('');
       }}
     >
       <Popover.Trigger
-        className={`desktop-tab-new${open ? " desktop-tab-new--active" : ""}`}
+        className={`desktop-tab-new${open ? ' desktop-tab-new--active' : ''}`}
         aria-label="新建标签"
         title="新建标签"
       >
@@ -71,7 +71,7 @@ export function NewTabLauncher({
                 value={symbol}
                 onChange={(event) => setSymbol(event.target.value)}
                 onKeyDown={(event) => {
-                  if (event.key === "Enter") openSymbol();
+                  if (event.key === 'Enter') openSymbol();
                 }}
               />
             </div>
@@ -83,12 +83,12 @@ export function NewTabLauncher({
               <button type="button" onClick={() => run(onOpenChat)}>
                 <MessageCircle size={14} aria-hidden />
                 <span>AI 对话</span>
-                <Kbd keys={["mod", "L"]} />
+                <Kbd keys={['mod', 'L']} />
               </button>
               <button type="button" onClick={() => run(onOpenResearch)}>
                 <Library size={14} aria-hidden />
                 <span>研究库</span>
-                <Kbd keys={["shift", "mod", "L"]} />
+                <Kbd keys={['shift', 'mod', 'L']} />
               </button>
             </div>
           </Popover.Popup>

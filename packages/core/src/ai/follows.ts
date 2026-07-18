@@ -1,7 +1,7 @@
-import { asc, eq } from "drizzle-orm";
-import { getDb, type Db } from "../db/index.js";
-import { symbolFollows } from "../db/schema.js";
-import { normalizeSymbol } from "../services/symbol.utils.js";
+import { asc, eq } from 'drizzle-orm';
+import { getDb, type Db } from '../db/index.js';
+import { symbolFollows } from '../db/schema.js';
+import { normalizeSymbol } from '../services/symbol.utils.js';
 
 export interface SymbolFollowState {
   symbol: string;

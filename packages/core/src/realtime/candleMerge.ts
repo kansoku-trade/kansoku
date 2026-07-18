@@ -1,4 +1,4 @@
-import type { RawBar } from "@kansoku/shared/types";
+import type { RawBar } from '@kansoku/shared/types';
 
 export interface PushBar {
   ts: number;
@@ -24,7 +24,7 @@ export function mergeCandleBar(bars: RawBar[], bar: PushBar): RawBar[] {
     volume: bar.volume,
   };
   if (bars.length === 0) return [rawBar];
-  const lastTs = Date.parse(bars[bars.length - 1].time);
+  const lastTs = Date.parse(bars.at(-1)!.time);
   if (bar.ts === lastTs) return [...bars.slice(0, -1), rawBar];
   if (bar.ts > lastTs) return [...bars, rawBar];
   return bars;
@@ -37,9 +37,13 @@ export function mergeCandleBar(bars: RawBar[], bar: PushBar): RawBar[] {
 // bar at/after the snapshot tail can still be inserted. Without an explicit
 // range this retains the historical forward-view behavior of only refreshing
 // the current tail and appending newer bars.
-export function mergeFreshBars(current: RawBar[], fresh: RawBar[], frozenRange?: FrozenBarRange): RawBar[] {
+export function mergeFreshBars(
+  current: RawBar[],
+  fresh: RawBar[],
+  frozenRange?: FrozenBarRange,
+): RawBar[] {
   if (current.length === 0) return fresh;
-  const currentTail = Date.parse(current[current.length - 1].time);
+  const currentTail = Date.parse(current.at(-1)!.time);
   const frozen = frozenRange ?? { start: Number.NEGATIVE_INFINITY, end: currentTail };
   const byTime = new Map<number, RawBar>();
   for (const bar of current) {
@@ -52,7 +56,5 @@ export function mergeFreshBars(current: RawBar[], fresh: RawBar[], frozenRange?:
     if (ts >= frozen.start && ts < frozen.end) continue;
     byTime.set(ts, bar);
   }
-  return [...byTime.entries()]
-    .sort(([a], [b]) => a - b)
-    .map(([, bar]) => bar);
+  return [...byTime.entries()].sort(([a], [b]) => a - b).map(([, bar]) => bar);
 }

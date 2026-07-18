@@ -1,12 +1,12 @@
-import type { CockpitComment, IntradaySidebar, SymbolAnalysisRow } from "@kansoku/shared/types";
-import type { SidebarTab } from "@web/charts/SidebarTabs";
-import { NewsTab } from "@web/charts/intraday/tabs/NewsTab";
-import { Badge } from "@web/ui";
-import { AiTab } from "./AiTab";
-import type { CockpitEnvState } from "./useCockpitEnv";
-import { EnvTab } from "./EnvTab";
-import { FlowTab } from "./FlowTab";
-import { ReviewTab, type ReviewSection } from "./ReviewTab";
+import type { CockpitComment, IntradaySidebar, SymbolAnalysisRow } from '@kansoku/shared/types';
+import type { SidebarTab } from '@web/charts/SidebarTabs';
+import { NewsTab } from '@web/charts/intraday/tabs/NewsTab';
+import { Badge } from '@web/ui';
+import { AiTab } from './AiTab';
+import type { CockpitEnvState } from './useCockpitEnv';
+import { EnvTab } from './EnvTab';
+import { FlowTab } from './FlowTab';
+import { ReviewTab, type ReviewSection } from './ReviewTab';
 
 export function buildSharedSidebarTabs(params: {
   sym: string;
@@ -25,13 +25,29 @@ export function buildSharedSidebarTabs(params: {
   commentsLoaded: boolean;
   unread: number;
 }): SidebarTab[] {
-  const { sym, sidebar, env, analysesRows, latestId, journalEntries, reloadJournal, reviewSection, setReviewSection, selectedJournal, setSelectedJournal, comments, commentsError, commentsLoaded, unread } = params;
+  const {
+    sym,
+    sidebar,
+    env,
+    analysesRows,
+    latestId,
+    journalEntries,
+    reloadJournal,
+    reviewSection,
+    setReviewSection,
+    selectedJournal,
+    setSelectedJournal,
+    comments,
+    commentsError,
+    commentsLoaded,
+    unread,
+  } = params;
   const hasNews = Boolean(sidebar.context?.news?.length) || Boolean(sidebar.news?.length);
 
   return [
     {
-      key: "env",
-      label: "环境",
+      key: 'env',
+      label: '环境',
       content: (
         <>
           <EnvTab
@@ -45,10 +61,15 @@ export function buildSharedSidebarTabs(params: {
         </>
       ),
     },
-    { key: "news", label: "消息", hidden: !hasNews, content: <NewsTab context={sidebar.context} news={sidebar.news ?? []} /> },
     {
-      key: "review",
-      label: "复盘",
+      key: 'news',
+      label: '消息',
+      hidden: !hasNews,
+      content: <NewsTab context={sidebar.context} news={sidebar.news ?? []} />,
+    },
+    {
+      key: 'review',
+      label: '复盘',
       content: (
         <ReviewTab
           symbol={sym}
@@ -64,10 +85,15 @@ export function buildSharedSidebarTabs(params: {
       ),
     },
     {
-      key: "ai",
+      key: 'ai',
       label: (
         <>
-          AI 点评{unread > 0 && <Badge tone="down" className="unread-badge">{unread}</Badge>}
+          AI 点评
+          {unread > 0 && (
+            <Badge tone="down" className="unread-badge">
+              {unread}
+            </Badge>
+          )}
         </>
       ),
       content: (

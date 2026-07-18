@@ -1,8 +1,8 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { PortLike } from "@desktop/realtime/bridge.js";
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { PortLike } from '@desktop/realtime/bridge.js';
 
 const handleConnection = vi.fn();
-vi.mock("@kansoku/core/realtime/channelProtocol", () => ({ handleConnection }));
+vi.mock('@kansoku/core/realtime/channelProtocol', () => ({ handleConnection }));
 
 interface FakeIpcMainEvent {
   ports: FakePort[];
@@ -14,9 +14,9 @@ const ipcMain = {
     ipcMainListeners.set(channel, listener);
   }),
 };
-vi.mock("electron", () => ({ ipcMain }));
+vi.mock('electron', () => ({ ipcMain }));
 
-const { attachRealtimeBridge, wrapMessagePort } = await import("@desktop/realtime/bridge.js");
+const { attachRealtimeBridge, wrapMessagePort } = await import('@desktop/realtime/bridge.js');
 
 class FakePort implements PortLike {
   sent: unknown[] = [];
@@ -26,11 +26,11 @@ class FakePort implements PortLike {
   private closeListeners: (() => void)[] = [];
 
   postMessage(message: unknown): void {
-    if (this.throwOnPostMessage) throw new Error("port is closed");
+    if (this.throwOnPostMessage) throw new Error('port is closed');
     this.sent.push(message);
   }
-  on(event: "message" | "close", listener: never): unknown {
-    if (event === "message") this.messageListeners.push(listener as (e: { data: unknown }) => void);
+  on(event: 'message' | 'close', listener: never): unknown {
+    if (event === 'message') this.messageListeners.push(listener as (e: { data: unknown }) => void);
     else this.closeListeners.push(listener as () => void);
     return this;
   }
@@ -45,18 +45,18 @@ class FakePort implements PortLike {
   }
 }
 
-describe("wrapMessagePort", () => {
-  it("bridges send/onMessage/onClose to the port", () => {
+describe('wrapMessagePort', () => {
+  it('bridges send/onMessage/onClose to the port', () => {
     const port = new FakePort();
     const conn = wrapMessagePort(port);
 
-    conn.send("hello");
-    expect(port.sent).toEqual(["hello"]);
+    conn.send('hello');
+    expect(port.sent).toEqual(['hello']);
 
     const received: string[] = [];
     conn.onMessage((text) => received.push(text));
-    port.emitMessage("world");
-    expect(received).toEqual(["world"]);
+    port.emitMessage('world');
+    expect(received).toEqual(['world']);
 
     let closed = false;
     conn.onClose(() => {
@@ -66,51 +66,51 @@ describe("wrapMessagePort", () => {
     expect(closed).toBe(true);
   });
 
-  it("swallows a send on a port that is physically closed before its close event lands", () => {
+  it('swallows a send on a port that is physically closed before its close event lands', () => {
     const port = new FakePort();
     const conn = wrapMessagePort(port);
     port.throwOnPostMessage = true;
-    expect(() => conn.send("late push")).not.toThrow();
+    expect(() => conn.send('late push')).not.toThrow();
     expect(port.sent).toEqual([]);
   });
 
-  it("stringifies non-string message payloads", () => {
+  it('stringifies non-string message payloads', () => {
     const port = new FakePort();
     const conn = wrapMessagePort(port);
     const received: string[] = [];
     conn.onMessage((text) => received.push(text));
     port.emitMessage(42);
-    expect(received).toEqual(["42"]);
+    expect(received).toEqual(['42']);
   });
 });
 
-describe("attachRealtimeBridge", () => {
+describe('attachRealtimeBridge', () => {
   beforeEach(() => {
     ipcMainListeners.clear();
     handleConnection.mockReset();
   });
 
-  it("registers a desktop-rt-connect handler that hands the port to handleConnection", () => {
+  it('registers a desktop-rt-connect handler that hands the port to handleConnection', () => {
     attachRealtimeBridge();
-    expect(ipcMain.on).toHaveBeenCalledWith("desktop-rt-connect", expect.any(Function));
+    expect(ipcMain.on).toHaveBeenCalledWith('desktop-rt-connect', expect.any(Function));
 
     const port = new FakePort();
-    ipcMainListeners.get("desktop-rt-connect")?.({ ports: [port] });
+    ipcMainListeners.get('desktop-rt-connect')?.({ ports: [port] });
 
     expect(handleConnection).toHaveBeenCalledTimes(1);
     expect(port.started).toBe(true);
   });
 
-  it("ignores a handshake event with no transferred port", () => {
+  it('ignores a handshake event with no transferred port', () => {
     attachRealtimeBridge();
-    ipcMainListeners.get("desktop-rt-connect")?.({ ports: [] });
+    ipcMainListeners.get('desktop-rt-connect')?.({ ports: [] });
     expect(handleConnection).not.toHaveBeenCalled();
   });
 
-  it("runs handleConnection cleanup when the port closes", () => {
+  it('runs handleConnection cleanup when the port closes', () => {
     attachRealtimeBridge();
     const port = new FakePort();
-    ipcMainListeners.get("desktop-rt-connect")?.({ ports: [port] });
+    ipcMainListeners.get('desktop-rt-connect')?.({ ports: [port] });
 
     const conn = handleConnection.mock.calls[0][0] as { onClose: (cb: () => void) => void };
     let cleaned = false;

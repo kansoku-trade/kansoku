@@ -1,9 +1,6 @@
 {
-  "id": "swing-TEST-01",
-  "bank": "swing",
-  "symbol": "MU.US",
-  "layer": "high-vol-tech",
   "adversarial": false,
+  "bank": "swing",
   "fixtures": {
     "kline": {
       "day": [
@@ -51,6 +48,8 @@
       "nextEarnings": "2026-06-25"
     }
   },
+  "id": "swing-TEST-01",
+  "layer": "high-vol-tech",
   "replay": {
     "horizonBars": 20,
     "bars": [
@@ -63,5 +62,6 @@
         "volume": "1100000"
       }
     ]
-  }
+  },
+  "symbol": "MU.US"
 }

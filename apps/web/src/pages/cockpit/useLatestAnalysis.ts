@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
-import type { ChartDoc, SymbolAnalysisRow } from "@kansoku/shared/types";
-import { useQuery } from "@web/apiHooks";
-import { client } from "@web/client";
-import { navigate, useQueryParam } from "@web/router";
-import { subscribeChannel } from "@web/wsHub";
+import { useEffect, useState } from 'react';
+import type { ChartDoc, SymbolAnalysisRow } from '@kansoku/shared/types';
+import { useQuery } from '@web/apiHooks';
+import { client } from '@web/client';
+import { navigate, useQueryParam } from '@web/router';
+import { subscribeChannel } from '@web/wsHub';
 import {
   applyAnalysisBroadcast,
   INITIAL_FEED_STATE,
@@ -12,7 +12,7 @@ import {
   symbolUrl,
   type AnalysisFeedState,
   type AnalysisViewMode,
-} from "./analysisMode";
+} from './analysisMode';
 
 type LatestDoc = ChartDoc & { url: string; prediction_stale?: boolean };
 
@@ -36,19 +36,22 @@ export interface LatestAnalysisState {
 }
 
 export function useLatestAnalysis(sym: string): LatestAnalysisState {
-  const pinnedId = useQueryParam("analysis");
-  const requestedView = useQueryParam("view");
+  const pinnedId = useQueryParam('analysis');
+  const requestedView = useQueryParam('view');
   const mode = resolveAnalysisViewMode(requestedView, pinnedId);
 
-  const latestKey = mode === "latest" ? `symbols.latest:${sym}` : null;
-  const { data: latestDoc, failure: latestFailure, loading: latestLoading, reload: reloadLatest } = useQuery<LatestDoc>(
-    latestKey,
-    () => client.symbols.latest({ sym }),
-  );
+  const latestKey = mode === 'latest' ? `symbols.latest:${sym}` : null;
+  const {
+    data: latestDoc,
+    failure: latestFailure,
+    loading: latestLoading,
+    reload: reloadLatest,
+  } = useQuery<LatestDoc>(latestKey, () => client.symbols.latest({ sym }));
 
   const analysesKey = `symbols.analyses:${sym}`;
-  const { data: analyses, reload: reloadAnalyses } = useQuery<SymbolAnalysisRow[]>(analysesKey, () =>
-    client.symbols.analyses({ sym }),
+  const { data: analyses, reload: reloadAnalyses } = useQuery<SymbolAnalysisRow[]>(
+    analysesKey,
+    () => client.symbols.analyses({ sym }),
   );
 
   const [feed, setFeed] = useState<AnalysisFeedState>(INITIAL_FEED_STATE);
@@ -59,30 +62,41 @@ export function useLatestAnalysis(sym: string): LatestAnalysisState {
 
   useEffect(() => {
     const off = subscribeChannel(
-      { kind: "analyses", symbol: sym },
+      { kind: 'analyses', symbol: sym },
       (payload) => {
         const msg = payload as AnalysisCreatedPayload;
-        if (msg.type !== "analysis-created" || !msg.symbol || !msg.chartId || !msg.chartType) return;
+        if (msg.type !== 'analysis-created' || !msg.symbol || !msg.chartId || !msg.chartType)
+          return;
         const broadcast = { symbol: msg.symbol, chartId: msg.chartId, chartType: msg.chartType };
-        setFeed((prev) => applyAnalysisBroadcast(prev, sym, mode === "pinned" ? pinnedId : null, broadcast));
+        setFeed((prev) =>
+          applyAnalysisBroadcast(prev, sym, mode === 'pinned' ? pinnedId : null, broadcast),
+        );
         reloadAnalyses();
-        if (mode === "latest") reloadLatest();
+        if (mode === 'latest') reloadLatest();
       },
       () => {},
     );
     return off;
   }, [sym, mode, pinnedId, reloadAnalyses, reloadLatest]);
 
-  const activeId = mode === "pinned" ? pinnedId : mode === "latest" ? (feed.latestId ?? latestDoc?.id ?? null) : null;
+  const activeId =
+    mode === 'pinned'
+      ? pinnedId
+      : mode === 'latest'
+        ? (feed.latestId ?? latestDoc?.id ?? null)
+        : null;
 
   const goToAnalysis = (id: string | null) => navigate(symbolUrl(sym, id));
 
   return {
     mode,
     activeId,
-    latestChecked: mode !== "latest" || !latestLoading,
-    latestError: mode === "latest" && latestFailure && latestFailure.status !== 404 ? latestFailure.message : null,
-    hasNewer: mode === "pinned" && Boolean(feed.newerId),
+    latestChecked: mode !== 'latest' || !latestLoading,
+    latestError:
+      mode === 'latest' && latestFailure && latestFailure.status !== 404
+        ? latestFailure.message
+        : null,
+    hasNewer: mode === 'pinned' && Boolean(feed.newerId),
     jumpToLatest: () => goToAnalysis(null),
     goToLive: () => navigate(symbolLiveUrl(sym)),
     goToAnalysis,

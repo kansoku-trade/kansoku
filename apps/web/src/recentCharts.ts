@@ -1,5 +1,5 @@
-const KEY = "trade.recent-symbols";
-const LEGACY_KEY = "trade.recent-charts";
+const KEY = 'trade.recent-symbols';
+const LEGACY_KEY = 'trade.recent-charts';
 const MAX = 5;
 
 export interface RecentSymbol {
@@ -17,7 +17,7 @@ export function listRecentSymbols(): RecentSymbol[] {
     const raw = localStorage.getItem(KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.filter((s) => s && typeof s.symbol === "string") : [];
+    return Array.isArray(parsed) ? parsed.filter((s) => s && typeof s.symbol === 'string') : [];
   } catch {
     return [];
   }
@@ -25,7 +25,10 @@ export function listRecentSymbols(): RecentSymbol[] {
 
 export function recordRecentSymbol(symbol: string): void {
   try {
-    const list = [{ symbol }, ...listRecentSymbols().filter((s) => s.symbol !== symbol)].slice(0, MAX);
+    const list = [{ symbol }, ...listRecentSymbols().filter((s) => s.symbol !== symbol)].slice(
+      0,
+      MAX,
+    );
     localStorage.setItem(KEY, JSON.stringify(list));
   } catch {
     return;

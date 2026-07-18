@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from "react";
+import { useSyncExternalStore } from 'react';
 
 export interface RestrictedModeState {
   restricted: boolean;
@@ -31,7 +31,7 @@ export function dismissRestrictedBanner(): void {
 }
 
 export function isCredentialsErrorCode(status: number, code: string | undefined): boolean {
-  return status === 503 && (code === "NO_CREDENTIALS" || code === "CREDENTIALS_REJECTED");
+  return status === 503 && (code === 'NO_CREDENTIALS' || code === 'CREDENTIALS_REJECTED');
 }
 
 function subscribe(listener: () => void): () => void {

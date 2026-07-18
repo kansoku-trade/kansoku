@@ -1,5 +1,15 @@
-import { Area, AreaChart, Brush, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import type { FlowRow } from "@kansoku/shared/types";
+import {
+  Area,
+  AreaChart,
+  Brush,
+  CartesianGrid,
+  ReferenceLine,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
+import type { FlowRow } from '@kansoku/shared/types';
 import {
   AXIS_COLOR,
   AXIS_LINE_COLOR,
@@ -12,8 +22,8 @@ import {
   tooltipContentStyle,
   tooltipItemStyle,
   tooltipLabelStyle,
-} from "./theme";
-import { theme } from "@web/theme";
+} from './theme';
+import { theme } from '@web/theme';
 
 export function FlowChart({ rows }: { rows: FlowRow[] }) {
   const data = rows
@@ -42,7 +52,7 @@ export function FlowChart({ rows }: { rows: FlowRow[] }) {
           dataKey="t"
           type="number"
           scale="time"
-          domain={["dataMin", "dataMax"]}
+          domain={['dataMin', 'dataMax']}
           tickFormatter={hhmm}
           stroke={AXIS_LINE_COLOR}
           tick={{ fill: AXIS_COLOR, fontSize: 11 }}
@@ -54,14 +64,20 @@ export function FlowChart({ rows }: { rows: FlowRow[] }) {
           tickLine={false}
           tickFormatter={(v: number) => v.toLocaleString()}
           width={72}
-          label={{ value: "累计主力净流入", angle: -90, position: "insideLeft", fill: AXIS_COLOR, fontSize: 11 }}
+          label={{
+            value: '累计主力净流入',
+            angle: -90,
+            position: 'insideLeft',
+            fill: AXIS_COLOR,
+            fontSize: 11,
+          }}
         />
         <Tooltip
           contentStyle={tooltipContentStyle}
           labelStyle={tooltipLabelStyle}
           itemStyle={tooltipItemStyle}
           labelFormatter={(t) => tooltipTime(Number(t))}
-          formatter={(value) => [Number(value).toLocaleString(), "净流入"]}
+          formatter={(value) => [Number(value).toLocaleString(), '净流入']}
         />
         <ReferenceLine y={0} stroke={ZERO_LINE_COLOR} strokeDasharray="4 4" />
         <Area
@@ -75,7 +91,14 @@ export function FlowChart({ rows }: { rows: FlowRow[] }) {
           activeDot={{ r: 3 }}
           isAnimationActive={false}
         />
-        <Brush dataKey="t" height={18} travellerWidth={8} stroke={theme.borderStrong} fill={theme.bgElement} tickFormatter={hhmm} />
+        <Brush
+          dataKey="t"
+          height={18}
+          travellerWidth={8}
+          stroke={theme.borderStrong}
+          fill={theme.bgElement}
+          tickFormatter={hhmm}
+        />
       </AreaChart>
     </ResponsiveContainer>
   );

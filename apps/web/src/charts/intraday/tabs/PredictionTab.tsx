@@ -1,20 +1,30 @@
-import type { CSSProperties } from "react";
-import { TriangleAlert } from "lucide-react";
-import type { IntradayBuilt, TimeframeKey } from "@kansoku/shared/types";
-import { fmt, signed } from "@web/format";
-import { TF_LABELS } from "../IntradayDashboard";
-import { conclusionOutdated, ReassessCta, type ConclusionReassess } from "../ConclusionCard";
-import { DIRECTION_COLOR, DIRECTION_LABEL } from "../directionLabels";
-import { AutoSignalItem, Pattern123Item, PriceZoneCard, TargetContextCard, TechRow } from "./predictionTabParts";
-import { theme } from "@web/theme";
-import { MarketTime, SectionTitle, TimeAgo } from "@web/ui";
+import type { CSSProperties } from 'react';
+import { TriangleAlert } from 'lucide-react';
+import type { IntradayBuilt, TimeframeKey } from '@kansoku/shared/types';
+import { fmt, signed } from '@web/format';
+import { TF_LABELS } from '../IntradayDashboard';
+import { conclusionOutdated, ReassessCta, type ConclusionReassess } from '../ConclusionCard';
+import { DIRECTION_COLOR, DIRECTION_LABEL } from '../directionLabels';
+import {
+  AutoSignalItem,
+  Pattern123Item,
+  PriceZoneCard,
+  TargetContextCard,
+  TechRow,
+} from './predictionTabParts';
+import { theme } from '@web/theme';
+import { MarketTime, SectionTitle, TimeAgo } from '@web/ui';
 
-const SIGNAL_ICON: Record<string, string> = { pin_bar: "📌", macd_divergence: "⚡", macd_beichi: "🌀" };
-const TF_ORDER: TimeframeKey[] = ["m5", "m15", "h1"];
+const SIGNAL_ICON: Record<string, string> = {
+  pin_bar: '📌',
+  macd_divergence: '⚡',
+  macd_beichi: '🌀',
+};
+const TF_ORDER: TimeframeKey[] = ['m5', 'm15', 'h1'];
 
 function rrTone(ep: { rr_great: boolean; rr_ok: boolean }): string {
-  if (ep.rr_great) return "up";
-  return ep.rr_ok ? "" : "down";
+  if (ep.rr_great) return 'up';
+  return ep.rr_ok ? '' : 'down';
 }
 
 interface PredictionTabProps {
@@ -25,22 +35,28 @@ interface PredictionTabProps {
   reassess?: ConclusionReassess;
 }
 
-export function PredictionTab({ built, activeTf, predictionUpdatedAt, predictionStale, reassess }: PredictionTabProps) {
+export function PredictionTab({
+  built,
+  activeTf,
+  predictionUpdatedAt,
+  predictionStale,
+  reassess,
+}: PredictionTabProps) {
   const s = built.sidebar;
   const p = s.prediction;
   const ep = s.entryPlan;
   const scenarios = (p?.scenarios ?? []).map((sc) => {
     const raw = sc as unknown as Record<string, unknown>;
     const label =
-      typeof sc.label === "string" && sc.label
+      typeof sc.label === 'string' && sc.label
         ? sc.label
-        : typeof raw.name === "string"
+        : typeof raw.name === 'string'
           ? (raw.name as string)
-          : "";
+          : '';
     const probRaw =
-      typeof sc.probability === "number" && Number.isFinite(sc.probability)
+      typeof sc.probability === 'number' && Number.isFinite(sc.probability)
         ? sc.probability
-        : typeof raw.prob === "number" && Number.isFinite(raw.prob as number)
+        : typeof raw.prob === 'number' && Number.isFinite(raw.prob as number)
           ? (raw.prob as number)
           : 0;
     const probability = probRaw > 0 && probRaw <= 1 ? probRaw * 100 : probRaw;
@@ -50,12 +66,15 @@ export function PredictionTab({ built, activeTf, predictionUpdatedAt, prediction
   const rbp = p?.range_bound_plan;
   const signals = p?.signals ?? [];
   const targetContexts = ep?.target_contexts ?? [];
-  const priceZones = (ep?.price_zones ?? []).filter((zone) => zone.kind === "resistance");
+  const priceZones = (ep?.price_zones ?? []).filter((zone) => zone.kind === 'resistance');
 
   return (
     <>
       {p ? (
-        <div className="verdict" style={{ "--vc": DIRECTION_COLOR[p.direction] ?? theme.textSecondary } as CSSProperties}>
+        <div
+          className="verdict"
+          style={{ '--vc': DIRECTION_COLOR[p.direction] ?? theme.textSecondary } as CSSProperties}
+        >
           <div className="verdict-label">
             短线方向判断
             {predictionStale ? (
@@ -65,25 +84,28 @@ export function PredictionTab({ built, activeTf, predictionUpdatedAt, prediction
             ) : (
               predictionUpdatedAt && (
                 <span className="prediction-age">
-                  更新于 <MarketTime value={predictionUpdatedAt} format="clock" includeZone />（<TimeAgo since={predictionUpdatedAt} />）
+                  更新于 <MarketTime value={predictionUpdatedAt} format="clock" includeZone />（
+                  <TimeAgo since={predictionUpdatedAt} />）
                 </span>
               )
             )}
           </div>
-          <div className="verdict-text">{DIRECTION_LABEL[p.direction] ?? "🤔 观望"}</div>
+          <div className="verdict-text">{DIRECTION_LABEL[p.direction] ?? '🤔 观望'}</div>
           {p.anchor && (
             <div className="verdict-reason">
-              预测点：{TF_LABELS[p.anchor.timeframe] ?? p.anchor.timeframe} ·{" "}
+              预测点：{TF_LABELS[p.anchor.timeframe] ?? p.anchor.timeframe} ·{' '}
               <MarketTime value={p.anchor.time} /> · ${fmt(Number(p.anchor.price))}
             </div>
           )}
           {reassess &&
-            conclusionOutdated(predictionUpdatedAt ?? p.anchor?.time, predictionStale, Date.now()) && (
-              <ReassessCta reassess={reassess} />
-            )}
+            conclusionOutdated(
+              predictionUpdatedAt ?? p.anchor?.time,
+              predictionStale,
+              Date.now(),
+            ) && <ReassessCta reassess={reassess} />}
         </div>
       ) : (
-        <div className="verdict" style={{ "--vc": theme.textSecondary } as CSSProperties}>
+        <div className="verdict" style={{ '--vc': theme.textSecondary } as CSSProperties}>
           <div className="verdict-label">模式</div>
           <div className="verdict-text">👀 预览模式</div>
           <div className="verdict-reason">仅技术面，暂无预测结论——供分析前读数用</div>
@@ -96,20 +118,21 @@ export function PredictionTab({ built, activeTf, predictionUpdatedAt, prediction
             情景推演
             {Math.abs(totalProb - 100) >= 1 && (
               <span className="warn-red">
-                {" "}
-                <TriangleAlert className="icon" size={13} /> 概率合计 {fmt(totalProb, 0)}%，未凑够100
+                {' '}
+                <TriangleAlert className="icon" size={13} /> 概率合计 {fmt(totalProb, 0)}
+                %，未凑够100
               </span>
             )}
           </SectionTitle>
           {scenarios.map((sc, i) => (
-            <div key={i} className="zone-item" style={{ "--zc": theme.accent } as CSSProperties}>
+            <div key={i} className="zone-item" style={{ '--zc': theme.accent } as CSSProperties}>
               <div className="zone-head">
                 <span className="zone-label plain">{sc.label}</span>
                 <span className="zone-range accent">{fmt(Number(sc.probability || 0), 0)}%</span>
               </div>
               <div className="zone-meta md">
-                {sc.path ?? ""}
-                {sc.trigger ? ` · 触发：${sc.trigger}` : ""}
+                {sc.path ?? ''}
+                {sc.trigger ? ` · 触发：${sc.trigger}` : ''}
               </div>
             </div>
           ))}
@@ -123,16 +146,16 @@ export function PredictionTab({ built, activeTf, predictionUpdatedAt, prediction
             {rbp.low != null && rbp.high != null && (
               <>
                 预判区间 ${fmt(Number(rbp.low))} – ${fmt(Number(rbp.high))}
-                {rbp.condition ? " · " : ""}
+                {rbp.condition ? ' · ' : ''}
               </>
             )}
-            {rbp.condition ?? ""}
+            {rbp.condition ?? ''}
           </div>
           <div className="grid2">
             <div className="k">若做多</div>
-            <div className="v left">{rbp.long_tactic ?? ""}</div>
+            <div className="v left">{rbp.long_tactic ?? ''}</div>
             <div className="k">若做空</div>
-            <div className="v left">{rbp.short_tactic ?? ""}</div>
+            <div className="v left">{rbp.short_tactic ?? ''}</div>
           </div>
         </>
       )}
@@ -141,7 +164,9 @@ export function PredictionTab({ built, activeTf, predictionUpdatedAt, prediction
         <>
           <SectionTitle>入场计划</SectionTitle>
           {ep.entry_status_note && (
-            <div className={`note-block${ep.entry_status === "invalidated" || ep.entry_status === "stopped" ? " down" : ""}`}>
+            <div
+              className={`note-block${ep.entry_status === 'invalidated' || ep.entry_status === 'stopped' ? ' down' : ''}`}
+            >
               {ep.entry_status_note}
             </div>
           )}
@@ -159,7 +184,7 @@ export function PredictionTab({ built, activeTf, predictionUpdatedAt, prediction
               {fmt(ep.rr)} : 1
               {!ep.rr_ok && (
                 <span className="warn-red">
-                  {" "}
+                  {' '}
                   <TriangleAlert className="icon" size={13} /> &lt;2:1
                 </span>
               )}
@@ -206,12 +231,14 @@ export function PredictionTab({ built, activeTf, predictionUpdatedAt, prediction
           <SectionTitle>关键标注</SectionTitle>
           {signals.map((sig, i) => (
             <div key={i} className="check-item signal">
-              <div className="check-icon">{SIGNAL_ICON[sig.type ?? sig.kind ?? "other"] ?? "•"}</div>
+              <div className="check-icon">
+                {SIGNAL_ICON[sig.type ?? sig.kind ?? 'other'] ?? '•'}
+              </div>
               <div>
-                <div className="check-label">{sig.label ?? ""}</div>
+                <div className="check-label">{sig.label ?? ''}</div>
                 <div className="check-val">
                   {TF_LABELS[sig.timeframe] ?? sig.timeframe}
-                  {sig.price != null ? ` · $${fmt(sig.price)}` : ""}
+                  {sig.price != null ? ` · $${fmt(sig.price)}` : ''}
                 </div>
               </div>
             </div>
@@ -223,7 +250,10 @@ export function PredictionTab({ built, activeTf, predictionUpdatedAt, prediction
         const tfData = built.timeframes[activeTf];
         const patterns123 = tfData?.pattern123 ?? [];
         const autoItems = [
-          ...(tfData?.autoDivergence ?? []).map((d) => ({ kindKey: `divergence-${d.kind}`, pair: d })),
+          ...(tfData?.autoDivergence ?? []).map((d) => ({
+            kindKey: `divergence-${d.kind}`,
+            pair: d,
+          })),
           ...(tfData?.autoBeichi ?? []).map((d) => ({ kindKey: `beichi-${d.kind}`, pair: d })),
         ];
         if (!autoItems.length && !patterns123.length) return null;
@@ -236,7 +266,9 @@ export function PredictionTab({ built, activeTf, predictionUpdatedAt, prediction
             {autoItems.map((it, i) => (
               <AutoSignalItem key={i} kindKey={it.kindKey} pair={it.pair} />
             ))}
-            <div className="note-block">简化算法自动检测（基于已确认摆动点），仅供参考，不构成买卖依据</div>
+            <div className="note-block">
+              简化算法自动检测（基于已确认摆动点），仅供参考，不构成买卖依据
+            </div>
           </>
         );
       })()}

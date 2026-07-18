@@ -1,27 +1,27 @@
-import { ArrowRight, ChartCandlestick, LayoutDashboard, Library } from "lucide-react";
-import type { ReactNode } from "react";
-import { type Components, Streamdown } from "streamdown";
-import { parseAppDeepLink } from "@kansoku/shared/appDeepLink";
-import { navigate } from "@web/router";
-import { openModal } from "@web/ui";
-import { researchRoute } from "../research/researchModel";
+import { ArrowRight, ChartCandlestick, LayoutDashboard, Library } from 'lucide-react';
+import type { ReactNode } from 'react';
+import { type Components, Streamdown } from 'streamdown';
+import { parseAppDeepLink } from '@kansoku/shared/appDeepLink';
+import { navigate } from '@web/router';
+import { openModal } from '@web/ui';
+import { researchRoute } from '../research/researchModel';
 
-type MarkdownVariant = "chat" | "report";
+type MarkdownVariant = 'chat' | 'report';
 
 function MarkdownLink(props: Record<string, unknown>) {
-  const href = typeof props.href === "string" ? props.href : undefined;
+  const href = typeof props.href === 'string' ? props.href : undefined;
   const children = props.children as ReactNode;
   const appLink = parseAppDeepLink(href);
   if (!appLink) return <a href={href}>{children}</a>;
 
-  const legacyChart = appLink.kind === "chart";
-  const analysis = appLink.kind === "symbol-analysis";
-  const title = legacyChart ? "打开历史图表" : analysis ? "打开这份分析" : "打开股票驾驶舱";
+  const legacyChart = appLink.kind === 'chart';
+  const analysis = appLink.kind === 'symbol-analysis';
+  const title = legacyChart ? '打开历史图表' : analysis ? '打开这份分析' : '打开股票驾驶舱';
   const subject = legacyChart ? appLink.chartId : appLink.symbol;
-  const detail = legacyChart ? "自动定位到对应分析" : appLink.analysisId ?? "最新分析与实时行情";
+  const detail = legacyChart ? '自动定位到对应分析' : (appLink.analysisId ?? '最新分析与实时行情');
   return (
     <a
-      className={`app-deep-link app-deep-link--${legacyChart ? "chart" : analysis ? "analysis" : "cockpit"}`}
+      className={`app-deep-link app-deep-link--${legacyChart ? 'chart' : analysis ? 'analysis' : 'cockpit'}`}
       href={appLink.route}
       aria-label={`${title}：${subject}，${detail}`}
       title={href}
@@ -52,7 +52,7 @@ export const MARKDOWN_COMPONENTS = {
 
 export function Markdown({
   children,
-  variant = "report",
+  variant = 'report',
   streaming = false,
 }: {
   children: string;
@@ -62,7 +62,7 @@ export function Markdown({
   return (
     <div className={`typeset typeset-${variant}`}>
       <Streamdown
-        mode={streaming ? "streaming" : "static"}
+        mode={streaming ? 'streaming' : 'static'}
         isAnimating={streaming}
         controls={false}
         linkSafety={{ enabled: false }}
@@ -96,7 +96,7 @@ export function openMarkdownModal({
             title="在研究库中打开"
             onClick={() => {
               close();
-              navigate(researchRoute("journal", documentPath));
+              navigate(researchRoute('journal', documentPath));
             }}
           >
             <Library size={16} />

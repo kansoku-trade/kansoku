@@ -1,6 +1,6 @@
-import type { IntradayDayContext, RawBar, SessionKind } from "@kansoku/shared/types";
-import { sma, toTs } from "./indicators.js";
-import { classifySession, easternDate } from "./session.js";
+import type { IntradayDayContext, RawBar, SessionKind } from '@kansoku/shared/types';
+import { sma, toTs } from './indicators.js';
+import { classifySession, easternDate } from './session.js';
 
 const OPENING_RANGE_BARS = 6;
 
@@ -40,15 +40,15 @@ function todaySessionBars(bars: RawBar[], now: Date, kind: SessionKind): RawBar[
 }
 
 export function preMarketRange(bars: RawBar[], now: Date): PriceRange | null {
-  return rangeOf(todaySessionBars(bars, now, "pre"));
+  return rangeOf(todaySessionBars(bars, now, 'pre'));
 }
 
 export function regularRange(bars: RawBar[], now: Date): PriceRange | null {
-  return rangeOf(todaySessionBars(bars, now, "regular"));
+  return rangeOf(todaySessionBars(bars, now, 'regular'));
 }
 
 export function openingRange(bars: RawBar[], now: Date): PriceRange | null {
-  const regular = todaySessionBars(bars, now, "regular");
+  const regular = todaySessionBars(bars, now, 'regular');
   if (regular.length <= OPENING_RANGE_BARS) return null;
   return rangeOf(regular.slice(0, OPENING_RANGE_BARS));
 }
@@ -61,18 +61,23 @@ function lastFinite(arr: (number | null)[]): number | null {
   return null;
 }
 
-export function buildDayContext(dayBars: RawBar[], m5Bars: RawBar[], now: Date, vwap: number | null): IntradayDayContext {
+export function buildDayContext(
+  dayBars: RawBar[],
+  m5Bars: RawBar[],
+  now: Date,
+  vwap: number | null,
+): IntradayDayContext {
   const closes = dayBars.map((b) => Number(b.close)).filter(Number.isFinite);
-  const close = closes.length ? closes[closes.length - 1] : null;
+  const close = closes.at(-1) ?? null;
   const ma20 = closes.length >= 20 ? lastFinite(sma(closes, 20)) : null;
   const ma50 = closes.length >= 50 ? lastFinite(sma(closes, 50)) : null;
   const last20 = dayBars.slice(-20);
   const range20 = last20.length >= 20 ? rangeOf(last20) : null;
-  let trend: IntradayDayContext["daily_trend"] = null;
+  let trend: IntradayDayContext['daily_trend'] = null;
   if (close !== null && ma20 !== null) {
-    if (close > ma20 && (ma50 === null || ma20 > ma50)) trend = "up";
-    else if (close < ma20 && (ma50 === null || ma20 < ma50)) trend = "down";
-    else trend = "range";
+    if (close > ma20 && (ma50 === null || ma20 > ma50)) trend = 'up';
+    else if (close < ma20 && (ma50 === null || ma20 < ma50)) trend = 'down';
+    else trend = 'range';
   }
   return {
     daily_trend: trend,
@@ -92,7 +97,7 @@ export function prevDayLevels(dayBars: RawBar[], now: Date): PrevDayLevels | nul
   const today = easternDate(now);
   const prior = dayBars.filter((bar) => easternDate(new Date(toTs(bar.time) * 1000)) < today);
   if (!prior.length) return null;
-  const last = prior[prior.length - 1];
+  const last = prior.at(-1)!;
   const high = Number(last.high);
   const low = Number(last.low);
   const close = Number(last.close);

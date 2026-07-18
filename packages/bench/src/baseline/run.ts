@@ -1,10 +1,10 @@
-import { promises as fs } from "node:fs";
-import { join } from "node:path";
-import { listQuestions, loadQuestionForRunner } from "../dataset/loader.js";
-import type { MockMode } from "../schema/mode.js";
-import type { RunnerQuestion } from "../schema/question.js";
-import { type BaselineStrategy, buildBaselineAnswer } from "./baselines.js";
-import { createAppendQueue, loadResumeKeys, resumeKey, writeConfigSnapshot } from "./results.js";
+import { promises as fs } from 'node:fs';
+import { join } from 'node:path';
+import { listQuestions, loadQuestionForRunner } from '../dataset/loader.js';
+import type { MockMode } from '../schema/mode.js';
+import type { RunnerQuestion } from '../schema/question.js';
+import { type BaselineStrategy, buildBaselineAnswer } from './baselines.js';
+import { createAppendQueue, loadResumeKeys, resumeKey, writeConfigSnapshot } from './results.js';
 
 async function selectQuestions(
   datasetsRoot: string,
@@ -16,7 +16,7 @@ async function selectQuestions(
   const ids = named ?? available;
   if (named) {
     const missing = named.filter((id) => !available.includes(id));
-    if (missing.length) throw new Error(`unknown question id(s): ${missing.join(", ")}`);
+    if (missing.length) throw new Error(`unknown question id(s): ${missing.join(', ')}`);
   }
   const out = new Map<string, RunnerQuestion>();
   for (const id of ids) out.set(id, await loadQuestionForRunner(datasetsRoot, version, bank, id));
@@ -45,12 +45,14 @@ export interface BaselineBenchResult {
   predictionsFile: string;
 }
 
-export async function runBenchBaseline(options: BaselineBenchOptions): Promise<BaselineBenchResult> {
+export async function runBenchBaseline(
+  options: BaselineBenchOptions,
+): Promise<BaselineBenchResult> {
   const log = options.log ?? (() => {});
-  const modes = options.modes ?? (["blind", "live"] as MockMode[]);
+  const modes = options.modes ?? (['blind', 'live'] as MockMode[]);
   const runDir = join(options.resultsRoot, options.runId);
-  const predictionsFile = join(runDir, "predictions.jsonl");
-  const configFile = join(runDir, "config.json");
+  const predictionsFile = join(runDir, 'predictions.jsonl');
+  const configFile = join(runDir, 'config.json');
 
   const hasConfig = await fs
     .access(configFile)

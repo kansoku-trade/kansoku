@@ -1,6 +1,14 @@
-import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type KeyboardEvent,
+  type PointerEvent,
+  type ReactNode,
+} from 'react';
 
-export type ResizablePanelSide = "start" | "end";
+export type ResizablePanelSide = 'start' | 'end';
 
 export function clampPanelSize(size: number, minSize: number, maxSize: number): number {
   return Math.min(maxSize, Math.max(minSize, size));
@@ -22,7 +30,7 @@ export function panelSizeFromPointer({
   maxSize: number;
 }): number {
   const delta = currentPosition - startPosition;
-  return clampPanelSize(startSize + (side === "start" ? delta : -delta), minSize, maxSize);
+  return clampPanelSize(startSize + (side === 'start' ? delta : -delta), minSize, maxSize);
 }
 
 export function panelSizeFromKey({
@@ -40,15 +48,21 @@ export function panelSizeFromKey({
   maxSize: number;
   step?: number;
 }): number | null {
-  if (key === "Home") return minSize;
-  if (key === "End") return maxSize;
-  if (key !== "ArrowLeft" && key !== "ArrowRight") return null;
-  const direction = key === "ArrowRight" ? 1 : -1;
-  return clampPanelSize(size + direction * step * (side === "start" ? 1 : -1), minSize, maxSize);
+  if (key === 'Home') return minSize;
+  if (key === 'End') return maxSize;
+  if (key !== 'ArrowLeft' && key !== 'ArrowRight') return null;
+  const direction = key === 'ArrowRight' ? 1 : -1;
+  return clampPanelSize(size + direction * step * (side === 'start' ? 1 : -1), minSize, maxSize);
 }
 
-function readStoredSize(storageKey: string | undefined, fallback: number, minSize: number, maxSize: number): number {
-  if (!storageKey || typeof window === "undefined") return clampPanelSize(fallback, minSize, maxSize);
+function readStoredSize(
+  storageKey: string | undefined,
+  fallback: number,
+  minSize: number,
+  maxSize: number,
+): number {
+  if (!storageKey || typeof window === 'undefined')
+    return clampPanelSize(fallback, minSize, maxSize);
   try {
     const stored = Number(window.localStorage.getItem(storageKey));
     return Number.isFinite(stored) && stored > 0
@@ -60,7 +74,7 @@ function readStoredSize(storageKey: string | undefined, fallback: number, minSiz
 }
 
 function storeSize(storageKey: string | undefined, size: number): void {
-  if (!storageKey || typeof window === "undefined") return;
+  if (!storageKey || typeof window === 'undefined') return;
   try {
     window.localStorage.setItem(storageKey, String(Math.round(size)));
   } catch {
@@ -78,12 +92,12 @@ export function ResizablePanel({
   children,
   className,
   contentClassName,
-  side = "start",
+  side = 'start',
   defaultSize,
   minSize = 220,
   maxSize = 560,
   storageKey,
-  handleLabel = "调整面板宽度",
+  handleLabel = '调整面板宽度',
   onSizeChange,
 }: {
   children: ReactNode;
@@ -107,8 +121,8 @@ export function ResizablePanel({
     if (!dragging) return;
     const previousCursor = document.body.style.cursor;
     const previousUserSelect = document.body.style.userSelect;
-    document.body.style.cursor = "col-resize";
-    document.body.style.userSelect = "none";
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
     return () => {
       document.body.style.cursor = previousCursor;
       document.body.style.userSelect = previousUserSelect;
@@ -127,7 +141,11 @@ export function ResizablePanel({
     if (event.button !== 0) return;
     event.preventDefault();
     event.currentTarget.setPointerCapture(event.pointerId);
-    dragRef.current = { pointerId: event.pointerId, startPosition: event.clientX, startSize: sizeRef.current };
+    dragRef.current = {
+      pointerId: event.pointerId,
+      startPosition: event.clientX,
+      startSize: sizeRef.current,
+    };
     setDragging(true);
   };
 
@@ -157,7 +175,13 @@ export function ResizablePanel({
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    const next = panelSizeFromKey({ key: event.key, side, size: sizeRef.current, minSize, maxSize });
+    const next = panelSizeFromKey({
+      key: event.key,
+      side,
+      size: sizeRef.current,
+      minSize,
+      maxSize,
+    });
     if (next === null) return;
     event.preventDefault();
     updateSize(next, true);
@@ -166,7 +190,7 @@ export function ResizablePanel({
   const resetSize = () => updateSize(initialSizeRef.current, true);
   const handle = (
     <div
-      className={`resize-panel-handle${dragging ? " dragging" : ""}`}
+      className={`resize-panel-handle${dragging ? ' dragging' : ''}`}
       role="separator"
       aria-label={handleLabel}
       aria-orientation="vertical"
@@ -187,12 +211,14 @@ export function ResizablePanel({
 
   return (
     <div
-      className={`resize-panel resize-panel--${side}${dragging ? " resize-panel--dragging" : ""}${className ? ` ${className}` : ""}`}
+      className={`resize-panel resize-panel--${side}${dragging ? ' resize-panel--dragging' : ''}${className ? ` ${className}` : ''}`}
       style={style}
     >
-      {side === "end" ? handle : null}
-      <div className={`resize-panel-content${contentClassName ? ` ${contentClassName}` : ""}`}>{children}</div>
-      {side === "start" ? handle : null}
+      {side === 'end' ? handle : null}
+      <div className={`resize-panel-content${contentClassName ? ` ${contentClassName}` : ''}`}>
+        {children}
+      </div>
+      {side === 'start' ? handle : null}
     </div>
   );
 }

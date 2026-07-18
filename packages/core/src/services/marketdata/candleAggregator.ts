@@ -1,9 +1,9 @@
-import type { RawBar } from "@kansoku/shared/types";
-import { classifySession } from "../session.js";
-import { marketOf } from "../symbol.utils.js";
-import type { ProtocolQuote, ProtocolTradePush } from "./longbridgeProtocol.js";
+import type { RawBar } from '@kansoku/shared/types';
+import { classifySession } from '../session.js';
+import { marketOf } from '../symbol.utils.js';
+import type { ProtocolQuote, ProtocolTradePush } from './longbridgeProtocol.js';
 
-export type CandlePeriod = "5m" | "15m" | "60m";
+export type CandlePeriod = '5m' | '15m' | '60m';
 
 export type CandleBar = {
   symbol: string;
@@ -17,7 +17,11 @@ export type CandleBar = {
   turnover: number;
 };
 
-const PERIOD_MS: Record<CandlePeriod, number> = { "5m": 5 * 60_000, "15m": 15 * 60_000, "60m": 60 * 60_000 };
+const PERIOD_MS: Record<CandlePeriod, number> = {
+  '5m': 5 * 60_000,
+  '15m': 15 * 60_000,
+  '60m': 60 * 60_000,
+};
 
 function key(symbol: string, period: CandlePeriod): string {
   return `${symbol}\0${period}`;
@@ -25,8 +29,8 @@ function key(symbol: string, period: CandlePeriod): string {
 
 function isTradeableAt(symbol: string, tsMs: number): boolean {
   const market = marketOf(symbol);
-  if (market === "US") return true;
-  return classifySession(Math.floor(tsMs / 1000), market) === "regular";
+  if (market === 'US') return true;
+  return classifySession(Math.floor(tsMs / 1000), market) === 'regular';
 }
 
 function fromRaw(symbol: string, period: CandlePeriod, raw: RawBar): CandleBar {
@@ -115,7 +119,8 @@ export class CandleAggregator {
     for (const period of periods) {
       const itemKey = key(quote.symbol, period);
       const current = this.bars.get(itemKey);
-      if (!current || timestamp < current.ts || timestamp >= current.ts + PERIOD_MS[period]) continue;
+      if (!current || timestamp < current.ts || timestamp >= current.ts + PERIOD_MS[period])
+        continue;
       const next = {
         ...current,
         high: Math.max(current.high, quote.lastDone),

@@ -1,5 +1,4 @@
 {
-  "version": "7",
   "dialect": "sqlite",
   "entries": [
     {
@@ -58,5 +57,6 @@
       "tag": "0007_watched_markets",
       "breakpoints": true
     }
-  ]
+  ],
+  "version": "7"
 }

@@ -1,4 +1,4 @@
-import type { Market } from "./types";
+import type { Market } from './types';
 
 export function toggleMarket(current: Market[], market: Market, next: boolean): Market[] | null {
   if (next) {

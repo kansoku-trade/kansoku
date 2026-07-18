@@ -1,4 +1,4 @@
-import type { Pattern123, SwingPoint } from "@kansoku/shared/types";
+import type { Pattern123, SwingPoint } from '@kansoku/shared/types';
 
 const PIVOT_WINDOW = 3;
 const EXTREME_LOOKBACK = 20;
@@ -25,7 +25,7 @@ function findPivots(highs: number[], lows: number[]): Pivot[] {
     const pivot: Pivot = isHigh
       ? { index: i, price: highs[i], isHigh: true }
       : { index: i, price: lows[i], isHigh: false };
-    const last = zigzag[zigzag.length - 1];
+    const last = zigzag.at(-1);
     if (last && last.isHigh === pivot.isHigh) {
       const keep = pivot.isHigh ? pivot.price >= last.price : pivot.price <= last.price;
       if (keep) zigzag[zigzag.length - 1] = pivot;
@@ -38,20 +38,26 @@ function findPivots(highs: number[], lows: number[]): Pivot[] {
 
 const fmtPrice = (v: number) => `$${v.toFixed(2)}`;
 
-function build123(bullish: boolean, p1: SwingPoint, p2: SwingPoint, p3: SwingPoint, confirm: SwingPoint | null): Pattern123 {
+function build123(
+  bullish: boolean,
+  p1: SwingPoint,
+  p2: SwingPoint,
+  p3: SwingPoint,
+  confirm: SwingPoint | null,
+): Pattern123 {
   const implication = bullish
     ? `低点抬高（③ ${fmtPrice(p3.price)} > ① ${fmtPrice(p1.price)}）——卖压衰竭；收盘站上 ② ${fmtPrice(p2.price)} 确认转多，跌破 ① 结构失效`
     : `高点降低（③ ${fmtPrice(p3.price)} < ① ${fmtPrice(p1.price)}）——买力衰竭；收盘跌破 ② ${fmtPrice(p2.price)} 确认转空，升破 ① 结构失效`;
   return {
-    kind: bullish ? "bullish" : "bearish",
-    status: confirm ? "confirmed" : "forming",
+    kind: bullish ? 'bullish' : 'bearish',
+    status: confirm ? 'confirmed' : 'forming',
     p1,
     p2,
     p3,
     trigger: p2.price,
     invalidation: p1.price,
     confirm,
-    label: bullish ? "底部 123 结构" : "顶部 123 结构",
+    label: bullish ? '底部 123 结构' : '顶部 123 结构',
     implication,
   };
 }

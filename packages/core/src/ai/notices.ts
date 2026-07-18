@@ -1,4 +1,4 @@
-import type { Notice } from "@kansoku/shared/types";
+import type { Notice } from '@kansoku/shared/types';
 
 type Listener = (notice: Notice) => void;
 
@@ -7,7 +7,7 @@ const anyListeners = new Set<Listener>();
 
 function key(symbol: string): string {
   const normalized = symbol.trim().toUpperCase();
-  return normalized.includes(".") ? normalized : `${normalized}.US`;
+  return normalized.includes('.') ? normalized : `${normalized}.US`;
 }
 
 export function onNotice(symbol: string, listener: Listener): () => void {

@@ -1,6 +1,6 @@
-const STORAGE_KEY = "desktop-tabs-v1";
-const HOME_ROUTE = "/";
-const DEFAULT_TITLE = "Kansoku";
+const STORAGE_KEY = 'desktop-tabs-v1';
+const HOME_ROUTE = '/';
+const DEFAULT_TITLE = 'Kansoku';
 
 export type TabState = {
   id: string;
@@ -14,16 +14,16 @@ export type TabsSnapshot = {
   activeTabId: string;
 };
 
-export type TabKind = "home" | "research" | "chat" | "settings" | "logs" | "symbol" | "other";
+export type TabKind = 'home' | 'research' | 'chat' | 'settings' | 'logs' | 'symbol' | 'other';
 
 export function tabKind(route: string): TabKind {
-  if (route === "/") return "home";
-  if (route === "/research" || route.startsWith("/research?")) return "research";
-  if (route === "/chat" || route.startsWith("/chat?")) return "chat";
-  if (route === "/settings" || route.startsWith("/settings?")) return "settings";
-  if (route === "/logs" || route.startsWith("/logs?")) return "logs";
-  if (route.startsWith("/symbol/")) return "symbol";
-  return "other";
+  if (route === '/') return 'home';
+  if (route === '/research' || route.startsWith('/research?')) return 'research';
+  if (route === '/chat' || route.startsWith('/chat?')) return 'chat';
+  if (route === '/settings' || route.startsWith('/settings?')) return 'settings';
+  if (route === '/logs' || route.startsWith('/logs?')) return 'logs';
+  if (route.startsWith('/symbol/')) return 'symbol';
+  return 'other';
 }
 
 function makeTab(route: string): TabState {
@@ -36,36 +36,48 @@ function defaultSnapshot(): TabsSnapshot {
 }
 
 function isValidTab(value: unknown): value is TabState {
-  if (!value || typeof value !== "object") return false;
+  if (!value || typeof value !== 'object') return false;
   const tab = value as Record<string, unknown>;
   return (
-    typeof tab.id === "string" &&
-    typeof tab.route === "string" &&
-    typeof tab.title === "string" &&
-    typeof tab.scrollY === "number"
+    typeof tab.id === 'string' &&
+    typeof tab.route === 'string' &&
+    typeof tab.title === 'string' &&
+    typeof tab.scrollY === 'number'
   );
 }
 
-export function loadTabsSnapshot(storage: Pick<Storage, "getItem"> = localStorage): TabsSnapshot {
+export function loadTabsSnapshot(storage: Pick<Storage, 'getItem'> = localStorage): TabsSnapshot {
   try {
     const raw = storage.getItem(STORAGE_KEY);
     if (!raw) return defaultSnapshot();
     const parsed = JSON.parse(raw) as Partial<TabsSnapshot>;
     const tabs = Array.isArray(parsed.tabs) ? parsed.tabs.filter(isValidTab) : [];
     if (tabs.length === 0) return defaultSnapshot();
-    const activeTabId = tabs.some((tab) => tab.id === parsed.activeTabId) ? (parsed.activeTabId as string) : tabs[0].id;
+    const activeTabId = tabs.some((tab) => tab.id === parsed.activeTabId)
+      ? (parsed.activeTabId as string)
+      : tabs[0].id;
     return { tabs, activeTabId };
   } catch {
     return defaultSnapshot();
   }
 }
 
-export function saveTabsSnapshot(snapshot: TabsSnapshot, storage: Pick<Storage, "setItem"> = localStorage): void {
+export function saveTabsSnapshot(
+  snapshot: TabsSnapshot,
+  storage: Pick<Storage, 'setItem'> = localStorage,
+): void {
   storage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
 }
 
-function patchTab(snapshot: TabsSnapshot, id: string, patch: Partial<Omit<TabState, "id">>): TabsSnapshot {
-  return { ...snapshot, tabs: snapshot.tabs.map((tab) => (tab.id === id ? { ...tab, ...patch } : tab)) };
+function patchTab(
+  snapshot: TabsSnapshot,
+  id: string,
+  patch: Partial<Omit<TabState, 'id'>>,
+): TabsSnapshot {
+  return {
+    ...snapshot,
+    tabs: snapshot.tabs.map((tab) => (tab.id === id ? { ...tab, ...patch } : tab)),
+  };
 }
 
 export function updateTabRoute(snapshot: TabsSnapshot, id: string, route: string): TabsSnapshot {
@@ -111,7 +123,9 @@ export function closeTabsToRight(snapshot: TabsSnapshot, id: string): TabsSnapsh
   const idx = snapshot.tabs.findIndex((tab) => tab.id === id);
   if (idx === -1) return snapshot;
   const tabs = snapshot.tabs.slice(0, idx + 1);
-  const activeTabId = tabs.some((tab) => tab.id === snapshot.activeTabId) ? snapshot.activeTabId : id;
+  const activeTabId = tabs.some((tab) => tab.id === snapshot.activeTabId)
+    ? snapshot.activeTabId
+    : id;
   return { tabs, activeTabId };
 }
 
@@ -139,8 +153,14 @@ export function focusOrOpenRoute(snapshot: TabsSnapshot, route: string): TabsSna
   return openTab(snapshot, route);
 }
 
-export function focusOrOpenRoutePrefix(snapshot: TabsSnapshot, prefix: string, initialRoute: string): TabsSnapshot {
-  const existing = snapshot.tabs.find((tab) => tab.route === prefix || tab.route.startsWith(`${prefix}?`));
+export function focusOrOpenRoutePrefix(
+  snapshot: TabsSnapshot,
+  prefix: string,
+  initialRoute: string,
+): TabsSnapshot {
+  const existing = snapshot.tabs.find(
+    (tab) => tab.route === prefix || tab.route.startsWith(`${prefix}?`),
+  );
   if (existing) return { ...snapshot, activeTabId: existing.id };
   return openTab(snapshot, initialRoute);
 }

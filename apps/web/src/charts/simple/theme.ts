@@ -1,6 +1,10 @@
-import type { CSSProperties } from "react";
-import { formatMarketClock, formatMarketDateTime, localMarketTimeLabel } from "@kansoku/shared/time";
-import { theme } from "@web/theme";
+import type { CSSProperties } from 'react';
+import {
+  formatMarketClock,
+  formatMarketDateTime,
+  localMarketTimeLabel,
+} from '@kansoku/shared/time';
+import { theme } from '@web/theme';
 
 export const UP_COLOR = theme.up;
 export const DOWN_COLOR = theme.down;
@@ -17,7 +21,11 @@ export const tooltipContentStyle: CSSProperties = {
   fontSize: 12,
 };
 
-export const tooltipLabelStyle: CSSProperties = { color: theme.textSecondary, marginBottom: 4, whiteSpace: "pre-line" };
+export const tooltipLabelStyle: CSSProperties = {
+  color: theme.textSecondary,
+  marginBottom: 4,
+  whiteSpace: 'pre-line',
+};
 
 export const tooltipItemStyle: CSSProperties = { color: theme.textPrimary };
 

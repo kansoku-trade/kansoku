@@ -1,5 +1,5 @@
-import { Select as BaseSelect } from "@base-ui/react/select";
-import { Check, ChevronDown } from "lucide-react";
+import { Select as BaseSelect } from '@base-ui/react/select';
+import { Check, ChevronDown } from 'lucide-react';
 
 export interface SelectOption {
   value: string;
@@ -35,7 +35,7 @@ export function Select({
     >
       <BaseSelect.Trigger
         aria-label={ariaLabel}
-        className={className ? `ui-select-trigger ${className}` : "ui-select-trigger"}
+        className={className ? `ui-select-trigger ${className}` : 'ui-select-trigger'}
       >
         <BaseSelect.Value placeholder={placeholder} />
         <BaseSelect.Icon className="ui-select-icon">

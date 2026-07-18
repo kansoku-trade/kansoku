@@ -1,6 +1,6 @@
-import { Button, Spinner } from "@web/ui";
-import { AnalysisRunDetails } from "./AnalysisRunDetails";
-import { useAnalystRun } from "./useAnalystRun";
+import { Button, Spinner } from '@web/ui';
+import { AnalysisRunDetails } from './AnalysisRunDetails';
+import { useAnalystRun } from './useAnalystRun';
 
 export function GenerateAnalysis({ sym }: { sym: string }) {
   const run = useAnalystRun(sym);
@@ -10,7 +10,7 @@ export function GenerateAnalysis({ sym }: { sym: string }) {
       <div className="ai-reassess">
         <Button onClick={run.start} disabled={run.pending || run.running}>
           {run.running && <Spinner />}
-          {run.running ? "AI 分析中…" : "AI 生成分析"}
+          {run.running ? 'AI 分析中…' : 'AI 生成分析'}
         </Button>
         {run.hint && <span className="ai-hint">{run.hint}</span>}
       </div>

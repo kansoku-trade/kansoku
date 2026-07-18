@@ -1,0 +1,8 @@
+.agents/
+.superpowers/
+apps/pro/
+**/dist/
+**/dist-*/
+**/release/
+journal/
+stocks/

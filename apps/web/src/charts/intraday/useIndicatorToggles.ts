@@ -1,48 +1,48 @@
-import { useCallback, useEffect, useState } from "react";
-import { theme } from "@web/theme";
+import { useCallback, useEffect, useState } from 'react';
+import { theme } from '@web/theme';
 
 export type IndicatorToggleKey =
-  | "crosses"
-  | "divergence"
-  | "beichi"
-  | "pattern123"
-  | "candle"
-  | "ai"
-  | "levels"
-  | "fvg"
-  | "ema"
-  | "vwap"
-  | "daylevel"
-  | "optwall";
+  | 'crosses'
+  | 'divergence'
+  | 'beichi'
+  | 'pattern123'
+  | 'candle'
+  | 'ai'
+  | 'levels'
+  | 'fvg'
+  | 'ema'
+  | 'vwap'
+  | 'daylevel'
+  | 'optwall';
 
 export const INDICATOR_TOGGLE_ORDER: IndicatorToggleKey[] = [
-  "ema",
-  "vwap",
-  "levels",
-  "daylevel",
-  "fvg",
-  "pattern123",
-  "optwall",
-  "crosses",
-  "divergence",
-  "beichi",
-  "candle",
-  "ai",
+  'ema',
+  'vwap',
+  'levels',
+  'daylevel',
+  'fvg',
+  'pattern123',
+  'optwall',
+  'crosses',
+  'divergence',
+  'beichi',
+  'candle',
+  'ai',
 ];
 
 export const INDICATOR_TOGGLE_LABELS: Record<IndicatorToggleKey, string> = {
-  crosses: "金叉死叉",
-  divergence: "自动背离",
-  beichi: "自动背驰",
-  pattern123: "123 结构",
-  candle: "K线形态",
-  ai: "AI 标注",
-  levels: "价位线",
-  fvg: "FVG 缺口",
-  ema: "EMA 均线",
-  vwap: "VWAP",
-  daylevel: "日内参照位",
-  optwall: "期权墙",
+  crosses: '金叉死叉',
+  divergence: '自动背离',
+  beichi: '自动背驰',
+  pattern123: '123 结构',
+  candle: 'K线形态',
+  ai: 'AI 标注',
+  levels: '价位线',
+  fvg: 'FVG 缺口',
+  ema: 'EMA 均线',
+  vwap: 'VWAP',
+  daylevel: '日内参照位',
+  optwall: '期权墙',
 };
 
 export const INDICATOR_TOGGLE_COLORS: Record<IndicatorToggleKey, string> = {
@@ -62,14 +62,15 @@ export const INDICATOR_TOGGLE_COLORS: Record<IndicatorToggleKey, string> = {
 
 export const INDICATOR_TOGGLE_KEYS = INDICATOR_TOGGLE_ORDER;
 
-const STORAGE_KEY = "intraday-indicators";
+const STORAGE_KEY = 'intraday-indicators';
 
-const DEFAULT_ON = new Set<IndicatorToggleKey>(["ema", "vwap", "levels", "daylevel"]);
+const DEFAULT_ON = new Set<IndicatorToggleKey>(['ema', 'vwap', 'levels', 'daylevel']);
 
 function defaultToggles(): Record<IndicatorToggleKey, boolean> {
-  return Object.fromEntries(
-    INDICATOR_TOGGLE_KEYS.map((k) => [k, DEFAULT_ON.has(k)]),
-  ) as Record<IndicatorToggleKey, boolean>;
+  return Object.fromEntries(INDICATOR_TOGGLE_KEYS.map((k) => [k, DEFAULT_ON.has(k)])) as Record<
+    IndicatorToggleKey,
+    boolean
+  >;
 }
 
 function loadToggles(): Record<IndicatorToggleKey, boolean> {
@@ -79,7 +80,7 @@ function loadToggles(): Record<IndicatorToggleKey, boolean> {
     if (!raw) return merged;
     const stored = JSON.parse(raw) as Partial<Record<string, unknown>>;
     for (const key of INDICATOR_TOGGLE_KEYS) {
-      if (typeof stored[key] === "boolean") merged[key] = stored[key] as boolean;
+      if (typeof stored[key] === 'boolean') merged[key] = stored[key] as boolean;
     }
   } catch {
     return merged;

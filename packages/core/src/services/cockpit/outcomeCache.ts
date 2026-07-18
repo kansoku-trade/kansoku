@@ -1,15 +1,18 @@
-import { inArray } from "drizzle-orm";
-import type { AnalysisOutcome, OutcomeStatus } from "@kansoku/shared/types";
-import { getDb, type Db } from "../../db/index.js";
-import { outcomes } from "../../db/schema.js";
+import { inArray } from 'drizzle-orm';
+import type { AnalysisOutcome, OutcomeStatus } from '@kansoku/shared/types';
+import { getDb, type Db } from '../../db/index.js';
+import { outcomes } from '../../db/schema.js';
 
 export interface OutcomeKey {
   chartId: string;
   symbol: string;
-  direction: "long" | "short" | "neutral";
+  direction: 'long' | 'short' | 'neutral';
 }
 
-export async function getResolvedOutcomes(chartIds: string[], db: Db = getDb()): Promise<Map<string, AnalysisOutcome>> {
+export async function getResolvedOutcomes(
+  chartIds: string[],
+  db: Db = getDb(),
+): Promise<Map<string, AnalysisOutcome>> {
   if (!chartIds.length) return new Map();
   const rows = await db.select().from(outcomes).where(inArray(outcomes.chartId, chartIds));
   return new Map(
@@ -24,8 +27,12 @@ export async function getResolvedOutcomes(chartIds: string[], db: Db = getDb()):
   );
 }
 
-export async function saveResolvedOutcome(key: OutcomeKey, outcome: AnalysisOutcome, db: Db = getDb()): Promise<void> {
-  if (outcome.status === "open" || outcome.resolved_at == null) return;
+export async function saveResolvedOutcome(
+  key: OutcomeKey,
+  outcome: AnalysisOutcome,
+  db: Db = getDb(),
+): Promise<void> {
+  if (outcome.status === 'open' || outcome.resolved_at == null) return;
   await db
     .insert(outcomes)
     .values({

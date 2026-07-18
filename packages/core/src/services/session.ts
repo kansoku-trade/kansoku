@@ -1,5 +1,5 @@
-import type { OffSessionSegment, SessionKind } from "@kansoku/shared/types";
-import type { Market } from "./symbol.utils.js";
+import type { OffSessionSegment, SessionKind } from '@kansoku/shared/types';
+import type { Market } from './symbol.utils.js';
 
 interface MarketSessionConfig {
   timeZone: string;
@@ -12,12 +12,12 @@ const POST_END = 20 * 60;
 
 const MARKET_CONFIG: Record<Market, MarketSessionConfig> = {
   US: {
-    timeZone: "America/New_York",
+    timeZone: 'America/New_York',
     regularSegments: [[9 * 60 + 30, 16 * 60]],
     extended: true,
   },
   HK: {
-    timeZone: "Asia/Hong_Kong",
+    timeZone: 'Asia/Hong_Kong',
     regularSegments: [
       [9 * 60 + 30, 12 * 60],
       [13 * 60, 16 * 60],
@@ -25,7 +25,7 @@ const MARKET_CONFIG: Record<Market, MarketSessionConfig> = {
     extended: false,
   },
   CN: {
-    timeZone: "Asia/Shanghai",
+    timeZone: 'Asia/Shanghai',
     regularSegments: [
       [9 * 60 + 30, 11 * 60 + 30],
       [13 * 60, 15 * 60],
@@ -35,21 +35,21 @@ const MARKET_CONFIG: Record<Market, MarketSessionConfig> = {
 };
 
 function buildClockFormatter(timeZone: string): Intl.DateTimeFormat {
-  return new Intl.DateTimeFormat("en-US", {
+  return new Intl.DateTimeFormat('en-US', {
     timeZone,
     hour12: false,
-    weekday: "short",
-    hour: "2-digit",
-    minute: "2-digit",
+    weekday: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
   });
 }
 
 function buildDateFormatter(timeZone: string): Intl.DateTimeFormat {
-  return new Intl.DateTimeFormat("en-CA", {
+  return new Intl.DateTimeFormat('en-CA', {
     timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
   });
 }
 
@@ -70,22 +70,25 @@ export function marketDate(market: Market, date: Date = new Date()): string {
 }
 
 export function easternDate(date: Date = new Date()): string {
-  return marketDate("US", date);
+  return marketDate('US', date);
 }
 
-export function isCurrentSessionId(id: string, market: Market = "US"): boolean {
+export function isCurrentSessionId(id: string, market: Market = 'US'): boolean {
   return id.slice(0, 10) === marketDate(market);
 }
 
-function readClockParts(market: Market, ts: number): { weekday: string; hour: number; minute: number } {
+function readClockParts(
+  market: Market,
+  ts: number,
+): { weekday: string; hour: number; minute: number } {
   const parts = clockFormatters[market].formatToParts(new Date(ts * 1000));
-  let weekday = "";
+  let weekday = '';
   let hour = 0;
   let minute = 0;
   for (const p of parts) {
-    if (p.type === "weekday") weekday = p.value;
-    else if (p.type === "hour") hour = Number(p.value);
-    else if (p.type === "minute") minute = Number(p.value);
+    if (p.type === 'weekday') weekday = p.value;
+    else if (p.type === 'hour') hour = Number(p.value);
+    else if (p.type === 'minute') minute = Number(p.value);
   }
   return { weekday, hour, minute };
 }
@@ -96,49 +99,53 @@ export function marketMinuteOfDay(market: Market, ts: number): number {
 }
 
 export function easternMinuteOfDay(ts: number): number {
-  return marketMinuteOfDay("US", ts);
+  return marketMinuteOfDay('US', ts);
 }
 
 function classifyByMinute(market: Market, min: number): SessionKind {
   const config = MARKET_CONFIG[market];
   for (const [start, end] of config.regularSegments) {
-    if (min >= start && min < end) return "regular";
+    if (min >= start && min < end) return 'regular';
   }
   if (config.extended) {
     const first = config.regularSegments[0][0];
-    const last = config.regularSegments[config.regularSegments.length - 1][1];
-    if (min >= PRE_START && min < first) return "pre";
-    if (min >= last && min < POST_END) return "post";
+    const last = config.regularSegments.at(-1)![1];
+    if (min >= PRE_START && min < first) return 'pre';
+    if (min >= last && min < POST_END) return 'post';
   }
-  return "overnight";
+  return 'overnight';
 }
 
-export function classifySession(ts: number, market: Market = "US"): SessionKind {
+export function classifySession(ts: number, market: Market = 'US'): SessionKind {
   const { weekday, hour, minute } = readClockParts(market, ts);
-  if (weekday === "Sat" || weekday === "Sun") return "overnight";
+  if (weekday === 'Sat' || weekday === 'Sun') return 'overnight';
   const min = (hour % 24) * 60 + minute;
   return classifyByMinute(market, min);
 }
 
-export function sessionLabel(kind: SessionKind, market: Market = "US"): string {
+export function sessionLabel(kind: SessionKind, market: Market = 'US'): string {
   switch (kind) {
-    case "regular":
-      return "日盘";
-    case "pre":
-      return "盘前";
-    case "post":
-      return "盘后";
-    case "overnight":
-      return market === "US" ? "隔夜" : "休市";
+    case 'regular': {
+      return '日盘';
+    }
+    case 'pre': {
+      return '盘前';
+    }
+    case 'post': {
+      return '盘后';
+    }
+    case 'overnight': {
+      return market === 'US' ? '隔夜' : '休市';
+    }
   }
 }
 
-export function offSessionSegments(timesTs: number[], market: Market = "US"): OffSessionSegment[] {
+export function offSessionSegments(timesTs: number[], market: Market = 'US'): OffSessionSegment[] {
   const out: OffSessionSegment[] = [];
   let cur: OffSessionSegment | null = null;
   for (const t of timesTs) {
     const kind = classifySession(t, market);
-    if (kind === "regular") {
+    if (kind === 'regular') {
       if (cur) {
         out.push(cur);
         cur = null;

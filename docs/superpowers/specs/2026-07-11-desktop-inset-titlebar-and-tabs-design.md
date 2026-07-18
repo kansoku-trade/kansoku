@@ -48,9 +48,9 @@ New files under `web/src/desktop/`: `tabsStore.ts` (state + persistence), `TabsP
 
 ```ts
 type TabState = {
-  id: string;       // crypto.randomUUID()
-  route: string;     // pathname + search, e.g. "/symbol/NVDA"
-  title: string;      // mirrors useTitle's pageName, defaults to "Kansoku"
+  id: string; // crypto.randomUUID()
+  route: string; // pathname + search, e.g. "/symbol/NVDA"
+  title: string; // mirrors useTitle's pageName, defaults to "Kansoku"
   scrollY: number;
 };
 ```
@@ -66,7 +66,7 @@ type TabState = {
 
 ```ts
 interface RouteStore {
-  getRoute(): string;                 // pathname + search
+  getRoute(): string; // pathname + search
   subscribe(cb: () => void): () => void;
   push(route: string): void;
   replace(route: string): void;
@@ -98,12 +98,12 @@ New `web/src/desktop/DesktopTitlebar.tsx`, swapped in for `GlobalTopbar` only wh
 
 `main.ts`'s `buildAppMenu()` gains a "Window" menu (Safari/Chrome convention), each item sent to the renderer over IPC and handled by `TabsProvider`:
 
-| Menu item | Shortcut | Action |
-|---|---|---|
-| New Tab | ⌘T | open a new home tab, activate it |
-| Close Tab | ⌘W | close the active tab (last tab → replaced by a home tab) |
-| Show Next Tab | ⌘⇧] | activate the tab to the right, wrapping |
-| Show Previous Tab | ⌘⇧[ | activate the tab to the left, wrapping |
+| Menu item         | Shortcut | Action                                                   |
+| ----------------- | -------- | -------------------------------------------------------- |
+| New Tab           | ⌘T       | open a new home tab, activate it                         |
+| Close Tab         | ⌘W       | close the active tab (last tab → replaced by a home tab) |
+| Show Next Tab     | ⌘⇧]      | activate the tab to the right, wrapping                  |
+| Show Previous Tab | ⌘⇧[      | activate the tab to the left, wrapping                   |
 
 `preload.ts` gains one read-only subscription channel, `desktopApi.tabs.onCommand(cb)`, gated by the existing `isPrivilegedOrigin` check (same tier as `credentials`/`externalApi`). No new writable IPC surface — the menu only announces intent; `TabsProvider` in the renderer owns all tab state mutation.
 

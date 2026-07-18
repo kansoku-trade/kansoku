@@ -1,7 +1,7 @@
-import type { Market } from "@kansoku/shared/time";
+import type { Market } from '@kansoku/shared/time';
 
-export type RoleMode = "custom" | "disabled" | "inherit";
-export type Role = "comment" | "analyst" | "deepDive" | "chat";
+export type RoleMode = 'custom' | 'disabled' | 'inherit';
+export type Role = 'comment' | 'analyst' | 'deepDive' | 'chat';
 
 export interface RoleSetting {
   mode: RoleMode;
@@ -11,17 +11,17 @@ export interface RoleSetting {
   stale: boolean;
 }
 
-export type AiRoles = Record<Role | "primary", RoleSetting>;
+export type AiRoles = Record<Role | 'primary', RoleSetting>;
 
 export interface CredentialEntry {
   provider: string;
-  kind: "api_key" | "oauth";
+  kind: 'api_key' | 'oauth';
   masked: string | null;
   updatedAt: string;
   ok: boolean;
 }
 
-export type MasterKeyStatus = "ready" | "missing" | "invalid";
+export type MasterKeyStatus = 'ready' | 'missing' | 'invalid';
 
 export interface AiSettings {
   roles: AiRoles;
@@ -46,8 +46,8 @@ export interface CatalogModel {
 }
 
 export interface CatalogAuth {
-  kind: "api_key" | "oauth";
-  status: "configured" | "missing" | "error";
+  kind: 'api_key' | 'oauth';
+  status: 'configured' | 'missing' | 'error';
 }
 
 export interface CatalogProvider {
@@ -61,20 +61,20 @@ export interface Catalog {
   providers: CatalogProvider[];
 }
 
-export const ROLES: Role[] = ["comment", "analyst", "deepDive", "chat"];
+export const ROLES: Role[] = ['comment', 'analyst', 'deepDive', 'chat'];
 
 export const ROLE_LABEL: Record<Role, string> = {
-  comment: "盘中快评",
-  analyst: "升级分析",
-  deepDive: "深度研究",
-  chat: "追问",
+  comment: '盘中快评',
+  analyst: '升级分析',
+  deepDive: '深度研究',
+  chat: '追问',
 };
 
-export const CODEX_PROVIDER = "openai-codex";
-export const LOBEHUB_PROVIDER = "lobehub";
+export const CODEX_PROVIDER = 'openai-codex';
+export const LOBEHUB_PROVIDER = 'lobehub';
 
 export interface LobeHubAccount {
-  status: "unavailable" | "disconnected" | "connected" | "refresh_required";
+  status: 'unavailable' | 'disconnected' | 'connected' | 'refresh_required';
   email: string | null;
   name: string | null;
   userId: string | null;
@@ -100,12 +100,12 @@ export interface LobeHubDeviceLogin {
 }
 
 export const THINKING_LABEL: Record<string, string> = {
-  off: "关闭思考",
-  minimal: "最简",
-  low: "低",
-  medium: "中",
-  high: "高",
-  xhigh: "极高",
+  off: '关闭思考',
+  minimal: '最简',
+  low: '低',
+  medium: '中',
+  high: '高',
+  xhigh: '极高',
 };
 
 export function thinkingLabel(level: string | null): string {
@@ -113,4 +113,4 @@ export function thinkingLabel(level: string | null): string {
 }
 
 export type { Market };
-export const MARKET_LABEL: Record<Market, string> = { US: "美股", HK: "港股", CN: "A 股" };
+export const MARKET_LABEL: Record<Market, string> = { US: '美股', HK: '港股', CN: 'A 股' };

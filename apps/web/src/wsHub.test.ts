@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 class FakePort {
   closed = false;
@@ -10,8 +10,8 @@ class FakePort {
     this.closed = true;
   }
   start(): void {}
-  addEventListener(type: "message" | "close", listener: never): void {
-    if (type === "message") this.messageListeners.push(listener as (e: { data: unknown }) => void);
+  addEventListener(type: 'message' | 'close', listener: never): void {
+    if (type === 'message') this.messageListeners.push(listener as (e: { data: unknown }) => void);
     else this.closeListeners.push(listener as () => void);
   }
   emitClose(): void {
@@ -25,21 +25,21 @@ class AutoRespondWindow {
   private listeners: ((e: { source: unknown; data: unknown; ports: FakePort[] }) => void)[] = [];
 
   postMessage(data: unknown): void {
-    if (data !== "desktop-rt-connect") return;
+    if (data !== 'desktop-rt-connect') return;
     const port = new FakePort();
     this.ports.push(port);
     queueMicrotask(() => {
-      for (const cb of this.listeners) cb({ source: this, data: "desktop-rt-port", ports: [port] });
+      for (const cb of this.listeners) cb({ source: this, data: 'desktop-rt-port', ports: [port] });
     });
   }
   addEventListener(
-    _type: "message",
+    _type: 'message',
     listener: (e: { source: unknown; data: unknown; ports: FakePort[] }) => void,
   ): void {
     this.listeners.push(listener);
   }
   removeEventListener(
-    _type: "message",
+    _type: 'message',
     listener: (e: { source: unknown; data: unknown; ports: FakePort[] }) => void,
   ): void {
     this.listeners = this.listeners.filter((l) => l !== listener);
@@ -91,24 +91,24 @@ async function flush(): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, 0));
 }
 
-describe("wsHub reconnect regression (port transport)", () => {
+describe('wsHub reconnect regression (port transport)', () => {
   let win: AutoRespondWindow;
 
   beforeEach(() => {
     vi.resetModules();
     win = new AutoRespondWindow();
-    vi.stubGlobal("window", win);
+    vi.stubGlobal('window', win);
   });
 
   afterEach(() => {
     vi.unstubAllGlobals();
   });
 
-  it("reconnects after subscribe -> unsub-all -> resubscribe -> peer death", async () => {
-    const { subscribeChannel } = await import("./wsHub.js");
+  it('reconnects after subscribe -> unsub-all -> resubscribe -> peer death', async () => {
+    const { subscribeChannel } = await import('./wsHub.js');
 
     const onConnected1 = vi.fn();
-    const unsub1 = subscribeChannel({ kind: "board" }, vi.fn(), onConnected1);
+    const unsub1 = subscribeChannel({ kind: 'board' }, vi.fn(), onConnected1);
     await flush();
     expect(onConnected1).toHaveBeenCalledWith(true);
     expect(win.ports).toHaveLength(1);
@@ -117,7 +117,7 @@ describe("wsHub reconnect regression (port transport)", () => {
     expect(win.ports[0].closed).toBe(true);
 
     const onConnected2 = vi.fn();
-    const unsubscribeSecond = subscribeChannel({ kind: "board" }, vi.fn(), onConnected2);
+    const unsubscribeSecond = subscribeChannel({ kind: 'board' }, vi.fn(), onConnected2);
     await flush();
     expect(onConnected2).toHaveBeenCalledWith(true);
     expect(win.ports).toHaveLength(2);
@@ -129,39 +129,40 @@ describe("wsHub reconnect regression (port transport)", () => {
     unsubscribeSecond();
   });
 
-  it("tracks hub status across connect, peer death, reconnect, and unsub-all", async () => {
-    const { subscribeChannel, getHubStatus, subscribeHubStatus } = await import("./wsHub.js");
+  it('tracks hub status across connect, peer death, reconnect, and unsub-all', async () => {
+    const { subscribeChannel, getHubStatus, subscribeHubStatus } = await import('./wsHub.js');
     const seen: string[] = [];
     const unsubscribeStatus = subscribeHubStatus(() => seen.push(getHubStatus()));
 
-    expect(getHubStatus()).toBe("connecting");
-    const unsub = subscribeChannel({ kind: "board" }, vi.fn(), vi.fn());
-    expect(getHubStatus()).toBe("connecting");
+    expect(getHubStatus()).toBe('connecting');
+    const unsub = subscribeChannel({ kind: 'board' }, vi.fn(), vi.fn());
+    expect(getHubStatus()).toBe('connecting');
     await flush();
-    expect(getHubStatus()).toBe("connected");
+    expect(getHubStatus()).toBe('connected');
 
     win.ports[0].emitClose();
     await flush();
-    expect(seen).toContain("reconnecting");
-    expect(getHubStatus()).toBe("connected");
+    expect(seen).toContain('reconnecting');
+    expect(getHubStatus()).toBe('connected');
 
     unsub();
-    expect(getHubStatus()).toBe("connecting");
+    expect(getHubStatus()).toBe('connecting');
     unsubscribeStatus();
   });
 });
 
-describe("wsHub socket ownership (websocket transport)", () => {
+describe('wsHub socket ownership (websocket transport)', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.resetModules();
     DelayedCloseWebSocket.instances = [];
-    vi.stubGlobal("window", {
-      setTimeout: (callback: () => void, delay: number) => setTimeout(callback, delay) as unknown as number,
+    vi.stubGlobal('window', {
+      setTimeout: (callback: () => void, delay: number) =>
+        setTimeout(callback, delay) as unknown as number,
       clearTimeout: (timer: number) => clearTimeout(timer),
     });
-    vi.stubGlobal("location", { protocol: "http:", host: "localhost" });
-    vi.stubGlobal("WebSocket", DelayedCloseWebSocket);
+    vi.stubGlobal('location', { protocol: 'http:', host: 'localhost' });
+    vi.stubGlobal('WebSocket', DelayedCloseWebSocket);
   });
 
   afterEach(() => {
@@ -169,44 +170,44 @@ describe("wsHub socket ownership (websocket transport)", () => {
     vi.unstubAllGlobals();
   });
 
-  it("ignores a delayed close from a socket replaced after unsubscribing", async () => {
-    const { getHubStatus, subscribeChannel } = await import("./wsHub.js");
+  it('ignores a delayed close from a socket replaced after unsubscribing', async () => {
+    const { getHubStatus, subscribeChannel } = await import('./wsHub.js');
 
     const firstConnected = vi.fn();
-    const unsubscribeFirst = subscribeChannel({ kind: "board" }, vi.fn(), firstConnected);
+    const unsubscribeFirst = subscribeChannel({ kind: 'board' }, vi.fn(), firstConnected);
     const first = DelayedCloseWebSocket.instances[0];
     first.open();
-    expect(getHubStatus()).toBe("connected");
+    expect(getHubStatus()).toBe('connected');
 
     unsubscribeFirst();
     expect(first.closeCalls).toBe(1);
-    expect(getHubStatus()).toBe("connecting");
+    expect(getHubStatus()).toBe('connecting');
 
     const secondConnected = vi.fn();
-    const unsubscribeSecond = subscribeChannel({ kind: "board" }, vi.fn(), secondConnected);
+    const unsubscribeSecond = subscribeChannel({ kind: 'board' }, vi.fn(), secondConnected);
     const second = DelayedCloseWebSocket.instances[1];
     second.open();
     expect(secondConnected).toHaveBeenCalledWith(true);
 
     first.finishClose();
 
-    expect(getHubStatus()).toBe("connected");
+    expect(getHubStatus()).toBe('connected');
     expect(secondConnected).not.toHaveBeenCalledWith(false);
     unsubscribeSecond();
   });
 
-  it("cancels reconnect and returns to connecting when the last subscriber leaves", async () => {
-    const { getHubStatus, subscribeChannel } = await import("./wsHub.js");
+  it('cancels reconnect and returns to connecting when the last subscriber leaves', async () => {
+    const { getHubStatus, subscribeChannel } = await import('./wsHub.js');
 
-    const unsubscribe = subscribeChannel({ kind: "board" }, vi.fn(), vi.fn());
+    const unsubscribe = subscribeChannel({ kind: 'board' }, vi.fn(), vi.fn());
     const socket = DelayedCloseWebSocket.instances[0];
     socket.open();
     socket.finishClose();
-    expect(getHubStatus()).toBe("reconnecting");
+    expect(getHubStatus()).toBe('reconnecting');
     expect(vi.getTimerCount()).toBe(1);
 
     unsubscribe();
-    expect(getHubStatus()).toBe("connecting");
+    expect(getHubStatus()).toBe('connecting');
     expect(vi.getTimerCount()).toBe(0);
 
     await vi.advanceTimersByTimeAsync(2_000);

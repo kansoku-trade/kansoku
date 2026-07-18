@@ -1,17 +1,10 @@
-import { defineRoutes } from "./defineRoutes.js";
-import type { ChatDisplayMessage } from "@kansoku/pro-api";
+import { defineRoutes } from './defineRoutes.js';
+import type { ChatDisplayMessage } from '@kansoku/pro-api';
 
-export type ResearchKind = "stock" | "journal";
+export type ResearchKind = 'stock' | 'journal';
 
 export type ResearchDocumentType =
-  | "stock"
-  | "intraday"
-  | "recap"
-  | "flow"
-  | "lessons"
-  | "decision"
-  | "archive"
-  | "journal";
+  'stock' | 'intraday' | 'recap' | 'flow' | 'lessons' | 'decision' | 'archive' | 'journal';
 
 export interface ResearchDocumentMeta {
   path: string;
@@ -30,11 +23,11 @@ export interface ResearchDocument extends ResearchDocumentMeta {
 }
 
 export type ResearchEditOperation =
-  | { type: "replace"; oldText: string; newText: string }
-  | { type: "insert_after"; anchor: string; content: string }
-  | { type: "append"; content: string };
+  | { type: 'replace'; oldText: string; newText: string }
+  | { type: 'insert_after'; anchor: string; content: string }
+  | { type: 'append'; content: string };
 
-export type ResearchEditStatus = "pending" | "applied" | "rejected" | "undone" | "stale";
+export type ResearchEditStatus = 'pending' | 'applied' | 'rejected' | 'undone' | 'stale';
 
 export interface ResearchEditProposal {
   id: string;
@@ -68,7 +61,7 @@ export interface ResearchChatState {
   partial: string | null;
 }
 
-export type ResearchEvidenceKind = "document" | "market" | "news";
+export type ResearchEvidenceKind = 'document' | 'market' | 'news';
 
 export interface ResearchEvidenceItem {
   id: string;
@@ -79,7 +72,7 @@ export interface ResearchEvidenceItem {
   summary: string;
 }
 
-export type ResearchFindingConfidence = "high" | "medium" | "low";
+export type ResearchFindingConfidence = 'high' | 'medium' | 'low';
 
 export interface ResearchFinding {
   title: string;
@@ -98,8 +91,9 @@ export interface ResearchRefreshReport {
   generatedAt: string;
 }
 
-export type ResearchRefreshStatus = "running" | "completed" | "failed" | "aborted";
-export type ResearchRefreshPhase = "preparing" | "documents" | "market" | "synthesis" | "proposal" | "completed";
+export type ResearchRefreshStatus = 'running' | 'completed' | 'failed' | 'aborted';
+export type ResearchRefreshPhase =
+  'preparing' | 'documents' | 'market' | 'synthesis' | 'proposal' | 'completed';
 
 export interface ResearchRefreshTask {
   id: string;
@@ -122,8 +116,7 @@ export type ResearchPostMessageResult =
   | { status: 503; body: { error: string } };
 
 export type ResearchAbortResult =
-  | { status: 202; body: { aborted: true } }
-  | { status: 409; body: { error: string } };
+  { status: 202; body: { aborted: true } } | { status: 409; body: { error: string } };
 
 export interface ResearchApi {
   list(input: { kind?: ResearchKind; query?: string }): Promise<ResearchDocumentMeta[]>;
@@ -147,18 +140,18 @@ export interface ResearchApi {
   }>;
 }
 
-export const researchRoutes = defineRoutes<ResearchApi>("research", {
-  list: { method: "GET", path: "/" },
-  get: { method: "GET", path: "/document" },
-  getChat: { method: "GET", path: "/chat", raw: "body" },
-  postMessage: { method: "POST", path: "/chat/messages", raw: "statusBody" },
-  abortChat: { method: "POST", path: "/chat/abort", raw: "statusBody" },
-  suggestions: { method: "GET", path: "/chat/suggestions", raw: "body" },
-  getRefresh: { method: "GET", path: "/refresh" },
-  startRefresh: { method: "POST", path: "/refresh" },
-  abortRefresh: { method: "POST", path: "/refresh/abort" },
-  listEdits: { method: "GET", path: "/edits" },
-  applyEdit: { method: "POST", path: "/edits/:id/apply" },
-  rejectEdit: { method: "POST", path: "/edits/:id/reject" },
-  undoEdit: { method: "POST", path: "/edits/:id/undo" },
+export const researchRoutes = defineRoutes<ResearchApi>('research', {
+  list: { method: 'GET', path: '/' },
+  get: { method: 'GET', path: '/document' },
+  getChat: { method: 'GET', path: '/chat', raw: 'body' },
+  postMessage: { method: 'POST', path: '/chat/messages', raw: 'statusBody' },
+  abortChat: { method: 'POST', path: '/chat/abort', raw: 'statusBody' },
+  suggestions: { method: 'GET', path: '/chat/suggestions', raw: 'body' },
+  getRefresh: { method: 'GET', path: '/refresh' },
+  startRefresh: { method: 'POST', path: '/refresh' },
+  abortRefresh: { method: 'POST', path: '/refresh/abort' },
+  listEdits: { method: 'GET', path: '/edits' },
+  applyEdit: { method: 'POST', path: '/edits/:id/apply' },
+  rejectEdit: { method: 'POST', path: '/edits/:id/reject' },
+  undoEdit: { method: 'POST', path: '/edits/:id/undo' },
 });

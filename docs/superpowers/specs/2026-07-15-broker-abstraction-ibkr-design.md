@@ -60,17 +60,17 @@ core 定义描述符接口，broker 包实现：
 
 ```ts
 interface BrokerDescriptor {
-  readonly name: string;                      // "longbridge" | "ibkr"
-  readonly displayName: string;               // 设置页显示用
+  readonly name: string; // "longbridge" | "ibkr"
+  readonly displayName: string; // 设置页显示用
   readonly capabilities: ReadonlySet<Capability>;
-  readonly provider: MarketDataProvider;      // 现有接口，原样保留
-  createStream(): QuoteStream;                // 现有接口，原样保留
+  readonly provider: MarketDataProvider; // 现有接口，原样保留
+  createStream(): QuoteStream; // 现有接口，原样保留
   readonly credentials: BrokerCredentialsAdapter;
 }
 
 interface BrokerCredentialsAdapter {
-  check(): Promise<BrokerConnectionStatus>;   // ok | not_configured | not_logged_in | gateway_offline
-  readonly setupGuide: SetupGuide;            // 结构化引导步骤，web 端渲染
+  check(): Promise<BrokerConnectionStatus>; // ok | not_configured | not_logged_in | gateway_offline
+  readonly setupGuide: SetupGuide; // 结构化引导步骤，web 端渲染
 }
 ```
 
@@ -95,15 +95,15 @@ IBKR 内部用数字 `conid` 而非 ticker。包内做 `symbol ↔ conid` 解析
 
 ### 能力映射
 
-| 能力 | IBKR 端点 | 声明 |
-|---|---|---|
-| 报价 | `/iserver/marketdata/snapshot` + WS 推送 | ✅ |
-| K 线 | `/iserver/marketdata/history` | ✅ |
-| 持仓 / 账户总览 | `/portfolio/{acct}/positions`、`/portfolio/{acct}/summary` | ✅ |
-| 自选股 | `/iserver/watchlists` | ✅ |
-| 实时流 | `wss://localhost:5000/v1/api/ws`（按 conid 订阅） | ✅ |
-| 资金流大中小单 / 财报日历 / 宏观日历 | 无对等物 | ❌ 不声明 |
-| 新闻 | 无稳定公开端点 | ❌ 不声明 |
+| 能力                                 | IBKR 端点                                                  | 声明      |
+| ------------------------------------ | ---------------------------------------------------------- | --------- |
+| 报价                                 | `/iserver/marketdata/snapshot` + WS 推送                   | ✅        |
+| K 线                                 | `/iserver/marketdata/history`                              | ✅        |
+| 持仓 / 账户总览                      | `/portfolio/{acct}/positions`、`/portfolio/{acct}/summary` | ✅        |
+| 自选股                               | `/iserver/watchlists`                                      | ✅        |
+| 实时流                               | `wss://localhost:5000/v1/api/ws`（按 conid 订阅）          | ✅        |
+| 资金流大中小单 / 财报日历 / 宏观日历 | 无对等物                                                   | ❌ 不声明 |
+| 新闻                                 | 无稳定公开端点                                             | ❌ 不声明 |
 
 - 分钟 K 线推送：IBKR WS 只推报价不推 bar，复用 core 已有的 `candleAggregator` 从逐笔报价聚合（长桥 stream 现行做法相同）。
 

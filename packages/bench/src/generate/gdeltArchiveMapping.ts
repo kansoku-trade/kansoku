@@ -1,5 +1,5 @@
-import type { BenchNewsItem } from "../schema/newsItem.js";
-import { hashSlug, normalizeTitle } from "./newsMapping.js";
+import type { BenchNewsItem } from '../schema/newsItem.js';
+import { hashSlug, normalizeTitle } from './newsMapping.js';
 
 const COL_DATE = 1;
 const COL_DOMAIN = 3;
@@ -35,16 +35,16 @@ export interface ArchiveWindowRequest {
 }
 
 const FINANCE_CONTEXT_TERMS = [
-  "stock",
-  "stocks",
-  "shares",
-  "earnings",
-  "nasdaq",
-  "nyse",
-  "investor",
-  "dividend",
-  "analyst",
-  "price target",
+  'stock',
+  'stocks',
+  'shares',
+  'earnings',
+  'nasdaq',
+  'nyse',
+  'investor',
+  'dividend',
+  'analyst',
+  'price target',
 ];
 
 const OTHER_EXCHANGE_TICKER_PATTERN = /(?:nyse|nasdaq)\s*:?\s*([a-z]{1,5})\b/g;
@@ -52,13 +52,14 @@ const OTHER_EXCHANGE_TICKER_PATTERN = /(?:nyse|nasdaq)\s*:?\s*([a-z]{1,5})\b/g;
 const ANALYST_ACTION_PATTERN =
   /(price target|pt (?:lowered|raised)|rating|upgrad|downgrad|initiates coverage|forecasts|reiterat|overweight|underweight)/;
 
-const FUND_PRODUCT_PATTERN = /\b(?:etf|fund|inv(?:estment)?\s+trust|income trust|growth income trust)\b/;
+const FUND_PRODUCT_PATTERN =
+  /\b(?:etf|fund|inv(?:estment)?\s+trust|income trust|growth income trust)\b/;
 
-const CORPORATE_SUFFIXES = ["inc", "inc.", "corp", "co", "co.", "plc"];
+const CORPORATE_SUFFIXES = ['inc', 'inc.', 'corp', 'co', 'co.', 'plc'];
 
 export function parseGkgRow(line: string): GkgRow | null {
   if (!line) return null;
-  const cols = line.split("\t");
+  const cols = line.split('\t');
   if (cols.length < MIN_COLUMNS) return null;
   return {
     date: cols[COL_DATE],
@@ -70,11 +71,11 @@ export function parseGkgRow(line: string): GkgRow | null {
 }
 
 export function isEnglishRow(row: GkgRow): boolean {
-  return row.translationInfo.trim() === "";
+  return row.translationInfo.trim() === '';
 }
 
 function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return value.replaceAll(/[$()*+.?[\\\]^{|}]/g, '\\$&');
 }
 
 function matchesTerm(haystack: string, term: string): boolean {
@@ -84,16 +85,21 @@ function matchesTerm(haystack: string, term: string): boolean {
 }
 
 function normalizeForMatch(value: string): string {
-  return value.replace(/[-_]+/g, " ");
+  return value.replaceAll(/[_-]+/g, ' ');
 }
 
 function tickerToken(symbol: string): string {
-  return symbol.split(".")[0];
+  return symbol.split('.')[0];
 }
 
-function hasFinanceCorroborator(url: string, organizations: string, derivedTitle: string | null, symbol: string): boolean {
+function hasFinanceCorroborator(
+  url: string,
+  organizations: string,
+  derivedTitle: string | null,
+  symbol: string,
+): boolean {
   const ticker = tickerToken(symbol);
-  const haystacks = [normalizeForMatch(url), normalizeForMatch(organizations), derivedTitle ?? ""];
+  const haystacks = [normalizeForMatch(url), normalizeForMatch(organizations), derivedTitle ?? ''];
 
   for (const haystack of haystacks) {
     if (matchesTerm(haystack, ticker)) return true;
@@ -126,7 +132,7 @@ function orgTagEqualsStrongTerm(orgTag: string, term: string): boolean {
 
 function strongTermHasExactOrgTag(organizations: string, strongTerms: string[]): boolean {
   const orgTags = organizations
-    .split(";")
+    .split(';')
     .map((tag) => tag.trim())
     .filter(Boolean);
   return orgTags.some((tag) => strongTerms.some((term) => orgTagEqualsStrongTerm(tag, term)));
@@ -136,7 +142,7 @@ export function rowMatchesCompany(row: GkgRow, terms: ArchiveTerms, symbol: stri
   const normalizedUrl = normalizeForMatch(row.url);
   const normalizedOrgs = normalizeForMatch(row.organizations);
   const derivedTitle = deriveTitleFromUrl(row.url);
-  const normalizedTitle = normalizeForMatch((derivedTitle ?? "").toLowerCase());
+  const normalizedTitle = normalizeForMatch((derivedTitle ?? '').toLowerCase());
   const titleAndUrl = `${normalizedTitle} ${normalizedUrl}`;
   const ownTicker = tickerToken(symbol).toLowerCase();
 
@@ -158,17 +164,21 @@ export function rowMatchesCompany(row: GkgRow, terms: ArchiveTerms, symbol: stri
     return true;
   }
 
-  const weakHit = matchesTerm(normalizedOrgs, terms.weakTerm) || matchesTerm(normalizedUrl, terms.weakTerm);
+  const weakHit =
+    matchesTerm(normalizedOrgs, terms.weakTerm) || matchesTerm(normalizedUrl, terms.weakTerm);
   if (!weakHit) return false;
 
   return hasFinanceCorroborator(row.url, row.organizations, derivedTitle, symbol);
 }
 
-export function extractArchiveMatches(csv: string, requests: ArchiveWindowRequest[]): Map<string, ArchiveMatch[]> {
+export function extractArchiveMatches(
+  csv: string,
+  requests: ArchiveWindowRequest[],
+): Map<string, ArchiveMatch[]> {
   const bySymbol = new Map<string, ArchiveMatch[]>();
   for (const request of requests) bySymbol.set(request.symbol, []);
 
-  for (const line of csv.split("\n")) {
+  for (const line of csv.split('\n')) {
     if (!line) continue;
     const row = parseGkgRow(line);
     if (!row) continue;
@@ -184,11 +194,11 @@ export function extractArchiveMatches(csv: string, requests: ArchiveWindowReques
 }
 
 function stripKnownExtension(segment: string): string {
-  return segment.replace(/\.(html?|php|aspx?)$/i, "");
+  return segment.replace(/\.(html?|php|aspx?)$/i, '');
 }
 
 function stripUnknownTrailingExtension(segment: string): string {
-  const match = /^(.+)\.([a-zA-Z0-9]{1,5})$/.exec(segment);
+  const match = /^(.+)\.([\dA-Za-z]{1,5})$/.exec(segment);
   return match ? match[1] : segment;
 }
 
@@ -199,7 +209,7 @@ function stripTrailingExtension(segment: string): string {
 }
 
 function alphaCount(word: string): number {
-  return (word.match(/[a-zA-Z]/g) ?? []).length;
+  return (word.match(/[A-Za-z]/g) ?? []).length;
 }
 
 function hasUsableSlug(words: string[]): boolean {
@@ -208,15 +218,15 @@ function hasUsableSlug(words: string[]): boolean {
 
 function slugToTitle(segment: string): string | null {
   const stripped = stripTrailingExtension(segment);
-  let cleaned = stripped.replace(/[-_]+/g, " ").trim();
-  cleaned = cleaned.replace(/\s+\d+$/, "").trim();
+  let cleaned = stripped.replaceAll(/[_-]+/g, ' ').trim();
+  cleaned = cleaned.replace(/\s+\d+$/, '').trim();
   if (!cleaned) return null;
 
   const words = cleaned.split(/\s+/).filter(Boolean);
   if (words.length === 0) return null;
   if (!hasUsableSlug(words)) return null;
 
-  return words.map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
+  return words.map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
 }
 
 export function deriveTitleFromUrl(url: string): string | null {
@@ -227,7 +237,7 @@ export function deriveTitleFromUrl(url: string): string | null {
     return null;
   }
 
-  const segments = pathname.split("/").filter(Boolean);
+  const segments = pathname.split('/').filter(Boolean);
   for (let i = segments.length - 1; i >= 0; i--) {
     const title = slugToTitle(segments[i]);
     if (title) return title;

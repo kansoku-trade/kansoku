@@ -1,10 +1,7 @@
 {
-  "id": "swing-TEST-01",
-  "bank": "swing",
-  "symbol": "MU.US",
-  "cutoff": "2026-03-20T20:00:00-04:00",
-  "layer": "high-vol-tech",
   "adversarial": false,
+  "bank": "swing",
+  "cutoff": "2026-03-20T20:00:00-04:00",
   "fixtures": {
     "kline": {
       "day": [
@@ -52,6 +49,8 @@
       "nextEarnings": "2026-06-25"
     }
   },
+  "id": "swing-TEST-01",
+  "layer": "high-vol-tech",
   "replay": {
     "horizonBars": 20,
     "bars": [
@@ -65,5 +64,6 @@
       }
     ]
   },
+  "symbol": "MU.US",
   "unexpectedTopLevelField": true
 }

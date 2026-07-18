@@ -1,5 +1,5 @@
-import { type Static, Type } from "typebox";
-import { weightsSchema } from "./runConfig.js";
+import { type Static, Type } from 'typebox';
+import { weightsSchema } from './runConfig.js';
 
 const cellMetricsSchema = Type.Object(
   {
@@ -14,30 +14,30 @@ export const cellVerdictSchema = Type.Object(
   {
     model: Type.String(),
     questionId: Type.String(),
-    mode: Type.Union([Type.Literal("blind"), Type.Literal("live")]),
+    mode: Type.Union([Type.Literal('blind'), Type.Literal('live')]),
     rep: Type.Integer({ minimum: 0 }),
     symbol: Type.String(),
     layer: Type.String(),
-    regime: Type.Union([Type.Literal("up"), Type.Literal("down")]),
+    regime: Type.Union([Type.Literal('up'), Type.Literal('down')]),
     direction: Type.Union([
-      Type.Literal("long"),
-      Type.Literal("short"),
-      Type.Literal("neutral"),
+      Type.Literal('long'),
+      Type.Literal('short'),
+      Type.Literal('neutral'),
       Type.Null(),
     ]),
     entry: Type.Union([Type.Number(), Type.Null()]),
     stop: Type.Union([Type.Number(), Type.Null()]),
     target: Type.Union([Type.Number(), Type.Null()]),
     outcome: Type.Union([
-      Type.Literal("win"),
-      Type.Literal("loss"),
-      Type.Literal("timeout_flat"),
-      Type.Literal("no_fill"),
-      Type.Literal("format_violation"),
-      Type.Literal("neutral_correct"),
-      Type.Literal("neutral_wrong"),
-      Type.Literal("api_error"),
-      Type.Literal("agent_timeout"),
+      Type.Literal('win'),
+      Type.Literal('loss'),
+      Type.Literal('timeout_flat'),
+      Type.Literal('no_fill'),
+      Type.Literal('format_violation'),
+      Type.Literal('neutral_correct'),
+      Type.Literal('neutral_wrong'),
+      Type.Literal('api_error'),
+      Type.Literal('agent_timeout'),
     ]),
     score: Type.Union([Type.Number(), Type.Null()]),
     r: Type.Union([Type.Number(), Type.Null()]),

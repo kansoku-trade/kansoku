@@ -1,22 +1,26 @@
-import { useState } from "react";
-import { Check, Undo2, X } from "lucide-react";
-import type { ResearchDocument, ResearchEditOperation, ResearchEditProposal } from "@kansoku/core/contract/index";
-import { errorMessage } from "@web/api";
-import { client } from "@web/client";
-import { Button, openModal, Spinner } from "@web/ui";
+import { useState } from 'react';
+import { Check, Undo2, X } from 'lucide-react';
+import type {
+  ResearchDocument,
+  ResearchEditOperation,
+  ResearchEditProposal,
+} from '@kansoku/core/contract/index';
+import { errorMessage } from '@web/api';
+import { client } from '@web/client';
+import { Button, openModal, Spinner } from '@web/ui';
 
-export const STATUS_LABEL: Record<ResearchEditProposal["status"], string> = {
-  pending: "待审阅",
-  applied: "已应用",
-  rejected: "已拒绝",
-  undone: "已撤销",
-  stale: "已失效",
+export const STATUS_LABEL: Record<ResearchEditProposal['status'], string> = {
+  pending: '待审阅',
+  applied: '已应用',
+  rejected: '已拒绝',
+  undone: '已撤销',
+  stale: '已失效',
 };
 
 function operationLabel(operation: ResearchEditOperation): string {
-  if (operation.type === "replace") return "替换原文";
-  if (operation.type === "insert_after") return "插入段落";
-  return "追加章节";
+  if (operation.type === 'replace') return '替换原文';
+  if (operation.type === 'insert_after') return '插入段落';
+  return '追加章节';
 }
 
 function OperationPreview({
@@ -33,15 +37,19 @@ function OperationPreview({
   onToggle: () => void;
 }) {
   return (
-    <section className={`research-edit-operation${selected ? " selected" : ""}`}>
+    <section className={`research-edit-operation${selected ? ' selected' : ''}`}>
       <header>
         <label>
           <input type="checkbox" checked={selected} disabled={disabled} onChange={onToggle} />
-          <span className="research-edit-check" aria-hidden="true">{selected ? <Check size={13} /> : null}</span>
-          <span>修改 {index + 1} · {operationLabel(operation)}</span>
+          <span className="research-edit-check" aria-hidden="true">
+            {selected ? <Check size={13} /> : null}
+          </span>
+          <span>
+            修改 {index + 1} · {operationLabel(operation)}
+          </span>
         </label>
       </header>
-      {operation.type === "replace" ? (
+      {operation.type === 'replace' ? (
         <div className="research-edit-pair">
           <div className="research-edit-code research-edit-code--removed">
             <span>原文</span>
@@ -49,10 +57,10 @@ function OperationPreview({
           </div>
           <div className="research-edit-code research-edit-code--added">
             <span>修改后</span>
-            <pre>{operation.newText || "（删除）"}</pre>
+            <pre>{operation.newText || '（删除）'}</pre>
           </div>
         </div>
-      ) : operation.type === "insert_after" ? (
+      ) : operation.type === 'insert_after' ? (
         <div className="research-edit-pair">
           <div className="research-edit-code research-edit-code--context">
             <span>定位原文</span>
@@ -82,7 +90,7 @@ function ResearchEditReview({
   close: () => void;
   onChanged: (document?: ResearchDocument) => void;
 }) {
-  const editable = proposal.status === "pending";
+  const editable = proposal.status === 'pending';
   const [selected, setSelected] = useState<number[]>(
     () => proposal.appliedOperationIndexes ?? proposal.operations.map((_, index) => index),
   );
@@ -93,7 +101,9 @@ function ResearchEditReview({
   const toggle = (index: number) => {
     if (!editable) return;
     setSelected((current) =>
-      current.includes(index) ? current.filter((item) => item !== index) : [...current, index].sort((a, b) => a - b),
+      current.includes(index)
+        ? current.filter((item) => item !== index)
+        : [...current, index].sort((a, b) => a - b),
     );
   };
 
@@ -147,7 +157,9 @@ function ResearchEditReview({
   return (
     <div className="research-edit-review">
       <div className="research-edit-review-summary">
-        <span className={`research-edit-status research-edit-status--${proposal.status}`}>{STATUS_LABEL[proposal.status]}</span>
+        <span className={`research-edit-status research-edit-status--${proposal.status}`}>
+          {STATUS_LABEL[proposal.status]}
+        </span>
         <p>{proposal.summary}</p>
         <code>{proposal.path}</code>
       </div>
@@ -163,7 +175,11 @@ function ResearchEditReview({
           />
         ))}
       </div>
-      {error ? <div className="research-assistant-error" role="alert">{error}</div> : null}
+      {error ? (
+        <div className="research-assistant-error" role="alert">
+          {error}
+        </div>
+      ) : null}
       <footer className="research-edit-review-actions">
         {editable ? (
           <>
@@ -175,10 +191,14 @@ function ResearchEditReview({
               应用 {selected.length} 处修改
             </Button>
           </>
-        ) : proposal.status === "applied" ? (
-          <Button className={confirmUndo ? "research-edit-undo-confirm" : ""} disabled={busy} onClick={() => void undo()}>
+        ) : proposal.status === 'applied' ? (
+          <Button
+            className={confirmUndo ? 'research-edit-undo-confirm' : ''}
+            disabled={busy}
+            onClick={() => void undo()}
+          >
             {busy ? <Spinner /> : <Undo2 size={14} />}
-            {confirmUndo ? "再次点击确认撤销" : "撤销本次修改"}
+            {confirmUndo ? '再次点击确认撤销' : '撤销本次修改'}
           </Button>
         ) : (
           <Button onClick={close}>关闭</Button>
@@ -188,9 +208,12 @@ function ResearchEditReview({
   );
 }
 
-export function openEditReview(proposal: ResearchEditProposal, onChanged: (document?: ResearchDocument) => void): void {
+export function openEditReview(
+  proposal: ResearchEditProposal,
+  onChanged: (document?: ResearchDocument) => void,
+): void {
   openModal({
-    title: "审阅文档修改",
+    title: '审阅文档修改',
     body: (close) => <ResearchEditReview proposal={proposal} close={close} onChanged={onChanged} />,
   });
 }

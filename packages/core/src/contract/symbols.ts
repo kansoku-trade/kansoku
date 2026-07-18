@@ -6,17 +6,21 @@ import type {
   CockpitPosition,
   RelativeVolume,
   SymbolAnalysisRow,
-} from "@kansoku/shared/types";
+} from '@kansoku/shared/types';
 import type {
   DeepDiveStartResult,
   DeepDiveState,
+  ReassessResult,
+  ReassessStatus,
+} from '@kansoku/pro-api';
+import { defineRoutes } from './defineRoutes.js';
+
+export type {
+  DeepDiveStartResult,
   ReassessPhase,
   ReassessResult,
   ReassessStatus,
-} from "@kansoku/pro-api";
-import { defineRoutes } from "./defineRoutes.js";
-
-export type { DeepDiveStartResult, ReassessPhase, ReassessResult, ReassessStatus } from "@kansoku/pro-api";
+} from '@kansoku/pro-api';
 
 export interface JournalListRow {
   name: string;
@@ -66,23 +70,28 @@ export interface SymbolsApi {
   latest(input: { sym: string }): Promise<LatestChart>;
 }
 
-export const symbolsRoutes = defineRoutes<SymbolsApi>("symbols", {
-  flow: { method: "GET", path: "/:sym/flow" },
-  benchmark: { method: "GET", path: "/:sym/benchmark" },
-  position: { method: "GET", path: "/:sym/position" },
-  analyses: { method: "GET", path: "/:sym/analyses" },
-  relvol: { method: "GET", path: "/:sym/relvol" },
-  comments: { method: "GET", path: "/:sym/comments" },
-  commentDates: { method: "GET", path: "/:sym/comment-dates" },
-  followStatus: { method: "GET", path: "/:sym/follow" },
-  startFollow: { method: "POST", path: "/:sym/follow", feature: "symbol-follow" },
-  stopFollow: { method: "DELETE", path: "/:sym/follow" },
-  journal: { method: "GET", path: "/:sym/journal" },
-  journalEntry: { method: "GET", path: "/:sym/journal/:name" },
-  reassess: { method: "POST", path: "/:sym/reassess" },
-  reassessStatus: { method: "GET", path: "/:sym/reassess/status" },
-  note: { method: "GET", path: "/:sym/note", raw: "body" },
-  deepDive: { method: "POST", path: "/:sym/deep-dive", raw: "body", feature: "deep-dive" },
-  deepDiveStatus: { method: "GET", path: "/:sym/deep-dive/status", raw: "body", feature: "deep-dive" },
-  latest: { method: "GET", path: "/:sym/latest" },
+export const symbolsRoutes = defineRoutes<SymbolsApi>('symbols', {
+  flow: { method: 'GET', path: '/:sym/flow' },
+  benchmark: { method: 'GET', path: '/:sym/benchmark' },
+  position: { method: 'GET', path: '/:sym/position' },
+  analyses: { method: 'GET', path: '/:sym/analyses' },
+  relvol: { method: 'GET', path: '/:sym/relvol' },
+  comments: { method: 'GET', path: '/:sym/comments' },
+  commentDates: { method: 'GET', path: '/:sym/comment-dates' },
+  followStatus: { method: 'GET', path: '/:sym/follow' },
+  startFollow: { method: 'POST', path: '/:sym/follow', feature: 'symbol-follow' },
+  stopFollow: { method: 'DELETE', path: '/:sym/follow' },
+  journal: { method: 'GET', path: '/:sym/journal' },
+  journalEntry: { method: 'GET', path: '/:sym/journal/:name' },
+  reassess: { method: 'POST', path: '/:sym/reassess' },
+  reassessStatus: { method: 'GET', path: '/:sym/reassess/status' },
+  note: { method: 'GET', path: '/:sym/note', raw: 'body' },
+  deepDive: { method: 'POST', path: '/:sym/deep-dive', raw: 'body', feature: 'deep-dive' },
+  deepDiveStatus: {
+    method: 'GET',
+    path: '/:sym/deep-dive/status',
+    raw: 'body',
+    feature: 'deep-dive',
+  },
+  latest: { method: 'GET', path: '/:sym/latest' },
 });

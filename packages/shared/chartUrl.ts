@@ -1,9 +1,9 @@
-import type { ChartMeta, ChartType } from "./types.js";
-import { marketDate } from "./time.js";
+import type { ChartMeta, ChartType } from './types.js';
+import { marketDate } from './time.js';
 
-export const SYMBOL_TYPES = new Set<ChartType>(["intraday", "sepa"]);
+export const SYMBOL_TYPES = new Set<ChartType>(['intraday', 'sepa']);
 
-export type ChartUrlDoc = Pick<ChartMeta, "id" | "type" | "symbol" | "created_at">;
+export type ChartUrlDoc = Pick<ChartMeta, 'id' | 'type' | 'symbol' | 'created_at'>;
 
 export function symbolAnalysisPath(symbol: string, analysisId: string | null): string {
   const base = `/symbol/${encodeURIComponent(symbol)}`;

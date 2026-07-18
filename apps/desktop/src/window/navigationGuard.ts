@@ -2,7 +2,10 @@ export interface NavigationGuardOptions {
   devUrl?: string;
 }
 
-export function isAllowedNavigationUrl(targetUrl: string, options: NavigationGuardOptions = {}): boolean {
+export function isAllowedNavigationUrl(
+  targetUrl: string,
+  options: NavigationGuardOptions = {},
+): boolean {
   let target: URL;
   try {
     target = new URL(targetUrl);
@@ -10,7 +13,7 @@ export function isAllowedNavigationUrl(targetUrl: string, options: NavigationGua
     return false;
   }
 
-  if (target.protocol === "app:") return true;
+  if (target.protocol === 'app:') return true;
 
   if (options.devUrl) {
     try {
@@ -26,7 +29,7 @@ export function isAllowedNavigationUrl(targetUrl: string, options: NavigationGua
 export function isExternalHttpUrl(targetUrl: string): boolean {
   try {
     const { protocol } = new URL(targetUrl);
-    return protocol === "http:" || protocol === "https:";
+    return protocol === 'http:' || protocol === 'https:';
   } catch {
     return false;
   }

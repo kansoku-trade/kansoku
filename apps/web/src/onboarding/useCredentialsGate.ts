@@ -1,10 +1,13 @@
-import { useCallback, useEffect } from "react";
-import { useQuery } from "../apiHooks";
-import { client } from "../client";
-import { getDesktopCredentialsBridge, type CredentialsGetResult } from "../pages/settings/desktopCredentials";
-import { clearRestricted } from "../restrictedMode";
-import { getDesktopOnboardingBridge, type OnboardingState } from "./desktopOnboarding";
-import { computeGateStatus, type GateStatus, type OnboardingStep } from "./gateStatus";
+import { useCallback, useEffect } from 'react';
+import { useQuery } from '../apiHooks';
+import { client } from '../client';
+import {
+  getDesktopCredentialsBridge,
+  type CredentialsGetResult,
+} from '../pages/settings/desktopCredentials';
+import { clearRestricted } from '../restrictedMode';
+import { getDesktopOnboardingBridge, type OnboardingState } from './desktopOnboarding';
+import { computeGateStatus, type GateStatus, type OnboardingStep } from './gateStatus';
 
 export function useCredentialsGate(): {
   status: GateStatus;
@@ -18,13 +21,16 @@ export function useCredentialsGate(): {
   const onboardingBridge = getDesktopOnboardingBridge();
 
   const { data, loading, reload } = useQuery<CredentialsGetResult>(
-    bridge ? "credentials.status" : null,
+    bridge ? 'credentials.status' : null,
     () => client.credentials.status() as Promise<CredentialsGetResult>,
   );
 
-  const { data: onboardingState, loading: onboardingLoading, reload: reloadOnboarding } = useQuery<OnboardingState>(
-    onboardingBridge ? "onboarding.state" : null,
-    () => onboardingBridge!.getState(),
+  const {
+    data: onboardingState,
+    loading: onboardingLoading,
+    reload: reloadOnboarding,
+  } = useQuery<OnboardingState>(onboardingBridge ? 'onboarding.state' : null, () =>
+    onboardingBridge!.getState(),
   );
 
   useEffect(() => {
@@ -39,7 +45,11 @@ export function useCredentialsGate(): {
     hasDesktopBridge: bridge !== null,
     statusLoading,
     configured: data ? data.configured : null,
-    onboardingCompleted: onboardingBridge ? (onboardingState ? onboardingState.completed : null) : true,
+    onboardingCompleted: onboardingBridge
+      ? onboardingState
+        ? onboardingState.completed
+        : null
+      : true,
   });
 
   const completeOnboarding = useCallback(async () => {

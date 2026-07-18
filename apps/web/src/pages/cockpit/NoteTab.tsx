@@ -1,33 +1,33 @@
-import { useCallback } from "react";
-import type { ReactNode } from "react";
-import { Lock, Maximize2 } from "lucide-react";
-import { Button, Empty, ErrorBox, MarketTime, Spinner, TimeAgo } from "@web/ui";
-import { marketOfSymbol } from "@web/lib/market";
-import { useFeature } from "@web/useFeature";
-import { Markdown, openMarkdownModal } from "./markdown";
-import { bareSymbol, useDeepDive } from "./useDeepDive";
-import { useNote } from "./useNote";
+import { useCallback } from 'react';
+import type { ReactNode } from 'react';
+import { Lock, Maximize2 } from 'lucide-react';
+import { Button, Empty, ErrorBox, MarketTime, Spinner, TimeAgo } from '@web/ui';
+import { marketOfSymbol } from '@web/lib/market';
+import { useFeature } from '@web/useFeature';
+import { Markdown, openMarkdownModal } from './markdown';
+import { bareSymbol, useDeepDive } from './useDeepDive';
+import { useNote } from './useNote';
 
 export function NoteTab({ symbol }: { symbol: string }) {
   const market = marketOfSymbol(symbol);
   const { note, error, reload } = useNote(symbol);
   const onNoteReady = useCallback(() => reload(), [reload]);
   const deepDive = useDeepDive(symbol, onNoteReady);
-  const { state, locked, guard } = useFeature("deep-dive");
+  const { state, locked, guard } = useFeature('deep-dive');
 
   const confirmAndStart = () => {
-    const confirmed = window.confirm(
-      "深度分析会跑数分钟，并消耗一次 AI 额度，确定要开始吗？",
-    );
+    const confirmed = window.confirm('深度分析会跑数分钟，并消耗一次 AI 额度，确定要开始吗？');
     if (confirmed) void deepDive.start();
   };
 
   if (error) return <ErrorBox>{error}</ErrorBox>;
 
   const runningElsewhere =
-    deepDive.running && deepDive.runningSymbol && bareSymbol(deepDive.runningSymbol) !== bareSymbol(symbol);
+    deepDive.running &&
+    deepDive.runningSymbol &&
+    bareSymbol(deepDive.runningSymbol) !== bareSymbol(symbol);
 
-  let buttonLabel: ReactNode = note?.markdown ? "重新深度分析" : "跑一次深度分析";
+  let buttonLabel: ReactNode = note?.markdown ? '重新深度分析' : '跑一次深度分析';
   if (deepDive.running) {
     buttonLabel = runningElsewhere ? (
       `有分析进行中（${deepDive.runningSymbol}）`
@@ -40,7 +40,7 @@ export function NoteTab({ symbol }: { symbol: string }) {
   }
 
   const button =
-    state !== "absent" ? (
+    state !== 'absent' ? (
       <Button
         onClick={locked ? () => guard(() => {}) : confirmAndStart}
         disabled={deepDive.pending || deepDive.running || deepDive.disabled}
@@ -61,7 +61,9 @@ export function NoteTab({ symbol }: { symbol: string }) {
       {note?.markdown ? (
         <>
           <div className="note-tab-header">
-            <span className="note-tab-mtime">更新于 {note.mtime ? <MarketTime value={note.mtime} market={market} /> : "—"}</span>
+            <span className="note-tab-mtime">
+              更新于 {note.mtime ? <MarketTime value={note.mtime} market={market} /> : '—'}
+            </span>
             <div className="note-tab-actions">
               <button className="link-button" onClick={openFullscreen}>
                 <Maximize2 className="icon" size={13} /> 全屏阅读

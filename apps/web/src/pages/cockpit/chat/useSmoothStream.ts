@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { drainBudget, safeCut } from "./smoothStreamPacing.js";
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { drainBudget, safeCut } from './smoothStreamPacing.js';
 
 export interface SmoothStream {
   text: string;
@@ -10,9 +10,9 @@ export interface SmoothStream {
 }
 
 export function useSmoothStream(): SmoothStream {
-  const [text, setText] = useState("");
-  const shownRef = useRef("");
-  const bufferRef = useRef("");
+  const [text, setText] = useState('');
+  const shownRef = useRef('');
+  const bufferRef = useRef('');
   const rafRef = useRef<number | null>(null);
   const lastTsRef = useRef(0);
   const onDrainedRef = useRef<(() => void) | null>(null);
@@ -75,11 +75,11 @@ export function useSmoothStream(): SmoothStream {
     (fullText?: string) => {
       stopLoop();
       if (fullText !== undefined) {
-        bufferRef.current = "";
+        bufferRef.current = '';
         shownRef.current = fullText;
       } else {
         shownRef.current += bufferRef.current;
-        bufferRef.current = "";
+        bufferRef.current = '';
       }
       setText(shownRef.current);
       settleIfDrained();
@@ -98,10 +98,10 @@ export function useSmoothStream(): SmoothStream {
 
   const reset = useCallback(() => {
     stopLoop();
-    bufferRef.current = "";
-    shownRef.current = "";
+    bufferRef.current = '';
+    shownRef.current = '';
     onDrainedRef.current = null;
-    setText("");
+    setText('');
   }, [stopLoop]);
 
   useEffect(() => stopLoop, [stopLoop]);

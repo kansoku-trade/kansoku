@@ -1,5 +1,5 @@
-import type { TransportEnvelope } from "@kansoku/core/contract/index";
-import { ClientError } from "@kansoku/core/errors";
+import type { TransportEnvelope } from '@kansoku/core/contract/index';
+import { ClientError } from '@kansoku/core/errors';
 
 export type WrapEnvelope<Api> = {
   [K in keyof Api]: Api[K] extends (...args: infer A) => infer R
@@ -24,12 +24,15 @@ function errorEnvelope(
 
 let loggedFirstCall = false;
 
-export async function toEnvelope<T>(channel: string, fn: () => Promise<T> | T): Promise<TransportEnvelope<T>> {
+export async function toEnvelope<T>(
+  channel: string,
+  fn: () => Promise<T> | T,
+): Promise<TransportEnvelope<T>> {
   try {
     const data = await fn();
     if (!loggedFirstCall) {
       loggedFirstCall = true;
-      console.log("[desktop] ipc first call ok:", channel);
+      console.log('[desktop] ipc first call ok:', channel);
     }
     return { ok: true, data };
   } catch (error) {

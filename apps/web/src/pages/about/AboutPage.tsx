@@ -1,9 +1,9 @@
-import { ArrowLeft } from "lucide-react";
-import { CREDITS } from "@kansoku/shared/credits";
-import { LICENSE_TEXT } from "@kansoku/shared/licenseText";
-import { navigate } from "@web/router";
-import { Card, SectionTitle } from "@web/ui";
-import { useTitle } from "@web/useTitle";
+import { ArrowLeft } from 'lucide-react';
+import { CREDITS } from '@kansoku/shared/credits';
+import { LICENSE_TEXT } from '@kansoku/shared/licenseText';
+import { navigate } from '@web/router';
+import { Card, SectionTitle } from '@web/ui';
+import { useTitle } from '@web/useTitle';
 
 function AboutBackLink() {
   return (
@@ -11,10 +11,17 @@ function AboutBackLink() {
       className="settings-back-link"
       href="/"
       onClick={(event) => {
-        if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        if (
+          event.defaultPrevented ||
+          event.metaKey ||
+          event.ctrlKey ||
+          event.shiftKey ||
+          event.altKey
+        )
+          return;
         event.preventDefault();
         if (window.history.length > 1) window.history.back();
-        else navigate("/");
+        else navigate('/');
       }}
     >
       <ArrowLeft className="icon" size={13} /> 返回
@@ -23,13 +30,19 @@ function AboutBackLink() {
 }
 
 export function AboutPage() {
-  useTitle("关于");
+  useTitle('关于');
 
   return (
     <div className="page about-page">
       <AboutBackLink />
       <div className="about-hero">
-        <img className="about-icon" src="/brand/kansoku-icon.svg" alt="Kansoku" width={72} height={72} />
+        <img
+          className="about-icon"
+          src="/brand/kansoku-icon.svg"
+          alt="Kansoku"
+          width={72}
+          height={72}
+        />
         <h1>Kansoku</h1>
         <div className="about-version">版本 {__APP_VERSION__}</div>
         <div className="about-copyright">© 2026 Innei · AGPL-3.0 + Commons Clause</div>
@@ -43,7 +56,8 @@ export function AboutPage() {
       <Card className="about-card">
         <SectionTitle>许可证</SectionTitle>
         <p className="about-license-summary">
-          本软件按 AGPL-3.0 授权，并附加 Commons Clause 条款：允许使用、修改和分发，但禁止把本软件本体作为收费产品或收费服务出售。
+          本软件按 AGPL-3.0 授权，并附加 Commons Clause
+          条款：允许使用、修改和分发，但禁止把本软件本体作为收费产品或收费服务出售。
         </p>
         <details className="about-details">
           <summary>查看完整许可证文本</summary>

@@ -15,14 +15,14 @@
 
 ## 已确认约束
 
-| 决策点 | 结论 |
-|---|---|
-| 实现路径 | 分区 builder + 薄 Manager（方案 B） |
-| 文案 | 自定义项全中文；系统 `role` 项不硬编码中文，跟系统本地化 |
-| 范围 | 标准 role + 现有项 + 关于 / 检查更新 / 设置；Help 不做 |
-| 平台 | 只发 macOS；不做 Win/Linux 特殊菜单 |
-| 动态菜单 | 第一版固定模板；预留 `rebuild()`，不做 renderer 注册或按路由 enabled |
-| 关于 | Electron `role: "about"`，不写自定义 About 窗口 |
+| 决策点   | 结论                                                                     |
+| -------- | ------------------------------------------------------------------------ |
+| 实现路径 | 分区 builder + 薄 Manager（方案 B）                                      |
+| 文案     | 自定义项全中文；系统 `role` 项不硬编码中文，跟系统本地化                 |
+| 范围     | 标准 role + 现有项 + 关于 / 检查更新 / 设置；Help 不做                   |
+| 平台     | 只发 macOS；不做 Win/Linux 特殊菜单                                      |
+| 动态菜单 | 第一版固定模板；预留 `rebuild()`，不做 renderer 注册或按路由 enabled     |
+| 关于     | Electron `role: "about"`，不写自定义 About 窗口                          |
 | 关闭标签 | 继续自定义「关闭标签页」+ ⌘W，**不用** `role: "close"`（避免关整个窗口） |
 
 ## 非目标
@@ -64,30 +64,30 @@ sections **不**直接 import `dialog`、`dataImport`、`sparkle`、kernel。所
 
 ### 生命周期
 
-| 时机 | 行为 |
-|---|---|
-| `app.whenReady` 且 kernel 起来后 | `install()` 一次 |
-| 第一版 | 不按状态动态改菜单 |
-| 预留 | `rebuild()` 与 `install()` 同一实现，供以后刷新 |
+| 时机                             | 行为                                            |
+| -------------------------------- | ----------------------------------------------- |
+| `app.whenReady` 且 kernel 起来后 | `install()` 一次                                |
+| 第一版                           | 不按状态动态改菜单                              |
+| 预留                             | `rebuild()` 与 `install()` 同一实现，供以后刷新 |
 
 ## 菜单树
 
 ### App 菜单（`label: app.name`）
 
-| 顺序 | 项 | 类型 | 快捷键 | 行为 |
-|---|---|---|---|---|
-| 1 | （关于） | `role: "about"` | — | 系统 About 面板 |
-| 2 | — | separator | | |
-| 3 | 检查更新… | 自定义 | — | `deps.checkForUpdates()` |
-| 4 | — | separator | | |
-| 5 | 从 repo 导入数据… | 自定义 | — | 现有 `runImportFromRepoFlow` |
-| 6 | 设置… | 自定义 | `CmdOrCtrl+,` | 发 tabs 命令 `open-settings` |
-| 7 | — | separator | | |
-| 8 | （服务） | `role: "services"` | — | macOS 标准 |
-| 9 | — | separator | | |
-| 10 | （隐藏 / 隐藏其他 / 显示全部） | `role: "hide"` 等 | — | macOS 标准 |
-| 11 | — | separator | | |
-| 12 | （退出） | `role: "quit"` | — | 系统本地化 |
+| 顺序 | 项                             | 类型               | 快捷键        | 行为                         |
+| ---- | ------------------------------ | ------------------ | ------------- | ---------------------------- |
+| 1    | （关于）                       | `role: "about"`    | —             | 系统 About 面板              |
+| 2    | —                              | separator          |               |                              |
+| 3    | 检查更新…                      | 自定义             | —             | `deps.checkForUpdates()`     |
+| 4    | —                              | separator          |               |                              |
+| 5    | 从 repo 导入数据…              | 自定义             | —             | 现有 `runImportFromRepoFlow` |
+| 6    | 设置…                          | 自定义             | `CmdOrCtrl+,` | 发 tabs 命令 `open-settings` |
+| 7    | —                              | separator          |               |                              |
+| 8    | （服务）                       | `role: "services"` | —             | macOS 标准                   |
+| 9    | —                              | separator          |               |                              |
+| 10   | （隐藏 / 隐藏其他 / 显示全部） | `role: "hide"` 等  | —             | macOS 标准                   |
+| 11   | —                              | separator          |               |                              |
+| 12   | （退出）                       | `role: "quit"`     | —             | 系统本地化                   |
 
 ### 编辑（Edit）
 
@@ -101,18 +101,18 @@ sections **不**直接 import `dialog`、`dataImport`、`sparkle`、kernel。所
 
 ### 窗口（Window）
 
-| 顺序 | 项 | 快捷键 | 行为 |
-|---|---|---|---|
-| 1 | 新建标签页 | `CmdOrCtrl+T` | `new-tab` |
-| 2 | 关闭标签页 | `CmdOrCtrl+W` | `close-tab`（不用 `role: "close"`） |
-| 3 | — | | |
-| 4 | 下一个标签页 | `CmdOrCtrl+Shift+]` | `next-tab` |
-| 5 | 上一个标签页 | `CmdOrCtrl+Shift+[` | `prev-tab` |
-| 6 | — | | |
-| 7 | （最小化） | `role: "minimize"` | 系统 |
-| 8 | （缩放） | `role: "zoom"` | 系统 |
-| 9 | — | | |
-| 10 | （前置全部窗口） | `role: "front"` | macOS |
+| 顺序 | 项               | 快捷键              | 行为                                |
+| ---- | ---------------- | ------------------- | ----------------------------------- |
+| 1    | 新建标签页       | `CmdOrCtrl+T`       | `new-tab`                           |
+| 2    | 关闭标签页       | `CmdOrCtrl+W`       | `close-tab`（不用 `role: "close"`） |
+| 3    | —                |                     |                                     |
+| 4    | 下一个标签页     | `CmdOrCtrl+Shift+]` | `next-tab`                          |
+| 5    | 上一个标签页     | `CmdOrCtrl+Shift+[` | `prev-tab`                          |
+| 6    | —                |                     |                                     |
+| 7    | （最小化）       | `role: "minimize"`  | 系统                                |
+| 8    | （缩放）         | `role: "zoom"`      | 系统                                |
+| 9    | —                |                     |                                     |
+| 10   | （前置全部窗口） | `role: "front"`     | macOS                               |
 
 ## 接口
 
@@ -147,12 +147,7 @@ export function createAppMenuManager(deps: MenuActionDeps): AppMenuManager;
 
 ```ts
 // tabsChannels.ts
-export type TabsCommand =
-  | "new-tab"
-  | "close-tab"
-  | "next-tab"
-  | "prev-tab"
-  | "open-settings";
+export type TabsCommand = 'new-tab' | 'close-tab' | 'next-tab' | 'prev-tab' | 'open-settings';
 ```
 
 - 主进程：`openSettings` → `sendTabsCommand("open-settings")`
@@ -171,11 +166,11 @@ export type UpdaterHandle = {
 export function initUpdater(options?: InitUpdaterOptions): UpdaterHandle;
 ```
 
-| 模式 | `checkNow()` 行为 |
-|---|---|
-| Sparkle 可用（打包且桥 init 成功） | `sparkleBridge.checkForUpdates()`（原生更新 UI） |
-| 弱更新兜底 | 强制查 GitHub Releases（**用户手动触发绕过 24h 节流**）；有新版本 → 通知；已最新 → dialog「已是最新版本」；失败 → dialog 提示失败 |
-| 开发模式（`ELECTRON_DEV=1`） | dialog：开发模式不检查更新 |
+| 模式                               | `checkNow()` 行为                                                                                                                 |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Sparkle 可用（打包且桥 init 成功） | `sparkleBridge.checkForUpdates()`（原生更新 UI）                                                                                  |
+| 弱更新兜底                         | 强制查 GitHub Releases（**用户手动触发绕过 24h 节流**）；有新版本 → 通知；已最新 → dialog「已是最新版本」；失败 → dialog 提示失败 |
+| 开发模式（`ELECTRON_DEV=1`）       | dialog：开发模式不检查更新                                                                                                        |
 
 「检查更新…」菜单项始终可见，不按模式 disabled。`main` 持有 `UpdaterHandle`，塞进 `MenuActionDeps.checkForUpdates`。
 
@@ -193,12 +188,12 @@ export function initUpdater(options?: InitUpdaterOptions): UpdaterHandle;
 
 ## 测试
 
-| 测什么 | 怎么测 |
-|---|---|
-| sections 结构 | 单测 builder 输出的 template：含预期 `role`、中文 label、accelerator |
-| click 接线 | mock deps，调用带 `click` 的项，断言对应 dep 被调用 |
-| `open-settings` | 渲染侧：command 映射到 `focusOrOpenSettings`（扩现有 tabs 相关测，或轻量映射测） |
-| updater `checkNow` | sparkle 路径调 `checkForUpdates`；weak 路径绕过 throttle；dev 不发网络请求 |
+| 测什么             | 怎么测                                                                           |
+| ------------------ | -------------------------------------------------------------------------------- |
+| sections 结构      | 单测 builder 输出的 template：含预期 `role`、中文 label、accelerator             |
+| click 接线         | mock deps，调用带 `click` 的项，断言对应 dep 被调用                              |
+| `open-settings`    | 渲染侧：command 映射到 `focusOrOpenSettings`（扩现有 tabs 相关测，或轻量映射测） |
+| updater `checkNow` | sparkle 路径调 `checkForUpdates`；weak 路径绕过 throttle；dev 不发网络请求       |
 
 优先测纯函数 builder 输出的 template 数组；`install` 对 `Menu.setApplicationMenu` 做 mock。沿用 `apps/desktop/test` 的 vitest 模式。
 

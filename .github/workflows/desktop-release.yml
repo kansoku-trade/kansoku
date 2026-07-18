@@ -3,11 +3,11 @@ name: desktop-release
 on:
   push:
     tags:
-      - "desktop-v*"
+      - 'desktop-v*'
   workflow_dispatch:
     inputs:
       tag:
-        description: "release tag (desktop-vX.Y.Z), must already exist"
+        description: 'release tag (desktop-vX.Y.Z), must already exist'
         required: true
         type: string
 
@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  REPO_SLUG: "Innei/kansoku"
+  REPO_SLUG: 'Innei/kansoku'
 
 jobs:
   release:
@@ -86,7 +86,7 @@ jobs:
       - name: setup node
         uses: actions/setup-node@v4
         with:
-          node-version: "24"
+          node-version: '24'
           # only the content-addressable pnpm store is cached, never node_modules —
           # a cached node_modules can carry a stale @electron/rebuild forge-meta
           # entry that lies about better-sqlite3 already being built for Electron's
@@ -206,9 +206,9 @@ jobs:
         with:
           tag: ${{ steps.version.outputs.tag }}
           repo: ${{ env.REPO_SLUG }}
-          tag-prefix: "desktop-v"
+          tag-prefix: 'desktop-v'
           archive-dir: ${{ steps.archive.outputs.dir }}
           ed-private-key: ${{ secrets.SPARKLE_ED_PRIVATE_KEY }}
-          publish: "true"
+          publish: 'true'
           dmg-path: ${{ steps.archive.outputs.dmg_path }}
           notes-file: ${{ steps.notes.outputs.file }}

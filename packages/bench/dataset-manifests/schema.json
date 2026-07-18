@@ -1,21 +1,7 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/kansoku-trade/kansoku-bench-data/blob/main/manifests/schema.json",
-  "title": "Kansoku benchmark dataset manifest",
-  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "required": [
-    "schemaVersion",
-    "id",
-    "revision",
-    "kind",
-    "visibility",
-    "repository",
-    "release",
-    "banks",
-    "generator",
-    "publishedAt"
-  ],
   "properties": {
     "$schema": { "type": "string" },
     "schemaVersion": { "const": 1 },
@@ -61,5 +47,19 @@
       }
     },
     "publishedAt": { "type": "string", "format": "date-time" }
-  }
+  },
+  "required": [
+    "schemaVersion",
+    "id",
+    "revision",
+    "kind",
+    "visibility",
+    "repository",
+    "release",
+    "banks",
+    "generator",
+    "publishedAt"
+  ],
+  "title": "Kansoku benchmark dataset manifest",
+  "type": "object"
 }

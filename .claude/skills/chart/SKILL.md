@@ -48,13 +48,13 @@ sparkline in the chat reply is faster.
 The app must be running before any API call:
 
 ```bash
-curl -s http://localhost:5199/api/health          # {"ok":true,...} = up
+curl -s http://localhost:5199/api/health # {"ok":true,...} = up
 ```
 
 If it is down, start it (long-running process — use run_in_background):
 
 ```bash
-pnpm start                                         # serves API + built web UI on :5199
+pnpm start # serves API + built web UI on :5199
 ```
 
 First-time setup only: `pnpm install && pnpm build`.
@@ -64,19 +64,19 @@ First-time setup only: `pnpm install && pnpm build`.
 Base URL `http://localhost:5199`. All responses follow the
 `{ok, data, meta}` / `{ok:false, error, hint}` contract.
 
-| Endpoint | Purpose |
-|---|---|
-| `GET /api/health` | liveness check |
-| `GET /api/charts?type=&symbol=&limit=` | list chart metas (newest first) |
-| `POST /api/charts` | create a chart; body below |
-| `GET /api/charts/:id` | full chart doc |
-| `GET /api/charts/:id/built?count=` | ephemeral intraday rebuild with a larger bar window (history view; max 1000, never persisted) |
-| `PATCH /api/charts/:id` | merge fields into input and rebuild (e.g. add `prediction`) |
-| `DELETE /api/charts/:id` | remove a chart |
-| `GET /api/legacy` | list old single-file HTML archives (served at `/legacy/<file>`) |
-| `GET /api/stream/quotes?extra=` | SSE quote snapshots (watchlist ∪ positions ∪ extra), 10s cadence |
-| `GET /api/stream/charts/:id` | SSE live rebuilds for flow/intraday charts, 60s cadence |
-| `GET /api/symbols/:sym/{flow,benchmark,position,analyses,latest}` | live per-symbol cockpit data (server-computed, never AI) |
+| Endpoint                                                          | Purpose                                                                                       |
+| ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `GET /api/health`                                                 | liveness check                                                                                |
+| `GET /api/charts?type=&symbol=&limit=`                            | list chart metas (newest first)                                                               |
+| `POST /api/charts`                                                | create a chart; body below                                                                    |
+| `GET /api/charts/:id`                                             | full chart doc                                                                                |
+| `GET /api/charts/:id/built?count=`                                | ephemeral intraday rebuild with a larger bar window (history view; max 1000, never persisted) |
+| `PATCH /api/charts/:id`                                           | merge fields into input and rebuild (e.g. add `prediction`)                                   |
+| `DELETE /api/charts/:id`                                          | remove a chart                                                                                |
+| `GET /api/legacy`                                                 | list old single-file HTML archives (served at `/legacy/<file>`)                               |
+| `GET /api/stream/quotes?extra=`                                   | SSE quote snapshots (watchlist ∪ positions ∪ extra), 10s cadence                              |
+| `GET /api/stream/charts/:id`                                      | SSE live rebuilds for flow/intraday charts, 60s cadence                                       |
+| `GET /api/symbols/:sym/{flow,benchmark,position,analyses,latest}` | live per-symbol cockpit data (server-computed, never AI)                                      |
 
 The stream endpoints power the web UI's realtime display; the AI workflow never
 needs them — created charts update themselves in the browser while open, and
@@ -145,31 +145,40 @@ All fields optional:
 
 ```jsonc
 {
-  "earnings_dates": ["2026-05-29"],       // E markers on those bars
-  "stage": "Stage 2 末期",                 // 阶段判断 sidebar card
+  "earnings_dates": ["2026-05-29"], // E markers on those bars
+  "stage": "Stage 2 末期", // 阶段判断 sidebar card
   "stage_note": "Stage 3 顶部嫌疑",
   "base_count": "3-4 (减半仓)",
   "pattern": "无可买（扩张振幅）",
-  "verdict": {                             // override the auto verdict
-    "tier": "watch",                       // pass / watch / buy
+  "verdict": {
+    // override the auto verdict
+    "tier": "watch", // pass / watch / buy
     "label": "👀 WATCH LIST",
     "color": "#ffc107",
-    "reason": "..."
+    "reason": "...",
   },
-  "entry_plan": {                          // 入场计划 card + price lines
-    "pivot": 260.00,                       // required: consolidation-range high
-    "stop": 241.80,                        // default pivot × 0.93 (-7%)
-    "target1_pct": 8,                      // default 8 (Phase 2: 卖一半 + 移至本钱)
-    "target2_pct": 15,                     // default 15 (Phase 3: 再卖 25% + 沿 20MA 跟踪)
+  "entry_plan": {
+    // 入场计划 card + price lines
+    "pivot": 260.0, // required: consolidation-range high
+    "stop": 241.8, // default pivot × 0.93 (-7%)
+    "target1_pct": 8, // default 8 (Phase 2: 卖一半 + 移至本钱)
+    "target2_pct": 15, // default 15 (Phase 3: 再卖 25% + 沿 20MA 跟踪)
     "note": "...",
-    "hypothetical": true                   // 标注 "假设性" 徽章
+    "hypothetical": true, // 标注 "假设性" 徽章
   },
-  "support_zones": [                       // omit → auto zones (MA50 / MA200 / volume cluster)
-    { "low": 217, "high": 226, "tier": "watch",   // warning / watch / buy / value
-      "label": "MA50 关注区", "note": "...", "sources": ["MA50 $221.75"] }
+  "support_zones": [
+    // omit → auto zones (MA50 / MA200 / volume cluster)
+    {
+      "low": 217,
+      "high": 226,
+      "tier": "watch", // warning / watch / buy / value
+      "label": "MA50 关注区",
+      "note": "...",
+      "sources": ["MA50 $221.75"],
+    },
   ],
-  "auto_support_zones": true,              // false disables the auto fallback
-  "volume_profile": { "lookback_days": 120, "bins": 30 }
+  "auto_support_zones": true, // false disables the auto fallback
+  "volume_profile": { "lookback_days": 120, "bins": 30 },
 }
 ```
 
@@ -182,7 +191,8 @@ renders a red warning.
 fail → `PASS` 🚫; all 8 pass + price ≥ 25% above MA50 → `WATCH · Extended` 👀;
 all 8 pass otherwise → `WATCH · No pattern detected` 👀. `STRONG BUY` ✅ is never
 auto-emitted — pass `context.verdict` after manually confirming a valid pattern
-+ pivot ±5% buy zone.
+
+- pivot ±5% buy zone.
 
 **Auto markers on the main K-line**: earnings (`context.earnings_dates`),
 climax top (volume ≥ 2.5×20MA + red close + local high), MA50/MA200 breakdowns,
@@ -209,22 +219,49 @@ climax top (volume ≥ 2.5×20MA + red close + local high), MA50/MA200 breakdown
 
 ```jsonc
 {
-  "direction": "short",                              // long | short | neutral
+  "direction": "short", // long | short | neutral
   "anchor": { "timeframe": "m15", "time": "2026-07-01T17:00:00Z", "price": 1049.81 },
-  "scenarios": [                                      // ≥ 2, probabilities ≈ 100
-    { "label": "继续探底", "probability": 45, "path": "...", "trigger": "..." }
+  "scenarios": [
+    // ≥ 2, probabilities ≈ 100
+    { "label": "继续探底", "probability": 45, "path": "...", "trigger": "..." },
   ],
-  "range_bound_plan": { "condition": "...", "long_tactic": "...", "short_tactic": "...", "low": 1020.00, "high": 1060.00 },
-                                                      // low/high = 箱体下沿/上沿；neutral 必填（观望按守住/破位对账入记分板），方向单可选
-  "entry_plan": { "entry": 1049.81, "stop": 1030.00, "target1_pct": 3, "target2_pct": 6, "note": "..." }, // 仅 long/short；neutral（观望）省略整个 entry_plan，条件应对写进 range_bound_plan
-  "price_zones": [                                      // only real resistance/pressure zones drawn on chart
-    { "kind": "resistance", "label": "反弹压力带", "low": 60.90, "high": 61.35,
-      "note": "短线均线和第一修复位重合", "sources": ["5m EMA9/21", "第一修复位"] }
+  "range_bound_plan": {
+    "condition": "...",
+    "long_tactic": "...",
+    "short_tactic": "...",
+    "low": 1020.0,
+    "high": 1060.0,
+  },
+  // low/high = 箱体下沿/上沿；neutral 必填（观望按守住/破位对账入记分板），方向单可选
+  "entry_plan": {
+    "entry": 1049.81,
+    "stop": 1030.0,
+    "target1_pct": 3,
+    "target2_pct": 6,
+    "note": "...",
+  }, // 仅 long/short；neutral（观望）省略整个 entry_plan，条件应对写进 range_bound_plan
+  "price_zones": [
+    // only real resistance/pressure zones drawn on chart
+    {
+      "kind": "resistance",
+      "label": "反弹压力带",
+      "low": 60.9,
+      "high": 61.35,
+      "note": "短线均线和第一修复位重合",
+      "sources": ["5m EMA9/21", "第一修复位"],
+    },
   ],
-  "signals": [                                          // 可选；背离/背驰/K线形态/123 结构均由服务端自动检测绘制，无需在此重复
-    { "type": "other", "timeframe": "m5", "time": "...", "price": 1032.28,
-      "bias": "bearish", "label": "尾盘放量长阴收在最低——摆动点未确认前的人工备注" }
-  ]
+  "signals": [
+    // 可选；背离/背驰/K线形态/123 结构均由服务端自动检测绘制，无需在此重复
+    {
+      "type": "other",
+      "timeframe": "m5",
+      "time": "...",
+      "price": 1032.28,
+      "bias": "bearish",
+      "label": "尾盘放量长阴收在最低——摆动点未确认前的人工备注",
+    },
+  ],
 }
 ```
 
@@ -235,19 +272,19 @@ reason in prose:
 
 ```jsonc
 {
-  "entry": 61.10,
+  "entry": 61.1,
   "stop": 62.52,
-  "target1": 60.00,                 // optional explicit target price; overrides pct-derived price
+  "target1": 60.0, // optional explicit target price; overrides pct-derived price
   "target2": 57.92,
   "rationale": "反弹到 60.90-61.35 压力带后受阻才入场。",
   "stop_note": "站回上一段反弹高点，空头计划失效。",
-  "entry_zone": { "kind": "resistance", "label": "反弹压力带", "low": 60.90, "high": 61.35 },
+  "entry_zone": { "kind": "resistance", "label": "反弹压力带", "low": 60.9, "high": 61.35 },
   "target1_label": "T1 · 日内低点",
   "target1_note": "整数位和日内低点，首次触及先看是否止跌。",
-  "target1_zone": { "kind": "support", "label": "日内低点", "low": 60.00, "high": 60.00 },
+  "target1_zone": { "kind": "support", "label": "日内低点", "low": 60.0, "high": 60.0 },
   "target2_label": "T2 · 深一档支撑",
   "target2_condition": "60.00 跌破并反抽失败后才成立。",
-  "target2_zone": { "kind": "support", "label": "深一档支撑", "low": 57.90, "high": 58.00 }
+  "target2_zone": { "kind": "support", "label": "深一档支撑", "low": 57.9, "high": 58.0 },
 }
 ```
 
@@ -337,7 +374,7 @@ these rules:
   default `--session all` is for pre-market analysis only.
 - **Volume calls align to prior sessions' same-time window.** Never compare
   today's running volume against full-day totals. Pull `longbridge kline
-  --period 5m` (regular-session bars), sum today's bars, and compare against
+--period 5m` (regular-session bars), sum today's bars, and compare against
   the same number of opening bars averaged over the prior ~5-8 sessions.
   Pair the ratio with per-bar direction before calling a move confirmed — a
   level break on ~0.6x same-period volume is not a confirmed breakout.

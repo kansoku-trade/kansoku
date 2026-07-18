@@ -8,13 +8,13 @@ import type {
   PrimitivePaneViewZOrder,
   SeriesAttachedParameter,
   Time,
-} from "lightweight-charts";
-import type { Annotation, AnnotationPoint } from "@kansoku/shared/types";
-import { paintFrame } from "./drawingsPaint";
-import { buildFrame, type AxisLabel, type DrawFrame } from "./drawingsRender";
+} from 'lightweight-charts';
+import type { Annotation, AnnotationPoint } from '@kansoku/shared/types';
+import { paintFrame } from './drawingsPaint';
+import { buildFrame, type AxisLabel, type DrawFrame } from './drawingsRender';
 
 export interface PreviewShape {
-  kind: Annotation["kind"];
+  kind: Annotation['kind'];
   points: AnnotationPoint[];
 }
 
@@ -48,7 +48,7 @@ const EMPTY_STATE: DrawingsState = {
 };
 const EMPTY_FRAME: DrawFrame = { cmds: [], axisLabels: [] };
 
-type DrawTarget = Parameters<IPrimitivePaneRenderer["draw"]>[0];
+type DrawTarget = Parameters<IPrimitivePaneRenderer['draw']>[0];
 
 class DrawingsRenderer implements IPrimitivePaneRenderer {
   constructor(private readonly frame: DrawFrame) {}
@@ -82,7 +82,7 @@ class DrawingsPaneView implements IPrimitivePaneView {
   }
 
   zOrder(): PrimitivePaneViewZOrder {
-    return "top";
+    return 'top';
   }
 
   axisLabels(): AxisLabel[] {
@@ -102,7 +102,7 @@ class HlineAxisView implements ISeriesPrimitiveAxisView {
   }
 
   textColor(): string {
-    return "#0a0a0a";
+    return '#0a0a0a';
   }
 
   backColor(): string {
@@ -112,14 +112,14 @@ class HlineAxisView implements ISeriesPrimitiveAxisView {
 
 export class DrawingsPrimitive implements ISeriesPrimitive<Time> {
   private chart: IChartApiBase<Time> | null = null;
-  private series: ISeriesApi<"Candlestick"> | null = null;
+  private series: ISeriesApi<'Candlestick'> | null = null;
   private requestUpdate?: () => void;
   private drawingsState: DrawingsState = EMPTY_STATE;
   private readonly paneView = new DrawingsPaneView(this);
 
   attached(param: SeriesAttachedParameter<Time>): void {
     this.chart = param.chart;
-    this.series = param.series as ISeriesApi<"Candlestick">;
+    this.series = param.series as ISeriesApi<'Candlestick'>;
     this.requestUpdate = param.requestUpdate;
   }
 
@@ -146,7 +146,11 @@ export class DrawingsPrimitive implements ISeriesPrimitive<Time> {
     return this.paneView.axisLabels().map((label) => new HlineAxisView(label));
   }
 
-  state(): { chart: IChartApiBase<Time> | null; series: ISeriesApi<"Candlestick"> | null; state: DrawingsState } {
+  state(): {
+    chart: IChartApiBase<Time> | null;
+    series: ISeriesApi<'Candlestick'> | null;
+    state: DrawingsState;
+  } {
     return { chart: this.chart, series: this.series, state: this.drawingsState };
   }
 }

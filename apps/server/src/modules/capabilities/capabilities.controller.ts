@@ -1,9 +1,9 @@
-import { Controller, Get } from "@tsuki-hono/common";
-import { capabilitiesService } from "@kansoku/core/modules/capabilities/capabilities.service";
+import { Controller, Get } from '@tsuki-hono/common';
+import { capabilitiesService } from '@kansoku/core/modules/capabilities/capabilities.service';
 
-@Controller("capabilities")
+@Controller('capabilities')
 export class CapabilitiesController {
-  @Get("/")
+  @Get('/')
   async get() {
     const data = await capabilitiesService.get();
     return { ok: true, data };

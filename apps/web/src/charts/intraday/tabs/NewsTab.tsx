@@ -1,20 +1,26 @@
-import type { ContextNewsItem, ContextNewsSource, ContextNewsTag, IntradayContext, NewsItem } from "@kansoku/shared/types";
-import { Badge, MarketTime, SectionTitle } from "@web/ui";
-import { NewsSection } from "@web/charts/NewsSection";
+import type {
+  ContextNewsItem,
+  ContextNewsSource,
+  ContextNewsTag,
+  IntradayContext,
+  NewsItem,
+} from '@kansoku/shared/types';
+import { Badge, MarketTime, SectionTitle } from '@web/ui';
+import { NewsSection } from '@web/charts/NewsSection';
 
 const TAG_LABEL: Record<ContextNewsTag, string> = {
-  catalyst: "催化",
-  regulatory: "监管",
-  sentiment: "情绪",
-  macro: "宏观",
+  catalyst: '催化',
+  regulatory: '监管',
+  sentiment: '情绪',
+  macro: '宏观',
 };
 
 const SOURCE_LABEL: Record<ContextNewsSource, string> = {
-  longbridge: "长桥",
-  x: "X",
-  trump: "Trump",
-  sec: "SEC",
-  gdelt: "GDELT",
+  longbridge: '长桥',
+  x: 'X',
+  trump: 'Trump',
+  sec: 'SEC',
+  gdelt: 'GDELT',
 };
 
 function ContextNewsRow({ item }: { item: ContextNewsItem }) {

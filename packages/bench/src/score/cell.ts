@@ -1,29 +1,29 @@
-import type { AnswerLine } from "../schema/answerLine.js";
-import type { Question } from "../schema/question.js";
-import { atr14, cutoffCloseOf, neutralCorrect, regimeOf } from "./neutral.js";
-import { coerceReplayBar, num, replayDirectional } from "./replay.js";
+import type { AnswerLine } from '../schema/answerLine.js';
+import type { Question } from '../schema/question.js';
+import { atr14, cutoffCloseOf, neutralCorrect, regimeOf } from './neutral.js';
+import { coerceReplayBar, num, replayDirectional } from './replay.js';
 
 export type CellOutcome =
-  | "win"
-  | "loss"
-  | "timeout_flat"
-  | "no_fill"
-  | "format_violation"
-  | "neutral_correct"
-  | "neutral_wrong"
-  | "api_error"
-  | "agent_timeout";
+  | 'win'
+  | 'loss'
+  | 'timeout_flat'
+  | 'no_fill'
+  | 'format_violation'
+  | 'neutral_correct'
+  | 'neutral_wrong'
+  | 'api_error'
+  | 'agent_timeout';
 
-export type CellDirection = "long" | "short" | "neutral" | null;
+export type CellDirection = 'long' | 'short' | 'neutral' | null;
 
 export interface CellVerdict {
   model: string;
   questionId: string;
-  mode: "blind" | "live";
+  mode: 'blind' | 'live';
   rep: number;
   symbol: string;
   layer: string;
-  regime: "up" | "down";
+  regime: 'up' | 'down';
   direction: CellDirection;
   entry: number | null;
   stop: number | null;
@@ -38,7 +38,7 @@ export interface CellVerdict {
 function baseVerdict(
   answer: AnswerLine,
   question: Question,
-): Omit<CellVerdict, "direction" | "entry" | "stop" | "target" | "outcome" | "score" | "r"> {
+): Omit<CellVerdict, 'direction' | 'entry' | 'stop' | 'target' | 'outcome' | 'score' | 'r'> {
   const dayBars = question.fixtures.kline.day ?? [];
   return {
     model: answer.model,
@@ -60,30 +60,57 @@ function baseVerdict(
 export function scoreCell(answer: AnswerLine, question: Question): CellVerdict {
   const base = baseVerdict(answer, question);
 
-  if (answer.status === "api_error") {
-    return { ...base, direction: null, entry: null, stop: null, target: null, outcome: "api_error", score: null, r: null };
+  if (answer.status === 'api_error') {
+    return {
+      ...base,
+      direction: null,
+      entry: null,
+      stop: null,
+      target: null,
+      outcome: 'api_error',
+      score: null,
+      r: null,
+    };
   }
-  if (answer.status === "timeout") {
-    return { ...base, direction: null, entry: null, stop: null, target: null, outcome: "agent_timeout", score: null, r: null };
+  if (answer.status === 'timeout') {
+    return {
+      ...base,
+      direction: null,
+      entry: null,
+      stop: null,
+      target: null,
+      outcome: 'agent_timeout',
+      score: null,
+      r: null,
+    };
   }
 
   const submission = answer.submission;
-  if (answer.status === "format_violation" || !submission) {
-    return { ...base, direction: null, entry: null, stop: null, target: null, outcome: "format_violation", score: null, r: null };
+  if (answer.status === 'format_violation' || !submission) {
+    return {
+      ...base,
+      direction: null,
+      entry: null,
+      stop: null,
+      target: null,
+      outcome: 'format_violation',
+      score: null,
+      r: null,
+    };
   }
 
   const dayBars = question.fixtures.kline.day ?? [];
 
-  if (submission.direction === "neutral") {
+  if (submission.direction === 'neutral') {
     const atr = atr14(dayBars);
     if (atr == null || !(atr > 0)) {
       return {
         ...base,
-        direction: "neutral",
+        direction: 'neutral',
         entry: null,
         stop: null,
         target: null,
-        outcome: "neutral_wrong",
+        outcome: 'neutral_wrong',
         score: null,
         r: null,
       };
@@ -91,11 +118,11 @@ export function scoreCell(answer: AnswerLine, question: Question): CellVerdict {
     const correct = neutralCorrect(cutoffCloseOf(dayBars), atr, question.replay.bars);
     return {
       ...base,
-      direction: "neutral",
+      direction: 'neutral',
       entry: null,
       stop: null,
       target: null,
-      outcome: correct ? "neutral_correct" : "neutral_wrong",
+      outcome: correct ? 'neutral_correct' : 'neutral_wrong',
       score: null,
       r: null,
     };
@@ -109,7 +136,7 @@ export function scoreCell(answer: AnswerLine, question: Question): CellVerdict {
       entry: null,
       stop: null,
       target: null,
-      outcome: "format_violation",
+      outcome: 'format_violation',
       score: null,
       r: null,
     };

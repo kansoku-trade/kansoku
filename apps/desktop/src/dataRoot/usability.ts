@@ -7,8 +7,8 @@ import {
   statSync,
   unlinkSync,
   writeFileSync,
-} from "node:fs";
-import { join } from "node:path";
+} from 'node:fs';
+import { join } from 'node:path';
 
 export function isDataRootUsable(path: string): boolean {
   if (!existsSync(path)) return false;
@@ -27,7 +27,7 @@ export function isDataRootUsable(path: string): boolean {
 
   const probe = join(path, `.data-root-usable-probe-${process.pid}`);
   try {
-    writeFileSync(probe, "");
+    writeFileSync(probe, '');
     unlinkSync(probe);
     return true;
   } catch {

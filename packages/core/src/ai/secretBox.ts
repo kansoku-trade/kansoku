@@ -1,10 +1,10 @@
-import { randomBytes } from "node:crypto";
-import { closeSync, openSync, readFileSync, rmSync, statSync, writeSync } from "node:fs";
-import type { MasterKeyStatus, SecretBox } from "@kansoku/pro-api";
-import { decryptWithKey, encryptWithKey, SecretBoxError } from "../services/secretCrypto.js";
+import { randomBytes } from 'node:crypto';
+import { closeSync, openSync, readFileSync, rmSync, statSync, writeSync } from 'node:fs';
+import type { MasterKeyStatus, SecretBox } from '@kansoku/pro-api';
+import { decryptWithKey, encryptWithKey, SecretBoxError } from '../services/secretCrypto.js';
 
-export type { MasterKeyStatus, SecretBox } from "@kansoku/pro-api";
-export { decryptWithKey, encryptWithKey, SecretBoxError } from "../services/secretCrypto.js";
+export type { MasterKeyStatus, SecretBox } from '@kansoku/pro-api';
+export { decryptWithKey, encryptWithKey, SecretBoxError } from '../services/secretCrypto.js';
 
 const KEY_BYTES = 32;
 
@@ -13,24 +13,24 @@ function statusOf(keyPath: string): MasterKeyStatus {
   try {
     stats = statSync(keyPath);
   } catch (err) {
-    if ((err as NodeJS.ErrnoException).code === "ENOENT") return "missing";
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return 'missing';
     throw err;
   }
-  if (!stats.isFile()) return "invalid";
-  if (stats.size !== KEY_BYTES) return "invalid";
-  if ((stats.mode & 0o777) !== 0o600) return "invalid";
-  return "ready";
+  if (!stats.isFile()) return 'invalid';
+  if (stats.size !== KEY_BYTES) return 'invalid';
+  if ((stats.mode & 0o777) !== 0o600) return 'invalid';
+  return 'ready';
 }
 
 function createKeyFileExclusive(keyPath: string): Buffer {
   const key = randomBytes(KEY_BYTES);
   try {
-    const fd = openSync(keyPath, "wx", 0o600);
+    const fd = openSync(keyPath, 'wx', 0o600);
     writeSync(fd, key);
     closeSync(fd);
     return key;
   } catch (err) {
-    if ((err as NodeJS.ErrnoException).code === "EEXIST") {
+    if ((err as NodeJS.ErrnoException).code === 'EEXIST') {
       return readFileSync(keyPath);
     }
     throw err;
@@ -40,14 +40,14 @@ function createKeyFileExclusive(keyPath: string): Buffer {
 export function createSecretBox(keyPath: string): SecretBox {
   function keyForEncrypt(): Buffer {
     const status = statusOf(keyPath);
-    if (status === "invalid") throw new SecretBoxError("master key file is invalid");
-    if (status === "missing") return createKeyFileExclusive(keyPath);
+    if (status === 'invalid') throw new SecretBoxError('master key file is invalid');
+    if (status === 'missing') return createKeyFileExclusive(keyPath);
     return readFileSync(keyPath);
   }
 
   function keyForDecrypt(): Buffer {
     const status = statusOf(keyPath);
-    if (status !== "ready") throw new SecretBoxError(`master key is ${status}`);
+    if (status !== 'ready') throw new SecretBoxError(`master key is ${status}`);
     return readFileSync(keyPath);
   }
 

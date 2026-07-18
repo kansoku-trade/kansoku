@@ -6,11 +6,11 @@ import type {
   PrimitivePaneViewZOrder,
   SeriesAttachedParameter,
   Time,
-} from "lightweight-charts";
+} from 'lightweight-charts';
 
-type DrawTarget = Parameters<IPrimitivePaneRenderer["draw"]>[0];
+type DrawTarget = Parameters<IPrimitivePaneRenderer['draw']>[0];
 
-const ANCHOR_BG = "rgba(88, 166, 255, 0.18)";
+const ANCHOR_BG = 'rgba(88, 166, 255, 0.18)';
 
 interface BandPx {
   x: number;
@@ -60,7 +60,7 @@ class AnchorPaneView implements IPrimitivePaneView {
   }
 
   zOrder(): PrimitivePaneViewZOrder {
-    return "bottom";
+    return 'bottom';
   }
 }
 

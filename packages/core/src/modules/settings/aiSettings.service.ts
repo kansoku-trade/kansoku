@@ -1,29 +1,40 @@
-import { getSupportedThinkingLevels } from "@earendil-works/pi-ai";
-import type { AiRole, AiSettingsService, AiUsageRecord, RoleSettingOut } from "@kansoku/pro-api";
-import { SINGLE_KEY_PROVIDERS } from "../../ai/modelsRuntime.js";
-import { LOBEHUB_PROVIDER } from "../../ai/lobehub/types.js";
-import { listUsage } from "../../ai/usageStore.js";
-import { ClientError } from "../../errors.js";
-import { easternDate } from "../../services/session.js";
-import { settingsDeps } from "./settings.deps.js";
-import { runTestConnection } from "./settings.testConnection.js";
-import { allowedProviders, CODEX_PROVIDER, parseRole, ROLES, validateRoleSetting } from "./settingsValidation.js";
+import { getSupportedThinkingLevels } from '@earendil-works/pi-ai';
+import type { AiRole, AiSettingsService, AiUsageRecord, RoleSettingOut } from '@kansoku/pro-api';
+import { SINGLE_KEY_PROVIDERS } from '../../ai/modelsRuntime.js';
+import { LOBEHUB_PROVIDER } from '../../ai/lobehub/types.js';
+import { listUsage } from '../../ai/usageStore.js';
+import { ClientError } from '../../errors.js';
+import { easternDate } from '../../services/session.js';
+import { settingsDeps } from './settings.deps.js';
+import { runTestConnection } from './settings.testConnection.js';
+import {
+  allowedProviders,
+  CODEX_PROVIDER,
+  parseRole,
+  ROLES,
+  validateRoleSetting,
+} from './settingsValidation.js';
 
-function usageRole(record: AiUsageRecord): "comment" | "analyst" | "deepDive" | "chat" | null {
+function usageRole(record: AiUsageRecord): 'comment' | 'analyst' | 'deepDive' | 'chat' | null {
   switch (record.layer) {
-    case "commentator":
-    case "event-filter":
-    case "chat-suggest":
-      return "comment";
-    case "analyst":
-      return record.origin === "deep-dive" ? "deepDive" : "analyst";
-    case "chat":
-    case "research-chat":
-      return "chat";
-    case "research-refresh":
-      return "deepDive";
-    default:
+    case 'commentator':
+    case 'event-filter':
+    case 'chat-suggest': {
+      return 'comment';
+    }
+    case 'analyst': {
+      return record.origin === 'deep-dive' ? 'deepDive' : 'analyst';
+    }
+    case 'chat':
+    case 'research-chat': {
+      return 'chat';
+    }
+    case 'research-refresh': {
+      return 'deepDive';
+    }
+    default: {
       return null;
+    }
   }
 }
 
@@ -33,7 +44,9 @@ export const aiSettingsService: AiSettingsService = {
     const rolesOut = {} as Record<AiRole, RoleSettingOut>;
     for (const role of ROLES) {
       const setting = settingsStore.getRole(role);
-      const stale = setting.mode === "custom" && !models.getModel(setting.provider ?? "", setting.modelId ?? "");
+      const stale =
+        setting.mode === 'custom' &&
+        !models.getModel(setting.provider ?? '', setting.modelId ?? '');
       rolesOut[role] = { ...setting, stale };
     }
     return { roles: rolesOut, credentials: credentials.list(), masterKey: secretBox.status() };
@@ -50,21 +63,32 @@ export const aiSettingsService: AiSettingsService = {
   async deleteRole(input) {
     const { settingsStore } = settingsDeps();
     const role = parseRole(input.role);
-    settingsStore.setRole(role, { mode: "disabled", provider: null, modelId: null, thinkingLevel: null });
-    return { role, mode: "disabled" };
+    settingsStore.setRole(role, {
+      mode: 'disabled',
+      provider: null,
+      modelId: null,
+      thinkingLevel: null,
+    });
+    return { role, mode: 'disabled' };
   },
 
   async putCredential(input) {
     const { credentials } = settingsDeps();
     const provider = input.provider;
     if (provider === CODEX_PROVIDER) {
-      throw new ClientError(`cannot set an api key for ${CODEX_PROVIDER}`, "managed by codex CLI login");
+      throw new ClientError(
+        `cannot set an api key for ${CODEX_PROVIDER}`,
+        'managed by codex CLI login',
+      );
     }
     if (!SINGLE_KEY_PROVIDERS.has(provider)) {
-      throw new ClientError(`unknown provider: ${provider}`, `expected one of ${[...SINGLE_KEY_PROVIDERS].join(", ")}`);
+      throw new ClientError(
+        `unknown provider: ${provider}`,
+        `expected one of ${[...SINGLE_KEY_PROVIDERS].join(', ')}`,
+      );
     }
     const key = input.key;
-    if (typeof key !== "string" || !key) {
+    if (typeof key !== 'string' || !key) {
       throw new ClientError('"key" must be a non-empty string');
     }
     credentials.setApiKey(provider, key);
@@ -77,7 +101,7 @@ export const aiSettingsService: AiSettingsService = {
     try {
       await credentials.delete(input.provider);
     } catch (err) {
-      const hint = input.provider === CODEX_PROVIDER ? "managed by codex CLI login" : undefined;
+      const hint = input.provider === CODEX_PROVIDER ? 'managed by codex CLI login' : undefined;
       throw new ClientError(err instanceof Error ? err.message : String(err), hint);
     }
     return { provider: input.provider, deleted: true };
@@ -90,7 +114,12 @@ export const aiSettingsService: AiSettingsService = {
     } catch (error) {
       console.warn(`settings: using cached LobeHub model catalog: ${String(error)}`);
     }
-    const configuredApiKey = new Set(credentials.list().filter((e) => e.ok).map((e) => e.provider));
+    const configuredApiKey = new Set(
+      credentials
+        .list()
+        .filter((e) => e.ok)
+        .map((e) => e.provider),
+    );
     const providers = [];
     for (const id of allowedProviders()) {
       const provider = models.getProvider(id);
@@ -101,31 +130,31 @@ export const aiSettingsService: AiSettingsService = {
         thinkingLevels: getSupportedThinkingLevels(m),
       }));
 
-      let auth: { kind: "api_key" | "oauth"; status: "configured" | "missing" | "error" };
+      let auth: { kind: 'api_key' | 'oauth'; status: 'configured' | 'missing' | 'error' };
       if (id === LOBEHUB_PROVIDER) {
         try {
           const account = await lobehub.getAccount();
           auth = {
-            kind: "oauth",
+            kind: 'oauth',
             status:
-              account.status === "connected"
-                ? "configured"
-                : account.status === "refresh_required"
-                  ? "error"
-                  : "missing",
+              account.status === 'connected'
+                ? 'configured'
+                : account.status === 'refresh_required'
+                  ? 'error'
+                  : 'missing',
           };
         } catch {
-          auth = { kind: "oauth", status: "error" };
+          auth = { kind: 'oauth', status: 'error' };
         }
       } else if (id === CODEX_PROVIDER) {
         try {
           const credential = await credentials.read(CODEX_PROVIDER);
-          auth = { kind: "oauth", status: credential ? "configured" : "missing" };
+          auth = { kind: 'oauth', status: credential ? 'configured' : 'missing' };
         } catch {
-          auth = { kind: "oauth", status: "error" };
+          auth = { kind: 'oauth', status: 'error' };
         }
       } else {
-        auth = { kind: "api_key", status: configuredApiKey.has(id) ? "configured" : "missing" };
+        auth = { kind: 'api_key', status: configuredApiKey.has(id) ? 'configured' : 'missing' };
       }
 
       providers.push({ id, name, auth, models: modelList });

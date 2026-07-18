@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import type { BenchmarkSeries, CockpitPosition, RelativeVolume } from "@kansoku/shared/types";
-import { useWsChannel } from "@web/useWsChannel";
+import { useEffect, useState } from 'react';
+import type { BenchmarkSeries, CockpitPosition, RelativeVolume } from '@kansoku/shared/types';
+import { useWsChannel } from '@web/useWsChannel';
 
 interface PositionPayload {
   position: CockpitPosition | null;
@@ -24,12 +24,15 @@ export function useCockpitEnv(sym: string): CockpitEnvState {
     setRelvol(null);
     setBenchmark(null);
   }, [sym]);
-  const { degraded: positionDegraded } = useWsChannel<PositionPayload>({ kind: "position", symbol: sym }, (d) => {
-    setPosition(d.position);
-    setRelvol(d.relvol);
-  });
+  const { degraded: positionDegraded } = useWsChannel<PositionPayload>(
+    { kind: 'position', symbol: sym },
+    (d) => {
+      setPosition(d.position);
+      setRelvol(d.relvol);
+    },
+  );
   const { degraded: benchmarkDegraded } = useWsChannel<BenchmarkSeries[]>(
-    { kind: "benchmark", symbol: sym },
+    { kind: 'benchmark', symbol: sym },
     setBenchmark,
   );
 
@@ -37,7 +40,7 @@ export function useCockpitEnv(sym: string): CockpitEnvState {
     position,
     relvol,
     benchmark,
-    positionError: positionDegraded ? "持仓数据获取失败，正在重试" : null,
-    benchmarkError: benchmarkDegraded ? "环境对照数据获取失败，正在重试" : null,
+    positionError: positionDegraded ? '持仓数据获取失败，正在重试' : null,
+    benchmarkError: benchmarkDegraded ? '环境对照数据获取失败，正在重试' : null,
   };
 }

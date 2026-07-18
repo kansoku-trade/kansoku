@@ -1,29 +1,29 @@
-import { useEffect, useState } from "react";
-import { ArrowLeft, ChevronsRight, PictureInPicture2 } from "lucide-react";
-import { IntradayDashboard, IntradayTimeframeSwitch } from "../charts/intraday/IntradayDashboard";
-import { resolveIntradayTf, useIntradayDoc } from "../charts/intraday/useIntradayDoc";
-import type { SidebarTab } from "../charts/SidebarTabs";
-import { SepaDashboard } from "../charts/sepa/SepaDashboard";
-import { getPopoutBridge } from "../desktop/desktopWindowsBridge";
-import { TopbarQuote } from "../QuoteBar";
-import { marketOfSymbol } from "../lib/market";
-import { recordRecentSymbol } from "../recentCharts";
-import { Dot, Empty, ErrorBox, MarketTime } from "../ui";
-import { useTitle } from "../useTitle";
-import { useLiveQuote } from "../useLiveQuote";
-import { AnalysisRunDetails } from "./cockpit/AnalysisRunDetails";
-import { AnalysisTimeline } from "./cockpit/AnalysisTimeline";
-import { ChatDock } from "./cockpit/chat/ChatDock";
-import { PreviewCockpit } from "./cockpit/PreviewCockpit";
-import { conclusionOutdated } from "../charts/intraday/ConclusionCard";
-import { PredictionTab } from "../charts/intraday/tabs/PredictionTab";
-import { buildSharedSidebarTabs } from "./cockpit/sharedSidebarTabs";
-import { useAiUnreadBadge } from "./cockpit/useAiUnreadBadge";
-import { useCockpitComments } from "./cockpit/useCockpitComments";
-import { useCockpitEnv } from "./cockpit/useCockpitEnv";
-import { useAnalystRun } from "./cockpit/useAnalystRun";
-import { useCockpitReviewState } from "./cockpit/useCockpitReviewState";
-import { useLatestAnalysis } from "./cockpit/useLatestAnalysis";
+import { useEffect, useState } from 'react';
+import { ArrowLeft, ChevronsRight, PictureInPicture2 } from 'lucide-react';
+import { IntradayDashboard, IntradayTimeframeSwitch } from '../charts/intraday/IntradayDashboard';
+import { resolveIntradayTf, useIntradayDoc } from '../charts/intraday/useIntradayDoc';
+import type { SidebarTab } from '../charts/SidebarTabs';
+import { SepaDashboard } from '../charts/sepa/SepaDashboard';
+import { getPopoutBridge } from '../desktop/desktopWindowsBridge';
+import { TopbarQuote } from '../QuoteBar';
+import { marketOfSymbol } from '../lib/market';
+import { recordRecentSymbol } from '../recentCharts';
+import { Dot, Empty, ErrorBox, MarketTime } from '../ui';
+import { useTitle } from '../useTitle';
+import { useLiveQuote } from '../useLiveQuote';
+import { AnalysisRunDetails } from './cockpit/AnalysisRunDetails';
+import { AnalysisTimeline } from './cockpit/AnalysisTimeline';
+import { ChatDock } from './cockpit/chat/ChatDock';
+import { PreviewCockpit } from './cockpit/PreviewCockpit';
+import { conclusionOutdated } from '../charts/intraday/ConclusionCard';
+import { PredictionTab } from '../charts/intraday/tabs/PredictionTab';
+import { buildSharedSidebarTabs } from './cockpit/sharedSidebarTabs';
+import { useAiUnreadBadge } from './cockpit/useAiUnreadBadge';
+import { useCockpitComments } from './cockpit/useCockpitComments';
+import { useCockpitEnv } from './cockpit/useCockpitEnv';
+import { useAnalystRun } from './cockpit/useAnalystRun';
+import { useCockpitReviewState } from './cockpit/useCockpitReviewState';
+import { useLatestAnalysis } from './cockpit/useLatestAnalysis';
 
 function PopoutButton({ sym }: { sym: string }) {
   const bridge = getPopoutBridge();
@@ -45,7 +45,7 @@ function PopoutButton({ sym }: { sym: string }) {
 }
 
 export function SymbolCockpit({ sym }: { sym: string }) {
-  const symLabel = sym.toUpperCase().replace(/\.US$/, "");
+  const symLabel = sym.toUpperCase().replace(/\.US$/, '');
   const market = marketOfSymbol(sym);
   const liveQuote = useLiveQuote(sym);
   const {
@@ -80,17 +80,27 @@ export function SymbolCockpit({ sym }: { sym: string }) {
   }, [sym, doc?.id, latestChecked, latestId, latestError]);
 
   const env = useCockpitEnv(sym);
-  const { journalEntries, reloadJournal, reviewSection, setReviewSection, selectedJournal, setSelectedJournal } =
-    useCockpitReviewState(sym);
+  const {
+    journalEntries,
+    reloadJournal,
+    reviewSection,
+    setReviewSection,
+    selectedJournal,
+    setSelectedJournal,
+  } = useCockpitReviewState(sym);
 
-  const [activeTab, setActiveTab] = useState("prediction");
+  const [activeTab, setActiveTab] = useState('prediction');
   const { comments, error: commentsError, loaded: commentsLoaded } = useCockpitComments(sym);
   const { unread, latestAlert } = useAiUnreadBadge(sym, comments, commentsLoaded, activeTab);
 
-  const intradaySidebar = doc?.built.kind === "intraday" ? doc.built.sidebar : null;
+  const intradaySidebar = doc?.built.kind === 'intraday' ? doc.built.sidebar : null;
   const reassessNow = Date.now();
   const reassessNeeded =
-    conclusionOutdated(intradaySidebar?.context?.generated_at, doc?.prediction_stale, reassessNow) ||
+    conclusionOutdated(
+      intradaySidebar?.context?.generated_at,
+      doc?.prediction_stale,
+      reassessNow,
+    ) ||
     conclusionOutdated(
       doc?.prediction_updated_at ?? intradaySidebar?.prediction?.anchor?.time,
       doc?.prediction_stale,
@@ -104,7 +114,7 @@ export function SymbolCockpit({ sym }: { sym: string }) {
     details: conclusionRun.status ? <AnalysisRunDetails status={conclusionRun.status} /> : null,
   };
 
-  if (mode === "live") {
+  if (mode === 'live') {
     return (
       <PreviewCockpit
         sym={sym}
@@ -160,7 +170,7 @@ export function SymbolCockpit({ sym }: { sym: string }) {
       </div>
     );
 
-  if (doc.built.kind === "sepa") {
+  if (doc.built.kind === 'sepa') {
     return (
       <div className="fullpage">
         <div className="detail-topbar">
@@ -181,7 +191,7 @@ export function SymbolCockpit({ sym }: { sym: string }) {
     );
   }
 
-  if (doc.built.kind !== "intraday")
+  if (doc.built.kind !== 'intraday')
     return (
       <div className="page">
         <ErrorBox>该图表格式已不再支持，请重新生成（旧格式重建失败）</ErrorBox>
@@ -193,8 +203,8 @@ export function SymbolCockpit({ sym }: { sym: string }) {
 
   const sidebarTabs: SidebarTab[] = [
     {
-      key: "prediction",
-      label: "预测",
+      key: 'prediction',
+      label: '预测',
       content: (
         <PredictionTab
           built={doc.built}
@@ -243,7 +253,7 @@ export function SymbolCockpit({ sym }: { sym: string }) {
               title="历史图表默认冻结在分析时的走势，点击加载分析日之后的 K 线到最新"
             >
               <ChevronsRight size={14} className="load-forward-icon" />
-              <span>{forwardBusy ? "加载中…" : "加载后续 K 线"}</span>
+              <span>{forwardBusy ? '加载中…' : '加载后续 K 线'}</span>
             </button>
           )}
         </span>
@@ -263,14 +273,14 @@ export function SymbolCockpit({ sym }: { sym: string }) {
           />
           {latestAlert && (
             <button
-              className={`badge badge--${latestAlert.level === "alert" ? "down" : "accent"} alert-badge`}
-              onClick={() => setActiveTab("ai")}
-              aria-label={`AI ${latestAlert.level === "alert" ? "警报" : "提醒"}：${latestAlert.text}`}
+              className={`badge badge--${latestAlert.level === 'alert' ? 'down' : 'accent'} alert-badge`}
+              onClick={() => setActiveTab('ai')}
+              aria-label={`AI ${latestAlert.level === 'alert' ? '警报' : '提醒'}：${latestAlert.text}`}
             >
-              <Dot tone={latestAlert.level === "alert" ? "down" : "accent"} pulse />
+              <Dot tone={latestAlert.level === 'alert' ? 'down' : 'accent'} pulse />
               <span className="alert-badge-text">
-                AI {latestAlert.level === "alert" ? "警报" : "提醒"}{" "}
-                <MarketTime value={latestAlert.ts} format="clock" market={market} /> ·{" "}
+                AI {latestAlert.level === 'alert' ? '警报' : '提醒'}{' '}
+                <MarketTime value={latestAlert.ts} format="clock" market={market} /> ·{' '}
                 {latestAlert.trigger ?? latestAlert.text}
               </span>
             </button>

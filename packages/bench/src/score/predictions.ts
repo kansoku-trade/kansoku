@@ -1,6 +1,6 @@
-import { promises as fs } from "node:fs";
-import type { AnswerLine } from "../schema/answerLine.js";
-import { resumeKey } from "../baseline/results.js";
+import { promises as fs } from 'node:fs';
+import type { AnswerLine } from '../schema/answerLine.js';
+import { resumeKey } from '../baseline/results.js';
 
 export function dedupePredictions(lines: string[]): AnswerLine[] {
   const byKey = new Map<string, AnswerLine>();
@@ -13,13 +13,13 @@ export function dedupePredictions(lines: string[]): AnswerLine[] {
     } catch {
       continue;
     }
-    if (!parsed || typeof parsed !== "object") continue;
+    if (!parsed || typeof parsed !== 'object') continue;
     byKey.set(resumeKey(parsed.model, parsed.questionId, parsed.mode, parsed.rep), parsed);
   }
   return [...byKey.values()];
 }
 
 export async function loadPredictions(file: string): Promise<AnswerLine[]> {
-  const raw = await fs.readFile(file, "utf8");
-  return dedupePredictions(raw.split("\n"));
+  const raw = await fs.readFile(file, 'utf8');
+  return dedupePredictions(raw.split('\n'));
 }

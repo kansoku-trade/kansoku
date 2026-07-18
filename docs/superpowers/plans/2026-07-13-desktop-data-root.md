@@ -26,31 +26,32 @@
 
 ## File map
 
-| Path | Role |
-|------|------|
-| `apps/desktop/src/dataRoot/store.ts` | Read/write/clear `data-root.json` |
-| `apps/desktop/src/dataRoot/validate.ts` | Candidate path validation |
-| `apps/desktop/src/dataRoot/status.ts` | Boot-time status object types + helpers |
-| `apps/desktop/src/dataRoot/flow.ts` | Dialog pick / reset / restart prompt |
-| `apps/desktop/src/boot/paths.ts` | Extend `resolveDataRoot` |
-| `apps/desktop/src/boot/env.ts` | Load preference, resolve, scaffold, export status |
-| `apps/desktop/src/dataRoot/ipc.ts` | `desktop:data-root:*` handlers |
-| `apps/desktop/src/menu/sections/appSection.ts` | Menu item |
-| `apps/desktop/src/menu/types.ts` | `selectDataRoot` dep |
-| `apps/desktop/src/main.ts` | Wire menu + register IPC |
-| `apps/desktop/src/preload.ts` | Expose `desktop.dataRoot` |
-| `apps/desktop/test/dataRoot/*.test.ts` | Unit tests |
-| `apps/desktop/test/boot/paths.test.ts` | Extended resolve tests |
-| `apps/web/src/pages/settings/desktopDataRoot.ts` | Bridge helper |
-| `apps/web/src/pages/settings/DataRootSection.tsx` | Settings card |
-| `apps/web/src/pages/settings/SettingsPage.tsx` | Mount section when bridge present |
-| `apps/desktop/README.md` | User-facing docs |
+| Path                                              | Role                                              |
+| ------------------------------------------------- | ------------------------------------------------- |
+| `apps/desktop/src/dataRoot/store.ts`              | Read/write/clear `data-root.json`                 |
+| `apps/desktop/src/dataRoot/validate.ts`           | Candidate path validation                         |
+| `apps/desktop/src/dataRoot/status.ts`             | Boot-time status object types + helpers           |
+| `apps/desktop/src/dataRoot/flow.ts`               | Dialog pick / reset / restart prompt              |
+| `apps/desktop/src/boot/paths.ts`                  | Extend `resolveDataRoot`                          |
+| `apps/desktop/src/boot/env.ts`                    | Load preference, resolve, scaffold, export status |
+| `apps/desktop/src/dataRoot/ipc.ts`                | `desktop:data-root:*` handlers                    |
+| `apps/desktop/src/menu/sections/appSection.ts`    | Menu item                                         |
+| `apps/desktop/src/menu/types.ts`                  | `selectDataRoot` dep                              |
+| `apps/desktop/src/main.ts`                        | Wire menu + register IPC                          |
+| `apps/desktop/src/preload.ts`                     | Expose `desktop.dataRoot`                         |
+| `apps/desktop/test/dataRoot/*.test.ts`            | Unit tests                                        |
+| `apps/desktop/test/boot/paths.test.ts`            | Extended resolve tests                            |
+| `apps/web/src/pages/settings/desktopDataRoot.ts`  | Bridge helper                                     |
+| `apps/web/src/pages/settings/DataRootSection.tsx` | Settings card                                     |
+| `apps/web/src/pages/settings/SettingsPage.tsx`    | Mount section when bridge present                 |
+| `apps/desktop/README.md`                          | User-facing docs                                  |
 
 ---
 
 ### Task 1: Store, validate, resolveDataRoot
 
 **Files:**
+
 - Create: `apps/desktop/src/dataRoot/store.ts`
 - Create: `apps/desktop/src/dataRoot/validate.ts`
 - Modify: `apps/desktop/src/boot/paths.ts`
@@ -59,6 +60,7 @@
 - Modify: `apps/desktop/test/boot/paths.test.ts`
 
 **Interfaces:**
+
 - Produces:
   - `DataRootPreference = { path: string | null }`
   - `createDataRootFileStore(filePath: string): { get(): Promise<DataRootPreference>; setPath(path: string): Promise<void>; clear(): Promise<void> }`
@@ -111,12 +113,14 @@ export function resolveDataRoot(opts: DataRootOptions): string {
 ### Task 2: Boot integration + status export
 
 **Files:**
+
 - Create: `apps/desktop/src/dataRoot/status.ts`
 - Create: `apps/desktop/src/dataRoot/usability.ts` (or inline in env) — `isDataRootUsable(path: string): boolean`
 - Modify: `apps/desktop/src/boot/env.ts`
 - Create: `apps/desktop/test/dataRoot/usability.test.ts` and/or boot unit test with injectables if possible
 
 **Interfaces:**
+
 - Produces:
   - `DataRootMode = "default" | "custom" | "env" | "dev-repo"`
   - `DataRootStatus = { effectivePath, configuredPath, mode, degraded, degradedReason?: string }`
@@ -133,7 +137,7 @@ export function buildDataRootStatus(input: {
   configuredPath: string | null;
   effectivePath: string;
   customPathUsable: boolean;
-}): DataRootStatus
+}): DataRootStatus;
 ```
 
 - [ ] **Step 2: Implement `isDataRootUsable`**: exists, isDirectory, can mkdir `journal/charts/data` under it (or access W_OK).
@@ -158,6 +162,7 @@ Store can keep async API for runtime IPC; boot uses sync read of same file forma
 ### Task 3: Flow, menu, IPC
 
 **Files:**
+
 - Create: `apps/desktop/src/dataRoot/flow.ts`
 - Create: `apps/desktop/src/dataRoot/ipc.ts`
 - Modify: `apps/desktop/src/menu/types.ts`
@@ -166,6 +171,7 @@ Store can keep async API for runtime IPC; boot uses sync read of same file forma
 - Create: `apps/desktop/test/dataRoot/flow.test.ts` for pure helpers if any; dialog-heavy flow may stay thin
 
 **Interfaces:**
+
 - Produces:
   - `runSelectDataRootFlow(win): Promise<void>`
   - `runResetDataRootFlow(win): Promise<void>`
@@ -175,6 +181,7 @@ Store can keep async API for runtime IPC; boot uses sync read of same file forma
   - In-process `restartPending` flag set after successful write until relaunch
 
 **Flow behavior (packaged only):**
+
 1. If `!app.isPackaged`: info dialog「开发模式已使用仓库目录，无需设置。」
 2. Else openDirectory dialog
 3. validate; if needs-confirm-scaffold → question dialog
@@ -202,6 +209,7 @@ Store can keep async API for runtime IPC; boot uses sync read of same file forma
 ### Task 4: Preload + settings UI
 
 **Files:**
+
 - Modify: `apps/desktop/src/preload.ts`
 - Create: `apps/web/src/pages/settings/desktopDataRoot.ts`
 - Create: `apps/web/src/pages/settings/DataRootSection.tsx`
@@ -209,13 +217,14 @@ Store can keep async API for runtime IPC; boot uses sync read of same file forma
 - Modify: `apps/web/src/pages/settings/SettingsPage.tsx`
 
 **Interfaces:**
+
 - Preload (privileged origin only):
 
 ```ts
 desktopApi.dataRoot = {
-  get: () => ipcRenderer.invoke("desktop:data-root:get"),
-  pick: () => ipcRenderer.invoke("desktop:data-root:pick"),
-  reset: () => ipcRenderer.invoke("desktop:data-root:reset"),
+  get: () => ipcRenderer.invoke('desktop:data-root:get'),
+  pick: () => ipcRenderer.invoke('desktop:data-root:pick'),
+  reset: () => ipcRenderer.invoke('desktop:data-root:reset'),
 };
 ```
 
@@ -242,6 +251,7 @@ desktopApi.dataRoot = {
 ### Task 5: README
 
 **Files:**
+
 - Modify: `apps/desktop/README.md`
 
 - [ ] **Step 1: Add section「数据目录」** covering: default location, how to bind trade repo, difference from import, restart, concurrent host warning, env override for power users.
@@ -252,17 +262,17 @@ desktopApi.dataRoot = {
 
 ## Spec coverage checklist
 
-| Spec requirement | Task |
-|------------------|------|
-| Project root semantics | 1, 4 copy |
-| Preference in real userData | 1, 2 |
-| Resolve env > custom > userData | 1, 2 |
-| Dev ignores custom | 2, 3, 4 |
-| Restart, no migrate | 3 |
-| Bad path degrade | 2, 4 |
-| Menu + settings | 3, 4 |
-| Import remains separate | 3 menu order, 5 docs |
-| Kernel unchanged | all (no core edits) |
+| Spec requirement                | Task                 |
+| ------------------------------- | -------------------- |
+| Project root semantics          | 1, 4 copy            |
+| Preference in real userData     | 1, 2                 |
+| Resolve env > custom > userData | 1, 2                 |
+| Dev ignores custom              | 2, 3, 4              |
+| Restart, no migrate             | 3                    |
+| Bad path degrade                | 2, 4                 |
+| Menu + settings                 | 3, 4                 |
+| Import remains separate         | 3 menu order, 5 docs |
+| Kernel unchanged                | all (no core edits)  |
 
 ## Execution notes for SDD
 

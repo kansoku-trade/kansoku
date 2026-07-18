@@ -1,18 +1,21 @@
-import type { SecretBox } from "@kansoku/pro-api";
-import { initAiSettings } from "@kansoku/core/ai/initAiSettings";
-import { getActiveSettingsStore } from "@kansoku/core/ai/settingsStore";
-import { getDb } from "@kansoku/core/db/index";
-import { loadPro } from "@kansoku/core/pro/loader";
-import { getPro } from "@kansoku/core/pro/registry";
+import type { SecretBox } from '@kansoku/pro-api';
+import { initAiSettings } from '@kansoku/core/ai/initAiSettings';
+import { getActiveSettingsStore } from '@kansoku/core/ai/settingsStore';
+import { getDb } from '@kansoku/core/db/index';
+import { loadPro } from '@kansoku/core/pro/loader';
+import { getPro } from '@kansoku/core/pro/registry';
 import {
   createWatchedMarketsStore,
   getActiveWatchedMarketsStore,
   setActiveWatchedMarketsStore,
-} from "@kansoku/core/services/watchedMarketsStore";
-import { loadDotenv } from "./dotenv.js";
-import { initAuthUrlOpener, type AuthUrlOpener } from "@kansoku/core/services/credentials/authUrlOpener";
-import { initCredentialProvider } from "@kansoku/core/services/credentials/registry";
-import type { CredentialProvider } from "@kansoku/core/services/credentials/types";
+} from '@kansoku/core/services/watchedMarketsStore';
+import { loadDotenv } from './dotenv.js';
+import {
+  initAuthUrlOpener,
+  type AuthUrlOpener,
+} from '@kansoku/core/services/credentials/authUrlOpener';
+import { initCredentialProvider } from '@kansoku/core/services/credentials/registry';
+import type { CredentialProvider } from '@kansoku/core/services/credentials/types';
 
 export interface ServerRuntimeOptions {
   credentialProvider?: CredentialProvider;
@@ -37,7 +40,7 @@ export async function initServerRuntime(opts?: ServerRuntimeOptions): Promise<vo
 
   // 1h prompt-cache TTL: commentator sessions re-run at 5-min heartbeats, the
   // default 5-min ephemeral TTL expires right at the boundary and misses.
-  process.env.PI_CACHE_RETENTION ??= "long";
+  process.env.PI_CACHE_RETENTION ??= 'long';
 
   initCredentialProvider(opts?.credentialProvider);
   initAuthUrlOpener(opts?.openAuthUrl);
@@ -48,6 +51,6 @@ export async function initServerRuntime(opts?: ServerRuntimeOptions): Promise<vo
   await getPro()?.initRuntime?.(getDb(), opts?.secretBox, {
     watchedMarkets: getActiveWatchedMarketsStore(),
     aiSettingsStore: getActiveSettingsStore(),
-    production: opts?.productionHost ?? process.env.NODE_ENV === "production",
+    production: opts?.productionHost ?? process.env.NODE_ENV === 'production',
   });
 }

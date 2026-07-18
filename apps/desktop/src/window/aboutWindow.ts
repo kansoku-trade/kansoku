@@ -1,29 +1,29 @@
-import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
-import { app, BrowserWindow } from "electron";
-import { CREDITS } from "@kansoku/shared/credits";
-import { LICENSE_TEXT } from "@kansoku/shared/licenseText";
-import { APP_ICON_PNG, applyWindowSecurity } from "./mainWindow.js";
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { app, BrowserWindow } from 'electron';
+import { CREDITS } from '@kansoku/shared/credits';
+import { LICENSE_TEXT } from '@kansoku/shared/licenseText';
+import { APP_ICON_PNG, applyWindowSecurity } from './mainWindow.js';
 
 const ABOUT_WIDTH = 340;
 const ABOUT_HEIGHT = 480;
 
 function escapeHtml(value: string): string {
-  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 }
 
 function iconDataUrl(): string {
-  const candidates = [join(process.resourcesPath ?? "", "icon.png"), APP_ICON_PNG];
+  const candidates = [join(process.resourcesPath ?? '', 'icon.png'), APP_ICON_PNG];
   const found = candidates.find((path) => path && existsSync(path));
-  if (!found) return "";
-  return `data:image/png;base64,${readFileSync(found).toString("base64")}`;
+  if (!found) return '';
+  return `data:image/png;base64,${readFileSync(found).toString('base64')}`;
 }
 
 export function buildAboutHtml(options: { version: string; iconUrl: string }): string {
   const creditRows = CREDITS.map(
     (entry) =>
       `<li><span class="n">${escapeHtml(entry.name)}</span><span class="v">${escapeHtml(entry.version)}</span><span class="l">${escapeHtml(entry.license)}</span></li>`,
-  ).join("");
+  ).join('');
 
   return `<!doctype html>
 <html>
@@ -71,7 +71,7 @@ export function buildAboutHtml(options: { version: string; iconUrl: string }): s
 </head>
 <body>
 <div class="drag"></div>
-${options.iconUrl ? `<img class="icon" src="${options.iconUrl}" alt="">` : ""}
+${options.iconUrl ? `<img class="icon" src="${options.iconUrl}" alt="">` : ''}
 <h1>Kansoku</h1>
 <div class="version">版本 ${escapeHtml(options.version)}</div>
 <div class="copyright">© 2026 Innei</div>
@@ -104,8 +104,8 @@ export function openAboutWindow(): BrowserWindow {
     minimizable: false,
     maximizable: false,
     fullscreenable: false,
-    titleBarStyle: "hiddenInset",
-    vibrancy: "under-window",
+    titleBarStyle: 'hiddenInset',
+    vibrancy: 'under-window',
     show: false,
     webPreferences: {
       sandbox: true,
@@ -115,8 +115,8 @@ export function openAboutWindow(): BrowserWindow {
   });
 
   applyWindowSecurity(win, undefined);
-  win.once("ready-to-show", () => win.show());
-  win.on("closed", () => {
+  win.once('ready-to-show', () => win.show());
+  win.on('closed', () => {
     if (aboutWindow === win) aboutWindow = null;
   });
 

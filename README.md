@@ -75,11 +75,11 @@ apps/
 ```
 
 ```bash
-pnpm install       # 首次（仓库根目录）
-pnpm dev           # 浏览器模式：web + server，http://localhost:5199
-pnpm dev:desktop   # 桌面模式：web + Electron，不起 server 进程
-pnpm test          # 全 workspace 测试
-pnpm typecheck     # 全 workspace 类型检查
+pnpm install     # 首次（仓库根目录）
+pnpm dev         # 浏览器模式：web + server，http://localhost:5199
+pnpm dev:desktop # 桌面模式：web + Electron，不起 server 进程
+pnpm test        # 全 workspace 测试
+pnpm typecheck   # 全 workspace 类型检查
 ```
 
 发版全链路自动化：`/release` skill 写更新说明、升版本、开 PR，合并后 CI 自动打 tag、构建签名并发布 Release，已装用户收到应用内更新提示。更新说明维护在 `apps/desktop/CHANGELOG.md`，workflow 见 `.github/workflows/`。

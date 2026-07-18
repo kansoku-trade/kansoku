@@ -6,7 +6,7 @@ DEFAULT_PRO_REPO_URL="git@github.com:Innei/kansoku-pro.git"
 
 echo "== init-dev: 1/5 检查 Node/pnpm =="
 
-if ! command -v node >/dev/null 2>&1; then
+if ! command -v node > /dev/null 2>&1; then
   echo "错误：没有找到 node，请先安装 Node.js（建议 LTS 版本）后重试" >&2
   exit 1
 fi
@@ -18,12 +18,12 @@ if [ "$node_major" -lt 20 ]; then
 fi
 echo "node v$node_version OK"
 
-if ! command -v pnpm >/dev/null 2>&1; then
+if ! command -v pnpm > /dev/null 2>&1; then
   echo "错误：没有找到 pnpm，请先安装（推荐 corepack enable 或 npm i -g pnpm）后重试" >&2
   exit 1
 fi
 pnpm_version="$(pnpm -v)"
-required_pnpm="$(node -pe "require('$ROOT_DIR/package.json').packageManager" 2>/dev/null | sed -E 's/^pnpm@//')"
+required_pnpm="$(node -pe "require('$ROOT_DIR/package.json').packageManager" 2> /dev/null | sed -E 's/^pnpm@//')"
 required_major="${required_pnpm%%.*}"
 pnpm_major="${pnpm_version%%.*}"
 if [ -n "$required_pnpm" ] && [ "$pnpm_major" != "$required_major" ]; then
@@ -51,7 +51,7 @@ else
 fi
 
 echo "== init-dev: 5/5 完成 =="
-cat <<'EOF'
+cat << 'EOF'
 
 下一步：
   pnpm dev        # 起本地开发环境，http://localhost:5199

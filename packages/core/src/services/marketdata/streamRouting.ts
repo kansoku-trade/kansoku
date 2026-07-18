@@ -1,8 +1,8 @@
-import { marketOf, type Market } from "../symbol.utils.js";
-import { getStream } from "./registry.js";
-import type { QuoteStream } from "./quoteStream.js";
+import { marketOf, type Market } from '../symbol.utils.js';
+import { getStream } from './registry.js';
+import type { QuoteStream } from './quoteStream.js';
 
-const MARKETS: Market[] = ["US", "HK", "CN"];
+const MARKETS: Market[] = ['US', 'HK', 'CN'];
 
 export function distinctStreams(): QuoteStream[] {
   const set = new Set<QuoteStream>();
@@ -22,9 +22,13 @@ function groupByMarket(symbols: string[]): Array<[Market, string[]]> {
 }
 
 export async function retainSymbols(symbols: string[]): Promise<void> {
-  await Promise.all(groupByMarket(symbols).map(([market, group]) => getStream(market).retain(group)));
+  await Promise.all(
+    groupByMarket(symbols).map(([market, group]) => getStream(market).retain(group)),
+  );
 }
 
 export async function releaseSymbols(symbols: string[]): Promise<void> {
-  await Promise.all(groupByMarket(symbols).map(([market, group]) => getStream(market).release(group)));
+  await Promise.all(
+    groupByMarket(symbols).map(([market, group]) => getStream(market).release(group)),
+  );
 }

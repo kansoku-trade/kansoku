@@ -10,6 +10,7 @@ description: US/global macro time series from St. Louis Fed FRED — CPI, GDP, F
 ## When to use
 
 Trigger phrases:
+
 - CPI / core CPI / PCE / PPI / inflation / 通胀 / 核心通胀
 - GDP / 国内生产总值
 - unemployment / 失业率 / U-3 / U-6 / nonfarm / 非农
@@ -71,32 +72,32 @@ python3 .claude/skills/fred/scripts/series.py CPI --fresh
 
 See `aliases.json` for the curated CN/EN → series ID map. Common ones:
 
-| Alias | Series ID |
-|---|---|
-| CPI | CPIAUCSL |
-| core CPI / 核心 CPI | CPILFESL |
-| PCE | PCEPI |
-| GDP | GDPC1 |
-| unemployment / 失业率 | UNRATE |
-| nonfarm / 非农 | PAYEMS |
-| Fed funds / 联储利率 | DFF |
-| 10Y yield / 美债 10 年 | DGS10 |
-| yield curve | T10Y2Y |
-| DXY / 美元指数 | DTWEXBGS |
-| M2 | M2SL |
-| VIX | VIXCLS |
-| 10Y breakeven / 通胀预期 | T10YIE |
+| Alias                    | Series ID |
+| ------------------------ | --------- |
+| CPI                      | CPIAUCSL  |
+| core CPI / 核心 CPI      | CPILFESL  |
+| PCE                      | PCEPI     |
+| GDP                      | GDPC1     |
+| unemployment / 失业率    | UNRATE    |
+| nonfarm / 非农           | PAYEMS    |
+| Fed funds / 联储利率     | DFF       |
+| 10Y yield / 美债 10 年   | DGS10     |
+| yield curve              | T10Y2Y    |
+| DXY / 美元指数           | DTWEXBGS  |
+| M2                       | M2SL      |
+| VIX                      | VIXCLS    |
+| 10Y breakeven / 通胀预期 | T10YIE    |
 
 If the user's phrase isn't in the map, fall back to `search.py "<query>"` and pick the highest-popularity non-discontinued result.
 
 ## Error handling
 
-| Exit code | Meaning | LLM action |
-|---|---|---|
-| 0 | Success | Parse `data`, narrate. |
-| 2 | Missing `FRED_API_KEY` | Tell user to register at https://fred.stlouisfed.org/docs/api/api_key.html and add to `.env` at project root. |
-| 3 | HTTP 4xx or non-JSON | Surface error from `hint`. |
-| 4 | Network | Suggest retry. |
+| Exit code | Meaning                | LLM action                                                                                                    |
+| --------- | ---------------------- | ------------------------------------------------------------------------------------------------------------- |
+| 0         | Success                | Parse `data`, narrate.                                                                                        |
+| 2         | Missing `FRED_API_KEY` | Tell user to register at https://fred.stlouisfed.org/docs/api/api_key.html and add to `.env` at project root. |
+| 3         | HTTP 4xx or non-JSON   | Surface error from `hint`.                                                                                    |
+| 4         | Network                | Suggest retry.                                                                                                |
 
 ## Known limitations
 

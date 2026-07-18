@@ -9,13 +9,13 @@
 
 盘点后发现这不是 chat 一个的问题，而是五个 in-app agent 各自手工装配、能力参差：
 
-| Agent | 文件 | 研究三件套（bash / read_skill / read_file） | 技能目录注入 | MessagesEngine |
-|---|---|---|---|---|
-| analyst | `analyst.ts` | 有（手工拼 + 进度上报包装） | 有（provider 注入） | 用（5 个专属 provider） |
-| deepDive | `deepDiveTools.ts` | 有（手工拼） | 有（拼进 system prompt 字符串） | 不用 |
-| 图表 chat | `chat.ts` | **无** | 无 | 不用 |
-| 研究库 chat | `researchChat.ts` | **无** | 无 | 用（文档上下文 provider） |
-| 全屏助手 | `assistantChat.ts` | 有（手工拼） | **无**（给了 read_skill 却没告诉模型有哪些 skill） | 不用 |
+| Agent       | 文件               | 研究三件套（bash / read_skill / read_file） | 技能目录注入                                       | MessagesEngine            |
+| ----------- | ------------------ | ------------------------------------------- | -------------------------------------------------- | ------------------------- |
+| analyst     | `analyst.ts`       | 有（手工拼 + 进度上报包装）                 | 有（provider 注入）                                | 用（5 个专属 provider）   |
+| deepDive    | `deepDiveTools.ts` | 有（手工拼）                                | 有（拼进 system prompt 字符串）                    | 不用                      |
+| 图表 chat   | `chat.ts`          | **无**                                      | 无                                                 | 不用                      |
+| 研究库 chat | `researchChat.ts`  | **无**                                      | 无                                                 | 用（文档上下文 provider） |
+| 全屏助手    | `assistantChat.ts` | 有（手工拼）                                | **无**（给了 read_skill 却没告诉模型有哪些 skill） | 不用                      |
 
 ## 目标
 
@@ -41,15 +41,15 @@
 ```ts
 interface ResearchToolsOptions {
   repoRoot: string;
-  exec?: ExecFn;              // 默认 createDefaultExec(repoRoot)；调用方可传包装过的（如 analyst 的进度上报）
-  skillIndex?: SkillMeta[];   // 默认 loadSkillIndex(skillSearchDirs(repoRoot))
+  exec?: ExecFn; // 默认 createDefaultExec(repoRoot)；调用方可传包装过的（如 analyst 的进度上报）
+  skillIndex?: SkillMeta[]; // 默认 loadSkillIndex(skillSearchDirs(repoRoot))
   onSkillRead?: (name: string) => void;
 }
 
 function buildResearchTools(opts: ResearchToolsOptions): {
-  tools: AgentTool[];         // [read_skill, bash, read_file]
-  skillIndex: SkillMeta[];    // 回传给调用方喂 SkillCatalogProvider，避免重复加载
-}
+  tools: AgentTool[]; // [read_skill, bash, read_file]
+  skillIndex: SkillMeta[]; // 回传给调用方喂 SkillCatalogProvider，避免重复加载
+};
 ```
 
 bash 的只读拦截（`isRejectedCommand`）、输出截断、超时等既有行为不变。

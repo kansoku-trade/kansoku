@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from "react";
-import { subscribeChannel, type ChannelSpec } from "./wsHub";
-import { loadSnapshot, saveSnapshot } from "./wsSnapshot";
+import { useEffect, useRef, useState } from 'react';
+import { subscribeChannel, type ChannelSpec } from './wsHub';
+import { loadSnapshot, saveSnapshot } from './wsSnapshot';
 
 interface Envelope {
-  type: "data" | "status";
+  type: 'data' | 'status';
   data?: unknown;
   degraded?: boolean;
 }
@@ -14,7 +14,10 @@ export interface WsChannelState {
   snapshotAt: number | null;
 }
 
-export function useWsChannel<T>(spec: ChannelSpec | null, onData: (data: T) => void): WsChannelState {
+export function useWsChannel<T>(
+  spec: ChannelSpec | null,
+  onData: (data: T) => void,
+): WsChannelState {
   const [degraded, setDegraded] = useState(false);
   const [connected, setConnected] = useState(false);
   const [snapshotAt, setSnapshotAt] = useState<number | null>(null);
@@ -38,12 +41,12 @@ export function useWsChannel<T>(spec: ChannelSpec | null, onData: (data: T) => v
       parsedSpec,
       (payload) => {
         const env = payload as Envelope;
-        if (env?.type === "data") {
+        if (env?.type === 'data') {
           setDegraded(false);
           setSnapshotAt(null);
           saveSnapshot(parsedSpec, env.data);
           handler.current(env.data as T);
-        } else if (env?.type === "status") {
+        } else if (env?.type === 'status') {
           setDegraded(Boolean(env.degraded));
         }
       },

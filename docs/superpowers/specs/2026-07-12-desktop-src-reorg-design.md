@@ -98,15 +98,15 @@ src/
 
 ### 新增文件的导出契约
 
-| 文件 | 导出 | 承载内容 |
-|---|---|---|
-| `boot/kernel.ts` | `bootKernel(): Promise<Kernel>` | secretBox 装配、`initServerRuntime`、`attachRealtimeBridge`、credentials IPC 注册、health self-test |
-| `window/mainWindow.ts` | `createWindow()` + 窗口常量 | windowState、will-navigate/openHandler 守卫、loadURL |
-| `window/fatalErrorWindow.ts` | `showFatalErrorWindow(error)` | data: URL 错误页 + `dialog.showErrorBox` |
-| `window/dockIcon.ts` | `applyDevDockIcon()` | dev 模式 macOS Dock 图标 |
-| `externalApi/ipc.ts` | `registerExternalApiIpc(controller)` | 4 个 `desktop:external-api:*` handler |
-| `dataImport/flow.ts` | `runImportFromRepoFlow(win)` | 目录选择 + 校验 + 冲突弹窗 + 复制汇总，`messageBox/openDialog` 为私有辅助 |
-| `tabs/commands.ts` | `sendTabsCommand(command)` | 向 focused window 发 `TABS_COMMAND_CHANNEL` |
+| 文件                         | 导出                                 | 承载内容                                                                                            |
+| ---------------------------- | ------------------------------------ | --------------------------------------------------------------------------------------------------- |
+| `boot/kernel.ts`             | `bootKernel(): Promise<Kernel>`      | secretBox 装配、`initServerRuntime`、`attachRealtimeBridge`、credentials IPC 注册、health self-test |
+| `window/mainWindow.ts`       | `createWindow()` + 窗口常量          | windowState、will-navigate/openHandler 守卫、loadURL                                                |
+| `window/fatalErrorWindow.ts` | `showFatalErrorWindow(error)`        | data: URL 错误页 + `dialog.showErrorBox`                                                            |
+| `window/dockIcon.ts`         | `applyDevDockIcon()`                 | dev 模式 macOS Dock 图标                                                                            |
+| `externalApi/ipc.ts`         | `registerExternalApiIpc(controller)` | 4 个 `desktop:external-api:*` handler                                                               |
+| `dataImport/flow.ts`         | `runImportFromRepoFlow(win)`         | 目录选择 + 校验 + 冲突弹窗 + 复制汇总，`messageBox/openDialog` 为私有辅助                           |
+| `tabs/commands.ts`           | `sendTabsCommand(command)`           | 向 focused window 发 `TABS_COMMAND_CHANNEL`                                                         |
 
 ### 常量下沉
 
@@ -145,4 +145,7 @@ src/
 - 不动 `ipc/`、`menu/` 内部结构（已合规）。
 - 不改任何运行时行为、不重构逻辑、不加/删功能。
 - 不引入 barrel 文件（`ipc/index.ts` 除外，保留现状）。
+
+```
+
 ```

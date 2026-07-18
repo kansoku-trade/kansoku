@@ -1,16 +1,20 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from 'react';
 
 export const TIMELINE_PAGE = 10;
 
 export type TimelineItem = { date: string; day: string; monthLabel: string | null };
 
 export function buildTimelineItems(datesAsc: string[]): TimelineItem[] {
-  const newestYear = datesAsc.length > 0 ? datesAsc[datesAsc.length - 1].slice(0, 4) : "";
+  const newestYear = datesAsc.length > 0 ? datesAsc.at(-1)!.slice(0, 4) : '';
   return datesAsc.map((date, i) => {
-    const [y, m, d] = date.split("-");
+    const [y, m, d] = date.split('-');
     const prev = datesAsc[i - 1];
     const isMonthStart = !prev || prev.slice(0, 7) !== date.slice(0, 7);
-    const monthLabel = isMonthStart ? (y === newestYear ? `${Number(m)}月` : `${y}年${Number(m)}月`) : null;
+    const monthLabel = isMonthStart
+      ? y === newestYear
+        ? `${Number(m)}月`
+        : `${y}年${Number(m)}月`
+      : null;
     return { date, day: String(Number(d)), monthLabel };
   });
 }
@@ -49,11 +53,11 @@ export function DateTimeline({
         {items.map((it, i) => (
           <button
             key={it.date}
-            className={`dtl-item${it.date === selected ? " active" : ""}${it.monthLabel && i > 0 ? " month-start" : ""}`}
+            className={`dtl-item${it.date === selected ? ' active' : ''}${it.monthLabel && i > 0 ? ' month-start' : ''}`}
             title={it.date}
             onClick={() => onSelect(it.date)}
           >
-            <span className="dtl-month">{it.monthLabel ?? " "}</span>
+            <span className="dtl-month">{it.monthLabel ?? ' '}</span>
             <span className="dtl-dot" />
             <span className="dtl-day">{it.day}</span>
           </button>

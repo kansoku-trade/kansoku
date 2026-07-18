@@ -1,6 +1,7 @@
 {
   "name": "@kansoku/server",
   "private": true,
+  "license": "SEE LICENSE IN LICENSE",
   "type": "module",
   "scripts": {
     "predev": "node scripts/ensureNativeAbi.mjs",
@@ -11,18 +12,13 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
-  "devDependencies": {
-    "@types/better-sqlite3": "^7.6.13",
-    "@types/node": "^26.1.1",
-    "@types/ws": "^8.18.1",
-    "typescript": "^7.0.2",
-    "vite-node": "^6.0.0",
-    "vitest": "^4.1.10"
-  },
   "dependencies": {
     "@earendil-works/pi-agent-core": "^0.80.7",
     "@earendil-works/pi-ai": "^0.80.7",
     "@hono/node-server": "2.0.9",
+    "@kansoku/core": "workspace:*",
+    "@kansoku/pro-api": "workspace:*",
+    "@kansoku/shared": "workspace:*",
     "@tsuki-hono/common": "0.0.5",
     "@tsuki-hono/core": "0.0.5",
     "better-sqlite3": "^12.11.1",
@@ -30,10 +26,14 @@
     "hono": "4.12.30",
     "reflect-metadata": "0.2.2",
     "tsyringe": "4.10.0",
-    "ws": "^8.21.1",
-    "@kansoku/core": "workspace:*",
-    "@kansoku/pro-api": "workspace:*",
-    "@kansoku/shared": "workspace:*"
+    "ws": "^8.21.1"
   },
-  "license": "SEE LICENSE IN LICENSE"
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^26.1.1",
+    "@types/ws": "^8.18.1",
+    "typescript": "^7.0.2",
+    "vite-node": "^6.0.0",
+    "vitest": "^4.1.10"
+  }
 }

@@ -1,13 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import type { ResearchRefreshTask } from "@kansoku/core/contract/index";
-import { errorMessage } from "@web/api";
-import { useQuery } from "@web/apiHooks";
-import { client } from "@web/client";
-import { subscribeChannel } from "@web/wsHub";
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { ResearchRefreshTask } from '@kansoku/core/contract/index';
+import { errorMessage } from '@web/api';
+import { useQuery } from '@web/apiHooks';
+import { client } from '@web/client';
+import { subscribeChannel } from '@web/wsHub';
 
 type RefreshEnvelope =
-  | { type: "init"; task: ResearchRefreshTask | null }
-  | { type: "task"; task: ResearchRefreshTask };
+  { type: 'init'; task: ResearchRefreshTask | null } | { type: 'task'; task: ResearchRefreshTask };
 
 export function useResearchRefresh(path: string, onProposalReady: () => void, enabled = true) {
   const query = useQuery<ResearchRefreshTask | null>(
@@ -24,10 +23,10 @@ export function useResearchRefresh(path: string, onProposalReady: () => void, en
     if (!enabled) return;
     let connectedOnce = false;
     return subscribeChannel(
-      { kind: "research-refresh", path },
+      { kind: 'research-refresh', path },
       (payload) => {
         const envelope = payload as RefreshEnvelope;
-        if (envelope.type === "init" || envelope.type === "task") setLiveTask(envelope.task);
+        if (envelope.type === 'init' || envelope.type === 'task') setLiveTask(envelope.task);
       },
       (connected) => {
         if (!connected) return;
@@ -38,7 +37,7 @@ export function useResearchRefresh(path: string, onProposalReady: () => void, en
   }, [path, enabled, query.reload]);
 
   const task = liveTask ?? query.data;
-  const proposalId = task?.status === "completed" ? task.report?.proposalId ?? null : null;
+  const proposalId = task?.status === 'completed' ? (task.report?.proposalId ?? null) : null;
   useEffect(() => {
     if (!proposalId || seenProposalRef.current === proposalId) return;
     seenProposalRef.current = proposalId;

@@ -1,13 +1,13 @@
-import { useEffect, useState } from "react";
-import type { OverviewBoard, PortfolioSummary } from "@kansoku/shared/types";
-import { useQuery } from "../apiHooks";
-import { client } from "../client";
-import { listRecentSymbols } from "../recentCharts";
-import { Input } from "../ui";
-import { buildPaletteCommands, type PaletteCommand } from "./commands";
-import { usePalette } from "./usePalette";
+import { useEffect, useState } from 'react';
+import type { OverviewBoard, PortfolioSummary } from '@kansoku/shared/types';
+import { useQuery } from '../apiHooks';
+import { client } from '../client';
+import { listRecentSymbols } from '../recentCharts';
+import { Input } from '../ui';
+import { buildPaletteCommands, type PaletteCommand } from './commands';
+import { usePalette } from './usePalette';
 
-const optionId = (commandId: string) => `palette-option-${commandId.replace(/[^a-zA-Z0-9_-]/g, "_")}`;
+const optionId = (commandId: string) => `palette-option-${commandId.replaceAll(/[^\w-]/g, '_')}`;
 
 export function CommandPalette({ onOpenRoute }: { onOpenRoute: (route: string) => void }) {
   const { open, close } = usePalette();
@@ -22,9 +22,11 @@ function PalettePanel({
   onClose: () => void;
   onOpenRoute: (route: string) => void;
 }) {
-  const { data: board } = useQuery<OverviewBoard>("overview.board", () => client.overview.board());
-  const { data: portfolio } = useQuery<PortfolioSummary>("positions.list", () => client.positions.list());
-  const [query, setQuery] = useState("");
+  const { data: board } = useQuery<OverviewBoard>('overview.board', () => client.overview.board());
+  const { data: portfolio } = useQuery<PortfolioSummary>('positions.list', () =>
+    client.positions.list(),
+  );
+  const [query, setQuery] = useState('');
   const [index, setIndex] = useState(0);
 
   const symbols = [
@@ -37,7 +39,7 @@ function PalettePanel({
   const activeId = commands[active]?.id;
 
   useEffect(() => {
-    if (activeId) document.getElementById(optionId(activeId))?.scrollIntoView({ block: "nearest" });
+    if (activeId) document.getElementById(optionId(activeId))?.scrollIntoView({ block: 'nearest' });
   }, [activeId]);
 
   const run = (cmd: PaletteCommand) => {
@@ -50,17 +52,17 @@ function PalettePanel({
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     const ctrlKey = e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey;
-    if (e.key === "ArrowDown" || (ctrlKey && (e.key === "j" || e.key === "n"))) {
+    if (e.key === 'ArrowDown' || (ctrlKey && (e.key === 'j' || e.key === 'n'))) {
       e.preventDefault();
       moveDown();
-    } else if (e.key === "ArrowUp" || (ctrlKey && (e.key === "k" || e.key === "p"))) {
+    } else if (e.key === 'ArrowUp' || (ctrlKey && (e.key === 'k' || e.key === 'p'))) {
       e.preventDefault();
       e.stopPropagation();
       moveUp();
-    } else if (e.key === "Enter") {
+    } else if (e.key === 'Enter') {
       const cmd = commands[active];
       if (cmd) run(cmd);
-    } else if (e.key === "Escape") {
+    } else if (e.key === 'Escape') {
       onClose();
     }
   };
@@ -98,7 +100,7 @@ function PalettePanel({
               role="option"
               aria-selected={i === active}
               tabIndex={-1}
-              className={`palette-item${i === active ? " active" : ""}`}
+              className={`palette-item${i === active ? ' active' : ''}`}
               onMouseEnter={() => setIndex(i)}
               onClick={() => run(cmd)}
             >

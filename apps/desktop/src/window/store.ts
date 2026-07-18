@@ -1,5 +1,5 @@
-import { writeFileSync } from "node:fs";
-import { readFile, writeFile } from "node:fs/promises";
+import { writeFileSync } from 'node:fs';
+import { readFile, writeFile } from 'node:fs/promises';
 
 const DEFAULT_DEBOUNCE_MS = 500;
 const WINDOW_ID_PATTERN = /^win-(\d+)$/;
@@ -37,7 +37,11 @@ export function removeWindowEntry(state: WindowsState, id: string): WindowsState
   return state.filter((entry) => entry.id !== id);
 }
 
-export function updateActiveTab(state: WindowsState, id: string, activeTabId: string): WindowsState {
+export function updateActiveTab(
+  state: WindowsState,
+  id: string,
+  activeTabId: string,
+): WindowsState {
   const idx = state.findIndex((entry) => entry.id === id);
   if (idx === -1) return state;
   if (state[idx].activeTabId === activeTabId) return state;
@@ -47,9 +51,9 @@ export function updateActiveTab(state: WindowsState, id: string, activeTabId: st
 }
 
 function isValidEntry(value: unknown): value is WindowEntry {
-  if (!value || typeof value !== "object") return false;
+  if (!value || typeof value !== 'object') return false;
   const entry = value as Record<string, unknown>;
-  return typeof entry.id === "string" && typeof entry.activeTabId === "string";
+  return typeof entry.id === 'string' && typeof entry.activeTabId === 'string';
 }
 
 function isValidWindowsState(value: unknown): value is WindowsState {
@@ -76,7 +80,7 @@ export function createWindowsFileStore(
   return {
     async load(): Promise<WindowsState> {
       try {
-        const raw = await readFile(filePath, "utf8");
+        const raw = await readFile(filePath, 'utf8');
         const parsed = JSON.parse(raw) as unknown;
         if (!isValidWindowsState(parsed)) return emptyWindowsState();
         return parsed;

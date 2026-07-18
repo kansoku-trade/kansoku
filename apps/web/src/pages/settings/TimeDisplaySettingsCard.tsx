@@ -1,14 +1,14 @@
-import { localTimeZone } from "@kansoku/shared/time";
+import { localTimeZone } from '@kansoku/shared/time';
 import {
   setTimeDisplayPreference,
   type TimeDisplayPreference,
   useTimeDisplayPreference,
-} from "@web/timeDisplayPreference";
-import { Card, SectionTitle, SegmentedControl, type SegmentedControlOption } from "@web/ui";
+} from '@web/timeDisplayPreference';
+import { Card, SectionTitle, SegmentedControl, type SegmentedControlOption } from '@web/ui';
 
 const OPTIONS = [
-  { value: "market", label: "美东时间" },
-  { value: "local", label: "本地时间" },
+  { value: 'market', label: '美东时间' },
+  { value: 'local', label: '本地时间' },
 ] satisfies readonly SegmentedControlOption<TimeDisplayPreference>[];
 
 export function TimeDisplaySettingsCard() {

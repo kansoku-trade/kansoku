@@ -1,6 +1,6 @@
-import { Plus, X } from "lucide-react";
-import type { AssistantSessionMeta } from "@kansoku/core/contract/index";
-import { Button, Empty, Spinner, TimeAgo, openModal } from "@web/ui";
+import { Plus, X } from 'lucide-react';
+import type { AssistantSessionMeta } from '@kansoku/core/contract/index';
+import { Button, Empty, Spinner, TimeAgo, openModal } from '@web/ui';
 
 interface AssistantSessionListProps {
   sessions: AssistantSessionMeta[];
@@ -14,7 +14,7 @@ interface AssistantSessionListProps {
 
 function confirmDelete(session: AssistantSessionMeta, onDelete: (id: string) => void): void {
   openModal({
-    title: "删除会话",
+    title: '删除会话',
     body: (close) => (
       <div className="assistant-confirm">
         <p>删除「{session.title}」后无法恢复，确定继续吗？</p>
@@ -35,7 +35,15 @@ function confirmDelete(session: AssistantSessionMeta, onDelete: (id: string) => 
   });
 }
 
-export function AssistantSessionList({ sessions, activeId, loading, error, onSelect, onCreate, onDelete }: AssistantSessionListProps) {
+export function AssistantSessionList({
+  sessions,
+  activeId,
+  loading,
+  error,
+  onSelect,
+  onCreate,
+  onDelete,
+}: AssistantSessionListProps) {
   return (
     <div className="assistant-sidebar">
       <div className="assistant-sidebar-head">
@@ -56,7 +64,7 @@ export function AssistantSessionList({ sessions, activeId, loading, error, onSel
           sessions.map((session) => (
             <div
               key={session.id}
-              className={`assistant-session-row${session.id === activeId ? " active" : ""}`}
+              className={`assistant-session-row${session.id === activeId ? ' active' : ''}`}
               onClick={() => onSelect(session.id)}
             >
               <div className="assistant-session-row-main">

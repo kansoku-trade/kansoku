@@ -1,8 +1,8 @@
-import type { QuoteCell } from "@kansoku/shared/types";
-import { classifySession, sessionLabel } from "../session.js";
-import { marketOf } from "../symbol.utils.js";
-import { getProvider } from "./registry.js";
-import { CandleAggregator, type CandleBar, type CandlePeriod } from "./candleAggregator.js";
+import type { QuoteCell } from '@kansoku/shared/types';
+import { classifySession, sessionLabel } from '../session.js';
+import { marketOf } from '../symbol.utils.js';
+import { getProvider } from './registry.js';
+import { CandleAggregator, type CandleBar, type CandlePeriod } from './candleAggregator.js';
 import {
   SUB_TYPE_QUOTE,
   SUB_TYPE_TRADE,
@@ -10,10 +10,10 @@ import {
   TRADE_SESSION_POST,
   TRADE_SESSION_PRE,
   type ProtocolQuote,
-} from "./longbridgeProtocol.js";
-import type { LongbridgeQuoteSocket } from "./longbridgeSocket.js";
-import { getSharedQuoteSocket } from "./sharedSocket.js";
-import type { CandleListener, QuoteListener, QuoteStream } from "./quoteStream.js";
+} from './longbridgeProtocol.js';
+import type { LongbridgeQuoteSocket } from './longbridgeSocket.js';
+import { getSharedQuoteSocket } from './sharedSocket.js';
+import type { CandleListener, QuoteListener, QuoteStream } from './quoteStream.js';
 
 export type { CandleBar, CandlePeriod };
 
@@ -36,7 +36,10 @@ function candleKey(symbol: string, period: CandlePeriod): string {
   return `${symbol}\0${period}`;
 }
 
-function extendedLast(value: { last?: string; prev_close?: string } | undefined, fallback: number): number {
+function extendedLast(
+  value: { last?: string; prev_close?: string } | undefined,
+  fallback: number,
+): number {
   return value?.prev_close ? Number(value.prev_close) : fallback;
 }
 
@@ -82,7 +85,8 @@ export class LongbridgeStream implements QuoteStream {
     let prevClose = prev?.regular ?? 0;
     if (quote.tradeSession === TRADE_SESSION_PRE) prevClose = prev?.pre || prevClose;
     else if (quote.tradeSession === TRADE_SESSION_POST) prevClose = prev?.post || prevClose;
-    else if (quote.tradeSession === TRADE_SESSION_OVERNIGHT) prevClose = prev?.overnight || prevClose;
+    else if (quote.tradeSession === TRADE_SESSION_OVERNIGHT)
+      prevClose = prev?.overnight || prevClose;
     const pct = pctOf(quote.lastDone, prevClose);
     if (quote.tradeSession === 0) this.lastRegular.set(quote.symbol, { last: quote.lastDone, pct });
     const regular = this.lastRegular.get(quote.symbol);
@@ -119,7 +123,7 @@ export class LongbridgeStream implements QuoteStream {
       if (!snapshot) {
         this.snapshots.set(row.symbol, {
           symbol: row.symbol,
-          session: "日盘",
+          session: '日盘',
           last,
           pct: regularCell.pct,
           regularLast: last,
@@ -149,24 +153,30 @@ export class LongbridgeStream implements QuoteStream {
       this.socket.subscribe(fresh, [SUB_TYPE_QUOTE]),
       this.refreshSnapshots(fresh),
     ]);
-    if (refreshed.status === "rejected") {
-      const reason = refreshed.reason instanceof Error ? refreshed.reason.message : String(refreshed.reason);
-      console.warn("[longbridge-stream] prev-close snapshot failed, will retry:", reason);
+    if (refreshed.status === 'rejected') {
+      const reason =
+        refreshed.reason instanceof Error ? refreshed.reason.message : String(refreshed.reason);
+      console.warn('[longbridge-stream] prev-close snapshot failed, will retry:', reason);
       this.schedulePrevCloseRetry();
     }
-    if (subscribed.status === "rejected") throw subscribed.reason;
+    if (subscribed.status === 'rejected') throw subscribed.reason;
   }
 
   private startPrevCloseTimer(): void {
     if (this.prevCloseTimer) return;
-    this.prevCloseTimer = setInterval(() => void this.refreshSnapshots([...this.quoteRefs.keys()]).catch(() => {}), PREV_CLOSE_TTL_MS);
+    this.prevCloseTimer = setInterval(
+      () => void this.refreshSnapshots([...this.quoteRefs.keys()]).catch(() => {}),
+      PREV_CLOSE_TTL_MS,
+    );
   }
 
   private schedulePrevCloseRetry(): void {
     if (this.prevCloseRetryTimer) return;
     this.prevCloseRetryTimer = setTimeout(() => {
       this.prevCloseRetryTimer = null;
-      const missing = [...this.quoteRefs.keys()].filter((symbol) => !this.prevCloseCache.has(symbol));
+      const missing = [...this.quoteRefs.keys()].filter(
+        (symbol) => !this.prevCloseCache.has(symbol),
+      );
       if (!missing.length) return;
       void this.refreshSnapshots(missing).catch(() => this.schedulePrevCloseRetry());
     }, PREV_CLOSE_RETRY_MS);
@@ -221,7 +231,9 @@ export class LongbridgeStream implements QuoteStream {
         this.candleListeners.delete(key);
         this.aggregator.remove(symbol, period);
         if (!this.hasCandleForSymbol(symbol)) {
-          const types = this.quoteRefs.has(symbol) ? [SUB_TYPE_TRADE] : [SUB_TYPE_QUOTE, SUB_TYPE_TRADE];
+          const types = this.quoteRefs.has(symbol)
+            ? [SUB_TYPE_TRADE]
+            : [SUB_TYPE_QUOTE, SUB_TYPE_TRADE];
           void this.socket.unsubscribe([symbol], types).catch(() => {});
         }
       } else {
@@ -232,13 +244,13 @@ export class LongbridgeStream implements QuoteStream {
 
   private async activateCandle(symbol: string, period: CandlePeriod): Promise<void> {
     try {
-      const cliPeriod = period === "60m" ? "1h" : period;
-      const rows = await getProvider().getKline(symbol, cliPeriod, 2, "all");
-      const last = rows[rows.length - 1];
+      const cliPeriod = period === '60m' ? '1h' : period;
+      const rows = await getProvider().getKline(symbol, cliPeriod, 2, 'all');
+      const last = rows.at(-1);
       if (last) this.aggregator.seed(symbol, period, last);
       await this.socket.subscribe([symbol], [SUB_TYPE_QUOTE, SUB_TYPE_TRADE]);
     } catch (error) {
-      console.warn("[longbridge-stream] candlestick subscribe failed", symbol, period, error);
+      console.warn('[longbridge-stream] candlestick subscribe failed', symbol, period, error);
     }
   }
 
@@ -252,7 +264,7 @@ export class LongbridgeStream implements QuoteStream {
       try {
         listener(bar);
       } catch (error) {
-        console.warn("[longbridge-stream] candlestick listener failed", error);
+        console.warn('[longbridge-stream] candlestick listener failed', error);
       }
     }
   }

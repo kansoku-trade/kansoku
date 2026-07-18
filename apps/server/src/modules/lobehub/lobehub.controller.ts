@@ -1,35 +1,35 @@
-import { Controller, Delete, Get, Post } from "@tsuki-hono/common";
-import { lobehubService } from "@kansoku/core/modules/lobehub/lobehub.service";
+import { Controller, Delete, Get, Post } from '@tsuki-hono/common';
+import { lobehubService } from '@kansoku/core/modules/lobehub/lobehub.service';
 
-export { setLobeHubDepsForTests } from "@kansoku/core/modules/lobehub/lobehub.deps";
+export { setLobeHubDepsForTests } from '@kansoku/core/modules/lobehub/lobehub.deps';
 
-@Controller("ai/providers/lobehub")
+@Controller('ai/providers/lobehub')
 export class LobeHubController {
-  @Post("/device-login")
+  @Post('/device-login')
   async startDeviceLogin() {
     const data = await lobehubService.startDeviceLogin();
     return { ok: true, data };
   }
 
-  @Post("/device-login/poll")
+  @Post('/device-login/poll')
   async pollDeviceLogin() {
     const data = await lobehubService.pollDeviceLogin();
     return { ok: true, data };
   }
 
-  @Get("/account")
+  @Get('/account')
   async getAccount() {
     const data = await lobehubService.getAccount();
     return { ok: true, data };
   }
 
-  @Get("/credits")
+  @Get('/credits')
   async getCredits() {
     const data = await lobehubService.getCredits();
     return { ok: true, data };
   }
 
-  @Delete("/session")
+  @Delete('/session')
   async deleteSession() {
     const data = await lobehubService.deleteSession();
     return { ok: true, data };

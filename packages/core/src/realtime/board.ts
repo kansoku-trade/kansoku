@@ -1,7 +1,7 @@
-import { chartUrl } from "../chartUrl.js";
-import { buildOverviewBoard } from "../services/cockpit/board.js";
-import { distinctStreams } from "../services/marketdata/streamRouting.js";
-import { createEmitter, emitData, emitStatus, replay } from "./emitter.js";
+import { chartUrl } from '../chartUrl.js';
+import { buildOverviewBoard } from '../services/cockpit/board.js';
+import { distinctStreams } from '../services/marketdata/streamRouting.js';
+import { createEmitter, emitData, emitStatus, replay } from './emitter.js';
 
 const THROTTLE_MS = 2_000;
 const SLOW_REFRESH_MS = 60_000;

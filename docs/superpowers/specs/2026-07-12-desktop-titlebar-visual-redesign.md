@@ -29,6 +29,7 @@
 高度 40px、`--bg-surface` 底、下缘 1px `--border`，均沿用。以下为 tab 区（`.desktop-tabstrip` 内）新规格：
 
 ### 单个 tab（`.desktop-tab`）
+
 - 布局：`inline-flex`，`gap: 7px`，横向内边距 14px，撑满 40px 高。
 - 弹性宽度：`flex: 0 1 190px`，`min-width` 约 90px；标题 `.desktop-tab-title` 溢出省略号。
 - 图标 `.desktop-tab-icon` 12px，`flex: 0 0 auto`。
@@ -39,17 +40,21 @@
 - 过渡：`color` / `background` / `opacity` 0.12s。
 
 ### 分隔线
+
 - 每个 `.desktop-tab` 右缘 `::after` 画 1px × 15px 竖线（`--border`，垂直居中，非贯穿全高）。
 - 隐藏规则：活动 tab 自身 `::after`、活动 tab 右邻 tab 的 `::after`、最后一个 tab 的 `::after` 均隐藏（活动项两侧与 tab/加号交界处不画线）。
 
 ### 关闭叉（`.desktop-tab-close`）
+
 - 15px 方形、`--radius` 圆角、图标 11px。
 - 默认 `opacity: 0`；tab 悬停或活动时淡出到 `.6`；叉自身悬停 `opacity 1` + 文字 `--text-primary` + 深一档背景（约 `#2a2a2a`）。
 
 ### 新建 tab（`.desktop-tab-new`）
+
 - 跟在最后一个 tab 右侧，`--text-muted`，悬停 `--text-primary` + 极淡背景，无边框。尺寸沿用现值。
 
 ### 溢出
+
 - `.desktop-tabstrip` 横向滚动 + 左右边缘 10px 渐隐遮罩（沿用现有 `mask-image`）。
 
 ## 涉及改动

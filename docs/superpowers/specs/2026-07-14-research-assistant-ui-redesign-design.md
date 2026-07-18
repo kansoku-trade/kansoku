@@ -82,13 +82,13 @@
 
 ## 代码改动
 
-| 文件 | 改动 |
-|---|---|
-| `apps/web/src/pages/research/ResearchAssistant.tsx` | 重排结构：删除顶部 RefreshPanel 挂载、底部历史区、待审阅区；历史改 header 图标 + 弹窗；加待审阅提示条；做时间线合并（chat rows + 最近 refresh 任务 + 提案，按时间戳排序后交给渲染） |
-| `apps/web/src/pages/research/ResearchRefreshPanel.tsx` | 面板壳、常驻 header、介绍文案删除；`TaskProgress` / `ResearchReport`（改分节折叠）/ 错误态改造为流内卡片组件导出 |
-| `apps/web/src/pages/research/useResearchRefresh.ts` | 不动（如时间线合并需要暴露字段，做最小调整） |
-| `apps/web/src/pages/cockpit/chat/ConversationTranscript.tsx` | 若需支持插入非聊天条目，加最小扩展点（如按时间戳混入自定义行）；不影响 cockpit 现有用法 |
-| `apps/web/src/styles.css` | 删除废弃的面板样式，新增流内卡片 / 提示条 / 历史弹窗样式 |
+| 文件                                                         | 改动                                                                                                                                                                                |
+| ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/web/src/pages/research/ResearchAssistant.tsx`          | 重排结构：删除顶部 RefreshPanel 挂载、底部历史区、待审阅区；历史改 header 图标 + 弹窗；加待审阅提示条；做时间线合并（chat rows + 最近 refresh 任务 + 提案，按时间戳排序后交给渲染） |
+| `apps/web/src/pages/research/ResearchRefreshPanel.tsx`       | 面板壳、常驻 header、介绍文案删除；`TaskProgress` / `ResearchReport`（改分节折叠）/ 错误态改造为流内卡片组件导出                                                                    |
+| `apps/web/src/pages/research/useResearchRefresh.ts`          | 不动（如时间线合并需要暴露字段，做最小调整）                                                                                                                                        |
+| `apps/web/src/pages/cockpit/chat/ConversationTranscript.tsx` | 若需支持插入非聊天条目，加最小扩展点（如按时间戳混入自定义行）；不影响 cockpit 现有用法                                                                                             |
+| `apps/web/src/styles.css`                                    | 删除废弃的面板样式，新增流内卡片 / 提示条 / 历史弹窗样式                                                                                                                            |
 
 后端接口、contract、core service 全部不动。
 

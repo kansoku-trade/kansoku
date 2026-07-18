@@ -1,9 +1,9 @@
-import type { PortfolioSummary } from "@kansoku/shared/types";
-import { fmt, signed, upDown } from "@web/format";
-import { Card, Dot, ErrorBox } from "@web/ui";
+import type { PortfolioSummary } from '@kansoku/shared/types';
+import { fmt, signed, upDown } from '@web/format';
+import { Card, Dot, ErrorBox } from '@web/ui';
 
 function signedMoney(value: number): string {
-  const sign = value < 0 ? "−" : "+";
+  const sign = value < 0 ? '−' : '+';
   return `${sign}$${Math.abs(value).toFixed(1)}`;
 }
 
@@ -40,7 +40,7 @@ export function PositionsCard({
           <div key={p.symbol} className="positions-row">
             <a className="sym" href={`/symbol/${encodeURIComponent(p.symbol)}`}>
               {watching.has(p.symbol) && <Dot title="今日跟踪中" />}
-              {p.symbol.replace(/\.US$/, "")}
+              {p.symbol.replace(/\.US$/, '')}
             </a>
             <span className="detail">
               {p.quantity} 股 @ {fmt(p.cost_price)}

@@ -1,5 +1,5 @@
-import type { AgentEvent, AgentMessage } from "@earendil-works/pi-agent-core";
-import { appendUsage } from "./usageStore.js";
+import type { AgentEvent, AgentMessage } from '@earendil-works/pi-agent-core';
+import { appendUsage } from './usageStore.js';
 
 export interface UsageSnapshot {
   input: number;
@@ -23,14 +23,14 @@ interface UsageTotal extends UsageSnapshot {
 
 export interface AiUsageLogContext {
   layer:
-    | "commentator"
-    | "analyst"
-    | "event-filter"
-    | "chat"
-    | "chat-suggest"
-    | "research-chat"
-    | "research-refresh"
-    | "assistant";
+    | 'commentator'
+    | 'analyst'
+    | 'event-filter'
+    | 'chat'
+    | 'chat-suggest'
+    | 'research-chat'
+    | 'research-refresh'
+    | 'assistant';
   symbol: string;
   model: { provider?: string; id?: string };
   origin?: string;
@@ -51,17 +51,17 @@ function emptyUsage(): UsageTotal {
 }
 
 export function isUsage(value: unknown): value is UsageSnapshot {
-  if (!value || typeof value !== "object") return false;
+  if (!value || typeof value !== 'object') return false;
   const usage = value as Record<string, unknown>;
   const cost = usage.cost as Record<string, unknown> | undefined;
   return (
-    typeof usage.input === "number" &&
-    typeof usage.output === "number" &&
-    typeof usage.cacheRead === "number" &&
-    typeof usage.cacheWrite === "number" &&
-    typeof usage.totalTokens === "number" &&
+    typeof usage.input === 'number' &&
+    typeof usage.output === 'number' &&
+    typeof usage.cacheRead === 'number' &&
+    typeof usage.cacheWrite === 'number' &&
+    typeof usage.totalTokens === 'number' &&
     Boolean(cost) &&
-    typeof cost?.total === "number"
+    typeof cost?.total === 'number'
   );
 }
 
@@ -90,14 +90,14 @@ function addUsage(total: UsageTotal, usage: UsageSnapshot): void {
 }
 
 function money(value: number): string {
-  if (!Number.isFinite(value)) return "$0";
-  if (value === 0) return "$0";
+  if (!Number.isFinite(value)) return '$0';
+  if (value === 0) return '$0';
   if (Math.abs(value) >= 0.01) return `$${value.toFixed(4)}`;
   return `$${value.toFixed(6)}`;
 }
 
 function usageText(usage: UsageSnapshot | UsageTotal): string {
-  const reasoning = usage.reasoning ? ` reasoning=${usage.reasoning}` : "";
+  const reasoning = usage.reasoning ? ` reasoning=${usage.reasoning}` : '';
   return [
     `tokens=${usage.totalTokens}`,
     `input=${usage.input}`,
@@ -108,22 +108,22 @@ function usageText(usage: UsageSnapshot | UsageTotal): string {
     `spend=${money(usage.cost.total)}`,
   ]
     .filter(Boolean)
-    .join(" ");
+    .join(' ');
 }
 
 function prefix(ctx: AiUsageLogContext): string {
-  const model = `${ctx.model.provider ?? "unknown"}/${ctx.model.id ?? "unknown"}`;
-  const origin = ctx.origin ? ` origin=${ctx.origin}` : "";
+  const model = `${ctx.model.provider ?? 'unknown'}/${ctx.model.id ?? 'unknown'}`;
+  const origin = ctx.origin ? ` origin=${ctx.origin}` : '';
   return `[ai-usage] layer=${ctx.layer} symbol=${ctx.symbol} model=${model}${origin}`;
 }
 
 export function attachAiUsageLogger(agent: unknown, ctx: AiUsageLogContext): void {
   const subscribe = (agent as { subscribe?: unknown })?.subscribe;
-  if (typeof subscribe !== "function") return;
+  if (typeof subscribe !== 'function') return;
 
   const total = emptyUsage();
   subscribe.call(agent, (event: AgentEvent) => {
-    if (event.type === "message_end") {
+    if (event.type === 'message_end') {
       const usage = getUsage(event.message);
       if (!usage || !hasBillableSignal(usage)) return;
       addUsage(total, usage);
@@ -131,7 +131,7 @@ export function attachAiUsageLogger(agent: unknown, ctx: AiUsageLogContext): voi
       return;
     }
 
-    if (event.type !== "agent_end") return;
+    if (event.type !== 'agent_end') return;
     if (total.calls === 0) {
       for (const message of event.messages) {
         const usage = getUsage(message);
@@ -147,13 +147,13 @@ export function attachAiUsageLogger(agent: unknown, ctx: AiUsageLogContext): voi
 }
 
 function persistTotal(total: UsageTotal, ctx: AiUsageLogContext): void {
-  if (process.env.VITEST || process.env.NODE_ENV === "test") return;
+  if (process.env.VITEST || process.env.NODE_ENV === 'test') return;
   if (total.calls === 0 && total.totalTokens === 0) return;
   void appendUsage({
     ts: new Date().toISOString(),
     layer: ctx.layer,
     symbol: ctx.symbol,
-    model: `${ctx.model.provider ?? "unknown"}/${ctx.model.id ?? "unknown"}`,
+    model: `${ctx.model.provider ?? 'unknown'}/${ctx.model.id ?? 'unknown'}`,
     ...(ctx.origin ? { origin: ctx.origin } : {}),
     calls: total.calls,
     total_tokens: total.totalTokens,
@@ -162,5 +162,7 @@ function persistTotal(total: UsageTotal, ctx: AiUsageLogContext): void {
     cache_read: total.cacheRead,
     cache_write: total.cacheWrite,
     cost_total: total.cost.total,
-  }).catch((err) => console.error("[ai-usage] persist failed:", err instanceof Error ? err.message : String(err)));
+  }).catch((err) =>
+    console.error('[ai-usage] persist failed:', err instanceof Error ? err.message : String(err)),
+  );
 }

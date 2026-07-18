@@ -14,10 +14,10 @@ import {
   type Time,
   type UTCTimestamp,
   type WhitespaceData,
-} from "lightweight-charts";
-import { formatMarketDateTime, formatMarketTick } from "@kansoku/shared/time";
-import type { Candle, ColoredPoint, LinePoint, SeriesMarker } from "@kansoku/shared/types";
-import { theme } from "../theme";
+} from 'lightweight-charts';
+import { formatMarketDateTime, formatMarketTick } from '@kansoku/shared/time';
+import type { Candle, ColoredPoint, LinePoint, SeriesMarker } from '@kansoku/shared/types';
+import { theme } from '../theme';
 
 export const asTime = (t: number) => t as UTCTimestamp;
 
@@ -28,7 +28,7 @@ export const toHistData = (pts: ColoredPoint[]): HistogramData[] =>
   pts.map((p) => ({ time: asTime(p.time), value: p.value, color: p.color }));
 
 const hexToRgba = (hex: string | undefined, alpha: number): string | undefined => {
-  if (!hex || !/^#[0-9a-f]{6}$/i.test(hex)) return hex;
+  if (!hex || !/^#[\da-f]{6}$/i.test(hex)) return hex;
   const n = Number.parseInt(hex.slice(1), 16);
   return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
 };
@@ -47,16 +47,28 @@ export function padLineData(pts: LinePoint[], timeline: number[]): (LineData | W
   });
 }
 
-export function padHistData(pts: ColoredPoint[], timeline: number[]): (HistogramData | WhitespaceData)[] {
+export function padHistData(
+  pts: ColoredPoint[],
+  timeline: number[],
+): (HistogramData | WhitespaceData)[] {
   const byTime = new Map(pts.map((p) => [p.time, p]));
   return timeline.map((t) => {
     const p = byTime.get(t);
-    return p === undefined ? { time: asTime(t) } : { time: asTime(t), value: p.value, color: p.color };
+    return p === undefined
+      ? { time: asTime(t) }
+      : { time: asTime(t), value: p.value, color: p.color };
   });
 }
 
 export const toMarkers = (ms: SeriesMarker[]): LwMarker<Time>[] =>
-  ms.map((m) => ({ time: asTime(m.time), position: m.position, color: m.color, shape: m.shape, text: m.text, id: m.id }));
+  ms.map((m) => ({
+    time: asTime(m.time),
+    position: m.position,
+    color: m.color,
+    shape: m.shape,
+    text: m.text,
+    id: m.id,
+  }));
 
 export function attachMarkers(
   series: ISeriesApi<SeriesType>,
@@ -71,30 +83,32 @@ export interface MarkerTooltipHandle {
 }
 
 export function markerTooltip(chart: IChartApi, host: HTMLElement): MarkerTooltipHandle {
-  const el = document.createElement("div");
-  el.className = "marker-tooltip";
+  const el = document.createElement('div');
+  el.className = 'marker-tooltip';
   host.appendChild(el);
   let byId = new Map<string, string>();
 
-  const onMove = (param: Parameters<Parameters<IChartApi["subscribeCrosshairMove"]>[0]>[0]) => {
-    const id = typeof param.hoveredObjectId === "string" ? param.hoveredObjectId : undefined;
+  const onMove = (param: Parameters<Parameters<IChartApi['subscribeCrosshairMove']>[0]>[0]) => {
+    const id = typeof param.hoveredObjectId === 'string' ? param.hoveredObjectId : undefined;
     const tip = id ? byId.get(id) : undefined;
     if (tip && param.point) {
       el.textContent = tip;
-      el.style.display = "block";
+      el.style.display = 'block';
       const x = Math.max(4, Math.min(param.point.x + 14, host.clientWidth - el.offsetWidth - 8));
       const y = Math.max(4, Math.min(param.point.y + 14, host.clientHeight - el.offsetHeight - 8));
       el.style.left = `${x}px`;
       el.style.top = `${y}px`;
     } else {
-      el.style.display = "none";
+      el.style.display = 'none';
     }
   };
   chart.subscribeCrosshairMove(onMove);
 
   return {
     setMarkers(ms: SeriesMarker[]) {
-      byId = new Map(ms.filter((m) => m.id && m.tooltip).map((m) => [m.id as string, m.tooltip as string]));
+      byId = new Map(
+        ms.filter((m) => m.id && m.tooltip).map((m) => [m.id as string, m.tooltip as string]),
+      );
     },
     destroy() {
       chart.unsubscribeCrosshairMove(onMove);
@@ -103,10 +117,11 @@ export function markerTooltip(chart: IChartApi, host: HTMLElement): MarkerToolti
   };
 }
 
-const marketTimeFormatter = (time: Time): string => (typeof time === "number" ? formatMarketDateTime(time) : String(time));
+const marketTimeFormatter = (time: Time): string =>
+  typeof time === 'number' ? formatMarketDateTime(time) : String(time);
 
 const marketTickMarkFormatter = (time: Time, tickMarkType: TickMarkType): string | null =>
-  typeof time === "number" ? formatMarketTick(time, tickMarkType) : null;
+  typeof time === 'number' ? formatMarketTick(time, tickMarkType) : null;
 
 export function baseChart(el: HTMLElement, timeVisible: boolean, marketTime = false): IChartApi {
   return createChart(el, {
@@ -153,7 +168,7 @@ export function addPriceLine(series: AnySeries, spec: PriceLineSpec) {
     lineWidth: (spec.lineWidth ?? 1) as never,
     lineStyle: (spec.lineStyle ?? 0) as never,
     axisLabelVisible: spec.axisLabelVisible ?? true,
-    title: spec.title ?? "",
+    title: spec.title ?? '',
   });
 }
 
@@ -203,7 +218,7 @@ export function centerLastBar(chart: IChartApi, candles: Candle[], n = 90): void
 
 export function showLastBars(chart: IChartApi, candles: Candle[], n = 90): void {
   if (!candles.length) return;
-  const lastTs = candles[candles.length - 1].time;
+  const lastTs = candles.at(-1)!.time;
   const startTs = candles[Math.max(0, candles.length - n)].time;
   chart.timeScale().setVisibleRange({ from: asTime(startTs), to: asTime(lastTs) });
 }

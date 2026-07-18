@@ -1,32 +1,32 @@
-import type { RawBar } from "@kansoku/shared/types";
+import type { RawBar } from '@kansoku/shared/types';
 import type {
   EpisodeAction,
   EpisodeActionRecord,
   EpisodeClosedTrade,
   EpisodeTradeAction,
   EpisodeTradeResult,
-} from "../schema/episode.js";
-import type { Question } from "../schema/question.js";
-import type { Submission } from "../schema/submission.js";
-import type { EpisodeTradeReason } from "../schema/tradeReason.js";
+} from '../schema/episode.js';
+import type { Question } from '../schema/question.js';
+import type { Submission } from '../schema/submission.js';
+import type { EpisodeTradeReason } from '../schema/tradeReason.js';
 
-export type EpisodePhase = "flat" | "pending" | "open" | "terminal";
+export type EpisodePhase = 'flat' | 'pending' | 'open' | 'terminal';
 export type EpisodeEvent =
-  | "observed"
-  | "abstained"
-  | "waiting_fill"
-  | "filled"
-  | "holding"
-  | "cancelled"
-  | "no_fill"
-  | "stop_hit"
-  | "target_hit"
-  | "manual_exit"
-  | "horizon_exit";
+  | 'observed'
+  | 'abstained'
+  | 'waiting_fill'
+  | 'filled'
+  | 'holding'
+  | 'cancelled'
+  | 'no_fill'
+  | 'stop_hit'
+  | 'target_hit'
+  | 'manual_exit'
+  | 'horizon_exit';
 
 export interface PendingOrderState {
   tradeId: number;
-  direction: "long" | "short";
+  direction: 'long' | 'short';
   decisionBar: number;
   decisionTime: string;
   entry: number;
@@ -39,7 +39,7 @@ export interface PendingOrderState {
 
 export interface PositionState {
   tradeId: number;
-  direction: "long" | "short";
+  direction: 'long' | 'short';
   decisionBar: number;
   decisionTime: string;
   entryPrice: number;
@@ -83,11 +83,11 @@ export interface EpisodeAdvanceResult {
 }
 
 function numberOf(value: string | number): number {
-  return typeof value === "number" ? value : Number(value);
+  return typeof value === 'number' ? value : Number(value);
 }
 
 function finite(value: unknown, label: string): number {
-  const parsed = typeof value === "number" ? value : Number(value);
+  const parsed = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(parsed)) throw new Error(`${label} must be a finite number`);
   return parsed;
 }
@@ -165,8 +165,8 @@ function terminalResult(state: EpisodeState): EpisodeTradeResult {
   const losses = state.trades.filter((trade) => trade.netR < 0).length;
 
   return {
-    terminationReason: state.trades.length === 0 ? "no_trade" : "horizon",
-    direction: last?.direction ?? "neutral",
+    terminationReason: state.trades.length === 0 ? 'no_trade' : 'horizon',
+    direction: last?.direction ?? 'neutral',
     entry: first?.entry ?? null,
     exit: last?.exit ?? null,
     initialRisk: first?.initialRisk ?? null,
@@ -198,7 +198,7 @@ function finishAtHorizon(
   const result = terminalResult(state);
   const terminalState: EpisodeState = {
     ...state,
-    phase: "terminal",
+    phase: 'terminal',
     order: null,
     position: null,
     result,
@@ -213,15 +213,16 @@ function validateDirectionalSubmission(
   decisionTime: string,
   entryReason: EpisodeTradeReason,
 ): PendingOrderState {
-  if (submission.direction === "neutral") throw new Error("neutral submission has no order");
+  if (submission.direction === 'neutral') throw new Error('neutral submission has no order');
   const plan = submission.entry_plan;
-  if (!plan || plan.target1 == null) throw new Error("directional submission requires entry, stop, and target1");
+  if (!plan || plan.target1 == null)
+    throw new Error('directional submission requires entry, stop, and target1');
 
-  const entry = finite(plan.entry, "entry");
-  const stop = finite(plan.stop, "stop");
-  const target = finite(plan.target1, "target1");
-  const wrongStop = submission.direction === "long" ? stop >= entry : stop <= entry;
-  const wrongTarget = submission.direction === "long" ? target <= entry : target >= entry;
+  const entry = finite(plan.entry, 'entry');
+  const stop = finite(plan.stop, 'stop');
+  const target = finite(plan.target1, 'target1');
+  const wrongStop = submission.direction === 'long' ? stop >= entry : stop <= entry;
+  const wrongTarget = submission.direction === 'long' ? target <= entry : target >= entry;
   if (wrongStop) throw new Error(`invalid ${submission.direction} stop`);
   if (wrongTarget) throw new Error(`invalid ${submission.direction} target`);
 
@@ -243,14 +244,14 @@ function submissionReason(submission: Submission): EpisodeTradeReason {
   if (submission.decision_reason) return submission.decision_reason;
   const summary = submission.entry_plan?.rationale?.trim() || submission.comment.trim();
   return {
-    category: submission.direction === "neutral" ? "no_setup" : "other",
-    summary: summary || "未提供明确的交易理由。",
+    category: submission.direction === 'neutral' ? 'no_setup' : 'other',
+    summary: summary || '未提供明确的交易理由。',
   };
 }
 
 export function createEpisodeState(): EpisodeState {
   return {
-    phase: "flat",
+    phase: 'flat',
     cursor: -1,
     steps: 0,
     decisionBar: null,
@@ -271,9 +272,10 @@ export function submitEpisode(
   submission: Submission,
   _options: EpisodeEngineOptions = {},
 ): EpisodeAdvanceResult {
-  if (state.phase === "terminal") throw new Error("episode already terminated");
-  if (state.phase !== "flat") throw new Error("a new prediction is only valid while flat");
-  if (remainingEpisodeBars(state, question) === 0) throw new Error("episode has no unrevealed replay bar");
+  if (state.phase === 'terminal') throw new Error('episode already terminated');
+  if (state.phase !== 'flat') throw new Error('a new prediction is only valid while flat');
+  if (remainingEpisodeBars(state, question) === 0)
+    throw new Error('episode has no unrevealed replay bar');
 
   const decisionBar = state.cursor + 1;
   const decisionTime = currentAsOf(question, state.cursor);
@@ -283,21 +285,27 @@ export function submitEpisode(
     state,
     question,
     {
-      type: "submit",
+      type: 'submit',
       direction: submission.direction,
-      ...(plan ? { entry: plan.entry, stop: plan.stop, ...(plan.target1 == null ? {} : { target: plan.target1 }) } : {}),
+      ...(plan
+        ? {
+            entry: plan.entry,
+            stop: plan.stop,
+            ...(plan.target1 == null ? {} : { target: plan.target1 }),
+          }
+        : {}),
       reason,
     },
     replayBar(question, state.cursor + 1),
-    submission.direction === "neutral" ? null : state.nextTradeId,
+    submission.direction === 'neutral' ? null : state.nextTradeId,
   );
 
-  if (submission.direction === "neutral") {
+  if (submission.direction === 'neutral') {
     return {
       state: recorded,
       asOf: decisionTime,
       bar: null,
-      event: "abstained",
+      event: 'abstained',
       terminal: false,
       result: null,
     };
@@ -312,7 +320,7 @@ export function submitEpisode(
   );
   const submitted: EpisodeState = {
     ...recorded,
-    phase: "pending",
+    phase: 'pending',
     decisionBar: state.decisionBar ?? decisionBar,
     decisionTime: state.decisionTime ?? decisionTime,
     initialSubmission: state.initialSubmission ?? submission,
@@ -324,7 +332,7 @@ export function submitEpisode(
     state: submitted,
     asOf: decisionTime,
     bar: null,
-    event: "waiting_fill",
+    event: 'waiting_fill',
     terminal: false,
     result: null,
   };
@@ -337,30 +345,34 @@ function visibleReferencePrice(question: Question, state: EpisodeState): number 
   if (Number.isFinite(quote)) return quote;
   const day = question.fixtures.kline.day ?? [];
   const last = day.at(-1);
-  if (!last) throw new Error("cannot resolve current visible price");
+  if (!last) throw new Error('cannot resolve current visible price');
   return numberOf(last.close);
 }
 
 function applyAmendment(
   position: PositionState,
-  action: Extract<EpisodeTradeAction, { type: "amend" }>,
+  action: Extract<EpisodeTradeAction, { type: 'amend' }>,
   reference: number,
 ): PositionState {
-  if (action.stop == null && action.target == null) throw new Error("amend requires stop or target");
-  const stop = action.stop == null ? position.stop : finite(action.stop, "stop");
-  const target = action.target == null ? position.target : finite(action.target, "target");
-  const wrongStop = position.direction === "long" ? stop >= reference : stop <= reference;
-  const wrongTarget = position.direction === "long" ? target <= reference : target >= reference;
+  if (action.stop == null && action.target == null)
+    throw new Error('amend requires stop or target');
+  const stop = action.stop == null ? position.stop : finite(action.stop, 'stop');
+  const target = action.target == null ? position.target : finite(action.target, 'target');
+  const wrongStop = position.direction === 'long' ? stop >= reference : stop <= reference;
+  const wrongTarget = position.direction === 'long' ? target <= reference : target >= reference;
   if (wrongStop) throw new Error(`amended ${position.direction} stop crosses the visible price`);
-  if (wrongTarget) throw new Error(`amended ${position.direction} target crosses the visible price`);
+  if (wrongTarget)
+    throw new Error(`amended ${position.direction} target crosses the visible price`);
   return { ...position, stop, target };
 }
 
 function updateExcursions(position: PositionState, bar: RawBar): PositionState {
   const high = numberOf(bar.high);
   const low = numberOf(bar.low);
-  const favorable = position.direction === "long" ? high - position.entryPrice : position.entryPrice - low;
-  const adverse = position.direction === "long" ? position.entryPrice - low : high - position.entryPrice;
+  const favorable =
+    position.direction === 'long' ? high - position.entryPrice : position.entryPrice - low;
+  const adverse =
+    position.direction === 'long' ? position.entryPrice - low : high - position.entryPrice;
   return {
     ...position,
     holdingBars: position.holdingBars + 1,
@@ -370,30 +382,34 @@ function updateExcursions(position: PositionState, bar: RawBar): PositionState {
 }
 
 function stopHit(position: PositionState, bar: RawBar): boolean {
-  return position.direction === "long" ? numberOf(bar.low) <= position.stop : numberOf(bar.high) >= position.stop;
+  return position.direction === 'long'
+    ? numberOf(bar.low) <= position.stop
+    : numberOf(bar.high) >= position.stop;
 }
 
 function targetHit(position: PositionState, bar: RawBar): boolean {
-  return position.direction === "long" ? numberOf(bar.high) >= position.target : numberOf(bar.low) <= position.target;
+  return position.direction === 'long'
+    ? numberOf(bar.high) >= position.target
+    : numberOf(bar.low) <= position.target;
 }
 
 function stopExitPrice(position: PositionState, bar: RawBar, allowOpenGap = true): number {
   const open = numberOf(bar.open);
-  if (allowOpenGap && position.direction === "long" && open < position.stop) return open;
-  if (allowOpenGap && position.direction === "short" && open > position.stop) return open;
+  if (allowOpenGap && position.direction === 'long' && open < position.stop) return open;
+  if (allowOpenGap && position.direction === 'short' && open > position.stop) return open;
   return position.stop;
 }
 
 function targetExitPrice(position: PositionState, bar: RawBar, allowOpenGap = true): number {
   const open = numberOf(bar.open);
-  if (allowOpenGap && position.direction === "long" && open > position.target) return open;
-  if (allowOpenGap && position.direction === "short" && open < position.target) return open;
+  if (allowOpenGap && position.direction === 'long' && open > position.target) return open;
+  if (allowOpenGap && position.direction === 'short' && open < position.target) return open;
   return position.target;
 }
 
 interface EntryFill {
   price: number;
-  timing: "open" | "intrabar";
+  timing: 'open' | 'intrabar';
 }
 
 function entryFill(order: PendingOrderState, reference: number, bar: RawBar): EntryFill | null {
@@ -401,49 +417,48 @@ function entryFill(order: PendingOrderState, reference: number, bar: RawBar): En
   const high = numberOf(bar.high);
   const low = numberOf(bar.low);
 
-  if (order.direction === "long") {
+  if (order.direction === 'long') {
     const isStopEntry = order.entry >= reference;
     if (isStopEntry) {
-      if (open >= order.entry) return { price: open, timing: "open" };
-      return high >= order.entry ? { price: order.entry, timing: "intrabar" } : null;
+      if (open >= order.entry) return { price: open, timing: 'open' };
+      return high >= order.entry ? { price: order.entry, timing: 'intrabar' } : null;
     }
-    if (open <= order.entry) return { price: open, timing: "open" };
-    return low <= order.entry ? { price: order.entry, timing: "intrabar" } : null;
+    if (open <= order.entry) return { price: open, timing: 'open' };
+    return low <= order.entry ? { price: order.entry, timing: 'intrabar' } : null;
   }
 
   const isStopEntry = order.entry <= reference;
   if (isStopEntry) {
-    if (open <= order.entry) return { price: open, timing: "open" };
-    return low <= order.entry ? { price: order.entry, timing: "intrabar" } : null;
+    if (open <= order.entry) return { price: open, timing: 'open' };
+    return low <= order.entry ? { price: order.entry, timing: 'intrabar' } : null;
   }
-  if (open >= order.entry) return { price: open, timing: "open" };
-  return high >= order.entry ? { price: order.entry, timing: "intrabar" } : null;
+  if (open >= order.entry) return { price: open, timing: 'open' };
+  return high >= order.entry ? { price: order.entry, timing: 'intrabar' } : null;
 }
 
-function bracketCrossedAtFill(
-  position: PositionState,
-): EpisodeClosedTrade["exitReason"] | null {
-  if (position.direction === "long") {
-    if (position.entryPrice <= position.stop) return "stop";
-    if (position.entryPrice >= position.target) return "target";
+function bracketCrossedAtFill(position: PositionState): EpisodeClosedTrade['exitReason'] | null {
+  if (position.direction === 'long') {
+    if (position.entryPrice <= position.stop) return 'stop';
+    if (position.entryPrice >= position.target) return 'target';
     return null;
   }
-  if (position.entryPrice >= position.stop) return "stop";
-  if (position.entryPrice <= position.target) return "target";
+  if (position.entryPrice >= position.stop) return 'stop';
+  if (position.entryPrice <= position.target) return 'target';
   return null;
 }
 
 function closePosition(
   state: EpisodeState,
-  exitReason: EpisodeClosedTrade["exitReason"],
+  exitReason: EpisodeClosedTrade['exitReason'],
   exit: { time: string; price: number },
   options: EpisodeEngineOptions,
 ): EpisodeState {
   const position = state.position;
-  if (!position) throw new Error("cannot close an empty position");
-  const grossR = position.direction === "long"
-    ? (exit.price - position.entryPrice) / position.initialRisk
-    : (position.entryPrice - exit.price) / position.initialRisk;
+  if (!position) throw new Error('cannot close an empty position');
+  const grossR =
+    position.direction === 'long'
+      ? (exit.price - position.entryPrice) / position.initialRisk
+      : (position.entryPrice - exit.price) / position.initialRisk;
   const costRate = (options.costBps ?? 0) / 10_000;
   const frictionR = (costRate * (position.entryPrice + exit.price)) / position.initialRisk;
   const trade: EpisodeClosedTrade = {
@@ -468,7 +483,7 @@ function closePosition(
   };
   return {
     ...state,
-    phase: "flat",
+    phase: 'flat',
     position: null,
     trades: [...state.trades, trade],
   };
@@ -477,19 +492,19 @@ function closePosition(
 function advanceFlat(
   state: EpisodeState,
   question: Question,
-  action: Extract<EpisodeAction, { type: "hold" | "observe" }>,
+  action: Extract<EpisodeAction, { type: 'hold' | 'observe' }>,
 ): EpisodeAdvanceResult {
   const nextCursor = state.cursor + 1;
   const bar = replayBar(question, nextCursor);
-  if (!bar) throw new Error("episode has no next replay bar");
+  if (!bar) throw new Error('episode has no next replay bar');
   const working: EpisodeState = {
     ...withAction(state, question, action, bar),
     cursor: nextCursor,
   };
   if (remainingEpisodeBars(working, question) === 0) {
-    return finishAtHorizon(working, "horizon_exit", bar.time, bar);
+    return finishAtHorizon(working, 'horizon_exit', bar.time, bar);
   }
-  return { state: working, asOf: bar.time, bar, event: "observed", terminal: false, result: null };
+  return { state: working, asOf: bar.time, bar, event: 'observed', terminal: false, result: null };
 }
 
 export function observeEpisode(
@@ -497,8 +512,8 @@ export function observeEpisode(
   question: Question,
   _options: EpisodeEngineOptions = {},
 ): EpisodeAdvanceResult {
-  if (state.phase !== "flat") throw new Error("observe_next_bar is only valid while flat");
-  return advanceFlat(state, question, { type: "observe" });
+  if (state.phase !== 'flat') throw new Error('observe_next_bar is only valid while flat');
+  return advanceFlat(state, question, { type: 'observe' });
 }
 
 export function advanceEpisode(
@@ -507,27 +522,32 @@ export function advanceEpisode(
   action: EpisodeTradeAction,
   options: EpisodeEngineOptions = {},
 ): EpisodeAdvanceResult {
-  if (state.phase === "terminal") throw new Error("episode already terminated");
-  if (state.phase === "flat") {
-    if (action.type !== "hold") throw new Error(`action ${action.type} is invalid while flat`);
+  if (state.phase === 'terminal') throw new Error('episode already terminated');
+  if (state.phase === 'flat') {
+    if (action.type !== 'hold') throw new Error(`action ${action.type} is invalid while flat`);
     return advanceFlat(state, question, action);
   }
-  if (state.phase === "pending" && action.type !== "hold" && action.type !== "cancel") {
+  if (state.phase === 'pending' && action.type !== 'hold' && action.type !== 'cancel') {
     throw new Error(`action ${action.type} is invalid while the order is pending`);
   }
-  if (state.phase === "open" && action.type !== "hold" && action.type !== "amend" && action.type !== "exit_next_open") {
+  if (
+    state.phase === 'open' &&
+    action.type !== 'hold' &&
+    action.type !== 'amend' &&
+    action.type !== 'exit_next_open'
+  ) {
     throw new Error(`action ${action.type} is invalid while the position is open`);
   }
 
   const activeTradeId = state.order?.tradeId ?? state.position?.tradeId ?? null;
-  if (action.type === "cancel") {
+  if (action.type === 'cancel') {
     const cancelled = withAction(state, question, action, null, activeTradeId);
-    const nextState: EpisodeState = { ...cancelled, phase: "flat", order: null };
+    const nextState: EpisodeState = { ...cancelled, phase: 'flat', order: null };
     return {
       state: nextState,
       asOf: currentAsOf(question, state.cursor),
       bar: null,
-      event: "cancelled",
+      event: 'cancelled',
       terminal: false,
       result: null,
     };
@@ -535,43 +555,50 @@ export function advanceEpisode(
 
   const nextCursor = state.cursor + 1;
   const bar = replayBar(question, nextCursor);
-  if (!bar) throw new Error("episode has no next replay bar");
+  if (!bar) throw new Error('episode has no next replay bar');
   let working: EpisodeState = {
     ...withAction(state, question, action, bar, activeTradeId),
     cursor: nextCursor,
   };
 
-  if (working.phase === "open" && working.position && action.type === "amend") {
+  if (working.phase === 'open' && working.position && action.type === 'amend') {
     working = {
       ...working,
       position: applyAmendment(working.position, action, visibleReferencePrice(question, state)),
     };
   }
 
-  if (working.phase === "open" && working.position && action.type === "exit_next_open") {
+  if (working.phase === 'open' && working.position && action.type === 'exit_next_open') {
     working = closePosition(
       working,
-      "manual",
+      'manual',
       { time: bar.time, price: numberOf(bar.open) },
       options,
     );
     if (remainingEpisodeBars(working, question) === 0) {
-      return finishAtHorizon(working, "manual_exit", bar.time, bar);
+      return finishAtHorizon(working, 'manual_exit', bar.time, bar);
     }
-    return { state: working, asOf: bar.time, bar, event: "manual_exit", terminal: false, result: null };
+    return {
+      state: working,
+      asOf: bar.time,
+      bar,
+      event: 'manual_exit',
+      terminal: false,
+      result: null,
+    };
   }
 
-  let fillTiming: EntryFill["timing"] | null = null;
-  if (working.phase === "pending" && working.order) {
+  let fillTiming: EntryFill['timing'] | null = null;
+  if (working.phase === 'pending' && working.order) {
     const order = { ...working.order, waitedBars: working.order.waitedBars + 1 };
     const fill = entryFill(order, visibleReferencePrice(question, state), bar);
     if (fill !== null) {
       const fillPrice = fill.price;
       const initialRisk = Math.abs(fillPrice - order.initialStop);
-      if (initialRisk === 0) throw new Error("filled entry equals the initial stop");
+      if (initialRisk === 0) throw new Error('filled entry equals the initial stop');
       working = {
         ...working,
-        phase: "open",
+        phase: 'open',
         order: null,
         position: {
           tradeId: order.tradeId,
@@ -593,23 +620,38 @@ export function advanceEpisode(
       fillTiming = fill.timing;
     } else {
       working = { ...working, order };
-      const expiry = question.replay.entryExpiryBars ?? (question.replay.basePeriod === "1h" ? 21 : 3);
+      const expiry =
+        question.replay.entryExpiryBars ?? (question.replay.basePeriod === '1h' ? 21 : 3);
       if (order.waitedBars >= expiry) {
-        working = { ...working, phase: "flat", order: null };
+        working = { ...working, phase: 'flat', order: null };
         if (remainingEpisodeBars(working, question) === 0) {
-          return finishAtHorizon(working, "no_fill", bar.time, bar);
+          return finishAtHorizon(working, 'no_fill', bar.time, bar);
         }
-        return { state: working, asOf: bar.time, bar, event: "no_fill", terminal: false, result: null };
+        return {
+          state: working,
+          asOf: bar.time,
+          bar,
+          event: 'no_fill',
+          terminal: false,
+          result: null,
+        };
       }
       if (remainingEpisodeBars(working, question) === 0) {
-        working = { ...working, phase: "flat", order: null };
-        return finishAtHorizon(working, "no_fill", bar.time, bar);
+        working = { ...working, phase: 'flat', order: null };
+        return finishAtHorizon(working, 'no_fill', bar.time, bar);
       }
-      return { state: working, asOf: bar.time, bar, event: "waiting_fill", terminal: false, result: null };
+      return {
+        state: working,
+        asOf: bar.time,
+        bar,
+        event: 'waiting_fill',
+        terminal: false,
+        result: null,
+      };
     }
   }
 
-  if (!working.position) throw new Error("open episode is missing its position");
+  if (!working.position) throw new Error('open episode is missing its position');
   if (fillTiming !== null) {
     const immediateExit = bracketCrossedAtFill(working.position);
     if (immediateExit) {
@@ -619,7 +661,7 @@ export function advanceEpisode(
         { time: bar.time, price: working.position.entryPrice },
         options,
       );
-      const event = immediateExit === "stop" ? "stop_hit" : "target_hit";
+      const event = immediateExit === 'stop' ? 'stop_hit' : 'target_hit';
       if (remainingEpisodeBars(working, question) === 0) {
         return finishAtHorizon(working, event, bar.time, bar);
       }
@@ -628,48 +670,62 @@ export function advanceEpisode(
   }
   const position = updateExcursions(working.position, bar);
   working = { ...working, position };
-  const allowOpenGap = fillTiming !== "intrabar";
+  const allowOpenGap = fillTiming !== 'intrabar';
 
   if (stopHit(position, bar)) {
     working = closePosition(
       working,
-      "stop",
+      'stop',
       { time: bar.time, price: stopExitPrice(position, bar, allowOpenGap) },
       options,
     );
     if (remainingEpisodeBars(working, question) === 0) {
-      return finishAtHorizon(working, "stop_hit", bar.time, bar);
+      return finishAtHorizon(working, 'stop_hit', bar.time, bar);
     }
-    return { state: working, asOf: bar.time, bar, event: "stop_hit", terminal: false, result: null };
+    return {
+      state: working,
+      asOf: bar.time,
+      bar,
+      event: 'stop_hit',
+      terminal: false,
+      result: null,
+    };
   }
   if (targetHit(position, bar)) {
     working = closePosition(
       working,
-      "target",
+      'target',
       { time: bar.time, price: targetExitPrice(position, bar, allowOpenGap) },
       options,
     );
     if (remainingEpisodeBars(working, question) === 0) {
-      return finishAtHorizon(working, "target_hit", bar.time, bar);
+      return finishAtHorizon(working, 'target_hit', bar.time, bar);
     }
-    return { state: working, asOf: bar.time, bar, event: "target_hit", terminal: false, result: null };
+    return {
+      state: working,
+      asOf: bar.time,
+      bar,
+      event: 'target_hit',
+      terminal: false,
+      result: null,
+    };
   }
 
   if (remainingEpisodeBars(working, question) === 0) {
     working = closePosition(
       working,
-      "horizon",
+      'horizon',
       { time: bar.time, price: numberOf(bar.close) },
       options,
     );
-    return finishAtHorizon(working, "horizon_exit", bar.time, bar);
+    return finishAtHorizon(working, 'horizon_exit', bar.time, bar);
   }
 
   return {
     state: working,
     asOf: bar.time,
     bar,
-    event: fillTiming !== null ? "filled" : "holding",
+    event: fillTiming !== null ? 'filled' : 'holding',
     terminal: false,
     result: null,
   };

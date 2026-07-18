@@ -1,16 +1,16 @@
-import type { AnnotationKind, AnnotationPoint } from "./types.js";
+import type { AnnotationKind, AnnotationPoint } from './types.js';
 
 export const FIB_RATIOS = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1] as const;
 
 export const ANNOTATION_PALETTE: readonly string[] = [
-  "#3B82F6",
-  "#EF4444",
-  "#22C55E",
-  "#F59E0B",
-  "#A855F7",
-  "#14B8A6",
-  "#EC4899",
-  "#64748B",
+  '#3B82F6',
+  '#EF4444',
+  '#22C55E',
+  '#F59E0B',
+  '#A855F7',
+  '#14B8A6',
+  '#EC4899',
+  '#64748B',
 ];
 
 export interface FibLevel {
@@ -85,7 +85,7 @@ export function distToSegment(p: Pt, a: Pt, b: Pt): number {
   return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy));
 }
 
-export type HitRegion = { type: "point"; index: number } | { type: "body" };
+export type HitRegion = { type: 'point'; index: number } | { type: 'body' };
 
 export interface ShapeGeom {
   kind: AnnotationKind;
@@ -95,7 +95,12 @@ export interface ShapeGeom {
 export function hitTest(
   shape: ShapeGeom,
   p: Pt,
-  opts?: { tolerance?: number; handleRadius?: number; fibXRange?: [number, number]; width?: number },
+  opts?: {
+    tolerance?: number;
+    handleRadius?: number;
+    fibXRange?: [number, number];
+    width?: number;
+  },
 ): HitRegion | null {
   const tolerance = opts?.tolerance ?? 6;
   const handleRadius = opts?.handleRadius ?? 8;
@@ -103,21 +108,22 @@ export function hitTest(
 
   for (let i = 0; i < pixels.length; i++) {
     if (Math.hypot(p.x - pixels[i].x, p.y - pixels[i].y) <= handleRadius) {
-      return { type: "point", index: i };
+      return { type: 'point', index: i };
     }
   }
 
-  if (kind === "trendline") {
-    if (pixels.length >= 2 && distToSegment(p, pixels[0], pixels[1]) <= tolerance) return { type: "body" };
+  if (kind === 'trendline') {
+    if (pixels.length >= 2 && distToSegment(p, pixels[0], pixels[1]) <= tolerance)
+      return { type: 'body' };
     return null;
   }
 
-  if (kind === "hline") {
-    if (Math.abs(p.y - pixels[0].y) <= tolerance) return { type: "body" };
+  if (kind === 'hline') {
+    if (Math.abs(p.y - pixels[0].y) <= tolerance) return { type: 'body' };
     return null;
   }
 
-  if (kind === "rect") {
+  if (kind === 'rect') {
     const [a, b] = pixels;
     const corners: Pt[] = [
       { x: a.x, y: a.y },
@@ -128,25 +134,25 @@ export function hitTest(
     for (let i = 0; i < corners.length; i++) {
       const c1 = corners[i];
       const c2 = corners[(i + 1) % corners.length];
-      if (distToSegment(p, c1, c2) <= tolerance) return { type: "body" };
+      if (distToSegment(p, c1, c2) <= tolerance) return { type: 'body' };
     }
     return null;
   }
 
-  if (kind === "polyline") {
+  if (kind === 'polyline') {
     for (let i = 0; i < pixels.length - 1; i++) {
-      if (distToSegment(p, pixels[i], pixels[i + 1]) <= tolerance) return { type: "body" };
+      if (distToSegment(p, pixels[i], pixels[i + 1]) <= tolerance) return { type: 'body' };
     }
     return null;
   }
 
-  if (kind === "fib") {
+  if (kind === 'fib') {
     const [a, b] = pixels;
     const [xMin, xMax] = opts?.fibXRange ?? [Math.min(a.x, b.x), Math.max(a.x, b.x)];
     if (p.x < xMin || p.x > xMax) return null;
     for (const ratio of FIB_RATIOS) {
       const levelY = a.y + ratio * (b.y - a.y);
-      if (Math.abs(p.y - levelY) <= tolerance) return { type: "body" };
+      if (Math.abs(p.y - levelY) <= tolerance) return { type: 'body' };
     }
     return null;
   }
@@ -161,10 +167,16 @@ export interface MeasureStats {
   dSeconds: number;
 }
 
-export function measureStats(p1: AnnotationPoint, p2: AnnotationPoint, barTimes: number[]): MeasureStats {
+export function measureStats(
+  p1: AnnotationPoint,
+  p2: AnnotationPoint,
+  barTimes: number[],
+): MeasureStats {
   const dPrice = p2.price - p1.price;
   const dPct = p1.price === 0 ? 0 : (dPrice / p1.price) * 100;
-  const bars = Math.round(Math.abs(timeToLogical(barTimes, p2.time) - timeToLogical(barTimes, p1.time)));
+  const bars = Math.round(
+    Math.abs(timeToLogical(barTimes, p2.time) - timeToLogical(barTimes, p1.time)),
+  );
   const dSeconds = Math.abs(p2.time - p1.time);
   return { dPrice, dPct, bars, dSeconds };
 }

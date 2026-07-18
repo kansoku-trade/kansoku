@@ -17,6 +17,7 @@ allowBuilds:
   electron-sparkle-updater: true
   esbuild: true
   protobufjs: false
+  unrs-resolver: false
 minimumReleaseAgeExclude:
   - '@earendil-works/pi-ai@0.80.6'
   - '@earendil-works/pi-agent-core@0.80.6'

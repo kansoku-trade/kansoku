@@ -1,20 +1,20 @@
-import type { AgentTool } from "@earendil-works/pi-agent-core";
-import { type Static, Type } from "typebox";
-import type { ChartDoc, CockpitComment, IntradayPrediction } from "@kansoku/shared/types";
-import { easternDate } from "../services/session.js";
-import { loadChart as defaultLoadChart } from "../services/store.js";
-import { type AiAgentFactory, createAgentSession } from "./agentSession.js";
-import { listComments as defaultListComments } from "./comments.js";
-import type { AiModel } from "./models.js";
-import { aiConfig } from "./models.js";
-import { CHAT_SUGGESTIONS_PROMPT } from "./prompts.js";
+import type { AgentTool } from '@earendil-works/pi-agent-core';
+import { type Static, Type } from 'typebox';
+import type { ChartDoc, CockpitComment, IntradayPrediction } from '@kansoku/shared/types';
+import { easternDate } from '../services/session.js';
+import { loadChart as defaultLoadChart } from '../services/store.js';
+import { type AiAgentFactory, createAgentSession } from './agentSession.js';
+import { listComments as defaultListComments } from './comments.js';
+import type { AiModel } from './models.js';
+import { aiConfig } from './models.js';
+import { CHAT_SUGGESTIONS_PROMPT } from './prompts.js';
 
 const TIMEOUT_MS = 30_000;
 const MAX_SUGGESTIONS = 3;
 const MAX_LENGTH = 40;
 
 const submitSchema = Type.Object({
-  questions: Type.Array(Type.String(), { description: "3 条追问问题，每条不超过 20 字" }),
+  questions: Type.Array(Type.String(), { description: '3 条追问问题，每条不超过 20 字' }),
 });
 
 type SubmitParams = Static<typeof submitSchema>;
@@ -39,7 +39,7 @@ function normalize(questions: unknown): string[] {
   if (!Array.isArray(questions)) return [];
   const out: string[] = [];
   for (const raw of questions) {
-    if (typeof raw !== "string") continue;
+    if (typeof raw !== 'string') continue;
     const text = raw.trim().slice(0, MAX_LENGTH);
     if (text && !out.includes(text)) out.push(text);
     if (out.length === MAX_SUGGESTIONS) break;
@@ -50,7 +50,7 @@ function normalize(questions: unknown): string[] {
 async function generate(chartId: string, deps: ChatSuggestionDeps): Promise<string[]> {
   const loadChartFn = deps.loadChart ?? defaultLoadChart;
   const doc = await loadChartFn(chartId);
-  if (!doc || doc.built.kind !== "intraday" || !doc.symbol) return [];
+  if (!doc || doc.built.kind !== 'intraday' || !doc.symbol) return [];
 
   const model = deps.model !== undefined ? deps.model : aiConfig().commentModel;
   if (!model) return [];
@@ -62,18 +62,18 @@ async function generate(chartId: string, deps: ChatSuggestionDeps): Promise<stri
 
   let questions: string[] | null = null;
   const tool: AgentTool<typeof submitSchema> = {
-    name: "submit_questions",
-    label: "Submit Questions",
-    description: "提交 3 条追问问题。必须调用恰好一次。",
+    name: 'submit_questions',
+    label: 'Submit Questions',
+    description: '提交 3 条追问问题。必须调用恰好一次。',
     parameters: submitSchema,
     execute: async (_id, params: SubmitParams) => {
       questions = params.questions;
-      return { content: [{ type: "text", text: "ok" }], details: {}, terminate: true };
+      return { content: [{ type: 'text', text: 'ok' }], details: {}, terminate: true };
     },
   };
 
   const session = createAgentSession({
-    layer: "chat-suggest",
+    layer: 'chat-suggest',
     symbol,
     model,
     systemPrompt: CHAT_SUGGESTIONS_PROMPT,
@@ -85,7 +85,7 @@ async function generate(chartId: string, deps: ChatSuggestionDeps): Promise<stri
     JSON.stringify({
       symbol,
       prediction,
-      comments: comments.filter((c) => c.level !== "error").map((c) => c.text),
+      comments: comments.filter((c) => c.level !== 'error').map((c) => c.text),
     }),
     deps.timeoutMs ?? TIMEOUT_MS,
   );
@@ -96,7 +96,10 @@ async function generate(chartId: string, deps: ChatSuggestionDeps): Promise<stri
   return normalize(questions);
 }
 
-export async function buildChatSuggestions(chartId: string, deps: ChatSuggestionDeps = {}): Promise<string[]> {
+export async function buildChatSuggestions(
+  chartId: string,
+  deps: ChatSuggestionDeps = {},
+): Promise<string[]> {
   const cached = cache.get(chartId);
   if (cached) return cached;
   const running = inFlight.get(chartId);
@@ -108,7 +111,7 @@ export async function buildChatSuggestions(chartId: string, deps: ChatSuggestion
       return questions;
     })
     .catch((err) => {
-      console.error("chat: failed to build suggestions", err);
+      console.error('chat: failed to build suggestions', err);
       return [] as string[];
     })
     .finally(() => {

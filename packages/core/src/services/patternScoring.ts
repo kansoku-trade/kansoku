@@ -4,9 +4,9 @@ import type {
   CandlePatternStatus,
   IntradayFvgZone,
   SwingPoint,
-} from "@kansoku/shared/types";
-import { CANDLE_PATTERN_META } from "./candlePatterns.js";
-import { classifySession } from "./session.js";
+} from '@kansoku/shared/types';
+import { CANDLE_PATTERN_META } from './candlePatterns.js';
+import { classifySession } from './session.js';
 
 const AVG_RANGE_WINDOW = 14;
 const AVG_VOL_WINDOW = 20;
@@ -24,7 +24,7 @@ const SESSION_EXTENDED_PENALTY = -10;
 const SESSION_OVERNIGHT_PENALTY = -25;
 const RELVOL_HIGH = 1.5;
 const RELVOL_HIGH_BONUS = 15;
-const RELVOL_OK = 1.0;
+const RELVOL_OK = 1;
 const RELVOL_OK_BONUS = 5;
 const RELVOL_LOW = 0.7;
 const RELVOL_LOW_PENALTY = -15;
@@ -63,11 +63,14 @@ function windowAvg(values: number[], endExclusive: number, window: number): numb
 
 // Overnight bars are so thin that a structural signal (123 / divergence / beichi / MACD
 // structure) anchored on one is usually noise — keep it only on a genuine volume impulse.
-export function offSessionSignalKeeper(timesTs: number[], vols: number[]): (time: number) => boolean {
+export function offSessionSignalKeeper(
+  timesTs: number[],
+  vols: number[],
+): (time: number) => boolean {
   const idxByTime = new Map<number, number>();
   for (let i = 0; i < timesTs.length; i++) idxByTime.set(timesTs[i], i);
   return (time: number) => {
-    if (classifySession(time) !== "overnight") return true;
+    if (classifySession(time) !== 'overnight') return true;
     const i = idxByTime.get(time);
     if (i === undefined) return true;
     const avgVol = windowAvg(vols, i, AVG_VOL_WINDOW);
@@ -75,7 +78,10 @@ export function offSessionSignalKeeper(timesTs: number[], vols: number[]): (time
   };
 }
 
-export function enrichCandlePatterns(patterns: CandlePattern[], ctx: PatternScoringContext): CandlePattern[] {
+export function enrichCandlePatterns(
+  patterns: CandlePattern[],
+  ctx: PatternScoringContext,
+): CandlePattern[] {
   const { highs, lows, closes, vols, timesTs, emaArrs, swingHighs, swingLows, fvgZones } = ctx;
   const n = timesTs.length;
   const idxByTime = new Map<number, number>();
@@ -89,16 +95,16 @@ export function enrichCandlePatterns(patterns: CandlePattern[], ctx: PatternScor
     const span = p.span ?? 1;
     const start = i - span + 1;
     const meta = CANDLE_PATTERN_META[p.kind];
-    const directional = p.bias !== "neutral";
+    const directional = p.bias !== 'neutral';
 
     const session = classifySession(p.time);
-    if (session === "overnight" && !meta.strong) continue;
+    if (session === 'overnight' && !meta.strong) continue;
 
     let score = BASE_NEUTRAL;
     if (meta.strong) score = BASE_STRONG;
     else if (directional) score = BASE_WEAK;
-    if (session === "regular") score += SESSION_REGULAR_BONUS;
-    else if (session === "overnight") score += SESSION_OVERNIGHT_PENALTY;
+    if (session === 'regular') score += SESSION_REGULAR_BONUS;
+    else if (session === 'overnight') score += SESSION_OVERNIGHT_PENALTY;
     else score += SESSION_EXTENDED_PENALTY;
 
     const avgVol = windowAvg(vols, start, AVG_VOL_WINDOW);
@@ -116,7 +122,7 @@ export function enrichCandlePatterns(patterns: CandlePattern[], ctx: PatternScor
       const point = p.invalidate_price;
       const startTs = timesTs[Math.max(0, start)];
       const levels: number[] = [];
-      const swings = p.bias === "bullish" ? swingLows : swingHighs;
+      const swings = p.bias === 'bullish' ? swingLows : swingHighs;
       for (const s of swings) if (s.time < startTs) levels.push(s.price);
       for (const { arr } of emaArrs) {
         const v = arr[i];
@@ -132,23 +138,23 @@ export function enrichCandlePatterns(patterns: CandlePattern[], ctx: PatternScor
     let status: CandlePatternStatus | null = null;
     let confirmIdx: number | null = null;
     if (directional && p.confirm_price != null && p.invalidate_price != null) {
-      status = "pending";
+      status = 'pending';
       const last = Math.min(n - 1, i + CONFIRM_WINDOW_BARS);
       for (let j = i + 1; j <= last; j++) {
         const c = closes[j];
-        const confirmed = p.bias === "bullish" ? c > p.confirm_price : c < p.confirm_price;
-        const invalidated = p.bias === "bullish" ? c < p.invalidate_price : c > p.invalidate_price;
+        const confirmed = p.bias === 'bullish' ? c > p.confirm_price : c < p.confirm_price;
+        const invalidated = p.bias === 'bullish' ? c < p.invalidate_price : c > p.invalidate_price;
         if (confirmed) {
-          status = "confirmed";
+          status = 'confirmed';
           confirmIdx = j;
           break;
         }
         if (invalidated) {
-          status = "invalidated";
+          status = 'invalidated';
           break;
         }
       }
-      if (status === "pending" && n - 1 - i >= CONFIRM_WINDOW_BARS) status = "expired";
+      if (status === 'pending' && n - 1 - i >= CONFIRM_WINDOW_BARS) status = 'expired';
     }
 
     tracked.push({
@@ -160,7 +166,7 @@ export function enrichCandlePatterns(patterns: CandlePattern[], ctx: PatternScor
     });
   }
 
-  const statsByKind = new Map<CandlePattern["kind"], CandlePatternStats>();
+  const statsByKind = new Map<CandlePattern['kind'], CandlePatternStats>();
   for (const p of tracked) {
     if (p.confirmIdx === null) continue;
     const c = p.confirmIdx;
@@ -169,7 +175,7 @@ export function enrichCandlePatterns(patterns: CandlePattern[], ctx: PatternScor
     const threshold = FOLLOW_THROUGH_RANGE_RATIO * avgRange;
     let win = false;
     for (let k = c + 1; k <= Math.min(n - 1, c + FOLLOW_THROUGH_BARS); k++) {
-      const move = p.bias === "bullish" ? closes[k] - closes[c] : closes[c] - closes[k];
+      const move = p.bias === 'bullish' ? closes[k] - closes[c] : closes[c] - closes[k];
       if (move >= threshold) {
         win = true;
         break;

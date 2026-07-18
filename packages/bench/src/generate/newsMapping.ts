@@ -1,4 +1,4 @@
-import type { BenchNewsItem } from "../schema/newsItem.js";
+import type { BenchNewsItem } from '../schema/newsItem.js';
 
 export interface GdeltArticle {
   url: string;
@@ -17,14 +17,14 @@ export interface EdgarFiling {
 }
 
 const GDELT_MAX_ITEMS = 10;
-const EDGAR_FORMS = new Set(["8-K", "10-Q", "10-K"]);
+const EDGAR_FORMS = new Set(['8-K', '10-Q', '10-K']);
 
 export function normalizeTitle(title: string): string {
   return title
     .toLowerCase()
     .trim()
-    .replace(/\s+/g, " ")
-    .replace(/[^\w ]/g, "");
+    .replaceAll(/\s+/g, ' ')
+    .replaceAll(/[^\w ]/g, '');
 }
 
 function gdeltSeenDateToIso(seendate: string): string {
@@ -72,9 +72,13 @@ export function mapGdeltArticles(articles: GdeltArticle[], cutoffIso: string): B
   return candidates.slice(0, GDELT_MAX_ITEMS).map((candidate) => candidate.item);
 }
 
-export function edgarDocumentUrl(cik: string, accessionNumber: string, primaryDocument: string): string {
+export function edgarDocumentUrl(
+  cik: string,
+  accessionNumber: string,
+  primaryDocument: string,
+): string {
   const cikNoPadding = String(Number(cik));
-  const accessionNoDashes = accessionNumber.replace(/-/g, "");
+  const accessionNoDashes = accessionNumber.replaceAll('-', '');
   return `https://www.sec.gov/Archives/edgar/data/${cikNoPadding}/${accessionNoDashes}/${primaryDocument}`;
 }
 
@@ -116,7 +120,9 @@ export function assertNoLeak(items: BenchNewsItem[], cutoffIso: string): void {
   const cutoffMs = Date.parse(cutoffIso);
   for (const item of items) {
     if (Date.parse(item.published_at) > cutoffMs) {
-      throw new Error(`news item leaks post-cutoff timestamp: ${item.id} published_at=${item.published_at}`);
+      throw new Error(
+        `news item leaks post-cutoff timestamp: ${item.id} published_at=${item.published_at}`,
+      );
     }
   }
 }

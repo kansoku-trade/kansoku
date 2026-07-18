@@ -1,26 +1,26 @@
-import { spawn } from "node:child_process";
-import { existsSync, statSync, watch } from "node:fs";
-import { createRequire } from "node:module";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { spawn } from 'node:child_process';
+import { existsSync, statSync, watch } from 'node:fs';
+import { createRequire } from 'node:module';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const desktopRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
-const require = createRequire(join(desktopRoot, "package.json"));
-const electronBin = require("electron");
+const desktopRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
+const require = createRequire(join(desktopRoot, 'package.json'));
+const electronBin = require('electron');
 
-const MAIN_BUNDLE = join(desktopRoot, "dist-main", "main.mjs");
-const PRELOAD_BUNDLE = join(desktopRoot, "dist-preload", "preload.cjs");
+const MAIN_BUNDLE = join(desktopRoot, 'dist-main', 'main.mjs');
+const PRELOAD_BUNDLE = join(desktopRoot, 'dist-preload', 'preload.cjs');
 
 let electron = null;
 let restarting = false;
 let shuttingDown = false;
 
-const tsdown = spawn("pnpm", ["exec", "tsdown", "--watch"], {
+const tsdown = spawn('pnpm', ['exec', 'tsdown', '--watch'], {
   cwd: desktopRoot,
-  stdio: "inherit",
-  env: { ...process.env, KANSOKU_DESKTOP_DEV: "1" },
+  stdio: 'inherit',
+  env: { ...process.env, KANSOKU_DESKTOP_DEV: '1' },
 });
-tsdown.on("exit", (code) => {
+tsdown.on('exit', (code) => {
   if (!shuttingDown) shutdown(code ?? 1);
 });
 
@@ -32,16 +32,16 @@ function shutdown(code) {
   process.exit(code);
 }
 
-process.on("SIGINT", () => shutdown(0));
-process.on("SIGTERM", () => shutdown(0));
+process.on('SIGINT', () => shutdown(0));
+process.on('SIGTERM', () => shutdown(0));
 
 function startElectron() {
-  electron = spawn(electronBin, ["."], {
+  electron = spawn(electronBin, ['.'], {
     cwd: desktopRoot,
-    stdio: "inherit",
-    env: { ...process.env, ELECTRON_DEV: "1" },
+    stdio: 'inherit',
+    env: { ...process.env, ELECTRON_DEV: '1' },
   });
-  electron.on("exit", (code) => {
+  electron.on('exit', (code) => {
     if (shuttingDown) return;
     if (restarting) {
       restarting = false;
@@ -49,7 +49,7 @@ function startElectron() {
       return;
     }
     // The app was quit by hand — stop the watcher instead of idling forever.
-    console.log("[desktop-dev] electron exited, stopping dev watcher");
+    console.log('[desktop-dev] electron exited, stopping dev watcher');
     shutdown(code ?? 0);
   });
 }
@@ -59,7 +59,7 @@ function scheduleRestart() {
   clearTimeout(debounce);
   debounce = setTimeout(() => {
     if (shuttingDown || !electron) return;
-    console.log("[desktop-dev] bundle changed, restarting electron");
+    console.log('[desktop-dev] bundle changed, restarting electron');
     restarting = true;
     electron.kill();
   }, 400);
@@ -71,7 +71,7 @@ function watchBundles() {
   }
   // The pro slot loads as TS at runtime (never bundled into main.mjs), so a
   // bundle-dir watch can't see edits to it — watch the source tree directly.
-  const proSrc = join(desktopRoot, "..", "pro", "src");
+  const proSrc = join(desktopRoot, '..', 'pro', 'src');
   if (existsSync(proSrc)) watch(proSrc, { recursive: true }, scheduleRestart);
 }
 
@@ -80,15 +80,15 @@ function watchBundles() {
 // quiet for a second before launching electron or attaching watchers.
 const started = Date.now();
 let lastChange = Date.now();
-let lastSignature = "";
+let lastSignature = '';
 const poll = setInterval(() => {
   if (Date.now() - started > 60_000) {
-    console.error("[desktop-dev] initial build did not produce bundles within 60s");
+    console.error('[desktop-dev] initial build did not produce bundles within 60s');
     shutdown(1);
     return;
   }
   if (!existsSync(MAIN_BUNDLE) || !existsSync(PRELOAD_BUNDLE)) return;
-  const signature = [MAIN_BUNDLE, PRELOAD_BUNDLE].map((f) => statSync(f).mtimeMs).join(":");
+  const signature = [MAIN_BUNDLE, PRELOAD_BUNDLE].map((f) => statSync(f).mtimeMs).join(':');
   if (signature !== lastSignature) {
     lastSignature = signature;
     lastChange = Date.now();

@@ -1,11 +1,17 @@
-import { useState } from "react";
-import { normalizeSymbol } from "./lib/symbol";
-import { listRecentSymbols } from "./recentCharts";
-import { navigate } from "./router";
-import { Button, Chip, Input, openModal } from "./ui";
+import { useState } from 'react';
+import { normalizeSymbol } from './lib/symbol';
+import { listRecentSymbols } from './recentCharts';
+import { navigate } from './router';
+import { Button, Chip, Input, openModal } from './ui';
 
-function OpenSymbolForm({ onOpen, onDone }: { onOpen: (route: string) => void; onDone: () => void }) {
-  const [input, setInput] = useState("");
+function OpenSymbolForm({
+  onOpen,
+  onDone,
+}: {
+  onOpen: (route: string) => void;
+  onDone: () => void;
+}) {
+  const [input, setInput] = useState('');
   const recent = listRecentSymbols();
   const symbol = normalizeSymbol(input);
 
@@ -23,7 +29,7 @@ function OpenSymbolForm({ onOpen, onDone }: { onOpen: (route: string) => void; o
         value={input}
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={(e) => {
-          if (e.key === "Enter" && symbol) open(symbol);
+          if (e.key === 'Enter' && symbol) open(symbol);
         }}
       />
       {recent.length > 0 && (
@@ -31,7 +37,7 @@ function OpenSymbolForm({ onOpen, onDone }: { onOpen: (route: string) => void; o
           <span className="open-symbol-recent-label">最近：</span>
           {recent.map((s) => (
             <Chip key={s.symbol} onClick={() => open(s.symbol)}>
-              {s.symbol.replace(/\.US$/, "")}
+              {s.symbol.replace(/\.US$/, '')}
             </Chip>
           ))}
         </div>
@@ -48,7 +54,7 @@ function OpenSymbolForm({ onOpen, onDone }: { onOpen: (route: string) => void; o
 
 export function openSymbolDialog(onOpen: (route: string) => void = navigate): void {
   openModal({
-    title: "打开个股",
+    title: '打开个股',
     body: (close) => <OpenSymbolForm onOpen={onOpen} onDone={close} />,
   });
 }

@@ -40,13 +40,13 @@ signing Sparkle updates"），并把公钥打印出来，形如：
 
 ```bash
 ./bin/generate_keys -x /tmp/sparkle_private_key.txt
-cat /tmp/sparkle_private_key.txt   # 这一行就是要填进 secret 的值
+cat /tmp/sparkle_private_key.txt # 这一行就是要填进 secret 的值
 ```
 
 设置两个 secret（需要仓库 admin 权限,命令供参考,实际值别贴进任何文档/issue/PR)：
 
 ```bash
-gh secret set SPARKLE_ED_PUBLIC_KEY  --repo Innei/trade-skills --body "<公钥字符串>"
+gh secret set SPARKLE_ED_PUBLIC_KEY --repo Innei/trade-skills --body "<公钥字符串>"
 gh secret set SPARKLE_ED_PRIVATE_KEY --repo Innei/trade-skills --body "<私钥文件内容>"
 ```
 

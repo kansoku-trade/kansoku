@@ -10,6 +10,7 @@ description: US SEC EDGAR filings — list 10-K/10-Q/8-K/Form 4/S-1, fetch filin
 ## When to use
 
 Trigger phrases:
+
 - 8-K / 10-K / 10-Q / Form 4 / S-1 / proxy / DEF 14A
 - 美股公告 / SEC filing / EDGAR
 - insider trading / 内部人交易 / 高管交易
@@ -58,13 +59,13 @@ python3 .claude/skills/sec-edgar/scripts/insider.py NVDA --include-amendments
 
 ## Section keys (10-K)
 
-| Key | 10-K section |
-|---|---|
-| `item1` / `business` | Item 1. Business |
-| `item1a` / `risk` | Item 1A. Risk Factors |
-| `item7` / `mda` | Item 7. MD&A |
-| `item7a` | Item 7A. Quantitative & Qualitative Disclosures |
-| `item8` | Item 8. Financial Statements |
+| Key                  | 10-K section                                    |
+| -------------------- | ----------------------------------------------- |
+| `item1` / `business` | Item 1. Business                                |
+| `item1a` / `risk`    | Item 1A. Risk Factors                           |
+| `item7` / `mda`      | Item 7. MD&A                                    |
+| `item7a`             | Item 7A. Quantitative & Qualitative Disclosures |
+| `item8`              | Item 8. Financial Statements                    |
 
 `meta.confidence` returned: `high` (clean heading match), `medium` (short
 slice, may be incomplete), `low` (heuristic fallback — full text returned
@@ -73,58 +74,64 @@ with warning).
 ## Output shapes
 
 `filings.py`:
+
 ```json
 {
-  "ok": true,
-  "data": [{
-    "accession": "0001045810-26-000051",
-    "cik": "0001045810",
-    "form": "8-K",
-    "filed_date": "2026-05-20",
-    "primary_doc_url": "https://www.sec.gov/Archives/edgar/data/1045810/...htm",
-    "primary_doc_name": "nvda-20260520.htm",
-    "description": "8-K",
-    "size": 637530,
-    "is_xbrl": true
-  }],
-  "meta": {"cik": "0001045810", "name": "NVIDIA CORP", "count_returned": 1}
+  "data": [
+    {
+      "accession": "0001045810-26-000051",
+      "cik": "0001045810",
+      "form": "8-K",
+      "filed_date": "2026-05-20",
+      "primary_doc_url": "https://www.sec.gov/Archives/edgar/data/1045810/...htm",
+      "primary_doc_name": "nvda-20260520.htm",
+      "description": "8-K",
+      "size": 637530,
+      "is_xbrl": true
+    }
+  ],
+  "meta": { "cik": "0001045810", "name": "NVIDIA CORP", "count_returned": 1 },
+  "ok": true
 }
 ```
 
 `insider.py`:
+
 ```json
 {
-  "ok": true,
-  "data": [{
-    "accession": "...",
-    "form": "4",
-    "filed_date": "2026-05-15",
-    "reporter": "JEN-HSUN HUANG",
-    "roles": ["officer:CEO", "director"],
-    "txn_date": "2026-05-13",
-    "security_title": "Common Stock",
-    "code": "S",
-    "shares": 240000,
-    "price": 412.50,
-    "acquire_or_dispose": "D",
-    "post_holdings": 78000000,
-    "ownership_kind": "D",
-    "derivative": false,
-    "footnote_ids": ["F1"],
-    "footnotes_text": ["Sale pursuant to 10b5-1 plan adopted ..."]
-  }],
-  "meta": {"cik": "...", "name": "...", "filings_scanned": 12, "txns_parsed": 24}
+  "data": [
+    {
+      "accession": "...",
+      "form": "4",
+      "filed_date": "2026-05-15",
+      "reporter": "JEN-HSUN HUANG",
+      "roles": ["officer:CEO", "director"],
+      "txn_date": "2026-05-13",
+      "security_title": "Common Stock",
+      "code": "S",
+      "shares": 240000,
+      "price": 412.5,
+      "acquire_or_dispose": "D",
+      "post_holdings": 78000000,
+      "ownership_kind": "D",
+      "derivative": false,
+      "footnote_ids": ["F1"],
+      "footnotes_text": ["Sale pursuant to 10b5-1 plan adopted ..."]
+    }
+  ],
+  "meta": { "cik": "...", "name": "...", "filings_scanned": 12, "txns_parsed": 24 },
+  "ok": true
 }
 ```
 
 ## Error handling
 
-| Exit code | Meaning | LLM action |
-|---|---|---|
-| 0 | Success | Parse and narrate. |
-| 2 | Missing `SEC_USER_AGENT` | Set in `.env` at project root. |
-| 3 | HTTP 4xx, ticker not found, or unparseable XML | Read `hint`. Per-filing parse errors collected in `meta.parse_errors`. |
-| 4 | Network | Suggest retry. |
+| Exit code | Meaning                                        | LLM action                                                             |
+| --------- | ---------------------------------------------- | ---------------------------------------------------------------------- |
+| 0         | Success                                        | Parse and narrate.                                                     |
+| 2         | Missing `SEC_USER_AGENT`                       | Set in `.env` at project root.                                         |
+| 3         | HTTP 4xx, ticker not found, or unparseable XML | Read `hint`. Per-filing parse errors collected in `meta.parse_errors`. |
+| 4         | Network                                        | Suggest retry.                                                         |
 
 ## Known limitations
 

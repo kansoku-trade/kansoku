@@ -1,18 +1,18 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowLeft, Copy, FolderOpen, RefreshCw } from "lucide-react";
-import { navigate } from "@web/router";
-import { useTitle } from "@web/useTitle";
-import { Button, ErrorBox } from "@web/ui";
-import { getDesktopLogsBridge } from "./desktopLogs";
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ArrowLeft, Copy, FolderOpen, RefreshCw } from 'lucide-react';
+import { navigate } from '@web/router';
+import { useTitle } from '@web/useTitle';
+import { Button, ErrorBox } from '@web/ui';
+import { getDesktopLogsBridge } from './desktopLogs';
 
 const POLL_MS = 2000;
 const TAIL_BYTES = 256 * 1024;
 
 export function LogsPage() {
-  useTitle("日志");
+  useTitle('日志');
   const bridge = getDesktopLogsBridge();
   const [path, setPath] = useState<string | null>(null);
-  const [text, setText] = useState("");
+  const [text, setText] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [autoScroll, setAutoScroll] = useState(true);
@@ -22,7 +22,10 @@ export function LogsPage() {
   const reload = useCallback(async () => {
     if (!bridge) return;
     try {
-      const [info, tail] = await Promise.all([bridge.getInfo(), bridge.tail({ maxBytes: TAIL_BYTES })]);
+      const [info, tail] = await Promise.all([
+        bridge.getInfo(),
+        bridge.tail({ maxBytes: TAIL_BYTES }),
+      ]);
       setPath(info.path);
       setText(tail.text);
       setError(null);
@@ -89,7 +92,7 @@ export function LogsPage() {
         <div>
           <h1>日志</h1>
           <div className="logs-page-path" title={path ?? undefined}>
-            {path ?? "加载中…"}
+            {path ?? '加载中…'}
           </div>
         </div>
         <div className="logs-page-actions">
@@ -97,7 +100,7 @@ export function LogsPage() {
             <RefreshCw size={14} /> 刷新
           </Button>
           <Button type="button" onClick={() => void copyAll()}>
-            <Copy size={14} /> {copied ? "已复制" : "复制"}
+            <Copy size={14} /> {copied ? '已复制' : '复制'}
           </Button>
           <Button type="button" onClick={() => void reveal()}>
             <FolderOpen size={14} /> 在访达中显示
@@ -109,11 +112,11 @@ export function LogsPage() {
 
       <div className="logs-page-meta">
         显示最近约 {Math.round(TAIL_BYTES / 1024)} KB · 每 {POLL_MS / 1000} 秒自动刷新
-        {autoScroll ? " · 跟随最新" : " · 已暂停跟随（滚到底部恢复）"}
+        {autoScroll ? ' · 跟随最新' : ' · 已暂停跟随（滚到底部恢复）'}
       </div>
 
       <pre ref={preRef} className="logs-viewer" onScroll={onScroll}>
-        {text || "（暂无日志）"}
+        {text || '（暂无日志）'}
       </pre>
     </div>
   );
@@ -125,10 +128,17 @@ function LogsBackLink() {
       className="settings-back-link"
       href="/"
       onClick={(event) => {
-        if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        if (
+          event.defaultPrevented ||
+          event.metaKey ||
+          event.ctrlKey ||
+          event.shiftKey ||
+          event.altKey
+        )
+          return;
         event.preventDefault();
         if (window.history.length > 1) window.history.back();
-        else navigate("/");
+        else navigate('/');
       }}
     >
       <ArrowLeft className="icon" size={13} /> 返回

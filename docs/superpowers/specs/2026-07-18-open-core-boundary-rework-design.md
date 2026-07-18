@@ -15,23 +15,23 @@ Phase 1/2 的 open-core 拆分把**所有** AI 代码搬进了私有仓 `apps/pr
 
 ### 免费且开源（代码在公开仓 `packages/core` + `apps/server` + `apps/web`）
 
-| 功能 | 说明 |
-|---|---|
-| 研究库浏览 | 文档列表 + markdown 阅读（journal/stocks） |
-| 个股关注状态 | 标记关注、cockpit 分组；`symbolFollows` 表本就在 core schema |
-| WS 频道骨架 | notifications / comments / analyst-runs / chat 等免费功能频道 |
-| AI 设置基座 | 模型角色配置、自带 API key、provider 管理（含 LobeHub 设备登录——用户自己的账号与额度）、连通测试、用量统计 |
-| 手动 AI 复评 | analyst 单次运行（reassess）+ AI 评论流展示 |
-| 对话类 | 图表页 ChatDock、全局助手 /chat、对话建议 |
-| macro 事件 AI 过滤 | eventFilter，一次 LLM 调用，用户自己的 key |
+| 功能               | 说明                                                                                                       |
+| ------------------ | ---------------------------------------------------------------------------------------------------------- |
+| 研究库浏览         | 文档列表 + markdown 阅读（journal/stocks）                                                                 |
+| 个股关注状态       | 标记关注、cockpit 分组；`symbolFollows` 表本就在 core schema                                               |
+| WS 频道骨架        | notifications / comments / analyst-runs / chat 等免费功能频道                                              |
+| AI 设置基座        | 模型角色配置、自带 API key、provider 管理（含 LobeHub 设备登录——用户自己的账号与额度）、连通测试、用量统计 |
+| 手动 AI 复评       | analyst 单次运行（reassess）+ AI 评论流展示                                                                |
+| 对话类             | 图表页 ChatDock、全局助手 /chat、对话建议                                                                  |
+| macro 事件 AI 过滤 | eventFilter，一次 LLM 调用，用户自己的 key                                                                 |
 
 ### 收费（代码留在私有仓 `apps/pro`，需订阅激活）
 
-| 功能 | 说明 |
-|---|---|
-| 个股自动跟踪 | scheduler 定时跑 analyst（含 triggers、每日 recap），产出评论流与通知 |
-| 深度研究 deep-dive | 多轮长任务，产出个股档案 |
-| 研究库 AI | AI 刷新文档、AI 编辑审阅、研究对话（researchChat） |
+| 功能               | 说明                                                                  |
+| ------------------ | --------------------------------------------------------------------- |
+| 个股自动跟踪       | scheduler 定时跑 analyst（含 triggers、每日 recap），产出评论流与通知 |
+| 深度研究 deep-dive | 多轮长任务，产出个股档案                                              |
+| 研究库 AI          | AI 刷新文档、AI 编辑审阅、研究对话（researchChat）                    |
 
 不收费但不开源（留 pro）：license/Dodo 整套、bench 私有基准。
 

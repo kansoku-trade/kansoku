@@ -1,12 +1,16 @@
-import type { CredentialProvider, LongbridgeAuth, LongbridgeCredentials } from "@kansoku/core/services/credentials/types";
-import type { CredentialStore, SetCredentialsResult } from "./store.js";
+import type {
+  CredentialProvider,
+  LongbridgeAuth,
+  LongbridgeCredentials,
+} from '@kansoku/core/services/credentials/types';
+import type { CredentialStore, SetCredentialsResult } from './store.js';
 
 export interface DesktopCredentialProvider extends CredentialProvider {
   setCredentials(creds: LongbridgeCredentials): SetCredentialsResult;
   setOAuth(clientId: string): SetCredentialsResult;
   clearCredentials(): void;
   isConfigured(): boolean;
-  configuredMethod(): LongbridgeAuth["kind"] | null;
+  configuredMethod(): LongbridgeAuth['kind'] | null;
   lastError(): string | null;
 }
 
@@ -34,11 +38,11 @@ export function createDesktopCredentialProvider(store: CredentialStore): Desktop
     },
 
     setCredentials(creds: LongbridgeCredentials): SetCredentialsResult {
-      return persist({ kind: "apikey", ...creds });
+      return persist({ kind: 'apikey', ...creds });
     },
 
     setOAuth(clientId: string): SetCredentialsResult {
-      return persist({ kind: "oauth", clientId });
+      return persist({ kind: 'oauth', clientId });
     },
 
     clearCredentials(): void {
@@ -50,7 +54,7 @@ export function createDesktopCredentialProvider(store: CredentialStore): Desktop
       return store.get() !== null;
     },
 
-    configuredMethod(): LongbridgeAuth["kind"] | null {
+    configuredMethod(): LongbridgeAuth['kind'] | null {
       return store.get()?.kind ?? null;
     },
 
@@ -71,6 +75,8 @@ export interface SelectCredentialProviderOptions {
 // the single source of truth once shipped. ELECTRON_DEV keeps the pre-P3
 // env-backed workflow untouched, since dev runs the web client against its
 // own standalone kernel (see preload.ts) and never exercises this IPC path.
-export function selectCredentialProvider(opts: SelectCredentialProviderOptions): CredentialProvider {
+export function selectCredentialProvider(
+  opts: SelectCredentialProviderOptions,
+): CredentialProvider {
   return opts.isDev ? opts.envProvider : opts.desktopProvider;
 }

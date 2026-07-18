@@ -1,9 +1,14 @@
-import { type Static, Type } from "typebox";
-import { episodeTradeReasonSchema } from "./tradeReason.js";
+import { type Static, Type } from 'typebox';
+import { episodeTradeReasonSchema } from './tradeReason.js';
 
 const anchorSchema = Type.Object(
   {
-    timeframe: Type.Union([Type.Literal("m5"), Type.Literal("m15"), Type.Literal("h1"), Type.Literal("day")]),
+    timeframe: Type.Union([
+      Type.Literal('m5'),
+      Type.Literal('m15'),
+      Type.Literal('h1'),
+      Type.Literal('day'),
+    ]),
     time: Type.String(),
     price: Type.Number(),
   },
@@ -47,7 +52,7 @@ const rangePlanSchema = Type.Object(
 
 export const submissionSchema = Type.Object(
   {
-    direction: Type.Union([Type.Literal("long"), Type.Literal("short"), Type.Literal("neutral")]),
+    direction: Type.Union([Type.Literal('long'), Type.Literal('short'), Type.Literal('neutral')]),
     anchor: anchorSchema,
     entry_plan: Type.Optional(entryPlanSchema),
     scenarios: Type.Array(scenarioSchema, { minItems: 2, maxItems: 4 }),

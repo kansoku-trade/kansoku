@@ -1,17 +1,17 @@
 // @vitest-environment jsdom
-import { act, cleanup, renderHook } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { ChannelSpec } from "@web/wsHub";
+import { act, cleanup, renderHook } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ChannelSpec } from '@web/wsHub';
 
 const subscribeChannel = vi.fn();
 const reassess = vi.fn();
 const reassessStatus = vi.fn();
 
-vi.mock("@web/wsHub", () => ({
+vi.mock('@web/wsHub', () => ({
   subscribeChannel: (...args: unknown[]) => subscribeChannel(...args),
 }));
 
-vi.mock("@web/client", () => ({
+vi.mock('@web/client', () => ({
   client: {
     symbols: {
       reassess: (...args: unknown[]) => reassess(...args),
@@ -20,16 +20,16 @@ vi.mock("@web/client", () => ({
   },
 }));
 
-const { resetAnalystRunsStoreForTests } = await import("@web/analystRunsStore");
-const { useAnalystRun } = await import("./useAnalystRun");
+const { resetAnalystRunsStoreForTests } = await import('@web/analystRunsStore');
+const { useAnalystRun } = await import('./useAnalystRun');
 
 const runningStatus = (activity: string) => ({
   running: true as const,
-  origin: "manual" as const,
-  phase: "researching" as const,
+  origin: 'manual' as const,
+  phase: 'researching' as const,
   activity,
-  startedAt: "2026-07-16T00:00:00.000Z",
-  updatedAt: "2026-07-16T00:00:00.000Z",
+  startedAt: '2026-07-16T00:00:00.000Z',
+  updatedAt: '2026-07-16T00:00:00.000Z',
 });
 
 async function advanceReconcileTimer(): Promise<void> {
@@ -38,7 +38,7 @@ async function advanceReconcileTimer(): Promise<void> {
   });
 }
 
-describe("useAnalystRun", () => {
+describe('useAnalystRun', () => {
   let subs: Array<{
     onConnected: (connected: boolean) => void;
     onPayload: (payload: unknown) => void;
@@ -67,32 +67,32 @@ describe("useAnalystRun", () => {
     vi.useRealTimers();
   });
 
-  it("reports not running when the store has no entry for the symbol", () => {
-    const { result } = renderHook(() => useAnalystRun("NVDA"));
+  it('reports not running when the store has no entry for the symbol', () => {
+    const { result } = renderHook(() => useAnalystRun('NVDA'));
 
     expect(result.current.running).toBe(false);
     expect(result.current.status).toBeNull();
   });
 
-  it("shows the optimistic placeholder on start until the store confirms the run", async () => {
+  it('shows the optimistic placeholder on start until the store confirms the run', async () => {
     reassess.mockResolvedValue({ started: true });
-    const { result } = renderHook(() => useAnalystRun("NVDA"));
+    const { result } = renderHook(() => useAnalystRun('NVDA'));
 
     await act(async () => {
       await result.current.start();
     });
 
     expect(result.current.running).toBe(true);
-    expect(result.current.status?.activity).toBe("正在等待服务端确认任务");
+    expect(result.current.status?.activity).toBe('正在等待服务端确认任务');
 
     act(() => {
-      subs[0].onPayload({ type: "update", symbol: "NVDA", status: runningStatus("分析中") });
+      subs[0].onPayload({ type: 'update', symbol: 'NVDA', status: runningStatus('分析中') });
     });
 
-    expect(result.current.status?.activity).toBe("分析中");
+    expect(result.current.status?.activity).toBe('分析中');
   });
 
-  it("does not restore an optimistic placeholder after WS events arrive before the POST response", async () => {
+  it('does not restore an optimistic placeholder after WS events arrive before the POST response', async () => {
     vi.useFakeTimers();
     let resolveReassess: ((value: { started: boolean }) => void) | undefined;
     reassess.mockReturnValue(
@@ -100,19 +100,19 @@ describe("useAnalystRun", () => {
         resolveReassess = resolve;
       }),
     );
-    const { result } = renderHook(() => useAnalystRun("NVDA"));
+    const { result } = renderHook(() => useAnalystRun('NVDA'));
     let startPromise: Promise<void> | undefined;
 
     act(() => {
       startPromise = result.current.start();
     });
     act(() => {
-      subs[0].onPayload({ type: "update", symbol: "NVDA", status: runningStatus("分析中") });
+      subs[0].onPayload({ type: 'update', symbol: 'NVDA', status: runningStatus('分析中') });
     });
     expect(result.current.running).toBe(true);
 
     act(() => {
-      subs[0].onPayload({ type: "update", symbol: "NVDA", status: { running: false } });
+      subs[0].onPayload({ type: 'update', symbol: 'NVDA', status: { running: false } });
     });
     expect(result.current.running).toBe(false);
 
@@ -127,7 +127,7 @@ describe("useAnalystRun", () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
-  it("restores the optimistic placeholder when a running WS event is followed by a disconnect", async () => {
+  it('restores the optimistic placeholder when a running WS event is followed by a disconnect', async () => {
     vi.useFakeTimers();
     let resolveReassess: ((value: { started: boolean }) => void) | undefined;
     reassess.mockReturnValue(
@@ -135,14 +135,14 @@ describe("useAnalystRun", () => {
         resolveReassess = resolve;
       }),
     );
-    const { result } = renderHook(() => useAnalystRun("NVDA"));
+    const { result } = renderHook(() => useAnalystRun('NVDA'));
     let startPromise: Promise<void> | undefined;
 
     act(() => {
       startPromise = result.current.start();
     });
     act(() => {
-      subs[0].onPayload({ type: "update", symbol: "NVDA", status: runningStatus("分析中") });
+      subs[0].onPayload({ type: 'update', symbol: 'NVDA', status: runningStatus('分析中') });
     });
     expect(result.current.running).toBe(true);
 
@@ -157,43 +157,43 @@ describe("useAnalystRun", () => {
     });
 
     expect(result.current.running).toBe(true);
-    expect(result.current.status?.activity).toBe("正在等待服务端确认任务");
+    expect(result.current.status?.activity).toBe('正在等待服务端确认任务');
     expect(reassessStatus).not.toHaveBeenCalled();
     expect(vi.getTimerCount()).toBe(1);
   });
 
-  it("stops running once the store reports the symbol as no longer running", () => {
-    const { result } = renderHook(() => useAnalystRun("NVDA"));
+  it('stops running once the store reports the symbol as no longer running', () => {
+    const { result } = renderHook(() => useAnalystRun('NVDA'));
 
     act(() => {
-      subs[0].onPayload({ type: "update", symbol: "NVDA", status: runningStatus("分析中") });
+      subs[0].onPayload({ type: 'update', symbol: 'NVDA', status: runningStatus('分析中') });
     });
     expect(result.current.running).toBe(true);
 
     act(() => {
-      subs[0].onPayload({ type: "update", symbol: "NVDA", status: { running: false } });
+      subs[0].onPayload({ type: 'update', symbol: 'NVDA', status: { running: false } });
     });
 
     expect(result.current.running).toBe(false);
     expect(result.current.status).toBeNull();
   });
 
-  it("ignores runs for other symbols", () => {
-    const { result } = renderHook(() => useAnalystRun("NVDA"));
+  it('ignores runs for other symbols', () => {
+    const { result } = renderHook(() => useAnalystRun('NVDA'));
 
     act(() => {
-      subs[0].onPayload({ type: "update", symbol: "MU", status: runningStatus("分析中") });
+      subs[0].onPayload({ type: 'update', symbol: 'MU', status: runningStatus('分析中') });
     });
 
     expect(result.current.running).toBe(false);
   });
 
-  it("clears the optimistic placeholder via the bounded re-check when no store update arrives", async () => {
+  it('clears the optimistic placeholder via the bounded re-check when no store update arrives', async () => {
     vi.useFakeTimers();
     reassess.mockResolvedValue({ started: true });
     reassessStatus.mockResolvedValue({ running: false });
 
-    const { result } = renderHook(() => useAnalystRun("NVDA"));
+    const { result } = renderHook(() => useAnalystRun('NVDA'));
 
     await act(async () => {
       await result.current.start();
@@ -202,17 +202,19 @@ describe("useAnalystRun", () => {
 
     await advanceReconcileTimer();
 
-    expect(reassessStatus).toHaveBeenCalledWith({ sym: "NVDA" });
+    expect(reassessStatus).toHaveBeenCalledWith({ sym: 'NVDA' });
     expect(result.current.running).toBe(false);
     expect(result.current.status).toBeNull();
   });
 
-  it("re-arms the re-check when the server still reports running", async () => {
+  it('re-arms the re-check when the server still reports running', async () => {
     vi.useFakeTimers();
     reassess.mockResolvedValue({ started: true });
-    reassessStatus.mockResolvedValueOnce({ running: true }).mockResolvedValueOnce({ running: false });
+    reassessStatus
+      .mockResolvedValueOnce({ running: true })
+      .mockResolvedValueOnce({ running: false });
 
-    const { result } = renderHook(() => useAnalystRun("NVDA"));
+    const { result } = renderHook(() => useAnalystRun('NVDA'));
 
     await act(async () => {
       await result.current.start();
@@ -227,12 +229,12 @@ describe("useAnalystRun", () => {
     expect(result.current.running).toBe(false);
   });
 
-  it("clears the optimistic placeholder when the bounded re-check itself fails", async () => {
+  it('clears the optimistic placeholder when the bounded re-check itself fails', async () => {
     vi.useFakeTimers();
     reassess.mockResolvedValue({ started: true });
-    reassessStatus.mockRejectedValue(new Error("network down"));
+    reassessStatus.mockRejectedValue(new Error('network down'));
 
-    const { result } = renderHook(() => useAnalystRun("NVDA"));
+    const { result } = renderHook(() => useAnalystRun('NVDA'));
 
     await act(async () => {
       await result.current.start();
@@ -243,7 +245,7 @@ describe("useAnalystRun", () => {
     expect(result.current.running).toBe(false);
   });
 
-  it("ignores an in-flight re-check that resolves after unmount", async () => {
+  it('ignores an in-flight re-check that resolves after unmount', async () => {
     vi.useFakeTimers();
     reassess.mockResolvedValue({ started: true });
     let resolveStatus: ((value: { running: boolean }) => void) | undefined;
@@ -253,7 +255,7 @@ describe("useAnalystRun", () => {
       }),
     );
 
-    const { result, unmount } = renderHook(() => useAnalystRun("NVDA"));
+    const { result, unmount } = renderHook(() => useAnalystRun('NVDA'));
 
     await act(async () => {
       await result.current.start();
@@ -283,7 +285,7 @@ describe("useAnalystRun", () => {
     );
 
     const { result, rerender } = renderHook(({ symbol }) => useAnalystRun(symbol), {
-      initialProps: { symbol: "NVDA" },
+      initialProps: { symbol: 'NVDA' },
     });
 
     await act(async () => {
@@ -291,9 +293,9 @@ describe("useAnalystRun", () => {
     });
 
     await advanceReconcileTimer();
-    expect(reassessStatus).toHaveBeenCalledWith({ sym: "NVDA" });
+    expect(reassessStatus).toHaveBeenCalledWith({ sym: 'NVDA' });
 
-    rerender({ symbol: "MU" });
+    rerender({ symbol: 'MU' });
 
     reassessStatus.mockResolvedValue({ running: true });
     await act(async () => {

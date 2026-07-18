@@ -1,8 +1,12 @@
-import type { AgentMessage } from "@earendil-works/pi-agent-core";
-import type { Db } from "../db/index.js";
-import { chatSessions } from "../db/schema.js";
-import { nextSnowflake } from "../db/snowflake.js";
-import { type ConversationMessageRow, createConversationStore, titleFromText } from "./conversationStore.js";
+import type { AgentMessage } from '@earendil-works/pi-agent-core';
+import type { Db } from '../db/index.js';
+import { chatSessions } from '../db/schema.js';
+import { nextSnowflake } from '../db/snowflake.js';
+import {
+  type ConversationMessageRow,
+  createConversationStore,
+  titleFromText,
+} from './conversationStore.js';
 
 export interface ChatSession {
   id: string;
@@ -17,7 +21,10 @@ export type ChatMessageRow = ConversationMessageRow;
 
 export { titleFromText };
 
-const store = createConversationStore<ChatSession, { chartId: string; symbol: string; title: string }>({
+const store = createConversationStore<
+  ChatSession,
+  { chartId: string; symbol: string; title: string }
+>({
   sessionTable: chatSessions,
   idColumn: chatSessions.id,
   keyColumn: chatSessions.chartId,
@@ -46,6 +53,10 @@ export function listMessages(sessionId: string, db?: Db): Promise<ChatMessageRow
   return store.listMessages(sessionId, db);
 }
 
-export function appendMessages(sessionId: string, messages: AgentMessage[], db?: Db): Promise<void> {
+export function appendMessages(
+  sessionId: string,
+  messages: AgentMessage[],
+  db?: Db,
+): Promise<void> {
   return store.appendMessages(sessionId, messages, db);
 }

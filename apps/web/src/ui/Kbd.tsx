@@ -1,6 +1,6 @@
-import { ArrowBigUp, Command, CornerDownLeft, type LucideIcon } from "lucide-react";
+import { ArrowBigUp, Command, CornerDownLeft, type LucideIcon } from 'lucide-react';
 
-export type KbdKey = "mod" | "shift" | "enter" | (string & {});
+export type KbdKey = 'mod' | 'shift' | 'enter' | (string & {});
 
 interface KbdProps {
   keys: readonly KbdKey[];
@@ -8,32 +8,32 @@ interface KbdProps {
 }
 
 const ICON_KEYS: Partial<Record<KbdKey, { icon: LucideIcon; label: string }>> = {
-  enter: { icon: CornerDownLeft, label: "Enter" },
-  shift: { icon: ArrowBigUp, label: "Shift" },
+  enter: { icon: CornerDownLeft, label: 'Enter' },
+  shift: { icon: ArrowBigUp, label: 'Shift' },
 };
-const COMMAND_KEY = { icon: Command, label: "Command" } as const;
+const COMMAND_KEY = { icon: Command, label: 'Command' } as const;
 
 function isApplePlatform(): boolean {
-  if (typeof navigator === "undefined") return false;
-  return /Mac|iPhone|iPad|iPod/i.test(navigator.platform || navigator.userAgent);
+  if (typeof navigator === 'undefined') return false;
+  return /mac|iphone|ipad|ipod/i.test(navigator.platform || navigator.userAgent);
 }
 
 export function Kbd({ keys, className }: KbdProps) {
   const apple = isApplePlatform();
   const labels = keys.map((key) => {
-    if (key === "mod") return apple ? "Command" : "Control";
+    if (key === 'mod') return apple ? 'Command' : 'Control';
     return ICON_KEYS[key]?.label ?? key.toUpperCase();
   });
 
   return (
-    <kbd className={`ui-kbd${className ? ` ${className}` : ""}`} aria-label={labels.join("+")}>
+    <kbd className={`ui-kbd${className ? ` ${className}` : ''}`} aria-label={labels.join('+')}>
       {keys.map((key, index) => {
-        const iconKey = key === "mod" && apple ? COMMAND_KEY : ICON_KEYS[key];
+        const iconKey = key === 'mod' && apple ? COMMAND_KEY : ICON_KEYS[key];
         if (iconKey) {
           const Icon = iconKey.icon;
           return <Icon key={`${key}-${index}`} aria-hidden />;
         }
-        return <span key={`${key}-${index}`}>{key === "mod" ? "Ctrl" : key.toUpperCase()}</span>;
+        return <span key={`${key}-${index}`}>{key === 'mod' ? 'Ctrl' : key.toUpperCase()}</span>;
       })}
     </kbd>
   );

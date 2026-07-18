@@ -1,7 +1,7 @@
-import type { Api, Model, ModelThinkingLevel, ThinkingLevel } from "@earendil-works/pi-ai";
-import { builtinModels } from "@earendil-works/pi-ai/providers/all";
-import { getModelsRuntime } from "./modelsRuntime.js";
-import { type AiTaskRole, getActiveSettingsStore, type RoleSetting } from "./settingsStore.js";
+import type { Api, Model, ModelThinkingLevel, ThinkingLevel } from '@earendil-works/pi-ai';
+import { builtinModels } from '@earendil-works/pi-ai/providers/all';
+import { getModelsRuntime } from './modelsRuntime.js';
+import { type AiTaskRole, getActiveSettingsStore, type RoleSetting } from './settingsStore.js';
 
 export type ModelRef = { provider: string; id: string; thinkingLevel?: ThinkingLevel };
 
@@ -9,7 +9,7 @@ export type ModelRef = { provider: string; id: string; thinkingLevel?: ThinkingL
 // without threading an extra field through every deps interface.
 export type AiModel = Model<Api> & { thinkingLevel?: ModelThinkingLevel };
 
-const THINKING_LEVELS: ReadonlySet<string> = new Set(["minimal", "low", "medium", "high", "xhigh"]);
+const THINKING_LEVELS: ReadonlySet<string> = new Set(['minimal', 'low', 'medium', 'high', 'xhigh']);
 
 export type AiConfig = {
   commentModel: AiModel | null;
@@ -24,13 +24,13 @@ const catalog = builtinModels();
 const defaultLookup: ModelLookup = (provider, id) => catalog.getModel(provider, id);
 
 export function parseModelRef(raw: string): ModelRef | null {
-  const slash = raw.indexOf("/");
+  const slash = raw.indexOf('/');
   if (slash <= 0) return null;
   const provider = raw.slice(0, slash).trim();
   let id = raw.slice(slash + 1).trim();
   if (!provider || !id) return null;
   let thinkingLevel: ThinkingLevel | undefined;
-  const colon = id.lastIndexOf(":");
+  const colon = id.lastIndexOf(':');
   if (colon > 0) {
     const level = id.slice(colon + 1);
     if (THINKING_LEVELS.has(level)) {
@@ -71,21 +71,21 @@ function resolveCustom(setting: RoleSetting): AiModel | null {
 }
 
 function resolveRole(setting: RoleSetting): AiModel | null {
-  if (setting.mode === "custom") return resolveCustom(setting);
+  if (setting.mode === 'custom') return resolveCustom(setting);
   return null;
 }
 
 export function aiConfig(): AiConfig {
   const store = getActiveSettingsStore();
-  const primaryModel = resolveRole(store.getRole("primary"));
+  const primaryModel = resolveRole(store.getRole('primary'));
   const resolve = (role: AiTaskRole): AiModel | null => {
     const setting = store.getRole(role);
-    return setting.mode === "inherit" ? primaryModel : resolveRole(setting);
+    return setting.mode === 'inherit' ? primaryModel : resolveRole(setting);
   };
   return {
-    commentModel: resolve("comment"),
-    analystModel: resolve("analyst"),
-    deepDiveModel: resolve("deepDive"),
-    chatModel: resolve("chat"),
+    commentModel: resolve('comment'),
+    analystModel: resolve('analyst'),
+    deepDiveModel: resolve('deepDive'),
+    chatModel: resolve('chat'),
   };
 }

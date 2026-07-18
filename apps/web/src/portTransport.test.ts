@@ -1,5 +1,11 @@
-import { describe, expect, it, vi } from "vitest";
-import { isDesktopRealtime, PortTransport, READY_STATE, type PortLike, type WindowLike } from "./portTransport.js";
+import { describe, expect, it, vi } from 'vitest';
+import {
+  isDesktopRealtime,
+  PortTransport,
+  READY_STATE,
+  type PortLike,
+  type WindowLike,
+} from './portTransport.js';
 
 class FakePort implements PortLike {
   sent: string[] = [];
@@ -17,8 +23,8 @@ class FakePort implements PortLike {
   start(): void {
     this.started = true;
   }
-  addEventListener(type: "message" | "close", listener: never): void {
-    if (type === "message") this.messageListeners.push(listener as (e: { data: unknown }) => void);
+  addEventListener(type: 'message' | 'close', listener: never): void {
+    if (type === 'message') this.messageListeners.push(listener as (e: { data: unknown }) => void);
     else this.closeListeners.push(listener as () => void);
   }
   emitMessage(data: unknown): void {
@@ -36,14 +42,20 @@ class FakeWindow implements WindowLike {
   postMessage(message: unknown): void {
     this.posted.push(message);
   }
-  addEventListener(_type: "message", listener: (e: { source: unknown; data: unknown; ports: PortLike[] }) => void): void {
+  addEventListener(
+    _type: 'message',
+    listener: (e: { source: unknown; data: unknown; ports: PortLike[] }) => void,
+  ): void {
     this.listeners.push(listener);
   }
-  removeEventListener(_type: "message", listener: (e: { source: unknown; data: unknown; ports: PortLike[] }) => void): void {
+  removeEventListener(
+    _type: 'message',
+    listener: (e: { source: unknown; data: unknown; ports: PortLike[] }) => void,
+  ): void {
     this.listeners = this.listeners.filter((l) => l !== listener);
   }
   respondWithPort(port: PortLike): void {
-    for (const cb of this.listeners) cb({ source: this, data: "desktop-rt-port", ports: [port] });
+    for (const cb of this.listeners) cb({ source: this, data: 'desktop-rt-port', ports: [port] });
   }
   emit(source: unknown, data: unknown, ports: PortLike[] = []): void {
     for (const cb of this.listeners) cb({ source, data, ports });
@@ -59,18 +71,18 @@ class ImmediateResponseWindow extends FakeWindow {
   }
 }
 
-describe("isDesktopRealtime", () => {
-  it("is true when __DESKTOP_RT__ is set", () => {
+describe('isDesktopRealtime', () => {
+  it('is true when __DESKTOP_RT__ is set', () => {
     expect(isDesktopRealtime({ __DESKTOP_RT__: true })).toBe(true);
   });
-  it("is false when absent or falsy", () => {
+  it('is false when absent or falsy', () => {
     expect(isDesktopRealtime({})).toBe(false);
     expect(isDesktopRealtime(undefined)).toBe(false);
   });
 });
 
-describe("PortTransport", () => {
-  it("handles a synchronous handshake response without leaving a timeout", () => {
+describe('PortTransport', () => {
+  it('handles a synchronous handshake response without leaving a timeout', () => {
     vi.useFakeTimers();
     try {
       const win = new ImmediateResponseWindow();
@@ -84,10 +96,10 @@ describe("PortTransport", () => {
     }
   });
 
-  it("performs the desktop-rt-connect handshake and opens on a matching response", () => {
+  it('performs the desktop-rt-connect handshake and opens on a matching response', () => {
     const win = new FakeWindow();
     const transport = new PortTransport(win);
-    expect(win.posted).toEqual(["desktop-rt-connect"]);
+    expect(win.posted).toEqual(['desktop-rt-connect']);
     expect(transport.readyState).toBe(READY_STATE.CONNECTING);
 
     const onopen = vi.fn();
@@ -100,15 +112,15 @@ describe("PortTransport", () => {
     expect(port.started).toBe(true);
   });
 
-  it("ignores messages from another source or with a different payload", () => {
+  it('ignores messages from another source or with a different payload', () => {
     const win = new FakeWindow();
     const transport = new PortTransport(win);
-    win.emit({}, "desktop-rt-port", [new FakePort()]);
-    win.emit(win, "something-else", [new FakePort()]);
+    win.emit({}, 'desktop-rt-port', [new FakePort()]);
+    win.emit(win, 'something-else', [new FakePort()]);
     expect(transport.readyState).toBe(READY_STATE.CONNECTING);
   });
 
-  it("forwards envelope messages from the port through onmessage", () => {
+  it('forwards envelope messages from the port through onmessage', () => {
     const win = new FakeWindow();
     const transport = new PortTransport(win);
     const port = new FakePort();
@@ -120,19 +132,19 @@ describe("PortTransport", () => {
     expect(received).toEqual(['{"key":"k1","payload":{"a":1}}']);
   });
 
-  it("only sends once open, and routes send() through the port", () => {
+  it('only sends once open, and routes send() through the port', () => {
     const win = new FakeWindow();
     const transport = new PortTransport(win);
-    transport.send("too-early");
+    transport.send('too-early');
     expect(transport.readyState).toBe(READY_STATE.CONNECTING);
 
     const port = new FakePort();
     win.respondWithPort(port);
-    transport.send("hello");
-    expect(port.sent).toEqual(["hello"]);
+    transport.send('hello');
+    expect(port.sent).toEqual(['hello']);
   });
 
-  it("fires onclose and flips to CLOSED when the port closes", () => {
+  it('fires onclose and flips to CLOSED when the port closes', () => {
     const win = new FakeWindow();
     const transport = new PortTransport(win);
     const port = new FakePort();
@@ -146,7 +158,7 @@ describe("PortTransport", () => {
     expect(transport.readyState).toBe(READY_STATE.CLOSED);
   });
 
-  it("close() closes the underlying port, flips readyState, and self-emits onclose", () => {
+  it('close() closes the underlying port, flips readyState, and self-emits onclose', () => {
     // A MessagePort's close event only fires on the entangled peer, never on
     // the end that called close() itself — the caller must self-report.
     const win = new FakeWindow();
@@ -163,7 +175,7 @@ describe("PortTransport", () => {
     expect(onclose).toHaveBeenCalledTimes(1);
   });
 
-  it("close() cancels a pending handshake and ignores a late port response", () => {
+  it('close() cancels a pending handshake and ignores a late port response', () => {
     vi.useFakeTimers();
     try {
       const win = new FakeWindow();
@@ -187,7 +199,7 @@ describe("PortTransport", () => {
     }
   });
 
-  it("does not double-fire onclose if close() runs after the port already reported closed", () => {
+  it('does not double-fire onclose if close() runs after the port already reported closed', () => {
     const win = new FakeWindow();
     const transport = new PortTransport(win);
     const port = new FakePort();
@@ -201,7 +213,7 @@ describe("PortTransport", () => {
     expect(onclose).toHaveBeenCalledTimes(1);
   });
 
-  it("self-emits onclose when the handshake response carries no port", () => {
+  it('self-emits onclose when the handshake response carries no port', () => {
     const win = new FakeWindow();
     const transport = new PortTransport(win);
     const onclose = vi.fn();
@@ -209,14 +221,14 @@ describe("PortTransport", () => {
     transport.onclose = onclose;
     transport.onerror = onerror;
 
-    win.emit(win, "desktop-rt-port", []);
+    win.emit(win, 'desktop-rt-port', []);
 
     expect(onerror).toHaveBeenCalledTimes(1);
     expect(onclose).toHaveBeenCalledTimes(1);
     expect(transport.readyState).toBe(READY_STATE.CLOSED);
   });
 
-  it("fires onerror and closes if the main process never answers the handshake", () => {
+  it('fires onerror and closes if the main process never answers the handshake', () => {
     vi.useFakeTimers();
     try {
       const win = new FakeWindow();

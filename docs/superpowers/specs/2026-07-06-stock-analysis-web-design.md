@@ -16,12 +16,12 @@
 
 对比过的三条路：
 
-| 方案 | 结论 |
-|---|---|
-| spawn `claude` CLI 子进程 | 可行，走订阅计费，但子进程 + stdout 解析糙 |
-| Claude Agent SDK（`@anthropic-ai/claude-agent-sdk`） | 接口好，但官方禁止复用 claude.ai 订阅登录，只能 API key 按量计费，弃 |
-| `@earendil-works/pi-coding-agent` 全 harness | skill 自动发现 + bash 全开，但要加新依赖、SDK 模式加载 skill 未验证、写文件安全只能靠 git 对比兜底，弃 |
-| **bare `pi-agent-core` + 自建 skill loader** | **选定**。server 现有分析员/点评员已在用 `pi-agent-core` 的 `Agent`（自定义工具模式），深度分析沿同一模式，skill 机制用一个小 loader 复刻 |
+| 方案                                                 | 结论                                                                                                                                      |
+| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| spawn `claude` CLI 子进程                            | 可行，走订阅计费，但子进程 + stdout 解析糙                                                                                                |
+| Claude Agent SDK（`@anthropic-ai/claude-agent-sdk`） | 接口好，但官方禁止复用 claude.ai 订阅登录，只能 API key 按量计费，弃                                                                      |
+| `@earendil-works/pi-coding-agent` 全 harness         | skill 自动发现 + bash 全开，但要加新依赖、SDK 模式加载 skill 未验证、写文件安全只能靠 git 对比兜底，弃                                    |
+| **bare `pi-agent-core` + 自建 skill loader**         | **选定**。server 现有分析员/点评员已在用 `pi-agent-core` 的 `Agent`（自定义工具模式），深度分析沿同一模式，skill 机制用一个小 loader 复刻 |
 
 ### skill loader 设计（`services/skills.ts`）
 
@@ -51,11 +51,11 @@ Claude 式 skill 的三件事，各自复刻：
 
 **REST 接口**
 
-| 方法 | 路径 | 说明 |
-|---|---|---|
-| `GET` | `/api/symbols/:sym/note` | 读 `stocks/{SYMBOL}.md`（symbol 去 `.US` 后缀映射文件名），返回 `{markdown, mtime}`；文件不存在返回 `{markdown: null}` |
-| `POST` | `/api/symbols/:sym/deep-dive` | 触发分析。已有分析在跑 → 409；env 缺失 → 503 |
-| `GET` | `/api/symbols/:sym/deep-dive/status` | 返回 `{running, startedAt?, lastResult?}`，供前端轮询和刷新后恢复状态 |
+| 方法   | 路径                                 | 说明                                                                                                                   |
+| ------ | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| `GET`  | `/api/symbols/:sym/note`             | 读 `stocks/{SYMBOL}.md`（symbol 去 `.US` 后缀映射文件名），返回 `{markdown, mtime}`；文件不存在返回 `{markdown: null}` |
+| `POST` | `/api/symbols/:sym/deep-dive`        | 触发分析。已有分析在跑 → 409；env 缺失 → 503                                                                           |
+| `GET`  | `/api/symbols/:sym/deep-dive/status` | 返回 `{running, startedAt?, lastResult?}`，供前端轮询和刷新后恢复状态                                                  |
 
 ### web 新增
 
@@ -69,12 +69,12 @@ Claude 式 skill 的三件事，各自复刻：
 
 ### 错误态汇总
 
-| 情况 | 表现 |
-|---|---|
-| `AI_DEEPDIVE_MODEL` 未配置 | 503；按钮置灰 + 提示 |
-| 已有分析在跑（任意标的） | 409；按钮提示「有分析进行中」 |
-| 会话超时/失败 | 通知 + 页面错误摘要，日志留全文 |
-| 改动越界 | 完成通知带 ⚠️ 警告 |
+| 情况                       | 表现                            |
+| -------------------------- | ------------------------------- |
+| `AI_DEEPDIVE_MODEL` 未配置 | 503；按钮置灰 + 提示            |
+| 已有分析在跑（任意标的）   | 409；按钮提示「有分析进行中」   |
+| 会话超时/失败              | 通知 + 页面错误摘要，日志留全文 |
+| 改动越界                   | 完成通知带 ⚠️ 警告              |
 
 ## 已知风险与对策
 

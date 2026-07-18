@@ -52,15 +52,15 @@
 
 ### 3. 组件收编与删除
 
-| 组件 | 处置 |
-|---|---|
-| `SymbolCockpit.tsx` | 成为唯一个股页,吸收 ChartDetail 的图表主体渲染与顶栏(时段切换、驾驶舱链接改为面包屑等) |
-| `ChartDetail.tsx` / `ChartList.tsx` | 删除 |
-| `HistoryTab` | 改造为时间轴选择器的数据源/展示 |
-| `useIntradayDoc` | 增加「跟随最新」模式(接收外部切换 id + 广播触发) |
-| `TodayCharts` | 被 `CrossSectionCharts` 取代 |
-| `useReassessSymbol` | 保留,去掉完成后的特殊刷新逻辑 |
-| `recentCharts`(最近图表记录) | 改为记录 symbol 维度;QuickBar 快捷入口逻辑不变 |
+| 组件                                | 处置                                                                                   |
+| ----------------------------------- | -------------------------------------------------------------------------------------- |
+| `SymbolCockpit.tsx`                 | 成为唯一个股页,吸收 ChartDetail 的图表主体渲染与顶栏(时段切换、驾驶舱链接改为面包屑等) |
+| `ChartDetail.tsx` / `ChartList.tsx` | 删除                                                                                   |
+| `HistoryTab`                        | 改造为时间轴选择器的数据源/展示                                                        |
+| `useIntradayDoc`                    | 增加「跟随最新」模式(接收外部切换 id + 广播触发)                                       |
+| `TodayCharts`                       | 被 `CrossSectionCharts` 取代                                                           |
+| `useReassessSymbol`                 | 保留,去掉完成后的特殊刷新逻辑                                                          |
+| `recentCharts`(最近图表记录)        | 改为记录 symbol 维度;QuickBar 快捷入口逻辑不变                                         |
 
 ### 4. 边界情况
 

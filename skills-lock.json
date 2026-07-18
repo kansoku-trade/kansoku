@@ -1,5 +1,4 @@
 {
-  "version": 1,
   "skills": {
     "company-valuation": {
       "source": "himself65/finance-skills",
@@ -109,5 +108,6 @@
       "skillPath": "plugins/market-analysis/skills/yfinance-data/SKILL.md",
       "computedHash": "63f3c8c26d63c2e30d96c58230c940c2024f9d754b0d369d9fdeec5208079193"
     }
-  }
+  },
+  "version": 1
 }

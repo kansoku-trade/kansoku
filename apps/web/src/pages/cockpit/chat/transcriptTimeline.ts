@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
-import type { ChatRow } from "./useChatSession";
+import type { ReactNode } from 'react';
+import type { ChatRow } from './useChatSession';
 
 export interface TranscriptInsert {
   id: string;
@@ -7,7 +7,8 @@ export interface TranscriptInsert {
   node: ReactNode;
 }
 
-export type TimelineEntry = { kind: "row"; row: ChatRow } | { kind: "insert"; insert: TranscriptInsert };
+export type TimelineEntry =
+  { kind: 'row'; row: ChatRow } | { kind: 'insert'; insert: TranscriptInsert };
 
 function parseTime(ts: string): number {
   const parsed = Date.parse(ts);
@@ -25,14 +26,14 @@ export function mergeTimeline(rows: ChatRow[], inserts: TranscriptInsert[]): Tim
   for (const row of rows) {
     const rowTime = parseTime(row.ts);
     while (pointer < sortedInserts.length && sortedInserts[pointer].time < rowTime) {
-      result.push({ kind: "insert", insert: sortedInserts[pointer].insert });
+      result.push({ kind: 'insert', insert: sortedInserts[pointer].insert });
       pointer++;
     }
-    result.push({ kind: "row", row });
+    result.push({ kind: 'row', row });
   }
 
   while (pointer < sortedInserts.length) {
-    result.push({ kind: "insert", insert: sortedInserts[pointer].insert });
+    result.push({ kind: 'insert', insert: sortedInserts[pointer].insert });
     pointer++;
   }
 

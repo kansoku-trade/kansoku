@@ -1,7 +1,7 @@
-const DASH = "—";
+const DASH = '—';
 
 export function escapeCell(value: string): string {
-  return value.replace(/\|/g, "\\|");
+  return value.replaceAll('|', '\\|');
 }
 
 export function fmtScore(value: number | null | undefined): string {

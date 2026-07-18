@@ -3,26 +3,26 @@ name: ci
 on:
   pull_request:
     paths:
-      - "apps/**"
-      - "packages/**"
-      - "patches/**"
-      - "scripts/**"
-      - "package.json"
-      - "pnpm-lock.yaml"
-      - "pnpm-workspace.yaml"
-      - ".github/**"
+      - 'apps/**'
+      - 'packages/**'
+      - 'patches/**'
+      - 'scripts/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - '.github/**'
   push:
     branches:
       - main
     paths:
-      - "apps/**"
-      - "packages/**"
-      - "patches/**"
-      - "scripts/**"
-      - "package.json"
-      - "pnpm-lock.yaml"
-      - "pnpm-workspace.yaml"
-      - ".github/**"
+      - 'apps/**'
+      - 'packages/**'
+      - 'patches/**'
+      - 'scripts/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - '.github/**'
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -44,7 +44,7 @@ jobs:
       - name: setup node
         uses: actions/setup-node@v4
         with:
-          node-version: "24"
+          node-version: '24'
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
 

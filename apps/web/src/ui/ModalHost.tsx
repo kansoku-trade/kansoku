@@ -1,27 +1,27 @@
-import { useEffect, useSyncExternalStore } from "react";
-import { X } from "lucide-react";
-import { closeModal, getSnapshot, subscribe, type ModalEntry } from "./modalStore";
-import { ScrollArea } from "./ScrollArea";
+import { useEffect, useSyncExternalStore } from 'react';
+import { X } from 'lucide-react';
+import { closeModal, getSnapshot, subscribe, type ModalEntry } from './modalStore';
+import { ScrollArea } from './ScrollArea';
 
 function ModalFrame({ entry }: { entry: ModalEntry }) {
   const close = () => closeModal(entry.id);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") close();
+      if (e.key === 'Escape') close();
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
   }, [entry.id]);
 
-  const body = typeof entry.body === "function" ? entry.body(close) : entry.body;
+  const body = typeof entry.body === 'function' ? entry.body(close) : entry.body;
   const headerAction =
-    typeof entry.headerAction === "function" ? entry.headerAction(close) : entry.headerAction;
+    typeof entry.headerAction === 'function' ? entry.headerAction(close) : entry.headerAction;
 
   return (
     <div className="modal-backdrop" data-state={entry.state} onClick={close}>
       <div
-        className={entry.panelClassName ? `modal-panel ${entry.panelClassName}` : "modal-panel"}
+        className={entry.panelClassName ? `modal-panel ${entry.panelClassName}` : 'modal-panel'}
         data-state={entry.state}
         role="dialog"
         aria-modal="true"
@@ -48,9 +48,9 @@ export function ModalHost() {
   const entries = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
   useEffect(() => {
     if (entries.length === 0) return;
-    document.body.style.overflow = "hidden";
+    document.body.style.overflow = 'hidden';
     return () => {
-      document.body.style.overflow = "";
+      document.body.style.overflow = '';
     };
   }, [entries.length]);
   return (

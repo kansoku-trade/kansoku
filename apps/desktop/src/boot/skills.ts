@@ -6,8 +6,8 @@ import {
   realpathSync,
   rmSync,
   symlinkSync,
-} from "node:fs";
-import { dirname, join } from "node:path";
+} from 'node:fs';
+import { dirname, join } from 'node:path';
 
 /**
  * Packaged builds ship agent skills under Resources/skills. The kernel still
@@ -18,7 +18,7 @@ import { dirname, join } from "node:path";
 export function ensureBundledSkills(dataRoot: string, bundledSkillsDir: string): boolean {
   if (!existsSync(bundledSkillsDir)) return false;
 
-  const target = join(dataRoot, ".claude", "skills");
+  const target = join(dataRoot, '.claude', 'skills');
   mkdirSync(dirname(target), { recursive: true });
 
   if (existsSync(target)) {
@@ -26,10 +26,10 @@ export function ensureBundledSkills(dataRoot: string, bundledSkillsDir: string):
       const st = lstatSync(target);
       if (st.isSymbolicLink()) {
         const current = readlinkSync(target);
-        const currentAbs = current.startsWith("/") ? current : join(dirname(target), current);
+        const currentAbs = current.startsWith('/') ? current : join(dirname(target), current);
         if (samePath(currentAbs, bundledSkillsDir)) return true;
         rmSync(target);
-      } else if (st.isDirectory() && existsSync(join(target, "intraday-signal", "SKILL.md"))) {
+      } else if (st.isDirectory() && existsSync(join(target, 'intraday-signal', 'SKILL.md'))) {
         // User/data already has a real skills tree — leave it alone.
         return true;
       } else {
@@ -45,7 +45,7 @@ export function ensureBundledSkills(dataRoot: string, bundledSkillsDir: string):
   }
 
   try {
-    symlinkSync(bundledSkillsDir, target, "dir");
+    symlinkSync(bundledSkillsDir, target, 'dir');
     return true;
   } catch {
     return false;
@@ -61,5 +61,5 @@ function samePath(a: string, b: string): boolean {
 }
 
 export function bundledSkillsPath(resourcesPath: string): string {
-  return join(resourcesPath, "skills");
+  return join(resourcesPath, 'skills');
 }

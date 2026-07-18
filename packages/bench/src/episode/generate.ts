@@ -1,13 +1,13 @@
-import { promises as fs } from "node:fs";
-import { join } from "node:path";
-import type { RawBar } from "@kansoku/shared/types";
-import { buildDayIndicators, buildWeekIndicators } from "../generate/indicatorsFixture.js";
-import { buildQuestionId } from "../generate/id.js";
-import type { QuoteBar } from "../generate/assemble.js";
-import type { CalendarEvent, EpisodeKlinePeriod } from "../generate/source.js";
-import type { Question } from "../schema/question.js";
-import { Value } from "typebox/value";
-import { questionSchema } from "../schema/question.js";
+import { promises as fs } from 'node:fs';
+import { join } from 'node:path';
+import type { RawBar } from '@kansoku/shared/types';
+import { buildDayIndicators, buildWeekIndicators } from '../generate/indicatorsFixture.js';
+import { buildQuestionId } from '../generate/id.js';
+import type { QuoteBar } from '../generate/assemble.js';
+import type { CalendarEvent, EpisodeKlinePeriod } from '../generate/source.js';
+import type { Question } from '../schema/question.js';
+import { Value } from 'typebox/value';
+import { questionSchema } from '../schema/question.js';
 
 export const EPISODE_REQUIRED_H1 = 210;
 export const EPISODE_REQUIRED_DAY = 250;
@@ -15,28 +15,28 @@ export const EPISODE_REQUIRED_WEEK = 104;
 export const EPISODE_DEFAULT_HORIZON_SESSIONS = 40;
 export const EPISODE_ENTRY_EXPIRY_SESSIONS = 3;
 
-const ET_DATE_FORMATTER = new Intl.DateTimeFormat("en-CA", {
-  timeZone: "America/New_York",
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
+const ET_DATE_FORMATTER = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'America/New_York',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
 });
-const ET_OFFSET_FORMATTER = new Intl.DateTimeFormat("en-US", {
-  timeZone: "America/New_York",
-  timeZoneName: "longOffset",
+const ET_OFFSET_FORMATTER = new Intl.DateTimeFormat('en-US', {
+  timeZone: 'America/New_York',
+  timeZoneName: 'longOffset',
 });
 
 function numberOf(value: string | number | undefined): number | null {
   if (value == null) return null;
-  const parsed = typeof value === "number" ? value : Number(value);
+  const parsed = typeof value === 'number' ? value : Number(value);
   return Number.isFinite(parsed) ? parsed : null;
 }
 
 export function marketDate(time: string): string {
   if (/^\d{4}-\d{2}-\d{2}$/.test(time)) return time;
   const parts = ET_DATE_FORMATTER.formatToParts(new Date(time));
-  const part = (type: string) => parts.find((entry) => entry.type === type)?.value ?? "";
-  return `${part("year")}-${part("month")}-${part("day")}`;
+  const part = (type: string) => parts.find((entry) => entry.type === type)?.value ?? '';
+  return `${part('year')}-${part('month')}-${part('day')}`;
 }
 
 export function weekKey(date: string): string {
@@ -48,13 +48,22 @@ export function weekKey(date: string): string {
 
 export function marketCloseIso(date: string): string {
   const noonUtc = new Date(`${date}T12:00:00Z`);
-  const zone = ET_OFFSET_FORMATTER.formatToParts(noonUtc).find((part) => part.type === "timeZoneName")?.value;
-  const offset = zone?.replace("GMT", "") ?? "-05:00";
+  const zone = ET_OFFSET_FORMATTER.formatToParts(noonUtc).find(
+    (part) => part.type === 'timeZoneName',
+  )?.value;
+  const offset = zone?.replace('GMT', '') ?? '-05:00';
   return `${date}T16:00:00${offset}`;
 }
 
 function strip(bar: QuoteBar): RawBar {
-  return { time: bar.time, open: bar.open, high: bar.high, low: bar.low, close: bar.close, volume: bar.volume };
+  return {
+    time: bar.time,
+    open: bar.open,
+    high: bar.high,
+    low: bar.low,
+    close: bar.close,
+    volume: bar.volume,
+  };
 }
 
 function aggregateWeek(key: string, bars: QuoteBar[]): QuoteBar {
@@ -126,9 +135,14 @@ function buildReplayRollups(dayBars: QuoteBar[], weekBars: QuoteBar[], replay: Q
   const replayWeeks = new Set([...replayByDate.keys()].map(weekKey));
   const week = [...replayWeeks].flatMap((key) => {
     const sourceDays = allDaysByWeek.get(key) ?? [];
-    const lastSessionDate = sourceDays.map((bar) => marketDate(bar.time)).sort().at(-1);
+    const lastSessionDate = sourceDays
+      .map((bar) => marketDate(bar.time))
+      .sort()
+      .at(-1);
     const nativeBar = weekByKey.get(key);
-    const availableAt = lastSessionDate ? replayByDate.get(lastSessionDate)?.at(-1)?.time : undefined;
+    const availableAt = lastSessionDate
+      ? replayByDate.get(lastSessionDate)?.at(-1)?.time
+      : undefined;
     return nativeBar && availableAt ? [{ availableAt, bar: strip(nativeBar) }] : [];
   });
 
@@ -153,23 +167,36 @@ export function assembleEpisodeQuestion(input: AssembleEpisodeQuestionInput): Qu
   const horizonSessions = input.horizonSessions ?? EPISODE_DEFAULT_HORIZON_SESSIONS;
   const cutoff = marketCloseIso(input.cutoffDate);
   const cutoffMs = Date.parse(cutoff);
-  const initialHours = input.hourBars.filter((bar) => Date.parse(bar.time) < cutoffMs).slice(-EPISODE_REQUIRED_H1);
-  const initialDays = input.dayBars.filter((bar) => marketDate(bar.time) <= input.cutoffDate).slice(-EPISODE_REQUIRED_DAY);
+  const initialHours = input.hourBars
+    .filter((bar) => Date.parse(bar.time) < cutoffMs)
+    .slice(-EPISODE_REQUIRED_H1);
+  const initialDays = input.dayBars
+    .filter((bar) => marketDate(bar.time) <= input.cutoffDate)
+    .slice(-EPISODE_REQUIRED_DAY);
   const cutoffWeek = weekKey(input.cutoffDate);
   const completedWeeks = input.weekBars.filter((bar) => weekKey(marketDate(bar.time)) < cutoffWeek);
   const currentWeekDays = initialDays.filter((bar) => weekKey(marketDate(bar.time)) === cutoffWeek);
-  const partialWeek = currentWeekDays.length > 0 ? aggregateWeek(cutoffWeek, currentWeekDays) : null;
-  const initialWeeks = [...completedWeeks, ...(partialWeek ? [partialWeek] : [])].slice(-EPISODE_REQUIRED_WEEK);
+  const partialWeek =
+    currentWeekDays.length > 0 ? aggregateWeek(cutoffWeek, currentWeekDays) : null;
+  const initialWeeks = [...completedWeeks, ...(partialWeek ? [partialWeek] : [])].slice(
+    -EPISODE_REQUIRED_WEEK,
+  );
   const replay = takeSessionsAfter(input.hourBars, cutoffMs, horizonSessions);
 
   if (initialHours.length < EPISODE_REQUIRED_H1) {
-    throw new Error(`insufficient 1h history: need ${EPISODE_REQUIRED_H1}, got ${initialHours.length}`);
+    throw new Error(
+      `insufficient 1h history: need ${EPISODE_REQUIRED_H1}, got ${initialHours.length}`,
+    );
   }
   if (initialDays.length < EPISODE_REQUIRED_DAY) {
-    throw new Error(`insufficient day history: need ${EPISODE_REQUIRED_DAY}, got ${initialDays.length}`);
+    throw new Error(
+      `insufficient day history: need ${EPISODE_REQUIRED_DAY}, got ${initialDays.length}`,
+    );
   }
   if (initialWeeks.length < EPISODE_REQUIRED_WEEK) {
-    throw new Error(`insufficient week history: need ${EPISODE_REQUIRED_WEEK}, got ${initialWeeks.length}`);
+    throw new Error(
+      `insufficient week history: need ${EPISODE_REQUIRED_WEEK}, got ${initialWeeks.length}`,
+    );
   }
   const replaySessions = new Set(replay.map((bar) => marketDate(bar.time))).size;
   if (replaySessions < horizonSessions) {
@@ -180,16 +207,16 @@ export function assembleEpisodeQuestion(input: AssembleEpisodeQuestionInput): Qu
   const previousDay = initialDays.at(-2);
   const question: Question = {
     id: buildQuestionId(input.symbol, input.cutoffDate, 1),
-    bank: "swing",
+    bank: 'swing',
     symbol: input.symbol,
     cutoff,
     layer: input.layer,
     adversarial: false,
     fixtures: {
       kline: {
-        "1h": initialHours.map(strip),
-        day: initialDays.map(strip),
-        week: initialWeeks.map(strip),
+        '1h': initialHours.map(strip),
+        'day': initialDays.map(strip),
+        'week': initialWeeks.map(strip),
       },
       indicators: {
         day: buildDayIndicators(initialDays),
@@ -210,7 +237,7 @@ export function assembleEpisodeQuestion(input: AssembleEpisodeQuestionInput): Qu
       calendar: input.calendar ?? {},
     },
     replay: {
-      basePeriod: "1h",
+      basePeriod: '1h',
       entryExpiryBars: barsInFirstSessions(replay, EPISODE_ENTRY_EXPIRY_SESSIONS),
       horizonSessions,
       horizonBars: replay.length,
@@ -221,7 +248,9 @@ export function assembleEpisodeQuestion(input: AssembleEpisodeQuestionInput): Qu
 
   if (!Value.Check(questionSchema, question)) {
     const first = Value.Errors(questionSchema, question)[0];
-    throw new Error(`invalid episode question: ${first?.instancePath ?? "(root)"} ${first?.message ?? "schema mismatch"}`);
+    throw new Error(
+      `invalid episode question: ${first?.instancePath ?? '(root)'} ${first?.message ?? 'schema mismatch'}`,
+    );
   }
   return question;
 }
@@ -256,14 +285,18 @@ export async function generateEpisodeCase(options: GenerateEpisodeCaseOptions) {
   const sessions = options.horizonSessions ?? EPISODE_DEFAULT_HORIZON_SESSIONS;
   const hourStart = addDays(options.cutoffDate, -90);
   const rangeEnd = addDays(options.cutoffDate, Math.ceil(sessions * 2.5) + 14);
-  log(`${options.symbol}: fetching 1h ${hourStart}..${rangeEnd}, day/week history through ${rangeEnd}`);
+  log(
+    `${options.symbol}: fetching 1h ${hourStart}..${rangeEnd}, day/week history through ${rangeEnd}`,
+  );
 
   const [hourBars, dayBars, weekBars, calendarEvents] = await Promise.all([
-    options.fetchKlineHistory(options.symbol, "1h", hourStart, rangeEnd),
-    options.fetchKlineHistory(options.symbol, "day", "2022-01-01", rangeEnd),
-    options.fetchKlineHistory(options.symbol, "week", "2022-01-01", rangeEnd),
+    options.fetchKlineHistory(options.symbol, '1h', hourStart, rangeEnd),
+    options.fetchKlineHistory(options.symbol, 'day', '2022-01-01', rangeEnd),
+    options.fetchKlineHistory(options.symbol, 'week', '2022-01-01', rangeEnd),
     options.fetchCalendar
-      ? options.fetchCalendar(options.symbol, options.cutoffDate, addDays(options.cutoffDate, 180)).catch(() => [])
+      ? options
+          .fetchCalendar(options.symbol, options.cutoffDate, addDays(options.cutoffDate, 180))
+          .catch(() => [])
       : Promise.resolve([]),
   ]);
 
@@ -277,12 +310,12 @@ export async function generateEpisodeCase(options: GenerateEpisodeCaseOptions) {
     horizonSessions: sessions,
     calendar: { events: calendarEvents },
   });
-  const dir = join(options.datasetsRoot, options.version, "swing");
+  const dir = join(options.datasetsRoot, options.version, 'swing');
   const file = join(dir, `${question.id}.json`);
   await fs.mkdir(dir, { recursive: true });
-  await fs.writeFile(file, `${JSON.stringify(question, null, 2)}\n`, "utf8");
+  await fs.writeFile(file, `${JSON.stringify(question, null, 2)}\n`, 'utf8');
   log(
-    `${question.id}: ${question.fixtures.kline["1h"].length} initial 1h, ` +
+    `${question.id}: ${question.fixtures.kline['1h'].length} initial 1h, ` +
       `${question.fixtures.kline.day.length} day, ${question.fixtures.kline.week.length} week, ` +
       `${question.replay.horizonBars} replay 1h across ${question.replay.horizonSessions} sessions`,
   );

@@ -1,6 +1,6 @@
-import { existsSync, mkdirSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { existsSync, mkdirSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 // Walk up from wherever this module physically sits until the repo root
 // (identified by apps/desktop/package.json) is found — this stays correct
@@ -11,12 +11,12 @@ import { fileURLToPath } from "node:url";
 export function resolveRepoRoot(): string {
   let dir = dirname(fileURLToPath(import.meta.url));
   for (let i = 0; i < 8; i++) {
-    if (existsSync(join(dir, "apps", "desktop", "package.json"))) return dir;
+    if (existsSync(join(dir, 'apps', 'desktop', 'package.json'))) return dir;
     const parent = dirname(dir);
     if (parent === dir) break;
     dir = parent;
   }
-  return join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
+  return join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 }
 
 export interface DataRootOptions {
@@ -35,10 +35,10 @@ export function resolveDataRoot(opts: DataRootOptions): string {
 }
 
 const DATA_ROOT_SUBDIRS = [
-  "journal",
-  join("journal", "charts", "data"),
-  join("journal", "charts", "annotations"),
-  "stocks",
+  'journal',
+  join('journal', 'charts', 'data'),
+  join('journal', 'charts', 'annotations'),
+  'stocks',
 ];
 
 export function scaffoldDataRoot(root: string): void {

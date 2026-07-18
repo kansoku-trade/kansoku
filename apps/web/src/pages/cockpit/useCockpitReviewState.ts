@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
-import { useQuery } from "@web/apiHooks";
-import { client } from "@web/client";
-import type { ReviewSection } from "./ReviewTab";
+import { useEffect, useState } from 'react';
+import { useQuery } from '@web/apiHooks';
+import { client } from '@web/client';
+import type { ReviewSection } from './ReviewTab';
 
 export interface CockpitReviewState {
   journalEntries: { name: string; date: string }[];
@@ -17,12 +17,19 @@ export function useCockpitReviewState(sym: string): CockpitReviewState {
     `symbols.journal:${sym}`,
     () => client.symbols.journal({ sym }),
   );
-  const [reviewSection, setReviewSection] = useState<ReviewSection>("history");
+  const [reviewSection, setReviewSection] = useState<ReviewSection>('history');
   const [selectedJournal, setSelectedJournal] = useState<string | null>(null);
   useEffect(() => {
     setSelectedJournal(null);
-    setReviewSection("history");
+    setReviewSection('history');
   }, [sym]);
 
-  return { journalEntries: journal ?? [], reloadJournal, reviewSection, setReviewSection, selectedJournal, setSelectedJournal };
+  return {
+    journalEntries: journal ?? [],
+    reloadJournal,
+    reviewSection,
+    setReviewSection,
+    selectedJournal,
+    setSelectedJournal,
+  };
 }

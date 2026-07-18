@@ -1,7 +1,7 @@
-import { useState } from "react";
-import { errorMessage } from "../api";
-import { Paywall } from "../LicenseModal";
-import { Card } from "../ui";
+import { useState } from 'react';
+import { errorMessage } from '../api';
+import { Paywall } from '../LicenseModal';
+import { Card } from '../ui';
 
 export function StepPro({ onComplete }: { onComplete: () => Promise<void> }) {
   const [busy, setBusy] = useState(false);
@@ -21,7 +21,9 @@ export function StepPro({ onComplete }: { onComplete: () => Promise<void> }) {
   return (
     <Card className="onboarding-card">
       <Paywall onActivated={() => void finish()} />
-      {error ? <div className="settings-test-result settings-test-result--fail">{error}</div> : null}
+      {error ? (
+        <div className="settings-test-result settings-test-result--fail">{error}</div>
+      ) : null}
       <div className="onboarding-skip-row">
         <button className="onboarding-skip-link" disabled={busy} onClick={() => void finish()}>
           跳过，先免费使用

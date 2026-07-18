@@ -1,4 +1,4 @@
-import type { AnchorHTMLAttributes, ButtonHTMLAttributes } from "react";
+import type { AnchorHTMLAttributes, ButtonHTMLAttributes } from 'react';
 
 type ChipProps = {
   active?: boolean;
@@ -6,7 +6,7 @@ type ChipProps = {
   ButtonHTMLAttributes<HTMLButtonElement>;
 
 export function Chip({ active, href, className, children, ...rest }: ChipProps) {
-  const cls = `chip${active ? " active" : ""}${className ? ` ${className}` : ""}`;
+  const cls = `chip${active ? ' active' : ''}${className ? ` ${className}` : ''}`;
 
   if (href) {
     return (

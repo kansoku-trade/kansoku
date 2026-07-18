@@ -1,8 +1,8 @@
-import { eq } from "drizzle-orm";
-import type { Db } from "../db/index.js";
-import { watchedMarketsSettings } from "../db/schema.js";
-import { ClientError } from "../errors.js";
-import type { Market } from "./symbol.utils.js";
+import { eq } from 'drizzle-orm';
+import type { Db } from '../db/index.js';
+import { watchedMarketsSettings } from '../db/schema.js';
+import { ClientError } from '../errors.js';
+import type { Market } from './symbol.utils.js';
 
 export interface WatchedMarketsStore {
   get(): Market[];
@@ -10,9 +10,9 @@ export interface WatchedMarketsStore {
   revision(): number;
 }
 
-const VALID_MARKETS: Market[] = ["US", "HK", "CN"];
+const VALID_MARKETS: Market[] = ['US', 'HK', 'CN'];
 
-export const DEFAULT_WATCHED_MARKETS: Market[] = ["US"];
+export const DEFAULT_WATCHED_MARKETS: Market[] = ['US'];
 
 export function validateWatchedMarkets(input: unknown): Market[] {
   if (!Array.isArray(input) || input.length === 0) {
@@ -20,13 +20,16 @@ export function validateWatchedMarkets(input: unknown): Market[] {
   }
   const deduped: Market[] = [];
   for (const item of input) {
-    if (typeof item !== "string" || !VALID_MARKETS.includes(item as Market)) {
-      throw new ClientError(`invalid market: ${String(item)}`, `expected one of ${VALID_MARKETS.join(", ")}`);
+    if (typeof item !== 'string' || !VALID_MARKETS.includes(item as Market)) {
+      throw new ClientError(
+        `invalid market: ${String(item)}`,
+        `expected one of ${VALID_MARKETS.join(', ')}`,
+      );
     }
     if (!deduped.includes(item as Market)) deduped.push(item as Market);
   }
   if (deduped.length === 0) {
-    throw new ClientError("at least one market must be selected");
+    throw new ClientError('at least one market must be selected');
   }
   return deduped;
 }
@@ -34,7 +37,11 @@ export function validateWatchedMarkets(input: unknown): Market[] {
 export function createWatchedMarketsStore(db: Db): WatchedMarketsStore {
   let rev = 0;
 
-  const row = db.select().from(watchedMarketsSettings).where(eq(watchedMarketsSettings.id, 1)).get();
+  const row = db
+    .select()
+    .from(watchedMarketsSettings)
+    .where(eq(watchedMarketsSettings.id, 1))
+    .get();
   let cache: Market[] = row ? row.markets : DEFAULT_WATCHED_MARKETS;
 
   return {
@@ -72,7 +79,9 @@ export function setActiveWatchedMarketsStore(store: WatchedMarketsStore | null):
 
 export function getActiveWatchedMarketsStore(): WatchedMarketsStore {
   if (!active) {
-    throw new Error("watchedMarketsStore: no active watched-markets store; call setActiveWatchedMarketsStore before use");
+    throw new Error(
+      'watchedMarketsStore: no active watched-markets store; call setActiveWatchedMarketsStore before use',
+    );
   }
   return active;
 }

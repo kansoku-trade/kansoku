@@ -16,12 +16,12 @@
 
 ## 调性决策（已确认）
 
-| 决策点 | 结论 |
-|---|---|
-| 视觉调性 | 终端/彭博风：高密度、信息优先、几乎无圆角、无阴影 |
-| 字体策略 | 数字等宽（`tabular-nums`），标签与中文正文用系统字体 |
-| 强调色 | 琥珀 `#ffb000`（彭博终端色），与警示色合并；取消蓝 `#58a6ff`、紫 `#ba68c8` |
-| 落地范围 | 全量迁移：token + 组件收敛 + 清理内联 style，一次到位 |
+| 决策点   | 结论                                                                       |
+| -------- | -------------------------------------------------------------------------- |
+| 视觉调性 | 终端/彭博风：高密度、信息优先、几乎无圆角、无阴影                          |
+| 字体策略 | 数字等宽（`tabular-nums`），标签与中文正文用系统字体                       |
+| 强调色   | 琥珀 `#ffb000`（彭博终端色），与警示色合并；取消蓝 `#58a6ff`、紫 `#ba68c8` |
+| 落地范围 | 全量迁移：token + 组件收敛 + 清理内联 style，一次到位                      |
 
 全站只允许 5 个色相：黑 / 灰 / 绿 / 红 / 琥珀。
 
@@ -32,10 +32,10 @@
 ### 背景 — 按界面层级命名
 
 ```css
---bg-canvas: #0a0a0a;   /* 页面最底层，只有 body 用 */
---bg-surface: #141414;  /* 浮在 canvas 上的容器：卡片、面板、侧栏、topbar */
---bg-element: #1e1e1e;  /* surface 内的交互件默认态：输入框、按钮、badge 底 */
---bg-hover: #262626;    /* 任何可交互元素的 hover 态 */
+--bg-canvas: #0a0a0a; /* 页面最底层，只有 body 用 */
+--bg-surface: #141414; /* 浮在 canvas 上的容器：卡片、面板、侧栏、topbar */
+--bg-element: #1e1e1e; /* surface 内的交互件默认态：输入框、按钮、badge 底 */
+--bg-hover: #262626; /* 任何可交互元素的 hover 态 */
 ```
 
 使用规则：**页面 → 容器 → 控件 → hover，一层比一层浅一档，跳层即错。**
@@ -43,31 +43,31 @@
 ### 边框
 
 ```css
---border: #262626;        /* 默认：分隔线、卡片描边 */
+--border: #262626; /* 默认：分隔线、卡片描边 */
 --border-strong: #3a3a3a; /* 更清楚的轮廓：输入框、激活控件 */
 ```
 
 ### 文字 — 按信息优先级命名
 
 ```css
---text-primary: #e8e8e8;   /* 正文、数据本体 */
+--text-primary: #e8e8e8; /* 正文、数据本体 */
 --text-secondary: #9a9a9a; /* 标签、meta、说明 */
---text-muted: #5c5c5c;     /* 占位符、禁用、失效 */
+--text-muted: #5c5c5c; /* 占位符、禁用、失效 */
 ```
 
 ### 功能色 — 按语义命名
 
 ```css
 --accent: #ffb000; /* 交互与强调：链接、选中、活跃 tab、focus、警示，全部归它 */
---up: #26a69a;     /* 涨、多头、成功 */
---down: #ef5350;   /* 跌、空头、错误（红兼任错误色，不再有独立 error 红） */
+--up: #26a69a; /* 涨、多头、成功 */
+--down: #ef5350; /* 跌、空头、错误（红兼任错误色，不再有独立 error 红） */
 ```
 
 ### 字体
 
 ```css
---font-ui: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
---font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+--font-ui: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', sans-serif;
+--font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
 ```
 
 所有数字（价格、百分比、时间、日期、金额）必须用 `--font-mono` + `font-variant-numeric: tabular-nums`，收口为一个 `.num` 工具类。
@@ -75,12 +75,12 @@
 ### 字号 — 12 档收敛为 6 档
 
 ```css
---fs-xs: 10px;   /* 极小角标 */
---fs-sm: 11px;   /* badge、面板标题、meta */
+--fs-xs: 10px; /* 极小角标 */
+--fs-sm: 11px; /* badge、面板标题、meta */
 --fs-base: 12px; /* 正文默认 */
---fs-md: 13px;   /* 列表主文字 */
---fs-lg: 15px;   /* 卡片头部 symbol */
---fs-xl: 20px;   /* 页面 h1 */
+--fs-md: 13px; /* 列表主文字 */
+--fs-lg: 15px; /* 卡片头部 symbol */
+--fs-xl: 20px; /* 页面 h1 */
 ```
 
 8px、9px 淘汰；17/22/26px 归入 20px 档。
@@ -139,19 +139,19 @@
 
 位置 `apps/web/src/ui/`，一件一文件，统一从 `ui/index.ts` 出口。全部是薄壳：外观由 CSS 基础类承载，组件只把 props 翻译成 class，零业务逻辑、零数据请求。
 
-| 组件 | API | 对应 CSS 类 / 替代对象 |
-|---|---|---|
-| `Card` | `link?: boolean`，link 时渲染 `<a>` | `.card` / `.card--link` |
-| `Badge` | `tone?: 'up' \| 'down' \| 'accent' \| 'solid'` | `.badge` 及修饰符 |
-| `Button` | `accent?: boolean; state?: 'busy' \| 'done' \| 'failed'` | `.btn`；替代 `ai-btn` / `reassess-btn` |
-| `Chip` | `active?: boolean` | `.chip`；替代 `filter-chip` / `quickbar-chip` |
-| `Input` / `Select` | 原生属性透传 | `.input` |
-| `Dot` | `tone?: 'accent' \| 'up' \| 'down'; pulse?: boolean` | `.dot`；替代 4 种圆点 |
-| `SectionTitle` | children | `.section-title` |
-| `Num` | `value: number; diff?: boolean` | `.num`；diff 模式按正负着色并带 +/- 号 |
-| `Spinner` | — | 替代 `ai-spin` |
-| `Empty` | children | 替代 `.empty` |
-| `ErrorBox` | children | 替代 `.error-box` |
+| 组件               | API                                                      | 对应 CSS 类 / 替代对象                        |
+| ------------------ | -------------------------------------------------------- | --------------------------------------------- |
+| `Card`             | `link?: boolean`，link 时渲染 `<a>`                      | `.card` / `.card--link`                       |
+| `Badge`            | `tone?: 'up' \| 'down' \| 'accent' \| 'solid'`           | `.badge` 及修饰符                             |
+| `Button`           | `accent?: boolean; state?: 'busy' \| 'done' \| 'failed'` | `.btn`；替代 `ai-btn` / `reassess-btn`        |
+| `Chip`             | `active?: boolean`                                       | `.chip`；替代 `filter-chip` / `quickbar-chip` |
+| `Input` / `Select` | 原生属性透传                                             | `.input`                                      |
+| `Dot`              | `tone?: 'accent' \| 'up' \| 'down'; pulse?: boolean`     | `.dot`；替代 4 种圆点                         |
+| `SectionTitle`     | children                                                 | `.section-title`                              |
+| `Num`              | `value: number; diff?: boolean`                          | `.num`；diff 模式按正负着色并带 +/- 号        |
+| `Spinner`          | —                                                        | 替代 `ai-spin`                                |
+| `Empty`            | children                                                 | 替代 `.empty`                                 |
+| `ErrorBox`         | children                                                 | 替代 `.error-box`                             |
 
 硬规则：
 

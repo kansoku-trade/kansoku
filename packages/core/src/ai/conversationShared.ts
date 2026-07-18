@@ -1,7 +1,7 @@
-import type { AgentMessage } from "@earendil-works/pi-agent-core";
-import type { Db } from "../db/index.js";
-import type { AiAgentHandle } from "./agentSession.js";
-import type { AiModel } from "./models.js";
+import type { AgentMessage } from '@earendil-works/pi-agent-core';
+import type { Db } from '../db/index.js';
+import type { AiAgentHandle } from './agentSession.js';
+import type { AiModel } from './models.js';
 
 export const TOOL_TEXT_CAP = 4000;
 
@@ -11,7 +11,7 @@ export function truncate(text: string): string {
 
 export function stringifyPayload(value: unknown): string | undefined {
   if (value == null) return undefined;
-  if (typeof value === "string") return value ? truncate(value) : undefined;
+  if (typeof value === 'string') return value ? truncate(value) : undefined;
   try {
     return truncate(JSON.stringify(value));
   } catch {
@@ -20,18 +20,18 @@ export function stringifyPayload(value: unknown): string | undefined {
 }
 
 export function textOf(block: { type: string; text?: string }): string {
-  return block.type === "text" && typeof block.text === "string" ? block.text : "";
+  return block.type === 'text' && typeof block.text === 'string' ? block.text : '';
 }
 
 export function agentToolResultText(result: unknown): string | undefined {
-  if (typeof result !== "object" || result === null) return undefined;
+  if (typeof result !== 'object' || result === null) return undefined;
   const content = (result as { content?: unknown }).content;
   if (!Array.isArray(content)) return undefined;
-  return content.map((block) => textOf(block as { type: string; text?: string })).join("");
+  return content.map((block) => textOf(block as { type: string; text?: string })).join('');
 }
 
 export function concatAssistantText(message: AgentMessage): string {
-  return message.role === "assistant" ? message.content.map(textOf).join("") : "";
+  return message.role === 'assistant' ? message.content.map(textOf).join('') : '';
 }
 
 export function hasAssistantText(messages: AgentMessage[]): boolean {
@@ -51,11 +51,11 @@ export function synthesizePartialAssistantMessage(
   model: AiModel,
   text: string,
   timestamp: number,
-  stopReason: "aborted" | "stop" = "aborted",
+  stopReason: 'aborted' | 'stop' = 'aborted',
 ): AgentMessage {
   return {
-    role: "assistant",
-    content: [{ type: "text", text }],
+    role: 'assistant',
+    content: [{ type: 'text', text }],
     api: model.api,
     provider: model.provider,
     model: model.id,

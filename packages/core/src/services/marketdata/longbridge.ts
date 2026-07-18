@@ -1,9 +1,9 @@
-import type { MacroEventItem, NewsItem, RawBar } from "@kansoku/shared/types";
-import { ClientError } from "../../errors.js";
-import { LongbridgeCliError, runLongbridgeJson } from "../longbridgeCli.js";
-import { getSharedQuoteSocket } from "./sharedSocket.js";
-import type { FlowRow } from "../simple.js";
-import type { Market } from "../symbol.utils.js";
+import type { MacroEventItem, NewsItem, RawBar } from '@kansoku/shared/types';
+import { ClientError } from '../../errors.js';
+import { LongbridgeCliError, runLongbridgeJson } from '../longbridgeCli.js';
+import { getSharedQuoteSocket } from './sharedSocket.js';
+import type { FlowRow } from '../simple.js';
+import type { Market } from '../symbol.utils.js';
 import type {
   EarningsCalendarEntry,
   MacroCalendarResult,
@@ -12,7 +12,7 @@ import type {
   RawPortfolio,
   RawPosition,
   RawQuote,
-} from "./types.js";
+} from './types.js';
 
 export type LongbridgeRunner = <T>(args: string[]) => Promise<T>;
 
@@ -53,29 +53,29 @@ interface CliCalendarPayload {
   list?: Array<{ date?: string; infos?: CliCalendarInfo[] }>;
 }
 
-const MACRO_SUPPORTED_MARKETS = new Set<Market>(["US"]);
+const MACRO_SUPPORTED_MARKETS = new Set<Market>(['US']);
 
 function calendarKv(info: CliCalendarInfo, type: string): string | null {
   const value = info.data_kv?.find((item) => item.type === type)?.value;
-  return value && value !== "--" ? value : null;
+  return value && value !== '--' ? value : null;
 }
 
-const SUPPORTED_PERIODS = new Set(["1m", "5m", "15m", "30m", "1h", "day", "week", "month", "year"]);
-const PERIOD_ALIASES: Record<string, string> = { "60m": "1h" };
+const SUPPORTED_PERIODS = new Set(['1m', '5m', '15m', '30m', '1h', 'day', 'week', 'month', 'year']);
+const PERIOD_ALIASES: Record<string, string> = { '60m': '1h' };
 
 function normalizePeriod(period: string): string {
   const normalized = PERIOD_ALIASES[period] ?? period;
   if (!SUPPORTED_PERIODS.has(normalized)) {
     throw new ClientError(
       `getKline: unsupported period "${period}"`,
-      `supported periods: ${[...SUPPORTED_PERIODS].join(", ")} (aliases: ${Object.keys(PERIOD_ALIASES).join(", ")})`,
+      `supported periods: ${[...SUPPORTED_PERIODS].join(', ')} (aliases: ${Object.keys(PERIOD_ALIASES).join(', ')})`,
     );
   }
   return normalized;
 }
 
 function number(value: string | number): number {
-  return typeof value === "number" ? value : Number(value);
+  return typeof value === 'number' ? value : Number(value);
 }
 
 async function callCli<T>(label: string, run: LongbridgeRunner, args: string[]): Promise<T> {
@@ -91,7 +91,7 @@ async function callCli<T>(label: string, run: LongbridgeRunner, args: string[]):
           : String(error);
     throw new ClientError(
       `longbridge ${label} failed: ${detail}`,
-      "请确认已安装 longbridge CLI，并执行 longbridge auth login 完成登录。",
+      '请确认已安装 longbridge CLI，并执行 longbridge auth login 完成登录。',
       502,
     );
   }
@@ -99,7 +99,12 @@ async function callCli<T>(label: string, run: LongbridgeRunner, args: string[]):
 
 export interface QuoteQueryTransport {
   queryQuotes(symbols: string[]): Promise<RawQuote[]>;
-  queryCandlesticks(symbol: string, period: string, count: number, session: "intraday" | "all"): Promise<RawBar[]>;
+  queryCandlesticks(
+    symbol: string,
+    period: string,
+    count: number,
+    session: 'intraday' | 'all',
+  ): Promise<RawBar[]>;
   queryCapitalFlow(symbol: string): Promise<FlowRow[]>;
   queryCapitalDistribution(symbol: string): Promise<RawCapitalDistribution>;
   queryStaticNames(symbols: string[]): Promise<Array<{ symbol: string; name: string }>>;
@@ -111,7 +116,9 @@ export interface QuoteQueryTransport {
 const QUOTA_COOLDOWN_MS = 5 * 60_000;
 
 function isQuotaError(message: string): boolean {
-  return message.includes("command=2 status=5") || message.includes("connections limitation is hit");
+  return (
+    message.includes('command=2 status=5') || message.includes('connections limitation is hit')
+  );
 }
 
 export function createLongbridgeProvider(
@@ -124,12 +131,16 @@ export function createLongbridgeProvider(
   function quotaError(label: string): ClientError {
     return new ClientError(
       `longbridge ${label} failed: 长桥行情连接数已满（limit 10）`,
-      "等待约 25 分钟让幽灵会话过期后自动恢复；期间避免运行 quote/kline/capital/static 类 longbridge CLI 命令，也不要重启 app。",
+      '等待约 25 分钟让幽灵会话过期后自动恢复；期间避免运行 quote/kline/capital/static 类 longbridge CLI 命令，也不要重启 app。',
       503,
     );
   }
 
-  async function wsFirst<T>(label: string, viaSocket: () => Promise<T>, viaCli: () => Promise<T>): Promise<T> {
+  async function wsFirst<T>(
+    label: string,
+    viaSocket: () => Promise<T>,
+    viaCli: () => Promise<T>,
+  ): Promise<T> {
     if (!socket) return viaCli();
     try {
       return await viaSocket();
@@ -137,11 +148,16 @@ export function createLongbridgeProvider(
       const message = error instanceof Error ? error.message : String(error);
       if (isQuotaError(message)) {
         quotaCooldownUntil = Date.now() + QUOTA_COOLDOWN_MS;
-        console.warn(`[longbridge] ws ${label} rejected: quote connection quota exhausted, skipping CLI fallback`);
+        console.warn(
+          `[longbridge] ws ${label} rejected: quote connection quota exhausted, skipping CLI fallback`,
+        );
         throw quotaError(label);
       }
       if (Date.now() < quotaCooldownUntil) {
-        console.warn(`[longbridge] ws ${label} failed during quota cooldown, skipping CLI fallback:`, message);
+        console.warn(
+          `[longbridge] ws ${label} failed during quota cooldown, skipping CLI fallback:`,
+          message,
+        );
         throw quotaError(label);
       }
       console.warn(`[longbridge] ws ${label} failed, falling back to CLI:`, message);
@@ -156,26 +172,37 @@ export function createLongbridgeProvider(
   }
 
   return {
-    name: "longbridge",
+    name: 'longbridge',
     capabilities: new Set([
-      "flow",
-      "capital-distribution",
-      "positions",
-      "watchlist",
-      "portfolio",
-      "earnings-calendar",
-      "macro-calendar",
+      'flow',
+      'capital-distribution',
+      'positions',
+      'watchlist',
+      'portfolio',
+      'earnings-calendar',
+      'macro-calendar',
     ]),
 
-    async getKline(symbol: string, period: string, count: number, session?: string): Promise<RawBar[]> {
+    async getKline(
+      symbol: string,
+      period: string,
+      count: number,
+      session?: string,
+    ): Promise<RawBar[]> {
       const normalized = normalizePeriod(period);
       return wsFirst(
-        "kline",
-        () => socket!().queryCandlesticks(symbol, normalized, count, session === "all" ? "all" : "intraday"),
+        'kline',
+        () =>
+          socket!().queryCandlesticks(
+            symbol,
+            normalized,
+            count,
+            session === 'all' ? 'all' : 'intraday',
+          ),
         async () => {
-          const args = ["kline", symbol, "--period", normalized, "--count", String(count)];
-          if (session === "all") args.push("--session", "all");
-          const rows = await callCli<CliBar[]>("kline", run, args);
+          const args = ['kline', symbol, '--period', normalized, '--count', String(count)];
+          if (session === 'all') args.push('--session', 'all');
+          const rows = await callCli<CliBar[]>('kline', run, args);
           return rows.map((row) => ({
             time: row.time,
             open: number(row.open),
@@ -191,9 +218,9 @@ export function createLongbridgeProvider(
     getQuotes(symbols: string[]): Promise<RawQuote[]> {
       if (!symbols.length) return Promise.resolve([]);
       return wsFirst(
-        "quote",
+        'quote',
         () => socket!().queryQuotes(symbols),
-        () => callCli<RawQuote[]>("quote", run, ["quote", ...symbols]),
+        () => callCli<RawQuote[]>('quote', run, ['quote', ...symbols]),
       );
     },
 
@@ -203,9 +230,9 @@ export function createLongbridgeProvider(
       if (cached) return cached;
 
       const request = wsFirst<CliSecurityInfo[]>(
-        "static",
+        'static',
         () => socket!().queryStaticNames([symbol]),
-        () => run<CliSecurityInfo[]>(["static", symbol, "--lang", "zh-CN"]),
+        () => run<CliSecurityInfo[]>(['static', symbol, '--lang', 'zh-CN']),
       )
         .then((rows) => {
           const exact = rows.find((row) => row.symbol?.toUpperCase() === key) ?? rows[0];
@@ -222,7 +249,7 @@ export function createLongbridgeProvider(
 
     async getNews(symbol: string, limit = 6): Promise<NewsItem[]> {
       try {
-        const rows = await run<CliNewsItem[]>(["news", symbol, "--lang", "zh-CN"]);
+        const rows = await run<CliNewsItem[]>(['news', symbol, '--lang', 'zh-CN']);
         return rows.slice(0, limit).map((row) => ({
           id: String(row.id),
           title: row.title,
@@ -236,26 +263,26 @@ export function createLongbridgeProvider(
 
     getFlow(symbol: string): Promise<FlowRow[]> {
       return wsFirst(
-        "capital flow",
+        'capital flow',
         () => socket!().queryCapitalFlow(symbol),
-        () => callCli<FlowRow[]>("capital flow", run, ["capital", symbol, "--flow"]),
+        () => callCli<FlowRow[]>('capital flow', run, ['capital', symbol, '--flow']),
       );
     },
 
     getCapitalDistribution(symbol: string): Promise<RawCapitalDistribution> {
       return wsFirst(
-        "capital distribution",
+        'capital distribution',
         () => socket!().queryCapitalDistribution(symbol),
-        () => callCli<RawCapitalDistribution>("capital distribution", run, ["capital", symbol]),
+        () => callCli<RawCapitalDistribution>('capital distribution', run, ['capital', symbol]),
       );
     },
 
     getPositions(): Promise<RawPosition[]> {
-      return callCli<RawPosition[]>("positions", run, ["positions"]);
+      return callCli<RawPosition[]>('positions', run, ['positions']);
     },
 
     async getPortfolio(): Promise<RawPortfolio> {
-      const result = await callCli<RawPortfolio>("portfolio", run, ["portfolio"]);
+      const result = await callCli<RawPortfolio>('portfolio', run, ['portfolio']);
       return {
         overview: result.overview,
         holdings: result.holdings.map((holding) => ({
@@ -272,27 +299,32 @@ export function createLongbridgeProvider(
     },
 
     async getWatchlistSymbols(): Promise<string[]> {
-      const groups = await callCli<CliWatchlistGroup[]>("watchlist", run, ["watchlist"]);
+      const groups = await callCli<CliWatchlistGroup[]>('watchlist', run, ['watchlist']);
       const symbols = new Set<string>();
       for (const group of groups) {
         for (const item of group.securities ?? []) {
-          const symbol = typeof item === "string" ? item : item.symbol;
+          const symbol = typeof item === 'string' ? item : item.symbol;
           if (symbol) symbols.add(symbol);
         }
       }
       return [...symbols];
     },
 
-    async getEarningsCalendar(symbol: string, fromDate: string): Promise<EarningsCalendarEntry | null> {
-      const payload = await callCli<CliCalendarPayload>("finance calendar report", run, [
-        "finance-calendar",
-        "report",
-        "--symbol",
+    async getEarningsCalendar(
+      symbol: string,
+      fromDate: string,
+    ): Promise<EarningsCalendarEntry | null> {
+      const payload = await callCli<CliCalendarPayload>('finance calendar report', run, [
+        'finance-calendar',
+        'report',
+        '--symbol',
         symbol,
       ]);
       for (const day of payload.list ?? []) {
         if (!day.date || day.date < fromDate) continue;
-        const info = day.infos?.find((item) => !item.counter_id || item.counter_id === symbol) ?? day.infos?.[0];
+        const info =
+          day.infos?.find((item) => !item.counter_id || item.counter_id === symbol) ??
+          day.infos?.[0];
         if (info?.content) return { date: day.date, title: info.content };
       }
       return null;
@@ -305,16 +337,16 @@ export function createLongbridgeProvider(
       minStar: number,
     ): Promise<MacroCalendarResult> {
       if (!MACRO_SUPPORTED_MARKETS.has(market)) return { supported: false };
-      const payload = await callCli<CliCalendarPayload>("finance calendar macrodata", run, [
-        "finance-calendar",
-        "macrodata",
-        "--market",
+      const payload = await callCli<CliCalendarPayload>('finance calendar macrodata', run, [
+        'finance-calendar',
+        'macrodata',
+        '--market',
         market,
-        "--star",
+        '--star',
         String(minStar),
-        "--start",
+        '--start',
         startDate,
-        "--end",
+        '--end',
         endDate,
       ]);
       const items: MacroEventItem[] = [];
@@ -325,8 +357,8 @@ export function createLongbridgeProvider(
           items.push({
             ts: new Date(epoch * 1000).toISOString(),
             title: info.content,
-            estimate: calendarKv(info, "estimate"),
-            previous: calendarKv(info, "previous"),
+            estimate: calendarKv(info, 'estimate'),
+            previous: calendarKv(info, 'previous'),
           });
         }
       }
@@ -335,4 +367,7 @@ export function createLongbridgeProvider(
   };
 }
 
-export const longbridgeProvider: MarketDataProvider = createLongbridgeProvider(runLongbridgeJson, getSharedQuoteSocket);
+export const longbridgeProvider: MarketDataProvider = createLongbridgeProvider(
+  runLongbridgeJson,
+  getSharedQuoteSocket,
+);

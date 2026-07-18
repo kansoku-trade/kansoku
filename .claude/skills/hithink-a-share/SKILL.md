@@ -19,6 +19,7 @@ Longbridge 不覆盖 A 股的短线情绪与官方口径财报数据，这个 sk
 - A 股行情快照 / A 股日 K / thscode（如 `600519.SH`）
 
 **不要用这个 skill 做什么**：
+
 - 分钟级 K 线、实时盯盘 —— 这些属于 Longbridge（本仓库不做港股 A 股实时看盘，Longbridge 只覆盖美股账户）。历史 K 线接口仅支持日线（`interval=1d`），不支持分钟级。
 - 港股 / 美股 —— 这个 skill 只覆盖 A 股（`thscode` 形如 `600519.SH` / `000001.SZ` / `430047.BJ`）。
 - **TD-LANG-03 全市场级工作不查 A 股**：只有明确要看 A 股个股/板块时才用这个 skill，不要在美股大盘扫描里顺带拉 A 股。
@@ -29,14 +30,14 @@ Longbridge 不覆盖 A 股的短线情绪与官方口径财报数据，这个 sk
 
 ## 脚本一览
 
-| 脚本 | 用途 | 关键参数 |
-|---|---|---|
-| `snapshot.py` | 行情快照（多 thscode 批量，或全市场分页） | `thscodes...`、`--limit`/`--offset`（全市场模式） |
-| `kline.py` | 日 K 线 | `thscode`、`--days`（便捷窗口）或 `--start`/`--end`（毫秒）、`--adjust` |
-| `special.py` | 涨停/连板/龙虎榜/异动/热榜，用 `--kind` 切换 | `--kind limit-up-pool\|limit-up-ladder\|dragon-tiger\|skyrocket\|hot\|hot-history\|hot-rank-trend\|anomaly\|anomaly-stock` |
-| `financials.py` | 官方口径财报 + 财务指标 | `thscode`、`--kind income\|balance\|cashflow\|indicators`、`--period annual\|quarterly`、`--limit` 或 `--start`/`--end`；indicators 用 `--report yyyy-N` |
-| `calendar.py` | A 股近一年交易日序列 | 无参数 |
-| `search.py` | 标的检索 / 批量代码表 | `query`（thscode/代码/中英文名），`--list` 切到批量代码表 |
+| 脚本            | 用途                                         | 关键参数                                                                                                                                                 |
+| --------------- | -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `snapshot.py`   | 行情快照（多 thscode 批量，或全市场分页）    | `thscodes...`、`--limit`/`--offset`（全市场模式）                                                                                                        |
+| `kline.py`      | 日 K 线                                      | `thscode`、`--days`（便捷窗口）或 `--start`/`--end`（毫秒）、`--adjust`                                                                                  |
+| `special.py`    | 涨停/连板/龙虎榜/异动/热榜，用 `--kind` 切换 | `--kind limit-up-pool\|limit-up-ladder\|dragon-tiger\|skyrocket\|hot\|hot-history\|hot-rank-trend\|anomaly\|anomaly-stock`                               |
+| `financials.py` | 官方口径财报 + 财务指标                      | `thscode`、`--kind income\|balance\|cashflow\|indicators`、`--period annual\|quarterly`、`--limit` 或 `--start`/`--end`；indicators 用 `--report yyyy-N` |
+| `calendar.py`   | A 股近一年交易日序列                         | 无参数                                                                                                                                                   |
+| `search.py`     | 标的检索 / 批量代码表                        | `query`（thscode/代码/中英文名），`--list` 切到批量代码表                                                                                                |
 
 所有脚本都支持 `--help` / `--smoke` / `--verbose` / `--json`（占位，输出恒为 JSON）/ `--fresh`（绕过缓存）。缓存在 `~/.cache/market-intel/hithink/`，节流默认 ≥0.5 秒/请求（`_shared/client.py` 的节流机制）。
 
@@ -97,7 +98,7 @@ python3 .claude/skills/hithink-a-share/scripts/snapshot.py 600519.SH --fresh
 失败时：
 
 ```json
-{"ok": false, "error": "hithink error 1003: ...", "hint": "request_id=..."}
+{ "error": "hithink error 1003: ...", "hint": "request_id=...", "ok": false }
 ```
 
 ## 数据陷阱（读这些数字前必看）
@@ -112,14 +113,14 @@ python3 .claude/skills/hithink-a-share/scripts/snapshot.py 600519.SH --fresh
 
 ## 错误处理
 
-| exit code | 含义 | 处理 |
-|---|---|---|
-| 0 | 成功 | 解析 `data` |
-| 1 | 参数校验失败（本地拦截，未发请求） | 按 `hint` 补齐参数 |
-| 2 | 缺 `HITHINK_FINANCE_API_KEY` | 提示用户去 `.env` 补 key |
-| 3 | HiThink 业务错误（`code!=0`）或 HTTP 4xx/非 JSON | 参考 `error` 里的 code 含义（1001 缺参/1002 格式错/1003 越界/1004 参数冲突/2003 无权限/4001 超频） |
-| 4 | 网络错误 | 建议重试 |
-| 5 | HTTP 401 | 检查 API Key 是否失效 |
+| exit code | 含义                                             | 处理                                                                                               |
+| --------- | ------------------------------------------------ | -------------------------------------------------------------------------------------------------- |
+| 0         | 成功                                             | 解析 `data`                                                                                        |
+| 1         | 参数校验失败（本地拦截，未发请求）               | 按 `hint` 补齐参数                                                                                 |
+| 2         | 缺 `HITHINK_FINANCE_API_KEY`                     | 提示用户去 `.env` 补 key                                                                           |
+| 3         | HiThink 业务错误（`code!=0`）或 HTTP 4xx/非 JSON | 参考 `error` 里的 code 含义（1001 缺参/1002 格式错/1003 越界/1004 参数冲突/2003 无权限/4001 超频） |
+| 4         | 网络错误                                         | 建议重试                                                                                           |
+| 5         | HTTP 401                                         | 检查 API Key 是否失效                                                                              |
 
 ## 相关 skill
 

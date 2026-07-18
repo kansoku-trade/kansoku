@@ -1,26 +1,26 @@
-import { existsSync } from "node:fs";
-import { join } from "node:path";
-import { app, BrowserWindow, shell } from "electron";
-import windowStateKeeper from "electron-window-state";
-import { resolveRepoRoot } from "../boot/paths.js";
-import { IS_DEV } from "../boot/env.js";
-import { isAllowedNavigationUrl, isExternalHttpUrl } from "./navigationGuard.js";
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
+import { app, BrowserWindow, shell } from 'electron';
+import windowStateKeeper from 'electron-window-state';
+import { resolveRepoRoot } from '../boot/paths.js';
+import { IS_DEV } from '../boot/env.js';
+import { isAllowedNavigationUrl, isExternalHttpUrl } from './navigationGuard.js';
 
-export const DEV_WEB_URL = "http://localhost:5199";
-export const PROD_APP_URL = "app://-/index.html";
-export const APP_ICON_PNG = join(resolveRepoRoot(), "apps", "desktop", "build", "icon.png");
+export const DEV_WEB_URL = 'http://localhost:5199';
+export const PROD_APP_URL = 'app://-/index.html';
+export const APP_ICON_PNG = join(resolveRepoRoot(), 'apps', 'desktop', 'build', 'icon.png');
 // Match web --bg-canvas so the native surface isn't white before the renderer paints.
-export const WINDOW_BG = "#0a0a0a";
+export const WINDOW_BG = '#0a0a0a';
 
 export function applyWindowSecurity(win: BrowserWindow, devUrl: string | undefined): void {
-  win.webContents.on("console-message", (event) => {
-    console.log("[renderer]", event.message);
+  win.webContents.on('console-message', (event) => {
+    console.log('[renderer]', event.message);
   });
 
   // A page loaded via app:// carries the preload's MessagePort kernel access.
   // Without this guard, following an in-app link (e.g. a markdown link in
   // rendered content) to a hostile origin would inherit that same preload.
-  win.webContents.on("will-navigate", (event, navUrl) => {
+  win.webContents.on('will-navigate', (event, navUrl) => {
     if (isAllowedNavigationUrl(navUrl, { devUrl })) return;
     event.preventDefault();
     if (isExternalHttpUrl(navUrl)) shell.openExternal(navUrl).catch(() => {});
@@ -28,7 +28,7 @@ export function applyWindowSecurity(win: BrowserWindow, devUrl: string | undefin
 
   win.webContents.setWindowOpenHandler(({ url: openUrl }) => {
     if (isExternalHttpUrl(openUrl)) shell.openExternal(openUrl).catch(() => {});
-    return { action: "deny" };
+    return { action: 'deny' };
   });
 }
 
@@ -54,28 +54,28 @@ export function createWindow(options: CreateWindowOptions = {}): BrowserWindow {
     minHeight: 720,
     backgroundColor: WINDOW_BG,
     show: false,
-    titleBarStyle: "hiddenInset",
+    titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 12, y: 12 },
     ...(existsSync(APP_ICON_PNG) ? { icon: APP_ICON_PNG } : {}),
     webPreferences: {
       sandbox: true,
       contextIsolation: true,
       nodeIntegration: false,
-      preload: join(app.getAppPath(), "dist-preload", "preload.cjs"),
+      preload: join(app.getAppPath(), 'dist-preload', 'preload.cjs'),
     },
   });
 
   windowState.manage(win);
 
   if (options.onFocus) {
-    win.on("focus", options.onFocus);
+    win.on('focus', options.onFocus);
   }
 
-  win.once("ready-to-show", () => {
+  win.once('ready-to-show', () => {
     win.show();
   });
 
-  win.webContents.once("did-finish-load", () => {
+  win.webContents.once('did-finish-load', () => {
     win.webContents.executeJavaScript(
       'console.log("desktop.versions =", JSON.stringify(window.desktop && window.desktop.versions))',
     );

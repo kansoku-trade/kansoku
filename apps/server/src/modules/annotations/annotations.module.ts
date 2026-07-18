@@ -1,5 +1,5 @@
-import { Module } from "@tsuki-hono/common";
-import { AnnotationsController } from "./annotations.controller.js";
+import { Module } from '@tsuki-hono/common';
+import { AnnotationsController } from './annotations.controller.js';
 
 @Module({
   controllers: [AnnotationsController],

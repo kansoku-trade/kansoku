@@ -65,7 +65,7 @@ the day's tape:
 - **Always, check first**: `twitter-reader` — X is the fastest tape on breaking
   news and sentiment; on an intraday horizon its lead time over aggregated feeds
   is exactly the window that matters. Search the symbol, read the last few hours.
-  X sentiment is an *input*, not a conclusion — form the price-structure read in
+  X sentiment is an _input_, not a conclusion — form the price-structure read in
   Step 3 independently, then reconcile; don't go hunting the chart for evidence
   of whatever narrative X planted. **If the `twitter-reader` skill is not
   available in the current session, don't silently skip it: write "X 未查"
@@ -75,7 +75,7 @@ the day's tape:
   `longbridge finance-calendar report --symbol <SYM>.US --format json`（下一个
   财报日；若返回为空再退回 news / X / IR 并注明未确认）and
   `longbridge finance-calendar macrodata --market US --star 3 --start <today>
-  --end <horizon-end> --format json`（横跨持仓周期的重要宏观发布，带前值/预测；
+--end <horizon-end> --format json`（横跨持仓周期的重要宏观发布，带前值/预测；
   时间为 ET——CPI/非农 8:30, 多数数据 10:00, FOMC 决议 14:00 + 记者会 14:30）. Any
   hard event inside the trade horizon must appear in the scenarios — a stop
   cannot protect you through a gap（跳空开盘直接越过止损价，实际亏损可远大于计划）.
@@ -85,7 +85,7 @@ the day's tape:
   tape; trading against it is allowed but must be justified in one line.
 - **Always: volume check**. `GET /api/symbols/<SYM>/relvol`（服务端已算好的
   相对成交量——当前量相对同时段常态量的倍数）+ `longbridge capital <SYM>.US
-  --format json`（triple-bucket flow）. Breakouts and reversals without volume
+--format json`（triple-bucket flow）. Breakouts and reversals without volume
   are suspects, not signals; cite relvol when calling any breakout real.
 - **Always**: `longbridge-news` on the symbol — official/aggregated headlines.
   It lags X by minutes to hours, so treat it as confirmation and source-anchoring
@@ -243,7 +243,7 @@ timeframe data + Step 3's numbers, decide:
    breakeven（推保本）; time stop — **~6 bars of the anchor timeframe**
    (m5 锚点 ≈30min、m15 锚点 ≈1.5h、h1 锚点 ≈6h——波段级判断不该被日内级的
    时间止损误杀), if the trade hasn't moved by then the thesis is stale, exit
-   flat; stopped out = stay out, no revenge re-entry unless a *new* structure
+   flat; stopped out = stay out, no revenge re-entry unless a _new_ structure
    signal forms.
 7. **Existing position（若用户已持仓）** — the read must end with an explicit
    加 / 减 / 持 / 清 call on the live position, reconciled against cost basis —
@@ -267,8 +267,8 @@ PATCH the same chart with BOTH `prediction` and `context` filled in, in one
 call (see `chart` skill's `prediction` / `context` schemas for the full shapes):
 
 ```bash
-curl -s -X PATCH http://localhost:5199/api/charts/<id-from-step-3> \
-  -H 'Content-Type: application/json' \
+curl -s -X PATCH http://localhost:5199/api/charts/ \
+  'Content-Type: application/json' \
   -d '{
     "prediction": { "direction": "short", "anchor": {"timeframe":"m15","time":"2026-07-06T14:15:00Z","price":61.10}, "scenarios": [ ... ] },
     "context": {
@@ -277,7 +277,7 @@ curl -s -X PATCH http://localhost:5199/api/charts/<id-from-step-3> \
       "news": [ { "time": "2026-07-06T13:10:00Z", "source": "longbridge", "tag": "catalyst", "title": "...", "note": "AI 一句话解读" } ],
       "sources_used": ["longbridge-news", "twitter-reader"]
     }
-  }'
+  }' < id-from-step-3 > -H
 ```
 
 Include `position` in the Step-3 POST (from the optional `longbridge positions`

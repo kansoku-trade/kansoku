@@ -1,7 +1,13 @@
-import { Agent, type AgentEvent, type AgentMessage, type AgentTool, type StreamFn } from "@earendil-works/pi-agent-core";
-import { getModelsRuntime } from "./modelsRuntime.js";
-import type { AiModel } from "./models.js";
-import { attachAiUsageLogger, type AiUsageLogContext } from "./usage.js";
+import {
+  Agent,
+  type AgentEvent,
+  type AgentMessage,
+  type AgentTool,
+  type StreamFn,
+} from '@earendil-works/pi-agent-core';
+import { getModelsRuntime } from './modelsRuntime.js';
+import type { AiModel } from './models.js';
+import { attachAiUsageLogger, type AiUsageLogContext } from './usage.js';
 
 export const runtimeStreamFn: StreamFn = (model, context, options) =>
   getModelsRuntime().streamSimple(model, context, options);
@@ -44,13 +50,13 @@ const defaultAgentFactory: AiAgentFactory = (config) => {
     setTools: (tools) => {
       agent.state.tools = tools;
     },
-    subscribe: (listener: Parameters<Agent["subscribe"]>[0]) => agent.subscribe(listener),
+    subscribe: (listener: Parameters<Agent['subscribe']>[0]) => agent.subscribe(listener),
     state: agent.state,
   };
 };
 
 export function createAgentSession(config: {
-  layer: AiUsageLogContext["layer"];
+  layer: AiUsageLogContext['layer'];
   symbol: string;
   origin?: string;
   model: AiModel;
@@ -92,7 +98,7 @@ export function createAgentSession(config: {
 
   async function runTurn(prompt: string, timeoutMs: number): Promise<void> {
     if (inFlight) {
-      throw new Error("agent session turn already in flight");
+      throw new Error('agent session turn already in flight');
     }
     inFlight = true;
     done = false;

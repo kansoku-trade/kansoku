@@ -1,10 +1,14 @@
-import type { AgentMessage } from "@earendil-works/pi-agent-core";
-import { desc, eq } from "drizzle-orm";
-import { getDb, type Db } from "../db/index.js";
-import { assistantSessions, chatMessages } from "../db/schema.js";
-import { nextSnowflake } from "../db/snowflake.js";
-import { type ConversationMessageRow, type ConversationSessionBase, createConversationStore } from "./conversationStore.js";
-import { isUsage } from "./usage.js";
+import type { AgentMessage } from '@earendil-works/pi-agent-core';
+import { desc, eq } from 'drizzle-orm';
+import { getDb, type Db } from '../db/index.js';
+import { assistantSessions, chatMessages } from '../db/schema.js';
+import { nextSnowflake } from '../db/snowflake.js';
+import {
+  type ConversationMessageRow,
+  type ConversationSessionBase,
+  createConversationStore,
+} from './conversationStore.js';
+import { isUsage } from './usage.js';
 
 export type AssistantSession = ConversationSessionBase;
 export type AssistantMessageRow = ConversationMessageRow;
@@ -25,7 +29,10 @@ export function getAssistantSession(id: string, db?: Db): Promise<AssistantSessi
   return store.getSessionByKey(id, db);
 }
 
-export function createAssistantSession(input: { title: string }, db?: Db): Promise<AssistantSession> {
+export function createAssistantSession(
+  input: { title: string },
+  db?: Db,
+): Promise<AssistantSession> {
   return store.createSession(input, db);
 }
 
@@ -33,7 +40,11 @@ export function listAssistantMessages(sessionId: string, db?: Db): Promise<Assis
   return store.listMessages(sessionId, db);
 }
 
-export function appendAssistantMessages(sessionId: string, messages: AgentMessage[], db?: Db): Promise<void> {
+export function appendAssistantMessages(
+  sessionId: string,
+  messages: AgentMessage[],
+  db?: Db,
+): Promise<void> {
   return store.appendMessages(sessionId, messages, db);
 }
 
@@ -54,7 +65,10 @@ export interface AssistantSessionUsageTotal {
   calls: number;
 }
 
-export async function sumAssistantSessionUsage(sessionId: string, db?: Db): Promise<AssistantSessionUsageTotal> {
+export async function sumAssistantSessionUsage(
+  sessionId: string,
+  db?: Db,
+): Promise<AssistantSessionUsageTotal> {
   const rows = await listAssistantMessages(sessionId, db);
   const total: AssistantSessionUsageTotal = { totalTokens: 0, costTotal: 0, calls: 0 };
   for (const row of rows) {

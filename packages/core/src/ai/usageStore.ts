@@ -1,9 +1,9 @@
-import { asc, desc, eq } from "drizzle-orm";
-import type { AiUsageSummary } from "@kansoku/shared/types";
-import { getDb, type Db } from "../db/index.js";
-import { aiUsage } from "../db/schema.js";
-import { nextSnowflake } from "../db/snowflake.js";
-import { easternDate } from "../services/session.js";
+import { asc, desc, eq } from 'drizzle-orm';
+import type { AiUsageSummary } from '@kansoku/shared/types';
+import { getDb, type Db } from '../db/index.js';
+import { aiUsage } from '../db/schema.js';
+import { nextSnowflake } from '../db/snowflake.js';
+import { easternDate } from '../services/session.js';
 
 export interface AiUsageRecord {
   ts: string;

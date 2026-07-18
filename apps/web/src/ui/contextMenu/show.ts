@@ -1,6 +1,6 @@
-import { resolveContextMenuAdapter } from "./adapters";
-import type { ContextMenuItem, ContextMenuPoint } from "./types";
-import { getLastPointer } from "./webHost";
+import { resolveContextMenuAdapter } from './adapters';
+import type { ContextMenuItem, ContextMenuPoint } from './types';
+import { getLastPointer } from './webHost';
 
 let adapterOverride: ReturnType<typeof resolveContextMenuAdapter> | null = null;
 
@@ -14,11 +14,8 @@ function adapter() {
   return adapterOverride ?? resolveContextMenuAdapter();
 }
 
-export function showContextMenu(
-  items: ContextMenuItem[],
-  point?: Partial<ContextMenuPoint>,
-): void {
-  if (typeof window === "undefined") return;
+export function showContextMenu(items: ContextMenuItem[], point?: Partial<ContextMenuPoint>): void {
+  if (typeof window === 'undefined') return;
   const last = getLastPointer();
   const resolved: ContextMenuPoint = {
     x: point?.x ?? last.x,

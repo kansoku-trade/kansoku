@@ -1,28 +1,28 @@
-import type { AuthContext, CredentialStore, MutableModels } from "@earendil-works/pi-ai";
-import { getEnvApiKey } from "@earendil-works/pi-ai/compat";
-import { openaiCodexOAuthProvider } from "@earendil-works/pi-ai/oauth";
-import { builtinModels } from "@earendil-works/pi-ai/providers/all";
+import type { AuthContext, CredentialStore, MutableModels } from '@earendil-works/pi-ai';
+import { getEnvApiKey } from '@earendil-works/pi-ai/compat';
+import { openaiCodexOAuthProvider } from '@earendil-works/pi-ai/oauth';
+import { builtinModels } from '@earendil-works/pi-ai/providers/all';
 
-const CODEX_PROVIDER = "openai-codex";
+const CODEX_PROVIDER = 'openai-codex';
 
 export const SINGLE_KEY_PROVIDERS: ReadonlySet<string> = new Set([
-  "anthropic",
-  "openai",
-  "deepseek",
-  "google",
-  "xai",
-  "groq",
-  "mistral",
-  "openrouter",
-  "together",
-  "fireworks",
-  "cerebras",
-  "moonshotai",
-  "kimi-coding",
-  "minimax",
-  "zai",
-  "nvidia",
-  "opencode",
+  'anthropic',
+  'openai',
+  'deepseek',
+  'google',
+  'xai',
+  'groq',
+  'mistral',
+  'openrouter',
+  'together',
+  'fireworks',
+  'cerebras',
+  'moonshotai',
+  'kimi-coding',
+  'minimax',
+  'zai',
+  'nvidia',
+  'opencode',
 ]);
 
 const isolatedAuthContext: AuthContext = {
@@ -36,7 +36,7 @@ function installStaticCodexOAuth(models: MutableModels): void {
   const provider = models.getProvider(CODEX_PROVIDER);
   const oauth = provider?.auth.oauth;
   if (!provider || !oauth) {
-    throw new Error("modelsRuntime: openai-codex OAuth provider is unavailable");
+    throw new Error('modelsRuntime: openai-codex OAuth provider is unavailable');
   }
 
   // pi-ai 的内置 provider 会通过运行时动态 import 加载 OAuth 实现；桌面主进程
@@ -49,12 +49,12 @@ function installStaticCodexOAuth(models: MutableModels): void {
       oauth: {
         name: oauth.name,
         async login() {
-          throw new Error("OpenAI Codex 登录由 codex CLI 管理，请先在终端完成登录");
+          throw new Error('OpenAI Codex 登录由 codex CLI 管理，请先在终端完成登录');
         },
         async refresh(credential) {
           return {
             ...(await openaiCodexOAuthProvider.refreshToken(credential)),
-            type: "oauth" as const,
+            type: 'oauth' as const,
           };
         },
         async toAuth(credential) {
@@ -67,7 +67,9 @@ function installStaticCodexOAuth(models: MutableModels): void {
 
 export function initModelsRuntime(credentials: CredentialStore): MutableModels {
   if (singleton) {
-    throw new Error("modelsRuntime: already initialized; call setModelsRuntimeForTests(null) first in tests");
+    throw new Error(
+      'modelsRuntime: already initialized; call setModelsRuntimeForTests(null) first in tests',
+    );
   }
   const models = builtinModels({ credentials, authContext: isolatedAuthContext });
   installStaticCodexOAuth(models);
@@ -77,7 +79,7 @@ export function initModelsRuntime(credentials: CredentialStore): MutableModels {
 
 export function getModelsRuntime(): MutableModels {
   if (!singleton) {
-    throw new Error("modelsRuntime: not initialized; call initModelsRuntime at startup before use");
+    throw new Error('modelsRuntime: not initialized; call initModelsRuntime at startup before use');
   }
   return singleton;
 }
@@ -89,11 +91,11 @@ export function setModelsRuntimeForTests(models: MutableModels | null): void {
 function envCredentialStore(): CredentialStore {
   const read = async (provider: string) => {
     if (provider === CODEX_PROVIDER) {
-      const { readCodexCredential, defaultCodexAuthPath } = await import("./credentialStore.js");
+      const { readCodexCredential, defaultCodexAuthPath } = await import('./credentialStore.js');
       return readCodexCredential(defaultCodexAuthPath());
     }
     const key = getEnvApiKey(provider, process.env as Record<string, string>);
-    return key && key !== "<authenticated>" ? { type: "api_key" as const, key } : undefined;
+    return key && key !== '<authenticated>' ? { type: 'api_key' as const, key } : undefined;
   };
   return {
     read,

@@ -2,21 +2,22 @@
   "name": "@kansoku/desktop",
   "version": "0.17.3",
   "private": true,
+  "license": "SEE LICENSE IN LICENSE",
   "type": "module",
   "main": "dist-main/main.mjs",
   "scripts": {
     "build": "tsdown",
-    "rebuild-native": "electron-rebuild -v 43.1.0 --force -w better-sqlite3",
     "build:native": "npx electron-sparkle-updater rebuild --electron-version 43.1.0 --arch arm64",
     "predev": "node scripts/ensureDevNative.mjs",
     "dev": "node scripts/dev.mjs",
+    "generate-icon": "bash scripts/generate-icon.sh",
+    "prepackage": "pnpm --filter @kansoku/web build && (test -f ../web/dist/index.html || (echo 'web/dist/index.html missing after build' && exit 1))",
+    "package": "tsdown && node scripts/stageSkills.mjs && node scripts/stagePro.mjs && pnpm rebuild-native && pnpm build:native && electron-builder --mac dmg zip --arm64",
+    "rebuild-native": "electron-rebuild -v 43.1.0 --force -w better-sqlite3",
     "prestart": "node scripts/ensureDevNative.mjs",
     "start": "electron .",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit",
-    "generate-icon": "bash scripts/generate-icon.sh",
-    "prepackage": "pnpm --filter @kansoku/web build && (test -f ../web/dist/index.html || (echo 'web/dist/index.html missing after build' && exit 1))",
-    "package": "tsdown && node scripts/stageSkills.mjs && node scripts/stagePro.mjs && pnpm rebuild-native && pnpm build:native && electron-builder --mac dmg zip --arm64"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@kansoku/core": "workspace:*",
@@ -42,6 +43,5 @@
     "tsx": "^4.23.1",
     "typescript": "^7.0.2",
     "vitest": "^4.1.10"
-  },
-  "license": "SEE LICENSE IN LICENSE"
+  }
 }

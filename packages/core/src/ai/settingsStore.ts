@@ -1,12 +1,12 @@
-import type { ModelThinkingLevel } from "@earendil-works/pi-ai";
-import type { Db } from "../db/index.js";
-import { aiRoleSettings } from "../db/schema.js";
+import type { ModelThinkingLevel } from '@earendil-works/pi-ai';
+import type { Db } from '../db/index.js';
+import { aiRoleSettings } from '../db/schema.js';
 
-export type AiTaskRole = "comment" | "analyst" | "deepDive" | "chat";
-export type AiRole = AiTaskRole | "primary";
-export type RoleMode = "custom" | "disabled" | "inherit";
+export type AiTaskRole = 'comment' | 'analyst' | 'deepDive' | 'chat';
+export type AiRole = AiTaskRole | 'primary';
+export type RoleMode = 'custom' | 'disabled' | 'inherit';
 
-export const TASK_ROLES: AiTaskRole[] = ["comment", "analyst", "deepDive", "chat"];
+export const TASK_ROLES: AiTaskRole[] = ['comment', 'analyst', 'deepDive', 'chat'];
 
 export interface RoleSetting {
   mode: RoleMode;
@@ -22,17 +22,25 @@ export interface SettingsStore {
   revision(): number;
 }
 
-const ROLES: AiRole[] = ["primary", ...TASK_ROLES];
+const ROLES: AiRole[] = ['primary', ...TASK_ROLES];
 
 function defaultFor(role: AiRole): RoleSetting {
-  return { mode: role === "primary" ? "disabled" : "inherit", provider: null, modelId: null, thinkingLevel: null };
+  return {
+    mode: role === 'primary' ? 'disabled' : 'inherit',
+    provider: null,
+    modelId: null,
+    thinkingLevel: null,
+  };
 }
 
 function validate(role: AiRole, setting: RoleSetting): void {
-  if (setting.mode === "inherit" && role === "primary") {
+  if (setting.mode === 'inherit' && role === 'primary') {
     throw new Error(`settingsStore: mode "inherit" is not allowed for role "primary"`);
   }
-  if (setting.mode === "custom" && (!setting.provider || !setting.modelId || !setting.thinkingLevel)) {
+  if (
+    setting.mode === 'custom' &&
+    (!setting.provider || !setting.modelId || !setting.thinkingLevel)
+  ) {
     throw new Error(
       `settingsStore: mode "custom" requires provider, modelId, and thinkingLevel for role "${role}"`,
     );
@@ -78,7 +86,7 @@ export function createSettingsStore(db: Db): SettingsStore {
     setRole(role: AiRole, setting: RoleSetting): void {
       validate(role, setting);
       const persisted: RoleSetting =
-        setting.mode === "custom"
+        setting.mode === 'custom'
           ? { ...setting }
           : { mode: setting.mode, provider: null, modelId: null, thinkingLevel: null };
       const updatedAt = new Date().toISOString();
@@ -122,7 +130,9 @@ export function setActiveSettingsStore(store: SettingsStore | null): void {
 
 export function getActiveSettingsStore(): SettingsStore {
   if (!active) {
-    throw new Error("settingsStore: no active settings store; call setActiveSettingsStore before use");
+    throw new Error(
+      'settingsStore: no active settings store; call setActiveSettingsStore before use',
+    );
   }
   return active;
 }

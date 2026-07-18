@@ -1,21 +1,21 @@
-import { isDesktopRealtime, PortTransport, type SocketLike } from "./portTransport.js";
+import { isDesktopRealtime, PortTransport, type SocketLike } from './portTransport.js';
 
 export type ChannelSpec =
-  | { kind: "quotes"; extra?: string[] }
-  | { kind: "chart"; id: string; count?: number }
-  | { kind: "comments"; symbol: string }
-  | { kind: "notifications" }
-  | { kind: "analyses"; symbol: string }
-  | { kind: "position"; symbol: string }
-  | { kind: "benchmark"; symbol: string }
-  | { kind: "preview"; symbol: string }
-  | { kind: "board" }
-  | { kind: "chat"; id: string }
-  | { kind: "research-chat"; path: string }
-  | { kind: "assistant-chat"; id: string }
-  | { kind: "research-refresh"; path: string }
-  | { kind: "annotations"; symbol: string }
-  | { kind: "analyst-runs" };
+  | { kind: 'quotes'; extra?: string[] }
+  | { kind: 'chart'; id: string; count?: number }
+  | { kind: 'comments'; symbol: string }
+  | { kind: 'notifications' }
+  | { kind: 'analyses'; symbol: string }
+  | { kind: 'position'; symbol: string }
+  | { kind: 'benchmark'; symbol: string }
+  | { kind: 'preview'; symbol: string }
+  | { kind: 'board' }
+  | { kind: 'chat'; id: string }
+  | { kind: 'research-chat'; path: string }
+  | { kind: 'assistant-chat'; id: string }
+  | { kind: 'research-refresh'; path: string }
+  | { kind: 'annotations'; symbol: string }
+  | { kind: 'analyst-runs' };
 
 interface ChannelSub {
   spec: ChannelSpec;
@@ -25,14 +25,14 @@ interface ChannelSub {
 
 const RECONNECT_MS = 2_000;
 
-export type HubStatus = "connecting" | "connected" | "reconnecting";
+export type HubStatus = 'connecting' | 'connected' | 'reconnecting';
 
 let ws: SocketLike | null = null;
 let reconnectTimer: number | null = null;
 let nextKey = 0;
 const subs = new Map<string, ChannelSub>();
 
-let hubStatus: HubStatus = "connecting";
+let hubStatus: HubStatus = 'connecting';
 const statusListeners = new Set<() => void>();
 
 function setHubStatus(next: HubStatus): void {
@@ -53,7 +53,7 @@ export function subscribeHubStatus(listener: () => void): () => void {
 }
 
 function wsUrl(): string {
-  const proto = location.protocol === "https:" ? "wss" : "ws";
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
   return `${proto}://${location.host}/api/ws`;
 }
 
@@ -81,13 +81,15 @@ function closeCurrentSocket(): void {
 function connect(): void {
   if (ws || subs.size === 0) return;
   cancelReconnect();
-  const sock = (isDesktopRealtime() ? new PortTransport() : new WebSocket(wsUrl())) as unknown as SocketLike;
+  const sock = (isDesktopRealtime()
+    ? new PortTransport()
+    : new WebSocket(wsUrl())) as unknown as SocketLike;
   ws = sock;
-  setHubStatus(hubStatus === "reconnecting" ? "reconnecting" : "connecting");
+  setHubStatus(hubStatus === 'reconnecting' ? 'reconnecting' : 'connecting');
   sock.onopen = () => {
     if (ws !== sock) return;
-    for (const [key, sub] of subs) sock.send(JSON.stringify({ op: "sub", key, ...sub.spec }));
-    setHubStatus("connected");
+    for (const [key, sub] of subs) sock.send(JSON.stringify({ op: 'sub', key, ...sub.spec }));
+    setHubStatus('connected');
     broadcast(true);
   };
   sock.onmessage = (e) => {
@@ -105,10 +107,10 @@ function connect(): void {
     ws = null;
     broadcast(false);
     if (subs.size > 0) {
-      setHubStatus("reconnecting");
+      setHubStatus('reconnecting');
       scheduleReconnect();
     } else {
-      setHubStatus("connecting");
+      setHubStatus('connecting');
     }
   };
   sock.onerror = () => {
@@ -134,15 +136,15 @@ export function subscribeChannel(
   if (!ws) {
     connect();
   } else if (ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify({ op: "sub", key, ...spec }));
+    ws.send(JSON.stringify({ op: 'sub', key, ...spec }));
     onConnected(true);
   }
   return () => {
     subs.delete(key);
-    if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ op: "unsub", key }));
+    if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ op: 'unsub', key }));
     if (subs.size === 0) {
       cancelReconnect();
-      setHubStatus("connecting");
+      setHubStatus('connecting');
       closeCurrentSocket();
     }
   };

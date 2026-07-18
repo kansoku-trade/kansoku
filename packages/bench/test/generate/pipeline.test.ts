@@ -1,10 +1,10 @@
-import { access, mkdtemp, readdir, rm } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { runGenerate } from "../../src/generate/pipeline.js";
-import type { QuoteBar } from "../../src/generate/assemble.js";
-import { loadQuestionForScorer } from "../../src/dataset/loader.js";
+import { access, mkdtemp, readdir, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { runGenerate } from '../../src/generate/pipeline.js';
+import type { QuoteBar } from '../../src/generate/assemble.js';
+import { loadQuestionForScorer } from '../../src/dataset/loader.js';
 
 function isWeekday(date: Date): boolean {
   const day = date.getUTCDay();
@@ -58,8 +58,8 @@ function buildWeekBars(startIso: string, endIso: string): QuoteBar[] {
   return bars;
 }
 
-const DAY_BARS = buildDayBars("2024-01-01", "2026-07-01");
-const WEEK_BARS = buildWeekBars("2020-01-06", "2026-06-29");
+const DAY_BARS = buildDayBars('2024-01-01', '2026-07-01');
+const WEEK_BARS = buildWeekBars('2020-01-06', '2026-06-29');
 
 function makeOptions(overrides: Partial<Parameters<typeof runGenerate>[0]> = {}) {
   const log: string[] = [];
@@ -68,65 +68,68 @@ function makeOptions(overrides: Partial<Parameters<typeof runGenerate>[0]> = {})
     log,
     klineCalls: () => klineCalls,
     options: {
-      bank: "swing" as const,
-      symbols: [{ symbol: "MU.US", layer: "high-vol-tech" as const }],
-      version: "v1",
+      bank: 'swing' as const,
+      symbols: [{ symbol: 'MU.US', layer: 'high-vol-tech' as const }],
+      version: 'v1',
       windowsPerSymbol: 2,
       dryRun: false,
       fresh: false,
-      datasetsRoot: "",
-      fetchKlineHistory: async (_symbol: string, period: "day" | "week") => {
+      datasetsRoot: '',
+      fetchKlineHistory: async (_symbol: string, period: 'day' | 'week') => {
         klineCalls += 1;
-        return period === "day" ? DAY_BARS : WEEK_BARS;
+        return period === 'day' ? DAY_BARS : WEEK_BARS;
       },
       fetchCalendar: async () => [],
-      now: () => new Date("2026-07-01T00:00:00Z"),
+      now: () => new Date('2026-07-01T00:00:00Z'),
       log: (line: string) => log.push(line),
       ...overrides,
     },
   };
 }
 
-describe("runGenerate", () => {
+describe('runGenerate', () => {
   let datasetsRoot: string;
 
   beforeEach(async () => {
-    datasetsRoot = await mkdtemp(join(tmpdir(), "bench-generate-"));
+    datasetsRoot = await mkdtemp(join(tmpdir(), 'bench-generate-'));
   });
 
   afterEach(async () => {
     await rm(datasetsRoot, { recursive: true, force: true });
   });
 
-  it("plans windows and writes nothing in dry-run mode", async () => {
+  it('plans windows and writes nothing in dry-run mode', async () => {
     const { options, log } = makeOptions({ datasetsRoot, dryRun: true });
     const result = await runGenerate(options);
     expect(result.written).toEqual([]);
-    expect(log.some((line) => line.includes("plan swing-MU-"))).toBe(true);
+    expect(log.some((line) => line.includes('plan swing-MU-'))).toBe(true);
   });
 
-  it("writes validated question files in real generation mode", async () => {
+  it('writes validated question files in real generation mode', async () => {
     const { options } = makeOptions({ datasetsRoot });
     const result = await runGenerate(options);
     expect(result.written.length).toBe(2);
     expect(result.skipped).toEqual([]);
     for (const file of result.written) {
-      const question = await loadQuestionForScorer(datasetsRoot, "v1", "swing", file.id);
-      expect(question.symbol).toBe("MU.US");
+      const question = await loadQuestionForScorer(datasetsRoot, 'v1', 'swing', file.id);
+      expect(question.symbol).toBe('MU.US');
       expect(question.fixtures.kline.day).toHaveLength(250);
       expect(question.replay.bars).toHaveLength(20);
     }
   });
 
-  it("caches raw kline pulls across runs unless --fresh is passed", async () => {
-    const sourceCacheRoot = await mkdtemp(join(tmpdir(), "bench-generate-sources-"));
+  it('caches raw kline pulls across runs unless --fresh is passed', async () => {
+    const sourceCacheRoot = await mkdtemp(join(tmpdir(), 'bench-generate-sources-'));
     try {
       const { options, klineCalls } = makeOptions({ datasetsRoot, sourceCacheRoot });
       await runGenerate(options);
       const firstCalls = klineCalls();
       expect(firstCalls).toBe(2);
-      expect((await readdir(sourceCacheRoot)).sort()).toEqual(["MU.US-day.json", "MU.US-week.json"]);
-      await expect(access(join(datasetsRoot, ".cache"))).rejects.toThrow();
+      expect((await readdir(sourceCacheRoot)).sort()).toEqual([
+        'MU.US-day.json',
+        'MU.US-week.json',
+      ]);
+      await expect(access(join(datasetsRoot, '.cache'))).rejects.toThrow();
 
       await runGenerate(options);
       expect(klineCalls()).toBe(firstCalls);
@@ -138,18 +141,20 @@ describe("runGenerate", () => {
     }
   });
 
-  it("logs a skip reason and writes nothing when every candidate window is halted", async () => {
-    const haltedDay = DAY_BARS.map((bar) => (bar.time.slice(0, 10) >= "2026-01-01" ? { ...bar, volume: "0" } : bar));
+  it('logs a skip reason and writes nothing when every candidate window is halted', async () => {
+    const haltedDay = DAY_BARS.map((bar) =>
+      bar.time.slice(0, 10) >= '2026-01-01' ? { ...bar, volume: '0' } : bar,
+    );
     const { options } = makeOptions({
       datasetsRoot,
-      fetchKlineHistory: async (_symbol: string, period: "day" | "week") =>
-        period === "day" ? haltedDay : WEEK_BARS,
+      fetchKlineHistory: async (_symbol: string, period: 'day' | 'week') =>
+        period === 'day' ? haltedDay : WEEK_BARS,
     });
     const result = await runGenerate(options);
     expect(result.written).toEqual([]);
     expect(result.skipped.length).toBeGreaterThan(0);
     for (const skip of result.skipped) {
-      expect(skip.reasons).toContain("zero_volume_halt");
+      expect(skip.reasons).toContain('zero_volume_halt');
     }
   });
 });

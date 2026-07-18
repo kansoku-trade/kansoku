@@ -1,7 +1,7 @@
-import type { LicenseActivateResult, LicenseSnapshot } from "@kansoku/pro-api";
-import { defineRoutes } from "./defineRoutes.js";
+import type { LicenseActivateResult, LicenseSnapshot } from '@kansoku/pro-api';
+import { defineRoutes } from './defineRoutes.js';
 
-export type { LicenseActivateResult, LicenseSnapshot } from "@kansoku/pro-api";
+export type { LicenseActivateResult, LicenseSnapshot } from '@kansoku/pro-api';
 
 export interface LicenseApi {
   status(): Promise<LicenseSnapshot>;
@@ -9,8 +9,8 @@ export interface LicenseApi {
   deactivate(): Promise<{ deactivated: true }>;
 }
 
-export const licenseRoutes = defineRoutes<LicenseApi>("license", {
-  status: { method: "GET", path: "/status" },
-  activate: { method: "POST", path: "/activate" },
-  deactivate: { method: "POST", path: "/deactivate" },
+export const licenseRoutes = defineRoutes<LicenseApi>('license', {
+  status: { method: 'GET', path: '/status' },
+  activate: { method: 'POST', path: '/activate' },
+  deactivate: { method: 'POST', path: '/deactivate' },
 });

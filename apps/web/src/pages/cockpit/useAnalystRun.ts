@@ -1,12 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   getAnalystRunStatus,
   getLatestAnalystRunEvent,
   type RunningReassessStatus,
   useAnalystRunStatus,
-} from "@web/analystRunsStore.js";
-import { client } from "@web/client";
-import { REASON_TEXT, useReassessSymbol } from "./useReassessSymbol";
+} from '@web/analystRunsStore.js';
+import { client } from '@web/client';
+import { REASON_TEXT, useReassessSymbol } from './useReassessSymbol';
 
 export type { RunningReassessStatus };
 
@@ -81,7 +81,7 @@ export function useAnalystRun(symbol: string, enabled = true): AnalystRunControl
       return;
     }
 
-    if (result.data.started || result.data.reason === "already running") {
+    if (result.data.started || result.data.reason === 'already running') {
       const eventAfterStart = getLatestAnalystRunEvent(symbol);
       const observedTerminalDuringStart =
         eventAfterStart !== null &&
@@ -97,8 +97,8 @@ export function useAnalystRun(symbol: string, enabled = true): AnalystRunControl
       return;
     }
 
-    const reason = result.data.reason ?? "";
-    setHint(REASON_TEXT[reason] ?? (reason || "未能启动分析"));
+    const reason = result.data.reason ?? '';
+    setHint(REASON_TEXT[reason] ?? (reason || '未能启动分析'));
   }, [reassess, armReconcileTimer, clearReconcileTimer, symbol]);
 
   let status: RunningReassessStatus | null = serverStatus;
@@ -106,9 +106,9 @@ export function useAnalystRun(symbol: string, enabled = true): AnalystRunControl
     const startedAt = new Date(optimisticStartedAt).toISOString();
     status = {
       running: true,
-      origin: "manual",
-      phase: "preparing",
-      activity: "正在等待服务端确认任务",
+      origin: 'manual',
+      phase: 'preparing',
+      activity: '正在等待服务端确认任务',
       startedAt,
       updatedAt: startedAt,
     };

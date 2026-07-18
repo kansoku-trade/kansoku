@@ -1,1 +1,1 @@
-export type MockMode = "blind" | "live";
+export type MockMode = 'blind' | 'live';

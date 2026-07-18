@@ -30,14 +30,14 @@
 
 ```ts
 export const FEATURES = {
-  "symbol-follow":  { tier: "pro" },
-  "deep-dive":      { tier: "pro" },
-  "research-ai":    { tier: "pro" },
+  'symbol-follow': { tier: 'pro' },
+  'deep-dive': { tier: 'pro' },
+  'research-ai': { tier: 'pro' },
 } as const;
 
 export type FeatureKey = keyof typeof FEATURES;
-export type FeatureTier = "free" | "pro";
-export type FeatureState = "active" | "locked" | "absent";
+export type FeatureTier = 'free' | 'pro';
+export type FeatureState = 'active' | 'locked' | 'absent';
 ```
 
 规则：
@@ -74,16 +74,16 @@ requireFeature(key: FeatureKey): Promise<void>
 `defineRoutes` 的路由项增加可选字段 `feature?: FeatureKey`：
 
 ```ts
-export const symbolsRoutes = defineRoutes<SymbolsApi>("symbols", {
-  startFollow: { method: "POST", path: "/:sym/follow", feature: "symbol-follow" },
-  stopFollow:  { method: "POST", path: "/:sym/unfollow" },
+export const symbolsRoutes = defineRoutes<SymbolsApi>('symbols', {
+  startFollow: { method: 'POST', path: '/:sym/follow', feature: 'symbol-follow' },
+  stopFollow: { method: 'POST', path: '/:sym/unfollow' },
 });
 ```
 
 core 新增包装器，在 service 定义处应用：
 
 ```ts
-export const symbolsService = withFeatureGates(symbolsRoutes, { /* 实现 */ });
+export const symbolsService = withFeatureGates(symbolsRoutes, {/* 实现 */});
 ```
 
 - `withFeatureGates` 遍历路由表，凡标了 `feature` 的方法自动前置 `await requireFeature(key)`。
@@ -108,7 +108,7 @@ interface CapabilitiesOut {
 web 侧：
 
 ```ts
-const { state, guard } = useFeature("symbol-follow");
+const { state, guard } = useFeature('symbol-follow');
 // state: "active" | "locked" | "absent"
 // guard(action): active 执行；locked 弹 license modal；absent 不动
 ```

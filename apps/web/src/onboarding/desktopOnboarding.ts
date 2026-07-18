@@ -12,7 +12,7 @@ interface DesktopGlobal {
 }
 
 export function getDesktopOnboardingBridge(
-  win: unknown = typeof window === "undefined" ? undefined : window,
+  win: unknown = typeof window === 'undefined' ? undefined : window,
 ): DesktopOnboardingBridge | null {
   return (win as { desktop?: DesktopGlobal } | undefined)?.desktop?.onboarding ?? null;
 }

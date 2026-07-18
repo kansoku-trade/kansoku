@@ -1,9 +1,24 @@
-import { CartesianGrid, Legend, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import type { BenchmarkSeries, CockpitPosition, RelativeVolume } from "@kansoku/shared/types";
-import { hhmm, tooltipContentStyle, tooltipLabelStyle, tooltipTime } from "@web/charts/simple/theme";
-import { fmt, signed, upDown } from "@web/format";
-import { seriesPalette, theme } from "@web/theme";
-import { Num, SectionTitle } from "@web/ui";
+import {
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  ReferenceLine,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
+import type { BenchmarkSeries, CockpitPosition, RelativeVolume } from '@kansoku/shared/types';
+import {
+  hhmm,
+  tooltipContentStyle,
+  tooltipLabelStyle,
+  tooltipTime,
+} from '@web/charts/simple/theme';
+import { fmt, signed, upDown } from '@web/format';
+import { seriesPalette, theme } from '@web/theme';
+import { Num, SectionTitle } from '@web/ui';
 
 const BENCHMARK_COLORS = [seriesPalette[0], seriesPalette[2], seriesPalette[3]];
 
@@ -24,7 +39,7 @@ function mergeBenchmark(series: BenchmarkSeries[]): Record<string, number>[] {
 function BenchmarkChart({ series }: { series: BenchmarkSeries[] }) {
   const data = mergeBenchmark(series);
   return (
-    <div style={{ width: "100%", height: 180 }}>
+    <div style={{ width: '100%', height: 180 }}>
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 4, right: 16, bottom: 0, left: 0 }}>
           <CartesianGrid stroke={theme.border} vertical={false} />
@@ -32,7 +47,7 @@ function BenchmarkChart({ series }: { series: BenchmarkSeries[] }) {
             dataKey="t"
             type="number"
             scale="time"
-            domain={["dataMin", "dataMax"]}
+            domain={['dataMin', 'dataMax']}
             tickFormatter={hhmm}
             tick={{ fill: theme.textSecondary, fontSize: 10 }}
             tickLine={false}
@@ -46,7 +61,11 @@ function BenchmarkChart({ series }: { series: BenchmarkSeries[] }) {
             width={46}
             tickFormatter={(v: number) => `${v}%`}
           />
-          <Legend verticalAlign="top" height={20} wrapperStyle={{ fontSize: 11, color: theme.textSecondary }} />
+          <Legend
+            verticalAlign="top"
+            height={20}
+            wrapperStyle={{ fontSize: 11, color: theme.textSecondary }}
+          />
           <Tooltip
             contentStyle={tooltipContentStyle}
             labelStyle={tooltipLabelStyle}
@@ -80,12 +99,18 @@ interface EnvTabProps {
 }
 
 function relvolTone(ratio: number): string {
-  if (ratio >= 1.5) return "up";
-  if (ratio <= 0.6) return "down";
-  return "";
+  if (ratio >= 1.5) return 'up';
+  if (ratio <= 0.6) return 'down';
+  return '';
 }
 
-export function EnvTab({ position, positionError, benchmark, benchmarkError, relvol }: EnvTabProps) {
+export function EnvTab({
+  position,
+  positionError,
+  benchmark,
+  benchmarkError,
+  relvol,
+}: EnvTabProps) {
   return (
     <>
       {relvol && (
@@ -111,32 +136,40 @@ export function EnvTab({ position, positionError, benchmark, benchmarkError, rel
             <div className="v">${fmt(position.cost)}</div>
             <div className="k">现价</div>
             <div className="v">${fmt(position.last)}</div>
-            <div className="k">浮{position.unrealized >= 0 ? "盈" : "亏"}</div>
+            <div className="k">浮{position.unrealized >= 0 ? '盈' : '亏'}</div>
             <div className={`v ${upDown(position.unrealized)}`}>
               {signed(position.unrealized, 0)} ({signed(position.unrealizedPct)}%)
             </div>
             {position.distances?.stop_pct != null && (
               <>
                 <div className="k">离止损</div>
-                <div className="v"><Num value={position.distances.stop_pct} diff suffix="%" /></div>
+                <div className="v">
+                  <Num value={position.distances.stop_pct} diff suffix="%" />
+                </div>
               </>
             )}
             {position.distances?.target1_pct != null && (
               <>
                 <div className="k">离目标1</div>
-                <div className="v"><Num value={position.distances.target1_pct} diff suffix="%" /></div>
+                <div className="v">
+                  <Num value={position.distances.target1_pct} diff suffix="%" />
+                </div>
               </>
             )}
             {position.distances?.target2_pct != null && (
               <>
                 <div className="k">离目标2</div>
-                <div className="v"><Num value={position.distances.target2_pct} diff suffix="%" /></div>
+                <div className="v">
+                  <Num value={position.distances.target2_pct} diff suffix="%" />
+                </div>
               </>
             )}
           </div>
         </>
       )}
-      {positionError && !position && <div className="note-block">持仓数据获取失败：{positionError}</div>}
+      {positionError && !position && (
+        <div className="note-block">持仓数据获取失败：{positionError}</div>
+      )}
 
       {!(benchmark && benchmark.length === 0) && (
         <>
@@ -151,7 +184,8 @@ export function EnvTab({ position, positionError, benchmark, benchmarkError, rel
 
   function renderBenchmark() {
     if (benchmark && benchmark.length > 0) return <BenchmarkChart series={benchmark} />;
-    if (benchmarkError) return <div className="note-block">环境对照数据获取失败：{benchmarkError}</div>;
+    if (benchmarkError)
+      return <div className="note-block">环境对照数据获取失败：{benchmarkError}</div>;
     return <div className="note-block">加载中…</div>;
   }
 }

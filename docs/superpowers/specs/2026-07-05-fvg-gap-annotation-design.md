@@ -19,12 +19,14 @@ Lightweight Charts(v4.2.3)。现在图上已经有 EMA 均线、MACD、金叉死
 ## 目标与非目标
 
 **目标**
+
 - 在 `intraday` 主图上,按 5m / 15m / 1h 三个周期各自识别并标注 FVG。
 - 只显示**还没被回补**的活跃缺口。
 - 用半透明矩形块呈现,看涨看跌两色区分,从缺口形成处横向延伸到当前最右 bar。
 - 提供一个独立开关,和现有指标开关并列,默认开。
 
 **非目标**
+
 - 不做相邻两根的普通跳空 / 隔夜跳空标注。
 - 不做已回补缺口的历史痕迹保留(不淡化显示,直接不画)。
 - 不做 hover tooltip 的复杂命中检测。
@@ -87,10 +89,10 @@ Lightweight Charts(v4.2.3)。现在图上已经有 EMA 均线、MACD、金叉死
 
 ```ts
 export interface IntradayFvgZone {
-  startTime: number;   // 缺口所在中间 bar 的时间戳
-  low: number;         // 缺口下沿价
-  high: number;        // 缺口上沿价
-  kind: "bullish" | "bearish";
+  startTime: number; // 缺口所在中间 bar 的时间戳
+  low: number; // 缺口下沿价
+  high: number; // 缺口上沿价
+  kind: 'bullish' | 'bearish';
 }
 ```
 
@@ -108,10 +110,11 @@ fvgZones?: IntradayFvgZone[];
 新建 `apps/server/src/services/fvg.ts`,和 `candlePatterns.ts` 同层,导出:
 
 ```ts
-export function detectFvgZones(candles: Candle[]): IntradayFvgZone[]
+export function detectFvgZones(candles: Candle[]): IntradayFvgZone[];
 ```
 
 纯函数,输入某一周期的 candles,输出活跃缺口数组。内部:
+
 1. 算 ATR(14)。
 2. 三根窗口扫描,套用看涨/看跌判定 + 波动门槛。
 3. 对每个候选缺口做「未补」检查(向后扫描)。
@@ -141,6 +144,7 @@ export function detectFvgZones(candles: Candle[]): IntradayFvgZone[]
 ### 接线:useIntradayCharts
 
 在 `useIntradayCharts.ts`:
+
 - 建图时创建 FVG primitive 实例并 `attachPrimitive` 到 `candle` series(仅一次)。
 - 数据更新的 effect 里,把 `d.fvgZones`(经开关过滤)喂给 primitive 的 `setData`,
   primitive 内部触发重绘。
@@ -153,6 +157,7 @@ FVG 不分 group 子类,直接受 `toggles.fvg` 单一开关控制(不走 `filte
 ### 开关:IndicatorToggles
 
 `useIndicatorToggles.ts`:
+
 - `IndicatorToggleKey` 加 `"fvg"`。
 - `INDICATOR_TOGGLE_LABELS` 加 `fvg: "FVG 缺口"`。
 - 默认全开的逻辑不变,新开关自动默认开。
@@ -164,6 +169,7 @@ FVG 不分 group 子类,直接受 `toggles.fvg` 单一开关控制(不走 `filte
 ## 测试
 
 新建 `apps/server/test/fvg.test.ts`,覆盖:
+
 - 看涨缺口识别:构造 `bar[i-1].high < bar[i+1].low` 的三根,确认产出 `bullish`、
   区间正确、`startTime` 是中间 bar。
 - 看跌缺口识别:对称用例。
@@ -177,6 +183,7 @@ FVG 不分 group 子类,直接受 `toggles.fvg` 单一开关控制(不走 `filte
 ## 影响范围
 
 改动文件:
+
 - `packages/shared/types.ts` — 加 `IntradayFvgZone`、`IntradayTfData.fvgZones`。
 - `apps/server/src/services/fvg.ts` — 新建,检测逻辑。
 - `apps/server/src/services/intraday.ts` — 组装时调用检测填字段。

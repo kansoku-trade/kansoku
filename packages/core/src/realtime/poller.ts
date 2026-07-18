@@ -29,7 +29,7 @@ export function createPoller(opts: PollerOptions): PollerHandle {
   };
 
   const applyData = (data: unknown) => {
-    const serialized = JSON.stringify({ type: "data", data });
+    const serialized = JSON.stringify({ type: 'data', data });
     if (serialized !== lastData) {
       lastData = serialized;
       emit(serialized);
@@ -44,7 +44,7 @@ export function createPoller(opts: PollerOptions): PollerHandle {
       failStreak = 0;
       if (degraded) {
         degraded = false;
-        emit(JSON.stringify({ type: "status", degraded: false }));
+        emit(JSON.stringify({ type: 'status', degraded: false }));
       }
       applyData(data);
     } catch (err) {
@@ -52,7 +52,7 @@ export function createPoller(opts: PollerOptions): PollerHandle {
       degraded = true;
       emit(
         JSON.stringify({
-          type: "status",
+          type: 'status',
           degraded: true,
           error: err instanceof Error ? err.message : String(err),
         }),
@@ -60,7 +60,7 @@ export function createPoller(opts: PollerOptions): PollerHandle {
     } finally {
       running = false;
       if (!stopped && listeners.size > 0) {
-        const base = typeof opts.intervalMs === "function" ? opts.intervalMs() : opts.intervalMs;
+        const base = typeof opts.intervalMs === 'function' ? opts.intervalMs() : opts.intervalMs;
         const interval = failStreak >= failThreshold ? backoffMs : base;
         timer = setTimeout(tick, interval);
       }

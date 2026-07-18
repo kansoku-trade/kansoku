@@ -1,20 +1,20 @@
-import { useState } from "react";
-import { ArrowLeft } from "lucide-react";
-import { useQuery } from "@web/apiHooks";
-import { client } from "@web/client";
-import { navigate } from "@web/router";
-import { Button, Card, ErrorBox, SectionTitle } from "@web/ui";
-import { useTitle } from "@web/useTitle";
-import { DataRootSection } from "./DataRootSection";
-import { DiagnosticsSection } from "./DiagnosticsSection";
-import { LicenseSection } from "./LicenseSection";
-import { LongbridgeSection } from "./LongbridgeSection";
-import { ProviderCredentialsSection } from "./ProviderCredentialsSection";
-import { RoleModelsCard } from "./RoleModelsCard";
-import { SettingsStatusStrip } from "./SettingsStatusStrip";
-import { TimeDisplaySettingsCard } from "./TimeDisplaySettingsCard";
-import { WatchedMarketsCard } from "./WatchedMarketsCard";
-import { deriveSettingsViewModel } from "./settingsViewModel";
+import { useState } from 'react';
+import { ArrowLeft } from 'lucide-react';
+import { useQuery } from '@web/apiHooks';
+import { client } from '@web/client';
+import { navigate } from '@web/router';
+import { Button, Card, ErrorBox, SectionTitle } from '@web/ui';
+import { useTitle } from '@web/useTitle';
+import { DataRootSection } from './DataRootSection';
+import { DiagnosticsSection } from './DiagnosticsSection';
+import { LicenseSection } from './LicenseSection';
+import { LongbridgeSection } from './LongbridgeSection';
+import { ProviderCredentialsSection } from './ProviderCredentialsSection';
+import { RoleModelsCard } from './RoleModelsCard';
+import { SettingsStatusStrip } from './SettingsStatusStrip';
+import { TimeDisplaySettingsCard } from './TimeDisplaySettingsCard';
+import { WatchedMarketsCard } from './WatchedMarketsCard';
+import { deriveSettingsViewModel } from './settingsViewModel';
 import type {
   AiRoles,
   AiSettings,
@@ -24,7 +24,7 @@ import type {
   Role,
   RoleSetting,
   UsageToday,
-} from "./types";
+} from './types';
 
 function SettingsWorkspace({
   settings,
@@ -48,21 +48,25 @@ function SettingsWorkspace({
   lobehubCreditsError: string | null;
 }) {
   const [roleDrafts, setRoleDrafts] = useState<AiRoles>(() => settings.roles);
-  const updateRoleDraft = (role: Role | "primary", next: RoleSetting) => {
+  const updateRoleDraft = (role: Role | 'primary', next: RoleSetting) => {
     setRoleDrafts((current) => ({ ...current, [role]: next }));
   };
   const view = deriveSettingsViewModel({ settings, catalog, usage, roles: roleDrafts });
   const usedProviderIds = Array.from(
     new Set(
       Object.values(roleDrafts).flatMap((setting) =>
-        setting.mode === "custom" && setting.provider ? [setting.provider] : [],
+        setting.mode === 'custom' && setting.provider ? [setting.provider] : [],
       ),
     ),
   );
 
   return (
     <>
-      <SettingsStatusStrip summary={view.summary} usageError={usageError} onRetryUsage={reloadUsage} />
+      <SettingsStatusStrip
+        summary={view.summary}
+        usageError={usageError}
+        onRetryUsage={reloadUsage}
+      />
       <div className="settings-workspace">
         <div className="settings-main-column">
           <RoleModelsCard
@@ -109,10 +113,17 @@ function SettingsBackLink() {
       className="settings-back-link"
       href="/"
       onClick={(event) => {
-        if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        if (
+          event.defaultPrevented ||
+          event.metaKey ||
+          event.ctrlKey ||
+          event.shiftKey ||
+          event.altKey
+        )
+          return;
         event.preventDefault();
         if (window.history.length > 1) window.history.back();
-        else navigate("/");
+        else navigate('/');
       }}
     >
       <ArrowLeft className="icon" size={13} /> 返回
@@ -121,28 +132,31 @@ function SettingsBackLink() {
 }
 
 export function SettingsPage() {
-  useTitle("设置");
-  const { data: settings, error: settingsError, reload: reloadSettings } = useQuery<AiSettings>(
-    "settings.getAi",
-    () => client.settings.getAi(),
-  );
-  const { data: catalog, error: catalogError, reload: reloadCatalog } = useQuery<Catalog>(
-    "settings.getCatalog",
-    () => client.settings.getCatalog(),
-  );
-  const { data: usage, error: usageError, reload: reloadUsage } = useQuery<UsageToday>(
-    "settings.getUsageToday",
-    () => client.settings.getUsageToday(),
-  );
+  useTitle('设置');
+  const {
+    data: settings,
+    error: settingsError,
+    reload: reloadSettings,
+  } = useQuery<AiSettings>('settings.getAi', () => client.settings.getAi());
+  const {
+    data: catalog,
+    error: catalogError,
+    reload: reloadCatalog,
+  } = useQuery<Catalog>('settings.getCatalog', () => client.settings.getCatalog());
+  const {
+    data: usage,
+    error: usageError,
+    reload: reloadUsage,
+  } = useQuery<UsageToday>('settings.getUsageToday', () => client.settings.getUsageToday());
   const { data: lobehubAccount, reload: reloadLobeHubAccount } = useQuery<LobeHubAccount>(
-    "lobehub.getAccount",
+    'lobehub.getAccount',
     () => client.lobehub.getAccount(),
   );
   const {
     data: lobehubCredits,
     error: lobehubCreditsError,
     reload: reloadLobeHubCredits,
-  } = useQuery<LobeHubCredits>("lobehub.getCredits", () => client.lobehub.getCredits());
+  } = useQuery<LobeHubCredits>('lobehub.getCredits', () => client.lobehub.getCredits());
 
   const reloadAll = () => {
     reloadSettings();

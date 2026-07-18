@@ -1,25 +1,27 @@
 // @vitest-environment jsdom
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
-import type { ReactNode } from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
-import type { ResearchDocument, ResearchDocumentMeta } from "@kansoku/core/contract/index";
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import type { ReactNode } from 'react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { ResearchDocument, ResearchDocumentMeta } from '@kansoku/core/contract/index';
 
-let capabilities: { features?: Record<string, string> } = { features: { "research-ai": "active" } };
+let capabilities: { features?: Record<string, string> } = { features: { 'research-ai': 'active' } };
 
 const listEdits = vi.fn().mockResolvedValue([]);
 const getRefresh = vi.fn().mockResolvedValue(null);
-const getChat = vi.fn().mockResolvedValue({ session: null, messages: [], busy: false, partial: "" });
+const getChat = vi
+  .fn()
+  .mockResolvedValue({ session: null, messages: [], busy: false, partial: '' });
 const suggestions = vi.fn().mockResolvedValue({ suggestions: [] });
 const postMessage = vi.fn();
 const abortChat = vi.fn();
 const startRefresh = vi.fn();
 const abortRefresh = vi.fn();
 
-vi.mock("@web/capabilitiesStore", () => ({
+vi.mock('@web/capabilitiesStore', () => ({
   useCapabilities: () => capabilities,
 }));
-vi.mock("@web/client", () => ({
+vi.mock('@web/client', () => ({
   client: {
     research: {
       listEdits: (...args: unknown[]) => listEdits(...args),
@@ -33,41 +35,41 @@ vi.mock("@web/client", () => ({
     },
   },
 }));
-vi.mock("@web/wsHub", () => ({
+vi.mock('@web/wsHub', () => ({
   subscribeChannel: () => () => {},
 }));
-vi.mock("../cockpit/chat/ChatComposer", () => ({
+vi.mock('../cockpit/chat/ChatComposer', () => ({
   ChatComposer: () => <div data-testid="chat-composer" />,
 }));
-vi.mock("../cockpit/chat/ConversationTranscript", () => ({
+vi.mock('../cockpit/chat/ConversationTranscript', () => ({
   ConversationTranscript: () => <div data-testid="conversation-transcript" />,
 }));
 
-const { ResearchAssistant } = await import("./ResearchAssistant");
+const { ResearchAssistant } = await import('./ResearchAssistant');
 
 const document: ResearchDocument = {
-  path: "stocks/MRVL.md",
-  kind: "stock",
-  type: "stock",
-  title: "MRVL",
+  path: 'stocks/MRVL.md',
+  kind: 'stock',
+  type: 'stock',
+  title: 'MRVL',
   date: null,
-  symbols: ["MRVL"],
-  mtime: "2026-07-18T00:00:00.000Z",
-  excerpt: "",
-  markdown: "# MRVL",
-  revision: "r1",
+  symbols: ['MRVL'],
+  mtime: '2026-07-18T00:00:00.000Z',
+  excerpt: '',
+  markdown: '# MRVL',
+  revision: 'r1',
 };
 
 const related: ResearchDocumentMeta[] = [
   {
-    path: "stocks/AVGO.md",
-    kind: "stock",
-    type: "stock",
-    title: "AVGO",
+    path: 'stocks/AVGO.md',
+    kind: 'stock',
+    type: 'stock',
+    title: 'AVGO',
     date: null,
-    symbols: ["AVGO"],
-    mtime: "2026-07-18T00:00:00.000Z",
-    excerpt: "",
+    symbols: ['AVGO'],
+    mtime: '2026-07-18T00:00:00.000Z',
+    excerpt: '',
   },
 ];
 
@@ -78,16 +80,16 @@ function renderWithClient(children: ReactNode) {
 
 afterEach(() => {
   cleanup();
-  capabilities = { features: { "research-ai": "active" } };
+  capabilities = { features: { 'research-ai': 'active' } };
   listEdits.mockClear();
   getRefresh.mockClear();
   getChat.mockClear();
   suggestions.mockClear();
 });
 
-describe("ResearchAssistant license gate", () => {
-  it("renders the locked placeholder + browse card, and fires zero AI-subroute fetches", async () => {
-    capabilities = { features: { "research-ai": "locked" } };
+describe('ResearchAssistant license gate', () => {
+  it('renders the locked placeholder + browse card, and fires zero AI-subroute fetches', async () => {
+    capabilities = { features: { 'research-ai': 'locked' } };
 
     renderWithClient(
       <ResearchAssistant
@@ -100,10 +102,10 @@ describe("ResearchAssistant license gate", () => {
     );
 
     expect(screen.getByText(/研究库 AI/)).toBeTruthy();
-    expect(screen.getByText("订阅解锁")).toBeTruthy();
+    expect(screen.getByText('订阅解锁')).toBeTruthy();
     expect(screen.getByText(/关联资料/)).toBeTruthy();
-    expect(screen.queryByLabelText("刷新研究")).toBeNull();
-    expect(screen.queryByTestId("chat-composer")).toBeNull();
+    expect(screen.queryByLabelText('刷新研究')).toBeNull();
+    expect(screen.queryByTestId('chat-composer')).toBeNull();
 
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(listEdits).not.toHaveBeenCalled();
@@ -111,8 +113,8 @@ describe("ResearchAssistant license gate", () => {
     expect(getChat).not.toHaveBeenCalled();
   });
 
-  it("renders the browse card only for a community build (pro:false), no locked notice, zero AI fetches", async () => {
-    capabilities = { features: { "research-ai": "absent" } };
+  it('renders the browse card only for a community build (pro:false), no locked notice, zero AI fetches', async () => {
+    capabilities = { features: { 'research-ai': 'absent' } };
 
     renderWithClient(
       <ResearchAssistant
@@ -126,9 +128,9 @@ describe("ResearchAssistant license gate", () => {
 
     expect(screen.getByText(/关联资料/)).toBeTruthy();
     expect(screen.queryByText(/研究库 AI/)).toBeNull();
-    expect(screen.queryByText("订阅解锁")).toBeNull();
-    expect(screen.queryByLabelText("刷新研究")).toBeNull();
-    expect(screen.queryByTestId("chat-composer")).toBeNull();
+    expect(screen.queryByText('订阅解锁')).toBeNull();
+    expect(screen.queryByLabelText('刷新研究')).toBeNull();
+    expect(screen.queryByTestId('chat-composer')).toBeNull();
 
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(listEdits).not.toHaveBeenCalled();
@@ -136,8 +138,8 @@ describe("ResearchAssistant license gate", () => {
     expect(getChat).not.toHaveBeenCalled();
   });
 
-  it("renders the real AI panel and fires the AI-subroute fetches when licensed", async () => {
-    capabilities = { features: { "research-ai": "active" } };
+  it('renders the real AI panel and fires the AI-subroute fetches when licensed', async () => {
+    capabilities = { features: { 'research-ai': 'active' } };
 
     renderWithClient(
       <ResearchAssistant
@@ -149,8 +151,8 @@ describe("ResearchAssistant license gate", () => {
       />,
     );
 
-    expect(screen.getByLabelText("刷新研究")).toBeTruthy();
-    expect(screen.getByTestId("chat-composer")).toBeTruthy();
+    expect(screen.getByLabelText('刷新研究')).toBeTruthy();
+    expect(screen.getByTestId('chat-composer')).toBeTruthy();
     expect(screen.queryByText(/研究库 AI/)).toBeNull();
 
     await waitFor(() => expect(listEdits).toHaveBeenCalled());

@@ -30,17 +30,17 @@
 标注用真实时间戳 + 价格两个绝对坐标存，与周期无关——切 5m/15m/1h 只是重新换算屏幕坐标：
 
 ```ts
-type AnnotationKind = "trendline" | "hline" | "rect" | "fib";
+type AnnotationKind = 'trendline' | 'hline' | 'rect' | 'fib';
 
 interface AnnotationPoint {
-  time: number;   // Unix 秒
+  time: number; // Unix 秒
   price: number;
 }
 
 interface Annotation {
   id: string;
   kind: AnnotationKind;
-  points: AnnotationPoint[];   // hline 存 1 个点（只用 price），其余存 2 个点
+  points: AnnotationPoint[]; // hline 存 1 个点（只用 price），其余存 2 个点
   createdAt: number;
 }
 ```

@@ -1,6 +1,6 @@
-import { useEffect } from "react";
+import { useEffect } from 'react';
 
-const BRAND = "Kansoku";
+const BRAND = 'Kansoku';
 
 let activeTitleSink: ((title: string) => void) | null = null;
 

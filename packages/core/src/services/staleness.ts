@@ -1,11 +1,11 @@
-import type { ChartDoc } from "@kansoku/shared/types";
-import { classifySession } from "./session.js";
+import type { ChartDoc } from '@kansoku/shared/types';
+import { classifySession } from './session.js';
 
 export const PREDICTION_STALE_MS = 15 * 60_000;
 
 export function predictionStale(doc: ChartDoc, now: Date): boolean {
-  if (doc.type !== "intraday") return false;
-  if (classifySession(Math.floor(now.getTime() / 1000)) !== "regular") return false;
+  if (doc.type !== 'intraday') return false;
+  if (classifySession(Math.floor(now.getTime() / 1000)) !== 'regular') return false;
 
   const predictionCondition = (() => {
     const prediction = doc.input.prediction;

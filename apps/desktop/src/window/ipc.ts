@@ -1,10 +1,10 @@
-import { ipcMain } from "electron";
+import { ipcMain } from 'electron';
 import {
   WINDOWS_ACTIVE_TAB_CHANNEL,
   WINDOWS_CONTEXT_CHANNEL,
   WINDOWS_OPEN_CHANNEL,
   WINDOWS_POPOUT_CHANNEL,
-} from "./channels.js";
+} from './channels.js';
 
 export interface WindowsContext {
   windowId: string;
@@ -30,6 +30,6 @@ export function registerWindowsIpc(deps: WindowsIpcDeps): void {
   });
 
   ipcMain.handle(WINDOWS_OPEN_CHANNEL, (_event, activeTabId: unknown) => {
-    deps.openWindow(typeof activeTabId === "string" ? activeTabId : "");
+    deps.openWindow(typeof activeTabId === 'string' ? activeTabId : '');
   });
 }

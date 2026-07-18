@@ -1,12 +1,12 @@
-import { useEffect, useState } from "react";
-import type { CockpitComment } from "@kansoku/shared/types";
-import { marketDate } from "@kansoku/shared/time";
-import { useQuery } from "@web/apiHooks";
-import { client } from "@web/client";
-import { subscribeChannel } from "@web/wsHub";
+import { useEffect, useState } from 'react';
+import type { CockpitComment } from '@kansoku/shared/types';
+import { marketDate } from '@kansoku/shared/time';
+import { useQuery } from '@web/apiHooks';
+import { client } from '@web/client';
+import { subscribeChannel } from '@web/wsHub';
 
 interface CommentEnvelope {
-  type: "init" | "comment";
+  type: 'init' | 'comment';
   comments?: CockpitComment[];
   comment?: CockpitComment;
 }
@@ -31,9 +31,11 @@ export function useCockpitComments(
   const [comments, setComments] = useState<CockpitComment[]>([]);
   const [streamLoaded, setStreamLoaded] = useState(false);
   const commentsKey = date ? `symbols.comments:${symbol}:${date}` : `symbols.comments:${symbol}`;
-  const { data: initialComments, error, loading } = useQuery<CockpitComment[]>(commentsKey, () =>
-    client.symbols.comments({ sym: symbol, date }),
-  );
+  const {
+    data: initialComments,
+    error,
+    loading,
+  } = useQuery<CockpitComment[]>(commentsKey, () => client.symbols.comments({ sym: symbol, date }));
 
   useEffect(() => {
     setComments([]);
@@ -47,13 +49,13 @@ export function useCockpitComments(
   useEffect(() => {
     if (!live) return;
     const off = subscribeChannel(
-      { kind: "comments", symbol },
+      { kind: 'comments', symbol },
       (payload) => {
         const env = payload as CommentEnvelope;
-        if (env.type === "init" && env.comments) {
+        if (env.type === 'init' && env.comments) {
           setComments((prev) => mergeComments(prev, env.comments ?? []));
           setStreamLoaded(true);
-        } else if (env.type === "comment" && env.comment) {
+        } else if (env.type === 'comment' && env.comment) {
           const c = env.comment;
           setComments((prev) => mergeComments(prev, [c]));
         }

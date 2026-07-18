@@ -1,8 +1,8 @@
-import type { MenuItemConstructorOptions } from "electron";
+import type { MenuItemConstructorOptions } from 'electron';
 
 export type NativeContextMenuItem =
   | {
-      type: "item";
+      type: 'item';
       key: string;
       label: string;
       enabled: boolean;
@@ -13,11 +13,11 @@ export type NativeContextMenuItem =
       danger?: boolean;
     }
   | {
-      type: "divider";
+      type: 'divider';
       key: string;
     }
   | {
-      type: "submenu";
+      type: 'submenu';
       key: string;
       label: string;
       enabled: boolean;
@@ -35,11 +35,11 @@ function mapItem(
   item: NativeContextMenuItem,
   onSelect: (key: string) => void,
 ): MenuItemConstructorOptions {
-  if (item.type === "divider") {
-    return { type: "separator" };
+  if (item.type === 'divider') {
+    return { type: 'separator' };
   }
 
-  if (item.type === "submenu") {
+  if (item.type === 'submenu') {
     return {
       label: item.label,
       enabled: item.enabled,
@@ -57,7 +57,7 @@ function mapItem(
   if (item.radioGroup) {
     return {
       ...base,
-      type: "radio",
+      type: 'radio',
       checked: Boolean(item.checked),
     };
   }
@@ -65,13 +65,13 @@ function mapItem(
   if (item.checked !== undefined) {
     return {
       ...base,
-      type: "checkbox",
+      type: 'checkbox',
       checked: item.checked,
     };
   }
 
   return {
     ...base,
-    type: "normal",
+    type: 'normal',
   };
 }

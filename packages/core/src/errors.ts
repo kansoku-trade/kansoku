@@ -5,7 +5,7 @@ export class ClientError extends Error {
 
   constructor(message: string, hint?: string, status = 400, code?: string) {
     super(message);
-    this.name = "ClientError";
+    this.name = 'ClientError';
     this.hint = hint;
     this.status = status;
     this.code = code;

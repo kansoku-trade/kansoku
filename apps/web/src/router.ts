@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
-import { parseAppDeepLink } from "@kansoku/shared/appDeepLink";
+import { useEffect, useState } from 'react';
+import { parseAppDeepLink } from '@kansoku/shared/appDeepLink';
 
-const LOCATION_EVENT = "locationchange";
+const LOCATION_EVENT = 'locationchange';
 
 export interface RouteStore {
   getRoute(): string;
@@ -11,25 +11,25 @@ export interface RouteStore {
 }
 
 function currentWindowRoute(): string {
-  return (window.location.pathname || "/") + window.location.search;
+  return (window.location.pathname || '/') + window.location.search;
 }
 
 const windowStore: RouteStore = {
   getRoute: currentWindowRoute,
   subscribe(cb) {
-    window.addEventListener("popstate", cb);
+    window.addEventListener('popstate', cb);
     window.addEventListener(LOCATION_EVENT, cb);
     return () => {
-      window.removeEventListener("popstate", cb);
+      window.removeEventListener('popstate', cb);
       window.removeEventListener(LOCATION_EVENT, cb);
     };
   },
   push(route) {
-    window.history.pushState({}, "", route);
+    window.history.pushState({}, '', route);
     window.dispatchEvent(new Event(LOCATION_EVENT));
   },
   replace(route) {
-    window.history.replaceState({}, "", route);
+    window.history.replaceState({}, '', route);
     window.dispatchEvent(new Event(LOCATION_EVENT));
   },
 };
@@ -48,7 +48,10 @@ function currentStore(): RouteStore {
   return activeStore ?? windowStore;
 }
 
-export function createMemoryRouteStore(initialRoute: string, opts: { onChange?: (route: string) => void } = {}): RouteStore {
+export function createMemoryRouteStore(
+  initialRoute: string,
+  opts: { onChange?: (route: string) => void } = {},
+): RouteStore {
   let route = initialRoute;
   const listeners = new Set<() => void>();
   const set = (next: string) => {
@@ -79,9 +82,9 @@ export function useRoute(): string {
 }
 
 export function routePathname(route: string): string {
-  const queryIndex = route.indexOf("?");
+  const queryIndex = route.indexOf('?');
   const pathname = queryIndex === -1 ? route : route.slice(0, queryIndex);
-  return pathname || "/";
+  return pathname || '/';
 }
 
 const POPOUT_SYMBOL_ROUTE_RE = /^\/popout\/symbol\/([^/]+)$/;
@@ -100,8 +103,8 @@ export function navigate(route: string, options: { replace?: boolean } = {}): vo
 
 export function useQueryParam(name: string): string | null {
   const read = () => {
-    const [, search] = currentStore().getRoute().split("?");
-    return new URLSearchParams(search ?? "").get(name);
+    const [, search] = currentStore().getRoute().split('?');
+    return new URLSearchParams(search ?? '').get(name);
   };
   const [value, setValue] = useState(read);
   useEffect(() => {
@@ -114,16 +117,16 @@ export function useQueryParam(name: string): string | null {
 }
 
 export function installRouter(): void {
-  document.addEventListener("click", (event) => {
+  document.addEventListener('click', (event) => {
     if (event.defaultPrevented || event.button !== 0) return;
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
 
-    const anchor = (event.target as Element | null)?.closest?.("a");
+    const anchor = (event.target as Element | null)?.closest?.('a');
     if (!anchor) return;
-    if (anchor.target && anchor.target !== "_self") return;
-    if (anchor.hasAttribute("download")) return;
+    if (anchor.target && anchor.target !== '_self') return;
+    if (anchor.hasAttribute('download')) return;
 
-    const href = anchor.getAttribute("href");
+    const href = anchor.getAttribute('href');
     const route = resolveAnchorRoute(href, anchor.href, window.location.origin);
     if (!route) return;
 
@@ -132,7 +135,7 @@ export function installRouter(): void {
   });
 }
 
-const ABSOLUTE_SCHEME_RE = /^[A-Za-z][A-Za-z\d+.-]*:/;
+const ABSOLUTE_SCHEME_RE = /^[A-Za-z][\d+.A-Za-z-]*:/;
 
 export function resolveAnchorRoute(
   rawHref: string | null,
@@ -142,7 +145,8 @@ export function resolveAnchorRoute(
   if (!rawHref) return null;
   const appLink = parseAppDeepLink(rawHref);
   if (appLink) return appLink.route;
-  if (rawHref.startsWith("//") || rawHref.startsWith("#") || ABSOLUTE_SCHEME_RE.test(rawHref)) return null;
+  if (rawHref.startsWith('//') || rawHref.startsWith('#') || ABSOLUTE_SCHEME_RE.test(rawHref))
+    return null;
 
   try {
     const url = new URL(resolvedHref);

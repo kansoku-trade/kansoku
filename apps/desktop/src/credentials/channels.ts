@@ -1,3 +1,3 @@
 export const CREDENTIALS_CHANNELS = {
-  get: "credentials:get",
+  get: 'credentials:get',
 } as const;

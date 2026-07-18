@@ -25,10 +25,10 @@
 
 ## 现状
 
-| 入口 | 组件 | 行为 |
-|------|------|------|
-| 日内 | `IndicatorToggles` + `useIndicatorToggles` | 12 个常驻 pill 按钮；默认全 `true`；localStorage 持久化 |
-| SEPA | `LayerPanel` | 可折叠「图层」面板；分组 checkbox；状态在组件内非受控；无 n/m 计数 |
+| 入口 | 组件                                       | 行为                                                               |
+| ---- | ------------------------------------------ | ------------------------------------------------------------------ |
+| 日内 | `IndicatorToggles` + `useIndicatorToggles` | 12 个常驻 pill 按钮；默认全 `true`；localStorage 持久化            |
+| SEPA | `LayerPanel`                               | 可折叠「图层」面板；分组 checkbox；状态在组件内非受控；无 n/m 计数 |
 
 指标 key（保持不变）：
 
@@ -70,18 +70,18 @@
 
 偏「常开参照在上、信号在下」：
 
-1. `ema` — EMA 均线  
-2. `vwap` — VWAP  
-3. `levels` — 价位线  
-4. `daylevel` — 日内参照位  
-5. `fvg` — FVG 缺口  
-6. `pattern123` — 123 结构  
-7. `optwall` — 期权墙  
-8. `crosses` — 金叉死叉  
-9. `divergence` — 自动背离  
-10. `beichi` — 自动背驰  
-11. `candle` — K线形态  
-12. `ai` — AI 标注  
+1. `ema` — EMA 均线
+2. `vwap` — VWAP
+3. `levels` — 价位线
+4. `daylevel` — 日内参照位
+5. `fvg` — FVG 缺口
+6. `pattern123` — 123 结构
+7. `optwall` — 期权墙
+8. `crosses` — 金叉死叉
+9. `divergence` — 自动背离
+10. `beichi` — 自动背驰
+11. `candle` — K线形态
+12. `ai` — AI 标注
 
 色点：有固定系列色的项（如 EMA、VWAP）传 `color`；纯标记类可用中性色或沿用现有主题 token。
 
@@ -95,8 +95,8 @@
 
 **仅当 localStorage 无有效记录时** 使用新默认；已有用户数据 **不强制覆盖**。
 
-| 默认开 | 默认关 |
-|--------|--------|
+| 默认开                              | 默认关                                                                            |
+| ----------------------------------- | --------------------------------------------------------------------------------- |
 | `ema`、`vwap`、`levels`、`daylevel` | `fvg`、`pattern123`、`optwall`、`crosses`、`divergence`、`beichi`、`candle`、`ai` |
 
 合并规则（与现状一致并明确）：
@@ -120,7 +120,7 @@ interface LayerItem {
 }
 
 interface LayerGroup {
-  title?: string;   // 可选；无 title 时不渲染分组标题行
+  title?: string; // 可选；无 title 时不渲染分组标题行
   items: LayerItem[];
 }
 
@@ -167,13 +167,13 @@ interface LayerPanelProps {
 
 ## 边界情况
 
-| 情况 | 处理 |
-|------|------|
-| localStorage 损坏 | 回退保守默认 |
-| 旧存储为「全 true」 | 尊重用户已存偏好，不迁移覆盖 |
-| 新用户 / 清缓存 | 保守默认（4 开 8 关 → 收起显示 `图层 4/12`） |
-| 极窄屏 | 面板 max-height 滚动；不改为底部 sheet |
-| SEPA 无项 | `groups.length === 0` 时不渲染（现状） |
+| 情况                | 处理                                         |
+| ------------------- | -------------------------------------------- |
+| localStorage 损坏   | 回退保守默认                                 |
+| 旧存储为「全 true」 | 尊重用户已存偏好，不迁移覆盖                 |
+| 新用户 / 清缓存     | 保守默认（4 开 8 关 → 收起显示 `图层 4/12`） |
+| 极窄屏              | 面板 max-height 滚动；不改为底部 sheet       |
+| SEPA 无项           | `groups.length === 0` 时不渲染（现状）       |
 
 ## 验收
 
@@ -193,14 +193,14 @@ interface LayerPanelProps {
 
 ## 文件触点（实现时）
 
-| 文件 | 动作 |
-|------|------|
-| `apps/web/src/charts/LayerPanel.tsx` | 增强 API + 标题计数 |
-| `apps/web/src/charts/intraday/useIndicatorToggles.ts` | 保守默认 + 顺序常量 |
-| `apps/web/src/charts/intraday/IntradayDashboard.tsx` | 换接 LayerPanel |
-| `apps/web/src/charts/intraday/IndicatorToggles.tsx` | 删除 |
-| `apps/web/src/charts/sepa/SepaDashboard.tsx`（及 groups 构造处） | 对齐标题计数 / 受控若需要 |
-| `apps/web/src/styles.css` | 去掉 indicator-toggles 样式；必要时微调 layer-panel |
+| 文件                                                             | 动作                                                |
+| ---------------------------------------------------------------- | --------------------------------------------------- |
+| `apps/web/src/charts/LayerPanel.tsx`                             | 增强 API + 标题计数                                 |
+| `apps/web/src/charts/intraday/useIndicatorToggles.ts`            | 保守默认 + 顺序常量                                 |
+| `apps/web/src/charts/intraday/IntradayDashboard.tsx`             | 换接 LayerPanel                                     |
+| `apps/web/src/charts/intraday/IndicatorToggles.tsx`              | 删除                                                |
+| `apps/web/src/charts/sepa/SepaDashboard.tsx`（及 groups 构造处） | 对齐标题计数 / 受控若需要                           |
+| `apps/web/src/styles.css`                                        | 去掉 indicator-toggles 样式；必要时微调 layer-panel |
 
 ## 后续（明确不在本次）
 

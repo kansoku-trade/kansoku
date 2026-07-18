@@ -1,23 +1,30 @@
-import type { AppCredentialStore } from "../../ai/credentialStore.js";
-import { categorizeTestError, sanitizeAuthError, validateCustomRef } from "./settingsValidation.js";
-import type { TestConnectionResult } from "../../contract/settings.js";
-import type { SettingsDeps } from "./settings.deps.js";
+import type { AppCredentialStore } from '../../ai/credentialStore.js';
+import { categorizeTestError, sanitizeAuthError, validateCustomRef } from './settingsValidation.js';
+import type { TestConnectionResult } from '../../contract/settings.js';
+import type { SettingsDeps } from './settings.deps.js';
 
 const TEST_PROMPT_MAX_TOKENS = 16;
 
-async function collectKnownSecrets(credentials: AppCredentialStore, provider: string): Promise<string[]> {
+async function collectKnownSecrets(
+  credentials: AppCredentialStore,
+  provider: string,
+): Promise<string[]> {
   try {
     const credential = await credentials.read(provider);
     if (!credential) return [];
-    if (credential.type === "api_key" && credential.key) return [credential.key];
-    if (credential.type === "oauth") return [credential.access, credential.refresh].filter(Boolean) as string[];
+    if (credential.type === 'api_key' && credential.key) return [credential.key];
+    if (credential.type === 'oauth')
+      return [credential.access, credential.refresh].filter(Boolean) as string[];
     return [];
   } catch {
     return [];
   }
 }
 
-export async function runTestConnection(body: Record<string, unknown>, deps: SettingsDeps): Promise<TestConnectionResult> {
+export async function runTestConnection(
+  body: Record<string, unknown>,
+  deps: SettingsDeps,
+): Promise<TestConnectionResult> {
   const { models, credentials, testTimeoutMs } = deps;
   const { provider, modelId, thinkingLevel, model } = validateCustomRef(body, models);
   const controller = new AbortController();
@@ -35,9 +42,9 @@ export async function runTestConnection(body: Record<string, unknown>, deps: Set
     await Promise.race([
       models.completeSimple(
         model,
-        { messages: [{ role: "user", content: "ping", timestamp: Date.now() }] },
+        { messages: [{ role: 'user', content: 'ping', timestamp: Date.now() }] },
         {
-          ...(thinkingLevel === "off" ? {} : { reasoning: thinkingLevel }),
+          ...(thinkingLevel === 'off' ? {} : { reasoning: thinkingLevel }),
           maxTokens: TEST_PROMPT_MAX_TOKENS,
           signal: controller.signal,
         },
@@ -51,7 +58,7 @@ export async function runTestConnection(body: Record<string, unknown>, deps: Set
     const hint = sanitizeAuthError(rawMessage, secrets);
     if (timedOut) {
       console.error(`settings: /ai/test timed out for ${provider}/${modelId}: ${hint}`);
-      return { ok: false, status: 504, error: "timeout", hint };
+      return { ok: false, status: 504, error: 'timeout', hint };
     }
     console.error(`settings: /ai/test failed for ${provider}/${modelId}: ${hint}`);
     return { ok: false, status: 502, error: categorizeTestError(rawMessage), hint };

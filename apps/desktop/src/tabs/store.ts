@@ -1,8 +1,8 @@
-import { writeFileSync } from "node:fs";
-import { readFile, writeFile } from "node:fs/promises";
+import { writeFileSync } from 'node:fs';
+import { readFile, writeFile } from 'node:fs/promises';
 
-const HOME_ROUTE = "/";
-const DEFAULT_TITLE = "Kansoku";
+const HOME_ROUTE = '/';
+const DEFAULT_TITLE = 'Kansoku';
 const DEFAULT_DEBOUNCE_MS = 500;
 
 export interface TabState {
@@ -18,14 +18,14 @@ export interface TabsState {
 }
 
 export type MutateOp =
-  | { op: "open"; route: string; id?: string }
-  | { op: "close"; id: string }
-  | { op: "closeOthers"; id: string }
-  | { op: "closeToRight"; id: string }
-  | { op: "updateRoute"; id: string; route: string }
-  | { op: "updateTitle"; id: string; title: string }
-  | { op: "updateScroll"; id: string; scrollY: number }
-  | { op: "adopt"; tabs: TabState[] };
+  | { op: 'open'; route: string; id?: string }
+  | { op: 'close'; id: string }
+  | { op: 'closeOthers'; id: string }
+  | { op: 'closeToRight'; id: string }
+  | { op: 'updateRoute'; id: string; route: string }
+  | { op: 'updateTitle'; id: string; title: string }
+  | { op: 'updateScroll'; id: string; scrollY: number }
+  | { op: 'adopt'; tabs: TabState[] };
 
 function makeTab(route: string, id?: string): TabState {
   return { id: id ?? crypto.randomUUID(), route, title: DEFAULT_TITLE, scrollY: 0 };
@@ -53,7 +53,10 @@ export function closeTab(state: TabsState, id: string): TabsState {
 
 export function closeOtherTabs(state: TabsState, id: string): TabsState {
   if (!state.tabs.some((tab) => tab.id === id)) return state;
-  return withTabs(state, state.tabs.filter((tab) => tab.id === id));
+  return withTabs(
+    state,
+    state.tabs.filter((tab) => tab.id === id),
+  );
 }
 
 export function closeTabsToRight(state: TabsState, id: string): TabsState {
@@ -62,12 +65,15 @@ export function closeTabsToRight(state: TabsState, id: string): TabsState {
   return withTabs(state, state.tabs.slice(0, idx + 1));
 }
 
-function patchTab(state: TabsState, id: string, patch: Partial<Omit<TabState, "id">>): TabsState {
+function patchTab(state: TabsState, id: string, patch: Partial<Omit<TabState, 'id'>>): TabsState {
   const current = state.tabs.find((tab) => tab.id === id);
   if (!current) return state;
   const entries = Object.entries(patch) as Array<[keyof TabState, TabState[keyof TabState]]>;
   if (entries.every(([key, value]) => current[key] === value)) return state;
-  return withTabs(state, state.tabs.map((tab) => (tab.id === id ? { ...tab, ...patch } : tab)));
+  return withTabs(
+    state,
+    state.tabs.map((tab) => (tab.id === id ? { ...tab, ...patch } : tab)),
+  );
 }
 
 export function updateTabRoute(state: TabsState, id: string, route: string): TabsState {
@@ -83,13 +89,13 @@ export function updateTabScroll(state: TabsState, id: string, scrollY: number): 
 }
 
 function isValidTab(value: unknown): value is TabState {
-  if (!value || typeof value !== "object") return false;
+  if (!value || typeof value !== 'object') return false;
   const tab = value as Record<string, unknown>;
   return (
-    typeof tab.id === "string" &&
-    typeof tab.route === "string" &&
-    typeof tab.title === "string" &&
-    typeof tab.scrollY === "number"
+    typeof tab.id === 'string' &&
+    typeof tab.route === 'string' &&
+    typeof tab.title === 'string' &&
+    typeof tab.scrollY === 'number'
   );
 }
 
@@ -102,34 +108,41 @@ export function adoptTabs(state: TabsState, tabs: TabState[]): TabsState {
 
 export function applyMutation(state: TabsState, mutation: MutateOp): TabsState {
   switch (mutation.op) {
-    case "open":
+    case 'open': {
       return openTab(state, mutation.route, mutation.id);
-    case "close":
+    }
+    case 'close': {
       return closeTab(state, mutation.id);
-    case "closeOthers":
+    }
+    case 'closeOthers': {
       return closeOtherTabs(state, mutation.id);
-    case "closeToRight":
+    }
+    case 'closeToRight': {
       return closeTabsToRight(state, mutation.id);
-    case "updateRoute":
+    }
+    case 'updateRoute': {
       return updateTabRoute(state, mutation.id, mutation.route);
-    case "updateTitle":
+    }
+    case 'updateTitle': {
       return updateTabTitle(state, mutation.id, mutation.title);
-    case "updateScroll":
+    }
+    case 'updateScroll': {
       return updateTabScroll(state, mutation.id, mutation.scrollY);
-    case "adopt":
+    }
+    case 'adopt': {
       return adoptTabs(state, mutation.tabs);
-    default:
+    }
+    default: {
       return state;
+    }
   }
 }
 
 function isValidTabsState(value: unknown): value is TabsState {
-  if (!value || typeof value !== "object") return false;
+  if (!value || typeof value !== 'object') return false;
   const state = value as Record<string, unknown>;
   return (
-    typeof state.revision === "number" &&
-    Array.isArray(state.tabs) &&
-    state.tabs.every(isValidTab)
+    typeof state.revision === 'number' && Array.isArray(state.tabs) && state.tabs.every(isValidTab)
   );
 }
 
@@ -153,7 +166,7 @@ export function createTabsFileStore(
   return {
     async load(): Promise<TabsState> {
       try {
-        const raw = await readFile(filePath, "utf8");
+        const raw = await readFile(filePath, 'utf8');
         const parsed = JSON.parse(raw) as unknown;
         if (!isValidTabsState(parsed)) return emptyTabsState();
         return parsed;

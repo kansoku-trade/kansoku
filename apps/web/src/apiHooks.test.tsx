@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, render, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { ApiError } from "./api";
-import { usePollingQuery, useQuery, type QueryState } from "./apiHooks";
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { cleanup, render, waitFor } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { ApiError } from './api';
+import { usePollingQuery, useQuery, type QueryState } from './apiHooks';
 
 afterEach(() => {
   cleanup();
@@ -47,11 +47,11 @@ function PollingProbe<T>({
   return null;
 }
 
-describe("useQuery", () => {
-  it("renders cached data with loading:false and updates it after a background refetch", async () => {
+describe('useQuery', () => {
+  it('renders cached data with loading:false and updates it after a background refetch', async () => {
     const client = createClient();
-    client.setQueryData(["k1"], "old", { updatedAt: Date.now() - 60_000 });
-    const fetch = vi.fn(() => Promise.resolve("new"));
+    client.setQueryData(['k1'], 'old', { updatedAt: Date.now() - 60_000 });
+    const fetch = vi.fn(() => Promise.resolve('new'));
     const stateRef: { current: QueryState<string> | null } = { current: null };
 
     render(
@@ -60,12 +60,12 @@ describe("useQuery", () => {
       </QueryClientProvider>,
     );
 
-    expect(stateRef.current).toMatchObject({ data: "old", loading: false });
+    expect(stateRef.current).toMatchObject({ data: 'old', loading: false });
 
-    await waitFor(() => expect(stateRef.current?.data).toBe("new"));
+    await waitFor(() => expect(stateRef.current?.data).toBe('new'));
   });
 
-  it("starts with loading:true when cache is disabled", async () => {
+  it('starts with loading:true when cache is disabled', async () => {
     const client = createClient();
     let resolveFetch!: (value: string) => void;
     const fetch = vi.fn(() => new Promise<string>((resolve) => (resolveFetch = resolve)));
@@ -80,13 +80,13 @@ describe("useQuery", () => {
     expect(stateRef.current?.loading).toBe(true);
     expect(stateRef.current?.data).toBeNull();
 
-    resolveFetch("done");
-    await waitFor(() => expect(stateRef.current?.data).toBe("done"));
+    resolveFetch('done');
+    await waitFor(() => expect(stateRef.current?.data).toBe('done'));
   });
 
-  it("maps a failure to failure.message and failure.status", async () => {
+  it('maps a failure to failure.message and failure.status', async () => {
     const client = createClient();
-    const fetch = vi.fn(() => Promise.reject(new ApiError("nope", 503)));
+    const fetch = vi.fn(() => Promise.reject(new ApiError('nope', 503)));
     const stateRef: { current: QueryState<string> | null } = { current: null };
 
     render(
@@ -96,13 +96,13 @@ describe("useQuery", () => {
     );
 
     await waitFor(() => expect(stateRef.current?.failure).not.toBeNull());
-    expect(stateRef.current?.failure).toEqual({ message: "nope", status: 503 });
-    expect(stateRef.current?.error).toBe("nope");
+    expect(stateRef.current?.failure).toEqual({ message: 'nope', status: 503 });
+    expect(stateRef.current?.error).toBe('nope');
   });
 
-  it("flips refreshed to true only after the first successful fetch completes", async () => {
+  it('flips refreshed to true only after the first successful fetch completes', async () => {
     const client = createClient();
-    const fetch = vi.fn(() => Promise.resolve("value"));
+    const fetch = vi.fn(() => Promise.resolve('value'));
     const stateRef: { current: QueryState<string> | null } = { current: null };
 
     render(
@@ -116,9 +116,9 @@ describe("useQuery", () => {
     await waitFor(() => expect(stateRef.current?.refreshed).toBe(true));
   });
 
-  it("marks meta.persist false when persist:false is passed while cache stays at its default gcTime", async () => {
+  it('marks meta.persist false when persist:false is passed while cache stays at its default gcTime', async () => {
     const client = createClient();
-    const fetch = vi.fn(() => Promise.resolve("value"));
+    const fetch = vi.fn(() => Promise.resolve('value'));
     const stateRef: { current: QueryState<string> | null } = { current: null };
 
     render(
@@ -127,19 +127,19 @@ describe("useQuery", () => {
       </QueryClientProvider>,
     );
 
-    await waitFor(() => expect(stateRef.current?.data).toBe("value"));
+    await waitFor(() => expect(stateRef.current?.data).toBe('value'));
 
-    const state = client.getQueryState(["k6"]);
-    expect(state?.fetchStatus).toBe("idle");
+    const state = client.getQueryState(['k6']);
+    expect(state?.fetchStatus).toBe('idle');
 
-    const query = client.getQueryCache().find({ queryKey: ["k6"] });
+    const query = client.getQueryCache().find({ queryKey: ['k6'] });
     expect(query?.meta).toEqual({ persist: false });
     expect(query?.options.gcTime).toBeUndefined();
   });
 
-  it("leaves meta.persist unset when persist is omitted (defaults to persisted)", async () => {
+  it('leaves meta.persist unset when persist is omitted (defaults to persisted)', async () => {
     const client = createClient();
-    const fetch = vi.fn(() => Promise.resolve("value"));
+    const fetch = vi.fn(() => Promise.resolve('value'));
     const stateRef: { current: QueryState<string> | null } = { current: null };
 
     render(
@@ -148,15 +148,15 @@ describe("useQuery", () => {
       </QueryClientProvider>,
     );
 
-    await waitFor(() => expect(stateRef.current?.data).toBe("value"));
+    await waitFor(() => expect(stateRef.current?.data).toBe('value'));
 
-    const query = client.getQueryCache().find({ queryKey: ["k7"] });
+    const query = client.getQueryCache().find({ queryKey: ['k7'] });
     expect(query?.meta).toBeUndefined();
   });
 
-  it("forces meta.persist false when cache:false even if persist is not explicitly set", async () => {
+  it('forces meta.persist false when cache:false even if persist is not explicitly set', async () => {
     const client = createClient();
-    const fetch = vi.fn(() => Promise.resolve("value"));
+    const fetch = vi.fn(() => Promise.resolve('value'));
     const stateRef: { current: QueryState<string> | null } = { current: null };
 
     render(
@@ -165,16 +165,16 @@ describe("useQuery", () => {
       </QueryClientProvider>,
     );
 
-    await waitFor(() => expect(stateRef.current?.data).toBe("value"));
+    await waitFor(() => expect(stateRef.current?.data).toBe('value'));
 
-    const query = client.getQueryCache().find({ queryKey: ["k8"] });
+    const query = client.getQueryCache().find({ queryKey: ['k8'] });
     expect(query?.meta).toEqual({ persist: false });
     expect(query?.options.gcTime).toBe(0);
   });
 
-  it("returns the disabled state when key is null", () => {
+  it('returns the disabled state when key is null', () => {
     const client = createClient();
-    const fetch = vi.fn(() => Promise.resolve("unused"));
+    const fetch = vi.fn(() => Promise.resolve('unused'));
     const stateRef: { current: QueryState<string> | null } = { current: null };
 
     render(
@@ -184,12 +184,17 @@ describe("useQuery", () => {
     );
 
     expect(fetch).not.toHaveBeenCalled();
-    expect(stateRef.current).toMatchObject({ data: null, loading: false, error: null, failure: null });
+    expect(stateRef.current).toMatchObject({
+      data: null,
+      loading: false,
+      error: null,
+      failure: null,
+    });
   });
 
-  it("does not fetch when reload is called on a disabled query", () => {
+  it('does not fetch when reload is called on a disabled query', () => {
     const client = createClient();
-    const fetch = vi.fn(() => Promise.resolve("unused"));
+    const fetch = vi.fn(() => Promise.resolve('unused'));
     const stateRef: { current: QueryState<string> | null } = { current: null };
 
     render(
@@ -203,9 +208,9 @@ describe("useQuery", () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 
-  it("keeps dataUpdatedAt null until data lands, then reports a number", async () => {
+  it('keeps dataUpdatedAt null until data lands, then reports a number', async () => {
     const client = createClient();
-    const fetch = vi.fn(() => Promise.resolve("value"));
+    const fetch = vi.fn(() => Promise.resolve('value'));
     const stateRef: { current: QueryState<string> | null } = { current: null };
 
     render(
@@ -216,17 +221,17 @@ describe("useQuery", () => {
 
     expect(stateRef.current?.dataUpdatedAt).toBeNull();
 
-    await waitFor(() => expect(stateRef.current?.data).toBe("value"));
-    expect(typeof stateRef.current?.dataUpdatedAt).toBe("number");
+    await waitFor(() => expect(stateRef.current?.data).toBe('value'));
+    expect(typeof stateRef.current?.dataUpdatedAt).toBe('number');
   });
 });
 
-describe("usePollingQuery", () => {
-  it("maps the interval to refetchInterval and refetches on schedule", async () => {
+describe('usePollingQuery', () => {
+  it('maps the interval to refetchInterval and refetches on schedule', async () => {
     vi.useFakeTimers();
     try {
       const client = createClient();
-      const fetch = vi.fn(() => Promise.resolve("tick"));
+      const fetch = vi.fn(() => Promise.resolve('tick'));
       const stateRef: { current: QueryState<string> | null } = { current: null };
 
       render(

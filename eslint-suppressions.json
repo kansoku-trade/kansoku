@@ -1,0 +1,120 @@
+{
+  "apps/desktop/scripts/afterAllArtifactBuild.cjs": {
+    "@typescript-eslint/no-require-imports": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/boot/kernel.ts": {
+    "no-console": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/dataRoot/validate.ts": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/ipc/envelope.ts": {
+    "no-console": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/logging/fileLogger.ts": {
+    "no-console": {
+      "count": 3
+    },
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/main.ts": {
+    "no-console": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/updater/updater.ts": {
+    "no-console": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/window/mainWindow.ts": {
+    "no-console": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/window/popoutWindow.ts": {
+    "no-useless-escape": {
+      "count": 1
+    }
+  },
+  "apps/server/src/host.ts": {
+    "no-console": {
+      "count": 2
+    }
+  },
+  "apps/server/src/main.node.ts": {
+    "no-console": {
+      "count": 1
+    }
+  },
+  "apps/server/src/modules/legacy/legacy.controller.ts": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "apps/web/src/pages/cockpit/useAnalystRun.ts": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "packages/bench/src/dataset/sync.ts": {
+    "preserve-caught-error": {
+      "count": 1
+    }
+  },
+  "packages/bench/src/report/table.ts": {
+    "unicorn/no-immediate-mutation": {
+      "count": 1
+    }
+  },
+  "packages/core/src/ai/messages/analystMessagesEngine.ts": {
+    "no-useless-escape": {
+      "count": 4
+    }
+  },
+  "packages/core/src/ai/messages/sharedProviders.ts": {
+    "no-useless-escape": {
+      "count": 10
+    }
+  },
+  "packages/core/src/ai/usage.ts": {
+    "no-console": {
+      "count": 2
+    }
+  },
+  "packages/core/src/realtime/charts.ts": {
+    "no-console": {
+      "count": 1
+    }
+  },
+  "packages/core/src/services/annotations.ts": {
+    "no-useless-escape": {
+      "count": 1
+    }
+  },
+  "packages/core/src/services/credentials/authUrlOpener.ts": {
+    "no-console": {
+      "count": 1
+    }
+  },
+  "packages/core/src/services/events.ts": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "packages/core/src/services/zones.ts": {
+    "unicorn/no-new-array": {
+      "count": 1
+    }
+  }
+}

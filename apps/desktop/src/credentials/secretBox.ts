@@ -1,8 +1,12 @@
-import { chmodSync, existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
-import { randomBytes } from "node:crypto";
-import type { MasterKeyStatus, SecretBox } from "@kansoku/pro-api";
-import { decryptWithKey, encryptWithKey, SecretBoxError } from "@kansoku/core/services/secretCrypto";
-import type { SafeStorageLike } from "./store.js";
+import { chmodSync, existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { randomBytes } from 'node:crypto';
+import type { MasterKeyStatus, SecretBox } from '@kansoku/pro-api';
+import {
+  decryptWithKey,
+  encryptWithKey,
+  SecretBoxError,
+} from '@kansoku/core/services/secretCrypto';
+import type { SafeStorageLike } from './store.js';
 
 const KEY_BYTES = 32;
 
@@ -19,15 +23,15 @@ interface WrappedKeyFile {
 
 function isWrappedKeyFile(value: unknown): value is WrappedKeyFile {
   return (
-    typeof value === "object" &&
+    typeof value === 'object' &&
     value !== null &&
     (value as WrappedKeyFile).version === 1 &&
-    typeof (value as WrappedKeyFile).ciphertext === "string"
+    typeof (value as WrappedKeyFile).ciphertext === 'string'
   );
 }
 
 function writeWrappedKey(path: string, key: Buffer, safeStorage: SafeStorageLike): void {
-  const ciphertext = safeStorage.encryptString(key.toString("base64")).toString("base64");
+  const ciphertext = safeStorage.encryptString(key.toString('base64')).toString('base64');
   const payload: WrappedKeyFile = { version: 1, ciphertext };
   writeFileSync(path, JSON.stringify(payload), { mode: 0o600 });
   chmodSync(path, 0o600);
@@ -36,7 +40,7 @@ function writeWrappedKey(path: string, key: Buffer, safeStorage: SafeStorageLike
 function readWrappedKey(path: string, safeStorage: SafeStorageLike): Buffer | null {
   let raw: string;
   try {
-    raw = readFileSync(path, "utf8");
+    raw = readFileSync(path, 'utf8');
   } catch {
     return null;
   }
@@ -48,8 +52,8 @@ function readWrappedKey(path: string, safeStorage: SafeStorageLike): Buffer | nu
   }
   if (!isWrappedKeyFile(parsed)) return null;
   try {
-    const decoded = safeStorage.decryptString(Buffer.from(parsed.ciphertext, "base64"));
-    const key = Buffer.from(decoded, "base64");
+    const decoded = safeStorage.decryptString(Buffer.from(parsed.ciphertext, 'base64'));
+    const key = Buffer.from(decoded, 'base64');
     if (key.length !== KEY_BYTES) return null;
     return key;
   } catch {
@@ -98,18 +102,18 @@ function resolveKey(deps: DesktopSecretBoxDeps): Buffer | null {
 export function createDesktopSecretBox(deps: DesktopSecretBoxDeps): SecretBox {
   function currentKey(): Buffer {
     const key = resolveKey(deps);
-    if (!key) throw new SecretBoxError("OS secure storage unavailable for master key");
+    if (!key) throw new SecretBoxError('OS secure storage unavailable for master key');
     return key;
   }
 
   return {
     status(): MasterKeyStatus {
-      if (readWrappedKey(deps.wrappedKeyPath, deps.safeStorage)) return "ready";
+      if (readWrappedKey(deps.wrappedKeyPath, deps.safeStorage)) return 'ready';
       if (!deps.safeStorage.isEncryptionAvailable()) {
-        return existsSync(deps.wrappedKeyPath) ? "invalid" : "missing";
+        return existsSync(deps.wrappedKeyPath) ? 'invalid' : 'missing';
       }
-      if (readLegacyKey(deps.legacyKeyPath)) return "missing";
-      return existsSync(deps.wrappedKeyPath) ? "invalid" : "missing";
+      if (readLegacyKey(deps.legacyKeyPath)) return 'missing';
+      return existsSync(deps.wrappedKeyPath) ? 'invalid' : 'missing';
     },
 
     encrypt(provider: string, plaintext: string): string {
@@ -122,7 +126,7 @@ export function createDesktopSecretBox(deps: DesktopSecretBoxDeps): SecretBox {
 
     resetKey(): void {
       if (!deps.safeStorage.isEncryptionAvailable()) {
-        throw new SecretBoxError("OS secure storage unavailable for master key");
+        throw new SecretBoxError('OS secure storage unavailable for master key');
       }
       const fresh = randomBytes(KEY_BYTES);
       writeWrappedKey(deps.wrappedKeyPath, fresh, deps.safeStorage);

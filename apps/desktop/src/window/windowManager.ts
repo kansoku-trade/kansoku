@@ -1,9 +1,9 @@
-import { join } from "node:path";
-import { app } from "electron";
-import type { BrowserWindow } from "electron";
-import { createWindow } from "./mainWindow.js";
-import { registerWindowsIpc } from "./ipc.js";
-import { createPopoutWindow } from "./popoutWindow.js";
+import { join } from 'node:path';
+import { app } from 'electron';
+import type { BrowserWindow } from 'electron';
+import { createWindow } from './mainWindow.js';
+import { registerWindowsIpc } from './ipc.js';
+import { createPopoutWindow } from './popoutWindow.js';
 import {
   addWindowEntry,
   createWindowsFileStore,
@@ -11,7 +11,7 @@ import {
   removeWindowEntry,
   updateActiveTab,
   type WindowsState,
-} from "./store.js";
+} from './store.js';
 
 export interface WindowManagerOptions {
   userDataDir: string;
@@ -27,12 +27,15 @@ export interface WindowManager {
 }
 
 export async function createWindowManager(options: WindowManagerOptions): Promise<WindowManager> {
-  const fileStore = createWindowsFileStore(join(options.userDataDir, "windows.json"), options.debounceMs);
+  const fileStore = createWindowsFileStore(
+    join(options.userDataDir, 'windows.json'),
+    options.debounceMs,
+  );
   let state: WindowsState = await fileStore.load();
   const registry = new Map<string, BrowserWindow>();
   let quitting = false;
 
-  app.on("before-quit", () => {
+  app.on('before-quit', () => {
     quitting = true;
   });
 
@@ -48,7 +51,7 @@ export async function createWindowManager(options: WindowManagerOptions): Promis
       const windowId = windowIdForSender(senderId);
       if (!windowId) return undefined;
       const entry = state.find((item) => item.id === windowId);
-      return { windowId, activeTabId: entry?.activeTabId ?? "" };
+      return { windowId, activeTabId: entry?.activeTabId ?? '' };
     },
     reportActiveTab(senderId, activeTabId) {
       const windowId = windowIdForSender(senderId);
@@ -79,7 +82,7 @@ export async function createWindowManager(options: WindowManagerOptions): Promis
     });
     registry.set(windowId, win);
 
-    win.on("closed", () => {
+    win.on('closed', () => {
       registry.delete(windowId);
       if (quitting) return;
       const withoutEntry = removeWindowEntry(state, windowId);
@@ -98,12 +101,12 @@ export async function createWindowManager(options: WindowManagerOptions): Promis
 
   return {
     openWindow(): BrowserWindow {
-      return openWithActiveTab("");
+      return openWithActiveTab('');
     },
 
     restoreWindows(): void {
       if (state.length === 0) {
-        spawn(nextWindowId([]), "");
+        spawn(nextWindowId([]), '');
         return;
       }
       for (const entry of state) {

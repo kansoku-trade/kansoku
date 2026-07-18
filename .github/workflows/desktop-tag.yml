@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - "apps/desktop/package.json"
+      - 'apps/desktop/package.json'
 
 concurrency:
   group: desktop-tag

@@ -1,7 +1,10 @@
-import { getPro } from "../../pro/registry.js";
-import { getActiveWatchedMarketsStore, validateWatchedMarkets } from "../../services/watchedMarketsStore.js";
-import type { SettingsApi } from "../../contract/settings.js";
-import { aiSettingsService } from "./aiSettings.service.js";
+import { getPro } from '../../pro/registry.js';
+import {
+  getActiveWatchedMarketsStore,
+  validateWatchedMarkets,
+} from '../../services/watchedMarketsStore.js';
+import type { SettingsApi } from '../../contract/settings.js';
+import { aiSettingsService } from './aiSettings.service.js';
 
 export const settingsService: SettingsApi = {
   getAi() {

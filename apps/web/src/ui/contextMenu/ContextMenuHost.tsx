@@ -1,29 +1,25 @@
-import { useEffect, useSyncExternalStore } from "react";
-import { ContextMenu } from "@base-ui/react/context-menu";
-import { resolveShortcutDisplay } from "./accelerator";
-import {
-  hasContextMenuSubmenu,
-  isContextMenuDivider,
-  type ContextMenuItem,
-} from "./types";
+import { useEffect, useSyncExternalStore } from 'react';
+import { ContextMenu } from '@base-ui/react/context-menu';
+import { resolveShortcutDisplay } from './accelerator';
+import { hasContextMenuSubmenu, isContextMenuDivider, type ContextMenuItem } from './types';
 import {
   closeWebContextMenu,
   getServerSnapshot,
   getSnapshot,
   subscribe,
   updateLastPointer,
-} from "./webHost";
+} from './webHost';
 
 export function ContextMenuHost() {
   const state = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   useEffect(() => {
     const handler = (event: PointerEvent | MouseEvent) => updateLastPointer(event);
-    window.addEventListener("pointerdown", handler, true);
-    window.addEventListener("contextmenu", handler, true);
+    window.addEventListener('pointerdown', handler, true);
+    window.addEventListener('contextmenu', handler, true);
     return () => {
-      window.removeEventListener("pointerdown", handler, true);
-      window.removeEventListener("contextmenu", handler, true);
+      window.removeEventListener('pointerdown', handler, true);
+      window.removeEventListener('contextmenu', handler, true);
     };
   }, []);
 
@@ -96,7 +92,7 @@ function MenuNode({ item, index }: { item: ContextMenuItem; index: number }) {
   const shortcut = resolveShortcutDisplay(item);
   return (
     <ContextMenu.Item
-      className={`ui-context-menu-item${item.danger ? " ui-context-menu-item--danger" : ""}`}
+      className={`ui-context-menu-item${item.danger ? ' ui-context-menu-item--danger' : ''}`}
       disabled={item.disabled}
       onClick={() => item.onClick?.()}
     >

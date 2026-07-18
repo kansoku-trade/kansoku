@@ -1,5 +1,16 @@
-import { Bar, BarChart, CartesianGrid, Cell, LabelList, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import type { CohortPoint } from "@kansoku/shared/types";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  LabelList,
+  ReferenceLine,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
+import type { CohortPoint } from '@kansoku/shared/types';
 import {
   AXIS_COLOR,
   AXIS_LINE_COLOR,
@@ -9,8 +20,8 @@ import {
   tooltipContentStyle,
   tooltipItemStyle,
   tooltipLabelStyle,
-} from "./theme";
-import { theme } from "@web/theme";
+} from './theme';
+import { theme } from '@web/theme';
 
 export function CohortChart({ rows }: { rows: CohortPoint[] }) {
   if (!rows.length) return <div className="error-box">没有可渲染的数据行</div>;
@@ -37,11 +48,11 @@ export function CohortChart({ rows }: { rows: CohortPoint[] }) {
           tickLine={false}
         />
         <Tooltip
-          cursor={{ fill: "rgba(255,255,255,0.04)" }}
+          cursor={{ fill: 'rgba(255,255,255,0.04)' }}
           contentStyle={tooltipContentStyle}
           labelStyle={tooltipLabelStyle}
           itemStyle={tooltipItemStyle}
-          formatter={(value) => [Number(value).toLocaleString(), "净额"]}
+          formatter={(value) => [Number(value).toLocaleString(), '净额']}
         />
         <ReferenceLine x={0} stroke={AXIS_LINE_COLOR} />
         <Bar dataKey="value" barSize={18} isAnimationActive={false}>

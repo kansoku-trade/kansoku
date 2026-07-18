@@ -11,14 +11,14 @@
 
 ## 需求决策（已与用户确认）
 
-| 维度 | 决策 |
-|---|---|
-| 会话定位 | 挂在单次分析（chart）上，一次分析一个会话；换分析即新会话 |
-| AI 能力 | 带工具的问答：可拉数据包 / K 线 / 新闻回答追问；**不可改预测、不可写点评** |
-| UI 位置 | cockpit 右侧栏最底部固定输入框；有会话时聚焦即向上抽出面板，无会话时先聚焦、发送后展开 |
-| 持久化 | 消息存 SQLite；旧分析的会话可回看也可继续聊 |
-| 呈现 | 流式输出 + 工具活动可见（「正在拉 15 分钟 K 线…」） |
-| 服务端状态 | 无状态回合制：每轮从 DB 读历史重建 agent，跑完写回，内存不养会话 |
+| 维度       | 决策                                                                                   |
+| ---------- | -------------------------------------------------------------------------------------- |
+| 会话定位   | 挂在单次分析（chart）上，一次分析一个会话；换分析即新会话                              |
+| AI 能力    | 带工具的问答：可拉数据包 / K 线 / 新闻回答追问；**不可改预测、不可写点评**             |
+| UI 位置    | cockpit 右侧栏最底部固定输入框；有会话时聚焦即向上抽出面板，无会话时先聚焦、发送后展开 |
+| 持久化     | 消息存 SQLite；旧分析的会话可回看也可继续聊                                            |
+| 呈现       | 流式输出 + 工具活动可见（「正在拉 15 分钟 K 线…」）                                    |
+| 服务端状态 | 无状态回合制：每轮从 DB 读历史重建 agent，跑完写回，内存不养会话                       |
 
 ## 非目标
 
@@ -34,28 +34,28 @@
 
 ```ts
 export const chatSessions = sqliteTable(
-  "chat_sessions",
+  'chat_sessions',
   {
-    id: text("id").primaryKey(),
-    chartId: text("chart_id").notNull().unique(),
-    symbol: text("symbol").notNull(),
-    title: text("title").notNull(),
-    createdAt: text("created_at").notNull(),
-    updatedAt: text("updated_at").notNull(),
+    id: text('id').primaryKey(),
+    chartId: text('chart_id').notNull().unique(),
+    symbol: text('symbol').notNull(),
+    title: text('title').notNull(),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
   },
-  (t) => [index("chat_sessions_symbol").on(t.symbol)],
+  (t) => [index('chat_sessions_symbol').on(t.symbol)],
 );
 
 export const chatMessages = sqliteTable(
-  "chat_messages",
+  'chat_messages',
   {
-    id: text("id").primaryKey(),
-    sessionId: text("session_id").notNull(),
-    ts: text("ts").notNull(),
-    role: text("role").notNull(),
-    payload: text("payload", { mode: "json" }).$type<AgentMessage>().notNull(),
+    id: text('id').primaryKey(),
+    sessionId: text('session_id').notNull(),
+    ts: text('ts').notNull(),
+    role: text('role').notNull(),
+    payload: text('payload', { mode: 'json' }).$type<AgentMessage>().notNull(),
   },
-  (t) => [index("chat_messages_session").on(t.sessionId)],
+  (t) => [index('chat_messages_session').on(t.sessionId)],
 );
 ```
 
@@ -198,19 +198,19 @@ buildNewsTool(symbol, fetchNews)
 
 ## 落地文件一览
 
-| 位置 | 内容 |
-|---|---|
-| `server/src/db/schema.ts` | 新增 `chatSessions` / `chatMessages`；comments / ai_usage 主键改 text |
-| `server/src/db/snowflake.ts` | snowflake 生成器 |
-| `server/drizzle/*` | 新迁移（建表 + 存量 id 迁移） |
-| `server/src/ai/agentSession.ts` | 通用 agent 管线（构造 / 超时 / 用量 / 事件 / 回放） |
-| `server/src/ai/runLock.ts` | keyed 忙锁 |
-| `server/src/ai/dataTools.ts` | `read_data_pack` / `fetch_kline` / `fetch_news` 共享实现 |
-| `server/src/ai/models.ts` | `aiConfig()` 扩展 `deepDiveModel` / `chatModel` |
-| `server/src/ai/analyst.ts`、`eventFilter.ts` | 迁移到新底座（commentator / deepDive 随后独立 commit） |
-| `server/src/ai/chat.ts` | `runChatTurn`、system prompt、事件翻译 |
-| `server/src/ai/chatStore.ts` | 会话 / 消息读写 |
-| `server/src/routes/chat.ts` | GET / POST 接口 |
-| `server/src/routes/ws.ts` | `chat` channel |
-| `web/src/pages/cockpit/chat/ChatDock.tsx` 等 | ChatDock / ChatPanel / useChatSession |
-| `server/test/chat*.test.ts` | 上节测试 |
+| 位置                                         | 内容                                                                  |
+| -------------------------------------------- | --------------------------------------------------------------------- |
+| `server/src/db/schema.ts`                    | 新增 `chatSessions` / `chatMessages`；comments / ai_usage 主键改 text |
+| `server/src/db/snowflake.ts`                 | snowflake 生成器                                                      |
+| `server/drizzle/*`                           | 新迁移（建表 + 存量 id 迁移）                                         |
+| `server/src/ai/agentSession.ts`              | 通用 agent 管线（构造 / 超时 / 用量 / 事件 / 回放）                   |
+| `server/src/ai/runLock.ts`                   | keyed 忙锁                                                            |
+| `server/src/ai/dataTools.ts`                 | `read_data_pack` / `fetch_kline` / `fetch_news` 共享实现              |
+| `server/src/ai/models.ts`                    | `aiConfig()` 扩展 `deepDiveModel` / `chatModel`                       |
+| `server/src/ai/analyst.ts`、`eventFilter.ts` | 迁移到新底座（commentator / deepDive 随后独立 commit）                |
+| `server/src/ai/chat.ts`                      | `runChatTurn`、system prompt、事件翻译                                |
+| `server/src/ai/chatStore.ts`                 | 会话 / 消息读写                                                       |
+| `server/src/routes/chat.ts`                  | GET / POST 接口                                                       |
+| `server/src/routes/ws.ts`                    | `chat` channel                                                        |
+| `web/src/pages/cockpit/chat/ChatDock.tsx` 等 | ChatDock / ChatPanel / useChatSession                                 |
+| `server/test/chat*.test.ts`                  | 上节测试                                                              |

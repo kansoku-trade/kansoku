@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A personal **US-equities trading journal**, not a software product. The repo is three things:
 
-1. **A durable record** — dated markdown under `journal/` and per-name notes under `stocks/`, plus chart data JSON under `journal/charts/data/`. These files are the *only* persistence layer (no database).
+1. **A durable record** — dated markdown under `journal/` and per-name notes under `stocks/`, plus chart data JSON under `journal/charts/data/`. These files are the _only_ persistence layer (no database).
 2. **A toolchain** — custom Claude Code skills under `.claude/skills/` that pull market data and orchestrate analysis workflows. "Running" this repo means invoking a skill or one of its Python scripts, then writing the synthesis back into a journal/stock file.
 3. **A chart web app** — a pnpm workspace rooted at the repo root: shared libraries live under `packages/` and hosts under `apps/`. The kernel lives in `packages/core` (`@kansoku/core`); `apps/server` is a thin HTTP host (Tsuki (Hono + NestJS-style modules/DI) controllers + WS) that wraps the kernel, hosted as a single process by `main.node.ts` in production; `apps/desktop` is an Electron shell that embeds the same kernel and reaches it over typed IPC (`electron-ipc-decorator`) instead of HTTP; `apps/web` is Vite + React and picks HTTP or IPC transport by environment — `pnpm dev` runs web+server (Vite dev server proxies to the server process, neither needs a separate build step), `pnpm dev:desktop` runs web+desktop with no server process at all; charts render locally at `http://localhost:5199`. Cross-package types sit in `packages/shared`. **Open-core split (2026-07-17)**: `apps/pro/` — a gitignored slot directory holding the private repo `Innei/kansoku-pro` (`@kansoku/pro`), loaded at boot via `packages/core/src/pro/loader.ts` — now provides only the paid surface (个股自动跟踪、深度研究、研究库 AI) plus license, while the free AI (自带 key 的复评、对话、AI 设置、macro 过滤、研究库浏览) has moved into open core and runs without `apps/pro`; `packages/pro-api` stays the public types-only contract. Without `apps/pro` the build is the complete free version (charts/realtime/journal + free AI all work, only the paid routes 404 and their UI hidden); `GET /api/capabilities` reports `{ pro, licensed }` unchanged. Paid-AI work therefore usually means editing `apps/pro` (its own git repo — commit there separately); free-AI work lives in `packages/core`. The server/kernel calls the longbridge CLI itself and computes every indicator in TS; charts are created via `POST /api/charts` (see `.claude/skills/chart/SKILL.md`). Realtime layer: a single WS connection (`/api/ws`) pushes live quotes (watchlist ∪ positions, pre/post/overnight aware) and 60s chart rebuilds while a page is open — persisted chart JSON stays frozen at analysis time. Daily entry point is `pnpm dev` at the repo root (no build step); `pnpm start` is the production form and requires `pnpm --filter @kansoku/web build` first. Tests with `pnpm test`.
 
@@ -24,15 +24,15 @@ A personal **US-equities trading journal**, not a software product. The repo is 
 
 ### Layer 1 — data sources (raw retrieval)
 
-| Source | Access | Covers |
-|---|---|---|
-| **Longbridge** plugin (`longbridge ...` CLI / `longbridge-*` skills) | brokerage account | real-time quotes, K-line/OHLCV, fundamentals, capital flow, technicals, market temperature, news |
-| **`fred`** skill | free API key | US/global macro time series (CPI, GDP, Fed funds, yields, M2, DXY) |
-| **`sec-edgar`** skill | UA header | raw 10-K/10-Q/8-K/S-1 text, Form 4 insider parsing |
-| **`gdelt`** skill | none (5s throttle) | global multilingual news tone stream |
-| **`trump-truth-monitor`** skill | RSS mirror | Trump Truth Social feed, classified + tier-graded for market impact |
-| **`options-levels`** skill | none (CBOE delayed) | per-strike option open interest（磁铁位/止损扎堆区）+ put/call ratios; per-contract quotes on Longbridge are NOT authorized for this account |
-| **`hithink-a-share`** skill | `HITHINK_FINANCE_API_KEY` | A 股特色数据（同花顺官方 API）：涨停池带原因、连板天梯、龙虎榜、异动、热榜、官方口径财报三表与指标、A 股交易日历；只有日线无分钟线——A 股图表与实时仍走 Longbridge |
+| Source                                                               | Access                    | Covers                                                                                                                                                            |
+| -------------------------------------------------------------------- | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Longbridge** plugin (`longbridge ...` CLI / `longbridge-*` skills) | brokerage account         | real-time quotes, K-line/OHLCV, fundamentals, capital flow, technicals, market temperature, news                                                                  |
+| **`fred`** skill                                                     | free API key              | US/global macro time series (CPI, GDP, Fed funds, yields, M2, DXY)                                                                                                |
+| **`sec-edgar`** skill                                                | UA header                 | raw 10-K/10-Q/8-K/S-1 text, Form 4 insider parsing                                                                                                                |
+| **`gdelt`** skill                                                    | none (5s throttle)        | global multilingual news tone stream                                                                                                                              |
+| **`trump-truth-monitor`** skill                                      | RSS mirror                | Trump Truth Social feed, classified + tier-graded for market impact                                                                                               |
+| **`options-levels`** skill                                           | none (CBOE delayed)       | per-strike option open interest（磁铁位/止损扎堆区）+ put/call ratios; per-contract quotes on Longbridge are NOT authorized for this account                      |
+| **`hithink-a-share`** skill                                          | `HITHINK_FINANCE_API_KEY` | A 股特色数据（同花顺官方 API）：涨停池带原因、连板天梯、龙虎榜、异动、热榜、官方口径财报三表与指标、A 股交易日历；只有日线无分钟线——A 股图表与实时仍走 Longbridge |
 
 Longbridge covers price/fundamentals; the five custom skills cover Longbridge's blind spots (macro, raw filings, world news, policy speech, per-strike options positioning). Earnings dates and macro release schedules come from `longbridge finance-calendar report/macrodata` — never hand-hunt them from news. See `docs/superpowers/specs/2026-05-28-market-intel-skills-design.md` for the design rationale and full per-script interface.
 
@@ -46,6 +46,7 @@ These skills do not fetch new kinds of data; they sequence Layer-1 calls into a 
 - **`trade-gate`** — trade decision gate for every buy/sell/add/trim: a six-layer scored buy funnel (hard gates + soft score, verdict bands ≥6/4–5/<4), a sell-trigger matrix reusing the user's existing rules (6/27 hold-plan lines A–D, the 11-item cycle-top checklist, the flush-not-clean reversal guard), and a patrol mode that runs the sell triggers across all live positions; every decision is logged to `journal/decisions/*.json`, reconciled against actual fills on the next run, and tallied into a violation ledger on request.
 
 **Routing (these three overlap — pick deliberately):**
+
 - Single name, first look, multiple dimensions → `stock-deep-dive`.
 - Cross-section "where is money moving today" → `capital-rotation`.
 - Live "watch this watchlist as it trades" → `market-session-tracker`.
@@ -68,13 +69,14 @@ Every workflow ends by writing markdown. Do not skip this.
 Custom skills are stdlib-only Python 3 (`/usr/bin/python3`), invoked from repo root:
 
 ```bash
-python3 .claude/skills/<source>/scripts/<cmd>.py --help     # self-documenting flags
-python3 .claude/skills/<source>/scripts/<cmd>.py --smoke     # connectivity self-test (use this as the "test")
+python3 .claude/skills/ --help < source > /scripts/ < cmd > .py  # self-documenting flags
+python3 .claude/skills/ --smoke < source > /scripts/ < cmd > .py # connectivity self-test (use this as the "test")
 python3 .claude/skills/trump-truth-monitor/scripts/fetch.py --hours 24 --json
 python3 .claude/skills/trump-truth-monitor/scripts/archive.py --quiet
 ```
 
 Shared conventions (enforced by `.claude/skills/_shared/`):
+
 - **Output contract**: success → `{"ok": true, "data": ..., "meta": ...}` on stdout, exit 0; failure → `{"ok": false, "error": ..., "hint": ...}`, non-zero exit, diagnostics on stderr.
 - **Flags**: every script supports `--help`, `--smoke`, `--verbose`; data scripts add `--fresh` (bypass cache), `--json`.
 - **Credentials**: `env.py` auto-loads `.env` at repo root on import (`FRED_API_KEY`, `SEC_USER_AGENT="Name <email>"`). No manual `source` step. `.env` is git-ignored — never commit it.

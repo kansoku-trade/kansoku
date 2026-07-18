@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
-import { navigate } from "@web/router";
-import { Button } from "@web/ui";
-import { getDesktopLogsBridge } from "../logViewer/desktopLogs";
+import { useCallback, useEffect, useState } from 'react';
+import { navigate } from '@web/router';
+import { Button } from '@web/ui';
+import { getDesktopLogsBridge } from '../logViewer/desktopLogs';
 
 export function DiagnosticsSection() {
   const bridge = getDesktopLogsBridge();
@@ -53,7 +53,7 @@ export function DiagnosticsSection() {
       )}
 
       <div className="settings-cred-actions">
-        <Button type="button" disabled={busy} onClick={() => navigate("/logs")}>
+        <Button type="button" disabled={busy} onClick={() => navigate('/logs')}>
           查看日志
         </Button>
         <Button type="button" disabled={busy} onClick={() => void reveal()}>
@@ -61,7 +61,9 @@ export function DiagnosticsSection() {
         </Button>
       </div>
 
-      {error ? <div className="settings-test-result settings-test-result--fail">{error}</div> : null}
+      {error ? (
+        <div className="settings-test-result settings-test-result--fail">{error}</div>
+      ) : null}
     </section>
   );
 }

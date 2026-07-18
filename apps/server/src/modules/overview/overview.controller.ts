@@ -1,35 +1,35 @@
-import { Controller, Get, Query } from "@tsuki-hono/common";
-import { overviewService } from "@kansoku/core/modules/overview/overview.service";
+import { Controller, Get, Query } from '@tsuki-hono/common';
+import { overviewService } from '@kansoku/core/modules/overview/overview.service';
 
-export { resetOverviewCacheForTests } from "@kansoku/core/modules/overview/overview.service";
+export { resetOverviewCacheForTests } from '@kansoku/core/modules/overview/overview.service';
 
-@Controller("overview")
+@Controller('overview')
 export class OverviewController {
-  @Get("/")
+  @Get('/')
   async getBoard() {
     const data = await overviewService.board();
     return { ok: true, data };
   }
 
-  @Get("/recap")
+  @Get('/recap')
   async getRecap(@Query() query: { date?: string }) {
     const data = await overviewService.recap({ date: query.date });
     return { ok: true, data };
   }
 
-  @Get("/stats")
+  @Get('/stats')
   async getStats() {
     const data = await overviewService.stats();
     return { ok: true, data };
   }
 
-  @Get("/usage")
+  @Get('/usage')
   async getUsage(@Query() query: { date?: string }) {
     const data = await overviewService.usage({ date: query.date });
     return { ok: true, data };
   }
 
-  @Get("/recap-dates")
+  @Get('/recap-dates')
   async getRecapDates() {
     const data = await overviewService.recapDates();
     return { ok: true, data };

@@ -1,8 +1,8 @@
-import type { DeepDiveStartResult, DeepDiveState } from "./aiTypes.js";
-import type { LicenseService, LicenseSnapshot } from "./licenseTypes.js";
+import type { DeepDiveStartResult, DeepDiveState } from './aiTypes.js';
+import type { LicenseService, LicenseSnapshot } from './licenseTypes.js';
 
-export * from "./aiTypes.js";
-export * from "./licenseTypes.js";
+export * from './aiTypes.js';
+export * from './licenseTypes.js';
 
 export interface ProHooks {
   requestImmediateFollow(symbol: string): void | Promise<void>;

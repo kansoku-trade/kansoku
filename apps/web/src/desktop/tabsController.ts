@@ -1,14 +1,19 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { createMemoryRouteStore, __setActiveRouteStore, type RouteStore } from "../router";
-import { __setActiveTitleSink } from "../useTitle";
-import { getDesktopTabsBridge, getSharedTabsBridge, type SharedTabsBridge, type TabsSnapshot as SharedSnapshot } from "./desktopTabsBridge";
-import { getWindowsBridge } from "./desktopWindowsBridge";
-import * as tabsStore from "./tabsStore";
-import { loadTabsSnapshot, saveTabsSnapshot, type TabsSnapshot, type TabState } from "./tabsStore";
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { createMemoryRouteStore, __setActiveRouteStore, type RouteStore } from '../router';
+import { __setActiveTitleSink } from '../useTitle';
+import {
+  getDesktopTabsBridge,
+  getSharedTabsBridge,
+  type SharedTabsBridge,
+  type TabsSnapshot as SharedSnapshot,
+} from './desktopTabsBridge';
+import { getWindowsBridge } from './desktopWindowsBridge';
+import * as tabsStore from './tabsStore';
+import { loadTabsSnapshot, saveTabsSnapshot, type TabsSnapshot, type TabState } from './tabsStore';
 
-const ACTIVE_TAB_STORAGE_KEY = "desktop-active-tab-v1";
-const LEGACY_TABS_STORAGE_KEY = "desktop-tabs-v1";
-const PLACEHOLDER_TAB: TabState = { id: "", route: "/", title: "Kansoku", scrollY: 0 };
+const ACTIVE_TAB_STORAGE_KEY = 'desktop-active-tab-v1';
+const LEGACY_TABS_STORAGE_KEY = 'desktop-tabs-v1';
+const PLACEHOLDER_TAB: TabState = { id: '', route: '/', title: 'Kansoku', scrollY: 0 };
 
 export interface TabsController {
   snapshot: TabsSnapshot;
@@ -28,9 +33,9 @@ export interface TabsController {
 
 function readActiveTabId(): string {
   try {
-    return sessionStorage.getItem(ACTIVE_TAB_STORAGE_KEY) ?? "";
+    return sessionStorage.getItem(ACTIVE_TAB_STORAGE_KEY) ?? '';
   } catch {
-    return "";
+    return '';
   }
 }
 
@@ -43,13 +48,13 @@ function writeActiveTabId(id: string): void {
 }
 
 function isValidTab(value: unknown): value is TabState {
-  if (!value || typeof value !== "object") return false;
+  if (!value || typeof value !== 'object') return false;
   const tab = value as Record<string, unknown>;
   return (
-    typeof tab.id === "string" &&
-    typeof tab.route === "string" &&
-    typeof tab.title === "string" &&
-    typeof tab.scrollY === "number"
+    typeof tab.id === 'string' &&
+    typeof tab.route === 'string' &&
+    typeof tab.title === 'string' &&
+    typeof tab.scrollY === 'number'
   );
 }
 
@@ -73,7 +78,10 @@ function sameTab(a: TabState, b: TabState): boolean {
 function reconcileTabs(prevTabs: TabState[], nextTabs: TabState[]): TabState[] {
   let allReused = prevTabs.length === nextTabs.length;
   const tabs = nextTabs.map((tab, index) => {
-    const prev = prevTabs[index]?.id === tab.id ? prevTabs[index] : prevTabs.find((item) => item.id === tab.id);
+    const prev =
+      prevTabs[index]?.id === tab.id
+        ? prevTabs[index]
+        : prevTabs.find((item) => item.id === tab.id);
     if (prev && sameTab(prev, tab)) {
       if (prev !== prevTabs[index]) allReused = false;
       return prev;
@@ -84,7 +92,11 @@ function reconcileTabs(prevTabs: TabState[], nextTabs: TabState[]): TabState[] {
   return allReused ? prevTabs : tabs;
 }
 
-function reselectActiveTabId(prevTabs: TabState[], nextTabs: TabState[], activeTabId: string): string {
+function reselectActiveTabId(
+  prevTabs: TabState[],
+  nextTabs: TabState[],
+  activeTabId: string,
+): string {
   if (nextTabs.length === 0) return activeTabId;
   if (nextTabs.some((tab) => tab.id === activeTabId)) return activeTabId;
   const idx = prevTabs.findIndex((tab) => tab.id === activeTabId);
@@ -114,7 +126,7 @@ export function useTabsController(): TabsController {
       if (prev.tabs.length === 0) {
         const activeTabId = tabs.some((tab) => tab.id === prev.activeTabId)
           ? prev.activeTabId
-          : tabs[0]?.id ?? "";
+          : (tabs[0]?.id ?? '');
         return { tabs, activeTabId };
       }
       const activeTabId = reselectActiveTabId(prev.tabs, tabs, prev.activeTabId);
@@ -150,8 +162,8 @@ export function useTabsController(): TabsController {
       }
       const legacy = readLegacyTabs();
       const result = legacy
-        ? await activeBridge.mutate({ op: "adopt", tabs: legacy })
-        : await activeBridge.mutate({ op: "open", route: "/" });
+        ? await activeBridge.mutate({ op: 'adopt', tabs: legacy })
+        : await activeBridge.mutate({ op: 'open', route: '/' });
       if (!cancelled) applySnapshot(result);
     }
 
@@ -175,7 +187,9 @@ export function useTabsController(): TabsController {
   }, [snapshot, bridge]);
 
   const activeTab =
-    snapshot.tabs.find((tab) => tab.id === snapshot.activeTabId) ?? snapshot.tabs[0] ?? PLACEHOLDER_TAB;
+    snapshot.tabs.find((tab) => tab.id === snapshot.activeTabId) ??
+    snapshot.tabs[0] ??
+    PLACEHOLDER_TAB;
 
   const storeRef = useRef<{ tabId: string; store: RouteStore } | null>(null);
   if (storeRef.current?.tabId !== activeTab.id) {
@@ -184,7 +198,7 @@ export function useTabsController(): TabsController {
       store: createMemoryRouteStore(activeTab.route, {
         onChange: (route) => {
           if (bridge) {
-            void bridge.mutate({ op: "updateRoute", id: activeTab.id, route }).then(applySnapshot);
+            void bridge.mutate({ op: 'updateRoute', id: activeTab.id, route }).then(applySnapshot);
             return;
           }
           setSnapshot((prev) => tabsStore.updateTabRoute(prev, activeTab.id, route));
@@ -195,7 +209,7 @@ export function useTabsController(): TabsController {
   __setActiveRouteStore(storeRef.current.store);
   __setActiveTitleSink((title) => {
     if (bridge) {
-      void bridge.mutate({ op: "updateTitle", id: activeTab.id, title }).then(applySnapshot);
+      void bridge.mutate({ op: 'updateTitle', id: activeTab.id, title }).then(applySnapshot);
       return;
     }
     setSnapshot((prev) => tabsStore.updateTabTitle(prev, activeTab.id, title));
@@ -210,7 +224,7 @@ export function useTabsController(): TabsController {
     if (!bridge) return Promise.resolve();
     const id = snapshotRef.current.activeTabId;
     if (!id) return Promise.resolve();
-    return bridge.mutate({ op: "updateScroll", id, scrollY: window.scrollY }).then(applySnapshot);
+    return bridge.mutate({ op: 'updateScroll', id, scrollY: window.scrollY }).then(applySnapshot);
   }, [bridge, applySnapshot]);
 
   const activateTab = useCallback(
@@ -232,7 +246,7 @@ export function useTabsController(): TabsController {
         setSnapshot((prev) => tabsStore.closeTab(prev, id));
         return;
       }
-      void bridge.mutate({ op: "close", id }).then(applySnapshot);
+      void bridge.mutate({ op: 'close', id }).then(applySnapshot);
     },
     [bridge, applySnapshot],
   );
@@ -243,7 +257,7 @@ export function useTabsController(): TabsController {
         setSnapshot((prev) => tabsStore.closeOtherTabs(withCurrentScrollCaptured(prev), id));
         return;
       }
-      void captureScroll().then(() => bridge.mutate({ op: "closeOthers", id }).then(applySnapshot));
+      void captureScroll().then(() => bridge.mutate({ op: 'closeOthers', id }).then(applySnapshot));
     },
     [bridge, captureScroll, applySnapshot],
   );
@@ -254,7 +268,9 @@ export function useTabsController(): TabsController {
         setSnapshot((prev) => tabsStore.closeTabsToRight(withCurrentScrollCaptured(prev), id));
         return;
       }
-      void captureScroll().then(() => bridge.mutate({ op: "closeToRight", id }).then(applySnapshot));
+      void captureScroll().then(() =>
+        bridge.mutate({ op: 'closeToRight', id }).then(applySnapshot),
+      );
     },
     [bridge, captureScroll, applySnapshot],
   );
@@ -267,69 +283,77 @@ export function useTabsController(): TabsController {
       }
       const id = crypto.randomUUID();
       void captureScroll().then(() =>
-        bridge.mutate({ op: "open", route, id }).then((result) => {
+        bridge.mutate({ op: 'open', route, id }).then((result) => {
           applySnapshot(result);
-          setSnapshot((prev) => (prev.tabs.some((tab) => tab.id === id) ? { ...prev, activeTabId: id } : prev));
+          setSnapshot((prev) =>
+            prev.tabs.some((tab) => tab.id === id) ? { ...prev, activeTabId: id } : prev,
+          );
         }),
       );
     },
     [bridge, captureScroll, applySnapshot],
   );
 
-  const openHomeTab = useCallback(() => openTab("/"), [openTab]);
+  const openHomeTab = useCallback(() => openTab('/'), [openTab]);
 
   const focusOrOpenSettings = useCallback(() => {
     if (!bridge) {
-      setSnapshot((prev) => tabsStore.focusOrOpenRoute(withCurrentScrollCaptured(prev), "/settings"));
+      setSnapshot((prev) =>
+        tabsStore.focusOrOpenRoute(withCurrentScrollCaptured(prev), '/settings'),
+      );
       return;
     }
-    const existing = snapshotRef.current.tabs.find((tab) => tab.route === "/settings");
+    const existing = snapshotRef.current.tabs.find((tab) => tab.route === '/settings');
     if (existing) activateTab(existing.id);
-    else openTab("/settings");
+    else openTab('/settings');
   }, [bridge, activateTab, openTab]);
 
   const focusOrOpenLogs = useCallback(() => {
     if (!bridge) {
-      setSnapshot((prev) => tabsStore.focusOrOpenRoute(withCurrentScrollCaptured(prev), "/logs"));
+      setSnapshot((prev) => tabsStore.focusOrOpenRoute(withCurrentScrollCaptured(prev), '/logs'));
       return;
     }
-    const existing = snapshotRef.current.tabs.find((tab) => tab.route === "/logs");
+    const existing = snapshotRef.current.tabs.find((tab) => tab.route === '/logs');
     if (existing) activateTab(existing.id);
-    else openTab("/logs");
+    else openTab('/logs');
   }, [bridge, activateTab, openTab]);
 
   const focusOrOpenChat = useCallback(() => {
     if (!bridge) {
-      setSnapshot((prev) => tabsStore.focusOrOpenRoute(withCurrentScrollCaptured(prev), "/chat"));
+      setSnapshot((prev) => tabsStore.focusOrOpenRoute(withCurrentScrollCaptured(prev), '/chat'));
       return;
     }
-    const existing = snapshotRef.current.tabs.find((tab) => tab.route === "/chat");
+    const existing = snapshotRef.current.tabs.find((tab) => tab.route === '/chat');
     if (existing) activateTab(existing.id);
-    else openTab("/chat");
+    else openTab('/chat');
   }, [bridge, activateTab, openTab]);
 
   const focusOrOpenHome = useCallback(() => {
     if (!bridge) {
-      setSnapshot((prev) => tabsStore.focusOrOpenRoute(withCurrentScrollCaptured(prev), "/"));
+      setSnapshot((prev) => tabsStore.focusOrOpenRoute(withCurrentScrollCaptured(prev), '/'));
       return;
     }
-    const existing = snapshotRef.current.tabs.find((tab) => tab.route === "/");
+    const existing = snapshotRef.current.tabs.find((tab) => tab.route === '/');
     if (existing) activateTab(existing.id);
-    else openTab("/");
+    else openTab('/');
   }, [bridge, activateTab, openTab]);
 
   const focusOrOpenResearch = useCallback(() => {
     if (!bridge) {
       setSnapshot((prev) =>
-        tabsStore.focusOrOpenRoutePrefix(withCurrentScrollCaptured(prev), "/research", "/research?view=journal"),
+        tabsStore.focusOrOpenRoutePrefix(
+          withCurrentScrollCaptured(prev),
+          '/research',
+          '/research?view=journal',
+        ),
       );
       return;
     }
     const existing = snapshotRef.current.tabs.find(
-      (tab) => tab.route === "/research" || tab.route.startsWith("/research?"),
+      (tab) => tab.route === '/research' || tab.route.startsWith('/research?'),
     );
     if (existing) activateTab(existing.id);
-    else openTab("/research?view=journal");
+    else openTab('/research?view=journal');
   }, [bridge, activateTab, openTab]);
 
   const closeActiveTab = useCallback(() => {
@@ -366,16 +390,25 @@ export function useTabsController(): TabsController {
     const commandBridge = getDesktopTabsBridge();
     if (!commandBridge) return;
     return commandBridge.onCommand((command) => {
-      if (command === "new-tab") openHomeTab();
-      else if (command === "close-tab") closeActiveTab();
-      else if (command === "next-tab") goToNextTab();
-      else if (command === "prev-tab") goToPrevTab();
-      else if (command === "open-settings") focusOrOpenSettings();
-      else if (command === "open-logs") focusOrOpenLogs();
-      else if (command === "open-research") focusOrOpenResearch();
-      else if (command === "open-chat") focusOrOpenChat();
+      if (command === 'new-tab') openHomeTab();
+      else if (command === 'close-tab') closeActiveTab();
+      else if (command === 'next-tab') goToNextTab();
+      else if (command === 'prev-tab') goToPrevTab();
+      else if (command === 'open-settings') focusOrOpenSettings();
+      else if (command === 'open-logs') focusOrOpenLogs();
+      else if (command === 'open-research') focusOrOpenResearch();
+      else if (command === 'open-chat') focusOrOpenChat();
     });
-  }, [openHomeTab, closeActiveTab, goToNextTab, goToPrevTab, focusOrOpenSettings, focusOrOpenLogs, focusOrOpenResearch, focusOrOpenChat]);
+  }, [
+    openHomeTab,
+    closeActiveTab,
+    goToNextTab,
+    goToPrevTab,
+    focusOrOpenSettings,
+    focusOrOpenLogs,
+    focusOrOpenResearch,
+    focusOrOpenChat,
+  ]);
 
   return {
     snapshot,

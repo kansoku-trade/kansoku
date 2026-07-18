@@ -1,5 +1,5 @@
-import { envCredentialProvider } from "./envCredentialProvider.js";
-import type { CredentialProvider } from "./types.js";
+import { envCredentialProvider } from './envCredentialProvider.js';
+import type { CredentialProvider } from './types.js';
 
 let current: CredentialProvider = envCredentialProvider;
 

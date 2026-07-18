@@ -1,6 +1,6 @@
-import { useSyncExternalStore } from "react";
-import type { ReassessStatus } from "@kansoku/core/contract/symbols";
-import { subscribeChannel } from "./wsHub.js";
+import { useSyncExternalStore } from 'react';
+import type { ReassessStatus } from '@kansoku/core/contract/symbols';
+import { subscribeChannel } from './wsHub.js';
 
 export type RunningReassessStatus = Extract<ReassessStatus, { running: true }>;
 
@@ -43,19 +43,19 @@ function emit(): void {
 }
 
 function isReassessStatus(value: unknown): value is ReassessStatus {
-  if (!value || typeof value !== "object") return false;
+  if (!value || typeof value !== 'object') return false;
   const status = value as Record<string, unknown>;
   if (status.running === false) return true;
   return (
     status.running === true &&
-    (status.origin === "manual" || status.origin === "escalation") &&
-    (status.phase === "preparing" ||
-      status.phase === "researching" ||
-      status.phase === "writing" ||
-      status.phase === "finalizing") &&
-    typeof status.activity === "string" &&
-    typeof status.startedAt === "string" &&
-    typeof status.updatedAt === "string"
+    (status.origin === 'manual' || status.origin === 'escalation') &&
+    (status.phase === 'preparing' ||
+      status.phase === 'researching' ||
+      status.phase === 'writing' ||
+      status.phase === 'finalizing') &&
+    typeof status.activity === 'string' &&
+    typeof status.startedAt === 'string' &&
+    typeof status.updatedAt === 'string'
   );
 }
 
@@ -75,9 +75,9 @@ function handleInit(payload: { runs?: unknown }): void {
   const next = new Map<string, RunningReassessStatus>();
   const eventStates = new Map<string, boolean>();
   for (const entry of payload.runs) {
-    if (!entry || typeof entry !== "object") continue;
+    if (!entry || typeof entry !== 'object') continue;
     const { symbol, status } = entry as { symbol?: unknown; status?: unknown };
-    if (typeof symbol !== "string" || !isReassessStatus(status)) continue;
+    if (typeof symbol !== 'string' || !isReassessStatus(status)) continue;
     eventStates.set(symbol, status.running);
     if (status.running) next.set(symbol, status);
     else next.delete(symbol);
@@ -99,7 +99,7 @@ function handleInit(payload: { runs?: unknown }): void {
 
 function handleUpdate(payload: { symbol?: unknown; status?: unknown }): void {
   const { symbol, status } = payload;
-  if (typeof symbol !== "string" || !isReassessStatus(status)) return;
+  if (typeof symbol !== 'string' || !isReassessStatus(status)) return;
   recordEvent(symbol, status.running);
 
   if (status.running) {
@@ -123,16 +123,17 @@ function handleConnected(connected: boolean): void {
 }
 
 function onPayload(payload: unknown): void {
-  if (!payload || typeof payload !== "object") return;
+  if (!payload || typeof payload !== 'object') return;
   const envelope = payload as { type?: unknown };
-  if (envelope.type === "init") handleInit(payload as { runs?: unknown });
-  else if (envelope.type === "update") handleUpdate(payload as { symbol?: unknown; status?: unknown });
+  if (envelope.type === 'init') handleInit(payload as { runs?: unknown });
+  else if (envelope.type === 'update')
+    handleUpdate(payload as { symbol?: unknown; status?: unknown });
 }
 
 export function subscribeAnalystRuns(listener: () => void): () => void {
   listeners.add(listener);
   if (listeners.size === 1) {
-    unsubscribeChannel = subscribeChannel({ kind: "analyst-runs" }, onPayload, handleConnected);
+    unsubscribeChannel = subscribeChannel({ kind: 'analyst-runs' }, onPayload, handleConnected);
   }
   return () => {
     listeners.delete(listener);

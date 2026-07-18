@@ -1,6 +1,6 @@
-import type { CapitalBucket, CockpitFlow, LinePoint } from "@kansoku/shared/types";
-import type { RawCapitalDistribution } from "../marketdata/types.js";
-import type { FlowRow } from "../simple.js";
+import type { CapitalBucket, CockpitFlow, LinePoint } from '@kansoku/shared/types';
+import type { RawCapitalDistribution } from '../marketdata/types.js';
+import type { FlowRow } from '../simple.js';
 
 function toBucket(inRaw: string, outRaw: string): CapitalBucket {
   const inVal = Number(inRaw);
@@ -8,7 +8,10 @@ function toBucket(inRaw: string, outRaw: string): CapitalBucket {
   return { in: inVal, out: outVal, net: inVal - outVal };
 }
 
-export function buildCockpitFlow(rows: FlowRow[], dist: RawCapitalDistribution | null): CockpitFlow {
+export function buildCockpitFlow(
+  rows: FlowRow[],
+  dist: RawCapitalDistribution | null,
+): CockpitFlow {
   const curve: LinePoint[] = [];
   for (const row of rows) {
     const time = Date.parse(row.time);

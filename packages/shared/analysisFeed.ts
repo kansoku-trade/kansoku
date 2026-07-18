@@ -1,5 +1,5 @@
 export function sameSymbol(a: string, b: string): boolean {
-  const norm = (s: string) => s.trim().toUpperCase().replace(/\.US$/, "");
+  const norm = (s: string) => s.trim().toUpperCase().replace(/\.US$/, '');
   return norm(a) === norm(b);
 }
 
@@ -27,7 +27,7 @@ export function applyAnalysisBroadcast(
   broadcast: { symbol: string; chartId: string; chartType: string },
 ): AnalysisFeedState {
   if (!sameSymbol(broadcast.symbol, pageSymbol)) return state;
-  if (broadcast.chartType !== "intraday") return state;
+  if (broadcast.chartType !== 'intraday') return state;
   if (pinnedId) return { ...state, newerId: broadcast.chartId };
   return { latestId: broadcast.chartId, newerId: null };
 }

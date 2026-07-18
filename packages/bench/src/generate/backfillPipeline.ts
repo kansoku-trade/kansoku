@@ -1,20 +1,20 @@
-import { promises as fs } from "node:fs";
-import { join } from "node:path";
-import { loadQuestionFile, loadQuestionForScorer } from "../dataset/loader.js";
-import type { BenchNewsItem } from "../schema/newsItem.js";
-import type { Question } from "../schema/question.js";
-import type { FetchArchiveFile, ReadArchiveCsv } from "./archiveSource.js";
-import { cacheFile, readCache, writeCache } from "./cache.js";
-import { archiveCachePeriod, enumerateArchiveGrid } from "./gdeltArchiveWindow.js";
-import { extractArchiveMatches, mapArchiveMatches } from "./gdeltArchiveMapping.js";
-import type { ArchiveMatch, ArchiveWindowRequest } from "./gdeltArchiveMapping.js";
-import { assertNoLeak, mapEdgarFilings, mapGdeltArticles } from "./newsMapping.js";
-import type { EdgarFiling, GdeltArticle } from "./newsMapping.js";
-import type { FetchEdgarFilings, FetchGdeltArticles } from "./newsSource.js";
-import { edgarWindow, gdeltWindow, toGdeltStamp } from "./newsWindow.js";
-import { specForSymbol } from "./symbols.js";
+import { promises as fs } from 'node:fs';
+import { join } from 'node:path';
+import { loadQuestionFile, loadQuestionForScorer } from '../dataset/loader.js';
+import type { BenchNewsItem } from '../schema/newsItem.js';
+import type { Question } from '../schema/question.js';
+import type { FetchArchiveFile, ReadArchiveCsv } from './archiveSource.js';
+import { cacheFile, readCache, writeCache } from './cache.js';
+import { archiveCachePeriod, enumerateArchiveGrid } from './gdeltArchiveWindow.js';
+import { extractArchiveMatches, mapArchiveMatches } from './gdeltArchiveMapping.js';
+import type { ArchiveMatch, ArchiveWindowRequest } from './gdeltArchiveMapping.js';
+import { assertNoLeak, mapEdgarFilings, mapGdeltArticles } from './newsMapping.js';
+import type { EdgarFiling, GdeltArticle } from './newsMapping.js';
+import type { FetchEdgarFilings, FetchGdeltArticles } from './newsSource.js';
+import { edgarWindow, gdeltWindow, toGdeltStamp } from './newsWindow.js';
+import { specForSymbol } from './symbols.js';
 
-export type NewsSourceMode = "doc" | "archive" | "auto";
+export type NewsSourceMode = 'doc' | 'archive' | 'auto';
 
 export const DEFAULT_ARCHIVE_THROTTLE_MS = 1000;
 
@@ -77,8 +77,12 @@ async function loadGdeltArticles(
   return articles;
 }
 
-async function loadEdgarFilings(symbol: string, cik: string, deps: NewsBackfillDeps): Promise<EdgarFiling[]> {
-  const file = cacheFile(deps.sourceCacheRoot, symbol, "news-edgar-full");
+async function loadEdgarFilings(
+  symbol: string,
+  cik: string,
+  deps: NewsBackfillDeps,
+): Promise<EdgarFiling[]> {
+  const file = cacheFile(deps.sourceCacheRoot, symbol, 'news-edgar-full');
   if (!deps.fresh) {
     const cached = await readCache<EdgarFiling[]>(file);
     if (cached) return cached;
@@ -119,13 +123,15 @@ async function scanArchiveWindowAndCache(
   deps: NewsBackfillDeps,
 ): Promise<void> {
   if (!deps.fetchArchiveFile || !deps.readArchiveCsv) {
-    throw new Error("archive news source selected but fetchArchiveFile/readArchiveCsv were not provided");
+    throw new Error(
+      'archive news source selected but fetchArchiveFile/readArchiveCsv were not provided',
+    );
   }
   const fetchArchiveFile = deps.fetchArchiveFile;
   const readArchiveCsv = deps.readArchiveCsv;
   const throttleMs = deps.archiveThrottleMs ?? DEFAULT_ARCHIVE_THROTTLE_MS;
 
-  const zipCacheDir = join(deps.sourceCacheRoot, "gdelt-arch");
+  const zipCacheDir = join(deps.sourceCacheRoot, 'gdelt-arch');
   const stamps = enumerateArchiveGrid(cutoffIso);
   const bySymbol = new Map<string, ArchiveMatch[]>();
   for (const request of requests) bySymbol.set(request.symbol, []);
@@ -219,9 +225,11 @@ export interface ComputeNewsOptions {
   scannedWindows?: Set<string>;
 }
 
-export async function computeNewsForQuestion(options: ComputeNewsOptions): Promise<QuestionNewsResult> {
+export async function computeNewsForQuestion(
+  options: ComputeNewsOptions,
+): Promise<QuestionNewsResult> {
   const { symbol, cutoff, companyQuery, cik, deps, breaker } = options;
-  const newsSource = options.newsSource ?? "doc";
+  const newsSource = options.newsSource ?? 'doc';
   const windowRequests = options.windowRequests ?? new Map<string, ArchiveWindowRequest[]>();
   const scannedWindows = options.scannedWindows ?? new Set<string>();
 
@@ -232,17 +240,33 @@ export async function computeNewsForQuestion(options: ComputeNewsOptions): Promi
   let usedArchive = false;
 
   if (companyQuery) {
-    if (newsSource === "archive") {
+    if (newsSource === 'archive') {
       usedArchive = true;
-      archiveItems = await loadArchiveNewsForSymbol(symbol, cutoff, windowRequests, scannedWindows, deps);
+      archiveItems = await loadArchiveNewsForSymbol(
+        symbol,
+        cutoff,
+        windowRequests,
+        scannedWindows,
+        deps,
+      );
     } else if (breaker?.tripped) {
-      if (newsSource === "auto") {
+      if (newsSource === 'auto') {
         usedArchive = true;
-        deps.log(`  gdelt circuit breaker already tripped: using archive for ${symbol} (cutoff ${cutoff})`);
-        archiveItems = await loadArchiveNewsForSymbol(symbol, cutoff, windowRequests, scannedWindows, deps);
+        deps.log(
+          `  gdelt circuit breaker already tripped: using archive for ${symbol} (cutoff ${cutoff})`,
+        );
+        archiveItems = await loadArchiveNewsForSymbol(
+          symbol,
+          cutoff,
+          windowRequests,
+          scannedWindows,
+          deps,
+        );
       } else {
         gdeltSkipped = true;
-        deps.log(`  gdelt skipped for ${symbol} (circuit breaker tripped: durably rate-limited this run)`);
+        deps.log(
+          `  gdelt skipped for ${symbol} (circuit breaker tripped: durably rate-limited this run)`,
+        );
       }
     } else {
       try {
@@ -254,10 +278,18 @@ export async function computeNewsForQuestion(options: ComputeNewsOptions): Promi
         gdeltError = error instanceof Error ? error.message : String(error);
         deps.log(`  gdelt fetch failed for ${symbol} (cutoff ${cutoff}): ${gdeltError}`);
         if (breaker) recordGdeltOutcome(breaker, true);
-        if (newsSource === "auto" && breaker?.tripped) {
+        if (newsSource === 'auto' && breaker?.tripped) {
           usedArchive = true;
-          deps.log(`  gdelt circuit breaker just tripped: switching to archive for ${symbol} (cutoff ${cutoff})`);
-          archiveItems = await loadArchiveNewsForSymbol(symbol, cutoff, windowRequests, scannedWindows, deps);
+          deps.log(
+            `  gdelt circuit breaker just tripped: switching to archive for ${symbol} (cutoff ${cutoff})`,
+          );
+          archiveItems = await loadArchiveNewsForSymbol(
+            symbol,
+            cutoff,
+            windowRequests,
+            scannedWindows,
+            deps,
+          );
         }
       }
     }
@@ -338,7 +370,10 @@ export interface BackfillNewsResult {
   gdeltCircuitTripped: boolean;
 }
 
-export async function findRunsReferencingVersion(resultsRoot: string, version: string): Promise<string[]> {
+export async function findRunsReferencingVersion(
+  resultsRoot: string,
+  version: string,
+): Promise<string[]> {
   const found: string[] = [];
   let entries: string[];
   try {
@@ -347,9 +382,9 @@ export async function findRunsReferencingVersion(resultsRoot: string, version: s
     return found;
   }
   for (const entry of entries) {
-    const configFile = join(resultsRoot, entry, "config.json");
+    const configFile = join(resultsRoot, entry, 'config.json');
     try {
-      const raw = await fs.readFile(configFile, "utf8");
+      const raw = await fs.readFile(configFile, 'utf8');
       const parsed = JSON.parse(raw) as { datasetVersion?: string };
       if (parsed.datasetVersion === version) found.push(entry);
     } catch {
@@ -363,7 +398,7 @@ export async function runBackfillNews(options: BackfillNewsOptions): Promise<Bac
   const frozenWarning = await findRunsReferencingVersion(options.resultsRoot, options.version);
   if (frozenWarning.length > 0) {
     options.log(
-      `WARNING: dataset version ${options.version} is already referenced by run(s): ${frozenWarning.join(", ")}. In-place rewrite may invalidate recorded scores.`,
+      `WARNING: dataset version ${options.version} is already referenced by run(s): ${frozenWarning.join(', ')}. In-place rewrite may invalidate recorded scores.`,
     );
   }
 
@@ -383,7 +418,7 @@ export async function runBackfillNews(options: BackfillNewsOptions): Promise<Bac
 
   const processed: QuestionBackfillOutcome[] = [];
   const deps: NewsBackfillDeps = {
-    sourceCacheRoot: options.sourceCacheRoot ?? join(options.datasetsRoot, ".cache"),
+    sourceCacheRoot: options.sourceCacheRoot ?? join(options.datasetsRoot, '.cache'),
     fresh: options.fresh,
     fetchGdelt: options.fetchGdelt,
     fetchEdgar: options.fetchEdgar,
@@ -433,8 +468,11 @@ export async function runBackfillNews(options: BackfillNewsOptions): Promise<Bac
 
       if (options.dryRun) continue;
 
-      const updated: Question = { ...question, fixtures: { ...question.fixtures, news: result.news } };
-      await fs.writeFile(file, `${JSON.stringify(updated, null, 2)}\n`, "utf8");
+      const updated: Question = {
+        ...question,
+        fixtures: { ...question.fixtures, news: result.news },
+      };
+      await fs.writeFile(file, `${JSON.stringify(updated, null, 2)}\n`, 'utf8');
       await loadQuestionForScorer(options.datasetsRoot, options.version, options.bank, id);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);

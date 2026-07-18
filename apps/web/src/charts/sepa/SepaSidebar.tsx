@@ -1,19 +1,19 @@
-import type { CSSProperties } from "react";
-import { Check, TriangleAlert, X } from "lucide-react";
-import type { SepaBuilt } from "@kansoku/shared/types";
-import { fmt, signed, upDown } from "@web/format";
-import { NewsSection } from "../NewsSection";
-import { Badge, Num, SectionTitle } from "@web/ui";
+import type { CSSProperties } from 'react';
+import { Check, TriangleAlert, X } from 'lucide-react';
+import type { SepaBuilt } from '@kansoku/shared/types';
+import { fmt, signed, upDown } from '@web/format';
+import { NewsSection } from '../NewsSection';
+import { Badge, Num, SectionTitle } from '@web/ui';
 
 const CHECK_ICON: Record<string, { icon: typeof Check; tone: string }> = {
-  pass: { icon: Check, tone: "up" },
-  fail: { icon: X, tone: "down" },
-  unknown: { icon: TriangleAlert, tone: "" },
+  pass: { icon: Check, tone: 'up' },
+  fail: { icon: X, tone: 'down' },
+  unknown: { icon: TriangleAlert, tone: '' },
 };
 
 function rrTone(ep: { rr_great: boolean; rr_ok: boolean }): string {
-  if (ep.rr_great) return "up";
-  return ep.rr_ok ? "" : "down";
+  if (ep.rr_great) return 'up';
+  return ep.rr_ok ? '' : 'down';
 }
 
 export function SepaSidebar({ built }: { built: SepaBuilt }) {
@@ -35,7 +35,7 @@ export function SepaSidebar({ built }: { built: SepaBuilt }) {
           <div className="price-date">{s.asOf} · 长桥证券</div>
         </div>
 
-        <div className="verdict" style={{ "--vc": s.verdict.color } as CSSProperties}>
+        <div className="verdict" style={{ '--vc': s.verdict.color } as CSSProperties}>
           <div className="verdict-label">SEPA 结论</div>
           <div className="verdict-text">{s.verdict.label}</div>
           <div className="verdict-reason">{s.verdict.reason}</div>
@@ -76,19 +76,27 @@ export function SepaSidebar({ built }: { built: SepaBuilt }) {
           <div className="k">距 52w 低 ${fmt(kv.low52w)}</div>
           <div className="v up">{signed(kv.l52Pct, 0)}%</div>
           <div className="k">距 MA50</div>
-          <div className="v"><Num value={kv.ma50Pct} diff suffix="%" /></div>
+          <div className="v">
+            <Num value={kv.ma50Pct} diff suffix="%" />
+          </div>
           <div className="k">距 MA200</div>
-          <div className="v"><Num value={kv.ma200Pct} diff suffix="%" /></div>
+          <div className="v">
+            <Num value={kv.ma200Pct} diff suffix="%" />
+          </div>
           {kv.rs21d !== null && (
             <>
               <div className="k">RS 21d (vs SPY)</div>
-              <div className="v"><Num value={kv.rs21d} diff digits={1} suffix=" pp" /></div>
+              <div className="v">
+                <Num value={kv.rs21d} diff digits={1} suffix=" pp" />
+              </div>
             </>
           )}
           {kv.rs126d !== null && (
             <>
               <div className="k">RS 126d (vs SPY)</div>
-              <div className="v"><Num value={kv.rs126d} diff digits={1} suffix=" pp" /></div>
+              <div className="v">
+                <Num value={kv.rs126d} diff digits={1} suffix=" pp" />
+              </div>
             </>
           )}
         </div>
@@ -97,16 +105,19 @@ export function SepaSidebar({ built }: { built: SepaBuilt }) {
           <>
             <SectionTitle>支撑区</SectionTitle>
             {zones.map((z, i) => (
-              <div key={i} className="zone-item" style={{ "--zc": z.axis_color } as CSSProperties}>
+              <div key={i} className="zone-item" style={{ '--zc': z.axis_color } as CSSProperties}>
                 <div className="zone-head">
                   <span className="zone-label">{z.label}</span>
                   <span className="zone-range">
-                    ${fmt(z.low)} – ${fmt(z.high)} ({signed(((z.high + z.low) / 2 / s.last) * 100 - 100, 1)}%)
+                    ${fmt(z.low)} – ${fmt(z.high)} (
+                    {signed(((z.high + z.low) / 2 / s.last) * 100 - 100, 1)}%)
                   </span>
                 </div>
                 <div className="zone-meta">
                   {z.note}
-                  {z.sources.length > 0 && <span className="zone-sources-inline"> · {z.sources.join(" / ")}</span>}
+                  {z.sources.length > 0 && (
+                    <span className="zone-sources-inline"> · {z.sources.join(' / ')}</span>
+                  )}
                 </div>
               </div>
             ))}
@@ -137,7 +148,7 @@ export function SepaSidebar({ built }: { built: SepaBuilt }) {
                 {fmt(ep.rr)} : 1
                 {!ep.rr_ok && (
                   <span className="warn-red">
-                    {" "}
+                    {' '}
                     <TriangleAlert className="icon" size={13} /> &lt;2:1 SEPA 不入场
                   </span>
                 )}
@@ -161,7 +172,7 @@ export function SepaSidebar({ built }: { built: SepaBuilt }) {
               <div className="v">{s.position.shares} sh</div>
               <div className="k">成本</div>
               <div className="v">${fmt(s.position.cost)}</div>
-              <div className="k">浮{s.position.unrealized >= 0 ? "盈" : "亏"}</div>
+              <div className="k">浮{s.position.unrealized >= 0 ? '盈' : '亏'}</div>
               <div className={`v ${upDown(s.position.unrealized)}`}>
                 {signed(s.position.unrealized)} ({signed(s.position.unrealizedPct)}%)
               </div>
@@ -174,9 +185,11 @@ export function SepaSidebar({ built }: { built: SepaBuilt }) {
         <NewsSection news={s.news ?? []} />
 
         <div className="disclaimer">
-          <TriangleAlert className="icon" size={12} /> 仅供学习参考，不构成投资建议。数据来源：长桥证券。
+          <TriangleAlert className="icon" size={12} />{' '}
+          仅供学习参考，不构成投资建议。数据来源：长桥证券。
           <br />
-          SEPA 框架基于 Mark Minervini 方法。Verdict 自动检测 trend template + extended 警戒；形态（VCP / 杯柄 / 平台 / 旗形）需人工目视确认。
+          SEPA 框架基于 Mark Minervini 方法。Verdict 自动检测 trend template + extended
+          警戒；形态（VCP / 杯柄 / 平台 / 旗形）需人工目视确认。
         </div>
       </div>
     </div>

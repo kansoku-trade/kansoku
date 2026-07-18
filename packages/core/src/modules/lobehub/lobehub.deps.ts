@@ -1,11 +1,11 @@
-import type { MutableModels } from "@earendil-works/pi-ai";
-import type { LobeHubCloudGateway } from "../../ai/lobehub/types.js";
-import { getAiRuntime } from "../../ai/initAiSettings.js";
-import { getModelsRuntime } from "../../ai/modelsRuntime.js";
+import type { MutableModels } from '@earendil-works/pi-ai';
+import type { LobeHubCloudGateway } from '../../ai/lobehub/types.js';
+import { getAiRuntime } from '../../ai/initAiSettings.js';
+import { getModelsRuntime } from '../../ai/modelsRuntime.js';
 
 export interface LobeHubDeps {
   gateway: LobeHubCloudGateway;
-  models: Pick<MutableModels, "refresh">;
+  models: Pick<MutableModels, 'refresh'>;
 }
 
 let testDeps: LobeHubDeps | null = null;

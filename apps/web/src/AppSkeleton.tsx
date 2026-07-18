@@ -1,9 +1,9 @@
 function isElectronShell(): boolean {
-  return typeof navigator !== "undefined" && /\bElectron\b/.test(navigator.userAgent);
+  return typeof navigator !== 'undefined' && /\bElectron\b/.test(navigator.userAgent);
 }
 
-function Bone({ className = "" }: { className?: string }) {
-  return <div className={`app-skeleton-bone${className ? ` ${className}` : ""}`} />;
+function Bone({ className = '' }: { className?: string }) {
+  return <div className={`app-skeleton-bone${className ? ` ${className}` : ''}`} />;
 }
 
 function QuoteCellBone() {
@@ -39,7 +39,7 @@ export function AppSkeleton() {
 
   return (
     <div
-      className={`app-skeleton${desktop ? " app-skeleton--desktop" : ""}`}
+      className={`app-skeleton${desktop ? ' app-skeleton--desktop' : ''}`}
       aria-busy="true"
       aria-label="加载中"
     >

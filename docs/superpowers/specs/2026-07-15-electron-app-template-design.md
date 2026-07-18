@@ -9,14 +9,14 @@
 
 ## 决策记录
 
-| 问题 | 决定 |
-|---|---|
-| 模板形态 | 独立 git 仓库（暂名 `electron-web-template`），GitHub 设为 template repository |
+| 问题     | 决定                                                                                                         |
+| -------- | ------------------------------------------------------------------------------------------------------------ |
+| 模板形态 | 独立 git 仓库（暂名 `electron-web-template`），GitHub 设为 template repository                               |
 | 基建范围 | SQLite + drizzle、桌面基础（窗口/菜单/tabs/协议）、日志 + 凭据、发版流水线、server 与 IPC 同构逻辑，全部保留 |
-| AI 层 | 进模板，带一个最小 agent 聊天示例（pi-ai / pi-agent-core） |
-| 示例功能 | 带一个 notes 示例模块走通整条链路 |
-| 改名机制 | `scripts/init.mjs` 一次性脚本，跑完自删 |
-| 制作路线 | 剥离式复制：整体复制仓库根 workspace，删交易领域模块，验证 + 审计 |
+| AI 层    | 进模板，带一个最小 agent 聊天示例（pi-ai / pi-agent-core）                                                   |
+| 示例功能 | 带一个 notes 示例模块走通整条链路                                                                            |
+| 改名机制 | `scripts/init.mjs` 一次性脚本，跑完自删                                                                      |
+| 制作路线 | 剥离式复制：整体复制仓库根 workspace，删交易领域模块，验证 + 审计                                            |
 
 ## 新仓库结构
 

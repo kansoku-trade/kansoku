@@ -1,5 +1,5 @@
-import type { CohortPoint, FlowRow } from "@kansoku/shared/types";
-import { ClientError } from "../errors.js";
+import type { CohortPoint, FlowRow } from '@kansoku/shared/types';
+import { ClientError } from '../errors.js';
 
 export type { FlowRow };
 
@@ -14,7 +14,10 @@ export function cleanCohortRows(rows: CohortRow[]): CohortPoint[] {
   const cleaned = rows.map((row) => {
     const label = row.label ?? row.symbol;
     if (label == null) {
-      throw new ClientError("cohort rows need `label` or `symbol`", `offending row: ${JSON.stringify(row)}`);
+      throw new ClientError(
+        'cohort rows need `label` or `symbol`',
+        `offending row: ${JSON.stringify(row)}`,
+      );
     }
     return { label: String(label), value: Number(row.value) };
   });

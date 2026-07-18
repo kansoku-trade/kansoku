@@ -1,5 +1,5 @@
-import { useMemo, useRef, useSyncExternalStore } from "react";
-import { createSaveQueue, type SaveQueue } from "./saveQueue";
+import { useMemo, useRef, useSyncExternalStore } from 'react';
+import { createSaveQueue, type SaveQueue } from './saveQueue';
 
 interface Snapshot<T> {
   flushing: boolean;
@@ -42,7 +42,11 @@ export function useSaveQueue<T>(opts: {
     [queue],
   );
 
-  useSyncExternalStore(subscribe, () => snapshotRef.current, () => snapshotRef.current);
+  useSyncExternalStore(
+    subscribe,
+    () => snapshotRef.current,
+    () => snapshotRef.current,
+  );
 
   return queue;
 }

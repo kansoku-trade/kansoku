@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 
 export function externalLinkHref(href: string | null): string | null {
   if (!href || !/^https?:\/\//i.test(href)) return null;
@@ -11,14 +11,14 @@ export function truncateUrl(url: string, max = 100): string {
 }
 
 export function LinkHoverStatus() {
-  const [url, setUrl] = useState("");
+  const [url, setUrl] = useState('');
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     const onOver = (event: MouseEvent) => {
       const target = event.target instanceof Element ? event.target : null;
-      const anchor = target?.closest("a[href]") ?? null;
-      const next = externalLinkHref(anchor?.getAttribute("href") ?? null);
+      const anchor = target?.closest('a[href]') ?? null;
+      const next = externalLinkHref(anchor?.getAttribute('href') ?? null);
       if (next) {
         setUrl(next);
         setVisible(true);
@@ -27,16 +27,16 @@ export function LinkHoverStatus() {
       }
     };
     const onLeave = () => setVisible(false);
-    document.addEventListener("mouseover", onOver);
-    document.documentElement.addEventListener("mouseleave", onLeave);
+    document.addEventListener('mouseover', onOver);
+    document.documentElement.addEventListener('mouseleave', onLeave);
     return () => {
-      document.removeEventListener("mouseover", onOver);
-      document.documentElement.removeEventListener("mouseleave", onLeave);
+      document.removeEventListener('mouseover', onOver);
+      document.documentElement.removeEventListener('mouseleave', onLeave);
     };
   }, []);
 
   return (
-    <div className={`link-hover-status${visible ? " link-hover-status--visible" : ""}`} aria-hidden>
+    <div className={`link-hover-status${visible ? ' link-hover-status--visible' : ''}`} aria-hidden>
       {truncateUrl(url)}
     </div>
   );

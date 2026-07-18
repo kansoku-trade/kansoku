@@ -1,28 +1,28 @@
-import { useMemo, useRef, useState, type ReactNode } from "react";
-import type { IntradayBuilt, QuoteCell, TimeframeKey } from "@kansoku/shared/types";
-import { fmt } from "@web/format";
-import type { SidebarTab } from "../SidebarTabs";
-import { DrawingToolbar } from "../drawings/DrawingToolbar";
-import { useDrawings, type DrawingsHandle } from "../drawings/useDrawings";
-import { LayerPanel, type LayerGroup } from "../LayerPanel";
-import type { ConclusionReassess } from "./ConclusionCard";
-import { IntradaySidebar } from "./IntradaySidebar";
+import { useMemo, useRef, useState, type ReactNode } from 'react';
+import type { IntradayBuilt, QuoteCell, TimeframeKey } from '@kansoku/shared/types';
+import { fmt } from '@web/format';
+import type { SidebarTab } from '../SidebarTabs';
+import { DrawingToolbar } from '../drawings/DrawingToolbar';
+import { useDrawings, type DrawingsHandle } from '../drawings/useDrawings';
+import { LayerPanel, type LayerGroup } from '../LayerPanel';
+import type { ConclusionReassess } from './ConclusionCard';
+import { IntradaySidebar } from './IntradaySidebar';
 import {
   INDICATOR_TOGGLE_COLORS,
   INDICATOR_TOGGLE_LABELS,
   INDICATOR_TOGGLE_ORDER,
   useIndicatorToggles,
-} from "./useIndicatorToggles";
-import { EMA_COLORS, useIntradayCharts } from "./useIntradayCharts";
+} from './useIndicatorToggles';
+import { EMA_COLORS, useIntradayCharts } from './useIntradayCharts';
 
-export const TF_LABELS: Record<TimeframeKey, string> = { m5: "5分钟", m15: "15分钟", h1: "1小时" };
-const TF_SHORT_LABELS: Record<TimeframeKey, string> = { m5: "5m", m15: "15m", h1: "1h" };
-const TF_ORDER: TimeframeKey[] = ["m5", "m15", "h1"];
+export const TF_LABELS: Record<TimeframeKey, string> = { m5: '5分钟', m15: '15分钟', h1: '1小时' };
+const TF_SHORT_LABELS: Record<TimeframeKey, string> = { m5: '5m', m15: '15m', h1: '1h' };
+const TF_ORDER: TimeframeKey[] = ['m5', 'm15', 'h1'];
 
 const MACD_MIN = 100;
 const MACD_MAX = 340;
 const MACD_DEFAULT = 190;
-const MACD_HEIGHT_KEY = "intraday-macd-height";
+const MACD_HEIGHT_KEY = 'intraday-macd-height';
 
 const clampMacdHeight = (h: number) => Math.min(MACD_MAX, Math.max(MACD_MIN, h));
 
@@ -52,7 +52,12 @@ export function IntradayTimeframeSwitch({
   return (
     <div className="chart-timeframe-switch" aria-label="时间周期">
       {TF_ORDER.map((k) => (
-        <button key={k} aria-pressed={k === activeTf} onClick={() => onChange(k)} title={TF_LABELS[k]}>
+        <button
+          key={k}
+          aria-pressed={k === activeTf}
+          onClick={() => onChange(k)}
+          title={TF_LABELS[k]}
+        >
           {TF_SHORT_LABELS[k]}
         </button>
       ))}
@@ -67,7 +72,12 @@ interface IntradayChartOnlyProps {
   onLoadHistory?: () => void;
 }
 
-export function IntradayChartOnly({ symbol, built, activeTf, onLoadHistory }: IntradayChartOnlyProps) {
+export function IntradayChartOnly({
+  symbol,
+  built,
+  activeTf,
+  onLoadHistory,
+}: IntradayChartOnlyProps) {
   const [macdHeight, setMacdHeight] = useState(() => {
     const saved = Number(localStorage.getItem(MACD_HEIGHT_KEY));
     return Number.isFinite(saved) && saved > 0 ? clampMacdHeight(saved) : MACD_DEFAULT;
@@ -106,16 +116,16 @@ export function IntradayChartOnly({ symbol, built, activeTf, onLoadHistory }: In
       setMacdHeight(clampMacdHeight(startH + (startY - ev.clientY)));
     };
     const onUp = () => {
-      window.removeEventListener("pointermove", onMove, true);
-      window.removeEventListener("pointerup", onUp, true);
+      window.removeEventListener('pointermove', onMove, true);
+      window.removeEventListener('pointerup', onUp, true);
       setDragging(false);
       setMacdHeight((h) => {
         localStorage.setItem(MACD_HEIGHT_KEY, String(h));
         return h;
       });
     };
-    window.addEventListener("pointermove", onMove, true);
-    window.addEventListener("pointerup", onUp, true);
+    window.addEventListener('pointermove', onMove, true);
+    window.addEventListener('pointerup', onUp, true);
   };
 
   return (
@@ -131,11 +141,11 @@ export function IntradayChartOnly({ symbol, built, activeTf, onLoadHistory }: In
             </span>
           ))}
           <span>
-            <span className="swatch" style={{ background: "rgba(232,232,232,0.3)" }} />
+            <span className="swatch" style={{ background: 'rgba(232,232,232,0.3)' }} />
             盘前/盘后
           </span>
           <span>
-            <span className="swatch" style={{ background: "rgba(70,100,180,0.7)" }} />
+            <span className="swatch" style={{ background: 'rgba(70,100,180,0.7)' }} />
             夜盘
           </span>
         </div>
@@ -144,7 +154,7 @@ export function IntradayChartOnly({ symbol, built, activeTf, onLoadHistory }: In
         <div ref={mainRef} className="chart-host" />
       </div>
       <div
-        className={`pane-resizer${dragging ? " dragging" : ""}`}
+        className={`pane-resizer${dragging ? ' dragging' : ''}`}
         title="拖动调整 MACD 高度"
         onPointerDown={onResizeStart}
       />
@@ -173,7 +183,12 @@ export function IntradayDashboard({
 }: IntradayDashboardProps) {
   return (
     <div className="layout">
-      <IntradayChartOnly symbol={symbol} built={built} activeTf={activeTf} onLoadHistory={onLoadHistory} />
+      <IntradayChartOnly
+        symbol={symbol}
+        built={built}
+        activeTf={activeTf}
+        onLoadHistory={onLoadHistory}
+      />
       <IntradaySidebar
         built={built}
         activeTf={activeTf}

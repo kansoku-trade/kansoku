@@ -1,9 +1,9 @@
-import type { AgentMessage } from "@earendil-works/pi-agent-core";
-import { asc, eq, type AnyColumn } from "drizzle-orm";
-import type { SQLiteTable } from "drizzle-orm/sqlite-core";
-import { getDb, type Db } from "../db/index.js";
-import { chatMessages } from "../db/schema.js";
-import { nextSnowflake } from "../db/snowflake.js";
+import type { AgentMessage } from '@earendil-works/pi-agent-core';
+import { asc, eq, type AnyColumn } from 'drizzle-orm';
+import type { SQLiteTable } from 'drizzle-orm/sqlite-core';
+import { getDb, type Db } from '../db/index.js';
+import { chatMessages } from '../db/schema.js';
+import { nextSnowflake } from '../db/snowflake.js';
 
 export interface ConversationMessageRow {
   id: string;
@@ -14,8 +14,8 @@ export interface ConversationMessageRow {
 }
 
 export function titleFromText(text: string): string {
-  const collapsed = text.trim().replace(/\s+/g, " ");
-  return [...collapsed].slice(0, 40).join("");
+  const collapsed = text.trim().replaceAll(/\s+/g, ' ');
+  return [...collapsed].slice(0, 40).join('');
 }
 
 export interface ConversationSessionBase {
@@ -43,7 +43,11 @@ export function createConversationStore<TSession extends ConversationSessionBase
   config: ConversationStoreConfig<TSession, TInput>,
 ): ConversationStore<TSession, TInput> {
   async function getSessionByKey(key: string, db: Db = getDb()): Promise<TSession | null> {
-    const rows = await db.select().from(config.sessionTable).where(eq(config.keyColumn, key)).limit(1);
+    const rows = await db
+      .select()
+      .from(config.sessionTable)
+      .where(eq(config.keyColumn, key))
+      .limit(1);
     return (rows[0] as TSession | undefined) ?? null;
   }
 
@@ -54,7 +58,10 @@ export function createConversationStore<TSession extends ConversationSessionBase
     return session;
   }
 
-  async function listMessages(sessionId: string, db: Db = getDb()): Promise<ConversationMessageRow[]> {
+  async function listMessages(
+    sessionId: string,
+    db: Db = getDb(),
+  ): Promise<ConversationMessageRow[]> {
     const rows = await db
       .select()
       .from(chatMessages)
@@ -63,7 +70,11 @@ export function createConversationStore<TSession extends ConversationSessionBase
     return rows as ConversationMessageRow[];
   }
 
-  async function appendMessages(sessionId: string, messages: AgentMessage[], db: Db = getDb()): Promise<void> {
+  async function appendMessages(
+    sessionId: string,
+    messages: AgentMessage[],
+    db: Db = getDb(),
+  ): Promise<void> {
     if (messages.length === 0) return;
     const now = new Date().toISOString();
     db.transaction((tx) => {

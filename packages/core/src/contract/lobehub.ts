@@ -3,8 +3,8 @@ import type {
   LobeHubCredits,
   LobeHubDeviceLogin,
   LobeHubDevicePollResult,
-} from "@kansoku/pro-api";
-import { defineRoutes } from "./defineRoutes.js";
+} from '@kansoku/pro-api';
+import { defineRoutes } from './defineRoutes.js';
 
 export interface LobeHubApi {
   startDeviceLogin(): Promise<LobeHubDeviceLogin>;
@@ -14,10 +14,10 @@ export interface LobeHubApi {
   deleteSession(): Promise<{ deleted: true }>;
 }
 
-export const lobehubRoutes = defineRoutes<LobeHubApi>("ai/providers/lobehub", {
-  startDeviceLogin: { method: "POST", path: "/device-login" },
-  pollDeviceLogin: { method: "POST", path: "/device-login/poll" },
-  getAccount: { method: "GET", path: "/account" },
-  getCredits: { method: "GET", path: "/credits" },
-  deleteSession: { method: "DELETE", path: "/session" },
+export const lobehubRoutes = defineRoutes<LobeHubApi>('ai/providers/lobehub', {
+  startDeviceLogin: { method: 'POST', path: '/device-login' },
+  pollDeviceLogin: { method: 'POST', path: '/device-login/poll' },
+  getAccount: { method: 'GET', path: '/account' },
+  getCredits: { method: 'GET', path: '/credits' },
+  deleteSession: { method: 'DELETE', path: '/session' },
 });

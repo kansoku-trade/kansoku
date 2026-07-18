@@ -1,6 +1,6 @@
-import { CalendarClock } from "lucide-react";
-import type { IntradayEventRisk } from "@kansoku/shared/types";
-import { MarketTime } from "@web/ui";
+import { CalendarClock } from 'lucide-react';
+import type { IntradayEventRisk } from '@kansoku/shared/types';
+import { MarketTime } from '@web/ui';
 
 interface EventRiskCardProps {
   eventRisk: IntradayEventRisk | null | undefined;
@@ -29,7 +29,7 @@ export function EventRiskCard({ eventRisk }: EventRiskCardProps) {
           </span>
           <span className="event-title">
             {m.title}
-            {m.estimate ? `（预期 ${m.estimate}）` : m.previous ? `（前值 ${m.previous}）` : ""}
+            {m.estimate ? `（预期 ${m.estimate}）` : m.previous ? `（前值 ${m.previous}）` : ''}
           </span>
         </div>
       ))}

@@ -83,13 +83,13 @@ CI 默认令牌（`GITHUB_TOKEN`）打的 tag **不会触发其他 workflow**（
 
 ## 错误处理
 
-| 情形 | 行为 |
-|---|---|
-| tag 已存在 | desktop-tag.yml 静默跳过 |
-| CHANGELOG 缺对应版本段落 | desktop-release.yml 报错失败 |
+| 情形                           | 行为                           |
+| ------------------------------ | ------------------------------ |
+| tag 已存在                     | desktop-tag.yml 静默跳过       |
+| CHANGELOG 缺对应版本段落       | desktop-release.yml 报错失败   |
 | tag 与 package.json 版本不一致 | 现有一致性检查报错失败（保留） |
-| 发版 PR 上 CI 红 | 不合并即不发版，链路天然中断 |
-| skill 前置检查不过 | 停止并向用户说明 |
+| 发版 PR 上 CI 红               | 不合并即不发版，链路天然中断   |
+| skill 前置检查不过             | 停止并向用户说明               |
 
 ## 测试
 

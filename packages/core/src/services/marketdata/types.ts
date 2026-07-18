@@ -1,6 +1,6 @@
-import type { MacroEventItem, NewsItem, RawBar } from "@kansoku/shared/types";
-import type { FlowRow } from "../simple.js";
-import type { Market } from "../symbol.utils.js";
+import type { MacroEventItem, NewsItem, RawBar } from '@kansoku/shared/types';
+import type { FlowRow } from '../simple.js';
+import type { Market } from '../symbol.utils.js';
 
 export interface ExtendedQuote {
   last?: string;
@@ -63,16 +63,17 @@ export interface EarningsCalendarEntry {
   title: string;
 }
 
-export type MacroCalendarResult = { supported: true; items: MacroEventItem[] } | { supported: false };
+export type MacroCalendarResult =
+  { supported: true; items: MacroEventItem[] } | { supported: false };
 
 export type Capability =
-  | "flow"
-  | "capital-distribution"
-  | "positions"
-  | "watchlist"
-  | "portfolio"
-  | "earnings-calendar"
-  | "macro-calendar";
+  | 'flow'
+  | 'capital-distribution'
+  | 'positions'
+  | 'watchlist'
+  | 'portfolio'
+  | 'earnings-calendar'
+  | 'macro-calendar';
 
 export interface MarketDataProvider {
   readonly name: string;
@@ -87,5 +88,10 @@ export interface MarketDataProvider {
   getPortfolio?(): Promise<RawPortfolio>;
   getWatchlistSymbols?(): Promise<string[]>;
   getEarningsCalendar?(symbol: string, fromDate: string): Promise<EarningsCalendarEntry | null>;
-  getMacroCalendar?(market: Market, startDate: string, endDate: string, minStar: number): Promise<MacroCalendarResult>;
+  getMacroCalendar?(
+    market: Market,
+    startDate: string,
+    endDate: string,
+    minStar: number,
+  ): Promise<MacroCalendarResult>;
 }

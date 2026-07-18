@@ -20,12 +20,12 @@
 ### 1. 目标形态
 
 ```ts
-import { setSymbolFollowing } from "@kansoku/core/ai/follows";
-import { FEATURES } from "@kansoku/pro-api/features";
-import type { ChartMeta } from "@kansoku/shared/types";
+import { setSymbolFollowing } from '@kansoku/core/ai/follows';
+import { FEATURES } from '@kansoku/pro-api/features';
+import type { ChartMeta } from '@kansoku/shared/types';
 
-import { useFeature } from "@web/useFeature";
-import { symbolsIpc } from "@desktop/ipc/symbolsIpc";
+import { useFeature } from '@web/useFeature';
+import { symbolsIpc } from '@desktop/ipc/symbolsIpc';
 ```
 
 - 同目录/近距离的 `./x`、`../x` 相对导入保留，不强制改；只消灭跨包 reach-in 和 app 内跨目录长链（`../../..` 及以上）。
@@ -50,11 +50,11 @@ import { symbolsIpc } from "@desktop/ipc/symbolsIpc";
 
 每个 app 三处对齐（typecheck / 运行构建 / 测试）：
 
-| app | tsconfig paths | 运行/构建 | 测试 |
-|---|---|---|---|
-| web | `"@web/*": ["./src/*"]` | vite `resolve.alias` | vitest 复用 vite 配置 |
-| server | `"@server/*": ["./src/*"]` | vite-node 读 server 的 vite config alias | 同一份配置 |
-| desktop | `"@desktop/*": ["./src/*"]` | tsdown alias（main/preload） | vitest alias |
+| app     | tsconfig paths              | 运行/构建                                | 测试                  |
+| ------- | --------------------------- | ---------------------------------------- | --------------------- |
+| web     | `"@web/*": ["./src/*"]`     | vite `resolve.alias`                     | vitest 复用 vite 配置 |
+| server  | `"@server/*": ["./src/*"]`  | vite-node 读 server 的 vite config alias | 同一份配置            |
+| desktop | `"@desktop/*": ["./src/*"]` | tsdown alias（main/preload）             | vitest alias          |
 
 core / pro-api / shared / bench 无任何新配置——包名自引用走标准 node 解析。
 
