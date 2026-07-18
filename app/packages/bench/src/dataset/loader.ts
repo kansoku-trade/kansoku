@@ -19,7 +19,17 @@ export async function listQuestions(
   bank: string,
 ): Promise<string[]> {
   const dir = bankDir(datasetsRoot, version, bank);
-  const entries = await fs.readdir(dir, { withFileTypes: true });
+  let entries;
+  try {
+    entries = await fs.readdir(dir, { withFileTypes: true });
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+      throw new DatasetValidationError(
+        `dataset ${version}/${bank} is not installed under ${datasetsRoot}; run "bench sync-dataset --dataset-version ${version}" first`,
+      );
+    }
+    throw error;
+  }
   return entries
     .filter((entry) => entry.isFile() && entry.name.endsWith(".json"))
     .map((entry) => entry.name.slice(0, -".json".length))

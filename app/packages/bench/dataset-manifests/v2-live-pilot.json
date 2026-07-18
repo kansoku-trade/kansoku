@@ -1,0 +1,27 @@
+{
+  "$schema": "./schema.json",
+  "schemaVersion": 1,
+  "id": "v2-live-pilot",
+  "revision": "r1",
+  "kind": "episode",
+  "status": "pilot",
+  "modes": ["live"],
+  "cohort": "live-2026",
+  "visibility": "private",
+  "repository": "kansoku-trade/kansoku-bench-data",
+  "release": {
+    "tag": "dataset-v2-live-pilot-r1",
+    "asset": "kansoku-bench-v2-live-pilot-r1.tar.zst",
+    "sha256": "0bcedc42aa259f3511cce7e71a20497ddd6a39a630212301a52741b4ec539504",
+    "sizeBytes": 280770,
+    "archiveRoot": "v2-live-pilot"
+  },
+  "banks": {
+    "swing": 12
+  },
+  "generator": {
+    "repository": "kansoku-trade/kansoku",
+    "commit": "36987d43be22df9fd81b341f87292c2e3ad8e4aa"
+  },
+  "publishedAt": "2026-07-18T07:57:56Z"
+}

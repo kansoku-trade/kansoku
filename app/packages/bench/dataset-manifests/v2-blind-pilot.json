@@ -1,0 +1,27 @@
+{
+  "$schema": "./schema.json",
+  "schemaVersion": 1,
+  "id": "v2-blind-pilot",
+  "revision": "r1",
+  "kind": "episode",
+  "status": "pilot",
+  "modes": ["blind"],
+  "cohort": "blind-anonymous",
+  "visibility": "private",
+  "repository": "kansoku-trade/kansoku-bench-data",
+  "release": {
+    "tag": "dataset-v2-blind-pilot-r1",
+    "asset": "kansoku-bench-v2-blind-pilot-r1.tar.zst",
+    "sha256": "a3d1d3d4930e3f34acb259097178c369fdee31dd4164cd1b954959a7dc7ac68b",
+    "sizeBytes": 433721,
+    "archiveRoot": "v2-blind-pilot"
+  },
+  "banks": {
+    "swing": 12
+  },
+  "generator": {
+    "repository": "kansoku-trade/kansoku",
+    "commit": "36987d43be22df9fd81b341f87292c2e3ad8e4aa"
+  },
+  "publishedAt": "2026-07-18T07:58:01Z"
+}

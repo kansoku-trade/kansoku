@@ -1,0 +1,24 @@
+{
+  "$schema": "./schema.json",
+  "schemaVersion": 1,
+  "id": "v1",
+  "revision": "r1",
+  "kind": "single-shot",
+  "visibility": "private",
+  "repository": "kansoku-trade/kansoku-bench-data",
+  "release": {
+    "tag": "dataset-v1-r1",
+    "asset": "kansoku-bench-v1-r1.tar.zst",
+    "sha256": "5d9feff981da24240f90d807118e2e241ee3e6ce94872b5ea8b1c3912a75f191",
+    "sizeBytes": 349423,
+    "archiveRoot": "v1"
+  },
+  "banks": {
+    "swing": 60
+  },
+  "generator": {
+    "repository": "kansoku-trade/kansoku",
+    "commit": "b1e3e5644472ffffeb5506ac1d009eb32b94113e"
+  },
+  "publishedAt": "2026-07-18T07:03:31Z"
+}

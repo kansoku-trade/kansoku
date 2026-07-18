@@ -1,0 +1,29 @@
+{
+  "id": "swing-MU-2026-01-02-01",
+  "bank": "swing",
+  "symbol": "MU.US",
+  "cutoff": "2026-01-02T20:00:00-04:00",
+  "layer": "high-vol-tech",
+  "adversarial": false,
+  "fixtures": {
+    "kline": {
+      "day": [
+        { "time": "2026-01-02", "open": "312", "high": "317", "low": "310", "close": "315.231", "volume": "1000000" }
+      ],
+      "week": []
+    },
+    "indicators": {},
+    "quote": { "last": 315.231 },
+    "capitalFlow": {},
+    "news": [],
+    "fundamentals": {},
+    "calendar": {}
+  },
+  "replay": {
+    "horizonBars": 20,
+    "bars": [
+      { "time": "2026-01-05", "open": "315", "high": "350", "low": "312", "close": "348", "volume": "1100000" },
+      { "time": "2026-01-06", "open": "350", "high": "460", "low": "345", "close": "455", "volume": "1200000" }
+    ]
+  }
+}

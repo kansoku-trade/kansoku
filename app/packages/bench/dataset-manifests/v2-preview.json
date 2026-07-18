@@ -1,0 +1,24 @@
+{
+  "$schema": "./schema.json",
+  "schemaVersion": 1,
+  "id": "v2-preview",
+  "revision": "r1",
+  "kind": "episode",
+  "visibility": "private",
+  "repository": "kansoku-trade/kansoku-bench-data",
+  "release": {
+    "tag": "dataset-v2-preview-r1",
+    "asset": "kansoku-bench-v2-preview-r1.tar.zst",
+    "sha256": "bce0e3f1de85f1fcc9ec200ee9c435b570d5aaf7a994b4a92e05a44b4f092ebf",
+    "sizeBytes": 20149,
+    "archiveRoot": "v2-preview"
+  },
+  "banks": {
+    "swing": 1
+  },
+  "generator": {
+    "repository": "kansoku-trade/kansoku",
+    "commit": "e18914c252daf3496060cd34e1b03ef1670a01e9"
+  },
+  "publishedAt": "2026-07-18T07:03:31Z"
+}

@@ -1,0 +1,29 @@
+{
+  "id": "swing-NVDA-2026-01-02-01",
+  "bank": "swing",
+  "symbol": "NVDA.US",
+  "cutoff": "2026-01-02T20:00:00-04:00",
+  "layer": "high-vol-tech",
+  "adversarial": false,
+  "fixtures": {
+    "kline": {
+      "day": [
+        { "time": "2026-01-02", "open": "189", "high": "190", "low": "187", "close": "188.623", "volume": "1000000" }
+      ],
+      "week": []
+    },
+    "indicators": {},
+    "quote": { "last": 188.623 },
+    "capitalFlow": {},
+    "news": [],
+    "fundamentals": {},
+    "calendar": {}
+  },
+  "replay": {
+    "horizonBars": 20,
+    "bars": [
+      { "time": "2026-01-05", "open": "188", "high": "190", "low": "180", "close": "181", "volume": "1100000" },
+      { "time": "2026-01-06", "open": "181", "high": "182", "low": "176", "close": "178", "volume": "1200000" }
+    ]
+  }
+}
