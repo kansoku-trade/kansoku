@@ -73,7 +73,7 @@ export interface ProModule {
   initRuntime?: (
     db: unknown,
     secretBox: unknown,
-    host?: { watchedMarkets?: unknown; production?: boolean },
+    host?: { watchedMarkets?: unknown; aiSettingsStore?: unknown; production?: boolean },
   ) => void | Promise<void>;
   migrations?: string;
 }

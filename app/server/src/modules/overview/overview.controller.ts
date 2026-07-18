@@ -1,6 +1,5 @@
 import { Controller, Get, Query } from "@tsuki-hono/common";
 import { overviewService } from "../../../../packages/core/src/modules/overview/overview.service.js";
-import { requirePro } from "../../../../packages/core/src/pro/requirePro.js";
 
 export { resetOverviewCacheForTests } from "../../../../packages/core/src/modules/overview/overview.service.js";
 
@@ -26,7 +25,6 @@ export class OverviewController {
 
   @Get("/usage")
   async getUsage(@Query() query: { date?: string }) {
-    requirePro();
     const data = await overviewService.usage({ date: query.date });
     return { ok: true, data };
   }

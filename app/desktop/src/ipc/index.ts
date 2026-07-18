@@ -1,10 +1,13 @@
 import type { IpcServiceConstructor } from "electron-ipc-decorator";
 import { getPro } from "../../../packages/core/src/pro/registry.js";
 import { AnnotationsIpc } from "./annotationsIpc.js";
+import { AssistantIpc } from "./assistantIpc.js";
 import { CapabilitiesIpc } from "./capabilitiesIpc.js";
 import { ChartsIpc } from "./chartsIpc.js";
+import { ChatIpc } from "./chatIpc.js";
 import { CredentialsIpc } from "./credentialsIpc.js";
 import { HealthIpc } from "./healthIpc.js";
+import { LobeHubIpc } from "./lobehubIpc.js";
 import { OverviewIpc } from "./overviewIpc.js";
 import { PositionsIpc } from "./positionsIpc.js";
 import { SettingsIpc } from "./settingsIpc.js";
@@ -17,6 +20,9 @@ const nonAiIpcServiceClasses = [
   PositionsIpc,
   OverviewIpc,
   SettingsIpc,
+  AssistantIpc,
+  ChatIpc,
+  LobeHubIpc,
   CredentialsIpc,
   HealthIpc,
   CapabilitiesIpc,
