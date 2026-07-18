@@ -1,8 +1,10 @@
 import { useState } from "react";
-import { Check, RadioTower } from "lucide-react";
+import { Check, Lock, RadioTower } from "lucide-react";
 import type { OverviewBoard, OverviewRow } from "../../../../shared/types";
 import { errorMessage } from "../../api";
+import { useCapabilities } from "../../capabilitiesStore";
 import { client } from "../../client";
+import { useFeatureGuard } from "../../featureGuard";
 import { fmt, signed } from "../../format";
 import { Badge, Button, Card, Dot, Empty, ErrorBox, MarketTime, Num, Switch } from "../../ui";
 import { useSymbolFollow } from "../../useSymbolFollow";
@@ -23,12 +25,16 @@ function FollowToggle({
   initialFollowing: boolean;
   compact?: boolean;
 }) {
+  const { pro } = useCapabilities();
   const { following, busy, statusError, change } = useSymbolFollow({ symbol, initialFollowing });
+  const { locked, guard } = useFeatureGuard();
   const active = following ?? initialFollowing;
+  if (pro !== true) return null;
   const className = [
     "symbol-card-follow",
     active && "symbol-card-follow--active",
     statusError && "symbol-card-follow--error",
+    locked && "symbol-card-follow--locked",
     compact && "symbol-card-follow--compact",
   ]
     .filter(Boolean)
@@ -38,22 +44,31 @@ function FollowToggle({
     event.preventDefault();
     event.stopPropagation();
     if ((event.target as Element).closest(".ui-switch") || busy) return;
+    if (locked) {
+      guard(() => {});
+      return;
+    }
     void change(!active);
   };
 
   return (
     <span
       className={className}
-      title={statusError ?? (active ? "AI 评论员正在后台持续跟进" : "AI 评论员未在后台跟进")}
+      title={
+        locked
+          ? "AI 跟进需要有效授权，点击开关订阅解锁"
+          : statusError ?? (active ? "AI 评论员正在后台持续跟进" : "AI 评论员未在后台跟进")
+      }
       onClick={onControlClick}
     >
       <RadioTower aria-hidden="true" size={compact ? 12 : 11} />
       <span className={compact ? "sr-only" : undefined}>AI 跟进</span>
+      {locked && <Lock className="follow-control-lock" size={compact ? 12 : 11} />}
       <Switch
         ariaLabel={`持续跟进 ${symbol} 的 AI 点评`}
         checked={active}
         disabled={busy}
-        onCheckedChange={(checked) => void change(checked)}
+        onCheckedChange={locked ? () => guard(() => {}) : (checked) => void change(checked)}
       />
     </span>
   );

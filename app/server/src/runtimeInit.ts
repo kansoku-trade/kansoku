@@ -1,4 +1,6 @@
 import type { SecretBox } from "@kansoku/pro-api";
+import { initAiSettings } from "../../packages/core/src/ai/initAiSettings.js";
+import { getActiveSettingsStore } from "../../packages/core/src/ai/settingsStore.js";
 import { getDb } from "../../packages/core/src/db/index.js";
 import { loadPro } from "../../packages/core/src/pro/loader.js";
 import { getPro } from "../../packages/core/src/pro/registry.js";
@@ -40,10 +42,12 @@ export async function initServerRuntime(opts?: ServerRuntimeOptions): Promise<vo
   initCredentialProvider(opts?.credentialProvider);
   initAuthUrlOpener(opts?.openAuthUrl);
   setActiveWatchedMarketsStore(createWatchedMarketsStore(getDb()));
+  initAiSettings(getDb(), { secretBox: opts?.secretBox });
 
   await loadPro(opts?.proAppDir, opts?.proEntry);
   await getPro()?.initRuntime?.(getDb(), opts?.secretBox, {
     watchedMarkets: getActiveWatchedMarketsStore(),
+    aiSettingsStore: getActiveSettingsStore(),
     production: opts?.productionHost ?? process.env.NODE_ENV === "production",
   });
 }

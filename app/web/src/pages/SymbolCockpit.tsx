@@ -4,7 +4,6 @@ import { IntradayDashboard, IntradayTimeframeSwitch } from "../charts/intraday/I
 import { resolveIntradayTf, useIntradayDoc } from "../charts/intraday/useIntradayDoc";
 import type { SidebarTab } from "../charts/SidebarTabs";
 import { SepaDashboard } from "../charts/sepa/SepaDashboard";
-import { useCapabilities } from "../capabilitiesStore";
 import { getPopoutBridge } from "../desktop/desktopWindowsBridge";
 import { TopbarQuote } from "../QuoteBar";
 import { marketOfSymbol } from "../lib/market";
@@ -15,7 +14,6 @@ import { useLiveQuote } from "../useLiveQuote";
 import { AnalysisRunDetails } from "./cockpit/AnalysisRunDetails";
 import { AnalysisTimeline } from "./cockpit/AnalysisTimeline";
 import { ChatDock } from "./cockpit/chat/ChatDock";
-import { LockedChatBar } from "./cockpit/chat/LockedChatBar";
 import { PreviewCockpit } from "./cockpit/PreviewCockpit";
 import { conclusionOutdated } from "../charts/intraday/ConclusionCard";
 import { PredictionTab } from "../charts/intraday/tabs/PredictionTab";
@@ -50,7 +48,6 @@ export function SymbolCockpit({ sym }: { sym: string }) {
   const symLabel = sym.toUpperCase().replace(/\.US$/, "");
   const market = marketOfSymbol(sym);
   const liveQuote = useLiveQuote(sym);
-  const { pro, licensed } = useCapabilities();
   const {
     mode,
     activeId: latestId,
@@ -294,7 +291,7 @@ export function SymbolCockpit({ sym }: { sym: string }) {
           sidebarTabs={sidebarTabs}
           activeTab={activeTab}
           onTabChange={setActiveTab}
-          dock={pro ? (licensed ? <ChatDock chartId={doc.id} docCreatedAt={doc.created_at} /> : <LockedChatBar />) : null}
+          dock={<ChatDock chartId={doc.id} docCreatedAt={doc.created_at} />}
           liveQuote={live ? liveQuote : null}
         />
       </div>

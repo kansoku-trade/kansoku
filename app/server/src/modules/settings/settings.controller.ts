@@ -1,6 +1,5 @@
 import { Body, Controller, Delete, Get, Param, Post, Put } from "@tsuki-hono/common";
 import { settingsService } from "../../../../packages/core/src/modules/settings/settings.service.js";
-import { requirePro } from "../../../../packages/core/src/pro/requirePro.js";
 import { jsonResponse } from "../../httpResponse.js";
 
 
@@ -8,49 +7,42 @@ import { jsonResponse } from "../../httpResponse.js";
 export class SettingsController {
   @Get("/ai")
   async getAi() {
-    requirePro();
     const data = await settingsService.getAi();
     return { ok: true, data };
   }
 
   @Put("/ai/roles/:role")
   async putRole(@Param("role") role: string, @Body() body: Record<string, unknown> | null) {
-    requirePro();
     const data = await settingsService.putRole({ role, ...(body ?? {}) });
     return { ok: true, data };
   }
 
   @Delete("/ai/roles/:role")
   async deleteRole(@Param("role") role: string) {
-    requirePro();
     const data = await settingsService.deleteRole({ role });
     return { ok: true, data };
   }
 
   @Put("/ai/credentials/:provider")
   async putCredential(@Param("provider") provider: string, @Body() body: { key?: unknown } | null) {
-    requirePro();
     const data = await settingsService.putCredential({ provider, key: body?.key });
     return { ok: true, data };
   }
 
   @Delete("/ai/credentials/:provider")
   async deleteCredential(@Param("provider") provider: string) {
-    requirePro();
     const data = await settingsService.deleteCredential({ provider });
     return { ok: true, data };
   }
 
   @Get("/ai/catalog")
   async getCatalog() {
-    requirePro();
     const data = await settingsService.getCatalog();
     return { ok: true, data };
   }
 
   @Post("/ai/test")
   async postTest(@Body() body: Record<string, unknown> | null) {
-    requirePro();
     const result = await settingsService.testConnection(body ?? {});
     if (result.ok) return { ok: true, data: result };
     return jsonResponse(result.status, { ok: false, error: result.error, hint: result.hint });
@@ -58,14 +50,12 @@ export class SettingsController {
 
   @Get("/ai/usage-today")
   async getUsageToday() {
-    requirePro();
     const data = await settingsService.getUsageToday();
     return { ok: true, data };
   }
 
   @Post("/ai/reset-credentials")
   async postResetCredentials() {
-    requirePro();
     const data = await settingsService.resetCredentials();
     return { ok: true, data };
   }

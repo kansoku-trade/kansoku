@@ -41,17 +41,9 @@ describe("pro loader", () => {
     }
   });
 
-  it("free-mode default hooks are inert", async () => {
-    const items = [{ ts: "2026-07-10T12:30:00.000Z", title: "CPI", estimate: null, previous: null }];
-    await expect(freeHooks.filterMacroForSymbol("NVDA", items)).resolves.toEqual(items);
-    expect(freeHooks.listFollowedSymbols()).toEqual([]);
-    expect(freeHooks.setSymbolFollowing("NVDA", true)).toEqual({
-      symbol: "NVDA",
-      following: false,
-      startedAt: null,
-    });
-    await expect(freeHooks.listComments("NVDA", "2026-07-10")).resolves.toEqual([]);
-    await expect(freeHooks.listAllCommentDates()).resolves.toEqual([]);
-    expect(freeHooks.activeSettingsRevision()).toBe(0);
+  it("free-mode default paid hooks are inert", () => {
+    expect(freeHooks.requestImmediateFollow("NVDA")).toBeUndefined();
+    expect(freeHooks.startDeepDiveForNote("NVDA")).toEqual({ started: false, reason: "disabled" });
+    expect(freeHooks.deepDiveStatus()).toEqual({ running: false });
   });
 });

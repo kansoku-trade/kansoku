@@ -3,6 +3,9 @@ import { join } from "node:path";
 import type { IntradayPrediction, RawBar, SymbolAnalysisRow } from "../../../../../shared/types.js";
 import { getProHooks } from "../../pro/registry.js";
 import { chartUrl } from "../../chartUrl.js";
+import { analystRunStatus, reassessSymbol } from "../../ai/analyst.js";
+import { listCommentDates, listComments } from "../../ai/comments.js";
+import { setSymbolFollowing, symbolFollowState } from "../../ai/follows.js";
 import type { SymbolsApi } from "../../contract/symbols.js";
 import { JOURNAL_DIR, STOCKS_DIR } from "../../env.js";
 import { ClientError } from "../../errors.js";
@@ -113,28 +116,27 @@ export const symbolsService: SymbolsApi = {
     if (!DATE_RE.test(date)) {
       throw new ClientError(`invalid date: ${date}`, "expected YYYY-MM-DD");
     }
-    return getProHooks().listComments(sym, date);
+    return listComments(sym, date);
   },
 
   async commentDates(input) {
     const sym = normalizeSymbol(input.sym);
-    return getProHooks().listCommentDates(sym);
+    return listCommentDates(sym);
   },
 
   async followStatus(input) {
-    return getProHooks().symbolFollowState(input.sym);
+    return symbolFollowState(input.sym);
   },
 
   async startFollow(input) {
-    const hooks = getProHooks();
-    const previous = hooks.symbolFollowState(input.sym);
-    const state = hooks.setSymbolFollowing(input.sym, true);
-    if (!previous.following) await hooks.requestImmediateFollow(state.symbol);
+    const previous = symbolFollowState(input.sym);
+    const state = setSymbolFollowing(input.sym, true);
+    if (!previous.following) await getProHooks().requestImmediateFollow(state.symbol);
     return state;
   },
 
   async stopFollow(input) {
-    return getProHooks().setSymbolFollowing(input.sym, false);
+    return setSymbolFollowing(input.sym, false);
   },
 
   async journal(input) {
@@ -174,11 +176,11 @@ export const symbolsService: SymbolsApi = {
   },
 
   async reassess(input) {
-    return getProHooks().reassessSymbol(normalizeSymbol(input.sym));
+    return reassessSymbol(normalizeSymbol(input.sym));
   },
 
   async reassessStatus(input) {
-    return getProHooks().analystRunStatus(normalizeSymbol(input.sym));
+    return analystRunStatus(normalizeSymbol(input.sym));
   },
 
   async note(input) {

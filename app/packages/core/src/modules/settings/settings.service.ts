@@ -1,41 +1,35 @@
 import { getPro } from "../../pro/registry.js";
 import { getActiveWatchedMarketsStore, validateWatchedMarkets } from "../../services/watchedMarketsStore.js";
 import type { SettingsApi } from "../../contract/settings.js";
-import { ClientError } from "../../errors.js";
-
-function aiSettings() {
-  const svc = getPro()?.aiSettings;
-  if (!svc) throw new ClientError("AI features are not available in this build", undefined, 404);
-  return svc;
-}
+import { aiSettingsService } from "./aiSettings.service.js";
 
 export const settingsService: SettingsApi = {
   getAi() {
-    return aiSettings().getAi();
+    return aiSettingsService.getAi();
   },
   putRole(input) {
-    return aiSettings().putRole(input);
+    return aiSettingsService.putRole(input);
   },
   deleteRole(input) {
-    return aiSettings().deleteRole(input);
+    return aiSettingsService.deleteRole(input);
   },
   putCredential(input) {
-    return aiSettings().putCredential(input);
+    return aiSettingsService.putCredential(input);
   },
   deleteCredential(input) {
-    return aiSettings().deleteCredential(input);
+    return aiSettingsService.deleteCredential(input);
   },
   getCatalog() {
-    return aiSettings().getCatalog();
+    return aiSettingsService.getCatalog();
   },
   testConnection(input) {
-    return aiSettings().testConnection(input);
+    return aiSettingsService.testConnection(input);
   },
   getUsageToday() {
-    return aiSettings().getUsageToday();
+    return aiSettingsService.getUsageToday();
   },
   resetCredentials() {
-    return aiSettings().resetCredentials();
+    return aiSettingsService.resetCredentials();
   },
 
   async getWatchedMarkets() {

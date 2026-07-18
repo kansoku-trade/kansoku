@@ -4,10 +4,9 @@ import { useLicenseModalTrigger } from "./licenseModalStore";
 import { ActivateForm, LicensePanel, useSubscribeInfo } from "./pages/settings/LicensePanel";
 
 const FEATURES = [
-  { name: "AI 盘面复盘", desc: "自动分析你的图表，给出多空判断与情景推演" },
-  { name: "深度研究", desc: "对单只股票生成可沉淀的研究文档" },
-  { name: "图表对话", desc: "在任意图表上直接向 AI 提问" },
-  { name: "定时盯盘", desc: "盘中自动跟踪关注的标的，异动时留言提醒" },
+  { name: "个股自动跟踪", desc: "盘中在后台持续跟进关注的标的，异动时自动留言提醒" },
+  { name: "深度研究", desc: "对单只股票跑一次深度分析，生成可沉淀的研究文档" },
+  { name: "研究库 AI", desc: "AI 刷新研究文档、AI 编辑审阅、与研究资料对话" },
 ];
 
 function Paywall({ notice, onActivated }: { notice?: "invalid" | "expired"; onActivated: () => void }) {

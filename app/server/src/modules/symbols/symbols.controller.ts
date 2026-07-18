@@ -80,14 +80,12 @@ export class SymbolsController {
 
   @Post("/:sym/reassess")
   async reassess(@Param("sym") sym: string) {
-    requirePro();
     const data = await symbolsService.reassess({ sym });
     return { ok: true, data };
   }
 
   @Get("/:sym/reassess/status")
   async getReassessStatus(@Param("sym") sym: string) {
-    requirePro();
     const data = await symbolsService.reassessStatus({ sym });
     return { ok: true, data };
   }

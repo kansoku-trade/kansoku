@@ -3,11 +3,14 @@ import { AnimatePresence, motion } from "motion/react";
 import { ChevronRight, FileDiff, History, RefreshCw, Square } from "lucide-react";
 import type { ResearchDocument, ResearchDocumentMeta, ResearchEditProposal } from "../../../../packages/core/src/contract";
 import { useQuery } from "../../apiHooks";
+import { useCapabilities } from "../../capabilitiesStore";
 import { client } from "../../client";
+import { useFeatureGuard } from "../../featureGuard";
 import { MarketTime, openModal, Spinner } from "../../ui";
 import { ChatComposer } from "../cockpit/chat/ChatComposer";
 import { ConversationTranscript } from "../cockpit/chat/ConversationTranscript";
 import type { TranscriptInsert } from "../cockpit/chat/transcriptTimeline";
+import { LockedAiNotice } from "../LockedAiNotice";
 import { openEditReview, STATUS_LABEL } from "./ResearchEditReview";
 import { ResearchRefreshCard } from "./ResearchRefreshPanel";
 import { researchTypeLabel } from "./researchModel";
@@ -183,17 +186,20 @@ export function ResearchAssistant({
   onSelect: (document: ResearchDocumentMeta) => void;
   onDocumentChanged: (document?: ResearchDocument) => void;
 }) {
-  const conversation = useResearchChatSession(document.path);
+  const { locked } = useFeatureGuard();
+  const { pro } = useCapabilities();
+  const aiEnabled = pro === true && !locked;
+  const conversation = useResearchChatSession(document.path, aiEnabled);
   const [text, setText] = useState("");
   const previousBusyRef = useRef(false);
   const pendingCardRefs = useRef(new Map<string, HTMLButtonElement>());
   const [bannerVisible, setBannerVisible] = useState(false);
   const { data: edits, reload: reloadEdits } = useQuery<ResearchEditProposal[]>(
-    `research.edits:${document.path}`,
+    aiEnabled ? `research.edits:${document.path}` : null,
     () => client.research.listEdits({ path: document.path }),
     { cache: false },
   );
-  const refresh = useResearchRefresh(document.path, reloadEdits);
+  const refresh = useResearchRefresh(document.path, reloadEdits, aiEnabled);
 
   useEffect(() => {
     if (conversation.loaded && !conversation.session) conversation.ensureSuggestions();
@@ -304,6 +310,23 @@ export function ResearchAssistant({
     }
     return list;
   }, [refresh.task, pending, history, handleChanged]);
+
+  if (pro !== true) {
+    return (
+      <div className="research-assistant research-assistant--locked">
+        <RelatedMaterialsCard selected={selected} related={related} onSelect={onSelect} />
+      </div>
+    );
+  }
+
+  if (locked) {
+    return (
+      <div className="research-assistant research-assistant--locked">
+        <RelatedMaterialsCard selected={selected} related={related} onSelect={onSelect} />
+        <LockedAiNotice message="研究库 AI（刷新文档 / 编辑审阅 / 研究对话）需要有效授权" />
+      </div>
+    );
+  }
 
   return (
     <div className="research-assistant">

@@ -60,6 +60,21 @@ describe("LicenseModal", () => {
     expect(screen.queryByText(/本次操作因授权已失效/)).toBeNull();
   });
 
+  it("advertises exactly the three paid features, not the now-free ones", async () => {
+    capabilitiesGet.mockResolvedValue({ pro: true, licensed: false, license: { state: "unlicensed" } });
+    subscribeUrlGet.mockResolvedValue({ subscribeUrl: null, priceLabel: null });
+    openLicenseModal("guard");
+
+    renderWithClient(<ModalHost />);
+
+    expect(await screen.findByText("个股自动跟踪")).toBeTruthy();
+    expect(screen.getByText("深度研究")).toBeTruthy();
+    expect(screen.getByText("研究库 AI")).toBeTruthy();
+    expect(screen.queryByText("AI 盘面复盘")).toBeNull();
+    expect(screen.queryByText("图表对话")).toBeNull();
+    expect(screen.queryByText("定时盯盘")).toBeNull();
+  });
+
   it("reveals the activate form behind the toggle", async () => {
     capabilitiesGet.mockResolvedValue({ pro: true, licensed: false, license: { state: "unlicensed" } });
     subscribeUrlGet.mockResolvedValue({ subscribeUrl: null, priceLabel: null });

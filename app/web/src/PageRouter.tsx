@@ -2,16 +2,13 @@ import { useEffect } from "react";
 import type { ChartDoc } from "../../shared/types";
 import { chartTargetPath } from "../../shared/chartUrl";
 import { useQuery } from "./apiHooks";
-import { useCapabilities } from "./capabilitiesStore";
 import { client } from "./client";
 import { symbolFromRoute } from "./lib/symbol";
 import { AboutPage } from "./pages/about/AboutPage";
 import { AssistantChatPage } from "./pages/assistant/AssistantChatPage";
 import { Home } from "./pages/Home";
-import { LicenseGateEmptyState } from "./pages/LicenseGateEmptyState";
 import { LogsPage } from "./pages/logViewer/LogsPage";
 import { PopoutChartWindow } from "./pages/PopoutChartWindow";
-import { ProUnavailablePage } from "./pages/ProUnavailablePage";
 import { ResearchPage } from "./pages/research/ResearchPage";
 import { SettingsPage } from "./pages/settings/SettingsPage";
 import { SymbolCockpit } from "./pages/SymbolCockpit";
@@ -47,7 +44,6 @@ function ChartRedirect({ id }: { id: string }) {
 export function Router() {
   const route = useRoute();
   const pathname = routePathname(route);
-  const { pro, licensed } = useCapabilities();
 
   if (pathname === "/overview" || pathname === "/charts") {
     return <Redirect to="/" />;
@@ -60,16 +56,8 @@ export function Router() {
   }
   const symbol = symbolFromRoute(route);
   if (symbol) return <SymbolCockpit sym={symbol} />;
-  if (pathname === "/research") {
-    if (pro === null) return null;
-    if (!pro) return <ProUnavailablePage />;
-    return licensed ? <ResearchPage /> : <LicenseGateEmptyState />;
-  }
-  if (pathname === "/chat") {
-    if (pro === null) return null;
-    if (!pro) return <ProUnavailablePage />;
-    return licensed ? <AssistantChatPage /> : <LicenseGateEmptyState />;
-  }
+  if (pathname === "/research") return <ResearchPage />;
+  if (pathname === "/chat") return <AssistantChatPage />;
   if (pathname === "/settings") return <SettingsPage />;
   if (pathname === "/about") return <AboutPage />;
   if (pathname === "/logs") return <LogsPage />;

@@ -1,38 +1,13 @@
-import type { AiUsageSummary, CockpitComment, MacroEventItem } from "../../../shared/types.js";
-import type {
-  AiSettingsService,
-  DeepDiveStartResult,
-  DeepDiveState,
-  ReassessResult,
-  ReassessStatus,
-} from "./aiTypes.js";
+import type { DeepDiveStartResult, DeepDiveState } from "./aiTypes.js";
 import type { LicenseService, LicenseSnapshot } from "./licenseTypes.js";
 
 export * from "./aiTypes.js";
 export * from "./licenseTypes.js";
 
-export interface SymbolFollowState {
-  symbol: string;
-  following: boolean;
-  startedAt: string | null;
-}
-
 export interface ProHooks {
-  filterMacroForSymbol(symbol: string, items: MacroEventItem[]): Promise<MacroEventItem[]>;
-  listFollowedSymbols(): string[];
-  setSymbolFollowing(symbol: string, following: boolean): SymbolFollowState;
-  symbolFollowState(symbol: string): SymbolFollowState;
   requestImmediateFollow(symbol: string): void | Promise<void>;
-  listComments(symbol: string, date: string): Promise<CockpitComment[]>;
-  listCommentDates(symbol: string): Promise<string[]>;
-  listAllCommentDates(limit?: number): Promise<string[]>;
-  reassessSymbol(symbol: string): Promise<ReassessResult>;
-  analystRunStatus(symbol: string): ReassessStatus;
   startDeepDiveForNote(note: string): DeepDiveStartResult;
   deepDiveStatus(): DeepDiveState;
-  usageSummary(date: string): Promise<AiUsageSummary>;
-  listUsageDates(limit: number): Promise<string[]>;
-  activeSettingsRevision(): number;
 }
 
 export interface ProHostContext {
@@ -59,7 +34,6 @@ export interface ProChannel {
 
 export interface ProModule {
   hooks: ProHooks;
-  aiSettings?: AiSettingsService;
   license?: LicenseService;
   subscription?: { url: string; priceLabel?: string };
   tsukiModules?: unknown[];
@@ -73,7 +47,7 @@ export interface ProModule {
   initRuntime?: (
     db: unknown,
     secretBox: unknown,
-    host?: { watchedMarkets?: unknown; production?: boolean },
+    host?: { watchedMarkets?: unknown; aiSettingsStore?: unknown; production?: boolean },
   ) => void | Promise<void>;
   migrations?: string;
 }

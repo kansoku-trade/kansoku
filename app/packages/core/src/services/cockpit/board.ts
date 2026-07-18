@@ -7,7 +7,8 @@ import type {
   OverviewBoard,
   OverviewRow,
 } from "../../../../../shared/types.js";
-import { getProHooks } from "../../pro/registry.js";
+import { listComments } from "../../ai/comments.js";
+import { listFollowedSymbols } from "../../ai/follows.js";
 import { getProvider } from "../marketdata/registry.js";
 import { classifySession, easternDate } from "../session.js";
 import { predictionStale } from "../staleness.js";
@@ -71,8 +72,7 @@ export async function buildOverviewBoard(chartUrl: (doc: ChartUrlDoc) => string)
   if (!symbols.length) {
     return { date: today, session, rows: [] };
   }
-  const hooks = getProHooks();
-  const followedSymbols = new Set(hooks.listFollowedSymbols());
+  const followedSymbols = new Set(listFollowedSymbols());
 
   const nowMs = Date.now();
   const [quotesRes, docs, commentsList] = await Promise.all([
@@ -80,7 +80,7 @@ export async function buildOverviewBoard(chartUrl: (doc: ChartUrlDoc) => string)
       .getQuotes(symbols)
       .catch(() => []),
     Promise.all([...bySymbol.values()].map((m) => loadChart(m.id))),
-    Promise.all(symbols.map((s) => hooks.listComments(s, today))),
+    Promise.all(symbols.map((s) => listComments(s, today))),
   ]);
   const quoteBySymbol = new Map(
     quotesRes.map((q) => {

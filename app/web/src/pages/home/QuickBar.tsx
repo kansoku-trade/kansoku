@@ -1,11 +1,9 @@
 import { useState } from "react";
-import { Library, Lock, MessageCircle, Settings } from "lucide-react";
-import { useCapabilities } from "../../capabilitiesStore";
+import { Library, MessageCircle, Settings } from "lucide-react";
 import { normalizeSymbol } from "../../lib/symbol";
 import { navigate } from "../../router";
-import { useFeatureGuard } from "../../featureGuard";
 import { listRecentSymbols } from "../../recentCharts";
-import { Chip, Input, Tooltip } from "../../ui";
+import { Chip, Input } from "../../ui";
 
 export function QuickBar({
   shortcuts,
@@ -15,8 +13,6 @@ export function QuickBar({
   showGlobalActions?: boolean;
 }) {
   const [input, setInput] = useState("");
-  const { pro } = useCapabilities();
-  const { locked, guard } = useFeatureGuard();
   const shortcutSet = new Set(shortcuts);
   const recent = listRecentSymbols().filter((s) => !shortcutSet.has(s.symbol));
 
@@ -55,44 +51,12 @@ export function QuickBar({
       )}
       {showGlobalActions ? (
         <span className="quickbar-actions">
-          {pro && (
-            locked ? (
-              <Tooltip content="订阅解锁 AI 功能">
-                <button
-                  type="button"
-                  className="icon-action icon-action--locked"
-                  aria-label="研究库（需订阅授权）"
-                  onClick={() => guard(() => navigate("/research?view=journal"))}
-                >
-                  <Library size={16} />
-                  <Lock className="icon-action-lock-badge" size={9} />
-                </button>
-              </Tooltip>
-            ) : (
-              <a className="icon-action" href="/research?view=journal" aria-label="研究库" title="研究库">
-                <Library size={16} />
-              </a>
-            )
-          )}
-          {pro && (
-            locked ? (
-              <Tooltip content="订阅解锁 AI 功能">
-                <button
-                  type="button"
-                  className="icon-action icon-action--locked"
-                  aria-label="AI 对话（需订阅授权）"
-                  onClick={() => guard(() => navigate("/chat"))}
-                >
-                  <MessageCircle size={16} />
-                  <Lock className="icon-action-lock-badge" size={9} />
-                </button>
-              </Tooltip>
-            ) : (
-              <a className="icon-action" href="/chat" aria-label="AI 对话" title="AI 对话">
-                <MessageCircle size={16} />
-              </a>
-            )
-          )}
+          <a className="icon-action" href="/research?view=journal" aria-label="研究库" title="研究库">
+            <Library size={16} />
+          </a>
+          <a className="icon-action" href="/chat" aria-label="AI 对话" title="AI 对话">
+            <MessageCircle size={16} />
+          </a>
           <a className="icon-action" href="/settings" aria-label="设置" title="设置">
             <Settings size={16} />
           </a>

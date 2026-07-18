@@ -672,6 +672,9 @@ a.zone-item:hover { text-decoration: none; background: var(--bg-hover); }
 }
 .follow-control > svg { color: var(--accent); }
 .follow-control--error, .follow-control--error > svg { color: var(--down); }
+.follow-control--locked { opacity: 0.65; }
+.follow-control--locked:hover { opacity: 1; }
+.follow-control-lock { color: var(--accent); }
 
 .ui-switch {
   position: relative; display: inline-flex; align-items: center;
@@ -797,6 +800,8 @@ a.zone-item:hover { text-decoration: none; background: var(--bg-hover); }
 .symbol-card-follow--active, .symbol-card-follow--active > svg { color: var(--accent); }
 .symbol-card-follow--error, .symbol-card-follow--error > svg { color: var(--down); }
 .symbol-card-follow--compact { margin-left: 0; }
+.symbol-card-follow--locked { opacity: 0.65; }
+.symbol-card-follow--locked:hover { opacity: 1; }
 .symbol-card-levels { display: flex; gap: 14px; margin-top: 8px; font-size: var(--fs-base); color: var(--text-secondary); font-variant-numeric: tabular-nums; }
 .symbol-card-comment {
   margin-top: 8px; font-size: var(--fs-base); color: var(--text-secondary); line-height: 1.4;
@@ -1012,7 +1017,6 @@ a.zone-item:hover { text-decoration: none; background: var(--bg-hover); }
 .chat-dock .input:focus-visible { border-color: transparent; box-shadow: none; }
 .chat-dock .chat-composer { padding: 6px 6px 6px 12px; }
 .chat-dock .chat-composer-action { border-radius: var(--radius-full); }
-.chat-dock--locked { padding: 8px 12px; }
 
 .locked-ai-notice {
   display: flex; align-items: center; gap: 8px; padding: 10px 12px;
@@ -1970,6 +1974,8 @@ a.zone-item:hover { text-decoration: none; background: var(--bg-hover); }
 .research-related-list small { color: var(--text-muted); font-size: var(--fs-xs); }
 
 .research-assistant { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 0; }
+.research-assistant--locked { justify-content: flex-start; }
+.research-assistant--locked .locked-ai-notice { margin: 24px 12px; }
 .research-assistant-header {
   display: flex; align-items: center; justify-content: space-between; flex: 0 0 auto;
   min-height: 38px; padding: 4px 8px;

@@ -1,12 +1,10 @@
 import { useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useQuery } from "../../apiHooks";
-import { useCapabilities } from "../../capabilitiesStore";
 import { client } from "../../client";
 import { navigate } from "../../router";
 import { Button, Card, ErrorBox, SectionTitle } from "../../ui";
 import { useTitle } from "../../useTitle";
-import { LockedAiNotice } from "../LockedAiNotice";
 import { DataRootSection } from "./DataRootSection";
 import { DiagnosticsSection } from "./DiagnosticsSection";
 import { LicenseSection } from "./LicenseSection";
@@ -105,53 +103,6 @@ function SettingsWorkspace({
   );
 }
 
-function SettingsWorkspaceNoAi() {
-  return (
-    <div className="settings-workspace">
-      <div className="settings-main-column">
-        <Card className="settings-provider-card">此构建不含 AI 功能</Card>
-      </div>
-      <div className="settings-side-column">
-        <TimeDisplaySettingsCard />
-        <WatchedMarketsCard />
-        <Card className="settings-connections-card">
-          <div className="settings-card-heading">
-            <SectionTitle>连接</SectionTitle>
-          </div>
-          <LongbridgeSection />
-          <DataRootSection />
-          <DiagnosticsSection />
-        </Card>
-      </div>
-    </div>
-  );
-}
-
-function SettingsWorkspaceLocked() {
-  return (
-    <div className="settings-workspace">
-      <div className="settings-main-column">
-        <Card className="settings-provider-card settings-ai-locked">
-          <LockedAiNotice message="AI 模型、Provider 与用量设置需要有效授权才能使用" />
-        </Card>
-      </div>
-      <div className="settings-side-column">
-        <LicenseSection />
-        <TimeDisplaySettingsCard />
-        <WatchedMarketsCard />
-        <Card className="settings-connections-card">
-          <div className="settings-card-heading">
-            <SectionTitle>连接</SectionTitle>
-          </div>
-          <LongbridgeSection />
-          <DataRootSection />
-          <DiagnosticsSection />
-        </Card>
-      </div>
-    </div>
-  );
-}
-
 function SettingsBackLink() {
   return (
     <a
@@ -171,29 +122,27 @@ function SettingsBackLink() {
 
 export function SettingsPage() {
   useTitle("设置");
-  const { pro, licensed } = useCapabilities();
-  const aiUnlocked = pro && licensed;
   const { data: settings, error: settingsError, reload: reloadSettings } = useQuery<AiSettings>(
-    aiUnlocked ? "settings.getAi" : null,
+    "settings.getAi",
     () => client.settings.getAi(),
   );
   const { data: catalog, error: catalogError, reload: reloadCatalog } = useQuery<Catalog>(
-    aiUnlocked ? "settings.getCatalog" : null,
+    "settings.getCatalog",
     () => client.settings.getCatalog(),
   );
   const { data: usage, error: usageError, reload: reloadUsage } = useQuery<UsageToday>(
-    aiUnlocked ? "settings.getUsageToday" : null,
+    "settings.getUsageToday",
     () => client.settings.getUsageToday(),
   );
   const { data: lobehubAccount, reload: reloadLobeHubAccount } = useQuery<LobeHubAccount>(
-    aiUnlocked ? "lobehub.getAccount" : null,
+    "lobehub.getAccount",
     () => client.lobehub.getAccount(),
   );
   const {
     data: lobehubCredits,
     error: lobehubCreditsError,
     reload: reloadLobeHubCredits,
-  } = useQuery<LobeHubCredits>(aiUnlocked ? "lobehub.getCredits" : null, () => client.lobehub.getCredits());
+  } = useQuery<LobeHubCredits>("lobehub.getCredits", () => client.lobehub.getCredits());
 
   const reloadAll = () => {
     reloadSettings();
@@ -201,44 +150,6 @@ export function SettingsPage() {
     reloadLobeHubAccount();
     reloadLobeHubCredits();
   };
-
-  if (pro === null) {
-    return (
-      <div className="page settings-page">
-        <SettingsBackLink />
-        <h1>设置</h1>
-        <div className="note-block">加载中…</div>
-      </div>
-    );
-  }
-
-  if (!pro) {
-    return (
-      <div className="page settings-page">
-        <SettingsBackLink />
-        <h1>设置</h1>
-        <div className="settings-page-subtitle">显示与连接</div>
-        <SettingsWorkspaceNoAi />
-        <div className="settings-about-link">
-          <a href="/about">关于 Kansoku · 版本 {__APP_VERSION__}</a>
-        </div>
-      </div>
-    );
-  }
-
-  if (!licensed) {
-    return (
-      <div className="page settings-page">
-        <SettingsBackLink />
-        <h1>设置</h1>
-        <div className="settings-page-subtitle">显示、连接与订阅授权</div>
-        <SettingsWorkspaceLocked />
-        <div className="settings-about-link">
-          <a href="/about">关于 Kansoku · 版本 {__APP_VERSION__}</a>
-        </div>
-      </div>
-    );
-  }
 
   if (settingsError || catalogError) {
     return (

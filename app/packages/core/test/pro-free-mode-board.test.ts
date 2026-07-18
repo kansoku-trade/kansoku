@@ -14,6 +14,18 @@ const provider = vi.hoisted(() => ({
 
 vi.mock("../src/services/marketdata/registry.js", () => ({ getProvider: () => provider }));
 
+vi.mock("../src/ai/follows.js", () => ({
+  listFollowedSymbols: () => [],
+  symbolFollowState: (symbol: string) => ({ symbol, following: false, startedAt: null }),
+  setSymbolFollowing: (symbol: string) => ({ symbol, following: false, startedAt: null }),
+}));
+
+vi.mock("../src/ai/comments.js", () => ({
+  listComments: async () => [],
+  onComment: () => () => {},
+  onAnyComment: () => () => {},
+}));
+
 const { buildOverviewBoard } = await import("../src/services/cockpit/board.js");
 const { isProPresent } = await import("../src/pro/registry.js");
 const { easternDate } = await import("../src/services/session.js");
@@ -58,8 +70,17 @@ describe("pro free-mode fallback for board.ts and realtime channels (no builtin 
     expect(board.rows[0].alert_count).toBe(0);
   });
 
-  it("rejects a pro-only channel kind (e.g. comments) as unknown when no pro module is registered", () => {
-    expect(parseWsMessage({ op: "sub", key: "k1", kind: "comments", symbol: "FREE.US" })).toBeNull();
+  it("parses a core AI channel kind (comments) even with no pro module registered", () => {
+    expect(parseWsMessage({ op: "sub", key: "k1", kind: "comments", symbol: "FREE.US" })).toEqual({
+      op: "sub",
+      key: "k1",
+      kind: "comments",
+      symbol: "FREE.US",
+    });
+  });
+
+  it("rejects a pro-only channel kind (research-refresh) as unknown when no pro module is registered", () => {
+    expect(parseWsMessage({ op: "sub", key: "k1", kind: "research-refresh", path: "stocks/MU.md" })).toBeNull();
   });
 
   it("silently ignores a subscribe for a pro-only channel kind, no crash and no reply", async () => {
@@ -73,7 +94,7 @@ describe("pro free-mode fallback for board.ts and realtime channels (no builtin 
       onClose: () => {},
     };
     handleConnection(conn);
-    onMessage?.(JSON.stringify({ op: "sub", key: "k1", kind: "comments", symbol: "FREE.US" }));
+    onMessage?.(JSON.stringify({ op: "sub", key: "k1", kind: "research-refresh", path: "stocks/MU.md" }));
     await new Promise((resolve) => setTimeout(resolve, 10));
     expect(sent).toHaveLength(0);
   });
