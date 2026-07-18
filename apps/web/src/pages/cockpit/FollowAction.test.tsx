@@ -53,6 +53,21 @@ describe("FollowAction license gate", () => {
     expect(getLicenseModalStateForTests()).toEqual({ open: true, trigger: "guard" });
   });
 
+  it("allows turning off an already-on follow when pro but unlicensed", async () => {
+    capabilities = { pro: true, licensed: false };
+    followStatus.mockResolvedValue({ following: true });
+    stopFollow.mockResolvedValue({ following: false });
+    renderWithClient(<FollowAction symbol="MRVL.US" />);
+
+    const toggle = await screen.findByLabelText("持续跟进 AI 点评");
+    await waitFor(() => expect(toggle.getAttribute("data-disabled")).toBeNull());
+    fireEvent.click(toggle);
+
+    await waitFor(() => expect(stopFollow).toHaveBeenCalledWith({ sym: "MRVL.US" }));
+    expect(startFollow).not.toHaveBeenCalled();
+    expect(getLicenseModalStateForTests().open).toBe(false);
+  });
+
   it("toggles normally when licensed", async () => {
     capabilities = { pro: true, licensed: true };
     followStatus.mockResolvedValue({ following: false });

@@ -7,6 +7,7 @@ import { getDb, type Db } from "../db/index.js";
 import { chartMeta, outcomes } from "../db/schema.js";
 import { CHART_DATA_DIR } from "../env.js";
 import { setSymbolFollowing } from "../ai/follows.js";
+import { isProLicensed } from "../pro/requirePro.js";
 import { publishAnalysisCreated } from "../realtime/analyses.js";
 import { migrateLegacyDoc, type BuildResult } from "./build.js";
 
@@ -165,7 +166,9 @@ export async function createChart(result: BuildResult, db: Db = getDb()): Promis
     built: result.built,
   };
   await saveChart(doc, db);
-  if (doc.type === "intraday" && doc.symbol) setSymbolFollowing(doc.symbol, true);
+  if (doc.type === "intraday" && doc.symbol && (await isProLicensed())) {
+    setSymbolFollowing(doc.symbol, true);
+  }
   if (doc.symbol && SYMBOL_TYPES.has(doc.type)) publishAnalysisCreated({ symbol: doc.symbol, chartId: doc.id, type: doc.type });
   return doc;
 }

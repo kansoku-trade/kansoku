@@ -2,6 +2,7 @@ import { promises as fs } from "node:fs";
 import { join } from "node:path";
 import type { IntradayPrediction, RawBar, SymbolAnalysisRow } from "../../../../shared/types.js";
 import { getProHooks } from "../../pro/registry.js";
+import { requireProLicensed } from "../../pro/requirePro.js";
 import { chartUrl } from "../../chartUrl.js";
 import { analystRunStatus, reassessSymbol } from "../../ai/analyst.js";
 import { listCommentDates, listComments } from "../../ai/comments.js";
@@ -129,6 +130,7 @@ export const symbolsService: SymbolsApi = {
   },
 
   async startFollow(input) {
+    await requireProLicensed();
     const previous = symbolFollowState(input.sym);
     const state = setSymbolFollowing(input.sym, true);
     if (!previous.following) await getProHooks().requestImmediateFollow(state.symbol);

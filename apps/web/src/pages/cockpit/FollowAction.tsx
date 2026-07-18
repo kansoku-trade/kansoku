@@ -19,7 +19,9 @@ function FollowControl({ symbol, revision }: { symbol: string; revision?: string
       className={`follow-control${statusError ? " follow-control--error" : ""}${locked ? " follow-control--locked" : ""}`}
       title={
         locked
-          ? "AI 跟进需要有效授权，点击开关订阅解锁"
+          ? following
+            ? "授权已失效，AI 跟进已暂停；可关闭开关，重新开启需订阅"
+            : "AI 跟进需要有效授权，点击开关订阅解锁"
           : statusError ??
             (following
               ? "AI 评论员会在后台持续跟进；关闭此图表不会停止"
@@ -33,7 +35,13 @@ function FollowControl({ symbol, revision }: { symbol: string; revision?: string
         ariaLabel="持续跟进 AI 点评"
         checked={following ?? false}
         disabled={busy}
-        onCheckedChange={locked ? () => guard(() => {}) : (checked) => void change(checked)}
+        onCheckedChange={(checked) => {
+          if (locked && checked) {
+            guard(() => {});
+            return;
+          }
+          void change(checked);
+        }}
       />
     </span>
   );
