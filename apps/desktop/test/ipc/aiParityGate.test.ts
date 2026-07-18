@@ -52,23 +52,12 @@ describe("desktop AI IPC parity with pro absent", () => {
     expect(status).toEqual({ ok: true, data: { running: false } });
   });
 
-  it("still gates symbols.deepDive behind requirePro (404 when pro absent)", async () => {
-    const result = await new SymbolsIpc().deepDive({ sym: "MU" });
-    expect(result).toEqual({
-      ok: false,
-      error: "AI features are not available in this build",
-      status: 404,
-    });
-    expect(symbols.deepDive).not.toHaveBeenCalled();
-  });
-
-  it("still gates symbols.deepDiveStatus behind requirePro (404 when pro absent)", async () => {
-    const result = await new SymbolsIpc().deepDiveStatus({ sym: "MU" });
-    expect(result).toEqual({
-      ok: false,
-      error: "AI features are not available in this build",
-      status: 404,
-    });
-    expect(symbols.deepDiveStatus).not.toHaveBeenCalled();
+  it("serves symbols.deepDive and deepDiveStatus without a host-level pro gate", async () => {
+    symbols.deepDive.mockResolvedValue({ started: false, reason: "disabled" });
+    symbols.deepDiveStatus.mockResolvedValue({ running: false });
+    const deepDive = await new SymbolsIpc().deepDive({ sym: "MU" });
+    expect(deepDive).toEqual({ ok: true, data: { started: false, reason: "disabled" } });
+    const status = await new SymbolsIpc().deepDiveStatus({ sym: "MU" });
+    expect(status).toEqual({ ok: true, data: { running: false } });
   });
 });

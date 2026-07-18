@@ -2,12 +2,12 @@ import { promises as fs } from "node:fs";
 import { join } from "node:path";
 import type { IntradayPrediction, RawBar, SymbolAnalysisRow } from "../../../../shared/types.js";
 import { getProHooks } from "../../pro/registry.js";
-import { requireProLicensed } from "../../pro/requirePro.js";
+import { withFeatureGates } from "../../pro/withFeatureGates.js";
 import { chartUrl } from "../../chartUrl.js";
 import { analystRunStatus, reassessSymbol } from "../../ai/analyst.js";
 import { listCommentDates, listComments } from "../../ai/comments.js";
 import { setSymbolFollowing, symbolFollowState } from "../../ai/follows.js";
-import type { SymbolsApi } from "../../contract/symbols.js";
+import { symbolsRoutes, type SymbolsApi } from "../../contract/symbols.js";
 import { JOURNAL_DIR, STOCKS_DIR } from "../../env.js";
 import { ClientError } from "../../errors.js";
 import { normalizeQuote } from "../../realtime/quotes.js";
@@ -31,7 +31,7 @@ const JOURNAL_FILE_RE = /^(\d{4}-\d{2}-\d{2})-([\w-]+)\.md$/;
 const JOURNAL_NAME_RE = /^\d{4}-\d{2}-\d{2}-[\w-]+\.md$/;
 const BENCHMARK_SYMBOLS = ["SMH.US", "QQQ.US"];
 
-export const symbolsService: SymbolsApi = {
+export const symbolsService: SymbolsApi = withFeatureGates(symbolsRoutes, {
   async flow(input) {
     const sym = normalizeSymbol(input.sym);
     const provider = getProvider(marketOf(sym));
@@ -130,7 +130,6 @@ export const symbolsService: SymbolsApi = {
   },
 
   async startFollow(input) {
-    await requireProLicensed();
     const previous = symbolFollowState(input.sym);
     const state = setSymbolFollowing(input.sym, true);
     if (!previous.following) await getProHooks().requestImmediateFollow(state.symbol);
@@ -214,4 +213,4 @@ export const symbolsService: SymbolsApi = {
     }
     return { ...doc, url: chartUrl(doc), prediction_stale: predictionStale(doc, new Date()) };
   },
-};
+});

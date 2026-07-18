@@ -1,3 +1,5 @@
+import type { FeatureKey } from "../../../pro-api/src/features.js";
+
 export type HttpMethod = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
 
 export interface RouteMeta {
@@ -7,6 +9,7 @@ export interface RouteMeta {
   // "body": HTTP response body IS the return value directly, not wrapped in {ok,data}.
   // "statusBody": the return type is itself {status,body} — caller branches on the HTTP status.
   raw?: "body" | "statusBody";
+  feature?: FeatureKey;
 }
 
 export type RouteTable<Api> = { [K in keyof Api]: RouteMeta };
