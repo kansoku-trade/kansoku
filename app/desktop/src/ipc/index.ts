@@ -10,6 +10,7 @@ import { HealthIpc } from "./healthIpc.js";
 import { LobeHubIpc } from "./lobehubIpc.js";
 import { OverviewIpc } from "./overviewIpc.js";
 import { PositionsIpc } from "./positionsIpc.js";
+import { ResearchIpc } from "./researchIpc.js";
 import { SettingsIpc } from "./settingsIpc.js";
 import { SymbolsIpc } from "./symbolsIpc.js";
 
@@ -22,6 +23,7 @@ const nonAiIpcServiceClasses = [
   SettingsIpc,
   AssistantIpc,
   ChatIpc,
+  ResearchIpc,
   LobeHubIpc,
   CredentialsIpc,
   HealthIpc,

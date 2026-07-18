@@ -11,6 +11,7 @@ import { LegacyModule } from "./legacy/legacy.module.js";
 import { LobeHubModule } from "./lobehub/lobehub.module.js";
 import { OverviewModule } from "./overview/overview.module.js";
 import { PositionsModule } from "./positions/positions.module.js";
+import { ResearchModule } from "./research/research.module.js";
 import { SettingsModule } from "./settings/settings.module.js";
 import { SymbolsModule } from "./symbols/symbols.module.js";
 
@@ -27,6 +28,7 @@ const aiModules = (getPro()?.tsukiModules ?? []) as Constructor[];
     SettingsModule,
     AssistantModule,
     ChatModule,
+    ResearchModule,
     LobeHubModule,
     LegacyModule,
     CredentialsModule,
