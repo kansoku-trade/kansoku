@@ -1,7 +1,7 @@
 import { Controller, ContextParam, Delete, Get, Param, Post, Query } from "@tsuki-hono/common";
 import type { Context } from "hono";
-import { symbolsService } from "../../../../../packages/core/src/modules/symbols/symbols.service.js";
-import { ClientError } from "../../../../../packages/core/src/errors.js";
+import { symbolsService } from "@kansoku/core/modules/symbols/symbols.service";
+import { ClientError } from "@kansoku/core/errors";
 
 @Controller("symbols")
 export class SymbolsController {

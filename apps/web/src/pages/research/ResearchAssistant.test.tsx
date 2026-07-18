@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { ResearchDocument, ResearchDocumentMeta } from "../../../../../packages/core/src/contract";
+import type { ResearchDocument, ResearchDocumentMeta } from "@kansoku/core/contract/index";
 
 let capabilities: { features?: Record<string, string> } = { features: { "research-ai": "active" } };
 

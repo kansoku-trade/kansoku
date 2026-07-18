@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { FeatureKey } from "../../../packages/pro-api/src/features.js";
+import type { FeatureKey } from "@kansoku/pro-api/features";
 import { useFeature } from "./useFeature";
 
 export function FeatureGate({

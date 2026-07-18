@@ -1,4 +1,4 @@
-import type { RawBar } from "../../../shared/types.js";
+import type { RawBar } from "@kansoku/shared/types";
 import { sma } from "../../../core/src/services/indicators.js";
 import { num } from "./replay.js";
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { IntradayBuilt, QuoteCell } from "../../../../../packages/shared/types";
+import type { IntradayBuilt, QuoteCell } from "@kansoku/shared/types";
 import { resolveSidebarQuote } from "./IntradaySidebar";
 
 const sidebar = {

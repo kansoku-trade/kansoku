@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { OverviewBoard, PortfolioSummary } from "../../../../packages/shared/types";
+import type { OverviewBoard, PortfolioSummary } from "@kansoku/shared/types";
 import { useQuery } from "../apiHooks";
 import { client } from "../client";
 import { listRecentSymbols } from "../recentCharts";

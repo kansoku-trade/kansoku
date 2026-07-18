@@ -1,4 +1,4 @@
-import type { PortfolioSummary } from "../../../../../packages/shared/types";
+import type { PortfolioSummary } from "@kansoku/shared/types";
 import { fmt, signed, upDown } from "../../format";
 import { Card, Dot, ErrorBox } from "../../ui";
 

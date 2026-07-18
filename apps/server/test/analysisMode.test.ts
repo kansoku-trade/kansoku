@@ -3,7 +3,7 @@ import {
   applyAnalysisBroadcast,
   INITIAL_FEED_STATE,
   type AnalysisFeedState,
-} from "../../../packages/shared/analysisFeed.js";
+} from "@kansoku/shared/analysisFeed";
 
 const broadcast = (overrides: Partial<{ symbol: string; chartId: string; chartType: string }> = {}) => ({
   symbol: "MU.US",

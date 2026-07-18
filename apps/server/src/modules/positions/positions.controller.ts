@@ -1,5 +1,5 @@
 import { Controller, Get } from "@tsuki-hono/common";
-import { createPositionsService } from "../../../../../packages/core/src/modules/positions/positions.service.js";
+import { createPositionsService } from "@kansoku/core/modules/positions/positions.service";
 
 @Controller("positions")
 export class PositionsController {

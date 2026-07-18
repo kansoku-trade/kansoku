@@ -1,6 +1,6 @@
 import { useEffect } from "react";
-import type { ChartDoc } from "../../../packages/shared/types";
-import { chartTargetPath } from "../../../packages/shared/chartUrl";
+import type { ChartDoc } from "@kansoku/shared/types";
+import { chartTargetPath } from "@kansoku/shared/chartUrl";
 import { useQuery } from "./apiHooks";
 import { client } from "./client";
 import { symbolFromRoute } from "./lib/symbol";

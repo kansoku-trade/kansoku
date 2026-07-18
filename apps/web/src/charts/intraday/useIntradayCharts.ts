@@ -10,7 +10,7 @@ import {
   type LogicalRange,
   type Time,
 } from "lightweight-charts";
-import type { IntradayBuilt, IntradayPriceZone, SeriesMarker, TimeframeKey } from "../../../../../packages/shared/types";
+import type { IntradayBuilt, IntradayPriceZone, SeriesMarker, TimeframeKey } from "@kansoku/shared/types";
 import {
   addPriceLine,
   attachMarkers,

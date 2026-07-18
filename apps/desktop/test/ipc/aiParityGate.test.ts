@@ -14,14 +14,14 @@ const symbols = vi.hoisted(() => ({
   deepDiveStatus: vi.fn(),
 }));
 
-vi.mock("../../../../packages/core/src/modules/overview/overview.service.js", () => ({ overviewService: overview }));
-vi.mock("../../../../packages/core/src/modules/settings/settings.service.js", () => ({ settingsService: settings }));
-vi.mock("../../../../packages/core/src/modules/symbols/symbols.service.js", () => ({ symbolsService: symbols }));
+vi.mock("@kansoku/core/modules/overview/overview.service", () => ({ overviewService: overview }));
+vi.mock("@kansoku/core/modules/settings/settings.service", () => ({ settingsService: settings }));
+vi.mock("@kansoku/core/modules/symbols/symbols.service", () => ({ symbolsService: symbols }));
 
 const { OverviewIpc } = await import("../../src/ipc/overviewIpc.js");
 const { SettingsIpc } = await import("../../src/ipc/settingsIpc.js");
 const { SymbolsIpc } = await import("../../src/ipc/symbolsIpc.js");
-const { unregisterProModuleForTests } = await import("../../../../packages/core/src/pro/registry.js");
+const { unregisterProModuleForTests } = await import("@kansoku/core/pro/registry");
 
 beforeEach(() => {
   unregisterProModuleForTests();

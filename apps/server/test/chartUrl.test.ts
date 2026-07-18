@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { chartTargetPath, symbolAnalysisPath, symbolLivePath, type ChartUrlDoc } from "../../../packages/shared/chartUrl.js";
+import { chartTargetPath, symbolAnalysisPath, symbolLivePath, type ChartUrlDoc } from "@kansoku/shared/chartUrl";
 
 function doc(overrides: Partial<ChartUrlDoc>): ChartUrlDoc {
   return {

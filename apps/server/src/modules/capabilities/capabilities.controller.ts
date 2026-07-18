@@ -1,5 +1,5 @@
 import { Controller, Get } from "@tsuki-hono/common";
-import { capabilitiesService } from "../../../../../packages/core/src/modules/capabilities/capabilities.service.js";
+import { capabilitiesService } from "@kansoku/core/modules/capabilities/capabilities.service";
 
 @Controller("capabilities")
 export class CapabilitiesController {

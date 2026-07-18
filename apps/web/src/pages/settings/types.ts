@@ -1,4 +1,4 @@
-import type { Market } from "../../../../../packages/shared/time";
+import type { Market } from "@kansoku/shared/time";
 
 export type RoleMode = "custom" | "disabled" | "inherit";
 export type Role = "comment" | "analyst" | "deepDive" | "chat";

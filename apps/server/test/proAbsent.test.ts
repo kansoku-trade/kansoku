@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { loadPro } from "../../../packages/core/src/pro/loader.js";
-import { unregisterProModuleForTests } from "../../../packages/core/src/pro/registry.js";
+import { loadPro } from "@kansoku/core/pro/loader";
+import { unregisterProModuleForTests } from "@kansoku/core/pro/registry";
 import { tsukiRequest } from "./helpers.js";
 
 describe("pro-absent HTTP surface", () => {

@@ -11,5 +11,5 @@
     "forceConsistentCasingInFileNames": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"]
   },
-  "include": ["src", "vite.config.ts", "../../packages/shared/**/*.ts"]
+  "include": ["src", "vite.config.ts"]
 }

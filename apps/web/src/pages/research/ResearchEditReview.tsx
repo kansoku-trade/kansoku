@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Check, Undo2, X } from "lucide-react";
-import type { ResearchDocument, ResearchEditOperation, ResearchEditProposal } from "../../../../../packages/core/src/contract";
+import type { ResearchDocument, ResearchEditOperation, ResearchEditProposal } from "@kansoku/core/contract/index";
 import { errorMessage } from "../../api";
 import { client } from "../../client";
 import { Button, openModal, Spinner } from "../../ui";

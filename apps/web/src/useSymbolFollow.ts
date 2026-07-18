@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { SymbolFollowStatus } from "../../../packages/core/src/contract/symbols";
+import type { SymbolFollowStatus } from "@kansoku/core/contract/symbols";
 import { errorMessage } from "./api";
 import { useQuery } from "./apiHooks";
 import { client } from "./client";

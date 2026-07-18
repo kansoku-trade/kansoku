@@ -1,6 +1,6 @@
 import { IpcMethod, IpcService } from "electron-ipc-decorator";
-import type { LobeHubApi } from "../../../../packages/core/src/contract/index.js";
-import { lobehubService } from "../../../../packages/core/src/modules/lobehub/lobehub.service.js";
+import type { LobeHubApi } from "@kansoku/core/contract/index";
+import { lobehubService } from "@kansoku/core/modules/lobehub/lobehub.service";
 import { toEnvelope, type WrapEnvelope } from "./envelope.js";
 
 export class LobeHubIpc extends IpcService implements WrapEnvelope<LobeHubApi> {

@@ -1,4 +1,4 @@
-import type { CockpitComment } from "../../../../../packages/shared/types";
+import type { CockpitComment } from "@kansoku/shared/types";
 
 export type FeedRow =
   | { kind: "comment"; comment: CockpitComment }

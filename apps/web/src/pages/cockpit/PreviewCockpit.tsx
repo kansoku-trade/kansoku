@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ArrowLeft } from "lucide-react";
-import type { QuoteCell, SymbolAnalysisRow } from "../../../../../packages/shared/types";
+import type { QuoteCell, SymbolAnalysisRow } from "@kansoku/shared/types";
 import { IntradayDashboard, IntradayTimeframeSwitch } from "../../charts/intraday/IntradayDashboard";
 import { resolveIntradayTf } from "../../charts/intraday/useIntradayDoc";
 import { useIntradayPreview } from "../../charts/intraday/useIntradayPreview";

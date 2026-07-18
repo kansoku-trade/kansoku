@@ -1,7 +1,7 @@
 import { Controller, Delete, Get, Post } from "@tsuki-hono/common";
-import { lobehubService } from "../../../../../packages/core/src/modules/lobehub/lobehub.service.js";
+import { lobehubService } from "@kansoku/core/modules/lobehub/lobehub.service";
 
-export { setLobeHubDepsForTests } from "../../../../../packages/core/src/modules/lobehub/lobehub.deps.js";
+export { setLobeHubDepsForTests } from "@kansoku/core/modules/lobehub/lobehub.deps";
 
 @Controller("ai/providers/lobehub")
 export class LobeHubController {

@@ -1,7 +1,7 @@
 import { Controller, Get, Query } from "@tsuki-hono/common";
-import { overviewService } from "../../../../../packages/core/src/modules/overview/overview.service.js";
+import { overviewService } from "@kansoku/core/modules/overview/overview.service";
 
-export { resetOverviewCacheForTests } from "../../../../../packages/core/src/modules/overview/overview.service.js";
+export { resetOverviewCacheForTests } from "@kansoku/core/modules/overview/overview.service";
 
 @Controller("overview")
 export class OverviewController {

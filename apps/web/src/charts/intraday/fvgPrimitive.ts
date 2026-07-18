@@ -8,7 +8,7 @@ import type {
   SeriesAttachedParameter,
   Time,
 } from "lightweight-charts";
-import type { IntradayFvgZone } from "../../../../../packages/shared/types";
+import type { IntradayFvgZone } from "@kansoku/shared/types";
 import { theme } from "../../theme";
 
 type DrawTarget = Parameters<IPrimitivePaneRenderer["draw"]>[0];

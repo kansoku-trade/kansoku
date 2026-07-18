@@ -1,4 +1,4 @@
-import type { NewsItem } from "../../../../packages/shared/types";
+import type { NewsItem } from "@kansoku/shared/types";
 import { Badge, MarketTime, SectionTitle } from "../ui";
 
 export function NewsSection({ news }: { news: NewsItem[] }) {

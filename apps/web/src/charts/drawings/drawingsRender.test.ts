@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { ANNOTATION_PALETTE } from "../../../../../packages/shared/drawings";
-import type { Annotation } from "../../../../../packages/shared/types";
+import { ANNOTATION_PALETTE } from "@kansoku/shared/drawings";
+import type { Annotation } from "@kansoku/shared/types";
 import { AI_DEFAULT_COLOR, buildFrame, resolveAnnotationStyle } from "./drawingsRender";
 import type { DrawingsState } from "./drawingsPrimitive";
 

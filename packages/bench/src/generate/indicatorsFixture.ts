@@ -1,4 +1,4 @@
-import type { RawBar } from "../../../shared/types.js";
+import type { RawBar } from "@kansoku/shared/types";
 import { macd, sma } from "../../../core/src/services/indicators.js";
 
 export interface DayIndicators {

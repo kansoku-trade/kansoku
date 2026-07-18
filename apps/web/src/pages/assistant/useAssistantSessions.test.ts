@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { AssistantSessionMeta } from "../../../../../packages/core/src/contract";
+import type { AssistantSessionMeta } from "@kansoku/core/contract/index";
 import { mergeOptimisticSessions } from "./useAssistantSessions";
 
 const session = (id: string): AssistantSessionMeta => ({

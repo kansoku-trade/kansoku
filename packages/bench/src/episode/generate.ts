@@ -1,6 +1,6 @@
 import { promises as fs } from "node:fs";
 import { join } from "node:path";
-import type { RawBar } from "../../../shared/types.js";
+import type { RawBar } from "@kansoku/shared/types";
 import { buildDayIndicators, buildWeekIndicators } from "../generate/indicatorsFixture.js";
 import { buildQuestionId } from "../generate/id.js";
 import type { QuoteBar } from "../generate/assemble.js";

@@ -1,6 +1,6 @@
 import type { IChartApiBase, ISeriesApi, Logical, Time } from "lightweight-charts";
-import type { Annotation, AnnotationKind, AnnotationPoint } from "../../../../../packages/shared/types";
-import { ANNOTATION_PALETTE, fibLevels, measureStats, timeToLogical } from "../../../../../packages/shared/drawings";
+import type { Annotation, AnnotationKind, AnnotationPoint } from "@kansoku/shared/types";
+import { ANNOTATION_PALETTE, fibLevels, measureStats, timeToLogical } from "@kansoku/shared/drawings";
 import { theme } from "../../theme";
 import type { DrawingsState, HoverLabel, MeasureShape } from "./drawingsPrimitive";
 

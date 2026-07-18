@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import type { AiAgentFactory } from "../../../packages/core/src/ai/agentSession.js";
-import type { AssistantChatDeps } from "../../../packages/core/src/ai/assistantChat.js";
-import type { AiModel } from "../../../packages/core/src/ai/models.js";
-import { createDb, type Db } from "../../../packages/core/src/db/index.js";
-import { setAssistantChatDepsForTests } from "../../../packages/core/src/modules/assistant/assistantChat.service.js";
+import type { AiAgentFactory } from "@kansoku/core/ai/agentSession";
+import type { AssistantChatDeps } from "@kansoku/core/ai/assistantChat";
+import type { AiModel } from "@kansoku/core/ai/models";
+import { createDb, type Db } from "@kansoku/core/db/index";
+import { setAssistantChatDepsForTests } from "@kansoku/core/modules/assistant/assistantChat.service";
 import { tsukiRequest } from "./helpers.js";
 
 const fakeModel = { provider: "anthropic", id: "test-model" } as unknown as AiModel;

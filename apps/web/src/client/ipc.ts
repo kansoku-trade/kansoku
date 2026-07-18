@@ -1,6 +1,6 @@
 import { createIpcProxy } from "electron-ipc-decorator/client";
 import type { IpcRenderer } from "electron";
-import { allRoutes, type AppApi, type TransportEnvelope } from "../../../../packages/core/src/contract/index.js";
+import { allRoutes, type AppApi, type TransportEnvelope } from "@kansoku/core/contract/index";
 import { unwrapEnvelope } from "./envelope";
 
 type RawIpcServices = {

@@ -1,5 +1,5 @@
-import type { TransportEnvelope } from "../../../../packages/core/src/contract/index.js";
-import { ClientError } from "../../../../packages/core/src/errors.js";
+import type { TransportEnvelope } from "@kansoku/core/contract/index";
+import { ClientError } from "@kansoku/core/errors";
 
 export type WrapEnvelope<Api> = {
   [K in keyof Api]: Api[K] extends (...args: infer A) => infer R

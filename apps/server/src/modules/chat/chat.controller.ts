@@ -1,12 +1,12 @@
 import { Body, Controller, Get, Param, Post } from "@tsuki-hono/common";
-import { chatService } from "../../../../../packages/core/src/modules/chat/chat.service.js";
-import { ClientError } from "../../../../../packages/core/src/errors.js";
+import { chatService } from "@kansoku/core/modules/chat/chat.service";
+import { ClientError } from "@kansoku/core/errors";
 import { jsonResponse } from "../../httpResponse.js";
 
 export {
   setChatDepsForTests,
   setChatSuggestionDepsForTests,
-} from "../../../../../packages/core/src/modules/chat/chat.service.js";
+} from "@kansoku/core/modules/chat/chat.service";
 
 @Controller("charts")
 export class ChatController {

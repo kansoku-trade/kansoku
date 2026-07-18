@@ -31,7 +31,9 @@
     "reflect-metadata": "0.2.2",
     "tsyringe": "4.10.0",
     "ws": "^8.21.1",
-    "@kansoku/pro-api": "workspace:*"
+    "@kansoku/core": "workspace:*",
+    "@kansoku/pro-api": "workspace:*",
+    "@kansoku/shared": "workspace:*"
   },
   "license": "SEE LICENSE IN LICENSE"
 }

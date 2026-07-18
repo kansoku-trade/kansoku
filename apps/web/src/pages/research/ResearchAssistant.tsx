@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { ChevronRight, FileDiff, History, RefreshCw, Square } from "lucide-react";
-import type { ResearchDocument, ResearchDocumentMeta, ResearchEditProposal } from "../../../../../packages/core/src/contract";
+import type { ResearchDocument, ResearchDocumentMeta, ResearchEditProposal } from "@kansoku/core/contract/index";
 import { useQuery } from "../../apiHooks";
 import { client } from "../../client";
 import { MarketTime, openModal, Spinner } from "../../ui";

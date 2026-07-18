@@ -1,4 +1,4 @@
-import type { CockpitComment, IntradaySidebar, SymbolAnalysisRow } from "../../../../../packages/shared/types";
+import type { CockpitComment, IntradaySidebar, SymbolAnalysisRow } from "@kansoku/shared/types";
 import type { SidebarTab } from "../../charts/SidebarTabs";
 import { NewsTab } from "../../charts/intraday/tabs/NewsTab";
 import { Badge } from "../../ui";

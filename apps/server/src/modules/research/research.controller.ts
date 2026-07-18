@@ -1,7 +1,7 @@
 import { Controller, Get, Query } from "@tsuki-hono/common";
-import type { ResearchKind } from "../../../../../packages/core/src/contract/research.js";
-import { ClientError } from "../../../../../packages/core/src/errors.js";
-import { researchService } from "../../../../../packages/core/src/modules/research/research.service.js";
+import type { ResearchKind } from "@kansoku/core/contract/research";
+import { ClientError } from "@kansoku/core/errors";
+import { researchService } from "@kansoku/core/modules/research/research.service";
 
 function parseKind(value: string | undefined): ResearchKind | undefined {
   if (value === undefined || value === "") return undefined;

@@ -15,8 +15,8 @@ import {
   type UTCTimestamp,
   type WhitespaceData,
 } from "lightweight-charts";
-import { formatMarketDateTime, formatMarketTick } from "../../../../packages/shared/time";
-import type { Candle, ColoredPoint, LinePoint, SeriesMarker } from "../../../../packages/shared/types";
+import { formatMarketDateTime, formatMarketTick } from "@kansoku/shared/time";
+import type { Candle, ColoredPoint, LinePoint, SeriesMarker } from "@kansoku/shared/types";
 import { theme } from "../theme";
 
 export const asTime = (t: number) => t as UTCTimestamp;

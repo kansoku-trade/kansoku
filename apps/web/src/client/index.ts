@@ -1,4 +1,4 @@
-import { allRoutes, type AppApi } from "../../../../packages/core/src/contract/index.js";
+import { allRoutes, type AppApi } from "@kansoku/core/contract/index";
 import { createHttpClient } from "./http";
 import { createIpcClient } from "./ipc";
 

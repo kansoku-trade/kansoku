@@ -2,8 +2,8 @@ import { Controller, Get, Module } from "@tsuki-hono/common";
 import { createApplication } from "@tsuki-hono/core";
 import { afterAll, describe, expect, it, vi } from "vitest";
 import { AppExceptionFilter } from "../src/filters/app-exception.filter.js";
-import { ClientError } from "../../../packages/core/src/errors.js";
-import { CHART_DATA_DIR, PORT } from "../../../packages/core/src/env.js";
+import { ClientError } from "@kansoku/core/errors";
+import { CHART_DATA_DIR, PORT } from "@kansoku/core/env";
 import { tsukiRequest } from "./helpers.js";
 
 describe("tsuki bootstrap", () => {

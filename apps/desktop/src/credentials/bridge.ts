@@ -1,4 +1,4 @@
-import { credentialsService } from "../../../../packages/core/src/modules/credentials/credentials.service.js";
+import { credentialsService } from "@kansoku/core/modules/credentials/credentials.service";
 import { CREDENTIALS_CHANNELS } from "./channels.js";
 
 export interface CredentialsBridgeHandlers {

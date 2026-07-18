@@ -11,7 +11,7 @@ import {
   shouldShowLocalTime,
   type Market,
   type TimeInput,
-} from "../../../../packages/shared/time";
+} from "@kansoku/shared/time";
 import {
   type TimeDisplayPreference,
   useTimeDisplayPreference,

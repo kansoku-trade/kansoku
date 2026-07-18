@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import { ArrowRight } from "lucide-react";
-import { AUTO_SIGNAL_META, type DivergencePair, type IntradayPriceZone, type IntradayTargetContext, type Pattern123 } from "../../../../../../packages/shared/types";
+import { AUTO_SIGNAL_META, type DivergencePair, type IntradayPriceZone, type IntradayTargetContext, type Pattern123 } from "@kansoku/shared/types";
 import { fmt } from "../../../format";
 import { theme } from "../../../theme";
 import { Badge, MarketTime } from "../../../ui";

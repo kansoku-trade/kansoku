@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from "react";
-import type { LicenseSnapshot } from "../../../packages/core/src/contract/license.js";
-import type { FeatureKey, FeatureState } from "../../../packages/pro-api/src/features.js";
+import type { LicenseSnapshot } from "@kansoku/core/contract/license";
+import type { FeatureKey, FeatureState } from "@kansoku/pro-api/features";
 import { client } from "./client";
 import { clearLicenseRequired, useLicenseRequiredMode } from "./licenseRequiredMode";
 

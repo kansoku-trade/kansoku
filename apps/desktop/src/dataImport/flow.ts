@@ -1,5 +1,5 @@
 import { app, BrowserWindow, dialog } from "electron";
-import type { ChartIndexRefreshResult } from "../../../../packages/core/src/services/store.js";
+import type { ChartIndexRefreshResult } from "@kansoku/core/services/store";
 import { dataRoot } from "../boot/env.js";
 import { buildImportManifest, copyImportManifest, validateImportSource } from "./manifest.js";
 
@@ -62,7 +62,7 @@ async function runImportFromRepoFlowUnsafe(win: BrowserWindow | null): Promise<v
   let indexResult: ChartIndexRefreshResult | null = null;
   let indexError: string | null = null;
   try {
-    const { refreshChartIndex } = await import("../../../../packages/core/src/services/store.js");
+    const { refreshChartIndex } = await import("@kansoku/core/services/store");
     indexResult = await refreshChartIndex();
   } catch (error) {
     indexError = error instanceof Error ? error.message : String(error);

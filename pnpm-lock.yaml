@@ -20,9 +20,15 @@ importers:
 
   apps/desktop:
     dependencies:
+      '@kansoku/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       '@kansoku/pro-api':
         specifier: workspace:*
         version: link:../../packages/pro-api
+      '@kansoku/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       '@tsuki-hono/common':
         specifier: 0.0.5
         version: 0.0.5(hono@4.12.30)
@@ -148,9 +154,15 @@ importers:
       '@hono/node-server':
         specifier: 2.0.9
         version: 2.0.9(hono@4.12.30)
+      '@kansoku/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       '@kansoku/pro-api':
         specifier: workspace:*
         version: link:../../packages/pro-api
+      '@kansoku/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       '@tsuki-hono/common':
         specifier: 0.0.5
         version: 0.0.5(hono@4.12.30)
@@ -200,6 +212,15 @@ importers:
       '@base-ui/react':
         specifier: ^1.6.0
         version: 1.6.0(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      '@kansoku/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@kansoku/pro-api':
+        specifier: workspace:*
+        version: link:../../packages/pro-api
+      '@kansoku/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       '@tanstack/query-sync-storage-persister':
         specifier: ^5.101.2
         version: 5.101.2
@@ -282,6 +303,9 @@ importers:
       '@kansoku/core':
         specifier: workspace:*
         version: link:../core
+      '@kansoku/shared':
+        specifier: workspace:*
+        version: link:../shared
       typebox:
         specifier: 1.3.6
         version: 1.3.6

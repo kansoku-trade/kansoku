@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 import { Check, CircleX, Clock, NotebookText } from "lucide-react";
-import type { OutcomeStatus, SymbolAnalysisRow } from "../../../../../packages/shared/types";
-import { marketDate } from "../../../../../packages/shared/time";
+import type { OutcomeStatus, SymbolAnalysisRow } from "@kansoku/shared/types";
+import { marketDate } from "@kansoku/shared/time";
 import { fmt, signed } from "../../format";
 import { marketOfSymbol } from "../../lib/market";
 import { symbolUrl } from "./analysisMode";

@@ -1,6 +1,6 @@
 import { IpcMethod, IpcService } from "electron-ipc-decorator";
-import type { SettingsApi } from "../../../../packages/core/src/contract/index.js";
-import { settingsService } from "../../../../packages/core/src/modules/settings/settings.service.js";
+import type { SettingsApi } from "@kansoku/core/contract/index";
+import { settingsService } from "@kansoku/core/modules/settings/settings.service";
 import { toEnvelope, type WrapEnvelope } from "./envelope.js";
 
 export class SettingsIpc extends IpcService implements WrapEnvelope<SettingsApi> {

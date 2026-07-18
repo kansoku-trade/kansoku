@@ -1,6 +1,6 @@
 import { promises as fs } from "node:fs";
 import { Controller, Get } from "@tsuki-hono/common";
-import { LEGACY_CHARTS_DIR } from "../../../../../packages/core/src/env.js";
+import { LEGACY_CHARTS_DIR } from "@kansoku/core/env";
 
 @Controller("legacy")
 export class LegacyController {

@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import { TriangleAlert } from "lucide-react";
-import type { IntradayBuilt, TimeframeKey } from "../../../../../../packages/shared/types";
+import type { IntradayBuilt, TimeframeKey } from "@kansoku/shared/types";
 import { fmt, signed } from "../../../format";
 import { TF_LABELS } from "../IntradayDashboard";
 import { conclusionOutdated, ReassessCta, type ConclusionReassess } from "../ConclusionCard";

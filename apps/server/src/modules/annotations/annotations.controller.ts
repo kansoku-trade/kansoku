@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, Put } from "@tsuki-hono/common";
-import { annotationsService } from "../../../../../packages/core/src/modules/annotations/annotations.service.js";
-import { ClientError } from "../../../../../packages/core/src/errors.js";
+import { annotationsService } from "@kansoku/core/modules/annotations/annotations.service";
+import { ClientError } from "@kansoku/core/errors";
 
 @Controller("annotations")
 export class AnnotationsController {

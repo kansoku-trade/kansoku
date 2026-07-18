@@ -1,5 +1,5 @@
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import type { CohortPoint } from "../../../../../packages/shared/types";
+import type { CohortPoint } from "@kansoku/shared/types";
 import {
   AXIS_COLOR,
   AXIS_LINE_COLOR,

@@ -10,7 +10,7 @@ const ctx = vi.hoisted(() => {
   return { dir };
 });
 
-vi.mock("../../../packages/core/src/env.js", async (importOriginal) => ({ ...(await importOriginal<object>()), STOCKS_DIR: ctx.dir }));
+vi.mock("@kansoku/core/env", async (importOriginal) => ({ ...(await importOriginal<object>()), STOCKS_DIR: ctx.dir }));
 
 const { tsukiRequest } = await import("./helpers.js");
 

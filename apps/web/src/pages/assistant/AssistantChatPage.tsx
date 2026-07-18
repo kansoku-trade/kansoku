@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type { ResearchDocumentMeta } from "../../../../../packages/core/src/contract";
+import type { ResearchDocumentMeta } from "@kansoku/core/contract/index";
 import { errorMessage } from "../../api";
 import { useQuery } from "../../apiHooks";
 import { client } from "../../client";

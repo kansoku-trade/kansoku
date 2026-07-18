@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { BenchmarkSeries, CockpitPosition, RelativeVolume } from "../../../../../packages/shared/types";
+import type { BenchmarkSeries, CockpitPosition, RelativeVolume } from "@kansoku/shared/types";
 import { useWsChannel } from "../../useWsChannel";
 
 interface PositionPayload {

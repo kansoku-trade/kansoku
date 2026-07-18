@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { LobeHubCloudGateway, LobeHubDevicePollResult } from "../../../packages/core/src/ai/lobehub/types.js";
+import type { LobeHubCloudGateway, LobeHubDevicePollResult } from "@kansoku/core/ai/lobehub/types";
 import { setLobeHubDepsForTests } from "../src/modules/lobehub/lobehub.controller.js";
 import { tsukiRequest } from "./helpers.js";
 

@@ -1,8 +1,8 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { app, BrowserWindow } from "electron";
-import { CREDITS } from "../../../../packages/shared/credits.js";
-import { LICENSE_TEXT } from "../../../../packages/shared/licenseText.js";
+import { CREDITS } from "@kansoku/shared/credits";
+import { LICENSE_TEXT } from "@kansoku/shared/licenseText";
 import { APP_ICON_PNG, applyWindowSecurity } from "./mainWindow.js";
 
 const ABOUT_WIDTH = 340;

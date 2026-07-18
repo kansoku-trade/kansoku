@@ -2,13 +2,13 @@ import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Annotation } from "../../../packages/shared/types.js";
+import type { Annotation } from "@kansoku/shared/types";
 
 let annotationsDir: string;
 
-vi.mock("../../../packages/core/src/env.js", async () => {
-  const actual = await vi.importActual<typeof import("../../../packages/core/src/env.js")>(
-    "../../../packages/core/src/env.js",
+vi.mock("@kansoku/core/env", async () => {
+  const actual = await vi.importActual<typeof import("@kansoku/core/env")>(
+    "@kansoku/core/env",
   );
   return {
     ...actual,

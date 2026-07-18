@@ -1,4 +1,4 @@
-import type { CredentialProvider, LongbridgeAuth, LongbridgeCredentials } from "../../../../packages/core/src/services/credentials/types.js";
+import type { CredentialProvider, LongbridgeAuth, LongbridgeCredentials } from "@kansoku/core/services/credentials/types";
 import type { CredentialStore, SetCredentialsResult } from "./store.js";
 
 export interface DesktopCredentialProvider extends CredentialProvider {

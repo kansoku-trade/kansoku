@@ -3,28 +3,28 @@ import type { Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import WebSocket from "ws";
-import { CHART_DATA_DIR, PORT, WEB_DIST } from "../../../packages/core/src/env.js";
+import { CHART_DATA_DIR, PORT, WEB_DIST } from "@kansoku/core/env";
 
-vi.mock("../../../packages/core/src/ai/comments.js", () => ({
+vi.mock("@kansoku/core/ai/comments", () => ({
   onComment: vi.fn(() => () => {}),
   listComments: vi.fn(async () => []),
   appendComment: vi.fn(),
 }));
-vi.mock("../../../packages/core/src/ai/chat.js", () => ({
+vi.mock("@kansoku/core/ai/chat", () => ({
   onChatEvent: vi.fn(),
   chatTurnState: vi.fn(),
 }));
-vi.mock("../../../packages/core/src/realtime/analyses.js", () => ({ subscribeAnalyses: vi.fn(() => () => {}) }));
-vi.mock("../../../packages/core/src/realtime/benchmark.js", () => ({ subscribeBenchmark: vi.fn(() => () => {}) }));
-vi.mock("../../../packages/core/src/realtime/board.js", () => ({
+vi.mock("@kansoku/core/realtime/analyses", () => ({ subscribeAnalyses: vi.fn(() => () => {}) }));
+vi.mock("@kansoku/core/realtime/benchmark", () => ({ subscribeBenchmark: vi.fn(() => () => {}) }));
+vi.mock("@kansoku/core/realtime/board", () => ({
   subscribeBoard: vi.fn((push: (envelope: string) => void) => {
     push(JSON.stringify({ type: "board", value: 1 }));
     return () => {};
   }),
 }));
-vi.mock("../../../packages/core/src/realtime/charts.js", () => ({ subscribeChart: vi.fn(() => () => {}) }));
-vi.mock("../../../packages/core/src/realtime/position.js", () => ({ subscribePosition: vi.fn(() => () => {}) }));
-vi.mock("../../../packages/core/src/realtime/quotes.js", () => ({ subscribeQuotes: vi.fn(() => () => {}) }));
+vi.mock("@kansoku/core/realtime/charts", () => ({ subscribeChart: vi.fn(() => () => {}) }));
+vi.mock("@kansoku/core/realtime/position", () => ({ subscribePosition: vi.fn(() => () => {}) }));
+vi.mock("@kansoku/core/realtime/quotes", () => ({ subscribeQuotes: vi.fn(() => () => {}) }));
 
 const { startHost } = await import("../src/host.js");
 

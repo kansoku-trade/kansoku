@@ -23,8 +23,8 @@ export async function bootKernel() {
   const [{ initServerRuntime }, { attachRealtimeBridge }, { CHART_DATA_DIR }, { getPro }] = await Promise.all([
     import("../../../server/src/runtimeInit.js"),
     import("../realtime/bridge.js"),
-    import("../../../../packages/core/src/env.js"),
-    import("../../../../packages/core/src/pro/registry.js"),
+    import("@kansoku/core/env"),
+    import("@kansoku/core/pro/registry"),
   ]);
 
   // Dev keeps the pre-P3 plaintext keyfile so ELECTRON_DEV workflows are

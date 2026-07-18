@@ -12,7 +12,7 @@ export default defineConfig([
       __DESKTOP_DEV__: JSON.stringify(isDev),
     },
     deps: {
-      alwaysBundle: ["electron-window-state"],
+      alwaysBundle: ["electron-window-state", /^@kansoku\//],
       neverBundle: [
         "electron",
         "better-sqlite3",

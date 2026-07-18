@@ -1,4 +1,4 @@
-import type { RawBar } from "../../../shared/types.js";
+import type { RawBar } from "@kansoku/shared/types";
 import type { EpisodeActionRecord, EpisodeAnswer, EpisodeClosedTrade } from "../schema/episode.js";
 import type { Question } from "../schema/question.js";
 import type { EpisodeTradeReason, EpisodeTradeReasonCategory } from "../schema/tradeReason.js";

@@ -1,7 +1,7 @@
 import { ArrowRight, ChartCandlestick, LayoutDashboard, Library } from "lucide-react";
 import type { ReactNode } from "react";
 import { type Components, Streamdown } from "streamdown";
-import { parseAppDeepLink } from "../../../../../packages/shared/appDeepLink";
+import { parseAppDeepLink } from "@kansoku/shared/appDeepLink";
 import { navigate } from "../../router";
 import { openModal } from "../../ui";
 import { researchRoute } from "../research/researchModel";

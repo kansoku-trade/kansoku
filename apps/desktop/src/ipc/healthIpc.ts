@@ -1,6 +1,6 @@
 import { IpcMethod, IpcService } from "electron-ipc-decorator";
-import type { HealthApi } from "../../../../packages/core/src/contract/index.js";
-import { healthService } from "../../../../packages/core/src/modules/health/health.service.js";
+import type { HealthApi } from "@kansoku/core/contract/index";
+import { healthService } from "@kansoku/core/modules/health/health.service";
 import { toEnvelope, type WrapEnvelope } from "./envelope.js";
 
 export class HealthIpc extends IpcService implements WrapEnvelope<HealthApi> {

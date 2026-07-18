@@ -9,7 +9,7 @@ import type {
   SeriesAttachedParameter,
   Time,
 } from "lightweight-charts";
-import type { Annotation, AnnotationPoint } from "../../../../../packages/shared/types";
+import type { Annotation, AnnotationPoint } from "@kansoku/shared/types";
 import { paintFrame } from "./drawingsPaint";
 import { buildFrame, type AxisLabel, type DrawFrame } from "./drawingsRender";
 

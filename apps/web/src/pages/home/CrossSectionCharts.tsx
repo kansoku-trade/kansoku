@@ -1,5 +1,5 @@
-import type { ChartDoc, ChartMeta } from "../../../../../packages/shared/types";
-import { marketDate } from "../../../../../packages/shared/time";
+import type { ChartDoc, ChartMeta } from "@kansoku/shared/types";
+import { marketDate } from "@kansoku/shared/time";
 import { useQuery } from "../../apiHooks";
 import { SimpleChartView } from "../../charts/simple/SimpleChartView";
 import { client } from "../../client";

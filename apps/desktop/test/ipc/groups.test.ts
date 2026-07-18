@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { allRoutes } from "../../../../packages/core/src/contract/index.js";
+import { allRoutes } from "@kansoku/core/contract/index";
 import { IPC_GROUPS } from "../../src/ipc/groups.js";
 
 describe("IPC_GROUPS", () => {

@@ -1,4 +1,4 @@
-import type { PositionView } from "../../../../../../packages/shared/types";
+import type { PositionView } from "@kansoku/shared/types";
 import { fmt, signed, upDown } from "../../../format";
 import { SectionTitle } from "../../../ui";
 

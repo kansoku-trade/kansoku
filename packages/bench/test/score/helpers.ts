@@ -1,4 +1,4 @@
-import type { RawBar } from "../../../shared/types.js";
+import type { RawBar } from "@kansoku/shared/types";
 import { traceRefFor } from "../../src/baseline/results.js";
 import type { AnswerLine } from "../../src/schema/answerLine.js";
 import type { Question } from "../../src/schema/question.js";

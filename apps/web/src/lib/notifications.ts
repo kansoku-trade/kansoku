@@ -1,4 +1,4 @@
-import type { CommentLevel, Notice } from "../../../../packages/shared/types";
+import type { CommentLevel, Notice } from "@kansoku/shared/types";
 
 export type NotifyEnvelope =
   | { type: "comment"; live: boolean; symbol: string; level: CommentLevel; text: string }

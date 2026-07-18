@@ -9,7 +9,7 @@ const service = vi.hoisted(() => ({
   list: vi.fn(),
   get: vi.fn(),
 }));
-vi.mock("../../../../packages/core/src/modules/research/research.service.js", () => ({ researchService: service }));
+vi.mock("@kansoku/core/modules/research/research.service", () => ({ researchService: service }));
 
 const { ResearchIpc } = await import("../../src/ipc/researchIpc.js");
 

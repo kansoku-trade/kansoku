@@ -1,6 +1,6 @@
 import type { Server } from "node:http";
 import { WebSocketServer } from "ws";
-import { handleConnection } from "../../../../packages/core/src/realtime/channelProtocol.js";
+import { handleConnection } from "@kansoku/core/realtime/channelProtocol";
 import { wrapWebSocket } from "./wsConnection.js";
 
 export function attachWs(server: Server, path: string): WebSocketServer {

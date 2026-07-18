@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { ChartDoc, ChartMeta } from "../../../packages/shared/types.js";
+import type { ChartDoc, ChartMeta } from "@kansoku/shared/types";
 import { tsukiRequest } from "./helpers.js";
 
 const store = vi.hoisted(() => ({
@@ -22,8 +22,8 @@ const build = vi.hoisted(() => ({
   refreshBody: vi.fn((): Record<string, unknown> | null => null),
 }));
 
-vi.mock("../../../packages/core/src/services/store.js", () => store);
-vi.mock("../../../packages/core/src/services/build.js", () => build);
+vi.mock("@kansoku/core/services/store", () => store);
+vi.mock("@kansoku/core/services/build", () => build);
 
 function patchReq(id: string, payload: unknown): [string, RequestInit] {
   return [

@@ -1,4 +1,4 @@
-import type { FeatureKey, FeatureState } from "../../../packages/pro-api/src/features.js";
+import type { FeatureKey, FeatureState } from "@kansoku/pro-api/features";
 import { useCapabilities } from "./capabilitiesStore";
 import { openLicenseModal } from "./licenseModalStore";
 

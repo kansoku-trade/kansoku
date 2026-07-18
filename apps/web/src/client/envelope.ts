@@ -1,4 +1,4 @@
-import type { TransportEnvelope } from "../../../../packages/core/src/contract/index.js";
+import type { TransportEnvelope } from "@kansoku/core/contract/index";
 import { ApiError } from "../api";
 import { isLicenseRequiredErrorCode, markLicenseRequired } from "../licenseRequiredMode";
 import { isCredentialsErrorCode, markRestricted } from "../restrictedMode";

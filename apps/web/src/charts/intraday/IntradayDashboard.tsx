@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState, type ReactNode } from "react";
-import type { IntradayBuilt, QuoteCell, TimeframeKey } from "../../../../../packages/shared/types";
+import type { IntradayBuilt, QuoteCell, TimeframeKey } from "@kansoku/shared/types";
 import { fmt } from "../../format";
 import type { SidebarTab } from "../SidebarTabs";
 import { DrawingToolbar } from "../drawings/DrawingToolbar";

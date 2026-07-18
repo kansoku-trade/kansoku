@@ -1,6 +1,6 @@
 import { useDeferredValue, useEffect, useState } from "react";
 import { BookOpen, ChartCandlestick, FileText, Library, RefreshCw, Search } from "lucide-react";
-import type { ResearchDocument, ResearchDocumentMeta } from "../../../../../packages/core/src/contract";
+import type { ResearchDocument, ResearchDocumentMeta } from "@kansoku/core/contract/index";
 import { useQuery } from "../../apiHooks";
 import { client } from "../../client";
 import { navigate, useQueryParam } from "../../router";

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { CREDITS } from "../../../../../packages/shared/credits";
+import { CREDITS } from "@kansoku/shared/credits";
 import { AboutPage } from "./AboutPage";
 
 afterEach(cleanup);

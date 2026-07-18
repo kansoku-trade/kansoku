@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { ResearchRefreshTask } from "../../../../../packages/core/src/contract";
+import type { ResearchRefreshTask } from "@kansoku/core/contract/index";
 import { errorMessage } from "../../api";
 import { useQuery } from "../../apiHooks";
 import { client } from "../../client";

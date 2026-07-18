@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { Hono } from "hono";
-import { BASE_URL, LEGACY_CHARTS_DIR, WEB_DIST } from "../../../packages/core/src/env.js";
+import { BASE_URL, LEGACY_CHARTS_DIR, WEB_DIST } from "@kansoku/core/env";
 import { attachWs } from "./realtime/wsHost.js";
 
 export interface HostHandle {

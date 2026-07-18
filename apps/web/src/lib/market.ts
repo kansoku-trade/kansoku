@@ -1,4 +1,4 @@
-import type { Market } from "../../../../packages/shared/time";
+import type { Market } from "@kansoku/shared/time";
 
 const SUFFIX_MARKET: Record<string, Market> = {
   US: "US",

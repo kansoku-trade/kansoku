@@ -1,7 +1,7 @@
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { ChartDoc } from "../../../packages/shared/types.js";
-import type { AiModel } from "../../../packages/core/src/ai/models.js";
+import type { ChartDoc } from "@kansoku/shared/types";
+import type { AiModel } from "@kansoku/core/ai/models";
 import { tsukiRequest } from "./helpers.js";
 
 const ctx = vi.hoisted(() => {
@@ -11,16 +11,16 @@ const ctx = vi.hoisted(() => {
   return { dir };
 });
 
-vi.mock("../../../packages/core/src/env.js", async (importOriginal) => ({ ...(await importOriginal<object>()), CHART_DATA_DIR: ctx.dir }));
+vi.mock("@kansoku/core/env", async (importOriginal) => ({ ...(await importOriginal<object>()), CHART_DATA_DIR: ctx.dir }));
 
 const store = vi.hoisted(() => ({ loadChart: vi.fn(), listCharts: vi.fn() }));
-vi.mock("../../../packages/core/src/services/store.js", () => store);
+vi.mock("@kansoku/core/services/store", () => store);
 
 const { setChatDepsForTests, setChatSuggestionDepsForTests } = await import("../src/modules/chat/chat.controller.js");
-const { createSession, appendMessages } = await import("../../../packages/core/src/ai/chatStore.js");
-const { clearChatSuggestionCache } = await import("../../../packages/core/src/ai/chatSuggestions.js");
+const { createSession, appendMessages } = await import("@kansoku/core/ai/chatStore");
+const { clearChatSuggestionCache } = await import("@kansoku/core/ai/chatSuggestions");
 
-type ChatDeps = import("../../../packages/core/src/ai/chat.js").ChatDeps;
+type ChatDeps = import("@kansoku/core/ai/chat").ChatDeps;
 
 const fakeModel = { provider: "anthropic", id: "claude-haiku-4-5" } as unknown as AiModel;
 

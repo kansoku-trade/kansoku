@@ -1,11 +1,11 @@
-import { symbolAnalysisPath, symbolLivePath } from "../../../../../packages/shared/chartUrl";
+import { symbolAnalysisPath, symbolLivePath } from "@kansoku/shared/chartUrl";
 
 export {
   sameSymbol,
   applyAnalysisBroadcast,
   INITIAL_FEED_STATE,
   type AnalysisFeedState,
-} from "../../../../../packages/shared/analysisFeed";
+} from "@kansoku/shared/analysisFeed";
 
 export type AnalysisViewMode = "live" | "latest" | "pinned";
 

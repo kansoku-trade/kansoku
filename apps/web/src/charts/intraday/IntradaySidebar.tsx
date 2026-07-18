@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { TriangleAlert } from "lucide-react";
-import type { IntradayBuilt, QuoteCell, TimeframeKey } from "../../../../../packages/shared/types";
+import type { IntradayBuilt, QuoteCell, TimeframeKey } from "@kansoku/shared/types";
 import { fmt } from "../../format";
 import { marketOfSymbol } from "../../lib/market";
 import { MarketTime } from "../../ui";

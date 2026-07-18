@@ -7,7 +7,7 @@ import type {
   SeriesAttachedParameter,
   Time,
 } from "lightweight-charts";
-import type { OffSessionSegment } from "../../../../../packages/shared/types";
+import type { OffSessionSegment } from "@kansoku/shared/types";
 
 type DrawTarget = Parameters<IPrimitivePaneRenderer["draw"]>[0];
 

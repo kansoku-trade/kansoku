@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { parseAppDeepLink } from "../../../packages/shared/appDeepLink";
+import { parseAppDeepLink } from "@kansoku/shared/appDeepLink";
 
 const LOCATION_EVENT = "locationchange";
 

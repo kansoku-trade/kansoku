@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Notice } from "../../../../packages/shared/types";
+import type { Notice } from "@kansoku/shared/types";
 import { decideNotification, type NotifyEnvelope } from "./notifications";
 
 const alert: NotifyEnvelope = {

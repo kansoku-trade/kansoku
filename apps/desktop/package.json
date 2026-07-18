@@ -19,7 +19,9 @@
     "package": "tsdown && node scripts/stageSkills.mjs && node scripts/stagePro.mjs && pnpm rebuild-native && pnpm build:native && electron-builder --mac dmg zip --arm64"
   },
   "dependencies": {
+    "@kansoku/core": "workspace:*",
     "@kansoku/pro-api": "workspace:*",
+    "@kansoku/shared": "workspace:*",
     "@tsuki-hono/common": "0.0.5",
     "@tsuki-hono/core": "0.0.5",
     "better-sqlite3": "^12.11.1",

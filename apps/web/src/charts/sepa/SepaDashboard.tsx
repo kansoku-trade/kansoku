@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import type { SepaBuilt } from "../../../../../packages/shared/types";
+import type { SepaBuilt } from "@kansoku/shared/types";
 import { fmt } from "../../format";
 import { LayerPanel } from "../LayerPanel";
 import { SepaSidebar } from "./SepaSidebar";

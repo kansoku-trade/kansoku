@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from "@tsuki-hono/common";
-import { chartsService } from "../../../../../packages/core/src/modules/charts/charts.service.js";
-import { ClientError } from "../../../../../packages/core/src/errors.js";
+import { chartsService } from "@kansoku/core/modules/charts/charts.service";
+import { ClientError } from "@kansoku/core/errors";
 
 type QueryParams = Record<string, string | undefined>;
 

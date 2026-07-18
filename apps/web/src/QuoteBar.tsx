@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { QuoteCell, QuoteSnapshot } from "../../../packages/shared/types";
+import type { QuoteCell, QuoteSnapshot } from "@kansoku/shared/types";
 import { signed, upDown } from "./format";
 import { useWsChannel } from "./useWsChannel";
 import { Badge, DataAgeBadge, Dot } from "./ui";

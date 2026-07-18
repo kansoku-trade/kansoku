@@ -1,5 +1,5 @@
 import { Component, type ReactNode } from "react";
-import type { SimpleBuilt } from "../../../../../packages/shared/types";
+import type { SimpleBuilt } from "@kansoku/shared/types";
 import { CohortChart } from "./CohortChart";
 import { FlowChart } from "./FlowChart";
 

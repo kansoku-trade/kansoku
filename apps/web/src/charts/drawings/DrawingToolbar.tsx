@@ -1,7 +1,7 @@
 import { AlignJustify, Eraser, Minus, MousePointer2, Ruler, Spline, Square, Trash2, TrendingUp } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ANNOTATION_PALETTE } from "../../../../../packages/shared/drawings";
-import type { AnnotationStyle, AnnotationKind } from "../../../../../packages/shared/types";
+import { ANNOTATION_PALETTE } from "@kansoku/shared/drawings";
+import type { AnnotationStyle, AnnotationKind } from "@kansoku/shared/types";
 import type { DrawingsApi } from "./useDrawings";
 import type { DrawingTool } from "./drawingsMachine";
 

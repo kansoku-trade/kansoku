@@ -1,4 +1,4 @@
-import type { AppApi, RouteGroup, TransportEnvelope } from "../../../../packages/core/src/contract/index.js";
+import type { AppApi, RouteGroup, TransportEnvelope } from "@kansoku/core/contract/index";
 import { ApiError } from "../api";
 import { unwrapEnvelope } from "./envelope";
 

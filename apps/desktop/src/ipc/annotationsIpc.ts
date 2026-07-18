@@ -1,6 +1,6 @@
 import { IpcMethod, IpcService } from "electron-ipc-decorator";
-import type { AnnotationsApi } from "../../../../packages/core/src/contract/index.js";
-import { annotationsService } from "../../../../packages/core/src/modules/annotations/annotations.service.js";
+import type { AnnotationsApi } from "@kansoku/core/contract/index";
+import { annotationsService } from "@kansoku/core/modules/annotations/annotations.service";
 import { toEnvelope, type WrapEnvelope } from "./envelope.js";
 
 export class AnnotationsIpc extends IpcService implements WrapEnvelope<AnnotationsApi> {

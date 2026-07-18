@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import { TriangleAlert } from "lucide-react";
-import { marketDate } from "../../../../../packages/shared/time";
-import type { IntradayContext } from "../../../../../packages/shared/types";
+import { marketDate } from "@kansoku/shared/time";
+import type { IntradayContext } from "@kansoku/shared/types";
 import { DIRECTION_COLOR, DIRECTION_LABEL } from "./directionLabels";
 import { theme } from "../../theme";
 import { Button, MarketTime, Spinner, TimeAgo } from "../../ui";

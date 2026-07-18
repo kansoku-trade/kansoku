@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatDateTimeInZone, localMarketTimeLabel, shouldShowLocalTime } from "../../../packages/shared/time.js";
+import { formatDateTimeInZone, localMarketTimeLabel, shouldShowLocalTime } from "@kansoku/shared/time";
 
 describe("local market time labels", () => {
   const marketOpen = "2026-07-02T13:30:00Z";

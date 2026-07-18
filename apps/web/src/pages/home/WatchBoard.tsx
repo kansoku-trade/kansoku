@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Check, Lock, RadioTower } from "lucide-react";
-import type { OverviewBoard, OverviewRow } from "../../../../../packages/shared/types";
+import type { OverviewBoard, OverviewRow } from "@kansoku/shared/types";
 import { errorMessage } from "../../api";
 import { client } from "../../client";
 import { fmt, signed } from "../../format";

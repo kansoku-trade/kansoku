@@ -1,5 +1,5 @@
 import { Module, type Constructor } from "@tsuki-hono/common";
-import { getPro } from "../../../../packages/core/src/pro/registry.js";
+import { getPro } from "@kansoku/core/pro/registry";
 import { AnnotationsModule } from "./annotations/annotations.module.js";
 import { AssistantModule } from "./assistant/assistant.module.js";
 import { CapabilitiesModule } from "./capabilities/capabilities.module.js";

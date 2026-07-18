@@ -1,6 +1,6 @@
 import { IpcMethod, IpcService } from "electron-ipc-decorator";
-import type { AssistantApi } from "../../../../packages/core/src/contract/index.js";
-import { assistantChatService } from "../../../../packages/core/src/modules/assistant/assistantChat.service.js";
+import type { AssistantApi } from "@kansoku/core/contract/index";
+import { assistantChatService } from "@kansoku/core/modules/assistant/assistantChat.service";
 import { toEnvelope, type WrapEnvelope } from "./envelope.js";
 
 export class AssistantIpc extends IpcService implements WrapEnvelope<AssistantApi> {

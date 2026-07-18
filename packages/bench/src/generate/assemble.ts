@@ -1,4 +1,4 @@
-import type { RawBar } from "../../../shared/types.js";
+import type { RawBar } from "@kansoku/shared/types";
 import type { Question } from "../schema/question.js";
 import { buildDayIndicators, buildWeekIndicators } from "./indicatorsFixture.js";
 import { buildQuestionId } from "./id.js";

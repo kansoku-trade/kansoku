@@ -1,5 +1,5 @@
-import type { SymbolAnalysisRow } from "../../../../../packages/shared/types";
-import { formatMarketMonthDayTime } from "../../../../../packages/shared/time";
+import type { SymbolAnalysisRow } from "@kansoku/shared/types";
+import { formatMarketMonthDayTime } from "@kansoku/shared/time";
 import { DIRECTION_LABEL } from "../../charts/intraday/directionLabels";
 import { Select } from "../../ui";
 import type { AnalysisViewMode } from "./analysisMode";

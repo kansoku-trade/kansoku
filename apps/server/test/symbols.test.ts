@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { ChartDoc, ChartMeta } from "../../../packages/shared/types.js";
+import type { ChartDoc, ChartMeta } from "@kansoku/shared/types";
 
 const provider = vi.hoisted(() => ({
   name: "mock",
@@ -18,9 +18,9 @@ const store = vi.hoisted(() => ({
   loadChart: vi.fn(),
 }));
 
-vi.mock("../../../packages/core/src/services/marketdata/registry.js", () => ({ getProvider: () => provider }));
-vi.mock("../../../packages/core/src/services/store.js", () => store);
-vi.mock("../../../packages/core/src/services/cockpit/outcomeCache.js", () => ({
+vi.mock("@kansoku/core/services/marketdata/registry", () => ({ getProvider: () => provider }));
+vi.mock("@kansoku/core/services/store", () => store);
+vi.mock("@kansoku/core/services/cockpit/outcomeCache", () => ({
   getResolvedOutcomes: async () => new Map(),
   saveResolvedOutcome: async () => {},
 }));
@@ -90,7 +90,7 @@ describe("GET /:sym/flow", () => {
   });
 
   it("propagates the flow fetch rejection status", async () => {
-    const { ClientError: CE } = await import("../../../packages/core/src/errors.js");
+    const { ClientError: CE } = await import("@kansoku/core/errors");
     provider.getFlow.mockRejectedValue(new CE("longbridge down", undefined, 502));
     provider.getCapitalDistribution.mockResolvedValue(null);
     const res = await tsukiRequest("/api/symbols/MU.US/flow");

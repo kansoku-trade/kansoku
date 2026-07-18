@@ -1,6 +1,6 @@
 import { ArrowLeft } from "lucide-react";
-import { CREDITS } from "../../../../../packages/shared/credits";
-import { LICENSE_TEXT } from "../../../../../packages/shared/licenseText";
+import { CREDITS } from "@kansoku/shared/credits";
+import { LICENSE_TEXT } from "@kansoku/shared/licenseText";
 import { navigate } from "../../router";
 import { Card, SectionTitle } from "../../ui";
 import { useTitle } from "../../useTitle";

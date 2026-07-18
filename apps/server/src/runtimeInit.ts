@@ -1,18 +1,18 @@
 import type { SecretBox } from "@kansoku/pro-api";
-import { initAiSettings } from "../../../packages/core/src/ai/initAiSettings.js";
-import { getActiveSettingsStore } from "../../../packages/core/src/ai/settingsStore.js";
-import { getDb } from "../../../packages/core/src/db/index.js";
-import { loadPro } from "../../../packages/core/src/pro/loader.js";
-import { getPro } from "../../../packages/core/src/pro/registry.js";
+import { initAiSettings } from "@kansoku/core/ai/initAiSettings";
+import { getActiveSettingsStore } from "@kansoku/core/ai/settingsStore";
+import { getDb } from "@kansoku/core/db/index";
+import { loadPro } from "@kansoku/core/pro/loader";
+import { getPro } from "@kansoku/core/pro/registry";
 import {
   createWatchedMarketsStore,
   getActiveWatchedMarketsStore,
   setActiveWatchedMarketsStore,
-} from "../../../packages/core/src/services/watchedMarketsStore.js";
+} from "@kansoku/core/services/watchedMarketsStore";
 import { loadDotenv } from "./dotenv.js";
-import { initAuthUrlOpener, type AuthUrlOpener } from "../../../packages/core/src/services/credentials/authUrlOpener.js";
-import { initCredentialProvider } from "../../../packages/core/src/services/credentials/registry.js";
-import type { CredentialProvider } from "../../../packages/core/src/services/credentials/types.js";
+import { initAuthUrlOpener, type AuthUrlOpener } from "@kansoku/core/services/credentials/authUrlOpener";
+import { initCredentialProvider } from "@kansoku/core/services/credentials/registry";
+import type { CredentialProvider } from "@kansoku/core/services/credentials/types";
 
 export interface ServerRuntimeOptions {
   credentialProvider?: CredentialProvider;

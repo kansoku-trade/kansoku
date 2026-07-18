@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Post } from "@tsuki-hono/common";
-import { ClientError } from "../../../../../packages/core/src/errors.js";
-import { assistantChatService } from "../../../../../packages/core/src/modules/assistant/assistantChat.service.js";
+import { ClientError } from "@kansoku/core/errors";
+import { assistantChatService } from "@kansoku/core/modules/assistant/assistantChat.service";
 import { jsonResponse } from "../../httpResponse.js";
 
 function requireText(body: { text?: unknown } | null): string {

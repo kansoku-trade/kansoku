@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { AnnotationPoint } from "../../../packages/shared/types.js";
+import type { AnnotationPoint } from "@kansoku/shared/types";
 import {
   FIB_RATIOS,
   distToSegment,
@@ -9,7 +9,7 @@ import {
   measureStats,
   timeToLogical,
   type ShapeGeom,
-} from "../../../packages/shared/drawings.js";
+} from "@kansoku/shared/drawings";
 
 describe("fibLevels", () => {
   it("ascending p1/p2: ratio 0 at p1, 1 at p2", () => {

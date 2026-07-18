@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseAppDeepLink } from "../../../packages/shared/appDeepLink.js";
+import { parseAppDeepLink } from "@kansoku/shared/appDeepLink";
 
 describe("parseAppDeepLink", () => {
   it("converts a durable localhost analysis link into an environment-independent route", () => {

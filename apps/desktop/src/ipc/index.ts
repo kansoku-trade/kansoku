@@ -1,5 +1,5 @@
 import type { IpcServiceConstructor } from "electron-ipc-decorator";
-import { getPro } from "../../../../packages/core/src/pro/registry.js";
+import { getPro } from "@kansoku/core/pro/registry";
 import { AnnotationsIpc } from "./annotationsIpc.js";
 import { AssistantIpc } from "./assistantIpc.js";
 import { CapabilitiesIpc } from "./capabilitiesIpc.js";

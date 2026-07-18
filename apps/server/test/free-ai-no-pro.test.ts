@@ -2,15 +2,15 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { initAiSettings, setAiRuntimeForTests } from "../../../packages/core/src/ai/initAiSettings.js";
-import { setModelsRuntimeForTests } from "../../../packages/core/src/ai/modelsRuntime.js";
-import { setActiveSettingsStore } from "../../../packages/core/src/ai/settingsStore.js";
+import { initAiSettings, setAiRuntimeForTests } from "@kansoku/core/ai/initAiSettings";
+import { setModelsRuntimeForTests } from "@kansoku/core/ai/modelsRuntime";
+import { setActiveSettingsStore } from "@kansoku/core/ai/settingsStore";
 import {
   createWatchedMarketsStore,
   setActiveWatchedMarketsStore,
-} from "../../../packages/core/src/services/watchedMarketsStore.js";
-import { createDb } from "../../../packages/core/src/db/index.js";
-import { unregisterProModuleForTests } from "../../../packages/core/src/pro/registry.js";
+} from "@kansoku/core/services/watchedMarketsStore";
+import { createDb } from "@kansoku/core/db/index";
+import { unregisterProModuleForTests } from "@kansoku/core/pro/registry";
 import { tsukiRequest } from "./helpers.js";
 
 describe("free AI settings without pro", () => {

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { AssistantSessionMeta } from "../../../../../packages/core/src/contract";
+import type { AssistantSessionMeta } from "@kansoku/core/contract/index";
 import { useQuery } from "../../apiHooks";
 import { client } from "../../client";
 

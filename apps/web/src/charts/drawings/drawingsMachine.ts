@@ -1,5 +1,5 @@
-import type { Annotation, AnnotationKind, AnnotationPoint } from "../../../../../packages/shared/types";
-import { hitTest, type HitRegion, type Pt } from "../../../../../packages/shared/drawings";
+import type { Annotation, AnnotationKind, AnnotationPoint } from "@kansoku/shared/types";
+import { hitTest, type HitRegion, type Pt } from "@kansoku/shared/drawings";
 
 export type DrawingTool = "cursor" | "measure" | "trendline" | "hline" | "rect" | "fib" | "polyline";
 

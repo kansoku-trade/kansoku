@@ -1,6 +1,6 @@
 import { ipcMain } from "electron";
-import { handleConnection } from "../../../../packages/core/src/realtime/channelProtocol.js";
-import type { Connection } from "../../../../packages/core/src/realtime/connection.js";
+import { handleConnection } from "@kansoku/core/realtime/channelProtocol";
+import type { Connection } from "@kansoku/core/realtime/connection";
 
 const HANDSHAKE_CHANNEL = "desktop-rt-connect";
 

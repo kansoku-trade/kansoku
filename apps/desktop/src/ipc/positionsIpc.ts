@@ -1,6 +1,6 @@
 import { IpcMethod, IpcService } from "electron-ipc-decorator";
-import type { PositionsApi } from "../../../../packages/core/src/contract/index.js";
-import { createPositionsService } from "../../../../packages/core/src/modules/positions/positions.service.js";
+import type { PositionsApi } from "@kansoku/core/contract/index";
+import { createPositionsService } from "@kansoku/core/modules/positions/positions.service";
 import { toEnvelope, type WrapEnvelope } from "./envelope.js";
 
 const positionsService = createPositionsService();

@@ -1,4 +1,4 @@
-import type { RawBar } from "../../../shared/types.js";
+import type { RawBar } from "@kansoku/shared/types";
 import type { QuoteBar } from "../generate/assemble.js";
 import { buildDayIndicators, buildWeekIndicators } from "../generate/indicatorsFixture.js";
 import type { EpisodeKlinePeriod } from "../generate/source.js";

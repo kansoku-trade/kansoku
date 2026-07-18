@@ -7,7 +7,7 @@ import {
   LineSeries,
   type ISeriesApi,
 } from "lightweight-charts";
-import type { SepaChartData } from "../../../../../packages/shared/types";
+import type { SepaChartData } from "@kansoku/shared/types";
 import type { LayerGroup } from "../LayerPanel";
 import {
   asTime,

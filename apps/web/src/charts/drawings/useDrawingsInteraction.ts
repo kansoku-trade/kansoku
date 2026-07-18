@@ -1,7 +1,7 @@
 import { useEffect, type MutableRefObject } from "react";
 import type { Logical } from "lightweight-charts";
-import type { Annotation, AnnotationPoint, AnnotationStyle } from "../../../../../packages/shared/types";
-import { logicalToTime, timeToLogical, type HitRegion, type Pt } from "../../../../../packages/shared/drawings";
+import type { Annotation, AnnotationPoint, AnnotationStyle } from "@kansoku/shared/types";
+import { logicalToTime, timeToLogical, type HitRegion, type Pt } from "@kansoku/shared/drawings";
 import { DrawingsPrimitive, type HoverLabel, type MeasureShape } from "./drawingsPrimitive";
 import { dragPoints, isMultiPointTool, makeAnnotation, MAX_POLYLINE_POINTS, pickHit, pixelDistance, type DrawingTool } from "./drawingsMachine";
 import type { DrawingsHandle } from "./useDrawings";

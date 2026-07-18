@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import type { ReassessStatus } from "../../../packages/core/src/contract/symbols.js";
+import type { ReassessStatus } from "@kansoku/core/contract/symbols";
 import { subscribeChannel } from "./wsHub.js";
 
 export type RunningReassessStatus = Extract<ReassessStatus, { running: true }>;

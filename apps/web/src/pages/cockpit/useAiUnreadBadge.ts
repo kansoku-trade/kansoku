@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type { CockpitComment } from "../../../../../packages/shared/types";
+import type { CockpitComment } from "@kansoku/shared/types";
 
 export interface AiUnreadBadgeState {
   unread: number;

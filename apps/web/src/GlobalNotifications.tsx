@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import type { CockpitComment, Notice } from "../../../packages/shared/types";
+import type { CockpitComment, Notice } from "@kansoku/shared/types";
 import { maybeNotify, requestNotificationPermissionOnce } from "./lib/notifications";
 import { symbolFromRoute } from "./lib/symbol";
 import { useRoute } from "./router";

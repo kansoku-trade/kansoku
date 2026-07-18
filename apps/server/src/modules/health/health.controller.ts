@@ -1,5 +1,5 @@
 import { Controller, Get } from "@tsuki-hono/common";
-import { healthService } from "../../../../../packages/core/src/modules/health/health.service.js";
+import { healthService } from "@kansoku/core/modules/health/health.service";
 
 @Controller("health")
 export class HealthController {

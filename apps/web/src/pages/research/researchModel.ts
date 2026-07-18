@@ -1,4 +1,4 @@
-import type { ResearchDocumentMeta, ResearchDocumentType, ResearchKind } from "../../../../../packages/core/src/contract";
+import type { ResearchDocumentMeta, ResearchDocumentType, ResearchKind } from "@kansoku/core/contract/index";
 
 export type ResearchView = "stocks" | "journal";
 

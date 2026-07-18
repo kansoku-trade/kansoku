@@ -5,9 +5,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 let legacyDir: string;
 
-vi.mock("../../../packages/core/src/env.js", async () => {
-  const actual = await vi.importActual<typeof import("../../../packages/core/src/env.js")>(
-    "../../../packages/core/src/env.js",
+vi.mock("@kansoku/core/env", async () => {
+  const actual = await vi.importActual<typeof import("@kansoku/core/env")>(
+    "@kansoku/core/env",
   );
   return {
     ...actual,

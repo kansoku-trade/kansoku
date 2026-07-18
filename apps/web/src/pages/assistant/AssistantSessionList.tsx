@@ -1,5 +1,5 @@
 import { Plus, X } from "lucide-react";
-import type { AssistantSessionMeta } from "../../../../../packages/core/src/contract";
+import type { AssistantSessionMeta } from "@kansoku/core/contract/index";
 import { Button, Empty, Spinner, TimeAgo, openModal } from "../../ui";
 
 interface AssistantSessionListProps {

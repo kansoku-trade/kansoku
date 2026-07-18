@@ -5,7 +5,7 @@ const service = vi.hoisted(() => ({
   get: vi.fn(),
 }));
 
-vi.mock("../../../packages/core/src/modules/research/research.service.js", () => ({ researchService: service }));
+vi.mock("@kansoku/core/modules/research/research.service", () => ({ researchService: service }));
 
 const { tsukiRequest } = await import("./helpers.js");
 

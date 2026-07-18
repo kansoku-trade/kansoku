@@ -1,5 +1,5 @@
 import { Bar, BarChart, CartesianGrid, Cell, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import type { CapitalBucket, CockpitFlow } from "../../../../../packages/shared/types";
+import type { CapitalBucket, CockpitFlow } from "@kansoku/shared/types";
 import { hhmm, tooltipContentStyle, tooltipItemStyle, tooltipLabelStyle, tooltipTime } from "../../charts/simple/theme";
 import { client } from "../../client";
 import { signed, upDown } from "../../format";

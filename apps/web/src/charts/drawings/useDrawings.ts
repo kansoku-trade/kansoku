@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { IChartApi, ISeriesApi } from "lightweight-charts";
-import type { Annotation, AnnotationKind, AnnotationPoint, AnnotationStyle } from "../../../../../packages/shared/types";
-import type { HitRegion, Pt } from "../../../../../packages/shared/drawings";
+import type { Annotation, AnnotationKind, AnnotationPoint, AnnotationStyle } from "@kansoku/shared/types";
+import type { HitRegion, Pt } from "@kansoku/shared/drawings";
 import { client } from "../../client";
 import { subscribeChannel } from "../../wsHub";
 import { DrawingsPrimitive, type HoverLabel, type MeasureShape, type PreviewShape } from "./drawingsPrimitive";

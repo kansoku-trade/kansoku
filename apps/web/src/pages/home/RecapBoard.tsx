@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
-import type { OverviewRecap, PredictionStats, StatsBucket } from "../../../../../packages/shared/types";
+import type { OverviewRecap, PredictionStats, StatsBucket } from "@kansoku/shared/types";
 import { signed } from "../../format";
-import { symbolAnalysisPath } from "../../../../../packages/shared/chartUrl";
-import { marketDate } from "../../../../../packages/shared/time";
+import { symbolAnalysisPath } from "@kansoku/shared/chartUrl";
+import { marketDate } from "@kansoku/shared/time";
 import { client } from "../../client";
 import { Badge, Card, ErrorBox, MarketTime, Num, SectionTitle } from "../../ui";
 import { useIntervalFetch } from "../cockpit/useIntervalFetch";

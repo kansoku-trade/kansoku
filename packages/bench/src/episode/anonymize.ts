@@ -1,5 +1,5 @@
 import { Value } from "typebox/value";
-import type { RawBar } from "../../../shared/types.js";
+import type { RawBar } from "@kansoku/shared/types";
 import { buildDayIndicators, buildWeekIndicators } from "../generate/indicatorsFixture.js";
 import { questionSchema, type Question } from "../schema/question.js";
 import { marketCloseIso, marketDate, weekKey } from "./generate.js";

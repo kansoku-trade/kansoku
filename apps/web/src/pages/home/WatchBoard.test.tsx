@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { OverviewBoard, OverviewRow } from "../../../../../packages/shared/types";
+import type { OverviewBoard, OverviewRow } from "@kansoku/shared/types";
 
 let capabilities: { features?: Record<string, string> } = { features: { "symbol-follow": "active" } };
 const startFollow = vi.fn();

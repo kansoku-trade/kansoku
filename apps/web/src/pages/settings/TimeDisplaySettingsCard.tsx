@@ -1,4 +1,4 @@
-import { localTimeZone } from "../../../../../packages/shared/time";
+import { localTimeZone } from "@kansoku/shared/time";
 import {
   setTimeDisplayPreference,
   type TimeDisplayPreference,

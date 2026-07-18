@@ -1,5 +1,5 @@
 import { BadRequestException, type ArgumentsHost, type ExceptionFilter } from "@tsuki-hono/common";
-import { ClientError } from "../../../../packages/core/src/errors.js";
+import { ClientError } from "@kansoku/core/errors";
 import { jsonResponse } from "../httpResponse.js";
 
 function isMalformedJsonBody(exception: unknown): boolean {

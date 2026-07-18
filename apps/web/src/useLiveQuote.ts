@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { QuoteCell, QuoteSnapshot } from "../../../packages/shared/types";
+import type { QuoteCell, QuoteSnapshot } from "@kansoku/shared/types";
 import { normalizeSymbol } from "./lib/symbol";
 import { useWsChannel } from "./useWsChannel";
 

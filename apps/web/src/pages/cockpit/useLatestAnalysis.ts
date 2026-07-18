@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { ChartDoc, SymbolAnalysisRow } from "../../../../../packages/shared/types";
+import type { ChartDoc, SymbolAnalysisRow } from "@kansoku/shared/types";
 import { useQuery } from "../../apiHooks";
 import { client } from "../../client";
 import { navigate, useQueryParam } from "../../router";

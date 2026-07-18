@@ -1,5 +1,5 @@
 import { Area, AreaChart, Brush, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import type { FlowRow } from "../../../../../packages/shared/types";
+import type { FlowRow } from "@kansoku/shared/types";
 import {
   AXIS_COLOR,
   AXIS_LINE_COLOR,

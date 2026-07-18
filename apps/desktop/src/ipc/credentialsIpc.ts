@@ -1,6 +1,6 @@
 import { IpcMethod, IpcService } from "electron-ipc-decorator";
-import type { CredentialsApi } from "../../../../packages/core/src/contract/index.js";
-import { credentialsService } from "../../../../packages/core/src/modules/credentials/credentials.service.js";
+import type { CredentialsApi } from "@kansoku/core/contract/index";
+import { credentialsService } from "@kansoku/core/modules/credentials/credentials.service";
 import { toEnvelope, type WrapEnvelope } from "./envelope.js";
 
 export class CredentialsIpc extends IpcService implements WrapEnvelope<CredentialsApi> {

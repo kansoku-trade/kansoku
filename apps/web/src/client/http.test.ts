@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { allRoutes } from "../../../../packages/core/src/contract/index.js";
+import { allRoutes } from "@kansoku/core/contract/index";
 import { ApiError } from "../api";
 import { getRestrictedModeSnapshotForTests, resetRestrictedModeForTests } from "../restrictedMode";
 import { createHttpClient } from "./http";

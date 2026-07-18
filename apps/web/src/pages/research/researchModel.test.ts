@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ResearchDocumentMeta } from "../../../../../packages/core/src/contract";
+import type { ResearchDocumentMeta } from "@kansoku/core/contract/index";
 import {
   parseResearchView,
   relatedDocuments,

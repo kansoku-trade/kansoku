@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 const status = vi.fn().mockResolvedValue({ configured: true, method: "cli", state: "ready", cliPath: "/bin/longbridge", lastError: null });
 
-vi.mock("../../../../packages/core/src/modules/credentials/credentials.service.js", () => ({
+vi.mock("@kansoku/core/modules/credentials/credentials.service", () => ({
   credentialsService: { status },
 }));
 

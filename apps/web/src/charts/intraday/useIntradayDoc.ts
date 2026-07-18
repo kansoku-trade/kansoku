@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { ChartBuilt, ChartDoc, IntradayBuilt, TimeframeKey } from "../../../../../packages/shared/types";
+import type { ChartBuilt, ChartDoc, IntradayBuilt, TimeframeKey } from "@kansoku/shared/types";
 import { useQuery } from "../../apiHooks";
 import { client } from "../../client";
 import { useWsChannel } from "../../useWsChannel";

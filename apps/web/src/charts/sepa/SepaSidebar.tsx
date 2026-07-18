@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import { Check, TriangleAlert, X } from "lucide-react";
-import type { SepaBuilt } from "../../../../../packages/shared/types";
+import type { SepaBuilt } from "@kansoku/shared/types";
 import { fmt, signed, upDown } from "../../format";
 import { NewsSection } from "../NewsSection";
 import { Badge, Num, SectionTitle } from "../../ui";

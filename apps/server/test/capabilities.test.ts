@@ -1,7 +1,7 @@
 import type { ProModule } from "@kansoku/pro-api";
 import { afterEach, describe, expect, it } from "vitest";
-import { loadPro } from "../../../packages/core/src/pro/loader.js";
-import { freeHooks, registerProModule, unregisterProModuleForTests } from "../../../packages/core/src/pro/registry.js";
+import { loadPro } from "@kansoku/core/pro/loader";
+import { freeHooks, registerProModule, unregisterProModuleForTests } from "@kansoku/core/pro/registry";
 import { tsukiRequest } from "./helpers.js";
 
 function fakeProModule(overrides: Partial<ProModule> = {}): ProModule {

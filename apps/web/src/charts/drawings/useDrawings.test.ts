@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Annotation } from "../../../../../packages/shared/types";
+import type { Annotation } from "@kansoku/shared/types";
 import { decodeAnnotationsFrame, mergePendingRemote } from "./useDrawings";
 
 const sample: Annotation[] = [

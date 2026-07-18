@@ -1,4 +1,4 @@
-import type { ContextNewsItem, ContextNewsSource, ContextNewsTag, IntradayContext, NewsItem } from "../../../../../../packages/shared/types";
+import type { ContextNewsItem, ContextNewsSource, ContextNewsTag, IntradayContext, NewsItem } from "@kansoku/shared/types";
 import { Badge, MarketTime, SectionTitle } from "../../../ui";
 import { NewsSection } from "../../NewsSection";
 

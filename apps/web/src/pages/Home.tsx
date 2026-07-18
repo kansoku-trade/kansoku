@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import type { ChartMeta, OverviewBoard, PortfolioSummary } from "../../../../packages/shared/types";
-import { marketDate } from "../../../../packages/shared/time";
+import type { ChartMeta, OverviewBoard, PortfolioSummary } from "@kansoku/shared/types";
+import { marketDate } from "@kansoku/shared/time";
 import { useQuery } from "../apiHooks";
 import { client } from "../client";
 import { navigate, useQueryParam } from "../router";

@@ -1,5 +1,5 @@
 import { CartesianGrid, Legend, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import type { BenchmarkSeries, CockpitPosition, RelativeVolume } from "../../../../../packages/shared/types";
+import type { BenchmarkSeries, CockpitPosition, RelativeVolume } from "@kansoku/shared/types";
 import { hhmm, tooltipContentStyle, tooltipLabelStyle, tooltipTime } from "../../charts/simple/theme";
 import { fmt, signed, upDown } from "../../format";
 import { seriesPalette, theme } from "../../theme";

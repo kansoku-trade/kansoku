@@ -1,4 +1,4 @@
-import type { SymbolAnalysisRow } from "../../../../../packages/shared/types";
+import type { SymbolAnalysisRow } from "@kansoku/shared/types";
 import { HistoryTab } from "./HistoryTab";
 import { JournalSection, type JournalEntryMeta } from "./JournalSection";
 import { NoteTab } from "./NoteTab";
