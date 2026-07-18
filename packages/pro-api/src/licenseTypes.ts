@@ -8,10 +8,3 @@ export interface LicenseSnapshot {
 }
 
 export type LicenseActivateResult = { activated: true } | { activated: false; error: string };
-
-export interface LicenseService {
-  status(): Promise<LicenseSnapshot>;
-  activate(key: string): Promise<LicenseActivateResult>;
-  deactivate(): Promise<{ deactivated: true }>;
-  isLicensed(): Promise<boolean>;
-}

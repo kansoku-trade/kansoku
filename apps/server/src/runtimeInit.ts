@@ -1,7 +1,11 @@
 import type { SecretBox } from "@kansoku/pro-api";
-import { initAiSettings } from "../../../packages/core/src/ai/initAiSettings.js";
+import { getAiRuntime, initAiSettings } from "../../../packages/core/src/ai/initAiSettings.js";
 import { getActiveSettingsStore } from "../../../packages/core/src/ai/settingsStore.js";
 import { getDb } from "../../../packages/core/src/db/index.js";
+import { setProductionHost } from "../../../packages/core/src/license/dodoEnv.js";
+import { isLicensed } from "../../../packages/core/src/license/licenseGate.js";
+import { startLicenseRevalidation } from "../../../packages/core/src/license/licenseSchedule.js";
+import { initLicenseManager } from "../../../packages/core/src/license/licenseState.js";
 import { loadPro } from "../../../packages/core/src/pro/loader.js";
 import { getPro } from "../../../packages/core/src/pro/registry.js";
 import {
@@ -44,10 +48,19 @@ export async function initServerRuntime(opts?: ServerRuntimeOptions): Promise<vo
   setActiveWatchedMarketsStore(createWatchedMarketsStore(getDb()));
   initAiSettings(getDb(), { secretBox: opts?.secretBox });
 
+  const productionHost = opts?.productionHost ?? process.env.NODE_ENV === "production";
+  setProductionHost(productionHost);
+  // The host passes no secretBox in dev (plaintext keyfile mode) —
+  // initAiSettings resolves the fallback box, so the license store must take
+  // the resolved one, not the raw (possibly undefined) opts value.
+  initLicenseManager(getDb(), getAiRuntime().secretBox);
+  startLicenseRevalidation();
+
   await loadPro(opts?.proAppDir, opts?.proEntry);
   await getPro()?.initRuntime?.(getDb(), opts?.secretBox, {
     watchedMarkets: getActiveWatchedMarketsStore(),
     aiSettingsStore: getActiveSettingsStore(),
-    production: opts?.productionHost ?? process.env.NODE_ENV === "production",
+    production: productionHost,
+    licenseGate: { isLicensed },
   });
 }

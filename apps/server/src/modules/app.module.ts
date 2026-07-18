@@ -8,6 +8,7 @@ import { ChatModule } from "./chat/chat.module.js";
 import { CredentialsModule } from "./credentials/credentials.module.js";
 import { HealthModule } from "./health/health.module.js";
 import { LegacyModule } from "./legacy/legacy.module.js";
+import { LicenseModule } from "./license/license.module.js";
 import { LobeHubModule } from "./lobehub/lobehub.module.js";
 import { OverviewModule } from "./overview/overview.module.js";
 import { PositionsModule } from "./positions/positions.module.js";
@@ -33,6 +34,7 @@ const aiModules = (getPro()?.tsukiModules ?? []) as Constructor[];
     LegacyModule,
     CredentialsModule,
     CapabilitiesModule,
+    LicenseModule,
     ...aiModules,
   ],
 })

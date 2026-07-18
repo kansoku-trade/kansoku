@@ -1,4 +1,4 @@
-import { getPro } from "../../pro/registry.js";
+import { resolveSubscription } from "../../license/subscription.js";
 import { getActiveWatchedMarketsStore, validateWatchedMarkets } from "../../services/watchedMarketsStore.js";
 import type { SettingsApi } from "../../contract/settings.js";
 import { aiSettingsService } from "./aiSettings.service.js";
@@ -43,10 +43,10 @@ export const settingsService: SettingsApi = {
   },
 
   async getSubscribeUrl() {
-    const subscription = getPro()?.subscription;
+    const subscription = resolveSubscription();
     return {
-      subscribeUrl: subscription?.url ?? null,
-      priceLabel: subscription?.priceLabel ?? null,
+      subscribeUrl: subscription.url,
+      priceLabel: subscription.priceLabel,
     };
   },
 };

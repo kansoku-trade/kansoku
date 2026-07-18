@@ -1,0 +1,289 @@
+import { describe, expect, it, vi } from "vitest";
+import type { DodoClient, DodoResult } from "../src/license/dodoClient.js";
+import { createLicenseManager, type LicenseManagerDeps } from "../src/license/licenseState.js";
+import type { LicenseRecord, LicenseStore } from "../src/license/licenseStore.js";
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function fakeStore(initial: LicenseRecord | null = null): LicenseStore {
+  let record = initial;
+  return {
+    read: () => record,
+    write: (next) => {
+      record = next;
+    },
+    clear: () => {
+      record = null;
+    },
+  };
+}
+
+function fakeClient(overrides: Partial<DodoClient> = {}): DodoClient {
+  return {
+    activate: vi.fn(async () => ({ ok: true, data: { id: "lki_default" } }) as DodoResult<{ id: string }>),
+    validate: vi.fn(async () => ({ ok: true, data: { valid: true } }) as DodoResult<{ valid: boolean }>),
+    deactivate: vi.fn(async () => ({ ok: true, data: undefined }) as DodoResult<void>),
+    ...overrides,
+  };
+}
+
+function harness(overrides: Partial<LicenseManagerDeps> = {}) {
+  const store = overrides.store ?? fakeStore();
+  const client = overrides.client ?? fakeClient();
+  const now = overrides.now ?? (() => Date.parse("2026-07-15T00:00:00.000Z"));
+  const hostname = overrides.hostname ?? (() => "test-host");
+  const manager = createLicenseManager({ store, client, now, hostname });
+  return { manager, store, client, now };
+}
+
+describe("licenseState snapshot", () => {
+  it("reports unlicensed when no record is stored", () => {
+    const { manager } = harness();
+    expect(manager.getLicenseSnapshot()).toEqual({ state: "unlicensed" });
+  });
+
+  it("reports licensed with masked key and device name after a successful outcome", () => {
+    const { manager } = harness({
+      store: fakeStore({
+        key: "lic_1234567890",
+        instanceId: "lki_abc",
+        deviceName: "my-mac",
+        lastValidatedAt: "2026-07-14T00:00:00.000Z",
+        lastOutcome: "success",
+      }),
+    });
+    expect(manager.getLicenseSnapshot()).toEqual({
+      state: "licensed",
+      deviceName: "my-mac",
+      maskedKey: "••••7890",
+    });
+  });
+
+  it("reports invalid immediately on a valid:false outcome regardless of elapsed time", () => {
+    const { manager } = harness({
+      store: fakeStore({
+        key: "lic_1234567890",
+        instanceId: "lki_abc",
+        deviceName: "my-mac",
+        lastValidatedAt: "2000-01-01T00:00:00.000Z",
+        lastOutcome: "invalid",
+      }),
+    });
+    expect(manager.getLicenseSnapshot()).toEqual({
+      state: "invalid",
+      deviceName: "my-mac",
+      maskedKey: "••••7890",
+    });
+  });
+
+  it("fully masks keys of 8 chars or fewer instead of leaking them via slice(-4)", () => {
+    const { manager } = harness({
+      store: fakeStore({
+        key: "sh0rtky",
+        instanceId: "lki_abc",
+        deviceName: "my-mac",
+        lastValidatedAt: "2026-07-14T00:00:00.000Z",
+        lastOutcome: "success",
+      }),
+    });
+    expect(manager.getLicenseSnapshot()).toEqual({
+      state: "licensed",
+      deviceName: "my-mac",
+      maskedKey: "••••••••",
+    });
+  });
+
+  it("reports grace on a network_fail outcome within the 14-day window, with graceUntil", () => {
+    const lastValidatedAt = "2026-07-01T00:00:00.000Z";
+    const { manager } = harness({
+      store: fakeStore({
+        key: "lic_1234567890",
+        instanceId: "lki_abc",
+        deviceName: "my-mac",
+        lastValidatedAt,
+        lastOutcome: "network_fail",
+      }),
+      now: () => Date.parse(lastValidatedAt) + 13 * DAY_MS,
+    });
+    expect(manager.getLicenseSnapshot()).toEqual({
+      state: "grace",
+      graceUntil: new Date(Date.parse(lastValidatedAt) + 14 * DAY_MS).toISOString(),
+      deviceName: "my-mac",
+      maskedKey: "••••7890",
+    });
+  });
+
+  it("14-day boundary: exactly 14 days is still grace, one ms past is expired", () => {
+    const lastValidatedAt = "2026-07-01T00:00:00.000Z";
+    const graceDeadline = Date.parse(lastValidatedAt) + 14 * DAY_MS;
+    const record: LicenseRecord = {
+      key: "lic_1234567890",
+      instanceId: "lki_abc",
+      deviceName: "my-mac",
+      lastValidatedAt,
+      lastOutcome: "network_fail",
+    };
+
+    const atBoundary = harness({ store: fakeStore(record), now: () => graceDeadline });
+    expect(atBoundary.manager.getLicenseSnapshot().state).toBe("grace");
+
+    const pastBoundary = harness({ store: fakeStore(record), now: () => graceDeadline + 1 });
+    expect(pastBoundary.manager.getLicenseSnapshot().state).toBe("expired");
+  });
+});
+
+describe("licenseState activate", () => {
+  it("calls Dodo activate with deviceName=hostname() and writes the store on success", async () => {
+    const client = fakeClient({
+      activate: vi.fn(async () => ({ ok: true, data: { id: "lki_new" } }) as DodoResult<{ id: string }>),
+    });
+    const { manager, store, now } = harness({ client, hostname: () => "my-mac" });
+
+    const result = await manager.activate("lic_1234567890");
+
+    expect(result).toEqual({ activated: true });
+    expect(client.activate).toHaveBeenCalledWith({ licenseKey: "lic_1234567890", name: "my-mac" });
+    expect(store.read()).toEqual({
+      key: "lic_1234567890",
+      instanceId: "lki_new",
+      deviceName: "my-mac",
+      lastValidatedAt: new Date(now()).toISOString(),
+      lastOutcome: "success",
+    });
+    expect(manager.getLicenseSnapshot().state).toBe("licensed");
+  });
+
+  it("does not write the store when Dodo activate fails", async () => {
+    const client = fakeClient({ activate: vi.fn(async () => ({ ok: false, error: "network down" }) as DodoResult<{ id: string }>) });
+    const { manager, store } = harness({ client });
+
+    const result = await manager.activate("lic_1234567890");
+
+    expect(result).toEqual({ activated: false, error: "network down" });
+    expect(store.read()).toBeNull();
+  });
+});
+
+describe("licenseState deactivate", () => {
+  const record: LicenseRecord = {
+    key: "lic_1234567890",
+    instanceId: "lki_abc",
+    deviceName: "my-mac",
+    lastValidatedAt: "2026-07-14T00:00:00.000Z",
+    lastOutcome: "success",
+  };
+
+  it("calls Dodo deactivate and clears the store on success", async () => {
+    const client = fakeClient({ deactivate: vi.fn(async () => ({ ok: true, data: undefined }) as DodoResult<void>) });
+    const { manager, store } = harness({ store: fakeStore(record), client });
+
+    await manager.deactivate();
+
+    expect(client.deactivate).toHaveBeenCalledWith({ licenseKey: "lic_1234567890", instanceId: "lki_abc" });
+    expect(store.read()).toBeNull();
+    expect(manager.getLicenseSnapshot()).toEqual({ state: "unlicensed" });
+  });
+
+  it("clears the store even when the Dodo deactivate call fails", async () => {
+    const client = fakeClient({ deactivate: vi.fn(async () => ({ ok: false, error: "network down" }) as DodoResult<void>) });
+    const { manager, store } = harness({ store: fakeStore(record), client });
+
+    await manager.deactivate();
+
+    expect(store.read()).toBeNull();
+  });
+
+  it("is a no-op toward Dodo when there is nothing stored", async () => {
+    const client = fakeClient();
+    const { manager, store } = harness({ client });
+
+    await manager.deactivate();
+
+    expect(client.deactivate).not.toHaveBeenCalled();
+    expect(store.read()).toBeNull();
+  });
+});
+
+describe("licenseState revalidate", () => {
+  const record: LicenseRecord = {
+    key: "lic_1234567890",
+    instanceId: "lki_abc",
+    deviceName: "my-mac",
+    lastValidatedAt: "2026-07-01T00:00:00.000Z",
+    lastOutcome: "success",
+  };
+
+  it("is a no-op when there is no stored license", async () => {
+    const client = fakeClient();
+    const { manager } = harness({ client });
+    await manager.revalidate();
+    expect(client.validate).not.toHaveBeenCalled();
+  });
+
+  it("on success, advances lastValidatedAt and sets lastOutcome=success", async () => {
+    const now = () => Date.parse("2026-07-15T00:00:00.000Z");
+    const client = fakeClient({ validate: vi.fn(async () => ({ ok: true, data: { valid: true } }) as DodoResult<{ valid: boolean }>) });
+    const { manager, store } = harness({ store: fakeStore({ ...record }), client, now });
+
+    await manager.revalidate();
+
+    expect(client.validate).toHaveBeenCalledWith({ licenseKey: "lic_1234567890", instanceId: "lki_abc" });
+    expect(store.read()).toEqual({ ...record, lastValidatedAt: new Date(now()).toISOString(), lastOutcome: "success" });
+    expect(manager.getLicenseSnapshot().state).toBe("licensed");
+  });
+
+  it("on network failure, sets lastOutcome=network_fail without advancing lastValidatedAt, entering grace", async () => {
+    const now = () => Date.parse(record.lastValidatedAt) + DAY_MS;
+    const client = fakeClient({ validate: vi.fn(async () => ({ ok: false, error: "timeout" }) as DodoResult<{ valid: boolean }>) });
+    const { manager, store } = harness({ store: fakeStore({ ...record }), client, now });
+
+    await manager.revalidate();
+
+    expect(store.read()).toEqual({ ...record, lastOutcome: "network_fail" });
+    expect(manager.getLicenseSnapshot().state).toBe("grace");
+  });
+
+  it("on valid:false, sets lastOutcome=invalid immediately and keeps key+instanceId", async () => {
+    const client = fakeClient({ validate: vi.fn(async () => ({ ok: true, data: { valid: false } }) as DodoResult<{ valid: boolean }>) });
+    const { manager, store } = harness({ store: fakeStore({ ...record }), client });
+
+    await manager.revalidate();
+
+    expect(store.read()).toEqual({ ...record, lastOutcome: "invalid" });
+    expect(manager.getLicenseSnapshot().state).toBe("invalid");
+  });
+
+  it("network failure beyond 14 days from the last success reports expired", async () => {
+    const now = () => Date.parse(record.lastValidatedAt) + 15 * DAY_MS;
+    const client = fakeClient({ validate: vi.fn(async () => ({ ok: false, error: "timeout" }) as DodoResult<{ valid: boolean }>) });
+    const { manager, store } = harness({ store: fakeStore({ ...record }), client, now });
+
+    await manager.revalidate();
+
+    expect(store.read()?.lastOutcome).toBe("network_fail");
+    expect(manager.getLicenseSnapshot().state).toBe("expired");
+  });
+
+  it("does not let a network failure resurrect an already-invalid license into grace", async () => {
+    const invalidRecord: LicenseRecord = { ...record, lastOutcome: "invalid" };
+    const client = fakeClient({ validate: vi.fn(async () => ({ ok: false, error: "timeout" }) as DodoResult<{ valid: boolean }>) });
+    const { manager, store } = harness({ store: fakeStore({ ...invalidRecord }), client });
+
+    await manager.revalidate();
+
+    expect(store.read()).toEqual(invalidRecord);
+    expect(manager.getLicenseSnapshot().state).toBe("invalid");
+  });
+
+  it("still recovers from invalid to licensed on a genuine valid:true revalidate", async () => {
+    const invalidRecord: LicenseRecord = { ...record, lastOutcome: "invalid" };
+    const now = () => Date.parse("2026-07-20T00:00:00.000Z");
+    const client = fakeClient({ validate: vi.fn(async () => ({ ok: true, data: { valid: true } }) as DodoResult<{ valid: boolean }>) });
+    const { manager, store } = harness({ store: fakeStore({ ...invalidRecord }), client, now });
+
+    await manager.revalidate();
+
+    expect(store.read()).toEqual({ ...invalidRecord, lastValidatedAt: new Date(now()).toISOString(), lastOutcome: "success" });
+    expect(manager.getLicenseSnapshot().state).toBe("licensed");
+  });
+});
