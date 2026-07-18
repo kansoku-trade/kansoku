@@ -5,7 +5,7 @@
 
 ## 背景
 
-Web 端右上角有一个固定悬浮栏（`app/web/src/App.tsx` 中的 `GlobalTopbar`），包含三个链接：研究库（`/research?view=journal`）、AI 对话（`/chat`）、设置（`/settings`）。它悬浮在所有页面之上，个股页的 detail-topbar 还要靠 `--web-global-topbar-safe-area` 给它让位。桌面端（Electron）的自绘标题栏 `DesktopTitlebar` 右侧另有 研究库、设置 两个按钮，且缺少 AI 对话入口。
+Web 端右上角有一个固定悬浮栏（`apps/web/src/App.tsx` 中的 `GlobalTopbar`），包含三个链接：研究库（`/research?view=journal`）、AI 对话（`/chat`）、设置（`/settings`）。它悬浮在所有页面之上，个股页的 detail-topbar 还要靠 `--web-global-topbar-safe-area` 给它让位。桌面端（Electron）的自绘标题栏 `DesktopTitlebar` 右侧另有 研究库、设置 两个按钮，且缺少 AI 对话入口。
 
 用户决定：右上角的三个全局入口全部挪走，两端各按平台惯例重新安置。
 
@@ -49,9 +49,9 @@ Web 端右上角有一个固定悬浮栏（`app/web/src/App.tsx` 中的 `GlobalT
 
 ## 涉及文件（定位参考）
 
-- `app/web/src/App.tsx` — `GlobalTopbar` 删除
-- `app/web/src/styles.css` — `.global-topbar`、`--web-global-topbar-safe-area` 清理
-- `app/web/src/desktop/DesktopTitlebar.tsx` — 右侧按钮删除
-- `app/web/src/palette/` — 命令定义抽象导航器，Web 端接入
-- `app/web/src/pages/Home.tsx`（QuickBar）— 追加三项
-- `app/desktop/src/menu/` — 菜单项与快捷键
+- `apps/web/src/App.tsx` — `GlobalTopbar` 删除
+- `apps/web/src/styles.css` — `.global-topbar`、`--web-global-topbar-safe-area` 清理
+- `apps/web/src/desktop/DesktopTitlebar.tsx` — 右侧按钮删除
+- `apps/web/src/palette/` — 命令定义抽象导航器，Web 端接入
+- `apps/web/src/pages/Home.tsx`（QuickBar）— 追加三项
+- `apps/desktop/src/menu/` — 菜单项与快捷键

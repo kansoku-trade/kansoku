@@ -9,6 +9,8 @@ __pycache__/
 
 node_modules/
 .superpowers/
+dist/
+*.tsbuildinfo
 
 # Installed third-party skills — pinned in skills-lock.json.
 # Restore on a fresh clone with: npx skills experimental_install

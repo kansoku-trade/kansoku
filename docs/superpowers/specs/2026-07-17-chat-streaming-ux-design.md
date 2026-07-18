@@ -1,7 +1,7 @@
 # AI Chat 流式输出体验改造
 
 日期：2026-07-17
-范围：`app/web`（前端），引擎/server/desktop 零改动。三类会话（chart / research / assistant）共用同一条链路，一次改造全部受益。
+范围：`apps/web`（前端），引擎/server/desktop 零改动。三类会话（chart / research / assistant）共用同一条链路，一次改造全部受益。
 
 ## 背景与问题
 
@@ -27,7 +27,7 @@
 
 ## 一、平滑排字器
 
-新文件 `app/web/src/pages/cockpit/chat/useSmoothStream.ts`，挂在 `useChatSession` 内部，对外接口不变（仍然吐 `streamText: string`）。
+新文件 `apps/web/src/pages/cockpit/chat/useSmoothStream.ts`，挂在 `useChatSession` 内部，对外接口不变（仍然吐 `streamText: string`）。
 
 **数据流**：WS `delta` 不再直接 `setStreamText`，而是追加进缓冲区 ref；`requestAnimationFrame` 循环按速率从缓冲区把字符移入显示文本。
 
@@ -49,7 +49,7 @@
 
 ## 二、Markdown 流式渲染（streamdown）
 
-改 `app/web/src/pages/cockpit/markdown.tsx`：
+改 `apps/web/src/pages/cockpit/markdown.tsx`：
 
 - 依赖变更：`react-markdown`、`remark-gfm` 移除，新增 `streamdown` **核心包**。不装 `@streamdown/code`、`@streamdown/math`、`@streamdown/mermaid` 插件包（聊天内容是文字和表格，不需要代码高亮/公式/图表，也避免它默认从 CDN 拉资源）。`remark-gfm` 是 streamdown 的默认插件，无需显式传。
 - `Markdown` 组件新增 `streaming?: boolean` 入参：

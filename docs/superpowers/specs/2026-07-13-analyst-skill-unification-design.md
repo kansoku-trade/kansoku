@@ -5,7 +5,7 @@
 
 ## 背景与问题
 
-server 端自动重估（`app/packages/core/src/ai/analyst.ts`）目前维护一份手写的
+server 端自动重估（`packages/core/src/ai/analyst.ts`）目前维护一份手写的
 `SYSTEM_PROMPT`，内容是 `.claude/skills/intraday-signal/SKILL.md` 判读纪律的
 人工翻译版。两份纪律并行演化：skill 已要求"先查 X 再定催化日/平静日"，而
 自动重估既没有 X 访问能力，提示词里也没有这条规则。SKILL.md 里甚至写着

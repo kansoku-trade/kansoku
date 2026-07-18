@@ -7,7 +7,7 @@
 
 当前 web 端有四个页面:盘面首页 `/`、图表列表 `/charts`、图表详情 `/charts/:id`、个股驾驶舱 `/symbol/:sym`。其中图表详情页和驾驶舱高度重叠——都围绕一只股票展示图表、预测、AI 点评、历史,但入口不同、侧栏能力不同、数据链路各接各的,产生明显的割裂感。
 
-割裂的直接恶果是一个已确认的 bug:驾驶舱 AI tab 点「重新分析」,后端 analyst 完成后通过 `submit_prediction` **新建**一个图表文档(`app/server/src/ai/analyst.ts` 的 `createChart` 调用),而驾驶舱页面只在打开时一次性拉过 `/api/symbols/:sym/latest`,实时推送订阅的还是旧图表 id,新预测落库后页面不刷新就永远看不到。首次生成分析那条路(`GenerateAnalysis` → `markGeneratedReady`)接了回调,重估这条路没接——同一动作两条路径,一通一断。
+割裂的直接恶果是一个已确认的 bug:驾驶舱 AI tab 点「重新分析」,后端 analyst 完成后通过 `submit_prediction` **新建**一个图表文档(`apps/server/src/ai/analyst.ts` 的 `createChart` 调用),而驾驶舱页面只在打开时一次性拉过 `/api/symbols/:sym/latest`,实时推送订阅的还是旧图表 id,新预测落库后页面不刷新就永远看不到。首次生成分析那条路(`GenerateAnalysis` → `markGeneratedReady`)接了回调,重估这条路没接——同一动作两条路径,一通一断。
 
 用户使用场景是「盘面 + 个股」双中心,两者各占一半。
 
@@ -71,7 +71,7 @@
 
 ### 5. 测试与验证
 
-- `cd app && pnpm test` 全量通过。
+- `pnpm test` 全量通过。
 - 新增用例:
   1. 旧链接重定向解析(有 symbol / 横截面 / 不存在 三种)。
   2. `symbol-analysis-created` 广播后,「最新」模式自动切换到新文档。

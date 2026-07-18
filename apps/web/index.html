@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Kansoku</title>
+    <script
+      defer
+      src="https://vibeloft.ai/telemetry/v1.js"
+      data-vl-product-id="bab5dcef-e4c5-4aad-bbb6-0b88156216c7"
+      data-vl-auth-key="vl_web.VOC50wmDDfAG2j-BLZpsBcbM6RquPU6xhVcvVe28Nfk"
+    ></script>
+    <style>
+      :root {
+        --bg-canvas: #0a0a0a;
+        --bg-surface: #141414;
+        --bg-element: #1e1e1e;
+        --border: #262626;
+        --border-strong: #3a3a3a;
+        --text-primary: #e8e8e8;
+        --text-secondary: #9a9a9a;
+        --radius: 2px;
+        --fs-base: 12px;
+        --fs-sm: 11px;
+        --fs-xl: 20px;
+        --font-ui: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
+      }
+      html,
+      body {
+        margin: 0;
+        background: var(--bg-canvas);
+        color: var(--text-primary);
+        color-scheme: dark;
+        font-family: var(--font-ui);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      .app-skeleton {
+        min-height: 100vh;
+        background: var(--bg-canvas);
+      }
+      .app-skeleton--desktop {
+        padding-top: 40px;
+      }
+      .app-skeleton-titlebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 40px;
+        z-index: 80;
+        display: none;
+        align-items: center;
+        gap: 8px;
+        background: var(--bg-surface);
+        border-bottom: 1px solid var(--border);
+        -webkit-app-region: drag;
+      }
+      .app-skeleton--desktop .app-skeleton-titlebar {
+        display: flex;
+      }
+      .app-skeleton-traffic {
+        flex: 0 0 78px;
+      }
+      .app-skeleton-tabstrip {
+        flex: 1;
+        min-width: 0;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        padding-left: 4px;
+      }
+      .app-skeleton-actions {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding-right: 14px;
+      }
+      .global-topbar {
+        position: fixed;
+        top: 8px;
+        right: 14px;
+        z-index: 50;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .app-skeleton--desktop .global-topbar {
+        display: none;
+      }
+      .page {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 24px 20px 60px;
+      }
+      .home-page {
+        max-width: 1400px;
+      }
+      .page h1 {
+        font-size: var(--fs-xl);
+        font-weight: 600;
+        margin: 0 0 4px;
+      }
+      .page .sub {
+        font-size: var(--fs-base);
+        color: var(--text-secondary);
+        margin-bottom: 20px;
+      }
+      .quote-bar {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        overflow: hidden;
+        padding: 8px 0 14px;
+        margin-bottom: 6px;
+        border-bottom: 1px solid var(--border);
+      }
+      .quote-cell {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        flex-shrink: 0;
+        background: var(--bg-element);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 5px 10px;
+      }
+      .quickbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        margin: 4px 0 20px;
+      }
+      .cross-section-switcher {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: 8px 0 12px;
+      }
+      .home-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 24px;
+        align-items: start;
+      }
+      @media (max-width: 1000px) {
+        .home-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .section-title {
+        font-size: var(--fs-sm);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+        font-weight: 500;
+        margin-top: 16px;
+        margin-bottom: 8px;
+      }
+      .overview-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 12px;
+        margin-top: 12px;
+      }
+      .card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 12px;
+      }
+      .positions-card {
+        padding: 10px 12px;
+      }
+      .cross-section-charts {
+        margin-top: 20px;
+      }
+      .app-skeleton-bone {
+        border-radius: var(--radius);
+        background: linear-gradient(90deg, #1a1a1a 0%, #242424 45%, #1a1a1a 90%);
+        background-size: 200% 100%;
+        animation: app-skeleton-shimmer 1.5s ease-in-out infinite;
+      }
+      .app-skeleton-bone--tab {
+        width: 96px;
+        height: 18px;
+      }
+      .app-skeleton-bone--btn {
+        width: 84px;
+        height: 28px;
+      }
+      .app-skeleton-bone--icon {
+        width: 26px;
+        height: 26px;
+      }
+      .app-skeleton-bone--input {
+        width: 170px;
+        height: 28px;
+      }
+      .app-skeleton-bone--chip {
+        width: 56px;
+        height: 24px;
+      }
+      .app-skeleton-bone--date {
+        width: 92px;
+        height: 24px;
+      }
+      .app-skeleton-bone--qc-sym {
+        width: 36px;
+        height: 11px;
+      }
+      .app-skeleton-bone--qc-price {
+        width: 48px;
+        height: 11px;
+      }
+      .app-skeleton-bone--qc-pct {
+        width: 40px;
+        height: 11px;
+      }
+      .app-skeleton-symbol-head {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .app-skeleton-bone--sym {
+        width: 64px;
+        height: 16px;
+      }
+      .app-skeleton-bone--badge {
+        width: 40px;
+        height: 16px;
+      }
+      .app-skeleton-bone--quote {
+        width: 88px;
+        height: 14px;
+        margin-left: auto;
+      }
+      .app-skeleton-symbol-levels {
+        display: flex;
+        gap: 14px;
+        margin-top: 8px;
+      }
+      .app-skeleton-bone--level {
+        width: 72px;
+        height: 12px;
+      }
+      .app-skeleton-bone--comment {
+        width: 100%;
+        height: 28px;
+        margin-top: 8px;
+      }
+      .app-skeleton-bone--chart-title {
+        width: 100px;
+        height: 14px;
+        margin-bottom: 8px;
+      }
+      .app-skeleton-bone--chart {
+        width: 100%;
+        height: 340px;
+        border: 1px solid var(--border);
+        background-color: var(--bg-surface);
+      }
+      .app-skeleton-positions-summary {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px 18px;
+        margin-bottom: 10px;
+      }
+      .app-skeleton-bone--stat {
+        width: 88px;
+        height: 12px;
+      }
+      .app-skeleton-positions-rows {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .app-skeleton-bone--row {
+        width: 100%;
+        height: 18px;
+      }
+      @keyframes app-skeleton-shimmer {
+        0% {
+          background-position: 100% 0;
+        }
+        100% {
+          background-position: -100% 0;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .app-skeleton-bone {
+          animation: none;
+          background: var(--bg-element);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root">
+      <div class="app-skeleton" id="app-boot-skeleton" aria-busy="true" aria-label="加载中">
+        <div class="app-skeleton-titlebar">
+          <div class="app-skeleton-traffic"></div>
+          <div class="app-skeleton-tabstrip">
+            <div class="app-skeleton-bone app-skeleton-bone--tab"></div>
+          </div>
+          <div class="app-skeleton-actions">
+            <div class="app-skeleton-bone app-skeleton-bone--btn"></div>
+            <div class="app-skeleton-bone app-skeleton-bone--icon"></div>
+          </div>
+        </div>
+        <div class="global-topbar" aria-hidden="true">
+          <div class="app-skeleton-bone app-skeleton-bone--btn"></div>
+          <div class="app-skeleton-bone app-skeleton-bone--icon"></div>
+        </div>
+        <div class="page home-page">
+          <h1>盘面</h1>
+          <div class="sub">盘中看盘、盘后复盘，随时段自动切换</div>
+          <div class="quote-bar" aria-hidden="true">
+            <div class="quote-cell">
+              <div class="app-skeleton-bone app-skeleton-bone--qc-sym"></div>
+              <div class="app-skeleton-bone app-skeleton-bone--qc-price"></div>
+              <div class="app-skeleton-bone app-skeleton-bone--qc-pct"></div>
+            </div>
+            <div class="quote-cell">
+              <div class="app-skeleton-bone app-skeleton-bone--qc-sym"></div>
+              <div class="app-skeleton-bone app-skeleton-bone--qc-price"></div>
+              <div class="app-skeleton-bone app-skeleton-bone--qc-pct"></div>
+            </div>
+            <div class="quote-cell">
+              <div class="app-skeleton-bone app-skeleton-bone--qc-sym"></div>
+              <div class="app-skeleton-bone app-skeleton-bone--qc-price"></div>
+              <div class="app-skeleton-bone app-skeleton-bone--qc-pct"></div>
+            </div>
+            <div class="quote-cell">
+              <div class="app-skeleton-bone app-skeleton-bone--qc-sym"></div>
+              <div class="app-skeleton-bone app-skeleton-bone--qc-price"></div>
+              <div class="app-skeleton-bone app-skeleton-bone--qc-pct"></div>
+            </div>
+            <div class="quote-cell">
+              <div class="app-skeleton-bone app-skeleton-bone--qc-sym"></div>
+              <div class="app-skeleton-bone app-skeleton-bone--qc-price"></div>
+              <div class="app-skeleton-bone app-skeleton-bone--qc-pct"></div>
+            </div>
+          </div>
+          <div class="quickbar" aria-hidden="true">
+            <div class="app-skeleton-bone app-skeleton-bone--input"></div>
+            <div class="app-skeleton-bone app-skeleton-bone--chip"></div>
+            <div class="app-skeleton-bone app-skeleton-bone--chip"></div>
+          </div>
+          <div class="cross-section-switcher" aria-hidden="true">
+            <div class="app-skeleton-bone app-skeleton-bone--date"></div>
+          </div>
+          <div class="home-grid">
+            <div class="home-main">
+              <div class="section-title">看盘</div>
+              <div class="overview-grid" aria-hidden="true">
+                <div class="card">
+                  <div class="app-skeleton-symbol-head">
+                    <div class="app-skeleton-bone app-skeleton-bone--sym"></div>
+                    <div class="app-skeleton-bone app-skeleton-bone--badge"></div>
+                    <div class="app-skeleton-bone app-skeleton-bone--quote"></div>
+                  </div>
+                  <div class="app-skeleton-symbol-levels">
+                    <div class="app-skeleton-bone app-skeleton-bone--level"></div>
+                    <div class="app-skeleton-bone app-skeleton-bone--level"></div>
+                    <div class="app-skeleton-bone app-skeleton-bone--level"></div>
+                  </div>
+                  <div class="app-skeleton-bone app-skeleton-bone--comment"></div>
+                </div>
+                <div class="card">
+                  <div class="app-skeleton-symbol-head">
+                    <div class="app-skeleton-bone app-skeleton-bone--sym"></div>
+                    <div class="app-skeleton-bone app-skeleton-bone--badge"></div>
+                    <div class="app-skeleton-bone app-skeleton-bone--quote"></div>
+                  </div>
+                  <div class="app-skeleton-symbol-levels">
+                    <div class="app-skeleton-bone app-skeleton-bone--level"></div>
+                    <div class="app-skeleton-bone app-skeleton-bone--level"></div>
+                    <div class="app-skeleton-bone app-skeleton-bone--level"></div>
+                  </div>
+                  <div class="app-skeleton-bone app-skeleton-bone--comment"></div>
+                </div>
+                <div class="card">
+                  <div class="app-skeleton-symbol-head">
+                    <div class="app-skeleton-bone app-skeleton-bone--sym"></div>
+                    <div class="app-skeleton-bone app-skeleton-bone--badge"></div>
+                    <div class="app-skeleton-bone app-skeleton-bone--quote"></div>
+                  </div>
+                  <div class="app-skeleton-symbol-levels">
+                    <div class="app-skeleton-bone app-skeleton-bone--level"></div>
+                    <div class="app-skeleton-bone app-skeleton-bone--level"></div>
+                    <div class="app-skeleton-bone app-skeleton-bone--level"></div>
+                  </div>
+                  <div class="app-skeleton-bone app-skeleton-bone--comment"></div>
+                </div>
+                <div class="card">
+                  <div class="app-skeleton-symbol-head">
+                    <div class="app-skeleton-bone app-skeleton-bone--sym"></div>
+                    <div class="app-skeleton-bone app-skeleton-bone--badge"></div>
+                    <div class="app-skeleton-bone app-skeleton-bone--quote"></div>
+                  </div>
+                  <div class="app-skeleton-symbol-levels">
+                    <div class="app-skeleton-bone app-skeleton-bone--level"></div>
+                    <div class="app-skeleton-bone app-skeleton-bone--level"></div>
+                    <div class="app-skeleton-bone app-skeleton-bone--level"></div>
+                  </div>
+                  <div class="app-skeleton-bone app-skeleton-bone--comment"></div>
+                </div>
+              </div>
+              <div class="cross-section-charts" aria-hidden="true">
+                <div class="app-skeleton-bone app-skeleton-bone--chart-title"></div>
+                <div class="app-skeleton-bone app-skeleton-bone--chart"></div>
+              </div>
+            </div>
+            <div class="home-side">
+              <div class="section-title">持仓</div>
+              <div class="card positions-card" aria-hidden="true">
+                <div class="app-skeleton-positions-summary">
+                  <div class="app-skeleton-bone app-skeleton-bone--stat"></div>
+                  <div class="app-skeleton-bone app-skeleton-bone--stat"></div>
+                  <div class="app-skeleton-bone app-skeleton-bone--stat"></div>
+                  <div class="app-skeleton-bone app-skeleton-bone--stat"></div>
+                </div>
+                <div class="app-skeleton-positions-rows">
+                  <div class="app-skeleton-bone app-skeleton-bone--row"></div>
+                  <div class="app-skeleton-bone app-skeleton-bone--row"></div>
+                  <div class="app-skeleton-bone app-skeleton-bone--row"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+      if (/\bElectron\b/.test(navigator.userAgent)) {
+        document.getElementById("app-boot-skeleton")?.classList.add("app-skeleton--desktop");
+      }
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

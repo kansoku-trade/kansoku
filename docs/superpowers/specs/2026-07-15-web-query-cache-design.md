@@ -1,7 +1,7 @@
 # Web 端查询缓存改造：TanStack Query + 冷启动旧数据直出
 
 日期：2026-07-15
-范围：`app/web`（纯前端，不动 server / core 的接口）
+范围：`apps/web`（纯前端，不动 server / core 的接口）
 
 ## 背景与目标
 
@@ -11,7 +11,7 @@
 
 ## 决策摘要
 
-- 全量替换：整个 `app/web` 的 HTTP 请求层换成 TanStack Query，删掉手写 Map 缓存，不留两套并存。
+- 全量替换：整个 `apps/web` 的 HTTP 请求层换成 TanStack Query，删掉手写 Map 缓存，不留两套并存。
 - WS 首帧一起做：盘面 / 行情类 WS 频道的最后一帧持久化到 localStorage，冷启动先渲染旧帧。
 - 旧数据展示：行情类板块带「数据为 X 分钟前」时间角标，新数据到达即消失；无最大龄限制，多旧都先展示。
 - 顺手清理：`useSSE.ts` 删除（名字与实际不符，现在全是 WS），换成 `useWsChannel`。
@@ -30,7 +30,7 @@
 
 ### 1. 查询层替换
 
-- 新建 `app/web/src/queryClient.ts`：
+- 新建 `apps/web/src/queryClient.ts`：
   - 创建 `QueryClient`，默认 `staleTime` 按数据类型区分，落实现时对齐现有轮询间隔（持仓 30s、复盘 60s、图表列表 5min 量级）。
   - `createSyncStoragePersister({ storage: localStorage })`，`maxAge` 7 天（超龄整体作废），`buster` 为一个手工维护的版本串——序列化结构变更时改它作废旧缓存。
   - 应用根部（`App` / 入口）用 `PersistQueryClientProvider` 包裹。
@@ -44,7 +44,7 @@
 
 ### 2. useSSE 删除，换成 useWsChannel + 快照持久化
 
-- 新建 `app/web/src/useWsChannel.ts`，接口与原 `useSSE` 一致：`useWsChannel<T>(spec, onData) => { degraded, connected, snapshotAt? }`。
+- 新建 `apps/web/src/useWsChannel.ts`，接口与原 `useSSE` 一致：`useWsChannel<T>(spec, onData) => { degraded, connected, snapshotAt? }`。
 - 删除 `useSSE.ts`，6 个调用点全部迁移：`pages/Home.tsx`（board）、`QuoteBar.tsx`（quotes）、`useLiveQuote.ts`（quotes+symbol）、`charts/intraday/useIntradayDoc.ts`、`pages/cockpit/useCockpitEnv.ts`（position、benchmark）。
 - 快照持久化（独立小模块 `wsSnapshot.ts`）：
   - 白名单频道（`board`、无 symbol 的 `quotes`）每收到一帧数据，节流（约 5s 一次）写 localStorage，带时间戳；key 按频道 spec 序列化。
@@ -69,7 +69,7 @@
 
 - `apiHooks` 薄封装：缓存命中先出旧值、轮询间隔映射、`dataUpdatedAt` 透出。
 - `wsSnapshot`：写入节流、回放、时间戳、白名单外频道不写。
-- 跑 `cd app && pnpm test` 现有用例保证无回归。
+- 跑 `pnpm test` 现有用例保证无回归。
 
 ## 明确不做
 

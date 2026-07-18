@@ -5,18 +5,18 @@
 ## 全局约束（每个任务都适用）
 
 - 代码零注释、零 JSDoc（项目硬规则）。标识符自解释。
-- `app/server` 是 ESM + TypeScript（tsx 运行），相对导入必须带 `.js` 后缀。
-- 测试用 vitest，放 `app/server/test/`，风格参照现有测试（如 `poller.test.ts`、`cockpit.test.ts`，共用 `helpers.ts`）。测试不得真调 LLM、不得真调 longbridge CLI —— 一律注入假实现。
+- `apps/server` 是 ESM + TypeScript（tsx 运行），相对导入必须带 `.js` 后缀。
+- 测试用 vitest，放 `apps/server/test/`，风格参照现有测试（如 `poller.test.ts`、`cockpit.test.ts`，共用 `helpers.ts`）。测试不得真调 LLM、不得真调 longbridge CLI —— 一律注入假实现。
 - 单文件 ≤ 500 行；React 组件 ≤ 300 行。
-- 每个任务完成后跑 `pnpm -C app/server test`（改了 web 再跑 `pnpm -C app/web typecheck` 如有该脚本，没有则 `npx tsc --noEmit -p app/web`），然后 git commit（只提交本任务文件）。
+- 每个任务完成后跑 `pnpm -C apps/server test`（改了 web 再跑 `pnpm -C apps/web typecheck` 如有该脚本，没有则 `npx tsc --noEmit -p apps/web`），然后 git commit（只提交本任务文件）。
 - 不写 `journal/` 下任何文件（除任务 3 的 comments 存储目录约定外，测试要用临时目录）。
 - 文档/README 用中文白话；代码、commit message 用英文。
 - 模型串格式 `provider/id`（如 `anthropic/claude-haiku-4-5`）；环境变量 `AI_COMMENT_MODEL`、`AI_ANALYST_MODEL`，缺失即该层停用，server 照常启动。
 
 ## 任务 1：依赖与模型配置 `ai/models.ts`
 
-- `pnpm -C app/server add @earendil-works/pi-agent-core`（会连带 `@earendil-works/pi-ai`）。
-- 新建 `app/server/src/ai/models.ts`：
+- `pnpm -C apps/server add @earendil-works/pi-agent-core`（会连带 `@earendil-works/pi-ai`）。
+- 新建 `apps/server/src/ai/models.ts`：
   - `parseModelRef(raw: string): { provider: string; id: string } | null` — 按第一个 `/` 切分，非法返回 null。
   - `resolveModel(envValue: string | undefined)` — 缺失/非法返回 null，否则用 `pi-ai` 的 `getModel(provider, id)` 返回 Model；`getModel` 抛错（未知 provider/id）也返回 null 并 `console.error` 一行。
   - `aiConfig()` — 读 `process.env.AI_COMMENT_MODEL` / `AI_ANALYST_MODEL`，返回 `{ commentModel, analystModel }`（各自可 null）。
@@ -33,7 +33,7 @@
 ## 任务 3：点评流存储与接口 `ai/comments.ts`
 
 - 存储目录：`CHART_DATA_DIR/comments/`（复用 `env.ts` 的 CHART_DATA_DIR，即 `journal/charts/data/`），文件 `<SYM>-YYYY-MM-DD.json`，内容 `CockpitComment[]`。
-- `CockpitComment = { ts: string(ISO), symbol, level: "info"|"warn"|"alert"|"error", text, trigger?: string, source: "commentator"|"analyst"|"system", escalated?: boolean, chartId?: string }`，类型放 `app/shared/types.ts`。
+- `CockpitComment = { ts: string(ISO), symbol, level: "info"|"warn"|"alert"|"error", text, trigger?: string, source: "commentator"|"analyst"|"system", escalated?: boolean, chartId?: string }`，类型放 `packages/shared/types.ts`。
 - `appendComment(c)`（读-改-写整文件，追加）+ `listComments(symbol, date)`。
 - 内存事件总线：`onComment(symbol, listener)` / append 时广播 —— SSE 用。
 - 路由：
@@ -86,7 +86,7 @@
 
 ## 任务 8：Web UI（驾驶舱）
 
-- `SymbolCockpit.tsx` 右栏加「AI 点评」tab（新组件 `app/web/src/pages/cockpit/AiTab.tsx`）：
+- `SymbolCockpit.tsx` 右栏加「AI 点评」tab（新组件 `apps/web/src/pages/cockpit/AiTab.tsx`）：
   - 打开时 `GET /api/symbols/:sym/comments`，随后 `EventSource /api/stream/comments/:sym` 实时追加（复用现有 SSE 客户端模式，看 `useIntervalFetch.ts` 与其他 tab 怎么连）。
   - 条目：时间 + level 徽标（info 灰 `#949494` / warn 黄 `#ffc107` / alert 红 `#ef5350` / error 红底）+ 文本 + 触发原因；`chartId` 有值时链接到 `/#/charts/<id>`；`escalated` 显示"已升级重估"。
   - 连续 ≥3 条 info 心跳折叠为一行"HH:MM–HH:MM 无事 ×N"，点击展开。
@@ -95,10 +95,10 @@
 - 顶部报价条：最新一条 warn/alert 点评显示为小徽章（红/黄脉动圆点 + 时间 + 摘要），点击切到 AI 点评 tab。当天无 warn/alert 则不显示。
 - 样式进 `styles.css`，沿用现有 token（#121212/#1c1c1c/#272727/#26a69a/#ef5350/#ffc107）。
 - 视觉基准：mockup 见 scratchpad `cockpit-ai-mockup.html`（本任务简述即可，按上述条目实现，不必像素级还原）。
-- 验证：`npx tsc --noEmit -p app/web`（或 web 包现有 typecheck 方式）。
+- 验证：`npx tsc --noEmit -p apps/web`（或 web 包现有 typecheck 方式）。
 
 ## 任务 9：冒烟脚本与文档
 
-- `app/server/scripts/ai-smoke.ts`：读 `.env` 模型配置，对一个传入 symbol 真跑一次 commentator（真模型、真数据），打印结果；`--analyst` 开关真跑一次 analyst。不进 CI。用法注释不写在代码里，写进 README。
-- `app/README.md` 加「AI 实时分析」小节：环境变量、两层机制、点评存储位置、冒烟脚本用法。
+- `apps/server/scripts/ai-smoke.ts`：读 `.env` 模型配置，对一个传入 symbol 真跑一次 commentator（真模型、真数据），打印结果；`--analyst` 开关真跑一次 analyst。不进 CI。用法注释不写在代码里，写进 README。
+- `apps/README.md` 加「AI 实时分析」小节：环境变量、两层机制、点评存储位置、冒烟脚本用法。
 - `.claude/skills/chart/SKILL.md` 在 cockpit 相关段落补一句：驾驶舱有 AI 点评流与自动重估，产物与手动 `intraday-signal` 同格式。

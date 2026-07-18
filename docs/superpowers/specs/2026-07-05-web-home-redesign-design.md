@@ -26,7 +26,7 @@
 
 ## 前端结构
 
-`Home.tsx` 只负责拼装与排序，板块组件放 `app/web/src/pages/home/`：
+`Home.tsx` 只负责拼装与排序，板块组件放 `apps/web/src/pages/home/`：
 
 - `QuickBar` — 快速入口条
 - `WatchBoard` — 看盘区（原 Overview 标的卡片 + reassess 按钮）

@@ -5,7 +5,7 @@
 
 ## 背景与目标
 
-桌面端 `app/desktop` 目前只有 `main.ts` 里内联的 `buildAppMenu()`：App 菜单含「从 repo 导入数据…」和退出，Window 菜单含标签页快捷键。没有独立的 menu manager，也缺少 macOS 常见的编辑 / 显示 / 标准窗口项，以及关于、检查更新、设置。
+桌面端 `apps/desktop` 目前只有 `main.ts` 里内联的 `buildAppMenu()`：App 菜单含「从 repo 导入数据…」和退出，Window 菜单含标签页快捷键。没有独立的 menu manager，也缺少 macOS 常见的编辑 / 显示 / 标准窗口项，以及关于、检查更新、设置。
 
 目标：
 
@@ -39,7 +39,7 @@
 ### 文件布局
 
 ```
-app/desktop/src/menu/
+apps/desktop/src/menu/
   appMenuManager.ts      # createAppMenuManager(deps) → { install(), rebuild() }
   types.ts               # MenuActionDeps
   sections/
@@ -200,11 +200,11 @@ export function initUpdater(options?: InitUpdaterOptions): UpdaterHandle;
 | `open-settings` | 渲染侧：command 映射到 `focusOrOpenSettings`（扩现有 tabs 相关测，或轻量映射测） |
 | updater `checkNow` | sparkle 路径调 `checkForUpdates`；weak 路径绕过 throttle；dev 不发网络请求 |
 
-优先测纯函数 builder 输出的 template 数组；`install` 对 `Menu.setApplicationMenu` 做 mock。沿用 `app/desktop/test` 的 vitest 模式。
+优先测纯函数 builder 输出的 template 数组；`install` 对 `Menu.setApplicationMenu` 做 mock。沿用 `apps/desktop/test` 的 vitest 模式。
 
 ## 文档
 
-- 更新 `app/desktop/README.md`：说明菜单里设置、检查更新、导入的位置与行为
+- 更新 `apps/desktop/README.md`：说明菜单里设置、检查更新、导入的位置与行为
 - 本设计文档：`docs/superpowers/specs/2026-07-12-electron-app-menu-manager-design.md`
 
 ## 实现顺序建议

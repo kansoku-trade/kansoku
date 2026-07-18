@@ -18,37 +18,33 @@ jobs:
       - name: setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          package_json_file: app/package.json
+          package_json_file: package.json
 
       - name: setup node
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
-          cache-dependency-path: app/pnpm-lock.yaml
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: fetch pro slot
         env:
           KANSOKU_PRO_REPO_URL: ${{ secrets.KANSOKU_PRO_REPO_URL }}
-        run: app/scripts/fetch-pro.sh
+        run: scripts/fetch-pro.sh
 
       - name: assert pro slot present
-        run: test -f app/pro/src/index.ts
+        run: test -f apps/pro/src/index.ts
 
       - name: install dependencies
-        working-directory: app
         run: pnpm install --frozen-lockfile
 
       - name: typecheck
-        working-directory: app
         run: pnpm -r typecheck
 
       - name: build
-        working-directory: app
         run: |
           pnpm --filter @kansoku/web build
           pnpm --filter @kansoku/desktop build
 
       - name: pro tests
-        working-directory: app
         run: pnpm --filter @kansoku/pro test

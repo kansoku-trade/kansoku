@@ -10,7 +10,7 @@ chart app 的 intraday 图表有两层内容：指标层（server 每 60 秒 SSE
 
 ## 数据模型
 
-`ChartDoc`（`app/shared/types.ts`）新增可选字段：
+`ChartDoc`（`packages/shared/types.ts`）新增可选字段：
 
 ```ts
 prediction_updated_at?: string   // ISO 时间

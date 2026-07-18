@@ -15,8 +15,8 @@
 
 ## 现状（实现前提）
 
-- 打包版只有一个 `BrowserWindow`（`app/desktop/src/main.ts` → `window/mainWindow.ts`），窗口位置由 `electron-window-state` 单档案记忆。
-- 标签全部在渲染层：`app/web/src/desktop/tabsStore.ts` 是纯函数集合，状态 `TabsSnapshot { tabs[], activeTabId }` 持久化在 `localStorage("desktop-tabs-v1")`；`tabsController.ts` 驱动，`desktopTabsBridge.ts` 只接收主进程的菜单命令（new-tab / close-tab / …）。
+- 打包版只有一个 `BrowserWindow`（`apps/desktop/src/main.ts` → `window/mainWindow.ts`），窗口位置由 `electron-window-state` 单档案记忆。
+- 标签全部在渲染层：`apps/web/src/desktop/tabsStore.ts` 是纯函数集合，状态 `TabsSnapshot { tabs[], activeTabId }` 持久化在 `localStorage("desktop-tabs-v1")`；`tabsController.ts` 驱动，`desktopTabsBridge.ts` 只接收主进程的菜单命令（new-tab / close-tab / …）。
 - kernel 在主进程，渲染进程经 preload 的 MessagePort 接入；实时层本就按连接多路广播，多窗口下行情仍共享同一条长桥 WS 连接（0.12.0 已验证）。
 
 单窗口假设的两处坑：多窗口会互相覆盖 `localStorage` 存档且互不感知；`electron-window-state` 单档案会让两个窗口抢同一份位置记忆。

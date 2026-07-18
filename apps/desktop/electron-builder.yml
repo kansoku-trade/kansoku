@@ -1,0 +1,62 @@
+appId: dev.innei.kansoku
+productName: Kansoku
+# Brand asset: apps/web/public/brand/kansoku-icon.svg — rebuild with scripts/generate-icon.sh
+icon: build/icon.icns
+directories:
+  output: release
+  buildResources: build
+electronLanguages:
+  - en
+  - zh_CN
+afterPack: scripts/afterPack.cjs
+afterAllArtifactBuild: scripts/afterAllArtifactBuild.cjs
+files:
+  - dist-main/**
+  - dist-preload/**
+  # Pro slot build staged by scripts/stagePro.mjs — must live inside the asar
+  # so its external @tsuki-hono imports resolve to the same node_modules copy
+  # the main bundle uses (single instance). Matches nothing on free builds.
+  - pro/dist/**
+  - native/sparkle-bridge/build/Release/sparkle_bridge.node
+  - package.json
+  - "!**/*.ts"
+extraResources:
+  - from: ../web/dist
+    to: web-dist
+  - from: build/icon.png
+    to: icon.png
+  - from: ../../packages/core/drizzle
+    to: drizzle
+  # Agent skill texts + scripts (intraday-signal, options-payoff, …). Linked
+  # into the data root at boot so analyst reassess can read SKILL.md.
+  # dist-skills is staged by scripts/stageSkills.mjs — .claude/skills holds
+  # symlinks into .agents that electron-builder would copy as dead links.
+  - from: dist-skills
+    to: skills
+extraFiles:
+  - from: native/sparkle-bridge/vendor/Sparkle.framework
+    to: Frameworks/Sparkle.framework
+asarUnpack:
+  - "**/node_modules/better-sqlite3/**"
+  - "**/native/sparkle-bridge/build/**"
+# Updates ship via Sparkle, not electron-updater — skip blockmaps for both targets.
+# dmg has a native knob; zip needs the app-builder-lib patch (patches/app-builder-lib@…).
+dmg:
+  writeUpdateInfo: false
+zip:
+  writeUpdateInfo: false
+mac:
+  icon: build/icon.icns
+  target:
+    - target: dmg
+      arch: [arm64]
+    - target: zip
+      arch: [arm64]
+  identity: null
+  extendInfo:
+    SUFeedURL: https://github.com/Innei/kansoku/releases/latest/download/appcast.xml
+    # CI injects the real EdDSA public key over this placeholder at build time — keep it
+    # greppable (SPARKLE_ED_PUBLIC_KEY_PLACEHOLDER) so that step has a stable anchor.
+    SUPublicEDKey: SPARKLE_ED_PUBLIC_KEY_PLACEHOLDER
+    SUEnableInstallerLauncherService: false
+    SUScheduledCheckInterval: 3600

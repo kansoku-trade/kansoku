@@ -22,7 +22,7 @@
 
 ## 设计
 
-### 服务端（`app/server/src/routes/overview.ts`）
+### 服务端（`apps/server/src/routes/overview.ts`）
 
 1. `GET /overview/recap` 增加可选 querystring `date`（`YYYY-MM-DD`，用现有 `DATE_RE` 校验，参照同文件 `GET /usage` 的写法）；缺省为 `easternDate()`。
 2. `buildRecap(date)` 不变地透传日期到 `listUsage` / `listComments` / 图表筛选（已支持）。
@@ -32,7 +32,7 @@
 4. **缓存改为按日期分键**：`recapCache` 从单条改为 `Map<date, {at, data}>`；今天的条目 TTL 维持 60s，历史日期的数据不再变化，TTL 可放宽（如 1 小时）并限制 Map 大小（如保留最近 10 个日期）。`recapInflight` 同样按日期分键防止并发重复构建。
 5. 历史日期的 outcome 判定沿用现有 `getResolvedOutcomes` 缓存；未缓存且 15m K 线窗口（300 根）已覆盖不到的旧日期，outcome 为 `null`，前端显示「无法判定」——可接受，不额外补历史 K 线。
 
-### 前端（`app/web/src/pages/`）
+### 前端（`apps/web/src/pages/`）
 
 1. **日期状态提升到 `Home.tsx`**：读 `useQueryParam("date")`，缺省今天（`marketDate()`）。切换用 `navigate("/?date=...", { replace: true })`，与 `CrossSectionCharts` 现有方式一致。
 2. **日期切换器提升为整页级**：把 `CrossSectionCharts` 里的日期 Chip 行上移到页面顶部（`QuoteBar` / `QuickBar` 附近）；`CrossSectionCharts` 不再自带切换器，改为接收 `date` prop。可选日期来源：flow/cohort 图表日期 ∪ 有复盘数据的日期（新增 `GET /api/overview/recap-dates`，取 `ai_usage` ∪ `comments` ∪ intraday 图表的不重复日期）∪ 今天 ∪ 当前选中日期——只靠图表日期会漏掉「那天只有 AI 活动、没跑资金流向图」的日子（实现期在真实数据上验证到 2026-07-06 正是这种情况）。
@@ -57,7 +57,7 @@
 
 - 服务端：`buildRecap` 传历史日期 → usage/alerts/结算按该日筛选；`day_pct` 历史分支用假 provider 的日 K 验证计算与缺 bar 时为 null；`date` 校验拒绝非法输入；缓存按日期分键不串。
 - 前端：手动验证 —— 切到 2026-07-06 应看到当天的 AI 花费（有真实数据）与 alert 列表，实时板块隐藏；切回今天恢复实时视图。
-- 跑 `cd app && pnpm test` 确认无回归。
+- 跑 `pnpm test` 确认无回归。
 
 ## 不做的事（YAGNI）
 

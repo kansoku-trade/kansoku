@@ -46,7 +46,7 @@
 
 ## server 新 API
 
-新增 `app/server/src/routes/symbols.ts`，全部按 symbol 现取、不落盘：
+新增 `apps/server/src/routes/symbols.ts`，全部按 symbol 现取、不落盘：
 
 | 路由 | 内容 | 来源 |
 |---|---|---|
@@ -90,15 +90,15 @@ stale 判定沿用现有机制，`context.generated_at` 与 `prediction_updated_
 
 ## 落地文件
 
-- `app/shared/types.ts` —— `context` 类型、schema_version 2
-- `app/server/src/routes/symbols.ts`（新）—— 5 个活数据路由
-- `app/server/src/services/cockpit/`（新）—— flow 转换、benchmark 归一化、持仓计算、事后判定；顺手把 `intraday.ts`（24K）中可复用部分拆出
-- `app/web/src/pages/SymbolCockpit.tsx`（新）+ 现有 intraday 侧栏拆成 tab 化小组件（每个 <300 行）+ 指标开关栏（localStorage）
+- `packages/shared/types.ts` —— `context` 类型、schema_version 2
+- `apps/server/src/routes/symbols.ts`（新）—— 5 个活数据路由
+- `apps/server/src/services/cockpit/`（新）—— flow 转换、benchmark 归一化、持仓计算、事后判定；顺手把 `intraday.ts`（24K）中可复用部分拆出
+- `apps/web/src/pages/SymbolCockpit.tsx`（新）+ 现有 intraday 侧栏拆成 tab 化小组件（每个 <300 行）+ 指标开关栏（localStorage）
 - `.claude/skills/chart/SKILL.md`、`.claude/skills/intraday-signal/SKILL.md` —— 文档更新
 
 ## 测试
 
-- 单测（`cd app && pnpm test`）：事后判定方向感知逻辑、benchmark 归一化、`context` 校验、v1 文档向后兼容。
+- 单测（`pnpm test`）：事后判定方向感知逻辑、benchmark 归一化、`context` 校验、v1 文档向后兼容。
 - 手动：起服务用真实 symbol 跑通驾驶舱页与存档页。
 
 ## 不在范围内

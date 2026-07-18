@@ -83,7 +83,7 @@ Lightweight Charts(v4.2.3)。现在图上已经有 EMA 均线、MACD、金叉死
 
 ## 数据结构
 
-`app/shared/types.ts` 新增:
+`packages/shared/types.ts` 新增:
 
 ```ts
 export interface IntradayFvgZone {
@@ -105,7 +105,7 @@ fvgZones?: IntradayFvgZone[];
 
 ## 后端实现
 
-新建 `app/server/src/services/fvg.ts`,和 `candlePatterns.ts` 同层,导出:
+新建 `apps/server/src/services/fvg.ts`,和 `candlePatterns.ts` 同层,导出:
 
 ```ts
 export function detectFvgZones(candles: Candle[]): IntradayFvgZone[]
@@ -125,7 +125,7 @@ export function detectFvgZones(candles: Candle[]): IntradayFvgZone[]
 
 ### 渲染:Lightweight Charts Primitive
 
-新建 `app/web/src/charts/intraday/fvgPrimitive.ts`,实现一个 series primitive
+新建 `apps/web/src/charts/intraday/fvgPrimitive.ts`,实现一个 series primitive
 (`ISeriesPrimitive`),挂到蜡烛 series 上:
 
 - 每个缺口画一个矩形:
@@ -163,7 +163,7 @@ FVG 不分 group 子类,直接受 `toggles.fvg` 单一开关控制(不走 `filte
 
 ## 测试
 
-新建 `app/server/test/fvg.test.ts`,覆盖:
+新建 `apps/server/test/fvg.test.ts`,覆盖:
 - 看涨缺口识别:构造 `bar[i-1].high < bar[i+1].low` 的三根,确认产出 `bullish`、
   区间正确、`startTime` 是中间 bar。
 - 看跌缺口识别:对称用例。
@@ -177,12 +177,12 @@ FVG 不分 group 子类,直接受 `toggles.fvg` 单一开关控制(不走 `filte
 ## 影响范围
 
 改动文件:
-- `app/shared/types.ts` — 加 `IntradayFvgZone`、`IntradayTfData.fvgZones`。
-- `app/server/src/services/fvg.ts` — 新建,检测逻辑。
-- `app/server/src/services/intraday.ts` — 组装时调用检测填字段。
-- `app/web/src/charts/intraday/fvgPrimitive.ts` — 新建,矩形 primitive。
-- `app/web/src/charts/intraday/useIntradayCharts.ts` — attach / 喂数据 / 清理。
-- `app/web/src/charts/intraday/useIndicatorToggles.ts` — 加 `fvg` 开关。
-- `app/server/test/fvg.test.ts` — 新建单测。
+- `packages/shared/types.ts` — 加 `IntradayFvgZone`、`IntradayTfData.fvgZones`。
+- `apps/server/src/services/fvg.ts` — 新建,检测逻辑。
+- `apps/server/src/services/intraday.ts` — 组装时调用检测填字段。
+- `apps/web/src/charts/intraday/fvgPrimitive.ts` — 新建,矩形 primitive。
+- `apps/web/src/charts/intraday/useIntradayCharts.ts` — attach / 喂数据 / 清理。
+- `apps/web/src/charts/intraday/useIndicatorToggles.ts` — 加 `fvg` 开关。
+- `apps/server/test/fvg.test.ts` — 新建单测。
 
 无破坏性改动:新字段可选,旧持久化 JSON 与旧开关配置向后兼容。

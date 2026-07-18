@@ -7,7 +7,7 @@
 
 ## 背景
 
-桌面端（Electron）现在的首启引导只有一张卡片（`app/web/src/onboarding/Onboarding.tsx`）：探测本机 Longbridge CLI 的安装与登录状态，三态展示（`cli_missing` / `login_required` / 修复登录），给出安装命令和「重新检测」。gate 逻辑在 `gateStatus.ts` + `useCredentialsGate.ts`，只在存在 desktop bridge 时生效，纯实时读凭据状态。web 部署不走引导（服务器上 CLI 已配好）。
+桌面端（Electron）现在的首启引导只有一张卡片（`apps/web/src/onboarding/Onboarding.tsx`）：探测本机 Longbridge CLI 的安装与登录状态，三态展示（`cli_missing` / `login_required` / 修复登录），给出安装命令和「重新检测」。gate 逻辑在 `gateStatus.ts` + `useCredentialsGate.ts`，只在存在 desktop bridge 时生效，纯实时读凭据状态。web 部署不走引导（服务器上 CLI 已配好）。
 
 与此同时，App 的 AI 能力现在有三种来源：
 

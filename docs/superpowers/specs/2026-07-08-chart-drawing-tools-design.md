@@ -49,7 +49,7 @@ interface Annotation {
 
 ## 服务端
 
-新增路由文件 `app/server/src/routes/annotations.ts`：
+新增路由文件 `apps/server/src/routes/annotations.ts`：
 
 - `GET /api/annotations/:symbol` → `{ok: true, data: Annotation[]}`；文件不存在返回空数组。
 - `PUT /api/annotations/:symbol` → 请求体为完整 `Annotation[]`，整份替换写回文件。
@@ -58,7 +58,7 @@ interface Annotation {
 
 ## 前端结构
 
-三个新文件，放 `app/web/src/charts/drawings/`：
+三个新文件，放 `apps/web/src/charts/drawings/`：
 
 ### `drawingsPrimitive.ts`
 

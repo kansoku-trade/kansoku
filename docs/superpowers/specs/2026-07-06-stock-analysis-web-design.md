@@ -85,4 +85,4 @@ Claude 式 skill 的三件事，各自复刻：
 ## 测试
 
 - `deep-dive-smoke.ts`：真跑一次验证（skill 索引 + read_skill + 会话跑通），对应现有 `ai-smoke.ts` 的定位。
-- skills loader / note / status 接口单测，纳入 `cd app && pnpm test` 体系。
+- skills loader / note / status 接口单测，纳入 `pnpm test` 体系。

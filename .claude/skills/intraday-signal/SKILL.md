@@ -111,7 +111,7 @@ the day's tape:
 ### Step 3 — Preview: read the technicals
 
 Check the chart server is up (`curl -s http://localhost:5199/api/health`; if
-down: `cd app && pnpm start` in the background), then POST a preview (no
+down: `pnpm start` at the repo root in the background), then POST a preview (no
 `prediction`):
 
 ```bash

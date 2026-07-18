@@ -2,7 +2,7 @@
 
 **日期**：2026-07-14
 **状态**：设计已批准，待写实施计划
-**范围**：`app/packages/core/src/ai/` 的六个 agent + `.claude/skills/` + 根 `CLAUDE.md`
+**范围**：`packages/core/src/ai/` 的六个 agent + `.claude/skills/` + 根 `CLAUDE.md`
 
 ---
 
@@ -11,7 +11,7 @@
 这个仓库的"纪律"有两个消费方：
 
 1. **Claude Code** 直接在仓库里跑 —— 读根 `CLAUDE.md` + `.claude/skills/*/SKILL.md` + `journal/lessons.md`
-2. **app 内的 AI** —— `app/packages/core/src/ai/` 里的六个 agent
+2. **app 内的 AI** —— `packages/core/src/ai/` 里的六个 agent
 
 **问题：没有任何一条路径把根 `CLAUDE.md` 送到 app agent 面前。** 仓库级的不变量（GAAP 陷阱、不自动附和、一手信源、单位歧义、少用行话）只活在 Claude Code 的上下文里。app 里的 AI 看不见。
 
@@ -85,7 +85,7 @@
 
 ### 3.4 集中式组装器
 
-新建 **`app/packages/core/src/ai/promptPolicy.ts`**。
+新建 **`packages/core/src/ai/promptPolicy.ts`**。
 
 **每个 agent 声明自己的能力形态，由组装器统一注入。禁止六个文件各自调 `readSkill` 拼 prompt。**
 

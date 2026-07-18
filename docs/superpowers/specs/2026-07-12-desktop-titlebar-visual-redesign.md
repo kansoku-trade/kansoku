@@ -1,7 +1,7 @@
 # 桌面 titlebar 视觉重做（方向 B · Buffer 列表）
 
 日期：2026-07-12
-范围：`app/web/src/styles.css`、`app/web/src/desktop/DesktopTitlebar.tsx`（仅桌面 Electron 模式的视觉；web/浏览器模式不受影响）
+范围：`apps/web/src/styles.css`、`apps/web/src/desktop/DesktopTitlebar.tsx`（仅桌面 Electron 模式的视觉；web/浏览器模式不受影响）
 
 ## 背景
 
@@ -54,8 +54,8 @@
 
 ## 涉及改动
 
-- **`app/web/src/styles.css`**：重写 `.desktop-tab*` 相关规则段（去掉活动态底部下划线 + canvas 背景块，改为左竖标 + 三态色规则、分隔线的兄弟选择器隐藏逻辑、悬停淡背景）。仅涉及该段，其余样式不动。
-- **`app/web/src/desktop/DesktopTitlebar.tsx`**：DOM 结构基本不变（图标 / 标题 / 关闭叉已在）。分隔线用纯 CSS `::after` + 兄弟选择器实现，**无需**在 markup 里插入分隔元素。若现有 className 已够用则本文件可零改动；如需为兄弟选择器命中而微调结构，改动限于 className / 元素嵌套，不碰逻辑与回调。
+- **`apps/web/src/styles.css`**：重写 `.desktop-tab*` 相关规则段（去掉活动态底部下划线 + canvas 背景块，改为左竖标 + 三态色规则、分隔线的兄弟选择器隐藏逻辑、悬停淡背景）。仅涉及该段，其余样式不动。
+- **`apps/web/src/desktop/DesktopTitlebar.tsx`**：DOM 结构基本不变（图标 / 标题 / 关闭叉已在）。分隔线用纯 CSS `::after` + 兄弟选择器实现，**无需**在 markup 里插入分隔元素。若现有 className 已够用则本文件可零改动；如需为兄弟选择器命中而微调结构，改动限于 className / 元素嵌套，不碰逻辑与回调。
 
 ## 测试
 

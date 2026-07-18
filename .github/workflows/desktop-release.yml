@@ -46,9 +46,9 @@ jobs:
               ;;
           esac
           TAG_VERSION="${TAG#desktop-v}"
-          PKG_VERSION="$(node -p "require('./app/desktop/package.json').version")"
+          PKG_VERSION="$(node -p "require('./apps/desktop/package.json').version")"
           if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
-            echo "::error::tag $TAG (version $TAG_VERSION) does not match app/desktop/package.json version $PKG_VERSION"
+            echo "::error::tag $TAG (version $TAG_VERSION) does not match apps/desktop/package.json version $PKG_VERSION"
             exit 1
           fi
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
@@ -73,9 +73,9 @@ jobs:
             $0 ~ "^## " ver "( |$)" { found = 1; next }
             found && /^## / { exit }
             found { print }
-          ' app/desktop/CHANGELOG.md > "$NOTES_FILE"
+          ' apps/desktop/CHANGELOG.md > "$NOTES_FILE"
           if ! grep -q '[^[:space:]]' "$NOTES_FILE"; then
-            echo "::error::no \"## $VERSION\" section found in app/desktop/CHANGELOG.md — run the release skill (or add the section) before tagging"
+            echo "::error::no \"## $VERSION\" section found in apps/desktop/CHANGELOG.md — run the release skill (or add the section) before tagging"
             exit 1
           fi
           echo "file=$NOTES_FILE" >> "$GITHUB_OUTPUT"
@@ -83,7 +83,7 @@ jobs:
       - name: setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          package_json_file: app/package.json
+          package_json_file: package.json
 
       - name: setup node
         uses: actions/setup-node@v4
@@ -94,44 +94,35 @@ jobs:
           # entry that lies about better-sqlite3 already being built for Electron's
           # ABI (see commit 39aa0f5).
           cache: pnpm
-          cache-dependency-path: |
-            app/pnpm-lock.yaml
-            pnpm-lock.yaml
+          cache-dependency-path: pnpm-lock.yaml
 
-      # app/pro (@kansoku/pro, the AI slot) lives in a private repo. Until
+      # apps/pro (@kansoku/pro, the AI slot) lives in a private repo. Until
       # KANSOKU_PRO_REPO_URL + a deploy key are configured as repo secrets,
       # this step is a no-op and the release stays free-only. Once configured
-      # it pulls app/pro in before install, pnpm picks it up as a workspace
+      # it pulls apps/pro in before install, pnpm picks it up as a workspace
       # member, and `pnpm package` (via scripts/stagePro.mjs) builds and
       # stages pro into the asar.
       - name: fetch pro slot (optional — free build until KANSOKU_PRO_REPO_URL is configured)
         env:
           KANSOKU_PRO_REPO_URL: ${{ secrets.KANSOKU_PRO_REPO_URL }}
-        run: app/scripts/fetch-pro.sh || echo "pro slot not configured, continuing with a free-only release build"
+        run: scripts/fetch-pro.sh || echo "pro slot not configured, continuing with a free-only release build"
 
+      # the root prepare script (skills experimental_install) restores third-party
+      # skills into .claude/skills so stageSkills.mjs can bundle them into the app.
       - name: install dependencies
-        working-directory: app
-        run: pnpm install --frozen-lockfile
-
-      # third-party skills are gitignored (pinned in skills-lock.json); the root
-      # prepare script runs `skills experimental_install` to restore them into
-      # .claude/skills so stageSkills.mjs can bundle them into the app.
-      - name: restore third-party skills (skills-lock.json)
         run: pnpm install --frozen-lockfile
 
       - name: typecheck (pro-api, core, server, web, desktop)
-        working-directory: app
         run: pnpm -r typecheck
 
       - name: test — core, web, desktop
-        working-directory: app
         run: |
           pnpm --filter @kansoku/core test
           pnpm --filter @kansoku/web test
           pnpm --filter @kansoku/desktop test
 
       - name: test — server (json report for the known-failure gate)
-        working-directory: app/server
+        working-directory: apps/server
         # no leading `--` here: pnpm forwards it verbatim to the underlying
         # `vitest run` script, which then reads it as a positional file filter
         # instead of a flag separator, and --reporter/--outputFile are silently
@@ -139,10 +130,10 @@ jobs:
         run: pnpm test --reporter=json --outputFile=test-results.json || true
 
       - name: gate — server suite has no NEW failures
-        run: node .github/scripts/assert-known-test-failures.mjs app/server/test-results.json
+        run: node .github/scripts/assert-known-test-failures.mjs apps/server/test-results.json
 
       - name: clear native-module rebuild cache (pnpm package forces the real rebuild)
-        working-directory: app/desktop
+        working-directory: apps/desktop
         run: rm -rf node_modules/better-sqlite3/build "$HOME/Library/Caches/electron-rebuild"
 
       - name: fetch Sparkle tools
@@ -160,22 +151,21 @@ jobs:
           SPARKLE_ED_PUBLIC_KEY: ${{ secrets.SPARKLE_ED_PUBLIC_KEY }}
         run: |
           PLACEHOLDER="SPARKLE_ED_PUBLIC_KEY_PLACEHOLDER"
-          if ! grep -q "$PLACEHOLDER" app/desktop/electron-builder.yml; then
-            echo "::error::placeholder $PLACEHOLDER not found in app/desktop/electron-builder.yml — has the Sparkle bridge integration point moved?"
+          if ! grep -q "$PLACEHOLDER" apps/desktop/electron-builder.yml; then
+            echo "::error::placeholder $PLACEHOLDER not found in apps/desktop/electron-builder.yml — has the Sparkle bridge integration point moved?"
             exit 1
           fi
-          sed -i '' "s|$PLACEHOLDER|$SPARKLE_ED_PUBLIC_KEY|" app/desktop/electron-builder.yml
+          sed -i '' "s|$PLACEHOLDER|$SPARKLE_ED_PUBLIC_KEY|" apps/desktop/electron-builder.yml
 
       - name: build web
-        working-directory: app
         run: pnpm --filter @kansoku/web build
 
       - name: package desktop (dmg + zip, no paid signing identity)
-        working-directory: app/desktop
+        working-directory: apps/desktop
         run: pnpm package
 
       - name: verify ad-hoc signature (dmg + zip both embed the afterPack-signed app)
-        working-directory: app/desktop
+        working-directory: apps/desktop
         run: |
           # electron-builder.yml's afterPack hook (scripts/afterPack.cjs)
           # ad-hoc signs the .app once, before either target is packaged, so
@@ -204,17 +194,17 @@ jobs:
           # only the zip goes into ARCHIVE_DIR — that's the directory
           # generate_appcast scans, and an unsigned dmg would just be skipped
           # with a warning (or worse, confuse delta-base detection). The dmg
-          # is uploaded to the release directly from app/desktop/release/.
-          cp app/desktop/release/*.zip "$ARCHIVE_DIR/"
+          # is uploaded to the release directly from apps/desktop/release/.
+          cp apps/desktop/release/*.zip "$ARCHIVE_DIR/"
           # a .md with the same basename as the zip is how generate_appcast picks up
           # release notes; with --embed-release-notes below they land in the appcast
           # <description sparkle:format="markdown"> so the Sparkle dialog shows them.
-          ZIP_BASE="$(basename app/desktop/release/*.zip .zip)"
+          ZIP_BASE="$(basename apps/desktop/release/*.zip .zip)"
           cp "${{ steps.notes.outputs.file }}" "$ARCHIVE_DIR/$ZIP_BASE.md"
           {
             echo "dir=$ARCHIVE_DIR"
-            echo "dmg_path=$(echo app/desktop/release/*.dmg)"
-            echo "zip_name=$(basename app/desktop/release/*.zip)"
+            echo "dmg_path=$(echo apps/desktop/release/*.dmg)"
+            echo "zip_name=$(basename apps/desktop/release/*.zip)"
           } >> "$GITHUB_OUTPUT"
 
       - name: fetch existing appcast + last 2 release archives (delta base)

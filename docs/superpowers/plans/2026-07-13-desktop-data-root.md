@@ -4,7 +4,7 @@
 
 **Goal:** Packaged Kansoku can bind its project-root data directory to a user-chosen path (e.g. the trade repo), so charts/`app.db`/`stocks` share one tree with server/dev; preference lives in real userData; bad paths degrade safely.
 
-**Architecture:** Host-only feature. Extend `resolveDataRoot` + boot `env.ts` to read `{userData}/data-root.json`. Pure store/validate/resolve modules under `app/desktop/src/dataRoot/`. Menu + settings UI call the same flow. Kernel still only sees `TRADE_PROJECT_ROOT`.
+**Architecture:** Host-only feature. Extend `resolveDataRoot` + boot `env.ts` to read `{userData}/data-root.json`. Pure store/validate/resolve modules under `apps/desktop/src/dataRoot/`. Menu + settings UI call the same flow. Kernel still only sees `TRADE_PROJECT_ROOT`.
 
 **Tech Stack:** Electron main, vitest, React settings page, existing onboarding-style file store + `desktop:*` IPC / preload bridge patterns.
 
@@ -22,41 +22,41 @@
 - Docs/UI copy: 中文白话; code/identifiers English
 - Comments/JSDoc: zero by default (project rule)
 - Commits: plain English messages, no AI co-authorship; only commit when task says so
-- Scope tests to files you touch (`pnpm -C app/desktop test`, targeted web tests)
+- Scope tests to files you touch (`pnpm -C apps/desktop test`, targeted web tests)
 
 ## File map
 
 | Path | Role |
 |------|------|
-| `app/desktop/src/dataRoot/store.ts` | Read/write/clear `data-root.json` |
-| `app/desktop/src/dataRoot/validate.ts` | Candidate path validation |
-| `app/desktop/src/dataRoot/status.ts` | Boot-time status object types + helpers |
-| `app/desktop/src/dataRoot/flow.ts` | Dialog pick / reset / restart prompt |
-| `app/desktop/src/boot/paths.ts` | Extend `resolveDataRoot` |
-| `app/desktop/src/boot/env.ts` | Load preference, resolve, scaffold, export status |
-| `app/desktop/src/dataRoot/ipc.ts` | `desktop:data-root:*` handlers |
-| `app/desktop/src/menu/sections/appSection.ts` | Menu item |
-| `app/desktop/src/menu/types.ts` | `selectDataRoot` dep |
-| `app/desktop/src/main.ts` | Wire menu + register IPC |
-| `app/desktop/src/preload.ts` | Expose `desktop.dataRoot` |
-| `app/desktop/test/dataRoot/*.test.ts` | Unit tests |
-| `app/desktop/test/boot/paths.test.ts` | Extended resolve tests |
-| `app/web/src/pages/settings/desktopDataRoot.ts` | Bridge helper |
-| `app/web/src/pages/settings/DataRootSection.tsx` | Settings card |
-| `app/web/src/pages/settings/SettingsPage.tsx` | Mount section when bridge present |
-| `app/desktop/README.md` | User-facing docs |
+| `apps/desktop/src/dataRoot/store.ts` | Read/write/clear `data-root.json` |
+| `apps/desktop/src/dataRoot/validate.ts` | Candidate path validation |
+| `apps/desktop/src/dataRoot/status.ts` | Boot-time status object types + helpers |
+| `apps/desktop/src/dataRoot/flow.ts` | Dialog pick / reset / restart prompt |
+| `apps/desktop/src/boot/paths.ts` | Extend `resolveDataRoot` |
+| `apps/desktop/src/boot/env.ts` | Load preference, resolve, scaffold, export status |
+| `apps/desktop/src/dataRoot/ipc.ts` | `desktop:data-root:*` handlers |
+| `apps/desktop/src/menu/sections/appSection.ts` | Menu item |
+| `apps/desktop/src/menu/types.ts` | `selectDataRoot` dep |
+| `apps/desktop/src/main.ts` | Wire menu + register IPC |
+| `apps/desktop/src/preload.ts` | Expose `desktop.dataRoot` |
+| `apps/desktop/test/dataRoot/*.test.ts` | Unit tests |
+| `apps/desktop/test/boot/paths.test.ts` | Extended resolve tests |
+| `apps/web/src/pages/settings/desktopDataRoot.ts` | Bridge helper |
+| `apps/web/src/pages/settings/DataRootSection.tsx` | Settings card |
+| `apps/web/src/pages/settings/SettingsPage.tsx` | Mount section when bridge present |
+| `apps/desktop/README.md` | User-facing docs |
 
 ---
 
 ### Task 1: Store, validate, resolveDataRoot
 
 **Files:**
-- Create: `app/desktop/src/dataRoot/store.ts`
-- Create: `app/desktop/src/dataRoot/validate.ts`
-- Modify: `app/desktop/src/boot/paths.ts`
-- Create: `app/desktop/test/dataRoot/store.test.ts`
-- Create: `app/desktop/test/dataRoot/validate.test.ts`
-- Modify: `app/desktop/test/boot/paths.test.ts`
+- Create: `apps/desktop/src/dataRoot/store.ts`
+- Create: `apps/desktop/src/dataRoot/validate.ts`
+- Modify: `apps/desktop/src/boot/paths.ts`
+- Create: `apps/desktop/test/dataRoot/store.test.ts`
+- Create: `apps/desktop/test/dataRoot/validate.test.ts`
+- Modify: `apps/desktop/test/boot/paths.test.ts`
 
 **Interfaces:**
 - Produces:
@@ -70,7 +70,7 @@
 
 - [ ] **Step 1: Write failing tests** for store (default null, set, clear), validate (self, missing, needs-confirm, ok with journal structure, empty dir ok), resolveDataRoot custom path priority after env.
 
-- [ ] **Step 2: Run** `pnpm -C app/desktop test test/dataRoot test/boot/paths.test.ts` — expect FAIL (missing modules / old resolve).
+- [ ] **Step 2: Run** `pnpm -C apps/desktop test test/dataRoot test/boot/paths.test.ts` — expect FAIL (missing modules / old resolve).
 
 - [ ] **Step 3: Implement store** — mirror `onboarding/store.ts`: JSON file, mode `0o600`, parse tolerant, invalid JSON → `{ path: null }`. `setPath` writes absolute path string; `clear` writes `{ "path": null }` or deletes file (prefer write null for explicitness).
 
@@ -111,10 +111,10 @@ export function resolveDataRoot(opts: DataRootOptions): string {
 ### Task 2: Boot integration + status export
 
 **Files:**
-- Create: `app/desktop/src/dataRoot/status.ts`
-- Create: `app/desktop/src/dataRoot/usability.ts` (or inline in env) — `isDataRootUsable(path: string): boolean`
-- Modify: `app/desktop/src/boot/env.ts`
-- Create: `app/desktop/test/dataRoot/usability.test.ts` and/or boot unit test with injectables if possible
+- Create: `apps/desktop/src/dataRoot/status.ts`
+- Create: `apps/desktop/src/dataRoot/usability.ts` (or inline in env) — `isDataRootUsable(path: string): boolean`
+- Modify: `apps/desktop/src/boot/env.ts`
+- Create: `apps/desktop/test/dataRoot/usability.test.ts` and/or boot unit test with injectables if possible
 
 **Interfaces:**
 - Produces:
@@ -158,12 +158,12 @@ Store can keep async API for runtime IPC; boot uses sync read of same file forma
 ### Task 3: Flow, menu, IPC
 
 **Files:**
-- Create: `app/desktop/src/dataRoot/flow.ts`
-- Create: `app/desktop/src/dataRoot/ipc.ts`
-- Modify: `app/desktop/src/menu/types.ts`
-- Modify: `app/desktop/src/menu/sections/appSection.ts`
-- Modify: `app/desktop/src/main.ts`
-- Create: `app/desktop/test/dataRoot/flow.test.ts` for pure helpers if any; dialog-heavy flow may stay thin
+- Create: `apps/desktop/src/dataRoot/flow.ts`
+- Create: `apps/desktop/src/dataRoot/ipc.ts`
+- Modify: `apps/desktop/src/menu/types.ts`
+- Modify: `apps/desktop/src/menu/sections/appSection.ts`
+- Modify: `apps/desktop/src/main.ts`
+- Create: `apps/desktop/test/dataRoot/flow.test.ts` for pure helpers if any; dialog-heavy flow may stay thin
 
 **Interfaces:**
 - Produces:
@@ -193,7 +193,7 @@ Store can keep async API for runtime IPC; boot uses sync read of same file forma
 
 - [ ] **Step 2: Add unit tests for any extracted pure parts; smoke-import flow module in test if needed**
 
-- [ ] **Step 3: `pnpm -C app/desktop test` and `pnpm -C app/desktop typecheck`**
+- [ ] **Step 3: `pnpm -C apps/desktop test` and `pnpm -C apps/desktop typecheck`**
 
 - [ ] **Step 4: Commit** `feat(desktop): data root pick/reset flow, menu, ipc`
 
@@ -202,11 +202,11 @@ Store can keep async API for runtime IPC; boot uses sync read of same file forma
 ### Task 4: Preload + settings UI
 
 **Files:**
-- Modify: `app/desktop/src/preload.ts`
-- Create: `app/web/src/pages/settings/desktopDataRoot.ts`
-- Create: `app/web/src/pages/settings/DataRootSection.tsx`
-- Create: `app/web/src/pages/settings/desktopDataRoot.test.ts` (bridge null/present)
-- Modify: `app/web/src/pages/settings/SettingsPage.tsx`
+- Modify: `apps/desktop/src/preload.ts`
+- Create: `apps/web/src/pages/settings/desktopDataRoot.ts`
+- Create: `apps/web/src/pages/settings/DataRootSection.tsx`
+- Create: `apps/web/src/pages/settings/desktopDataRoot.test.ts` (bridge null/present)
+- Modify: `apps/web/src/pages/settings/SettingsPage.tsx`
 
 **Interfaces:**
 - Preload (privileged origin only):
@@ -233,7 +233,7 @@ desktopApi.dataRoot = {
 
 - [ ] **Step 2: Web unit test for bridge helper; optional render test if project has rtl — skip if no rtl pattern**
 
-- [ ] **Step 3: `pnpm -C app/desktop test` + `pnpm -C app/web test` (or scoped) + typecheck both if applicable**
+- [ ] **Step 3: `pnpm -C apps/desktop test` + `pnpm -C apps/web test` (or scoped) + typecheck both if applicable**
 
 - [ ] **Step 4: Commit** `feat(desktop): settings UI for data root binding`
 
@@ -242,7 +242,7 @@ desktopApi.dataRoot = {
 ### Task 5: README
 
 **Files:**
-- Modify: `app/desktop/README.md`
+- Modify: `apps/desktop/README.md`
 
 - [ ] **Step 1: Add section「数据目录」** covering: default location, how to bind trade repo, difference from import, restart, concurrent host warning, env override for power users.
 

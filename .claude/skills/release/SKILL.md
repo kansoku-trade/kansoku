@@ -1,6 +1,6 @@
 ---
 name: release
-description: Use when the user wants to release a new desktop app version (发版 / release / 发布新版本) — bumps app/desktop version, writes user-facing release notes into CHANGELOG.md, and opens the release PR that drives the automated tag → build → publish pipeline
+description: Use when the user wants to release a new desktop app version (发版 / release / 发布新版本) — bumps apps/desktop version, writes user-facing release notes into CHANGELOG.md, and opens the release PR that drives the automated tag → build → publish pipeline
 ---
 
 # Desktop Release
@@ -30,22 +30,22 @@ git fetch origin main && git rev-list --count main..origin/main   # must be 0
 
 ```bash
 LAST_TAG=$(git describe --tags --match 'desktop-v*' --abbrev=0)
-git log "$LAST_TAG"..HEAD --oneline -- app/
+git log "$LAST_TAG"..HEAD --oneline -- apps/ packages/ patches/ scripts/
 ```
 
-If `git describe` finds no tag, this is the first release — use the full history of `app/`. If there are no commits touching `app/` since the last tag, stop: nothing to release.
+If `git describe` finds no tag, this is the first release — use the full history of those paths. If there are no commits touching `apps/`, `packages/`, `patches/`, or `scripts/` since the last tag, stop: nothing to release.
 
 Read the actual diffs of significant commits when the one-line messages aren't enough to describe user-visible changes.
 
 ### 3. Decide the version
 
-Current version: `node -p "require('./app/desktop/package.json').version"`.
+Current version: `node -p "require('./apps/desktop/package.json').version"`.
 
 If the user passed `patch`/`minor`/`major`, apply it directly. Otherwise suggest one — any `feat` → minor, only fixes/refactors/chores → patch, breaking changes to user data or workflows → major — and **ask the user to confirm the version number before continuing**.
 
 ### 4. Write the release notes
 
-Prepend a section to `app/desktop/CHANGELOG.md` (below the file header, above the previous version's section):
+Prepend a section to `apps/desktop/CHANGELOG.md` (below the file header, above the previous version's section):
 
 ```markdown
 ## X.Y.Z — YYYY-MM-DD
@@ -62,13 +62,13 @@ Rules for the notes (they become the GitHub Release body verbatim, and users rea
 
 ### 5. Bump the version
 
-Update `version` in `app/desktop/package.json` to the confirmed `X.Y.Z`.
+Update `version` in `apps/desktop/package.json` to the confirmed `X.Y.Z`.
 
 ### 6. Open the PR
 
 ```bash
 git checkout -b release/desktop-vX.Y.Z
-git add app/desktop/package.json app/desktop/CHANGELOG.md
+git add apps/desktop/package.json apps/desktop/CHANGELOG.md
 git commit -m "release(desktop): vX.Y.Z"
 git push -u origin release/desktop-vX.Y.Z
 gh pr create --title "release(desktop): vX.Y.Z" --body "<release notes section>"

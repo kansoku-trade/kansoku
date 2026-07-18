@@ -5,7 +5,7 @@
 
 ## 目标
 
-把 `app/` 里所有非 K 线图表从 ECharts 换成 Recharts，删掉 `echarts` 依赖。视觉上贴合现有暗色设计（GitHub 暗色底、绿 `#22c55e` / 红 `#ef4444`、细网格线、暗色悬浮提示框）。
+把 workspace（仓库根）里所有非 K 线图表从 ECharts 换成 Recharts，删掉 `echarts` 依赖。视觉上贴合现有暗色设计（GitHub 暗色底、绿 `#22c55e` / 红 `#ef4444`、细网格线、暗色悬浮提示框）。
 
 **不动的部分**：SEPA 仪表盘和短线预测仪表盘的 K 线图继续用 lightweight-charts（Recharts 不支持蜡烛图）。不引入 Tailwind / shadcn。
 
@@ -13,7 +13,7 @@
 
 ECharts 有两条使用路径：
 
-1. **图表详情页**（flow / cohort 类型）：服务端 `app/server/src/services/simple.ts` 把原始行数据拼成 ECharts option，存进图表 JSON 的 `built.option`，前端 `EChartsView.tsx` 无脑渲染。
+1. **图表详情页**（flow / cohort 类型）：服务端 `apps/server/src/services/simple.ts` 把原始行数据拼成 ECharts option，存进图表 JSON 的 `built.option`，前端 `EChartsView.tsx` 无脑渲染。
 2. **驾驶舱小图**：`FlowTab.tsx` / `EnvTab.tsx` 在前端自己拼 ECharts option，交给 `MiniEChart.tsx` 渲染。
 
 ## 方案：改数据契约，服务端只发数据，前端负责渲染
@@ -35,13 +35,13 @@ export interface SimpleBuilt {
 - cohort 的数据清洗（label 解析、按数值升序排序、非法行报错）仍留在服务端，`rows` 存的是清洗后的结果；前端只做渲染。
 - flow 的正负拆分（零点插值）属于渲染逻辑，随迁到前端组件里。
 
-### 服务端（app/server）
+### 服务端（apps/server）
 
 - `simple.ts`：删掉 `buildFlowOption` / `buildCohortOption`，保留并导出 cohort 清洗函数；flow 只做行校验。
 - `build.ts`：flow / cohort 分支产出 `SimpleBuilt` 而非 option。
 - **旧数据兼容**：读取图表 JSON 时若 `built.kind === "echarts"`，用现有 `rebuild()` 从 `input` 重建成新格式再返回（`input.rows` 一直都有，不需要手工迁移文件）。SSE 的 60 秒重建走同一条路径，自然产出新格式。
 
-### 前端（app/web）
+### 前端（apps/web）
 
 新建 `src/charts/simple/` 目录：
 
@@ -65,7 +65,7 @@ export interface SimpleBuilt {
 
 ### 测试与文档
 
-- `cd app && pnpm test`：更新断言 `built.option` 的服务端测试为断言 `SimpleBuilt` 形状；补一条旧格式（`kind:"echarts"`）读取时自动重建的用例。
+- `pnpm test`：更新断言 `built.option` 的服务端测试为断言 `SimpleBuilt` 形状；补一条旧格式（`kind:"echarts"`）读取时自动重建的用例。
 - 更新 `.claude/skills/chart/SKILL.md` 与 `CLAUDE.md` 中提到 ECharts 的描述。
 
 ## 错误处理

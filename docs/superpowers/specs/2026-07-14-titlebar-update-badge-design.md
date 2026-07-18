@@ -2,7 +2,7 @@
 
 **日期：** 2026-07-14  
 **状态：** 待实现  
-**范围：** `app/desktop`（主进程 updater、Sparkle bridge、主窗 focus）+ `app/web`（`DesktopTitlebar`）
+**范围：** `apps/desktop`（主进程 updater、Sparkle bridge、主窗 focus）+ `apps/web`（`DesktopTitlebar`）
 
 ## 背景
 
@@ -194,7 +194,7 @@ desktop.updater = {
 
 ## 标题栏 UI
 
-文件：`app/web/src/desktop/DesktopTitlebar.tsx`（及对应 CSS）。
+文件：`apps/web/src/desktop/DesktopTitlebar.tsx`（及对应 CSS）。
 
 - 仅当 `desktop.updater` 存在且 `status.kind === "available"` 时渲染按钮。  
 - 图标：`ArrowUpCircle`（lucide-react，与现有 titlebar 图标一致）。  

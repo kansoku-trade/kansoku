@@ -3,13 +3,25 @@ name: ci
 on:
   pull_request:
     paths:
-      - "app/**"
+      - "apps/**"
+      - "packages/**"
+      - "patches/**"
+      - "scripts/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
       - ".github/**"
   push:
     branches:
       - main
     paths:
-      - "app/**"
+      - "apps/**"
+      - "packages/**"
+      - "patches/**"
+      - "scripts/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
       - ".github/**"
 
 concurrency:
@@ -27,49 +39,45 @@ jobs:
       - name: setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          package_json_file: app/package.json
+          package_json_file: package.json
 
       - name: setup node
         uses: actions/setup-node@v4
         with:
           node-version: "24"
           cache: pnpm
-          cache-dependency-path: app/pnpm-lock.yaml
+          cache-dependency-path: pnpm-lock.yaml
 
-      # app/pro (@kansoku/pro, the AI slot) is gitignored and lives in a
+      # apps/pro (@kansoku/pro, the AI slot) is gitignored and lives in a
       # separate private repo — a checkout here never has it. This is the
       # standing "community can build without the AI slot" verification;
       # this step just makes that assumption explicit instead of implicit.
       - name: assert pro slot absent (this is the free-state build)
         run: |
-          if [ -e app/pro ]; then
-            echo "::error::app/pro exists on a public CI checkout — it should be gitignored, not committed"
+          if [ -e apps/pro ]; then
+            echo "::error::apps/pro exists on a public CI checkout — it should be gitignored, not committed"
             exit 1
           fi
 
       - name: install dependencies
-        working-directory: app
         run: pnpm install --frozen-lockfile
 
       - name: typecheck (pro-api, core, server, web, desktop)
-        working-directory: app
         run: pnpm -r typecheck
 
       - name: build (web, desktop main — the compile step that would have caught a bundling regression)
-        working-directory: app
         run: |
           pnpm --filter @kansoku/web build
           pnpm --filter @kansoku/desktop build
 
       - name: test — core, web, desktop
-        working-directory: app
         run: |
           pnpm --filter @kansoku/core test
           pnpm --filter @kansoku/web test
           pnpm --filter @kansoku/desktop test
 
       - name: test — server (json report for the known-failure gate)
-        working-directory: app/server
+        working-directory: apps/server
         # no leading `--` here: pnpm forwards it verbatim to the underlying
         # `vitest run` script, which then reads it as a positional file filter
         # instead of a flag separator, and --reporter/--outputFile are silently
@@ -77,4 +85,4 @@ jobs:
         run: pnpm test --reporter=json --outputFile=test-results.json || true
 
       - name: gate — server suite has no NEW failures
-        run: node .github/scripts/assert-known-test-failures.mjs app/server/test-results.json
+        run: node .github/scripts/assert-known-test-failures.mjs apps/server/test-results.json

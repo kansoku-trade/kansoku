@@ -5,7 +5,7 @@
 
 ## 背景与目标
 
-当前 intraday 图表（`app/web/src/charts/drawings/`）有 6 个绘图工具（选择、测量、趋势线、水平线、矩形、斐波那契），样式固定、画一条就退回选择状态。AI Chat（`app/packages/core/src/ai/chat.ts`）只能读行情数据，完全看不到用户画的线，也不能在图上画任何东西。
+当前 intraday 图表（`apps/web/src/charts/drawings/`）有 6 个绘图工具（选择、测量、趋势线、水平线、矩形、斐波那契），样式固定、画一条就退回选择状态。AI Chat（`packages/core/src/ai/chat.ts`）只能读行情数据，完全看不到用户画的线，也不能在图上画任何东西。
 
 本设计做三件事：
 
@@ -21,7 +21,7 @@
 
 ## 一、数据模型
 
-`app/shared/types.ts` 的 `Annotation` 增加三个可选字段，老 JSON 文件无需迁移：
+`packages/shared/types.ts` 的 `Annotation` 增加三个可选字段，老 JSON 文件无需迁移：
 
 ```ts
 interface Annotation {
@@ -41,13 +41,13 @@ interface AnnotationStyle {
 }
 ```
 
-- 预设色板（6–8 色）定义在 `app/shared/drawings.ts`，客户端样式面板和服务端校验共用同一份。
+- 预设色板（6–8 色）定义在 `packages/shared/drawings.ts`，客户端样式面板和服务端校验共用同一份。
 - `annotations.service.ts` 校验收紧：`label` 限长 120 字；`style.color` 必须在色板白名单内；`source` 只允许 `"user" | "ai"`；点数校验规则不变。
 - 渲染优先用 `style`，缺省落回现有按 kind 的主题色（`drawingsRender.ts` 的 `KIND_COLORS`）。
 
 ## 二、annotations 实时通道
 
-- `app/packages/core/src/realtime/channelProtocol.ts` 新增 `annotations` 通道，按代号订阅（现有通道：quotes/chart/comments/analyses/position/benchmark/board/chat/preview）。
+- `packages/core/src/realtime/channelProtocol.ts` 新增 `annotations` 通道，按代号订阅（现有通道：quotes/chart/comments/analyses/position/benchmark/board/chat/preview）。
 - 服务端 `annotationsService.replace` 成功落盘后，向该代号的订阅者广播全量 `Annotation[]`（画线数据量小，全量最简单，与现有 PUT 全量覆盖语义一致）。
 - 回声处理：
   - PUT 请求体增加可选 `clientId`（页面随机生成、会话内不变），广播帧原样带回。
@@ -106,7 +106,7 @@ interface AnnotationStyle {
 - core 单元测试：新字段校验（label 长度、色板白名单、source 枚举）；AI 合并逻辑（只追加、不动用户线、强制 source）。
 - chat 工具测试：`draw_annotations` 请求 → 落盘 JSON 内容断言；`read_drawings` 输出格式。
 - 现有几何/序列化测试（`drawings-geometry.test.ts`）不受影响。
-- 全部通过 `cd app && pnpm test` 验证；前端交互（样式面板、连续绘制、实时出现）手工在 `pnpm dev` 下验证。
+- 全部通过 `pnpm test` 验证；前端交互（样式面板、连续绘制、实时出现）手工在 `pnpm dev` 下验证。
 
 ## 增补（2026-07-14 第二轮，用户确认）
 

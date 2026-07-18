@@ -18,14 +18,14 @@
 
 ### 1. 后端：新实时频道 `analyst-runs`（全局，不带 symbol）
 
-- `app/packages/core/src/ai/analyst.ts`：为现有的 `analystRunStates` 内存表加事件出口——`updateAnalystRunStatus` 每次变更（开跑、换阶段、结束）发一个事件；新增 `listAnalystRuns()` 返回当前所有在跑的 `{ symbol, status }`，供订阅时发快照。
-- `app/packages/core/src/realtime/channelProtocol.ts`：注册 kind `analyst-runs`。订阅即推 `{ type: "init", runs: [{ symbol, status }] }`；之后每次变更推 `{ type: "update", symbol, status }`。`status` 复用契约里的 `ReassessStatus`（`contract/symbols.ts`），结束时为 `{ running: false }`。
+- `packages/core/src/ai/analyst.ts`：为现有的 `analystRunStates` 内存表加事件出口——`updateAnalystRunStatus` 每次变更（开跑、换阶段、结束）发一个事件；新增 `listAnalystRuns()` 返回当前所有在跑的 `{ symbol, status }`，供订阅时发快照。
+- `packages/core/src/realtime/channelProtocol.ts`：注册 kind `analyst-runs`。订阅即推 `{ type: "init", runs: [{ symbol, status }] }`；之后每次变更推 `{ type: "update", symbol, status }`。`status` 复用契约里的 `ReassessStatus`（`contract/symbols.ts`），结束时为 `{ running: false }`。
 - 选全局频道而非按标的订阅：每条连接频道上限 16 个，按标的订会随 tab 数量挤占；全局订一次，tab 开关无需订退。
 - 桌面端零额外工作：`wsHub` 在桌面模式走 `PortTransport`（IPC 端口），频道协议与 WebSocket 完全一致。
 
 ### 2. 前端：analystRuns store + 外壳层订阅
 
-- 新建 `app/web/src/desktop/analystRunsStore.ts`（可放通用位置，供非桌面页面 hook 复用），风格照 `tabsStore`（模块级 + 订阅函数，不引状态库）：
+- 新建 `apps/web/src/desktop/analystRunsStore.ts`（可放通用位置，供非桌面页面 hook 复用），风格照 `tabsStore`（模块级 + 订阅函数，不引状态库）：
   - `runs: Map<symbol, ReassessStatus>`（running 态）
   - `unseen: Set<symbol>`
   - 迁移规则：update 为 running → 入 `runs`；update 为不 running → 出 `runs`，且该标的对应 tab 非激活 tab 时入 `unseen`；激活某 symbol tab → 该标的移出 `unseen`。
@@ -41,7 +41,7 @@
 
 ### 4. `useAnalystRun` 去轮询
 
-- `app/web/src/pages/cockpit/useAnalystRun.ts` 删除 `usePollingQuery` 的 5 秒轮询，改为从 `analystRuns` store 读该标的的状态（首帧由频道 init 快照兜底）。
+- `apps/web/src/pages/cockpit/useAnalystRun.ts` 删除 `usePollingQuery` 的 5 秒轮询，改为从 `analystRuns` store 读该标的的状态（首帧由频道 init 快照兜底）。
 - 保留 start 时的 optimistic「正在等待服务端确认任务」占位，服务端事件到达后被真实状态覆盖。
 - 对外接口 `{ checking, hint, pending, running, start, status }` 不变，`SymbolCockpit` / `AiTab` / `GenerateAnalysis` / `JournalSection` 等消费方无需改动。
 - 契约里的 `reassessStatus` GET 路由保留（作为调试/兜底接口），但前端不再轮询它。

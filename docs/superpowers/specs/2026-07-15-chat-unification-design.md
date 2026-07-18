@@ -5,7 +5,7 @@
 
 ## 现状摸底（要点）
 
-- Markdown 只有一个组件（`app/web/src/pages/cockpit/markdown.tsx`），两个变体 `chat` / `report`，样式主体在 `typeset.css` + `styles.css` 的 `.typeset*` 段。已知穿透：全局 `a` 规则（styles.css:174）覆盖所有 markdown 表面；`.page h1` / `.page .sub`（styles.css:189-190）是隐患（当前没有 markdown 挂在 `.page` 下，属于待引爆）。
+- Markdown 只有一个组件（`apps/web/src/pages/cockpit/markdown.tsx`），两个变体 `chat` / `report`，样式主体在 `typeset.css` + `styles.css` 的 `.typeset*` 段。已知穿透：全局 `a` 规则（styles.css:174）覆盖所有 markdown 表面；`.page h1` / `.page .sub`（styles.css:189-190）是隐患（当前没有 markdown 挂在 `.page` 下，属于待引爆）。
 - 前端：`useConversationSession` 和 `ConversationTranscript`（含时间线合并）已共用。重复的是壳：输入行、发送/停止切换、回车发送（含输入法守卫）、失败回填、提示行——`ChatDock.tsx:52-88` 与 `ResearchAssistant.tsx:206-219,367-390` 逐对孪生，各穿 `chat-*` 与 `research-assistant-*` 两套 CSS。
 - 后端：`src/ai/chat.ts` 与 `src/ai/researchChat.ts` 结构逐函数平行（运行锁/turnStates/listeners/broadcast/turnState/abort/execute/run），持久化增量、事件翻译、截断工具函数成对拷贝；`chatStore.ts` ≈ `researchChatStore.ts`（消息同写 `chat_messages` 表，只差会话表和键列）；contract/service 四件套形状雷同（`researchChat.service.ts` 甚至直接 import `chat.ts` 的 `toDisplayMessages`）；`channelProtocol.ts` 的 `attachChat` ≈ `attachResearchChat`。provider 调用层已共用 `createAgentSession`。真正领域特有：图表侧的方向性验证门（缓冲流式+门控重试+fail-closed），研究侧的 MessagesEngine 文档上下文注入与修改提案工具。
 
@@ -21,7 +21,7 @@
 
 ## 块 2 — 前端壳归一（小）
 
-新共享组件 `app/web/src/pages/cockpit/chat/ChatComposer.tsx`：
+新共享组件 `apps/web/src/pages/cockpit/chat/ChatComposer.tsx`：
 
 - Props：`value, onChange, busy, aborting, disabled?, placeholder, onSubmit, onAbort, hint?`（不留空插槽，将来有真实需求再加）。
 - 内含：`Input` + 发送/停止按钮切换（busy → 停止）+ Enter 发送（`isComposing` 守卫）+ 提示/错误行（`role="alert"`）。

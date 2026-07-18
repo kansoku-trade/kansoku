@@ -9,7 +9,7 @@
 
 给内核加上第三种宿主：Electron。本期结束时能产出一个可安装的 macOS dmg，双击打开即是完整 App（无终端、无端口），并具备 Sparkle 自动更新（含增量更新与原生弹窗）。
 
-1. `app/desktop/` 包：main / preload / 打包配置 / Sparkle 桥。
+1. `apps/desktop/` 包：main / preload / 打包配置 / Sparkle 桥。
 2. `protocol.handle('app')` 宿主：渲染进程 `fetch('app://…')` 直达内核，零 localhost 监听。
 3. 实时通道的桌面传输绑定（MessagePort）。
 4. electron-builder 打包（dmg + zip），原生模块正确处理。
@@ -26,7 +26,7 @@
 ## 目录
 
 ```
-app/desktop/
+apps/desktop/
 ├─ src/
 │  ├─ main.ts            # app ready → 注册协议 → 起内核 → 开窗口 → 初始化 Sparkle 桥
 │  ├─ protocolHost.ts    # protocol.handle('app', req => kernel.fetch(req))

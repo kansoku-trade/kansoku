@@ -69,7 +69,7 @@
 ## 测试
 
 - core：`parseWsMessage` 的 `preview` 分支单测；`subscribePreview` 单测（mock provider——初始 build 推送、push 合并后重建、多订阅共享、最后退订拆除）。
-- 跑 `cd app && pnpm test`。
+- 跑 `pnpm test`。
 
 ## 不做的事
 

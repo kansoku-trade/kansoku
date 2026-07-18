@@ -7,7 +7,7 @@
 
 短线预测目前有两条生产线、复盘有四个出口，规则和口径分散：
 
-- **预测生产线**：(1) 对话里裸跑 `intraday-signal` skill（全量：X、财报日历、期权墙、仓位、journal）；(2) in-app 内置 analyst（`app/server/src/ai/analyst.ts`，pi-agent-core），用一份手工复刻的 SYSTEM_PROMPT，产物是精简版（无 journal、无 context、无仓位、无财报日历、无 X）。两套规则文本各自维护，已经漂移。
+- **预测生产线**：(1) 对话里裸跑 `intraday-signal` skill（全量：X、财报日历、期权墙、仓位、journal）；(2) in-app 内置 analyst（`apps/server/src/ai/analyst.ts`，pi-agent-core），用一份手工复刻的 SYSTEM_PROMPT，产物是精简版（无 journal、无 context、无仓位、无财报日历、无 X）。两套规则文本各自维护，已经漂移。
 - **复盘出口**：机械记分板（`/api/overview/stats`）、盘后自动 recap（`journal/YYYY-MM-DD-intraday-recap.md`）、skill Step 7 手写 journal、`journal/lessons.md`。命中率/盈利倍数没有唯一口径。
 
 ## 目标

@@ -5,7 +5,7 @@
 
 ## 背景与目标
 
-`app/` 目前是本地图表 web 应用（Fastify + Vite middleware 模式 + React），图表由 Claude Code skills 通过 `POST /api/charts` 创建，仅自己使用。目标是把它演进成**可正经分发的桌面 App**，同时保留 **Server + Web 自部署**的运行形态。
+本仓库的 workspace（现即仓库根，宿主在 `apps/`、共享库在 `packages/`）目前是本地图表 web 应用（Fastify + Vite middleware 模式 + React），图表由 Claude Code skills 通过 `POST /api/charts` 创建，仅自己使用。目标是把它演进成**可正经分发的桌面 App**，同时保留 **Server + Web 自部署**的运行形态。
 
 ### 已确认的约束
 
@@ -15,7 +15,7 @@
 | 桌面平台 | 先只做 macOS，CI 架子留扩展空间 |
 | 数据源 | 用户自带 Longbridge 开放平台凭证，App 内设置页填写 |
 | 签名 | 先不买 Apple 开发者账号：无签名 + 弱更新，架构按可升级到签名 + 自动更新设计 |
-| 仓库 | 留在本仓库 `app/` 下，接受目录与架构重构 |
+| 仓库 | 留在本仓库（workspace 即仓库根），接受目录与架构重构 |
 | 运行形态 | 双模式共存：① Server + Web（Linux 自部署）② Electron 桌面分发 |
 | 服务端框架 | Fastify → Tsuki（https://github.com/Innei/Tsuki ，Hono 上的 NestJS 风格框架：装饰器 + tsyringe DI + 模块 + OpenAPI） |
 
@@ -33,17 +33,17 @@
 核心利用 Hono 的本质——app 就是一个 `fetch(Request) => Response` 函数，不绑定端口：
 
 ```
-app/
-├─ server/                  # Tsuki 化
+.                           # 仓库根即 workspace 根
+├─ apps/server/             # Tsuki 化
 │  ├─ src/modules/          # charts / quotes / credentials / ai … 各业务模块
 │  ├─ src/bootstrap.ts      # createApplication(AppModule) → 返回 hono app（不 listen）
 │  └─ src/main.node.ts      # 宿主二入口：@hono/node-server serve()
-├─ desktop/                 # 宿主三：Electron 壳
+├─ apps/desktop/            # 宿主三：Electron 壳
 │  ├─ src/main.ts           # protocol.handle('app', req => honoApp.fetch(req))
 │  ├─ src/preload.ts        # IPC 白名单桥
 │  └─ forge.config.ts       # electron-forge 打包（dmg + zip）
-├─ web/                     # 不感知宿主，仅 API base URL 一个开关
-└─ shared/
+├─ apps/web/                # 不感知宿主，仅 API base URL 一个开关
+└─ packages/shared/
 ```
 
 | 运行态 | 宿主 | Vite | 说明 |

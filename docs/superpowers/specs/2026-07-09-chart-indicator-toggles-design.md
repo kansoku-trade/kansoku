@@ -107,7 +107,7 @@
 
 ## 组件与数据流
 
-### `LayerPanel` 增强（`app/web/src/charts/LayerPanel.tsx`）
+### `LayerPanel` 增强（`apps/web/src/charts/LayerPanel.tsx`）
 
 对外接口演进为支持受控用法，SEPA 可继续半非受控兼容：
 
@@ -195,12 +195,12 @@ interface LayerPanelProps {
 
 | 文件 | 动作 |
 |------|------|
-| `app/web/src/charts/LayerPanel.tsx` | 增强 API + 标题计数 |
-| `app/web/src/charts/intraday/useIndicatorToggles.ts` | 保守默认 + 顺序常量 |
-| `app/web/src/charts/intraday/IntradayDashboard.tsx` | 换接 LayerPanel |
-| `app/web/src/charts/intraday/IndicatorToggles.tsx` | 删除 |
-| `app/web/src/charts/sepa/SepaDashboard.tsx`（及 groups 构造处） | 对齐标题计数 / 受控若需要 |
-| `app/web/src/styles.css` | 去掉 indicator-toggles 样式；必要时微调 layer-panel |
+| `apps/web/src/charts/LayerPanel.tsx` | 增强 API + 标题计数 |
+| `apps/web/src/charts/intraday/useIndicatorToggles.ts` | 保守默认 + 顺序常量 |
+| `apps/web/src/charts/intraday/IntradayDashboard.tsx` | 换接 LayerPanel |
+| `apps/web/src/charts/intraday/IndicatorToggles.tsx` | 删除 |
+| `apps/web/src/charts/sepa/SepaDashboard.tsx`（及 groups 构造处） | 对齐标题计数 / 受控若需要 |
+| `apps/web/src/styles.css` | 去掉 indicator-toggles 样式；必要时微调 layer-panel |
 
 ## 后续（明确不在本次）
 

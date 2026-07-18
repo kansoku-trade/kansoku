@@ -1,7 +1,7 @@
 # 研究 AI 助手面板重构：统一对话流
 
 日期：2026-07-14
-范围：纯前端（`app/web`），后端 / contract / service 不动。
+范围：纯前端（`apps/web`），后端 / contract / service 不动。
 
 ## 背景与问题
 
@@ -84,11 +84,11 @@
 
 | 文件 | 改动 |
 |---|---|
-| `app/web/src/pages/research/ResearchAssistant.tsx` | 重排结构：删除顶部 RefreshPanel 挂载、底部历史区、待审阅区；历史改 header 图标 + 弹窗；加待审阅提示条；做时间线合并（chat rows + 最近 refresh 任务 + 提案，按时间戳排序后交给渲染） |
-| `app/web/src/pages/research/ResearchRefreshPanel.tsx` | 面板壳、常驻 header、介绍文案删除；`TaskProgress` / `ResearchReport`（改分节折叠）/ 错误态改造为流内卡片组件导出 |
-| `app/web/src/pages/research/useResearchRefresh.ts` | 不动（如时间线合并需要暴露字段，做最小调整） |
-| `app/web/src/pages/cockpit/chat/ConversationTranscript.tsx` | 若需支持插入非聊天条目，加最小扩展点（如按时间戳混入自定义行）；不影响 cockpit 现有用法 |
-| `app/web/src/styles.css` | 删除废弃的面板样式，新增流内卡片 / 提示条 / 历史弹窗样式 |
+| `apps/web/src/pages/research/ResearchAssistant.tsx` | 重排结构：删除顶部 RefreshPanel 挂载、底部历史区、待审阅区；历史改 header 图标 + 弹窗；加待审阅提示条；做时间线合并（chat rows + 最近 refresh 任务 + 提案，按时间戳排序后交给渲染） |
+| `apps/web/src/pages/research/ResearchRefreshPanel.tsx` | 面板壳、常驻 header、介绍文案删除；`TaskProgress` / `ResearchReport`（改分节折叠）/ 错误态改造为流内卡片组件导出 |
+| `apps/web/src/pages/research/useResearchRefresh.ts` | 不动（如时间线合并需要暴露字段，做最小调整） |
+| `apps/web/src/pages/cockpit/chat/ConversationTranscript.tsx` | 若需支持插入非聊天条目，加最小扩展点（如按时间戳混入自定义行）；不影响 cockpit 现有用法 |
+| `apps/web/src/styles.css` | 删除废弃的面板样式，新增流内卡片 / 提示条 / 历史弹窗样式 |
 
 后端接口、contract、core service 全部不动。
 
@@ -106,5 +106,5 @@
 
 ## 测试
 
-- 现有 `app/web` 相关测试跟随组件结构调整。
+- 现有 `apps/web` 相关测试跟随组件结构调整。
 - 手工验证路径：空态 → 发起刷新（进度卡）→ 完成（报告卡分节折叠）→ 提案卡审阅（应用 / 拒绝 / 撤销）→ 历史弹窗 → 待审阅提示条滚动定位 → 刷新失败 / 中止态。

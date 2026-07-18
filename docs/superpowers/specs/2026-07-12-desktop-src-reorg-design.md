@@ -1,8 +1,8 @@
-# app/desktop/src 主进程目录重排设计
+# apps/desktop/src 主进程目录重排设计
 
 ## 背景
 
-`app/desktop/src` 是 Electron 主进程代码。当前根目录平铺了约 20 个文件，职责混在一起（启动、凭据、外部 API、更新器、窗口导航、数据导入……）；`main.ts`（317 行）尤其臃肿，同时干了 kernel 启动编排、窗口工厂、外部 API 的 IPC 注册、数据导入的整套弹窗流程、菜单接线、致命错误窗口、dev dock 图标和一堆常量。真正属于「入口」的只有底部那段 `whenReady` 生命周期编排。
+`apps/desktop/src` 是 Electron 主进程代码。当前根目录平铺了约 20 个文件，职责混在一起（启动、凭据、外部 API、更新器、窗口导航、数据导入……）；`main.ts`（317 行）尤其臃肿，同时干了 kernel 启动编排、窗口工厂、外部 API 的 IPC 注册、数据导入的整套弹窗流程、菜单接线、致命错误窗口、dev dock 图标和一堆常量。真正属于「入口」的只有底部那段 `whenReady` 生命周期编排。
 
 `ipc/`、`menu/` 两个子目录已经是「按域聚合」的清晰结构，不属于问题范围。
 
@@ -126,7 +126,7 @@ src/
 - `test/` 从平铺改为镜像 `src/` 子目录：`test/credentials/store.test.ts`、`test/window/navigationGuard.test.ts` ……一一对应。
 - 每个测试文件顶部的 `../src/...` import 路径同步更新。
 - 特例改名：`bootEnvOrdering.test.ts → test/boot/envOrdering.test.ts`、`ipcGroups.test.ts → test/ipc/groups.test.ts`。
-- **验收基线**：迁移后 `cd app && pnpm --filter @trade/desktop test` 全绿。
+- **验收基线**：迁移后 `pnpm --filter @trade/desktop test` 全绿。
 
 ## 构建
 

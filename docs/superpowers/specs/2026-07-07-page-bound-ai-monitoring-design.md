@@ -7,10 +7,10 @@
 
 当前 AI 监测循环完全在服务端运行，与浏览器无关：
 
-- scheduler 在服务器启动时开跑（`app/server/src/index.ts:35`），每 60 秒一个循环，进程活着就一直跑。
-- 监测目标 = 当天（美东日期）创建过 intraday 分析图的所有股票（`app/server/src/ai/scheduler.ts` 的 `discoverIntradayTargets`）。用户关掉页面、切去看别的股票，原股票依然被监测、依然发通知，直到美东日期翻天。
-- 通知由 Node 端通过 `osascript` 发 macOS 系统通知（`app/server/src/ai/notify.ts`），三个触发点：alert 级点评落库（`comments.ts`）、分析员完成重估（`analyst.ts`）、deep dive 完成或失败（`deepDive.ts`）。唯一开关是 `AI_NOTIFY` 环境变量，网页上没有任何通知入口。
-- 前端 WebSocket（`/api/ws`，`app/web/src/wsHub.ts`）只是"收听"已生成的点评，连接断开只清理监听者，不影响服务端监测。另外 `wsHub.ts` 在 tab 不可见时会主动断开 WS、可见时重连。
+- scheduler 在服务器启动时开跑（`apps/server/src/index.ts:35`），每 60 秒一个循环，进程活着就一直跑。
+- 监测目标 = 当天（美东日期）创建过 intraday 分析图的所有股票（`apps/server/src/ai/scheduler.ts` 的 `discoverIntradayTargets`）。用户关掉页面、切去看别的股票，原股票依然被监测、依然发通知，直到美东日期翻天。
+- 通知由 Node 端通过 `osascript` 发 macOS 系统通知（`apps/server/src/ai/notify.ts`），三个触发点：alert 级点评落库（`comments.ts`）、分析员完成重估（`analyst.ts`）、deep dive 完成或失败（`deepDive.ts`）。唯一开关是 `AI_NOTIFY` 环境变量，网页上没有任何通知入口。
+- 前端 WebSocket（`/api/ws`，`apps/web/src/wsHub.ts`）只是"收听"已生成的点评，连接断开只清理监听者，不影响服务端监测。另外 `wsHub.ts` 在 tab 不可见时会主动断开 WS、可见时重连。
 
 两个问题是同一根源的两面：服务器不知道"用户现在在看什么"。
 
@@ -34,7 +34,7 @@
 
 ### 2. 前端：保持连接
 
-`app/web/src/wsHub.ts` 去掉 `visibilitychange` 的"隐藏即断线、可见即重连"逻辑。tab 只要开着（无论前后台）就保持 WS 连接，租约随之持续有效。
+`apps/web/src/wsHub.ts` 去掉 `visibilitychange` 的"隐藏即断线、可见即重连"逻辑。tab 只要开着（无论前后台）就保持 WS 连接，租约随之持续有效。
 
 ### 3. 通知迁移到浏览器
 
@@ -67,11 +67,11 @@
 
 ## 涉及文件（预期）
 
-- `app/server/src/ai/scheduler.ts` — 目标集与租约求交
-- `app/server/src/ai/` 新增租约模块（如 `leases.ts`）
-- `app/server/src/routes/ws.ts` — 订阅/退订/断开时增减租约；新增通知消息类型下发
-- `app/server/src/ai/notify.ts` — 删除 osascript，改为经 WS 推送（或整体移除、由调用点直接推）
-- `app/server/src/ai/comments.ts`、`analyst.ts`、`deepDive.ts` — 替换 `notifyUser` 调用
-- `app/web/src/wsHub.ts` — 去掉 visibilitychange 断线逻辑
-- `app/web/src/` — Notification 授权与弹出逻辑（股票页层面）
-- `app/README.md` — 通知说明更新
+- `apps/server/src/ai/scheduler.ts` — 目标集与租约求交
+- `apps/server/src/ai/` 新增租约模块（如 `leases.ts`）
+- `apps/server/src/routes/ws.ts` — 订阅/退订/断开时增减租约；新增通知消息类型下发
+- `apps/server/src/ai/notify.ts` — 删除 osascript，改为经 WS 推送（或整体移除、由调用点直接推）
+- `apps/server/src/ai/comments.ts`、`analyst.ts`、`deepDive.ts` — 替换 `notifyUser` 调用
+- `apps/web/src/wsHub.ts` — 去掉 visibilitychange 断线逻辑
+- `apps/web/src/` — Notification 授权与弹出逻辑（股票页层面）
+- `apps/README.md` — 通知说明更新

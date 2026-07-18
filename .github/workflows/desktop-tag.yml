@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - "app/desktop/package.json"
+      - "apps/desktop/package.json"
 
 concurrency:
   group: desktop-tag
@@ -26,7 +26,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          VERSION="$(node -p "require('./app/desktop/package.json').version")"
+          VERSION="$(node -p "require('./apps/desktop/package.json').version")"
           TAG="desktop-v$VERSION"
           if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null; then
             echo "tag $TAG already exists — nothing to release"

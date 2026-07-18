@@ -44,7 +44,7 @@
 
 ## 不做的事
 
-- 不动 `CLAUDE.md`、`app/` 下各 README。
+- 不动 `CLAUDE.md`、`apps/` 与 `packages/` 下各 README。
 - 不制作新截图，全部复用现有 GitHub release 附件图。
 - 不写英文版 README。
 - 不修改任何代码。
@@ -54,4 +54,4 @@
 - README 通读下来是一个 AI 产品页：AI 四小节在功能主体的最前面，行情图表压缩为单节。
 - README 中不再出现数据源表格、纪律清单、数据坑、环境变量等研究工作台内容。
 - `docs/research-toolchain.md` 覆盖上述搬运清单，且开头有纪律源头声明。
-- README 内所有相对链接（LICENSE、app/desktop/README.md、docs/research-toolchain.md）有效。
+- README 内所有相对链接（LICENSE、apps/desktop/README.md、docs/research-toolchain.md）有效。

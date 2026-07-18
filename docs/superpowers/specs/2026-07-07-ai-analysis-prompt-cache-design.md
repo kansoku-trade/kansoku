@@ -7,8 +7,8 @@
 
 盘中 AI 分析是两层 agent：
 
-- **Commentator**（`app/server/src/ai/commentator.ts`）：调度器（`scheduler.ts`）每 60 秒一个 tick，某个 symbol 触发信号或到 5 分钟心跳时运行一次，输入是 `JSON.stringify({ pack, trigger })` 整包快照。
-- **Analyst**（`app/server/src/ai/analyst.ts`）：Commentator 升级（escalate）或手动 reassess 时运行，带 5 个 tool，30 分钟升级冷却。
+- **Commentator**（`apps/server/src/ai/commentator.ts`）：调度器（`scheduler.ts`）每 60 秒一个 tick，某个 symbol 触发信号或到 5 分钟心跳时运行一次，输入是 `JSON.stringify({ pack, trigger })` 整包快照。
+- **Analyst**（`apps/server/src/ai/analyst.ts`）：Commentator 升级（escalate）或手动 reassess 时运行，带 5 个 tool，30 分钟升级冷却。
 
 系统没有应用层的 AI 结果缓存，唯一的缓存是 pi-ai 内置的 Anthropic prompt cache（前缀缓存）。当前命中率极低，原因：
 
@@ -29,7 +29,7 @@
 
 ### a. 缓存保留时长
 
-在服务入口（`app/server/src/index.ts`）尽早设置：
+在服务入口（`apps/server/src/index.ts`）尽早设置：
 
 ```ts
 process.env.PI_CACHE_RETENTION ??= "long";
@@ -122,7 +122,7 @@ Commentator 的 prompt 文本：
    - `runCount` / `sentChars` 超阈值后重播种；
    - model 变化后重建。
 2. **`buildCommentUpdate`** 纯函数单测：新 bar 截断、`lastBarTime` 为 null 的回退、字段裁剪（无 prediction / recent_comments）。
-3. 运行 `cd app && pnpm test` 保证既有用例不回归。
+3. 运行 `pnpm test` 保证既有用例不回归。
 
 ## 不做的事（明确出界）
 

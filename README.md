@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./app/web/public/brand/kansoku-product-banner.png" alt="Kansoku — 本地优先的 AI 看盘与研究桌面应用" width="100%">
+  <img src="./apps/web/public/brand/kansoku-product-banner.png" alt="Kansoku — 本地优先的 AI 看盘与研究桌面应用" width="100%">
 </p>
 
 # Kansoku
@@ -14,7 +14,7 @@
 
 去 [Releases](https://github.com/Innei/kansoku/releases) 下载最新 `desktop-v*` 版本的 `Kansoku-x.y.z-arm64.dmg`（macOS · Apple Silicon），拖进「应用程序」即可。应用内置 Sparkle 自动更新（EdDSA 签名 + 增量包），装一次就不用再回来手动下载。
 
-前置依赖：本机安装并登录 [longbridge CLI](https://open.longbridge.com/docs/cli/install)（行情和账户数据都走它）。应用当前没有付费开发者签名，首次打开需要右键 →「打开」，详见 [`app/desktop/README.md`](./app/desktop/README.md)。
+前置依赖：本机安装并登录 [longbridge CLI](https://open.longbridge.com/docs/cli/install)（行情和账户数据都走它）。应用当前没有付费开发者签名，首次打开需要右键 →「打开」，详见 [`apps/desktop/README.md`](./apps/desktop/README.md)。
 
 首次启动有引导：连上长桥数据，再选一个 AI 接入方式（本机 codex 登录态 / LobeHub Cloud / 自带 API key），也可以先跳过。
 
@@ -60,25 +60,29 @@ AI 之下是一套完整的本地看盘工具：
 
 ## 开发
 
-`app/` 是 pnpm workspace，内核与宿主分离：
+仓库根是 pnpm workspace，共享库与宿主分离：
 
 ```text
-app/
-├── packages/core/   # @kansoku/core 内核：调 longbridge CLI 拉数据，TypeScript 实算全部指标
+packages/
+├── core/            # @kansoku/core 内核：调 longbridge CLI 拉数据，TypeScript 实算全部指标
+├── shared/          # 跨包共享的类型定义与时间工具
+├── bench/           # 模型交易基准测试（公开半边）
+└── pro-api/         # @kansoku/pro-api：pro 插槽的纯类型契约
+apps/
 ├── server/          # 薄 HTTP 宿主（Tsuki 控制器 + WebSocket），浏览器模式用
 ├── desktop/         # Electron 壳：内嵌同一个内核，走类型化 IPC，Sparkle 自动更新
 └── web/             # Vite + React 前端，按运行环境自动选 HTTP 或 IPC 传输
 ```
 
 ```bash
-cd app && pnpm install       # 首次
-cd app && pnpm dev           # 浏览器模式：web + server，http://localhost:5199
-cd app && pnpm dev:desktop   # 桌面模式：web + Electron，不起 server 进程
-cd app && pnpm test          # 全 workspace 测试
-cd app && pnpm typecheck     # 全 workspace 类型检查
+pnpm install       # 首次（仓库根目录）
+pnpm dev           # 浏览器模式：web + server，http://localhost:5199
+pnpm dev:desktop   # 桌面模式：web + Electron，不起 server 进程
+pnpm test          # 全 workspace 测试
+pnpm typecheck     # 全 workspace 类型检查
 ```
 
-发版全链路自动化：`/release` skill 写更新说明、升版本、开 PR，合并后 CI 自动打 tag、构建签名并发布 Release，已装用户收到应用内更新提示。更新说明维护在 `app/desktop/CHANGELOG.md`，workflow 见 `.github/workflows/`。
+发版全链路自动化：`/release` skill 写更新说明、升版本、开 PR，合并后 CI 自动打 tag、构建签名并发布 Release，已装用户收到应用内更新提示。更新说明维护在 `apps/desktop/CHANGELOG.md`，workflow 见 `.github/workflows/`。
 
 ## 研究工作台
 

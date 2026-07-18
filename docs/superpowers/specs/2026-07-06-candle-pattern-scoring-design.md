@@ -5,7 +5,7 @@
 
 ## 背景与问题
 
-`intraday` 图表的自动 K 线形态检测（`app/server/src/services/candlePatterns.ts`）目前把所有检测结果一视同仁地画上图，导致标注没有实际参考价值。典型例子：夜盘 04:35 ET 的「下影针线」——成交量极小的时段里几笔单子就能扎出长下影，属于流动性噪音。
+`intraday` 图表的自动 K 线形态检测（`apps/server/src/services/candlePatterns.ts`）目前把所有检测结果一视同仁地画上图，导致标注没有实际参考价值。典型例子：夜盘 04:35 ET 的「下影针线」——成交量极小的时段里几笔单子就能扎出长下影，属于流动性噪音。
 
 具体缺陷：
 
@@ -90,13 +90,13 @@ detectCandlePatterns → scorePatterns(打分 + 状态判定 + 历史统计) →
 
 | 文件 | 改动 |
 |---|---|
-| `app/shared/types.ts` | `CandlePattern` 加 `score`、`status`、`confirm_price`、`invalidate_price`、`stats` 字段 |
-| `app/server/src/services/candlePatterns.ts` | 检测输出附带 confirm/invalidate 价位与形态跨度（span） |
-| `app/server/src/services/patternScoring.ts`（新增） | 打分、状态机、历史统计 |
-| `app/server/src/services/intraday.ts` | `coerceIntradayTimeframe` 里接入打分层（FVG 检测提前到打分之前）；marker 构建按分档 + 状态渲染，tooltip 加确认价/失效价/分数/统计 |
-| `app/server/test/candlePatterns.test.ts` | 补确认价/失效价断言 |
-| `app/server/test/patternScoring.test.ts`（新增） | 时段丢弃、量能加减分、位置加分、状态流转、统计口径 |
-| `app/server/test/intraday.test.ts` | 分档渲染与 tooltip 相关断言更新 |
+| `packages/shared/types.ts` | `CandlePattern` 加 `score`、`status`、`confirm_price`、`invalidate_price`、`stats` 字段 |
+| `apps/server/src/services/candlePatterns.ts` | 检测输出附带 confirm/invalidate 价位与形态跨度（span） |
+| `apps/server/src/services/patternScoring.ts`（新增） | 打分、状态机、历史统计 |
+| `apps/server/src/services/intraday.ts` | `coerceIntradayTimeframe` 里接入打分层（FVG 检测提前到打分之前）；marker 构建按分档 + 状态渲染，tooltip 加确认价/失效价/分数/统计 |
+| `apps/server/test/candlePatterns.test.ts` | 补确认价/失效价断言 |
+| `apps/server/test/patternScoring.test.ts`（新增） | 时段丢弃、量能加减分、位置加分、状态流转、统计口径 |
+| `apps/server/test/intraday.test.ts` | 分档渲染与 tooltip 相关断言更新 |
 
 web 端无需改动：形态标注全部由服务端生成 marker，前端只负责渲染。
 

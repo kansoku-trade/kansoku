@@ -2,7 +2,7 @@
 
 日期：2026-07-10  
 状态：已确认，待实施计划  
-范围：app/web/src/pages/settings/ 与对应页面样式
+范围：apps/web/src/pages/settings/ 与对应页面样式
 
 ## 背景
 

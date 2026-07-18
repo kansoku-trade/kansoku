@@ -1,8 +1,8 @@
 ---
 name: chart
 description: >
-  Render financial charts via the local chart web app (`app/` — Hono server +
-  React front end, port 5199). Four chart types: intraday capital-flow line
+  Render financial charts via the local chart web app (workspace at the repo
+  root — Hono server + React front end, port 5199). Four chart types: intraday capital-flow line
   (`flow`) and cross-symbol signed-bar comparison (`cohort`) — both Recharts —
   plus SEPA strategy dashboard (`sepa`) and short-term multi-timeframe
   prediction dashboard (`intraday`) — both TradingView Lightweight Charts.
@@ -54,10 +54,10 @@ curl -s http://localhost:5199/api/health          # {"ok":true,...} = up
 If it is down, start it (long-running process — use run_in_background):
 
 ```bash
-cd app && pnpm start                               # serves API + built web UI on :5199
+pnpm start                                         # serves API + built web UI on :5199
 ```
 
-First-time setup only: `cd app && pnpm install && pnpm build`.
+First-time setup only: `pnpm install && pnpm build`.
 
 ## API
 
@@ -356,7 +356,7 @@ these rules:
 
 ## 桌面版模式
 
-打包的桌面版（`Kansoku.app`）不监听任何本机端口，全部走 `app://` 内部协议 + IPC，不提供 HTTP 接口。要用这个 skill 的 curl 命令，单独起 server 进程即可：`cd app && pnpm start`（或开发模式 `pnpm dev`），API 照常在 `http://localhost:5199`。
+打包的桌面版（`Kansoku.app`）不监听任何本机端口，全部走 `app://` 内部协议 + IPC，不提供 HTTP 接口。要用这个 skill 的 curl 命令，单独起 server 进程即可：`pnpm start`（或开发模式 `pnpm dev`），API 照常在 `http://localhost:5199`。
 
 ## Storage
 
@@ -365,9 +365,9 @@ these rules:
   (derived from the data, not local clock).
 - Old single-file HTML archives stay in `journal/charts/*.html`, listed in the
   app under 旧版存档 and served at `/legacy/<file>`.
-- The app itself: `app/` (pnpm workspace, `server/` Hono + TS, `web/` Vite +
-  React). Analysis parity with the retired Python implementation is locked by
-  vitest golden tests: `cd app && pnpm test`.
+- The app itself: the pnpm workspace at the repo root (`apps/server/` Hono +
+  TS, `apps/web/` Vite + React). Analysis parity with the retired Python
+  implementation is locked by vitest golden tests: `pnpm test`.
 
 ## Sparkline alternative (no API)
 

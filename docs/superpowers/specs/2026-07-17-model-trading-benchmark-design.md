@@ -110,7 +110,7 @@
 当前所有权结构（数据分发细节见 `2026-07-18-bench-dataset-boundary-design.md`）：
 
 ```
-app/packages/bench/
+packages/bench/
 ├── dataset-manifests/ 已发布数据集的公开校验契约
 ├── src/
 │   ├── generate/      出题管线
@@ -119,7 +119,7 @@ app/packages/bench/
 │   └── report/        报告生成
 └── results/           运行结果（按 run_id）
 
-app/pro/src/bench/      私有 runner、mock 工具层与 agent 执行器
+apps/pro/src/bench/      私有 runner、mock 工具层与 agent 执行器
 kansoku-bench-data/    私有 manifest registry；完整题库位于 GitHub Release assets
 ```
 

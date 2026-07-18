@@ -2,11 +2,11 @@
 
 日期：2026-07-05
 状态：已确认（mockup 已过目）
-范围：`app/web/`（Vite + React 前端）
+范围：`apps/web/`（Vite + React 前端）
 
 ## 背景与问题
 
-现有 `app/web/src/styles.css`（554 行）演化出严重的样式发散：
+现有 `apps/web/src/styles.css`（554 行）演化出严重的样式发散：
 
 - 28 种十六进制颜色，其中灰色 7~8 种（`#949494 / #888 / #777 / #b1b1b1 / #666 / #444 / #ddd`）
 - CSS 变量全文件仅 5 处，等于没有 token 层
@@ -137,7 +137,7 @@
 
 ## UI Kit（React 基础组件层）
 
-位置 `app/web/src/ui/`，一件一文件，统一从 `ui/index.ts` 出口。全部是薄壳：外观由 CSS 基础类承载，组件只把 props 翻译成 class，零业务逻辑、零数据请求。
+位置 `apps/web/src/ui/`，一件一文件，统一从 `ui/index.ts` 出口。全部是薄壳：外观由 CSS 基础类承载，组件只把 props 翻译成 class，零业务逻辑、零数据请求。
 
 | 组件 | API | 对应 CSS 类 / 替代对象 |
 |---|---|---|
@@ -182,7 +182,7 @@
 ## 迁移方案（全量，一次到位）
 
 1. `styles.css` 顶部写入 `:root` token 块与基础组件类（`.card` / `.badge` / `.btn` / `.chip` / `.input` / `.dot` / `.section-title` / `.num`）
-2. 建 `app/web/src/ui/` UI Kit（上表 11 件 + `index.ts`）
+2. 建 `apps/web/src/ui/` UI Kit（上表 11 件 + `index.ts`）
 3. 业务组件换装：逐页把旧类名与手写元素替换为 UI Kit 组件；同时清理内联 `style={{…}}`（10+ 文件，含 `charts/intraday/*`、`charts/sepa/*`、`pages/cockpit/*`、`pages/home/*`）——外观类内联样式改为 class，纯布局微调（如动态宽度百分比）可保留
 4. 逐段重写 `styles.css` 剩余部分：裸色值 → 变量；6 种卡片、7 种 badge、4 种按钮、4 种圆点的旧类删除；业务类仅保留布局属性
 5. TradingView / Recharts 图表的 JS 配色抽成共享常量模块（如 `web/src/theme.ts`），与 CSS token 数值保持一致：涨跌色、网格线、文字色、琥珀强调

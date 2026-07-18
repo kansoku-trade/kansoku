@@ -18,7 +18,7 @@
 
 复用现有对话基建，作为 `createConversationEngine` / `createConversationStore` 的第三个实例（前两个是 chart chat 和 research chat）。会话的 key 就是 sessionId 本身。
 
-## 1. 数据与后端核心（`app/packages/core`）
+## 1. 数据与后端核心（`packages/core`）
 
 ### 数据
 
@@ -56,11 +56,11 @@
   - `postMessage(input: { id: string; text: string })`：202 受理，busy 时 409
   - `abortChat(input: { id: string })`
   - 形状与 route 定义方式照抄 `contract/research.ts` 的 chat 部分。
-- **server**：新 `app/server/src/modules/assistant/assistant.controller.ts`，注册进 `app.module.ts`。
-- **desktop**：新 `app/desktop/src/ipc/assistantIpc.ts`，照 `researchIpc.ts` 的形状。
+- **server**：新 `apps/server/src/modules/assistant/assistant.controller.ts`，注册进 `app.module.ts`。
+- **desktop**：新 `apps/desktop/src/ipc/assistantIpc.ts`，照 `researchIpc.ts` 的形状。
 - **WS**：`realtime/channelProtocol.ts` 加 `kind: "assistant-chat"`（携带 sessionId）；事件流复用 `ConversationEvent`（init / delta / tool / done / aborted / error）。server 与 desktop 两条通道都接。
 
-## 3. 前端（`app/web`）
+## 3. 前端（`apps/web`）
 
 ### 页面与路由
 

@@ -4,7 +4,7 @@
 
 ## 背景与目标
 
-`app/server/src/ai/` 的三个 AI 层（盘中点评员 commentator、分析师 analyst、深挖 deepDive）通过 `@earendil-works/pi-agent-core` 的 `Agent` 跑模型，模型由环境变量 `AI_COMMENT_MODEL` / `AI_ANALYST_MODEL`（格式 `provider/id`）经 `models.ts` 从 pi-ai 的内置目录解析。
+`apps/server/src/ai/` 的三个 AI 层（盘中点评员 commentator、分析师 analyst、深挖 deepDive）通过 `@earendil-works/pi-agent-core` 的 `Agent` 跑模型，模型由环境变量 `AI_COMMENT_MODEL` / `AI_ANALYST_MODEL`（格式 `provider/id`）经 `models.ts` 从 pi-ai 的内置目录解析。
 
 目标：让这些层可以使用本地 codex CLI 登录的 ChatGPT 账号（`~/.codex/auth.json`）作为模型后端，即 `openai-codex/*` 系列模型，无需 API key、无需额外登录。
 
@@ -20,7 +20,7 @@
 
 ## 方案
 
-### 1. 新文件 `app/server/src/ai/codexAuth.ts`（约 80 行）
+### 1. 新文件 `apps/server/src/ai/codexAuth.ts`（约 80 行）
 
 导出 `getCodexApiKey(provider: string): Promise<string | undefined>`：
 
@@ -59,7 +59,7 @@ AI_ANALYST_MODEL=openai-codex/gpt-5.5
 
 ## 测试
 
-`app/server/src/ai/codexAuth.test.ts`（vitest，与现有测试同风格），用临时目录的假 auth.json 和注入的假 refresh 函数覆盖：
+`apps/server/src/ai/codexAuth.test.ts`（vitest，与现有测试同风格），用临时目录的假 auth.json 和注入的假 refresh 函数覆盖：
 
 1. provider 不是 `openai-codex` → 返回 `undefined`，不读文件。
 2. token 未过期 → 直接返回 access_token。

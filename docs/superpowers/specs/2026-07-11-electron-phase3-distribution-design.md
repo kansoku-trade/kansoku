@@ -47,7 +47,7 @@
 
 ## 发布配套
 
-- README（或 repo 内 `app/desktop/README`）：下载链接、系统要求、Gatekeeper 右键打开图解、凭证申请指引链接、常见问题。
+- README（或 repo 内 `apps/desktop/README`）：下载链接、系统要求、Gatekeeper 右键打开图解、凭证申请指引链接、常见问题。
 - Release notes 模板：功能变化 + 已知问题。
 
 ## 测试

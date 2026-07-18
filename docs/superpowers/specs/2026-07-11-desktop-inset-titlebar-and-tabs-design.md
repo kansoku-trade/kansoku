@@ -1,11 +1,11 @@
 # Desktop inset titlebar + in-window tabs
 
 Date: 2026-07-11
-Scope: `app/desktop`, `app/web` (Electron-only behavior; web/browser mode unaffected)
+Scope: `apps/desktop`, `apps/web` (Electron-only behavior; web/browser mode unaffected)
 
 ## Problem
 
-The desktop shell (`app/desktop`) currently uses the default macOS window chrome — a native title bar plus a separate `GlobalTopbar` overlay (new-chart button, settings link) rendered by the web app. This looks like a web page in a window, not a native macOS app. There is also no way to have more than one route open at once; navigating away loses the previous page's place.
+The desktop shell (`apps/desktop`) currently uses the default macOS window chrome — a native title bar plus a separate `GlobalTopbar` overlay (new-chart button, settings link) rendered by the web app. This looks like a web page in a window, not a native macOS app. There is also no way to have more than one route open at once; navigating away loses the previous page's place.
 
 ## Goals
 

@@ -130,7 +130,7 @@ rev 1 的「只扩 `Agent.getApiKey`」不成立：pi-ai 的 `resolveProviderAut
 
 ## 启动顺序
 
-`app/server/src/index.ts` 固定为：`loadDotenv()` → DB migration → `initAiSettings()`（搬家 + 装载 settingsStore 缓存 + 构造唯一 Models 实例）→ `createApp()` → `startAiScheduler()`。**settingsStore / modelsRuntime 禁止在模块顶层读 DB 或执行搬家**——全部走显式 init，测试才可注入。
+`apps/server/src/index.ts` 固定为：`loadDotenv()` → DB migration → `initAiSettings()`（搬家 + 装载 settingsStore 缓存 + 构造唯一 Models 实例）→ `createApp()` → `startAiScheduler()`。**settingsStore / modelsRuntime 禁止在模块顶层读 DB 或执行搬家**——全部走显式 init，测试才可注入。
 
 ## 前端设置页
 
@@ -158,7 +158,7 @@ rev 1 的「只扩 `Agent.getApiKey`」不成立：pi-ai 的 `resolveProviderAut
 - `db/schema.ts`、`src/index.ts`（启动顺序）、`src/app.ts`（注册路由）。
 - **提示文案改指向 `/settings`**（不再教用户设 env）：`routes/chat.ts`、`routes/symbols.ts`、`web/src/pages/cockpit/useDeepDive.ts:117-120`。
 - `scripts/ai-smoke.ts`、`scripts/deep-dive-smoke.ts` — 改读 settingsStore 而非 `AI_*_MODEL`。
-- `app/README.md` — env 配置说明段改写为设置页说明。
+- `apps/README.md` — env 配置说明段改写为设置页说明。
 
 ## 测试
 

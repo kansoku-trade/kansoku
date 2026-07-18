@@ -14,13 +14,13 @@
 1. **两层 AI**：
    - **点评员（Commentator）**——高频轻量。事件驱动 + 5 分钟心跳，读 server 打包好的数据快照，产出一条短点评。
    - **分析员（Analyst）**——低频完整重估。手动按钮或点评员升级触发，跑一次等价 `intraday-signal` 的完整流程，产出新的 chart JSON 存档。不设固定定时。
-2. **进程内嵌，不 spawn 子进程**：用 `@earendil-works/pi-agent-core`（0.80.x，连带 `pi-ai`）在 `app/server` 里直接 `new Agent()`。多 provider 支持由 pi-ai 提供。
+2. **进程内嵌，不 spawn 子进程**：用 `@earendil-works/pi-agent-core`（0.80.x，连带 `pi-ai`）在 `apps/server` 里直接 `new Agent()`。多 provider 支持由 pi-ai 提供。
 3. **窄工具面**：agent 不碰 shell、不碰文件系统。工具是 server 里的普通 TS 函数，直调现有 services。结构化输出靠"提交工具 + typebox schema + terminate"保证，不解析自由文本。
 4. **监控范围**：自动运行只针对「当天有 intraday 存档的标的」；手动重估按钮对任意标的可用。只在美股盘中时段运行（复用现有 session 判断）。
 
 ## 模块结构
 
-新增 `app/server/src/ai/`：
+新增 `apps/server/src/ai/`：
 
 - `models.ts` — 解析 `.env` 的 `AI_COMMENT_MODEL` / `AI_ANALYST_MODEL`（`provider/id` 格式），`getModel()` 实例化；API key 用各 provider 标准环境变量。任一变量缺失则对应层整体停用（server 正常跑，AI 功能静默关闭）。
 - `triggers.ts` — 纯函数触发检测器。输入：60 秒重算后的最新指标 + 当前存档预测。输出：触发列表。信号集：金叉/死叉、突破/跌破存档预测的入场/止损/目标价位线、资金流方向翻转、异常放量。另有 5 分钟心跳兜底（无触发也跑一次）。

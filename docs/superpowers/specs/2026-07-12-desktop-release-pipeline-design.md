@@ -27,9 +27,9 @@ CI 默认令牌（`GITHUB_TOKEN`）打的 tag **不会触发其他 workflow**（
 流程：
 
 1. 前置检查：工作区干净、在 main 上、与远端同步。任一不满足即停并说明。
-2. 找最近的 `desktop-v*` tag，收集其后所有涉及 `app/` 的提交（`git log <tag>..HEAD -- app/`）。没有相关提交则停：无可发版内容。
+2. 找最近的 `desktop-v*` tag，收集其后所有涉及 `apps/` 与 `packages/` 的提交（`git log <tag>..HEAD -- apps/ packages/`）。没有相关提交则停：无可发版内容。
 3. 建议升级幅度：含 feat → minor，纯 fix/chore/refactor → patch，破坏性变更 → major。用户带参数则直接用参数。向用户确认版本号后继续。
-4. 用中文白话写一段**面向用户**的更新说明（讲用户能感知的变化，不是提交清单），插入 `app/desktop/CHANGELOG.md` 顶部，格式：
+4. 用中文白话写一段**面向用户**的更新说明（讲用户能感知的变化，不是提交清单），插入 `apps/desktop/CHANGELOG.md` 顶部，格式：
 
    ```markdown
    ## X.Y.Z — YYYY-MM-DD
@@ -37,13 +37,13 @@ CI 默认令牌（`GITHUB_TOKEN`）打的 tag **不会触发其他 workflow**（
    - 更新点……
    ```
 
-5. 更新 `app/desktop/package.json` 的 `version`。
+5. 更新 `apps/desktop/package.json` 的 `version`。
 6. 开分支 `release/desktop-vX.Y.Z`，提交（`release(desktop): vX.Y.Z`），推送，`gh pr create`——PR 标题 `release(desktop): vX.Y.Z`，正文附更新说明。
 7. 输出 PR 链接。之后的链路交给 CI。
 
 ### 二、`.github/workflows/ci.yml`（新，日常检查）
 
-- 触发：`pull_request` 与 `push`（main），路径过滤 `app/**` 与 `.github/**`。
+- 触发：`pull_request` 与 `push`（main），路径过滤 `apps/**`、`packages/**` 与 `.github/**`。
 - `ubuntu-latest`，单 job：
   1. pnpm + node 24（配置与 desktop-release.yml 保持一致，只缓存 pnpm store）
   2. `pnpm install --frozen-lockfile`
@@ -55,9 +55,9 @@ CI 默认令牌（`GITHUB_TOKEN`）打的 tag **不会触发其他 workflow**（
 
 ### 三、`.github/workflows/desktop-tag.yml`（新，合并后打 tag）
 
-- 触发：`push` 到 main，路径过滤 `app/desktop/package.json`。
+- 触发：`push` 到 main，路径过滤 `apps/desktop/package.json`。
 - 步骤：
-  1. 读 `app/desktop/package.json` 的 version，得目标 tag `desktop-vX.Y.Z`。
+  1. 读 `apps/desktop/package.json` 的 version，得目标 tag `desktop-vX.Y.Z`。
   2. tag 已存在 → 正常退出（幂等，防重复触发和非版本改动误发）。
   3. 打 annotated tag 指向当前 commit，推送。
   4. `gh workflow run desktop-release.yml -f tag=desktop-vX.Y.Z`。
@@ -68,9 +68,9 @@ CI 默认令牌（`GITHUB_TOKEN`）打的 tag **不会触发其他 workflow**（
 - 触发加 `workflow_dispatch`（输入 `tag`），与现有 tag 推送触发并存（手动打 tag 的老路仍通）。
 - dispatch 场景下 checkout 对应 tag；版本一致性检查改为对 `tag` 输入/`GITHUB_REF` 二取一后统一校验。
 - 测试步骤**保留**（macOS 与 ubuntu 环境不同，better-sqlite3 等 native 模块只在这里被真正验证）。
-- Release 说明：从 `app/desktop/CHANGELOG.md` 提取对应版本段落作为 body（`--notes-file`），替换 `--generate-notes`；段落缺失 → 构建失败并报错，强制说明先行。
+- Release 说明：从 `apps/desktop/CHANGELOG.md` 提取对应版本段落作为 body（`--notes-file`），替换 `--generate-notes`；段落缺失 → 构建失败并报错，强制说明先行。
 - `--draft` 去掉，直接发布。发布即生效：`releases/latest/download/appcast.xml` 立刻指向新版。
-- `REPO_SLUG` 更新为 `Innei/kansoku`；`app/desktop` 源码与 `electron-builder.yml` 里两处 appcast/releases URL 同步改。
+- `REPO_SLUG` 更新为 `Innei/kansoku`；`apps/desktop` 源码与 `electron-builder.yml` 里两处 appcast/releases URL 同步改。
 
 ## 完整链路
 
@@ -93,7 +93,7 @@ CI 默认令牌（`GITHUB_TOKEN`）打的 tag **不会触发其他 workflow**（
 
 ## 测试
 
-- ci.yml / desktop-tag.yml：推一个改动 `app/` 的测试 PR 验证触发与路径过滤。
+- ci.yml / desktop-tag.yml：推一个改动 `apps/` 的测试 PR 验证触发与路径过滤。
 - desktop-release.yml 改造：先用 `workflow_dispatch` 对既有 tag 试跑（或发 0.1.x 测试版）验证 notes 提取与直接发布。
 - skill：跑一次 `/release patch` 完整走到 PR，检查 CHANGELOG、版本号、PR 内容。
 

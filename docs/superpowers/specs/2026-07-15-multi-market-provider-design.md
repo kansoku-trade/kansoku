@@ -5,7 +5,7 @@
 
 ## 背景
 
-app 内核（`app/packages/core`）目前只服务美股，数据源焊死长桥。实测确认现有长桥账号已能拉 A 股（`.SH`/`.SZ`）和港股（`.HK`）的报价、日 K、分钟 K、分时资金流、大中小单分布，因此第一期不需要引入新数据源。
+app 内核（`packages/core`）目前只服务美股，数据源焊死长桥。实测确认现有长桥账号已能拉 A 股（`.SH`/`.SZ`）和港股（`.HK`）的报价、日 K、分钟 K、分时资金流、大中小单分布，因此第一期不需要引入新数据源。
 
 探查结论：拉数据路径已有 `MarketDataProvider` 接口（`src/services/marketdata/types.ts`）和注册表（`registry.ts`）这道缝，但四块仍是长桥/美股硬编码：
 
@@ -66,11 +66,11 @@ app 内核（`app/packages/core`）目前只服务美股，数据源焊死长桥
 
 ## 第 5 节 — 前端时间组件市场化
 
-`app/web/src/ui/MarketTime.tsx` 及底层 `formatMarketClock` / `formatMarketDateTime` / `formatMarketMonthDayTime` 加市场参数：US 显示美东时间，HK 显示香港时间，CN 显示北京时间；悬停提示"美东时间 …"字样按市场替换。symbol 页与日内图表调用点传入当前代号的市场；无市场上下文的场合（如纯美股的首页时间线）默认 US，行为不变。时区设置卡片语义不动。
+`apps/web/src/ui/MarketTime.tsx` 及底层 `formatMarketClock` / `formatMarketDateTime` / `formatMarketMonthDayTime` 加市场参数：US 显示美东时间，HK 显示香港时间，CN 显示北京时间；悬停提示"美东时间 …"字样按市场替换。symbol 页与日内图表调用点传入当前代号的市场；无市场上下文的场合（如纯美股的首页时间线）默认 US，行为不变。时区设置卡片语义不动。
 
 ## 测试与验收
 
-- 单元测试（沿用 `app/packages/core/test` 模式）：`marketOf` 推导、三张时段表（含午休断档与美股盘前盘后）、provider 路由表、`QuoteStream` 假实现的引用计数订阅/退订。
+- 单元测试（沿用 `packages/core/test` 模式）：`marketOf` 推导、三张时段表（含午休断档与美股盘前盘后）、provider 路由表、`QuoteStream` 假实现的引用计数订阅/退订。
 - 前端：`MarketTime` 三市场格式化用例（沿用 `MarketTime.test.ts`）。
 - 端到端验收：为 `700.HK` 与 `600519.SH` 各建一张 sepa 图和一张 intraday 图，盘中打开 symbol 页可见分钟级实时跳动；美股既有页面行为无回归。
 

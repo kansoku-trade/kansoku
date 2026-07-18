@@ -6,14 +6,14 @@
 
 ## 背景与问题
 
-Phase 1/2 的 open-core 拆分把**所有** AI 代码搬进了私有仓 `app/pro`，并给整个 AI 面挂上了订阅门（`requirePro` 404 + `LicensedGuard` 403）。这一刀切得太粗，造成两类误伤：
+Phase 1/2 的 open-core 拆分把**所有** AI 代码搬进了私有仓 `apps/pro`，并给整个 AI 面挂上了订阅门（`requirePro` 404 + `LicensedGuard` 403）。这一刀切得太粗，造成两类误伤：
 
 1. **非 AI 的核心功能被收费**：研究库的文档列表与 markdown 阅读（`research.controller` 的 `GET /` 和 `GET /document`）只是读 `journal/` 与 `stocks/` 下用户自己写的文件，不产生任何 AI 成本，却因整个 research 模块搬进 pro 而要求订阅；QuickBar 的研究库入口在无 pro 构建里直接不渲染。这违背仓库定位——journal/stocks 是第一层「durable record」。
 2. **自带 key 的 AI 功能被收费**：用户配置自己的 API key 后，token 成本由用户承担，这类功能不该再收订阅费。
 
 ## 决策：新的免费/收费分界
 
-### 免费且开源（代码在公开仓 `app/packages/core` + `app/server` + `app/web`）
+### 免费且开源（代码在公开仓 `packages/core` + `apps/server` + `apps/web`）
 
 | 功能 | 说明 |
 |---|---|
@@ -25,7 +25,7 @@ Phase 1/2 的 open-core 拆分把**所有** AI 代码搬进了私有仓 `app/pro
 | 对话类 | 图表页 ChatDock、全局助手 /chat、对话建议 |
 | macro 事件 AI 过滤 | eventFilter，一次 LLM 调用，用户自己的 key |
 
-### 收费（代码留在私有仓 `app/pro`，需订阅激活）
+### 收费（代码留在私有仓 `apps/pro`，需订阅激活）
 
 | 功能 | 说明 |
 |---|---|
@@ -85,7 +85,7 @@ Phase 1/2 的 open-core 拆分把**所有** AI 代码搬进了私有仓 `app/pro
 
 ### Phase B —— 代码搬迁（大）
 
-1. 按搬迁映射把文件移入 core（保持相对结构，`app/packages/core/src/ai/…`），改 import 路径；pro 内剩余模块改为从 `@kansoku/core` 导入基座。
+1. 按搬迁映射把文件移入 core（保持相对结构，`packages/core/src/ai/…`），改 import 路径；pro 内剩余模块改为从 `@kansoku/core` 导入基座。
 2. research 模块拆分（core browse + pro AI），contract 同步拆分。
 3. `pro-api` 契约收窄：`ProHooks` 缩减、`ProModule` 的 `tsukiModules` / `ipcServiceClasses` / `channels` 只剩付费与 license 相关项。
 4. desktop：IPC channel allowlist（`groups.ts`）随 contract 调整——免费 AI 组变为 core 常驻，license 组保持 pro 提供。
@@ -95,7 +95,7 @@ Phase 1/2 的 open-core 拆分把**所有** AI 代码搬进了私有仓 `app/pro
 
 - 既有门语义测试改写：`capabilitiesStore`、`featureGuard`、`PageRouter.license`、`LicenseModal`、desktop `groups.test.ts`（contract parity）。
 - 新增：research browse 无门可访问（pro 缺席 + 未订阅两种状态）；免费 AI 路由在纯开源构建（pro 缺席）下工作；付费三项在未订阅时 403、pro 缺席时 404。
-- 兜底：`cd app && pnpm test`；CI 的 pro-present build check（fetch-pro + typecheck + build + pro tests）。
+- 兜底：`pnpm test`；CI 的 pro-present build check（fetch-pro + typecheck + build + pro tests）。
 
 ## 明确不做
 

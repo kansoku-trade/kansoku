@@ -20,7 +20,7 @@
 - 这是一个未走 Apple 开发者账号签名的 app（只做了本地 ad-hoc 签名）。首次打开
   macOS 会提示"应用已损坏"或"无法验证开发者"——不是真的损坏，右键（或
   `control` + 单击）app 图标选「打开」，弹出的确认框里再点一次「打开」即可，
-  之后正常双击打开不会再拦。详见 `app/desktop/README.md`。
+  之后正常双击打开不会再拦。详见 `apps/desktop/README.md`。
 - AI 设置里走 OAuth 授权方式登录的 provider，桌面版目前支持有限，稳定可用的是
   API Key 方式的 provider；如果某个 OAuth 类型的 provider 显示未配置，属于已知
   限制，不代表配置出错。

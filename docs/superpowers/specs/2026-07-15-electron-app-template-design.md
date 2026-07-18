@@ -5,7 +5,7 @@
 
 ## 目标
 
-把 `app/` 现有的 Electron + Web 全套架构（四包 workspace、HTTP/WS 与 IPC 双通道通信、Sparkle 自动更新、发版流水线）抽成一个独立的模板仓库，以后开新桌面/Web 应用时 clone 一份、跑一次 init 脚本就能开工。
+把仓库根 workspace 现有的 Electron + Web 全套架构（四包 workspace、HTTP/WS 与 IPC 双通道通信、Sparkle 自动更新、发版流水线）抽成一个独立的模板仓库，以后开新桌面/Web 应用时 clone 一份、跑一次 init 脚本就能开工。
 
 ## 决策记录
 
@@ -16,7 +16,7 @@
 | AI 层 | 进模板，带一个最小 agent 聊天示例（pi-ai / pi-agent-core） |
 | 示例功能 | 带一个 notes 示例模块走通整条链路 |
 | 改名机制 | `scripts/init.mjs` 一次性脚本，跑完自删 |
-| 制作路线 | 剥离式复制：整体复制 `app/`，删交易领域模块，验证 + 审计 |
+| 制作路线 | 剥离式复制：整体复制仓库根 workspace，删交易领域模块，验证 + 审计 |
 
 ## 新仓库结构
 

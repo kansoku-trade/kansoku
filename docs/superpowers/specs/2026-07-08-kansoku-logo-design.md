@@ -23,12 +23,12 @@ The logo uses a **Minimal Observer** symbol:
 
 | File | Purpose |
 | --- | --- |
-| `app/web/public/brand/kansoku-mark.svg` | Standalone symbol on transparent background |
-| `app/web/public/brand/kansoku-icon.svg` | Square icon with dark background |
-| `app/web/public/brand/kansoku-lockup.svg` | Horizontal lockup with wordmark |
-| `app/web/public/brand/kansoku-lockup.png` | 2x PNG export of the horizontal lockup |
-| `app/web/public/brand/kansoku-product-banner.png` | README product banner with the real cockpit interface |
-| `app/web/public/favicon.svg` | Browser favicon |
+| `apps/web/public/brand/kansoku-mark.svg` | Standalone symbol on transparent background |
+| `apps/web/public/brand/kansoku-icon.svg` | Square icon with dark background |
+| `apps/web/public/brand/kansoku-lockup.svg` | Horizontal lockup with wordmark |
+| `apps/web/public/brand/kansoku-lockup.png` | 2x PNG export of the horizontal lockup |
+| `apps/web/public/brand/kansoku-product-banner.png` | README product banner with the real cockpit interface |
+| `apps/web/public/favicon.svg` | Browser favicon |
 
 ## Usage Rules
 

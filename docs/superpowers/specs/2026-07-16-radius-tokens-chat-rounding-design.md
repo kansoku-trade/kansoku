@@ -9,7 +9,7 @@
 
 ## 目标
 
-1. 建立圆角 token 体系，消灭 `app/web/src/styles.css` 里的硬编码圆角。
+1. 建立圆角 token 体系，消灭 `apps/web/src/styles.css` 里的硬编码圆角。
 2. chat dock 输入区改造：input 无边框、send button 大圆角贴合窗口边缘。
 3. chat 浮动面板整体改圆角，内部元素跟随。
 
@@ -63,5 +63,5 @@
 ## 验证
 
 1. `pnpm dev:desktop` 起桌面端，肉眼核对：dock 右下角 send button、浮动面板外框与内部元素、modal、命令面板、桌面 tab。
-2. `grep -n "border-radius" app/web/src/styles.css` 确认除白名单外无硬编码数值。
+2. `grep -n "border-radius" apps/web/src/styles.css` 确认除白名单外无硬编码数值。
 3. 现有测试不受影响（纯 CSS 变更 + 可能的少量 className 调整）。

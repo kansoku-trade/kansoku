@@ -25,7 +25,7 @@ git stash pop          # 会在 SettingsPage.tsx + styles.css 上报冲突
 2. **Sparkle 更新弹窗肉眼确认**：桥的 `init()`/`checkForUpdates()` 都验证过会话真的起来（Sparkle 系统日志有活动），但沙箱里没有可见桌面会话，没截到那个原生更新弹窗。把 `checkForUpdates()` 接到一个菜单项手点一下确认。
 3. **真发布**（我全程没 push、没打 tag、没建 Release、没碰 secret）：
    - EdDSA 密钥仪式：`docs/desktop-release.md` 有步骤。`generate_keys` 生成密钥对 → 私钥进钥匙串 + GitHub secret `SPARKLE_ED_PRIVATE_KEY`，公钥 → secret `SPARKLE_ED_PUBLIC_KEY`（CI 注入替换 `electron-builder.yml` 里的 `SPARKLE_ED_PUBLIC_KEY_PLACEHOLDER`）。**私钥即发布权，换钥 = 老用户集体断更。**
-   - 本地先跑 dry-run：`app/desktop/scripts/release-dry-run.sh`（用临时密钥，已验证能出签名 appcast + delta）。
+   - 本地先跑 dry-run：`apps/desktop/scripts/release-dry-run.sh`（用临时密钥，已验证能出签名 appcast + delta）。
    - 发版：改 desktop 版本号 → 打 `desktop-v*` tag → push → CI 出 draft Release → 你审 → 手动 Publish。
 
 ## 待办（跟进项，不阻塞，按优先级）
@@ -41,9 +41,9 @@ git stash pop          # 会在 SettingsPage.tsx + styles.css 上报冲突
 
 ## 结构速览（main 上的新东西）
 
-- `app/server/src/services/credentials/` —— 凭证注入缝（provider 抽象、受限模式、`/api/credentials/status`）
-- `app/desktop/` —— Electron 包：`main.ts`（宿主接线）、`protocolHost.ts`、`realtimeBridge.ts`、`credentialStore.ts`（safeStorage）、`externalApi.ts`（本机 API+token）、`updater.ts`（弱更新）、`native/sparkle-bridge/`（ObjC++ 桥）、`electron-builder.yml`、`scripts/`
-- `app/web/src/` —— 建图对话框（`newChart/`）、首启引导 + 凭证设置（`pages/settings/`、`Onboarding`、`restrictedMode`）、传输探测（`portTransport.ts`、`wsHub.ts`）
+- `apps/server/src/services/credentials/` —— 凭证注入缝（provider 抽象、受限模式、`/api/credentials/status`）
+- `apps/desktop/` —— Electron 包：`main.ts`（宿主接线）、`protocolHost.ts`、`realtimeBridge.ts`、`credentialStore.ts`（safeStorage）、`externalApi.ts`（本机 API+token）、`updater.ts`（弱更新）、`native/sparkle-bridge/`（ObjC++ 桥）、`electron-builder.yml`、`scripts/`
+- `apps/web/src/` —— 建图对话框（`newChart/`）、首启引导 + 凭证设置（`pages/settings/`、`Onboarding`、`restrictedMode`）、传输探测（`portTransport.ts`、`wsHub.ts`）
 - `.github/workflows/desktop-release.yml` + `docs/desktop-release.md` —— 发布 CI + 密钥仪式文档
 - specs：`docs/superpowers/specs/2026-07-11-electron-*.md`（总设计 + 三期各一份）
 

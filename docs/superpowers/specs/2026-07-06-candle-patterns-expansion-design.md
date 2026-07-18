@@ -5,7 +5,7 @@
 
 ## 背景与问题
 
-`app/server/src/services/candlePatterns.ts` 已实现 16 种形态,但用户在 intraday 图上从未见过任何形态标记。排查结论(链路证据见下):
+`apps/server/src/services/candlePatterns.ts` 已实现 16 种形态,但用户在 intraday 图上从未见过任何形态标记。排查结论(链路证据见下):
 
 1. **Pin bar 判定苛刻到几乎不触发**:要求影线 ≥ 2 倍实体、另一侧影线 ≤ 0.3 倍实体、扎出最近 5 根新低/新高、整根振幅 ≥ 14 根平均振幅,且排在锤子/射击之星之后兜底。实测 MU 5m/15m/1h 三个周期命中数全为 0,仅 MRVL 日线出过 1 个。
 2. **非 strong 形态在图上无文字标签**(`intraday.ts` patternMarkers 的 `text` 仅 strong 形态非空),只画无标签小箭头,与其他标记混杂,肉眼无法识别。
@@ -21,10 +21,10 @@
 
 涉及文件:
 
-- `app/server/src/services/candlePatterns.ts` — 判定重写 + 新形态
-- `app/server/src/services/intraday.ts` — 标记文字、neutral 样式
-- `app/shared/types.ts` — `CandlePatternKind` 扩充、`bias` 加 `"neutral"`
-- `app/server/test/candlePatterns.test.ts` — 新用例 + 真实数据回归
+- `apps/server/src/services/candlePatterns.ts` — 判定重写 + 新形态
+- `apps/server/src/services/intraday.ts` — 标记文字、neutral 样式
+- `packages/shared/types.ts` — `CandlePatternKind` 扩充、`bias` 加 `"neutral"`
+- `apps/server/test/candlePatterns.test.ts` — 新用例 + 真实数据回归
 - 前端如有对 `bias` 的二值假设需同步(检查 `useIntradayCharts.ts` / tooltip 组件)
 
 ## 设计
@@ -86,4 +86,4 @@ Pin bar 放宽:
 1. MU 5m/15m/1h fixture 上 pin bar 或其替代单根形态命中数 > 0;
 2. 图上每个形态标记都有可读的中文标签;
 3. 新增 8 种形态在构造用例下全部可触发,横盘十字星等反例不触发;
-4. `cd app && pnpm test` 全绿;lint 通过(仅改动文件)。
+4. `pnpm test` 全绿;lint 通过(仅改动文件)。

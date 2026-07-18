@@ -9,7 +9,7 @@ description: >
 
 # 交易判读纪律（共享源头）
 
-> **这是唯一的纪律源头。** 根 `CLAUDE.md` 用 `@` 导入本文件；`app/packages/core/src/ai/promptPolicy.ts` 把本文件注入判断型 agent。
+> **这是唯一的纪律源头。** 根 `CLAUDE.md` 用 `@` 导入本文件；`packages/core/src/ai/promptPolicy.ts` 把本文件注入判断型 agent。
 >
 > **领域 skill 只引用规则 ID，不复制规则正文。** 复制必然漂移 —— 2026-07-14 已实证：`capital-rotation/SKILL.md` 曾要求把资金流换算成亿，而 `CLAUDE.md` 明令禁止换算。
 
