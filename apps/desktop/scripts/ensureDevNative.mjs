@@ -8,7 +8,7 @@ const desktopRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 ensureElectronAbi(desktopRoot, "ensureDevNative");
 
-const bridgeRoot = join(desktopRoot, "native", "sparkle-bridge");
+const bridgeRoot = join(desktopRoot, "node_modules", "electron-sparkle-updater", "native");
 const bridgeReady =
   existsSync(join(bridgeRoot, "build", "Release", "sparkle_bridge.node")) &&
   existsSync(join(bridgeRoot, "vendor", "Sparkle.framework"));
