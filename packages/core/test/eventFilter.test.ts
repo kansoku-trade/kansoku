@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { builtinModels } from "@earendil-works/pi-ai/providers/all";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { MacroEventItem } from "../../shared/types.js";
+import type { MacroEventItem } from "@kansoku/shared/types";
 import type { AiAgentFactory, AiAgentHandle } from "../src/ai/agentSession.js";
 import { AgentTimeoutError } from "../src/ai/agentSession.js";
 import { filterMacroForSymbol } from "../src/ai/eventFilter.js";

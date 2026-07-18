@@ -1,4 +1,4 @@
-import type { MacroEventItem, NewsItem, RawBar } from "../../../../shared/types.js";
+import type { MacroEventItem, NewsItem, RawBar } from "@kansoku/shared/types";
 import { ClientError } from "../../errors.js";
 import { LongbridgeCliError, runLongbridgeJson } from "../longbridgeCli.js";
 import { getSharedQuoteSocket } from "./sharedSocket.js";

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Notice } from "../../shared/types.js";
+import type { Notice } from "@kansoku/shared/types";
 import { emitNotice, onAnyNotice, onNotice } from "../src/ai/notices.js";
 
 function notice(overrides: Partial<Notice> = {}): Notice {

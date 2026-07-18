@@ -1,4 +1,4 @@
-import type { FeatureKey } from "../../../pro-api/src/features.js";
+import type { FeatureKey } from "@kansoku/pro-api/features";
 
 export type HttpMethod = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
 

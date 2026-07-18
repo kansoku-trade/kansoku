@@ -1,4 +1,4 @@
-import type { OffSessionSegment, SessionKind } from "../../../shared/types.js";
+import type { OffSessionSegment, SessionKind } from "@kansoku/shared/types";
 import type { Market } from "./symbol.utils.js";
 
 interface MarketSessionConfig {

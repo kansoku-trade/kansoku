@@ -1,4 +1,4 @@
-import type { ChartDoc } from "../../../shared/types.js";
+import type { ChartDoc } from "@kansoku/shared/types";
 import { classifySession } from "./session.js";
 
 export const PREDICTION_STALE_MS = 15 * 60_000;

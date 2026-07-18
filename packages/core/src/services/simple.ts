@@ -1,4 +1,4 @@
-import type { CohortPoint, FlowRow } from "../../../shared/types.js";
+import type { CohortPoint, FlowRow } from "@kansoku/shared/types";
 import { ClientError } from "../errors.js";
 
 export type { FlowRow };

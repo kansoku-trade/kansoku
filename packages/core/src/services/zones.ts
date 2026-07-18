@@ -1,4 +1,4 @@
-import type { SupportZone, VolumeProfile } from "../../../shared/types.js";
+import type { SupportZone, VolumeProfile } from "@kansoku/shared/types";
 import { pyRound } from "./indicators.js";
 
 const ZONE_PALETTE: Record<string, { label_zh: string; fill: string; border: string; axis_color: string; hint: string }> = {

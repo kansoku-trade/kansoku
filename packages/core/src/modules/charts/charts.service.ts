@@ -1,4 +1,4 @@
-import type { ChartDoc, IntradayPrediction, RawBar, TimeframeKey } from "../../../../shared/types.js";
+import type { ChartDoc, IntradayPrediction, RawBar, TimeframeKey } from "@kansoku/shared/types";
 import { chartUrl } from "../../chartUrl.js";
 import type { ChartsApi } from "../../contract/charts.js";
 import { ClientError } from "../../errors.js";

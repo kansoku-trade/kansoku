@@ -1,4 +1,4 @@
-import type { ChartDoc } from "../../../shared/types.js";
+import type { ChartDoc } from "@kansoku/shared/types";
 import { getProvider } from "./marketdata/registry.js";
 import type { MarketDataProvider } from "./marketdata/types.js";
 import { marketOf } from "./symbol.utils.js";

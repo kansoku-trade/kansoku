@@ -2,7 +2,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Annotation } from "../../shared/types.js";
+import type { Annotation } from "@kansoku/shared/types";
 import type { Connection } from "../src/realtime/connection.js";
 
 let annotationsDir: string;

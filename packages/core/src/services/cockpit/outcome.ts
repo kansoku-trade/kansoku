@@ -1,4 +1,4 @@
-import type { AnalysisOutcome, IntradayPrediction, OutcomeStatus, RawBar } from "../../../../shared/types.js";
+import type { AnalysisOutcome, IntradayPrediction, OutcomeStatus, RawBar } from "@kansoku/shared/types";
 
 export interface OutcomePlan {
   entry?: number;

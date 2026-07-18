@@ -1,5 +1,5 @@
-import { ANNOTATION_PALETTE } from "../../../../shared/drawings.js";
-import type { Annotation, AnnotationKind, AnnotationPoint, AnnotationStyle } from "../../../../shared/types.js";
+import { ANNOTATION_PALETTE } from "@kansoku/shared/drawings";
+import type { Annotation, AnnotationKind, AnnotationPoint, AnnotationStyle } from "@kansoku/shared/types";
 import type { AnnotationsApi } from "../../contract/annotations.js";
 import { ClientError } from "../../errors.js";
 import { loadAnnotations, saveAnnotations } from "../../services/annotations.js";

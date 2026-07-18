@@ -1,5 +1,5 @@
 import { gunzipSync } from "node:zlib";
-import type { FlowRow, RawBar } from "../../../../shared/types.js";
+import type { FlowRow, RawBar } from "@kansoku/shared/types";
 import type { ExtendedQuote, RawCapitalDistribution, RawQuote } from "./types.js";
 
 export const COMMAND_AUTH = 2;

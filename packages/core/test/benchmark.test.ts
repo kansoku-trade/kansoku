@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { QuoteCell, RawBar } from "../../shared/types.js";
+import type { QuoteCell, RawBar } from "@kansoku/shared/types";
 
 const provider = vi.hoisted(() => ({
   name: "mock",

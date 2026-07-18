@@ -1,4 +1,4 @@
-import type { Candle, LinePoint, RawBar, SwingPoint } from "../../../shared/types.js";
+import type { Candle, LinePoint, RawBar, SwingPoint } from "@kansoku/shared/types";
 import { ClientError } from "../errors.js";
 
 export function sma(arr: number[], n: number): (number | null)[] {

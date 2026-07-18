@@ -64,13 +64,13 @@ describe("feature resolver", () => {
 
 describe("free-tier feature", () => {
   afterEach(() => {
-    vi.doUnmock("../../pro-api/src/features.js");
+    vi.doUnmock("@kansoku/pro-api/features");
     vi.resetModules();
   });
 
   it("is always active regardless of pro module presence", async () => {
     vi.resetModules();
-    vi.doMock("../../pro-api/src/features.js", () => ({
+    vi.doMock("@kansoku/pro-api/features", () => ({
       FEATURES: { "fake-free": { tier: "free" } },
     }));
     const mod = await import("../src/pro/features.js");

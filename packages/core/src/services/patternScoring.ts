@@ -4,7 +4,7 @@ import type {
   CandlePatternStatus,
   IntradayFvgZone,
   SwingPoint,
-} from "../../../shared/types.js";
+} from "@kansoku/shared/types";
 import { CANDLE_PATTERN_META } from "./candlePatterns.js";
 import { classifySession } from "./session.js";
 

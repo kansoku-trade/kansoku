@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { RawBar } from "../../shared/types.js";
+import type { RawBar } from "@kansoku/shared/types";
 
 const provider = vi.hoisted(() => ({
   name: "mock",

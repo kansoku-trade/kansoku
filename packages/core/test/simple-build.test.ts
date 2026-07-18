@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ChartDoc } from "../../shared/types.js";
+import type { ChartDoc } from "@kansoku/shared/types";
 import { migrateLegacyDoc, rebuild } from "../src/services/build.js";
 import { cleanCohortRows } from "../src/services/simple.js";
 

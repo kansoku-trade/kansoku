@@ -1,4 +1,4 @@
-import type { IntradayOptionsLevels, OptionsWallLevel } from "../../../shared/types.js";
+import type { IntradayOptionsLevels, OptionsWallLevel } from "@kansoku/shared/types";
 import { marketOf } from "./symbol.utils.js";
 
 const CBOE_BASE = "https://cdn.cboe.com/api/global/delayed_quotes/options";

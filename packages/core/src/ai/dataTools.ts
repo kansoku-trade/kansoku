@@ -1,6 +1,6 @@
 import type { AgentTool, AgentToolResult } from "@earendil-works/pi-agent-core";
 import { Type } from "typebox";
-import type { Annotation, NewsItem, RawBar } from "../../../shared/types.js";
+import type { Annotation, NewsItem, RawBar } from "@kansoku/shared/types";
 import type { ReassessPack } from "./datapack.js";
 
 const KLINE_MAX_COUNT = 500;

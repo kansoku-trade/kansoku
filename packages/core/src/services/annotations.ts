@@ -1,6 +1,6 @@
 import { promises as fs } from "node:fs";
 import { join } from "node:path";
-import type { Annotation } from "../../../shared/types.js";
+import type { Annotation } from "@kansoku/shared/types";
 import { ANNOTATIONS_DIR } from "../env.js";
 import { ClientError } from "../errors.js";
 

@@ -1,4 +1,4 @@
-import type { ChartDoc } from "../../../../shared/types.js";
+import type { ChartDoc } from "@kansoku/shared/types";
 import { abortChatTurn, type ChatDeps, chatTurnState, runChatTurn, toDisplayMessages } from "../../ai/chat.js";
 import { getSessionByChartId, listMessages } from "../../ai/chatStore.js";
 import { buildChatSuggestions, type ChatSuggestionDeps } from "../../ai/chatSuggestions.js";

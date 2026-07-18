@@ -1,4 +1,4 @@
-import type { PortfolioSummary } from "../../../../shared/types.js";
+import type { PortfolioSummary } from "@kansoku/shared/types";
 import type { RawPortfolio } from "../../services/marketdata/types.js";
 
 function num(value: string): number {

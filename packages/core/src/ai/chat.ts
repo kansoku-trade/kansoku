@@ -8,7 +8,7 @@ import type {
   IntradayPrediction,
   NewsItem,
   RawBar,
-} from "../../../shared/types.js";
+} from "@kansoku/shared/types";
 import { PROJECT_ROOT } from "../env.js";
 import { annotationsService } from "../modules/annotations/annotations.service.js";
 import { getProvider } from "../services/marketdata/registry.js";

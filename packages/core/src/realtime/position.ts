@@ -1,4 +1,4 @@
-import type { CockpitPosition, RelativeVolume } from "../../../shared/types.js";
+import type { CockpitPosition, RelativeVolume } from "@kansoku/shared/types";
 import { buildCockpitPosition } from "../services/cockpit/position.js";
 import { entryPlanFromDoc, latestIntradayDoc, type EntryPlan } from "../services/cockpit/entryPlan.js";
 import { getProvider, getStream } from "../services/marketdata/registry.js";

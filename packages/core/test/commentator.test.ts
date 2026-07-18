@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import type { CockpitComment, RawBar } from "../../shared/types.js";
+import type { CockpitComment, RawBar } from "@kansoku/shared/types";
 import type { AiAgentFactory, AiAgentHandle } from "../src/ai/agentSession.js";
 import {
   type CommentatorDeps,

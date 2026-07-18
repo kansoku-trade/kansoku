@@ -1,4 +1,4 @@
-import type { RawBar } from "../../../shared/types.js";
+import type { RawBar } from "@kansoku/shared/types";
 import { preMarketRange, regularRange } from "../services/dayLevels.js";
 import { toTs } from "../services/indicators.js";
 import type { ReassessPack } from "./datapack.js";

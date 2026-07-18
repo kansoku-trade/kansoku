@@ -1,4 +1,4 @@
-import type { CandlePattern, CandlePatternKind } from "../../../shared/types.js";
+import type { CandlePattern, CandlePatternKind } from "@kansoku/shared/types";
 
 const AVG_BODY_WINDOW = 14;
 const TREND_LOOKBACK = 4;

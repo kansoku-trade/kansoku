@@ -1,6 +1,6 @@
 import type { AgentTool } from "@earendil-works/pi-agent-core";
 import { type Static, Type } from "typebox";
-import type { CockpitComment } from "../../../shared/types.js";
+import type { CockpitComment } from "@kansoku/shared/types";
 import { easternDate } from "../services/session.js";
 import { AgentTimeoutError, type AiAgentFactory, createAgentSession } from "./agentSession.js";
 import { appendComment as defaultAppendComment } from "./comments.js";

@@ -1,4 +1,4 @@
-import type { PortfolioSummary } from "../../../shared/types.js";
+import type { PortfolioSummary } from "@kansoku/shared/types";
 import { defineRoutes } from "./defineRoutes.js";
 
 export interface PositionsApi {

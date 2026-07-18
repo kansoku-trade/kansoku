@@ -1,4 +1,4 @@
-import type { SessionKind } from "../../../shared/types.js";
+import type { SessionKind } from "@kansoku/shared/types";
 
 export const REGULAR_POLL_MS = 15_000;
 export const PRE_POST_POLL_MS = 30_000;

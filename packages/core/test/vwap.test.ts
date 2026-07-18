@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { RawBar } from "../../shared/types.js";
+import type { RawBar } from "@kansoku/shared/types";
 import { lastVwap, sessionVwap } from "../src/services/vwap.js";
 
 function bar(time: string, h: number, l: number, c: number, v: number): RawBar {

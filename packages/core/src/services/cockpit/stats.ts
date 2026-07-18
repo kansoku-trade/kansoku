@@ -1,4 +1,4 @@
-import type { AnalysisOutcome, PredictionStats, StatsBucket } from "../../../../shared/types.js";
+import type { AnalysisOutcome, PredictionStats, StatsBucket } from "@kansoku/shared/types";
 
 export type StatsOrigin = "analyst" | "manual";
 

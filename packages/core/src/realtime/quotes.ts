@@ -1,4 +1,4 @@
-import type { QuoteCell, QuoteSnapshot } from "../../../shared/types.js";
+import type { QuoteCell, QuoteSnapshot } from "@kansoku/shared/types";
 import { getProvider, getStream } from "../services/marketdata/registry.js";
 import { distinctStreams, releaseSymbols, retainSymbols } from "../services/marketdata/streamRouting.js";
 import type { ExtendedQuote, RawQuote } from "../services/marketdata/types.js";

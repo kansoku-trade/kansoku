@@ -5,10 +5,12 @@
   "types": "./src/index.ts",
   "exports": {
     ".": {
-      "types": "./src/index.ts"
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
     },
     "./features": {
-      "types": "./src/features.ts"
+      "types": "./src/features.ts",
+      "default": "./src/features.ts"
     }
   },
   "scripts": {

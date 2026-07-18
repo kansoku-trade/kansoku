@@ -1,4 +1,4 @@
-import type { IntradayPrediction } from "../../../shared/types.js";
+import type { IntradayPrediction } from "@kansoku/shared/types";
 
 const SCENARIO_SUM_TOLERANCE = 10;
 const MIN_T1_RR = 1;

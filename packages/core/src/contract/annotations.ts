@@ -1,4 +1,4 @@
-import type { Annotation } from "../../../shared/types.js";
+import type { Annotation } from "@kansoku/shared/types";
 import { defineRoutes } from "./defineRoutes.js";
 
 export interface AnnotationsApi {

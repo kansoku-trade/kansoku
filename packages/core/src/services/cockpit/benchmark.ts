@@ -1,4 +1,4 @@
-import type { BenchmarkSeries, RawBar } from "../../../../shared/types.js";
+import type { BenchmarkSeries, RawBar } from "@kansoku/shared/types";
 
 export function buildBenchmark(series: { symbol: string; bars: RawBar[] }[]): BenchmarkSeries[] {
   const nonEmpty = series.filter((s) => s.bars.length > 0);

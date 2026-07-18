@@ -1,4 +1,4 @@
-import { FEATURES, type FeatureKey, type FeatureState, type FeatureTier } from "../../../pro-api/src/features.js";
+import { FEATURES, type FeatureKey, type FeatureState, type FeatureTier } from "@kansoku/pro-api/features";
 import { ClientError } from "../errors.js";
 import { getPro } from "./registry.js";
 

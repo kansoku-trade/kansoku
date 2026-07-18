@@ -1,6 +1,6 @@
 import type { AgentTool } from "@earendil-works/pi-agent-core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { ChartDoc } from "../../shared/types.js";
+import type { ChartDoc } from "@kansoku/shared/types";
 import type { AiAgentFactory } from "../src/ai/agentSession.js";
 import type { AiModel } from "../src/ai/models.js";
 

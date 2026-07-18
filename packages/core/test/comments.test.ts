@@ -1,6 +1,6 @@
 import { promises as fs } from "node:fs";
 import { afterAll, describe, expect, it, vi } from "vitest";
-import type { CockpitComment } from "../../shared/types.js";
+import type { CockpitComment } from "@kansoku/shared/types";
 
 const ctx = vi.hoisted(() => {
   const base = process.env.TMPDIR ?? "/tmp/";

@@ -1,4 +1,4 @@
-import type { QuoteCell } from "../../../../shared/types.js";
+import type { QuoteCell } from "@kansoku/shared/types";
 import { classifySession, sessionLabel } from "../session.js";
 import { marketOf } from "../symbol.utils.js";
 import { getProvider } from "./registry.js";

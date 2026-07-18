@@ -29,8 +29,8 @@ import {
   type SeriesMarker,
   type SwingPoint,
   type TimeframeKey,
-} from "../../../shared/types.js";
-import { formatMarketMonthDayTime } from "../../../shared/time.js";
+} from "@kansoku/shared/types";
+import { formatMarketMonthDayTime } from "@kansoku/shared/time";
 import { ClientError } from "../errors.js";
 import { detectCandlePatterns } from "./candlePatterns.js";
 import { buildDayContext } from "./dayLevels.js";

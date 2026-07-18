@@ -1,4 +1,4 @@
-import type { Candle, IntradayFvgZone } from "../../../shared/types.js";
+import type { Candle, IntradayFvgZone } from "@kansoku/shared/types";
 
 const ATR_PERIOD = 14;
 export const FVG_ATR_RATIO = 0.25;

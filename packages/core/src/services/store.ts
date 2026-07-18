@@ -1,8 +1,8 @@
 import { promises as fs } from "node:fs";
 import { join } from "node:path";
 import { desc, eq, sql } from "drizzle-orm";
-import { SYMBOL_TYPES } from "../../../shared/chartUrl.js";
-import { CURRENT_SCHEMA_VERSION, type ChartDoc, type ChartMeta } from "../../../shared/types.js";
+import { SYMBOL_TYPES } from "@kansoku/shared/chartUrl";
+import { CURRENT_SCHEMA_VERSION, type ChartDoc, type ChartMeta } from "@kansoku/shared/types";
 import { getDb, type Db } from "../db/index.js";
 import { chartMeta, outcomes } from "../db/schema.js";
 import { CHART_DATA_DIR } from "../env.js";

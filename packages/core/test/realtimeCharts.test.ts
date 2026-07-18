@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { ChartDoc } from "../../shared/types.js";
+import type { ChartDoc } from "@kansoku/shared/types";
 import { easternDate } from "../src/services/session.js";
 
 const TODAY = easternDate();

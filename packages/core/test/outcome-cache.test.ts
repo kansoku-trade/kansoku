@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { AnalysisOutcome } from "../../shared/types.js";
+import type { AnalysisOutcome } from "@kansoku/shared/types";
 import { createDb } from "../src/db/index.js";
 import { getResolvedOutcomes, saveResolvedOutcome } from "../src/services/cockpit/outcomeCache.js";
 

@@ -1,5 +1,5 @@
 import { and, asc, desc, eq } from "drizzle-orm";
-import type { CockpitComment, CommentLevel, CommentSource } from "../../../shared/types.js";
+import type { CockpitComment, CommentLevel, CommentSource } from "@kansoku/shared/types";
 import { getDb, type Db } from "../db/index.js";
 import { comments } from "../db/schema.js";
 import { nextSnowflake } from "../db/snowflake.js";

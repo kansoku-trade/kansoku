@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { RawBar } from "../../shared/types.js";
+import type { RawBar } from "@kansoku/shared/types";
 import { computeRelativeVolume } from "../src/services/relvol.js";
 
 const NOW = new Date("2026-07-02T15:00:00Z");

@@ -2,7 +2,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { AgentEvent, AgentMessage, AgentTool } from "@earendil-works/pi-agent-core";
 import { describe, expect, it, vi } from "vitest";
-import type { ChartDoc, CockpitComment } from "../../shared/types.js";
+import type { ChartDoc, CockpitComment } from "@kansoku/shared/types";
 import type { AiAgentFactory } from "../src/ai/agentSession.js";
 import type { ChatMessageRow } from "../src/ai/chatStore.js";
 import type { AiModel } from "../src/ai/models.js";

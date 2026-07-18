@@ -1,4 +1,4 @@
-import type { IntradayDayContext, RawBar, SessionKind } from "../../../shared/types.js";
+import type { IntradayDayContext, RawBar, SessionKind } from "@kansoku/shared/types";
 import { sma, toTs } from "./indicators.js";
 import { classifySession, easternDate } from "./session.js";
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ChartDoc } from "../../shared/types.js";
+import type { ChartDoc } from "@kansoku/shared/types";
 import { buildAnalystSystemPrompt } from "../src/ai/analyst.js";
 import { buildChatSystemPrompt } from "../src/ai/chat.js";
 import {

@@ -1,4 +1,4 @@
-import type { RawBar, RelativeVolume } from "../../../shared/types.js";
+import type { RawBar, RelativeVolume } from "@kansoku/shared/types";
 import { toTs } from "./indicators.js";
 import { classifySession, easternDate, easternMinuteOfDay } from "./session.js";
 

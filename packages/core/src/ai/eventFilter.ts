@@ -1,6 +1,6 @@
 import type { AgentTool } from "@earendil-works/pi-agent-core";
 import { type Static, Type } from "typebox";
-import type { MacroEventItem } from "../../../shared/types.js";
+import type { MacroEventItem } from "@kansoku/shared/types";
 import { type AiAgentFactory, createAgentSession } from "./agentSession.js";
 import { aiConfig } from "./models.js";
 import { EVENT_FILTER_PROMPT } from "./prompts.js";

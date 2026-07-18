@@ -1,4 +1,4 @@
-import type { CockpitPosition } from "../../../../shared/types.js";
+import type { CockpitPosition } from "@kansoku/shared/types";
 import type { RawPosition } from "../marketdata/types.js";
 
 export function buildCockpitPosition(

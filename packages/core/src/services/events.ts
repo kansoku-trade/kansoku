@@ -1,4 +1,4 @@
-import type { IntradayEventRisk, MacroEventItem } from "../../../shared/types.js";
+import type { IntradayEventRisk, MacroEventItem } from "@kansoku/shared/types";
 import { filterMacroForSymbol } from "../ai/eventFilter.js";
 import { activeSettingsRevision } from "../ai/settingsStore.js";
 import { getProvider } from "./marketdata/registry.js";

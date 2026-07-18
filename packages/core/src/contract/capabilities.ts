@@ -1,5 +1,5 @@
 import type { LicenseSnapshot } from "@kansoku/pro-api";
-import type { FeatureKey, FeatureState } from "../../../pro-api/src/features.js";
+import type { FeatureKey, FeatureState } from "@kansoku/pro-api/features";
 import { defineRoutes } from "./defineRoutes.js";
 
 export interface CapabilitiesOut {

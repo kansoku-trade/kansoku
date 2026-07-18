@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { RawBar } from "../../shared/types.js";
+import type { RawBar } from "@kansoku/shared/types";
 import { attachRMultiple, judgeOutcome, rMultipleFor } from "../src/services/cockpit/outcome.js";
 import { aggregateStats } from "../src/services/cockpit/stats.js";
 

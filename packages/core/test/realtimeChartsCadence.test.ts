@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { ChartDoc } from "../../shared/types.js";
+import type { ChartDoc } from "@kansoku/shared/types";
 import { OVERNIGHT_POLL_MS, REGULAR_POLL_MS } from "../src/realtime/pushFallback.js";
 
 const store = vi.hoisted(() => ({ loadChart: vi.fn() }));

@@ -1,4 +1,4 @@
-import type { PortfolioSummary } from "../../../../shared/types.js";
+import type { PortfolioSummary } from "@kansoku/shared/types";
 import type { PositionsApi } from "../../contract/positions.js";
 import { ClientError } from "../../errors.js";
 import { getProvider } from "../../services/marketdata/registry.js";

@@ -1,4 +1,4 @@
-import type { ChartDoc, RawBar, TimeframeKey } from "../../../shared/types.js";
+import type { ChartDoc, RawBar, TimeframeKey } from "@kansoku/shared/types";
 import { ClientError } from "../errors.js";
 import { buildChart, rebuild, refreshBody } from "../services/build.js";
 import { getEventRisk } from "../services/events.js";

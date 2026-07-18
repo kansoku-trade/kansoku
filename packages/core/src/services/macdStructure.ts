@@ -1,4 +1,4 @@
-import type { MacdStructureKind, MacdStructureSignal } from "../../../shared/types.js";
+import type { MacdStructureKind, MacdStructureSignal } from "@kansoku/shared/types";
 
 const DOUBLE_CROSS_WINDOW = 45;
 const TANGLE_WINDOW = 40;

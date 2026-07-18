@@ -1,4 +1,4 @@
-import type { Pattern123, SwingPoint } from "../../../shared/types.js";
+import type { Pattern123, SwingPoint } from "@kansoku/shared/types";
 
 const PIVOT_WINDOW = 3;
 const EXTREME_LOOKBACK = 20;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ChartDoc, ChartMeta, CockpitComment, IntradayEventRisk, RawBar } from "../../shared/types.js";
+import type { ChartDoc, ChartMeta, CockpitComment, IntradayEventRisk, RawBar } from "@kansoku/shared/types";
 import type { RawPosition } from "../src/services/marketdata/types.js";
 import {
   buildCommentPack,

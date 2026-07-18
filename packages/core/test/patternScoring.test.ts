@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { CandlePattern } from "../../shared/types.js";
+import type { CandlePattern } from "@kansoku/shared/types";
 import {
   enrichCandlePatterns,
   offSessionSignalKeeper,

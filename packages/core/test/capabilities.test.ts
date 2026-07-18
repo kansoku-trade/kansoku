@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import type { LicenseService } from "@kansoku/pro-api";
-import { FEATURES, type FeatureTier } from "../../pro-api/src/features.js";
+import { FEATURES, type FeatureTier } from "@kansoku/pro-api/features";
 import { freeHooks, registerProModule, unregisterProModuleForTests } from "../src/pro/registry.js";
 import { capabilitiesService } from "../src/modules/capabilities/capabilities.service.js";
 

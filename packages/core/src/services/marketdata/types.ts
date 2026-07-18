@@ -1,4 +1,4 @@
-import type { MacroEventItem, NewsItem, RawBar } from "../../../../shared/types.js";
+import type { MacroEventItem, NewsItem, RawBar } from "@kansoku/shared/types";
 import type { FlowRow } from "../simple.js";
 import type { Market } from "../symbol.utils.js";
 

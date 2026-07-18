@@ -6,7 +6,7 @@ import type {
   CockpitPosition,
   RelativeVolume,
   SymbolAnalysisRow,
-} from "../../../shared/types.js";
+} from "@kansoku/shared/types";
 import type {
   DeepDiveStartResult,
   DeepDiveState,

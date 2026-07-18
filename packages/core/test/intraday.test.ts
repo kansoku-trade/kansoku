@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { RawBar, TimeframeKey } from "../../shared/types.js";
+import type { RawBar, TimeframeKey } from "@kansoku/shared/types";
 import {
   buildIntraday,
   capMarkersPerBar,

@@ -1,4 +1,4 @@
-import type { Notice } from "../../../shared/types.js";
+import type { Notice } from "@kansoku/shared/types";
 
 type Listener = (notice: Notice) => void;
 

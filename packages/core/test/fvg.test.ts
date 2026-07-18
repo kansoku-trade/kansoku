@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { detectFvgZones } from "../src/services/fvg.js";
-import type { Candle } from "../../shared/types.js";
+import type { Candle } from "@kansoku/shared/types";
 
 function series(bars: Array<[low: number, high: number]>): Candle[] {
   return bars.map(([low, high], i) => {

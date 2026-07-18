@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { ChartDoc } from "../../shared/types.js";
+import type { ChartDoc } from "@kansoku/shared/types";
 import type { MarketDataProvider } from "../src/services/marketdata/types.js";
 import { localizeChartDocName, resolveSecurityName } from "../src/services/securityName.js";
 

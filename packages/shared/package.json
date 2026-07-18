@@ -1,0 +1,12 @@
+{
+  "name": "@kansoku/shared",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./*": {
+      "types": "./*.ts",
+      "default": "./*.ts"
+    }
+  },
+  "license": "SEE LICENSE IN LICENSE"
+}

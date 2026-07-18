@@ -10,5 +10,5 @@
     "forceConsistentCasingInFileNames": true,
     "types": ["node"]
   },
-  "include": ["src", "../shared/**/*.ts"]
+  "include": ["src"]
 }

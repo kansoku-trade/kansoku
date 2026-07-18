@@ -11,7 +11,7 @@ import type {
   SeriesMarker,
   SupportZone,
   VolumeProfile,
-} from "../../../shared/types.js";
+} from "@kansoku/shared/types";
 import { ClientError } from "../errors.js";
 import { coerceKlines, lineData, pyRound, rsSeries, sma, toCandles } from "./indicators.js";
 import { computeVolumeProfile, defaultSupportZones, normalizeSupportZones } from "./zones.js";

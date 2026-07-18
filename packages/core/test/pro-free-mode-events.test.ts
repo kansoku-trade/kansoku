@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { MacroEventItem } from "../../shared/types.js";
+import type { MacroEventItem } from "@kansoku/shared/types";
 
 const runLongbridgeJson = vi.fn();
 

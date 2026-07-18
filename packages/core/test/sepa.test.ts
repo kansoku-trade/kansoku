@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { SepaCheck, SepaChartData, SepaVerdict } from "../../shared/types.js";
+import type { SepaCheck, SepaChartData, SepaVerdict } from "@kansoku/shared/types";
 import { buildSepa, type SepaInput, type SepaMeta } from "../src/services/sepa.js";
 import { approxDiff, loadFixture } from "./helpers.js";
 

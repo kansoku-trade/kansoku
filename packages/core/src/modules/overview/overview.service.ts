@@ -1,4 +1,4 @@
-import type { IntradayPrediction, OverviewRecap, RawBar, RecapSettlementRow } from "../../../../shared/types.js";
+import type { IntradayPrediction, OverviewRecap, RawBar, RecapSettlementRow } from "@kansoku/shared/types";
 import { chartUrl } from "../../chartUrl.js";
 import { listAllCommentDates, listComments } from "../../ai/comments.js";
 import { listUsage, listUsageDates, summarizeUsage } from "../../ai/usageStore.js";

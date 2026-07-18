@@ -1,4 +1,4 @@
-import type { AiUsageSummary, OverviewBoard, OverviewRecap, PredictionStats } from "../../../shared/types.js";
+import type { AiUsageSummary, OverviewBoard, OverviewRecap, PredictionStats } from "@kansoku/shared/types";
 import { defineRoutes } from "./defineRoutes.js";
 
 export interface OverviewApi {

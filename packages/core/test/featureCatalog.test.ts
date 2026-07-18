@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FEATURES } from "../../pro-api/src/features.js";
+import { FEATURES } from "@kansoku/pro-api/features";
 
 describe("FEATURES catalog", () => {
   it("matches snapshot", () => {

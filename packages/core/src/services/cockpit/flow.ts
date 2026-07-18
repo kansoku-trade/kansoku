@@ -1,4 +1,4 @@
-import type { CapitalBucket, CockpitFlow, LinePoint } from "../../../../shared/types.js";
+import type { CapitalBucket, CockpitFlow, LinePoint } from "@kansoku/shared/types";
 import type { RawCapitalDistribution } from "../marketdata/types.js";
 import type { FlowRow } from "../simple.js";
 

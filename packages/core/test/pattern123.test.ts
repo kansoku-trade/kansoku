@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { RawBar } from "../../shared/types.js";
+import type { RawBar } from "@kansoku/shared/types";
 import { coerceIntradayTimeframe } from "../src/services/intraday.js";
 import { detect123Patterns } from "../src/services/pattern123.js";
 

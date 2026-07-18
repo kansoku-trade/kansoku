@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { AnalysisOutcome } from "../../shared/types.js";
+import type { AnalysisOutcome } from "@kansoku/shared/types";
 import { aggregateStats, type StatsRow } from "../src/services/cockpit/stats.js";
 
 function outcome(status: AnalysisOutcome["status"], pct = 0): AnalysisOutcome {

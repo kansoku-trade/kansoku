@@ -1,5 +1,5 @@
 import { asc, desc, eq } from "drizzle-orm";
-import type { AiUsageSummary } from "../../../shared/types.js";
+import type { AiUsageSummary } from "@kansoku/shared/types";
 import { getDb, type Db } from "../db/index.js";
 import { aiUsage } from "../db/schema.js";
 import { nextSnowflake } from "../db/snowflake.js";

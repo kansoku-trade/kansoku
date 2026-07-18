@@ -1,4 +1,4 @@
-import type { ChartDoc, ChartMeta } from "../../../shared/types.js";
+import type { ChartDoc, ChartMeta } from "@kansoku/shared/types";
 import { defineRoutes, type WithMeta } from "./defineRoutes.js";
 
 export interface ChartListItem extends ChartMeta {

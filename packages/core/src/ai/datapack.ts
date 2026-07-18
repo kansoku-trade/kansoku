@@ -14,7 +14,7 @@ import type {
   RawBar,
   RelativeVolume,
   TimeframeKey,
-} from "../../../shared/types.js";
+} from "@kansoku/shared/types";
 import { ClientError } from "../errors.js";
 import { normalizeQuote } from "../realtime/quotes.js";
 import { buildCockpitPosition } from "../services/cockpit/position.js";

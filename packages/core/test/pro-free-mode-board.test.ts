@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { ChartDoc, ChartMeta } from "../../shared/types.js";
+import type { ChartDoc, ChartMeta } from "@kansoku/shared/types";
 
 const store = vi.hoisted(() => ({
   listCharts: vi.fn(),

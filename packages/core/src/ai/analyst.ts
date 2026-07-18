@@ -3,7 +3,7 @@ import { join } from "node:path";
 import type { AgentTool } from "@earendil-works/pi-agent-core";
 import { type Static, Type } from "typebox";
 import { Check } from "typebox/value";
-import { type CockpitComment, type CommentLevel, type IntradayPrediction, type NewsItem, type RawBar } from "../../../shared/types.js";
+import { type CockpitComment, type CommentLevel, type IntradayPrediction, type NewsItem, type RawBar } from "@kansoku/shared/types";
 import type { ReassessPhase, ReassessResult, ReassessStatus } from "../contract/symbols.js";
 import { chartUrl } from "../chartUrl.js";
 import { JOURNAL_DIR, PROJECT_ROOT, skillSearchDirs } from "../env.js";

@@ -1,5 +1,5 @@
 import { inArray } from "drizzle-orm";
-import type { AnalysisOutcome, OutcomeStatus } from "../../../../shared/types.js";
+import type { AnalysisOutcome, OutcomeStatus } from "@kansoku/shared/types";
 import { getDb, type Db } from "../../db/index.js";
 import { outcomes } from "../../db/schema.js";
 

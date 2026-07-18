@@ -1,4 +1,4 @@
-import type { RawBar } from "../../../../shared/types.js";
+import type { RawBar } from "@kansoku/shared/types";
 import { classifySession } from "../session.js";
 import { marketOf } from "../symbol.utils.js";
 import type { ProtocolQuote, ProtocolTradePush } from "./longbridgeProtocol.js";

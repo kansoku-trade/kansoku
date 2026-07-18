@@ -1,5 +1,5 @@
 import type { ProChannel } from "@kansoku/pro-api";
-import type { CockpitComment } from "../../../shared/types.js";
+import type { CockpitComment } from "@kansoku/shared/types";
 import { listAnalystRuns, onAnalystRunChange } from "../ai/analyst.js";
 import { assistantChatTurnState, onAssistantChatEvent } from "../ai/assistantChat.js";
 import { type ChatEvent, chatTurnState, onChatEvent } from "../ai/chat.js";

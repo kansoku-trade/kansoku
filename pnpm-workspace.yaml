@@ -2,6 +2,7 @@ packages:
   - packages/core
   - packages/bench
   - packages/pro-api
+  - packages/shared
   - apps/pro
   - apps/server
   - apps/web

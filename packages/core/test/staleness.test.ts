@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ChartDoc } from "../../shared/types.js";
+import type { ChartDoc } from "@kansoku/shared/types";
 import { PREDICTION_STALE_MS, predictionStale } from "../src/services/staleness.js";
 
 const REGULAR_TS = "2026-07-02T15:00:00.000Z";

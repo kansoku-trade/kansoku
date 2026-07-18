@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
 import { describe, expect, it } from "vitest";
-import type { CockpitComment } from "../../shared/types.js";
+import type { CockpitComment } from "@kansoku/shared/types";
 import type { AiAgentFactory, AiAgentHandle } from "../src/ai/agentSession.js";
 import {
   analystRunStatus,

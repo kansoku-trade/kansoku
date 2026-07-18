@@ -1,4 +1,4 @@
-import type { LinePoint, RawBar } from "../../../shared/types.js";
+import type { LinePoint, RawBar } from "@kansoku/shared/types";
 import { toTs } from "./indicators.js";
 import { easternDate } from "./session.js";
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { RawBar } from "../../shared/types.js";
+import type { RawBar } from "@kansoku/shared/types";
 import { buildIntraday, type IntradayInput } from "../src/services/intraday.js";
 
 const DAY = { y: 2026, m: 6, d: 8 };

@@ -1,6 +1,6 @@
 import { promises as fs } from "node:fs";
 import { join } from "node:path";
-import type { IntradayPrediction, RawBar, SymbolAnalysisRow } from "../../../../shared/types.js";
+import type { IntradayPrediction, RawBar, SymbolAnalysisRow } from "@kansoku/shared/types";
 import { getProHooks } from "../../pro/registry.js";
 import { withFeatureGates } from "../../pro/withFeatureGates.js";
 import { chartUrl } from "../../chartUrl.js";

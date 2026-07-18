@@ -1,4 +1,4 @@
-import type { ChartBuilt, ChartDoc, ChartType, RawBar } from "../../../shared/types.js";
+import type { ChartBuilt, ChartDoc, ChartType, RawBar } from "@kansoku/shared/types";
 import { ClientError } from "../errors.js";
 import { ymd } from "./indicators.js";
 import { buildIntraday, TIMEFRAME_ORDER, type IntradayInput } from "./intraday.js";

@@ -1,4 +1,4 @@
-import type { ChartDoc } from "../../../../shared/types.js";
+import type { ChartDoc } from "@kansoku/shared/types";
 import { listCharts, loadChart } from "../store.js";
 
 export interface EntryPlan {

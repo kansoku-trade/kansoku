@@ -1,4 +1,4 @@
-import type { ChartUrlDoc } from "../../../../shared/chartUrl.js";
+import type { ChartUrlDoc } from "@kansoku/shared/chartUrl";
 import type {
   ChartDoc,
   ChartMeta,
@@ -6,7 +6,7 @@ import type {
   IntradayPrediction,
   OverviewBoard,
   OverviewRow,
-} from "../../../../shared/types.js";
+} from "@kansoku/shared/types";
 import { listComments } from "../../ai/comments.js";
 import { listFollowedSymbols } from "../../ai/follows.js";
 import { getProvider } from "../marketdata/registry.js";
