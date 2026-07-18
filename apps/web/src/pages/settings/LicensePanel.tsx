@@ -125,12 +125,13 @@ export function ActivateForm({
   );
 }
 
-function LicensedStatus({ state, deviceName, maskedKey, graceUntil, restartRequired }: {
+function LicensedStatus({ state, deviceName, maskedKey, graceUntil, restartRequired, proUnavailable }: {
   state: "licensed" | "grace";
   deviceName?: string;
   maskedKey?: string;
   graceUntil?: string;
   restartRequired?: boolean;
+  proUnavailable?: boolean;
 }) {
   return (
     <div className="settings-time-preference license-status-row">
@@ -150,6 +151,11 @@ function LicensedStatus({ state, deviceName, maskedKey, graceUntil, restartRequi
             AI 付费功能需要重启应用后才会生效，请手动退出并重新打开 Kansoku。
           </div>
         ) : null}
+        {proUnavailable ? (
+          <div className="settings-preference-description license-restart-notice">
+            当前构建不包含付费模块，无法启用 AI 付费功能。
+          </div>
+        ) : null}
       </div>
       <Button
         onClick={() =>
@@ -166,7 +172,7 @@ function LicensedStatus({ state, deviceName, maskedKey, graceUntil, restartRequi
 }
 
 export function LicensePanel() {
-  const { licensed, license, pro } = useCapabilities();
+  const { licensed, license, pro, hasEncBundle } = useCapabilities();
 
   if (licensed) {
     return (
@@ -175,7 +181,8 @@ export function LicensePanel() {
         deviceName={license?.deviceName}
         maskedKey={license?.maskedKey}
         graceUntil={license?.graceUntil}
-        restartRequired={!pro}
+        restartRequired={!pro && !!hasEncBundle}
+        proUnavailable={!pro && !hasEncBundle}
       />
     );
   }

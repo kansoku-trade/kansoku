@@ -5,6 +5,7 @@ export interface CapabilitiesOut {
   pro: boolean;
   licensed: boolean;
   license?: LicenseSnapshot;
+  hasEncBundle?: boolean;
 }
 
 export interface CapabilitiesApi {

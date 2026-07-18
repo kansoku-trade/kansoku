@@ -133,6 +133,7 @@ describe("LicenseModal", () => {
       pro: false,
       licensed: true,
       license: { state: "licensed", maskedKey: "••••1234" },
+      hasEncBundle: true,
     });
     fireEvent.click(screen.getByText("激活"));
 

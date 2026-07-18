@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { loadPro } from "../src/pro/loader.js";
-import { freeHooks, getPro, isProPresent, unregisterProModuleForTests } from "../src/pro/registry.js";
+import { freeHooks, getPro, hasEncBundle, isProPresent, unregisterProModuleForTests } from "../src/pro/registry.js";
 
 describe("pro loader", () => {
   afterEach(() => {
@@ -15,6 +15,7 @@ describe("pro loader", () => {
     expect(loaded).toBe(false);
     expect(isProPresent()).toBe(false);
     expect(getPro()).toBeNull();
+    expect(hasEncBundle()).toBe(false);
   });
 
   it("logs a warning (not the not-found info line) when a present pro module itself fails to import", async () => {
@@ -31,6 +32,7 @@ describe("pro loader", () => {
       const loaded = await loadPro(appDir);
       expect(loaded).toBe(false);
       expect(isProPresent()).toBe(false);
+      expect(hasEncBundle()).toBe(false);
       expect(infoSpy).not.toHaveBeenCalled();
       expect(warnSpy).toHaveBeenCalledTimes(1);
       expect(warnSpy.mock.calls[0]?.[0]).toContain("missing-inner.js");

@@ -93,4 +93,32 @@ describe("LicenseSection", () => {
     expect(screen.queryByText(/已失效/)).toBeNull();
     expect(screen.getByPlaceholderText("输入授权码")).toBeTruthy();
   });
+
+  it("shows the restart-required notice when licensed but pro hasn't loaded and an enc bundle is staged", async () => {
+    capabilitiesGet.mockResolvedValue({
+      pro: false,
+      licensed: true,
+      license: { state: "licensed", maskedKey: "••••1234" },
+      hasEncBundle: true,
+    });
+
+    renderWithClient(<LicenseSection />);
+
+    expect(await screen.findByText(/需要重启应用后才会生效/)).toBeTruthy();
+    expect(screen.queryByText(/当前构建不包含付费模块/)).toBeNull();
+  });
+
+  it("shows the honest no-paid-module notice when licensed but this build has no pro code at all", async () => {
+    capabilitiesGet.mockResolvedValue({
+      pro: false,
+      licensed: true,
+      license: { state: "licensed", maskedKey: "••••1234" },
+      hasEncBundle: false,
+    });
+
+    renderWithClient(<LicenseSection />);
+
+    expect(await screen.findByText(/当前构建不包含付费模块/)).toBeTruthy();
+    expect(screen.queryByText(/需要重启应用后才会生效/)).toBeNull();
+  });
 });

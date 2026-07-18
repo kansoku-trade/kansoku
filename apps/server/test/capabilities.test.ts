@@ -31,7 +31,12 @@ describe("GET /capabilities", () => {
     setLicenseManagerForTests(fakeLicenseManager());
     const res = await tsukiRequest("/api/capabilities");
     expect(res.status).toBe(200);
-    expect((await res.json()).data).toEqual({ pro: false, licensed: false, license: { state: "unlicensed" } });
+    expect((await res.json()).data).toEqual({
+      pro: false,
+      licensed: false,
+      license: { state: "unlicensed" },
+      hasEncBundle: false,
+    });
   });
 
   it("reports pro:true licensed:false with an unlicensed snapshot", async () => {
@@ -39,7 +44,12 @@ describe("GET /capabilities", () => {
     setLicenseManagerForTests(fakeLicenseManager({ getLicenseSnapshot: () => ({ state: "unlicensed" }) }));
     const res = await tsukiRequest("/api/capabilities");
     expect(res.status).toBe(200);
-    expect((await res.json()).data).toEqual({ pro: true, licensed: false, license: { state: "unlicensed" } });
+    expect((await res.json()).data).toEqual({
+      pro: true,
+      licensed: false,
+      license: { state: "unlicensed" },
+      hasEncBundle: false,
+    });
   });
 
   it("reports pro:true licensed:true with a licensed snapshot", async () => {
@@ -55,6 +65,7 @@ describe("GET /capabilities", () => {
       pro: true,
       licensed: true,
       license: { state: "licensed", deviceName: "my-mac", maskedKey: "••••7890" },
+      hasEncBundle: false,
     });
   });
 });

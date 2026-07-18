@@ -7,6 +7,7 @@ export interface Capabilities {
   pro: boolean | null;
   licensed: boolean;
   license?: LicenseSnapshot;
+  hasEncBundle?: boolean;
 }
 
 const DEFAULT: Capabilities = { pro: null, licensed: false };

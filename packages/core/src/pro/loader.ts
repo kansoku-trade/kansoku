@@ -4,7 +4,7 @@ import { pathToFileURL } from "node:url";
 import type { ProModule } from "@kansoku/pro-api";
 import { getActiveBundleKey } from "../license/licenseState.js";
 import { loadEncryptedModule } from "./encLoader.js";
-import { registerProModule } from "./registry.js";
+import { registerProModule, setEncBundlePresent } from "./registry.js";
 
 // Relative filesystem path to the gitignored slot rather than a bare package
 // specifier: nothing declares @kansoku/pro as a dependency (public code must
@@ -53,7 +53,9 @@ function proEncLayout(appDir?: string): { encPath: string; virtualDir: string } 
 
 export async function loadPro(appDir?: string, entryFile?: string): Promise<boolean> {
   const enc = proEncLayout(appDir);
-  if (enc && existsSync(enc.encPath)) {
+  const encPresent = enc != null && existsSync(enc.encPath);
+  setEncBundlePresent(encPresent);
+  if (enc && encPresent) {
     const keyHex = getActiveBundleKey() ?? process.env.KANSOKU_BUNDLE_KEY;
     if (keyHex) {
       try {

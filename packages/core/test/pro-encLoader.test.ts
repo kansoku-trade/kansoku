@@ -9,7 +9,7 @@ import { gzipSync } from "node:zlib";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { loadPro } from "../src/pro/loader.js";
 import { EncDecryptError, decryptProBlob } from "../src/pro/encLoader.js";
-import { isProPresent, unregisterProModuleForTests } from "../src/pro/registry.js";
+import { hasEncBundle, isProPresent, unregisterProModuleForTests } from "../src/pro/registry.js";
 
 const KEY_HEX = "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff";
 
@@ -145,6 +145,7 @@ describe("encLoader", () => {
         const loaded = await loadPro(appDir);
         expect(loaded).toBe(false);
         expect(isProPresent()).toBe(false);
+        expect(hasEncBundle()).toBe(true);
         expect(warnSpy).toHaveBeenCalledTimes(1);
       } finally {
         warnSpy.mockRestore();
@@ -159,6 +160,7 @@ describe("encLoader", () => {
         const loaded = await loadPro(appDir);
         expect(loaded).toBe(false);
         expect(isProPresent()).toBe(false);
+        expect(hasEncBundle()).toBe(true);
         expect(infoSpy.mock.calls.some((c) => String(c[0]).includes("no bundle key"))).toBe(true);
       } finally {
         infoSpy.mockRestore();
