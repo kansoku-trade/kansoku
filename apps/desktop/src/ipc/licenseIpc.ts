@@ -1,6 +1,6 @@
 import { IpcMethod, IpcService } from "electron-ipc-decorator";
-import type { LicenseApi } from "../../../../packages/core/src/contract/index.js";
-import { licenseService } from "../../../../packages/core/src/modules/license/license.service.js";
+import type { LicenseApi } from "@kansoku/core/contract/index";
+import { licenseService } from "@kansoku/core/modules/license/license.service";
 import { toEnvelope, type WrapEnvelope } from "./envelope.js";
 
 export class LicenseIpc extends IpcService implements WrapEnvelope<LicenseApi> {

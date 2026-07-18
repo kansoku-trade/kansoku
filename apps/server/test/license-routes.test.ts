@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { setLicenseManagerForTests, type LicenseManager } from "../../../packages/core/src/license/licenseState.js";
+import { setLicenseManagerForTests, type LicenseManager } from "@kansoku/core/license/licenseState";
 import { tsukiRequest } from "./helpers.js";
 
 function fakeManager(overrides: Partial<LicenseManager> = {}): LicenseManager {
@@ -77,8 +77,8 @@ describe("license routes", () => {
   });
 
   it("works with pro absent (free build): unlicensed status, not 404", async () => {
-    const { loadPro } = await import("../../../packages/core/src/pro/loader.js");
-    const { unregisterProModuleForTests } = await import("../../../packages/core/src/pro/registry.js");
+    const { loadPro } = await import("@kansoku/core/pro/loader");
+    const { unregisterProModuleForTests } = await import("@kansoku/core/pro/registry");
     unregisterProModuleForTests();
     setLicenseManagerForTests(fakeManager());
     try {
