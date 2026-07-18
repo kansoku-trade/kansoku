@@ -8,6 +8,10 @@ function fakeProModule(overrides: Partial<ProModule> = {}): ProModule {
   return { hooks: freeHooks, ...overrides };
 }
 
+function allFeatures(state: "absent" | "locked" | "active") {
+  return { "symbol-follow": state, "deep-dive": state, "research-ai": state };
+}
+
 describe("GET /capabilities", () => {
   afterEach(async () => {
     await loadPro();
@@ -17,7 +21,7 @@ describe("GET /capabilities", () => {
     unregisterProModuleForTests();
     const res = await tsukiRequest("/api/capabilities");
     expect(res.status).toBe(200);
-    expect((await res.json()).data).toEqual({ pro: false, licensed: false });
+    expect((await res.json()).data).toEqual({ pro: false, licensed: false, features: allFeatures("absent") });
   });
 
   it("reports pro:true licensed:false with an unlicensed snapshot", async () => {
@@ -33,7 +37,12 @@ describe("GET /capabilities", () => {
     );
     const res = await tsukiRequest("/api/capabilities");
     expect(res.status).toBe(200);
-    expect((await res.json()).data).toEqual({ pro: true, licensed: false, license: { state: "unlicensed" } });
+    expect((await res.json()).data).toEqual({
+      pro: true,
+      licensed: false,
+      license: { state: "unlicensed" },
+      features: allFeatures("locked"),
+    });
   });
 
   it("reports pro:true licensed:true with a licensed snapshot", async () => {
@@ -53,6 +62,7 @@ describe("GET /capabilities", () => {
       pro: true,
       licensed: true,
       license: { state: "licensed", deviceName: "my-mac", maskedKey: "••••7890" },
+      features: allFeatures("active"),
     });
   });
 });
