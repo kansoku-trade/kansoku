@@ -183,6 +183,23 @@ describe("episode engine", () => {
     expect(result.result!.trades![0]).toMatchObject({ exitReason: "stop", grossR: -1 });
   });
 
+  it("prices a same-bar stop from an intrabar entry at the stop instead of the earlier open", () => {
+    const q = question([bar("2026-02-06T14:30:00Z", 98.147166, 100.917579, 97.989683, 100.284433)]);
+    const result = advanceEpisode(
+      submitEpisode(createEpisodeState(), q, prediction("long", 100.1, 98.6, 101.8)).state,
+      q,
+      { type: "hold" },
+    );
+
+    expect(result).toMatchObject({ terminal: true, event: "stop_hit" });
+    expect(result.result!.trades![0]).toMatchObject({
+      entry: { price: 100.1 },
+      exit: { price: 98.6 },
+      exitReason: "stop",
+      grossR: -1,
+    });
+  });
+
   it("immediately closes a gap fill that has already crossed its bracket without counting later excursions", () => {
     const q = question([bar("2026-03-23T14:30:00Z", 85, 89, 80, 82)]);
     const result = advanceEpisode(

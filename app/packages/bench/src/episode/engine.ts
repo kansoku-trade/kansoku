@@ -360,21 +360,26 @@ function targetHit(position: PositionState, bar: RawBar): boolean {
   return position.direction === "long" ? numberOf(bar.high) >= position.target : numberOf(bar.low) <= position.target;
 }
 
-function stopExitPrice(position: PositionState, bar: RawBar): number {
+function stopExitPrice(position: PositionState, bar: RawBar, allowOpenGap = true): number {
   const open = numberOf(bar.open);
-  if (position.direction === "long" && open < position.stop) return open;
-  if (position.direction === "short" && open > position.stop) return open;
+  if (allowOpenGap && position.direction === "long" && open < position.stop) return open;
+  if (allowOpenGap && position.direction === "short" && open > position.stop) return open;
   return position.stop;
 }
 
-function targetExitPrice(position: PositionState, bar: RawBar): number {
+function targetExitPrice(position: PositionState, bar: RawBar, allowOpenGap = true): number {
   const open = numberOf(bar.open);
-  if (position.direction === "long" && open > position.target) return open;
-  if (position.direction === "short" && open < position.target) return open;
+  if (allowOpenGap && position.direction === "long" && open > position.target) return open;
+  if (allowOpenGap && position.direction === "short" && open < position.target) return open;
   return position.target;
 }
 
-function entryFillPrice(order: PendingOrderState, reference: number, bar: RawBar): number | null {
+interface EntryFill {
+  price: number;
+  timing: "open" | "intrabar";
+}
+
+function entryFill(order: PendingOrderState, reference: number, bar: RawBar): EntryFill | null {
   const open = numberOf(bar.open);
   const high = numberOf(bar.high);
   const low = numberOf(bar.low);
@@ -382,20 +387,20 @@ function entryFillPrice(order: PendingOrderState, reference: number, bar: RawBar
   if (order.direction === "long") {
     const isStopEntry = order.entry >= reference;
     if (isStopEntry) {
-      if (open >= order.entry) return open;
-      return high >= order.entry ? order.entry : null;
+      if (open >= order.entry) return { price: open, timing: "open" };
+      return high >= order.entry ? { price: order.entry, timing: "intrabar" } : null;
     }
-    if (open <= order.entry) return open;
-    return low <= order.entry ? order.entry : null;
+    if (open <= order.entry) return { price: open, timing: "open" };
+    return low <= order.entry ? { price: order.entry, timing: "intrabar" } : null;
   }
 
   const isStopEntry = order.entry <= reference;
   if (isStopEntry) {
-    if (open <= order.entry) return open;
-    return low <= order.entry ? order.entry : null;
+    if (open <= order.entry) return { price: open, timing: "open" };
+    return low <= order.entry ? { price: order.entry, timing: "intrabar" } : null;
   }
-  if (open >= order.entry) return open;
-  return high >= order.entry ? order.entry : null;
+  if (open >= order.entry) return { price: open, timing: "open" };
+  return high >= order.entry ? { price: order.entry, timing: "intrabar" } : null;
 }
 
 function bracketCrossedAtFill(
@@ -538,11 +543,12 @@ export function advanceEpisode(
     return { state: working, asOf: bar.time, bar, event: "manual_exit", terminal: false, result: null };
   }
 
-  let fillBar = false;
+  let fillTiming: EntryFill["timing"] | null = null;
   if (working.phase === "pending" && working.order) {
     const order = { ...working.order, waitedBars: working.order.waitedBars + 1 };
-    const fillPrice = entryFillPrice(order, visibleReferencePrice(question, state), bar);
-    if (fillPrice !== null) {
+    const fill = entryFill(order, visibleReferencePrice(question, state), bar);
+    if (fill !== null) {
+      const fillPrice = fill.price;
       const initialRisk = Math.abs(fillPrice - order.initialStop);
       if (initialRisk === 0) throw new Error("filled entry equals the initial stop");
       working = {
@@ -565,7 +571,7 @@ export function advanceEpisode(
           maeR: 0,
         },
       };
-      fillBar = true;
+      fillTiming = fill.timing;
     } else {
       working = { ...working, order };
       const expiry = question.replay.entryExpiryBars ?? (question.replay.basePeriod === "1h" ? 21 : 3);
@@ -585,7 +591,7 @@ export function advanceEpisode(
   }
 
   if (!working.position) throw new Error("open episode is missing its position");
-  if (fillBar) {
+  if (fillTiming !== null) {
     const immediateExit = bracketCrossedAtFill(working.position);
     if (immediateExit) {
       working = closePosition(
@@ -603,12 +609,13 @@ export function advanceEpisode(
   }
   const position = updateExcursions(working.position, bar);
   working = { ...working, position };
+  const allowOpenGap = fillTiming !== "intrabar";
 
   if (stopHit(position, bar)) {
     working = closePosition(
       working,
       "stop",
-      { time: bar.time, price: stopExitPrice(position, bar) },
+      { time: bar.time, price: stopExitPrice(position, bar, allowOpenGap) },
       options,
     );
     if (remainingEpisodeBars(working, question) === 0) {
@@ -620,7 +627,7 @@ export function advanceEpisode(
     working = closePosition(
       working,
       "target",
-      { time: bar.time, price: targetExitPrice(position, bar) },
+      { time: bar.time, price: targetExitPrice(position, bar, allowOpenGap) },
       options,
     );
     if (remainingEpisodeBars(working, question) === 0) {
@@ -643,7 +650,7 @@ export function advanceEpisode(
     state: working,
     asOf: bar.time,
     bar,
-    event: fillBar ? "filled" : "holding",
+    event: fillTiming !== null ? "filled" : "holding",
     terminal: false,
     result: null,
   };
