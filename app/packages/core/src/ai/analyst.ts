@@ -4,7 +4,7 @@ import type { AgentTool } from "@earendil-works/pi-agent-core";
 import { type Static, Type } from "typebox";
 import { Check } from "typebox/value";
 import { type CockpitComment, type CommentLevel, type IntradayPrediction, type NewsItem, type RawBar } from "../../../../shared/types.js";
-import type { ReassessPhase, ReassessStatus } from "../contract/symbols.js";
+import type { ReassessPhase, ReassessResult, ReassessStatus } from "../contract/symbols.js";
 import { chartUrl } from "../chartUrl.js";
 import { JOURNAL_DIR, PROJECT_ROOT, skillSearchDirs } from "../env.js";
 import { buildChart } from "../services/build.js";
@@ -21,7 +21,7 @@ import { buildResearchTools, createDefaultExec, type ExecFn } from "./agentTools
 import { appendComment as defaultAppendComment } from "./comments.js";
 import { buildDataPackTool, buildKlineTool, buildNewsTool, textResult } from "./dataTools.js";
 import { buildReassessPack as defaultBuildReassessPack, type ReassessPack } from "./datapack.js";
-import type { AiModel } from "./models.js";
+import { aiConfig, type AiModel } from "./models.js";
 import { emitNotice } from "./notices.js";
 import { createRunLock } from "./runLock.js";
 
@@ -545,4 +545,15 @@ export function runAnalyst({ symbol, origin, deps }: RunAnalystInput): StartResu
     emitAnalystRunChange(symbol, { running: false });
   });
   return { started: true, done };
+}
+
+export async function reassessSymbol(symbol: string): Promise<ReassessResult> {
+  const model = aiConfig().analystModel;
+  if (!model) return { started: false, reason: "analyst layer disabled" };
+  const result = runAnalyst({ symbol, origin: "manual", deps: { model } });
+  if (result.started) {
+    void result.done.catch(() => {});
+    return { started: true };
+  }
+  return { started: false, reason: result.reason };
 }

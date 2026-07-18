@@ -1,48 +1,12 @@
 import type { ProHooks, ProModule } from "@kansoku/pro-api";
 
 export const freeHooks: ProHooks = {
-  async filterMacroForSymbol(_symbol, items) {
-    return items;
-  },
-  listFollowedSymbols() {
-    return [];
-  },
-  setSymbolFollowing(symbol, _following) {
-    return { symbol, following: false, startedAt: null };
-  },
-  symbolFollowState(symbol) {
-    return { symbol, following: false, startedAt: null };
-  },
   requestImmediateFollow() {},
-  async listComments() {
-    return [];
-  },
-  async listCommentDates() {
-    return [];
-  },
-  async listAllCommentDates() {
-    return [];
-  },
-  async reassessSymbol() {
-    return { started: false, reason: "analyst layer disabled" };
-  },
-  analystRunStatus() {
-    return { running: false };
-  },
   startDeepDiveForNote() {
     return { started: false, reason: "disabled" };
   },
   deepDiveStatus() {
     return { running: false };
-  },
-  async usageSummary(date) {
-    return { date, runs: 0, calls: 0, total_tokens: 0, cost_total: 0, by_layer: {} };
-  },
-  async listUsageDates() {
-    return [];
-  },
-  activeSettingsRevision() {
-    return 0;
   },
 };
 

@@ -1,7 +1,9 @@
 import { type AnnotationsChangedEvent, loadAnnotations, onAnnotationsChanged } from "../services/annotations.js";
 import { clampViewCount } from "../services/history.js";
+import type { ProChannel } from "@kansoku/pro-api";
 import { normalizeSymbol } from "../services/symbol.utils.js";
 import { getPro } from "../pro/registry.js";
+import { coreAiChannels } from "./aiChannels.js";
 import { subscribeAnalyses } from "./analyses.js";
 import { subscribeBenchmark } from "./benchmark.js";
 import { subscribeBoard } from "./board.js";
@@ -40,6 +42,10 @@ export interface WsUnsub {
 }
 
 export type WsClientMessage = WsSub | WsUnsub;
+
+function findChannel(kind: string): ProChannel | undefined {
+  return [...coreAiChannels, ...(getPro()?.channels ?? [])].find((c) => c.kind === kind);
+}
 
 export function parseWsMessage(raw: unknown): WsClientMessage | null {
   if (typeof raw !== "object" || raw === null) return null;
@@ -80,7 +86,7 @@ export function parseWsMessage(raw: unknown): WsClientMessage | null {
     return { op: "sub", key: msg.key, kind: "annotations", symbol: msg.symbol };
   }
   if (typeof msg.kind === "string") {
-    const channel = getPro()?.channels?.find((c) => c.kind === msg.kind);
+    const channel = findChannel(msg.kind);
     if (channel) {
       const parsed = channel.parse(msg);
       if (!parsed) return null;
@@ -126,7 +132,7 @@ async function attachChannel(msg: WsSub, push: (envelope: string) => void): Prom
   if (msg.kind === "preview") return subscribePreview(msg.symbol as string, push);
   if (msg.kind === "annotations") return attachAnnotations(msg.symbol as string, push);
   if (msg.kind === "board") return subscribeBoard(push);
-  const channel = getPro()?.channels?.find((c) => c.kind === msg.kind);
+  const channel = findChannel(msg.kind);
   if (channel) return channel.attach(msg as unknown as Record<string, unknown>, push);
   return subscribeBoard(push);
 }

@@ -69,18 +69,12 @@ export class SymbolsIpc extends IpcService implements WrapEnvelope<SymbolsApi> {
 
   @IpcMethod()
   reassess(input: Parameters<SymbolsApi["reassess"]>[0]) {
-    return toEnvelope("symbols.reassess", () => {
-      requirePro();
-      return symbolsService.reassess(input);
-    });
+    return toEnvelope("symbols.reassess", () => symbolsService.reassess(input));
   }
 
   @IpcMethod()
   reassessStatus(input: Parameters<SymbolsApi["reassessStatus"]>[0]) {
-    return toEnvelope("symbols.reassessStatus", () => {
-      requirePro();
-      return symbolsService.reassessStatus(input);
-    });
+    return toEnvelope("symbols.reassessStatus", () => symbolsService.reassessStatus(input));
   }
 
   @IpcMethod()

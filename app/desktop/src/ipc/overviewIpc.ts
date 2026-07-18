@@ -1,7 +1,6 @@
 import { IpcMethod, IpcService } from "electron-ipc-decorator";
 import type { OverviewApi } from "../../../packages/core/src/contract/index.js";
 import { overviewService } from "../../../packages/core/src/modules/overview/overview.service.js";
-import { requirePro } from "../../../packages/core/src/pro/requirePro.js";
 import { toEnvelope, type WrapEnvelope } from "./envelope.js";
 
 export class OverviewIpc extends IpcService implements WrapEnvelope<OverviewApi> {
@@ -24,10 +23,7 @@ export class OverviewIpc extends IpcService implements WrapEnvelope<OverviewApi>
 
   @IpcMethod()
   usage(input: Parameters<OverviewApi["usage"]>[0]) {
-    return toEnvelope("overview.usage", () => {
-      requirePro();
-      return overviewService.usage(input);
-    });
+    return toEnvelope("overview.usage", () => overviewService.usage(input));
   }
 
   @IpcMethod()
