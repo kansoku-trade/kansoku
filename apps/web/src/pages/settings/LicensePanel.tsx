@@ -75,8 +75,12 @@ export function ActivateForm({
         setError(activateErrorMessage(result.error));
         return;
       }
-      await refreshCapabilities();
+      const caps = await refreshCapabilities();
       setKey("");
+      // When pro doesn't hot-mount (encrypted slot, key just became available),
+      // stay put so the caller re-renders into LicensePanel's licensed view,
+      // which carries the restart-required notice — closing here would hide it.
+      if (caps?.licensed && !caps.pro) return;
       onActivated?.();
     } catch (err) {
       setError(errorMessage(err));
@@ -121,11 +125,12 @@ export function ActivateForm({
   );
 }
 
-function LicensedStatus({ state, deviceName, maskedKey, graceUntil }: {
+function LicensedStatus({ state, deviceName, maskedKey, graceUntil, restartRequired }: {
   state: "licensed" | "grace";
   deviceName?: string;
   maskedKey?: string;
   graceUntil?: string;
+  restartRequired?: boolean;
 }) {
   return (
     <div className="settings-time-preference license-status-row">
@@ -140,6 +145,11 @@ function LicensedStatus({ state, deviceName, maskedKey, graceUntil }: {
             ? ` · 离线宽限至 ${new Date(graceUntil).toLocaleString()}`
             : null}
         </div>
+        {restartRequired ? (
+          <div className="settings-preference-description license-restart-notice">
+            AI 付费功能需要重启应用后才会生效，请手动退出并重新打开 Kansoku。
+          </div>
+        ) : null}
       </div>
       <Button
         onClick={() =>
@@ -156,7 +166,7 @@ function LicensedStatus({ state, deviceName, maskedKey, graceUntil }: {
 }
 
 export function LicensePanel() {
-  const { licensed, license } = useCapabilities();
+  const { licensed, license, pro } = useCapabilities();
 
   if (licensed) {
     return (
@@ -165,6 +175,7 @@ export function LicensePanel() {
         deviceName={license?.deviceName}
         maskedKey={license?.maskedKey}
         graceUntil={license?.graceUntil}
+        restartRequired={!pro}
       />
     );
   }

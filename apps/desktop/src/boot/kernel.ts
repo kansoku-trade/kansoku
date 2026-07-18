@@ -44,10 +44,12 @@ export async function bootKernel() {
     },
     proAppDir: app.getAppPath(),
     productionHost: app.isPackaged,
-    // Packaged builds stage pro INSIDE app.asar (see desktop/scripts/
-    // stagePro.mjs) — an absolute entry, not the ../pro sibling that the
-    // appDir-relative form resolves; dev keeps the sibling slot checkout.
-    proEntry: app.isPackaged ? join(app.getAppPath(), "pro", "dist", "index.mjs") : "src/index.ts",
+    // Packaged builds only ever stage pro.enc (see desktop/scripts/
+    // stagePro.mjs) — no plaintext dist/ to fall back to, so loadPro's
+    // default entryFile is fine (it just fails cleanly into free mode when
+    // absent). Only dev needs an explicit entry, for the sibling slot
+    // checkout it runs straight from TS.
+    proEntry: app.isPackaged ? undefined : "src/index.ts",
   });
   // bootstrap.js is imported lazily, after initServerRuntime() has awaited
   // loadPro() above, so AppModule's registry-derived AI module composition

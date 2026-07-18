@@ -35,15 +35,16 @@ function ensureLoaded(): void {
     });
 }
 
-export function refreshCapabilities(): Promise<void> {
+export function refreshCapabilities(): Promise<Capabilities | null> {
   clearLicenseRequired();
   return client.capabilities
     .get()
     .then((data) => {
       capabilities = data;
       emit();
+      return data;
     })
-    .catch(() => {});
+    .catch(() => null);
 }
 
 function subscribe(listener: () => void): () => void {

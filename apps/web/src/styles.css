@@ -1715,6 +1715,7 @@ a.zone-item:hover { text-decoration: none; background: var(--bg-hover); }
 .license-input-row .input { min-width: 0; flex: 1; }
 .license-invalid-notice { color: var(--down); }
 .license-expired-notice { color: var(--accent); }
+.license-restart-notice { color: var(--accent); }
 .license-subscribe-link { color: var(--accent); font-size: var(--fs-sm); }
 
 .license-modal-panel { width: min(440px, 100%); }

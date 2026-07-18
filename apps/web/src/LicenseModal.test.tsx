@@ -117,4 +117,26 @@ describe("LicenseModal", () => {
     await waitFor(() => expect(getLicenseModalStateForTests().open).toBe(false));
     expect(activate).toHaveBeenCalledWith({ key: "KEY-1234" });
   });
+
+  it("shows a restart-required notice when pro doesn't hot-mount after activation", async () => {
+    capabilitiesGet.mockResolvedValue({ pro: false, licensed: false, license: { state: "unlicensed" } });
+    subscribeUrlGet.mockResolvedValue({ subscribeUrl: null, priceLabel: null });
+    activate.mockResolvedValue({ activated: true });
+    openLicenseModal("guard");
+
+    renderWithClient(<ModalHost />);
+    fireEvent.click(await screen.findByText("已有授权码？输入激活"));
+    const input = await screen.findByPlaceholderText("输入授权码");
+    fireEvent.change(input, { target: { value: "KEY-1234" } });
+
+    capabilitiesGet.mockResolvedValue({
+      pro: false,
+      licensed: true,
+      license: { state: "licensed", maskedKey: "••••1234" },
+    });
+    fireEvent.click(screen.getByText("激活"));
+
+    expect(await screen.findByText(/重启应用后才会生效/)).toBeTruthy();
+    expect(getLicenseModalStateForTests().open).toBe(true);
+  });
 });

@@ -168,6 +168,15 @@ jobs:
 
       - name: package desktop (dmg + zip, no paid signing identity)
         working-directory: apps/desktop
+        # KANSOKU_BUNDLE_KEY / KANSOKU_BUNDLE_KEY_ID only matter when the pro
+        # slot got fetched above — stagePro.mjs no-ops on a free build. When
+        # the slot IS present, scripts/packEnc.mjs (apps/pro) hard-fails
+        # without these, which is intentional: a pro release must never ship
+        # without encryption. See apps/pro README「发版：KANSOKU_BUNDLE_KEY 来源
+        # 与 keyId 轮换」for how the secrets are provisioned/rotated.
+        env:
+          KANSOKU_BUNDLE_KEY: ${{ secrets.KANSOKU_BUNDLE_KEY }}
+          KANSOKU_BUNDLE_KEY_ID: ${{ secrets.KANSOKU_BUNDLE_KEY_ID }}
         run: pnpm package
 
       - name: verify ad-hoc signature (dmg + zip both embed the afterPack-signed app)
