@@ -1,4 +1,5 @@
 import { type Static, Type } from "typebox";
+import { episodeTradeReasonSchema } from "./tradeReason.js";
 
 const anchorSchema = Type.Object(
   {
@@ -51,6 +52,7 @@ export const submissionSchema = Type.Object(
     entry_plan: Type.Optional(entryPlanSchema),
     scenarios: Type.Array(scenarioSchema, { minItems: 2, maxItems: 4 }),
     range_plan: Type.Optional(rangePlanSchema),
+    decision_reason: Type.Optional(episodeTradeReasonSchema),
     comment: Type.String(),
   },
   { additionalProperties: false },

@@ -118,6 +118,8 @@ pnpm --filter @kansoku/bench cli generate-episode-dataset \
   --source-cache-dir ~/.cache/kansoku/bench/sources
 ```
 
+Episode runner 要求模型在每次交易决策中提交结构化理由：`submit_prediction.decision_reason` 记录入场或观望理由，`advance_trade.reason` 记录持有、改单、撤单或主动退出理由。每条理由由一个主类别和一段简短、可审计的依据组成；缺少理由的调用会被拒绝。Episode HTML 报告及 `episode-report-summary.json` 会按“模型 × 原因类别”统计理由覆盖率、动作分布、入场/成交、胜率、平均净 R 和累计净 R。历史结果中的理由字段保持可选，因此旧 JSONL 仍可读取，但不会被计入理由覆盖。
+
 ## 评分口径速览
 
 - **判断分**（权重默认 0.8）= 0.4×胜率 + 0.4×期望收益归一值 + 0.2×观望正确率。胜率只算「出手」的题（观望不计入分母）；期望收益以止损距离为单位（赢记 +实际盈亏比、输记 −1、超时按收盘价相对入场价的比例截断在 [−1, 盈亏比] 之间），归一到 [0,1] 再加权；观望正确率 = 观望题里事后确实没有像样行情的比例，一个模型如果从不观望，这一项会退化用「全场观望正确率的中位数」兜底。

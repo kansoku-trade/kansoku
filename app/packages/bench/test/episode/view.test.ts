@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { advanceEpisode, createEpisodeState, submitEpisode } from "../../src/episode/engine.js";
 import { buildEpisodeQuestionView } from "../../src/episode/view.js";
+import type { EpisodeTradeAction } from "../../src/schema/episode.js";
 import type { Question } from "../../src/schema/question.js";
 import type { Submission } from "../../src/schema/submission.js";
 
@@ -64,13 +65,19 @@ const SUBMISSION: Submission = {
     { label: "上涨", probability: 60 },
     { label: "回撤", probability: 40 },
   ],
+  decision_reason: { category: "trend_following", summary: "多周期趋势保持向上。" },
   comment: "多周期视图测试",
+};
+
+const HOLD: EpisodeTradeAction = {
+  type: "hold",
+  reason: { category: "risk_management", summary: "趋势未失效，继续持有。" },
 };
 
 describe("episode rolling multi-timeframe view", () => {
   it("reveals one hourly bar and builds a partial day/week without exposing later bars", () => {
     const submitted = submitEpisode(createEpisodeState(), QUESTION, SUBMISSION);
-    const first = advanceEpisode(submitted.state, QUESTION, { type: "hold" });
+    const first = advanceEpisode(submitted.state, QUESTION, HOLD);
     const view = buildEpisodeQuestionView(QUESTION, first.state);
 
     expect(view.fixtures.kline["1h"].map((entry) => entry.time)).toEqual([
@@ -86,8 +93,8 @@ describe("episode rolling multi-timeframe view", () => {
 
   it("updates the same day candle, then starts a new day while retaining all revealed hours", () => {
     let state = submitEpisode(createEpisodeState(), QUESTION, SUBMISSION).state;
-    state = advanceEpisode(state, QUESTION, { type: "hold" }).state;
-    state = advanceEpisode(state, QUESTION, { type: "hold" }).state;
+    state = advanceEpisode(state, QUESTION, HOLD).state;
+    state = advanceEpisode(state, QUESTION, HOLD).state;
     let view = buildEpisodeQuestionView(QUESTION, state);
     expect(view.fixtures.kline.day.at(-1)).toMatchObject({
       time: "2026-03-23",
@@ -99,7 +106,7 @@ describe("episode rolling multi-timeframe view", () => {
     });
     expect(view.fixtures.quote).toMatchObject({ last: 104.1, open: 99.5, high: 105.5, low: 98.5, volume: 550 });
 
-    state = advanceEpisode(state, QUESTION, { type: "hold" }).state;
+    state = advanceEpisode(state, QUESTION, HOLD).state;
     view = buildEpisodeQuestionView(QUESTION, state);
     expect(view.fixtures.kline["1h"]).toHaveLength(4);
     expect(view.fixtures.kline.day.slice(-2).map((entry) => entry.time)).toEqual(["2026-03-23", "2026-03-24"]);

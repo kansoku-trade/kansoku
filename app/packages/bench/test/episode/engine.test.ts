@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { advanceEpisode, createEpisodeState, observeEpisode, submitEpisode } from "../../src/episode/engine.js";
+import type { EpisodeTradeAction } from "../../src/schema/episode.js";
 import type { Question } from "../../src/schema/question.js";
 import type { Submission } from "../../src/schema/submission.js";
 
@@ -41,6 +42,7 @@ function prediction(direction: "long" | "short", entry: number, stop: number, ta
       { label: "主情景", probability: 60 },
       { label: "反向情景", probability: 40 },
     ],
+    decision_reason: { category: "breakout", summary: "价格突破关键结构，按计划入场。" },
     comment: "测试交易计划",
   };
 }
@@ -53,21 +55,36 @@ function neutral(): Submission {
       { label: "区间", probability: 60 },
       { label: "突破", probability: 40 },
     ],
+    decision_reason: { category: "no_setup", summary: "当前没有满足风险收益要求的机会。" },
     comment: "继续观察",
   };
+}
+
+function reasoned<T extends Record<string, unknown>>(action: T): EpisodeTradeAction {
+  return {
+    ...action,
+    reason: { category: "risk_management", summary: "结构尚未失效，继续按既定风险计划执行。" },
+  } as EpisodeTradeAction;
 }
 
 describe("episode engine", () => {
   it("allows immediate B0 trading and multiple round trips before the fixed horizon", () => {
     const q = question();
     let state = submitEpisode(createEpisodeState(), q, prediction("long", 100, 95, 104)).state;
-    const firstExit = advanceEpisode(state, q, { type: "hold" });
+    const firstExit = advanceEpisode(state, q, reasoned({ type: "hold" }));
     expect(firstExit).toMatchObject({ terminal: false, event: "target_hit" });
     expect(firstExit.state).toMatchObject({ phase: "flat", cursor: 0, decisionBar: 0 });
     expect(firstExit.state.trades).toHaveLength(1);
+    expect(firstExit.state.trades[0].entryReason).toEqual({
+      category: "breakout",
+      summary: "价格突破关键结构，按计划入场。",
+    });
+    expect(firstExit.state.actions.map((record) =>
+      "reason" in record.action ? record.action.reason?.category : null
+    )).toEqual(["breakout", "risk_management"]);
 
     state = submitEpisode(firstExit.state, q, prediction("short", 105, 110, 101)).state;
-    const secondExit = advanceEpisode(state, q, { type: "hold" });
+    const secondExit = advanceEpisode(state, q, reasoned({ type: "hold" }));
     expect(secondExit).toMatchObject({ terminal: false, event: "target_hit" });
     expect(secondExit.state.trades).toHaveLength(2);
 
@@ -92,7 +109,7 @@ describe("episode engine", () => {
     const submitted = submitEpisode(observed.state, q, prediction("short", 105, 110, 101));
     expect(submitted.state).toMatchObject({ phase: "pending", decisionBar: 1 });
 
-    const exited = advanceEpisode(submitted.state, q, { type: "hold" });
+    const exited = advanceEpisode(submitted.state, q, reasoned({ type: "hold" }));
     expect(exited).toMatchObject({ terminal: false, event: "target_hit" });
     expect(exited.state.trades[0]).toMatchObject({
       decisionBar: 1,
@@ -121,7 +138,7 @@ describe("episode engine", () => {
       bar("2026-03-23T15:30:00Z", 95, 100, 94, 99),
     ]);
     const submitted = submitEpisode(createEpisodeState(), q, prediction("long", 100, 95, 120));
-    const stopped = advanceEpisode(submitted.state, q, { type: "hold" });
+    const stopped = advanceEpisode(submitted.state, q, reasoned({ type: "hold" }));
     expect(stopped).toMatchObject({ terminal: false, event: "stop_hit" });
     expect(stopped.state).toMatchObject({ phase: "flat", cursor: 0 });
     expect(() => submitEpisode(stopped.state, q, prediction("long", 95, 90, 100))).not.toThrow();
@@ -134,8 +151,8 @@ describe("episode engine", () => {
       bar("2026-03-23T16:30:00Z", 101, 103, 100, 102),
     ]);
     let state = submitEpisode(createEpisodeState(), q, prediction("long", 100, 95, 110)).state;
-    state = advanceEpisode(state, q, { type: "hold" }).state;
-    const stopped = advanceEpisode(state, q, { type: "amend", stop: 101 });
+    state = advanceEpisode(state, q, reasoned({ type: "hold" })).state;
+    const stopped = advanceEpisode(state, q, reasoned({ type: "amend", stop: 101 }));
     expect(stopped).toMatchObject({ terminal: false, event: "stop_hit" });
     expect(stopped.state.trades[0]).toMatchObject({ exitReason: "stop", grossR: 0.2 });
   });
@@ -145,9 +162,9 @@ describe("episode engine", () => {
     const filled = advanceEpisode(
       submitEpisode(createEpisodeState(), q, prediction("long", 100, 95, 120)).state,
       q,
-      { type: "hold" },
+      reasoned({ type: "hold" }),
     );
-    const exited = advanceEpisode(filled.state, q, { type: "exit_next_open" });
+    const exited = advanceEpisode(filled.state, q, reasoned({ type: "exit_next_open" }));
     expect(exited).toMatchObject({ terminal: false, event: "manual_exit" });
     expect(exited.state.trades[0]).toMatchObject({ exitReason: "manual", exit: { price: 105 } });
   });
@@ -160,14 +177,14 @@ describe("episode engine", () => {
       bar("2026-03-23T17:30:00Z", 103, 105, 102, 104),
     ]);
     let state = submitEpisode(createEpisodeState(), q, prediction("long", 90, 85, 100)).state;
-    state = advanceEpisode(state, q, { type: "hold" }).state;
-    state = advanceEpisode(state, q, { type: "hold" }).state;
-    const expired = advanceEpisode(state, q, { type: "hold" });
+    state = advanceEpisode(state, q, reasoned({ type: "hold" })).state;
+    state = advanceEpisode(state, q, reasoned({ type: "hold" })).state;
+    const expired = advanceEpisode(state, q, reasoned({ type: "hold" }));
     expect(expired).toMatchObject({ terminal: false, event: "no_fill" });
     expect(expired.state.phase).toBe("flat");
 
     const pending = submitEpisode(expired.state, q, prediction("long", 90, 85, 100));
-    const cancelled = advanceEpisode(pending.state, q, { type: "cancel" });
+    const cancelled = advanceEpisode(pending.state, q, reasoned({ type: "cancel" }));
     expect(cancelled).toMatchObject({ terminal: false, event: "cancelled", bar: null });
     expect(cancelled.state.phase).toBe("flat");
   });
@@ -177,7 +194,7 @@ describe("episode engine", () => {
     const result = advanceEpisode(
       submitEpisode(createEpisodeState(), q, prediction("long", 100, 95, 106)).state,
       q,
-      { type: "hold" },
+      reasoned({ type: "hold" }),
     );
     expect(result).toMatchObject({ terminal: true, event: "stop_hit" });
     expect(result.result!.trades![0]).toMatchObject({ exitReason: "stop", grossR: -1 });
@@ -188,7 +205,7 @@ describe("episode engine", () => {
     const result = advanceEpisode(
       submitEpisode(createEpisodeState(), q, prediction("long", 100.1, 98.6, 101.8)).state,
       q,
-      { type: "hold" },
+      reasoned({ type: "hold" }),
     );
 
     expect(result).toMatchObject({ terminal: true, event: "stop_hit" });
@@ -205,7 +222,7 @@ describe("episode engine", () => {
     const result = advanceEpisode(
       submitEpisode(createEpisodeState(), q, prediction("short", 95, 105, 90)).state,
       q,
-      { type: "hold" },
+      reasoned({ type: "hold" }),
     );
     expect(result).toMatchObject({ terminal: true, event: "target_hit" });
     expect(result.result!.trades![0]).toMatchObject({
@@ -224,7 +241,7 @@ describe("episode engine", () => {
     const result = advanceEpisode(
       submitEpisode(createEpisodeState(), q, prediction("long", 100, 95, 120)).state,
       q,
-      { type: "hold" },
+      reasoned({ type: "hold" }),
     );
     expect(result).toMatchObject({ terminal: true, event: "horizon_exit" });
     expect(result.result).toMatchObject({ terminationReason: "horizon", tradeCount: 1, grossR: 0.4 });

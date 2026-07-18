@@ -1,6 +1,7 @@
 import type { RawBar } from "../../../../shared/types.js";
-import type { EpisodeAnswer, EpisodeClosedTrade } from "../schema/episode.js";
+import type { EpisodeActionRecord, EpisodeAnswer, EpisodeClosedTrade } from "../schema/episode.js";
 import type { Question } from "../schema/question.js";
+import type { EpisodeTradeReason, EpisodeTradeReasonCategory } from "../schema/tradeReason.js";
 import type { EpisodeDataAudit } from "./audit.js";
 import { buildEpisodeQuestionViewAtCursor } from "./view.js";
 
@@ -86,7 +87,32 @@ export interface EpisodeReportSummary {
   averageToolCalls: number | null;
   averageTokens: number | null;
   averageDecisionBars: number | null;
+  reasonCoverage: number | null;
+  reasonedActions: number;
+  decisionActions: number;
+  reasonCoverageByModel: EpisodeReasonCoverage[];
+  reasonStats: EpisodeReasonStat[];
   dataAuditPassed: boolean | null;
+}
+
+export interface EpisodeReasonStat {
+  model: string;
+  category: EpisodeTradeReasonCategory;
+  actions: number;
+  actionBreakdown: Record<string, number>;
+  entries: number;
+  trades: number;
+  wins: number;
+  winRate: number | null;
+  averageNetR: number | null;
+  totalNetR: number;
+}
+
+export interface EpisodeReasonCoverage {
+  model: string;
+  reasonedActions: number;
+  decisionActions: number;
+  coverage: number | null;
 }
 
 interface ReportRow {
@@ -193,6 +219,31 @@ const TERMINATION_LABELS: Record<string, string> = {
 
 const DIRECTION_LABELS: Record<string, string> = { long: "做多", short: "做空", neutral: "观望" };
 const MODE_LABELS: Record<string, string> = { blind: "盲盘", live: "实盘" };
+const REASON_LABELS: Record<EpisodeTradeReasonCategory, string> = {
+  trend_following: "趋势跟随",
+  breakout: "突破",
+  pullback: "回调入场",
+  mean_reversion: "均值回归",
+  support_resistance: "支撑阻力",
+  momentum: "动量",
+  volume_flow: "量价与资金流",
+  volatility: "波动率",
+  news_event: "新闻事件",
+  fundamental: "基本面",
+  risk_management: "风险管理",
+  thesis_invalidated: "逻辑失效",
+  profit_protection: "利润保护",
+  time_horizon: "时间窗口",
+  no_setup: "无有效机会",
+  other: "其他",
+};
+const ACTION_LABELS: Record<string, string> = {
+  submit: "提交",
+  hold: "持有",
+  amend: "改单",
+  cancel: "撤单",
+  exit_next_open: "主动退出",
+};
 const EVENT_LABELS: Record<string, string> = {
   observed: "已公开下一根",
   decision_due: "决策窗口即将截止",
@@ -367,6 +418,20 @@ function inferBarAfter(line: EpisodeReportTraceLine, before: number): number {
   return before;
 }
 
+function traceReason(args: Record<string, unknown>): EpisodeTradeReason | null {
+  const candidate = (args.decision_reason ?? args.reason) as Record<string, unknown> | undefined;
+  if (!candidate || typeof candidate !== "object") return null;
+  if (typeof candidate.category !== "string" || typeof candidate.summary !== "string") return null;
+  return candidate as EpisodeTradeReason;
+}
+
+function reasonDetail(args: Record<string, unknown>): string | null {
+  const reason = traceReason(args);
+  if (!reason) return null;
+  const label = REASON_LABELS[reason.category] ?? reason.category;
+  return `${label}：${reason.summary}`;
+}
+
 function processLabel(line: EpisodeReportTraceLine): { label: string; detail: string; timeframe: ChartTimeframe | null } {
   const name = line.name ?? "unknown_tool";
   const args = line.args ?? {};
@@ -386,11 +451,13 @@ function processLabel(line: EpisodeReportTraceLine): { label: string; detail: st
   }
   if (name === "submit_prediction") {
     const direction = typeof args.direction === "string" ? DIRECTION_LABELS[args.direction] ?? args.direction : "未知方向";
-    return { label: `交易计划 · ${direction}`, detail: eventText ? `引擎事件：${eventText}` : "空仓时提交计划，可在后续重新入场", timeframe: "h1" };
+    const reason = reasonDetail(args);
+    return { label: `交易计划 · ${direction}`, detail: reason ?? (eventText ? `引擎事件：${eventText}` : "空仓时提交计划，可在后续重新入场"), timeframe: "h1" };
   }
   if (name === "advance_trade") {
     const action = typeof args.type === "string" ? args.type.toUpperCase() : "ACTION";
-    return { label: `推进 · ${action}`, detail: eventText ? `引擎事件：${eventText}` : "提交管理动作并公开下一根", timeframe: "h1" };
+    const reason = reasonDetail(args);
+    return { label: `推进 · ${action}`, detail: reason ?? (eventText ? `引擎事件：${eventText}` : "提交管理动作并公开下一根"), timeframe: "h1" };
   }
   return { label: name, detail: "工具调用", timeframe: null };
 }
@@ -597,6 +664,114 @@ function aggregate(rows: ReportRow[]): AggregateMetrics {
     avgToolCalls: mean(rows.map((row) => row.answer.metrics.toolCalls)),
     avgTokens: mean(rows.map((row) => row.answer.metrics.inputTokens + row.answer.metrics.outputTokens)),
     avgDecisionBars: mean(completed.map((row) => decisionBar(row.answer))),
+  };
+}
+
+function actionReason(record: EpisodeActionRecord): EpisodeTradeReason | null {
+  return "reason" in record.action ? record.action.reason ?? null : null;
+}
+
+function isDecisionAction(record: EpisodeActionRecord): boolean {
+  return record.action.type !== "observe";
+}
+
+function tradeEntryReason(row: ReportRow, trade: EpisodeClosedTrade): EpisodeTradeReason | null {
+  if (trade.entryReason) return trade.entryReason;
+  const submitted = row.answer.result?.actions.find((record) =>
+    record.tradeId === trade.tradeId && record.action.type === "submit"
+  );
+  return submitted ? actionReason(submitted) : null;
+}
+
+interface ReasonMetrics {
+  decisionActions: number;
+  reasonedActions: number;
+  coverage: number | null;
+  coverageByModel: EpisodeReasonCoverage[];
+  stats: EpisodeReasonStat[];
+}
+
+function aggregateReasons(rows: ReportRow[]): ReasonMetrics {
+  const completed = rows.filter((row) => row.answer.status === "completed");
+  const actions = completed.flatMap((row) =>
+    (row.answer.result?.actions ?? []).filter(isDecisionAction).map((record) => ({ model: row.answer.model, record }))
+  );
+  const reasoned = actions.flatMap(({ model, record }) => {
+    const reason = actionReason(record);
+    return reason ? [{ model, record, reason }] : [];
+  });
+  const byCategory = new Map<string, EpisodeReasonStat>();
+  const ensure = (model: string, category: EpisodeTradeReasonCategory): EpisodeReasonStat => {
+    const key = `${model}\u0000${category}`;
+    const existing = byCategory.get(key);
+    if (existing) return existing;
+    const created: EpisodeReasonStat = {
+      model,
+      category,
+      actions: 0,
+      actionBreakdown: {},
+      entries: 0,
+      trades: 0,
+      wins: 0,
+      winRate: null,
+      averageNetR: null,
+      totalNetR: 0,
+    };
+    byCategory.set(key, created);
+    return created;
+  };
+
+  for (const { model, record, reason } of reasoned) {
+    const stat = ensure(model, reason.category);
+    stat.actions += 1;
+    stat.actionBreakdown[record.action.type] = (stat.actionBreakdown[record.action.type] ?? 0) + 1;
+    if (record.action.type === "submit" && record.tradeId != null) stat.entries += 1;
+  }
+
+  const netByCategory = new Map<string, number[]>();
+  for (const row of completed) {
+    for (const trade of closedTrades(row.answer)) {
+      const reason = tradeEntryReason(row, trade);
+      if (!reason) continue;
+      const stat = ensure(row.answer.model, reason.category);
+      stat.trades += 1;
+      if (trade.netR > 0) stat.wins += 1;
+      stat.totalNetR += trade.netR;
+      const key = `${row.answer.model}\u0000${reason.category}`;
+      netByCategory.set(key, [...(netByCategory.get(key) ?? []), trade.netR]);
+    }
+  }
+
+  for (const [key, values] of netByCategory) {
+    const stat = byCategory.get(key);
+    if (!stat) continue;
+    stat.winRate = ratio(stat.wins, stat.trades);
+    stat.averageNetR = mean(values);
+  }
+
+  const models = [...new Set(actions.map((entry) => entry.model))].sort();
+  const coverageByModel = models.map((model) => {
+    const modelActions = actions.filter((entry) => entry.model === model).length;
+    const modelReasoned = reasoned.filter((entry) => entry.model === model).length;
+    return {
+      model,
+      reasonedActions: modelReasoned,
+      decisionActions: modelActions,
+      coverage: ratio(modelReasoned, modelActions),
+    };
+  });
+
+  return {
+    decisionActions: actions.length,
+    reasonedActions: reasoned.length,
+    coverage: ratio(reasoned.length, actions.length),
+    coverageByModel,
+    stats: [...byCategory.values()].sort((a, b) =>
+      a.model.localeCompare(b.model)
+      || b.actions - a.actions
+      || b.trades - a.trades
+      || a.category.localeCompare(b.category)
+    ),
   };
 }
 
@@ -807,6 +982,21 @@ function metricCell(label: string, value: string, note: string, tone = "neutral"
   return `<div class="metric ${tone}"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong><small>${escapeHtml(note)}</small></div>`;
 }
 
+function renderReasonTable(rows: ReportRow[]): string {
+  const metrics = aggregateReasons(rows);
+  const coverage = metrics.coverage == null ? "—" : fmtPercent(metrics.coverage);
+  if (metrics.stats.length === 0) {
+    return `<section class="panel reason-panel"><div class="panel-title"><h2>交易原因统计</h2><span>理由覆盖 ${metrics.reasonedActions}/${metrics.decisionActions} · ${coverage}</span></div><p class="reason-empty">该运行没有结构化交易理由；历史结果仍可读取，但不进入原因表现统计。</p></section>`;
+  }
+  return `<section class="panel reason-panel"><div class="panel-title"><h2>交易原因统计</h2><span>理由覆盖 ${metrics.reasonedActions}/${metrics.decisionActions} · ${coverage}</span></div>
+    <div class="table-scroll"><table class="compact-table reason-table"><thead><tr><th>模型</th><th>主原因</th><th>动作</th><th>入场 / 成交</th><th>胜率</th><th>AVG NET R</th><th>TOTAL NET R</th></tr></thead><tbody>${metrics.stats.map((stat) => {
+      const breakdown = Object.entries(stat.actionBreakdown)
+        .map(([action, count]) => `${ACTION_LABELS[action] ?? action} ${count}`)
+        .join(" · ");
+      return `<tr><td><strong>${escapeHtml(stat.model)}</strong></td><td><strong>${escapeHtml(REASON_LABELS[stat.category])}</strong><small>${escapeHtml(stat.category)}</small></td><td><strong>${stat.actions}</strong><small>${escapeHtml(breakdown || "—")}</small></td><td>${stat.entries} / ${stat.trades}</td><td>${fmtPercent(stat.winRate)}</td><td class="mono ${valueClass(stat.averageNetR)}">${fmtSigned(stat.averageNetR, 3)}</td><td class="mono ${valueClass(stat.totalNetR)}">${fmtSigned(stat.totalNetR, 3)}</td></tr>`;
+    }).join("")}</tbody></table></div></section>`;
+}
+
 function renderModelTable(rows: ReportRow[]): string {
   const groups = new Map<string, ReportRow[]>();
   for (const row of rows) groups.set(row.answer.model, [...(groups.get(row.answer.model) ?? []), row]);
@@ -936,8 +1126,16 @@ function renderTradeLedger(row: ReportRow): string {
     const entryBar = replayBarIndex(row.question, trade.entry.time);
     const exitBar = replayBarIndex(row.question, trade.exit.time);
     const reason = tradeExitLabel(trade);
-    return `<li><div><strong>T${trade.tradeId} · ${escapeHtml(DIRECTION_LABELS[trade.direction])}</strong><small>B${trade.decisionBar} 决策 · ${entryBar == null ? "—" : `B${entryBar}`} → ${exitBar == null ? "—" : `B${exitBar}`} · ${escapeHtml(reason)}</small></div><div class="trade-prices"><span>E ${fmt(trade.entry.price)}</span><span>S ${fmt(trade.initialStop)}${trade.finalStop === trade.initialStop ? "" : ` → ${fmt(trade.finalStop)}`}</span><span>T ${fmt(trade.target)}</span><span>X ${fmt(trade.exit.price)}</span></div><strong class="${valueClass(trade.netR)}">${fmtSigned(trade.netR, 3)} R</strong></li>`;
+    const entryReason = tradeEntryReason(row, trade);
+    return `<li><div><strong>T${trade.tradeId} · ${escapeHtml(DIRECTION_LABELS[trade.direction])}</strong><small>B${trade.decisionBar} 决策 · ${entryBar == null ? "—" : `B${entryBar}`} → ${exitBar == null ? "—" : `B${exitBar}`} · ${escapeHtml(reason)}</small>${entryReason ? `<small class="trade-reason"><b>${escapeHtml(REASON_LABELS[entryReason.category])}</b>${escapeHtml(entryReason.summary)}</small>` : ""}</div><div class="trade-prices"><span>E ${fmt(trade.entry.price)}</span><span>S ${fmt(trade.initialStop)}${trade.finalStop === trade.initialStop ? "" : ` → ${fmt(trade.finalStop)}`}</span><span>T ${fmt(trade.target)}</span><span>X ${fmt(trade.exit.price)}</span></div><strong class="${valueClass(trade.netR)}">${fmtSigned(trade.netR, 3)} R</strong></li>`;
   }).join("")}</ol></details>`;
+}
+
+function renderActionRecord(record: EpisodeActionRecord): string {
+  const reason = actionReason(record);
+  const label = ACTION_LABELS[record.action.type] ?? record.action.type;
+  const reasonLabel = reason ? REASON_LABELS[reason.category] : "未记录理由";
+  return `<li><span>${String(record.step).padStart(2, "0")}</span><div><strong>${escapeHtml(label)} · ${escapeHtml(reasonLabel)}</strong>${reason ? `<small>${escapeHtml(reason.summary)}</small>` : ""}<em>${escapeHtml(record.effectiveBarTime ?? record.at)}</em></div></li>`;
 }
 
 function renderCaseDetail(row: ReportRow, index: number): string {
@@ -950,12 +1148,13 @@ function renderCaseDetail(row: ReportRow, index: number): string {
   const entryAt = replayBarIndex(row.question, result?.entry?.time);
   const exitAt = replayBarIndex(row.question, result?.exit?.time);
   const trades = closedTrades(answer);
+  const initialReason = answer.initialSubmission?.decision_reason;
   return `<article class="trade-case" id="case-${index}" data-model="${escapeHtml(answer.model)}" data-mode="${escapeHtml(answer.mode)}" data-outcome="${escapeHtml(outcome)}">
     <header class="case-head"><div><h3>${escapeHtml(answer.symbol)}</h3><span>${escapeHtml(answer.questionId)} · ${escapeHtml(answer.model)} · ${escapeHtml(MODE_LABELS[answer.mode] ?? answer.mode)}</span></div><div class="case-result"><span class="status ${valueClass(result?.netR)}">${escapeHtml(TERMINATION_LABELS[outcome] ?? outcome)}</span><strong class="${valueClass(result?.netR)}">${escapeHtml(fmtSigned(result?.netR, 3))} R</strong></div></header>
     <div class="case-layout"><section class="chart-panel"><div class="chart-toolbar"><div><strong>K 线与成交量</strong><span>点击工具节点可回看该 B 编号当时可见的数据</span></div><div class="timeframe-tabs" role="tablist" aria-label="K 线周期"><button type="button" class="active" data-timeframe-tab data-chart="trade-chart-${index}" data-timeframe="h1">1 小时</button><button type="button" data-timeframe-tab data-chart="trade-chart-${index}" data-timeframe="day">日线</button><button type="button" data-timeframe-tab data-chart="trade-chart-${index}" data-timeframe="week">周线</button></div></div><div class="tv-chart" id="trade-chart-${index}" data-chart-id="trade-chart-${index}"><span class="chart-loading">加载图表…</span></div><div class="chart-legend"><span><i class="entry"></i>计划入场</span><span><i class="target"></i>止盈</span><span><i class="stop"></i>止损</span><span><i class="decision"></i>决策位置</span><span class="chart-range" data-chart-range="trade-chart-${index}"></span></div>${renderProcessChain(row, index)}</section>
-      <aside class="trade-sidebar"><section><h4>首次计划</h4><dl class="facts">${fact("方向", DIRECTION_LABELS[answer.initialSubmission?.direction ?? ""] ?? "—")}${fact("首次决策", submittedAt == null ? "—" : `B${submittedAt}`)}${fact("自主观察", `${observationBars(answer)} bars`)}${fact("计划入场", fmt(plan?.entry), "entry-text")}${fact("止损", fmt(plan?.stop), "negative")}${fact("止盈", fmt(plan?.target1), "positive")}${fact("计划盈亏比", `${fmt(row.plannedRr)} R`)}${fact("止损距离", fmtPercent(row.stopDistancePct))}</dl>${plan?.rationale ? `<p class="rationale">${escapeHtml(plan.rationale)}</p>` : ""}</section>
+      <aside class="trade-sidebar"><section><h4>首次计划</h4><dl class="facts">${fact("方向", DIRECTION_LABELS[answer.initialSubmission?.direction ?? ""] ?? "—")}${fact("首次决策", submittedAt == null ? "—" : `B${submittedAt}`)}${fact("自主观察", `${observationBars(answer)} bars`)}${fact("计划入场", fmt(plan?.entry), "entry-text")}${fact("止损", fmt(plan?.stop), "negative")}${fact("止盈", fmt(plan?.target1), "positive")}${fact("计划盈亏比", `${fmt(row.plannedRr)} R`)}${fact("止损距离", fmtPercent(row.stopDistancePct))}</dl>${initialReason ? `<p class="decision-reason"><b>${escapeHtml(REASON_LABELS[initialReason.category])}</b>${escapeHtml(initialReason.summary)}</p>` : plan?.rationale ? `<p class="rationale">${escapeHtml(plan.rationale)}</p>` : ""}</section>
       <section><h4>Episode 结果</h4><dl class="facts">${fact("完整交易", `${trades.length} 笔`)}${fact("盈利 / 亏损", `${result?.winCount ?? trades.filter((trade) => trade.netR > 0).length} / ${result?.lossCount ?? trades.filter((trade) => trade.netR < 0).length}`)}${fact("Gross / Net R", `${fmtSigned(result?.grossR, 3)} / ${fmtSigned(result?.netR, 3)}`, valueClass(result?.netR))}${fact("最大回撤", `${fmt(result?.maxDrawdownR)} R`)}${fact("MFE / MAE", `${fmt(result?.mfeR)} / ${fmt(result?.maeR)}`)}${fact("首次成交 / 末次退出", `${entryAt == null ? "—" : `B${entryAt}`} / ${exitAt == null ? "—" : `B${exitAt}`}`)}${fact("累计持有", `${result?.holdingBars ?? 0} bars`)}${fact("方向命中", row.directionHit == null ? "—" : row.directionHit ? "是" : "否")}</dl></section>
-      ${renderTradeLedger(row)}<details class="actions"><summary>回放动作 <span>${actions.length}</span></summary>${actions.length === 0 ? `<p>没有动作记录</p>` : `<ol>${actions.map((action) => `<li><span>${String(action.step).padStart(2, "0")}</span><strong>${escapeHtml(action.action.type)}</strong><small>${escapeHtml(action.effectiveBarTime ?? action.at)}</small></li>`).join("")}</ol>`}</details></aside></div>
+      ${renderTradeLedger(row)}<details class="actions"><summary>回放动作与理由 <span>${actions.length}</span></summary>${actions.length === 0 ? `<p>没有动作记录</p>` : `<ol>${actions.map(renderActionRecord).join("")}</ol>`}</details></aside></div>
   </article>`;
 }
 
@@ -972,6 +1171,10 @@ const STYLES = String.raw`
 
 const PROCESS_STYLES = String.raw`
   .chart-legend i.decision{background:#7c3aed}.process-panel{border-top:1px solid var(--line);background:#fbfcfd}.process-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 10px;border-bottom:1px solid var(--line)}.process-head>div:first-child strong,.process-head>div:first-child span{display:block}.process-head>div:first-child strong{font-size:11px}.process-head>div:first-child span{margin-top:1px;color:var(--muted);font:9px var(--mono)}.process-head>div:last-child{display:flex;align-items:center;gap:6px}.process-score,.process-reset{height:25px;padding:0 8px;border:1px solid var(--line-strong);border-radius:4px;background:#fff;font:9px inherit}.process-score{display:inline-flex;align-items:center}.process-score.pass{color:var(--green);border-color:#a7d8c7;background:#f0fdf8}.process-score.fail{color:var(--red);border-color:#efb4b4;background:#fff5f5}.process-reset{cursor:pointer;color:var(--text)}.process-reset:hover{background:var(--soft)}.process-rail{display:flex;gap:14px;padding:10px;overflow-x:auto;scrollbar-width:thin}.process-node{position:relative;flex:0 0 154px;min-height:94px;padding:8px 9px;border:1px solid var(--line);border-top:3px solid #94a3b8;border-radius:5px;background:#fff;color:var(--text);text-align:left;cursor:pointer}.process-node::after{content:"";position:absolute;top:42px;left:calc(100% + 1px);width:14px;height:1px;background:var(--line-strong)}.process-node:last-child::after{display:none}.process-node:hover{border-color:#94a3b8;background:#f8fafc}.process-node.active{border-color:#7c3aed;box-shadow:0 0 0 2px #ede9fe;background:#faf9ff}.process-node.data{border-top-color:#2563eb}.process-node.observe{border-top-color:#d97706}.process-node.decision{border-top-color:#7c3aed}.process-node.manage{border-top-color:#059669}.process-node.warning{border-top-color:#dc2626;background:#fffafa}.process-node.warning .process-bar{color:#dc2626}.process-node.error{border-color:var(--red);border-top-color:var(--red)}.process-index{position:absolute;top:6px;right:7px;color:#9aa2ad;font:8px var(--mono)}.process-bar{display:block;color:#7c3aed;font:650 10px var(--mono)}.process-node strong,.process-node small,.process-node em{display:block}.process-node strong{margin-top:5px;font-size:10px}.process-node small{margin-top:2px;color:var(--muted);font-size:8px;line-height:1.3}.process-node em{margin-top:6px;color:#87909b;font:7px var(--mono);font-style:normal}.process-checks{display:flex;align-items:center;gap:14px;min-height:31px;padding:6px 10px;border-top:1px solid var(--line);background:#fff;overflow-x:auto}.process-checks>span{display:inline-flex;align-items:center;gap:4px;white-space:nowrap;font-size:8px;color:var(--muted)}.process-checks i{display:grid;place-items:center;width:14px;height:14px;border-radius:50%;font-style:normal}.process-checks .pass i{color:var(--green);background:#e9f9f2}.process-checks .fail i{color:var(--red);background:#fff0f0}.process-checks small{font:7px var(--mono);color:#99a1ab}.process-empty{margin:0;padding:12px;color:var(--muted);font-size:10px}.trade-ledger{padding:0!important;border-bottom:1px solid var(--line)}.trade-ledger>h4,.trade-ledger>p{margin:0;padding:9px 12px}.trade-ledger>p{padding-top:0;color:var(--muted);font-size:9px}.trade-ledger>summary{display:flex;justify-content:space-between;padding:9px 12px;cursor:pointer;font-size:10px;font-weight:650}.trade-ledger>summary span{color:var(--muted)}.trade-ledger ol{list-style:none;margin:0;padding:0 12px 8px}.trade-ledger li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px 8px;padding:7px 0;border-top:1px solid var(--line)}.trade-ledger li>div:first-child strong,.trade-ledger li>div:first-child small{display:block}.trade-ledger li>div:first-child strong{font-size:9px}.trade-ledger li>div:first-child small{color:var(--muted);font:7px var(--mono)}.trade-prices{grid-column:1/-1;display:flex;gap:7px;color:var(--muted);font:7px var(--mono);white-space:nowrap}.trade-ledger li>strong{grid-column:2;grid-row:1;font:650 10px var(--mono)}@media(max-width:680px){.process-head{align-items:flex-start;flex-direction:column}.process-head>div:last-child{width:100%;justify-content:space-between}.process-node{flex-basis:146px}.process-checks{gap:10px}.process-checks small{display:none}}@media print{.process-reset{display:none}.process-rail{flex-wrap:wrap;overflow:visible}.process-node{flex-basis:140px}}
+`;
+
+const REASON_STYLES = String.raw`
+  .reason-panel{margin-bottom:10px}.reason-empty{margin:0;padding:12px;color:var(--muted);font-size:10px}.reason-table{min-width:720px}.decision-reason{margin:8px 0 0;padding-top:8px;border-top:1px solid var(--line);color:var(--muted);font-size:10px}.decision-reason b,.trade-reason b{display:inline-block;margin-right:6px;color:#7c3aed}.trade-ledger li>div:first-child .trade-reason{margin-top:4px;color:var(--text);font:9px/1.45 inherit}.actions li{grid-template-columns:22px minmax(0,1fr);gap:6px;padding:7px 0}.actions li>div strong,.actions li>div small,.actions li>div em{display:block}.actions li>div strong{font-size:9px}.actions li>div small{margin-top:2px;color:var(--text);font:9px/1.4 inherit}.actions li>div em{margin-top:3px;color:var(--muted);font:7px var(--mono);font-style:normal}
 `;
 
 const SCRIPT = String.raw`
@@ -1133,6 +1336,7 @@ export function renderEpisodeReportHtml(input: EpisodeReportInput): { html: stri
   const generatedAt = (input.now ?? (() => new Date()))().toISOString();
   const rows = buildRows(input.answers, input.questions, input.traces);
   const metrics = aggregate(rows);
+  const reasonMetrics = aggregateReasons(rows);
   const runId = input.config.runId ?? "episode-run";
   const audits = input.audits ?? [];
   const auditChecks = audits.flatMap((audit) => audit.checks);
@@ -1172,12 +1376,17 @@ export function renderEpisodeReportHtml(input: EpisodeReportInput): { html: stri
     averageToolCalls: metrics.avgToolCalls,
     averageTokens: metrics.avgTokens,
     averageDecisionBars: metrics.avgDecisionBars,
+    reasonCoverage: reasonMetrics.coverage,
+    reasonedActions: reasonMetrics.reasonedActions,
+    decisionActions: reasonMetrics.decisionActions,
+    reasonCoverageByModel: reasonMetrics.coverageByModel,
+    reasonStats: reasonMetrics.stats,
     dataAuditPassed: auditPassed,
   };
   const charts = rows.map(buildChartPayload).filter((payload): payload is ChartPayload => payload != null);
   const models = input.config.config?.models ?? [...new Set(input.answers.map((answer) => answer.model))];
   const modes = input.config.config?.modes ?? [...new Set(input.answers.map((answer) => answer.mode))];
-  const html = `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="color-scheme" content="light"/><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%232563eb'/%3E%3Cpath d='M8 7h4v7l7-7h5l-8 8 9 10h-5l-8-9v9H8z' fill='white'/%3E%3C/svg%3E"/><title>${escapeHtml(runId)} · Episode Bench Report</title><style>${STYLES}${PROCESS_STYLES}</style></head><body><main class="report">
+  const html = `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="color-scheme" content="light"/><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%232563eb'/%3E%3Cpath d='M8 7h4v7l7-7h5l-8 8 9 10h-5l-8-9v9H8z' fill='white'/%3E%3C/svg%3E"/><title>${escapeHtml(runId)} · Episode Bench Report</title><style>${STYLES}${PROCESS_STYLES}${REASON_STYLES}</style></head><body><main class="report">
     <header class="report-header"><div class="report-title"><h1>Episode Bench Report</h1><p>${escapeHtml(runId)}</p></div><div class="header-meta"><span class="chip">${escapeHtml(input.config.datasetVersion ?? input.config.config?.datasetVersion ?? "—")}</span><span class="chip">${escapeHtml(models.join(" · "))}</span><span class="chip">${escapeHtml(modes.map((mode) => MODE_LABELS[mode] ?? mode).join(" / "))}</span><span class="chip">${input.config.costBps ?? 0} bps</span><span class="chip audit-state ${auditPassed === true ? "pass" : auditPassed === false ? "fail" : ""}">${auditPassed === true ? "长桥数据已校验" : auditPassed === false ? "数据审计失败" : "未附加数据审计"}</span><span class="generated">${escapeHtml(generatedAt)}</span></div></header>
     <section class="panel summary"><div class="panel-title"><h2>运行总览</h2><span>${metrics.completed}/${metrics.cases} 完成 · ${metrics.trades} 笔完整交易</span></div><div class="metrics">
       ${metricCell("平均净 R / case", `${fmtSigned(metrics.avgNetRPerCase, 3)} R`, `累计 ${fmtSigned(metrics.totalNetR, 3)} R`, valueClass(metrics.avgNetRPerCase))}
@@ -1193,7 +1402,7 @@ export function renderEpisodeReportHtml(input: EpisodeReportInput): { html: stri
       ${metricCell("执行成本", fmtUsd(metrics.avgCostUsd), `${input.config.costBps ?? 0} bps`)}
       ${metricCell("耗时 / 首次决策", `${fmtDuration(metrics.avgDurationMs)} / ${metrics.avgDecisionBars == null ? "—" : `B${fmt(metrics.avgDecisionBars, 1)}`}`, `${fmt(metrics.avgToolCalls, 1)} tools · ${fmt(metrics.avgTokens, 0)} tokens`)}
     </div><div class="config-strip"><div><span>初始 1H</span><strong>${config?.h1 ?? "—"} bars</strong></div><div><span>初始日线</span><strong>${config?.day ?? "—"} bars</strong></div><div><span>初始周线</span><strong>${config?.week ?? "—"} bars</strong></div><div><span>回放窗口</span><strong>${config?.sessions ?? "—"} sessions</strong></div><div><span>回放 1H</span><strong>${config?.bars ?? "—"} bars</strong></div><div><span>首次决策</span><strong>B0 起自主决定</strong></div><div><span>待成交窗口</span><strong>${config?.expiry ?? "—"} bars</strong></div><div><span>强平提醒</span><strong>T-5 → T-1</strong></div><div><span>长桥日 / 周回填</span><strong>${config?.dayRollups ?? "—"} / ${config?.weekRollups ?? "—"}</strong></div></div></section>
-    ${renderModelTable(rows)}${renderCasesTable(rows)}<section class="case-details">${rows.map(renderCaseDetail).join("")}</section>${renderAudit(audits)}
+    ${renderReasonTable(rows)}${renderModelTable(rows)}${renderCasesTable(rows)}<section class="case-details">${rows.map(renderCaseDetail).join("")}</section>${renderAudit(audits)}
     <footer class="footer"><span>KANSOKU BENCH · Git ${escapeHtml(input.config.gitSha ?? "—")}</span><span>图表由 <a href="https://www.tradingview.com/" target="_blank" rel="noreferrer">TradingView Lightweight Charts™</a> 提供 · 行情数据源：长桥</span></footer>
   </main><script src="https://unpkg.com/lightweight-charts@5.2.0/dist/lightweight-charts.standalone.production.js"></script><script>const REPORT_CHARTS=${serializeForScript(charts)};${SCRIPT}</script></body></html>`;
   return { html, summary };

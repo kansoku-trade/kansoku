@@ -8,6 +8,7 @@ import type {
 } from "../schema/episode.js";
 import type { Question } from "../schema/question.js";
 import type { Submission } from "../schema/submission.js";
+import type { EpisodeTradeReason } from "../schema/tradeReason.js";
 
 export type EpisodePhase = "flat" | "pending" | "open" | "terminal";
 export type EpisodeEvent =
@@ -33,6 +34,7 @@ export interface PendingOrderState {
   stop: number;
   target: number;
   waitedBars: number;
+  entryReason: EpisodeTradeReason;
 }
 
 export interface PositionState {
@@ -49,6 +51,7 @@ export interface PositionState {
   holdingBars: number;
   mfeR: number;
   maeR: number;
+  entryReason: EpisodeTradeReason;
 }
 
 export interface EpisodeState {
@@ -208,6 +211,7 @@ function validateDirectionalSubmission(
   tradeId: number,
   decisionBar: number,
   decisionTime: string,
+  entryReason: EpisodeTradeReason,
 ): PendingOrderState {
   if (submission.direction === "neutral") throw new Error("neutral submission has no order");
   const plan = submission.entry_plan;
@@ -231,6 +235,16 @@ function validateDirectionalSubmission(
     stop,
     target,
     waitedBars: 0,
+    entryReason,
+  };
+}
+
+function submissionReason(submission: Submission): EpisodeTradeReason {
+  if (submission.decision_reason) return submission.decision_reason;
+  const summary = submission.entry_plan?.rationale?.trim() || submission.comment.trim();
+  return {
+    category: submission.direction === "neutral" ? "no_setup" : "other",
+    summary: summary || "未提供明确的交易理由。",
   };
 }
 
@@ -264,6 +278,7 @@ export function submitEpisode(
   const decisionBar = state.cursor + 1;
   const decisionTime = currentAsOf(question, state.cursor);
   const plan = submission.entry_plan;
+  const reason = submissionReason(submission);
   const recorded = withAction(
     state,
     question,
@@ -271,6 +286,7 @@ export function submitEpisode(
       type: "submit",
       direction: submission.direction,
       ...(plan ? { entry: plan.entry, stop: plan.stop, ...(plan.target1 == null ? {} : { target: plan.target1 }) } : {}),
+      reason,
     },
     replayBar(question, state.cursor + 1),
     submission.direction === "neutral" ? null : state.nextTradeId,
@@ -292,6 +308,7 @@ export function submitEpisode(
     state.nextTradeId,
     decisionBar,
     decisionTime,
+    reason,
   );
   const submitted: EpisodeState = {
     ...recorded,
@@ -447,6 +464,7 @@ function closePosition(
     mfeR: position.mfeR,
     maeR: position.maeR,
     holdingBars: position.holdingBars,
+    entryReason: position.entryReason,
   };
   return {
     ...state,
@@ -569,6 +587,7 @@ export function advanceEpisode(
           holdingBars: 0,
           mfeR: 0,
           maeR: 0,
+          entryReason: order.entryReason,
         },
       };
       fillTiming = fill.timing;

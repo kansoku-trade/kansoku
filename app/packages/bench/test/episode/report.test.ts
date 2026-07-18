@@ -62,6 +62,7 @@ const answer: EpisodeAnswer = {
       { label: "下跌", probability: 60 },
       { label: "反弹", probability: 40 },
     ],
+    decision_reason: { category: "breakout", summary: "日线与周线同步跌破关键支撑。" },
     comment: "测试",
   },
   result: {
@@ -76,7 +77,7 @@ const answer: EpisodeAnswer = {
     mfeR: 0.4874559,
     maeR: 0.2134045,
     holdingBars: 1,
-    steps: 2,
+    steps: 3,
     decisionBar: 1,
     decisionTime: "2026-03-26T13:30:00Z",
     observationBars: 1,
@@ -98,6 +99,7 @@ const answer: EpisodeAnswer = {
       mfeR: 0.4874559,
       maeR: 0.2134045,
       holdingBars: 1,
+      entryReason: { category: "breakout", summary: "日线与周线同步跌破关键支撑。" },
     }],
     tradeCount: 1,
     winCount: 1,
@@ -105,7 +107,27 @@ const answer: EpisodeAnswer = {
     maxDrawdownR: 0,
     actions: [
       { step: 1, at: question.cutoff, effectiveBarTime: "2026-03-26T13:30:00Z", action: { type: "observe" } },
-      { step: 2, at: "2026-03-26T13:30:00Z", effectiveBarTime: "2026-03-26T14:30:00Z", action: { type: "hold" } },
+      {
+        step: 2,
+        tradeId: 1,
+        at: "2026-03-26T13:30:00Z",
+        effectiveBarTime: "2026-03-26T14:30:00Z",
+        action: {
+          type: "submit",
+          direction: "short",
+          entry: 379.5,
+          stop: 389.2,
+          target: 361,
+          reason: { category: "breakout", summary: "日线与周线同步跌破关键支撑。" },
+        },
+      },
+      {
+        step: 3,
+        tradeId: 1,
+        at: "2026-03-26T13:30:00Z",
+        effectiveBarTime: "2026-03-26T14:30:00Z",
+        action: { type: "hold", reason: { category: "risk_management", summary: "止损仍有效，继续执行原计划。" } },
+      },
     ],
   },
   metrics: { durationMs: 25_095, costUsd: 0.12715, toolCalls: 7, inputTokens: 10_490, outputTokens: 826 },
@@ -141,8 +163,8 @@ describe("episode HTML report", () => {
       { type: "tool_call", sequence: 3, name: "fetch_kline", args: { period: "week", count: 30 }, contextBefore: { barIndex: 0, phase: "flat" }, contextAfter: { barIndex: 0, phase: "flat" }, durationMs: 2 },
       { type: "tool_call", sequence: 4, name: "observe_next_bar", args: {}, contextBefore: { barIndex: 0, phase: "flat" }, contextAfter: { barIndex: 1, phase: "flat" }, resultSummary: '{"barIndex":1,"event":"observed","terminal":false}', durationMs: 1 },
       { type: "prompt_context", barIndex: 1, phase: "flat", remainingBars: 1, tradeCount: 0, episodeNetR: 0, warningInjected: true, warningPriority: "critical" },
-      { type: "tool_call", sequence: 5, name: "submit_prediction", args: { direction: "short" }, contextBefore: { barIndex: 1, phase: "flat" }, contextAfter: { barIndex: 1, phase: "pending", decisionBar: 1 }, resultSummary: '{"barIndex":1,"event":"waiting_fill","terminal":false}', durationMs: 2 },
-      { type: "tool_call", sequence: 6, name: "advance_trade", args: { type: "hold" }, contextBefore: { barIndex: 1, phase: "pending", decisionBar: 1 }, contextAfter: { barIndex: 2, phase: "terminal", decisionBar: 1 }, resultSummary: '{"barIndex":2,"event":"target_hit","terminal":true}', durationMs: 1 },
+      { type: "tool_call", sequence: 5, name: "submit_prediction", args: { direction: "short", decision_reason: { category: "breakout", summary: "日线与周线同步跌破关键支撑。" } }, contextBefore: { barIndex: 1, phase: "flat" }, contextAfter: { barIndex: 1, phase: "pending", decisionBar: 1 }, resultSummary: '{"barIndex":1,"event":"waiting_fill","terminal":false}', durationMs: 2 },
+      { type: "tool_call", sequence: 6, name: "advance_trade", args: { type: "hold", reason: { category: "risk_management", summary: "止损仍有效，继续执行原计划。" } }, contextBefore: { barIndex: 1, phase: "pending", decisionBar: 1 }, contextAfter: { barIndex: 2, phase: "terminal", decisionBar: 1 }, resultSummary: '{"barIndex":2,"event":"target_hit","terminal":true}', durationMs: 1 },
     ]],
   ]);
   const rendered = renderEpisodeReportHtml({
@@ -190,6 +212,10 @@ describe("episode HTML report", () => {
     expect(rendered.html).toContain("T-2 强平提醒");
     expect(rendered.html).toContain("T-1 强平提醒");
     expect(rendered.html).toContain("过程检查 5/5");
+    expect(rendered.html).toContain("交易原因统计");
+    expect(rendered.html).toContain("理由覆盖 2/2 · 100.0%");
+    expect(rendered.html).toContain("日线与周线同步跌破关键支撑");
+    expect(rendered.html).toContain("止损仍有效，继续执行原计划");
     expect(rendered.html).toContain("payload.snapshotPatches");
   });
 
@@ -216,7 +242,42 @@ describe("episode HTML report", () => {
       averageToolCalls: 7,
       averageTokens: 11_316,
       averageDecisionBars: 1,
+      reasonCoverage: 1,
+      reasonedActions: 2,
+      decisionActions: 2,
+      reasonCoverageByModel: [{
+        model: answer.model,
+        reasonedActions: 2,
+        decisionActions: 2,
+        coverage: 1,
+      }],
       dataAuditPassed: true,
     });
+    expect(rendered.summary.reasonStats).toEqual([
+      {
+        model: answer.model,
+        category: "breakout",
+        actions: 1,
+        actionBreakdown: { submit: 1 },
+        entries: 1,
+        trades: 1,
+        wins: 1,
+        winRate: 1,
+        averageNetR: 0.4428025,
+        totalNetR: 0.4428025,
+      },
+      {
+        model: answer.model,
+        category: "risk_management",
+        actions: 1,
+        actionBreakdown: { hold: 1 },
+        entries: 0,
+        trades: 0,
+        wins: 0,
+        winRate: null,
+        averageNetR: null,
+        totalNetR: 0,
+      },
+    ]);
   });
 });

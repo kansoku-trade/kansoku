@@ -104,12 +104,22 @@ flowchart TD
 `advance_trade` 的动作结构：
 
 ```ts
+interface EpisodeTradeReason {
+  category: "trend_following" | "breakout" | "pullback" | "mean_reversion"
+    | "support_resistance" | "momentum" | "volume_flow" | "volatility"
+    | "news_event" | "fundamental" | "risk_management" | "thesis_invalidated"
+    | "profit_protection" | "time_horizon" | "no_setup" | "other";
+  summary: string;
+}
+
 type EpisodeTradeAction =
-  | { type: "hold" }
-  | { type: "amend"; stop?: number; target?: number }
-  | { type: "cancel" }
-  | { type: "exit_next_open" };
+  | { type: "hold"; reason: EpisodeTradeReason }
+  | { type: "amend"; stop?: number; target?: number; reason: EpisodeTradeReason }
+  | { type: "cancel"; reason: EpisodeTradeReason }
+  | { type: "exit_next_open"; reason: EpisodeTradeReason };
 ```
+
+`submit_prediction` 同样必须提交 `decision_reason: EpisodeTradeReason`。这是模型主动提供的、可审计的决策依据摘要，不是隐藏思维链。缺少理由的工具调用由 runner 拒绝，模型必须修正后重新提交。
 
 - `flat + hold` 与继续观察等价；
 - `pending + cancel` 在当前虚拟时点撤单，不公开新 K 线；
@@ -252,6 +262,7 @@ interface EpisodeClosedTrade {
   mfeR: number;
   maeR: number;
   holdingBars: number;
+  entryReason?: EpisodeTradeReason;
 }
 
 interface EpisodeTradeResult {
@@ -288,6 +299,8 @@ interface EpisodeTradeResult {
 | MFE / MAE | 每笔交易持仓期间的最大有利和不利波动 |
 | 最大回撤 | 按已结算交易累计净 R 计算的 Episode 最大回撤 |
 | 决策位置 | 第一次方向提交所在的 B 编号；B0 立即交易是合法结果 |
+| 理由覆盖率 | 已提交结构化理由的交易决策动作数除以全部交易决策动作数，并按模型分别统计 |
+| 原因表现 | 按“模型 × 入场主原因”统计提交数、成交数、胜率、平均净 R 与累计净 R |
 | 效率 | 每 case 的工具调用、模型调用、token、耗时和 USD 成本 |
 
 不允许只统计“有交易的胜率”作为主胜率，也不允许把全程空仓 case 从分母中删除。
@@ -299,15 +312,16 @@ interface EpisodeTradeResult {
 | 区域 | 内容 |
 | --- | --- |
 | 运行总览 | 平均净 R、Episode/交易胜率、方向命中、Profit Factor、参与/成交、期望、MFE/MAE、回撤、成本和耗时 |
+| 交易原因统计 | 按模型和主原因统计理由覆盖、动作分布、入场/成交、胜率和净 R |
 | 数据配置 | 1h/day/week 数量、完整回放窗口、待成交窗口、T-5 提醒、长桥日/周回填 |
 | Case 图表 | TradingView Lightweight Charts 的 1 小时、日线、周线 K 线和成交量 |
 | 图表标注 | `CASE START · B0`、首根回放、`B_end · 强制结算`、每笔决策、成交、初始止损、目标和退出 |
-| 交易明细 | 每笔交易的方向、决策/成交/退出 B 编号、E/S/T/X、退出原因和净 R |
-| 工具链 | 只读查询、观察、提交、管理动作及其 B 编号和阶段变化 |
+| 交易明细 | 每笔交易的方向、决策/成交/退出 B 编号、E/S/T/X、入场理由、退出原因和净 R |
+| 工具链 | 只读查询、观察、提交、管理动作、显式决策理由及其 B 编号和阶段变化 |
 | Message Engine | `T-5` 到 `T-1` 强平提醒节点，以及提醒完整性检查 |
 | 数据审计 | 长桥 1h/day/week、cutoff、时区、滚动周期和未来数据边界 |
 
-点击工具或提醒节点时，图表切换到该节点对应的 B 编号及周期，只展示当时已经公开的数据。报告不展示隐藏推理，只展示工具输入、状态变化、消息注入元数据和结果摘要。
+点击工具或提醒节点时，图表切换到该节点对应的 B 编号及周期，只展示当时已经公开的数据。报告不展示隐藏思维链；它展示模型在每次交易操作中主动提交的结构化理由摘要、工具输入、状态变化、消息注入元数据和结果摘要。
 
 ## 14. Trace 与消息审计
 
