@@ -79,7 +79,7 @@ export class ActivatedSkillsProvider extends BaseFirstUserContentProvider {
 
   constructor(
     private readonly skills: SkillContext[],
-    private readonly runtimeAdapter: string,
+    private readonly runtimeAdapter?: string,
   ) {
     super();
   }
@@ -99,12 +99,10 @@ export class ActivatedSkillsProvider extends BaseFirstUserContentProvider {
         "  </skill>",
       );
     }
-    lines.push(
-      "</activated_skills>",
-      "<runtime_adapter>",
-      this.runtimeAdapter,
-      "</runtime_adapter>",
-    );
+    lines.push("</activated_skills>");
+    if (this.runtimeAdapter?.trim()) {
+      lines.push("<runtime_adapter>", this.runtimeAdapter, "</runtime_adapter>");
+    }
     return lines.join("\n");
   }
 }

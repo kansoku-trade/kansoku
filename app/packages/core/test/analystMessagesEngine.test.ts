@@ -108,11 +108,15 @@ describe("AnalystMessagesEngine", () => {
     const before = await engine.process(raw);
     step.journalWritten = true;
     step.loadedSkillIds = ["twitter-reader"];
+    step.marketDate = "2026-07-15";
+    step.dataAsOf = "2026-07-15T15:30:00.000Z";
     const after = await engine.process(raw);
 
     expect(textOf(before.messages.at(-1)!)).toContain("<journal_written>false</journal_written>");
     expect(textOf(after.messages.at(-1)!)).toContain("<journal_written>true</journal_written>");
     expect(textOf(after.messages.at(-1)!)).toContain("twitter-reader");
+    expect(textOf(after.messages.at(-1)!)).toContain("<market_date>2026-07-15</market_date>");
+    expect(textOf(after.messages.at(-1)!)).toContain("<data_as_of>2026-07-15T15:30:00.000Z</data_as_of>");
     expect(textOf(after.messages.at(-1)!)).not.toContain("<journal_written>false</journal_written>");
     expect(raw).toEqual([{ role: "user", content: "分析", timestamp: 1 }]);
   });

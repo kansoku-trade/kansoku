@@ -30,8 +30,10 @@ export interface AnalystInitialContext {
 
 export interface AnalystStepContext {
   chartId: string | null;
+  dataAsOf?: string;
   journalWritten: boolean;
   loadedSkillIds: string[];
+  marketDate?: string;
   submitted: boolean;
 }
 
@@ -72,6 +74,8 @@ class AnalystRunStateProvider extends BaseVirtualTailProvider {
       `  <submitted>${state.submitted}</submitted>`,
       `  <chart_id>${escapeXml(state.chartId ?? "")}</chart_id>`,
       `  <loaded_skills>${state.loadedSkillIds.map(escapeXml).join(",")}</loaded_skills>`,
+      ...(state.marketDate ? [`  <market_date>${escapeXml(state.marketDate)}</market_date>`] : []),
+      ...(state.dataAsOf ? [`  <data_as_of>${escapeXml(state.dataAsOf)}</data_as_of>`] : []),
       "</analyst_run_state>",
     ].join("\n");
   }
