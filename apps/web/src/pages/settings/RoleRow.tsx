@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Check, TriangleAlert } from "lucide-react";
-import { errorMessage } from "../../api";
-import { client } from "../../client";
-import { Button, Select, Spinner } from "../../ui";
+import { errorMessage } from "@web/api";
+import { client } from "@web/client";
+import { Button, Select, Spinner } from "@web/ui";
 import { RoleModeControl } from "./RoleModeControl";
 import {
   defaultCustom,

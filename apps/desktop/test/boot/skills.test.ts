@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, mkdtempSync, readlinkSync, rmSync, writeFileSync
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { bundledSkillsPath, ensureBundledSkills } from "../../src/boot/skills.js";
+import { bundledSkillsPath, ensureBundledSkills } from "@desktop/boot/skills.js";
 
 const temps: string[] = [];
 

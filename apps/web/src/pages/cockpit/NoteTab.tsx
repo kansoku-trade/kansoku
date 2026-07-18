@@ -1,9 +1,9 @@
 import { useCallback } from "react";
 import type { ReactNode } from "react";
 import { Lock, Maximize2 } from "lucide-react";
-import { Button, Empty, ErrorBox, MarketTime, Spinner, TimeAgo } from "../../ui";
-import { marketOfSymbol } from "../../lib/market";
-import { useFeature } from "../../useFeature";
+import { Button, Empty, ErrorBox, MarketTime, Spinner, TimeAgo } from "@web/ui";
+import { marketOfSymbol } from "@web/lib/market";
+import { useFeature } from "@web/useFeature";
 import { Markdown, openMarkdownModal } from "./markdown";
 import { bareSymbol, useDeepDive } from "./useDeepDive";
 import { useNote } from "./useNote";

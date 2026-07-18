@@ -1,9 +1,9 @@
 import type { CSSProperties } from "react";
 import { ArrowRight } from "lucide-react";
 import { AUTO_SIGNAL_META, type DivergencePair, type IntradayPriceZone, type IntradayTargetContext, type Pattern123 } from "@kansoku/shared/types";
-import { fmt } from "../../../format";
-import { theme } from "../../../theme";
-import { Badge, MarketTime } from "../../../ui";
+import { fmt } from "@web/format";
+import { theme } from "@web/theme";
+import { Badge, MarketTime } from "@web/ui";
 
 const ZONE_KIND_LABEL: Record<string, string> = {
   entry: "入场区",

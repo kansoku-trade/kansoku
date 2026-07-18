@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { errorMessage } from "../../api";
-import { client } from "../../client";
+import { errorMessage } from "@web/api";
+import { client } from "@web/client";
 
 export interface NoteResponse {
   markdown: string | null;

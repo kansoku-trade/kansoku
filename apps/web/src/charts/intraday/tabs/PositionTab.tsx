@@ -1,6 +1,6 @@
 import type { PositionView } from "@kansoku/shared/types";
-import { fmt, signed, upDown } from "../../../format";
-import { SectionTitle } from "../../../ui";
+import { fmt, signed, upDown } from "@web/format";
+import { SectionTitle } from "@web/ui";
 
 interface PositionTabProps {
   position: PositionView | null;

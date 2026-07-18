@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import type { OverviewRecap, PredictionStats, StatsBucket } from "@kansoku/shared/types";
-import { signed } from "../../format";
+import { signed } from "@web/format";
 import { symbolAnalysisPath } from "@kansoku/shared/chartUrl";
 import { marketDate } from "@kansoku/shared/time";
-import { client } from "../../client";
-import { Badge, Card, ErrorBox, MarketTime, Num, SectionTitle } from "../../ui";
+import { client } from "@web/client";
+import { Badge, Card, ErrorBox, MarketTime, Num, SectionTitle } from "@web/ui";
 import { useIntervalFetch } from "../cockpit/useIntervalFetch";
 
 const DIRECTION_LABEL: Record<string, string> = { long: "做多", short: "做空", neutral: "观望" };

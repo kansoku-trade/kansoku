@@ -9,10 +9,10 @@ const followStatus = vi.fn();
 const startFollow = vi.fn();
 const stopFollow = vi.fn();
 
-vi.mock("../../capabilitiesStore", () => ({
+vi.mock("@web/capabilitiesStore", () => ({
   useCapabilities: () => capabilities,
 }));
-vi.mock("../../client", () => ({
+vi.mock("@web/client", () => ({
   client: {
     symbols: {
       followStatus: (...args: unknown[]) => followStatus(...args),
@@ -22,7 +22,7 @@ vi.mock("../../client", () => ({
   },
 }));
 
-const { getLicenseModalStateForTests, resetLicenseModalStoreForTests } = await import("../../licenseModalStore");
+const { getLicenseModalStateForTests, resetLicenseModalStoreForTests } = await import("@web/licenseModalStore");
 const { FollowAction } = await import("./FollowAction");
 
 function renderWithClient(children: ReactNode) {

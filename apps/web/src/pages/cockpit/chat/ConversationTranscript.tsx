@@ -1,6 +1,6 @@
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowDown, ChevronRight } from "lucide-react";
-import { ScrollArea } from "../../../ui";
+import { ScrollArea } from "@web/ui";
 import { Markdown } from "../markdown";
 import { mergeTimeline, type TranscriptInsert } from "./transcriptTimeline.js";
 import { summarizeToolInput, toolRowKey } from "./toolSummary.js";

@@ -27,6 +27,7 @@
   },
   "devDependencies": {
     "concurrently": "^10.0.3",
+    "electron-sparkle-updater": "0.1.0",
     "skills": "^1.5.16"
   },
   "license": "SEE LICENSE IN LICENSE"

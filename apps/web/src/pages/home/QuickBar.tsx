@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Library, MessageCircle, Settings, Sparkles } from "lucide-react";
-import { useCapabilities } from "../../capabilitiesStore";
-import { openLicenseModal } from "../../licenseModalStore";
-import { normalizeSymbol } from "../../lib/symbol";
-import { navigate } from "../../router";
-import { listRecentSymbols } from "../../recentCharts";
-import { Chip, Input } from "../../ui";
+import { useCapabilities } from "@web/capabilitiesStore";
+import { openLicenseModal } from "@web/licenseModalStore";
+import { normalizeSymbol } from "@web/lib/symbol";
+import { navigate } from "@web/router";
+import { listRecentSymbols } from "@web/recentCharts";
+import { Chip, Input } from "@web/ui";
 
 export function QuickBar({
   shortcuts,

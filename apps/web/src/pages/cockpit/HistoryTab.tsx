@@ -2,12 +2,12 @@ import type { CSSProperties } from "react";
 import { Check, CircleX, Clock, NotebookText } from "lucide-react";
 import type { OutcomeStatus, SymbolAnalysisRow } from "@kansoku/shared/types";
 import { marketDate } from "@kansoku/shared/time";
-import { fmt, signed } from "../../format";
-import { marketOfSymbol } from "../../lib/market";
+import { fmt, signed } from "@web/format";
+import { marketOfSymbol } from "@web/lib/market";
 import { symbolUrl } from "./analysisMode";
-import { DIRECTION_COLOR, DIRECTION_LABEL } from "../../charts/intraday/directionLabels";
-import { theme } from "../../theme";
-import { Badge, MarketTime, SectionTitle } from "../../ui";
+import { DIRECTION_COLOR, DIRECTION_LABEL } from "@web/charts/intraday/directionLabels";
+import { theme } from "@web/theme";
+import { Badge, MarketTime, SectionTitle } from "@web/ui";
 
 const OUTCOME_LABEL: Record<OutcomeStatus, { icon: typeof Check; tone: string; label: string }> = {
   hit_target: { icon: Check, tone: "up", label: "到目标" },

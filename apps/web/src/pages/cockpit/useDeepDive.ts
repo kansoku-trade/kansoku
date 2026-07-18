@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ApiError, errorMessage } from "../../api";
-import { client } from "../../client";
+import { ApiError, errorMessage } from "@web/api";
+import { client } from "@web/client";
 
 export const bareSymbol = (value: string) => value.toUpperCase().replace(/\.US$/, "");
 

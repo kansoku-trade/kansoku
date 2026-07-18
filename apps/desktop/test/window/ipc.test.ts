@@ -15,9 +15,9 @@ const ipcMain = {
 
 vi.mock("electron", () => ({ ipcMain }));
 
-const { registerWindowsIpc } = await import("../../src/window/ipc.js");
+const { registerWindowsIpc } = await import("@desktop/window/ipc.js");
 const { WINDOWS_ACTIVE_TAB_CHANNEL, WINDOWS_CONTEXT_CHANNEL, WINDOWS_POPOUT_CHANNEL } = await import(
-  "../../src/window/channels.js"
+  "@desktop/window/channels.js"
 );
 
 describe("registerWindowsIpc", () => {

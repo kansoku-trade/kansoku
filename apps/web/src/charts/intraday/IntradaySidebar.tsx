@@ -1,9 +1,9 @@
 import { useState, type ReactNode } from "react";
 import { TriangleAlert } from "lucide-react";
 import type { IntradayBuilt, QuoteCell, TimeframeKey } from "@kansoku/shared/types";
-import { fmt } from "../../format";
-import { marketOfSymbol } from "../../lib/market";
-import { MarketTime } from "../../ui";
+import { fmt } from "@web/format";
+import { marketOfSymbol } from "@web/lib/market";
+import { MarketTime } from "@web/ui";
 import type { SidebarTab } from "../SidebarTabs";
 import { SidebarTabs } from "../SidebarTabs";
 import { ConclusionCard, type ConclusionReassess } from "./ConclusionCard";

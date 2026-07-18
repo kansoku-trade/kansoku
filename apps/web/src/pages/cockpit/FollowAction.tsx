@@ -1,7 +1,7 @@
 import { Lock, RadioTower } from "lucide-react";
-import { Switch } from "../../ui";
-import { useFeature } from "../../useFeature";
-import { useSymbolFollow } from "../../useSymbolFollow";
+import { Switch } from "@web/ui";
+import { useFeature } from "@web/useFeature";
+import { useSymbolFollow } from "@web/useSymbolFollow";
 
 export function FollowAction({ symbol, revision }: { symbol: string; revision?: string }) {
   const { state } = useFeature("symbol-follow");

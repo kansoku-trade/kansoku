@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { errorMessage } from "../../api";
-import { useQuery } from "../../apiHooks";
-import { refreshCapabilities, useCapabilities } from "../../capabilitiesStore";
-import { client } from "../../client";
-import { openLicenseModal } from "../../licenseModalStore";
-import { Badge, Button, Input, openModal } from "../../ui";
+import { errorMessage } from "@web/api";
+import { useQuery } from "@web/apiHooks";
+import { refreshCapabilities, useCapabilities } from "@web/capabilitiesStore";
+import { client } from "@web/client";
+import { openLicenseModal } from "@web/licenseModalStore";
+import { Badge, Button, Input, openModal } from "@web/ui";
 
 function activateErrorMessage(raw: string): string {
   if (/responded (401|404)/.test(raw)) return "授权码无效，请检查后重新输入";

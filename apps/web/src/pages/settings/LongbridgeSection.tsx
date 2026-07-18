@@ -1,6 +1,6 @@
-import { useQuery } from "../../apiHooks";
-import { client } from "../../client";
-import { Badge, Button } from "../../ui";
+import { useQuery } from "@web/apiHooks";
+import { client } from "@web/client";
+import { Badge, Button } from "@web/ui";
 import { getDesktopCredentialsBridge, type CredentialsGetResult } from "./desktopCredentials";
 
 const INSTALL_URL = "https://open.longbridge.com/docs/cli/install";

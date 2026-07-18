@@ -3,8 +3,8 @@ import { TriangleAlert } from "lucide-react";
 import { marketDate } from "@kansoku/shared/time";
 import type { IntradayContext } from "@kansoku/shared/types";
 import { DIRECTION_COLOR, DIRECTION_LABEL } from "./directionLabels";
-import { theme } from "../../theme";
-import { Button, MarketTime, Spinner, TimeAgo } from "../../ui";
+import { theme } from "@web/theme";
+import { Button, MarketTime, Spinner, TimeAgo } from "@web/ui";
 
 export function conclusionOutdated(
   generatedAt: string | null | undefined,

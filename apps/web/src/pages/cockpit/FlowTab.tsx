@@ -1,10 +1,10 @@
 import { Bar, BarChart, CartesianGrid, Cell, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { CapitalBucket, CockpitFlow } from "@kansoku/shared/types";
-import { hhmm, tooltipContentStyle, tooltipItemStyle, tooltipLabelStyle, tooltipTime } from "../../charts/simple/theme";
-import { client } from "../../client";
-import { signed, upDown } from "../../format";
-import { theme } from "../../theme";
-import { SectionTitle } from "../../ui";
+import { hhmm, tooltipContentStyle, tooltipItemStyle, tooltipLabelStyle, tooltipTime } from "@web/charts/simple/theme";
+import { client } from "@web/client";
+import { signed, upDown } from "@web/format";
+import { theme } from "@web/theme";
+import { SectionTitle } from "@web/ui";
 import { useIntervalFetch } from "./useIntervalFetch";
 
 const BUCKET_LABEL: Record<string, string> = { large: "大单", medium: "中单", small: "小单" };

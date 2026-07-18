@@ -108,7 +108,7 @@ app.whenReady().then(async () => {
     registerContextMenuIpc();
     await installDefaultContextMenu();
 
-    const updater = initUpdater();
+    const updater = await initUpdater();
     registerUpdaterIpc(updater);
 
     const windowManager = await createWindowManager({

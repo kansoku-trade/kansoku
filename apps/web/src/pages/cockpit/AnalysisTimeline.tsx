@@ -1,7 +1,7 @@
 import type { SymbolAnalysisRow } from "@kansoku/shared/types";
 import { formatMarketMonthDayTime } from "@kansoku/shared/time";
-import { DIRECTION_LABEL } from "../../charts/intraday/directionLabels";
-import { Select } from "../../ui";
+import { DIRECTION_LABEL } from "@web/charts/intraday/directionLabels";
+import { Select } from "@web/ui";
 import type { AnalysisViewMode } from "./analysisMode";
 
 const LIVE_VALUE = "__live_view__";

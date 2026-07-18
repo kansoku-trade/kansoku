@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import type { ChartDoc, SymbolAnalysisRow } from "@kansoku/shared/types";
-import { useQuery } from "../../apiHooks";
-import { client } from "../../client";
-import { navigate, useQueryParam } from "../../router";
-import { subscribeChannel } from "../../wsHub";
+import { useQuery } from "@web/apiHooks";
+import { client } from "@web/client";
+import { navigate, useQueryParam } from "@web/router";
+import { subscribeChannel } from "@web/wsHub";
 import {
   applyAnalysisBroadcast,
   INITIAL_FEED_STATE,

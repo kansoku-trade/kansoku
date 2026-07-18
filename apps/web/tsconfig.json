@@ -9,7 +9,10 @@
     "noEmit": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "lib": ["ES2022", "DOM", "DOM.Iterable"]
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "paths": {
+      "@web/*": ["./src/*"]
+    }
   },
   "include": ["src", "vite.config.ts"]
 }

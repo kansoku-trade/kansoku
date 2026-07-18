@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { IntradayBuilt, TimeframeKey } from "@kansoku/shared/types";
-import { subscribeChannel } from "../../wsHub";
+import { subscribeChannel } from "@web/wsHub";
 
 interface PreviewEnvelope {
   type: "data" | "status";

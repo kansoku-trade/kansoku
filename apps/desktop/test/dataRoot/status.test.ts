@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildDataRootStatus } from "../../src/dataRoot/status.js";
+import { buildDataRootStatus } from "@desktop/dataRoot/status.js";
 
 describe("buildDataRootStatus", () => {
   const userData = "/Users/x/Library/Application Support/Kansoku";

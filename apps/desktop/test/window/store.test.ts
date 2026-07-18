@@ -10,7 +10,7 @@ import {
   removeWindowEntry,
   updateActiveTab,
   type WindowsState,
-} from "../../src/window/store.js";
+} from "@desktop/window/store.js";
 
 describe("nextWindowId", () => {
   it("starts at win-1 when there are no existing windows", () => {

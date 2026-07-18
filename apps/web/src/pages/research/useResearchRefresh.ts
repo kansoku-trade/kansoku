@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ResearchRefreshTask } from "@kansoku/core/contract/index";
-import { errorMessage } from "../../api";
-import { useQuery } from "../../apiHooks";
-import { client } from "../../client";
-import { subscribeChannel } from "../../wsHub";
+import { errorMessage } from "@web/api";
+import { useQuery } from "@web/apiHooks";
+import { client } from "@web/client";
+import { subscribeChannel } from "@web/wsHub";
 
 type RefreshEnvelope =
   | { type: "init"; task: ResearchRefreshTask | null }

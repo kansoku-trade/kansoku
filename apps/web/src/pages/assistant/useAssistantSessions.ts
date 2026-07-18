@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { AssistantSessionMeta } from "@kansoku/core/contract/index";
-import { useQuery } from "../../apiHooks";
-import { client } from "../../client";
+import { useQuery } from "@web/apiHooks";
+import { client } from "@web/client";
 
 export interface AssistantSessionsState {
   sessions: AssistantSessionMeta[];

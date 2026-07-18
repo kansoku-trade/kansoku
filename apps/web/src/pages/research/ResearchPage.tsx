@@ -1,11 +1,11 @@
 import { useDeferredValue, useEffect, useState } from "react";
 import { BookOpen, ChartCandlestick, FileText, Library, RefreshCw, Search } from "lucide-react";
 import type { ResearchDocument, ResearchDocumentMeta } from "@kansoku/core/contract/index";
-import { useQuery } from "../../apiHooks";
-import { client } from "../../client";
-import { navigate, useQueryParam } from "../../router";
-import { Badge, Empty, ErrorBox, Input, MarketTime, ResizablePanel, Spinner } from "../../ui";
-import { useTitle } from "../../useTitle";
+import { useQuery } from "@web/apiHooks";
+import { client } from "@web/client";
+import { navigate, useQueryParam } from "@web/router";
+import { Badge, Empty, ErrorBox, Input, MarketTime, ResizablePanel, Spinner } from "@web/ui";
+import { useTitle } from "@web/useTitle";
 import { Markdown } from "../cockpit/markdown";
 import { ResearchAssistant } from "./ResearchAssistant";
 import {

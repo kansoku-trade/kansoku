@@ -7,10 +7,10 @@ const note = vi.fn();
 const deepDiveStatus = vi.fn();
 const deepDive = vi.fn();
 
-vi.mock("../../capabilitiesStore", () => ({
+vi.mock("@web/capabilitiesStore", () => ({
   useCapabilities: () => capabilities,
 }));
-vi.mock("../../client", () => ({
+vi.mock("@web/client", () => ({
   client: {
     symbols: {
       note: (...args: unknown[]) => note(...args),
@@ -20,7 +20,7 @@ vi.mock("../../client", () => ({
   },
 }));
 
-const { getLicenseModalStateForTests, resetLicenseModalStoreForTests } = await import("../../licenseModalStore");
+const { getLicenseModalStateForTests, resetLicenseModalStoreForTests } = await import("@web/licenseModalStore");
 const { NoteTab } = await import("./NoteTab");
 
 afterEach(() => {

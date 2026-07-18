@@ -10,7 +10,7 @@ import {
   tooltipItemStyle,
   tooltipLabelStyle,
 } from "./theme";
-import { theme } from "../../theme";
+import { theme } from "@web/theme";
 
 export function CohortChart({ rows }: { rows: CohortPoint[] }) {
   if (!rows.length) return <div className="error-box">没有可渲染的数据行</div>;

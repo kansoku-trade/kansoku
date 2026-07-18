@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { navigate } from "../../router";
-import { Button } from "../../ui";
+import { navigate } from "@web/router";
+import { Button } from "@web/ui";
 import { getDesktopLogsBridge } from "../logViewer/desktopLogs";
 
 export function DiagnosticsSection() {

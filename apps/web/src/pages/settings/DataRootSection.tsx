@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Badge, Button } from "../../ui";
+import { Badge, Button } from "@web/ui";
 import {
   getDesktopDataRootBridge,
   isDataRootResetDisabled,

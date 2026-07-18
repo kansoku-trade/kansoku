@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, unlinkSync, w
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { buildImportManifest, copyImportManifest, validateImportSource } from "../../src/dataImport/manifest.js";
+import { buildImportManifest, copyImportManifest, validateImportSource } from "@desktop/dataImport/manifest.js";
 
 describe("dataImport", () => {
   let root: string;

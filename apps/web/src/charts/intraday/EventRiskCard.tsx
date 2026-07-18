@@ -1,6 +1,6 @@
 import { CalendarClock } from "lucide-react";
 import type { IntradayEventRisk } from "@kansoku/shared/types";
-import { MarketTime } from "../../ui";
+import { MarketTime } from "@web/ui";
 
 interface EventRiskCardProps {
   eventRisk: IntradayEventRisk | null | undefined;

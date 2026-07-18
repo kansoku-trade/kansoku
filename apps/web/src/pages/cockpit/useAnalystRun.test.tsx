@@ -1,17 +1,17 @@
 // @vitest-environment jsdom
 import { act, cleanup, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { ChannelSpec } from "../../wsHub";
+import type { ChannelSpec } from "@web/wsHub";
 
 const subscribeChannel = vi.fn();
 const reassess = vi.fn();
 const reassessStatus = vi.fn();
 
-vi.mock("../../wsHub", () => ({
+vi.mock("@web/wsHub", () => ({
   subscribeChannel: (...args: unknown[]) => subscribeChannel(...args),
 }));
 
-vi.mock("../../client", () => ({
+vi.mock("@web/client", () => ({
   client: {
     symbols: {
       reassess: (...args: unknown[]) => reassess(...args),
@@ -20,7 +20,7 @@ vi.mock("../../client", () => ({
   },
 }));
 
-const { resetAnalystRunsStoreForTests } = await import("../../analystRunsStore");
+const { resetAnalystRunsStoreForTests } = await import("@web/analystRunsStore");
 const { useAnalystRun } = await import("./useAnalystRun");
 
 const runningStatus = (activity: string) => ({

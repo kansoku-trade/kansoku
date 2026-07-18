@@ -1,6 +1,6 @@
 import type { ContextNewsItem, ContextNewsSource, ContextNewsTag, IntradayContext, NewsItem } from "@kansoku/shared/types";
-import { Badge, MarketTime, SectionTitle } from "../../../ui";
-import { NewsSection } from "../../NewsSection";
+import { Badge, MarketTime, SectionTitle } from "@web/ui";
+import { NewsSection } from "@web/charts/NewsSection";
 
 const TAG_LABEL: Record<ContextNewsTag, string> = {
   catalyst: "催化",

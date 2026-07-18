@@ -31,7 +31,7 @@ import type { IndicatorToggleKey } from "./useIndicatorToggles";
 import { AnchorBgPrimitive } from "./anchorPrimitive";
 import { FvgPrimitive } from "./fvgPrimitive";
 import { SessionBgPrimitive } from "./sessionPrimitive";
-import { seriesPalette, theme } from "../../theme";
+import { seriesPalette, theme } from "@web/theme";
 
 export const EMA_COLORS = [theme.accent, theme.textPrimary, theme.textSecondary, theme.up, theme.down] as const;
 

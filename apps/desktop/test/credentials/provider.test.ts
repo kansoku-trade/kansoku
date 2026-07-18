@@ -2,8 +2,8 @@ import { describe, expect, it, vi } from "vitest";
 import {
   createDesktopCredentialProvider,
   selectCredentialProvider,
-} from "../../src/credentials/provider.js";
-import type { CredentialStore } from "../../src/credentials/store.js";
+} from "@desktop/credentials/provider.js";
+import type { CredentialStore } from "@desktop/credentials/store.js";
 import type { CredentialProvider } from "@kansoku/core/services/credentials/types";
 
 const CREDS = { appKey: "k", appSecret: "s", accessToken: "t" };

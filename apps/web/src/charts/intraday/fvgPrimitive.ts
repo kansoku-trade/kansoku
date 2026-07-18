@@ -9,7 +9,7 @@ import type {
   Time,
 } from "lightweight-charts";
 import type { IntradayFvgZone } from "@kansoku/shared/types";
-import { theme } from "../../theme";
+import { theme } from "@web/theme";
 
 type DrawTarget = Parameters<IPrimitivePaneRenderer["draw"]>[0];
 

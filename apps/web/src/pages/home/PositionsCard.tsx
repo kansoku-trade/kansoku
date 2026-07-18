@@ -1,6 +1,6 @@
 import type { PortfolioSummary } from "@kansoku/shared/types";
-import { fmt, signed, upDown } from "../../format";
-import { Card, Dot, ErrorBox } from "../../ui";
+import { fmt, signed, upDown } from "@web/format";
+import { Card, Dot, ErrorBox } from "@web/ui";
 
 function signedMoney(value: number): string {
   const sign = value < 0 ? "−" : "+";

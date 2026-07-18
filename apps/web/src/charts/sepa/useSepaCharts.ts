@@ -24,7 +24,7 @@ import {
   toMarkers,
   toVolumeData,
 } from "../lw";
-import { seriesPalette, theme } from "../../theme";
+import { seriesPalette, theme } from "@web/theme";
 
 const VP_WIDTH = 90;
 

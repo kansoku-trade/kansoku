@@ -4,8 +4,8 @@ import {
   getLatestAnalystRunEvent,
   type RunningReassessStatus,
   useAnalystRunStatus,
-} from "../../analystRunsStore.js";
-import { client } from "../../client";
+} from "@web/analystRunsStore.js";
+import { client } from "@web/client";
 import { REASON_TEXT, useReassessSymbol } from "./useReassessSymbol";
 
 export type { RunningReassessStatus };

@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Check, TriangleAlert } from "lucide-react";
-import { errorMessage } from "../../api";
-import { client } from "../../client";
-import { Button, Chip, openModal, Select, Spinner } from "../../ui";
+import { errorMessage } from "@web/api";
+import { client } from "@web/client";
+import { Button, Chip, openModal, Select, Spinner } from "@web/ui";
 import {
   defaultCustom,
   defaultThinkingLevel,

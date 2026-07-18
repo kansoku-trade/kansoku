@@ -1,9 +1,9 @@
 import type { CSSProperties } from "react";
 import { Check, TriangleAlert, X } from "lucide-react";
 import type { SepaBuilt } from "@kansoku/shared/types";
-import { fmt, signed, upDown } from "../../format";
+import { fmt, signed, upDown } from "@web/format";
 import { NewsSection } from "../NewsSection";
-import { Badge, Num, SectionTitle } from "../../ui";
+import { Badge, Num, SectionTitle } from "@web/ui";
 
 const CHECK_ICON: Record<string, { icon: typeof Check; tone: string }> = {
   pass: { icon: Check, tone: "up" },

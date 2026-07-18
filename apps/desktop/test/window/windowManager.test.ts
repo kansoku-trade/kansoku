@@ -2,7 +2,7 @@ import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { WindowsState } from "../../src/window/store.js";
+import type { WindowsState } from "@desktop/window/store.js";
 
 type QuitHandler = () => void;
 
@@ -42,10 +42,10 @@ let nextSenderId = 1;
 const createWindow = vi.fn(() => new FakeWindow(nextSenderId++));
 const createPopoutWindow = vi.fn(() => new FakeWindow(nextSenderId++));
 
-vi.mock("../../src/window/mainWindow.js", () => ({ createWindow }));
-vi.mock("../../src/window/popoutWindow.js", () => ({ createPopoutWindow }));
+vi.mock("@desktop/window/mainWindow.js", () => ({ createWindow }));
+vi.mock("@desktop/window/popoutWindow.js", () => ({ createPopoutWindow }));
 
-const { createWindowManager } = await import("../../src/window/windowManager.js");
+const { createWindowManager } = await import("@desktop/window/windowManager.js");
 
 function asFake(win: unknown): FakeWindow {
   return win as unknown as FakeWindow;

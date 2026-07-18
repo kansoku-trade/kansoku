@@ -3,15 +3,15 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { resetCapabilitiesStoreForTests } from "../../capabilitiesStore";
-import { getLicenseModalStateForTests, resetLicenseModalStoreForTests } from "../../licenseModalStore";
+import { resetCapabilitiesStoreForTests } from "@web/capabilitiesStore";
+import { getLicenseModalStateForTests, resetLicenseModalStoreForTests } from "@web/licenseModalStore";
 
 const capabilitiesGet = vi.fn();
 const subscribeUrlGet = vi.fn();
 const activate = vi.fn();
 const deactivate = vi.fn();
 
-vi.mock("../../client", () => ({
+vi.mock("@web/client", () => ({
   client: {
     capabilities: { get: (...args: unknown[]) => capabilitiesGet(...args) },
     settings: { getSubscribeUrl: (...args: unknown[]) => subscribeUrlGet(...args) },

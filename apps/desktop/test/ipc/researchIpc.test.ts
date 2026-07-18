@@ -11,7 +11,7 @@ const service = vi.hoisted(() => ({
 }));
 vi.mock("@kansoku/core/modules/research/research.service", () => ({ researchService: service }));
 
-const { ResearchIpc } = await import("../../src/ipc/researchIpc.js");
+const { ResearchIpc } = await import("@desktop/ipc/researchIpc.js");
 
 beforeEach(() => {
   service.list.mockReset().mockResolvedValue([]);

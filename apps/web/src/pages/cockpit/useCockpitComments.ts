@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import type { CockpitComment } from "@kansoku/shared/types";
 import { marketDate } from "@kansoku/shared/time";
-import { useQuery } from "../../apiHooks";
-import { client } from "../../client";
-import { subscribeChannel } from "../../wsHub";
+import { useQuery } from "@web/apiHooks";
+import { client } from "@web/client";
+import { subscribeChannel } from "@web/wsHub";
 
 interface CommentEnvelope {
   type: "init" | "comment";

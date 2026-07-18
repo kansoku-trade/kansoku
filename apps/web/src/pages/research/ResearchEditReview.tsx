@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Check, Undo2, X } from "lucide-react";
 import type { ResearchDocument, ResearchEditOperation, ResearchEditProposal } from "@kansoku/core/contract/index";
-import { errorMessage } from "../../api";
-import { client } from "../../client";
-import { Button, openModal, Spinner } from "../../ui";
+import { errorMessage } from "@web/api";
+import { client } from "@web/client";
+import { Button, openModal, Spinner } from "@web/ui";
 
 export const STATUS_LABEL: Record<ResearchEditProposal["status"], string> = {
   pending: "待审阅",

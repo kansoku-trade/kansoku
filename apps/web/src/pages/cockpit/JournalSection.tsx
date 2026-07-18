@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { errorMessage } from "../../api";
-import { client } from "../../client";
-import { Button, ErrorBox, Spinner } from "../../ui";
+import { errorMessage } from "@web/api";
+import { client } from "@web/client";
+import { Button, ErrorBox, Spinner } from "@web/ui";
 import { AnalysisRunDetails } from "./AnalysisRunDetails";
 import { openMarkdownModal } from "./markdown";
 import { useAnalystRun } from "./useAnalystRun";

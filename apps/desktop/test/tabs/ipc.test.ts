@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { TabsFileStore, TabsState } from "../../src/tabs/store.js";
-import { emptyTabsState, openTab } from "../../src/tabs/store.js";
+import type { TabsFileStore, TabsState } from "@desktop/tabs/store.js";
+import { emptyTabsState, openTab } from "@desktop/tabs/store.js";
 
 type Handler = (event: unknown, payload?: unknown) => unknown;
 
@@ -22,9 +22,9 @@ const BrowserWindow = {
 
 vi.mock("electron", () => ({ ipcMain, BrowserWindow }));
 
-const { registerTabsIpc } = await import("../../src/tabs/ipc.js");
+const { registerTabsIpc } = await import("@desktop/tabs/ipc.js");
 const { TABS_GET_CHANNEL, TABS_MUTATE_CHANNEL, TABS_SNAPSHOT_CHANNEL } = await import(
-  "../../src/tabs/channels.js"
+  "@desktop/tabs/channels.js"
 );
 
 function fakeFileStore(initial: TabsState): TabsFileStore & { saved: TabsState[] } {

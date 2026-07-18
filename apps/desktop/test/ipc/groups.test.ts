@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { allRoutes } from "@kansoku/core/contract/index";
-import { IPC_GROUPS } from "../../src/ipc/groups.js";
+import { IPC_GROUPS } from "@desktop/ipc/groups.js";
 
 describe("IPC_GROUPS", () => {
   it("matches the contract's AppApi group keys exactly", () => {

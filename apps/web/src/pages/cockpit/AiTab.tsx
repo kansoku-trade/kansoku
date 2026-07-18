@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CockpitComment } from "@kansoku/shared/types";
 import { marketDate } from "@kansoku/shared/time";
-import { useQuery } from "../../apiHooks";
-import { client } from "../../client";
-import { marketOfSymbol } from "../../lib/market";
-import { Badge, Button, MarketTime, Select, Spinner } from "../../ui";
+import { useQuery } from "@web/apiHooks";
+import { client } from "@web/client";
+import { marketOfSymbol } from "@web/lib/market";
+import { Badge, Button, MarketTime, Select, Spinner } from "@web/ui";
 import { AnalysisRunDetails } from "./AnalysisRunDetails";
 import { buildFeed, type FeedRow } from "./aiFeed";
 import { FollowAction } from "./FollowAction";

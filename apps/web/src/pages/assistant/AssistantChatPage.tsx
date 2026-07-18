@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ResearchDocumentMeta } from "@kansoku/core/contract/index";
-import { errorMessage } from "../../api";
-import { useQuery } from "../../apiHooks";
-import { client } from "../../client";
-import { navigate, useQueryParam } from "../../router";
-import { Button, Empty, Spinner } from "../../ui";
-import { useTitle } from "../../useTitle";
+import { errorMessage } from "@web/api";
+import { useQuery } from "@web/apiHooks";
+import { client } from "@web/client";
+import { navigate, useQueryParam } from "@web/router";
+import { Button, Empty, Spinner } from "@web/ui";
+import { useTitle } from "@web/useTitle";
 import { saveRole } from "../settings/roleShared";
 import type { AiSettings, Catalog } from "../settings/types";
 import { AssistantConversation } from "./AssistantConversation";

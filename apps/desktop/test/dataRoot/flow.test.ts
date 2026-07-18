@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   getDataRootRestartPending,
   markDataRootRestartPending,
-} from "../../src/dataRoot/restartState.js";
+} from "@desktop/dataRoot/restartState.js";
 
 describe("data root restartPending flag", () => {
   it("starts false and flips true after mark", () => {

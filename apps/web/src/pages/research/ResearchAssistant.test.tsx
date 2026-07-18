@@ -16,10 +16,10 @@ const abortChat = vi.fn();
 const startRefresh = vi.fn();
 const abortRefresh = vi.fn();
 
-vi.mock("../../capabilitiesStore", () => ({
+vi.mock("@web/capabilitiesStore", () => ({
   useCapabilities: () => capabilities,
 }));
-vi.mock("../../client", () => ({
+vi.mock("@web/client", () => ({
   client: {
     research: {
       listEdits: (...args: unknown[]) => listEdits(...args),
@@ -33,7 +33,7 @@ vi.mock("../../client", () => ({
     },
   },
 }));
-vi.mock("../../wsHub", () => ({
+vi.mock("@web/wsHub", () => ({
   subscribeChannel: () => () => {},
 }));
 vi.mock("../cockpit/chat/ChatComposer", () => ({

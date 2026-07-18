@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { errorMessage } from "../../../api";
-import { client } from "../../../client";
-import { subscribeChannel } from "../../../wsHub";
+import { errorMessage } from "@web/api";
+import { client } from "@web/client";
+import { subscribeChannel } from "@web/wsHub";
 import { useSmoothStream } from "./useSmoothStream.js";
 
 export interface ChatSessionInfo {

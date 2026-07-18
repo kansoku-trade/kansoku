@@ -6,13 +6,13 @@ const navigate = vi.fn();
 const openLicenseModal = vi.fn();
 const capabilities = { pro: false, licensed: false };
 
-vi.mock("../../router", () => ({
+vi.mock("@web/router", () => ({
   navigate: (...args: unknown[]) => navigate(...args),
 }));
-vi.mock("../../capabilitiesStore", () => ({
+vi.mock("@web/capabilitiesStore", () => ({
   useCapabilities: () => capabilities,
 }));
-vi.mock("../../licenseModalStore", () => ({
+vi.mock("@web/licenseModalStore", () => ({
   openLicenseModal: (...args: unknown[]) => openLicenseModal(...args),
 }));
 

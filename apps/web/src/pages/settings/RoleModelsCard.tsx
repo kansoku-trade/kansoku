@@ -1,4 +1,4 @@
-import { Card, SectionTitle } from "../../ui";
+import { Card, SectionTitle } from "@web/ui";
 import { PrimaryRow } from "./PrimaryRow";
 import { RoleRow } from "./RoleRow";
 import type { SettingsViewModel } from "./settingsViewModel";

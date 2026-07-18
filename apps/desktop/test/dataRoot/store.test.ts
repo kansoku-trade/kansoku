@@ -2,7 +2,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { createDataRootFileStore } from "../../src/dataRoot/store.js";
+import { createDataRootFileStore } from "@desktop/dataRoot/store.js";
 
 describe("createDataRootFileStore", () => {
   let dir: string;

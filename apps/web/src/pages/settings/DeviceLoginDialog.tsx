@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { errorMessage } from "../../api";
-import { client } from "../../client";
-import { Button } from "../../ui";
+import { errorMessage } from "@web/api";
+import { client } from "@web/client";
+import { Button } from "@web/ui";
 import type { LobeHubDeviceLogin } from "./types";
 
 export function DeviceLoginDialog({

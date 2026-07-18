@@ -17,7 +17,7 @@ import type {
   ResearchRefreshReport,
   ResearchRefreshTask,
 } from "@kansoku/core/contract/index";
-import { MarketTime, Spinner } from "../../ui";
+import { MarketTime, Spinner } from "@web/ui";
 
 const PHASES: { phase: ResearchRefreshPhase; label: string }[] = [
   { phase: "preparing", label: "制定计划" },

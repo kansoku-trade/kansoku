@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { theme } from "../../theme";
+import { theme } from "@web/theme";
 
 export type IndicatorToggleKey =
   | "crosses"

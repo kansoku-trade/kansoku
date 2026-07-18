@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { ArrowLeft } from "lucide-react";
-import { useQuery } from "../../apiHooks";
-import { client } from "../../client";
-import { navigate } from "../../router";
-import { Button, Card, ErrorBox, SectionTitle } from "../../ui";
-import { useTitle } from "../../useTitle";
+import { useQuery } from "@web/apiHooks";
+import { client } from "@web/client";
+import { navigate } from "@web/router";
+import { Button, Card, ErrorBox, SectionTitle } from "@web/ui";
+import { useTitle } from "@web/useTitle";
 import { DataRootSection } from "./DataRootSection";
 import { DiagnosticsSection } from "./DiagnosticsSection";
 import { LicenseSection } from "./LicenseSection";

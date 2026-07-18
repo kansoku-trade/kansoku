@@ -1,157 +1,25 @@
-import { readFile, writeFile } from "node:fs/promises";
-import { join } from "node:path";
-import { app, dialog, Notification, shell } from "electron";
-import { loadSparkleBridgeForApp, type SparkleBridge, type SparkleInitOptions } from "./sparkle.js";
+import { dialog, shell } from "electron";
+import {
+  loadSparkleBridgeForApp,
+  type SparkleBridge,
+  type SparkleInitOptions,
+} from "electron-sparkle-updater";
+import { SPARKLE_ED_PUBLIC_KEY_PLACEHOLDER } from "electron-sparkle-updater/builder";
+import {
+  checkForUpdate,
+  createElectronFallbackDeps,
+  type CheckForUpdateResult,
+} from "electron-sparkle-updater/fallback";
 import { createUpdaterStatusStore, type UpdaterStatusStore, type UpdaterUiStatus } from "./status.js";
 
 const OWNER_REPO = "Innei/kansoku";
-const RELEASES_URL = `https://api.github.com/repos/${OWNER_REPO}/releases/latest`;
-const THROTTLE_MS = 60 * 60 * 1000;
+const TAG_PREFIX = "desktop-v";
 const CHECK_DELAY_MS = 10_000;
-const FETCH_TIMEOUT_MS = 5_000;
 
 // Mirrors electron-builder.yml's extendInfo SUFeedURL/SUPublicEDKey — belt-and-braces
 // path for builds where Info.plist lacks those keys (see sparkle_bridge.mm). CI injects
 // the real EdDSA public key over this placeholder at package time.
 const SPARKLE_APPCAST_URL = "https://github.com/Innei/kansoku/releases/latest/download/appcast.xml";
-const SPARKLE_PUBLIC_ED_KEY_PLACEHOLDER = "SPARKLE_ED_PUBLIC_KEY_PLACEHOLDER";
-
-export interface ReleaseInfo {
-  version: string;
-  htmlUrl: string;
-}
-
-export type CheckForUpdateResult =
-  | { kind: "throttled" }
-  | { kind: "fetch-failed"; message: string }
-  | { kind: "no-release" }
-  | { kind: "up-to-date"; current: string; latest: string }
-  | { kind: "available"; release: ReleaseInfo };
-
-export interface UpdaterDeps {
-  currentVersion: string;
-  now: () => string;
-  fetchJson: (url: string) => Promise<unknown>;
-  readLastCheck: () => Promise<string | null>;
-  writeLastCheck: (iso: string) => Promise<void>;
-  notify: (release: ReleaseInfo) => void;
-  log?: (message: string) => void;
-  force?: boolean;
-  silent?: boolean;
-}
-
-function normalizeVersion(raw: string): number[] {
-  const stripped = raw.replace(/^desktop-v/i, "").replace(/^v/i, "");
-  return stripped.split(".").map((part) => {
-    const n = Number.parseInt(part, 10);
-    return Number.isNaN(n) ? 0 : n;
-  });
-}
-
-export function isNewerVersion(current: string, latest: string): boolean {
-  const a = normalizeVersion(current);
-  const b = normalizeVersion(latest);
-  const len = Math.max(a.length, b.length);
-  for (let i = 0; i < len; i++) {
-    const av = a[i] ?? 0;
-    const bv = b[i] ?? 0;
-    if (bv > av) return true;
-    if (bv < av) return false;
-  }
-  return false;
-}
-
-export function shouldCheck(lastCheckIso: string | null, nowIso: string): boolean {
-  if (!lastCheckIso) return true;
-  const last = Date.parse(lastCheckIso);
-  if (Number.isNaN(last)) return true;
-  return Date.parse(nowIso) - last >= THROTTLE_MS;
-}
-
-export function parseLatestRelease(json: unknown): ReleaseInfo | null {
-  if (typeof json !== "object" || json === null) return null;
-  const record = json as Record<string, unknown>;
-  if (record.draft === true) return null;
-  const { tag_name, html_url } = record;
-  if (typeof tag_name !== "string" || typeof html_url !== "string") return null;
-  return { version: tag_name, htmlUrl: html_url };
-}
-
-export async function checkForUpdate(deps: UpdaterDeps): Promise<CheckForUpdateResult> {
-  const nowIso = deps.now();
-  if (!deps.force) {
-    const lastCheck = await deps.readLastCheck();
-    if (!shouldCheck(lastCheck, nowIso)) {
-      deps.log?.("skipped: throttled");
-      return { kind: "throttled" };
-    }
-  }
-
-  let json: unknown;
-  try {
-    json = await deps.fetchJson(RELEASES_URL);
-  } catch (err) {
-    const message = (err as Error).message;
-    deps.log?.(`skipped: fetch failed (${message})`);
-    return { kind: "fetch-failed", message };
-  }
-
-  await deps.writeLastCheck(nowIso);
-
-  const release = parseLatestRelease(json);
-  if (!release) {
-    deps.log?.("no-op: no usable release found");
-    return { kind: "no-release" };
-  }
-  if (!isNewerVersion(deps.currentVersion, release.version)) {
-    deps.log?.(`no-op: up to date (current ${deps.currentVersion}, latest ${release.version})`);
-    return { kind: "up-to-date", current: deps.currentVersion, latest: release.version };
-  }
-  if (!deps.silent) {
-    deps.notify(release);
-    deps.log?.(`notified: ${release.version} available`);
-  } else {
-    deps.log?.(`silent available: ${release.version}`);
-  }
-  return { kind: "available", release };
-}
-
-interface PersistedState {
-  lastCheckIso?: string;
-}
-
-async function readLastCheckFile(filePath: string): Promise<string | null> {
-  try {
-    const raw = await readFile(filePath, "utf8");
-    const state = JSON.parse(raw) as PersistedState;
-    return typeof state.lastCheckIso === "string" ? state.lastCheckIso : null;
-  } catch {
-    return null;
-  }
-}
-
-async function writeLastCheckFile(filePath: string, iso: string): Promise<void> {
-  const state: PersistedState = { lastCheckIso: iso };
-  await writeFile(filePath, JSON.stringify(state));
-}
-
-async function fetchJsonWithTimeout(url: string): Promise<unknown> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-  try {
-    const res = await fetch(url, {
-      signal: controller.signal,
-      headers: {
-        accept: "application/vnd.github+json",
-        "user-agent": "trade-desktop-updater",
-      },
-    });
-    if (!res.ok) return { message: `http ${res.status}` };
-    return await res.json();
-  } finally {
-    clearTimeout(timer);
-  }
-}
 
 export interface InitUpdaterOptions {
   delayMs?: number;
@@ -204,30 +72,6 @@ function defaultShowMessage(options: {
     title: options.title,
     message: options.message,
   });
-}
-
-function createWeakCheckDeps(log: (message: string) => void): UpdaterDeps {
-  const stateFile = join(app.getPath("userData"), "updater.json");
-  return {
-    currentVersion: app.getVersion(),
-    now: () => new Date().toISOString(),
-    fetchJson: fetchJsonWithTimeout,
-    readLastCheck: () => readLastCheckFile(stateFile),
-    writeLastCheck: (iso) => writeLastCheckFile(stateFile, iso),
-    notify: (release) => {
-      const notification = new Notification({
-        title: "trade update available",
-        body: `${release.version} is ready — click to view the release`,
-      });
-      notification.on("click", () => {
-        shell.openExternal(release.htmlUrl).catch((err) => {
-          log(`skipped: openExternal failed (${(err as Error).message})`);
-        });
-      });
-      notification.show();
-    },
-    log,
-  };
 }
 
 export function createUpdaterHandle(options: {
@@ -422,7 +266,7 @@ export function createUpdaterHandle(options: {
   };
 }
 
-export function initUpdater(options: InitUpdaterOptions = {}): UpdaterHandle {
+export async function initUpdater(options: InitUpdaterOptions = {}): Promise<UpdaterHandle> {
   const isDev = options.isDev ?? process.env.ELECTRON_DEV === "1";
   const log = (message: string) => console.debug(`[updater] ${message}`);
   const showMessage = options.showMessage ?? defaultShowMessage;
@@ -432,12 +276,12 @@ export function initUpdater(options: InitUpdaterOptions = {}): UpdaterHandle {
     return createUpdaterHandle({ mode: "dev", showMessage, statusStore, log });
   }
 
-  const sparkleBridge = loadSparkleBridgeForApp(log);
+  const sparkleBridge = await loadSparkleBridgeForApp(log);
   const mode = startUpdater({
     sparkleBridge,
     sparkleOptions: {
       appcastUrl: SPARKLE_APPCAST_URL,
-      publicEdKey: SPARKLE_PUBLIC_ED_KEY_PLACEHOLDER,
+      publicEdKey: SPARKLE_ED_PUBLIC_KEY_PLACEHOLDER,
     },
     runWeakChecker: () => {
       setTimeout(() => {
@@ -470,14 +314,15 @@ export function initUpdater(options: InitUpdaterOptions = {}): UpdaterHandle {
 
 async function runElectronCheck(force = false, silent = false): Promise<CheckForUpdateResult> {
   const log = (message: string) => console.debug(`[updater] ${message}`);
-  const deps: UpdaterDeps = {
-    ...createWeakCheckDeps(log),
-    force,
-    silent,
-  };
+  const deps = await createElectronFallbackDeps({
+    ownerRepo: OWNER_REPO,
+    tagPrefix: TAG_PREFIX,
+    notificationTitle: "trade update available",
+    log,
+  });
 
   try {
-    return await checkForUpdate(deps);
+    return await checkForUpdate({ ...deps, force, silent });
   } catch (err) {
     log(`skipped: unexpected error (${(err as Error).message})`);
     return { kind: "fetch-failed", message: (err as Error).message };

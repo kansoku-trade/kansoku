@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { buildNativeContextMenuTemplate } from "../../src/contextMenu/buildTemplate.js";
+import { buildNativeContextMenuTemplate } from "@desktop/contextMenu/buildTemplate.js";
 
 describe("buildNativeContextMenuTemplate", () => {
   it("maps items, dividers, accelerators, and checkbox/radio types", () => {

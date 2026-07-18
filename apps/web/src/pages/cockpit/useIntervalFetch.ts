@@ -1,4 +1,4 @@
-import { useQuery, usePollingQuery } from "../../apiHooks";
+import { useQuery, usePollingQuery } from "@web/apiHooks";
 
 interface IntervalFetchState<T> {
   data: T | null;

@@ -13,7 +13,7 @@ import {
   tooltipItemStyle,
   tooltipLabelStyle,
 } from "./theme";
-import { theme } from "../../theme";
+import { theme } from "@web/theme";
 
 export function FlowChart({ rows }: { rows: FlowRow[] }) {
   const data = rows

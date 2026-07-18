@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { Check, Lock, RadioTower } from "lucide-react";
 import type { OverviewBoard, OverviewRow } from "@kansoku/shared/types";
-import { errorMessage } from "../../api";
-import { client } from "../../client";
-import { fmt, signed } from "../../format";
-import { Badge, Button, Card, Dot, Empty, ErrorBox, MarketTime, Num, Switch } from "../../ui";
-import { useFeature } from "../../useFeature";
-import { useSymbolFollow } from "../../useSymbolFollow";
-import { directionTone } from "../../charts/intraday/directionLabels";
+import { errorMessage } from "@web/api";
+import { client } from "@web/client";
+import { fmt, signed } from "@web/format";
+import { Badge, Button, Card, Dot, Empty, ErrorBox, MarketTime, Num, Switch } from "@web/ui";
+import { useFeature } from "@web/useFeature";
+import { useSymbolFollow } from "@web/useSymbolFollow";
+import { directionTone } from "@web/charts/intraday/directionLabels";
 
 const DIRECTION_LABEL: Record<string, string> = { long: "做多", short: "做空", neutral: "观望" };
 

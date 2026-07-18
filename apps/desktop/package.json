@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsdown",
     "rebuild-native": "electron-rebuild -v 43.1.0 --force -w better-sqlite3",
-    "build:native": "cd native/sparkle-bridge && npm ci && npm run build",
+    "build:native": "npx electron-sparkle-updater rebuild --electron-version 43.1.0 --arch arm64",
     "predev": "node scripts/ensureDevNative.mjs",
     "dev": "node scripts/dev.mjs",
     "prestart": "node scripts/ensureDevNative.mjs",
@@ -27,6 +27,7 @@
     "better-sqlite3": "^12.11.1",
     "electron-context-menu": "^4.1.2",
     "electron-ipc-decorator": "^1.0.1",
+    "electron-sparkle-updater": "^0.1.0",
     "electron-window-state": "5.0.3",
     "hono": "4.12.30",
     "reflect-metadata": "0.2.2"

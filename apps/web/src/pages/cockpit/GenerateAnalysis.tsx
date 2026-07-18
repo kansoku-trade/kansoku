@@ -1,4 +1,4 @@
-import { Button, Spinner } from "../../ui";
+import { Button, Spinner } from "@web/ui";
 import { AnalysisRunDetails } from "./AnalysisRunDetails";
 import { useAnalystRun } from "./useAnalystRun";
 

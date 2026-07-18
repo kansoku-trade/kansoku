@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isAllowedNavigationUrl, isExternalHttpUrl } from "../../src/window/navigationGuard.js";
+import { isAllowedNavigationUrl, isExternalHttpUrl } from "@desktop/window/navigationGuard.js";
 
 describe("isAllowedNavigationUrl", () => {
   it("allows any app:// url in prod mode", () => {

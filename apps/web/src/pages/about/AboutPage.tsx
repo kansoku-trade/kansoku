@@ -1,9 +1,9 @@
 import { ArrowLeft } from "lucide-react";
 import { CREDITS } from "@kansoku/shared/credits";
 import { LICENSE_TEXT } from "@kansoku/shared/licenseText";
-import { navigate } from "../../router";
-import { Card, SectionTitle } from "../../ui";
-import { useTitle } from "../../useTitle";
+import { navigate } from "@web/router";
+import { Card, SectionTitle } from "@web/ui";
+import { useTitle } from "@web/useTitle";
 
 function AboutBackLink() {
   return (

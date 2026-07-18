@@ -10,7 +10,10 @@
     "noEmit": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "types": ["node"]
+    "types": ["node"],
+    "paths": {
+      "@server/*": ["./src/*"]
+    }
   },
   "include": ["src", "test/**/*.ts", "scripts/**/*.ts"]
 }

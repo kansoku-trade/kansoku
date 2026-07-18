@@ -1,4 +1,4 @@
-import { Card, SectionTitle } from "../../ui";
+import { Card, SectionTitle } from "@web/ui";
 import { LicensePanel } from "./LicensePanel";
 
 export function LicenseSection() {

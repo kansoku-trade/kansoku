@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Dot, MarketTime } from "../../ui";
+import { Dot, MarketTime } from "@web/ui";
 import type { RunningReassessStatus } from "./useAnalystRun";
 
 const PHASE_LABEL: Record<RunningReassessStatus["phase"], string> = {

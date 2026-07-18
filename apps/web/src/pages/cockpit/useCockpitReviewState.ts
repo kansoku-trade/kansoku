@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { useQuery } from "../../apiHooks";
-import { client } from "../../client";
+import { useQuery } from "@web/apiHooks";
+import { client } from "@web/client";
 import type { ReviewSection } from "./ReviewTab";
 
 export interface CockpitReviewState {

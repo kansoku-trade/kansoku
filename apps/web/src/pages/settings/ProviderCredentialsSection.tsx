@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { errorMessage } from "../../api";
-import { client } from "../../client";
-import { Button, Dot, Input, openModal, SectionTitle, Select } from "../../ui";
+import { errorMessage } from "@web/api";
+import { client } from "@web/client";
+import { Button, Dot, Input, openModal, SectionTitle, Select } from "@web/ui";
 import { DeviceLoginDialog } from "./DeviceLoginDialog";
 import {
   CODEX_PROVIDER,

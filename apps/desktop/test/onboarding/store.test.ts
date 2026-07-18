@@ -2,7 +2,7 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { createOnboardingFileStore } from "../../src/onboarding/store.js";
+import { createOnboardingFileStore } from "@desktop/onboarding/store.js";
 
 describe("createOnboardingFileStore", () => {
   let dir: string;

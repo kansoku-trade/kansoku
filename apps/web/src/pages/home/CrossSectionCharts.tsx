@@ -1,10 +1,10 @@
 import type { ChartDoc, ChartMeta } from "@kansoku/shared/types";
 import { marketDate } from "@kansoku/shared/time";
-import { useQuery } from "../../apiHooks";
-import { SimpleChartView } from "../../charts/simple/SimpleChartView";
-import { client } from "../../client";
-import { useQueryParam } from "../../router";
-import { Card, Empty, ErrorBox, SectionTitle } from "../../ui";
+import { useQuery } from "@web/apiHooks";
+import { SimpleChartView } from "@web/charts/simple/SimpleChartView";
+import { client } from "@web/client";
+import { useQueryParam } from "@web/router";
+import { Card, Empty, ErrorBox, SectionTitle } from "@web/ui";
 
 export const CROSS_SECTION_TYPES = "flow,cohort";
 

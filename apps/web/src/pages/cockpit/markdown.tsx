@@ -2,8 +2,8 @@ import { ArrowRight, ChartCandlestick, LayoutDashboard, Library } from "lucide-r
 import type { ReactNode } from "react";
 import { type Components, Streamdown } from "streamdown";
 import { parseAppDeepLink } from "@kansoku/shared/appDeepLink";
-import { navigate } from "../../router";
-import { openModal } from "../../ui";
+import { navigate } from "@web/router";
+import { openModal } from "@web/ui";
 import { researchRoute } from "../research/researchModel";
 
 type MarkdownVariant = "chat" | "report";

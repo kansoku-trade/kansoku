@@ -2,7 +2,7 @@ import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:f
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { isDataRootUsable } from "../../src/dataRoot/usability.js";
+import { isDataRootUsable } from "@desktop/dataRoot/usability.js";
 
 describe("isDataRootUsable", () => {
   let root: string;

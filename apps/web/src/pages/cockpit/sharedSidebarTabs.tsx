@@ -1,7 +1,7 @@
 import type { CockpitComment, IntradaySidebar, SymbolAnalysisRow } from "@kansoku/shared/types";
-import type { SidebarTab } from "../../charts/SidebarTabs";
-import { NewsTab } from "../../charts/intraday/tabs/NewsTab";
-import { Badge } from "../../ui";
+import type { SidebarTab } from "@web/charts/SidebarTabs";
+import { NewsTab } from "@web/charts/intraday/tabs/NewsTab";
+import { Badge } from "@web/ui";
 import { AiTab } from "./AiTab";
 import type { CockpitEnvState } from "./useCockpitEnv";
 import { EnvTab } from "./EnvTab";

@@ -15,7 +15,7 @@ import {
   updateTabScroll,
   updateTabTitle,
   type TabsState,
-} from "../../src/tabs/store.js";
+} from "@desktop/tabs/store.js";
 
 function homeState(): TabsState {
   return openTab(emptyTabsState(), "/");

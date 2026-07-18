@@ -16,8 +16,6 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  SPARKLE_VERSION: "2.9.4"
-  SPARKLE_TARBALL_SHA256: "ce89daf967db1e1893ed3ebd67575ed82d3902563e3191ca92aaec9164fbdef9"
   REPO_SLUG: "Innei/kansoku"
 
 jobs:
@@ -142,26 +140,16 @@ jobs:
         working-directory: apps/desktop
         run: rm -rf node_modules/better-sqlite3/build "$HOME/Library/Caches/electron-rebuild"
 
-      - name: fetch Sparkle tools
-        run: |
-          curl -sSL -o /tmp/sparkle.tar.xz \
-            "https://github.com/sparkle-project/Sparkle/releases/download/${SPARKLE_VERSION}/Sparkle-${SPARKLE_VERSION}.tar.xz"
-          echo "${SPARKLE_TARBALL_SHA256}  /tmp/sparkle.tar.xz" | shasum -a 256 -c -
-          mkdir -p /tmp/sparkle
-          tar -xf /tmp/sparkle.tar.xz -C /tmp/sparkle bin/
-          chmod +x /tmp/sparkle/bin/*
-          echo "/tmp/sparkle/bin" >> "$GITHUB_PATH"
-
       - name: inject SUPublicEDKey into electron-builder.yml
         env:
           SPARKLE_ED_PUBLIC_KEY: ${{ secrets.SPARKLE_ED_PUBLIC_KEY }}
+        # runs after `pnpm install` so the workspace bin resolves — root-level
+        # npx cannot see electron-sparkle-updater (it's only a dependency of
+        # apps/desktop, not the workspace root), so this uses pnpm --filter
+        # exec instead.
         run: |
-          PLACEHOLDER="SPARKLE_ED_PUBLIC_KEY_PLACEHOLDER"
-          if ! grep -q "$PLACEHOLDER" apps/desktop/electron-builder.yml; then
-            echo "::error::placeholder $PLACEHOLDER not found in apps/desktop/electron-builder.yml — has the Sparkle bridge integration point moved?"
-            exit 1
-          fi
-          sed -i '' "s|$PLACEHOLDER|$SPARKLE_ED_PUBLIC_KEY|" apps/desktop/electron-builder.yml
+          pnpm --filter @kansoku/desktop exec -- electron-sparkle-updater inject-public-key \
+            --file electron-builder.yml
 
       - name: build web
         run: pnpm --filter @kansoku/web build
@@ -213,78 +201,14 @@ jobs:
             echo "zip_name=$(basename apps/desktop/release/*.zip)"
           } >> "$GITHUB_OUTPUT"
 
-      - name: fetch existing appcast + last 2 release archives (delta base)
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          # old zips are fetched into the same dir generate_appcast scans so it can
-          # diff them for deltas, but they must NOT be re-uploaded as this release's
-          # own assets — the publish step uploads only this release's own
-          # dmg (dmg_path) and zip (zip_name), captured above, plus appcast.xml + *.delta.
-          # $REPO_SLUG (kansoku) also hosts non-desktop releases, so these
-          # queries filter to desktop-v* tags explicitly rather than trusting
-          # "latest across the whole repo" — an unrelated release published
-          # after a desktop one would otherwise get picked as the delta base.
-          ARCHIVE_DIR="${{ steps.archive.outputs.dir }}"
-          LATEST_TAG="$(gh release list --repo "$REPO_SLUG" --exclude-drafts --limit 20 --json tagName \
-            -q '[.[] | select(.tagName | startswith("desktop-v"))][0].tagName' 2>/dev/null || true)"
-          if [ -n "$LATEST_TAG" ]; then
-            gh release download --repo "$REPO_SLUG" --pattern 'appcast.xml' --dir "$ARCHIVE_DIR" "$LATEST_TAG" \
-              || echo "no appcast.xml asset on latest release $LATEST_TAG"
-          else
-            echo "no previous release (first release) — generate_appcast will create a fresh appcast.xml"
-          fi
-          PREV_TAGS="$(gh release list --repo "$REPO_SLUG" --exclude-drafts --limit 20 --json tagName \
-            -q '[.[] | select(.tagName | startswith("desktop-v"))][0:2][].tagName' 2>/dev/null || true)"
-          for T in $PREV_TAGS; do
-            gh release download --repo "$REPO_SLUG" --pattern '*.zip' --dir "$ARCHIVE_DIR" "$T" \
-              || echo "no zip asset on release $T, skipping"
-          done
-
-      - name: sign + generate appcast (EdDSA key lives only on a RAM disk)
-        env:
-          SPARKLE_ED_PRIVATE_KEY: ${{ secrets.SPARKLE_ED_PRIVATE_KEY }}
-        run: |
-          ARCHIVE_DIR="${{ steps.archive.outputs.dir }}"
-          TAG="${{ steps.version.outputs.tag }}"
-
-          DEV="$(hdiutil attach -nomount ram://16384 | awk '{print $1}')"
-          diskutil erasevolume HFS+ SparkleKeyRAM "$DEV" >/dev/null
-          KEY_DIR="/Volumes/SparkleKeyRAM"
-          KEY_FILE="$KEY_DIR/ed_private_key"
-          printf '%s' "$SPARKLE_ED_PRIVATE_KEY" > "$KEY_FILE"
-
-          generate_appcast \
-            --ed-key-file "$KEY_FILE" \
-            --download-url-prefix "https://github.com/${REPO_SLUG}/releases/download/${TAG}/" \
-            --embed-release-notes \
-            --full-release-notes-url "https://github.com/${REPO_SLUG}/releases" \
-            "$ARCHIVE_DIR"
-
-          dd if=/dev/urandom of="$KEY_FILE" bs=1024 count=4 conv=notrunc 2>/dev/null
-          rm -f "$KEY_FILE"
-          hdiutil detach "$DEV"
-
-      - name: repoint old appcast enclosures at their own release tags
-        run: node .github/scripts/fix-appcast-enclosure-urls.mjs "${{ steps.archive.outputs.dir }}/appcast.xml" "$REPO_SLUG"
-
-      - name: publish GitHub Release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          shopt -s nullglob
-          ARCHIVE_DIR="${{ steps.archive.outputs.dir }}"
-          TAG="${{ steps.version.outputs.tag }}"
-          ASSETS=(
-            "${{ steps.archive.outputs.dmg_path }}"
-            "$ARCHIVE_DIR/${{ steps.archive.outputs.zip_name }}"
-            "$ARCHIVE_DIR/appcast.xml"
-            "$ARCHIVE_DIR"/*.delta
-          )
-          # published immediately (no --draft): the app's Sparkle feed points at
-          # releases/latest/download/appcast.xml, so publishing IS the rollout.
-          gh release create "$TAG" \
-            --repo "$REPO_SLUG" \
-            --title "Kansoku $TAG" \
-            --notes-file "${{ steps.notes.outputs.file }}" \
-            "${ASSETS[@]}"
+      - name: sign, generate appcast, and publish GitHub Release (electron-sparkle-updater)
+        uses: Innei/electron-sparkle-updater/action@v1
+        with:
+          tag: ${{ steps.version.outputs.tag }}
+          repo: ${{ env.REPO_SLUG }}
+          tag-prefix: "desktop-v"
+          archive-dir: ${{ steps.archive.outputs.dir }}
+          ed-private-key: ${{ secrets.SPARKLE_ED_PRIVATE_KEY }}
+          publish: "true"
+          dmg-path: ${{ steps.archive.outputs.dmg_path }}
+          notes-file: ${{ steps.notes.outputs.file }}

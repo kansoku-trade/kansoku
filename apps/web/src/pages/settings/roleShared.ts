@@ -1,4 +1,4 @@
-import { client } from "../../client";
+import { client } from "@web/client";
 import {
   CODEX_PROVIDER,
   type Catalog,

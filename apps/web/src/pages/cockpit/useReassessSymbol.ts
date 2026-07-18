@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { errorMessage } from "../../api";
-import { client } from "../../client";
+import { errorMessage } from "@web/api";
+import { client } from "@web/client";
 
 export const REASON_TEXT: Record<string, string> = {
   "analyst layer disabled": "AI 分析未配置（服务端缺 analyst 模型）",

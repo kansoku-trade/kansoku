@@ -2,7 +2,7 @@ import { gsap } from "gsap";
 import { AtSign } from "lucide-react";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { SyntheticEvent } from "react";
-import { Kbd, Select } from "../../ui";
+import { Kbd, Select } from "@web/ui";
 import { ChatComposer } from "../cockpit/chat/ChatComposer";
 import { ConversationTranscript } from "../cockpit/chat/ConversationTranscript";
 import { useAssistantChatSession } from "../cockpit/chat/useChatSession";

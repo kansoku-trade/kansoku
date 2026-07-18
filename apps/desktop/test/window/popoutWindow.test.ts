@@ -53,10 +53,10 @@ const app = { getAppPath: vi.fn(() => "/app") };
 const screen = { getPrimaryDisplay: vi.fn(() => ({ workArea: { x: 0, y: 0, width: 1920, height: 1080 } })) };
 
 vi.mock("electron", () => ({ app, BrowserWindow, screen }));
-vi.mock("../../src/boot/env.js", () => ({ IS_DEV: false }));
+vi.mock("@desktop/boot/env.js", () => ({ IS_DEV: false }));
 
 const { createPopoutWindow, cascadePosition, isPopoutWindow, isValidPopoutSymbol, popoutRoute, popoutUrl } =
-  await import("../../src/window/popoutWindow.js");
+  await import("@desktop/window/popoutWindow.js");
 
 describe("isValidPopoutSymbol", () => {
   it("accepts plain tickers and dotted/suffixed forms", () => {

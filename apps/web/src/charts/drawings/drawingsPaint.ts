@@ -1,4 +1,4 @@
-import { theme } from "../../theme";
+import { theme } from "@web/theme";
 import type { DrawCmd, DrawFrame } from "./drawingsRender";
 
 const HANDLE_RADIUS = 4;

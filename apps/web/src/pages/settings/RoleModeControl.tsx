@@ -1,4 +1,4 @@
-import { SegmentedControl, type SegmentedControlOption } from "../../ui";
+import { SegmentedControl, type SegmentedControlOption } from "@web/ui";
 import { ROLE_LABEL, type Role, type RoleMode } from "./types";
 
 const MODE_OPTIONS = [

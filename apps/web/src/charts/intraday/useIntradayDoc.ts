@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ChartBuilt, ChartDoc, IntradayBuilt, TimeframeKey } from "@kansoku/shared/types";
-import { useQuery } from "../../apiHooks";
-import { client } from "../../client";
-import { useWsChannel } from "../../useWsChannel";
+import { useQuery } from "@web/apiHooks";
+import { client } from "@web/client";
+import { useWsChannel } from "@web/useWsChannel";
 
 const LIVE_TYPES = new Set(["flow", "intraday"]);
 

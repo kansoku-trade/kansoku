@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { useQuery } from "../../apiHooks";
-import { client } from "../../client";
-import { Card, SectionTitle, Switch } from "../../ui";
+import { useQuery } from "@web/apiHooks";
+import { client } from "@web/client";
+import { Card, SectionTitle, Switch } from "@web/ui";
 import { MARKET_LABEL, type Market } from "./types";
 import { toggleMarket } from "./watchedMarkets";
 import { useSaveQueue } from "./useSaveQueue";

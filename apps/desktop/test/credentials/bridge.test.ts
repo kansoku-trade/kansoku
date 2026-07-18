@@ -6,8 +6,8 @@ vi.mock("@kansoku/core/modules/credentials/credentials.service", () => ({
   credentialsService: { status },
 }));
 
-const { createCredentialsBridgeHandlers, registerCredentialsIpc } = await import("../../src/credentials/bridge.js");
-const { CREDENTIALS_CHANNELS } = await import("../../src/credentials/channels.js");
+const { createCredentialsBridgeHandlers, registerCredentialsIpc } = await import("@desktop/credentials/bridge.js");
+const { CREDENTIALS_CHANNELS } = await import("@desktop/credentials/channels.js");
 
 describe("credentials CLI bridge", () => {
   it("exposes only the read-only CLI status channel", async () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { applyCheckResult, createUpdaterStatusStore } from "../../src/updater/status.js";
+import { applyCheckResult, createUpdaterStatusStore } from "@desktop/updater/status.js";
 
 describe("applyCheckResult", () => {
   const available = {

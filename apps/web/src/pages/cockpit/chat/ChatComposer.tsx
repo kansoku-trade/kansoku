@@ -8,7 +8,7 @@ import type {
   ReactEventHandler,
   Ref,
 } from "react";
-import { Button, Input } from "../../../ui";
+import { Button, Input } from "@web/ui";
 
 type ChatComposerFieldElement = HTMLInputElement | HTMLTextAreaElement;
 

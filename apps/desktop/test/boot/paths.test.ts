@@ -2,7 +2,7 @@ import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { resolveDataRoot, resolveRepoRoot, scaffoldDataRoot } from "../../src/boot/paths.js";
+import { resolveDataRoot, resolveRepoRoot, scaffoldDataRoot } from "@desktop/boot/paths.js";
 
 describe("resolveRepoRoot", () => {
   it("lands on the repo root regardless of whether this module runs from src or a relocated build output", () => {

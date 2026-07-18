@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import { formatMarketClock, formatMarketDateTime, localMarketTimeLabel } from "@kansoku/shared/time";
-import { theme } from "../../theme";
+import { theme } from "@web/theme";
 
 export const UP_COLOR = theme.up;
 export const DOWN_COLOR = theme.down;

@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowLeft, Copy, FolderOpen, RefreshCw } from "lucide-react";
-import { navigate } from "../../router";
-import { useTitle } from "../../useTitle";
-import { Button, ErrorBox } from "../../ui";
+import { navigate } from "@web/router";
+import { useTitle } from "@web/useTitle";
+import { Button, ErrorBox } from "@web/ui";
 import { getDesktopLogsBridge } from "./desktopLogs";
 
 const POLL_MS = 2000;

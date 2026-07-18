@@ -1,6 +1,11 @@
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "tsdown";
 
 const isDev = process.env.KANSOKU_DESKTOP_DEV === "1";
+const desktopAlias = {
+  "@desktop": fileURLToPath(new URL("./src", import.meta.url)),
+  "@server": fileURLToPath(new URL("../server/src", import.meta.url)),
+};
 
 export default defineConfig([
   {
@@ -8,6 +13,7 @@ export default defineConfig([
     outDir: "dist-main",
     format: "esm",
     platform: "node",
+    alias: desktopAlias,
     define: {
       __DESKTOP_DEV__: JSON.stringify(isDev),
     },
@@ -42,6 +48,7 @@ export default defineConfig([
     outDir: "dist-preload",
     format: "cjs",
     platform: "node",
+    alias: desktopAlias,
     deps: { neverBundle: ["electron"] },
     dts: false,
     clean: true,

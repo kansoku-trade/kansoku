@@ -1,5 +1,5 @@
 import { ChevronDown, Maximize2, Minimize2 } from "lucide-react";
-import { MarketTime } from "../../../ui";
+import { MarketTime } from "@web/ui";
 import { ConversationTranscript } from "./ConversationTranscript";
 import type { ChatMode } from "./ChatDock";
 import type { ChatLiveTool, ChatRow, ChatSessionInfo } from "./useChatSession";

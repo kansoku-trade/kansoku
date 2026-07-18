@@ -2,7 +2,7 @@ import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:f
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { CHART_DATA_REL, validateDataRootCandidate } from "../../src/dataRoot/validate.js";
+import { CHART_DATA_REL, validateDataRootCandidate } from "@desktop/dataRoot/validate.js";
 
 describe("validateDataRootCandidate", () => {
   let root: string;

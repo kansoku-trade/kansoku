@@ -2,9 +2,9 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync 
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { createDesktopSecretBox } from "../../src/credentials/secretBox.js";
+import { createDesktopSecretBox } from "@desktop/credentials/secretBox.js";
 import { SecretBoxError } from "@kansoku/core/services/secretCrypto";
-import type { SafeStorageLike } from "../../src/credentials/store.js";
+import type { SafeStorageLike } from "@desktop/credentials/store.js";
 
 function fakeSafeStorage(available = true): SafeStorageLike {
   return {

@@ -1,13 +1,13 @@
 import type { CSSProperties } from "react";
 import { TriangleAlert } from "lucide-react";
 import type { IntradayBuilt, TimeframeKey } from "@kansoku/shared/types";
-import { fmt, signed } from "../../../format";
+import { fmt, signed } from "@web/format";
 import { TF_LABELS } from "../IntradayDashboard";
 import { conclusionOutdated, ReassessCta, type ConclusionReassess } from "../ConclusionCard";
 import { DIRECTION_COLOR, DIRECTION_LABEL } from "../directionLabels";
 import { AutoSignalItem, Pattern123Item, PriceZoneCard, TargetContextCard, TechRow } from "./predictionTabParts";
-import { theme } from "../../../theme";
-import { MarketTime, SectionTitle, TimeAgo } from "../../../ui";
+import { theme } from "@web/theme";
+import { MarketTime, SectionTitle, TimeAgo } from "@web/ui";
 
 const SIGNAL_ICON: Record<string, string> = { pin_bar: "📌", macd_divergence: "⚡", macd_beichi: "🌀" };
 const TF_ORDER: TimeframeKey[] = ["m5", "m15", "h1"];

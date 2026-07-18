@@ -18,9 +18,9 @@ vi.mock("@kansoku/core/modules/overview/overview.service", () => ({ overviewServ
 vi.mock("@kansoku/core/modules/settings/settings.service", () => ({ settingsService: settings }));
 vi.mock("@kansoku/core/modules/symbols/symbols.service", () => ({ symbolsService: symbols }));
 
-const { OverviewIpc } = await import("../../src/ipc/overviewIpc.js");
-const { SettingsIpc } = await import("../../src/ipc/settingsIpc.js");
-const { SymbolsIpc } = await import("../../src/ipc/symbolsIpc.js");
+const { OverviewIpc } = await import("@desktop/ipc/overviewIpc.js");
+const { SettingsIpc } = await import("@desktop/ipc/settingsIpc.js");
+const { SymbolsIpc } = await import("@desktop/ipc/symbolsIpc.js");
 const { unregisterProModuleForTests } = await import("@kansoku/core/pro/registry");
 
 beforeEach(() => {

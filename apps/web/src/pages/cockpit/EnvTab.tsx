@@ -1,9 +1,9 @@
 import { CartesianGrid, Legend, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { BenchmarkSeries, CockpitPosition, RelativeVolume } from "@kansoku/shared/types";
-import { hhmm, tooltipContentStyle, tooltipLabelStyle, tooltipTime } from "../../charts/simple/theme";
-import { fmt, signed, upDown } from "../../format";
-import { seriesPalette, theme } from "../../theme";
-import { Num, SectionTitle } from "../../ui";
+import { hhmm, tooltipContentStyle, tooltipLabelStyle, tooltipTime } from "@web/charts/simple/theme";
+import { fmt, signed, upDown } from "@web/format";
+import { seriesPalette, theme } from "@web/theme";
+import { Num, SectionTitle } from "@web/ui";
 
 const BENCHMARK_COLORS = [seriesPalette[0], seriesPalette[2], seriesPalette[3]];
 
