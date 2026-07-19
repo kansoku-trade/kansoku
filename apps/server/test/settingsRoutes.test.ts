@@ -39,6 +39,10 @@ function stubModels(
     getModels: base.getModels.bind(base),
     getModel: base.getModel.bind(base),
     refresh: base.refresh.bind(base),
+    checkAuth: base.checkAuth.bind(base),
+    getAvailable: base.getAvailable.bind(base),
+    login: base.login.bind(base),
+    logout: base.logout.bind(base),
     getAuth: base.getAuth.bind(base),
     stream: base.stream.bind(base),
     complete: base.complete.bind(base),
@@ -368,7 +372,7 @@ describe('POST /ai/reset-credentials', () => {
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ ok: true, data: { reset: true } });
 
-    expect(ctx.credentials.list()).toEqual([]);
+    expect(ctx.credentials.listEntries()).toEqual([]);
     expect(() => ctx.secretBox.decrypt('deepseek', oldRow.secret)).toThrow();
   });
 });

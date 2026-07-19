@@ -43,7 +43,7 @@ describe("credentialStore", () => {
     store.setApiKey("deepseek", "sk-real-1234");
     await expect(store.read("deepseek")).resolves.toEqual({ type: "api_key", key: "sk-real-1234" });
 
-    const entries = store.list();
+    const entries = store.listEntries();
     expect(entries).toEqual([
       expect.objectContaining({ provider: "deepseek", masked: "••••1234", ok: true }),
     ]);
@@ -64,7 +64,7 @@ describe("credentialStore", () => {
     store.setApiKey("anthropic", "sk-a");
     store.setApiKey("openai", "sk-b");
     store.wipeAll();
-    expect(store.list()).toEqual([]);
+    expect(store.listEntries()).toEqual([]);
   });
 
   it("logs a decrypt error once per provider and reports ok:false without plaintext", async () => {
@@ -80,7 +80,7 @@ describe("credentialStore", () => {
     }
     errorSpy.mockRestore();
 
-    const entries = store.list();
+    const entries = store.listEntries();
     expect(entries).toEqual([
       { provider: "mistral", kind: "api_key", masked: null, ok: false, updatedAt: expect.any(String) },
     ]);
@@ -120,7 +120,7 @@ describe("credentialStore", () => {
       createLicenseStore(db, secretBox).write(licenseRecord);
       store.setApiKey("deepseek", "sk-real-1234");
 
-      const entries = store.list();
+      const entries = store.listEntries();
 
       expect(entries).toEqual([expect.objectContaining({ provider: "deepseek" })]);
       expect(entries.some((e) => e.provider === "kansoku-license")).toBe(false);
@@ -133,7 +133,7 @@ describe("credentialStore", () => {
 
       store.wipeAll();
 
-      expect(store.list()).toEqual([]);
+      expect(store.listEntries()).toEqual([]);
       expect(licenseStore.read()).toEqual(licenseRecord);
     });
   });

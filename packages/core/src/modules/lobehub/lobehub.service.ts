@@ -1,4 +1,3 @@
-import { LOBEHUB_PROVIDER } from '../../ai/lobehub/types.js';
 import type { LobeHubApi } from '../../contract/lobehub.js';
 import { lobehubDeps } from './lobehub.deps.js';
 
@@ -10,7 +9,7 @@ export const lobehubService: LobeHubApi = {
   async pollDeviceLogin() {
     const deps = lobehubDeps();
     const result = await deps.gateway.pollDeviceLogin();
-    if (result.status === 'connected') await deps.models.refresh(LOBEHUB_PROVIDER);
+    if (result.status === 'connected') await deps.models.refresh({ force: true });
     return result;
   },
 

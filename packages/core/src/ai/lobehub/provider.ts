@@ -8,7 +8,7 @@ export function createLobeHubProvider(gateway: LobeHubCloudGateway) {
     name: 'LobeHub Cloud',
     baseUrl: gateway.baseUrl,
     models: [],
-    refreshModels: () => gateway.listModels(),
+    fetchModels: () => gateway.listModels(),
     auth: {
       oauth: {
         name: 'LobeHub Cloud',

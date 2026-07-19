@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ModelsRefreshOptions, ModelsRefreshResult } from '@earendil-works/pi-ai';
 import type { LobeHubCloudGateway, LobeHubDevicePollResult } from '@kansoku/core/ai/lobehub/types';
 import { setLobeHubDepsForTests } from '../src/modules/lobehub/lobehub.controller.js';
 import { tsukiRequest } from './helpers.js';
@@ -57,10 +58,10 @@ function createGateway(
   return { gateway, logout };
 }
 
-let refresh: (provider?: string) => Promise<void>;
+let refresh: (options?: ModelsRefreshOptions) => Promise<ModelsRefreshResult>;
 
 beforeEach(() => {
-  refresh = vi.fn(async () => {});
+  refresh = vi.fn(async () => ({ aborted: false, errors: new Map<string, Error>() }));
   const { gateway } = createGateway();
   setLobeHubDepsForTests({ gateway, models: { refresh } });
 });
@@ -101,7 +102,7 @@ describe('LobeHub provider routes', () => {
     expect(poll.status).toBe(200);
     expect(await poll.json()).toEqual({ ok: true, data: { status: 'connected' } });
     expect(refresh).toHaveBeenCalledOnce();
-    expect(refresh).toHaveBeenCalledWith('lobehub');
+    expect(refresh).toHaveBeenCalledWith({ force: true });
   });
 
   it('does not refresh models while authorization is pending and deletes the session', async () => {

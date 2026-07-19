@@ -10,7 +10,7 @@ import { CHART_DATA_DIR } from '../env.js';
 import { type AppCredentialStore, createCredentialStore } from './credentialStore.js';
 import { WebApiLobeHubCloudGateway } from './lobehub/gateway.js';
 import { createLobeHubProvider } from './lobehub/provider.js';
-import type { LobeHubCloudGateway } from './lobehub/types.js';
+import { LOBEHUB_PROVIDER, type LobeHubCloudGateway } from './lobehub/types.js';
 import { initModelsRuntime, SINGLE_KEY_PROVIDERS } from './modelsRuntime.js';
 import { parseModelRef } from './models.js';
 import { createSecretBox, type SecretBox } from './secretBox.js';
@@ -190,9 +190,17 @@ export function initAiSettings(
   });
   models.setProvider(createLobeHubProvider(lobehub));
   if (opts?.fetch || process.env.NODE_ENV !== 'test') {
-    void models.refresh('lobehub').catch((error) => {
-      console.warn(`initAiSettings: failed to load LobeHub Cloud models: ${String(error)}`);
-    });
+    void models
+      .refresh({ force: true })
+      .then((result) => {
+        const error = result.errors.get(LOBEHUB_PROVIDER);
+        if (error) {
+          console.warn(`initAiSettings: failed to load LobeHub Cloud models: ${String(error)}`);
+        }
+      })
+      .catch((error: unknown) => {
+        console.warn(`initAiSettings: failed to load LobeHub Cloud models: ${String(error)}`);
+      });
   }
   runtime = { secretBox: box, credentials, lobehub };
   return { models };

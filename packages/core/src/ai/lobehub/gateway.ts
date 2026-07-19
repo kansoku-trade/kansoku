@@ -451,7 +451,9 @@ export class WebApiLobeHubCloudGateway implements LobeHubCloudGateway {
         });
         if (response.ok) claims = object(await response.json()) ?? claims;
       }
-      const entry = this.credentials.list().find((item) => item.provider === LOBEHUB_PROVIDER);
+      const entry = this.credentials
+        .listEntries()
+        .find((item) => item.provider === LOBEHUB_PROVIDER);
       return {
         status: 'connected',
         email: text(claims.email),

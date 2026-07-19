@@ -1,7 +1,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import path from 'node:path';
-import type { Credential, CredentialStore } from '@earendil-works/pi-ai';
+import type { Credential, CredentialInfo, CredentialStore } from '@earendil-works/pi-ai';
 import { eq, ne } from 'drizzle-orm';
 import type { Db } from '../db/index.js';
 import { providerCredentials } from '../db/schema.js';
@@ -21,7 +21,7 @@ export interface CredentialListEntry {
 
 export interface AppCredentialStore extends CredentialStore {
   setApiKey(provider: string, key: string): void;
-  list(): CredentialListEntry[];
+  listEntries(): CredentialListEntry[];
   wipeAll(): void;
 }
 
@@ -207,7 +207,25 @@ export function createCredentialStore(
       writeDbCredential(provider, { type: 'api_key', key });
     },
 
-    list(): CredentialListEntry[] {
+    async list(): Promise<readonly CredentialInfo[]> {
+      const infos: CredentialInfo[] = [];
+      const codex = await readCodexCredential(codexAuthPath);
+      if (codex) infos.push({ providerId: CODEX_PROVIDER, type: codex.type });
+      const rows = db.select().from(providerCredentials).all();
+      for (const row of rows) {
+        if (row.provider === LICENSE_PROVIDER_KEY) continue;
+        try {
+          const plaintext = secretBox.decrypt(row.provider, row.secret);
+          const credential = JSON.parse(plaintext) as Credential;
+          infos.push({ providerId: row.provider, type: credential.type });
+        } catch {
+          continue;
+        }
+      }
+      return infos;
+    },
+
+    listEntries(): CredentialListEntry[] {
       const rows = db.select().from(providerCredentials).all();
       return rows
         .filter((row) => row.provider !== LICENSE_PROVIDER_KEY)

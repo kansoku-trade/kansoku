@@ -15,8 +15,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@earendil-works/pi-agent-core": "^0.80.7",
-    "@earendil-works/pi-ai": "^0.80.7",
+    "@earendil-works/pi-agent-core": "^0.80.10",
+    "@earendil-works/pi-ai": "^0.80.10",
     "@kansoku/pro-api": "workspace:*",
     "@kansoku/shared": "workspace:*",
     "better-sqlite3": "^12.11.1",
