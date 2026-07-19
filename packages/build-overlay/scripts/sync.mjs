@@ -78,7 +78,7 @@ function readPrivateOnlyManifest() {
     errors.push(`invalid private-only manifest ${manifestRelative}: ${error.message}`);
     return [];
   }
-  if (!Array.isArray(manifest.files)) {
+  if (manifest === null || typeof manifest !== 'object' || !Array.isArray(manifest.files)) {
     errors.push(`private-only manifest ${manifestRelative} must have a "files" array`);
     return [];
   }
@@ -112,7 +112,7 @@ for (const mapping of mappings) {
   }
 }
 
-for (const entry of privateOnlyFiles) {
+for (const entry of new Set(privateOnlyFiles)) {
   if (!overlayRelativePaths.has(entry)) {
     errors.push(`private-only manifest ${manifestRelative} has a stale entry: ${entry}`);
   }
