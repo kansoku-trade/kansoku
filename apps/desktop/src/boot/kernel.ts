@@ -90,13 +90,13 @@ export async function bootKernel() {
   };
 
   // Attempt at most one pro protocol per process (see protocolClaim.ts):
-  // initServerRuntime() already resolved the server-side edition and, when
-  // the packaged bundle was absent/locked/incompatible, fell back to the
-  // legacy loadPro() protocol and claimed it. Calling loadEdition() again
-  // here in that case would throw a protocol-conflict error, so only retry
-  // the edition protocol for the desktop runtime when the server side
-  // actually activated it — a legacy claim goes straight to the legacy
-  // desktop adapter without touching loadEdition() again.
+  // initServerRuntime() already resolved the server-side edition. protocol
+  // is 'legacy' both when it fell back to the legacy loadPro() protocol
+  // (bundle absent/locked) and when it rejected a present-but-invalid
+  // bundle and ran free instead (incompatible/failed) — either way no
+  // edition-protocol bundle is usable, so only retry loadEdition() for the
+  // desktop runtime when the server side actually activated it; otherwise
+  // go straight to the legacy desktop adapter.
   let desktopEdition: BaseDesktopEdition;
   if (protocol === 'edition') {
     const { encPath, virtualDir } = serverEncLayout(app.getAppPath());

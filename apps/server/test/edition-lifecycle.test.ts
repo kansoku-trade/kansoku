@@ -90,16 +90,13 @@ describe('initServerRuntime: loadEdition-first with legacy fallback', () => {
     expect(stopScheduler).toHaveBeenCalledTimes(1);
   });
 
-  const nonActiveStates = ['absent', 'locked', 'incompatible', 'failed'] as const;
+  const noBundleStates = ['absent', 'locked'] as const;
 
-  for (const state of nonActiveStates) {
+  for (const state of noBundleStates) {
     it(`state=${state} falls back to loadPro + LegacyCompatServerEdition, and reports protocol="legacy"`, async () => {
       vi.mocked(loadEdition).mockResolvedValueOnce({
         state,
         bundlePresent: state !== 'absent',
-        ...(state !== 'absent' && state !== 'locked'
-          ? { error: { code: 'PRO_EDITION_ABI_MISMATCH', message: 'boom' } }
-          : {}),
       } as EditionActivation<BaseServerEdition>);
       const infoSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
 
@@ -113,6 +110,35 @@ describe('initServerRuntime: loadEdition-first with legacy fallback', () => {
       expect(logLine).toContain(`state=${state}`);
 
       infoSpy.mockRestore();
+    });
+  }
+
+  const rejectedBundleStates = ['incompatible', 'failed'] as const;
+
+  for (const state of rejectedBundleStates) {
+    it(`state=${state} (bundle present but rejected) never calls loadPro, runs free via LegacyCompatServerEdition, and reports protocol="legacy"`, async () => {
+      vi.mocked(loadEdition).mockResolvedValueOnce({
+        state,
+        bundlePresent: true,
+        error: { code: 'PRO_EDITION_ABI_MISMATCH', message: 'boom' },
+      } as EditionActivation<BaseServerEdition>);
+      const infoSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      const { edition, protocol } = await initServerRuntime({ proAppDir: tmpAppDir });
+
+      expect(edition).toBeInstanceOf(LegacyCompatServerEdition);
+      expect(protocol).toBe('legacy');
+      expect(loadPro).not.toHaveBeenCalled();
+      const logLine = infoSpy.mock.calls.map((args) => String(args[0])).find((line) => line.startsWith('[edition]'));
+      expect(logLine).toContain('runtime=server');
+      expect(logLine).toContain(`state=${state}`);
+      const errorLine = errorSpy.mock.calls.map((args) => String(args[0])).find((line) => line.startsWith('[edition]'));
+      expect(errorLine).toContain(`state=${state}`);
+      expect(errorLine).toContain('free mode');
+
+      infoSpy.mockRestore();
+      errorSpy.mockRestore();
     });
   }
 

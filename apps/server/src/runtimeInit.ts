@@ -117,7 +117,7 @@ export async function initServerRuntime(
   if (activation.state === 'active' && activation.edition) {
     edition = activation.edition;
     protocol = 'edition';
-  } else {
+  } else if (activation.state === 'absent' || activation.state === 'locked') {
     await loadPro(opts?.proAppDir, opts?.proEntry);
     await getPro()?.initRuntime?.(getDb(), opts?.secretBox, {
       watchedMarkets: getActiveWatchedMarketsStore(),
@@ -126,6 +126,17 @@ export async function initServerRuntime(
       licenseGate: { isLicensed },
       kansokuHome: KANSOKU_HOME,
     });
+    edition = new LegacyCompatServerEdition(host);
+    protocol = 'legacy';
+  } else {
+    // A bundle was present but rejected (incompatible commit combo or a
+    // decrypt/ABI/init failure). Never fall back to loadPro()'s commit-unaware
+    // legacy index.mjs here — that would reactivate the exact bundle
+    // loadEdition just refused. Run free instead: skip loadPro() entirely so
+    // getPro() stays null and LegacyCompatServerEdition carries no pro modules.
+    console.error(
+      `[edition] runtime=server rejected bundle (state=${activation.state}); running in free mode instead of falling back to legacy pro loader`,
+    );
     edition = new LegacyCompatServerEdition(host);
     protocol = 'legacy';
   }
