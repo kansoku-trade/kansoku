@@ -120,9 +120,8 @@ export function proOverlayPlugin(options: ProOverlayOptions = {}): ProOverlayPlu
     async resolveId(source, importer) {
       if (source.startsWith('.')) return resolveProOverlayId(source, importer, options);
       if (options.enabled === false) return null;
-      if (source.includes('\0') || isAbsolute(source) || externalUrlPattern.test(source)) {
-        return null;
-      }
+      if (source.includes('\0') || externalUrlPattern.test(source)) return null;
+      if (importer === undefined) return null;
 
       const hostResolve = this.resolve;
       if (typeof hostResolve !== 'function') return null;

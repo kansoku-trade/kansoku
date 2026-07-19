@@ -234,4 +234,51 @@ describe('proOverlayPlugin host-first resolution', () => {
     const result = await resolveId.call(plugin, '@scope/settings', fixture.importer);
     expect(result).toBeNull();
   });
+
+  it('returns null without calling the host resolver for an absolute-path source with no importer', async () => {
+    const fixture = hostFixture();
+    const plugin = proOverlayPlugin();
+    let called = false;
+    const context = {
+      resolve: async () => {
+        called = true;
+        return { id: fixture.resolvedFile };
+      },
+    };
+    const result = await plugin.resolveId.call(context, fixture.resolvedFile, undefined);
+    expect(result).toBeNull();
+    expect(called).toBe(false);
+  });
+
+  it('resolves the overlay projection for an absolute-path source with an importer (alias rewritten to absolute)', async () => {
+    const fixture = hostFixture();
+    const plugin = proOverlayPlugin();
+    const aliasSource = join(fixture.root, 'alias-target.ts');
+    const context = { resolve: async () => ({ id: fixture.resolvedFile }) };
+    const result = await plugin.resolveId.call(context, aliasSource, fixture.importer);
+    expect(result).toBe(fixture.projection);
+  });
+
+  it('propagates the overlayRoot violation as a rejection when the host-resolved candidate symlink escapes overlayRoot', async () => {
+    const root = makeRoot('kansoku-overlay-host-root-');
+    const overlayRoot = join(root, 'overlay-root');
+    mkdirSync(overlayRoot, { recursive: true });
+    const importer = join(root, 'entry.ts');
+    writeFileSync(importer, '');
+    const resolvedFile = join(root, 'node', 'settings.ts');
+    mkdirSync(path.dirname(resolvedFile), { recursive: true });
+    writeFileSync(resolvedFile, '');
+    const outsideDir = join(root, 'outside');
+    mkdirSync(outsideDir, { recursive: true });
+    const outsideTarget = join(outsideDir, 'settings.pro.ts');
+    writeFileSync(outsideTarget, '');
+    const projection = join(root, 'node', 'settings.pro.ts');
+    symlinkSync(outsideTarget, projection);
+
+    const plugin = proOverlayPlugin({ overlayRoot });
+    const context = { resolve: async () => ({ id: resolvedFile }) };
+    await expect(plugin.resolveId.call(context, '@scope/settings', importer)).rejects.toThrow(
+      'resolves outside overlayRoot',
+    );
+  });
 });
