@@ -3,6 +3,7 @@ import type { CoreEditionHost, DesktopEditionHost, ServerEditionHost } from './h
 export abstract class BaseEdition<THost extends CoreEditionHost> {
   private initialized = false;
   private initializing = false;
+  private initializePromise: Promise<void> | null = null;
   private started = false;
   private startPromise: Promise<void> | null = null;
   private disposed = false;
@@ -14,12 +15,17 @@ export abstract class BaseEdition<THost extends CoreEditionHost> {
       throw new Error(`${this.constructor.name}: already initialized`);
     }
     this.initializing = true;
-    try {
-      await this.onInitialize();
-      this.initialized = true;
-    } finally {
-      this.initializing = false;
-    }
+    const promise = (async () => {
+      try {
+        await this.onInitialize();
+        this.initialized = true;
+      } finally {
+        this.initializing = false;
+        this.initializePromise = null;
+      }
+    })();
+    this.initializePromise = promise;
+    return promise;
   }
 
   async start(): Promise<void> {
@@ -45,6 +51,12 @@ export abstract class BaseEdition<THost extends CoreEditionHost> {
   async dispose(): Promise<void> {
     if (this.disposed) return;
     this.disposed = true;
+    if (this.initializePromise) {
+      await this.initializePromise.catch(() => {});
+    }
+    if (this.startPromise) {
+      await this.startPromise.catch(() => {});
+    }
     await this.onDispose();
   }
 

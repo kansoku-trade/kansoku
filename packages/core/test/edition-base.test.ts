@@ -19,6 +19,7 @@ function fakeHost(): CoreEditionHost {
 
 class TestEdition extends BaseEdition<CoreEditionHost> {
   readonly calls: string[] = [];
+  readonly runningThings: string[] = [];
   initFn: () => void | Promise<void> = () => {};
   startFn: () => void | Promise<void> = () => {};
 
@@ -29,10 +30,12 @@ class TestEdition extends BaseEdition<CoreEditionHost> {
 
   protected async onStart(): Promise<void> {
     await this.startFn();
+    this.runningThings.push('scheduler');
     this.calls.push('start');
   }
 
   protected async onDispose(): Promise<void> {
+    this.runningThings.length = 0;
     this.calls.push('dispose');
   }
 }
@@ -159,6 +162,68 @@ describe('BaseEdition lifecycle', () => {
     await expect(first).resolves.toBeUndefined();
     await expect(second).resolves.toBeUndefined();
     expect(edition.calls.filter((call) => call === 'start')).toHaveLength(1);
+  });
+
+  it('clears in-flight state after a failed concurrent start, allowing retry', async () => {
+    const edition = new TestEdition(fakeHost());
+    await edition.initialize();
+
+    edition.startFn = () => {
+      throw new Error('boom');
+    };
+
+    const first = edition.start();
+    const second = edition.start();
+
+    await expect(first).rejects.toThrow('boom');
+    await expect(second).rejects.toThrow('boom');
+    expect(edition.calls.filter((call) => call === 'start')).toHaveLength(0);
+
+    edition.startFn = () => {};
+    await expect(edition.start()).resolves.toBeUndefined();
+    expect(edition.calls.filter((call) => call === 'start')).toHaveLength(1);
+  });
+
+  it('dispose during a pending start awaits onStart before running onDispose, and stops what was started', async () => {
+    const edition = new TestEdition(fakeHost());
+    await edition.initialize();
+
+    let resolveStart: () => void = () => {};
+    edition.startFn = () =>
+      new Promise<void>((resolve) => {
+        resolveStart = resolve;
+      });
+
+    const startPromise = edition.start();
+    const disposePromise = edition.dispose();
+
+    expect(edition.calls).toEqual(['init']);
+    resolveStart();
+
+    await expect(startPromise).resolves.toBeUndefined();
+    await expect(disposePromise).resolves.toBeUndefined();
+    expect(edition.calls).toEqual(['init', 'start', 'dispose']);
+    expect(edition.runningThings).toEqual([]);
+  });
+
+  it('dispose during a pending initialize awaits it (swallowing rejection) before running onDispose', async () => {
+    const edition = new TestEdition(fakeHost());
+
+    let rejectInit: (error: Error) => void = () => {};
+    edition.initFn = () =>
+      new Promise<void>((_, reject) => {
+        rejectInit = reject;
+      });
+
+    const initPromise = edition.initialize();
+    const disposePromise = edition.dispose();
+
+    expect(edition.calls).toEqual([]);
+    rejectInit(new Error('boom'));
+
+    await expect(initPromise).rejects.toThrow('boom');
+    await expect(disposePromise).resolves.toBeUndefined();
+    expect(edition.calls).toEqual(['dispose']);
   });
 });
 
