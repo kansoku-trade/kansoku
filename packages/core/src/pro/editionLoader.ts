@@ -25,6 +25,7 @@ export interface EditionActivation<TEdition> {
   state: EditionActivationState;
   bundlePresent: boolean;
   keyId?: string;
+  buildId?: string;
   edition?: TEdition;
   error?: EditionActivationError;
 }
@@ -54,11 +55,23 @@ function isSafeVirtualEntryPath(entryPath: string): boolean {
   return !isAbsolute(normalized) && normalized !== ".." && !normalized.startsWith("../");
 }
 
-type BundleParseResult =
+const EDITION_RUNTIME_KINDS: readonly EditionRuntimeKind[] = ["server", "desktop", "web"];
+
+function isEditionRuntimeKind(value: string): value is EditionRuntimeKind {
+  return (EDITION_RUNTIME_KINDS as readonly string[]).includes(value);
+}
+
+export type BundleParseResult =
   | { ok: true; value: EditionBundleManifest }
   | { ok: false; message: string; cause?: unknown };
 
-function parseBundleManifest(files: Record<string, string>): BundleParseResult {
+export function parseBundleManifest(files: Record<string, string>): BundleParseResult {
+  for (const fileKey of Object.keys(files)) {
+    if (!isSafeVirtualEntryPath(fileKey)) {
+      return { ok: false, message: `bundle manifest file "${fileKey}" escapes the virtual root` };
+    }
+  }
+
   const raw = files["bundle.json"];
   if (raw === undefined) {
     return { ok: false, message: "bundle.json missing from pro bundle manifest" };
@@ -99,7 +112,9 @@ function parseBundleManifest(files: Record<string, string>): BundleParseResult {
     if (!isSafeVirtualEntryPath(value)) {
       return { ok: false, message: `bundle.json entries.${key} path "${value}" escapes the virtual root` };
     }
-    entries[key as EditionRuntimeKind] = value;
+    if (isEditionRuntimeKind(key)) {
+      entries[key] = value;
+    }
   }
 
   return {
@@ -119,9 +134,15 @@ function activationError<TEdition>(
   state: "incompatible" | "failed",
   code: EditionErrorCode,
   message: string,
-  cause?: unknown,
+  options?: { cause?: unknown; keyId?: string; buildId?: string },
 ): EditionActivation<TEdition> {
-  return { state, bundlePresent: true, error: { code, message, cause } };
+  return {
+    state,
+    bundlePresent: true,
+    keyId: options?.keyId,
+    buildId: options?.buildId,
+    error: { code, message, cause: options?.cause },
+  };
 }
 
 export async function loadEdition<THost, TEdition>(
@@ -138,25 +159,34 @@ export async function loadEdition<THost, TEdition>(
     return { state: "locked", bundlePresent: true };
   }
 
-  const blob = readFileSync(options.encPath);
+  let blob: Buffer;
+  try {
+    blob = readFileSync(options.encPath);
+  } catch (cause) {
+    return activationError<TEdition>(
+      "failed",
+      "PRO_BUNDLE_DECRYPT_FAILED",
+      "pro.enc could not be read after it was confirmed present",
+      { cause },
+    );
+  }
+
   let manifest: ProManifest;
   try {
     manifest = decryptProBlob(blob, options.keyHex);
   } catch (cause) {
     if (cause instanceof EncDecryptError) {
-      return activationError<TEdition>("failed", "PRO_BUNDLE_DECRYPT_FAILED", cause.message, cause);
+      return activationError<TEdition>("failed", "PRO_BUNDLE_DECRYPT_FAILED", cause.message, { cause });
     }
     throw cause;
   }
 
   const bundleResult = parseBundleManifest(manifest.files);
   if (!bundleResult.ok) {
-    return activationError<TEdition>(
-      "failed",
-      "PRO_BUNDLE_MANIFEST_INVALID",
-      bundleResult.message,
-      bundleResult.cause,
-    );
+    return activationError<TEdition>("failed", "PRO_BUNDLE_MANIFEST_INVALID", bundleResult.message, {
+      cause: bundleResult.cause,
+      keyId: manifest.keyId,
+    });
   }
   const bundle = bundleResult.value;
 
@@ -165,6 +195,7 @@ export async function loadEdition<THost, TEdition>(
       "incompatible",
       "PRO_EDITION_ABI_MISMATCH",
       `edition ABI mismatch: bundle requires ${bundle.editionAbiVersion}, host supports ${EDITION_ABI_VERSION}`,
+      { keyId: manifest.keyId, buildId: bundle.buildId },
     );
   }
 
@@ -173,6 +204,7 @@ export async function loadEdition<THost, TEdition>(
       "incompatible",
       "PRO_EDITION_ABI_MISMATCH",
       `public commit mismatch: host expects ${options.expectedPublicCommit}, bundle built against ${bundle.publicCommit}`,
+      { keyId: manifest.keyId, buildId: bundle.buildId },
     );
   }
 
@@ -182,13 +214,25 @@ export async function loadEdition<THost, TEdition>(
       "incompatible",
       "PRO_EDITION_ENTRY_MISSING",
       `no edition entry for runtime "${options.runtime}"`,
+      { keyId: manifest.keyId, buildId: bundle.buildId },
     );
   }
 
   const virtualRoot = join(options.virtualDir, createHash("sha256").update(blob).digest("hex").slice(0, 16));
   registerManifestFiles(manifest.files, virtualRoot);
   const entryUrl = virtualModuleUrl(virtualRoot, entryPath);
-  const namespace = (await import(entryUrl)) as Record<string, unknown>;
+
+  let namespace: Record<string, unknown>;
+  try {
+    namespace = (await import(entryUrl)) as Record<string, unknown>;
+  } catch (cause) {
+    return activationError<TEdition>(
+      "failed",
+      "PRO_EDITION_INIT_FAILED",
+      `edition entry "${entryPath}" threw while importing for runtime "${options.runtime}"`,
+      { cause, keyId: manifest.keyId, buildId: bundle.buildId },
+    );
+  }
   const entryModule = (namespace.default ?? namespace) as Partial<EditionEntry<THost, TEdition>>;
 
   if (
@@ -200,6 +244,7 @@ export async function loadEdition<THost, TEdition>(
       "incompatible",
       "PRO_EDITION_ABI_MISMATCH",
       `edition entry "${entryPath}" failed ABI validation for runtime "${options.runtime}"`,
+      { keyId: manifest.keyId, buildId: bundle.buildId },
     );
   }
 
@@ -211,9 +256,9 @@ export async function loadEdition<THost, TEdition>(
       "failed",
       "PRO_EDITION_INIT_FAILED",
       `createEdition threw for runtime "${options.runtime}"`,
-      cause,
+      { cause, keyId: manifest.keyId, buildId: bundle.buildId },
     );
   }
 
-  return { state: "active", bundlePresent: true, keyId: manifest.keyId, edition };
+  return { state: "active", bundlePresent: true, keyId: manifest.keyId, buildId: bundle.buildId, edition };
 }

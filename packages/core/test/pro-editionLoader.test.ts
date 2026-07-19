@@ -1,13 +1,13 @@
 import { createCipheriv, randomBytes } from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { gzipSync } from "node:zlib";
 import { afterEach, describe, expect, it } from "vitest";
-import { loadEdition } from "../src/pro/editionLoader.js";
+import { loadEdition, parseBundleManifest } from "../src/pro/editionLoader.js";
 
 const KEY_HEX = "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff";
 const WRONG_KEY_HEX = "ff".repeat(32);
@@ -57,6 +57,8 @@ const THROWING_SERVER_ENTRY = [
   "}",
   "",
 ].join("\n");
+
+const THROWING_AT_TOP_LEVEL_ENTRY = ['throw new Error("boom at top-level evaluation");', ""].join("\n");
 
 const SERVER_ENTRY_V2 = [
   "export const abiVersion = 1;",
@@ -162,8 +164,43 @@ describe("loadEdition (in-process, no dynamic import reached)", () => {
     expect(activation.error?.code).toBe("PRO_BUNDLE_DECRYPT_FAILED");
   });
 
+  it("failed: encPath exists as a directory, readFileSync fails after existsSync check", async () => {
+    const root = mkdtempSync(join(tmpdir(), "kansoku-edition-"));
+    roots.push(root);
+    const encPath = join(root, "pro.enc");
+    mkdirSync(encPath);
+    const activation = await loadEdition({
+      encPath,
+      virtualDir: join(root, "vdir"),
+      runtime: "server",
+      keyHex: KEY_HEX,
+      host: {},
+    });
+    expect(activation.state).toBe("failed");
+    expect(activation.error?.code).toBe("PRO_BUNDLE_DECRYPT_FAILED");
+  });
+
   it("failed: bundle.json missing from the file set", async () => {
     const { encPath, root } = stageEnc({ "server/index.mjs": SERVER_ENTRY });
+    roots.push(root);
+    const activation = await loadEdition({
+      encPath,
+      virtualDir: join(root, "vdir"),
+      runtime: "server",
+      keyHex: KEY_HEX,
+      host: {},
+    });
+    expect(activation.state).toBe("failed");
+    expect(activation.error?.code).toBe("PRO_BUNDLE_MANIFEST_INVALID");
+    expect(activation.keyId).toBe("test");
+    expect(activation.buildId).toBeUndefined();
+  });
+
+  it("failed: manifest file key escapes the virtual root", async () => {
+    const { encPath, root } = stageEnc({
+      ...FIXTURE_FILES,
+      "../evil.mjs": "export const pwned = true;",
+    });
     roots.push(root);
     const activation = await loadEdition({
       encPath,
@@ -233,6 +270,8 @@ describe("loadEdition (in-process, no dynamic import reached)", () => {
     });
     expect(activation.state).toBe("incompatible");
     expect(activation.error?.code).toBe("PRO_EDITION_ABI_MISMATCH");
+    expect(activation.keyId).toBe("test");
+    expect(activation.buildId).toBe("test-v1");
   });
 
   it("incompatible: editionAbiVersion mismatch (bundle older than host)", async () => {
@@ -280,6 +319,25 @@ describe("loadEdition (in-process, no dynamic import reached)", () => {
   });
 });
 
+describe("parseBundleManifest (unknown runtime keys)", () => {
+  it("filters unknown runtime keys out of entries instead of force-casting them", () => {
+    const files: Record<string, string> = {
+      "bundle.json": Buffer.from(
+        bundleJson({
+          entries: { server: "server/index.mjs", desktop: "desktop/index.mjs", tablet: "tablet/index.mjs" },
+        }),
+      ).toString("base64"),
+    };
+
+    const result = parseBundleManifest(files);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.entries).toEqual({ server: "server/index.mjs", desktop: "desktop/index.mjs" });
+    expect(Object.keys(result.value.entries)).not.toContain("tablet");
+  });
+});
+
 // registerHooks-based virtual module resolution only fires under Node's native
 // ESM loader; vitest's vite-node runner intercepts import() before Node ever
 // sees it (confirmed empirically: an in-process registerHooks + import() of a
@@ -306,6 +364,7 @@ const RUNNER_SOURCE = [
   "    state: activation.state,",
   "    bundlePresent: activation.bundlePresent,",
   "    keyId: activation.keyId ?? null,",
+  "    buildId: activation.buildId ?? null,",
   "    errorCode: activation.error ? activation.error.code : null,",
   "    edition: activation.edition ?? null,",
   "  };",
@@ -327,6 +386,7 @@ interface ScenarioResult {
   state: string;
   bundlePresent: boolean;
   keyId: string | null;
+  buildId: string | null;
   errorCode: string | null;
   edition: unknown;
 }
@@ -448,6 +508,54 @@ describe("loadEdition (spawned Node process, real dynamic import)", () => {
     expect(results.initFailed!.state).toBe("failed");
     expect(results.initFailed!.errorCode).toBe("PRO_EDITION_INIT_FAILED");
     expect(results.initFailed!.edition).toBeNull();
+    expect(results.initFailed!.keyId).toBe("test");
+    expect(results.initFailed!.buildId).toBe("test-v1");
+  });
+
+  it("failed: entry module throws at top-level evaluation yields PRO_EDITION_INIT_FAILED", () => {
+    const { encPath, root } = stageEnc({
+      "bundle.json": bundleJson(),
+      "server/index.mjs": THROWING_AT_TOP_LEVEL_ENTRY,
+      "desktop/index.mjs": DESKTOP_ENTRY,
+    });
+    roots.push(root);
+    const results = runEditionScenarios([
+      {
+        id: "topLevelThrow",
+        encPath,
+        virtualDir: join(root, "vdir-top-level-throw"),
+        runtime: "server",
+        keyHex: KEY_HEX,
+        host: { name: "frank" },
+      },
+    ]);
+    expect(results.topLevelThrow!.state).toBe("failed");
+    expect(results.topLevelThrow!.errorCode).toBe("PRO_EDITION_INIT_FAILED");
+    expect(results.topLevelThrow!.edition).toBeNull();
+    expect(results.topLevelThrow!.keyId).toBe("test");
+    expect(results.topLevelThrow!.buildId).toBe("test-v1");
+  });
+
+  it("active: unknown runtime key in bundle.json entries does not prevent a valid runtime from loading", () => {
+    const { encPath, root } = stageEnc({
+      ...FIXTURE_FILES,
+      "bundle.json": bundleJson({
+        entries: { server: "server/index.mjs", desktop: "desktop/index.mjs", tablet: "desktop/index.mjs" },
+      }),
+    });
+    roots.push(root);
+    const results = runEditionScenarios([
+      {
+        id: "serverActiveWithUnknownKey",
+        encPath,
+        virtualDir: join(root, "vdir-unknown-runtime-key"),
+        runtime: "server",
+        keyHex: KEY_HEX,
+        host: { name: "grace" },
+      },
+    ]);
+    expect(results.serverActiveWithUnknownKey!.state).toBe("active");
+    expect(results.serverActiveWithUnknownKey!.edition).toEqual({ kind: "server", name: "grace" });
   });
 
   it("stale-module guard: two different bundles loaded through the same virtualDir do not reuse a stale ESM evaluation", () => {
