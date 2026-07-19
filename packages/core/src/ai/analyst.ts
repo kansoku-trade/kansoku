@@ -19,6 +19,7 @@ import { marketOf } from '../services/symbol.utils.js';
 import { validatePrediction } from '../services/predictionRules.js';
 import { loadSkillIndex, readSkill, type SkillMeta } from '../services/skills.js';
 import { createChart } from '../services/store.js';
+import { prepareProAiTurn } from '../pro/aiExtension.js';
 import { AgentTimeoutError, type AiAgentFactory, createAgentSession } from './agentSession.js';
 import {
   AnalystMessagesEngine,
@@ -30,7 +31,12 @@ import {
   DISCIPLINE_SKILL,
   DisciplineMissingError,
 } from './promptPolicy.js';
-import { buildResearchTools, createDefaultExec, type ExecFn } from './agentTools.js';
+import {
+  buildResearchTools,
+  createDefaultExec,
+  type ExecFn,
+  type FsReadMount,
+} from './agentTools.js';
 import { appendComment as defaultAppendComment } from './comments.js';
 import { buildDataPackTool, buildKlineTool, buildNewsTool, textResult } from './dataTools.js';
 import { buildReassessPack as defaultBuildReassessPack, type ReassessPack } from './datapack.js';
@@ -109,7 +115,8 @@ const scenarioSchema = Type.Object({
   probability: Type.Number({
     minimum: 0,
     maximum: 100,
-    description: 'A percentage from 0 to 100; the three scenario probabilities should sum to approximately 100.',
+    description:
+      'A percentage from 0 to 100; the three scenario probabilities should sum to approximately 100.',
   }),
   trigger: Type.Optional(Type.String()),
   path: Type.Optional(Type.String()),
@@ -119,8 +126,12 @@ const rangePlanSchema = Type.Object({
   condition: Type.Optional(Type.String()),
   long_tactic: Type.Optional(Type.String()),
   short_tactic: Type.Optional(Type.String()),
-  low: Type.Optional(Type.Number({ description: 'Lower bound of the range; required for neutral.' })),
-  high: Type.Optional(Type.Number({ description: 'Upper bound of the range; required for neutral.' })),
+  low: Type.Optional(
+    Type.Number({ description: 'Lower bound of the range; required for neutral.' }),
+  ),
+  high: Type.Optional(
+    Type.Number({ description: 'Upper bound of the range; required for neutral.' }),
+  ),
 });
 
 const predictionSchema = Type.Object({
@@ -129,7 +140,9 @@ const predictionSchema = Type.Object({
   entry_plan: Type.Optional(entryPlanSchema),
   scenarios: Type.Array(scenarioSchema, { minItems: 2, maxItems: 4 }),
   range_plan: Type.Optional(rangePlanSchema),
-  comment: Type.String({ description: 'A one-sentence plain-language conclusion to store as a comment.' }),
+  comment: Type.String({
+    description: 'A one-sentence plain-language conclusion to store as a comment.',
+  }),
 });
 
 type PredictionParams = Static<typeof predictionSchema>;
@@ -262,7 +275,8 @@ export function buildAnalystSkillContexts(
       SKILL_NAME,
       {
         content: skillText,
-        fallbackDescription: 'Multi-period direction, scenarios, and trade-plan analysis for one symbol across intraday to several trading days.',
+        fallbackDescription:
+          'Multi-period direction, scenarios, and trade-plan analysis for one symbol across intraday to several trading days.',
       },
     ],
   ]);
@@ -302,7 +316,8 @@ export function buildSubmitPredictionTool(
   return {
     name: 'submit_prediction',
     label: 'Submit Prediction',
-    description: 'Submit the complete conclusion and create the chart. Call exactly once after research is complete.',
+    description:
+      'Submit the complete conclusion and create the chart. Call exactly once after research is complete.',
     parameters: predictionSchema,
     execute: async (_id, params: PredictionParams) => {
       if (hooks.isDone()) return textResult('skipped', true);
@@ -351,6 +366,7 @@ function buildTools(
     exec: ExecFn;
     now: () => number;
     skillIndex: SkillMeta[];
+    readMounts: FsReadMount[];
   },
   state: RunState,
   isDone: () => boolean,
@@ -415,6 +431,7 @@ function buildTools(
     },
     skillIndex: deps.skillIndex,
     onSkillRead: (name) => state.loadedSkillIds.add(name),
+    readMounts: deps.readMounts,
   }).tools;
 
   return [
@@ -470,6 +487,13 @@ export async function executeAnalystRun(symbol: string, deps: AnalystDeps): Prom
     reportProgress('researching', '正在整理多周期行情、资金流与持仓');
     const dataPack = await (deps.buildReassessPack ?? defaultBuildReassessPack)(symbol);
     if (dataPack.prediction_chart_id) state.chartId = dataPack.prediction_chart_id;
+    const sessionId = `analyst:${symbol}:${runStartedAt}`;
+    const proTurn = await prepareProAiTurn({
+      surface: 'analyst',
+      sessionId,
+      symbol,
+      market: marketOf(symbol),
+    });
 
     const tools = buildTools(
       symbol,
@@ -487,6 +511,7 @@ export async function executeAnalystRun(symbol: string, deps: AnalystDeps): Prom
         exec: deps.exec ?? createDefaultExec(repoRoot),
         now,
         skillIndex,
+        readMounts: proTurn.readMounts,
       },
       state,
       () => session?.isDone() ?? false,
@@ -509,6 +534,7 @@ export async function executeAnalystRun(symbol: string, deps: AnalystDeps): Prom
         loadedSkillIds: [...state.loadedSkillIds].sort(),
         submitted: state.submitted,
       }),
+      extraProcessors: proTurn.processors,
     });
 
     session = createAgentSession({
@@ -518,19 +544,23 @@ export async function executeAnalystRun(symbol: string, deps: AnalystDeps): Prom
       model: deps.model,
       systemPrompt: buildAnalystSystemPrompt(),
       tools,
-      sessionId: `analyst:${symbol}:${runStartedAt}`,
+      sessionId,
       transformContext: async (messages) => (await messagesEngine.process(messages)).messages,
       agentFactory: deps.agentFactory,
     });
 
     reportProgress('researching', '正在规划分析步骤并读取市场信息');
-    await session.runTurn(`Reassess the short-term multi-period conclusion for ${symbol}.`, timeoutMs);
+    await session.runTurn(
+      `Reassess the short-term multi-period conclusion for ${symbol}.`,
+      timeoutMs,
+    );
 
     // One explicit retry, mirroring chat/commentator: a rejected submit only returns a tool
     // result, so without an outer nudge the model is free to give up and ship nothing.
     if (!state.submitted && !session.agent.state?.errorMessage) {
       await session.runTurn(ANALYST_RETRY_PROMPT, timeoutMs);
     }
+    proTurn.onTurnComplete?.(session.agent.state?.messages ?? []);
 
     if (!state.submitted) {
       const errorMessage = session.agent.state?.errorMessage;

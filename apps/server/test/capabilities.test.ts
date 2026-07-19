@@ -1,9 +1,6 @@
 import type { ProModule } from '@kansoku/pro-api';
 import { afterEach, describe, expect, it } from 'vitest';
-import {
-  setLicenseManagerForTests,
-  type LicenseManager,
-} from '@kansoku/core/license/licenseState';
+import { setLicenseManagerForTests, type LicenseManager } from '@kansoku/core/license/licenseState';
 import { loadPro } from '@kansoku/core/pro/loader';
 import {
   freeHooks,
@@ -29,7 +26,7 @@ function fakeLicenseManager(overrides: Partial<LicenseManager> = {}): LicenseMan
 }
 
 function allFeatures(state: 'absent' | 'locked' | 'active') {
-  return { 'symbol-follow': state, 'deep-dive': state, 'research-ai': state };
+  return { 'symbol-follow': state, 'deep-dive': state, 'research-ai': state, 'memory': state };
 }
 
 describe('GET /capabilities', () => {

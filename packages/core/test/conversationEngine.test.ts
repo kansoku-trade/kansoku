@@ -209,6 +209,35 @@ describe('createConversationEngine persistence', () => {
     expect(events).toEqual([{ event: 'done' }]);
   });
 
+  it('notifies the non-blocking after-turn hook with the persisted visible turn', async () => {
+    const engine = makeEngine();
+    const store = memoryStore();
+    const completed: AgentMessage[][] = [];
+    const reply = assistantMessage('持久回答');
+    const factory: AiAgentFactory = (config) => ({
+      prompt: async () => {},
+      abort: () => {},
+      state: {
+        messages: [
+          ...(config.messages ?? []),
+          { role: 'user', content: '记住这个偏好', timestamp: 0 },
+          reply,
+        ],
+      },
+    });
+
+    const result = await engine.run(
+      'after-turn',
+      '记住这个偏好',
+      makeTurn(store, factory, {
+        onTurnComplete: (messages) => completed.push([...messages]),
+      }),
+    );
+    if (result.started) await result.done;
+
+    expect(completed).toEqual([[{ role: 'user', content: '记住这个偏好', timestamp: 0 }, reply]]);
+  });
+
   it('synthesizes a partial assistant row when the turn fails after streaming', async () => {
     const engine = makeEngine();
     const store = memoryStore();

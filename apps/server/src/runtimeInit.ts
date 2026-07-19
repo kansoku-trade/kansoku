@@ -2,6 +2,7 @@ import type { SecretBox } from '@kansoku/pro-api';
 import { getAiRuntime, initAiSettings } from '@kansoku/core/ai/initAiSettings';
 import { getActiveSettingsStore } from '@kansoku/core/ai/settingsStore';
 import { getDb } from '@kansoku/core/db/index';
+import { KANSOKU_HOME } from '@kansoku/core/env';
 import { setProductionHost } from '@kansoku/core/license/dodoEnv';
 import { isLicensed } from '@kansoku/core/license/licenseGate';
 import { startLicenseRevalidation } from '@kansoku/core/license/licenseSchedule';
@@ -65,5 +66,6 @@ export async function initServerRuntime(opts?: ServerRuntimeOptions): Promise<vo
     aiSettingsStore: getActiveSettingsStore(),
     production: productionHost,
     licenseGate: { isLicensed },
+    kansokuHome: KANSOKU_HOME,
   });
 }

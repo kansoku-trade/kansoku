@@ -62,6 +62,7 @@ import {
   rejectAnswer,
   verifyDirectionalRead,
 } from './verifyRead.js';
+import { prepareProAiTurn } from '../pro/aiExtension.js';
 
 const COMMENT_CAP = 20;
 const RELEVANT_COMMENT_SOURCES = new Set(['analyst', 'system']);
@@ -190,7 +191,9 @@ export function buildChatSystemPrompt(
   disciplineText = '',
 ): string {
   const prediction = (doc.input.prediction as IntradayPrediction | undefined) ?? null;
-  const predictionText = prediction ? JSON.stringify(prediction) : 'No prediction is attached to this analysis.';
+  const predictionText = prediction
+    ? JSON.stringify(prediction)
+    : 'No prediction is attached to this analysis.';
 
   const commentLines = analysisDayComments
     .filter((c) => RELEVANT_COMMENT_SOURCES.has(c.source) && c.level !== 'error')
@@ -198,12 +201,14 @@ export function buildChatSystemPrompt(
     .map((c) => `${etClock(c.ts)} ${c.text}`);
 
   const own = [
-    'You are Kansoku\'s short-term technical-analysis chat mode. The user is asking follow-up questions about an archived intraday analysis in Kansoku.',
+    "You are Kansoku's short-term technical-analysis chat mode. The user is asking follow-up questions about an archived intraday analysis in Kansoku.",
     '',
     `Symbol: ${doc.symbol}`,
     `Analysis created at: ${doc.created_at}`,
     `Archived prediction: ${predictionText}`,
-    commentLines.length ? `Analyst comments for this day:\n${commentLines.join('\n')}` : 'There are no analyst comments for this day.',
+    commentLines.length
+      ? `Analyst comments for this day:\n${commentLines.join('\n')}`
+      : 'There are no analyst comments for this day.',
     '',
     CHAT_DIALOG_RULES,
     '',
@@ -248,7 +253,7 @@ function buildVerifyTools(
     name: 'verify_directional_read',
     label: 'Verify Directional Read',
     description:
-      'Verify the user\'s directional claim. Fetch fresh live data and calculate current price, regular-session high/low, premarket high, and prior-day high/close on the server, then return a mechanical result for whether price truly exceeded the premarket high. Call this first when the user claims a breakout, bottom, or dumping.',
+      "Verify the user's directional claim. Fetch fresh live data and calculate current price, regular-session high/low, premarket high, and prior-day high/close on the server, then return a mechanical result for whether price truly exceeded the premarket high. Call this first when the user claims a breakout, bottom, or dumping.",
     parameters: noArgsSchema,
     execute: async () => {
       const pack = await deps.buildPack(symbol);
@@ -264,7 +269,7 @@ function buildVerifyTools(
     name: 'submit_chat_answer',
     label: 'Submit Answer',
     description:
-      'Submit the answer for this turn. When the user made a directional claim, this tool is required and must include the verification_id returned by this turn\'s verify_directional_read. claim_status must be one of supported, partial, contradicted, or insufficient; use insufficient rather than taking a side when evidence is inadequate.',
+      "Submit the answer for this turn. When the user made a directional claim, this tool is required and must include the verification_id returned by this turn's verify_directional_read. claim_status must be one of supported, partial, contradicted, or insufficient; use insufficient rather than taking a side when evidence is inadequate.",
     parameters: submitChatAnswerSchema,
     execute: async (_id, params) => {
       const rejection = rejectAnswer(params, ctx.minted);
@@ -329,7 +334,7 @@ function prepareTurn(
       listMessages: (sessionId) => listMessages(sessionId),
       appendMessages: (sessionId, messages) => appendMessages(sessionId, messages),
     },
-    buildTurn: async () => {
+    buildTurn: async (activeSessionId) => {
       const listCommentsFn = deps.listComments ?? defaultListComments;
       const buildPackFn = deps.buildPack ?? defaultBuildReassessPack;
       const fetchKlineFn =
@@ -374,11 +379,19 @@ function prepareTurn(
       );
 
       const repoRoot = deps.repoRoot ?? PROJECT_ROOT;
+      const proTurn = await prepareProAiTurn({
+        surface: 'chart-chat',
+        sessionId: activeSessionId,
+        symbol,
+        market: marketOf(symbol),
+      });
       const { tools: researchTools, skillIndex } = buildResearchTools({
         repoRoot,
         exec: deps.exec,
+        readMounts: proTurn.readMounts,
       });
       const messageEngine = new MessagesEngine([
+        ...proTurn.processors,
         new SkillCatalogProvider(toSkillContexts(skillIndex)),
       ]);
 
@@ -387,11 +400,13 @@ function prepareTurn(
         systemPrompt,
         tools: [...tools, ...researchTools],
         transformContext: async (messages) => (await messageEngine.process(messages)).messages,
+        onTurnComplete: proTurn.onTurnComplete,
         gate: verifyCtx
           ? {
               instruction: CHAT_GATED_TURN_INSTRUCTION,
               retryInstruction: CHAT_GATED_RETRY_INSTRUCTION,
-              failClosedMessage: 'The answer did not pass directional verification and was blocked. Retry or use Reassess.',
+              failClosedMessage:
+                'The answer did not pass directional verification and was blocked. Retry or use Reassess.',
               answer: () => verifyCtx.answer,
             }
           : undefined,

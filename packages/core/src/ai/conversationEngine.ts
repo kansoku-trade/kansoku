@@ -45,6 +45,7 @@ export interface ConversationTurnPlan {
   tools: AgentTool[];
   transformContext?: (messages: AgentMessage[], signal?: AbortSignal) => Promise<AgentMessage[]>;
   gate?: ConversationTurnGate;
+  onTurnComplete?: (messages: readonly AgentMessage[]) => void;
 }
 
 export interface ConversationPreparedTurn {
@@ -134,6 +135,18 @@ function translateEvent(
       status: 'end',
       output: stringifyPayload(agentToolResultText(event.result)),
     });
+  }
+}
+
+function notifyTurnComplete(
+  plan: ConversationTurnPlan,
+  messages: readonly AgentMessage[],
+  logLabel: string,
+): void {
+  try {
+    plan.onTurnComplete?.(messages);
+  } catch (error) {
+    console.warn(`${logLabel}: after-turn hook failed`, error);
   }
 }
 
@@ -282,9 +295,18 @@ export function createConversationEngine<TInput, TReason extends string>(
             broadcast(key, { event: 'error', message: plan.gate.failClosedMessage });
             return;
           }
-          await turn.store.appendMessages(session.id, [
-            synthesizePartialAssistantMessage(turn.model, answer, nowFn(), 'stop'),
-          ]);
+          const synthesized = synthesizePartialAssistantMessage(
+            turn.model,
+            answer,
+            nowFn(),
+            'stop',
+          );
+          await turn.store.appendMessages(session.id, [synthesized]);
+          notifyTurnComplete(
+            plan,
+            [userMessage, ...increment, synthesized],
+            config.logLabels.preTurnFailure,
+          );
           broadcast(key, { event: 'delta', text: answer });
           broadcast(key, { event: 'done' });
           return;
@@ -293,6 +315,7 @@ export function createConversationEngine<TInput, TReason extends string>(
         if (errorMessage || !hasAssistantText(increment)) {
           broadcast(key, { event: 'error', message: errorMessage ?? '模型未产出回答' });
         } else {
+          notifyTurnComplete(plan, [userMessage, ...increment], config.logLabels.preTurnFailure);
           broadcast(key, { event: 'done' });
         }
       } catch (err) {
