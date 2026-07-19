@@ -19,6 +19,7 @@ import {
 } from './promptPolicy.js';
 import { buildResearchLibraryTools } from './researchLibraryTools.js';
 import type { AiModel } from './models.js';
+import { prepareProAiTurn } from '../pro/aiExtension.js';
 
 export interface AssistantChatDeps {
   model: AiModel | null;
@@ -61,14 +62,20 @@ function prepareTurn(
       listMessages: (id) => listAssistantMessages(id, deps.db),
       appendMessages: (id, messages) => appendAssistantMessages(id, messages, deps.db),
     },
-    buildTurn: async () => {
+    buildTurn: async (activeSessionId) => {
       const disciplineText = deps.disciplineText ?? loadSharedDiscipline(rootDir);
       if (!disciplineText) throw new DisciplineMissingError();
+      const proTurn = await prepareProAiTurn({
+        surface: 'assistant',
+        sessionId: activeSessionId,
+      });
       const { tools: researchTools, skillIndex } = buildResearchTools({
         repoRoot: rootDir,
         exec: deps.exec,
+        readMounts: proTurn.readMounts,
       });
       const messageEngine = new MessagesEngine([
+        ...proTurn.processors,
         new SkillCatalogProvider(toSkillContexts(skillIndex)),
       ]);
       return {
@@ -77,6 +84,7 @@ function prepareTurn(
         systemPrompt: buildSystemPrompt(disciplineText),
         tools: [...researchTools, ...buildResearchLibraryTools(rootDir)],
         transformContext: async (messages) => (await messageEngine.process(messages)).messages,
+        onTurnComplete: proTurn.onTurnComplete,
       };
     },
   };

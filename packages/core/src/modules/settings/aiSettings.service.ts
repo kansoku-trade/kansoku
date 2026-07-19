@@ -32,6 +32,9 @@ function usageRole(record: AiUsageRecord): 'comment' | 'analyst' | 'deepDive' | 
     case 'research-refresh': {
       return 'deepDive';
     }
+    case 'memory': {
+      return 'chat';
+    }
     default: {
       return null;
     }

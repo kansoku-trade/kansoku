@@ -19,6 +19,7 @@ import { marketOf } from '../services/symbol.utils.js';
 import { validatePrediction } from '../services/predictionRules.js';
 import { loadSkillIndex, readSkill, type SkillMeta } from '../services/skills.js';
 import { createChart } from '../services/store.js';
+import { prepareProAiTurn } from '../pro/aiExtension.js';
 import { AgentTimeoutError, type AiAgentFactory, createAgentSession } from './agentSession.js';
 import {
   AnalystMessagesEngine,
@@ -30,7 +31,12 @@ import {
   DISCIPLINE_SKILL,
   DisciplineMissingError,
 } from './promptPolicy.js';
-import { buildResearchTools, createDefaultExec, type ExecFn } from './agentTools.js';
+import {
+  buildResearchTools,
+  createDefaultExec,
+  type ExecFn,
+  type FsReadMount,
+} from './agentTools.js';
 import { appendComment as defaultAppendComment } from './comments.js';
 import { buildDataPackTool, buildKlineTool, buildNewsTool, textResult } from './dataTools.js';
 import { buildReassessPack as defaultBuildReassessPack, type ReassessPack } from './datapack.js';
@@ -351,6 +357,7 @@ function buildTools(
     exec: ExecFn;
     now: () => number;
     skillIndex: SkillMeta[];
+    readMounts: FsReadMount[];
   },
   state: RunState,
   isDone: () => boolean,
@@ -415,6 +422,7 @@ function buildTools(
     },
     skillIndex: deps.skillIndex,
     onSkillRead: (name) => state.loadedSkillIds.add(name),
+    readMounts: deps.readMounts,
   }).tools;
 
   return [
@@ -470,6 +478,13 @@ export async function executeAnalystRun(symbol: string, deps: AnalystDeps): Prom
     reportProgress('researching', '正在整理多周期行情、资金流与持仓');
     const dataPack = await (deps.buildReassessPack ?? defaultBuildReassessPack)(symbol);
     if (dataPack.prediction_chart_id) state.chartId = dataPack.prediction_chart_id;
+    const sessionId = `analyst:${symbol}:${runStartedAt}`;
+    const proTurn = await prepareProAiTurn({
+      surface: 'analyst',
+      sessionId,
+      symbol,
+      market: marketOf(symbol),
+    });
 
     const tools = buildTools(
       symbol,
@@ -487,6 +502,7 @@ export async function executeAnalystRun(symbol: string, deps: AnalystDeps): Prom
         exec: deps.exec ?? createDefaultExec(repoRoot),
         now,
         skillIndex,
+        readMounts: proTurn.readMounts,
       },
       state,
       () => session?.isDone() ?? false,
@@ -509,6 +525,7 @@ export async function executeAnalystRun(symbol: string, deps: AnalystDeps): Prom
         loadedSkillIds: [...state.loadedSkillIds].sort(),
         submitted: state.submitted,
       }),
+      extraProcessors: proTurn.processors,
     });
 
     session = createAgentSession({
@@ -518,7 +535,7 @@ export async function executeAnalystRun(symbol: string, deps: AnalystDeps): Prom
       model: deps.model,
       systemPrompt: buildAnalystSystemPrompt(),
       tools,
-      sessionId: `analyst:${symbol}:${runStartedAt}`,
+      sessionId,
       transformContext: async (messages) => (await messagesEngine.process(messages)).messages,
       agentFactory: deps.agentFactory,
     });
@@ -531,6 +548,7 @@ export async function executeAnalystRun(symbol: string, deps: AnalystDeps): Prom
     if (!state.submitted && !session.agent.state?.errorMessage) {
       await session.runTurn(ANALYST_RETRY_PROMPT, timeoutMs);
     }
+    proTurn.onTurnComplete?.(session.agent.state?.messages ?? []);
 
     if (!state.submitted) {
       const errorMessage = session.agent.state?.errorMessage;

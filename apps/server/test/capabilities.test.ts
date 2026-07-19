@@ -13,7 +13,7 @@ function fakeProModule(overrides: Partial<ProModule> = {}): ProModule {
 }
 
 function allFeatures(state: 'absent' | 'locked' | 'active') {
-  return { 'symbol-follow': state, 'deep-dive': state, 'research-ai': state };
+  return { 'symbol-follow': state, 'deep-dive': state, 'research-ai': state, 'memory': state };
 }
 
 describe('GET /capabilities', () => {

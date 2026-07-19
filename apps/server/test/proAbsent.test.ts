@@ -27,7 +27,12 @@ describe('pro-absent HTTP surface', () => {
     expect((await res.json()).data).toEqual({
       pro: false,
       licensed: false,
-      features: { 'symbol-follow': 'absent', 'deep-dive': 'absent', 'research-ai': 'absent' },
+      features: {
+        'symbol-follow': 'absent',
+        'deep-dive': 'absent',
+        'research-ai': 'absent',
+        'memory': 'absent',
+      },
     });
   });
 });

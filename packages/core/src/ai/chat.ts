@@ -62,6 +62,7 @@ import {
   rejectAnswer,
   verifyDirectionalRead,
 } from './verifyRead.js';
+import { prepareProAiTurn } from '../pro/aiExtension.js';
 
 const COMMENT_CAP = 20;
 const RELEVANT_COMMENT_SOURCES = new Set(['analyst', 'system']);
@@ -331,7 +332,7 @@ function prepareTurn(
       listMessages: (sessionId) => listMessages(sessionId),
       appendMessages: (sessionId, messages) => appendMessages(sessionId, messages),
     },
-    buildTurn: async () => {
+    buildTurn: async (activeSessionId) => {
       const listCommentsFn = deps.listComments ?? defaultListComments;
       const buildPackFn = deps.buildPack ?? defaultBuildReassessPack;
       const fetchKlineFn =
@@ -376,11 +377,19 @@ function prepareTurn(
       );
 
       const repoRoot = deps.repoRoot ?? PROJECT_ROOT;
+      const proTurn = await prepareProAiTurn({
+        surface: 'chart-chat',
+        sessionId: activeSessionId,
+        symbol,
+        market: marketOf(symbol),
+      });
       const { tools: researchTools, skillIndex } = buildResearchTools({
         repoRoot,
         exec: deps.exec,
+        readMounts: proTurn.readMounts,
       });
       const messageEngine = new MessagesEngine([
+        ...proTurn.processors,
         new SkillCatalogProvider(toSkillContexts(skillIndex)),
       ]);
 
@@ -389,6 +398,7 @@ function prepareTurn(
         systemPrompt,
         tools: [...tools, ...researchTools],
         transformContext: async (messages) => (await messageEngine.process(messages)).messages,
+        onTurnComplete: proTurn.onTurnComplete,
         gate: verifyCtx
           ? {
               instruction: CHAT_GATED_TURN_INSTRUCTION,

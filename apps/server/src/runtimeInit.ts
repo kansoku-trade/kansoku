@@ -2,6 +2,7 @@ import type { SecretBox } from '@kansoku/pro-api';
 import { initAiSettings } from '@kansoku/core/ai/initAiSettings';
 import { getActiveSettingsStore } from '@kansoku/core/ai/settingsStore';
 import { getDb } from '@kansoku/core/db/index';
+import { KANSOKU_HOME } from '@kansoku/core/env';
 import { loadPro } from '@kansoku/core/pro/loader';
 import { getPro } from '@kansoku/core/pro/registry';
 import {
@@ -52,5 +53,6 @@ export async function initServerRuntime(opts?: ServerRuntimeOptions): Promise<vo
     watchedMarkets: getActiveWatchedMarketsStore(),
     aiSettingsStore: getActiveSettingsStore(),
     production: opts?.productionHost ?? process.env.NODE_ENV === 'production',
+    kansokuHome: KANSOKU_HOME,
   });
 }
