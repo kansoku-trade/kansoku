@@ -15,6 +15,10 @@ ignoredOptionalDependencies:
 allowBuilds:
   '@google/genai': false
   better-sqlite3: true
+  # Electron's postinstall downloads the binary; blocking it defers the download
+  # to the first require('electron'), and parallel vitest workers then race the
+  # same dist/ extraction (proven flaky-fatal in CI: locales/fa.pak collision).
+  electron: true
   electron-sparkle-updater: true
   esbuild: true
   protobufjs: false
