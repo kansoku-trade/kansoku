@@ -1,55 +1,41 @@
 import { useCallback } from 'react';
-import type { ReactNode } from 'react';
 import { Lock, Maximize2 } from 'lucide-react';
-import { Button, Empty, ErrorBox, MarketTime, Spinner, TimeAgo } from '@web/ui';
+import { Button, Empty, ErrorBox, MarketTime } from '@web/ui';
 import { marketOfSymbol } from '@web/lib/market';
 import { useFeature } from '@web/useFeature';
+import { useProSlot } from '@web/host/useProSlot';
 import { Markdown, openMarkdownModal } from './markdown';
-import { bareSymbol, useDeepDive } from './useDeepDive';
-import { useNote } from './useNote';
+import { useNote, type NoteResponse } from './useNote';
+
+interface DeepDiveActionProps {
+  symbol: string;
+  note: NoteResponse | null;
+  onNoteReady: () => void;
+}
+
+function DeepDiveAction({ symbol, note, onNoteReady }: DeepDiveActionProps) {
+  const { state, locked, guard } = useFeature('deep-dive');
+  const Control = useProSlot<DeepDiveActionProps>('deep-dive.action');
+
+  if (state === 'absent') return null;
+  if (locked) {
+    return (
+      <Button onClick={() => guard(() => {})}>
+        <Lock size={13} />
+        {note?.markdown ? '重新深度分析' : '跑一次深度分析'}
+      </Button>
+    );
+  }
+  if (!Control) return null;
+  return <Control symbol={symbol} note={note} onNoteReady={onNoteReady} />;
+}
 
 export function NoteTab({ symbol }: { symbol: string }) {
   const market = marketOfSymbol(symbol);
   const { note, error, reload } = useNote(symbol);
   const onNoteReady = useCallback(() => reload(), [reload]);
-  const deepDive = useDeepDive(symbol, onNoteReady);
-  const { state, locked, guard } = useFeature('deep-dive');
-
-  const confirmAndStart = () => {
-    const confirmed = window.confirm('深度分析会跑数分钟，并消耗一次 AI 额度，确定要开始吗？');
-    if (confirmed) void deepDive.start();
-  };
 
   if (error) return <ErrorBox>{error}</ErrorBox>;
-
-  const runningElsewhere =
-    deepDive.running &&
-    deepDive.runningSymbol &&
-    bareSymbol(deepDive.runningSymbol) !== bareSymbol(symbol);
-
-  let buttonLabel: ReactNode = note?.markdown ? '重新深度分析' : '跑一次深度分析';
-  if (deepDive.running) {
-    buttonLabel = runningElsewhere ? (
-      `有分析进行中（${deepDive.runningSymbol}）`
-    ) : (
-      <>
-        分析中…
-        <TimeAgo since={deepDive.startedAt} format="duration" />
-      </>
-    );
-  }
-
-  const button =
-    state !== 'absent' ? (
-      <Button
-        onClick={locked ? () => guard(() => {}) : confirmAndStart}
-        disabled={deepDive.pending || deepDive.running || deepDive.disabled}
-      >
-        {(deepDive.pending || deepDive.running) && <Spinner />}
-        {locked && <Lock size={13} />}
-        {buttonLabel}
-      </Button>
-    ) : null;
 
   const openFullscreen = () => {
     if (!note?.markdown) return;
@@ -68,19 +54,17 @@ export function NoteTab({ symbol }: { symbol: string }) {
               <button className="link-button" onClick={openFullscreen}>
                 <Maximize2 className="icon" size={13} /> 全屏阅读
               </button>
-              {button}
+              <DeepDiveAction symbol={symbol} note={note} onNoteReady={onNoteReady} />
             </div>
           </div>
-          {deepDive.inlineMessage && <span className="ai-hint">{deepDive.inlineMessage}</span>}
-          {deepDive.successNote && <span className="ai-hint">{deepDive.successNote}</span>}
           <Markdown>{note.markdown}</Markdown>
         </>
       ) : (
         <>
           <Empty>还没有 {symbol} 的研究笔记</Empty>
-          {button && <div className="note-tab-header note-tab-header--center">{button}</div>}
-          {deepDive.inlineMessage && <span className="ai-hint">{deepDive.inlineMessage}</span>}
-          {deepDive.successNote && <span className="ai-hint">{deepDive.successNote}</span>}
+          <div className="note-tab-header note-tab-header--center">
+            <DeepDiveAction symbol={symbol} note={note} onNoteReady={onNoteReady} />
+          </div>
         </>
       )}
     </div>
