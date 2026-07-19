@@ -9,6 +9,7 @@ export interface Capabilities {
   licensed: boolean;
   license?: LicenseSnapshot;
   features?: Record<FeatureKey, FeatureState>;
+  hasEncBundle?: boolean;
 }
 
 const DEFAULT: Capabilities = { pro: null, licensed: false };
@@ -37,15 +38,16 @@ function ensureLoaded(): void {
     });
 }
 
-export function refreshCapabilities(): Promise<void> {
+export function refreshCapabilities(): Promise<Capabilities | null> {
   clearLicenseRequired();
   return client.capabilities
     .get()
     .then((data) => {
       capabilities = data;
       emit();
+      return data;
     })
-    .catch(() => {});
+    .catch(() => null);
 }
 
 function subscribe(listener: () => void): () => void {

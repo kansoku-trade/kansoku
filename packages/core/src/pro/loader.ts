@@ -1,7 +1,10 @@
-import { isAbsolute } from 'node:path';
+import { existsSync } from 'node:fs';
+import { isAbsolute, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import type { ProModule } from '@kansoku/pro-api';
-import { registerProModule } from './registry.js';
+import { getActiveBundleKey } from '../license/licenseState.js';
+import { loadEncryptedModule } from './encLoader.js';
+import { registerProModule, setEncBundlePresent } from './registry.js';
 
 // Relative filesystem path to the gitignored slot rather than a bare package
 // specifier: nothing declares @kansoku/pro as a dependency (public code must
@@ -39,7 +42,40 @@ function isProEntryNotFound(error: unknown): boolean {
   return missing !== undefined && /\/pro\/(src|dist)\/index\.m?[jt]s$/.test(missing);
 }
 
+// Packaged desktop stages pro.enc at <appDir>/pro/pro.enc (see
+// desktop/scripts/stagePro.mjs); the virtual root sits beside it under the same
+// real <appDir>/pro directory so bare deps resolve through the real
+// node_modules. Source hosts (no appDir) never carry an enc payload.
+function proEncLayout(appDir?: string): { encPath: string; virtualDir: string } | undefined {
+  if (!appDir) return undefined;
+  return { encPath: join(appDir, 'pro', 'pro.enc'), virtualDir: join(appDir, 'pro', '__enc__') };
+}
+
 export async function loadPro(appDir?: string, entryFile?: string): Promise<boolean> {
+  const enc = proEncLayout(appDir);
+  const encPresent = enc != null && existsSync(enc.encPath);
+  setEncBundlePresent(encPresent);
+  if (enc && encPresent) {
+    const keyHex = getActiveBundleKey() ?? process.env.KANSOKU_BUNDLE_KEY;
+    if (keyHex) {
+      try {
+        const { namespace } = await loadEncryptedModule({
+          encPath: enc.encPath,
+          keyHex,
+          virtualDir: enc.virtualDir,
+        });
+        const proModule = (namespace.default ?? namespace) as ProModule;
+        registerProModule(proModule);
+        return true;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.warn(`pro slot: encrypted pro failed to load, running in free mode: ${message}`);
+        return false;
+      }
+    }
+    console.info('pro slot: encrypted pro present but no bundle key, running in free mode');
+  }
+
   const entryUrl = proEntryUrl(appDir, entryFile);
   try {
     const mod = (await import(entryUrl)) as { default?: ProModule } & Partial<ProModule>;

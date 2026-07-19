@@ -7,6 +7,7 @@ export interface CapabilitiesOut {
   licensed: boolean;
   license?: LicenseSnapshot;
   features: Record<FeatureKey, FeatureState>;
+  hasEncBundle?: boolean;
 }
 
 export interface CapabilitiesApi {

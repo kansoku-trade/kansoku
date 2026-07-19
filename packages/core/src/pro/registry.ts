@@ -11,9 +11,18 @@ export const freeHooks: ProHooks = {
 };
 
 let activeModule: ProModule | null = null;
+let encBundlePresent = false;
 
 export function registerProModule(module: ProModule): void {
   activeModule = module;
+}
+
+export function setEncBundlePresent(present: boolean): void {
+  encBundlePresent = present;
+}
+
+export function hasEncBundle(): boolean {
+  return encBundlePresent;
 }
 
 export function extendProModule(patch: Partial<ProModule>): void {

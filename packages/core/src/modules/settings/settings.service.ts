@@ -1,4 +1,4 @@
-import { getPro } from '../../pro/registry.js';
+import { resolveSubscription } from '../../license/subscription.js';
 import {
   getActiveWatchedMarketsStore,
   validateWatchedMarkets,
@@ -46,20 +46,17 @@ export const settingsService: SettingsApi = {
   },
 
   async getSubscribeUrl() {
-    const subscription = getPro()?.subscription;
-    const yearly = subscription?.yearly;
+    const subscription = resolveSubscription();
     return {
-      subscribeUrl: subscription?.url ?? null,
-      priceLabel: subscription?.priceLabel ?? null,
-      trialDays: subscription?.trialDays ?? null,
-      yearly: yearly
-        ? {
-            subscribeUrl: yearly.url,
-            priceLabel: yearly.priceLabel ?? null,
-            trialDays: yearly.trialDays ?? null,
-            savingsLabel: yearly.savingsLabel ?? null,
-          }
-        : null,
+      subscribeUrl: subscription.url,
+      priceLabel: subscription.priceLabel,
+      trialDays: subscription.trialDays,
+      yearly: {
+        subscribeUrl: subscription.yearly.url,
+        priceLabel: subscription.yearly.priceLabel,
+        trialDays: subscription.yearly.trialDays,
+        savingsLabel: subscription.yearly.savingsLabel,
+      },
     };
   },
 };

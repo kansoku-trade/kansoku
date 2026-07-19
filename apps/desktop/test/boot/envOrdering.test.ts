@@ -19,13 +19,24 @@ describe('bundled boot ordering', () => {
         return;
       }
 
-      const envChunk = readdirSync(distDir).find((name) => {
-        if (!name.startsWith('env-') || !name.endsWith('.mjs')) return false;
-        return readFileSync(join(distDir, name), 'utf8').includes('const APP_ROOT =');
-      });
+      const chunkNames = readdirSync(distDir).filter(
+        (name) => name.endsWith('.mjs') && name !== 'main.mjs',
+      );
+      const chunkContent = new Map(
+        chunkNames.map((name) => [name, readFileSync(join(distDir, name), 'utf8')]),
+      );
+      const envChunk = chunkNames.find((name) => chunkContent.get(name)!.includes('const APP_ROOT ='));
       expect(envChunk).toBeDefined();
       expect(content.includes(`from "./${envChunk}"`)).toBe(false);
-      const dynamicImportIndex = content.indexOf(`import("./${envChunk}")`);
+
+      // The env chunk may be dynamically imported directly, or via an
+      // intermediate barrel chunk that statically re-exports it — bundler
+      // chunking is free to add that indirection, so accept either shape.
+      const importedChunk = content.includes(`import("./${envChunk}")`)
+        ? envChunk!
+        : chunkNames.find((name) => chunkContent.get(name)!.includes(`from "./${envChunk}"`));
+      expect(importedChunk).toBeDefined();
+      const dynamicImportIndex = content.indexOf(`import("./${importedChunk}")`);
       expect(dynamicImportIndex).toBeGreaterThanOrEqual(0);
       expect(bootEnvIndex).toBeLessThan(dynamicImportIndex);
     },

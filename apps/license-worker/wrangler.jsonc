@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "kansoku-license-worker",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-07-01",
+  "vars": {
+    "DODO_BASE_URL": "https://test.dodopayments.com"
+  },
+  "env": {
+    "production": {
+      "routes": [{ "pattern": "kansoku-portal.innei.dev", "custom_domain": true }],
+      "vars": {
+        "DODO_BASE_URL": "https://live.dodopayments.com"
+      }
+    }
+  }
+}

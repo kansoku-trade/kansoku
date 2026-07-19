@@ -4369,6 +4369,9 @@ a.zone-item:hover {
 .license-expired-notice {
   color: var(--accent);
 }
+.license-restart-notice {
+  color: var(--accent);
+}
 .license-subscribe-link {
   align-self: flex-start;
   padding: 0;

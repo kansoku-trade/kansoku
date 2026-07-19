@@ -5,34 +5,38 @@ import {
   type FeatureTier,
 } from '@kansoku/pro-api/features';
 import { ClientError } from '../errors.js';
-import { getPro } from './registry.js';
+import { isLicensed } from '../license/licenseGate.js';
+import { getPro, hasEncBundle } from './registry.js';
 
 const featureCatalog: Record<FeatureKey, { tier: FeatureTier }> = FEATURES;
 
-function resolveState(tier: FeatureTier, proPresent: boolean, licensed: boolean): FeatureState {
+function resolveState(
+  tier: FeatureTier,
+  proPresent: boolean,
+  licensed: boolean,
+  encBundlePresent: boolean,
+): FeatureState {
   if (tier === 'free') return 'active';
-  if (!proPresent) return 'absent';
+  if (!proPresent) return encBundlePresent ? 'locked' : 'absent';
   return licensed ? 'active' : 'locked';
-}
-
-async function currentLicensed(): Promise<boolean> {
-  const license = getPro()?.license;
-  if (!license) return false;
-  return license.isLicensed();
 }
 
 export async function featureState(key: FeatureKey): Promise<FeatureState> {
   const tier = featureCatalog[key].tier;
   if (tier === 'free') return 'active';
-  return resolveState(tier, getPro() != null, await currentLicensed());
+  return resolveState(tier, getPro() != null, isLicensed(), hasEncBundle());
 }
 
 export async function featureStates(): Promise<Record<FeatureKey, FeatureState>> {
   const proPresent = getPro() != null;
-  const licensed = await currentLicensed();
+  const licensed = isLicensed();
+  const encBundlePresent = hasEncBundle();
   const keys = Object.keys(featureCatalog) as FeatureKey[];
   return Object.fromEntries(
-    keys.map((key) => [key, resolveState(featureCatalog[key].tier, proPresent, licensed)]),
+    keys.map((key) => [
+      key,
+      resolveState(featureCatalog[key].tier, proPresent, licensed, encBundlePresent),
+    ]),
   ) as Record<FeatureKey, FeatureState>;
 }
 

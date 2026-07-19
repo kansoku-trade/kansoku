@@ -13,10 +13,11 @@ afterAllArtifactBuild: scripts/afterAllArtifactBuild.cjs
 files:
   - dist-main/**
   - dist-preload/**
-  # Pro slot build staged by scripts/stagePro.mjs — must live inside the asar
-  # so its external @tsuki-hono imports resolve to the same node_modules copy
-  # the main bundle uses (single instance). Matches nothing on free builds.
-  - pro/dist/**
+  # Pro slot bundle staged by scripts/stagePro.mjs as an encrypted blob — must
+  # live inside the asar so the decryption path's virtual file: root resolves
+  # bare imports (@tsuki-hono/*) to the same node_modules copy the main bundle
+  # uses (single instance). Matches nothing on free builds.
+  - pro/pro.enc
   - package.json
   - '!**/*.ts'
   - '!**/node_modules/electron-sparkle-updater/native/vendor/**'

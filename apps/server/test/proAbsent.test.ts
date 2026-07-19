@@ -14,10 +14,10 @@ describe('pro-absent HTTP surface', () => {
     expect(res.status).toBe(404);
   });
 
-  it('returns 404 for the license status route when pro is absent', async () => {
+  it('serves the license status route when pro is absent (license lives in core, not ProModule)', async () => {
     unregisterProModuleForTests();
     const res = await tsukiRequest('/api/license/status');
-    expect(res.status).toBe(404);
+    expect(res.status).toBe(200);
   });
 
   it('reports pro:false via /capabilities when pro is absent', async () => {
@@ -27,7 +27,9 @@ describe('pro-absent HTTP surface', () => {
     expect((await res.json()).data).toEqual({
       pro: false,
       licensed: false,
+      license: { state: 'unlicensed' },
       features: { 'symbol-follow': 'absent', 'deep-dive': 'absent', 'research-ai': 'absent' },
+      hasEncBundle: false,
     });
   });
 });

@@ -1,22 +1,33 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import type { LicenseService } from '@kansoku/pro-api';
 import { FEATURES, type FeatureTier } from '@kansoku/pro-api/features';
-import { freeHooks, registerProModule, unregisterProModuleForTests } from '../src/pro/registry.js';
+import {
+  setLicenseManagerForTests,
+  type LicenseManager,
+} from '../src/license/licenseState.js';
+import {
+  freeHooks,
+  registerProModule,
+  setEncBundlePresent,
+  unregisterProModuleForTests,
+} from '../src/pro/registry.js';
 import { capabilitiesService } from '../src/modules/capabilities/capabilities.service.js';
 
 const featureKeys = Object.keys(FEATURES) as Array<keyof typeof FEATURES>;
 
-function licenseService(licensed: boolean): LicenseService {
+function fakeLicenseManager(licensed: boolean): LicenseManager {
   return {
-    status: async () => ({ state: licensed ? 'licensed' : 'unlicensed' }),
+    getLicenseSnapshot: () => ({ state: licensed ? 'licensed' : 'unlicensed' }),
+    getBundleKey: () => undefined,
     activate: async () => ({ activated: true }),
-    deactivate: async () => ({ deactivated: true }),
-    isLicensed: async () => licensed,
+    deactivate: async () => ({}) as never,
+    revalidate: async () => {},
   };
 }
 
 afterEach(() => {
   unregisterProModuleForTests();
+  setEncBundlePresent(false);
+  setLicenseManagerForTests(null);
 });
 
 describe('capabilitiesService.get', () => {
@@ -24,6 +35,7 @@ describe('capabilitiesService.get', () => {
     const result = await capabilitiesService.get();
     expect(result.pro).toBe(false);
     expect(result.licensed).toBe(false);
+    expect(result.hasEncBundle).toBe(false);
     for (const key of featureKeys) {
       expect(result.features).toHaveProperty(key);
       const tier = FEATURES[key].tier as FeatureTier;
@@ -31,8 +43,21 @@ describe('capabilitiesService.get', () => {
     }
   });
 
+  it('marks pro-tier keys locked and reports hasEncBundle when only the enc bundle is present', async () => {
+    setEncBundlePresent(true);
+    const result = await capabilitiesService.get();
+    expect(result.pro).toBe(false);
+    expect(result.licensed).toBe(false);
+    expect(result.hasEncBundle).toBe(true);
+    for (const key of featureKeys) {
+      const tier = FEATURES[key].tier as FeatureTier;
+      expect(result.features[key]).toBe(tier === 'free' ? 'active' : 'locked');
+    }
+  });
+
   it('marks pro-tier keys locked when pro is registered but unlicensed', async () => {
-    registerProModule({ hooks: freeHooks, license: licenseService(false) });
+    registerProModule({ hooks: freeHooks });
+    setLicenseManagerForTests(fakeLicenseManager(false));
     const result = await capabilitiesService.get();
     expect(result.pro).toBe(true);
     expect(result.licensed).toBe(false);
@@ -43,7 +68,8 @@ describe('capabilitiesService.get', () => {
   });
 
   it('marks pro-tier keys active when pro is registered and licensed', async () => {
-    registerProModule({ hooks: freeHooks, license: licenseService(true) });
+    registerProModule({ hooks: freeHooks });
+    setLicenseManagerForTests(fakeLicenseManager(true));
     const result = await capabilitiesService.get();
     expect(result.pro).toBe(true);
     expect(result.licensed).toBe(true);

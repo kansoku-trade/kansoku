@@ -1,7 +1,11 @@
 import type { SecretBox } from '@kansoku/pro-api';
-import { initAiSettings } from '@kansoku/core/ai/initAiSettings';
+import { getAiRuntime, initAiSettings } from '@kansoku/core/ai/initAiSettings';
 import { getActiveSettingsStore } from '@kansoku/core/ai/settingsStore';
 import { getDb } from '@kansoku/core/db/index';
+import { setProductionHost } from '@kansoku/core/license/dodoEnv';
+import { isLicensed } from '@kansoku/core/license/licenseGate';
+import { startLicenseRevalidation } from '@kansoku/core/license/licenseSchedule';
+import { initLicenseManager } from '@kansoku/core/license/licenseState';
 import { loadPro } from '@kansoku/core/pro/loader';
 import { getPro } from '@kansoku/core/pro/registry';
 import {
@@ -47,10 +51,19 @@ export async function initServerRuntime(opts?: ServerRuntimeOptions): Promise<vo
   setActiveWatchedMarketsStore(createWatchedMarketsStore(getDb()));
   initAiSettings(getDb(), { secretBox: opts?.secretBox });
 
+  const productionHost = opts?.productionHost ?? process.env.NODE_ENV === 'production';
+  setProductionHost(productionHost);
+  // The host passes no secretBox in dev (plaintext keyfile mode) —
+  // initAiSettings resolves the fallback box, so the license store must take
+  // the resolved one, not the raw (possibly undefined) opts value.
+  initLicenseManager(getDb(), getAiRuntime().secretBox);
+  startLicenseRevalidation();
+
   await loadPro(opts?.proAppDir, opts?.proEntry);
   await getPro()?.initRuntime?.(getDb(), opts?.secretBox, {
     watchedMarkets: getActiveWatchedMarketsStore(),
     aiSettingsStore: getActiveSettingsStore(),
-    production: opts?.productionHost ?? process.env.NODE_ENV === 'production',
+    production: productionHost,
+    licenseGate: { isLicensed },
   });
 }

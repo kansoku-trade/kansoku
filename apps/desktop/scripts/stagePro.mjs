@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { cpSync, existsSync, rmSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -14,16 +14,20 @@ if (!existsSync(join(proDir, 'package.json'))) {
   process.exit(0);
 }
 
-const build = spawnSync('pnpm', ['--filter', '@kansoku/pro', 'build'], {
+const release = spawnSync('pnpm', ['--filter', '@kansoku/pro', 'release'], {
   cwd: join(desktopDir, '..'),
   stdio: 'inherit',
 });
-if (build.status !== 0) process.exit(build.status ?? 1);
+if (release.status !== 0) process.exit(release.status ?? 1);
 
-// Staged under desktop/ so electron-builder's `files` puts it INSIDE app.asar.
-// extraResources would land it outside the asar, where pro's external bare
-// imports (@tsuki-hono/*) could not resolve into app.asar/node_modules and
-// would therefore load a second module instance — which breaks Tsuki's
-// symbol-keyed decorator metadata and silently maps zero pro routes.
-cpSync(join(proDir, 'dist'), join(destDir, 'dist'), { recursive: true });
-console.log('stagePro: staged pro/dist into the asar payload');
+const encFile = join(proDir, 'dist-enc', 'pro.enc');
+if (!existsSync(encFile)) {
+  console.error(`stagePro: ${encFile} not found after pro release — packEnc did not run`);
+  process.exit(1);
+}
+
+// Staged under desktop/ so electron-builder's `files` puts it INSIDE app.asar,
+// matching where the decryption path (packages/core loader) expects to find it.
+mkdirSync(destDir, { recursive: true });
+cpSync(encFile, join(destDir, 'pro.enc'));
+console.log('stagePro: staged pro.enc into the asar payload');

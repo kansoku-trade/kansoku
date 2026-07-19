@@ -1,7 +1,15 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { LicenseService } from '@kansoku/pro-api';
 import { ClientError } from '../src/errors.js';
-import { freeHooks, registerProModule, unregisterProModuleForTests } from '../src/pro/registry.js';
+import {
+  setLicenseManagerForTests,
+  type LicenseManager,
+} from '../src/license/licenseState.js';
+import {
+  freeHooks,
+  registerProModule,
+  setEncBundlePresent,
+  unregisterProModuleForTests,
+} from '../src/pro/registry.js';
 import {
   featureState,
   featureStates,
@@ -9,21 +17,24 @@ import {
   requireFeature,
 } from '../src/pro/features.js';
 
-function licenseService(licensed: boolean): LicenseService {
+function fakeLicenseManager(licensed: boolean): LicenseManager {
   return {
-    status: async () => ({ state: licensed ? 'licensed' : 'unlicensed' }),
+    getLicenseSnapshot: () => ({ state: licensed ? 'licensed' : 'unlicensed' }),
+    getBundleKey: () => undefined,
     activate: async () => ({ activated: true }),
-    deactivate: async () => ({ deactivated: true }),
-    isLicensed: async () => licensed,
+    deactivate: async () => ({}) as never,
+    revalidate: async () => {},
   };
 }
 
 afterEach(() => {
   unregisterProModuleForTests();
+  setEncBundlePresent(false);
+  setLicenseManagerForTests(null);
 });
 
 describe('feature resolver', () => {
-  it('is absent for a pro key when no pro module is present', async () => {
+  it('is absent for a pro key when no pro module and no enc bundle are present', async () => {
     await expect(featureState('symbol-follow')).resolves.toBe('absent');
     await expect(isFeatureActive('symbol-follow')).resolves.toBe(false);
     const err = await requireFeature('symbol-follow').catch((e: unknown) => e);
@@ -31,7 +42,15 @@ describe('feature resolver', () => {
     expect(err).toMatchObject({ status: 404 });
   });
 
-  it('is locked for a pro key when pro is present without a license service', async () => {
+  it('is locked for a pro key when pro is not loaded but the enc bundle is present', async () => {
+    setEncBundlePresent(true);
+    await expect(featureState('symbol-follow')).resolves.toBe('locked');
+    const err = await requireFeature('symbol-follow').catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(ClientError);
+    expect(err).toMatchObject({ status: 403, code: 'LICENSE_REQUIRED' });
+  });
+
+  it('is locked for a pro key when pro is present without a license manager', async () => {
     registerProModule({ hooks: freeHooks });
     await expect(featureState('deep-dive')).resolves.toBe('locked');
     const err = await requireFeature('deep-dive').catch((e: unknown) => e);
@@ -40,7 +59,8 @@ describe('feature resolver', () => {
   });
 
   it('is locked for a pro key when unlicensed', async () => {
-    registerProModule({ hooks: freeHooks, license: licenseService(false) });
+    registerProModule({ hooks: freeHooks });
+    setLicenseManagerForTests(fakeLicenseManager(false));
     await expect(featureState('research-ai')).resolves.toBe('locked');
     await expect(isFeatureActive('research-ai')).resolves.toBe(false);
     const err = await requireFeature('research-ai').catch((e: unknown) => e);
@@ -49,16 +69,18 @@ describe('feature resolver', () => {
   });
 
   it('is active for a pro key when licensed', async () => {
-    registerProModule({ hooks: freeHooks, license: licenseService(true) });
+    registerProModule({ hooks: freeHooks });
+    setLicenseManagerForTests(fakeLicenseManager(true));
     await expect(featureState('symbol-follow')).resolves.toBe('active');
     await expect(isFeatureActive('symbol-follow')).resolves.toBe(true);
     await expect(requireFeature('symbol-follow')).resolves.toBeUndefined();
   });
 
   it('featureStates resolves the license once and matches featureState per key', async () => {
-    const license = licenseService(false);
-    const spy = vi.spyOn(license, 'isLicensed');
-    registerProModule({ hooks: freeHooks, license });
+    const manager = fakeLicenseManager(false);
+    const spy = vi.spyOn(manager, 'getLicenseSnapshot');
+    registerProModule({ hooks: freeHooks });
+    setLicenseManagerForTests(manager);
     const states = await featureStates();
     expect(spy).toHaveBeenCalledTimes(1);
     for (const [key, state] of Object.entries(states)) {
