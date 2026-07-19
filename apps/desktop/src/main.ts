@@ -17,6 +17,7 @@ import { createWindowManager } from './window/windowManager.js';
 import { showFatalErrorWindow } from './window/fatalErrorWindow.js';
 import { applyDevDockIcon } from './window/dockIcon.js';
 import { applyContentSecurityPolicy } from './window/csp.js';
+import { getCspScriptNonce } from './window/cspNonce.js';
 import {
   registerAppProtocolHandler,
   registerAppScheme,
@@ -108,6 +109,7 @@ app.whenReady().then(async () => {
 
     applyContentSecurityPolicy(session.defaultSession, {
       extraScriptSrcOrigins: ['https://vibeloft.ai'],
+      scriptNonce: getCspScriptNonce(),
     });
 
     const webDistRoot = resolveWebDistRoot();

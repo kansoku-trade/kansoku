@@ -86,6 +86,16 @@ export function injectSharedReactImportMapOnce(
   const script = doc.createElement('script');
   script.type = 'importmap';
   script.textContent = JSON.stringify(importMap);
+  // Electron's desktop CSP only allows script-src via 'self' | pro-asset: |
+  // blob: | 'nonce-<value>' — no 'unsafe-inline'. The nonce IDL property must
+  // be set (not the "nonce" attribute — browsers hide that attribute's value
+  // from a dynamically created element's own getAttribute/setAttribute) for
+  // CSP to accept this inline script. desktop.cspNonce is exposed by the
+  // Electron preload only on privileged origins; plain browser/community
+  // builds have no such CSP restriction and get undefined here, which is a
+  // no-op.
+  const cspNonce = (window as unknown as { desktop?: { cspNonce?: string } }).desktop?.cspNonce;
+  if (cspNonce) script.nonce = cspNonce;
   doc.head.appendChild(script);
 }
 

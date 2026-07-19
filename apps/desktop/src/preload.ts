@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { CONTEXT_MENU_CHANNELS } from './contextMenu/channels.js';
+import { CSP_NONCE_ARGV_PREFIX } from './window/cspNonceArgv.js';
 import { CREDENTIALS_CHANNELS } from './credentials/channels.js';
 import { IPC_GROUPS } from './ipc/groups.js';
 import {
@@ -42,6 +43,11 @@ function isAllowedIpcChannel(channel: string): boolean {
 
 if (isPrivilegedOrigin) {
   contextBridge.exposeInMainWorld('__DESKTOP_RT__', true);
+
+  const cspNonceArg = process.argv.find((arg) => arg.startsWith(CSP_NONCE_ARGV_PREFIX));
+  if (cspNonceArg) {
+    desktopApi.cspNonce = cspNonceArg.slice(CSP_NONCE_ARGV_PREFIX.length);
+  }
 
   window.addEventListener('message', (event) => {
     if (event.source !== window || event.data !== 'desktop-rt-connect') return;

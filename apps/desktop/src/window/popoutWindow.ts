@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { app, BrowserWindow, screen } from 'electron';
 import { IS_DEV } from '../boot/env.js';
+import { cspNonceAdditionalArgument } from './cspNonce.js';
 import {
   APP_ICON_PNG,
   applyWindowSecurity,
@@ -81,6 +82,7 @@ export function createPopoutWindow(symbol: string): BrowserWindow {
       contextIsolation: true,
       nodeIntegration: false,
       preload: join(app.getAppPath(), 'dist-preload', 'preload.cjs'),
+      additionalArguments: [cspNonceAdditionalArgument()],
     },
   });
 

@@ -6,13 +6,14 @@ import {
 } from '@desktop/window/csp.js';
 
 describe('buildContentSecurityPolicy', () => {
-  it('allows self and the pro-asset: scheme in script-src, no unsafe-inline/wildcards', () => {
+  it('allows self, pro-asset:, and blob: in script-src, no unsafe-inline/wildcards', () => {
     const csp = buildContentSecurityPolicy();
     const scriptSrc = csp.split('; ').find((d) => d.startsWith('script-src'));
 
     expect(scriptSrc).toBeDefined();
     expect(scriptSrc).toContain("'self'");
     expect(scriptSrc).toContain('pro-asset:');
+    expect(scriptSrc).toContain('blob:');
     expect(scriptSrc).not.toContain("'unsafe-inline'");
     expect(scriptSrc).not.toContain('*');
   });
@@ -22,6 +23,16 @@ describe('buildContentSecurityPolicy', () => {
     const scriptSrc = csp.split('; ').find((d) => d.startsWith('script-src'));
 
     expect(scriptSrc).toContain('https://vibeloft.ai');
+  });
+
+  it('adds the nonce source only when scriptNonce is given, and omits it otherwise', () => {
+    const withoutNonce = buildContentSecurityPolicy();
+    const scriptSrcWithout = withoutNonce.split('; ').find((d) => d.startsWith('script-src'));
+    expect(scriptSrcWithout).not.toMatch(/'nonce-/);
+
+    const withNonce = buildContentSecurityPolicy({ scriptNonce: 'deadbeef' });
+    const scriptSrcWith = withNonce.split('; ').find((d) => d.startsWith('script-src'));
+    expect(scriptSrcWith).toContain("'nonce-deadbeef'");
   });
 });
 

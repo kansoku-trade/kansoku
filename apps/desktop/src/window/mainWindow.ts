@@ -4,6 +4,7 @@ import { app, BrowserWindow, shell } from 'electron';
 import windowStateKeeper from 'electron-window-state';
 import { resolveRepoRoot } from '../boot/paths.js';
 import { IS_DEV } from '../boot/env.js';
+import { cspNonceAdditionalArgument } from './cspNonce.js';
 import { isAllowedNavigationUrl, isExternalHttpUrl } from './navigationGuard.js';
 
 export const DEV_WEB_URL = 'http://localhost:5199';
@@ -62,6 +63,7 @@ export function createWindow(options: CreateWindowOptions = {}): BrowserWindow {
       contextIsolation: true,
       nodeIntegration: false,
       preload: join(app.getAppPath(), 'dist-preload', 'preload.cjs'),
+      additionalArguments: [cspNonceAdditionalArgument()],
     },
   });
 

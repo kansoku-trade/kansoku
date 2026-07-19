@@ -46,6 +46,10 @@ describe('buildSharedReactImportMap', () => {
 });
 
 describe('injectSharedReactImportMapOnce', () => {
+  afterEach(() => {
+    delete (window as unknown as Record<string, unknown>).desktop;
+  });
+
   it('appends exactly one <script type="importmap"> even when called repeatedly', () => {
     const modules = { react: { default: {} }, reactJsxRuntime: {}, reactDomClient: {} };
 
@@ -54,6 +58,25 @@ describe('injectSharedReactImportMapOnce', () => {
     injectSharedReactImportMapOnce(modules);
 
     expect(document.head.querySelectorAll('script[type="importmap"]').length).toBe(1);
+  });
+
+  it('sets the script.nonce IDL property from window.desktop.cspNonce when the Electron preload exposes one', () => {
+    (window as unknown as { desktop: { cspNonce: string } }).desktop = { cspNonce: 'test-nonce-value' };
+    const modules = { react: { default: {} }, reactJsxRuntime: {}, reactDomClient: {} };
+
+    injectSharedReactImportMapOnce(modules);
+
+    const script = document.head.querySelector('script[type="importmap"]') as HTMLScriptElement;
+    expect(script.nonce).toBe('test-nonce-value');
+  });
+
+  it('leaves script.nonce empty when no desktop.cspNonce is present (plain browser/community build)', () => {
+    const modules = { react: { default: {} }, reactJsxRuntime: {}, reactDomClient: {} };
+
+    injectSharedReactImportMapOnce(modules);
+
+    const script = document.head.querySelector('script[type="importmap"]') as HTMLScriptElement;
+    expect(script.nonce).toBe('');
   });
 
   it('stashes the real module references on window so the blob shim can re-export them', () => {
