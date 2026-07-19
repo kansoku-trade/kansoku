@@ -73,6 +73,22 @@ function ensureHooks(): void {
   });
 }
 
+export function virtualModuleUrl(virtualDir: string, rel: string): string {
+  return pathToFileURL(join(virtualDir, rel)).href;
+}
+
+// The virtual root is a fake file: URL under a REAL directory (virtualDir does
+// not exist on disk): rolldown runtime's createRequire only accepts file:
+// URLs, and hanging the tree under a real dir lets bare deps (@tsuki-hono/*,
+// better-sqlite3, electron) resolve through the real node_modules exactly as
+// the plaintext slot does.
+export function registerManifestFiles(files: Record<string, string>, virtualDir: string): void {
+  for (const [rel, base64] of Object.entries(files)) {
+    encSources.set(virtualModuleUrl(virtualDir, rel), Buffer.from(base64, "base64").toString("utf8"));
+  }
+  ensureHooks();
+}
+
 export interface LoadEncryptedOptions {
   encPath: string;
   keyHex: string;
@@ -86,18 +102,9 @@ export async function loadEncryptedModule(
   const blob = readFileSync(opts.encPath);
   const manifest = decryptProBlob(blob, opts.keyHex);
 
-  // The virtual root is a fake file: URL under a REAL directory (opts.virtualDir
-  // does not exist on disk): rolldown runtime's createRequire only accepts
-  // file: URLs, and hanging the tree under a real dir lets bare deps
-  // (@tsuki-hono/*, better-sqlite3, electron) resolve through the real
-  // node_modules exactly as the plaintext slot does.
-  for (const [rel, base64] of Object.entries(manifest.files)) {
-    const url = pathToFileURL(join(opts.virtualDir, rel)).href;
-    encSources.set(url, Buffer.from(base64, "base64").toString("utf8"));
-  }
-  ensureHooks();
+  registerManifestFiles(manifest.files, opts.virtualDir);
 
-  const entryUrl = pathToFileURL(join(opts.virtualDir, opts.entry ?? "index.mjs")).href;
+  const entryUrl = virtualModuleUrl(opts.virtualDir, opts.entry ?? "index.mjs");
   const namespace = (await import(entryUrl)) as Record<string, unknown>;
   return { namespace, keyId: manifest.keyId };
 }

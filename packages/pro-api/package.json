@@ -11,6 +11,10 @@
     "./features": {
       "types": "./src/features.ts",
       "default": "./src/features.ts"
+    },
+    "./edition": {
+      "types": "./src/edition.ts",
+      "default": "./src/edition.ts"
     }
   },
   "types": "./src/index.ts",

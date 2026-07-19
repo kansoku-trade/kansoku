@@ -2,6 +2,7 @@ import type { DeepDiveStartResult, DeepDiveState } from './aiTypes.js';
 import type { LicenseSnapshot } from './licenseTypes.js';
 
 export * from './aiTypes.js';
+export * from './edition.js';
 export * from './licenseTypes.js';
 
 export interface ProHooks {
