@@ -26,7 +26,7 @@ describe('createSettingsStore defaults', () => {
     try {
       const db = createDb(path);
       const store = createSettingsStore(db);
-      for (const role of ['comment', 'analyst', 'deepDive', 'chat'] as const) {
+      for (const role of ['comment', 'analyst', 'deepDive', 'chat', 'memory'] as const) {
         expect(store.getRole(role)).toEqual({
           mode: 'inherit',
           provider: null,
@@ -40,14 +40,14 @@ describe('createSettingsStore defaults', () => {
         modelId: null,
         thinkingLevel: null,
       });
-      expect(warn).toHaveBeenCalledTimes(5);
+      expect(warn).toHaveBeenCalledTimes(6);
     } finally {
       warn.mockRestore();
       rmSync(dir, { recursive: true, force: true });
     }
   });
 
-  it('listRoles returns primary plus all four task roles', () => {
+  it('listRoles returns primary plus all five task roles', () => {
     const { dir, path } = tempDbPath();
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     try {
@@ -59,6 +59,7 @@ describe('createSettingsStore defaults', () => {
         'chat',
         'comment',
         'deepDive',
+        'memory',
         'primary',
       ]);
     } finally {
@@ -354,6 +355,7 @@ describe('aiConfig integration with settingsStore', () => {
     expect(config.chatModel).toEqual({ ...realModel, thinkingLevel: 'medium' });
     expect(config.commentModel).toBe(config.chatModel);
     expect(config.analystModel).toBe(config.chatModel);
+    expect(config.memoryModel).toBe(config.chatModel);
   });
 
   it('inherit roles resolve to null when primary is unset, and chat no longer follows analyst', () => {

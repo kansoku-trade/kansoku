@@ -15,7 +15,7 @@ export interface CredentialListEntry {
   ok: boolean;
 }
 
-export type AiTaskRole = 'comment' | 'analyst' | 'deepDive' | 'chat';
+export type AiTaskRole = 'comment' | 'analyst' | 'deepDive' | 'chat' | 'memory';
 export type AiRole = AiTaskRole | 'primary';
 export type RoleMode = 'custom' | 'disabled' | 'inherit';
 
@@ -53,7 +53,10 @@ export type TestConnectionResult =
   { ok: true; latencyMs: number } | { ok: false; status: 504 | 502; error: string; hint: string };
 
 export interface UsageTodayOut {
-  roles: Record<'comment' | 'analyst' | 'deepDive' | 'chat', { calls: number; cost: number }>;
+  roles: Record<
+    'comment' | 'analyst' | 'deepDive' | 'chat' | 'memory',
+    { calls: number; cost: number }
+  >;
   total: { calls: number; cost: number };
 }
 

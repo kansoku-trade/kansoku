@@ -16,6 +16,7 @@ export type AiConfig = {
   analystModel: AiModel | null;
   deepDiveModel: AiModel | null;
   chatModel: AiModel | null;
+  memoryModel: AiModel | null;
 };
 
 type ModelLookup = (provider: string, id: string) => AiModel | undefined;
@@ -87,5 +88,6 @@ export function aiConfig(): AiConfig {
     analystModel: resolve('analyst'),
     deepDiveModel: resolve('deepDive'),
     chatModel: resolve('chat'),
+    memoryModel: resolve('memory'),
   };
 }

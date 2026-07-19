@@ -35,19 +35,22 @@ export function setAiRuntimeForTests(next: AiRuntime | null): void {
   runtime = next;
 }
 
-const ROLE_ENV_VARS: Record<AiTaskRole, string> = {
+type EnvAiTaskRole = Exclude<AiTaskRole, 'memory'>;
+
+const ROLE_ENV_VARS: Record<EnvAiTaskRole, string> = {
   comment: 'AI_COMMENT_MODEL',
   analyst: 'AI_ANALYST_MODEL',
   deepDive: 'AI_DEEPDIVE_MODEL',
   chat: 'AI_CHAT_MODEL',
 };
 
-const ROLES: AiTaskRole[] = ['comment', 'analyst', 'deepDive', 'chat'];
+const ENV_ROLES: EnvAiTaskRole[] = ['comment', 'analyst', 'deepDive', 'chat'];
 
 const ENV_IMPORT_MARKER_KEY = 'env_import_v1';
 const ENV_IMPORT_MARKER_VALUE = 'completed';
 const PRIMARY_MARKER_KEY = 'primary_model_v1';
-const PRIMARY_ANCHOR_ORDER: AiTaskRole[] = ['analyst', 'comment', 'deepDive', 'chat'];
+const PRIMARY_ANCHOR_ORDER: EnvAiTaskRole[] = ['analyst', 'comment', 'deepDive', 'chat'];
+const MEMORY_MODEL_MARKER_KEY = 'memory_model_v1';
 
 const catalog = builtinModels();
 
@@ -59,7 +62,7 @@ export function runEnvImport(db: Db, secretBox: SecretBox, env: NodeJS.ProcessEn
     const updatedAt = new Date().toISOString();
     const importedProviders = new Set<string>();
 
-    for (const role of ROLES) {
+    for (const role of ENV_ROLES) {
       const raw = env[ROLE_ENV_VARS[role]];
       const ref = raw ? parseModelRef(raw) : null;
       const model = ref ? catalog.getModel(ref.provider, ref.id) : undefined;
@@ -166,6 +169,63 @@ export function runPrimaryModelMigration(db: Db): void {
   });
 }
 
+function roleCanResolve(
+  row: typeof aiRoleSettings.$inferSelect | undefined,
+  primary: typeof aiRoleSettings.$inferSelect | undefined,
+): boolean {
+  if (!row) return false;
+  if (row.mode === 'custom') return true;
+  return row.mode === 'inherit' && primary?.mode === 'custom';
+}
+
+/**
+ * Give Memory its own role without changing the model existing installs used.
+ * Before this migration maintenance preferred comment and then chat, so copy
+ * the first configured source in that order. The copied row is independent and
+ * can be changed or disabled from Settings after migration.
+ */
+export function runMemoryModelMigration(db: Db): void {
+  const marker = db.select().from(appMeta).where(eq(appMeta.key, MEMORY_MODEL_MARKER_KEY)).get();
+  if (marker?.value === ENV_IMPORT_MARKER_VALUE) return;
+
+  db.transaction((tx) => {
+    const rows = tx.select().from(aiRoleSettings).all();
+    const byRole = new Map(rows.map((row) => [row.role, row]));
+    const existing = byRole.get('memory');
+
+    if (!existing) {
+      const primary = byRole.get('primary');
+      const comment = byRole.get('comment');
+      const chat = byRole.get('chat');
+      const source = roleCanResolve(comment, primary)
+        ? comment
+        : roleCanResolve(chat, primary)
+          ? chat
+          : undefined;
+      const setting = source
+        ? {
+            mode: source.mode,
+            provider: source.provider,
+            modelId: source.modelId,
+            thinkingLevel: source.thinkingLevel,
+          }
+        : { mode: 'disabled', provider: null, modelId: null, thinkingLevel: null };
+
+      tx.insert(aiRoleSettings)
+        .values({ role: 'memory', ...setting, updatedAt: new Date().toISOString() })
+        .run();
+    }
+
+    tx.insert(appMeta)
+      .values({ key: MEMORY_MODEL_MARKER_KEY, value: ENV_IMPORT_MARKER_VALUE })
+      .onConflictDoUpdate({
+        target: appMeta.key,
+        set: { value: ENV_IMPORT_MARKER_VALUE },
+      })
+      .run();
+  });
+}
+
 export function initAiSettings(
   db: Db,
   opts?: {
@@ -178,6 +238,7 @@ export function initAiSettings(
   const box = opts?.secretBox ?? createSecretBox(join(CHART_DATA_DIR, 'ai-secret.key'));
   runEnvImport(db, box, opts?.env ?? process.env);
   runPrimaryModelMigration(db);
+  runMemoryModelMigration(db);
   setActiveSettingsStore(createSettingsStore(db));
   const credentials = createCredentialStore(db, box, { codexAuthPath: opts?.codexAuthPath });
   const models = initModelsRuntime(credentials);
