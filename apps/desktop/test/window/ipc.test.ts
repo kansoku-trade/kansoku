@@ -1,35 +1,38 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { WindowsIpcDeps } from '@desktop/shell/window/ipc.js';
 
 type Handler = (...args: never[]) => unknown;
 
 const handlers = new Map<string, Handler>();
-const onHandlers = new Map<string, Handler>();
 const ipcMain = {
   handle: vi.fn((channel: string, handler: Handler) => {
     handlers.set(channel, handler);
-  }),
-  on: vi.fn((channel: string, handler: Handler) => {
-    onHandlers.set(channel, handler);
   }),
 };
 
 vi.mock('electron', () => ({ ipcMain }));
 
-const { registerWindowsIpc } = await import('@desktop/window/ipc.js');
-const { WINDOWS_ACTIVE_TAB_CHANNEL, WINDOWS_CONTEXT_CHANNEL, WINDOWS_POPOUT_CHANNEL } =
-  await import('@desktop/window/channels.js');
+const WINDOWS_CONTEXT_CHANNEL = 'windows.getContext';
+const WINDOWS_ACTIVE_TAB_CHANNEL = 'windows.reportActiveTab';
+const WINDOWS_POPOUT_CHANNEL = 'windows.openPopout';
 
-describe('registerWindowsIpc', () => {
+// electron-ipc-decorator's IpcHandler singleton dedupes channel registration,
+// so each test resets modules to re-register against fresh deps.
+async function registerWindowsIpc(deps: WindowsIpcDeps): Promise<void> {
+  vi.resetModules();
+  const { WindowsIpc } = await import('@desktop/shell/window/ipc.js');
+  new WindowsIpc(deps);
+}
+
+describe('WindowsIpc', () => {
   beforeEach(() => {
     handlers.clear();
-    onHandlers.clear();
     ipcMain.handle.mockClear();
-    ipcMain.on.mockClear();
   });
 
   it('resolves context for the calling window via getContext keyed by sender id', async () => {
     const getContext = vi.fn().mockReturnValue({ windowId: 'win-1', activeTabId: 'tab-a' });
-    registerWindowsIpc({
+    await registerWindowsIpc({
       getContext,
       reportActiveTab: vi.fn(),
       openPopout: vi.fn(),
@@ -44,7 +47,7 @@ describe('registerWindowsIpc', () => {
 
   it('returns undefined when the sender is not a registered window', async () => {
     const getContext = vi.fn().mockReturnValue(undefined);
-    registerWindowsIpc({
+    await registerWindowsIpc({
       getContext,
       reportActiveTab: vi.fn(),
       openPopout: vi.fn(),
@@ -56,23 +59,25 @@ describe('registerWindowsIpc', () => {
     expect(result).toBeUndefined();
   });
 
-  it('forwards active-tab reports keyed by sender id', () => {
+  it('forwards active-tab reports keyed by sender id', async () => {
     const reportActiveTab = vi.fn();
-    registerWindowsIpc({
+    await registerWindowsIpc({
       getContext: vi.fn(),
       reportActiveTab,
       openPopout: vi.fn(),
       openWindow: vi.fn(),
     });
 
-    onHandlers.get(WINDOWS_ACTIVE_TAB_CHANNEL)?.({ sender: { id: 9 } } as never, 'tab-z' as never);
+    await handlers
+      .get(WINDOWS_ACTIVE_TAB_CHANNEL)
+      ?.({ sender: { id: 9 } } as never, 'tab-z' as never);
 
     expect(reportActiveTab).toHaveBeenCalledWith(9, 'tab-z');
   });
 
   it('opens a popout window for the requested symbol', async () => {
     const openPopout = vi.fn();
-    registerWindowsIpc({
+    await registerWindowsIpc({
       getContext: vi.fn(),
       reportActiveTab: vi.fn(),
       openPopout,

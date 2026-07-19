@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { RendererCallRequest } from '@desktop/rendererCall/channels.js';
+import type { RendererCallRequest } from '@desktop/platform/rendererCall/channels.js';
 
 type Handler = (event: unknown, payload: unknown) => void;
 
@@ -13,9 +13,9 @@ const ipcMain = {
 vi.mock('electron', () => ({ ipcMain }));
 
 const { createRendererCallClient, RendererCallTimeoutError } =
-  await import('@desktop/rendererCall/client.js');
+  await import('@desktop/platform/rendererCall/client.js');
 const { RENDERER_CALL_REQUEST_CHANNEL, RENDERER_CALL_RESPONSE_CHANNEL } =
-  await import('@desktop/rendererCall/channels.js');
+  await import('@desktop/platform/rendererCall/channels.js');
 
 class FakeWindow {
   webContents = { send: vi.fn() };

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   getDesktopDataRootBridge,
   isDataRootResetDisabled,
@@ -16,13 +16,19 @@ function status(partial: Partial<DataRootBridgeStatus> = {}): DataRootBridgeStat
 }
 
 describe('getDesktopDataRootBridge', () => {
-  it('returns the data-root bridge when present', () => {
-    const bridge = {
-      get: async () => status(),
-      pick: async () => {},
-      reset: async () => {},
-    };
-    expect(getDesktopDataRootBridge({ desktop: { dataRoot: bridge } })).toBe(bridge);
+  it('invokes shell rpc channels', async () => {
+    const invoke = vi.fn(async () => status());
+    const bridge = getDesktopDataRootBridge({ desktop: { rpc: { invoke } } });
+    expect(bridge).not.toBeNull();
+
+    await bridge?.get();
+    expect(invoke).toHaveBeenCalledWith('dataRoot.get');
+
+    await bridge?.pick();
+    expect(invoke).toHaveBeenCalledWith('dataRoot.pick');
+
+    await bridge?.reset();
+    expect(invoke).toHaveBeenCalledWith('dataRoot.reset');
   });
 
   it('returns null outside desktop', () => {

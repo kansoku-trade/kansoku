@@ -17,7 +17,7 @@ vi.mock("../../src/boot/proRelaunch.js", () => ({
   maybePromptProRelaunchAfterKeyLanded: relaunchPrompt,
 }));
 
-const { LicenseIpc } = await import("../../src/ipc/licenseIpc.js");
+const { LicenseIpc } = await import("../../src/kernel/ipc/licenseIpc.js");
 
 beforeEach(() => {
   service.status.mockReset();

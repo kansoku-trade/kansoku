@@ -1,8 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { app } from 'electron';
-import { buildDataRootStatus } from '../dataRoot/status.js';
-import { isDataRootUsable } from '../dataRoot/usability.js';
+import { buildDataRootStatus } from '../data/dataRoot/status.js';
+import { isDataRootUsable } from '../data/dataRoot/usability.js';
 import { resolveDataRoot, scaffoldDataRoot } from './paths.js';
 import { bundledSkillsPath, ensureBundledSkills } from './skills.js';
 

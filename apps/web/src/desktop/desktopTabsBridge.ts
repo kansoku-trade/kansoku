@@ -1,3 +1,5 @@
+import { getShellRpc } from './shellRpc';
+
 export type TabsCommand =
   | 'new-tab'
   | 'close-tab'
@@ -32,20 +34,25 @@ export type TabsMutateOp =
 
 export interface DesktopTabsBridge {
   onCommand(cb: (command: TabsCommand) => void): () => void;
-  getSnapshot?(): Promise<TabsSnapshot>;
-  mutate?(op: TabsMutateOp): Promise<TabsSnapshot>;
-  onSnapshot?(cb: (snapshot: TabsSnapshot) => void): () => void;
 }
 
 interface DesktopGlobal {
-  tabs?: DesktopTabsBridge;
+  tabs?: {
+    onCommand?(cb: (command: TabsCommand) => void): () => void;
+    onSnapshot?(cb: (snapshot: TabsSnapshot) => void): () => void;
+  };
+}
+
+function getTabsPush(win: unknown): DesktopGlobal['tabs'] | undefined {
+  return (win as { desktop?: DesktopGlobal } | undefined)?.desktop?.tabs;
 }
 
 export function getDesktopTabsBridge(
   win: unknown = typeof window === 'undefined' ? undefined : window,
 ): DesktopTabsBridge | null {
-  const bridge = (win as { desktop?: DesktopGlobal } | undefined)?.desktop?.tabs;
-  return bridge ?? null;
+  const push = getTabsPush(win);
+  if (!push?.onCommand) return null;
+  return { onCommand: push.onCommand.bind(push) };
 }
 
 export interface SharedTabsBridge {
@@ -57,7 +64,13 @@ export interface SharedTabsBridge {
 export function getSharedTabsBridge(
   win: unknown = typeof window === 'undefined' ? undefined : window,
 ): SharedTabsBridge | null {
-  const bridge = getDesktopTabsBridge(win);
-  if (!bridge || !bridge.getSnapshot || !bridge.mutate || !bridge.onSnapshot) return null;
-  return bridge as SharedTabsBridge;
+  const rpc = getShellRpc(win);
+  const push = getTabsPush(win);
+  if (!rpc || !push?.onSnapshot) return null;
+  const onSnapshot = push.onSnapshot.bind(push);
+  return {
+    getSnapshot: () => rpc.invoke('tabs.getSnapshot') as Promise<TabsSnapshot>,
+    mutate: (op: TabsMutateOp) => rpc.invoke('tabs.mutate', op) as Promise<TabsSnapshot>,
+    onSnapshot,
+  };
 }

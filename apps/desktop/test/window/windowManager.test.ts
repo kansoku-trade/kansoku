@@ -2,7 +2,7 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { WindowsState } from '@desktop/window/store.js';
+import type { WindowsState } from '@desktop/shell/window/store.js';
 
 type QuitHandler = () => void;
 
@@ -42,10 +42,10 @@ let nextSenderId = 1;
 const createWindow = vi.fn(() => new FakeWindow(nextSenderId++));
 const createPopoutWindow = vi.fn(() => new FakeWindow(nextSenderId++));
 
-vi.mock('@desktop/window/mainWindow.js', () => ({ createWindow }));
-vi.mock('@desktop/window/popoutWindow.js', () => ({ createPopoutWindow }));
+vi.mock('@desktop/shell/window/mainWindow.js', () => ({ createWindow }));
+vi.mock('@desktop/shell/window/popoutWindow.js', () => ({ createPopoutWindow }));
 
-const { createWindowManager } = await import('@desktop/window/windowManager.js');
+const { createWindowManager } = await import('@desktop/shell/window/windowManager.js');
 
 function asFake(win: unknown): FakeWindow {
   return win as unknown as FakeWindow;
@@ -182,10 +182,16 @@ describe('createWindowManager', () => {
     dir = await mkdtemp(join(tmpdir(), 'window-manager-'));
     createPopoutWindow.mockClear();
     ipcMain.handle.mockClear();
-    const manager = await createWindowManager({ userDataDir: dir, debounceMs: 10 });
+    // electron-ipc-decorator's IpcHandler singleton dedupes channel
+    // registration, so re-import for a registration bound to this manager.
+    vi.resetModules();
+    const { createWindowManager: freshCreateWindowManager } = await import(
+      '@desktop/shell/window/windowManager.js'
+    );
+    const manager = await freshCreateWindowManager({ userDataDir: dir, debounceMs: 10 });
 
     const popoutHandler = ipcMain.handle.mock.calls.find(
-      ([channel]) => channel === 'desktop:windows:popout',
+      ([channel]) => channel === 'windows.openPopout',
     )?.[1];
     expect(popoutHandler).toBeDefined();
 
@@ -198,10 +204,14 @@ describe('createWindowManager', () => {
   it('opens a full window seeded with the requested active tab via the open ipc handler', async () => {
     dir = await mkdtemp(join(tmpdir(), 'window-manager-'));
     ipcMain.handle.mockClear();
-    const manager = await createWindowManager({ userDataDir: dir, debounceMs: 10 });
+    vi.resetModules();
+    const { createWindowManager: freshCreateWindowManager } = await import(
+      '@desktop/shell/window/windowManager.js'
+    );
+    const manager = await freshCreateWindowManager({ userDataDir: dir, debounceMs: 10 });
 
     const openHandler = ipcMain.handle.mock.calls.find(
-      ([channel]) => channel === 'desktop:windows:open',
+      ([channel]) => channel === 'windows.openWindow',
     )?.[1];
     expect(openHandler).toBeDefined();
 

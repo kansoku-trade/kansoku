@@ -9,7 +9,7 @@ import {
   readTail,
   redactSecrets,
   resolveMainLogPath,
-} from '@desktop/logging/fileLogger.js';
+} from '@desktop/platform/logging/fileLogger.js';
 
 const temps: string[] = [];
 

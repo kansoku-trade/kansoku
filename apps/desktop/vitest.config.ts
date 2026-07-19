@@ -10,5 +10,12 @@ export default defineConfig({
   test: {
     environment: 'node',
     globalSetup: './test/globalSetup.ts',
+    server: {
+      deps: {
+        // electron-ipc-decorator imports electron at module scope; inline it
+        // so vi.mock('electron') applies inside the library too.
+        inline: ['electron-ipc-decorator'],
+      },
+    },
   },
 });

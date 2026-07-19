@@ -72,9 +72,10 @@ describe('context menu adapters', () => {
     expect(onClick).not.toHaveBeenCalled();
   });
 
-  it('resolves electron when desktop.contextMenu bridge exists', () => {
-    const bridge = { popup: vi.fn(async () => ({ selectedKey: null })) };
-    const adapter = resolveContextMenuAdapter({ desktop: { contextMenu: bridge } });
+  it('resolves electron when desktop rpc exists', () => {
+    const adapter = resolveContextMenuAdapter({
+      desktop: { rpc: { invoke: vi.fn(async () => ({ selectedKey: null })) } },
+    });
     expect(adapter.kind).toBe('electron');
   });
 

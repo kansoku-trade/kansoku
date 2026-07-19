@@ -1,3 +1,5 @@
+import { getShellRpc } from '../desktop/shellRpc';
+
 export interface OnboardingState {
   completed: boolean;
 }
@@ -7,12 +9,13 @@ export interface DesktopOnboardingBridge {
   complete(): Promise<OnboardingState>;
 }
 
-interface DesktopGlobal {
-  onboarding?: DesktopOnboardingBridge;
-}
-
 export function getDesktopOnboardingBridge(
   win: unknown = typeof window === 'undefined' ? undefined : window,
 ): DesktopOnboardingBridge | null {
-  return (win as { desktop?: DesktopGlobal } | undefined)?.desktop?.onboarding ?? null;
+  const rpc = getShellRpc(win);
+  if (!rpc) return null;
+  return {
+    getState: () => rpc.invoke('onboarding.getState') as Promise<OnboardingState>,
+    complete: () => rpc.invoke('onboarding.complete') as Promise<OnboardingState>,
+  };
 }

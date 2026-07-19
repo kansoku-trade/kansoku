@@ -27,7 +27,7 @@ const NOTICE_LABEL: Record<string, string> = { 'chart-not-found': '该图表不�
 
 function SectionTitleWithAge({ label, at }: { label: string; at: number | null }) {
   return (
-    <SectionTitle>
+    <SectionTitle className="section-title--with-age">
       {label}
       <DataAgeBadge at={at} />
     </SectionTitle>

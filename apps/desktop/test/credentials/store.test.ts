@@ -2,7 +2,7 @@ import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { createCredentialStore, type SafeStorageLike } from '@desktop/credentials/store.js';
+import { createCredentialStore, type SafeStorageLike } from '@desktop/data/credentials/store.js';
 
 const CREDS = {
   kind: 'apikey' as const,

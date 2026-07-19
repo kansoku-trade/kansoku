@@ -1,3 +1,5 @@
+import { getShellRpc } from './shellRpc';
+
 export type UpdaterUiStatus =
   | { kind: 'unknown' }
   | { kind: 'up-to-date'; current: string; latest: string }
@@ -11,13 +13,20 @@ export interface DesktopUpdaterBridge {
 }
 
 interface DesktopGlobal {
-  updater?: DesktopUpdaterBridge;
+  updater?: Pick<DesktopUpdaterBridge, 'onStatus'>;
 }
 
 export function getDesktopUpdaterBridge(
   win: unknown = typeof window === 'undefined' ? undefined : window,
 ): DesktopUpdaterBridge | null {
-  return (win as { desktop?: DesktopGlobal } | undefined)?.desktop?.updater ?? null;
+  const rpc = getShellRpc(win);
+  const push = (win as { desktop?: DesktopGlobal } | undefined)?.desktop?.updater;
+  if (!rpc || !push?.onStatus) return null;
+  return {
+    getStatus: () => rpc.invoke('updater.getStatus') as Promise<UpdaterUiStatus>,
+    onStatus: (cb) => push.onStatus(cb),
+    installNow: () => rpc.invoke('updater.installNow') as Promise<void>,
+  };
 }
 
 export function isAvailableStatus(status: UpdaterUiStatus | null | undefined): boolean {

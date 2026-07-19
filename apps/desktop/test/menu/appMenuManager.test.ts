@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { buildAppMenuTemplate, createAppMenuManager } from '@desktop/menu/appMenuManager.js';
-import type { MenuActionDeps } from '@desktop/menu/types.js';
+import { buildAppMenuTemplate, createAppMenuManager } from '@desktop/shell/menu/appMenuManager.js';
+import type { MenuActionDeps } from '@desktop/shell/menu/types.js';
 
 function makeDeps(overrides: Partial<MenuActionDeps> = {}): MenuActionDeps {
   return {

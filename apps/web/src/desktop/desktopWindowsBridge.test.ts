@@ -2,32 +2,32 @@ import { describe, expect, it, vi } from 'vitest';
 import { getPopoutBridge, getWindowsBridge } from './desktopWindowsBridge';
 
 describe('getWindowsBridge', () => {
-  it('returns null when desktop.windows is absent', () => {
+  it('returns null when desktop rpc is absent', () => {
     expect(getWindowsBridge({})).toBeNull();
   });
 
-  it('returns null when getContext or reportActiveTab is missing', () => {
-    expect(getWindowsBridge({ desktop: { windows: { getContext: vi.fn() } } })).toBeNull();
-    expect(getWindowsBridge({ desktop: { windows: { reportActiveTab: vi.fn() } } })).toBeNull();
-  });
+  it('invokes shell rpc channels', async () => {
+    const invoke = vi.fn(async () => undefined);
+    const bridge = getWindowsBridge({ desktop: { rpc: { invoke } } });
+    expect(bridge).not.toBeNull();
 
-  it('returns the bridge when both methods are present', () => {
-    const windows = { getContext: vi.fn(), reportActiveTab: vi.fn() };
-    expect(getWindowsBridge({ desktop: { windows } })).toBe(windows);
+    await bridge?.getContext();
+    expect(invoke).toHaveBeenCalledWith('windows.getContext');
+
+    bridge?.reportActiveTab('tab-1');
+    expect(invoke).toHaveBeenCalledWith('windows.reportActiveTab', 'tab-1');
   });
 });
 
 describe('getPopoutBridge', () => {
-  it('returns null when desktop.windows is absent', () => {
+  it('returns null when desktop rpc is absent', () => {
     expect(getPopoutBridge({})).toBeNull();
   });
 
-  it('returns null when openPopout is missing', () => {
-    expect(getPopoutBridge({ desktop: { windows: { getContext: vi.fn() } } })).toBeNull();
-  });
-
-  it('returns the bridge when openPopout is present', () => {
-    const windows = { openPopout: vi.fn(async () => {}) };
-    expect(getPopoutBridge({ desktop: { windows } })).toBe(windows);
+  it('invokes windows.openPopout', async () => {
+    const invoke = vi.fn(async () => undefined);
+    const bridge = getPopoutBridge({ desktop: { rpc: { invoke } } });
+    await bridge?.openPopout('NVDA.US');
+    expect(invoke).toHaveBeenCalledWith('windows.openPopout', 'NVDA.US');
   });
 });

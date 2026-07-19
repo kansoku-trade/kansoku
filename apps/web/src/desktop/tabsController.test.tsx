@@ -94,6 +94,31 @@ class FakeWindowsBridge {
   }
 }
 
+function makeRpc(bridge: FakeBridge, windowsBridge?: FakeWindowsBridge) {
+  return {
+    invoke: (channel: string, ...args: unknown[]): Promise<unknown> => {
+      switch (channel) {
+        case 'tabs.getSnapshot': {
+          return bridge.getSnapshot();
+        }
+        case 'tabs.mutate': {
+          return bridge.mutate(args[0] as TabsMutateOp);
+        }
+        case 'windows.getContext': {
+          return windowsBridge ? windowsBridge.getContext() : Promise.resolve(undefined);
+        }
+        case 'windows.reportActiveTab': {
+          windowsBridge?.reportActiveTab(args[0] as string);
+          return Promise.resolve(undefined);
+        }
+        default: {
+          return Promise.reject(new Error(`unexpected channel ${channel}`));
+        }
+      }
+    },
+  };
+}
+
 function Probe({ onReady }: { onReady: (controller: TabsController) => void }) {
   const controller = useTabsController();
   onReady(controller);
@@ -113,7 +138,7 @@ describe('useTabsController with shared bridge', () => {
     localStorage.clear();
     sessionStorage.clear();
     bridge = new FakeBridge();
-    (window as unknown as { desktop: unknown }).desktop = { tabs: bridge };
+    (window as unknown as { desktop: unknown }).desktop = { rpc: makeRpc(bridge), tabs: bridge };
   });
 
   afterEach(() => {
@@ -271,7 +296,10 @@ describe('useTabsController with a per-window context bridge', () => {
     sessionStorage.clear();
     bridge = new FakeBridge();
     windowsBridge = new FakeWindowsBridge();
-    (window as unknown as { desktop: unknown }).desktop = { tabs: bridge, windows: windowsBridge };
+    (window as unknown as { desktop: unknown }).desktop = {
+      rpc: makeRpc(bridge, windowsBridge),
+      tabs: bridge,
+    };
   });
 
   afterEach(() => {

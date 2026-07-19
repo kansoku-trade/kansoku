@@ -1,24 +1,8 @@
+import { getShellRpc } from './shellRpc';
+
 export interface WindowsContext {
   windowId: string;
   activeTabId: string;
-}
-
-export interface DesktopWindowsBridge {
-  getContext?(): Promise<WindowsContext | undefined>;
-  reportActiveTab?(activeTabId: string): void;
-  openPopout?(symbol: string): Promise<void>;
-  openWindow?(activeTabId?: string): Promise<void>;
-}
-
-interface DesktopGlobal {
-  windows?: DesktopWindowsBridge;
-}
-
-export function getDesktopWindowsBridge(
-  win: unknown = typeof window === 'undefined' ? undefined : window,
-): DesktopWindowsBridge | null {
-  const bridge = (win as { desktop?: DesktopGlobal } | undefined)?.desktop?.windows;
-  return bridge ?? null;
 }
 
 export interface WindowsBridge {
@@ -29,9 +13,14 @@ export interface WindowsBridge {
 export function getWindowsBridge(
   win: unknown = typeof window === 'undefined' ? undefined : window,
 ): WindowsBridge | null {
-  const bridge = getDesktopWindowsBridge(win);
-  if (!bridge || !bridge.getContext || !bridge.reportActiveTab) return null;
-  return bridge as WindowsBridge;
+  const rpc = getShellRpc(win);
+  if (!rpc) return null;
+  return {
+    getContext: () => rpc.invoke('windows.getContext') as Promise<WindowsContext | undefined>,
+    reportActiveTab: (activeTabId: string) => {
+      void rpc.invoke('windows.reportActiveTab', activeTabId);
+    },
+  };
 }
 
 export interface OpenWindowBridge {
@@ -41,9 +30,12 @@ export interface OpenWindowBridge {
 export function getOpenWindowBridge(
   win: unknown = typeof window === 'undefined' ? undefined : window,
 ): OpenWindowBridge | null {
-  const bridge = getDesktopWindowsBridge(win);
-  if (!bridge || !bridge.openWindow) return null;
-  return bridge as OpenWindowBridge;
+  const rpc = getShellRpc(win);
+  if (!rpc) return null;
+  return {
+    openWindow: (activeTabId?: string) =>
+      rpc.invoke('windows.openWindow', activeTabId ?? '') as Promise<void>,
+  };
 }
 
 export interface PopoutBridge {
@@ -53,7 +45,9 @@ export interface PopoutBridge {
 export function getPopoutBridge(
   win: unknown = typeof window === 'undefined' ? undefined : window,
 ): PopoutBridge | null {
-  const bridge = getDesktopWindowsBridge(win);
-  if (!bridge || !bridge.openPopout) return null;
-  return bridge as PopoutBridge;
+  const rpc = getShellRpc(win);
+  if (!rpc) return null;
+  return {
+    openPopout: (symbol: string) => rpc.invoke('windows.openPopout', symbol) as Promise<void>,
+  };
 }

@@ -1,3 +1,5 @@
+import { getShellRpc } from '../../desktop/shellRpc';
+
 export interface DataRootBridgeStatus {
   effectivePath: string;
   configuredPath: string | null;
@@ -13,14 +15,16 @@ export interface DesktopDataRootBridge {
   reset(): Promise<void>;
 }
 
-interface DesktopGlobal {
-  dataRoot?: DesktopDataRootBridge;
-}
-
 export function getDesktopDataRootBridge(
   win: unknown = typeof window === 'undefined' ? undefined : window,
 ): DesktopDataRootBridge | null {
-  return (win as { desktop?: DesktopGlobal } | undefined)?.desktop?.dataRoot ?? null;
+  const rpc = getShellRpc(win);
+  if (!rpc) return null;
+  return {
+    get: () => rpc.invoke('dataRoot.get') as Promise<DataRootBridgeStatus>,
+    pick: () => rpc.invoke('dataRoot.pick') as Promise<void>,
+    reset: () => rpc.invoke('dataRoot.reset') as Promise<void>,
+  };
 }
 
 export function isDataRootResetDisabled(

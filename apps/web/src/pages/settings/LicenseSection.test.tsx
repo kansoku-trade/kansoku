@@ -150,7 +150,10 @@ describe('LicenseSection', () => {
 
   it("offers one-click relaunch in the desktop runtime instead of asking for a manual quit", async () => {
     const relaunch = vi.fn().mockResolvedValue(undefined);
-    (window as { desktop?: unknown }).desktop = { appControl: { relaunch } };
+    const invoke = vi.fn((channel: string) =>
+      channel === "appControl.relaunch" ? relaunch() : Promise.resolve(undefined),
+    );
+    (window as { desktop?: unknown }).desktop = { rpc: { invoke } };
     capabilitiesGet.mockResolvedValue({
       pro: false,
       licensed: true,

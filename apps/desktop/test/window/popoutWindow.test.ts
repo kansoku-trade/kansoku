@@ -64,7 +64,7 @@ const {
   isValidPopoutSymbol,
   popoutRoute,
   popoutUrl,
-} = await import('@desktop/window/popoutWindow.js');
+} = await import('@desktop/shell/window/popoutWindow.js');
 
 describe('isValidPopoutSymbol', () => {
   it('accepts plain tickers and dotted/suffixed forms', () => {

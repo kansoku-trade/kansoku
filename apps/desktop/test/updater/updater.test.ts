@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createUpdaterHandle, startUpdater } from '@desktop/updater/updater.js';
-import { createUpdaterStatusStore } from '@desktop/updater/status.js';
+import { createUpdaterHandle, startUpdater } from '@desktop/shell/updater/updater.js';
+import { createUpdaterStatusStore } from '@desktop/shell/updater/status.js';
 import type { SparkleBridge } from 'electron-sparkle-updater';
 
 function mockBridge(overrides: Partial<SparkleBridge> = {}): SparkleBridge {

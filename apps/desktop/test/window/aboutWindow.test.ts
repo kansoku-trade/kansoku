@@ -50,13 +50,13 @@ const app = { getVersion: vi.fn(() => '9.9.9') };
 const applyWindowSecurity = vi.fn();
 
 vi.mock('electron', () => ({ app, BrowserWindow }));
-vi.mock('@desktop/window/mainWindow.js', () => ({
+vi.mock('@desktop/shell/window/mainWindow.js', () => ({
   APP_ICON_PNG: '/nonexistent/icon.png',
   applyWindowSecurity,
 }));
 
 const { buildAboutHtml, isAboutWindow, openAboutWindow } =
-  await import('@desktop/window/aboutWindow.js');
+  await import('@desktop/shell/window/aboutWindow.js');
 
 describe('buildAboutHtml', () => {
   it('includes version, copyright, license name, and credits', () => {

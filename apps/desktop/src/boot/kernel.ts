@@ -5,8 +5,8 @@
 import 'reflect-metadata';
 import { join } from 'node:path';
 import { app, ipcMain, safeStorage, shell } from 'electron';
-import { createCredentialsBridgeHandlers, registerCredentialsIpc } from '../credentials/bridge.js';
-import { createDesktopSecretBox } from '../credentials/secretBox.js';
+import { createCredentialsBridgeHandlers, registerCredentialsIpc } from '../data/credentials/bridge.js';
+import { createDesktopSecretBox } from '../data/credentials/secretBox.js';
 import { IS_DEV } from './env.js';
 import { startProActivationWatch } from './proActivationWatch.js';
 import { promptProRelaunch } from './proRelaunch.js';
@@ -20,7 +20,7 @@ export async function bootKernel() {
     { getActiveBundleKey },
   ] = await Promise.all([
     import('../../../server/src/runtimeInit.js'),
-    import('../realtime/bridge.js'),
+    import('../kernel/realtime/bridge.js'),
     import('@kansoku/core/env'),
     import('@kansoku/core/pro/registry'),
     import('@kansoku/core/license/licenseState'),

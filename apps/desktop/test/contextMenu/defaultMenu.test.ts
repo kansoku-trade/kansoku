@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { shouldShowDefaultMenu } from '@desktop/contextMenu/defaultMenu.js';
+import { shouldShowDefaultMenu } from '@desktop/shell/contextMenu/defaultMenu.js';
 
 describe('shouldShowDefaultMenu', () => {
   it('shows for editable fields and text selection', () => {

@@ -1,3 +1,5 @@
+import { getShellRpc } from '../../desktop/shellRpc';
+
 export interface LogsInfo {
   path: string;
   dir: string;
@@ -15,12 +17,15 @@ export interface DesktopLogsBridge {
   openDir(): Promise<{ ok: boolean; error?: string }>;
 }
 
-interface DesktopGlobal {
-  logs?: DesktopLogsBridge;
-}
-
 export function getDesktopLogsBridge(
   win: unknown = typeof window === 'undefined' ? undefined : window,
 ): DesktopLogsBridge | null {
-  return (win as { desktop?: DesktopGlobal } | undefined)?.desktop?.logs ?? null;
+  const rpc = getShellRpc(win);
+  if (!rpc) return null;
+  return {
+    getInfo: () => rpc.invoke('logs.getInfo') as Promise<LogsInfo>,
+    tail: (opts?: { maxBytes?: number }) => rpc.invoke('logs.tail', opts) as Promise<LogsTailResult>,
+    reveal: () => rpc.invoke('logs.reveal') as Promise<{ ok: true }>,
+    openDir: () => rpc.invoke('logs.openDir') as Promise<{ ok: boolean; error?: string }>,
+  };
 }

@@ -14,7 +14,7 @@ import {
   buildImportManifest,
   copyImportManifest,
   validateImportSource,
-} from '@desktop/dataImport/manifest.js';
+} from '@desktop/data/dataImport/manifest.js';
 
 describe('dataImport', () => {
   let root: string;

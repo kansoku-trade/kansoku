@@ -1,6 +1,6 @@
 import type { IpcServiceConstructor } from "electron-ipc-decorator";
 import { describe, expect, it } from "vitest";
-import { gateLicensedIpc } from "../../src/ipc/licenseGateIpc.js";
+import { gateLicensedIpc } from "../../src/kernel/ipc/licenseGateIpc.js";
 
 // A fresh class per test: gateLicensedIpc mutates Ctor.prototype in place, so
 // reusing one class across tests with different isLicensed closures would

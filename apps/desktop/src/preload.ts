@@ -1,29 +1,19 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import { CONTEXT_MENU_CHANNELS } from './contextMenu/channels.js';
-import { CREDENTIALS_CHANNELS } from './credentials/channels.js';
-import { IPC_GROUPS } from './ipc/groups.js';
+import { CREDENTIALS_CHANNELS } from './data/credentials/channels.js';
+import { IPC_GROUPS } from './kernel/ipc/groups.js';
 import {
   RENDERER_CALL_REQUEST_CHANNEL,
   RENDERER_CALL_RESPONSE_CHANNEL,
   type RendererCallRequest,
   type RendererCallResponse,
-} from './rendererCall/channels.js';
+} from './platform/rendererCall/channels.js';
 import {
   TABS_COMMAND_CHANNEL,
-  TABS_GET_CHANNEL,
-  TABS_MUTATE_CHANNEL,
   TABS_SNAPSHOT_CHANNEL,
   type TabsCommand,
-} from './tabs/channels.js';
-import type { MutateOp, TabsState } from './tabs/store.js';
-import { UPDATER_CHANNELS } from './updater/channels.js';
-import {
-  WINDOWS_ACTIVE_TAB_CHANNEL,
-  WINDOWS_CONTEXT_CHANNEL,
-  WINDOWS_OPEN_CHANNEL,
-  WINDOWS_POPOUT_CHANNEL,
-} from './window/channels.js';
-import type { WindowsContext } from './window/ipc.js';
+} from './shell/tabs/channels.js';
+import type { TabsState } from './shell/tabs/store.js';
+import { UPDATER_CHANNELS } from './shell/updater/channels.js';
 
 // main.ts boots one embedded kernel regardless of dev or packaged mode, so
 // both the packaged app:// page and the dev renderer (ELECTRON_DEV=1, served
@@ -69,23 +59,12 @@ if (isPrivilegedOrigin) {
     get: () => ipcRenderer.invoke(CREDENTIALS_CHANNELS.get),
   };
 
-  desktopApi.appControl = {
-    relaunch: () => ipcRenderer.invoke('desktop:app:relaunch'),
-  };
-
-  desktopApi.onboarding = {
-    getState: () => ipcRenderer.invoke('desktop:onboarding:get-state'),
-    complete: () => ipcRenderer.invoke('desktop:onboarding:complete'),
-  };
-
   desktopApi.tabs = {
     onCommand: (cb: (command: TabsCommand) => void) => {
       const listener = (_event: Electron.IpcRendererEvent, command: TabsCommand) => cb(command);
       ipcRenderer.on(TABS_COMMAND_CHANNEL, listener);
       return () => ipcRenderer.removeListener(TABS_COMMAND_CHANNEL, listener);
     },
-    getSnapshot: (): Promise<TabsState> => ipcRenderer.invoke(TABS_GET_CHANNEL),
-    mutate: (op: MutateOp): Promise<TabsState> => ipcRenderer.invoke(TABS_MUTATE_CHANNEL, op),
     onSnapshot: (cb: (snapshot: TabsState) => void) => {
       const listener = (_event: Electron.IpcRendererEvent, snapshot: TabsState) => cb(snapshot);
       ipcRenderer.on(TABS_SNAPSHOT_CHANNEL, listener);
@@ -118,43 +97,12 @@ if (isPrivilegedOrigin) {
     },
   };
 
-  desktopApi.windows = {
-    getContext: (): Promise<WindowsContext | undefined> =>
-      ipcRenderer.invoke(WINDOWS_CONTEXT_CHANNEL),
-    reportActiveTab: (activeTabId: string): void => {
-      ipcRenderer.send(WINDOWS_ACTIVE_TAB_CHANNEL, activeTabId);
-    },
-    openPopout: (symbol: string): Promise<void> =>
-      ipcRenderer.invoke(WINDOWS_POPOUT_CHANNEL, symbol),
-    openWindow: (activeTabId?: string): Promise<void> =>
-      ipcRenderer.invoke(WINDOWS_OPEN_CHANNEL, activeTabId ?? ''),
-  };
-
-  desktopApi.dataRoot = {
-    get: () => ipcRenderer.invoke('desktop:data-root:get'),
-    pick: () => ipcRenderer.invoke('desktop:data-root:pick'),
-    reset: () => ipcRenderer.invoke('desktop:data-root:reset'),
-  };
-
-  desktopApi.logs = {
-    getInfo: () => ipcRenderer.invoke('desktop:logs:get-info'),
-    tail: (opts?: { maxBytes?: number }) => ipcRenderer.invoke('desktop:logs:tail', opts),
-    reveal: () => ipcRenderer.invoke('desktop:logs:reveal'),
-    openDir: () => ipcRenderer.invoke('desktop:logs:open-dir'),
-  };
-
-  desktopApi.contextMenu = {
-    popup: (request: unknown) => ipcRenderer.invoke(CONTEXT_MENU_CHANNELS.popup, request),
-  };
-
   desktopApi.updater = {
-    getStatus: () => ipcRenderer.invoke(UPDATER_CHANNELS.getStatus),
     onStatus: (cb: (status: unknown) => void) => {
       const listener = (_event: Electron.IpcRendererEvent, status: unknown) => cb(status);
       ipcRenderer.on(UPDATER_CHANNELS.status, listener);
       return () => ipcRenderer.removeListener(UPDATER_CHANNELS.status, listener);
     },
-    installNow: () => ipcRenderer.invoke(UPDATER_CHANNELS.installNow),
   };
 }
 

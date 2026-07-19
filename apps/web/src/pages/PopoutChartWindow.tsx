@@ -1,5 +1,5 @@
 import { IntradayChartOnly } from '../charts/intraday/IntradayDashboard';
-import { getDesktopWindowsBridge } from '../desktop/desktopWindowsBridge';
+import { getShellRpc } from '../desktop/shellRpc';
 import { resolveIntradayTf } from '../charts/intraday/useIntradayDoc';
 import { useIntradayPreview } from '../charts/intraday/useIntradayPreview';
 import { TopbarQuote } from '../QuoteBar';
@@ -11,7 +11,7 @@ export function PopoutChartWindow({ sym }: { sym: string }) {
   const symLabel = sym.toUpperCase().replace(/\.US$/, '');
   const liveQuote = useLiveQuote(sym);
   const { built, error, degraded, intradayTf } = useIntradayPreview(sym);
-  const isDesktop = getDesktopWindowsBridge() !== null;
+  const isDesktop = getShellRpc() !== null;
   useTitle(symLabel);
 
   return (
