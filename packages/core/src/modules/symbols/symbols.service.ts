@@ -1,7 +1,9 @@
 import { promises as fs } from 'node:fs';
 import { join } from 'node:path';
 import type { IntradayPrediction, RawBar, SymbolAnalysisRow } from '@kansoku/shared/types';
-import { getProHooks } from '../../pro/registry.js';
+import type { DeepDiveService } from '../../pro/domain/deepDiveService.js';
+import type { FollowAutomation } from '../../pro/domain/followAutomation.js';
+import { LegacyDeepDiveService, LegacyFollowAutomation } from '../../pro/domain/legacyAdapters.js';
 import { withFeatureGates } from '../../pro/withFeatureGates.js';
 import { chartUrl } from '../../chartUrl.js';
 import { analystRunStatus, reassessSymbol } from '../../ai/analyst.js';
@@ -35,7 +37,13 @@ const JOURNAL_FILE_RE = /^(\d{4}-\d{2}-\d{2})-([\w-]+)\.md$/;
 const JOURNAL_NAME_RE = /^\d{4}-\d{2}-\d{2}-[\w-]+\.md$/;
 const BENCHMARK_SYMBOLS = ['SMH.US', 'QQQ.US'];
 
-export const symbolsService: SymbolsApi = withFeatureGates(symbolsRoutes, {
+export interface SymbolsServiceDeps {
+  followAutomation: FollowAutomation;
+  deepDiveService: DeepDiveService;
+}
+
+export function createSymbolsService(deps: SymbolsServiceDeps): SymbolsApi {
+  return withFeatureGates(symbolsRoutes, {
   async flow(input) {
     const sym = normalizeSymbol(input.sym);
     const provider = getProvider(marketOf(sym));
@@ -146,7 +154,7 @@ export const symbolsService: SymbolsApi = withFeatureGates(symbolsRoutes, {
   async startFollow(input) {
     const previous = symbolFollowState(input.sym);
     const state = setSymbolFollowing(input.sym, true);
-    if (!previous.following) await getProHooks().requestImmediateFollow(state.symbol);
+    if (!previous.following) await deps.followAutomation.requestImmediateFollow(state.symbol);
     return state;
   },
 
@@ -212,11 +220,11 @@ export const symbolsService: SymbolsApi = withFeatureGates(symbolsRoutes, {
 
   async deepDive(input) {
     const name = noteFileName(input.sym);
-    return getProHooks().startDeepDiveForNote(name);
+    return deps.deepDiveService.startDeepDiveForNote(name);
   },
 
   async deepDiveStatus(_input) {
-    return getProHooks().deepDiveStatus();
+    return deps.deepDiveService.deepDiveStatus();
   },
 
   async latest(input) {
@@ -231,4 +239,10 @@ export const symbolsService: SymbolsApi = withFeatureGates(symbolsRoutes, {
     }
     return { ...doc, url: chartUrl(doc), prediction_stale: predictionStale(doc, new Date()) };
   },
+  });
+}
+
+export const symbolsService: SymbolsApi = createSymbolsService({
+  followAutomation: new LegacyFollowAutomation(),
+  deepDiveService: new LegacyDeepDiveService(),
 });
