@@ -15,7 +15,9 @@ import {
   validateRoleSetting,
 } from './settingsValidation.js';
 
-function usageRole(record: AiUsageRecord): 'comment' | 'analyst' | 'deepDive' | 'chat' | null {
+function usageRole(
+  record: AiUsageRecord,
+): 'comment' | 'analyst' | 'deepDive' | 'chat' | 'memory' | null {
   switch (record.layer) {
     case 'commentator':
     case 'event-filter':
@@ -33,7 +35,7 @@ function usageRole(record: AiUsageRecord): 'comment' | 'analyst' | 'deepDive' | 
       return 'deepDive';
     }
     case 'memory': {
-      return 'chat';
+      return 'memory';
     }
     default: {
       return null;
@@ -177,6 +179,7 @@ export const aiSettingsService: AiSettingsService = {
       analyst: { calls: 0, cost: 0 },
       deepDive: { calls: 0, cost: 0 },
       chat: { calls: 0, cost: 0 },
+      memory: { calls: 0, cost: 0 },
     };
     const total = { calls: 0, cost: 0 };
     for (const record of records) {

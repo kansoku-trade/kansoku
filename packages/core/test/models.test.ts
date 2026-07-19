@@ -126,6 +126,7 @@ describe('aiConfig', () => {
       analystModel: null,
       deepDiveModel: null,
       chatModel: null,
+      memoryModel: null,
     });
   });
 
@@ -187,6 +188,7 @@ describe('aiConfig', () => {
     expect(config.chatModel).toBe(config.analystModel);
     expect(config.commentModel).toBe(config.analystModel);
     expect(config.deepDiveModel).toBe(config.analystModel);
+    expect(config.memoryModel).toBe(config.analystModel);
   });
 
   it('returns null for inherit roles when primary is unset; a custom analyst does not leak into chat', () => {

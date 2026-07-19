@@ -34,6 +34,13 @@ const roles = {
     thinkingLevel: null,
     stale: false,
   } satisfies RoleSetting,
+  memory: {
+    mode: 'inherit',
+    provider: null,
+    modelId: null,
+    thinkingLevel: null,
+    stale: false,
+  } satisfies RoleSetting,
 };
 
 const settings: AiSettings = {
@@ -79,8 +86,9 @@ const usage: UsageToday = {
     analyst: { calls: 8, cost: 0.76 },
     deepDive: { calls: 0, cost: 0 },
     chat: { calls: 28, cost: 0.64 },
+    memory: { calls: 4, cost: 0.02 },
   },
-  total: { calls: 127, cost: 1.82 },
+  total: { calls: 131, cost: 1.84 },
 };
 
 describe('deriveSettingsViewModel', () => {
@@ -90,6 +98,8 @@ describe('deriveSettingsViewModel', () => {
     expect(view.roles.comment.effectiveLabel).toBe('DeepSeek V4 · 关闭思考');
     expect(view.roles.analyst.effectiveLabel).toBe('Anthropic 未配置认证，此用途暂停');
     expect(view.roles.deepDive.effectiveLabel).toBe('已停用，不会发起调用');
+    expect(view.roles.memory.effectiveLabel).toBe('DeepSeek V4 · 关闭思考');
+    expect(view.roles.memory.usageLabel).toBe('今日 $0.02 · 4 次');
   });
 
   it('groups missing authentication by provider and ignores unused providers', () => {
@@ -125,7 +135,7 @@ describe('deriveSettingsViewModel', () => {
     });
 
     expect(view.issues.map((issue) => issue.id)).toEqual(['missing-primary']);
-    expect(view.issues[0]?.detail).toContain('盘中快评、追问');
+    expect(view.issues[0]?.detail).toContain('盘中快评、追问、记忆整理');
   });
 
   it('sorts master-key errors ahead of stale custom models without duplicating api-key errors', () => {

@@ -140,6 +140,7 @@ describe('envelope', () => {
     expect(body.data.roles.comment).toMatchObject({ mode: 'inherit', stale: false });
     expect(body.data.roles.analyst).toMatchObject({ mode: 'inherit', stale: false });
     expect(body.data.roles.deepDive).toMatchObject({ mode: 'inherit', stale: false });
+    expect(body.data.roles.memory).toMatchObject({ mode: 'inherit', stale: false });
   });
 });
 
@@ -156,6 +157,13 @@ describe('PUT/DELETE /ai/roles/:role', () => {
     const accepted = await put('/ai/roles/comment', { mode: 'inherit' });
     expect(accepted.status).toBe(200);
     expect((await accepted.json()).data).toMatchObject({ role: 'comment', mode: 'inherit' });
+  });
+
+  it('persists the dedicated memory role', async () => {
+    const res = await put('/ai/roles/memory', { mode: 'inherit' });
+    expect(res.status).toBe(200);
+    expect((await res.json()).data).toMatchObject({ role: 'memory', mode: 'inherit' });
+    expect(ctx.settingsStore.getRole('memory')).toMatchObject({ mode: 'inherit' });
   });
 
   it('rejects an unknown provider', async () => {
@@ -462,6 +470,7 @@ describe('GET /ai/usage-today', () => {
     insertUsage('analyst', 'escalation', 1, 0.2, today);
     insertUsage('analyst', 'deep-dive', 1, 0.5, today);
     insertUsage('chat', null, 4, 0.04, today);
+    insertUsage('memory', 'idle-maintenance', 2, 0.02, today);
     insertUsage('mystery-layer', null, 1, 1, today);
     insertUsage('chat', null, 9, 9, '2000-01-01');
 
@@ -472,14 +481,16 @@ describe('GET /ai/usage-today', () => {
     expect(data.roles.analyst).toEqual({ calls: 1, cost: 0.2 });
     expect(data.roles.deepDive).toEqual({ calls: 1, cost: 0.5 });
     expect(data.roles.chat).toEqual({ calls: 4, cost: 0.04 });
-    expect(data.total.calls).toBe(12);
-    expect(data.total.cost).toBeCloseTo(1.78, 10);
+    expect(data.roles.memory).toEqual({ calls: 2, cost: 0.02 });
+    expect(data.total.calls).toBe(14);
+    expect(data.total.cost).toBeCloseTo(1.8, 10);
   });
 
   it('returns zeros with no usage rows', async () => {
     const res = await get('/ai/usage-today');
     const { data } = await res.json();
     expect(data.roles.comment).toEqual({ calls: 0, cost: 0 });
+    expect(data.roles.memory).toEqual({ calls: 0, cost: 0 });
     expect(data.total).toEqual({ calls: 0, cost: 0 });
   });
 });

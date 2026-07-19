@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   initAiSettings,
   runEnvImport,
+  runMemoryModelMigration,
   runPrimaryModelMigration,
 } from '../src/ai/initAiSettings.js';
 import { aiConfig } from '../src/ai/models.js';
@@ -366,9 +367,110 @@ describe('runPrimaryModelMigration', () => {
       expect(config.analystModel?.id).toBe('claude-sonnet-4-5');
       expect(config.chatModel).toBe(config.analystModel);
       expect(config.commentModel).toBeNull();
+      expect(config.memoryModel).toBe(config.chatModel);
     } finally {
       setActiveSettingsStore(null);
       setModelsRuntimeForTests(null);
     }
+  });
+});
+
+describe('runMemoryModelMigration', () => {
+  let dir: string;
+  let db: Db;
+
+  beforeEach(() => {
+    const t = tempDb();
+    dir = t.dir;
+    db = t.db;
+  });
+
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  function insertRole(
+    role: string,
+    mode: string,
+    provider: string | null,
+    modelId: string | null,
+    thinkingLevel: string | null,
+  ) {
+    db.insert(aiRoleSettings)
+      .values({ role, mode, provider, modelId, thinkingLevel, updatedAt: new Date().toISOString() })
+      .run();
+  }
+
+  function role(role: string) {
+    return db.select().from(aiRoleSettings).where(eq(aiRoleSettings.role, role)).get();
+  }
+
+  it('copies the comment role that maintenance previously preferred', () => {
+    insertRole('primary', 'custom', 'anthropic', 'primary-model', 'high');
+    insertRole('comment', 'custom', 'anthropic', 'small-model', 'off');
+    insertRole('chat', 'inherit', null, null, null);
+
+    runMemoryModelMigration(db);
+
+    expect(role('memory')).toMatchObject({
+      mode: 'custom',
+      provider: 'anthropic',
+      modelId: 'small-model',
+      thinkingLevel: 'off',
+    });
+    expect(db.select().from(appMeta).where(eq(appMeta.key, 'memory_model_v1')).get()?.value).toBe(
+      'completed',
+    );
+  });
+
+  it('copies chat when comment cannot resolve', () => {
+    insertRole('primary', 'custom', 'anthropic', 'primary-model', 'high');
+    insertRole('comment', 'disabled', null, null, null);
+    insertRole('chat', 'inherit', null, null, null);
+
+    runMemoryModelMigration(db);
+
+    expect(role('memory')).toMatchObject({
+      mode: 'inherit',
+      provider: null,
+      modelId: null,
+      thinkingLevel: null,
+    });
+  });
+
+  it('disables memory when neither previous fallback can resolve', () => {
+    insertRole('primary', 'disabled', null, null, null);
+    insertRole('comment', 'inherit', null, null, null);
+    insertRole('chat', 'disabled', null, null, null);
+
+    runMemoryModelMigration(db);
+
+    expect(role('memory')).toMatchObject({
+      mode: 'disabled',
+      provider: null,
+      modelId: null,
+      thinkingLevel: null,
+    });
+  });
+
+  it('preserves an existing explicit memory role and becomes idempotent', () => {
+    insertRole('memory', 'custom', 'openai', 'memory-model', 'low');
+
+    runMemoryModelMigration(db);
+    runMemoryModelMigration(db);
+
+    expect(role('memory')).toMatchObject({
+      mode: 'custom',
+      provider: 'openai',
+      modelId: 'memory-model',
+      thinkingLevel: 'low',
+    });
+    expect(
+      db
+        .select()
+        .from(aiRoleSettings)
+        .all()
+        .filter((row) => row.role === 'memory'),
+    ).toHaveLength(1);
   });
 });

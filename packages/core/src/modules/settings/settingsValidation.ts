@@ -6,7 +6,7 @@ import { LOBEHUB_PROVIDER } from '../../ai/lobehub/types.js';
 import type { AiRole, RoleMode, RoleSetting } from '../../ai/settingsStore.js';
 
 export const CODEX_PROVIDER = 'openai-codex';
-export const ROLES: AiRole[] = ['primary', 'comment', 'analyst', 'deepDive', 'chat'];
+export const ROLES: AiRole[] = ['primary', 'comment', 'analyst', 'deepDive', 'chat', 'memory'];
 const MODES: RoleMode[] = ['custom', 'disabled', 'inherit'];
 
 export function allowedProviders(): string[] {
