@@ -1,4 +1,5 @@
 import { dirname, join } from 'node:path';
+import { homedir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -9,6 +10,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const rootOverride = process.env.TRADE_PROJECT_ROOT;
 
 export const PROJECT_ROOT = rootOverride ?? join(here, '..', '..', '..');
+export const KANSOKU_HOME = process.env.KANSOKU_HOME ?? join(homedir(), '.kansoku');
 export const APP_ROOT = join(PROJECT_ROOT, 'apps');
 export const JOURNAL_DIR = join(PROJECT_ROOT, 'journal');
 export const STOCKS_DIR = join(PROJECT_ROOT, 'stocks');

@@ -8,6 +8,9 @@ describe('FEATURES catalog', () => {
         "deep-dive": {
           "tier": "pro",
         },
+        "memory": {
+          "tier": "pro",
+        },
         "research-ai": {
           "tier": "pro",
         },

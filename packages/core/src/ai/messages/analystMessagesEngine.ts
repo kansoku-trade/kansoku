@@ -4,6 +4,7 @@ import { BaseFirstUserContentProvider } from './injectors/baseFirstUserContentPr
 import { BaseVirtualTailProvider } from './injectors/baseVirtualTailProvider.js';
 import {
   type MessagePipelineContext,
+  type MessageProcessor,
   MessagesEngine,
   type MessagesEngineResult,
 } from './messageEngine.js';
@@ -40,6 +41,7 @@ export interface AnalystStepContext {
 export interface AnalystMessagesEngineConfig {
   initialContext: AnalystInitialContext;
   stepContext: () => AnalystStepContext;
+  extraProcessors?: MessageProcessor[];
 }
 
 class DataPackProvider extends BaseFirstUserContentProvider {
@@ -86,6 +88,7 @@ export class AnalystMessagesEngine {
 
   constructor(config: AnalystMessagesEngineConfig) {
     this.engine = new MessagesEngine([
+      ...(config.extraProcessors ?? []),
       new SkillCatalogProvider(config.initialContext.skills),
       new ActivatedSkillsProvider(
         config.initialContext.skills,
