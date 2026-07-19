@@ -149,6 +149,9 @@ function activationError<TEdition>(
 export async function loadEdition<THost, TEdition>(
   options: LoadEditionOptions<THost>,
 ): Promise<EditionActivation<TEdition>> {
+  // claimProtocol("edition") only fires on the final success path below; every
+  // early return (absent/locked/incompatible/failed) leaves the protocol
+  // unclaimed so the caller can still fall back to the legacy protocol.
   assertProtocolAllowed("edition");
   const bundlePresent = existsSync(options.encPath);
   if (!bundlePresent) {

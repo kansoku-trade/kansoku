@@ -14,6 +14,7 @@ export interface CoreEditionHost {
   watchedMarkets: WatchedMarketsStore | null;
   paths: EditionPaths;
   secretBox?: SecretBox;
+  aiRuntimeAlreadyInitialized?: boolean;
   production: boolean;
 }
 

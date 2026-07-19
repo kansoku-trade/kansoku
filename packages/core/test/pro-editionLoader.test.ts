@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 import { gzipSync } from "node:zlib";
 import { afterEach, describe, expect, it } from "vitest";
 import { loadEdition, parseBundleManifest } from "../src/pro/editionLoader.js";
+import { getClaimedProtocol, resetProtocolClaimForTests } from "../src/pro/protocolClaim.js";
 
 const KEY_HEX = "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff";
 const WRONG_KEY_HEX = "ff".repeat(32);
@@ -102,6 +103,7 @@ describe("loadEdition (in-process, no dynamic import reached)", () => {
   const roots: string[] = [];
 
   afterEach(() => {
+    resetProtocolClaimForTests();
     while (roots.length) rmSync(roots.pop()!, { recursive: true, force: true });
   });
 
@@ -144,6 +146,7 @@ describe("loadEdition (in-process, no dynamic import reached)", () => {
     });
     expect(activation.state).toBe("failed");
     expect(activation.error?.code).toBe("PRO_BUNDLE_DECRYPT_FAILED");
+    expect(getClaimedProtocol()).toBeNull();
   });
 
   it("failed: tampered ciphertext yields PRO_BUNDLE_DECRYPT_FAILED", async () => {
@@ -272,6 +275,7 @@ describe("loadEdition (in-process, no dynamic import reached)", () => {
     expect(activation.error?.code).toBe("PRO_EDITION_ABI_MISMATCH");
     expect(activation.keyId).toBe("test");
     expect(activation.buildId).toBe("test-v1");
+    expect(getClaimedProtocol()).toBeNull();
   });
 
   it("incompatible: editionAbiVersion mismatch (bundle older than host)", async () => {
