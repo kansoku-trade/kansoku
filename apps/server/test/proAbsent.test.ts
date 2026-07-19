@@ -28,7 +28,12 @@ describe('pro-absent HTTP surface', () => {
       pro: false,
       licensed: false,
       license: { state: 'unlicensed' },
-      features: { 'symbol-follow': 'absent', 'deep-dive': 'absent', 'research-ai': 'absent' },
+      features: {
+        'symbol-follow': 'absent',
+        'deep-dive': 'absent',
+        'research-ai': 'absent',
+        'memory': 'absent',
+      },
       hasEncBundle: false,
     });
   });

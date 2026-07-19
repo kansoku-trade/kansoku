@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -94,5 +94,123 @@ describe('buildResearchTools', () => {
 
     expect(calls).toEqual(['echo hi']);
     expect((res.content[0] as { text: string }).text).toContain('custom-output');
+  });
+
+  it('exposes additional read-only mounts without changing the free tool surface', async () => {
+    const memoryRoot = join(repoRoot, 'memory-mount');
+    mkdirSync(join(memoryRoot, 'symbols'), { recursive: true });
+    mkdirSync(join(memoryRoot, '.runtime'), { recursive: true });
+    writeFileSync(join(memoryRoot, 'MEMORY.md'), '偏好：使用日线。');
+    writeFileSync(join(memoryRoot, 'symbols', 'AAPL.md'), 'AAPL 风险预算：2%。');
+    writeFileSync(join(memoryRoot, '.runtime', 'pending.md'), 'internal');
+    writeFileSync(join(memoryRoot, 'secret.json'), '{"secret":true}');
+
+    const { tools } = buildResearchTools({
+      repoRoot,
+      skillIndex: [],
+      readMounts: [
+        {
+          name: 'memory',
+          root: memoryRoot,
+          include: ['**/*.md'],
+          exclude: ['.runtime/**'],
+        },
+      ],
+    });
+
+    expect(tools.map((tool) => tool.name)).toEqual([
+      'read_skill',
+      'bash',
+      'read_file',
+      'list_files',
+      'grep',
+    ]);
+
+    const readFile = tools.find((tool) => tool.name === 'read_file')!;
+    const readable = await readFile.execute('read-ok', {
+      mount: 'memory',
+      path: 'symbols/AAPL.md',
+    });
+    expect((readable.content[0] as { text: string }).text).toContain('风险预算');
+
+    const excluded = await readFile.execute('read-excluded', {
+      mount: 'memory',
+      path: '.runtime/pending.md',
+    });
+    expect((excluded.content[0] as { text: string }).text).toContain('rejected');
+
+    const wrongType = await readFile.execute('read-type', {
+      mount: 'memory',
+      path: 'secret.json',
+    });
+    expect((wrongType.content[0] as { text: string }).text).toContain('rejected');
+
+    const escaped = await readFile.execute('read-escape', {
+      mount: 'memory',
+      path: '../outside.md',
+    });
+    expect((escaped.content[0] as { text: string }).text).toContain('outside mount root');
+  });
+
+  it('does not follow symlinks outside an additional mount', async () => {
+    const memoryRoot = join(repoRoot, 'memory-symlink-mount');
+    const outside = join(repoRoot, 'outside-memory.md');
+    mkdirSync(memoryRoot, { recursive: true });
+    writeFileSync(outside, 'must not be readable');
+    symlinkSync(outside, join(memoryRoot, 'escaped.md'));
+
+    const { tools } = buildResearchTools({
+      repoRoot,
+      skillIndex: [],
+      readMounts: [{ name: 'memory', root: memoryRoot, include: ['**/*.md'] }],
+    });
+    const readFile = tools.find((tool) => tool.name === 'read_file')!;
+    const result = await readFile.execute('read-symlink', {
+      mount: 'memory',
+      path: 'escaped.md',
+    });
+
+    expect((result.content[0] as { text: string }).text).toContain('outside mount root');
+  });
+
+  it('implements grep file, content, count, glob, and pagination behavior', async () => {
+    const memoryRoot = join(repoRoot, 'memory-grep-mount');
+    mkdirSync(join(memoryRoot, 'symbols'), { recursive: true });
+    writeFileSync(join(memoryRoot, 'MEMORY.md'), '风险偏好：保守\n交易周期：日线\n');
+    writeFileSync(join(memoryRoot, 'symbols', 'AAPL.md'), '风险预算：2%\n避免追高\n');
+    writeFileSync(join(memoryRoot, 'symbols', 'TSLA.md'), '风险预算：1%\n波动较高\n');
+
+    const { tools } = buildResearchTools({
+      repoRoot,
+      skillIndex: [],
+      readMounts: [{ name: 'memory', root: memoryRoot, include: ['**/*.md'] }],
+    });
+    const grep = tools.find((tool) => tool.name === 'grep')!;
+
+    const files = await grep.execute('grep-files', {
+      mount: 'memory',
+      pattern: '风险',
+      glob: '*.{md,txt}',
+    });
+    expect((files.content[0] as { text: string }).text).toBe(
+      ['MEMORY.md', 'symbols/AAPL.md', 'symbols/TSLA.md'].join('\n'),
+    );
+
+    const content = await grep.execute('grep-content', {
+      mount: 'memory',
+      pattern: '风险预算',
+      glob: 'symbols/*.md',
+      output_mode: 'content',
+      offset: 1,
+      head_limit: 1,
+    });
+    expect((content.content[0] as { text: string }).text).toBe('symbols/TSLA.md:1:风险预算：1%');
+
+    const count = await grep.execute('grep-count', {
+      mount: 'memory',
+      pattern: '风险',
+      output_mode: 'count',
+    });
+    expect((count.content[0] as { text: string }).text).toContain('total:3');
   });
 });
