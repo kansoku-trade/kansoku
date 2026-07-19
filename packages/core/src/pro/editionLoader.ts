@@ -1,5 +1,6 @@
+import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
-import { isAbsolute, normalize } from "node:path";
+import { isAbsolute, join, normalize } from "node:path";
 import { EDITION_ABI_VERSION } from "@kansoku/pro-api/edition";
 import type { EditionEntry, EditionRuntimeKind } from "@kansoku/pro-api/edition";
 import type { ProManifest } from "./encLoader.js";
@@ -137,9 +138,9 @@ export async function loadEdition<THost, TEdition>(
     return { state: "locked", bundlePresent: true };
   }
 
+  const blob = readFileSync(options.encPath);
   let manifest: ProManifest;
   try {
-    const blob = readFileSync(options.encPath);
     manifest = decryptProBlob(blob, options.keyHex);
   } catch (cause) {
     if (cause instanceof EncDecryptError) {
@@ -184,8 +185,9 @@ export async function loadEdition<THost, TEdition>(
     );
   }
 
-  registerManifestFiles(manifest.files, options.virtualDir);
-  const entryUrl = virtualModuleUrl(options.virtualDir, entryPath);
+  const virtualRoot = join(options.virtualDir, createHash("sha256").update(blob).digest("hex").slice(0, 16));
+  registerManifestFiles(manifest.files, virtualRoot);
+  const entryUrl = virtualModuleUrl(virtualRoot, entryPath);
   const namespace = (await import(entryUrl)) as Record<string, unknown>;
   const entryModule = (namespace.default ?? namespace) as Partial<EditionEntry<THost, TEdition>>;
 

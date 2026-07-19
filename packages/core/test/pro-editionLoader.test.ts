@@ -58,6 +58,15 @@ const THROWING_SERVER_ENTRY = [
   "",
 ].join("\n");
 
+const SERVER_ENTRY_V2 = [
+  "export const abiVersion = 1;",
+  'export const runtime = "server";',
+  "export function createEdition(host) {",
+  '  return { kind: "server-v2", name: host.name };',
+  "}",
+  "",
+].join("\n");
+
 const FIXTURE_FILES: Record<string, string> = {
   "bundle.json": bundleJson(),
   "server/index.mjs": SERVER_ENTRY,
@@ -439,5 +448,75 @@ describe("loadEdition (spawned Node process, real dynamic import)", () => {
     expect(results.initFailed!.state).toBe("failed");
     expect(results.initFailed!.errorCode).toBe("PRO_EDITION_INIT_FAILED");
     expect(results.initFailed!.edition).toBeNull();
+  });
+
+  it("stale-module guard: two different bundles loaded through the same virtualDir do not reuse a stale ESM evaluation", () => {
+    const first = stageEnc(FIXTURE_FILES, "first", KEY_HEX);
+    roots.push(first.root);
+    const second = stageEnc(
+      { "bundle.json": bundleJson(), "server/index.mjs": SERVER_ENTRY_V2, "desktop/index.mjs": DESKTOP_ENTRY },
+      "second",
+      KEY_HEX,
+    );
+    roots.push(second.root);
+    const sharedRoot = mkdtempSync(join(tmpdir(), "kansoku-edition-shared-vdir-"));
+    roots.push(sharedRoot);
+    const sharedVirtualDir = join(sharedRoot, "vdir");
+
+    const results = runEditionScenarios([
+      {
+        id: "firstLoad",
+        encPath: first.encPath,
+        virtualDir: sharedVirtualDir,
+        runtime: "server",
+        keyHex: KEY_HEX,
+        host: { name: "alice" },
+      },
+      {
+        id: "secondLoad",
+        encPath: second.encPath,
+        virtualDir: sharedVirtualDir,
+        runtime: "server",
+        keyHex: KEY_HEX,
+        host: { name: "alice" },
+      },
+    ]);
+
+    expect(results.firstLoad!.state).toBe("active");
+    expect(results.firstLoad!.edition).toEqual({ kind: "server", name: "alice" });
+    expect(results.secondLoad!.state).toBe("active");
+    expect(results.secondLoad!.edition).toEqual({ kind: "server-v2", name: "alice" });
+  });
+
+  it("cache reuse: the same bundle loaded twice through the same virtualDir succeeds both times", () => {
+    const { encPath, root } = stageEnc();
+    roots.push(root);
+    const sharedRoot = mkdtempSync(join(tmpdir(), "kansoku-edition-shared-vdir-"));
+    roots.push(sharedRoot);
+    const sharedVirtualDir = join(sharedRoot, "vdir");
+
+    const results = runEditionScenarios([
+      {
+        id: "firstLoad",
+        encPath,
+        virtualDir: sharedVirtualDir,
+        runtime: "server",
+        keyHex: KEY_HEX,
+        host: { name: "alice" },
+      },
+      {
+        id: "secondLoad",
+        encPath,
+        virtualDir: sharedVirtualDir,
+        runtime: "server",
+        keyHex: KEY_HEX,
+        host: { name: "alice" },
+      },
+    ]);
+
+    expect(results.firstLoad!.state).toBe("active");
+    expect(results.firstLoad!.edition).toEqual({ kind: "server", name: "alice" });
+    expect(results.secondLoad!.state).toBe("active");
+    expect(results.secondLoad!.edition).toEqual({ kind: "server", name: "alice" });
   });
 });
