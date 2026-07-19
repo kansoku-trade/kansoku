@@ -62,6 +62,25 @@ describe("license-worker validate", () => {
     await expect(res.json()).resolves.toEqual({ valid: true, bundleKey: env.BUNDLE_KEY, keyId: env.BUNDLE_KEY_ID });
   });
 
+  it("serves the /licenses/* paths the shipped desktop client (>= 0.18.0) calls", async () => {
+    const fetchImpl = fakeFetch({ status: 200, body: { valid: true } });
+    const handler = handlerWith(fetchImpl);
+
+    const res = await handler(
+      post("/licenses/validate", { license_key: "lic_1", license_key_instance_id: "lki_1" }),
+    );
+
+    expect(fetchImpl).toHaveBeenCalledWith(
+      "https://test.dodopayments.com/licenses/validate",
+      expect.anything(),
+    );
+    await expect(res.json()).resolves.toEqual({
+      valid: true,
+      bundleKey: env.BUNDLE_KEY,
+      keyId: env.BUNDLE_KEY_ID,
+    });
+  });
+
   it("does not append a key when valid is false", async () => {
     const fetchImpl = fakeFetch({ status: 200, body: { valid: false } });
     const handler = handlerWith(fetchImpl);

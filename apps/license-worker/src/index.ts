@@ -9,7 +9,9 @@ export function createRequestHandler(deps: ProxyDeps): (request: Request) => Pro
     if (request.method !== "POST") return new Response("method not allowed", { status: 405 });
 
     const url = new URL(request.url);
-    switch (url.pathname) {
+    // Shipped desktop clients (>= 0.18.0) call the Dodo-shaped /licenses/*
+    // paths; the bare paths predate them and stay for compatibility.
+    switch (url.pathname.replace(/^\/licenses/, "")) {
       case "/activate":
         return handleActivate(request, deps);
       case "/validate":
