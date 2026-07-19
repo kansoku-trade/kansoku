@@ -1,5 +1,7 @@
 # Pro 文件 Overlay POC
 
+日常怎么加/改一个 overlay、命令速查、依赖方向红线、CI 闸门，见 `docs/pro-overlay.md`。本文档只讲这个包本身覆盖的三类验证场景。
+
 这个包验证同目录 `foo.ts` / `foo.pro.ts` 的构建期选择机制，覆盖三类场景：
 
 - **替换型**：`edition.ts` / `edition.pro.ts` 经共享基类 `edition/base.ts` 分别实现 OSS / Pro 版本，两者同名并存，Pro 优先。
