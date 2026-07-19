@@ -151,6 +151,22 @@ describe("readEditionWebManifest", () => {
     expect(result.files!.get("web/index.mjs")?.toString("utf8")).toBe(WEB_ENTRY);
   });
 
+  it("active: excludes server/desktop entries and bundle.json — pro-asset:// must never serve decrypted private source", async () => {
+    const { encPath, root } = stageEnc({
+      ...FIXTURE_FILES,
+      "server/index.mjs": "export const abiVersion = 1; // private server source",
+      "desktop/index.mjs": "export const abiVersion = 1; // private desktop source",
+    });
+    roots.push(root);
+    const result = await readEditionWebManifest({ encPath, keyHex: KEY_HEX });
+    expect(result.state).toBe("active");
+    expect(result.files!.has("server/index.mjs")).toBe(false);
+    expect(result.files!.has("desktop/index.mjs")).toBe(false);
+    expect(result.files!.has("bundle.json")).toBe(false);
+    expect(result.files!.has("web/index.mjs")).toBe(true);
+    expect(result.files!.has("web/assets/logo.png")).toBe(true);
+  });
+
   it("active: binary-safety — non-UTF8-safe bytes round-trip byte-for-byte via Buffer equality", async () => {
     const { encPath, root } = stageEnc();
     roots.push(root);

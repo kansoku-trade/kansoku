@@ -106,4 +106,26 @@ describe('createProAssetProtocolHandler — active state', () => {
     const response = await handler(new Request('pro-asset://web/index.mjs', { method: 'DELETE' }));
     expect(response.status).toBe(405);
   });
+
+  it('404s pro-asset://server/index.mjs even when the private server entry is present in files', async () => {
+    const handler = createProAssetProtocolHandler(
+      activeManifest({ 'web/index.mjs': 'x', 'server/index.mjs': 'private server source' }),
+    );
+    const response = await handler(new Request('pro-asset://server/index.mjs'));
+    expect(response.status).toBe(404);
+  });
+
+  it('404s pro-asset://desktop/index.mjs even when the private desktop entry is present in files', async () => {
+    const handler = createProAssetProtocolHandler(
+      activeManifest({ 'web/index.mjs': 'x', 'desktop/index.mjs': 'private desktop source' }),
+    );
+    const response = await handler(new Request('pro-asset://desktop/index.mjs'));
+    expect(response.status).toBe(404);
+  });
+
+  it('404s pro-asset:///bundle.json even when bundle.json is present in files', async () => {
+    const handler = createProAssetProtocolHandler(activeManifest({ 'web/index.mjs': 'x', 'bundle.json': '{}' }));
+    const response = await handler(new Request('pro-asset:///bundle.json'));
+    expect(response.status).toBe(404);
+  });
 });

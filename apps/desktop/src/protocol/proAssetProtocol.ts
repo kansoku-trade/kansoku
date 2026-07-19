@@ -60,13 +60,24 @@ export function createProAssetProtocolHandler(webManifest: EditionWebManifestRes
     // Locked/absent/incompatible/failed states must never read
     // webManifest.files (it is null in every non-active state per Task 1's
     // contract) — 404 unconditionally before touching it.
-    if (webManifest.state !== 'active' || webManifest.files === null) {
+    if (webManifest.state !== 'active' || webManifest.files === null || webManifest.entryPath === null) {
       return new Response('Not Found', { status: 404 });
     }
 
     const resolvedPath = resolveProAssetPath(request.url);
     if (resolvedPath === null) {
       return new Response('Forbidden', { status: 403 });
+    }
+
+    // Defense in depth: readEditionWebManifest already filters webManifest.files
+    // to entries under the web entry's directory, so a host other than "web"
+    // (e.g. pro-asset://server/index.mjs, pro-asset:///bundle.json) already
+    // 404s on the Map lookup below — this rejects it before that lookup too.
+    const webDirIndex = webManifest.entryPath.lastIndexOf('/');
+    const webPrefix = webDirIndex === -1 ? webManifest.entryPath : webManifest.entryPath.slice(0, webDirIndex + 1);
+    const withinWebDir = webDirIndex === -1 ? resolvedPath === webPrefix : resolvedPath.startsWith(webPrefix);
+    if (!withinWebDir) {
+      return new Response('Not Found', { status: 404 });
     }
 
     const body = webManifest.files.get(resolvedPath);

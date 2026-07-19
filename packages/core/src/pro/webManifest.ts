@@ -40,8 +40,16 @@ export async function readEditionWebManifest(
     return emptyResult("incompatible", "PRO_EDITION_ENTRY_MISSING");
   }
 
+  // pro-asset:// only ever serves this map to the renderer, so it must never
+  // carry the server/desktop entries or bundle.json — those hold decrypted
+  // private source and would otherwise be fetchable by any renderer script
+  // via pro-asset://server/... or pro-asset:///bundle.json.
+  const lastSlash = entryPath.lastIndexOf("/");
+  const webDir = lastSlash === -1 ? null : entryPath.slice(0, lastSlash + 1);
+
   const files = new Map<string, Buffer>();
   for (const [rel, base64] of Object.entries(manifest.files) as [string, string][]) {
+    if (webDir === null ? rel !== entryPath : !rel.startsWith(webDir)) continue;
     files.set(rel, Buffer.from(base64, "base64"));
   }
 
