@@ -35,11 +35,20 @@ jobs:
       - name: assert pro slot present
         run: test -f apps/pro/src/index.ts
 
+      - name: create overlay projections
+        run: node packages/build-overlay/scripts/sync.mjs
+
+      - name: check overlay projections
+        run: node packages/build-overlay/scripts/sync.mjs --check
+
       - name: install dependencies
         run: pnpm install --frozen-lockfile
 
       - name: typecheck
         run: pnpm -r typecheck
+
+      - name: typecheck:pro
+        run: pnpm typecheck:pro
 
       - name: build
         run: |

@@ -59,6 +59,29 @@ jobs:
             exit 1
           fi
 
+      - name: assert no tracked overlay artifacts
+        run: |
+          pro_files="$(git ls-files -- '*.pro.ts' '*.pro.tsx' '*.pro.mts' '*.pro.cts')"
+          if [ -n "$pro_files" ]; then
+            echo "::error::tracked *.pro.* overlay projection files found in the public repo:"
+            echo "$pro_files"
+            exit 1
+          fi
+
+          oss_files="$(git ls-files -- '*.oss.ts' '*.oss.tsx' '*.oss.mts' '*.oss.cts')"
+          if [ -n "$oss_files" ]; then
+            echo "::error::tracked *.oss.* files found in the public repo (retired suffix shape must not return):"
+            echo "$oss_files"
+            exit 1
+          fi
+
+          state_file="$(git ls-files -- '.kansoku-overlay-links.json')"
+          if [ -n "$state_file" ]; then
+            echo "::error::tracked .kansoku-overlay-links.json found in the public repo — overlay sync state must stay untracked:"
+            echo "$state_file"
+            exit 1
+          fi
+
       - name: install dependencies
         run: pnpm install --frozen-lockfile
 
@@ -92,3 +115,12 @@ jobs:
 
       - name: gate — server suite has no NEW failures
         run: node .github/scripts/assert-known-test-failures.mjs apps/server/test-results.json
+
+      - name: gate — working tree still clean after Community build
+        run: |
+          dirty="$(git status --porcelain -- . ':!apps/server/test-results.json')"
+          if [ -n "$dirty" ]; then
+            echo "::error::working tree is not clean after the Community build:"
+            echo "$dirty"
+            exit 1
+          fi
