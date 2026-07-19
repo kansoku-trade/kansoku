@@ -55,7 +55,7 @@ export async function bootKernel() {
         legacyKeyPath: join(CHART_DATA_DIR, 'ai-secret.key'),
       });
 
-  const { host: serverHost, edition: serverEdition } = await initServerRuntime({
+  const { host: serverHost, edition: serverEdition, protocol } = await initServerRuntime({
     secretBox,
     openAuthUrl: (url) => {
       shell.openExternal(url).catch(() => {});
@@ -86,19 +86,32 @@ export async function bootKernel() {
     realtime: realtimeRegistry,
   };
 
-  const { encPath, virtualDir } = serverEncLayout(app.getAppPath());
-  const keyHex = getActiveBundleKey() ?? process.env.KANSOKU_BUNDLE_KEY ?? null;
-  const desktopActivation = await loadEdition<DesktopEditionHost, BaseDesktopEdition>({
-    encPath,
-    virtualDir,
-    runtime: 'desktop',
-    keyHex,
-    host: desktopHost,
-  });
-  const desktopEdition: BaseDesktopEdition =
-    desktopActivation.state === 'active' && desktopActivation.edition
-      ? desktopActivation.edition
-      : new LegacyCompatDesktopEdition(desktopHost);
+  // Attempt at most one pro protocol per process (see protocolClaim.ts):
+  // initServerRuntime() already resolved the server-side edition and, when
+  // the packaged bundle was absent/locked/incompatible, fell back to the
+  // legacy loadPro() protocol and claimed it. Calling loadEdition() again
+  // here in that case would throw a protocol-conflict error, so only retry
+  // the edition protocol for the desktop runtime when the server side
+  // actually activated it — a legacy claim goes straight to the legacy
+  // desktop adapter without touching loadEdition() again.
+  let desktopEdition: BaseDesktopEdition;
+  if (protocol === 'edition') {
+    const { encPath, virtualDir } = serverEncLayout(app.getAppPath());
+    const keyHex = getActiveBundleKey() ?? process.env.KANSOKU_BUNDLE_KEY ?? null;
+    const desktopActivation = await loadEdition<DesktopEditionHost, BaseDesktopEdition>({
+      encPath,
+      virtualDir,
+      runtime: 'desktop',
+      keyHex,
+      host: desktopHost,
+    });
+    desktopEdition =
+      desktopActivation.state === 'active' && desktopActivation.edition
+        ? desktopActivation.edition
+        : new LegacyCompatDesktopEdition(desktopHost);
+  } else {
+    desktopEdition = new LegacyCompatDesktopEdition(desktopHost);
+  }
   desktopEdition.configureIpc(ipcRegistry);
   desktopEdition.configureRealtime(realtimeRegistry);
   await desktopEdition.initialize();

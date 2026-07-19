@@ -73,7 +73,11 @@ beforeEach(() => {
     app: { getInstance: () => ({ fetch: vi.fn(async () => new Response('ok', { status: 200 })) }) },
   }));
   loadEdition.mockResolvedValue({ state: 'absent', bundlePresent: false });
-  initServerRuntime.mockImplementation(async () => ({ host: fakeCoreHost(), edition: fakeServerEdition() }));
+  initServerRuntime.mockImplementation(async () => ({
+    host: fakeCoreHost(),
+    edition: fakeServerEdition(),
+    protocol: 'edition',
+  }));
 });
 
 afterEach(() => {

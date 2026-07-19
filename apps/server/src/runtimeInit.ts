@@ -47,9 +47,20 @@ export interface ServerRuntimeOptions {
   productionHost?: boolean;
 }
 
+export interface ServerRuntimeResult {
+  host: ServerEditionHost;
+  edition: BaseServerEdition;
+  // Which pro protocol this process claimed while resolving the server
+  // edition (see protocolClaim.ts) — 'edition' means the packaged bundle
+  // activated and callers may still load further edition-protocol runtimes
+  // (e.g. desktop) in this process; 'legacy' means loadPro() already claimed
+  // the legacy protocol and loadEdition() must not be attempted again here.
+  protocol: 'edition' | 'legacy';
+}
+
 export async function initServerRuntime(
   opts?: ServerRuntimeOptions,
-): Promise<{ host: ServerEditionHost; edition: BaseServerEdition }> {
+): Promise<ServerRuntimeResult> {
   loadDotenv();
 
   // 1h prompt-cache TTL: commentator sessions re-run at 5-min heartbeats, the
@@ -95,8 +106,10 @@ export async function initServerRuntime(
   );
 
   let edition: BaseServerEdition;
+  let protocol: 'edition' | 'legacy';
   if (activation.state === 'active' && activation.edition) {
     edition = activation.edition;
+    protocol = 'edition';
   } else {
     await loadPro(opts?.proAppDir, opts?.proEntry);
     await getPro()?.initRuntime?.(getDb(), opts?.secretBox, {
@@ -107,7 +120,8 @@ export async function initServerRuntime(
       kansokuHome: KANSOKU_HOME,
     });
     edition = new LegacyCompatServerEdition(host);
+    protocol = 'legacy';
   }
 
-  return { host, edition };
+  return { host, edition, protocol };
 }
