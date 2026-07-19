@@ -1,5 +1,4 @@
 import { Module, type Constructor } from '@tsuki-hono/common';
-import { getPro } from '@kansoku/core/pro/registry';
 import { AnnotationsModule } from './annotations/annotations.module.js';
 import { AssistantModule } from './assistant/assistant.module.js';
 import { CapabilitiesModule } from './capabilities/capabilities.module.js';
@@ -16,26 +15,26 @@ import { ResearchModule } from './research/research.module.js';
 import { SettingsModule } from './settings/settings.module.js';
 import { SymbolsModule } from './symbols/symbols.module.js';
 
-const aiModules = (getPro()?.tsukiModules ?? []) as Constructor[];
+export const SERVER_PUBLIC_MODULES: Constructor[] = [
+  HealthModule,
+  ChartsModule,
+  SymbolsModule,
+  AnnotationsModule,
+  PositionsModule,
+  OverviewModule,
+  SettingsModule,
+  AssistantModule,
+  ChatModule,
+  ResearchModule,
+  LobeHubModule,
+  LegacyModule,
+  CredentialsModule,
+  CapabilitiesModule,
+  LicenseModule,
+];
 
-@Module({
-  imports: [
-    HealthModule,
-    ChartsModule,
-    SymbolsModule,
-    AnnotationsModule,
-    PositionsModule,
-    OverviewModule,
-    SettingsModule,
-    AssistantModule,
-    ChatModule,
-    ResearchModule,
-    LobeHubModule,
-    LegacyModule,
-    CredentialsModule,
-    CapabilitiesModule,
-    LicenseModule,
-    ...aiModules,
-  ],
-})
-export class AppModule {}
+export function buildAppModule(modules: Constructor[]): Constructor {
+  class RootModule {}
+  Module({ imports: modules })(RootModule);
+  return RootModule;
+}

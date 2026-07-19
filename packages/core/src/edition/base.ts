@@ -1,4 +1,5 @@
 import type { CoreEditionHost, DesktopEditionHost, ServerEditionHost } from './host.js';
+import type { ServerBuilder } from './serverBuilder.js';
 
 export abstract class BaseEdition<THost extends CoreEditionHost> {
   private initialized = false;
@@ -65,5 +66,9 @@ export abstract class BaseEdition<THost extends CoreEditionHost> {
   protected onDispose(): Promise<void> | void {}
 }
 
-export abstract class BaseServerEdition extends BaseEdition<ServerEditionHost> {}
+export abstract class BaseServerEdition extends BaseEdition<ServerEditionHost> {
+  configureServer(builder: ServerBuilder): void {
+    builder.addPublicModules();
+  }
+}
 export abstract class BaseDesktopEdition extends BaseEdition<DesktopEditionHost> {}
