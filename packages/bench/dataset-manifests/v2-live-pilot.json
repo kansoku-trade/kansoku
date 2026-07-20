@@ -9,6 +9,7 @@
     "commit": "36987d43be22df9fd81b341f87292c2e3ad8e4aa"
   },
   "id": "v2-live-pilot",
+  "label": "live-2026-12",
   "kind": "episode",
   "modes": ["live"],
   "publishedAt": "2026-07-18T07:57:56Z",

@@ -9,6 +9,7 @@
     "commit": "36987d43be22df9fd81b341f87292c2e3ad8e4aa"
   },
   "id": "v2-blind-pilot",
+  "label": "blind-anon-12",
   "kind": "episode",
   "modes": ["blind"],
   "publishedAt": "2026-07-18T07:58:01Z",

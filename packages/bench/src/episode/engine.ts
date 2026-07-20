@@ -9,6 +9,8 @@ import type {
 import type { Question } from '../schema/question.js';
 import type { Submission } from '../schema/submission.js';
 import type { EpisodeTradeReason } from '../schema/tradeReason.js';
+import { marketDate, weekKey } from './generate.js';
+import { buildEpisodeQuestionViewAtCursor } from './view.js';
 
 export type EpisodePhase = 'flat' | 'pending' | 'open' | 'terminal';
 export type EpisodeEvent =
@@ -73,13 +75,79 @@ export interface EpisodeEngineOptions {
   costBps?: number;
 }
 
-export interface EpisodeAdvanceResult {
+export interface EpisodeNewBars {
+  h1: RawBar[];
+  day: RawBar[];
+  week: RawBar[];
+}
+
+export type EpisodeAdvanceCore = {
   state: EpisodeState;
   asOf: string;
   bar: RawBar | null;
   event: EpisodeEvent;
   terminal: boolean;
   result: EpisodeTradeResult | null;
+  batchAdvancedBars?: number;
+  batchStopReason?: 'requested' | EpisodeEvent | 'terminal';
+};
+
+export interface EpisodeAdvanceResult extends EpisodeAdvanceCore {
+  newBars: EpisodeNewBars;
+}
+
+const EMPTY_NEW_BARS: EpisodeNewBars = { h1: [], day: [], week: [] };
+
+function diffBars(prev: readonly RawBar[], next: readonly RawBar[]): RawBar[] {
+  const prevMap = new Map<string, RawBar>();
+  for (const bar of prev) prevMap.set(bar.time, bar);
+  const out: RawBar[] = [];
+  for (const bar of next) {
+    const prior = prevMap.get(bar.time);
+    if (!prior) {
+      out.push(bar);
+      continue;
+    }
+    if (
+      numberOf(prior.open) !== numberOf(bar.open) ||
+      numberOf(prior.high) !== numberOf(bar.high) ||
+      numberOf(prior.low) !== numberOf(bar.low) ||
+      numberOf(prior.close) !== numberOf(bar.close) ||
+      numberOf(prior.volume) !== numberOf(bar.volume)
+    ) {
+      out.push(bar);
+    }
+  }
+  return out;
+}
+
+function computeNewBars(
+  question: Question,
+  prevCursor: number,
+  nextCursor: number,
+): EpisodeNewBars {
+  if (nextCursor <= prevCursor) return { h1: [], day: [], week: [] };
+  const prevView = buildEpisodeQuestionViewAtCursor(question, prevCursor);
+  const nextView = buildEpisodeQuestionViewAtCursor(question, nextCursor);
+  const prevH1 = prevView.fixtures.kline['1h'] ?? [];
+  const nextH1 = nextView.fixtures.kline['1h'] ?? [];
+  const prevDay = prevView.fixtures.kline.day ?? [];
+  const nextDay = nextView.fixtures.kline.day ?? [];
+  const prevWeek = prevView.fixtures.kline.week ?? [];
+  const nextWeek = nextView.fixtures.kline.week ?? [];
+  return {
+    h1: diffBars(prevH1, nextH1),
+    day: diffBars(prevDay, nextDay),
+    week: diffBars(prevWeek, nextWeek),
+  };
+}
+
+function withNewBars(
+  core: EpisodeAdvanceCore,
+  question: Question,
+  prevCursor: number,
+): EpisodeAdvanceResult {
+  return { ...core, newBars: computeNewBars(question, prevCursor, core.state.cursor) };
 }
 
 function numberOf(value: string | number): number {
@@ -194,7 +262,7 @@ function finishAtHorizon(
   event: EpisodeEvent,
   asOf: string,
   bar: RawBar | null,
-): EpisodeAdvanceResult {
+): EpisodeAdvanceCore {
   const result = terminalResult(state);
   const terminalState: EpisodeState = {
     ...state,
@@ -308,6 +376,7 @@ export function submitEpisode(
       event: 'abstained',
       terminal: false,
       result: null,
+      newBars: EMPTY_NEW_BARS,
     };
   }
 
@@ -335,6 +404,7 @@ export function submitEpisode(
     event: 'waiting_fill',
     terminal: false,
     result: null,
+    newBars: EMPTY_NEW_BARS,
   };
 }
 
@@ -493,12 +563,13 @@ function advanceFlat(
   state: EpisodeState,
   question: Question,
   action: Extract<EpisodeAction, { type: 'hold' | 'observe' }>,
-): EpisodeAdvanceResult {
+  skipRecord = false,
+): EpisodeAdvanceCore {
   const nextCursor = state.cursor + 1;
   const bar = replayBar(question, nextCursor);
   if (!bar) throw new Error('episode has no next replay bar');
   const working: EpisodeState = {
-    ...withAction(state, question, action, bar),
+    ...(skipRecord ? state : withAction(state, question, action, bar)),
     cursor: nextCursor,
   };
   if (remainingEpisodeBars(working, question) === 0) {
@@ -513,19 +584,21 @@ export function observeEpisode(
   _options: EpisodeEngineOptions = {},
 ): EpisodeAdvanceResult {
   if (state.phase !== 'flat') throw new Error('observe_next_bar is only valid while flat');
-  return advanceFlat(state, question, { type: 'observe' });
+  const prevCursor = state.cursor;
+  return withNewBars(advanceFlat(state, question, { type: 'observe' }), question, prevCursor);
 }
 
-export function advanceEpisode(
+function advanceEpisodeSingle(
   state: EpisodeState,
   question: Question,
   action: EpisodeTradeAction,
   options: EpisodeEngineOptions = {},
-): EpisodeAdvanceResult {
+  skipRecord = false,
+): EpisodeAdvanceCore {
   if (state.phase === 'terminal') throw new Error('episode already terminated');
   if (state.phase === 'flat') {
     if (action.type !== 'hold') throw new Error(`action ${action.type} is invalid while flat`);
-    return advanceFlat(state, question, action);
+    return advanceFlat(state, question, action, skipRecord);
   }
   if (state.phase === 'pending' && action.type !== 'hold' && action.type !== 'cancel') {
     throw new Error(`action ${action.type} is invalid while the order is pending`);
@@ -538,10 +611,18 @@ export function advanceEpisode(
   ) {
     throw new Error(`action ${action.type} is invalid while the position is open`);
   }
+  if (
+    !skipRecord &&
+    action.type === 'hold' &&
+    (state.phase === 'pending' || state.phase === 'open') &&
+    !action.reason
+  ) {
+    throw new Error(`hold in ${state.phase} phase requires a reason`);
+  }
 
   const activeTradeId = state.order?.tradeId ?? state.position?.tradeId ?? null;
   if (action.type === 'cancel') {
-    const cancelled = withAction(state, question, action, null, activeTradeId);
+    const cancelled = skipRecord ? state : withAction(state, question, action, null, activeTradeId);
     const nextState: EpisodeState = { ...cancelled, phase: 'flat', order: null };
     return {
       state: nextState,
@@ -557,7 +638,7 @@ export function advanceEpisode(
   const bar = replayBar(question, nextCursor);
   if (!bar) throw new Error('episode has no next replay bar');
   let working: EpisodeState = {
-    ...withAction(state, question, action, bar, activeTradeId),
+    ...(skipRecord ? state : withAction(state, question, action, bar, activeTradeId)),
     cursor: nextCursor,
   };
 
@@ -729,4 +810,115 @@ export function advanceEpisode(
     terminal: false,
     result: null,
   };
+}
+
+function isBoringEvent(event: EpisodeEvent): boolean {
+  return event === 'holding' || event === 'waiting_fill' || event === 'observed';
+}
+
+function computeBatchTargetBars(
+  state: EpisodeState,
+  question: Question,
+  action: Extract<EpisodeTradeAction, { type: 'hold' }>,
+): number {
+  const barsRequested = action.bars ?? 1;
+  const period = action.period ?? 'h1';
+  const allBars = question.replay.bars;
+  const remaining = allBars.length - state.cursor - 1;
+  if (remaining <= 0) return 0;
+  if (period === 'h1') return Math.min(barsRequested, remaining);
+  const keyOf =
+    period === 'day'
+      ? (time: string) => marketDate(time)
+      : (time: string) => weekKey(marketDate(time));
+  const startKey =
+    state.cursor >= 0 ? keyOf(allBars[state.cursor].time) : keyOf(question.cutoff);
+  let currentKey = startKey;
+  let unitsCompleted = 0;
+  let lastMatchingIndex = state.cursor;
+  for (let i = state.cursor + 1; i < allBars.length; i++) {
+    const key = keyOf(allBars[i].time);
+    if (key !== currentKey) {
+      unitsCompleted += 1;
+      if (unitsCompleted > barsRequested) break;
+      currentKey = key;
+    }
+    lastMatchingIndex = i;
+  }
+  return Math.max(1, Math.min(lastMatchingIndex - state.cursor, remaining));
+}
+
+export function advanceEpisode(
+  state: EpisodeState,
+  question: Question,
+  action: EpisodeTradeAction,
+  options: EpisodeEngineOptions = {},
+): EpisodeAdvanceResult {
+  const prevCursor = state.cursor;
+  if (action.type !== 'hold') {
+    return withNewBars(
+      advanceEpisodeSingle(state, question, action, options, false),
+      question,
+      prevCursor,
+    );
+  }
+  const barsRequested = action.bars ?? 1;
+  const period = action.period ?? 'h1';
+  if (barsRequested === 1 && period === 'h1') {
+    return withNewBars(
+      advanceEpisodeSingle(state, question, action, options, false),
+      question,
+      prevCursor,
+    );
+  }
+  const target = computeBatchTargetBars(state, question, action);
+  if (target <= 0) {
+    return withNewBars(
+      advanceEpisodeSingle(state, question, action, options, false),
+      question,
+      prevCursor,
+    );
+  }
+  let result: EpisodeAdvanceCore = advanceEpisodeSingle(state, question, action, options, false);
+  let advanced = 1;
+  if (result.terminal) {
+    return withNewBars(
+      { ...result, batchAdvancedBars: advanced, batchStopReason: 'terminal' },
+      question,
+      prevCursor,
+    );
+  }
+  if (!isBoringEvent(result.event)) {
+    return withNewBars(
+      { ...result, batchAdvancedBars: advanced, batchStopReason: result.event },
+      question,
+      prevCursor,
+    );
+  }
+  const continuationAction: Extract<EpisodeTradeAction, { type: 'hold' }> = action.reason
+    ? { type: 'hold', reason: action.reason }
+    : { type: 'hold' };
+  while (advanced < target) {
+    result = advanceEpisodeSingle(result.state, question, continuationAction, options, true);
+    advanced += 1;
+    if (result.terminal) {
+      return withNewBars(
+        { ...result, batchAdvancedBars: advanced, batchStopReason: 'terminal' },
+        question,
+        prevCursor,
+      );
+    }
+    if (!isBoringEvent(result.event)) {
+      return withNewBars(
+        { ...result, batchAdvancedBars: advanced, batchStopReason: result.event },
+        question,
+        prevCursor,
+      );
+    }
+  }
+  return withNewBars(
+    { ...result, batchAdvancedBars: advanced, batchStopReason: 'requested' },
+    question,
+    prevCursor,
+  );
 }

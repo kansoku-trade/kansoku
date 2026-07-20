@@ -4395,6 +4395,10 @@ a.zone-item:hover {
 .license-modal-panel {
   width: min(440px, 100%);
 }
+.license-deactivate-button {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
 .license-paywall {
   display: flex;
   flex-direction: column;

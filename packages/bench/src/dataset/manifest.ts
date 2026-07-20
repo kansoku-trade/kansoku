@@ -15,6 +15,7 @@ export const datasetManifestSchema = Type.Object(
     $schema: Type.Optional(Type.String()),
     schemaVersion: Type.Literal(1),
     id: Type.String({ pattern: DATASET_ID_PATTERN }),
+    label: Type.Optional(Type.String({ pattern: '^[a-z0-9][a-z0-9-]{0,63}$' })),
     revision: Type.String({ pattern: '^r[1-9][0-9]*$' }),
     kind: Type.Union([Type.Literal('single-shot'), Type.Literal('episode')]),
     status: Type.Optional(Type.Union([Type.Literal('pilot'), Type.Literal('production')])),

@@ -190,6 +190,7 @@ function LicensedStatus({
         ) : null}
       </div>
       <Button
+        className="license-deactivate-button"
         onClick={() =>
           openModal({
             title: '停用本机',

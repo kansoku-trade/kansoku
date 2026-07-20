@@ -6,7 +6,14 @@ export interface ArchiveTermSpec {
 
 export interface SymbolSpec {
   symbol: string;
-  layer: 'high-vol-tech' | 'mega-blue-chip' | 'defensive' | 'cyclical' | 'index-etf';
+  layer:
+    | 'high-vol-tech'
+    | 'mega-blue-chip'
+    | 'defensive'
+    | 'cyclical'
+    | 'index-etf'
+    | 'commodity'
+    | 'crypto';
   companyQuery?: string | null;
   cik?: string | null;
   archiveTerms?: ArchiveTermSpec | null;
@@ -136,6 +143,20 @@ export const DEFAULT_SYMBOLS: SymbolSpec[] = [
   { symbol: 'QQQ.US', layer: 'index-etf', companyQuery: null, cik: null, archiveTerms: null },
   { symbol: 'SMH.US', layer: 'index-etf', companyQuery: null, cik: null, archiveTerms: null },
   { symbol: 'IWM.US', layer: 'index-etf', companyQuery: null, cik: null, archiveTerms: null },
+  {
+    symbol: 'GC=F',
+    layer: 'commodity',
+    companyQuery: null,
+    cik: null,
+    archiveTerms: null,
+  },
+  {
+    symbol: 'BTC-USD',
+    layer: 'crypto',
+    companyQuery: null,
+    cik: null,
+    archiveTerms: null,
+  },
 ];
 
 export function layerForSymbol(symbol: string): SymbolSpec['layer'] {

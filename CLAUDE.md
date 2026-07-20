@@ -85,11 +85,11 @@ Shared conventions (enforced by `.claude/skills/_shared/`):
 
 ## Cross-cutting invariants (the reason the skills exist)
 
-**The invariants live in ONE place — `trading-discipline` — imported below. Do not restate them here or copy their text into any other skill.** Domain skills cite rule IDs (`TD-SOURCE-01`, `TD-GAAP-01`, …) and never duplicate the prose. Duplication drifts: on 2026-07-14 `capital-rotation/SKILL.md` was instructing a unit conversion that this file explicitly forbade.
+**The invariants live in one skill (`trading-discipline`) with scope-specific chapters under `references/`. Do not restate them here or copy their text into any other skill.** Domain skills cite rule IDs (`TD-SOURCE-01`, `TD-GAAP-01`, …) and never duplicate the prose. Duplication drifts: on 2026-07-14 `capital-rotation/SKILL.md` was instructing a unit conversion that this file explicitly forbade.
 
 @.claude/skills/trading-discipline/SKILL.md
 
-The same file is injected into the in-app agents (`analyst` / `deepDive` / `chat`) by the AI prompt pipeline: `analyst` activates it in its provider-facing MessagesEngine, while `deepDive` / `chat` compose it through `packages/core/src/ai/promptPolicy.ts`. Claude Code and the app therefore run on identical discipline. `@` import is a Claude Code mechanism only — the app reads the skill file directly.
+The main `SKILL.md` is imported here; the `references/` chapters (`us-market-data.md`, `journal.md`, `market-analysis.md`, `episode-execution.md`) are composed into agent prompts by the AI pipeline based on the runtime, not by Claude Code's `@import`. Concretely: `packages/core/src/ai/promptPolicy.ts` exposes `loadAppDiscipline(repoRoot)` (SKILL.md + the three app-only references) and `loadBenchDiscipline(repoRoot)` (SKILL.md + the bench-only reference). App agents (`analyst` / `deepDive` / `chat`) call the first; the bench episode runner calls the second. Claude Code sessions in this repo receive only the SKILL.md core through `@import` — the model can `read_file` a specific reference when it needs the detail, but the base discipline is the core, mirroring the app runtime's baseline load.
 
 ### Known data gotchas
 

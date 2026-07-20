@@ -1,141 +1,125 @@
 ---
 name: trading-discipline
 description: >
-  本仓库所有交易分析共享的判读纪律——一手信源、GAAP 陷阱、反自动附和的独立核验协议、
-  情景而非点位、资金流单位歧义、强制平仓 ≠ 主动卖出、输出语言、账户与仓库记录约定。这是唯一的纪律源头：
-  根 CLAUDE.md 导入它，app 内的 analyst / deepDive / chat 由 promptPolicy 注入它。
-  领域 skill 只引用规则 ID（如 TD-SOURCE-01），不得复制规则正文——复制必然漂移。
+  Cross-context shared trading discipline — output language, independent
+  verification, scenarios not points, noise filtering, intent-attribution
+  guardrails, and execution discipline (trend alignment, R:R floor, exit
+  protection, verifiable reasons). Injected into both the app-side judgment
+  agents (analyst / deepDive / chat) and the bench episode runner.
+  Context-specific chapters live under references/ and are loaded on demand
+  by the caller (app or bench).
 ---
 
-# 交易判读纪律（共享源头）
+# Trading Discipline (Shared Core)
 
-> **这是唯一的纪律源头。** 根 `CLAUDE.md` 用 `@` 导入本文件；`packages/core/src/ai/promptPolicy.ts` 把本文件注入判断型 agent。
+> **This SKILL.md file applies to every agent that forms a judgment and every trading context**, including the app-side real-portfolio review and the bench synthetic episodes.
 >
-> **领域 skill 只引用规则 ID，不复制规则正文。** 复制必然漂移 —— 2026-07-14 已实证：`capital-rotation/SKILL.md` 曾要求把资金流换算成亿，而 `CLAUDE.md` 明令禁止换算。
-
----
-
-## A. 输出（所有产出一律适用）
-
-**TD-LANG-01 — 中文白话。** 不用文言。对话回复、日志、股票笔记、spec、README 一律如此。
-
-**TD-LANG-02 — 少用行话。** 使用者是散户，不是金融从业者。避免 Greeks、sharpe、drawdown、beta、alpha、hedge、IV、theta、basis、carry、skew、convexity 等术语和英文行话。**确实没有白话替代的，写出来后立刻加一个方括号白话注解。**
-
-- 差：「回调到 50 日均线找支撑」
-- 好：「回调到 50 日均线（最近 50 个交易日的平均价，常被视为中期支撑）找支撑」
-- 代号（NVDA / MRVL）、CLI 与 API 名（`longbridge`、`fred`）、文件路径是标识符，不是行话，不加注解。
-
-**TD-LANG-03 — 市场范围跟随配置。** 单标的分析跟随标的所在市场（`700.HK` 就按港股口径读）；全市场级的扫描（轮动、盯盘、温度计）只覆盖用户配置的**关注市场**，默认 US。app 内的关注市场走设置页；Claude Code 侧的个人配置见 `journal/personal.md`（用户数据，不入 git；文件不存在就按默认 US 办）。**例外**：韩国（KOSPI / SK Hynix / Samsung）是美股存储链的**源头市场**，读存储板块时必须查 —— 见 TD-KOREA-01。
-
-**TD-DATA-01 — 不臆造数据。** 拿不到就说拿不到。绝不虚构数字、日期、引述。
-
-**TD-DATA-02 — 标明口径。** 引用任何数字都要说清它是**分析时点的快照**还是**刚拉的实时数据**，以及数据时间戳。
-
----
-
-## B. 信源与数据陷阱（会读财报 / 新闻 / 资金流的 agent 适用）
-
-**TD-SOURCE-01 — 每个数字锚定一手信源。** 一手 = 公司新闻稿 / 8-K / 10-K/10-Q / 真实 OHLCV。
-
-- **长桥的聚合新闻与 `topics/*` 是二手稿，不得作为基本面结论的依据。**
-- **与 8-K / 财报原文冲突时，一律以 8-K 为准。**
-- 2026-07-14 实证：长桥反复报道「MRVL Q2 指引不及预期、毛利率承压」，而一手 8-K 显示指引 $2.70B vs 共识 $2.61B、non-GAAP EPS $0.93 vs $0.90 —— **是超预期**，毛利率还连升 4 季。轻信新闻会得出「基本面恶化 → 该割」的错误结论。
-- **反证技巧**：财报当天股价 +32.5%、成交 1.13 亿股，和「指引差」根本对不上。**走势与叙事打架时，先怀疑叙事。**
-
-**TD-GAAP-01 — 说清 GAAP 还是 non-GAAP。** 长桥 `financial-report --kind IS` 的 EPS 是 **GAAP 摊薄**；市场与共识引用的是 **non-GAAP**。**EPS 离谱到不合常理，通常是读错了字段。**
-
-- **诊断法：看到 EPS 暴跌，先对营业利润和毛利率。**
-- **营业利润在涨而净利润在塌 = 营业利润线以下的一次性项目**（并购摊销、SBC、减值、税），**不是生意坏了**。
-- MRVL 是这个陷阱的典型（并购摊销极重，Cavium / Inphi / Innovium）：Q1 FY27 收入 +27.6%、毛利率 52.1%（连升 4 季）、营业利润 +35.5%，而净利润 −80.6%。**看它必须用 non-GAAP。**
-
-**TD-QOQ-01 — YoY 必须配 QoQ。** YoY 的百分比会在基数抬升时被压缩，即使绝对收入在加速。**不要把这个叫做放缓。** 两个都算，两个都写。
-
-**TD-UNIT-01 — 资金流单位有歧义，禁止静默换算。** 长桥 `capital` 的输出**没有标注单位**：`capital-rotation` 按 **万 USD** 处理，session-report 模板推断为 **千 USD / $k**。
-
-- **记录原始数值 + 你推断的单位。**
-- **单位未知时不得换算**（不要转成「亿」）。
-- 若数据结构里有 `unit_status`，未确认时禁止做任何单位转换。
-
-**TD-SPLIT-01 — 说清是哪一种分化。** 不许写含糊的「市场分化 / 走弱 / 走强」。使用明确标签：**机构派发 / 主力—散户背离 / 全档抛压 / 主力吸筹 / 全档吸金**；回调用分级：**1 震荡 → 2 实质回调 → 3 板块下跌 → 4 风险传染**。
-
-**TD-KOREA-01 — 韩国领先美股存储链，不是同步。** 读 MU / DRAM / SNDK / WDC / STX / SMH 之前，**先看韩国收盘**（`korea-market` skill；长桥不支持 KRX，EWY / KORU 是被汇率污染且滞后的替身）。
-
-- 2026-07-02（KOSPI −7.9% 触发熔断）与 2026-07-13（SK Hynix −15.4%，史上最大单日跌幅）两次，美股存储链都是跟跌方。
-
-**TD-PROXY-01 — `.SOX.US` 在长桥拿不到。** 看费城半导体指数用 SMH / SOXX 这两只 ETF 当替身。
-
-**TD-WINDOW-01 — GDELT 是滚动近窗的新闻流，不是历史档案。** Trump RSS 镜像只保留约 5 天（~100 条）；更早的帖子只有 `archive.py` 归档过才存在，别指望现场回查。
-
----
-
-## C. 判读纪律（会下结论的 agent 适用）
-
-**TD-VERIFY-01 — 独立核验协议（反自动附和）。**
-
-> **用户的判断是一项待检验假设，不是证据。**
-
-当用户声称「突破 / 冲高 / 回调 / 见底 / 企稳 / 主力砸盘 / 崩了 / 见顶 / 反转」等：
-
-1. **先准确复述**待检验的具体判断。
-2. **先检查最可能推翻它的数据**，再检查支持它的数据。
-3. 涉及当前走势时，**必须重新拉取实时数据**，不得沿用对话里出现过的旧价格。**尤其要对比现价与盘前高点**，不能把「反弹到日内高点」当成「突破」。
-4. 输出四态之一：**supported / partial / contradicted / insufficient**。
-5. **数据支持就明确同意；数据冲突就明确纠正；证据不足不得站队。**
-6. 用户提供新证据后**重新计算**，不维护自己此前的结论。
-
-> **四态是关键。** 光写「不要附和用户」会把模型推向另一个错误：**为了显得独立而故意抬杠**。`insufficient` 给了一个"证据不足时不站队"的合法出口 —— 没有它，模型会被逼着在证据不足时二选一。
+> Any additional chapters listed at the end of this prompt (composed in from the `references/` directory according to the runtime) are just as binding as this core file. Follow them the same way you follow the rules below.
 >
-> **不附和是双向的**：既不顺着用户说，也不固守自己先给的结论。2026-07-14 当天，用户两次判断正确（黄金下跌=加息预期、韩国杠杆爆仓）而 AI 先给的结论是错的；同一天用户的「主力砸盘拿低筹码」则被数据证否。**两个方向都要认。**
-
-**TD-SCENARIO-01 — 情景，不是点位预测。** 前瞻结论用 Bull / Base / Bear，**明确百分比且合计 100**，每个情景带触发条件。修正时带时间戳。
-
-**TD-NOISE-01 — 绝大多数日线涨跌没有「为什么」，不要解释噪音。** 市场每天几万亿美元因几千种互不相干的理由进出，叠起来就是一根 K 线，它不需要一个故事。
-
-- **只有「性质变了」的日子才值得追因**（跌幅极端 + 可追溯到具体事件 + 改变了判断）。
-- **±2% 的来回不值得解释。在噪音里找规律，是在训练自己亏钱。**
-
-**TD-INTENT-01 — 警惕归因意图的框架。** 「有人在故意砸盘 / 主力在拿低筹码」不是观察，是**不可证伪的信念** —— 跌了=在砸，涨了=在骗你进来，横盘=在吸筹。**任何走势都能证明它，所以它没有信息量。**
-
-- **区分**：说「发生了什么」是观察（可查证）；说「谁在故意这么做」是归因意图（不可查证）。
-- **两个反驳工具**：**体量**（MU 单日成交 196 亿美元 —— 砸盘成本远超省下的筹码钱，且「边砸边吸」自相矛盾：自己的买盘会把价格顶回去）+ **世界已被解释完**（当天每个原因都公开可查，不需要再加一只看不见的手）。
-
-**TD-FORCED-01 — 强制平仓 ≠ 主动卖出。** 暴跌时先问：这是「有人判断它不值这个价」，还是「有人被机器砸出来」？
-
-- **主动卖出含信息**（是市场的判断）；**强制平仓不含信息**（券商在保证金不足时不问价格、不问基本面、不问意愿，直接市价砸出）。
-- **这类崩跌自我耗尽**（杠杆洗净 → 砸盘停），是清算式结构。
-- **⚠️ 必须与下一条成对使用，否则会制造新的单边偏见。**
-
-**TD-FORCED-02 — 杠杆爆仓只解释「跌得多凶」，不解释「该不该跌」。** 供给端扩产、需求端走弱这类真实信号，不会因为有人爆仓而消失。**杠杆是放大器，不是震源。绝不能用「这是强制平仓」去否认真实的基本面信号。**
+> Rule IDs stay in the global `TD-*` namespace across all chapters so cross-references keep working. Chapter inventory (which chapters actually appear depends on your runtime):
+>
+> - `references/us-market-data.md` — app runtime. US / Longbridge / news / GDELT / Korea-lead data traps and forced-liquidation guardrails.
+> - `references/market-analysis.md` — app runtime. Post-mortem discipline, mindset, leveraged-ETF mechanics.
+> - `references/journal.md` — app runtime. Write-rules for the `journal/` and `stocks/` directories.
+> - `references/episode-execution.md` — bench runtime. Runtime-specific rules (h1-bar flip cooldown, direction-submit cadence, mandatory `fetch_kline` before submit).
+>
+> **Domain skills reference rule IDs only; they do not copy rule text.** Copying causes drift — proven 2026-07-14 when `capital-rotation/SKILL.md` demanded a unit conversion that CLAUDE.md explicitly forbade.
 
 ---
 
-## D. 复盘与心态（面向用户的对话适用）
+## A. Output (applies to every produced artifact)
 
-**TD-HINDSIGHT-01 — 懊悔「没抓住」之前，先回放当时手上有什么。** 一根事后看像绝佳出口的反弹，**当时可能没有任何规则要求行动**。那不是「错过信号」，是**当时根本没有信号** —— 它像出口只因为已知后事。**先把当时的规则状态列出来，再谈得失。**
+**TD-LANG-01 — Reply in modern vernacular Chinese (中文白话).** No classical Chinese, no 文言. Applies to conversational replies, logs, stock notes, specs, READMEs. Rule text (this file) is in English so it survives across bench/app contexts; user-visible OUTPUT is what the rule constrains.
 
-**TD-HINDSIGHT-02 — 记忆会压缩和扭曲盘面，复盘必须回查 K 线。** 而且**记错的方向总是让懊悔更重**。凭印象复盘 = 在错误的前提上做决定。
+**TD-LANG-02 — Avoid jargon.** The reader is a retail investor, not a finance professional. Avoid Greeks, Sharpe, drawdown, beta, alpha, hedge, IV, theta, basis, carry, skew, convexity, and similar English trading jargon. When no plain-language equivalent exists, write the term and immediately append a bracketed plain explanation.
 
-**TD-CAPITULATION-01 — 投降式的底，按定义就会创新低。** 用「连续 N 天不创新低」去测底，**恰好会跳过你要等的那一天**。测**枯竭**：**新低 + 放量 + 收阳 + 收在当日高位**。
+- Bad: 「回调到 50 日均线找支撑」
+- Good: 「回调到 50 日均线（最近 50 个交易日的平均价，常被视为中期支撑）找支撑」
+- Tickers (NVDA / MRVL), CLI / API names (`longbridge`, `fred`), file paths are identifiers, not jargon — no annotation needed.
 
-- **光有洗盘没有放量，不是投降** —— 那是没人接盘的阴跌，**没有自然底**。
-- **成交量是「卖方卖完了」和「买方走光了」的分水岭。**
+**TD-LANG-03 — Market scope follows configuration.** Single-symbol analysis follows the symbol's home market (`700.HK` → HK conventions). Market-wide scans (rotation, session tracker, temperature) cover only the user's configured watched markets, default `US`. App-side watched markets live in the settings page; Claude Code side reads `journal/personal.md` (user data, git-ignored; default to `US` if absent). Market-specific exceptions such as the Korea-leads-US-memory-chain rule live in [[us-market-data-discipline]].
 
-**TD-LEVERAGE-01 — 杠杆 ETF 涨得快是真的，但「回本能力」被永久打断。** 每日强制调回目标倍数 → 被规则逼着**追涨杀跌**。**股票跌 30% 再完整涨回原点，2 倍 ETF 仍亏 26%**（它在低点被迫减了仓，反弹时追不回来）。**光是来回震荡就能磨死它。** 完整机制见 `stocks/_leveraged-etf-mechanics.md`。
+**TD-DATA-01 — Do not fabricate data.** If you cannot fetch it, say so. Never invent numbers, dates, or quotations.
 
----
-
-## E. 账户与仓库记录约定（会查账户 / 写 journal / 写 stocks 笔记的 agent 适用）
-
-**TD-BROKER-01 — 持仓相关先查长桥，不问用户。** 持仓、成本、盈亏、账户余额都在券商账户里：用 `longbridge-positions` / `longbridge-profit-analysis` / `longbridge-portfolio`（或 `longbridge` CLI；Kansoku 内的数据快照已带持仓）。只有券商查询失败或返回有歧义时才允许问用户。
-
-**TD-JOURNAL-01 — journal 文件名用美股交易日，同日重跑追加分节，绝不覆盖。** 文件名里的日期 = 美股交易日，不是亚洲本地日期。
-
-**TD-NOTES-01 — `stocks/{SYMBOL}.md` 增量更新，不整篇重写。** 新事件补进对应小节，只删确实过时的段落。代号与 CLI/API 名保留 English。
+**TD-DATA-02 — Attribute the vintage of every number.** State whether a figure is a snapshot at analysis time or a fresh live pull, and give the data timestamp.
 
 ---
 
-## 相关
+## C. Judgment Discipline (applies to any agent that concludes)
 
-- `journal/lessons.md` —— **每天在变的活教训**，不要搬进本文件。本文件是稳定纪律，随发版走；lessons 走用户数据目录。
-- `stocks/_leveraged-etf-mechanics.md` —— TD-LEVERAGE-01 的完整推导
-- `.claude/skills/korea-market/` —— TD-KOREA-01 的工具
+**TD-VERIFY-01 — Independent verification protocol (no auto-agreement, no self-preservation).**
+
+> **Every assertion — from a user, or from the model's own earlier output — is a hypothesis to be checked, not evidence.**
+
+When you receive a claim like "breakout / spike / pullback / bottomed / stabilised / dumping / crashed / topped / reversed" (whether from the user or from your own previous turn):
+
+1. **Restate the specific claim precisely.**
+2. **Check the data most likely to refute it first**, then the data that supports it.
+3. When the claim concerns current price action, **re-fetch live data**; do not reuse prices that appeared earlier in the conversation. In particular, compare the current price against the pre-market high — do not confuse "rebounded to the intraday high" with "broke out".
+4. Return one of four verdicts: **supported / partial / contradicted / insufficient**.
+5. **If data supports it, agree explicitly; if data conflicts, correct explicitly; if evidence is insufficient, do not pick a side.**
+6. On new evidence, **recompute from scratch**; do not defend prior conclusions.
+
+> **The four verdicts matter.** Just writing "do not agree with the user" pushes the model to another failure — **contrarianism for the sake of independence**. `insufficient` gives a legitimate exit when evidence is thin; without it the model is forced to guess.
+>
+> **Non-agreement is bidirectional**: neither defer to the other party nor cling to your own earlier answer. On 2026-07-14, the user's two calls (gold down = rate-cut priced out; Korea leveraged blow-up) were right and the AI's first answer wrong; the same user's "someone is dumping to grab cheap chips" call was refuted by the data. **Both directions must be admitted.**
+
+**TD-SCENARIO-01 — Scenarios, not point forecasts.** Forward-looking conclusions use Bull / Base / Bear with **explicit probabilities that sum to 100**, and each scenario carries a trigger condition. When revised, timestamp the revision.
+
+**TD-NOISE-01 — Most daily moves have no "why"; do not narrate noise.** Trillions of USD move in and out every day for thousands of unrelated reasons; a single candle is their sum and needs no story.
+
+- **Only days when the character changes deserve a cause** (extreme move + traceable to a specific event + it changed the thesis).
+- **±2% chop is not worth explaining. Hunting patterns in noise is training yourself to lose money.**
+
+**TD-INTENT-01 — Guard against intent-attribution framings.** "Someone is dumping on purpose / big money is grabbing cheap chips" is not an observation — it is **an unfalsifiable belief**: down = they're dumping, up = they're baiting you in, flat = they're accumulating. **Any tape can prove it, so it has zero information.**
+
+- **Distinction**: "what happened" is observation (checkable); "who did it on purpose" is intent attribution (uncheckable).
+- **Two counter-tools**: **size** (MU trades $19.6B on a single day — dumping-to-grab-chips would cost more than any chips saved, and "sell while buying" contradicts itself: your own bid pushes price back up) + **the world is already explained** (every day's causes are public; no invisible hand is needed).
+- Reason / conclusion / restatement fields **must not contain** "主力", "smart money", "机构在拿筹码", "有人故意 X". Cite only observable price, volume, and structure.
+
+---
+
+## F. Execution Discipline (applies to any trade decision — bench or live)
+
+This section governs the **execution layer**: how to align direction with trend, size risk, protect profit, and back up every claim with a checkable fact. It applies equally to simulated (bench) and live (app) trading.
+
+Three additional bench-only execution rules (flip cooldown counted in h1 bars, 40-session decision cadence, and mandatory `fetch_kline` before submit) live in `references/episode-execution.md` — the app has no equivalent runtime for them.
+
+**TD-TREND-01 — Trend alignment first.**
+
+"Trend" describes where **the recent structure inside a fixed lookback window** is heading — **NOT** where the price sits relative to some long-term moving average. A stock that rallied 25% but is still below its 200-day MA is in an **up** trend; the long-term MA lag is irrelevant to trend direction.
+
+Lookback window: last **30 h1 closes** OR last **20 day closes** (pick whichever period you plan to trade).
+
+Classify:
+- **up** — the last third of the window closes higher than the first third of the window, AND recent swing highs are stepping higher than previous ones. The 20-period SMA/EMA computed inside this same window is rising.
+- **down** — mirror image.
+- **sideways** — neither slope holds; price oscillates inside a range.
+
+Then:
+- In an **up** trend, **do not initiate a short** unless the same lookback window shows a fresh structural breakdown (rising MA lost + volume expansion + a new lower low that breaks a prior swing).
+- In a **down** trend, mirror the rule against longs.
+- In **sideways**, both directions allowed, but R:R must be ≥ 2:1 (see TD-RR-01).
+
+Reason.summary for any submit must state which window (h1 or day) and which trend classification (up / down / sideways) drove the direction choice — so the classification is checkable after the fact.
+
+**TD-RR-01 — Minimum reward-to-risk 1.5:1.** Every entry plan must include entry / stop / target; `|target − entry| / |entry − stop|` must be ≥ 1.5. Sideways trend requires ≥ 2. Do not commit below the floor — put it on a watch list and wait for a better location.
+
+**TD-EXIT-01 — Do not give back a 1R profit.** Once a position is at initialRisk × 1 or better:
+- **Do not** move the stop below breakeven (that hands back gains already booked).
+- Moving stop to breakeven or above (trailing) is allowed.
+- Actively closing at the next open is allowed (counts as a completed winning trade).
+
+**TD-REASON-01 — Reason must be verifiable.** Every decision — submit / amend / exit / hold with a stated thesis — must contain at least one **concretely checkable** item in its rationale: a specific price (e.g. "98.45"), a bar or session index (e.g. "B37" / "day 3"), or a structural name (e.g. "broke 100 round number", "lost EMA20"). **Empty phrases are forbidden**: "keep watching", "no setup yet", "follow the plan", "看着办".
+
+---
+
+## Related
+
+- `journal/lessons.md` — **lessons that change day to day**; do not fold them here. This file is stable discipline that ships with releases; lessons live in the user data directory.
+- `references/us-market-data.md` — US/Longbridge/news/Korea data rules (app only).
+- `references/market-analysis.md` — post-mortem, mindset, leveraged-ETF mechanics (app only).
+- `references/journal.md` — write rules for `journal/` and `stocks/` (app only).
+- `references/episode-execution.md` — bench-only h1/session/fetch_kline rules.
+- `stocks/_leveraged-etf-mechanics.md` — full derivation for TD-LEVERAGE-01 (in `references/market-analysis.md`).
+- `.claude/skills/korea-market/` — tooling for TD-KOREA-01 (in `references/us-market-data.md`).

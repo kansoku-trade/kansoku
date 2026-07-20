@@ -17,6 +17,7 @@ import { auditEpisodeQuestionLive } from './episode/audit.js';
 import { readEpisodeAnswers } from './episode/results.js';
 import {
   renderEpisodeReportHtml,
+  type EpisodeProvenanceEntry,
   type EpisodeReportConfigSnapshot,
   type EpisodeReportTraceLine,
 } from './episode/report.js';
@@ -24,11 +25,15 @@ import type { EpisodeDataAudit } from './episode/audit.js';
 import { fetchGdeltArticlesLive, fetchEdgarFilingsLive } from './generate/newsSource.js';
 import { runGenerate } from './generate/pipeline.js';
 import { fetchCalendarLive, fetchKlineHistoryLive } from './generate/source.js';
+import { fetchKlineHistoryYahoo } from './generate/yahooFetcher.js';
+import type { FetchEpisodeKlineHistory } from './episode/generate.js';
 import { DEFAULT_SYMBOLS, layerForSymbol, type SymbolSpec } from './generate/symbols.js';
 import { listQuestions, loadQuestionForScorer } from './dataset/loader.js';
+import { loadDatasetManifest } from './dataset/manifest.js';
 import { parseDatasetPathOptions, type DatasetPaths } from './dataset/paths.js';
 import { syncDataset } from './dataset/sync.js';
 import { type ReportConfigSnapshot, renderReport } from './report/render.js';
+import { renderReportHtml } from './report/renderHtml.js';
 import { parseBaselineArgs } from './baseline/args.js';
 import { runBenchBaseline } from './baseline/run.js';
 import { type Scores, scoresSchema } from './schema/scores.js';
@@ -64,7 +69,7 @@ Commands:
   baseline       Emit deterministic baseline answer sheets
   score          Score recorded answer sheets
   gold           Emit hindsight-optimal gold answer sheets
-  report         Render a leaderboard report
+  report         Render a leaderboard report (--format md|html|both, default md)
   backfill-news  Backfill fixtures.news from GDELT + SEC EDGAR
   sync-dataset   Download and verify an immutable dataset release
 
@@ -309,13 +314,20 @@ interface GenerateEpisodeCaseArgs {
   cutoffDate: string;
   version: string;
   horizonSessions: number;
+  source: 'longbridge' | 'yahoo';
 }
+
+const KLINE_FETCHERS: Record<GenerateEpisodeCaseArgs['source'], FetchEpisodeKlineHistory> = {
+  longbridge: fetchKlineHistoryLive,
+  yahoo: fetchKlineHistoryYahoo,
+};
 
 function parseGenerateEpisodeCaseArgs(argv: string[]): GenerateEpisodeCaseArgs {
   let symbol: string | undefined;
   let cutoffDate: string | undefined;
   let version: string | undefined;
   let horizonSessions = 40;
+  let source: GenerateEpisodeCaseArgs['source'] = 'longbridge';
 
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
@@ -334,6 +346,14 @@ function parseGenerateEpisodeCaseArgs(argv: string[]): GenerateEpisodeCaseArgs {
       }
       case '--horizon-sessions': {
         horizonSessions = Number(argv[++i]);
+        break;
+      }
+      case '--source': {
+        const next = argv[++i];
+        if (next !== 'longbridge' && next !== 'yahoo') {
+          throw new Error(`--source must be longbridge|yahoo, got: ${next}`);
+        }
+        source = next;
         break;
       }
       default: {
@@ -356,7 +376,7 @@ function parseGenerateEpisodeCaseArgs(argv: string[]): GenerateEpisodeCaseArgs {
   }
 
   layerForSymbol(symbol);
-  return { symbol, cutoffDate, version, horizonSessions };
+  return { symbol, cutoffDate, version, horizonSessions, source };
 }
 
 async function runGenerateEpisodeCaseCommand(argv: string[], paths: DatasetPaths): Promise<void> {
@@ -368,7 +388,7 @@ async function runGenerateEpisodeCaseCommand(argv: string[], paths: DatasetPaths
     version: args.version,
     horizonSessions: args.horizonSessions,
     datasetsRoot: paths.datasetsRoot,
-    fetchKlineHistory: fetchKlineHistoryLive,
+    fetchKlineHistory: KLINE_FETCHERS[args.source],
     fetchCalendar: fetchCalendarLive,
     log: (line) => process.stdout.write(`${line}\n`),
   });
@@ -568,13 +588,24 @@ async function runBackfillNewsCommand(argv: string[], paths: DatasetPaths): Prom
   if (result.failed.length > 0) process.exitCode = 1;
 }
 
-function parseReportArgs(argv: string[]): { runId: string } {
+type ReportFormat = 'md' | 'html' | 'both';
+
+function parseReportArgs(argv: string[]): { runId: string; format: ReportFormat } {
   let runId: string | undefined;
+  let format: ReportFormat = 'md';
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     switch (arg) {
       case '--run-id': {
         runId = argv[++i];
+        break;
+      }
+      case '--format': {
+        const next = argv[++i];
+        if (next !== 'md' && next !== 'html' && next !== 'both') {
+          throw new Error(`unknown --format value: ${next} (expected md|html|both)`);
+        }
+        format = next;
         break;
       }
       default: {
@@ -583,7 +614,7 @@ function parseReportArgs(argv: string[]): { runId: string } {
     }
   }
   if (!runId) throw new Error('--run-id is required');
-  return { runId };
+  return { runId, format };
 }
 
 async function readJsonFile(file: string): Promise<unknown> {
@@ -643,12 +674,20 @@ async function runReportCommand(argv: string[], paths: DatasetPaths): Promise<vo
     for (const traceRef of new Set(answers.map((answer) => answer.traceRef).filter(Boolean))) {
       traces.set(traceRef, await readEpisodeTraceLines(join(runDir, traceRef)));
     }
+    let datasetMeta: { label?: string; kind?: string } | undefined;
+    try {
+      const manifest = await loadDatasetManifest(datasetVersion);
+      datasetMeta = { label: manifest.label, kind: manifest.kind };
+    } catch {
+      // manifest may live outside this checkout; not fatal for reporting.
+    }
     const { html, summary } = renderEpisodeReportHtml({
       answers,
       questions,
       config,
       audits,
       traces,
+      datasetMeta,
     });
     await fs.writeFile(join(runDir, 'report.html'), html, 'utf8');
     await fs.writeFile(
@@ -672,14 +711,24 @@ async function runReportCommand(argv: string[], paths: DatasetPaths): Promise<vo
   }
   const scores = rawScores as Scores;
   const { markdown, summary } = renderReport(scores, config);
-  await fs.writeFile(join(runDir, 'report.md'), markdown, 'utf8');
+  const outputs: string[] = [];
+  if (args.format === 'md' || args.format === 'both') {
+    await fs.writeFile(join(runDir, 'report.md'), markdown, 'utf8');
+    outputs.push('report.md');
+  }
   await fs.writeFile(
     join(runDir, 'report-summary.json'),
     `${JSON.stringify(summary, null, 2)}\n`,
     'utf8',
   );
+  outputs.push('report-summary.json');
+  if (args.format === 'html' || args.format === 'both') {
+    const { html } = renderReportHtml(scores, config);
+    await fs.writeFile(join(runDir, 'report.html'), html, 'utf8');
+    outputs.push('report.html');
+  }
   process.stdout.write(
-    `report ${args.runId}: ${scores.models.length} models -> report.md, report-summary.json\n`,
+    `report ${args.runId}: ${scores.models.length} models -> ${outputs.join(', ')}\n`,
   );
 }
 
