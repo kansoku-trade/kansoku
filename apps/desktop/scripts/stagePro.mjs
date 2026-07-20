@@ -11,7 +11,8 @@ const destFile = join(destDir, 'pro.enc');
 rmSync(destDir, { recursive: true, force: true });
 
 const nodeStage = join(desktopDir, 'dist-main', '__pro__');
-const webStage = join(desktopDir, '..', 'web', 'dist', 'assets', '__pro__');
+const webDistRoot = join(desktopDir, '..', 'web', 'dist');
+const webStage = join(webDistRoot, 'assets', '__pro__');
 
 if (process.env.KANSOKU_FORCE_FREE === '1' || !existsSync(join(proDir, 'package.json'))) {
   if (existsSync(nodeStage) || existsSync(webStage)) {
@@ -42,6 +43,8 @@ const args = [
   nodeStage,
   '--web',
   webStage,
+  '--web-root',
+  webDistRoot,
   '--out',
   destFile,
 ];
