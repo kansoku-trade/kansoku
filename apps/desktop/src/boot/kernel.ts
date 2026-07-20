@@ -67,6 +67,8 @@ export async function bootKernel() {
       return null;
     });
 
+  console.log(`[boot] proComposition=${proComposition ? 'active' : 'free'}`);
+
   setProPresent(proComposition != null);
   if (proComposition?.hooks) registerProHooks(proComposition.hooks);
   if (proComposition?.aiExtension) registerProAiExtension(proComposition.aiExtension);

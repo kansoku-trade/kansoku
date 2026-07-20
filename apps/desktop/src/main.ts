@@ -224,6 +224,8 @@ app.whenReady().then(async () => {
         console.error('[desktop] flush on quit failed', error);
       }
     });
+
+    if (process.env.KANSOKU_EXIT_AFTER_BOOT === '1') app.quit();
   } catch (error) {
     showFatalErrorWindow(error);
   }
