@@ -27,9 +27,9 @@ import {
 } from './messages/analystMessagesEngine.js';
 import { ANALYST_ADAPTER_PROMPT, ANALYST_RETRY_PROMPT, ANALYST_SYSTEM_PROMPT } from './prompts.js';
 import {
-  appendWatchedMarketsLine,
   DISCIPLINE_SKILL,
   DisciplineMissingError,
+  loadAppDiscipline,
 } from './promptPolicy.js';
 import {
   buildResearchTools,
@@ -466,8 +466,7 @@ export async function executeAnalystRun(symbol: string, deps: AnalystDeps): Prom
     return;
   }
 
-  const disciplineText =
-    deps.disciplineText ?? appendWatchedMarketsLine(readSkill(skillIndex, DISCIPLINE_SKILL) ?? '');
+  const disciplineText = deps.disciplineText ?? (loadAppDiscipline(repoRoot) ?? '');
   if (!disciplineText) {
     await writeError(new DisciplineMissingError().message);
     return;
