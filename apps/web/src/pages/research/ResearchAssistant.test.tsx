@@ -1,48 +1,12 @@
 // @vitest-environment jsdom
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
-import type { ReactNode } from 'react';
+import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ResearchDocument, ResearchDocumentMeta } from '@kansoku/core/contract/index';
 
-let capabilities: { features?: Record<string, string> } = { features: { 'research-ai': 'active' } };
-
-const listEdits = vi.fn().mockResolvedValue([]);
-const getRefresh = vi.fn().mockResolvedValue(null);
-const getChat = vi
-  .fn()
-  .mockResolvedValue({ session: null, messages: [], busy: false, partial: '' });
-const suggestions = vi.fn().mockResolvedValue({ suggestions: [] });
-const postMessage = vi.fn();
-const abortChat = vi.fn();
-const startRefresh = vi.fn();
-const abortRefresh = vi.fn();
+let capabilities: { features?: Record<string, string> } = { features: { 'research-ai': 'locked' } };
 
 vi.mock('@web/capabilitiesStore', () => ({
   useCapabilities: () => capabilities,
-}));
-vi.mock('@web/client', () => ({
-  client: {
-    research: {
-      listEdits: (...args: unknown[]) => listEdits(...args),
-      getRefresh: (...args: unknown[]) => getRefresh(...args),
-      getChat: (...args: unknown[]) => getChat(...args),
-      postMessage: (...args: unknown[]) => postMessage(...args),
-      abortChat: (...args: unknown[]) => abortChat(...args),
-      suggestions: (...args: unknown[]) => suggestions(...args),
-      startRefresh: (...args: unknown[]) => startRefresh(...args),
-      abortRefresh: (...args: unknown[]) => abortRefresh(...args),
-    },
-  },
-}));
-vi.mock('@web/wsHub', () => ({
-  subscribeChannel: () => () => {},
-}));
-vi.mock('../cockpit/chat/ChatComposer', () => ({
-  ChatComposer: () => <div data-testid="chat-composer" />,
-}));
-vi.mock('../cockpit/chat/ConversationTranscript', () => ({
-  ConversationTranscript: () => <div data-testid="conversation-transcript" />,
 }));
 
 const { ResearchAssistant } = await import('./ResearchAssistant');
@@ -73,25 +37,16 @@ const related: ResearchDocumentMeta[] = [
   },
 ];
 
-function renderWithClient(children: ReactNode) {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(<QueryClientProvider client={queryClient}>{children}</QueryClientProvider>);
-}
-
 afterEach(() => {
   cleanup();
-  capabilities = { features: { 'research-ai': 'active' } };
-  listEdits.mockClear();
-  getRefresh.mockClear();
-  getChat.mockClear();
-  suggestions.mockClear();
+  capabilities = { features: { 'research-ai': 'locked' } };
 });
 
-describe('ResearchAssistant license gate', () => {
-  it('renders the locked placeholder + browse card, and fires zero AI-subroute fetches', async () => {
+describe('ResearchAssistant free stub', () => {
+  it('renders the locked placeholder + browse card when research-ai is locked', () => {
     capabilities = { features: { 'research-ai': 'locked' } };
 
-    renderWithClient(
+    render(
       <ResearchAssistant
         document={document}
         selected={document}
@@ -104,19 +59,13 @@ describe('ResearchAssistant license gate', () => {
     expect(screen.getByText(/研究库 AI/)).toBeTruthy();
     expect(screen.getByText('订阅解锁')).toBeTruthy();
     expect(screen.getByText(/关联资料/)).toBeTruthy();
-    expect(screen.queryByLabelText('刷新研究')).toBeNull();
-    expect(screen.queryByTestId('chat-composer')).toBeNull();
-
-    await new Promise((resolve) => setTimeout(resolve, 20));
-    expect(listEdits).not.toHaveBeenCalled();
-    expect(getRefresh).not.toHaveBeenCalled();
-    expect(getChat).not.toHaveBeenCalled();
+    expect(screen.queryByText('打开 AI 助手')).toBeNull();
   });
 
-  it('renders the browse card only for a community build (pro:false), no locked notice, zero AI fetches', async () => {
+  it('renders the browse card only for a community build (pro:false), no locked notice', () => {
     capabilities = { features: { 'research-ai': 'absent' } };
 
-    renderWithClient(
+    render(
       <ResearchAssistant
         document={document}
         selected={document}
@@ -129,19 +78,13 @@ describe('ResearchAssistant license gate', () => {
     expect(screen.getByText(/关联资料/)).toBeTruthy();
     expect(screen.queryByText(/研究库 AI/)).toBeNull();
     expect(screen.queryByText('订阅解锁')).toBeNull();
-    expect(screen.queryByLabelText('刷新研究')).toBeNull();
-    expect(screen.queryByTestId('chat-composer')).toBeNull();
-
-    await new Promise((resolve) => setTimeout(resolve, 20));
-    expect(listEdits).not.toHaveBeenCalled();
-    expect(getRefresh).not.toHaveBeenCalled();
-    expect(getChat).not.toHaveBeenCalled();
+    expect(screen.queryByText('打开 AI 助手')).toBeNull();
   });
 
-  it('renders the real AI panel and fires the AI-subroute fetches when licensed', async () => {
+  it('renders a link to the full AI assistant when active', () => {
     capabilities = { features: { 'research-ai': 'active' } };
 
-    renderWithClient(
+    render(
       <ResearchAssistant
         document={document}
         selected={document}
@@ -151,12 +94,10 @@ describe('ResearchAssistant license gate', () => {
       />,
     );
 
-    expect(screen.getByLabelText('刷新研究')).toBeTruthy();
-    expect(screen.getByTestId('chat-composer')).toBeTruthy();
-    expect(screen.queryByText(/研究库 AI/)).toBeNull();
-
-    await waitFor(() => expect(listEdits).toHaveBeenCalled());
-    await waitFor(() => expect(getRefresh).toHaveBeenCalled());
-    await waitFor(() => expect(getChat).toHaveBeenCalled());
+    const link = screen.getByText('打开 AI 助手').closest('a');
+    expect(link?.getAttribute('href')).toBe(
+      `/research/assistant?path=${encodeURIComponent(document.path)}`,
+    );
+    expect(screen.queryByText('订阅解锁')).toBeNull();
   });
 });
