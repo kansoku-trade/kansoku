@@ -12,6 +12,7 @@ import { app, BrowserWindow, session } from 'electron';
 import { createServices } from 'electron-ipc-decorator';
 import { AppControlIpc } from './shell/appControl/ipc.js';
 import { createAppMenuManager } from './shell/menu/appMenuManager.js';
+import { IS_DEV } from './boot/env.js';
 import { bootKernel } from './boot/kernel.js';
 import { createWindowManager } from './shell/window/windowManager.js';
 import { showFatalErrorWindow } from './shell/window/fatalErrorWindow.js';
@@ -177,10 +178,15 @@ app.whenReady().then(async () => {
     const { ipcServiceClasses, webManifest, dispose: disposeEdition } = await bootKernel();
     createServices(ipcServiceClasses);
 
-    applyContentSecurityPolicy(session.defaultSession, {
-      extraScriptSrcOrigins: ['https://vibeloft.ai'],
-      scriptNonce: getCspScriptNonce(),
-    });
+    // Dev renderers come from the Vite dev server, whose @vitejs/plugin-react
+    // preamble is an un-nonced inline script — the nonce CSP would block it and
+    // break the page. The hardened policy guards the packaged app:// renderer.
+    if (!IS_DEV) {
+      applyContentSecurityPolicy(session.defaultSession, {
+        extraScriptSrcOrigins: ['https://vibeloft.ai'],
+        scriptNonce: getCspScriptNonce(),
+      });
+    }
 
     const webDistRoot = resolveWebDistRoot();
     registerAppProtocolHandler({
