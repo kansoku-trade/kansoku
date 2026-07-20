@@ -7,8 +7,8 @@ import type {
   OverviewBoard,
   OverviewRow,
 } from '@kansoku/shared/types';
-import { listComments } from '../ai/comments.js';
-import { listFollowedSymbols } from '../ai/follows.js';
+import { listComments } from '../ai/personas/comments.js';
+import { listFollowedSymbols } from '../ai/personas/follows.js';
 import { getProvider } from '../marketdata/registry.js';
 import { classifySession, easternDate } from '../marketdata/session.js';
 import { predictionStale } from '../platform/staleness.js';

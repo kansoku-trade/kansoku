@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { ChartDoc } from '@kansoku/shared/types';
-import { buildAnalystSystemPrompt } from '../src/ai/analyst.js';
-import { buildChatSystemPrompt } from '../src/ai/chat.js';
+import { buildAnalystSystemPrompt } from '../src/ai/personas/analyst.js';
+import { buildChatSystemPrompt } from '../src/ai/chat/chat.js';
 import {
   ANALYST_ADAPTER_PROMPT,
   ANALYST_RETRY_PROMPT,
@@ -13,7 +13,7 @@ import {
   COMMENTATOR_RETRY_PROMPT,
   deepDiveAdapterPrompt,
   EVENT_FILTER_PROMPT,
-} from '../src/ai/prompts.js';
+} from '../src/ai/runtime/prompts.js';
 
 const DISCIPLINE = '<TRADING-DISCIPLINE>';
 

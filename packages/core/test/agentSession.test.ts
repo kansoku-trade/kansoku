@@ -7,9 +7,9 @@ import {
   createAgentSession,
   runtimeStreamFn,
   type AiAgentFactory,
-} from '../src/ai/agentSession.js';
-import { setModelsRuntimeForTests } from '../src/ai/modelsRuntime.js';
-import type { AiModel } from '../src/ai/models.js';
+} from '../src/ai/agents/agentSession.js';
+import { setModelsRuntimeForTests } from '../src/ai/runtime/modelsRuntime.js';
+import type { AiModel } from '../src/ai/runtime/models.js';
 
 const fakeModel = { provider: 'anthropic', id: 'claude-haiku-4-5' } as unknown as AiModel;
 

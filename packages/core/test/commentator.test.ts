@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { CockpitComment, RawBar } from '@kansoku/shared/types';
-import type { AiAgentFactory, AiAgentHandle } from '../src/ai/agentSession.js';
+import type { AiAgentFactory, AiAgentHandle } from '../src/ai/agents/agentSession.js';
 import {
   type CommentatorDeps,
   resetCommentatorSessions,
   runCommentator,
-} from '../src/ai/commentator.js';
-import type { CommentPack } from '../src/ai/datapack.js';
-import type { AiModel } from '../src/ai/models.js';
-import type { Trigger } from '../src/ai/triggers.js';
+} from '../src/ai/personas/commentator.js';
+import type { CommentPack } from '../src/ai/agents/datapack.js';
+import type { AiModel } from '../src/ai/runtime/models.js';
+import type { Trigger } from '../src/ai/personas/triggers.js';
 
 const fakeModel = { provider: 'anthropic', id: 'claude-haiku-4-5' } as unknown as AiModel;
 const trigger: Trigger = { kind: 'macd_cross', detail: 'hist 0.1 -> -0.1' };

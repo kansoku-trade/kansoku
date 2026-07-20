@@ -9,11 +9,11 @@ import {
   runEnvImport,
   runMemoryModelMigration,
   runPrimaryModelMigration,
-} from '../src/ai/initAiSettings.js';
-import { aiConfig } from '../src/ai/models.js';
-import { getModelsRuntime, setModelsRuntimeForTests } from '../src/ai/modelsRuntime.js';
-import { createSecretBox, type SecretBox } from '../src/ai/secretBox.js';
-import { setActiveSettingsStore } from '../src/ai/settingsStore.js';
+} from '../src/ai/settings/initAiSettings.js';
+import { aiConfig } from '../src/ai/runtime/models.js';
+import { getModelsRuntime, setModelsRuntimeForTests } from '../src/ai/runtime/modelsRuntime.js';
+import { createSecretBox, type SecretBox } from '../src/ai/settings/secretBox.js';
+import { setActiveSettingsStore } from '../src/ai/settings/settingsStore.js';
 import { createDb, type Db } from '../src/db/index.js';
 import { aiRoleSettings, appMeta, providerCredentials } from '../src/db/schema.js';
 

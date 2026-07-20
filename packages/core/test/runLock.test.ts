@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createRunLock } from '../src/ai/runLock.js';
+import { createRunLock } from '../src/ai/agents/runLock.js';
 
 describe('createRunLock', () => {
   it('acquires a free key and reports it as locked', () => {

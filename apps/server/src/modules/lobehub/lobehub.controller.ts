@@ -1,7 +1,7 @@
 import { Controller, Delete, Get, Post } from '@tsuki-hono/common';
-import { lobehubService } from '@kansoku/core/modules/lobehub/lobehub.service';
+import { lobehubService } from '@kansoku/core/ai/lobehub/lobehub.service';
 
-export { setLobeHubDepsForTests } from '@kansoku/core/modules/lobehub/lobehub.deps';
+export { setLobeHubDepsForTests } from '@kansoku/core/ai/lobehub/lobehub.deps';
 
 @Controller('ai/providers/lobehub')
 export class LobeHubController {

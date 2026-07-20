@@ -6,10 +6,10 @@ import { getSupportedThinkingLevels } from '@earendil-works/pi-ai';
 import { builtinModels } from '@earendil-works/pi-ai/providers/all';
 import { eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { createCredentialStore, type AppCredentialStore } from '@kansoku/core/ai/credentialStore';
-import { SINGLE_KEY_PROVIDERS } from '@kansoku/core/ai/modelsRuntime';
-import { createSecretBox, type SecretBox } from '@kansoku/core/ai/secretBox';
-import { createSettingsStore, type SettingsStore } from '@kansoku/core/ai/settingsStore';
+import { createCredentialStore, type AppCredentialStore } from '@kansoku/core/ai/settings/credentialStore';
+import { SINGLE_KEY_PROVIDERS } from '@kansoku/core/ai/runtime/modelsRuntime';
+import { createSecretBox, type SecretBox } from '@kansoku/core/ai/settings/secretBox';
+import { createSettingsStore, type SettingsStore } from '@kansoku/core/ai/settings/settingsStore';
 import {
   createWatchedMarketsStore,
   setActiveWatchedMarketsStore,
@@ -17,7 +17,7 @@ import {
 } from '@kansoku/core/marketdata/watchedMarketsStore';
 import { createDb, type Db } from '@kansoku/core/db/index';
 import { aiUsage, providerCredentials } from '@kansoku/core/db/schema';
-import { setSettingsDepsForTests } from '@kansoku/core/modules/settings/settings.deps';
+import { setSettingsDepsForTests } from '@kansoku/core/settings/settings.deps';
 import { easternDate } from '@kansoku/core/marketdata/session';
 import { tsukiRequest } from './helpers.js';
 

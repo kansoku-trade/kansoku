@@ -12,7 +12,7 @@ const ctx = vi.hoisted(() => {
 vi.mock('../src/platform/env.js', () => ({ CHART_DATA_DIR: ctx.dir }));
 
 const { appendComment, latestCommentatorRunAt, listComments, onAnyComment, onComment } =
-  await import('../src/ai/comments.js');
+  await import('../src/ai/personas/comments.js');
 
 function comment(overrides: Partial<CockpitComment> = {}): CockpitComment {
   return {

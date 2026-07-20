@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createDb, type Db } from "../src/db/index.js";
 import { providerCredentials } from "../src/db/schema.js";
 import { createLicenseStore, type LicenseRecord, type LicenseStore } from "../src/license/licenseStore.js";
-import { createSecretBox, type SecretBox } from "../src/ai/secretBox.js";
+import { createSecretBox, type SecretBox } from "../src/ai/settings/secretBox.js";
 
 describe("licenseStore", () => {
   let dir: string;

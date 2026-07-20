@@ -10,7 +10,7 @@ const ctx = vi.hoisted(() => {
 
 vi.mock('../src/platform/env.js', () => ({ CHART_DATA_DIR: ctx.dir }));
 
-const { appendUsage, listUsage, summarizeUsage } = await import('../src/ai/usageStore.js');
+const { appendUsage, listUsage, summarizeUsage } = await import('../src/ai/runtime/usageStore.js');
 type UsageRecord = Awaited<ReturnType<typeof listUsage>>[number];
 
 function record(overrides: Partial<UsageRecord> = {}): UsageRecord {

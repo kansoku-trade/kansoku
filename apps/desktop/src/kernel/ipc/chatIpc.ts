@@ -1,6 +1,6 @@
 import { IpcMethod, IpcService } from 'electron-ipc-decorator';
 import type { ChatApi } from '@kansoku/core/contract/index';
-import { chatService } from '@kansoku/core/modules/chat/chat.service';
+import { chatService } from '@kansoku/core/ai/chat/chat.service';
 import { toEnvelope, type WrapEnvelope } from './envelope.js';
 
 export class ChatIpc extends IpcService implements WrapEnvelope<ChatApi> {

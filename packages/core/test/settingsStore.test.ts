@@ -3,13 +3,13 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { builtinModels } from '@earendil-works/pi-ai/providers/all';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { aiConfig } from '../src/ai/models.js';
+import { aiConfig } from '../src/ai/runtime/models.js';
 import {
   createSettingsStore,
   getActiveSettingsStore,
   setActiveSettingsStore,
   type RoleSetting,
-} from '../src/ai/settingsStore.js';
+} from '../src/ai/settings/settingsStore.js';
 import { createDb } from '../src/db/index.js';
 
 function tempDbPath(): { dir: string; path: string } {

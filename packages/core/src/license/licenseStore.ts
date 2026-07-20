@@ -1,8 +1,8 @@
 import { eq } from "drizzle-orm";
 import type { Db } from "../db/index.js";
 import { providerCredentials } from "../db/schema.js";
-import { LICENSE_PROVIDER_KEY } from "../ai/credentialStore.js";
-import type { SecretBox } from "../ai/secretBox.js";
+import { LICENSE_PROVIDER_KEY } from "../ai/settings/credentialStore.js";
+import type { SecretBox } from "../ai/settings/secretBox.js";
 
 const LICENSE_PROVIDER = LICENSE_PROVIDER_KEY;
 

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { AgentEvent } from '@earendil-works/pi-agent-core';
-import { attachAiUsageLogger } from '../src/ai/usage.js';
+import { attachAiUsageLogger } from '../src/ai/runtime/usage.js';
 
 function usage(tokens: number, cost: number) {
   return {

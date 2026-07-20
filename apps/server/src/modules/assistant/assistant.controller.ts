@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Post } from '@tsuki-hono/common';
 import { ClientError } from '@kansoku/core/platform/errors';
-import { assistantChatService } from '@kansoku/core/modules/assistant/assistantChat.service';
+import { assistantChatService } from '@kansoku/core/ai/assistant/assistantChat.service';
 import { jsonResponse } from '../../httpResponse.js';
 
 function requireText(body: { text?: unknown } | null): string {

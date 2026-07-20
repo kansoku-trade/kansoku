@@ -5,8 +5,8 @@ import type {
   RecapSettlementRow,
 } from '@kansoku/shared/types';
 import { chartUrl } from '../platform/chartUrl.js';
-import { listAllCommentDates, listComments } from '../ai/comments.js';
-import { listUsage, listUsageDates, summarizeUsage } from '../ai/usageStore.js';
+import { listAllCommentDates, listComments } from '../ai/personas/comments.js';
+import { listUsage, listUsageDates, summarizeUsage } from '../ai/runtime/usageStore.js';
 import type { OverviewApi } from '../contract/overview.js';
 import { ClientError } from '../platform/errors.js';
 import { normalizeQuote } from '../realtime/quotes.js';

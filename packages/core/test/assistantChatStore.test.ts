@@ -7,7 +7,7 @@ import {
   getAssistantSession,
   listAssistantMessages,
   listAssistantSessions,
-} from '../src/ai/assistantChatStore.js';
+} from '../src/ai/assistant/assistantChatStore.js';
 import { createDb, type Db } from '../src/db/index.js';
 
 const ZERO_USAGE = {

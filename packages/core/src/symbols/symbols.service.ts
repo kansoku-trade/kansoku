@@ -4,9 +4,9 @@ import type { IntradayPrediction, RawBar, SymbolAnalysisRow } from '@kansoku/sha
 import { getProHooks } from '../pro/registry.js';
 import { withFeatureGates } from '../pro/withFeatureGates.js';
 import { chartUrl } from '../platform/chartUrl.js';
-import { analystRunStatus, reassessSymbol } from '../ai/analyst.js';
-import { listCommentDates, listComments } from '../ai/comments.js';
-import { setSymbolFollowing, symbolFollowState } from '../ai/follows.js';
+import { analystRunStatus, reassessSymbol } from '../ai/personas/analyst.js';
+import { listCommentDates, listComments } from '../ai/personas/comments.js';
+import { setSymbolFollowing, symbolFollowState } from '../ai/personas/follows.js';
 import { symbolsRoutes, type SymbolsApi } from '../contract/symbols.js';
 import { JOURNAL_DIR, STOCKS_DIR } from '../platform/env.js';
 import { ClientError } from '../platform/errors.js';

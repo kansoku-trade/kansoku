@@ -1,6 +1,6 @@
 import type { IntradayEventRisk, MacroEventItem } from '@kansoku/shared/types';
-import { filterMacroForSymbol } from '../ai/eventFilter.js';
-import { activeSettingsRevision } from '../ai/settingsStore.js';
+import { filterMacroForSymbol } from '../ai/personas/eventFilter.js';
+import { activeSettingsRevision } from '../ai/settings/settingsStore.js';
 import { getProvider } from './registry.js';
 import { easternDate } from './session.js';
 import { marketOf, type Market } from '../symbols/symbol.utils.js';

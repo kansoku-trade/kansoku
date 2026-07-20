@@ -3,8 +3,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { builtinModels } from '@earendil-works/pi-ai/providers/all';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { aiConfig, type AiModel, parseModelRef, resolveModel } from '../src/ai/models.js';
-import { createSettingsStore, setActiveSettingsStore } from '../src/ai/settingsStore.js';
+import { aiConfig, type AiModel, parseModelRef, resolveModel } from '../src/ai/runtime/models.js';
+import { createSettingsStore, setActiveSettingsStore } from '../src/ai/settings/settingsStore.js';
 import { createDb } from '../src/db/index.js';
 
 const fakeModel = { provider: 'anthropic', id: 'claude-haiku-4-5' } as unknown as AiModel;

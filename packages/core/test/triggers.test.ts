@@ -4,7 +4,7 @@ import {
   shouldHeartbeat,
   type TriggerBar,
   type TriggerInput,
-} from '../src/ai/triggers.js';
+} from '../src/ai/personas/triggers.js';
 
 function bar(time: number, close: number, volume: number): TriggerBar {
   return { time, close, volume };

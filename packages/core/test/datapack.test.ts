@@ -15,7 +15,7 @@ import {
   type DatapackDeps,
   findTodayLatestIntradayDoc,
   truncateForPrompt,
-} from '../src/ai/datapack.js';
+} from '../src/ai/agents/datapack.js';
 
 const NOW = new Date('2026-07-02T18:00:00Z');
 

@@ -1,12 +1,12 @@
 import { Body, Controller, Get, Param, Post } from '@tsuki-hono/common';
-import { chatService } from '@kansoku/core/modules/chat/chat.service';
+import { chatService } from '@kansoku/core/ai/chat/chat.service';
 import { ClientError } from '@kansoku/core/platform/errors';
 import { jsonResponse } from '../../httpResponse.js';
 
 export {
   setChatDepsForTests,
   setChatSuggestionDepsForTests,
-} from '@kansoku/core/modules/chat/chat.service';
+} from '@kansoku/core/ai/chat/chat.service';
 
 @Controller('charts')
 export class ChatController {

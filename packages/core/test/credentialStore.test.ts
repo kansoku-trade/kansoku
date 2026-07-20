@@ -5,15 +5,15 @@ import { builtinModels } from "@earendil-works/pi-ai/providers/all";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createDb, type Db } from "../src/db/index.js";
 import { providerCredentials } from "../src/db/schema.js";
-import { createCredentialStore, type AppCredentialStore } from "../src/ai/credentialStore.js";
-import { createSecretBox, type SecretBox } from "../src/ai/secretBox.js";
+import { createCredentialStore, type AppCredentialStore } from "../src/ai/settings/credentialStore.js";
+import { createSecretBox, type SecretBox } from "../src/ai/settings/secretBox.js";
 import { createLicenseStore, type LicenseRecord } from "../src/license/licenseStore.js";
 import {
   SINGLE_KEY_PROVIDERS,
   getModelsRuntime,
   initModelsRuntime,
   setModelsRuntimeForTests,
-} from "../src/ai/modelsRuntime.js";
+} from "../src/ai/runtime/modelsRuntime.js";
 
 function jwt(expSeconds: number): string {
   const payload = Buffer.from(JSON.stringify({ exp: expSeconds })).toString("base64url");

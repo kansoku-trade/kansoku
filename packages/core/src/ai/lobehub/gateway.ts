@@ -9,7 +9,7 @@ import type {
   Usage,
 } from '@earendil-works/pi-ai';
 import { createAssistantMessageEventStream } from '@earendil-works/pi-ai';
-import type { AppCredentialStore } from '../credentialStore.js';
+import type { AppCredentialStore } from '../settings/credentialStore.js';
 import {
   LOBEHUB_API,
   LOBEHUB_PROVIDER,

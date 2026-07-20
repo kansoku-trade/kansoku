@@ -2,9 +2,9 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { initAiSettings, setAiRuntimeForTests } from '@kansoku/core/ai/initAiSettings';
-import { setModelsRuntimeForTests } from '@kansoku/core/ai/modelsRuntime';
-import { setActiveSettingsStore } from '@kansoku/core/ai/settingsStore';
+import { initAiSettings, setAiRuntimeForTests } from '@kansoku/core/ai/settings/initAiSettings';
+import { setModelsRuntimeForTests } from '@kansoku/core/ai/runtime/modelsRuntime';
+import { setActiveSettingsStore } from '@kansoku/core/ai/settings/settingsStore';
 import {
   createWatchedMarketsStore,
   setActiveWatchedMarketsStore,

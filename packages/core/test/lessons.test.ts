@@ -10,7 +10,7 @@ vi.mock('../src/platform/env.js', async (importOriginal) => ({
   JOURNAL_DIR: journalDir,
 }));
 
-const { readActiveLessons } = await import('../src/services/lessons.js');
+const { readActiveLessons } = await import('../src/ai/agents/lessons.js');
 
 function writeLessons(text: string): void {
   writeFileSync(join(journalDir, 'lessons.md'), text, 'utf8');
@@ -51,7 +51,7 @@ describe('readActiveLessons', () => {
       ...(await importOriginal<typeof import('../src/platform/env.js')>()),
       JOURNAL_DIR: empty,
     }));
-    const mod = await import('../src/services/lessons.js');
+    const mod = await import('../src/ai/agents/lessons.js');
     expect(await mod.readActiveLessons()).toEqual([]);
   });
 });

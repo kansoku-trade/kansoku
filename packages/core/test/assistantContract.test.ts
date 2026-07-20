@@ -1,15 +1,15 @@
 import type { AgentMessage } from '@earendil-works/pi-agent-core';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import type { AiAgentFactory } from '../src/ai/agentSession.js';
-import { assistantChatTurnState } from '../src/ai/assistantChat.js';
-import { appendAssistantMessages, listAssistantMessages } from '../src/ai/assistantChatStore.js';
-import type { AiModel } from '../src/ai/models.js';
+import type { AiAgentFactory } from '../src/ai/agents/agentSession.js';
+import { assistantChatTurnState } from '../src/ai/assistant/assistantChat.js';
+import { appendAssistantMessages, listAssistantMessages } from '../src/ai/assistant/assistantChatStore.js';
+import type { AiModel } from '../src/ai/runtime/models.js';
 import { createDb, type Db } from '../src/db/index.js';
 import { ClientError } from '../src/platform/errors.js';
 import {
   assistantChatService,
   setAssistantChatDepsForTests,
-} from '../src/modules/assistant/assistantChat.service.js';
+} from '../src/ai/assistant/assistantChat.service.js';
 
 const model = { provider: 'anthropic', id: 'test-model' } as unknown as AiModel;
 const USAGE = {

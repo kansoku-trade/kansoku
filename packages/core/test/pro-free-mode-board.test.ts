@@ -14,13 +14,13 @@ const provider = vi.hoisted(() => ({
 
 vi.mock('../src/marketdata/registry.js', () => ({ getProvider: () => provider }));
 
-vi.mock('../src/ai/follows.js', () => ({
+vi.mock('../src/ai/personas/follows.js', () => ({
   listFollowedSymbols: () => [],
   symbolFollowState: (symbol: string) => ({ symbol, following: false, startedAt: null }),
   setSymbolFollowing: (symbol: string) => ({ symbol, following: false, startedAt: null }),
 }));
 
-vi.mock('../src/ai/comments.js', () => ({
+vi.mock('../src/ai/personas/comments.js', () => ({
   listComments: async () => [],
   onComment: () => () => {},
   onAnyComment: () => () => {},

@@ -1,14 +1,14 @@
 import type { AgentEvent, AgentMessage } from '@earendil-works/pi-agent-core';
 import { describe, expect, it } from 'vitest';
-import type { AiAgentFactory } from '../src/ai/agentSession.js';
+import type { AiAgentFactory } from '../src/ai/agents/agentSession.js';
 import {
   type ConversationEvent,
   type ConversationPreparedTurn,
   type ConversationTurnPlan,
   createConversationEngine,
-} from '../src/ai/conversationEngine.js';
-import type { ConversationMessageRow } from '../src/ai/conversationStore.js';
-import type { AiModel } from '../src/ai/models.js';
+} from '../src/ai/conversation/conversationEngine.js';
+import type { ConversationMessageRow } from '../src/ai/conversation/conversationStore.js';
+import type { AiModel } from '../src/ai/runtime/models.js';
 
 const fakeModel = {
   api: 'anthropic-messages',

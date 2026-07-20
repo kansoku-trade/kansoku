@@ -3,9 +3,9 @@ import { join } from 'node:path';
 import type { AgentEvent, AgentMessage, AgentTool } from '@earendil-works/pi-agent-core';
 import { describe, expect, it, vi } from 'vitest';
 import type { ChartDoc, CockpitComment } from '@kansoku/shared/types';
-import type { AiAgentFactory } from '../src/ai/agentSession.js';
-import type { ChatMessageRow } from '../src/ai/chatStore.js';
-import type { AiModel } from '../src/ai/models.js';
+import type { AiAgentFactory } from '../src/ai/agents/agentSession.js';
+import type { ChatMessageRow } from '../src/ai/chat/chatStore.js';
+import type { AiModel } from '../src/ai/runtime/models.js';
 
 const ctx = vi.hoisted(() => {
   const base = process.env.TMPDIR ?? '/tmp/';
@@ -28,8 +28,8 @@ const {
   toDisplayMessages,
   buildChatSystemPrompt,
   abortChatTurn,
-} = await import('../src/ai/chat.js');
-const { getSessionByChartId, listMessages } = await import('../src/ai/chatStore.js');
+} = await import('../src/ai/chat/chat.js');
+const { getSessionByChartId, listMessages } = await import('../src/ai/chat/chatStore.js');
 
 type ChatEvent = Parameters<Parameters<typeof onChatEvent>[1]>[0];
 type ChatDeps = Parameters<typeof runChatTurn>[2];

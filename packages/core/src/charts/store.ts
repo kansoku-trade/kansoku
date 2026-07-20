@@ -6,7 +6,7 @@ import { CURRENT_SCHEMA_VERSION, type ChartDoc, type ChartMeta } from '@kansoku/
 import { getDb, type Db } from '../db/index.js';
 import { chartMeta, outcomes } from '../db/schema.js';
 import { CHART_DATA_DIR } from '../platform/env.js';
-import { setSymbolFollowing } from '../ai/follows.js';
+import { setSymbolFollowing } from '../ai/personas/follows.js';
 import { isFeatureActive } from '../pro/features.js';
 import { publishAnalysisCreated } from '../realtime/analyses.js';
 import { migrateLegacyDoc, type BuildResult } from './build.js';

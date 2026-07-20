@@ -16,7 +16,7 @@ const symbols = vi.hoisted(() => ({
 }));
 
 vi.mock('@kansoku/core/overview/overview.service', () => ({ overviewService: overview }));
-vi.mock('@kansoku/core/modules/settings/settings.service', () => ({ settingsService: settings }));
+vi.mock('@kansoku/core/settings/settings.service', () => ({ settingsService: settings }));
 vi.mock('@kansoku/core/symbols/symbols.service', () => ({ symbolsService: symbols }));
 
 const { OverviewIpc } = await import('@desktop/kernel/ipc/overviewIpc.js');

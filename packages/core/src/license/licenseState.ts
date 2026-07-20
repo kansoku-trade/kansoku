@@ -1,6 +1,6 @@
 import { hostname as osHostname } from "node:os";
 import type { Db } from "../db/index.js";
-import type { SecretBox } from "../ai/secretBox.js";
+import type { SecretBox } from "../ai/settings/secretBox.js";
 import { createDodoClient, type DodoClient } from "./dodoClient.js";
 import { createLicenseStore, type LicenseRecord, type LicenseStore } from "./licenseStore.js";
 

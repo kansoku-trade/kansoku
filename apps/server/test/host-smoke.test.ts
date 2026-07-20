@@ -5,12 +5,12 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import WebSocket from 'ws';
 import { CHART_DATA_DIR, PORT, WEB_DIST } from '@kansoku/core/platform/env';
 
-vi.mock('@kansoku/core/ai/comments', () => ({
+vi.mock('@kansoku/core/ai/personas/comments', () => ({
   onComment: vi.fn(() => () => {}),
   listComments: vi.fn(async () => []),
   appendComment: vi.fn(),
 }));
-vi.mock('@kansoku/core/ai/chat', () => ({
+vi.mock('@kansoku/core/ai/chat/chat', () => ({
   onChatEvent: vi.fn(),
   chatTurnState: vi.fn(),
 }));

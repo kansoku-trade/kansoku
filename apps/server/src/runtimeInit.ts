@@ -1,6 +1,6 @@
 import type { SecretBox } from '@kansoku/pro-api';
-import { getAiRuntime, initAiSettings } from '@kansoku/core/ai/initAiSettings';
-import { getActiveSettingsStore } from '@kansoku/core/ai/settingsStore';
+import { getAiRuntime, initAiSettings } from '@kansoku/core/ai/settings/initAiSettings';
+import { getActiveSettingsStore } from '@kansoku/core/ai/settings/settingsStore';
 import { getDb } from '@kansoku/core/db/index';
 import { KANSOKU_HOME } from '@kansoku/core/platform/env';
 import { setProductionHost } from '@kansoku/core/license/dodoEnv';

@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import type { ReassessPack } from '../src/ai/datapack.js';
+import type { ReassessPack } from '../src/ai/agents/datapack.js';
 import {
   type DirectionalVerification,
   isDirectionalClaim,
   rejectAnswer,
   verifyDirectionalRead,
-} from '../src/ai/verifyRead.js';
+} from '../src/ai/agents/verifyRead.js';
 
 // 2026-07-13 was a Monday. 13:30Z = 09:30 ET open; 12:00Z = 08:00 ET pre-market.
 const bar = (iso: string, high: number, low: number, close: number) => ({

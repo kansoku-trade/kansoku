@@ -2,7 +2,7 @@ import { chmodSync, existsSync, mkdtempSync, rmSync, statSync, writeFileSync } f
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { SecretBoxError, createSecretBox } from '../src/ai/secretBox.js';
+import { SecretBoxError, createSecretBox } from '../src/ai/settings/secretBox.js';
 
 describe('secretBox', () => {
   let dir: string;

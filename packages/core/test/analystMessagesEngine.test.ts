@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest';
 import {
   AnalystMessagesEngine,
   type AnalystStepContext,
-} from '../src/ai/messages/analystMessagesEngine.js';
-import type { ReassessPack } from '../src/ai/datapack.js';
+} from '../src/ai/conversation/messages/analystMessagesEngine.js';
+import type { ReassessPack } from '../src/ai/agents/datapack.js';
 
 const pack: ReassessPack = {
   symbol: 'MU.US',

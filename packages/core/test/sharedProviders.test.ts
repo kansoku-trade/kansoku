@@ -1,8 +1,8 @@
 import type { AgentMessage } from '@earendil-works/pi-agent-core';
 import { describe, expect, it } from 'vitest';
-import { CURRENT_INTERFACE_LANGUAGE } from '../src/ai/messages/injectors/afterSystemPromptLanguageInjector.js';
-import { MessagesEngine } from '../src/ai/messages/messageEngine.js';
-import { RunMetadataProvider } from '../src/ai/messages/sharedProviders.js';
+import { CURRENT_INTERFACE_LANGUAGE } from '../src/ai/conversation/messages/injectors/afterSystemPromptLanguageInjector.js';
+import { MessagesEngine } from '../src/ai/conversation/messages/messageEngine.js';
+import { RunMetadataProvider } from '../src/ai/conversation/messages/sharedProviders.js';
 
 const textOf = (message: AgentMessage): string => {
   if (message.role !== 'user') return '';

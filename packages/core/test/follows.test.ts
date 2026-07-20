@@ -11,7 +11,7 @@ const ctx = vi.hoisted(() => {
 vi.mock('../src/platform/env.js', () => ({ CHART_DATA_DIR: ctx.dir }));
 
 const { listFollowedSymbols, setSymbolFollowing, symbolFollowState } =
-  await import('../src/ai/follows.js');
+  await import('../src/ai/personas/follows.js');
 
 afterAll(async () => {
   await fs.rm(ctx.dir, { recursive: true, force: true });

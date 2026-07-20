@@ -1,7 +1,7 @@
 import type { AgentMessage } from '@earendil-works/pi-agent-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ChartDoc } from '@kansoku/shared/types';
-import type { AiModel } from '@kansoku/core/ai/models';
+import type { AiModel } from '@kansoku/core/ai/runtime/models';
 import { tsukiRequest } from './helpers.js';
 
 const ctx = vi.hoisted(() => {
@@ -21,10 +21,10 @@ vi.mock('@kansoku/core/charts/store', () => store);
 
 const { setChatDepsForTests, setChatSuggestionDepsForTests } =
   await import('../src/modules/chat/chat.controller.js');
-const { createSession, appendMessages } = await import('@kansoku/core/ai/chatStore');
-const { clearChatSuggestionCache } = await import('@kansoku/core/ai/chatSuggestions');
+const { createSession, appendMessages } = await import('@kansoku/core/ai/chat/chatStore');
+const { clearChatSuggestionCache } = await import('@kansoku/core/ai/chat/chatSuggestions');
 
-type ChatDeps = import('@kansoku/core/ai/chat').ChatDeps;
+type ChatDeps = import('@kansoku/core/ai/chat/chat').ChatDeps;
 
 const fakeModel = { provider: 'anthropic', id: 'claude-haiku-4-5' } as unknown as AiModel;
 

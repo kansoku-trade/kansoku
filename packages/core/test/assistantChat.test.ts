@@ -3,20 +3,20 @@ import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import type { AiAgentFactory } from '../src/ai/agentSession.js';
+import type { AiAgentFactory } from '../src/ai/agents/agentSession.js';
 import {
   abortAssistantChatTurn,
   assistantChatTurnState,
   onAssistantChatEvent,
   runAssistantChatTurn,
-} from '../src/ai/assistantChat.js';
+} from '../src/ai/assistant/assistantChat.js';
 import {
   createAssistantSession,
   listAssistantMessages,
   sumAssistantSessionUsage,
-} from '../src/ai/assistantChatStore.js';
-import type { ChatEvent } from '../src/ai/chat.js';
-import type { AiModel } from '../src/ai/models.js';
+} from '../src/ai/assistant/assistantChatStore.js';
+import type { ChatEvent } from '../src/ai/chat/chat.js';
+import type { AiModel } from '../src/ai/runtime/models.js';
 import { createDb, type Db } from '../src/db/index.js';
 
 const model = { provider: 'anthropic', id: 'test-model' } as unknown as AiModel;

@@ -16,7 +16,7 @@ vi.mock('../src/platform/env.js', async () => {
   };
 });
 
-const { buildReadDrawingsTool, buildDrawAnnotationsTool } = await import('../src/ai/dataTools.js');
+const { buildReadDrawingsTool, buildDrawAnnotationsTool } = await import('../src/ai/agents/dataTools.js');
 const { annotationsService } = await import('../src/charts/annotations.service.js');
 const { saveAnnotations } = await import('../src/charts/annotations.js');
 

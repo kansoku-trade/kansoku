@@ -10,7 +10,7 @@ import {
   loadSharedDiscipline,
   watchedMarketsLine,
   withDiscipline,
-} from '../src/ai/promptPolicy.js';
+} from '../src/ai/runtime/promptPolicy.js';
 import {
   setActiveWatchedMarketsStore,
   type WatchedMarketsStore,

@@ -7,7 +7,7 @@ import {
   getSessionByChartId,
   listMessages,
   titleFromText,
-} from '../src/ai/chatStore.js';
+} from '../src/ai/chat/chatStore.js';
 
 function userMessage(text: string): AgentMessage {
   return { role: 'user', content: text, timestamp: Date.now() };

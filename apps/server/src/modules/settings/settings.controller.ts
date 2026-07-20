@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, Param, Post, Put } from '@tsuki-hono/common';
-import { settingsService } from '@kansoku/core/modules/settings/settings.service';
+import { settingsService } from '@kansoku/core/settings/settings.service';
 import { jsonResponse } from '../../httpResponse.js';
 
 @Controller('settings')

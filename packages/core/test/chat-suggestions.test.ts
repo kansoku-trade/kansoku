@@ -1,8 +1,8 @@
 import type { AgentTool } from '@earendil-works/pi-agent-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ChartDoc } from '@kansoku/shared/types';
-import type { AiAgentFactory } from '../src/ai/agentSession.js';
-import type { AiModel } from '../src/ai/models.js';
+import type { AiAgentFactory } from '../src/ai/agents/agentSession.js';
+import type { AiModel } from '../src/ai/runtime/models.js';
 
 const ctx = vi.hoisted(() => {
   const base = process.env.TMPDIR ?? '/tmp/';
@@ -15,7 +15,7 @@ const ctx = vi.hoisted(() => {
 vi.mock('../src/platform/env.js', () => ({ CHART_DATA_DIR: ctx.dir }));
 
 const { buildChatSuggestions, clearChatSuggestionCache } =
-  await import('../src/ai/chatSuggestions.js');
+  await import('../src/ai/chat/chatSuggestions.js');
 
 type SuggestionDeps = Parameters<typeof buildChatSuggestions>[1];
 

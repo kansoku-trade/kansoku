@@ -4,14 +4,14 @@ import { join } from 'node:path';
 import { builtinModels } from '@earendil-works/pi-ai/providers/all';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MacroEventItem } from '@kansoku/shared/types';
-import type { AiAgentFactory, AiAgentHandle } from '../src/ai/agentSession.js';
-import { AgentTimeoutError } from '../src/ai/agentSession.js';
-import { filterMacroForSymbol } from '../src/ai/eventFilter.js';
+import type { AiAgentFactory, AiAgentHandle } from '../src/ai/agents/agentSession.js';
+import { AgentTimeoutError } from '../src/ai/agents/agentSession.js';
+import { filterMacroForSymbol } from '../src/ai/personas/eventFilter.js';
 import {
   createSettingsStore,
   setActiveSettingsStore,
   type SettingsStore,
-} from '../src/ai/settingsStore.js';
+} from '../src/ai/settings/settingsStore.js';
 import { createDb } from '../src/db/index.js';
 
 const realModel = builtinModels().getModels('anthropic')[0];

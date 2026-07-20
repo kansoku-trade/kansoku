@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { loadSkillIndex, readSkill } from '../src/services/skills.js';
+import { loadSkillIndex, readSkill } from '../src/ai/agents/skills.js';
 
 let root: string;
 
