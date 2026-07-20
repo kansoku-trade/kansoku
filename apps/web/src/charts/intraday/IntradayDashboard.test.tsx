@@ -80,6 +80,25 @@ describe('IntradayChartOnly pro annotation layer locks', () => {
     expect(screen.getByText(/^图层 7\/7$/)).toBeTruthy();
   });
 
+  it('renders gated layers locked on a public-only build where features are absent', () => {
+    capabilities = { features: { 'auto-patterns': 'absent', 'options-walls': 'absent' } };
+    render(<IntradayChartOnly symbol="NVDA.US" built={built} activeTf="m5" />);
+    openCustomLayers();
+
+    expect(screen.getByText('SB 结构').closest('.lp-locked')).toBeTruthy();
+    expect(screen.getByText('123 结构').closest('.lp-locked')).toBeTruthy();
+    expect(screen.getByText('期权墙').closest('.lp-locked')).toBeTruthy();
+    expect(screen.getByText(/^图层 \d+\/7$/)).toBeTruthy();
+  });
+
+  it('renders gated layers locked before capabilities load (features undefined)', () => {
+    capabilities = {};
+    render(<IntradayChartOnly symbol="NVDA.US" built={built} activeTf="m5" />);
+    openCustomLayers();
+
+    expect(screen.getByText('期权墙').closest('.lp-locked')).toBeTruthy();
+  });
+
   it('renders unlocked checkboxes once the gating features become active', () => {
     capabilities = { features: { 'auto-patterns': 'active', 'options-walls': 'active' } };
     render(<IntradayChartOnly symbol="NVDA.US" built={built} activeTf="m5" />);

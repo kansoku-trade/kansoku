@@ -3,25 +3,14 @@ import { chartUrl } from '../platform/chartUrl.js';
 import type { ChartsApi } from '../contract/charts.js';
 import { ClientError } from '../platform/errors.js';
 import { mergeFreshBars } from '../realtime/candleMerge.js';
-import {
-  ALL_TYPES,
-  buildChart,
-  mergeForPatch,
-  rebuild,
-  refreshBody,
-} from './build.js';
+import { ALL_TYPES, buildChart, mergeForPatch, rebuild, refreshBody } from './build.js';
 import { clampViewCount } from '../analysis/history.js';
 import { TIMEFRAME_ORDER } from '../analysis/intraday/constants.js';
 import { validatePrediction } from '../analysis/predictionRules.js';
 import { predictionStale } from '../platform/staleness.js';
-import {
-  createChart,
-  deleteChart,
-  listCharts,
-  loadChart,
-  saveChart,
-} from './store.js';
+import { createChart, deleteChart, listCharts, loadChart, saveChart } from './store.js';
 import { localizeChartDocName } from '../symbols/securityName.js';
+import { featureStateSync } from '../pro/features.js';
 
 function assertPredictionValid(prediction: unknown): void {
   if (prediction == null) return;
@@ -60,7 +49,11 @@ export const chartsService: ChartsApi = {
         404,
       );
     const localized = await localizeChartDocName(doc);
-    return { ...localized, prediction_stale: predictionStale(localized, new Date()) };
+    const served =
+      featureStateSync('options-walls') === 'active'
+        ? localized
+        : { ...localized, input: { ...localized.input, options_levels: null } };
+    return { ...served, prediction_stale: predictionStale(served, new Date()) };
   },
 
   async create(input) {
@@ -154,10 +147,17 @@ export const chartsService: ChartsApi = {
     const result = refreshable
       ? await buildChart({ ...refreshable, title })
       : rebuild(doc.type, merged, title);
+    // A refresh rebuild re-fetches options_levels through the gated pro detector,
+    // which yields null when options-walls is inactive; keep the stored value so a
+    // free-side PATCH can never erase persisted options data.
+    const persistedInput =
+      featureStateSync('options-walls') === 'active'
+        ? result.input
+        : { ...result.input, options_levels: doc.input.options_levels ?? null };
     const updated: ChartDoc = {
       ...doc,
       title: result.title,
-      input: result.input,
+      input: persistedInput,
       built: result.built,
       updated_at: new Date().toISOString(),
       ...('prediction' in parsed ? { prediction_updated_at: new Date().toISOString() } : {}),

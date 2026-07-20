@@ -124,32 +124,47 @@ export function IntradayChartOnly({
     [built, activeTf],
   );
   const drawingsApi = useDrawings(drawingHandle, symbol, barTimes);
-  const lockedToggleKeys = new Set<IndicatorToggleKey>();
-  for (const [key, featureKey] of Object.entries(INDICATOR_FEATURE_GATES) as [
-    IndicatorToggleKey,
-    FeatureKey,
-  ][]) {
-    if (gatedFeatures[featureKey]?.locked) lockedToggleKeys.add(key);
-  }
-  const layerGroups: LayerGroup[] = LAYER_GROUP_DEFS.map(({ title, keys }) => ({
-    title,
-    items: keys.map((key) => {
-      const featureKey = INDICATOR_FEATURE_GATES[key];
-      const locked = lockedToggleKeys.has(key);
-      return {
-        key,
-        label: INDICATOR_TOGGLE_LABELS[key],
-        color: INDICATOR_TOGGLE_COLORS[key],
-        toggle: (v: boolean) => setToggle(key, v),
-        locked,
-        onLockedClick: featureKey ? () => gatedFeatures[featureKey]?.guard(() => {}) : undefined,
-      };
-    }),
-  }));
-  const filteredPresets: LayerPreset[] = INDICATOR_PRESETS.map((p) => ({
-    ...p,
-    on: p.on.filter((key) => !lockedToggleKeys.has(key)),
-  }));
+  const lockedToggleKeys = useMemo(() => {
+    const keys = new Set<IndicatorToggleKey>();
+    for (const [key, featureKey] of Object.entries(INDICATOR_FEATURE_GATES) as [
+      IndicatorToggleKey,
+      FeatureKey,
+    ][]) {
+      if (!gatedFeatures[featureKey]?.active) keys.add(key);
+    }
+    return keys;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoPatternsFeature.active, optionsWallsFeature.active]);
+  const layerGroups: LayerGroup[] = useMemo(
+    () =>
+      LAYER_GROUP_DEFS.map(({ title, keys }) => ({
+        title,
+        items: keys.map((key) => {
+          const featureKey = INDICATOR_FEATURE_GATES[key];
+          const locked = lockedToggleKeys.has(key);
+          return {
+            key,
+            label: INDICATOR_TOGGLE_LABELS[key],
+            color: INDICATOR_TOGGLE_COLORS[key],
+            toggle: (v: boolean) => setToggle(key, v),
+            locked,
+            onLockedClick: featureKey
+              ? () => gatedFeatures[featureKey]?.guard(() => {})
+              : undefined,
+          };
+        }),
+      })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [lockedToggleKeys, setToggle, autoPatternsFeature.locked, optionsWallsFeature.locked],
+  );
+  const filteredPresets: LayerPreset[] = useMemo(
+    () =>
+      INDICATOR_PRESETS.map((p) => ({
+        ...p,
+        on: p.on.filter((key) => !lockedToggleKeys.has(key)),
+      })),
+    [lockedToggleKeys],
+  );
 
   const onResizeStart = (e: React.PointerEvent<HTMLDivElement>) => {
     e.preventDefault();

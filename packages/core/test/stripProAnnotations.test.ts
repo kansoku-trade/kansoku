@@ -223,11 +223,19 @@ describe('stripProAnnotations', () => {
     expect(output.sidebar.news).toBe(input.sidebar.news);
   });
 
-  it('strips only pattern data when auto-patterns is inactive but options-walls is active', () => {
+  it('strips both pattern and options data when the bundle is present but unlicensed (both features locked)', () => {
     setEncBundlePresent(true);
     const output = stripProAnnotations(built());
     expect(output.timeframes.m5.autoDivergence).toEqual([]);
     expect(output.sidebar.optionsLevels).toBeNull();
+  });
+
+  it('preserves optionsLevels when options-walls is active', () => {
+    activatePro();
+    const input = built();
+    const output = stripProAnnotations(input);
+    expect(output.sidebar.optionsLevels).toEqual(input.sidebar.optionsLevels);
+    expect(output.sidebar.optionsLevels).not.toBeNull();
   });
 
   it('returns the input unchanged (same reference) when both features are active', () => {

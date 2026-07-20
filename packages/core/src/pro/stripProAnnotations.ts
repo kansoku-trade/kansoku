@@ -23,9 +23,9 @@ function stripTfData(tf: IntradayTfData): IntradayTfData {
     autoBeichi: [],
     ...(tf.pattern123 !== undefined ? { pattern123: [] } : {}),
     ...(tf.secondBreakouts !== undefined ? { secondBreakouts: [] } : {}),
-    markers: stripOverlay(tf.markers),
-    priceConnectors: stripOverlay(tf.priceConnectors),
-    macdConnectors: stripOverlay(tf.macdConnectors),
+    markers: stripOverlay(tf.markers ?? []),
+    priceConnectors: stripOverlay(tf.priceConnectors ?? []),
+    macdConnectors: stripOverlay(tf.macdConnectors ?? []),
   };
 }
 
