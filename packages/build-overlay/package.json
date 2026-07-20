@@ -1,0 +1,17 @@
+{
+  "name": "@kansoku/build-overlay",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node scripts/sync.mjs --check",
+    "sync": "node scripts/sync.mjs",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "typescript": "^7.0.2",
+    "vite": "^8.1.5",
+    "vitest": "^4.1.10"
+  }
+}

@@ -17,6 +17,8 @@
     "format:check": "prettier --check .",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
+    "overlay:check": "pnpm --filter @kansoku/build-overlay check",
+    "overlay:sync": "pnpm --filter @kansoku/build-overlay sync",
     "package:desktop": "pnpm --filter @kansoku/desktop package",
     "prepare": "skills experimental_install",
     "release:desktop:dry-run": "apps/desktop/scripts/release-dry-run.sh",

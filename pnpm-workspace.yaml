@@ -1,6 +1,7 @@
 packages:
   - packages/core
   - packages/bench
+  - packages/build-overlay
   - packages/pro-api
   - packages/shared
   - apps/license-worker
