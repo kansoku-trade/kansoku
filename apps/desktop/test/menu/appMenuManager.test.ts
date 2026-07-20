@@ -204,6 +204,46 @@ describe('buildAppMenuTemplate', () => {
   });
 });
 
+describe('debug section', () => {
+  it('is absent without devLicense deps', () => {
+    const template = buildAppMenuTemplate('Kansoku', makeDeps());
+    expect(template.some((item) => item.label === '调试')).toBe(false);
+  });
+
+  it('renders radio state from isUnlicensed and wires clicks to set', () => {
+    const set = vi.fn();
+    const deps = makeDeps({ devLicense: { isUnlicensed: () => true, set } });
+    const template = buildAppMenuTemplate('Kansoku', deps);
+    expect(template.map((item) => item.label ?? item.role)).toEqual([
+      'Kansoku',
+      '编辑',
+      '显示',
+      '前往',
+      '窗口',
+      '调试',
+      '帮助',
+    ]);
+    const debugMenu = asSubmenu(findByLabel(template, '调试'));
+    expect(findByLabel(debugMenu, '许可：已激活')).toMatchObject({ type: 'radio', checked: false });
+    expect(findByLabel(debugMenu, '许可：未激活（模拟）')).toMatchObject({
+      type: 'radio',
+      checked: true,
+    });
+    findByLabel(debugMenu, '许可：已激活').click?.(
+      undefined as never,
+      undefined as never,
+      undefined as never,
+    );
+    findByLabel(debugMenu, '许可：未激活（模拟）').click?.(
+      undefined as never,
+      undefined as never,
+      undefined as never,
+    );
+    expect(set).toHaveBeenNthCalledWith(1, false);
+    expect(set).toHaveBeenNthCalledWith(2, true);
+  });
+});
+
 describe('createAppMenuManager', () => {
   it('install and rebuild both set the application menu from the template', () => {
     const setApplicationMenu = vi.fn();

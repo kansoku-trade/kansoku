@@ -20,8 +20,6 @@ export const SIGNAL_ICON: Record<string, string> = {
   macd_divergence: '⚡',
   macd_beichi: '🌀',
 };
-export const BEICHI_WEAKER_RATIO = 0.9;
-export const MIN_PUSH_BARS = 3;
 export const ZONE_COLORS: Record<string, string> = {
   entry: '#58a6ff',
   stop: '#ef5350',

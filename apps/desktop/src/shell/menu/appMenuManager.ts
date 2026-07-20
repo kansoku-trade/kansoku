@@ -1,5 +1,6 @@
 import { Menu } from 'electron';
 import { buildAppSectionWithName } from './sections/appSection.js';
+import { buildDebugSection } from './sections/debugSection.js';
 import { buildEditSection } from './sections/editSection.js';
 import { buildGoSection } from './sections/goSection.js';
 import { buildHelpSection } from './sections/helpSection.js';
@@ -18,12 +19,14 @@ export function buildAppMenuTemplate(
   appName: string,
   deps: MenuActionDeps,
 ): Electron.MenuItemConstructorOptions[] {
+  const debugSection = buildDebugSection(deps);
   return [
     buildAppSectionWithName(appName, deps),
     buildEditSection(),
     buildViewSection(),
     buildGoSection(deps),
     buildWindowSection(deps),
+    ...(debugSection ? [debugSection] : []),
     buildHelpSection(deps),
   ];
 }

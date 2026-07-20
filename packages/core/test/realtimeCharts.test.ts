@@ -19,9 +19,6 @@ vi.mock('../src/charts/build.js', () => build);
 vi.mock('../src/marketdata/longbridgeStream.js', () => ({
   getLongbridgeStream: () => longbridgeStream,
 }));
-vi.mock('../src/analysis/optionsLevels.js', () => ({
-  getOptionsLevels: vi.fn().mockResolvedValue(null),
-}));
 vi.mock('../src/marketdata/events.js', () => ({ getEventRisk: vi.fn().mockResolvedValue(null) }));
 
 const { subscribeChart, subscribePreview } = await import('../src/realtime/charts.js');

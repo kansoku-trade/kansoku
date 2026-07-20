@@ -21,10 +21,14 @@ function resolveState(
   return licensed ? 'active' : 'locked';
 }
 
-export async function featureState(key: FeatureKey): Promise<FeatureState> {
+export function featureStateSync(key: FeatureKey): FeatureState {
   const tier = featureCatalog[key].tier;
   if (tier === 'free') return 'active';
   return resolveState(tier, isProPresent(), isLicensed(), hasEncBundle());
+}
+
+export async function featureState(key: FeatureKey): Promise<FeatureState> {
+  return featureStateSync(key);
 }
 
 export async function featureStates(): Promise<Record<FeatureKey, FeatureState>> {

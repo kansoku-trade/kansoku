@@ -5,10 +5,16 @@ describe('FEATURES catalog', () => {
   it('matches snapshot', () => {
     expect(FEATURES).toMatchInlineSnapshot(`
       {
+        "auto-patterns": {
+          "tier": "pro",
+        },
         "deep-dive": {
           "tier": "pro",
         },
         "memory": {
+          "tier": "pro",
+        },
+        "options-walls": {
           "tier": "pro",
         },
         "research-ai": {

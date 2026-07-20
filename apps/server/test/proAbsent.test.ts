@@ -33,6 +33,8 @@ describe('pro-absent HTTP surface', () => {
         'deep-dive': 'absent',
         'research-ai': 'absent',
         'memory': 'absent',
+        'auto-patterns': 'absent',
+        'options-walls': 'absent',
       },
       hasEncBundle: false,
     });

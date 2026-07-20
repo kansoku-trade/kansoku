@@ -11,6 +11,7 @@ function fakeLicenseManager(overrides: Partial<LicenseManager> = {}): LicenseMan
   return {
     getLicenseSnapshot: () => ({ state: 'unlicensed' }),
     getBundleKey: () => undefined,
+    getBundleKeyId: () => undefined,
     activate: async () => ({ activated: true }),
     deactivate: async () => ({}) as never,
     revalidate: async () => {},
@@ -19,7 +20,14 @@ function fakeLicenseManager(overrides: Partial<LicenseManager> = {}): LicenseMan
 }
 
 function allFeatures(state: 'absent' | 'locked' | 'active') {
-  return { 'symbol-follow': state, 'deep-dive': state, 'research-ai': state, 'memory': state };
+  return {
+    'symbol-follow': state,
+    'deep-dive': state,
+    'research-ai': state,
+    'memory': state,
+    'auto-patterns': state,
+    'options-walls': state,
+  };
 }
 
 describe('GET /capabilities', () => {

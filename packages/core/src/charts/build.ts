@@ -5,7 +5,7 @@ import { TIMEFRAME_ORDER } from '../analysis/intraday/constants.js';
 import { buildIntraday, type IntradayInput } from '../analysis/intraday/orchestrator.js';
 import { getProvider } from '../marketdata/registry.js';
 import { getEventRisk } from '../marketdata/events.js';
-import { getOptionsLevels } from '../analysis/optionsLevels.js';
+import { activeProDetectors } from '../pro/detectors.js';
 import { resolveSecurityName } from '../symbols/securityName.js';
 import { buildSepa, type SepaInput } from '../analysis/sepa.js';
 import { marketDate } from '../marketdata/session.js';
@@ -118,7 +118,8 @@ async function prepareInput(type: ChartType, body: Body): Promise<Record<string,
       const provider = getProvider(marketOf(symbol));
       const namePromise = resolveSecurityName(symbol, body.name, provider);
       const newsPromise = provider.getNews(symbol);
-      const optionsPromise = getOptionsLevels(symbol);
+      const getOptions = activeProDetectors().getOptionsLevels;
+      const optionsPromise = getOptions ? getOptions(symbol) : Promise.resolve(null);
       const eventRiskPromise = getEventRisk(symbol).catch(() => null);
       if (!timeframes) {
         const [m5, m15, h1] = await Promise.all(

@@ -3,7 +3,8 @@ import { ClientError } from '../platform/errors.js';
 import { buildChart, rebuild, refreshBody } from '../charts/build.js';
 import { getEventRisk } from '../marketdata/events.js';
 import { TIMEFRAME_ORDER } from '../analysis/intraday/constants.js';
-import { getOptionsLevels } from '../analysis/optionsLevels.js';
+import { activeProDetectors } from '../pro/detectors.js';
+import { featureStateSync } from '../pro/features.js';
 import { getStream } from '../marketdata/registry.js';
 import type { CandlePeriod } from '../marketdata/quoteStream.js';
 import { classifySession, isCurrentSessionId } from '../marketdata/session.js';
@@ -106,6 +107,16 @@ function scheduleDebouncedRebuild(key: string): void {
   }, wait);
 }
 
+// Live rebuilds must never re-materialize stored options_levels for a client
+// whose options-walls feature is inactive: fall back to the persisted value only
+// when the feature is active, otherwise null.
+export function liveOptionsLevels(fetched: unknown, latestInput: Record<string, unknown>): unknown {
+  if (fetched != null) return fetched;
+  return featureStateSync('options-walls') === 'active'
+    ? (latestInput.options_levels ?? null)
+    : null;
+}
+
 // Rebuild an intraday chart from the live in-memory candle state (the frozen
 // analysis snapshot plus whatever bars push/poller have merged in). Both the
 // streaming push path and the poller safety net funnel through here so the two
@@ -121,10 +132,11 @@ async function buildFromState(
   // stored values freeze at analysis time — the live view refetches both (the
   // getters are memory-cached, so this is free on the streaming hot path).
   const symbol = latestInput.symbol;
+  const getOptions = activeProDetectors().getOptionsLevels;
   const [optionsLevels, eventRisk] =
     typeof symbol === 'string'
       ? await Promise.all([
-          getOptionsLevels(symbol).catch(() => null),
+          getOptions ? getOptions(symbol).catch(() => null) : Promise.resolve(null),
           getEventRisk(symbol).catch(() => null),
         ])
       : [null, null];
@@ -132,7 +144,7 @@ async function buildFromState(
     ...latestInput,
     timeframes,
     as_of: lastM5?.time ?? latestInput.as_of,
-    options_levels: optionsLevels ?? latestInput.options_levels ?? null,
+    options_levels: liveOptionsLevels(optionsLevels, latestInput),
     event_risk: eventRisk ?? latestInput.event_risk ?? null,
   };
   const result = rebuild('intraday', input, latest.title);

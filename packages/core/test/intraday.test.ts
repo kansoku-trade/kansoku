@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { RawBar, TimeframeKey } from '@kansoku/shared/types';
-import { computeIntradayEntryPlan, resolveEntryPlanStatus } from '../src/analysis/intraday/entryPlan.js';
+import {
+  computeIntradayEntryPlan,
+  resolveEntryPlanStatus,
+} from '../src/analysis/intraday/entryPlan.js';
 import { capMarkersPerBar, mergeAiAutoMarkers } from '../src/analysis/intraday/markers.js';
 import { buildIntraday, type IntradayInput } from '../src/analysis/intraday/orchestrator.js';
 import { coerceIntradayTimeframe } from '../src/analysis/intraday/timeframe.js';
@@ -27,7 +30,7 @@ describe('intraday parity vs python golden fixture', () => {
   const expected = loadFixture<TfExpected>('intraday-expected.json');
 
   for (const key of ['m5', 'm15', 'h1'] as TimeframeKey[]) {
-    it(`timeframe ${key} matches`, () => {
+    it(`timeframe ${key} matches (annotation detectors absent by default)`, () => {
       const tf = coerceIntradayTimeframe(input.timeframes[key] as RawBar[], key);
       const exp = expected[key];
       expect(approxDiff(tf.candles, exp.candles)).toBeNull();
@@ -36,11 +39,25 @@ describe('intraday parity vs python golden fixture', () => {
       expect(approxDiff(tf.macdDea, exp.macdDea)).toBeNull();
       expect(approxDiff(tf.macdHist, exp.macdHist)).toBeNull();
       expect(approxDiff(tf.macdCrosses, exp.macdCrosses)).toBeNull();
-      // the python golden fixture was generated when only the last 2 detections shipped
-      expect(approxDiff(tf.autoDivergence.slice(-2), exp.autoDivergence)).toBeNull();
-      expect(approxDiff(tf.autoBeichi.slice(-2), exp.autoBeichi)).toBeNull();
       expect(approxDiff(tf.lastClose, exp.last_close)).toBeNull();
-      expect(approxDiff(tf.summary, exp.summary)).toBeNull();
+
+      // Free build: the six pro annotation detectors are absent, so every
+      // detection field degrades to empty. Everything else still matches golden.
+      expect(tf.autoDivergence).toEqual([]);
+      expect(tf.autoBeichi).toEqual([]);
+      expect(tf.pattern123).toEqual([]);
+      expect(tf.secondBreakouts).toEqual([]);
+      expect(tf.candlePatterns).toEqual([]);
+
+      const expectedSummary = {
+        ...(exp.summary as Record<string, unknown>),
+        divergence_candidates: [],
+        beichi_candidates: [],
+        candle_patterns: [],
+        pattern_123: [],
+        second_breakouts: [],
+      };
+      expect(approxDiff(tf.summary, expectedSummary)).toBeNull();
     });
   }
 
@@ -142,81 +159,6 @@ describe('intraday parity vs python golden fixture', () => {
     expect(() => buildIntraday({ ...input, context })).toThrow(/news/);
   });
 
-  it('tags every marker and connector with its origin group', () => {
-    const prediction = {
-      direction: 'long' as const,
-      anchor: { timeframe: 'm15' as const, time: '2026-06-01T14:30:00.000Z', price: 100 },
-      signals: [
-        {
-          type: 'macd_divergence',
-          timeframe: 'm15' as const,
-          bias: 'bullish' as const,
-          label: '底背离',
-          points: [
-            { time: '2026-06-01T14:00:00.000Z', price: 98, macd_value: -0.2 },
-            { time: '2026-06-01T14:15:00.000Z', price: 97, macd_value: -0.1 },
-          ],
-        },
-        {
-          type: 'pin_bar',
-          timeframe: 'm15' as const,
-          time: '2026-06-01T14:30:00.000Z',
-          price: 100,
-          bias: 'bullish' as const,
-          label: 'Pin Bar',
-        },
-      ],
-      entry_plan: { entry: 100, stop: 95 },
-    };
-    const { built } = buildIntraday({ ...input, prediction });
-
-    const groupsSeen = new Set<string | undefined>();
-    for (const key of ['m5', 'm15', 'h1'] as TimeframeKey[]) {
-      const tf = built.timeframes[key];
-      for (const m of tf.markers) {
-        expect(m.group).toBeDefined();
-        groupsSeen.add(m.group);
-      }
-      for (const c of [...tf.priceConnectors, ...tf.macdConnectors]) {
-        expect(c.group).toBeDefined();
-        groupsSeen.add(c.group);
-      }
-      for (const m of tf.macdCrossMarkers) {
-        expect(m.group).toBeUndefined();
-      }
-    }
-    expect(groupsSeen).toEqual(new Set(['ai', 'divergence', 'beichi', 'pattern123', 'candle']));
-  });
-
-  it('scores candle patterns, hides low-score ones, and annotates status/confirm prices', () => {
-    const { built } = buildIntraday(input);
-
-    for (const key of ['m5', 'm15', 'h1'] as TimeframeKey[]) {
-      const tf = coerceIntradayTimeframe(input.timeframes[key] as RawBar[], key);
-      for (const p of tf.candlePatterns) {
-        expect(p.score).toBeGreaterThanOrEqual(0);
-        expect(p.score).toBeLessThanOrEqual(100);
-        if (p.bias !== 'neutral') {
-          expect(p.confirm_price).not.toBeNull();
-          expect(p.invalidate_price).not.toBeNull();
-          expect(['pending', 'confirmed', 'invalidated', 'expired']).toContain(p.status);
-        } else {
-          expect(p.status).toBeNull();
-        }
-      }
-    }
-
-    const candleMarkers = Object.values(built.timeframes).flatMap((tf) =>
-      tf.markers.filter((m) => m.group === 'candle'),
-    );
-    expect(candleMarkers.length).toBeGreaterThan(0);
-    for (const m of candleMarkers) {
-      expect(m.tooltip).toContain('含金量');
-      expect(m.tooltip).toContain('状态：');
-      if (m.text !== '') expect(m.shape).not.toBe('square');
-    }
-  });
-
   it('walks the entry plan lifecycle from the anchor bar', () => {
     const plan = { entry: 1014, stop: 990.5 };
     const bar = (i: number, high: number, low: number, close: number) => ({
@@ -261,71 +203,6 @@ describe('intraday parity vs python golden fixture', () => {
       for (const m of tf.markers) perBar.set(m.time, (perBar.get(m.time) ?? 0) + 1);
       for (const count of perBar.values()) expect(count).toBeLessThanOrEqual(2);
     }
-  });
-
-  it('flows a confirmed H2 through coerceIntradayTimeframe into summary and tf data', () => {
-    const upRamp = (from: number, to: number, step: number) => {
-      const out: number[] = [];
-      for (let v = from; step > 0 ? v <= to : v >= to; v += step) out.push(v);
-      return out;
-    };
-    const UP_TREND = upRamp(70, 130, 1);
-    const UP_H2_STRUCTURE = [
-      129, 128, 127, 126, 125,
-      126, 127, 128,
-      127, 126, 125, 124, 123,
-      124, 125, 126, 127, 126, 125, 124,
-      125, 126, 127, 128,
-    ];
-    const closes = [...UP_TREND, ...UP_H2_STRUCTURE];
-    const base = Date.parse('2026-06-01T08:00:00.000Z') / 1000;
-    const raw: RawBar[] = closes.map((c, i) => ({
-      time: new Date((base + i * 300) * 1000).toISOString(),
-      open: c,
-      high: c + 0.5,
-      low: c - 0.5,
-      close: c,
-      volume: 1000,
-    }));
-    const tf = coerceIntradayTimeframe(raw, 'm5');
-    expect(tf.secondBreakouts).toHaveLength(1);
-    expect(tf.secondBreakouts[0].kind).toBe('H2');
-    expect(tf.secondBreakouts[0].status).toBe('confirmed');
-    expect(tf.summary.second_breakouts).toEqual(tf.secondBreakouts);
-  });
-
-  it('emits a secondBreakouts field for a confirmed SB structure', () => {
-    const upRamp = (from: number, to: number, step: number) => {
-      const out: number[] = [];
-      for (let v = from; step > 0 ? v <= to : v >= to; v += step) out.push(v);
-      return out;
-    };
-    const UP_TREND = upRamp(70, 130, 1);
-    const UP_H2_STRUCTURE = [
-      129, 128, 127, 126, 125,
-      126, 127, 128,
-      127, 126, 125, 124, 123,
-      124, 125, 126, 127, 126, 125, 124,
-      125, 126, 127, 128,
-    ];
-    const closes = [...UP_TREND, ...UP_H2_STRUCTURE];
-    const base = Date.parse('2026-06-01T08:00:00.000Z') / 1000;
-    const sbBars: RawBar[] = closes.map((c, i) => ({
-      time: new Date((base + i * 300) * 1000).toISOString(),
-      open: c,
-      high: c + 0.5,
-      low: c - 0.5,
-      close: c,
-      volume: 1000,
-    }));
-    const { built } = buildIntraday({
-      ...input,
-      timeframes: { ...input.timeframes, m5: sbBars },
-    });
-
-    expect(built.timeframes.m5.secondBreakouts).toHaveLength(1);
-    expect(built.timeframes.m5.secondBreakouts?.[0].status).toBe('confirmed');
-    expect(built.sidebar.technicals.m5.second_breakouts).toEqual(built.timeframes.m5.secondBreakouts);
   });
 
   it('throws ClientError when sources_used is not an array', () => {

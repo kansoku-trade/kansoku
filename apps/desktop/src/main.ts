@@ -35,7 +35,10 @@ import {
 import { installDefaultContextMenu } from './shell/contextMenu/defaultMenu.js';
 import { ContextMenuIpc } from './shell/contextMenu/ipc.js';
 import { LogsIpc } from './platform/logging/ipc.js';
-import { createRendererCallClient, type RendererCallClient } from './platform/rendererCall/client.js';
+import {
+  createRendererCallClient,
+  type RendererCallClient,
+} from './platform/rendererCall/client.js';
 import { sendTabsCommand } from './shell/tabs/commands.js';
 import {
   createTabsFileStore,
@@ -103,9 +106,31 @@ function installAppMenu({
     });
   }
 
-  createAppMenuManager({
+  let devUnlicensed = false;
+  let menuManager: ReturnType<typeof createAppMenuManager> | null = null;
+  const devLicense = app.isPackaged
+    ? undefined
+    : {
+        isUnlicensed: () => devUnlicensed,
+        set: (unlicensed: boolean) => {
+          void (async () => {
+            const { setDevUnlicensedOverride } = await import('@kansoku/core/license/licenseGate');
+            setDevUnlicensedOverride(unlicensed);
+            devUnlicensed = unlicensed;
+            menuManager?.rebuild();
+            for (const win of BrowserWindow.getAllWindows()) {
+              win.webContents.reload();
+            }
+          })().catch((error: unknown) => {
+            console.error('[desktop] toggle dev license override failed', error);
+          });
+        },
+      };
+
+  menuManager = createAppMenuManager({
     appName: app.name,
     deps: {
+      devLicense,
       openAbout: () => {
         openAboutWindow();
       },
@@ -160,7 +185,8 @@ function installAppMenu({
       nextTab: () => cycleTab(1),
       prevTab: () => cycleTab(-1),
     },
-  }).install();
+  });
+  menuManager.install();
 }
 
 app.whenReady().then(async () => {

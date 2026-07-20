@@ -12,6 +12,10 @@ export type MenuActionDeps = {
   closeTab: () => void;
   nextTab: () => void;
   prevTab: () => void;
+  devLicense?: {
+    isUnlicensed: () => boolean;
+    set: (unlicensed: boolean) => void;
+  };
 };
 
 export type AppMenuManager = {

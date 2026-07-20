@@ -13,21 +13,13 @@ import {
   type SecondBreakout,
 } from '@kansoku/shared/types';
 import { ClientError } from '../../platform/errors.js';
-import { detectCandlePatterns } from '../candlePatterns/detect.js';
 import { detectFvgZones } from '../fvg.js';
 import { lastVwap, sessionVwap } from '../vwap.js';
 import { ema, findSwings, lineData, macd, sma, toTs } from '../indicators.js';
 import { classifyMacdStructure, type MacdStructure } from '../macdStructure.js';
-import { detect123Patterns } from '../pattern123.js';
-import { detectSecondBreakouts } from '../secondBreakout.js';
-import { enrichCandlePatterns, offSessionSignalKeeper } from '../patternScoring.js';
-import {
-  BEICHI_WEAKER_RATIO,
-  DEFAULT_EMA_PERIODS,
-  MACD_MIN_BARS,
-  MIN_PUSH_BARS,
-  VWAP_TIMEFRAMES,
-} from './constants.js';
+import { offSessionSignalKeeper } from '../patternScoring.js';
+import { activeProDetectors } from '../../pro/detectors.js';
+import { DEFAULT_EMA_PERIODS, MACD_MIN_BARS, VWAP_TIMEFRAMES } from './constants.js';
 
 export function findMacdCrosses(hist: (number | null)[], timesTs: number[]): MacdCross[] {
   const out: MacdCross[] = [];
@@ -40,106 +32,6 @@ export function findMacdCrosses(hist: (number | null)[], timesTs: number[]): Mac
       else if (prev >= 0 && h < 0) out.push({ time: timesTs[i], type: 'death' });
     }
     prev = h;
-  }
-  return out;
-}
-
-export function findPriceDivergence(
-  swingPoints: DivergencePoint[],
-  isHigh: boolean,
-): DivergencePair[] {
-  const out: DivergencePair[] = [];
-  for (let i = 0; i + 1 < swingPoints.length; i++) {
-    const a = swingPoints[i];
-    const b = swingPoints[i + 1];
-    if (isHigh && b.price > a.price && b.macd_value < a.macd_value) {
-      out.push({ kind: 'top', a, b });
-    } else if (!isHigh && b.price < a.price && b.macd_value > a.macd_value) {
-      out.push({ kind: 'bottom', a, b });
-    }
-  }
-  return out;
-}
-
-interface Push {
-  start: number;
-  end: number;
-  sign: 1 | -1;
-}
-
-export function macdPushes(hist: (number | null)[]): Push[] {
-  const pushes: Push[] = [];
-  let i = 0;
-  const n = hist.length;
-  while (i < n) {
-    const h = hist[i];
-    if (h === null || h === 0) {
-      i += 1;
-      continue;
-    }
-    const sign = h > 0 ? 1 : -1;
-    let j = i;
-    while (j < n) {
-      const hj = hist[j];
-      if (hj === null || (sign > 0 ? hj <= 0 : hj >= 0)) break;
-      j += 1;
-    }
-    if (j - i >= MIN_PUSH_BARS) pushes.push({ start: i, end: j - 1, sign });
-    i = j > i ? j : i + 1;
-  }
-  return pushes;
-}
-
-export function findMacdBeichi(
-  hist: (number | null)[],
-  highs: number[],
-  lows: number[],
-  timesTs: number[],
-): DivergencePair[] {
-  const pushes = macdPushes(hist);
-  const out: DivergencePair[] = [];
-  const area = (p: Push) => {
-    let s = 0;
-    for (let j = p.start; j <= p.end; j++) s += Math.abs(hist[j] ?? 0);
-    return s;
-  };
-  const argExtreme = (p: Push, arr: number[], isMax: boolean) => {
-    let best = p.start;
-    for (let j = p.start + 1; j <= p.end; j++) {
-      if (isMax ? arr[j] > arr[best] : arr[j] < arr[best]) best = j;
-    }
-    return best;
-  };
-  for (let k = 2; k < pushes.length; k++) {
-    const prev = pushes[k - 2];
-    const curr = pushes[k];
-    if (prev.sign !== curr.sign) continue;
-    if (area(curr) >= area(prev) * BEICHI_WEAKER_RATIO) continue;
-    let kind: 'top' | 'bottom';
-    let prevI: number;
-    let currI: number;
-    let prevPrice: number;
-    let currPrice: number;
-    if (curr.sign > 0) {
-      prevI = argExtreme(prev, highs, true);
-      currI = argExtreme(curr, highs, true);
-      if (highs[currI] <= highs[prevI]) continue;
-      kind = 'top';
-      prevPrice = highs[prevI];
-      currPrice = highs[currI];
-    } else {
-      prevI = argExtreme(prev, lows, false);
-      currI = argExtreme(curr, lows, false);
-      if (lows[currI] >= lows[prevI]) continue;
-      kind = 'bottom';
-      prevPrice = lows[prevI];
-      currPrice = lows[currI];
-    }
-    out.push({
-      kind,
-      a: { time: timesTs[prevI], price: prevPrice, macd_value: hist[prevI] as number },
-      b: { time: timesTs[currI], price: currPrice, macd_value: hist[currI] as number },
-    });
   }
   return out;
 }
@@ -227,20 +119,22 @@ export function coerceIntradayTimeframe(
   const macdCrosses = findMacdCrosses(hist, timesTs);
   const structure = classifyMacdStructure(dif, hist, timesTs);
   const fvgZones = detectFvgZones(candles);
-  const candlePatterns = enrichCandlePatterns(
-    detectCandlePatterns(opens, highs, lows, closes, timesTs),
-    {
-      highs,
-      lows,
-      closes,
-      vols,
-      timesTs,
-      emaArrs,
-      swingHighs,
-      swingLows,
-      fvgZones,
-    },
-  );
+  const proDetectors = activeProDetectors();
+  const { detectCandlePatterns, enrichCandlePatterns } = proDetectors;
+  const candlePatterns =
+    detectCandlePatterns && enrichCandlePatterns
+      ? enrichCandlePatterns(detectCandlePatterns(opens, highs, lows, closes, timesTs), {
+          highs,
+          lows,
+          closes,
+          vols,
+          timesTs,
+          emaArrs,
+          swingHighs,
+          swingLows,
+          fvgZones,
+        })
+      : [];
 
   const histByTime = new Map<number, number>();
   for (let i = 0; i < hist.length; i++) {
@@ -253,21 +147,31 @@ export function coerceIntradayTimeframe(
       .map((p) => ({ ...p, macd_value: histByTime.get(p.time) as number }));
 
   const keepSignal = offSessionSignalKeeper(timesTs, vols);
-  const autoDivergence = [
-    ...findPriceDivergence(withMacd(swingHighs), true),
-    ...findPriceDivergence(withMacd(swingLows), false),
-  ]
-    .filter((d) => keepSignal(d.b.time))
-    .sort((a, b) => a.b.time - b.b.time);
-  const autoBeichi = findMacdBeichi(hist, highs, lows, timesTs)
-    .filter((d) => keepSignal(d.b.time))
-    .sort((a, b) => a.b.time - b.b.time);
-  const pattern123 = detect123Patterns(highs, lows, closes, timesTs).filter((p) =>
-    keepSignal(p.confirm?.time ?? p.p3.time),
-  );
-  const secondBreakouts = detectSecondBreakouts(highs, lows, closes, timesTs).filter((sb) =>
-    keepSignal(sb.trigger?.time ?? sb.signal.time),
-  );
+  const findPriceDivergence = proDetectors.findPriceDivergence;
+  const autoDivergence = findPriceDivergence
+    ? [
+        ...findPriceDivergence(withMacd(swingHighs), true),
+        ...findPriceDivergence(withMacd(swingLows), false),
+      ]
+        .filter((d) => keepSignal(d.b.time))
+        .sort((a, b) => a.b.time - b.b.time)
+    : [];
+  const autoBeichi = proDetectors.findMacdBeichi
+    ? proDetectors
+        .findMacdBeichi(hist, highs, lows, timesTs)
+        .filter((d) => keepSignal(d.b.time))
+        .sort((a, b) => a.b.time - b.b.time)
+    : [];
+  const pattern123 = proDetectors.detect123Patterns
+    ? proDetectors
+        .detect123Patterns(highs, lows, closes, timesTs)
+        .filter((p) => keepSignal(p.confirm?.time ?? p.p3.time))
+    : [];
+  const secondBreakouts = proDetectors.detectSecondBreakouts
+    ? proDetectors
+        .detectSecondBreakouts(highs, lows, closes, timesTs)
+        .filter((sb) => keepSignal(sb.trigger?.time ?? sb.signal.time))
+    : [];
   structure.signals = structure.signals.filter((s) => keepSignal(s.time));
 
   return {

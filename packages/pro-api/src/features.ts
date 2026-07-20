@@ -6,6 +6,8 @@ export const FEATURES = {
   'deep-dive': { tier: 'pro' },
   'research-ai': { tier: 'pro' },
   'memory': { tier: 'pro' },
+  'auto-patterns': { tier: 'pro' },
+  'options-walls': { tier: 'pro' },
 } as const satisfies Record<string, { tier: FeatureTier }>;
 
 export type FeatureKey = keyof typeof FEATURES;

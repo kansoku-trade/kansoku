@@ -3,6 +3,7 @@ import type { LicenseSnapshot } from './licenseTypes.js';
 
 export * from './aiTypes.js';
 export * from './licenseTypes.js';
+export * from './detectors.js';
 
 // Shared contract between core's registration seam (packages/core/src/pro/hooks.ts)
 // and the pro composition that supplies the real implementation at start() —
@@ -70,4 +71,3 @@ export interface ProAiExtension {
   prepareTurn(context: ProAiTurnContext): Promise<ProAiPreparedTurn>;
   afterTurn?(context: ProAiCompletedTurn): void | Promise<void>;
 }
-

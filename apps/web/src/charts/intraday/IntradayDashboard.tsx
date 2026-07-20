@@ -1,13 +1,16 @@
 import { useMemo, useRef, useState, type ReactNode } from 'react';
 import type { IntradayBuilt, QuoteCell, TimeframeKey } from '@kansoku/shared/types';
+import type { FeatureKey } from '@kansoku/pro-api/features';
 import { fmt } from '@web/format';
+import { useFeature } from '@web/useFeature';
 import type { SidebarTab } from '../SidebarTabs';
 import { DrawingToolbar } from '../drawings/DrawingToolbar';
 import { useDrawings, type DrawingsHandle } from '../drawings/useDrawings';
-import { LayerPanel, type LayerGroup } from '../LayerPanel';
+import { LayerPanel, type LayerGroup, type LayerPreset } from '../LayerPanel';
 import type { ConclusionReassess } from './ConclusionCard';
 import { IntradaySidebar } from './IntradaySidebar';
 import {
+  INDICATOR_FEATURE_GATES,
   INDICATOR_PRESETS,
   INDICATOR_TOGGLE_COLORS,
   INDICATOR_TOGGLE_LABELS,
@@ -100,6 +103,12 @@ export function IntradayChartOnly({
     setMarkerRange,
   } = useIndicatorToggles();
   const [drawingHandle, setDrawingHandle] = useState<DrawingsHandle | null>(null);
+  const autoPatternsFeature = useFeature('auto-patterns');
+  const optionsWallsFeature = useFeature('options-walls');
+  const gatedFeatures: Partial<Record<FeatureKey, typeof autoPatternsFeature>> = {
+    'auto-patterns': autoPatternsFeature,
+    'options-walls': optionsWallsFeature,
+  };
   useIntradayCharts(
     built,
     activeTf,
@@ -115,18 +124,46 @@ export function IntradayChartOnly({
     [built, activeTf],
   );
   const drawingsApi = useDrawings(drawingHandle, symbol, barTimes);
-  const layerGroups = useMemo<LayerGroup[]>(
+  const lockedToggleKeys = useMemo(() => {
+    const keys = new Set<IndicatorToggleKey>();
+    for (const [key, featureKey] of Object.entries(INDICATOR_FEATURE_GATES) as [
+      IndicatorToggleKey,
+      FeatureKey,
+    ][]) {
+      if (!gatedFeatures[featureKey]?.active) keys.add(key);
+    }
+    return keys;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoPatternsFeature.active, optionsWallsFeature.active]);
+  const layerGroups: LayerGroup[] = useMemo(
     () =>
       LAYER_GROUP_DEFS.map(({ title, keys }) => ({
         title,
-        items: keys.map((key) => ({
-          key,
-          label: INDICATOR_TOGGLE_LABELS[key],
-          color: INDICATOR_TOGGLE_COLORS[key],
-          toggle: (v: boolean) => setToggle(key, v),
-        })),
+        items: keys.map((key) => {
+          const featureKey = INDICATOR_FEATURE_GATES[key];
+          const locked = lockedToggleKeys.has(key);
+          return {
+            key,
+            label: INDICATOR_TOGGLE_LABELS[key],
+            color: INDICATOR_TOGGLE_COLORS[key],
+            toggle: (v: boolean) => setToggle(key, v),
+            locked,
+            onLockedClick: featureKey
+              ? () => gatedFeatures[featureKey]?.guard(() => {})
+              : undefined,
+          };
+        }),
       })),
-    [setToggle],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [lockedToggleKeys, setToggle, autoPatternsFeature.locked, optionsWallsFeature.locked],
+  );
+  const filteredPresets: LayerPreset[] = useMemo(
+    () =>
+      INDICATOR_PRESETS.map((p) => ({
+        ...p,
+        on: p.on.filter((key) => !lockedToggleKeys.has(key)),
+      })),
+    [lockedToggleKeys],
   );
 
   const onResizeStart = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -174,7 +211,7 @@ export function IntradayChartOnly({
         <LayerPanel
           groups={layerGroups}
           checked={toggles}
-          presets={INDICATOR_PRESETS}
+          presets={filteredPresets}
           onPreset={(on) => applyPreset(on as IndicatorToggleKey[])}
           range={markerRange}
           onRangeChange={setMarkerRange}

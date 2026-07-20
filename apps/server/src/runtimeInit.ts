@@ -9,14 +9,12 @@ import {
   setActiveWatchedMarketsStore,
 } from '@kansoku/core/marketdata/watchedMarketsStore';
 import { loadDotenv } from './dotenv.js';
-import {
-  initAuthUrlOpener,
-  type AuthUrlOpener,
-} from '@kansoku/core/credentials/authUrlOpener';
+import { initAuthUrlOpener, type AuthUrlOpener } from '@kansoku/core/credentials/authUrlOpener';
 import { initCredentialProvider } from '@kansoku/core/credentials/registry';
 import type { CredentialProvider } from '@kansoku/core/credentials/types';
 import { setProPresent } from '@kansoku/core/pro/bundleState';
 import { registerProChannels } from '@kansoku/core/pro/channels';
+import { registerProDetectors } from '@kansoku/core/pro/detectors';
 import { registerProHooks } from '@kansoku/core/pro/hooks';
 import { registerProAiExtension } from '@kansoku/core/pro/aiExtension';
 import type { ServerProComposition } from './edition/types.js';
@@ -92,13 +90,14 @@ export async function prepareServerRuntime(
 export async function activateProComposition(
   composition: Pick<
     ServerProComposition,
-    'hooks' | 'aiExtension' | 'realtimeChannels' | 'start'
+    'hooks' | 'aiExtension' | 'realtimeChannels' | 'detectors' | 'start'
   > | null,
 ): Promise<void> {
   setProPresent(composition != null);
   if (composition?.hooks) registerProHooks(composition.hooks);
   if (composition?.aiExtension) registerProAiExtension(composition.aiExtension);
   if (composition?.realtimeChannels) registerProChannels(composition.realtimeChannels);
+  if (composition?.detectors) registerProDetectors(composition.detectors);
   await composition?.start?.();
 }
 

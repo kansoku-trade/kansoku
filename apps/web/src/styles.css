@@ -1307,6 +1307,24 @@ a.zone-item:hover {
   border-radius: var(--radius);
   flex-shrink: 0;
 }
+.lp-locked {
+  display: flex;
+  align-items: center;
+  color: var(--text-muted);
+  padding: 1px 0;
+  cursor: pointer;
+  user-select: none;
+  line-height: 1.25;
+  font-size: var(--fs-sm);
+}
+.lp-locked:hover {
+  color: var(--text-secondary);
+}
+.lp-lock-icon {
+  margin: 0 5px 0 0;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
 .lp-seg {
   grid-auto-flow: column;
   grid-auto-columns: 1fr;

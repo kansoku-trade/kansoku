@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import type { FeatureKey } from '@kansoku/pro-api/features';
 import { theme } from '@web/theme';
 
 export type IndicatorToggleKey =
@@ -65,6 +66,15 @@ export const INDICATOR_TOGGLE_COLORS: Record<IndicatorToggleKey, string> = {
 };
 
 export const INDICATOR_TOGGLE_KEYS = INDICATOR_TOGGLE_ORDER;
+
+export const INDICATOR_FEATURE_GATES: Partial<Record<IndicatorToggleKey, FeatureKey>> = {
+  divergence: 'auto-patterns',
+  beichi: 'auto-patterns',
+  pattern123: 'auto-patterns',
+  sb: 'auto-patterns',
+  candle: 'auto-patterns',
+  optwall: 'options-walls',
+};
 
 export type MarkerRange = 'recent' | 'all';
 
