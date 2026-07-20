@@ -6,7 +6,7 @@
   "type": "module",
   "main": "dist-main/main.mjs",
   "scripts": {
-    "build": "vite build -c vite.main.config.ts && vite build -c vite.preload.config.ts",
+    "build": "vite build -c vite.main.config.ts --configLoader runner && vite build -c vite.preload.config.ts",
     "build:native": "npx electron-sparkle-updater rebuild --electron-version 43.1.0 --arch arm64",
     "predev": "node scripts/ensureDevNative.mjs",
     "dev": "node scripts/dev.mjs",
@@ -25,6 +25,7 @@
   },
   "devDependencies": {
     "@electron/rebuild": "^4.2.0",
+    "@kansoku/build-overlay": "workspace:*",
     "@kansoku/core": "workspace:*",
     "@kansoku/pro-api": "workspace:*",
     "@kansoku/shared": "workspace:*",
