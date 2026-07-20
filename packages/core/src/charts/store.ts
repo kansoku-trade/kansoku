@@ -8,6 +8,7 @@ import { chartMeta, outcomes } from '../db/schema.js';
 import { CHART_DATA_DIR } from '../platform/env.js';
 import { setSymbolFollowing } from '../ai/personas/follows.js';
 import { isFeatureActive } from '../pro/features.js';
+import { stripProAnnotations } from '../pro/stripProAnnotations.js';
 import { publishAnalysisCreated } from '../realtime/analyses.js';
 import { migrateLegacyDoc, type BuildResult } from './build.js';
 
@@ -124,7 +125,10 @@ export async function loadChart(id: string): Promise<ChartDoc | null> {
   if (!/^[\p{L}\p{N}._-]+$/u.test(id)) return null;
   try {
     const doc = JSON.parse(await fs.readFile(docPath(id), 'utf8')) as ChartDoc;
-    return migrateLegacyDoc(doc);
+    const migrated = migrateLegacyDoc(doc);
+    return migrated.built.kind === 'intraday'
+      ? { ...migrated, built: stripProAnnotations(migrated.built) }
+      : migrated;
   } catch {
     return null;
   }
