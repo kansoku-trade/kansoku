@@ -18,7 +18,17 @@ export const episodeSubmissionSchema = Type.Object(
 export type EpisodeSubmission = Static<typeof episodeSubmissionSchema>;
 
 export const episodeTradeActionSchema = Type.Union([
-  Type.Object({ type: Type.Literal('hold'), ...requiredReason }, { additionalProperties: false }),
+  Type.Object(
+    {
+      type: Type.Literal('hold'),
+      bars: Type.Optional(Type.Integer({ minimum: 1, maximum: 20 })),
+      period: Type.Optional(
+        Type.Union([Type.Literal('h1'), Type.Literal('day'), Type.Literal('week')]),
+      ),
+      ...requiredReason,
+    },
+    { additionalProperties: false },
+  ),
   Type.Object(
     {
       type: Type.Literal('amend'),
@@ -56,7 +66,17 @@ export const episodeActionSchema = Type.Union([
 export type EpisodeAction = Static<typeof episodeActionSchema>;
 
 const episodeRecordedTradeActionSchema = Type.Union([
-  Type.Object({ type: Type.Literal('hold'), ...optionalReason }, { additionalProperties: false }),
+  Type.Object(
+    {
+      type: Type.Literal('hold'),
+      bars: Type.Optional(Type.Integer({ minimum: 1, maximum: 20 })),
+      period: Type.Optional(
+        Type.Union([Type.Literal('h1'), Type.Literal('day'), Type.Literal('week')]),
+      ),
+      ...optionalReason,
+    },
+    { additionalProperties: false },
+  ),
   Type.Object(
     {
       type: Type.Literal('amend'),
