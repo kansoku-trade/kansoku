@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react';
 import type { ChartDoc, SymbolAnalysisRow } from '@kansoku/shared/types';
 import { useQuery } from '@web/apiHooks';
 import { client } from '@web/client';
+import { easternToday } from '@web/lib/easternDate';
 import { navigate, useQueryParam } from '@web/router';
 import { subscribeChannel } from '@web/wsHub';
 import {
   applyAnalysisBroadcast,
   INITIAL_FEED_STATE,
   resolveAnalysisViewMode,
+  resolveEffectiveMode,
   symbolLiveUrl,
   symbolUrl,
   type AnalysisFeedState,
@@ -89,7 +91,7 @@ export function useLatestAnalysis(sym: string): LatestAnalysisState {
   const goToAnalysis = (id: string | null) => navigate(symbolUrl(sym, id));
 
   return {
-    mode,
+    mode: resolveEffectiveMode(mode, activeId, easternToday()),
     activeId,
     latestChecked: mode !== 'latest' || !latestLoading,
     latestError:

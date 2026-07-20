@@ -36,6 +36,9 @@ vi.mock('@kansoku/core/pro/bundleState', () => ({
 const getActiveBundleKey = vi.hoisted(() => vi.fn(() => undefined));
 vi.mock('@kansoku/core/license/licenseState', () => ({ getActiveBundleKey }));
 
+const disposeMarketData = vi.hoisted(() => vi.fn());
+vi.mock('@kansoku/core/marketdata/registry', () => ({ disposeMarketData }));
+
 const loadPro = vi.hoisted(() =>
   vi.fn(async () => {
     callOrder.push('loadPro');
@@ -162,7 +165,12 @@ describe('bootKernel', () => {
 
     await result.dispose();
     expect(dispose).toHaveBeenCalledTimes(1);
+    expect(disposeMarketData).toHaveBeenCalledTimes(1);
     expect(serverDispose).not.toHaveBeenCalled();
+
+    await result.dispose();
+    expect(dispose).toHaveBeenCalledTimes(1);
+    expect(disposeMarketData).toHaveBeenCalledTimes(1);
   });
 
   it('returns the decrypted web chunks from loadPro', async () => {

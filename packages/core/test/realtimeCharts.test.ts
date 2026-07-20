@@ -4,7 +4,7 @@ import { easternDate } from '../src/marketdata/session.js';
 
 const TODAY = easternDate();
 
-const store = vi.hoisted(() => ({ loadChart: vi.fn() }));
+const store = vi.hoisted(() => ({ loadChart: vi.fn(), listCharts: vi.fn() }));
 const build = vi.hoisted(() => ({
   buildChart: vi.fn(),
   refreshBody: vi.fn(),
@@ -452,6 +452,8 @@ describe('subscribePreview', () => {
     vi.useFakeTimers();
     callbacksByPeriod.clear();
     unsubSpies.clear();
+    store.loadChart.mockReset();
+    store.listCharts.mockReset().mockResolvedValue([]);
     build.buildChart
       .mockReset()
       .mockImplementation(async (body: { symbol: string }) => previewBuildResult(body.symbol));
@@ -496,6 +498,46 @@ describe('subscribePreview', () => {
     const parsed = JSON.parse(events[0]);
     expect(parsed.type).toBe('data');
     expect(parsed.data.built.kind).toBe('intraday');
+    expect(parsed.data).not.toHaveProperty('prediction_stale');
+    unsub();
+  });
+
+  it('overlays the latest analysis prediction/context and carries stale fields on the initial envelope', async () => {
+    const analysisDoc = makeDoc({
+      id: '2026-07-20-pova-intraday',
+      symbol: 'POVA.US',
+      prediction_updated_at: '2026-07-20T14:00:00.000Z',
+      input: {
+        symbol: 'POVA.US',
+        prediction: { direction: 'long', anchor: 50 },
+        context: { generated_at: '2026-07-20T14:00:00.000Z', conclusion: { stance: 'long' } },
+      },
+    });
+    store.listCharts.mockResolvedValue([{ id: analysisDoc.id }]);
+    store.loadChart.mockResolvedValue(analysisDoc);
+
+    const events: string[] = [];
+    const unsub = await subscribePreview('POVA.US', (e) => events.push(e));
+
+    const parsed = JSON.parse(events[0]);
+    expect(parsed.type).toBe('data');
+    expect(parsed.data.prediction_updated_at).toBe('2026-07-20T14:00:00.000Z');
+    expect(typeof parsed.data.prediction_stale).toBe('boolean');
+
+    const overlaid = build.rebuild.mock.calls.some((call) => {
+      const input = call[1] as { prediction?: { direction?: string }; context?: unknown };
+      return input.prediction?.direction === 'long' && input.context !== undefined;
+    });
+    expect(overlaid).toBe(true);
+    unsub();
+  });
+
+  it('omits prediction fields on the initial envelope when the symbol has no analysis', async () => {
+    const events: string[] = [];
+    const unsub = await subscribePreview('POVB.US', (e) => events.push(e));
+
+    const parsed = JSON.parse(events[0]);
+    expect(parsed.data).not.toHaveProperty('prediction_updated_at');
     expect(parsed.data).not.toHaveProperty('prediction_stale');
     unsub();
   });

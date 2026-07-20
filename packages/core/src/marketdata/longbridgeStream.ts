@@ -284,6 +284,17 @@ export class LongbridgeStream implements QuoteStream {
       return snapshot ? [snapshot] : [];
     });
   }
+
+  dispose(): void {
+    if (this.prevCloseTimer) {
+      clearInterval(this.prevCloseTimer);
+      this.prevCloseTimer = null;
+    }
+    if (this.prevCloseRetryTimer) {
+      clearTimeout(this.prevCloseRetryTimer);
+      this.prevCloseRetryTimer = null;
+    }
+  }
 }
 
 let instance: LongbridgeStream | null = null;
@@ -291,4 +302,9 @@ let instance: LongbridgeStream | null = null;
 export function getLongbridgeStream(): LongbridgeStream {
   if (!instance) instance = new LongbridgeStream();
   return instance;
+}
+
+export function resetLongbridgeStream(): void {
+  instance?.dispose();
+  instance = null;
 }

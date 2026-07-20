@@ -17,5 +17,15 @@ export function resolveAnalysisViewMode(
   return analysisId ? 'pinned' : 'latest';
 }
 
+export function resolveEffectiveMode(
+  mode: AnalysisViewMode,
+  latestId: string | null,
+  todayEastern: string,
+): AnalysisViewMode {
+  if (mode !== 'latest') return mode;
+  if (!latestId) return 'latest';
+  return latestId.slice(0, 10) === todayEastern ? 'latest' : 'live';
+}
+
 export const symbolUrl = symbolAnalysisPath;
 export const symbolLiveUrl = symbolLivePath;

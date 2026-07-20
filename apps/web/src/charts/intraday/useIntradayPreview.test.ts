@@ -29,4 +29,28 @@ describe('decodePreviewEnvelope', () => {
     expect(decodePreviewEnvelope({ type: 'other' }, false)).toEqual({});
     expect(decodePreviewEnvelope(null, false)).toEqual({});
   });
+
+  it('decodes prediction overlay fields from a data envelope', () => {
+    expect(
+      decodePreviewEnvelope(
+        {
+          type: 'data',
+          data: { built, prediction_updated_at: '2026-07-21T10:00:00Z', prediction_stale: true },
+        },
+        false,
+      ),
+    ).toEqual({
+      built,
+      degraded: false,
+      predictionUpdatedAt: '2026-07-21T10:00:00Z',
+      predictionStale: true,
+    });
+  });
+
+  it('leaves prediction overlay fields absent when the data envelope has none', () => {
+    expect(decodePreviewEnvelope({ type: 'data', data: { built } }, false)).toEqual({
+      built,
+      degraded: false,
+    });
+  });
 });

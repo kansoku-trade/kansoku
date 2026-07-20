@@ -1,8 +1,9 @@
 import { ClientError } from '../platform/errors.js';
 import type { Market } from '../symbols/symbol.utils.js';
 import { longbridgeProvider } from './longbridge.js';
-import { getLongbridgeStream } from './longbridgeStream.js';
+import { getLongbridgeStream, resetLongbridgeStream } from './longbridgeStream.js';
 import type { QuoteStream } from './quoteStream.js';
+import { resetSharedQuoteSocket } from './sharedSocket.js';
 import type { MarketDataProvider } from './types.js';
 
 const providers: Record<string, MarketDataProvider> = {
@@ -43,4 +44,9 @@ export function getStream(market: Market = 'US'): QuoteStream {
 
 export function listProviders(): string[] {
   return Object.keys(providers);
+}
+
+export function disposeMarketData(): void {
+  resetLongbridgeStream();
+  resetSharedQuoteSocket();
 }

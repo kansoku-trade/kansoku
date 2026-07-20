@@ -2,20 +2,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ChartBuilt, ChartDoc, IntradayBuilt, TimeframeKey } from '@kansoku/shared/types';
 import { useQuery } from '@web/apiHooks';
 import { client } from '@web/client';
+import { isCurrentSessionId } from '@web/lib/easternDate';
 import { useWsChannel } from '@web/useWsChannel';
 
 const LIVE_TYPES = new Set(['flow', 'intraday']);
-
-const easternDateFormatter = new Intl.DateTimeFormat('en-CA', {
-  timeZone: 'America/New_York',
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-});
-
-function isCurrentSessionId(id: string): boolean {
-  return id.slice(0, 10) === easternDateFormatter.format(new Date());
-}
 
 export type ChartDocView = ChartDoc & { prediction_stale?: boolean };
 

@@ -38,6 +38,8 @@ describe('PopoutChartWindow', () => {
       degraded: false,
       intradayTf: null,
       setIntradayTf: vi.fn(),
+      predictionUpdatedAt: undefined,
+      predictionStale: undefined,
     });
 
     const { container } = render(<PopoutChartWindow sym="NVDA" />);
@@ -59,6 +61,8 @@ describe('PopoutChartWindow', () => {
       degraded: false,
       intradayTf: null,
       setIntradayTf: vi.fn(),
+      predictionUpdatedAt: undefined,
+      predictionStale: undefined,
     });
 
     render(<PopoutChartWindow sym="NVDA" />);
@@ -74,6 +78,8 @@ describe('PopoutChartWindow', () => {
       degraded: false,
       intradayTf: null,
       setIntradayTf: vi.fn(),
+      predictionUpdatedAt: undefined,
+      predictionStale: undefined,
     });
 
     render(<PopoutChartWindow sym="NVDA" />);

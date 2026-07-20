@@ -45,3 +45,5 @@ stocks/
 *.pro.mts
 *.pro.cts
 .kansoku-overlay-links.json
+
+.worktrees/

@@ -19,6 +19,7 @@ export async function bootKernel() {
     { hasEncBundle, isProPresent },
     { getActiveBundleKey },
     { loadPro },
+    { disposeMarketData },
   ] = await Promise.all([
     import('../../../server/src/runtimeInit.js'),
     import('../kernel/realtime/bridge.js'),
@@ -26,6 +27,7 @@ export async function bootKernel() {
     import('@kansoku/core/pro/bundleState'),
     import('@kansoku/core/license/licenseState'),
     import('@kansoku/core/pro/loader'),
+    import('@kansoku/core/marketdata/registry'),
   ]);
 
   // Dev keeps the pre-P3 plaintext keyfile so ELECTRON_DEV workflows are
@@ -87,12 +89,19 @@ export async function bootKernel() {
     relaunch: () => void promptProRelaunch(),
   });
 
+  let disposed = false;
   return {
     kernel,
     proComposition,
     webFiles: proPayload?.webFiles ?? null,
     dispose: async () => {
-      await proComposition?.dispose?.();
+      if (disposed) return;
+      disposed = true;
+      disposeMarketData();
+      await Promise.race([
+        Promise.resolve(proComposition?.dispose?.()),
+        new Promise<void>((resolve) => setTimeout(resolve, 2_000)),
+      ]);
     },
   };
 }

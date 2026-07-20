@@ -18,6 +18,8 @@ import {
 } from './candleMerge.js';
 import { createPoller, type PollerHandle } from './poller.js';
 import { isPushFresh, pollIntervalMs } from './pushFallback.js';
+import { overlayAnalysisInput } from './previewOverlay.js';
+import { latestIntradayDoc } from '../cockpit/entryPlan.js';
 
 const LIVE_TYPES = new Set(['flow', 'intraday']);
 
@@ -228,7 +230,14 @@ function setupPreviewCandleState(
     pushMode: false,
     debounceTimer: null,
     unsubs: [],
-    loadDoc: async () => ({ title, input }),
+    loadDoc: async () => {
+      const latestDoc = await latestIntradayDoc(symbol);
+      return {
+        title,
+        input: overlayAnalysisInput(input, latestDoc),
+        prediction: latestDoc ? predictionFields(latestDoc) : undefined,
+      };
+    },
   };
   wireCandleState(key, symbol, state);
 }
@@ -330,9 +339,15 @@ export async function subscribePreview(
   let handle = chartPollers.get(key);
   if (!handle) {
     const result = await buildChart({ type: 'intraday', symbol: normalized, session: 'intraday' });
-    previewInitialBuilt.set(key, result.built);
     chartMarkets.set(key, marketOf(normalized));
     setupPreviewCandleState(key, normalized, result.input, result.title);
+    const initialState = candleStates.get(key);
+    const initialLatest = initialState ? await initialState.loadDoc() : null;
+    const initialData =
+      initialState && initialLatest
+        ? await buildFromState(initialState, initialLatest)
+        : { built: result.built };
+    previewInitialBuilt.set(key, initialData);
     handle = createPoller({
       intervalMs: () => chartIntervalMs(key),
       task: async () => {
@@ -367,8 +382,8 @@ export async function subscribePreview(
     chartPollers.set(key, handle);
   }
 
-  const built = previewInitialBuilt.get(key);
-  if (built !== undefined && !handle.hasData())
-    push(JSON.stringify({ type: 'data', data: { built } }));
+  const initial = previewInitialBuilt.get(key);
+  if (initial !== undefined && !handle.hasData())
+    push(JSON.stringify({ type: 'data', data: initial }));
   return handle.subscribe(push);
 }

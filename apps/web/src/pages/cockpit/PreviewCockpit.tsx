@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import type { QuoteCell, SymbolAnalysisRow } from '@kansoku/shared/types';
 import { IntradayDashboard, IntradayTimeframeSwitch } from '@web/charts/intraday/IntradayDashboard';
+import { PredictionTab } from '@web/charts/intraday/tabs/PredictionTab';
 import { resolveIntradayTf } from '@web/charts/intraday/useIntradayDoc';
 import { useIntradayPreview } from '@web/charts/intraday/useIntradayPreview';
 import type { SidebarTab } from '@web/charts/SidebarTabs';
@@ -10,6 +11,7 @@ import { Dot, Empty, ErrorBox } from '@web/ui';
 import { useTitle } from '@web/useTitle';
 import { AnalysisTimeline } from './AnalysisTimeline';
 import { GenerateAnalysis } from './GenerateAnalysis';
+import { GenerateAnalysisCta } from './GenerateAnalysisCta';
 import { buildSharedSidebarTabs } from './sharedSidebarTabs';
 import { useAiUnreadBadge } from './useAiUnreadBadge';
 import { useCockpitComments } from './useCockpitComments';
@@ -30,7 +32,8 @@ export function PreviewCockpit({
   liveQuote: QuoteCell | null;
 }) {
   const symLabel = sym.toUpperCase().replace(/\.US$/, '');
-  const { built, error, degraded, intradayTf, setIntradayTf } = useIntradayPreview(sym);
+  const { built, error, degraded, intradayTf, setIntradayTf, predictionUpdatedAt, predictionStale } =
+    useIntradayPreview(sym);
   useTitle(symLabel);
 
   const env = useCockpitEnv(sym);
@@ -72,15 +75,29 @@ export function PreviewCockpit({
     {
       key: 'prediction',
       label: '预测',
-      content: (
+      content: built.sidebar.prediction ? (
         <>
-          <Empty>
-            {analysesRows.length > 0
-              ? '当前为实时视图——图表会随行情更新；可从右上角切回历史分析，或生成一份当前分析'
-              : '这只股票还没有 AI 分析——先看实时走势，也可以直接生成一份'}
-          </Empty>
+          <PredictionTab
+            built={built}
+            activeTf={activeIntradayTf}
+            predictionUpdatedAt={predictionUpdatedAt}
+            predictionStale={predictionStale}
+          />
           <GenerateAnalysis sym={sym} />
         </>
+      ) : (
+        analysesRows.length > 0 ? (
+          <>
+            <Empty>当前为实时视图——图表会随行情更新；可从右上角切回历史分析，或生成一份当前分析</Empty>
+            <GenerateAnalysis sym={sym} />
+          </>
+        ) : (
+          <GenerateAnalysisCta
+            sym={sym}
+            title="还没有 AI 分析"
+            desc="这只股票还没有分析报告——生成一份，图上会标出关键位和多空判断"
+          />
+        )
       ),
     },
     ...buildSharedSidebarTabs({

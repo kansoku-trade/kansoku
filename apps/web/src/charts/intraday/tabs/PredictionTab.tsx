@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { TriangleAlert } from 'lucide-react';
 import type { IntradayBuilt, TimeframeKey } from '@kansoku/shared/types';
 import { fmt, signed } from '@web/format';
@@ -33,6 +33,7 @@ interface PredictionTabProps {
   predictionUpdatedAt?: string;
   predictionStale?: boolean;
   reassess?: ConclusionReassess;
+  emptyCta?: ReactNode;
 }
 
 export function PredictionTab({
@@ -41,6 +42,7 @@ export function PredictionTab({
   predictionUpdatedAt,
   predictionStale,
   reassess,
+  emptyCta,
 }: PredictionTabProps) {
   const s = built.sidebar;
   const p = s.prediction;
@@ -111,6 +113,7 @@ export function PredictionTab({
           <div className="verdict-reason">仅技术面，暂无预测结论——供分析前读数用</div>
         </div>
       )}
+      {!p && emptyCta}
 
       {p && scenarios.length > 0 && (
         <>
