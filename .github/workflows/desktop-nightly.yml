@@ -1,0 +1,304 @@
+name: desktop-nightly
+
+# Produces a real, pro-encrypted, signed desktop build for hands-on verification
+# WITHOUT touching what shipped users receive.
+#
+# The live update feed is https://github.com/Innei/kansoku/releases/latest/download/appcast.xml,
+# and GitHub resolves `latest` to the newest NON-prerelease release. Two independent
+# guards keep a nightly out of that path:
+#   1. the release is created with prerelease: true, so `latest` never resolves to it;
+#   2. no appcast.xml is generated or uploaded at all, so even if the prerelease flag
+#      were lost the feed would have nothing to serve.
+# Everything else — the build, the pro encryption, the leak gates, signing and
+# notarization — is the same path desktop-release.yml takes, because a nightly that
+# skipped any of it would not be evidence about the real artifact.
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'branch, tag or SHA to build (defaults to the default branch)'
+        required: false
+        type: string
+      skip-tests:
+        description: 'skip the test/typecheck gates (faster, only for a rebuild of an already-verified ref)'
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: desktop-nightly-${{ inputs.ref || github.ref }}
+  cancel-in-progress: true
+
+env:
+  REPO_SLUG: 'Innei/kansoku'
+
+jobs:
+  nightly:
+    runs-on: macos-14
+    timeout-minutes: 60
+    permissions:
+      contents: write
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+          fetch-depth: 0
+
+      - name: derive nightly version and tag
+        id: version
+        run: |
+          SHA="$(git rev-parse --short=7 HEAD)"
+          STAMP="$(date -u +%Y%m%d-%H%M)"
+          PKG_VERSION="$(node -p "require('./apps/desktop/package.json').version")"
+          # Version carries the source commit so an installed nightly is
+          # traceable to what built it; the tag adds a timestamp so repeated
+          # nightlies off the same commit do not collide.
+          echo "version=${PKG_VERSION}-nightly.${SHA}" >> "$GITHUB_OUTPUT"
+          echo "tag=nightly-${STAMP}-${SHA}" >> "$GITHUB_OUTPUT"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+
+      - name: assert Sparkle public key present (it is baked into the app bundle)
+        env:
+          SPARKLE_ED_PUBLIC_KEY: ${{ secrets.SPARKLE_ED_PUBLIC_KEY }}
+        run: |
+          if [ -z "$SPARKLE_ED_PUBLIC_KEY" ]; then
+            echo "::error::SPARKLE_ED_PUBLIC_KEY is missing — the app would ship with an empty update public key"
+            exit 1
+          fi
+
+      # Same all-or-nothing rule as the release workflow: a Developer-ID-signed
+      # but unnotarized app is still blocked by Gatekeeper, so a partial secret
+      # set is a configuration error rather than a degraded mode.
+      - name: detect signing secrets (all 5 → sign + notarize, none → ad-hoc)
+        id: signing
+        env:
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          missing=""
+          for v in CSC_LINK CSC_KEY_PASSWORD APPLE_ID APPLE_APP_SPECIFIC_PASSWORD APPLE_TEAM_ID; do
+            if [ -z "${!v}" ]; then
+              missing="$missing $v"
+            fi
+          done
+          if [ -z "$missing" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+            echo "Developer ID signing + notarization enabled"
+          elif [ "$(echo "$missing" | wc -w)" -eq 5 ]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "no signing secrets configured — ad-hoc signed nightly (Gatekeeper will require a manual open)"
+          else
+            echo "::error::partial signing secrets — missing:$missing. Configure all five or none."
+            exit 1
+          fi
+
+      - name: setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          package_json_file: package.json
+
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          # Only the content-addressable store is cached, never node_modules — a
+          # cached node_modules can carry a stale @electron/rebuild forge-meta
+          # entry claiming better-sqlite3 is already built for Electron's ABI.
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      # Without KANSOKU_PRO_REPO_URL this is a no-op and the nightly is a free
+      # build. That is a legitimate artifact, but it cannot verify anything about
+      # pro activation — the summary at the end says which kind was produced.
+      - name: fetch pro slot
+        id: pro
+        env:
+          KANSOKU_PRO_REPO_URL: ${{ secrets.KANSOKU_PRO_REPO_URL }}
+        run: |
+          if scripts/fetch-pro.sh; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::pro slot not configured — this nightly is a FREE build and cannot verify pro activation"
+          fi
+
+      - name: install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: link first-party skills into .agents
+        run: python3 scripts/sync-agents-skills.py
+
+      - name: refresh third-party license credits (About page)
+        run: pnpm credits
+
+      - name: typecheck
+        if: ${{ !inputs.skip-tests }}
+        run: pnpm -r typecheck
+
+      - name: test — core, web, desktop
+        if: ${{ !inputs.skip-tests }}
+        run: |
+          pnpm --filter @kansoku/core test
+          pnpm --filter @kansoku/web test
+          pnpm --filter @kansoku/desktop test
+
+      - name: test — server (json report for the known-failure gate)
+        if: ${{ !inputs.skip-tests }}
+        working-directory: apps/server
+        run: pnpm test --reporter=json --outputFile=test-results.json || true
+
+      - name: gate — server suite has no NEW failures
+        if: ${{ !inputs.skip-tests }}
+        run: node .github/scripts/assert-known-test-failures.mjs apps/server/test-results.json
+
+      - name: stamp the nightly version into apps/desktop/package.json
+        working-directory: apps/desktop
+        # electron-builder reads the version from package.json, so an installed
+        # nightly self-identifies as e.g. 0.19.2-nightly.a1b2c3d in About and in
+        # its bundle id metadata. Never committed — this edit lives only in the
+        # runner's checkout.
+        run: |
+          node -e '
+            const fs = require("node:fs");
+            const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+            pkg.version = process.env.NIGHTLY_VERSION;
+            fs.writeFileSync("package.json", JSON.stringify(pkg, null, 2) + "\n");
+          '
+        env:
+          NIGHTLY_VERSION: ${{ steps.version.outputs.version }}
+
+      - name: clear native-module rebuild cache (pnpm package forces the real rebuild)
+        working-directory: apps/desktop
+        run: rm -rf node_modules/better-sqlite3/build "$HOME/Library/Caches/electron-rebuild"
+
+      - name: inject SUPublicEDKey into electron-builder.yml
+        env:
+          SPARKLE_ED_PUBLIC_KEY: ${{ secrets.SPARKLE_ED_PUBLIC_KEY }}
+        run: |
+          pnpm --filter @kansoku/desktop exec -- electron-sparkle-updater inject-public-key \
+            --file electron-builder.yml
+
+      - name: build web
+        run: pnpm --filter @kansoku/web build
+
+      - name: enable Developer ID signing (drop identity:null from electron-builder.yml)
+        if: steps.signing.outputs.enabled == 'true'
+        working-directory: apps/desktop
+        run: |
+          grep -q '^  identity: null$' electron-builder.yml
+          sed -i '' '/^  identity: null$/d' electron-builder.yml
+
+      # Identical to the release path, including the pro encryption. packEnc
+      # hard-fails without the bundle secrets when the pro slot is present, which
+      # is what makes this artifact real evidence rather than a lookalike.
+      - name: package desktop (dmg + zip)
+        working-directory: apps/desktop
+        env:
+          KANSOKU_BUNDLE_KEY: ${{ secrets.KANSOKU_BUNDLE_KEY }}
+          KANSOKU_BUNDLE_KEY_ID: ${{ secrets.KANSOKU_BUNDLE_KEY_ID }}
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: pnpm package
+
+      - name: verify signature
+        working-directory: apps/desktop
+        env:
+          SIGNING_ENABLED: ${{ steps.signing.outputs.enabled }}
+        run: |
+          verify_app() {
+            codesign --verify --deep --strict "$1"
+            if [ "$SIGNING_ENABLED" = "true" ]; then
+              codesign --display --verbose=2 "$1" 2>&1 | grep -q 'Authority=Developer ID Application'
+              xcrun stapler validate "$1"
+              spctl --assess --type execute --verbose=2 "$1"
+            fi
+          }
+
+          ZIP_PATH="$PWD/$(echo release/*.zip)"
+          DMG_PATH="$PWD/$(echo release/*.dmg)"
+
+          ZIP_EXTRACT_DIR="$(mktemp -d)"
+          ditto -x -k "$ZIP_PATH" "$ZIP_EXTRACT_DIR"
+          verify_app "$ZIP_EXTRACT_DIR"/*.app
+          rm -rf "$ZIP_EXTRACT_DIR"
+
+          DMG_MOUNT_DIR="$(mktemp -d)"
+          hdiutil attach "$DMG_PATH" -mountpoint "$DMG_MOUNT_DIR" -nobrowse -quiet
+          verify_app "$DMG_MOUNT_DIR"/*.app
+          hdiutil detach "$DMG_MOUNT_DIR" -quiet
+
+      # The whole point of a nightly is that it must not reach shipped users. If
+      # an appcast ever appears in the artifacts, the prerelease flag is no longer
+      # the only thing standing between this build and the live feed — fail rather
+      # than publish.
+      - name: assert no appcast was produced
+        working-directory: apps/desktop
+        run: |
+          if ls release/appcast.xml >/dev/null 2>&1; then
+            echo "::error::release/appcast.xml exists — a nightly must never generate an update feed"
+            exit 1
+          fi
+
+      - name: upload artifacts (downloadable without touching Releases)
+        uses: actions/upload-artifact@v4
+        with:
+          name: kansoku-nightly-${{ steps.version.outputs.sha }}
+          path: |
+            apps/desktop/release/*.dmg
+            apps/desktop/release/*.zip
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: publish prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+          VERSION: ${{ steps.version.outputs.version }}
+          PRO_PRESENT: ${{ steps.pro.outputs.present }}
+          SIGNING_ENABLED: ${{ steps.signing.outputs.enabled }}
+        run: |
+          NOTES="$RUNNER_TEMP/nightly-notes.md"
+          {
+            echo "Nightly verification build — **not** an update for shipped users."
+            echo
+            echo "- source: \`$(git rev-parse HEAD)\`"
+            echo "- version: \`$VERSION\`"
+            echo "- pro slot: $([ "$PRO_PRESENT" = "true" ] && echo 'present (encrypted pro.enc staged)' || echo '**absent — free build**')"
+            echo "- signing: $([ "$SIGNING_ENABLED" = "true" ] && echo 'Developer ID + notarized' || echo 'ad-hoc (right-click → Open on first launch)')"
+            echo
+            echo "Published as a prerelease and carries no \`appcast.xml\`, so"
+            echo "\`releases/latest\` — the URL the shipped updater polls — never resolves to it."
+          } > "$NOTES"
+
+          gh release create "$TAG" \
+            --repo "$REPO_SLUG" \
+            --title "Nightly $VERSION" \
+            --notes-file "$NOTES" \
+            --prerelease \
+            apps/desktop/release/*.dmg \
+            apps/desktop/release/*.zip
+
+      - name: summary
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+          VERSION: ${{ steps.version.outputs.version }}
+          PRO_PRESENT: ${{ steps.pro.outputs.present }}
+        run: |
+          {
+            echo "## Nightly $VERSION"
+            echo
+            echo "- release: https://github.com/$REPO_SLUG/releases/tag/$TAG (prerelease)"
+            echo "- pro slot: $PRO_PRESENT"
+            if [ "$PRO_PRESENT" != "true" ]; then
+              echo
+              echo "> This is a FREE build — it cannot verify license activation or paid features."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
