@@ -17,6 +17,7 @@ import { auditEpisodeQuestionLive } from './episode/audit.js';
 import { readEpisodeAnswers } from './episode/results.js';
 import {
   renderEpisodeReportHtml,
+  type EpisodeProvenanceEntry,
   type EpisodeReportConfigSnapshot,
   type EpisodeReportTraceLine,
 } from './episode/report.js';
@@ -609,6 +610,42 @@ async function readJsonFile(file: string): Promise<unknown> {
   return JSON.parse(raw) as unknown;
 }
 
+interface RawProvenanceCase {
+  outputId?: unknown;
+  aliasSymbol?: unknown;
+  sourceSymbol?: unknown;
+  sourceCutoff?: unknown;
+  syntheticCutoff?: unknown;
+  dayShift?: unknown;
+  priceScale?: unknown;
+  volumeScale?: unknown;
+}
+
+async function loadEpisodeProvenance(
+  datasetsRoot: string,
+  datasetVersion: string,
+): Promise<Map<string, EpisodeProvenanceEntry> | undefined> {
+  const raw = (await readJsonFile(
+    join(datasetsRoot, datasetVersion, 'provenance.json'),
+  )) as { cases?: RawProvenanceCase[] } | null;
+  if (!raw || !Array.isArray(raw.cases)) return undefined;
+  const map = new Map<string, EpisodeProvenanceEntry>();
+  for (const entry of raw.cases) {
+    if (typeof entry.outputId !== 'string') continue;
+    if (typeof entry.sourceSymbol !== 'string' || typeof entry.sourceCutoff !== 'string') continue;
+    map.set(entry.outputId, {
+      sourceSymbol: entry.sourceSymbol,
+      sourceCutoff: entry.sourceCutoff,
+      syntheticCutoff:
+        typeof entry.syntheticCutoff === 'string' ? entry.syntheticCutoff : undefined,
+      dayShift: typeof entry.dayShift === 'number' ? entry.dayShift : undefined,
+      priceScale: typeof entry.priceScale === 'number' ? entry.priceScale : undefined,
+      volumeScale: typeof entry.volumeScale === 'number' ? entry.volumeScale : undefined,
+    });
+  }
+  return map.size > 0 ? map : undefined;
+}
+
 async function readEpisodeTraceLines(file: string): Promise<EpisodeReportTraceLine[]> {
   const raw = await fs.readFile(file, 'utf8').catch(() => null);
   if (raw == null) return [];
@@ -660,12 +697,14 @@ async function runReportCommand(argv: string[], paths: DatasetPaths): Promise<vo
     for (const traceRef of new Set(answers.map((answer) => answer.traceRef).filter(Boolean))) {
       traces.set(traceRef, await readEpisodeTraceLines(join(runDir, traceRef)));
     }
+    const provenance = await loadEpisodeProvenance(paths.datasetsRoot, datasetVersion);
     const { html, summary } = renderEpisodeReportHtml({
       answers,
       questions,
       config,
       audits,
       traces,
+      provenance,
     });
     await fs.writeFile(join(runDir, 'report.html'), html, 'utf8');
     await fs.writeFile(

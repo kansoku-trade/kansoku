@@ -22,6 +22,15 @@ export interface EpisodeReportConfigSnapshot {
   };
 }
 
+export interface EpisodeProvenanceEntry {
+  sourceSymbol: string;
+  sourceCutoff: string;
+  syntheticCutoff?: string;
+  dayShift?: number;
+  priceScale?: number;
+  volumeScale?: number;
+}
+
 export interface EpisodeReportInput {
   answers: EpisodeAnswer[];
   questions: Map<string, Question>;
@@ -30,6 +39,14 @@ export interface EpisodeReportInput {
   traces?: Map<string, EpisodeReportTraceLine[]>;
   now?: () => Date;
   datasetMeta?: { label?: string; kind?: string };
+  /**
+   * Map from `questionId` → provenance entry. When present, the report reveals
+   * the real underlying symbol / cutoff / shift / price-scale of an anonymised
+   * blind case so a human reader can interpret the case beyond its ASSETxxx
+   * alias. Loaded from `<datasetsRoot>/<datasetVersion>/provenance.json` by
+   * the CLI when the file exists.
+   */
+  provenance?: Map<string, EpisodeProvenanceEntry>;
 }
 
 const PLAYSTYLE_LABEL: Record<string, string> = {
@@ -131,6 +148,16 @@ interface ReportRow {
   plannedRr: number | null;
   stopDistancePct: number | null;
   captureRate: number | null;
+  provenance?: EpisodeProvenanceEntry;
+}
+
+function formatProvenanceLine(prov: EpisodeProvenanceEntry): string {
+  const parts = [`Source: ${prov.sourceSymbol} @ ${prov.sourceCutoff.slice(0, 10)}`];
+  if (prov.dayShift != null) parts.push(`shift +${prov.dayShift}d`);
+  if (prov.priceScale != null && Number.isFinite(prov.priceScale)) {
+    parts.push(`price ×${prov.priceScale.toFixed(2)}`);
+  }
+  return parts.join(' · ');
 }
 
 interface AggregateMetrics {
@@ -676,6 +703,7 @@ function buildRows(
   answers: EpisodeAnswer[],
   questions: Map<string, Question>,
   traces: Map<string, EpisodeReportTraceLine[]> = new Map(),
+  provenance: Map<string, EpisodeProvenanceEntry> = new Map(),
 ): ReportRow[] {
   return answers.map((answer) => {
     const question = questions.get(answer.questionId);
@@ -703,6 +731,7 @@ function buildRows(
         answer.initialSubmission?.entry_plan?.stop,
       ),
       captureRate: mfe != null && mfe > 0 && net != null ? net / mfe : null,
+      provenance: provenance.get(answer.questionId),
     };
   });
 }
@@ -1148,7 +1177,8 @@ function renderCasesTable(rows: ReportRow[]): string {
         const result = answer.result;
         const outcome = result?.terminationReason ?? answer.status;
         const submittedAt = decisionBar(answer);
-        return `<tr class="case-row" data-model="${escapeHtml(answer.model)}" data-mode="${escapeHtml(answer.mode)}" data-outcome="${escapeHtml(outcome)}" data-search="${escapeHtml(`${answer.symbol} ${answer.questionId}`.toLowerCase())}"><td><a href="#case-${index}"><strong>${escapeHtml(answer.symbol)}</strong><small>${escapeHtml(answer.questionId)}</small></a></td><td><strong>${escapeHtml(answer.model)}</strong><small>${escapeHtml(MODE_LABELS[answer.mode] ?? answer.mode)} · REP ${answer.rep}</small></td><td><strong>${escapeHtml(DIRECTION_LABELS[answer.initialSubmission?.direction ?? ''] ?? '—')}</strong><small>${submittedAt == null ? '未决策' : `B${submittedAt} 首次决策`}</small></td><td class="mono">${fmt(plan?.entry)} / <span class="negative">${fmt(plan?.stop)}</span> / <span class="positive">${fmt(plan?.target1)}</span></td><td class="mono"><span>${fmt(result?.entry?.price)} / ${fmt(result?.exit?.price)}</span><small>${closedTrades(answer).length} 笔完整交易</small></td><td><span class="status ${valueClass(result?.netR)}">${escapeHtml(TERMINATION_LABELS[outcome] ?? outcome)}</span></td><td class="mono ${valueClass(result?.netR)}">${fmtSigned(result?.netR, 3)}</td><td class="mono">${fmt(result?.mfeR)} / ${fmt(result?.maeR)}</td><td><span>${fmtUsd(answer.metrics.costUsd)}</span><small>${fmtDuration(answer.metrics.durationMs)}</small></td></tr>`;
+        const provSearch = row.provenance ? ` ${row.provenance.sourceSymbol}` : '';
+        return `<tr class="case-row" data-model="${escapeHtml(answer.model)}" data-mode="${escapeHtml(answer.mode)}" data-outcome="${escapeHtml(outcome)}" data-search="${escapeHtml(`${answer.symbol} ${answer.questionId}${provSearch}`.toLowerCase())}"><td><a href="#case-${index}"><strong>${escapeHtml(answer.symbol)}${row.provenance ? ` <span class="provenance-alias">→ ${escapeHtml(row.provenance.sourceSymbol)}</span>` : ''}</strong><small>${escapeHtml(answer.questionId)}${row.provenance ? ` · ${escapeHtml(row.provenance.sourceCutoff.slice(0, 10))}` : ''}</small></a></td><td><strong>${escapeHtml(answer.model)}</strong><small>${escapeHtml(MODE_LABELS[answer.mode] ?? answer.mode)} · REP ${answer.rep}</small></td><td><strong>${escapeHtml(DIRECTION_LABELS[answer.initialSubmission?.direction ?? ''] ?? '—')}</strong><small>${submittedAt == null ? '未决策' : `B${submittedAt} 首次决策`}</small></td><td class="mono">${fmt(plan?.entry)} / <span class="negative">${fmt(plan?.stop)}</span> / <span class="positive">${fmt(plan?.target1)}</span></td><td class="mono"><span>${fmt(result?.entry?.price)} / ${fmt(result?.exit?.price)}</span><small>${closedTrades(answer).length} 笔完整交易</small></td><td><span class="status ${valueClass(result?.netR)}">${escapeHtml(TERMINATION_LABELS[outcome] ?? outcome)}</span></td><td class="mono ${valueClass(result?.netR)}">${fmtSigned(result?.netR, 3)}</td><td class="mono">${fmt(result?.mfeR)} / ${fmt(result?.maeR)}</td><td><span>${fmtUsd(answer.metrics.costUsd)}</span><small>${fmtDuration(answer.metrics.durationMs)}</small></td></tr>`;
       })
       .join('')}</tbody></table></div></section>`;
 }
@@ -1326,7 +1356,7 @@ function renderCaseDetail(row: ReportRow, index: number): string {
   const available = availableTimeframesFor(row.question);
   const defaultTimeframe: ChartTimeframe = available[0] ?? 'day';
   return `<article class="trade-case" id="case-${index}" data-model="${escapeHtml(answer.model)}" data-mode="${escapeHtml(answer.mode)}" data-outcome="${escapeHtml(outcome)}">
-    <header class="case-head"><div><h3>${escapeHtml(answer.symbol)}</h3><span>${escapeHtml(answer.questionId)} · ${escapeHtml(answer.model)} · ${escapeHtml(MODE_LABELS[answer.mode] ?? answer.mode)}</span></div><div class="case-result"><span class="status ${valueClass(result?.netR)}">${escapeHtml(TERMINATION_LABELS[outcome] ?? outcome)}</span><strong class="${valueClass(result?.netR)}">${escapeHtml(fmtSigned(result?.netR, 3))} R</strong></div></header>
+    <header class="case-head"><div><h3>${escapeHtml(answer.symbol)}${row.provenance ? ` <span class="provenance-alias">→ ${escapeHtml(row.provenance.sourceSymbol)}</span>` : ''}</h3><span>${escapeHtml(answer.questionId)} · ${escapeHtml(answer.model)} · ${escapeHtml(MODE_LABELS[answer.mode] ?? answer.mode)}</span>${row.provenance ? `<small class="provenance-line">${escapeHtml(formatProvenanceLine(row.provenance))}</small>` : ''}</div><div class="case-result"><span class="status ${valueClass(result?.netR)}">${escapeHtml(TERMINATION_LABELS[outcome] ?? outcome)}</span><strong class="${valueClass(result?.netR)}">${escapeHtml(fmtSigned(result?.netR, 3))} R</strong></div></header>
     <div class="case-layout"><section class="chart-panel"><div class="chart-toolbar"><div><strong>K 线与成交量</strong><span>点击工具节点可回看该 B 编号当时可见的数据</span></div><div class="timeframe-tabs" role="tablist" aria-label="K 线周期">${available.map((tf, i) => `<button type="button"${i === 0 ? ' class="active"' : ''} data-timeframe-tab data-chart="trade-chart-${index}" data-timeframe="${tf}">${CHART_TIMEFRAME_LABEL[tf]}</button>`).join('')}</div></div><div class="tv-chart" id="trade-chart-${index}" data-chart-id="trade-chart-${index}"><span class="chart-loading">加载图表…</span></div><div class="chart-legend"><span><i class="entry"></i>计划入场</span><span><i class="target"></i>止盈</span><span><i class="stop"></i>止损</span><span><i class="decision"></i>决策位置</span><span class="chart-range" data-chart-range="trade-chart-${index}"></span></div>${renderProcessChain(row, index, available, defaultTimeframe)}</section>
       <aside class="trade-sidebar"><section><h4>首次计划</h4><dl class="facts">${fact('方向', DIRECTION_LABELS[answer.initialSubmission?.direction ?? ''] ?? '—')}${fact('首次决策', submittedAt == null ? '—' : `B${submittedAt}`)}${fact('自主观察', `${observationBars(answer)} bars`)}${fact('计划入场', fmt(plan?.entry), 'entry-text')}${fact('止损', fmt(plan?.stop), 'negative')}${fact('止盈', fmt(plan?.target1), 'positive')}${fact('计划盈亏比', `${fmt(row.plannedRr)} R`)}${fact('止损距离', fmtPercent(row.stopDistancePct))}</dl>${initialReason ? `<p class="decision-reason"><b>${escapeHtml(REASON_LABELS[initialReason.category])}</b>${escapeHtml(initialReason.summary)}</p>` : plan?.rationale ? `<p class="rationale">${escapeHtml(plan.rationale)}</p>` : ''}</section>
       <section><h4>Episode 结果</h4><dl class="facts">${fact('完整交易', `${trades.length} 笔`)}${fact('盈利 / 亏损', `${result?.winCount ?? trades.filter((trade) => trade.netR > 0).length} / ${result?.lossCount ?? trades.filter((trade) => trade.netR < 0).length}`)}${fact('Gross / Net R', `${fmtSigned(result?.grossR, 3)} / ${fmtSigned(result?.netR, 3)}`, valueClass(result?.netR))}${fact('最大回撤', `${fmt(result?.maxDrawdownR)} R`)}${fact('MFE / MAE', `${fmt(result?.mfeR)} / ${fmt(result?.maeR)}`)}${fact('首次成交 / 末次退出', `${entryAt == null ? '—' : `B${entryAt}`} / ${exitAt == null ? '—' : `B${exitAt}`}`)}${fact('累计持有', `${result?.holdingBars ?? 0} bars`)}${fact('方向命中', row.directionHit == null ? '—' : row.directionHit ? '是' : '否')}</dl></section>
@@ -1590,7 +1620,7 @@ export function renderEpisodeReportHtml(input: EpisodeReportInput): {
   summary: EpisodeReportSummary;
 } {
   const generatedAt = (input.now ?? (() => new Date()))().toISOString();
-  const rows = buildRows(input.answers, input.questions, input.traces);
+  const rows = buildRows(input.answers, input.questions, input.traces, input.provenance);
   const metrics = aggregate(rows);
   const reasonMetrics = aggregateReasons(rows);
   const runId = input.config.runId ?? 'episode-run';
