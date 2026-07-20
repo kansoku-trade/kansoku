@@ -130,6 +130,17 @@ jobs:
       - name: install dependencies
         run: pnpm install --frozen-lockfile
 
+      # The pro overlay projections are gitignored symlinks created from
+      # apps/pro/overlays, so a fresh checkout has none of them. Without this
+      # the vite resolver never sees a .pro override, the build emits a purely
+      # free module graph, and stagePro fails on the missing __pro__ chunks —
+      # or worse, a free artifact ships looking like a pro one.
+      - name: project pro overlays into the public tree
+        if: steps.pro.outputs.present == 'true'
+        run: |
+          pnpm overlay:sync
+          pnpm overlay:check
+
       - name: link first-party skills into .agents
         run: python3 scripts/sync-agents-skills.py
 
