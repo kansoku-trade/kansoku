@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
-import { CHART_DATA_DIR, PROJECT_ROOT } from '../env.js';
+import { CHART_DATA_DIR, PROJECT_ROOT } from '../platform/env.js';
 import * as schema from './schema.js';
 
 // PROJECT_ROOT already honors TRADE_PROJECT_ROOT (see env.ts) for the same

@@ -35,11 +35,11 @@ const entryPlan = vi.hoisted(() => ({
   entryPlanFromDoc: vi.fn(() => null),
 }));
 
-vi.mock('../src/services/marketdata/registry.js', () => ({
+vi.mock('../src/marketdata/registry.js', () => ({
   getProvider: () => provider,
   getStream: () => stream,
 }));
-vi.mock('../src/services/cockpit/entryPlan.js', () => entryPlan);
+vi.mock('../src/cockpit/entryPlan.js', () => entryPlan);
 
 const { subscribePosition, buildPositionPayload } = await import('../src/realtime/position.js');
 

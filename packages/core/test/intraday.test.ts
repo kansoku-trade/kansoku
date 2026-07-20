@@ -8,7 +8,7 @@ import {
   mergeAiAutoMarkers,
   resolveEntryPlanStatus,
   type IntradayInput,
-} from '../src/services/intraday.js';
+} from '../src/analysis/intraday.js';
 import { approxDiff, loadFixture } from './helpers.js';
 
 type TfExpected = Record<

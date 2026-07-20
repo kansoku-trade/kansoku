@@ -2,7 +2,7 @@ import { resolveSubscription } from '../../license/subscription.js';
 import {
   getActiveWatchedMarketsStore,
   validateWatchedMarkets,
-} from '../../services/watchedMarketsStore.js';
+} from '../../marketdata/watchedMarketsStore.js';
 import type { SettingsApi } from '../../contract/settings.js';
 import { aiSettingsService } from './aiSettings.service.js';
 

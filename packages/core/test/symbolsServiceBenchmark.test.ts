@@ -9,9 +9,9 @@ const provider = vi.hoisted(() => ({
   getNews: vi.fn(),
 }));
 
-vi.mock('../src/services/marketdata/registry.js', () => ({ getProvider: () => provider }));
+vi.mock('../src/marketdata/registry.js', () => ({ getProvider: () => provider }));
 
-const { symbolsService } = await import('../src/modules/symbols/symbols.service.js');
+const { symbolsService } = await import('../src/symbols/symbols.service.js');
 
 function bar(time: string): RawBar {
   return { time, open: 1, high: 1, low: 1, close: 1, volume: 100 };

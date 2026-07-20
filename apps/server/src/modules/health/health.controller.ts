@@ -1,5 +1,5 @@
 import { Controller, Get } from '@tsuki-hono/common';
-import { healthService } from '@kansoku/core/modules/health/health.service';
+import { healthService } from '@kansoku/core/health/health.service';
 
 @Controller('health')
 export class HealthController {

@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, Post } from '@tsuki-hono/common';
 import { chatService } from '@kansoku/core/modules/chat/chat.service';
-import { ClientError } from '@kansoku/core/errors';
+import { ClientError } from '@kansoku/core/platform/errors';
 import { jsonResponse } from '../../httpResponse.js';
 
 export {

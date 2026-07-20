@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { AnalysisOutcome } from '@kansoku/shared/types';
 import { createDb } from '../src/db/index.js';
-import { getResolvedOutcomes, saveResolvedOutcome } from '../src/services/cockpit/outcomeCache.js';
+import { getResolvedOutcomes, saveResolvedOutcome } from '../src/cockpit/outcomeCache.js';
 
 function outcome(status: AnalysisOutcome['status'], pct = 1): AnalysisOutcome {
   return { status, pct_since_anchor: pct, resolved_at: status === 'open' ? null : 1751400000 };

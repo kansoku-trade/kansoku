@@ -6,8 +6,8 @@ import type { Annotation } from '@kansoku/shared/types';
 
 let annotationsDir: string;
 
-vi.mock('@kansoku/core/env', async () => {
-  const actual = await vi.importActual<typeof import('@kansoku/core/env')>('@kansoku/core/env');
+vi.mock('@kansoku/core/platform/env', async () => {
+  const actual = await vi.importActual<typeof import('@kansoku/core/platform/env')>('@kansoku/core/platform/env');
   return {
     ...actual,
     get ANNOTATIONS_DIR() {

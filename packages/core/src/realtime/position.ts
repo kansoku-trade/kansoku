@@ -1,14 +1,14 @@
 import type { CockpitPosition, RelativeVolume } from '@kansoku/shared/types';
-import { buildCockpitPosition } from '../services/cockpit/position.js';
+import { buildCockpitPosition } from '../cockpit/position.js';
 import {
   entryPlanFromDoc,
   latestIntradayDoc,
   type EntryPlan,
-} from '../services/cockpit/entryPlan.js';
-import { getProvider, getStream } from '../services/marketdata/registry.js';
-import type { RawPosition } from '../services/marketdata/types.js';
-import { computeRelativeVolume } from '../services/relvol.js';
-import { marketOf } from '../services/symbol.utils.js';
+} from '../cockpit/entryPlan.js';
+import { getProvider, getStream } from '../marketdata/registry.js';
+import type { RawPosition } from '../marketdata/types.js';
+import { computeRelativeVolume } from '../analysis/relvol.js';
+import { marketOf } from '../symbols/symbol.utils.js';
 import { createEmitter, emitData, emitStatus, replay } from './emitter.js';
 
 const SLOW_REFRESH_MS = 60_000;

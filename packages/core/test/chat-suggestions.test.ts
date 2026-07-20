@@ -12,7 +12,7 @@ const ctx = vi.hoisted(() => {
   };
 });
 
-vi.mock('../src/env.js', () => ({ CHART_DATA_DIR: ctx.dir }));
+vi.mock('../src/platform/env.js', () => ({ CHART_DATA_DIR: ctx.dir }));
 
 const { buildChatSuggestions, clearChatSuggestionCache } =
   await import('../src/ai/chatSuggestions.js');

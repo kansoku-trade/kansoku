@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ChartDoc } from '@kansoku/shared/types';
-import { easternDate } from '../src/services/session.js';
+import { easternDate } from '../src/marketdata/session.js';
 
 const TODAY = easternDate();
 
@@ -14,15 +14,15 @@ const longbridgeStream = vi.hoisted(() => ({
   subscribeCandlesticks: vi.fn(),
 }));
 
-vi.mock('../src/services/store.js', () => store);
-vi.mock('../src/services/build.js', () => build);
-vi.mock('../src/services/marketdata/longbridgeStream.js', () => ({
+vi.mock('../src/charts/store.js', () => store);
+vi.mock('../src/charts/build.js', () => build);
+vi.mock('../src/marketdata/longbridgeStream.js', () => ({
   getLongbridgeStream: () => longbridgeStream,
 }));
-vi.mock('../src/services/optionsLevels.js', () => ({
+vi.mock('../src/analysis/optionsLevels.js', () => ({
   getOptionsLevels: vi.fn().mockResolvedValue(null),
 }));
-vi.mock('../src/services/events.js', () => ({ getEventRisk: vi.fn().mockResolvedValue(null) }));
+vi.mock('../src/marketdata/events.js', () => ({ getEventRisk: vi.fn().mockResolvedValue(null) }));
 
 const { subscribeChart, subscribePreview } = await import('../src/realtime/charts.js');
 

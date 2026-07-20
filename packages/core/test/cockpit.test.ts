@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { RawBar } from '@kansoku/shared/types';
-import type { RawCapitalDistribution, RawPosition } from '../src/services/marketdata/types.js';
-import type { FlowRow } from '../src/services/simple.js';
-import { buildBenchmark } from '../src/services/cockpit/benchmark.js';
-import { buildCockpitFlow } from '../src/services/cockpit/flow.js';
-import { judgeOutcome, zoneFromPrediction } from '../src/services/cockpit/outcome.js';
-import { buildCockpitPosition } from '../src/services/cockpit/position.js';
+import type { RawCapitalDistribution, RawPosition } from '../src/marketdata/types.js';
+import type { FlowRow } from '../src/analysis/simple.js';
+import { buildBenchmark } from '../src/cockpit/benchmark.js';
+import { buildCockpitFlow } from '../src/cockpit/flow.js';
+import { judgeOutcome, zoneFromPrediction } from '../src/cockpit/outcome.js';
+import { buildCockpitPosition } from '../src/cockpit/position.js';
 
 function bar(time: string, o: number, h: number, l: number, c: number, v = 1000): RawBar {
   return { time, open: o, high: h, low: l, close: c, volume: v };

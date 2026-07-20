@@ -5,7 +5,7 @@ import {
   offSessionSignalKeeper,
   SCORE_DOT_MARKER,
   type PatternScoringContext,
-} from '../src/services/patternScoring.js';
+} from '../src/analysis/patternScoring.js';
 
 // 2026-06-01T14:30:00Z = 10:30 ET Monday (regular session)
 const REGULAR_BASE = Date.parse('2026-06-01T14:30:00.000Z') / 1000;

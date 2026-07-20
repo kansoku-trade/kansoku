@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { ChartDoc } from '@kansoku/shared/types';
-import type { MarketDataProvider } from '../src/services/marketdata/types.js';
-import { localizeChartDocName, resolveSecurityName } from '../src/services/securityName.js';
+import type { MarketDataProvider } from '../src/marketdata/types.js';
+import { localizeChartDocName, resolveSecurityName } from '../src/symbols/securityName.js';
 
 function provider(getSecurityName: MarketDataProvider['getSecurityName']): MarketDataProvider {
   return {

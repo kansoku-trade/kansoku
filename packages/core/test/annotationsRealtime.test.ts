@@ -7,8 +7,8 @@ import type { Connection } from '../src/realtime/connection.js';
 
 let annotationsDir: string;
 
-vi.mock('../src/env.js', async () => {
-  const actual = await vi.importActual<typeof import('../src/env.js')>('../src/env.js');
+vi.mock('../src/platform/env.js', async () => {
+  const actual = await vi.importActual<typeof import('../src/platform/env.js')>('../src/platform/env.js');
   return {
     ...actual,
     get ANNOTATIONS_DIR() {
@@ -18,7 +18,7 @@ vi.mock('../src/env.js', async () => {
 });
 
 const { loadAnnotations, saveAnnotations, onAnnotationsChanged } =
-  await import('../src/services/annotations.js');
+  await import('../src/charts/annotations.js');
 const { handleConnection } = await import('../src/realtime/channelProtocol.js');
 
 class FakeConnection implements Connection {

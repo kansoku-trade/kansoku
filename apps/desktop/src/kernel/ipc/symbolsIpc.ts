@@ -1,6 +1,6 @@
 import { IpcMethod, IpcService } from 'electron-ipc-decorator';
 import type { SymbolsApi } from '@kansoku/core/contract/index';
-import { symbolsService } from '@kansoku/core/modules/symbols/symbols.service';
+import { symbolsService } from '@kansoku/core/symbols/symbols.service';
 import { toEnvelope, type WrapEnvelope } from './envelope.js';
 
 export class SymbolsIpc extends IpcService implements WrapEnvelope<SymbolsApi> {

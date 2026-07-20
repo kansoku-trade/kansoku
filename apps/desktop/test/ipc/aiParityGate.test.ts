@@ -15,9 +15,9 @@ const symbols = vi.hoisted(() => ({
   deepDiveStatus: vi.fn(),
 }));
 
-vi.mock('@kansoku/core/modules/overview/overview.service', () => ({ overviewService: overview }));
+vi.mock('@kansoku/core/overview/overview.service', () => ({ overviewService: overview }));
 vi.mock('@kansoku/core/modules/settings/settings.service', () => ({ settingsService: settings }));
-vi.mock('@kansoku/core/modules/symbols/symbols.service', () => ({ symbolsService: symbols }));
+vi.mock('@kansoku/core/symbols/symbols.service', () => ({ symbolsService: symbols }));
 
 const { OverviewIpc } = await import('@desktop/kernel/ipc/overviewIpc.js');
 const { SettingsIpc } = await import('@desktop/kernel/ipc/settingsIpc.js');

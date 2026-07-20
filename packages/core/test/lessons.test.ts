@@ -5,8 +5,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const journalDir = mkdtempSync(join(tmpdir(), 'lessons-'));
 
-vi.mock('../src/env.js', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../src/env.js')>()),
+vi.mock('../src/platform/env.js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../src/platform/env.js')>()),
   JOURNAL_DIR: journalDir,
 }));
 
@@ -47,8 +47,8 @@ describe('readActiveLessons', () => {
   it('returns [] when the file is missing', async () => {
     const empty = mkdtempSync(join(tmpdir(), 'lessons-empty-'));
     vi.resetModules();
-    vi.doMock('../src/env.js', async (importOriginal) => ({
-      ...(await importOriginal<typeof import('../src/env.js')>()),
+    vi.doMock('../src/platform/env.js', async (importOriginal) => ({
+      ...(await importOriginal<typeof import('../src/platform/env.js')>()),
       JOURNAL_DIR: empty,
     }));
     const mod = await import('../src/services/lessons.js');

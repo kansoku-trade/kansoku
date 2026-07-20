@@ -3,7 +3,7 @@ import type { CockpitComment, CommentLevel, CommentSource } from '@kansoku/share
 import { getDb, type Db } from '../db/index.js';
 import { comments } from '../db/schema.js';
 import { nextSnowflake } from '../db/snowflake.js';
-import { easternDate } from '../services/session.js';
+import { easternDate } from '../marketdata/session.js';
 
 type Listener = (comment: CockpitComment) => void;
 

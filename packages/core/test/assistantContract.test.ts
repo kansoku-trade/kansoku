@@ -5,7 +5,7 @@ import { assistantChatTurnState } from '../src/ai/assistantChat.js';
 import { appendAssistantMessages, listAssistantMessages } from '../src/ai/assistantChatStore.js';
 import type { AiModel } from '../src/ai/models.js';
 import { createDb, type Db } from '../src/db/index.js';
-import { ClientError } from '../src/errors.js';
+import { ClientError } from '../src/platform/errors.js';
 import {
   assistantChatService,
   setAssistantChatDepsForTests,

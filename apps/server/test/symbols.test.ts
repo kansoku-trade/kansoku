@@ -18,9 +18,9 @@ const store = vi.hoisted(() => ({
   loadChart: vi.fn(),
 }));
 
-vi.mock('@kansoku/core/services/marketdata/registry', () => ({ getProvider: () => provider }));
-vi.mock('@kansoku/core/services/store', () => store);
-vi.mock('@kansoku/core/services/cockpit/outcomeCache', () => ({
+vi.mock('@kansoku/core/marketdata/registry', () => ({ getProvider: () => provider }));
+vi.mock('@kansoku/core/charts/store', () => store);
+vi.mock('@kansoku/core/cockpit/outcomeCache', () => ({
   getResolvedOutcomes: async () => new Map(),
   saveResolvedOutcome: async () => {},
 }));
@@ -90,7 +90,7 @@ describe('GET /:sym/flow', () => {
   });
 
   it('propagates the flow fetch rejection status', async () => {
-    const { ClientError: CE } = await import('@kansoku/core/errors');
+    const { ClientError: CE } = await import('@kansoku/core/platform/errors');
     provider.getFlow.mockRejectedValue(new CE('longbridge down', undefined, 502));
     provider.getCapitalDistribution.mockResolvedValue(null);
     const res = await tsukiRequest('/api/symbols/MU.US/flow');

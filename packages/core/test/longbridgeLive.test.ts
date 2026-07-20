@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { LongbridgeQuoteSocket } from '../src/services/marketdata/longbridgeSocket.js';
+import { LongbridgeQuoteSocket } from '../src/marketdata/longbridgeSocket.js';
 
 it.runIf(process.env.LONGBRIDGE_LIVE === '1')(
   'authenticates and subscribes through the real Longbridge quote gateway',

@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   LongbridgeQuoteSocket,
   type WebSocketLike,
-} from '../src/services/marketdata/longbridgeSocket.js';
+} from '../src/marketdata/longbridgeSocket.js';
 
 type Listener = (event: { data?: unknown }) => void;
 

@@ -9,12 +9,12 @@ import type {
   NewsItem,
   RawBar,
 } from '@kansoku/shared/types';
-import { PROJECT_ROOT } from '../env.js';
-import { annotationsService } from '../modules/annotations/annotations.service.js';
-import { getProvider } from '../services/marketdata/registry.js';
-import { marketOf } from '../services/symbol.utils.js';
-import { easternDate } from '../services/session.js';
-import { loadChart as defaultLoadChart } from '../services/store.js';
+import { PROJECT_ROOT } from '../platform/env.js';
+import { annotationsService } from '../charts/annotations.service.js';
+import { getProvider } from '../marketdata/registry.js';
+import { marketOf } from '../symbols/symbol.utils.js';
+import { easternDate } from '../marketdata/session.js';
+import { loadChart as defaultLoadChart } from '../charts/store.js';
 import type { AiAgentFactory } from './agentSession.js';
 import { buildResearchTools, type ExecFn } from './agentTools.js';
 import {

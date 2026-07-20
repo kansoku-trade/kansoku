@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { JOURNAL_DIR } from '../env.js';
+import { JOURNAL_DIR } from '../platform/env.js';
 
 const MAX_LESSONS = 12;
 // Entries run long (200+ chars each), so a count cap alone lets the payload blow up.

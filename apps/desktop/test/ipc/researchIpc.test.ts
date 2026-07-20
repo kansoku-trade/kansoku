@@ -10,7 +10,7 @@ const service = vi.hoisted(() => ({
   list: vi.fn(),
   get: vi.fn(),
 }));
-vi.mock('@kansoku/core/modules/research/research.service', () => ({ researchService: service }));
+vi.mock('@kansoku/core/research/research.service', () => ({ researchService: service }));
 
 const { ResearchIpc } = await import('@desktop/kernel/ipc/researchIpc.js');
 

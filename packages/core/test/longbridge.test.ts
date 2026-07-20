@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   createLongbridgeProvider,
   type LongbridgeRunner,
-} from '../src/services/marketdata/longbridge.js';
+} from '../src/marketdata/longbridge.js';
 
 function runner(responses: Record<string, unknown>): LongbridgeRunner {
   const run = vi.fn(async (args: string[]) => {

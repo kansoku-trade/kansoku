@@ -6,7 +6,7 @@ import {
   isCurrentSessionId,
   marketDate,
   offSessionSegments,
-} from '../src/services/session.js';
+} from '../src/marketdata/session.js';
 
 const US_REGULAR = 1784124000;
 const US_PRE = 1784109600;

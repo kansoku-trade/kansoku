@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { RawBar } from '@kansoku/shared/types';
-import { openingRange, preMarketRange, prevDayLevels } from '../src/services/dayLevels.js';
+import { openingRange, preMarketRange, prevDayLevels } from '../src/analysis/dayLevels.js';
 
 const NOW = new Date('2026-07-02T15:00:00Z');
 

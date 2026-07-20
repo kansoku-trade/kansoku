@@ -6,7 +6,7 @@ import type {
   TestConnectionResult,
   UsageTodayOut,
 } from '@kansoku/pro-api';
-import type { Market } from '../services/symbol.utils.js';
+import type { Market } from '../symbols/symbol.utils.js';
 import { defineRoutes } from './defineRoutes.js';
 
 export type {

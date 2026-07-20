@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { CandleAggregator } from '../src/services/marketdata/candleAggregator.js';
+import { CandleAggregator } from '../src/marketdata/candleAggregator.js';
 
 describe('CandleAggregator', () => {
   it('merges same-bucket trades and opens a later bucket', () => {

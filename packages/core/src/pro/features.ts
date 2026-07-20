@@ -4,7 +4,7 @@ import {
   type FeatureState,
   type FeatureTier,
 } from '@kansoku/pro-api/features';
-import { ClientError } from '../errors.js';
+import { ClientError } from '../platform/errors.js';
 import { isLicensed } from '../license/licenseGate.js';
 import { getPro, hasEncBundle } from './registry.js';
 

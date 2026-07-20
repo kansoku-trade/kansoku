@@ -7,7 +7,7 @@ import {
   LongbridgeCliError,
   resetLongbridgeCliCacheForTests,
   runLongbridgeJson,
-} from '../src/services/longbridgeCli.js';
+} from '../src/marketdata/longbridgeCli.js';
 
 const dirs: string[] = [];
 

@@ -26,7 +26,7 @@ const stream = vi.hoisted(() => {
   };
 });
 
-vi.mock('../src/services/marketdata/registry.js', () => ({
+vi.mock('../src/marketdata/registry.js', () => ({
   getProvider: () => provider,
   getStream: () => stream,
 }));

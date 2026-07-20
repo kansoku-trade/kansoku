@@ -4,8 +4,8 @@ import { delimiter, dirname, relative, resolve, sep } from 'node:path';
 import { promisify } from 'node:util';
 import type { AgentTool } from '@earendil-works/pi-agent-core';
 import { Type } from 'typebox';
-import { skillSearchDirs } from '../env.js';
-import { locateLongbridgeCli } from '../services/longbridgeCli.js';
+import { skillSearchDirs } from '../platform/env.js';
+import { locateLongbridgeCli } from '../marketdata/longbridgeCli.js';
 import { loadSkillIndex, readSkill, type SkillMeta } from '../services/skills.js';
 import { textResult } from './dataTools.js';
 

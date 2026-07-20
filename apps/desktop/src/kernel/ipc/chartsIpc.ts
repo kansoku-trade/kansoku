@@ -1,6 +1,6 @@
 import { IpcMethod, IpcService } from 'electron-ipc-decorator';
 import type { ChartsApi } from '@kansoku/core/contract/index';
-import { chartsService } from '@kansoku/core/modules/charts/charts.service';
+import { chartsService } from '@kansoku/core/charts/charts.service';
 import { toEnvelope, type WrapEnvelope } from './envelope.js';
 
 export class ChartsIpc extends IpcService implements WrapEnvelope<ChartsApi> {

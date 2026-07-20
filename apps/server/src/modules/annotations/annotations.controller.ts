@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, Put } from '@tsuki-hono/common';
-import { annotationsService } from '@kansoku/core/modules/annotations/annotations.service';
-import { ClientError } from '@kansoku/core/errors';
+import { annotationsService } from '@kansoku/core/charts/annotations.service';
+import { ClientError } from '@kansoku/core/platform/errors';
 
 @Controller('annotations')
 export class AnnotationsController {

@@ -5,7 +5,7 @@ import {
   decryptWithKey,
   encryptWithKey,
   SecretBoxError,
-} from '@kansoku/core/services/secretCrypto';
+} from '@kansoku/core/platform/secretCrypto';
 import type { SafeStorageLike } from './store.js';
 
 const KEY_BYTES = 32;

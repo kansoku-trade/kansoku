@@ -1,6 +1,6 @@
 import { IpcMethod, IpcService } from 'electron-ipc-decorator';
 import type { OverviewApi } from '@kansoku/core/contract/index';
-import { overviewService } from '@kansoku/core/modules/overview/overview.service';
+import { overviewService } from '@kansoku/core/overview/overview.service';
 import { toEnvelope, type WrapEnvelope } from './envelope.js';
 
 export class OverviewIpc extends IpcService implements WrapEnvelope<OverviewApi> {

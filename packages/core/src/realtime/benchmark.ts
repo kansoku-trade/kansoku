@@ -1,13 +1,13 @@
-import { buildBenchmark } from '../services/cockpit/benchmark.js';
-import { toTs } from '../services/indicators.js';
-import { getProvider } from '../services/marketdata/registry.js';
+import { buildBenchmark } from '../cockpit/benchmark.js';
+import { toTs } from '../analysis/indicators.js';
+import { getProvider } from '../marketdata/registry.js';
 import {
   distinctStreams,
   releaseSymbols,
   retainSymbols,
-} from '../services/marketdata/streamRouting.js';
-import { classifySession } from '../services/session.js';
-import { marketOf } from '../services/symbol.utils.js';
+} from '../marketdata/streamRouting.js';
+import { classifySession } from '../marketdata/session.js';
+import { marketOf } from '../symbols/symbol.utils.js';
 import { createEmitter, emitData, emitStatus, replay } from './emitter.js';
 
 const BENCHMARK_SYMBOLS = ['SMH.US', 'QQQ.US'];

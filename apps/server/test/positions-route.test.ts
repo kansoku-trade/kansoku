@@ -1,6 +1,6 @@
 import { createApplication } from '@tsuki-hono/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { RawPortfolio } from '@kansoku/core/services/marketdata/types';
+import type { RawPortfolio } from '@kansoku/core/marketdata/types';
 
 const provider = vi.hoisted(() => ({
   name: 'mock',
@@ -11,10 +11,10 @@ const provider = vi.hoisted(() => ({
   getPortfolio: vi.fn() as ReturnType<typeof vi.fn> | undefined,
 }));
 
-vi.mock('@kansoku/core/services/marketdata/registry', () => ({ getProvider: () => provider }));
+vi.mock('@kansoku/core/marketdata/registry', () => ({ getProvider: () => provider }));
 
-const { summarizePortfolio } = await import('@kansoku/core/modules/positions/positions.utils');
-const { ClientError } = await import('@kansoku/core/errors');
+const { summarizePortfolio } = await import('@kansoku/core/cockpit/positions.utils');
+const { ClientError } = await import('@kansoku/core/platform/errors');
 const { AppExceptionFilter } = await import('../src/filters/app-exception.filter.js');
 const { PositionsModule } = await import('../src/modules/positions/positions.module.js');
 

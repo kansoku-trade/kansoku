@@ -6,8 +6,8 @@ import type { Annotation } from '@kansoku/shared/types';
 
 let annotationsDir: string;
 
-vi.mock('../src/env.js', async () => {
-  const actual = await vi.importActual<typeof import('../src/env.js')>('../src/env.js');
+vi.mock('../src/platform/env.js', async () => {
+  const actual = await vi.importActual<typeof import('../src/platform/env.js')>('../src/platform/env.js');
   return {
     ...actual,
     get ANNOTATIONS_DIR() {
@@ -17,8 +17,8 @@ vi.mock('../src/env.js', async () => {
 });
 
 const { buildReadDrawingsTool, buildDrawAnnotationsTool } = await import('../src/ai/dataTools.js');
-const { annotationsService } = await import('../src/modules/annotations/annotations.service.js');
-const { saveAnnotations } = await import('../src/services/annotations.js');
+const { annotationsService } = await import('../src/charts/annotations.service.js');
+const { saveAnnotations } = await import('../src/charts/annotations.js');
 
 const SYMBOL = 'MU.US';
 

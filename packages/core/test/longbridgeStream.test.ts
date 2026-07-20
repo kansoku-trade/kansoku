@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import type { ProtocolQuote } from '../src/services/marketdata/longbridgeProtocol.js';
-import { LongbridgeStream } from '../src/services/marketdata/longbridgeStream.js';
-import type { LongbridgeQuoteSocket } from '../src/services/marketdata/longbridgeSocket.js';
+import type { ProtocolQuote } from '../src/marketdata/longbridgeProtocol.js';
+import { LongbridgeStream } from '../src/marketdata/longbridgeStream.js';
+import type { LongbridgeQuoteSocket } from '../src/marketdata/longbridgeSocket.js';
 
 describe('LongbridgeStream quote timestamps', () => {
   it('advances the quote as-of time with each broker push', () => {

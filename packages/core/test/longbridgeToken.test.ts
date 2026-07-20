@@ -6,11 +6,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const getLongbridgeAuthStatus = vi.fn();
 
-vi.mock('../src/services/longbridgeCli.js', () => ({
+vi.mock('../src/marketdata/longbridgeCli.js', () => ({
   getLongbridgeAuthStatus: (...args: unknown[]) => getLongbridgeAuthStatus(...args),
 }));
 
-const { readLongbridgeToken } = await import('../src/services/longbridgeToken.js');
+const { readLongbridgeToken } = await import('../src/marketdata/longbridgeToken.js');
 const dirs: string[] = [];
 
 afterEach(() => {

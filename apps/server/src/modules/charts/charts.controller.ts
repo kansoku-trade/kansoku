@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@tsuki-hono/common';
-import { chartsService } from '@kansoku/core/modules/charts/charts.service';
-import { ClientError } from '@kansoku/core/errors';
+import { chartsService } from '@kansoku/core/charts/charts.service';
+import { ClientError } from '@kansoku/core/platform/errors';
 
 type QueryParams = Record<string, string | undefined>;
 

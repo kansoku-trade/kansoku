@@ -1,6 +1,6 @@
 import type { AgentTool } from '@earendil-works/pi-agent-core';
 import { Type } from 'typebox';
-import { createResearchService } from '../modules/research/research.service.js';
+import { createResearchService } from '../research/research.service.js';
 import { textResult } from './dataTools.js';
 
 const searchSchema = Type.Object({ query: Type.String() });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { clampViewCount } from '../src/services/history.js';
+import { clampViewCount } from '../src/analysis/history.js';
 
 describe('clampViewCount', () => {
   it('parses a positive integer', () => {

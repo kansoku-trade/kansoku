@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { getOptionsLevels } = await import('../src/services/optionsLevels.js');
+const { getOptionsLevels } = await import('../src/analysis/optionsLevels.js');
 
 describe('getOptionsLevels market gate', () => {
   const fetchMock = vi.fn();

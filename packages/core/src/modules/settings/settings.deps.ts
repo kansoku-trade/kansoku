@@ -8,7 +8,7 @@ import { getActiveSettingsStore, type SettingsStore } from '../../ai/settingsSto
 import {
   getActiveWatchedMarketsStore,
   type WatchedMarketsStore,
-} from '../../services/watchedMarketsStore.js';
+} from '../../marketdata/watchedMarketsStore.js';
 import { getDb, type Db } from '../../db/index.js';
 
 const DEFAULT_TEST_TIMEOUT_MS = 25_000;

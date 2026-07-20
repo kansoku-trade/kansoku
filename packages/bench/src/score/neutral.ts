@@ -1,5 +1,5 @@
 import type { RawBar } from '@kansoku/shared/types';
-import { sma } from '../../../core/src/services/indicators.js';
+import { sma } from '../../../core/src/analysis/indicators.js';
 import { num } from './replay.js';
 
 export type Regime = 'up' | 'down';

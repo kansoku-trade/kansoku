@@ -1,4 +1,4 @@
-import { runLongbridgeJson } from '../../../core/src/services/longbridgeCli.js';
+import { runLongbridgeJson } from '../../../core/src/marketdata/longbridgeCli.js';
 import type { QuoteBar } from './assemble.js';
 
 export type KlinePeriod = 'day' | 'week';

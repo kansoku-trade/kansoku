@@ -15,7 +15,7 @@ import {
 import { toDisplayMessages } from '../../ai/chat.js';
 import { aiConfig } from '../../ai/models.js';
 import type { AssistantApi } from '../../contract/assistant.js';
-import { ClientError } from '../../errors.js';
+import { ClientError } from '../../platform/errors.js';
 
 const MAX_TEXT_LENGTH = 4_000;
 const DEFAULT_TITLE = '新对话';

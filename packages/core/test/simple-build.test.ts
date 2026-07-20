@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { ChartDoc } from '@kansoku/shared/types';
-import { migrateLegacyDoc, rebuild } from '../src/services/build.js';
-import { cleanCohortRows } from '../src/services/simple.js';
+import { migrateLegacyDoc, rebuild } from '../src/charts/build.js';
+import { cleanCohortRows } from '../src/analysis/simple.js';
 
 const FLOW_ROWS = [
   { time: '2026-07-02T13:30:00Z', inflow: '1200' },

@@ -1,6 +1,6 @@
 import { IpcMethod, IpcService } from 'electron-ipc-decorator';
 import type { ResearchApi } from '@kansoku/core/contract/index';
-import { researchService } from '@kansoku/core/modules/research/research.service';
+import { researchService } from '@kansoku/core/research/research.service';
 import { toEnvelope, type WrapEnvelope } from './envelope.js';
 
 export class ResearchIpc

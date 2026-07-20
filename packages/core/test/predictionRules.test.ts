@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { IntradayPrediction } from '@kansoku/shared/types';
-import { validatePrediction } from '../src/services/predictionRules.js';
+import { validatePrediction } from '../src/analysis/predictionRules.js';
 
 const validPrediction: IntradayPrediction = {
   direction: 'long',

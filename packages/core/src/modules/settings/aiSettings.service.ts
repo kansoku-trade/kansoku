@@ -3,8 +3,8 @@ import type { AiRole, AiSettingsService, AiUsageRecord, RoleSettingOut } from '@
 import { SINGLE_KEY_PROVIDERS } from '../../ai/modelsRuntime.js';
 import { LOBEHUB_PROVIDER } from '../../ai/lobehub/types.js';
 import { listUsage } from '../../ai/usageStore.js';
-import { ClientError } from '../../errors.js';
-import { easternDate } from '../../services/session.js';
+import { ClientError } from '../../platform/errors.js';
+import { easternDate } from '../../marketdata/session.js';
 import { settingsDeps } from './settings.deps.js';
 import { runTestConnection } from './settings.testConnection.js';
 import {

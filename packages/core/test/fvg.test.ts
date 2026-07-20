@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { detectFvgZones } from '../src/services/fvg.js';
+import { detectFvgZones } from '../src/analysis/fvg.js';
 import type { Candle } from '@kansoku/shared/types';
 
 function series(bars: Array<[low: number, high: number]>): Candle[] {

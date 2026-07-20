@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Post } from "@tsuki-hono/common";
-import { ClientError } from "@kansoku/core/errors";
-import { licenseService } from "@kansoku/core/modules/license/license.service";
+import { ClientError } from "@kansoku/core/platform/errors";
+import { licenseService } from "@kansoku/core/license/license.service";
 
 function requireKey(body: { key?: unknown } | null): string {
   if (typeof body?.key !== "string" || !body.key) {

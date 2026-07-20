@@ -10,7 +10,7 @@ import {
   setEncBundlePresent,
   unregisterProModuleForTests,
 } from '../src/pro/registry.js';
-import { capabilitiesService } from '../src/modules/capabilities/capabilities.service.js';
+import { capabilitiesService } from '../src/capabilities/capabilities.service.js';
 
 const featureKeys = Object.keys(FEATURES) as Array<keyof typeof FEATURES>;
 

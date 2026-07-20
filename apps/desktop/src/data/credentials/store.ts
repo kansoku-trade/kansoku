@@ -2,7 +2,7 @@ import { chmodSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import type {
   LongbridgeAuth,
   LongbridgeCredentials,
-} from '@kansoku/core/services/credentials/types';
+} from '@kansoku/core/credentials/types';
 
 export interface SafeStorageLike {
   isEncryptionAvailable(): boolean;

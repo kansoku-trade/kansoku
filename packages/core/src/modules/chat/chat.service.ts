@@ -10,8 +10,8 @@ import { getSessionByChartId, listMessages } from '../../ai/chatStore.js';
 import { buildChatSuggestions, type ChatSuggestionDeps } from '../../ai/chatSuggestions.js';
 import { aiConfig } from '../../ai/models.js';
 import type { ChatApi } from '../../contract/chat.js';
-import { ClientError } from '../../errors.js';
-import { loadChart } from '../../services/store.js';
+import { ClientError } from '../../platform/errors.js';
+import { loadChart } from '../../charts/store.js';
 
 const MAX_TEXT_LENGTH = 4000;
 
