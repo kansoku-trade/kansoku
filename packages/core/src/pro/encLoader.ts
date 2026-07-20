@@ -1,5 +1,4 @@
 import { createDecipheriv } from "node:crypto";
-import { readFileSync } from "node:fs";
 import { registerHooks } from "node:module";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -87,24 +86,4 @@ export function registerManifestFiles(files: Record<string, string>, virtualDir:
     encSources.set(virtualModuleUrl(virtualDir, rel), Buffer.from(base64, "base64").toString("utf8"));
   }
   ensureHooks();
-}
-
-export interface LoadEncryptedOptions {
-  encPath: string;
-  keyHex: string;
-  virtualDir: string;
-  entry?: string;
-}
-
-export async function loadEncryptedModule(
-  opts: LoadEncryptedOptions,
-): Promise<{ namespace: Record<string, unknown>; keyId: string }> {
-  const blob = readFileSync(opts.encPath);
-  const manifest = decryptProBlob(blob, opts.keyHex);
-
-  registerManifestFiles(manifest.files, opts.virtualDir);
-
-  const entryUrl = virtualModuleUrl(opts.virtualDir, opts.entry ?? "index.mjs");
-  const namespace = (await import(entryUrl)) as Record<string, unknown>;
-  return { namespace, keyId: manifest.keyId };
 }

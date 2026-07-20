@@ -3,7 +3,7 @@ import type {
   DeepDiveState,
   ProAiExtension,
   ProAiTurnContext,
-  ProHooks,
+  EditionHooks,
 } from '@kansoku/pro-api';
 import { prepareProAiTurn, type PreparedProAiTurn } from '../aiExtension.js';
 import type { AiTurnPipeline } from './aiTurnPipeline.js';
@@ -31,7 +31,7 @@ export class EmptyAiTurnPipeline implements AiTurnPipeline {
 }
 
 export class EditionFollowAutomation implements FollowAutomation {
-  constructor(private readonly hooks: Pick<ProHooks, 'requestImmediateFollow'>) {}
+  constructor(private readonly hooks: Pick<EditionHooks, 'requestImmediateFollow'>) {}
 
   requestImmediateFollow(symbol: string): Promise<void> | void {
     return this.hooks.requestImmediateFollow(symbol);
@@ -39,7 +39,7 @@ export class EditionFollowAutomation implements FollowAutomation {
 }
 
 export class EditionDeepDiveService implements DeepDiveService {
-  constructor(private readonly hooks: Pick<ProHooks, 'startDeepDiveForNote' | 'deepDiveStatus'>) {}
+  constructor(private readonly hooks: Pick<EditionHooks, 'startDeepDiveForNote' | 'deepDiveStatus'>) {}
 
   startDeepDiveForNote(note: string): DeepDiveStartResult {
     return this.hooks.startDeepDiveForNote(note);

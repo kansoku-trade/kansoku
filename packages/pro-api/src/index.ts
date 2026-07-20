@@ -4,7 +4,7 @@ export * from './aiTypes.js';
 export * from './edition.js';
 export * from './licenseTypes.js';
 
-export interface ProHooks {
+export interface EditionHooks {
   requestImmediateFollow(symbol: string): void | Promise<void>;
   startDeepDiveForNote(note: string): DeepDiveStartResult;
   deepDiveStatus(): DeepDiveState;
@@ -63,6 +63,6 @@ export interface ProAiExtension {
 }
 
 export interface EditionProCapabilities {
-  hooks?: ProHooks;
+  hooks?: EditionHooks;
   aiExtension?: ProAiExtension;
 }
