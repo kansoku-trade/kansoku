@@ -48,6 +48,31 @@ function chartIntervalMs(key?: string): number {
 }
 
 const chartPollers = new Map<string, PollerHandle>();
+const chartPollerSetups = new Map<string, Promise<PollerHandle>>();
+
+// Concurrent first subscribers for one key must share a single setup: without this
+// both see no poller, both build one, and the loser's onStop later tears down the
+// shared candle state under the winner. The in-flight entry is cleared on both
+// success and failure so a failed setup can be retried by a later subscriber.
+async function getOrCreatePoller(
+  key: string,
+  setup: () => Promise<PollerHandle>,
+): Promise<PollerHandle> {
+  const existing = chartPollers.get(key);
+  if (existing) return existing;
+  const inflight = chartPollerSetups.get(key);
+  if (inflight) return inflight;
+  const promise = setup()
+    .then((handle) => {
+      chartPollers.set(key, handle);
+      return handle;
+    })
+    .finally(() => {
+      chartPollerSetups.delete(key);
+    });
+  chartPollerSetups.set(key, promise);
+  return promise;
+}
 
 function predictionFields(doc: ChartDoc) {
   return {
@@ -273,11 +298,10 @@ export async function subscribeChart(
     return () => {};
 
   const key = viewCount === undefined ? id : `${id}#${viewCount}`;
-  let handle = chartPollers.get(key);
-  if (!handle) {
+  const handle = await getOrCreatePoller(key, async () => {
     chartMarkets.set(key, market);
     if (doc.type === 'intraday') setupCandleState(key, id, viewCount, doc);
-    handle = createPoller({
+    return createPoller({
       intervalMs: () => chartIntervalMs(key),
       task: async () => {
         const latest = await loadChart(id);
@@ -322,8 +346,7 @@ export async function subscribeChart(
         teardownCandleState(key);
       },
     });
-    chartPollers.set(key, handle);
-  }
+  });
   return handle.subscribe(push);
 }
 
@@ -336,8 +359,7 @@ export async function subscribePreview(
   const normalized = normalizeSymbol(symbol);
   const key = `preview:${normalized}`;
 
-  let handle = chartPollers.get(key);
-  if (!handle) {
+  const handle = await getOrCreatePoller(key, async () => {
     const result = await buildChart({ type: 'intraday', symbol: normalized, session: 'intraday' });
     chartMarkets.set(key, marketOf(normalized));
     setupPreviewCandleState(key, normalized, result.input, result.title);
@@ -348,7 +370,7 @@ export async function subscribePreview(
         ? await buildFromState(initialState, initialLatest)
         : { built: result.built };
     previewInitialBuilt.set(key, initialData);
-    handle = createPoller({
+    return createPoller({
       intervalMs: () => chartIntervalMs(key),
       task: async () => {
         const state = candleStates.get(key);
@@ -379,8 +401,7 @@ export async function subscribePreview(
         previewInitialBuilt.delete(key);
       },
     });
-    chartPollers.set(key, handle);
-  }
+  });
 
   const initial = previewInitialBuilt.get(key);
   if (initial !== undefined && !handle.hasData())

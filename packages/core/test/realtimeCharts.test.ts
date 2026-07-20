@@ -607,6 +607,50 @@ describe('subscribePreview', () => {
     unsub2();
   });
 
+  it('dedupes two concurrent first subscribers into one poller and one candle state, and survives the first leaving', async () => {
+    const events1: string[] = [];
+    const events2: string[] = [];
+    const [unsub1, unsub2] = await Promise.all([
+      subscribePreview('PQQ7.US', (e) => events1.push(e)),
+      subscribePreview('PQQ7.US', (e) => events2.push(e)),
+    ]);
+
+    expect(build.buildChart).toHaveBeenCalledTimes(1);
+    expect(longbridgeStream.subscribeCandlesticks).toHaveBeenCalledTimes(3);
+    expect(JSON.parse(events1[0]).data.built.kind).toBe('intraday');
+    expect(JSON.parse(events2[0]).data.built.kind).toBe('intraday');
+
+    await vi.advanceTimersByTimeAsync(0);
+    await vi.advanceTimersByTimeAsync(0);
+
+    unsub1();
+
+    for (const period of ['5m', '15m', '60m']) {
+      expect(unsubSpies.get(period)).not.toHaveBeenCalled();
+    }
+
+    events2.length = 0;
+    build.rebuild.mockClear();
+    const m5cb = callbacksByPeriod.get('5m')!;
+    m5cb({
+      symbol: 'PQQ7.US',
+      period: '5m',
+      ts: 2_000,
+      open: 2,
+      high: 2,
+      low: 2,
+      close: 2,
+      volume: 5,
+    });
+    await vi.advanceTimersByTimeAsync(1_500);
+
+    expect(build.rebuild).toHaveBeenCalledTimes(1);
+    expect(events2.map((e) => JSON.parse(e)).some((e) => e.type === 'data' && e.data.built.pushed)).toBe(
+      true,
+    );
+    unsub2();
+  });
+
   it('tears down state once both subscribers leave and rebuilds from scratch on a fresh subscribe', async () => {
     const unsub1 = await subscribePreview('PQQ4.US', () => {});
     const unsub2 = await subscribePreview('PQQ4.US', () => {});
