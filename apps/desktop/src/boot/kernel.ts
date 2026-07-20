@@ -13,7 +13,7 @@ import { promptProRelaunch } from './proRelaunch.js';
 
 export async function bootKernel() {
   const [
-    { prepareServerRuntime, activateProComposition },
+    { initServerHostRuntime, resolveServerProComposition, activateProComposition },
     { attachRealtimeBridge },
     { CHART_DATA_DIR },
     { hasEncBundle, isProPresent },
@@ -38,11 +38,13 @@ export async function bootKernel() {
         legacyKeyPath: join(CHART_DATA_DIR, 'ai-secret.key'),
       });
 
-  // Only the server edition's module list is needed here — the desktop
-  // host does not own the server composition's lifecycle, so this must not
-  // register or start it (that would double-run the composition alongside
-  // the desktop edition's own composition below).
-  const serverProComposition = await prepareServerRuntime({
+  // Three phases in a fixed order, because two conflicting constraints meet
+  // on the desktop host: loadPro must run AFTER host init (it reads the
+  // bundle key off the license state initServerHostRuntime sets up), and
+  // both edition composition imports must run AFTER loadPro (in a packaged
+  // build the plaintext __pro__ chunks are gone, so the pro node chunks only
+  // resolve once loadPro has registered them as virtual modules).
+  await initServerHostRuntime({
     secretBox,
     openAuthUrl: (url) => {
       shell.openExternal(url).catch(() => {});
@@ -50,13 +52,16 @@ export async function bootKernel() {
     productionHost: app.isPackaged,
   });
 
+  const proPayload = await loadPro(app.getAppPath());
+
+  // Only the server edition's module list is needed here — the desktop
+  // host does not own the server composition's lifecycle, so this must not
+  // register or start it (that would double-run the composition alongside
+  // the desktop edition's own composition below).
+  const serverProComposition = await resolveServerProComposition();
+
   const { createKernel } = await import('../../../server/src/bootstrap.js');
   const kernel = await createKernel(serverProComposition?.modules ?? []);
-
-  // loadPro must run before the edition import below: in a packaged build
-  // the plaintext __pro__ chunks are gone, so the pro node chunks only
-  // resolve once loadPro has registered them as virtual modules.
-  const proPayload = await loadPro(app.getAppPath());
 
   const proComposition = await import('../edition/pro.js')
     .then((m) => m.loadProComposition())

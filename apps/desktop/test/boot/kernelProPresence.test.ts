@@ -2,7 +2,8 @@ import { IpcService } from 'electron-ipc-decorator';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ServerProComposition } from '../../../server/src/edition/types.js';
 
-const prepareServerRuntime = vi.hoisted(() =>
+const initServerHostRuntime = vi.hoisted(() => vi.fn(async () => {}));
+const resolveServerProComposition = vi.hoisted(() =>
   vi.fn<() => Promise<ServerProComposition | null>>(async () => null),
 );
 // activateProComposition is the real implementation — this suite deliberately
@@ -10,7 +11,11 @@ const prepareServerRuntime = vi.hoisted(() =>
 // real registration seam to observe isProPresent() flip.
 vi.mock('../../../server/src/runtimeInit.js', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../../server/src/runtimeInit.js')>();
-  return { prepareServerRuntime, activateProComposition: actual.activateProComposition };
+  return {
+    initServerHostRuntime,
+    resolveServerProComposition,
+    activateProComposition: actual.activateProComposition,
+  };
 });
 
 const fetchHealth = vi.hoisted(() => vi.fn(async () => new Response('ok', { status: 200 })));
@@ -73,7 +78,7 @@ const { bootKernel } = await import('@desktop/boot/kernel.js');
 describe('bootKernel keeps pro presence in sync', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    prepareServerRuntime.mockResolvedValue(null);
+    resolveServerProComposition.mockResolvedValue(null);
     createKernel.mockResolvedValue({ app: { getInstance: () => ({ fetch: fetchHealth }) } });
     fetchHealth.mockResolvedValue(new Response('ok', { status: 200 }));
     loadPro.mockResolvedValue(null);

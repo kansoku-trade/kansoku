@@ -31,14 +31,12 @@ export interface ServerRuntimeOptions {
 }
 
 // Sets up the shared server-side runtime (db, credentials, license, AI
-// settings) and resolves the server edition's pro composition, WITHOUT
-// registering it into the core pro seams or starting it. Both hosts call
-// this; only the host that actually owns a composition's lifecycle should
-// go on to call activateProComposition with it — see kernel.ts vs
-// initServerRuntime below.
-export async function prepareServerRuntime(
-  opts?: ServerRuntimeOptions,
-): Promise<ServerProComposition | null> {
+// settings) WITHOUT resolving the server edition's pro composition. This is
+// the piece that must run before loadPro on a host with an encrypted bundle
+// (loadPro reads the bundle key off the license state this initialises), and
+// it's also the piece the standalone server host needs on its own — it has
+// no encrypted bundle and no loadPro step at all.
+export async function initServerHostRuntime(opts?: ServerRuntimeOptions): Promise<void> {
   loadDotenv();
 
   // 1h prompt-cache TTL: commentator sessions re-run at 5-min heartbeats, the
@@ -57,13 +55,34 @@ export async function prepareServerRuntime(
   // the resolved one, not the raw (possibly undefined) opts value.
   initLicenseManager(getDb(), getAiRuntime().secretBox);
   startLicenseRevalidation();
+}
 
+// Resolves the server edition's pro composition, WITHOUT registering it into
+// the core pro seams or starting it. In a packaged build this import only
+// resolves once loadPro has registered the pro chunks as virtual modules —
+// callers with an encrypted bundle (desktop) MUST call loadPro before this;
+// callers with no bundle (standalone server) can call it right away. Both
+// hosts call this; only the host that actually owns a composition's
+// lifecycle should go on to call activateProComposition with it — see
+// kernel.ts vs initServerRuntime below.
+export async function resolveServerProComposition(): Promise<ServerProComposition | null> {
   return await import('./edition/pro.js')
     .then((m) => m.loadProComposition())
     .catch((error: unknown) => {
       console.warn('[server] pro composition unavailable, running free', error);
       return null;
     });
+}
+
+// Convenience composition of the two phases above, in the order that's
+// correct for a host with NO encrypted bundle step in between (standalone
+// server). Hosts with a loadPro step (desktop) must call the two phases
+// separately with loadPro sequenced between them — see kernel.ts.
+export async function prepareServerRuntime(
+  opts?: ServerRuntimeOptions,
+): Promise<ServerProComposition | null> {
+  await initServerHostRuntime(opts);
+  return resolveServerProComposition();
 }
 
 // Registers a resolved composition into the core pro seams and starts it.

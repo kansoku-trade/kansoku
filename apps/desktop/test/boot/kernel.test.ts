@@ -2,12 +2,14 @@ import { IpcService } from 'electron-ipc-decorator';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ServerProComposition } from '../../../server/src/edition/types.js';
 
-const prepareServerRuntime = vi.hoisted(() =>
+const initServerHostRuntime = vi.hoisted(() => vi.fn(async () => {}));
+const resolveServerProComposition = vi.hoisted(() =>
   vi.fn<() => Promise<ServerProComposition | null>>(async () => null),
 );
 const activateProComposition = vi.hoisted(() => vi.fn(async () => {}));
 vi.mock('../../../server/src/runtimeInit.js', () => ({
-  prepareServerRuntime,
+  initServerHostRuntime,
+  resolveServerProComposition,
   activateProComposition,
 }));
 
@@ -88,7 +90,7 @@ describe('bootKernel', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     callOrder.length = 0;
-    prepareServerRuntime.mockResolvedValue(null);
+    resolveServerProComposition.mockResolvedValue(null);
     createKernel.mockResolvedValue({ app: { getInstance: () => ({ fetch: fetchHealth }) } });
     fetchHealth.mockResolvedValue(new Response('ok', { status: 200 }));
   });
@@ -118,7 +120,7 @@ describe('bootKernel', () => {
     const serverModule = class ServerAiModule {};
     const serverStart = vi.fn();
     const serverDispose = vi.fn();
-    prepareServerRuntime.mockResolvedValueOnce({
+    resolveServerProComposition.mockResolvedValueOnce({
       modules: [serverModule],
       realtimeChannels: [],
       start: serverStart,
