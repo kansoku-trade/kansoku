@@ -12,7 +12,10 @@ const NODE_PREFIX = 'node/';
 const WEB_PREFIX = 'web/';
 
 export async function loadPro(appDir?: string): Promise<ProPayload | null> {
-  if (!appDir) return null;
+  if (!appDir) {
+    setEncBundlePresent(false);
+    return null;
+  }
   const encPath = join(appDir, 'pro', 'pro.enc');
   const present = existsSync(encPath);
   setEncBundlePresent(present);

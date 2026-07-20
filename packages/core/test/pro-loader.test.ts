@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { loadPro } from '../src/pro/loader.js';
+import { hasEncBundle } from '../src/pro/registry.js';
 
 const roots: string[] = [];
 afterEach(() => {
@@ -36,5 +37,15 @@ describe('loadPro', () => {
     } finally {
       delete process.env.KANSOKU_BUNDLE_KEY;
     }
+  });
+
+  it('resets hasEncBundle to false when called without an appDir, even if a previous call left it true', async () => {
+    const root = stageAppDir();
+    writeFileSync(join(root, 'pro', 'pro.enc'), Buffer.from('KPRO1'));
+    await loadPro(root);
+    expect(hasEncBundle()).toBe(true);
+
+    await loadPro();
+    expect(hasEncBundle()).toBe(false);
   });
 });
