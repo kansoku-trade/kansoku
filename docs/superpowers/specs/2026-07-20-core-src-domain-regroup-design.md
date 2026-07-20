@@ -53,6 +53,8 @@ packages/core/src/
   overview/     modules/overview
   health/       modules/health
   capabilities/ modules/capabilities
+  settings/     modules/settings/* (settings.service, aiSettings.service,
+                settings.deps, settings.testConnection, settingsValidation)
   ai/           see subdomains below
 ```
 
@@ -72,8 +74,6 @@ ai/
   runtime/       models, modelsRuntime, usage, usageStore, prompts,
                  promptPolicy
   settings/      settingsStore, initAiSettings, credentialStore, secretBox
-                 + modules/settings/* (settings.service, aiSettings.service,
-                 settings.deps, settings.testConnection, settingsValidation)
   lobehub/       lobehub/* + modules/lobehub/*
 ```
 
@@ -86,9 +86,11 @@ Placement notes:
   acceptable, direction: marketdata → ai).
 - `secretCrypto.ts` (generic crypto helper) goes to `platform/`; `secretBox.ts`
   (AI credential encryption) stays beside `credentialStore` in `ai/settings/`.
-- If during implementation `modules/settings` turns out to contain app-wide
-  (non-AI) settings, promote it to a top-level `settings/` domain instead;
-  everything else in the mapping is fixed.
+- `modules/settings` was confirmed during implementation to front app-wide
+  settings (watched markets, subscribe URL) alongside AI settings, so it is
+  promoted wholesale to the top-level `settings/` domain; the AI-only stores
+  (settingsStore, credentialStore, secretBox, initAiSettings) stay in
+  `ai/settings/`.
 - `X.service.ts` filenames keep their names after the move (e.g.
   `charts/charts.service.ts`); only directories change.
 
