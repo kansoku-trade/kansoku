@@ -1032,12 +1032,15 @@ Create `apps/web/src/edition/useProRoutes.ts`:
 ```ts
 import { useEffect, useState } from 'react';
 import type { ComponentType } from 'react';
-import { loadProComposition } from './pro';
 
 let cached: Promise<Record<string, ComponentType> | null> | null = null;
 
+// The import of ./pro MUST stay dynamic. A static edge would merge the pro
+// chunk into this public chunk, which either ships paid code unencrypted or
+// breaks the free build once the plaintext is stripped.
 function resolveProRoutes(): Promise<Record<string, ComponentType> | null> {
-  cached ??= loadProComposition()
+  cached ??= import('./pro')
+    .then((m) => m.loadProComposition())
     .then((composition) => (composition ? { ...composition.routes } : null))
     .catch(() => null);
   return cached;
