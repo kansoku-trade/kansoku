@@ -85,14 +85,20 @@ export function PreviewCockpit({
           <GenerateAnalysis sym={sym} />
         </>
       ) : (
-        <>
-          <Empty>
-            {analysesRows.length > 0
-              ? '当前为实时视图——图表会随行情更新；可从右上角切回历史分析，或生成一份当前分析'
-              : '这只股票还没有 AI 分析——先看实时走势，也可以直接生成一份'}
-          </Empty>
-          <GenerateAnalysis sym={sym} />
-        </>
+        analysesRows.length > 0 ? (
+          <>
+            <Empty>当前为实时视图——图表会随行情更新；可从右上角切回历史分析，或生成一份当前分析</Empty>
+            <GenerateAnalysis sym={sym} />
+          </>
+        ) : (
+          <div className="preview-cta">
+            <h3 className="preview-cta-title">还没有 AI 分析</h3>
+            <p className="preview-cta-desc">
+              这只股票还没有分析报告——生成一份，图上会标出关键位和多空判断
+            </p>
+            <GenerateAnalysis sym={sym} />
+          </div>
+        )
       ),
     },
     ...buildSharedSidebarTabs({

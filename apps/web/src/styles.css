@@ -1638,6 +1638,37 @@ a.zone-item:hover {
   font-size: var(--fs-xs);
 }
 
+.preview-cta {
+  padding: 20px 18px;
+  background: color-mix(in srgb, var(--accent) 6%, var(--bg-element));
+  border: 1px solid color-mix(in srgb, var(--accent) 26%, var(--border));
+  border-radius: var(--radius);
+  text-align: center;
+}
+.preview-cta-title {
+  margin: 0 0 8px;
+  color: var(--text-primary);
+  font-size: var(--fs-lg);
+  font-weight: 600;
+}
+.preview-cta-desc {
+  margin: 0 0 16px;
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+.preview-cta .ai-run-control {
+  margin-bottom: 0;
+}
+.preview-cta .ai-reassess {
+  justify-content: center;
+  margin-bottom: 0;
+}
+.preview-cta .ai-run-control .btn {
+  padding: 10px 22px;
+  font-size: var(--fs-md);
+}
+
 .ui-select-trigger {
   display: inline-flex;
   align-items: center;

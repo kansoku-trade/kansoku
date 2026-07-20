@@ -2,7 +2,7 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ReactNode } from 'react';
-import type { IntradayBuilt } from '@kansoku/shared/types';
+import type { IntradayBuilt, SymbolAnalysisRow } from '@kansoku/shared/types';
 
 let previewState: {
   built: IntradayBuilt | null;
@@ -80,7 +80,7 @@ const baseBuilt = {
 } as unknown as IntradayBuilt;
 
 describe('PreviewCockpit prediction tab', () => {
-  it('shows the empty-state copy when there is no prediction', () => {
+  it('shows a CTA card when the symbol has no analyses at all', () => {
     previewState = {
       built: baseBuilt,
       error: null,
@@ -101,7 +101,48 @@ describe('PreviewCockpit prediction tab', () => {
       />,
     );
 
-    expect(screen.getByText(/这只股票还没有 AI 分析/)).toBeTruthy();
+    expect(screen.getByText('还没有 AI 分析')).toBeTruthy();
+    expect(screen.getByText(/这只股票还没有分析报告/)).toBeTruthy();
+    expect(screen.getByTestId('generate-analysis')).toBeTruthy();
+  });
+
+  it('keeps the live-view hint when analyses exist but the view is live', () => {
+    previewState = {
+      built: baseBuilt,
+      error: null,
+      degraded: false,
+      intradayTf: null,
+      setIntradayTf: () => {},
+      predictionUpdatedAt: undefined,
+      predictionStale: undefined,
+    };
+
+    render(
+      <PreviewCockpit
+        sym="MRVL.US"
+        analysesRows={[
+          {
+            id: 'a1',
+            schema_version: 1,
+            type: 'intraday',
+            title: 'a1',
+            symbol: 'MRVL.US',
+            created_at: '2026-07-21T09:30:00Z',
+            updated_at: '2026-07-21T09:30:00Z',
+            url: '/charts/a1',
+            direction: null,
+            anchor: null,
+            outcome: null,
+          } as SymbolAnalysisRow,
+        ]}
+        onLive={() => {}}
+        onSelectAnalysis={() => {}}
+        liveQuote={null}
+      />,
+    );
+
+    expect(screen.getByText(/当前为实时视图/)).toBeTruthy();
+    expect(screen.getByTestId('generate-analysis')).toBeTruthy();
   });
 
   it('renders PredictionTab content when the overlay carries a prediction', () => {
