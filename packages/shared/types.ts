@@ -336,6 +336,14 @@ export interface Pattern123 {
   implication: string;
 }
 
+export interface SecondBreakout {
+  kind: 'H2' | 'L2';
+  status: 'forming' | 'confirmed';
+  first: SwingPoint;
+  signal: SwingPoint;
+  trigger: SwingPoint | null;
+}
+
 export interface IntradayTfSummary {
   last_dif: number | null;
   last_dea: number | null;
