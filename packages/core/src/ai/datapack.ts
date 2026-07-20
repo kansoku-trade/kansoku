@@ -15,28 +15,28 @@ import type {
   RelativeVolume,
   TimeframeKey,
 } from '@kansoku/shared/types';
-import { ClientError } from '../errors.js';
+import { ClientError } from '../platform/errors.js';
 import { normalizeQuote } from '../realtime/quotes.js';
-import { buildCockpitPosition } from '../services/cockpit/position.js';
+import { buildCockpitPosition } from '../cockpit/position.js';
 import {
   buildDayContext,
   openingRange,
   preMarketRange,
   prevDayLevels,
   type DayLevels,
-} from '../services/dayLevels.js';
-import { lastVwap, sessionVwap } from '../services/vwap.js';
-import { macd } from '../services/indicators.js';
-import { getEventRisk } from '../services/events.js';
-import { coerceIntradayTimeframe } from '../services/intraday.js';
-import { computeRelativeVolume } from '../services/relvol.js';
+} from '../analysis/dayLevels.js';
+import { lastVwap, sessionVwap } from '../analysis/vwap.js';
+import { macd } from '../analysis/indicators.js';
+import { getEventRisk } from '../marketdata/events.js';
+import { coerceIntradayTimeframe } from '../analysis/intraday.js';
+import { computeRelativeVolume } from '../analysis/relvol.js';
 import { readActiveLessons } from '../services/lessons.js';
-import { getProvider } from '../services/marketdata/registry.js';
-import { getOptionsLevels } from '../services/optionsLevels.js';
-import type { RawPosition } from '../services/marketdata/types.js';
-import { easternDate } from '../services/session.js';
-import { listCharts, loadChart, type ListFilter } from '../services/store.js';
-import { marketOf } from '../services/symbol.utils.js';
+import { getProvider } from '../marketdata/registry.js';
+import { getOptionsLevels } from '../analysis/optionsLevels.js';
+import type { RawPosition } from '../marketdata/types.js';
+import { easternDate } from '../marketdata/session.js';
+import { listCharts, loadChart, type ListFilter } from '../charts/store.js';
+import { marketOf } from '../symbols/symbol.utils.js';
 import { listComments } from './comments.js';
 
 const KLINE_COUNT = 150;

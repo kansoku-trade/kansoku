@@ -1,7 +1,7 @@
 import { Controller, Get, Query } from '@tsuki-hono/common';
-import { overviewService } from '@kansoku/core/modules/overview/overview.service';
+import { overviewService } from '@kansoku/core/overview/overview.service';
 
-export { resetOverviewCacheForTests } from '@kansoku/core/modules/overview/overview.service';
+export { resetOverviewCacheForTests } from '@kansoku/core/overview/overview.service';
 
 @Controller('overview')
 export class OverviewController {

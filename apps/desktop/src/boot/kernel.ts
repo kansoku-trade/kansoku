@@ -21,7 +21,7 @@ export async function bootKernel() {
   ] = await Promise.all([
     import('../../../server/src/runtimeInit.js'),
     import('../kernel/realtime/bridge.js'),
-    import('@kansoku/core/env'),
+    import('@kansoku/core/platform/env'),
     import('@kansoku/core/pro/registry'),
     import('@kansoku/core/license/licenseState'),
   ]);

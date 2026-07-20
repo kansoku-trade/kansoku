@@ -3,11 +3,11 @@ import type { MacroEventItem } from '@kansoku/shared/types';
 
 const runLongbridgeJson = vi.fn();
 
-vi.mock('../src/services/longbridgeCli.js', () => ({
+vi.mock('../src/marketdata/longbridgeCli.js', () => ({
   runLongbridgeJson: (...args: unknown[]) => runLongbridgeJson(...args),
 }));
 
-const { getEventRisk } = await import('../src/services/events.js');
+const { getEventRisk } = await import('../src/marketdata/events.js');
 const { isProPresent } = await import('../src/pro/registry.js');
 
 function macroPayload(now: Date): unknown {

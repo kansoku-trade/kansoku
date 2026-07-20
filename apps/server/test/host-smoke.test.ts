@@ -3,7 +3,7 @@ import type { Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import WebSocket from 'ws';
-import { CHART_DATA_DIR, PORT, WEB_DIST } from '@kansoku/core/env';
+import { CHART_DATA_DIR, PORT, WEB_DIST } from '@kansoku/core/platform/env';
 
 vi.mock('@kansoku/core/ai/comments', () => ({
   onComment: vi.fn(() => () => {}),

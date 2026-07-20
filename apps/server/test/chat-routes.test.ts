@@ -11,13 +11,13 @@ const ctx = vi.hoisted(() => {
   return { dir };
 });
 
-vi.mock('@kansoku/core/env', async (importOriginal) => ({
+vi.mock('@kansoku/core/platform/env', async (importOriginal) => ({
   ...(await importOriginal<object>()),
   CHART_DATA_DIR: ctx.dir,
 }));
 
 const store = vi.hoisted(() => ({ loadChart: vi.fn(), listCharts: vi.fn() }));
-vi.mock('@kansoku/core/services/store', () => store);
+vi.mock('@kansoku/core/charts/store', () => store);
 
 const { setChatDepsForTests, setChatSuggestionDepsForTests } =
   await import('../src/modules/chat/chat.controller.js');

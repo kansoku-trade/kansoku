@@ -17,11 +17,11 @@ const hkProvider = vi.hoisted(() => ({
   getNews: vi.fn().mockResolvedValue([]),
 }));
 
-vi.mock('../src/services/marketdata/registry.js', () => ({
+vi.mock('../src/marketdata/registry.js', () => ({
   getProvider: (market: string) => (market === 'HK' ? hkProvider : usProvider),
 }));
 
-vi.mock('../src/services/sepa.js', () => ({
+vi.mock('../src/analysis/sepa.js', () => ({
   buildSepa: vi.fn().mockReturnValue({
     built: {
       kind: 'sepa',
@@ -31,7 +31,7 @@ vi.mock('../src/services/sepa.js', () => ({
   }),
 }));
 
-const { buildChart } = await import('../src/services/build.js');
+const { buildChart } = await import('../src/charts/build.js');
 
 function bars(): RawBar[] {
   return [{ time: '2026-07-08T00:00:00Z', open: 1, high: 1, low: 1, close: 1, volume: 1 }];

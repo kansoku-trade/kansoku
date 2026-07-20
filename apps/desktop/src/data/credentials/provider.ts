@@ -2,7 +2,7 @@ import type {
   CredentialProvider,
   LongbridgeAuth,
   LongbridgeCredentials,
-} from '@kansoku/core/services/credentials/types';
+} from '@kansoku/core/credentials/types';
 import type { CredentialStore, SetCredentialsResult } from './store.js';
 
 export interface DesktopCredentialProvider extends CredentialProvider {

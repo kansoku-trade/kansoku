@@ -1,5 +1,5 @@
 import type { RawBar } from '@kansoku/shared/types';
-import { macd, sma } from '../../../core/src/services/indicators.js';
+import { macd, sma } from '../../../core/src/analysis/indicators.js';
 
 export interface DayIndicators {
   sma20: number | null;

@@ -1,6 +1,6 @@
 import { promises as fs } from 'node:fs';
 import { Controller, Get } from '@tsuki-hono/common';
-import { LEGACY_CHARTS_DIR } from '@kansoku/core/env';
+import { LEGACY_CHARTS_DIR } from '@kansoku/core/platform/env';
 
 @Controller('legacy')
 export class LegacyController {

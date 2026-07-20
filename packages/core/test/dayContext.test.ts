@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { RawBar } from '@kansoku/shared/types';
-import { buildDayContext } from '../src/services/dayLevels.js';
+import { buildDayContext } from '../src/analysis/dayLevels.js';
 
 function dayBar(date: string, close: number): RawBar {
   return {

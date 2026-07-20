@@ -1,15 +1,15 @@
 import type { ChartDoc, RawBar, TimeframeKey } from '@kansoku/shared/types';
-import { ClientError } from '../errors.js';
-import { buildChart, rebuild, refreshBody } from '../services/build.js';
-import { getEventRisk } from '../services/events.js';
-import { TIMEFRAME_ORDER } from '../services/intraday.js';
-import { getOptionsLevels } from '../services/optionsLevels.js';
-import { getStream } from '../services/marketdata/registry.js';
-import type { CandlePeriod } from '../services/marketdata/quoteStream.js';
-import { classifySession, isCurrentSessionId } from '../services/session.js';
-import { predictionStale } from '../services/staleness.js';
-import { loadChart } from '../services/store.js';
-import { marketOf, normalizeSymbol, type Market } from '../services/symbol.utils.js';
+import { ClientError } from '../platform/errors.js';
+import { buildChart, rebuild, refreshBody } from '../charts/build.js';
+import { getEventRisk } from '../marketdata/events.js';
+import { TIMEFRAME_ORDER } from '../analysis/intraday.js';
+import { getOptionsLevels } from '../analysis/optionsLevels.js';
+import { getStream } from '../marketdata/registry.js';
+import type { CandlePeriod } from '../marketdata/quoteStream.js';
+import { classifySession, isCurrentSessionId } from '../marketdata/session.js';
+import { predictionStale } from '../platform/staleness.js';
+import { loadChart } from '../charts/store.js';
+import { marketOf, normalizeSymbol, type Market } from '../symbols/symbol.utils.js';
 import {
   mergeCandleBar,
   mergeFreshBars,

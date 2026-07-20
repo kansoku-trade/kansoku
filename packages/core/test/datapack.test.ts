@@ -6,7 +6,7 @@ import type {
   IntradayEventRisk,
   RawBar,
 } from '@kansoku/shared/types';
-import type { RawPosition } from '../src/services/marketdata/types.js';
+import type { RawPosition } from '../src/marketdata/types.js';
 import {
   buildCommentPack,
   buildCommentUpdate,

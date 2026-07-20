@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { PROJECT_ROOT } from '@kansoku/core/env';
+import { PROJECT_ROOT } from '@kansoku/core/platform/env';
 
 export function loadDotenv(path = join(PROJECT_ROOT, '.env')): void {
   let raw: string;

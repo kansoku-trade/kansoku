@@ -6,7 +6,7 @@ import { builtinModels } from '@earendil-works/pi-ai/providers/all';
 import { eq } from 'drizzle-orm';
 import type { Db } from '../db/index.js';
 import { aiRoleSettings, appMeta, providerCredentials } from '../db/schema.js';
-import { CHART_DATA_DIR } from '../env.js';
+import { CHART_DATA_DIR } from '../platform/env.js';
 import { type AppCredentialStore, createCredentialStore } from './credentialStore.js';
 import { WebApiLobeHubCloudGateway } from './lobehub/gateway.js';
 import { createLobeHubProvider } from './lobehub/provider.js';

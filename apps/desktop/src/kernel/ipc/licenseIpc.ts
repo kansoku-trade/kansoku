@@ -1,6 +1,6 @@
 import { IpcMethod, IpcService } from "electron-ipc-decorator";
 import type { LicenseApi } from "@kansoku/core/contract/index";
-import { licenseService } from "@kansoku/core/modules/license/license.service";
+import { licenseService } from "@kansoku/core/license/license.service";
 import { maybePromptProRelaunchAfterKeyLanded } from "../../boot/proRelaunch.js";
 import { toEnvelope, type WrapEnvelope } from "./envelope.js";
 

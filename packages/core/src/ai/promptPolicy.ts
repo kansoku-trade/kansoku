@@ -1,9 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { skillSearchDirs } from '../env.js';
-import type { Market } from '../services/symbol.utils.js';
+import { skillSearchDirs } from '../platform/env.js';
+import type { Market } from '../symbols/symbol.utils.js';
 import { loadSkillIndex, readSkill, type SkillMeta } from '../services/skills.js';
-import { getWatchedMarketsOrDefault } from '../services/watchedMarketsStore.js';
+import { getWatchedMarketsOrDefault } from '../marketdata/watchedMarketsStore.js';
 
 /**
  * Single injection point for the shared trading discipline.

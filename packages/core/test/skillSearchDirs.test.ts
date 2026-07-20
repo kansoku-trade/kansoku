@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { skillSearchDirs } from '../src/env.js';
+import { skillSearchDirs } from '../src/platform/env.js';
 
 const original = process.env.TRADE_SKILLS_DIR;
 

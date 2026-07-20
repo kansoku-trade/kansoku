@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createDesktopSecretBox } from '@desktop/data/credentials/secretBox.js';
-import { SecretBoxError } from '@kansoku/core/services/secretCrypto';
+import { SecretBoxError } from '@kansoku/core/platform/secretCrypto';
 import type { SafeStorageLike } from '@desktop/data/credentials/store.js';
 
 function fakeSafeStorage(available = true): SafeStorageLike {

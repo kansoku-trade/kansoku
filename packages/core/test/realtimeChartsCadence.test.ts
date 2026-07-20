@@ -13,15 +13,15 @@ const longbridgeStream = vi.hoisted(() => ({
 }));
 const capturedIntervalMs = vi.hoisted(() => ({ fn: null as (() => number) | null }));
 
-vi.mock('../src/services/store.js', () => store);
-vi.mock('../src/services/build.js', () => build);
-vi.mock('../src/services/marketdata/longbridgeStream.js', () => ({
+vi.mock('../src/charts/store.js', () => store);
+vi.mock('../src/charts/build.js', () => build);
+vi.mock('../src/marketdata/longbridgeStream.js', () => ({
   getLongbridgeStream: () => longbridgeStream,
 }));
-vi.mock('../src/services/optionsLevels.js', () => ({
+vi.mock('../src/analysis/optionsLevels.js', () => ({
   getOptionsLevels: vi.fn().mockResolvedValue(null),
 }));
-vi.mock('../src/services/events.js', () => ({ getEventRisk: vi.fn().mockResolvedValue(null) }));
+vi.mock('../src/marketdata/events.js', () => ({ getEventRisk: vi.fn().mockResolvedValue(null) }));
 vi.mock('../src/realtime/poller.js', () => ({
   createPoller: (opts: { intervalMs: number | (() => number) }) => {
     capturedIntervalMs.fn =

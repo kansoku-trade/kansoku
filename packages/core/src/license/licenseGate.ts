@@ -1,5 +1,5 @@
 import type { LicenseSnapshot } from "./licenseState.js";
-import { ClientError } from "../errors.js";
+import { ClientError } from "../platform/errors.js";
 import { getLicenseManager } from "./licenseState.js";
 
 // electron-only signal: core must stay importable from the Tsuki server host

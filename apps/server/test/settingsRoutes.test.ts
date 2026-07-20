@@ -14,11 +14,11 @@ import {
   createWatchedMarketsStore,
   setActiveWatchedMarketsStore,
   type WatchedMarketsStore,
-} from '@kansoku/core/services/watchedMarketsStore';
+} from '@kansoku/core/marketdata/watchedMarketsStore';
 import { createDb, type Db } from '@kansoku/core/db/index';
 import { aiUsage, providerCredentials } from '@kansoku/core/db/schema';
 import { setSettingsDepsForTests } from '@kansoku/core/modules/settings/settings.deps';
-import { easternDate } from '@kansoku/core/services/session';
+import { easternDate } from '@kansoku/core/marketdata/session';
 import { tsukiRequest } from './helpers.js';
 
 const catalog = builtinModels();

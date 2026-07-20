@@ -5,8 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 let legacyDir: string;
 
-vi.mock('@kansoku/core/env', async () => {
-  const actual = await vi.importActual<typeof import('@kansoku/core/env')>('@kansoku/core/env');
+vi.mock('@kansoku/core/platform/env', async () => {
+  const actual = await vi.importActual<typeof import('@kansoku/core/platform/env')>('@kansoku/core/platform/env');
   return {
     ...actual,
     get LEGACY_CHARTS_DIR() {

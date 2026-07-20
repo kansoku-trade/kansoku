@@ -1,6 +1,6 @@
 import type { Api, Model, ModelThinkingLevel, MutableModels } from '@earendil-works/pi-ai';
 import { getSupportedThinkingLevels } from '@earendil-works/pi-ai';
-import { ClientError } from '../../errors.js';
+import { ClientError } from '../../platform/errors.js';
 import { SINGLE_KEY_PROVIDERS } from '../../ai/modelsRuntime.js';
 import { LOBEHUB_PROVIDER } from '../../ai/lobehub/types.js';
 import type { AiRole, RoleMode, RoleSetting } from '../../ai/settingsStore.js';

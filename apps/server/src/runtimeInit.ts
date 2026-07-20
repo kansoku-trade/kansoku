@@ -2,7 +2,7 @@ import type { SecretBox } from '@kansoku/pro-api';
 import { getAiRuntime, initAiSettings } from '@kansoku/core/ai/initAiSettings';
 import { getActiveSettingsStore } from '@kansoku/core/ai/settingsStore';
 import { getDb } from '@kansoku/core/db/index';
-import { KANSOKU_HOME } from '@kansoku/core/env';
+import { KANSOKU_HOME } from '@kansoku/core/platform/env';
 import { setProductionHost } from '@kansoku/core/license/dodoEnv';
 import { isLicensed } from '@kansoku/core/license/licenseGate';
 import { startLicenseRevalidation } from '@kansoku/core/license/licenseSchedule';
@@ -13,14 +13,14 @@ import {
   createWatchedMarketsStore,
   getActiveWatchedMarketsStore,
   setActiveWatchedMarketsStore,
-} from '@kansoku/core/services/watchedMarketsStore';
+} from '@kansoku/core/marketdata/watchedMarketsStore';
 import { loadDotenv } from './dotenv.js';
 import {
   initAuthUrlOpener,
   type AuthUrlOpener,
-} from '@kansoku/core/services/credentials/authUrlOpener';
-import { initCredentialProvider } from '@kansoku/core/services/credentials/registry';
-import type { CredentialProvider } from '@kansoku/core/services/credentials/types';
+} from '@kansoku/core/credentials/authUrlOpener';
+import { initCredentialProvider } from '@kansoku/core/credentials/registry';
+import type { CredentialProvider } from '@kansoku/core/credentials/types';
 
 export interface ServerRuntimeOptions {
   credentialProvider?: CredentialProvider;

@@ -11,14 +11,14 @@ import {
   type RawBar,
 } from '@kansoku/shared/types';
 import type { ReassessPhase, ReassessResult, ReassessStatus } from '../contract/symbols.js';
-import { chartUrl } from '../chartUrl.js';
-import { JOURNAL_DIR, PROJECT_ROOT, skillSearchDirs } from '../env.js';
-import { buildChart } from '../services/build.js';
-import { getProvider } from '../services/marketdata/registry.js';
-import { marketOf } from '../services/symbol.utils.js';
-import { validatePrediction } from '../services/predictionRules.js';
+import { chartUrl } from '../platform/chartUrl.js';
+import { JOURNAL_DIR, PROJECT_ROOT, skillSearchDirs } from '../platform/env.js';
+import { buildChart } from '../charts/build.js';
+import { getProvider } from '../marketdata/registry.js';
+import { marketOf } from '../symbols/symbol.utils.js';
+import { validatePrediction } from '../analysis/predictionRules.js';
 import { loadSkillIndex, readSkill, type SkillMeta } from '../services/skills.js';
-import { createChart } from '../services/store.js';
+import { createChart } from '../charts/store.js';
 import { prepareProAiTurn } from '../pro/aiExtension.js';
 import { AgentTimeoutError, type AiAgentFactory, createAgentSession } from './agentSession.js';
 import {

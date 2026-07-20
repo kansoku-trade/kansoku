@@ -8,7 +8,7 @@ const status = vi.fn().mockResolvedValue({
   lastError: null,
 });
 
-vi.mock('@kansoku/core/modules/credentials/credentials.service', () => ({
+vi.mock('@kansoku/core/credentials/credentials.service', () => ({
   credentialsService: { status },
 }));
 

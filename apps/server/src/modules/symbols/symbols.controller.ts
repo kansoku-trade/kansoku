@@ -1,7 +1,7 @@
 import { Controller, ContextParam, Delete, Get, Param, Post, Query } from '@tsuki-hono/common';
 import type { Context } from 'hono';
-import { symbolsService } from '@kansoku/core/modules/symbols/symbols.service';
-import { ClientError } from '@kansoku/core/errors';
+import { symbolsService } from '@kansoku/core/symbols/symbols.service';
+import { ClientError } from '@kansoku/core/platform/errors';
 
 @Controller('symbols')
 export class SymbolsController {

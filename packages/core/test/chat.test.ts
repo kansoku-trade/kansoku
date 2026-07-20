@@ -14,8 +14,8 @@ const ctx = vi.hoisted(() => {
   return { dir };
 });
 
-vi.mock('../src/env.js', async () => {
-  const actual = await vi.importActual<typeof import('../src/env.js')>('../src/env.js');
+vi.mock('../src/platform/env.js', async () => {
+  const actual = await vi.importActual<typeof import('../src/platform/env.js')>('../src/platform/env.js');
   return { ...actual, CHART_DATA_DIR: ctx.dir, PROJECT_ROOT: ctx.dir };
 });
 

@@ -2,7 +2,7 @@ import { mkdtempSync, mkdirSync, rmSync, symlinkSync, writeFileSync } from 'node
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { createResearchService } from '../src/modules/research/research.service.js';
+import { createResearchService } from '../src/research/research.service.js';
 
 let root: string;
 

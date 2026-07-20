@@ -1,15 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ProtocolQuote } from '../src/services/marketdata/longbridgeProtocol.js';
-import type { LongbridgeQuoteSocket } from '../src/services/marketdata/longbridgeSocket.js';
+import type { ProtocolQuote } from '../src/marketdata/longbridgeProtocol.js';
+import type { LongbridgeQuoteSocket } from '../src/marketdata/longbridgeSocket.js';
 
 const provider = vi.hoisted(() => ({
   getQuotes: vi.fn().mockResolvedValue([]),
   getKline: vi.fn().mockResolvedValue([]),
 }));
 
-vi.mock('../src/services/marketdata/registry.js', () => ({ getProvider: () => provider }));
+vi.mock('../src/marketdata/registry.js', () => ({ getProvider: () => provider }));
 
-const { LongbridgeStream } = await import('../src/services/marketdata/longbridgeStream.js');
+const { LongbridgeStream } = await import('../src/marketdata/longbridgeStream.js');
 
 interface FakeSocket {
   emitQuote: (quote: ProtocolQuote) => void;

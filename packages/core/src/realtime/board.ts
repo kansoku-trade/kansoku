@@ -1,6 +1,6 @@
-import { chartUrl } from '../chartUrl.js';
-import { buildOverviewBoard } from '../services/cockpit/board.js';
-import { distinctStreams } from '../services/marketdata/streamRouting.js';
+import { chartUrl } from '../platform/chartUrl.js';
+import { buildOverviewBoard } from '../cockpit/board.js';
+import { distinctStreams } from '../marketdata/streamRouting.js';
 import { createEmitter, emitData, emitStatus, replay } from './emitter.js';
 
 const THROTTLE_MS = 2_000;

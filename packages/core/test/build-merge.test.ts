@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mergeForPatch } from '../src/services/build.js';
+import { mergeForPatch } from '../src/charts/build.js';
 
 describe('mergeForPatch intraday', () => {
   it('merges session so a cash-session PATCH persists', () => {

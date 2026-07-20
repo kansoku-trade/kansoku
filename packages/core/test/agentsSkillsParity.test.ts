@@ -1,7 +1,7 @@
 import { existsSync, lstatSync, readdirSync, readFileSync, readlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { PROJECT_ROOT } from '../src/env.js';
+import { PROJECT_ROOT } from '../src/platform/env.js';
 
 const AGENTS_ROOT = join(PROJECT_ROOT, '.agents', 'skills');
 const CLAUDE_ROOT = join(PROJECT_ROOT, '.claude', 'skills');

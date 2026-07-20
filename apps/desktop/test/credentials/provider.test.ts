@@ -4,7 +4,7 @@ import {
   selectCredentialProvider,
 } from '@desktop/data/credentials/provider.js';
 import type { CredentialStore } from '@desktop/data/credentials/store.js';
-import type { CredentialProvider } from '@kansoku/core/services/credentials/types';
+import type { CredentialProvider } from '@kansoku/core/credentials/types';
 
 const CREDS = { appKey: 'k', appSecret: 's', accessToken: 't' };
 const APIKEY_AUTH = { kind: 'apikey' as const, ...CREDS };

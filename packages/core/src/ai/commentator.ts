@@ -1,7 +1,7 @@
 import type { AgentTool } from '@earendil-works/pi-agent-core';
 import { type Static, Type } from 'typebox';
 import type { CockpitComment } from '@kansoku/shared/types';
-import { easternDate } from '../services/session.js';
+import { easternDate } from '../marketdata/session.js';
 import { AgentTimeoutError, type AiAgentFactory, createAgentSession } from './agentSession.js';
 import { appendComment as defaultAppendComment } from './comments.js';
 import { buildCommentUpdate, type CommentPack } from './datapack.js';

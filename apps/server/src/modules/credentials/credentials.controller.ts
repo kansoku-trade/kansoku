@@ -1,5 +1,5 @@
 import { Controller, Get } from '@tsuki-hono/common';
-import { credentialsService } from '@kansoku/core/modules/credentials/credentials.service';
+import { credentialsService } from '@kansoku/core/credentials/credentials.service';
 
 @Controller('credentials')
 export class CredentialsController {

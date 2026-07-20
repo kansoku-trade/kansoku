@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { getProvider, listProviders } from '../src/services/marketdata/registry.js';
-import type { Capability, MarketDataProvider } from '../src/services/marketdata/types.js';
+import { getProvider, listProviders } from '../src/marketdata/registry.js';
+import type { Capability, MarketDataProvider } from '../src/marketdata/types.js';
 
 const OPTIONAL_METHODS: Record<Capability, keyof MarketDataProvider> = {
   'flow': 'getFlow',

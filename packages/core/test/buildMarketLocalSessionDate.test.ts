@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('../src/services/sepa.js', () => ({
+vi.mock('../src/analysis/sepa.js', () => ({
   buildSepa: vi.fn((input: { symbol: string; as_of_date?: string }) => ({
     built: {
       kind: 'sepa',
@@ -14,7 +14,7 @@ vi.mock('../src/services/sepa.js', () => ({
   })),
 }));
 
-vi.mock('../src/services/intraday.js', () => ({
+vi.mock('../src/analysis/intraday.js', () => ({
   buildIntraday: vi.fn((input: { symbol: string }) => ({
     built: {
       kind: 'intraday',
@@ -25,7 +25,7 @@ vi.mock('../src/services/intraday.js', () => ({
   TIMEFRAME_ORDER: ['m5', 'm15', 'h1'],
 }));
 
-const { rebuild } = await import('../src/services/build.js');
+const { rebuild } = await import('../src/charts/build.js');
 
 describe('rebuild sepa/intraday: sessionDate is market-local, not UTC-sliced', () => {
   it('resolves a HK day bar stamped at market-local midnight (16:00Z prior day) to the correct HK session date', () => {

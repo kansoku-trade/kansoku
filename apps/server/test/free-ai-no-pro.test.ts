@@ -8,7 +8,7 @@ import { setActiveSettingsStore } from '@kansoku/core/ai/settingsStore';
 import {
   createWatchedMarketsStore,
   setActiveWatchedMarketsStore,
-} from '@kansoku/core/services/watchedMarketsStore';
+} from '@kansoku/core/marketdata/watchedMarketsStore';
 import { createDb } from '@kansoku/core/db/index';
 import { unregisterProModuleForTests } from '@kansoku/core/pro/registry';
 import { tsukiRequest } from './helpers.js';

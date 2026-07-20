@@ -1,4 +1,4 @@
-import { PROJECT_ROOT } from '../env.js';
+import { PROJECT_ROOT } from '../platform/env.js';
 import type { Db } from '../db/index.js';
 import { buildResearchTools, type ExecFn } from './agentTools.js';
 import type { AiAgentFactory } from './agentSession.js';

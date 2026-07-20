@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ChartDoc } from '@kansoku/shared/types';
-import { PREDICTION_STALE_MS, predictionStale } from '../src/services/staleness.js';
+import { PREDICTION_STALE_MS, predictionStale } from '../src/platform/staleness.js';
 
 const REGULAR_TS = '2026-07-02T15:00:00.000Z';
 const PRE_MARKET_TS = '2026-07-02T12:00:00.000Z';

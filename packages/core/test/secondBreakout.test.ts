@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { detectSecondBreakouts } from '../src/services/secondBreakout.js';
+import { detectSecondBreakouts } from '../src/analysis/secondBreakout.js';
 
 function bars(closes: number[]): {
   highs: number[];

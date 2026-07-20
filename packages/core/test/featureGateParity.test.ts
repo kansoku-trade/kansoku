@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { allRoutes } from '../src/contract/index.js';
-import { symbolsService } from '../src/modules/symbols/symbols.service.js';
+import { symbolsService } from '../src/symbols/symbols.service.js';
 import { freeHooks, registerProModule, unregisterProModuleForTests } from '../src/pro/registry.js';
 
 type GatedService = Record<string, (input: { sym: string }) => Promise<unknown>>;

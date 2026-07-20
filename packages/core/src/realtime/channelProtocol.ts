@@ -2,10 +2,10 @@ import {
   type AnnotationsChangedEvent,
   loadAnnotations,
   onAnnotationsChanged,
-} from '../services/annotations.js';
-import { clampViewCount } from '../services/history.js';
+} from '../charts/annotations.js';
+import { clampViewCount } from '../analysis/history.js';
 import type { ProChannel } from '@kansoku/pro-api';
-import { normalizeSymbol } from '../services/symbol.utils.js';
+import { normalizeSymbol } from '../symbols/symbol.utils.js';
 import { getPro } from '../pro/registry.js';
 import { coreAiChannels } from './aiChannels.js';
 import { subscribeAnalyses } from './analyses.js';

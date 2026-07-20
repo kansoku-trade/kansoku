@@ -1,10 +1,10 @@
 import { randomBytes } from 'node:crypto';
 import { closeSync, openSync, readFileSync, rmSync, statSync, writeSync } from 'node:fs';
 import type { MasterKeyStatus, SecretBox } from '@kansoku/pro-api';
-import { decryptWithKey, encryptWithKey, SecretBoxError } from '../services/secretCrypto.js';
+import { decryptWithKey, encryptWithKey, SecretBoxError } from '../platform/secretCrypto.js';
 
 export type { MasterKeyStatus, SecretBox } from '@kansoku/pro-api';
-export { decryptWithKey, encryptWithKey, SecretBoxError } from '../services/secretCrypto.js';
+export { decryptWithKey, encryptWithKey, SecretBoxError } from '../platform/secretCrypto.js';
 
 const KEY_BYTES = 32;
 

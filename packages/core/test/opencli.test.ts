@@ -2,7 +2,7 @@ import { chmodSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { probeOpencli, resetOpencliCacheForTests } from '../src/services/opencli.js';
+import { probeOpencli, resetOpencliCacheForTests } from '../src/credentials/opencli.js';
 
 const dirs: string[] = [];
 

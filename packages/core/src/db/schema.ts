@@ -7,7 +7,7 @@ import type {
   ResearchRefreshReport,
   ResearchRefreshStatus,
 } from '../contract/research.js';
-import type { Market } from '../services/symbol.utils.js';
+import type { Market } from '../symbols/symbol.utils.js';
 import { index, integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 export const comments = sqliteTable(

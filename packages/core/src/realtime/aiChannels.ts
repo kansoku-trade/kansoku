@@ -5,8 +5,8 @@ import { assistantChatTurnState, onAssistantChatEvent } from '../ai/assistantCha
 import { type ChatEvent, chatTurnState, onChatEvent } from '../ai/chat.js';
 import { listComments, onAnyComment, onComment } from '../ai/comments.js';
 import { onAnyNotice } from '../ai/notices.js';
-import { easternDate } from '../services/session.js';
-import { normalizeSymbol } from '../services/symbol.utils.js';
+import { easternDate } from '../marketdata/session.js';
+import { normalizeSymbol } from '../symbols/symbol.utils.js';
 
 async function attachComments(
   symbol: string,

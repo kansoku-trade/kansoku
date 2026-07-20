@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { AnalysisOutcome } from '@kansoku/shared/types';
-import { aggregateStats, type StatsRow } from '../src/services/cockpit/stats.js';
+import { aggregateStats, type StatsRow } from '../src/cockpit/stats.js';
 
 function outcome(status: AnalysisOutcome['status'], pct = 0): AnalysisOutcome {
   return { status, pct_since_anchor: pct, resolved_at: status === 'open' ? null : 1 };

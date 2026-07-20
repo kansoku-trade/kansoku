@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { RawBar } from '@kansoku/shared/types';
-import { attachRMultiple, judgeOutcome, rMultipleFor } from '../src/services/cockpit/outcome.js';
-import { aggregateStats } from '../src/services/cockpit/stats.js';
+import { attachRMultiple, judgeOutcome, rMultipleFor } from '../src/cockpit/outcome.js';
+import { aggregateStats } from '../src/cockpit/stats.js';
 
 function bar(time: string, h: number, l: number, c: number): RawBar {
   return { time, open: c, high: h, low: l, close: c, volume: 1000 };

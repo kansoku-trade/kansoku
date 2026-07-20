@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { RawBar } from '@kansoku/shared/types';
-import { lastVwap, sessionVwap } from '../src/services/vwap.js';
+import { lastVwap, sessionVwap } from '../src/analysis/vwap.js';
 
 function bar(time: string, h: number, l: number, c: number, v: number): RawBar {
   return { time, open: c, high: h, low: l, close: c, volume: v };

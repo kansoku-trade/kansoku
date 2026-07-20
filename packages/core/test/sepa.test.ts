@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { SepaCheck, SepaChartData, SepaVerdict } from '@kansoku/shared/types';
-import { buildSepa, type SepaInput, type SepaMeta } from '../src/services/sepa.js';
+import { buildSepa, type SepaInput, type SepaMeta } from '../src/analysis/sepa.js';
 import { approxDiff, loadFixture } from './helpers.js';
 
 interface SepaExpected {

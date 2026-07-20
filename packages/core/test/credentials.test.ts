@@ -1,17 +1,17 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { envCredentialProvider } from '../src/services/credentials/envCredentialProvider.js';
+import { envCredentialProvider } from '../src/credentials/envCredentialProvider.js';
 import {
   getCredentialProvider,
   initCredentialProvider,
   setCredentialProviderForTests,
-} from '../src/services/credentials/registry.js';
-import type { CredentialProvider } from '../src/services/credentials/types.js';
+} from '../src/credentials/registry.js';
+import type { CredentialProvider } from '../src/credentials/types.js';
 import {
   clearCredentialRejection,
   getLastCredentialError,
   recordCredentialRejection,
   resetCredentialStatusForTests,
-} from '../src/services/credentials/credentialStatus.js';
+} from '../src/credentials/credentialStatus.js';
 
 describe('envCredentialProvider', () => {
   afterEach(() => {

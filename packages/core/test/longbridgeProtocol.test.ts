@@ -14,7 +14,7 @@ import {
   encodeMultiSecurityRequest,
   encodeRequest,
   encodeSubscribeRequest,
-} from '../src/services/marketdata/longbridgeProtocol.js';
+} from '../src/marketdata/longbridgeProtocol.js';
 
 const bytes = (...values: number[]) => Uint8Array.from(values);
 

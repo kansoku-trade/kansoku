@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { detectCandlePatterns } from '../src/services/candlePatterns.js';
+import { detectCandlePatterns } from '../src/analysis/candlePatterns.js';
 import { loadFixture } from './helpers.js';
 
 interface TestBar {

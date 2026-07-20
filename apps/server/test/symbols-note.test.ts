@@ -9,7 +9,7 @@ const ctx = vi.hoisted(() => {
   return { dir };
 });
 
-vi.mock('@kansoku/core/env', async (importOriginal) => ({
+vi.mock('@kansoku/core/platform/env', async (importOriginal) => ({
   ...(await importOriginal<object>()),
   STOCKS_DIR: ctx.dir,
 }));

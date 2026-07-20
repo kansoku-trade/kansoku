@@ -1,15 +1,15 @@
 import type { QuoteCell, QuoteSnapshot } from '@kansoku/shared/types';
-import { getProvider, getStream } from '../services/marketdata/registry.js';
+import { getProvider, getStream } from '../marketdata/registry.js';
 import {
   distinctStreams,
   releaseSymbols,
   retainSymbols,
-} from '../services/marketdata/streamRouting.js';
-import type { ExtendedQuote, RawQuote } from '../services/marketdata/types.js';
-import { classifySession, sessionLabel } from '../services/session.js';
-import { marketOf } from '../services/symbol.utils.js';
+} from '../marketdata/streamRouting.js';
+import type { ExtendedQuote, RawQuote } from '../marketdata/types.js';
+import { classifySession, sessionLabel } from '../marketdata/session.js';
+import { marketOf } from '../symbols/symbol.utils.js';
 
-export type { RawQuote } from '../services/marketdata/types.js';
+export type { RawQuote } from '../marketdata/types.js';
 
 const EXTENDED_FRESH_MS = 15 * 60_000;
 

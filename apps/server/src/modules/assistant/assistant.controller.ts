@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, Param, Post } from '@tsuki-hono/common';
-import { ClientError } from '@kansoku/core/errors';
+import { ClientError } from '@kansoku/core/platform/errors';
 import { assistantChatService } from '@kansoku/core/modules/assistant/assistantChat.service';
 import { jsonResponse } from '../../httpResponse.js';
 

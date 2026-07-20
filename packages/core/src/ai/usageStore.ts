@@ -3,7 +3,7 @@ import type { AiUsageSummary } from '@kansoku/shared/types';
 import { getDb, type Db } from '../db/index.js';
 import { aiUsage } from '../db/schema.js';
 import { nextSnowflake } from '../db/snowflake.js';
-import { easternDate } from '../services/session.js';
+import { easternDate } from '../marketdata/session.js';
 
 export interface AiUsageRecord {
   ts: string;

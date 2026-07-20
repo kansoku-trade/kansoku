@@ -1,4 +1,4 @@
-import { HOST_MODE, KERNEL_PORT, PORT } from '@kansoku/core/env';
+import { HOST_MODE, KERNEL_PORT, PORT } from '@kansoku/core/platform/env';
 import { getPro } from '@kansoku/core/pro/registry';
 import { startHost } from './host.js';
 import { initServerRuntime } from './runtimeInit.js';

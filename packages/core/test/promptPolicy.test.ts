@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
-import { PROJECT_ROOT, skillSearchDirs } from '../src/env.js';
+import { PROJECT_ROOT, skillSearchDirs } from '../src/platform/env.js';
 import {
   DISCIPLINE_SKILL,
   DisciplineMissingError,
@@ -14,8 +14,8 @@ import {
 import {
   setActiveWatchedMarketsStore,
   type WatchedMarketsStore,
-} from '../src/services/watchedMarketsStore.js';
-import type { Market } from '../src/services/symbol.utils.js';
+} from '../src/marketdata/watchedMarketsStore.js';
+import type { Market } from '../src/symbols/symbol.utils.js';
 
 function fakeWatchedMarketsStore(markets: Market[]): WatchedMarketsStore {
   let current = markets;

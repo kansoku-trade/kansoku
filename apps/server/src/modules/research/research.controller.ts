@@ -1,7 +1,7 @@
 import { Controller, Get, Query } from '@tsuki-hono/common';
 import type { ResearchKind } from '@kansoku/core/contract/research';
-import { ClientError } from '@kansoku/core/errors';
-import { researchService } from '@kansoku/core/modules/research/research.service';
+import { ClientError } from '@kansoku/core/platform/errors';
+import { researchService } from '@kansoku/core/research/research.service';
 
 function parseKind(value: string | undefined): ResearchKind | undefined {
   if (value === undefined || value === '') return undefined;

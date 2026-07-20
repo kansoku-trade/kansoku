@@ -1,8 +1,8 @@
 import type { AgentTool } from '@earendil-works/pi-agent-core';
 import { type Static, Type } from 'typebox';
 import type { ChartDoc, CockpitComment, IntradayPrediction } from '@kansoku/shared/types';
-import { easternDate } from '../services/session.js';
-import { loadChart as defaultLoadChart } from '../services/store.js';
+import { easternDate } from '../marketdata/session.js';
+import { loadChart as defaultLoadChart } from '../charts/store.js';
 import { type AiAgentFactory, createAgentSession } from './agentSession.js';
 import { listComments as defaultListComments } from './comments.js';
 import type { AiModel } from './models.js';

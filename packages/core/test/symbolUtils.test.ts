@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { marketOf, noteFileName, normalizeSymbol } from '../src/services/symbol.utils.js';
+import { marketOf, noteFileName, normalizeSymbol } from '../src/symbols/symbol.utils.js';
 
 describe('marketOf', () => {
   it('derives US from the .US suffix', () => {

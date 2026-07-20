@@ -1,5 +1,5 @@
 import { Controller, Get } from '@tsuki-hono/common';
-import { createPositionsService } from '@kansoku/core/modules/positions/positions.service';
+import { createPositionsService } from '@kansoku/core/cockpit/positions.service';
 
 @Controller('positions')
 export class PositionsController {

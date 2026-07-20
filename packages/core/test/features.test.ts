@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ClientError } from '../src/errors.js';
+import { ClientError } from '../src/platform/errors.js';
 import {
   setLicenseManagerForTests,
   type LicenseManager,

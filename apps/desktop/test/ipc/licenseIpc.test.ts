@@ -10,7 +10,7 @@ const service = vi.hoisted(() => ({
   activate: vi.fn(),
   deactivate: vi.fn(),
 }));
-vi.mock("../../../../packages/core/src/modules/license/license.service.js", () => ({ licenseService: service }));
+vi.mock("../../../../packages/core/src/license/license.service.js", () => ({ licenseService: service }));
 
 const relaunchPrompt = vi.hoisted(() => vi.fn());
 vi.mock("../../src/boot/proRelaunch.js", () => ({
