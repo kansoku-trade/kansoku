@@ -38,3 +38,10 @@ apps/desktop/native/
 
 journal/
 stocks/
+
+# Pro overlay projections (symlinks into apps/pro/overlays) — never committed
+*.pro.ts
+*.pro.tsx
+*.pro.mts
+*.pro.cts
+.kansoku-overlay-links.json
