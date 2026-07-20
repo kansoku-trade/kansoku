@@ -30,7 +30,13 @@ export interface ServerRuntimeOptions {
   productionHost?: boolean;
 }
 
-export async function initServerRuntime(
+// Sets up the shared server-side runtime (db, credentials, license, AI
+// settings) and resolves the server edition's pro composition, WITHOUT
+// registering it into the core pro seams or starting it. Both hosts call
+// this; only the host that actually owns a composition's lifecycle should
+// go on to call activateProComposition with it — see kernel.ts vs
+// initServerRuntime below.
+export async function prepareServerRuntime(
   opts?: ServerRuntimeOptions,
 ): Promise<ServerProComposition | null> {
   loadDotenv();
@@ -52,16 +58,35 @@ export async function initServerRuntime(
   initLicenseManager(getDb(), getAiRuntime().secretBox);
   startLicenseRevalidation();
 
-  const proComposition = await import('./edition/pro.js')
+  return await import('./edition/pro.js')
     .then((m) => m.loadProComposition())
     .catch((error: unknown) => {
       console.warn('[server] pro composition unavailable, running free', error);
       return null;
     });
-  setProPresent(proComposition != null);
-  if (proComposition?.hooks) registerProHooks(proComposition.hooks);
-  if (proComposition?.aiExtension) registerProAiExtension(proComposition.aiExtension);
-  if (proComposition?.realtimeChannels) registerProChannels(proComposition.realtimeChannels);
-  await proComposition?.start?.();
+}
+
+// Registers a resolved composition into the core pro seams and starts it.
+// Call this exactly once per host boot, using whichever composition that
+// host actually owns — the standalone server owns the server composition,
+// desktop owns the desktop composition.
+export async function activateProComposition(
+  composition: Pick<
+    ServerProComposition,
+    'hooks' | 'aiExtension' | 'realtimeChannels' | 'start'
+  > | null,
+): Promise<void> {
+  setProPresent(composition != null);
+  if (composition?.hooks) registerProHooks(composition.hooks);
+  if (composition?.aiExtension) registerProAiExtension(composition.aiExtension);
+  if (composition?.realtimeChannels) registerProChannels(composition.realtimeChannels);
+  await composition?.start?.();
+}
+
+export async function initServerRuntime(
+  opts?: ServerRuntimeOptions,
+): Promise<ServerProComposition | null> {
+  const proComposition = await prepareServerRuntime(opts);
+  await activateProComposition(proComposition);
   return proComposition;
 }

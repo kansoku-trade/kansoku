@@ -2,10 +2,14 @@ import { IpcService } from 'electron-ipc-decorator';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ServerProComposition } from '../../../server/src/edition/types.js';
 
-const initServerRuntime = vi.hoisted(() =>
+const prepareServerRuntime = vi.hoisted(() =>
   vi.fn<() => Promise<ServerProComposition | null>>(async () => null),
 );
-vi.mock('../../../server/src/runtimeInit.js', () => ({ initServerRuntime }));
+const activateProComposition = vi.hoisted(() => vi.fn(async () => {}));
+vi.mock('../../../server/src/runtimeInit.js', () => ({
+  prepareServerRuntime,
+  activateProComposition,
+}));
 
 const fetchHealth = vi.hoisted(() => vi.fn(async () => new Response('ok', { status: 200 })));
 const createKernel = vi.hoisted(() =>
@@ -20,23 +24,12 @@ vi.mock('@kansoku/core/env', () => ({ CHART_DATA_DIR: '/tmp/chart-data' }));
 
 const callOrder = vi.hoisted(() => [] as string[]);
 
-const setProPresent = vi.hoisted(() => vi.fn());
 const hasEncBundle = vi.hoisted(() => vi.fn(() => false));
 const isProPresent = vi.hoisted(() => vi.fn(() => false));
 vi.mock('@kansoku/core/pro/bundleState', () => ({
   hasEncBundle,
   isProPresent,
-  setProPresent,
 }));
-
-const registerProHooks = vi.hoisted(() => vi.fn());
-vi.mock('@kansoku/core/pro/hooks', () => ({ registerProHooks }));
-
-const registerProAiExtension = vi.hoisted(() => vi.fn());
-vi.mock('@kansoku/core/pro/aiExtension', () => ({ registerProAiExtension }));
-
-const registerProChannels = vi.hoisted(() => vi.fn());
-vi.mock('@kansoku/core/pro/channels', () => ({ registerProChannels }));
 
 const getActiveBundleKey = vi.hoisted(() => vi.fn(() => undefined));
 vi.mock('@kansoku/core/license/licenseState', () => ({ getActiveBundleKey }));
@@ -95,7 +88,7 @@ describe('bootKernel', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     callOrder.length = 0;
-    initServerRuntime.mockResolvedValue(null);
+    prepareServerRuntime.mockResolvedValue(null);
     createKernel.mockResolvedValue({ app: { getInstance: () => ({ fetch: fetchHealth }) } });
     fetchHealth.mockResolvedValue(new Response('ok', { status: 200 }));
   });
@@ -107,10 +100,8 @@ describe('bootKernel', () => {
     expect(result.proComposition).toBeNull();
     expect(result.webFiles).toBeNull();
     expect(createKernel).toHaveBeenCalledWith([]);
-    expect(setProPresent).toHaveBeenCalledWith(false);
-    expect(registerProHooks).not.toHaveBeenCalled();
-    expect(registerProAiExtension).not.toHaveBeenCalled();
-    expect(registerProChannels).not.toHaveBeenCalled();
+    expect(activateProComposition).toHaveBeenCalledTimes(1);
+    expect(activateProComposition).toHaveBeenCalledWith(null);
   });
 
   it('boots free when the pro composition resolves null', async () => {
@@ -119,15 +110,20 @@ describe('bootKernel', () => {
 
     expect(result.proComposition).toBeNull();
     expect(attachRealtimeBridge).toHaveBeenCalled();
-    expect(setProPresent).toHaveBeenCalledWith(false);
-    expect(registerProHooks).not.toHaveBeenCalled();
-    expect(registerProAiExtension).not.toHaveBeenCalled();
-    expect(registerProChannels).not.toHaveBeenCalled();
+    expect(activateProComposition).toHaveBeenCalledTimes(1);
+    expect(activateProComposition).toHaveBeenCalledWith(null);
   });
 
-  it('passes server pro modules into createKernel and starts the desktop composition', async () => {
+  it('passes server pro modules into createKernel without activating the server composition, and activates the desktop composition exactly once', async () => {
     const serverModule = class ServerAiModule {};
-    initServerRuntime.mockResolvedValueOnce({ modules: [serverModule] });
+    const serverStart = vi.fn();
+    const serverDispose = vi.fn();
+    prepareServerRuntime.mockResolvedValueOnce({
+      modules: [serverModule],
+      realtimeChannels: [],
+      start: serverStart,
+      dispose: serverDispose,
+    });
     const start = vi.fn();
     const dispose = vi.fn();
     class DesktopIpc extends IpcService {
@@ -140,27 +136,31 @@ describe('bootKernel', () => {
       deepDiveStatus: vi.fn(),
     };
     const aiExtension = { prepareTurn: vi.fn() };
-    loadProComposition.mockResolvedValueOnce({
+    const desktopComposition = {
       ipcServices: [ipcServiceClass],
       realtimeChannels: [],
       hooks,
       aiExtension,
       start,
       dispose,
-    });
+    };
+    loadProComposition.mockResolvedValueOnce(desktopComposition);
 
     const result = await bootKernel();
 
     expect(createKernel).toHaveBeenCalledWith([serverModule]);
-    expect(start).toHaveBeenCalledTimes(1);
     expect(result.proComposition?.ipcServices).toEqual([ipcServiceClass]);
-    expect(setProPresent).toHaveBeenCalledWith(true);
-    expect(registerProHooks).toHaveBeenCalledWith(hooks);
-    expect(registerProAiExtension).toHaveBeenCalledWith(aiExtension);
-    expect(registerProChannels).toHaveBeenCalledWith([]);
+
+    // The server composition's own start/dispose must never run on desktop —
+    // only its .modules are consumed here. Activation belongs to whichever
+    // edition's composition the host is actually starting: the desktop one.
+    expect(serverStart).not.toHaveBeenCalled();
+    expect(activateProComposition).toHaveBeenCalledTimes(1);
+    expect(activateProComposition).toHaveBeenCalledWith(desktopComposition);
 
     await result.dispose();
     expect(dispose).toHaveBeenCalledTimes(1);
+    expect(serverDispose).not.toHaveBeenCalled();
   });
 
   it('returns the decrypted web chunks from loadPro', async () => {

@@ -7,7 +7,7 @@ const proComposition = await initServerRuntime();
 const isDevKernel = HOST_MODE === 'dev';
 const bindPort = isDevKernel ? KERNEL_PORT : PORT;
 
-await startHost(bindPort, isDevKernel);
+await startHost(bindPort, isDevKernel, proComposition?.modules ?? []);
 
 let shuttingDown = false;
 async function shutdown(signal: NodeJS.Signals) {

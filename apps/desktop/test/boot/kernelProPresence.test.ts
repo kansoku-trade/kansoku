@@ -2,10 +2,16 @@ import { IpcService } from 'electron-ipc-decorator';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ServerProComposition } from '../../../server/src/edition/types.js';
 
-const initServerRuntime = vi.hoisted(() =>
+const prepareServerRuntime = vi.hoisted(() =>
   vi.fn<() => Promise<ServerProComposition | null>>(async () => null),
 );
-vi.mock('../../../server/src/runtimeInit.js', () => ({ initServerRuntime }));
+// activateProComposition is the real implementation — this suite deliberately
+// leaves @kansoku/core/pro/bundleState unmocked (see below), so it needs the
+// real registration seam to observe isProPresent() flip.
+vi.mock('../../../server/src/runtimeInit.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../server/src/runtimeInit.js')>();
+  return { prepareServerRuntime, activateProComposition: actual.activateProComposition };
+});
 
 const fetchHealth = vi.hoisted(() => vi.fn(async () => new Response('ok', { status: 200 })));
 const createKernel = vi.hoisted(() =>
@@ -67,7 +73,7 @@ const { bootKernel } = await import('@desktop/boot/kernel.js');
 describe('bootKernel keeps pro presence in sync', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    initServerRuntime.mockResolvedValue(null);
+    prepareServerRuntime.mockResolvedValue(null);
     createKernel.mockResolvedValue({ app: { getInstance: () => ({ fetch: fetchHealth }) } });
     fetchHealth.mockResolvedValue(new Response('ok', { status: 200 }));
     loadPro.mockResolvedValue(null);

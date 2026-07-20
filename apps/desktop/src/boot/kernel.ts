@@ -13,13 +13,10 @@ import { promptProRelaunch } from './proRelaunch.js';
 
 export async function bootKernel() {
   const [
-    { initServerRuntime },
+    { prepareServerRuntime, activateProComposition },
     { attachRealtimeBridge },
     { CHART_DATA_DIR },
-    { hasEncBundle, isProPresent, setProPresent },
-    { registerProHooks },
-    { registerProAiExtension },
-    { registerProChannels },
+    { hasEncBundle, isProPresent },
     { getActiveBundleKey },
     { loadPro },
   ] = await Promise.all([
@@ -27,9 +24,6 @@ export async function bootKernel() {
     import('../kernel/realtime/bridge.js'),
     import('@kansoku/core/env'),
     import('@kansoku/core/pro/bundleState'),
-    import('@kansoku/core/pro/hooks'),
-    import('@kansoku/core/pro/aiExtension'),
-    import('@kansoku/core/pro/channels'),
     import('@kansoku/core/license/licenseState'),
     import('@kansoku/core/pro/loader'),
   ]);
@@ -44,7 +38,11 @@ export async function bootKernel() {
         legacyKeyPath: join(CHART_DATA_DIR, 'ai-secret.key'),
       });
 
-  const serverProComposition = await initServerRuntime({
+  // Only the server edition's module list is needed here — the desktop
+  // host does not own the server composition's lifecycle, so this must not
+  // register or start it (that would double-run the composition alongside
+  // the desktop edition's own composition below).
+  const serverProComposition = await prepareServerRuntime({
     secretBox,
     openAuthUrl: (url) => {
       shell.openExternal(url).catch(() => {});
@@ -69,14 +67,9 @@ export async function bootKernel() {
 
   console.log(`[boot] proComposition=${proComposition ? 'active' : 'free'}`);
 
-  setProPresent(proComposition != null);
-  if (proComposition?.hooks) registerProHooks(proComposition.hooks);
-  if (proComposition?.aiExtension) registerProAiExtension(proComposition.aiExtension);
-  if (proComposition?.realtimeChannels) registerProChannels(proComposition.realtimeChannels);
-
   const apiApp = kernel.app.getInstance();
   attachRealtimeBridge();
-  await proComposition?.start?.();
+  await activateProComposition(proComposition);
   registerCredentialsIpc(ipcMain, createCredentialsBridgeHandlers());
 
   const health = await apiApp.fetch(new Request('http://localhost/api/health'));

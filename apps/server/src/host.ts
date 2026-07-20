@@ -4,6 +4,7 @@ import type { Server } from 'node:http';
 import { join } from 'node:path';
 import { serve } from '@hono/node-server';
 import { serveStatic } from '@hono/node-server/serve-static';
+import type { Constructor } from '@tsuki-hono/common';
 import { Hono } from 'hono';
 import { BASE_URL, LEGACY_CHARTS_DIR, WEB_DIST } from '@kansoku/core/env';
 import { attachWs } from './realtime/wsHost.js';
@@ -12,9 +13,13 @@ export interface HostHandle {
   server: Server;
 }
 
-export async function startHost(port: number, isDevKernel: boolean): Promise<HostHandle> {
+export async function startHost(
+  port: number,
+  isDevKernel: boolean,
+  extraModules: readonly Constructor[] = [],
+): Promise<HostHandle> {
   const { createKernel } = await import('./bootstrap.js');
-  const kernel = await createKernel();
+  const kernel = await createKernel(extraModules);
   const apiApp = kernel.app.getInstance();
 
   const app = new Hono();
