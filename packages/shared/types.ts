@@ -39,6 +39,8 @@ export interface SeriesMarker {
   id?: string;
   tooltip?: string;
   group?: OverlayGroup;
+  /** false = only visible in "全部" marker range; undefined/true = always visible */
+  recent?: boolean;
 }
 
 export const AUTO_SIGNAL_META: Record<string, { icon: string; title: string; impact: string }> = {
@@ -68,6 +70,7 @@ export interface Connector {
   color: string;
   data: LinePoint[];
   group?: OverlayGroup;
+  recent?: boolean;
 }
 
 export interface SupportZone {

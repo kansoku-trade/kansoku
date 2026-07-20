@@ -262,12 +262,12 @@ export function coerceIntradayTimeframe(
   const autoBeichi = findMacdBeichi(hist, highs, lows, timesTs)
     .filter((d) => keepSignal(d.b.time))
     .sort((a, b) => a.b.time - b.b.time);
-  const pattern123 = detect123Patterns(highs, lows, closes, timesTs)
-    .filter((p) => keepSignal(p.confirm?.time ?? p.p3.time))
-    .slice(-2);
-  const secondBreakouts = detectSecondBreakouts(highs, lows, closes, timesTs)
-    .filter((sb) => keepSignal(sb.trigger?.time ?? sb.signal.time))
-    .slice(-2);
+  const pattern123 = detect123Patterns(highs, lows, closes, timesTs).filter((p) =>
+    keepSignal(p.confirm?.time ?? p.p3.time),
+  );
+  const secondBreakouts = detectSecondBreakouts(highs, lows, closes, timesTs).filter((sb) =>
+    keepSignal(sb.trigger?.time ?? sb.signal.time),
+  );
   structure.signals = structure.signals.filter((s) => keepSignal(s.time));
 
   return {
@@ -281,8 +281,8 @@ export function coerceIntradayTimeframe(
     macdCrosses,
     structure,
     candlePatterns,
-    autoDivergence: autoDivergence.slice(-2),
-    autoBeichi: autoBeichi.slice(-2),
+    autoDivergence,
+    autoBeichi,
     pattern123,
     secondBreakouts,
     fvgZones,
@@ -301,8 +301,8 @@ export function coerceIntradayTimeframe(
       structure_signals: structure.signals.slice(-6),
       zero_tangle: structure.tangle,
       candle_patterns: candlePatterns.slice(-6),
-      pattern_123: pattern123,
-      second_breakouts: secondBreakouts,
+      pattern_123: pattern123.slice(-2),
+      second_breakouts: secondBreakouts.slice(-2),
     },
   };
 }

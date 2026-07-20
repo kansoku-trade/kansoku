@@ -200,8 +200,8 @@ export function buildIntraday(input: IntradayInput): { built: IntradayBuilt; met
     });
     const patternMarkers: SeriesMarker[] = dedupedPatterns
       .filter((p) => (p.score ?? 0) >= SCORE_DOT_MARKER)
-      .slice(-12)
-      .map((p) => {
+      .map((p, idx, arr) => {
+        const recent = idx >= arr.length - 12;
         const full = (p.score ?? 0) >= SCORE_FULL_MARKER;
         const dead = p.status === 'invalidated' || p.status === 'expired';
         const statusText = p.status ? PATTERN_STATUS_TEXT[p.status] : '无方向';
@@ -229,6 +229,7 @@ export function buildIntraday(input: IntradayInput): { built: IntradayBuilt; met
           text: dead || !full ? '' : `${p.label}${suffix}`,
           tooltip: lines.join('\n'),
           group: 'candle',
+          recent,
         } satisfies SeriesMarker;
       });
     timeframes[k] = {

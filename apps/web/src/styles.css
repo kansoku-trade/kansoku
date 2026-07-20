@@ -1307,6 +1307,50 @@ a.zone-item:hover {
   border-radius: var(--radius);
   flex-shrink: 0;
 }
+.lp-seg {
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+}
+.lp-seg .ui-segmented-control-option span {
+  padding: 2px 8px;
+}
+.lp-presets {
+  margin-bottom: 4px;
+}
+.lp-range {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.lp-range .lp-seg {
+  grid-auto-columns: auto;
+}
+.lp-range-label {
+  color: var(--text-muted);
+  margin-right: auto;
+}
+.lp-custom-toggle {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  width: 100%;
+  padding: 3px 0 2px;
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  border-top: 1px solid var(--border);
+  cursor: pointer;
+  user-select: none;
+}
+.lp-custom-toggle:hover {
+  color: var(--text-primary);
+}
+.lp-custom-flag {
+  margin-left: auto;
+  color: var(--accent);
+}
 
 .conclusion-card {
   margin-bottom: 14px;

@@ -26,6 +26,7 @@ import {
   observeSize,
   padHistData,
   padLineData,
+  syncCrosshair,
   syncTimeScales,
   toCandleData,
   toLineData,
@@ -33,7 +34,7 @@ import {
   toVolumeData,
   type MarkerTooltipHandle,
 } from '../lw';
-import type { IndicatorToggleKey } from './useIndicatorToggles';
+import type { IndicatorToggleKey, MarkerRange } from './useIndicatorToggles';
 import { AnchorBgPrimitive } from './anchorPrimitive';
 import { FvgPrimitive } from './fvgPrimitive';
 import { SessionBgPrimitive } from './sessionPrimitive';
@@ -97,6 +98,11 @@ const filterByGroup = <T extends { group?: SeriesMarker['group'] }>(
   toggles: Record<IndicatorToggleKey, boolean>,
 ): T[] => items.filter((item) => groupAllowed(toggles, item.group));
 
+const filterByRange = <T extends { recent?: boolean }>(items: T[], range: MarkerRange): T[] =>
+  range === 'all' ? items : items.filter((item) => item.recent !== false);
+
+const RECENT_SB_COUNT = 2;
+
 const secondBreakoutMarkers = (sbs: SecondBreakout[]): SeriesMarker[] => {
   const markers: SeriesMarker[] = [];
   sbs.forEach((sb, i) => {
@@ -151,6 +157,7 @@ export function useIntradayCharts(
   macdRef: RefObject<HTMLDivElement | null>,
   onNearLeftEdge: (() => void) | undefined,
   toggles: Record<IndicatorToggleKey, boolean>,
+  markerRange: MarkerRange,
   onHandle?: (h: DrawingChartHandle | null) => void,
 ): void {
   const handleRef = useRef<Handle | null>(null);
@@ -236,6 +243,10 @@ export function useIntradayCharts(
     });
 
     const stopTimeScaleSync = syncTimeScales([main, macd]);
+    const stopCrosshairSync = syncCrosshair([
+      { chart: main, series: candle },
+      { chart: macd, series: dif },
+    ]);
     const observers = [observeSize(mainEl, main), observeSize(macdEl, macd)];
     const mainTip = markerTooltip(main, mainEl);
     const macdTip = markerTooltip(macd, macdEl);
@@ -276,6 +287,7 @@ export function useIntradayCharts(
       mainTip.destroy();
       macdTip.destroy();
       observers.forEach((ro) => ro.disconnect());
+      stopCrosshairSync();
       stopTimeScaleSync();
       main.remove();
       macd.remove();
@@ -316,10 +328,15 @@ export function useIntradayCharts(
     h.anchorBg.setData(
       toggles.ai && anchorHere ? [Math.floor(Date.parse(anchorHere.time) / 1000)] : [],
     );
-    const sbMarkers = toggles.sb ? secondBreakoutMarkers(d.secondBreakouts ?? []) : [];
-    const markers = [...filterByGroup(d.markers, toggles), ...sbMarkers].sort(
-      (a, b) => a.time - b.time,
-    );
+    const sbSource =
+      markerRange === 'all'
+        ? (d.secondBreakouts ?? [])
+        : (d.secondBreakouts ?? []).slice(-RECENT_SB_COUNT);
+    const sbMarkers = toggles.sb ? secondBreakoutMarkers(sbSource) : [];
+    const markers = [
+      ...filterByGroup(filterByRange(d.markers, markerRange), toggles),
+      ...sbMarkers,
+    ].sort((a, b) => a.time - b.time);
     h.candleMarkers.setMarkers(toMarkers(markers));
     h.mainTip.setMarkers(markers);
     h.dif.setData(padLineData(d.macdDif, timeline));
@@ -336,12 +353,12 @@ export function useIntradayCharts(
       lastValueVisible: false,
       crosshairMarkerVisible: false,
     };
-    filterByGroup(d.priceConnectors ?? [], toggles).forEach((c) => {
+    filterByGroup(filterByRange(d.priceConnectors ?? [], markerRange), toggles).forEach((c) => {
       const s = h.main.addSeries(LineSeries, { color: c.color, ...connectorOpts });
       s.setData(toLineData(c.data));
       h.dynamic.push({ chart: h.main, series: s });
     });
-    filterByGroup(d.macdConnectors ?? [], toggles).forEach((c) => {
+    filterByGroup(filterByRange(d.macdConnectors ?? [], markerRange), toggles).forEach((c) => {
       const s = h.macd.addSeries(LineSeries, { color: c.color, ...connectorOpts });
       s.setData(toLineData(c.data));
       h.dynamic.push({ chart: h.macd, series: s });
@@ -506,5 +523,5 @@ export function useIntradayCharts(
     lastBuiltRef.current = built;
     barCountRef.current = d.candles.length;
     firstTimeRef.current = timeline[0] ?? null;
-  }, [built, activeTf, toggles]);
+  }, [built, activeTf, toggles, markerRange]);
 }

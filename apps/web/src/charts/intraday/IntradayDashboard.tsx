@@ -8,10 +8,11 @@ import { LayerPanel, type LayerGroup } from '../LayerPanel';
 import type { ConclusionReassess } from './ConclusionCard';
 import { IntradaySidebar } from './IntradaySidebar';
 import {
+  INDICATOR_PRESETS,
   INDICATOR_TOGGLE_COLORS,
   INDICATOR_TOGGLE_LABELS,
-  INDICATOR_TOGGLE_ORDER,
   useIndicatorToggles,
+  type IndicatorToggleKey,
 } from './useIndicatorToggles';
 import { EMA_COLORS, useIntradayCharts } from './useIntradayCharts';
 
@@ -25,6 +26,12 @@ const MACD_DEFAULT = 190;
 const MACD_HEIGHT_KEY = 'intraday-macd-height';
 
 const clampMacdHeight = (h: number) => Math.min(MACD_MAX, Math.max(MACD_MIN, h));
+
+const LAYER_GROUP_DEFS: { title: string; keys: IndicatorToggleKey[] }[] = [
+  { title: '参照', keys: ['ema', 'vwap', 'levels', 'daylevel', 'optwall'] },
+  { title: '结构', keys: ['fvg', 'pattern123', 'sb', 'candle'] },
+  { title: '信号', keys: ['crosses', 'divergence', 'beichi', 'ai'] },
+];
 
 interface IntradayDashboardProps {
   symbol: string;
@@ -85,25 +92,40 @@ export function IntradayChartOnly({
   const [dragging, setDragging] = useState(false);
   const mainRef = useRef<HTMLDivElement>(null);
   const macdRef = useRef<HTMLDivElement>(null);
-  const { toggles, set: setToggle } = useIndicatorToggles();
+  const {
+    toggles,
+    set: setToggle,
+    applyPreset,
+    markerRange,
+    setMarkerRange,
+  } = useIndicatorToggles();
   const [drawingHandle, setDrawingHandle] = useState<DrawingsHandle | null>(null);
-  useIntradayCharts(built, activeTf, mainRef, macdRef, onLoadHistory, toggles, setDrawingHandle);
+  useIntradayCharts(
+    built,
+    activeTf,
+    mainRef,
+    macdRef,
+    onLoadHistory,
+    toggles,
+    markerRange,
+    setDrawingHandle,
+  );
   const barTimes = useMemo(
     () => built.timeframes[activeTf]?.candles.map((c) => c.time) ?? [],
     [built, activeTf],
   );
   const drawingsApi = useDrawings(drawingHandle, symbol, barTimes);
   const layerGroups = useMemo<LayerGroup[]>(
-    () => [
-      {
-        items: INDICATOR_TOGGLE_ORDER.map((key) => ({
+    () =>
+      LAYER_GROUP_DEFS.map(({ title, keys }) => ({
+        title,
+        items: keys.map((key) => ({
           key,
           label: INDICATOR_TOGGLE_LABELS[key],
           color: INDICATOR_TOGGLE_COLORS[key],
           toggle: (v: boolean) => setToggle(key, v),
         })),
-      },
-    ],
+      })),
     [setToggle],
   );
 
@@ -149,7 +171,14 @@ export function IntradayChartOnly({
             夜盘
           </span>
         </div>
-        <LayerPanel groups={layerGroups} checked={toggles} />
+        <LayerPanel
+          groups={layerGroups}
+          checked={toggles}
+          presets={INDICATOR_PRESETS}
+          onPreset={(on) => applyPreset(on as IndicatorToggleKey[])}
+          range={markerRange}
+          onRangeChange={setMarkerRange}
+        />
         <DrawingToolbar api={drawingsApi} />
         <div ref={mainRef} className="chart-host" />
       </div>

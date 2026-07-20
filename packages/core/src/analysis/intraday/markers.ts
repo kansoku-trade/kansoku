@@ -133,8 +133,11 @@ export function capMarkersPerBar(
       const copy = { ...m };
       bySlot.set(slot, copy);
       deduped.push(copy);
-    } else if (m.tooltip && prev.tooltip !== m.tooltip && !prev.tooltip?.includes(m.tooltip)) {
-      prev.tooltip = `${prev.tooltip}\n———\n${m.tooltip}`;
+    } else {
+      if (m.tooltip && prev.tooltip !== m.tooltip && !prev.tooltip?.includes(m.tooltip)) {
+        prev.tooltip = `${prev.tooltip}\n———\n${m.tooltip}`;
+      }
+      if (prev.recent === false && m.recent !== false) prev.recent = m.recent;
     }
   }
   const byTime = new Map<number, SeriesMarker[]>();
@@ -170,11 +173,13 @@ export function autoPatternMarkers(
   items: DivergencePair[],
   group: 'divergence' | 'beichi',
   color: string,
+  recentCount = 2,
 ): TfOverlay {
   const markers: SeriesMarker[] = [];
   const priceConnectors: Connector[] = [];
   const macdConnectors: Connector[] = [];
-  for (const it of items) {
+  for (const [idx, it] of items.entries()) {
+    const recent = idx >= items.length - recentCount;
     const { a, b } = it;
     const meta = AUTO_SIGNAL_META[`${group}-${it.kind}`];
     const position = it.kind === 'top' ? 'aboveBar' : 'belowBar';
@@ -183,11 +188,21 @@ export function autoPatternMarkers(
       `${barTimeShort(a.time)} $${a.price} → ${barTimeShort(b.time)} $${b.price}\n` +
       meta.impact;
     for (const p of [a, b]) {
-      markers.push({ time: p.time, position, color, shape: 'circle', text: '', tooltip, group });
+      markers.push({
+        time: p.time,
+        position,
+        color,
+        shape: 'circle',
+        text: '',
+        tooltip,
+        group,
+        recent,
+      });
     }
     priceConnectors.push({
       color,
       group,
+      recent,
       data: [
         { time: a.time, value: a.price },
         { time: b.time, value: b.price },
@@ -196,6 +211,7 @@ export function autoPatternMarkers(
     macdConnectors.push({
       color,
       group,
+      recent,
       data: [
         { time: a.time, value: a.macd_value },
         { time: b.time, value: b.macd_value },
@@ -205,10 +221,15 @@ export function autoPatternMarkers(
   return { markers, priceConnectors, macdConnectors };
 }
 
-export function pattern123Overlay(patterns: Pattern123[], lastBarTime: number): TfOverlay {
+export function pattern123Overlay(
+  patterns: Pattern123[],
+  lastBarTime: number,
+  recentCount = 2,
+): TfOverlay {
   const markers: SeriesMarker[] = [];
   const priceConnectors: Connector[] = [];
-  for (const pat of patterns) {
+  for (const [idx, pat] of patterns.entries()) {
+    const recent = idx >= patterns.length - recentCount;
     const bullish = pat.kind === 'bullish';
     const color = bullish ? '#26a69a' : '#ef5350';
     const breakVerb = bullish ? '站上' : '跌破';
@@ -234,6 +255,7 @@ export function pattern123Overlay(patterns: Pattern123[], lastBarTime: number): 
         text: pat.confirm || text !== '③' ? text : `${text}?`,
         tooltip,
         group: 'pattern123',
+        recent,
       });
     }
     if (pat.confirm) {
@@ -245,11 +267,13 @@ export function pattern123Overlay(patterns: Pattern123[], lastBarTime: number): 
         text: '123✓',
         tooltip: `🔢 123 结构确认\n${barTimeShort(pat.confirm.time)} 收盘 $${pat.confirm.price.toFixed(2)} ${breakVerb}触发线 $${pat.trigger.toFixed(2)}\n${pat.implication}`,
         group: 'pattern123',
+        recent,
       });
     }
     priceConnectors.push({
       color,
       group: 'pattern123',
+      recent,
       data: [
         { time: pat.p1.time, value: pat.p1.price },
         { time: pat.p2.time, value: pat.p2.price },
@@ -261,6 +285,7 @@ export function pattern123Overlay(patterns: Pattern123[], lastBarTime: number): 
       priceConnectors.push({
         color,
         group: 'pattern123',
+        recent,
         data: [
           { time: pat.p3.time, value: pat.trigger },
           { time: triggerEnd, value: pat.trigger },
