@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import type { QuoteCell, SymbolAnalysisRow } from '@kansoku/shared/types';
 import { IntradayDashboard, IntradayTimeframeSwitch } from '@web/charts/intraday/IntradayDashboard';
+import { PredictionTab } from '@web/charts/intraday/tabs/PredictionTab';
 import { resolveIntradayTf } from '@web/charts/intraday/useIntradayDoc';
 import { useIntradayPreview } from '@web/charts/intraday/useIntradayPreview';
 import type { SidebarTab } from '@web/charts/SidebarTabs';
@@ -30,7 +31,8 @@ export function PreviewCockpit({
   liveQuote: QuoteCell | null;
 }) {
   const symLabel = sym.toUpperCase().replace(/\.US$/, '');
-  const { built, error, degraded, intradayTf, setIntradayTf } = useIntradayPreview(sym);
+  const { built, error, degraded, intradayTf, setIntradayTf, predictionUpdatedAt, predictionStale } =
+    useIntradayPreview(sym);
   useTitle(symLabel);
 
   const env = useCockpitEnv(sym);
@@ -72,7 +74,17 @@ export function PreviewCockpit({
     {
       key: 'prediction',
       label: '预测',
-      content: (
+      content: built.sidebar.prediction ? (
+        <>
+          <PredictionTab
+            built={built}
+            activeTf={activeIntradayTf}
+            predictionUpdatedAt={predictionUpdatedAt}
+            predictionStale={predictionStale}
+          />
+          <GenerateAnalysis sym={sym} />
+        </>
+      ) : (
         <>
           <Empty>
             {analysesRows.length > 0
