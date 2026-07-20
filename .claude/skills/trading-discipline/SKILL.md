@@ -14,14 +14,14 @@ description: >
 
 > **This SKILL.md file applies to every agent that forms a judgment and every trading context**, including the app-side real-portfolio review and the bench synthetic episodes.
 >
-> Scope-specific chapters live under `references/` and are composed in by the caller (`packages/core/src/ai/promptPolicy.ts`), not by the model:
+> Any additional chapters listed at the end of this prompt (composed in from the `references/` directory according to the runtime) are just as binding as this core file. Follow them the same way you follow the rules below.
 >
-> - `references/us-market-data.md` — **app only.** US / Longbridge / news / GDELT / Korea-lead data traps and forced-liquidation guardrails.
-> - `references/market-analysis.md` — **app only.** Post-mortem discipline, mindset, leveraged-ETF mechanics.
-> - `references/journal.md` — **app only.** Write-rules for the `journal/` and `stocks/` directories.
-> - `references/episode-execution.md` — **bench only.** Runtime-specific rules (h1-bar flip cooldown, 40-session decision cadence, mandatory `fetch_kline` before submit).
+> Rule IDs stay in the global `TD-*` namespace across all chapters so cross-references keep working. Chapter inventory (which chapters actually appear depends on your runtime):
 >
-> App agents receive core + the three app-only chapters. Bench receives core + the one bench-only chapter. Rule IDs stay in the global `TD-*` namespace across all chapters so cross-references keep working.
+> - `references/us-market-data.md` — app runtime. US / Longbridge / news / GDELT / Korea-lead data traps and forced-liquidation guardrails.
+> - `references/market-analysis.md` — app runtime. Post-mortem discipline, mindset, leveraged-ETF mechanics.
+> - `references/journal.md` — app runtime. Write-rules for the `journal/` and `stocks/` directories.
+> - `references/episode-execution.md` — bench runtime. Runtime-specific rules (h1-bar flip cooldown, direction-submit cadence, mandatory `fetch_kline` before submit).
 >
 > **Domain skills reference rule IDs only; they do not copy rule text.** Copying causes drift — proven 2026-07-14 when `capital-rotation/SKILL.md` demanded a unit conversion that CLAUDE.md explicitly forbade.
 
@@ -85,15 +85,23 @@ This section governs the **execution layer**: how to align direction with trend,
 
 Three additional bench-only execution rules (flip cooldown counted in h1 bars, 40-session decision cadence, and mandatory `fetch_kline` before submit) live in `references/episode-execution.md` — the app has no equivalent runtime for them.
 
-**TD-TREND-01 — Trend alignment first.** Judge the current trend from the last 30 h1 closes or 20 daily closes:
-- **up** — close above 20-period SMA/EMA AND recent highs stepping higher.
-- **down** — close below 20-period SMA/EMA AND recent lows stepping lower.
-- **sideways** — anything else.
+**TD-TREND-01 — Trend alignment first.**
+
+"Trend" describes where **the recent structure inside a fixed lookback window** is heading — **NOT** where the price sits relative to some long-term moving average. A stock that rallied 25% but is still below its 200-day MA is in an **up** trend; the long-term MA lag is irrelevant to trend direction.
+
+Lookback window: last **30 h1 closes** OR last **20 day closes** (pick whichever period you plan to trade).
+
+Classify:
+- **up** — the last third of the window closes higher than the first third of the window, AND recent swing highs are stepping higher than previous ones. The 20-period SMA/EMA computed inside this same window is rising.
+- **down** — mirror image.
+- **sideways** — neither slope holds; price oscillates inside a range.
 
 Then:
-- In an **up** trend, **do not initiate a short** unless a clear daily-level breakdown has occurred (loss of a major MA + volume expansion + new lower low).
+- In an **up** trend, **do not initiate a short** unless the same lookback window shows a fresh structural breakdown (rising MA lost + volume expansion + a new lower low that breaks a prior swing).
 - In a **down** trend, mirror the rule against longs.
 - In **sideways**, both directions allowed, but R:R must be ≥ 2:1 (see TD-RR-01).
+
+Reason.summary for any submit must state which window (h1 or day) and which trend classification (up / down / sideways) drove the direction choice — so the classification is checkable after the fact.
 
 **TD-RR-01 — Minimum reward-to-risk 1.5:1.** Every entry plan must include entry / stop / target; `|target − entry| / |entry − stop|` must be ≥ 1.5. Sideways trend requires ≥ 2. Do not commit below the floor — put it on a watch list and wait for a better location.
 
