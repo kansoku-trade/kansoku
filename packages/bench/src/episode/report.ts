@@ -29,7 +29,13 @@ export interface EpisodeReportInput {
   audits?: EpisodeDataAudit[];
   traces?: Map<string, EpisodeReportTraceLine[]>;
   now?: () => Date;
+  datasetMeta?: { label?: string; kind?: string };
 }
+
+const PLAYSTYLE_LABEL: Record<string, string> = {
+  'single-shot': 'oneshot',
+  episode: 'walkthrough',
+};
 
 export interface EpisodeReportTraceContext {
   virtualAsOf?: string;
@@ -159,6 +165,27 @@ interface AggregateMetrics {
 
 type ChartTimeframe = 'h1' | 'day' | 'week';
 
+const CHART_TIMEFRAME_ORDER: ChartTimeframe[] = ['h1', 'day', 'week'];
+const CHART_TIMEFRAME_KLINE_KEY: Record<ChartTimeframe, '1h' | 'day' | 'week'> = {
+  h1: '1h',
+  day: 'day',
+  week: 'week',
+};
+const CHART_TIMEFRAME_LABEL: Record<ChartTimeframe, string> = {
+  h1: '1 小时',
+  day: '日线',
+  week: '周线',
+};
+
+function availableTimeframesFor(question: Question | null | undefined): ChartTimeframe[] {
+  if (!question) return [];
+  const kl = question.fixtures.kline as Record<string, unknown[] | undefined>;
+  return CHART_TIMEFRAME_ORDER.filter((tf) => {
+    const bars = kl[CHART_TIMEFRAME_KLINE_KEY[tf]];
+    return Array.isArray(bars) && bars.length > 0;
+  });
+}
+
 interface ChartBar {
   time: number | string;
   open: number;
@@ -185,6 +212,8 @@ interface ChartPayload {
   snapshotPatches: Record<string, { day: ChartBar[]; week: ChartBar[] }>;
   markers: Record<ChartTimeframe, ChartMarker[]>;
   levels: Array<{ title: string; price: number; color: string }>;
+  availableTimeframes: ChartTimeframe[];
+  defaultTimeframe: ChartTimeframe;
 }
 
 type ProcessKind = 'data' | 'observe' | 'decision' | 'manage' | 'warning' | 'other';
@@ -971,48 +1000,54 @@ function buildChartPayload(row: ReportRow, index: number): ChartPayload | null {
   }
   const trades = closedTrades(row.answer);
   const markers = { h1: [], day: [], week: [] } as Record<ChartTimeframe, ChartMarker[]>;
-  const initialH1 = row.question.fixtures.kline['1h'] ?? [];
-  const caseStart = initialH1.at(-1);
-  if (caseStart) {
-    markers.h1.push({
-      time: chartTime(caseStart.time, 'h1'),
-      position: 'belowBar',
-      color: '#111827',
-      shape: 'square',
-      text: 'CASE START · B0',
-    });
-  }
+  const availableTf = availableTimeframesFor(row.question);
   const firstReplay = row.question.replay.bars[0];
-  if (firstReplay && finalBarIndex >= 1) {
-    markers.h1.push({
-      time: chartTime(firstReplay.time, 'h1'),
-      position: 'belowBar',
-      color: '#64748b',
-      shape: 'circle',
-      text: 'B1 · 首根回放',
-    });
-  }
   const finalReplay = row.question.replay.bars.at(finalBarIndex - 1);
-  if (finalReplay && finalBarIndex === row.question.replay.bars.length) {
-    markers.h1.push({
-      time: chartTime(finalReplay.time, 'h1'),
-      position: 'aboveBar',
-      color: '#111827',
-      shape: 'square',
-      text: `B${finalBarIndex} · 强制结算`,
-    });
-  }
-  for (const trade of trades) {
-    const decisionSourceForTrade =
-      trade.decisionBar === 0 ? caseStart : row.question.replay.bars[trade.decisionBar - 1];
-    if (decisionSourceForTrade && trade.decisionBar <= finalBarIndex) {
-      markers.h1.push({
-        time: chartTime(decisionSourceForTrade.time, 'h1'),
-        position: trade.direction === 'short' ? 'aboveBar' : 'belowBar',
-        color: '#7c3aed',
-        shape: trade.direction === 'short' ? 'arrowDown' : 'arrowUp',
-        text: `T${trade.tradeId} 决策 B${trade.decisionBar}`,
+  for (const tf of availableTf) {
+    const key = CHART_TIMEFRAME_KLINE_KEY[tf];
+    const bars = row.question.fixtures.kline[key] ?? [];
+    const caseStartBar = bars.at(-1);
+    if (caseStartBar) {
+      markers[tf].push({
+        time: chartTime(caseStartBar.time, tf),
+        position: 'belowBar',
+        color: '#171717',
+        shape: 'square',
+        text: 'CASE START · B0',
       });
+    }
+    if (firstReplay && finalBarIndex >= 1) {
+      markers[tf].push({
+        time: chartTime(firstReplay.time, tf),
+        position: 'belowBar',
+        color: '#737373',
+        shape: 'circle',
+        text: 'B1 · 首根回放',
+      });
+    }
+    if (finalReplay && finalBarIndex === row.question.replay.bars.length) {
+      markers[tf].push({
+        time: chartTime(finalReplay.time, tf),
+        position: 'aboveBar',
+        color: '#171717',
+        shape: 'square',
+        text: `B${finalBarIndex} · 强制结算`,
+      });
+    }
+    for (const trade of trades) {
+      const decisionSourceForTrade =
+        trade.decisionBar === 0
+          ? caseStartBar
+          : row.question.replay.bars[trade.decisionBar - 1];
+      if (decisionSourceForTrade && trade.decisionBar <= finalBarIndex) {
+        markers[tf].push({
+          time: chartTime(decisionSourceForTrade.time, tf),
+          position: trade.direction === 'short' ? 'aboveBar' : 'belowBar',
+          color: '#7c3aed',
+          shape: trade.direction === 'short' ? 'arrowDown' : 'arrowUp',
+          text: `T${trade.tradeId} 决策 B${trade.decisionBar}`,
+        });
+      }
     }
   }
   for (const timeframe of ['h1', 'day', 'week'] as const) {
@@ -1047,6 +1082,8 @@ function buildChartPayload(row: ReportRow, index: number): ChartPayload | null {
   if (plan?.entry != null) levels.push({ title: '计划入场', price: plan.entry, color: '#2563eb' });
   if (plan?.stop != null) levels.push({ title: '止损', price: plan.stop, color: '#dc2626' });
   if (plan?.target1 != null) levels.push({ title: '止盈', price: plan.target1, color: '#059669' });
+  const availableTimeframes = availableTimeframesFor(row.question);
+  const defaultTimeframe = availableTimeframes[0] ?? 'day';
   return {
     id: `trade-chart-${index}`,
     symbol: row.answer.symbol,
@@ -1056,6 +1093,8 @@ function buildChartPayload(row: ReportRow, index: number): ChartPayload | null {
     snapshotPatches,
     markers,
     levels,
+    availableTimeframes,
+    defaultTimeframe,
   };
 }
 
@@ -1137,7 +1176,10 @@ function phaseLabel(phase: string | null): string {
   return PHASE_LABELS[phase] ?? phase;
 }
 
-function processChecks(row: ReportRow): Array<{ label: string; pass: boolean; detail: string }> {
+function processChecks(
+  row: ReportRow,
+  available: ChartTimeframe[],
+): Array<{ label: string; pass: boolean; detail: string }> {
   const events = row.processEvents;
   const submissionIndex = events.findIndex((event) => event.tool === 'submit_prediction');
   const beforeSubmission = submissionIndex >= 0 ? events.slice(0, submissionIndex) : events;
@@ -1176,9 +1218,9 @@ function processChecks(row: ReportRow): Array<{ label: string; pass: boolean; de
   const errors = events.filter((event) => event.isError).length;
   return [
     {
-      label: '三周期检查',
-      pass: periods.has('h1') && periods.has('day') && periods.has('week'),
-      detail: `${periods.size}/3`,
+      label: '周期覆盖',
+      pass: available.length > 0 && available.every((tf) => periods.has(tf)),
+      detail: `${available.filter((tf) => periods.has(tf)).length}/${available.length || 0}`,
     },
     {
       label: '重复交易边界',
@@ -1206,7 +1248,12 @@ function processChecks(row: ReportRow): Array<{ label: string; pass: boolean; de
   ];
 }
 
-function renderProcessChain(row: ReportRow, index: number): string {
+function renderProcessChain(
+  row: ReportRow,
+  index: number,
+  available: ChartTimeframe[],
+  defaultTimeframe: ChartTimeframe,
+): string {
   const events = row.processEvents;
   const chartId = `trade-chart-${index}`;
   const submittedAt = decisionBar(row.answer);
@@ -1221,7 +1268,7 @@ function renderProcessChain(row: ReportRow, index: number): string {
   if (events.length === 0) {
     return `<section class="process-panel"><div class="process-head"><div><strong>可观察决策链</strong><span>${escapeHtml(timing.join(' · '))}</span></div></div><p class="process-empty">该结果未附加工具 trace；K 线仍显示可验证的 case 起点、决策与成交结果。</p></section>`;
   }
-  const checks = processChecks(row);
+  const checks = processChecks(row, available);
   const passed = checks.filter((check) => check.pass).length;
   return `<section class="process-panel"><div class="process-head"><div><strong>可观察决策链</strong><span>${escapeHtml(timing.join(' · '))}</span></div><div><span class="process-score ${passed === checks.length ? 'pass' : 'fail'}">过程检查 ${passed}/${checks.length}</span><button type="button" class="process-reset" data-process-reset data-chart="${chartId}">查看终局</button></div></div>
     <div class="process-rail" role="list" aria-label="工具调用链">${events
@@ -1234,7 +1281,8 @@ function renderProcessChain(row: ReportRow, index: number): string {
           event.phaseBefore === event.phaseAfter
             ? phaseLabel(event.phaseAfter)
             : `${phaseLabel(event.phaseBefore)} → ${phaseLabel(event.phaseAfter)}`;
-        const timeframe = event.timeframe ?? 'h1';
+        const rawTimeframe = event.timeframe ?? defaultTimeframe;
+        const timeframe = available.includes(rawTimeframe) ? rawTimeframe : defaultTimeframe;
         return `<button type="button" role="listitem" class="process-node ${event.kind}${event.isError ? ' error' : ''}" data-process-node data-chart="${chartId}" data-timeframe="${timeframe}" data-bar-index="${event.snapshotBar}" title="${escapeHtml(event.tool)}"><span class="process-index">${String(event.sequence).padStart(2, '0')}</span><span class="process-bar">${escapeHtml(bar)}</span><strong>${escapeHtml(event.label)}</strong><small>${escapeHtml(event.detail)}</small><em>${escapeHtml(transition)}${event.durationMs == null ? '' : ` · ${escapeHtml(fmtDuration(event.durationMs))}`}</em></button>`;
       })
       .join('')}</div>
@@ -1275,9 +1323,11 @@ function renderCaseDetail(row: ReportRow, index: number): string {
   const exitAt = replayBarIndex(row.question, result?.exit?.time);
   const trades = closedTrades(answer);
   const initialReason = answer.initialSubmission?.decision_reason;
+  const available = availableTimeframesFor(row.question);
+  const defaultTimeframe: ChartTimeframe = available[0] ?? 'day';
   return `<article class="trade-case" id="case-${index}" data-model="${escapeHtml(answer.model)}" data-mode="${escapeHtml(answer.mode)}" data-outcome="${escapeHtml(outcome)}">
     <header class="case-head"><div><h3>${escapeHtml(answer.symbol)}</h3><span>${escapeHtml(answer.questionId)} · ${escapeHtml(answer.model)} · ${escapeHtml(MODE_LABELS[answer.mode] ?? answer.mode)}</span></div><div class="case-result"><span class="status ${valueClass(result?.netR)}">${escapeHtml(TERMINATION_LABELS[outcome] ?? outcome)}</span><strong class="${valueClass(result?.netR)}">${escapeHtml(fmtSigned(result?.netR, 3))} R</strong></div></header>
-    <div class="case-layout"><section class="chart-panel"><div class="chart-toolbar"><div><strong>K 线与成交量</strong><span>点击工具节点可回看该 B 编号当时可见的数据</span></div><div class="timeframe-tabs" role="tablist" aria-label="K 线周期"><button type="button" class="active" data-timeframe-tab data-chart="trade-chart-${index}" data-timeframe="h1">1 小时</button><button type="button" data-timeframe-tab data-chart="trade-chart-${index}" data-timeframe="day">日线</button><button type="button" data-timeframe-tab data-chart="trade-chart-${index}" data-timeframe="week">周线</button></div></div><div class="tv-chart" id="trade-chart-${index}" data-chart-id="trade-chart-${index}"><span class="chart-loading">加载图表…</span></div><div class="chart-legend"><span><i class="entry"></i>计划入场</span><span><i class="target"></i>止盈</span><span><i class="stop"></i>止损</span><span><i class="decision"></i>决策位置</span><span class="chart-range" data-chart-range="trade-chart-${index}"></span></div>${renderProcessChain(row, index)}</section>
+    <div class="case-layout"><section class="chart-panel"><div class="chart-toolbar"><div><strong>K 线与成交量</strong><span>点击工具节点可回看该 B 编号当时可见的数据</span></div><div class="timeframe-tabs" role="tablist" aria-label="K 线周期">${available.map((tf, i) => `<button type="button"${i === 0 ? ' class="active"' : ''} data-timeframe-tab data-chart="trade-chart-${index}" data-timeframe="${tf}">${CHART_TIMEFRAME_LABEL[tf]}</button>`).join('')}</div></div><div class="tv-chart" id="trade-chart-${index}" data-chart-id="trade-chart-${index}"><span class="chart-loading">加载图表…</span></div><div class="chart-legend"><span><i class="entry"></i>计划入场</span><span><i class="target"></i>止盈</span><span><i class="stop"></i>止损</span><span><i class="decision"></i>决策位置</span><span class="chart-range" data-chart-range="trade-chart-${index}"></span></div>${renderProcessChain(row, index, available, defaultTimeframe)}</section>
       <aside class="trade-sidebar"><section><h4>首次计划</h4><dl class="facts">${fact('方向', DIRECTION_LABELS[answer.initialSubmission?.direction ?? ''] ?? '—')}${fact('首次决策', submittedAt == null ? '—' : `B${submittedAt}`)}${fact('自主观察', `${observationBars(answer)} bars`)}${fact('计划入场', fmt(plan?.entry), 'entry-text')}${fact('止损', fmt(plan?.stop), 'negative')}${fact('止盈', fmt(plan?.target1), 'positive')}${fact('计划盈亏比', `${fmt(row.plannedRr)} R`)}${fact('止损距离', fmtPercent(row.stopDistancePct))}</dl>${initialReason ? `<p class="decision-reason"><b>${escapeHtml(REASON_LABELS[initialReason.category])}</b>${escapeHtml(initialReason.summary)}</p>` : plan?.rationale ? `<p class="rationale">${escapeHtml(plan.rationale)}</p>` : ''}</section>
       <section><h4>Episode 结果</h4><dl class="facts">${fact('完整交易', `${trades.length} 笔`)}${fact('盈利 / 亏损', `${result?.winCount ?? trades.filter((trade) => trade.netR > 0).length} / ${result?.lossCount ?? trades.filter((trade) => trade.netR < 0).length}`)}${fact('Gross / Net R', `${fmtSigned(result?.grossR, 3)} / ${fmtSigned(result?.netR, 3)}`, valueClass(result?.netR))}${fact('最大回撤', `${fmt(result?.maxDrawdownR)} R`)}${fact('MFE / MAE', `${fmt(result?.mfeR)} / ${fmt(result?.maeR)}`)}${fact('首次成交 / 末次退出', `${entryAt == null ? '—' : `B${entryAt}`} / ${exitAt == null ? '—' : `B${exitAt}`}`)}${fact('累计持有', `${result?.holdingBars ?? 0} bars`)}${fact('方向命中', row.directionHit == null ? '—' : row.directionHit ? '是' : '否')}</dl></section>
       ${renderTradeLedger(row)}<details class="actions"><summary>回放动作与理由 <span>${actions.length}</span></summary>${actions.length === 0 ? `<p>没有动作记录</p>` : `<ol>${actions.map(renderActionRecord).join('')}</ol>`}</details></aside></div>
@@ -1293,15 +1343,15 @@ function renderAudit(audits: EpisodeDataAudit[]): string {
 }
 
 const STYLES = String.raw`
-  :root{color-scheme:light;--bg:#f5f6f8;--panel:#fff;--line:#dfe3e8;--line-strong:#c7cdd4;--text:#17202a;--muted:#69717c;--green:#059669;--red:#dc2626;--blue:#2563eb;--soft:#f8fafc;--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--text);font:13px/1.45 Inter,-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}.report{width:min(1440px,calc(100% - 32px));margin:16px auto 40px}.report-header,.panel,.trade-case{background:var(--panel);border:1px solid var(--line);border-radius:8px}.report-header{display:flex;align-items:center;gap:18px;padding:14px 16px;margin-bottom:10px}.report-title{min-width:260px}.report-title h1{font-size:18px;margin:0}.report-title p{margin:2px 0 0;color:var(--muted);font:11px var(--mono)}.header-meta{display:flex;align-items:center;gap:6px;flex:1;flex-wrap:wrap}.chip,.status{display:inline-flex;align-items:center;min-height:24px;padding:3px 8px;border:1px solid var(--line);border-radius:4px;background:var(--soft);font-size:11px;white-space:nowrap}.audit-state{font-weight:650}.audit-state.pass{color:var(--green);border-color:#a7d8c7;background:#f0fdf8}.audit-state.fail{color:var(--red);border-color:#efb4b4;background:#fff5f5}.generated{margin-left:auto;color:var(--muted);font:10px var(--mono);white-space:nowrap}.summary{padding:0;overflow:hidden;margin-bottom:10px}.panel-title{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 12px;border-bottom:1px solid var(--line)}.panel-title h2{font-size:13px;margin:0}.panel-title span{color:var(--muted);font-size:11px}.metrics{display:grid;grid-template-columns:repeat(6,1fr);border-bottom:1px solid var(--line)}.metric{min-width:0;padding:10px 12px;border-right:1px solid var(--line)}.metric:nth-child(6n){border-right:0}.metric span,.metric small{display:block;color:var(--muted);font-size:10px}.metric strong{display:block;margin:3px 0 1px;font:600 18px var(--mono);letter-spacing:-.03em}.positive{color:var(--green)!important}.negative{color:var(--red)!important}.neutral{color:var(--text)}.config-strip{display:flex;gap:0;overflow:auto}.config-strip div{flex:1;min-width:112px;padding:8px 12px;border-right:1px solid var(--line)}.config-strip div:last-child{border:0}.config-strip span,.config-strip strong{display:block}.config-strip span{color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.04em}.config-strip strong{margin-top:2px;font:600 11px var(--mono)}.model-panel,.cases-panel,.audit-panel{margin-bottom:10px}.table-scroll{overflow:auto}.compact-table{width:100%;border-collapse:collapse;min-width:880px}.compact-table th{padding:7px 10px;background:var(--soft);border-bottom:1px solid var(--line);color:var(--muted);font-size:9px;text-align:left;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}.compact-table td{padding:8px 10px;border-bottom:1px solid #edf0f2;vertical-align:middle;white-space:nowrap}.compact-table tbody tr:last-child td{border-bottom:0}.compact-table tbody tr:hover{background:#f8fafc}.compact-table strong,.compact-table small{display:block}.compact-table small{color:var(--muted);font-size:9px}.mono{font-family:var(--mono)}a{color:inherit}.filters{display:flex;gap:6px;padding:8px 10px;border-bottom:1px solid var(--line)}.filters select,.filters input{height:30px;padding:0 9px;border:1px solid var(--line-strong);border-radius:4px;background:#fff;color:var(--text);font:11px inherit;outline:none}.filters select:focus,.filters input:focus{border-color:var(--blue);box-shadow:0 0 0 2px #dbeafe}.filters input{flex:1;min-width:180px}.filters>span{align-self:center;margin-left:auto;color:var(--muted);font:10px var(--mono)}.case-row[hidden],.trade-case[hidden]{display:none}.status.positive{background:#eefbf5;border-color:#b4e2d0}.status.negative{background:#fff3f3;border-color:#efb8b8}.trade-case{margin-bottom:10px;overflow:hidden;scroll-margin-top:10px}.case-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border-bottom:1px solid var(--line)}.case-head h3{display:inline;margin:0 8px 0 0;font-size:15px}.case-head>div>span{color:var(--muted);font-size:10px}.case-result{display:flex;align-items:center;gap:10px}.case-result strong{font:650 17px var(--mono)}.case-layout{display:grid;grid-template-columns:minmax(0,1fr) 310px}.chart-panel{min-width:0;border-right:1px solid var(--line)}.chart-toolbar{height:48px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 10px;border-bottom:1px solid var(--line)}.chart-toolbar strong,.chart-toolbar span{display:block}.chart-toolbar span{color:var(--muted);font-size:9px}.timeframe-tabs{display:flex;border:1px solid var(--line-strong);border-radius:4px;overflow:hidden}.timeframe-tabs button{height:28px;padding:0 12px;border:0;border-right:1px solid var(--line-strong);background:#fff;color:var(--muted);font:11px inherit;cursor:pointer}.timeframe-tabs button:last-child{border-right:0}.timeframe-tabs button.active{background:#e9eef5;color:var(--text);font-weight:650}.tv-chart{height:360px;position:relative;background:#fff}.chart-loading,.chart-error{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-size:11px}.chart-error{color:var(--red)}.chart-legend{height:31px;display:flex;align-items:center;gap:14px;padding:0 10px;border-top:1px solid var(--line);color:var(--muted);font-size:9px}.chart-legend span{display:flex;align-items:center;gap:5px}.chart-legend i{display:block;width:14px;height:2px}.chart-legend i.entry{background:var(--blue)}.chart-legend i.target{background:var(--green)}.chart-legend i.stop{background:var(--red)}.chart-range{margin-left:auto!important;font-family:var(--mono)}.trade-sidebar{background:#fbfcfd}.trade-sidebar>section,.actions{padding:10px 12px;border-bottom:1px solid var(--line)}.trade-sidebar h4{margin:0 0 8px;font-size:11px}.facts{display:grid;grid-template-columns:1fr 1fr;gap:7px 12px;margin:0}.facts div{min-width:0}.facts dt{color:var(--muted);font-size:9px}.facts dd{margin:1px 0 0;font:600 11px var(--mono)}.entry-text{color:var(--blue)}.rationale{margin:8px 0 0;padding-top:8px;border-top:1px solid var(--line);color:var(--muted);font-size:10px}.actions{padding:0}.actions summary{display:flex;justify-content:space-between;padding:9px 12px;cursor:pointer;font-size:10px;font-weight:650}.actions summary span{color:var(--muted)}.actions p{margin:0;padding:0 12px 10px;color:var(--muted);font-size:10px}.actions ol{list-style:none;margin:0;padding:0 12px 8px}.actions li{display:grid;grid-template-columns:22px 58px 1fr;gap:6px;padding:5px 0;border-top:1px solid var(--line);font-size:9px}.actions li>span,.actions li small{color:var(--muted);font-family:var(--mono)}.audit-panel>summary{display:flex;align-items:center;justify-content:space-between;padding:11px 12px;cursor:pointer;font-size:12px;font-weight:650}.audit-panel>summary small{margin-left:8px;color:var(--muted);font-weight:400}.audit-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border-top:1px solid var(--line)}.audit-check{display:grid;grid-template-columns:20px 1fr;gap:7px;padding:8px;background:#fff}.audit-check i{display:grid;place-items:center;width:18px;height:18px;border-radius:50%;background:#e9f9f2;color:var(--green);font-style:normal;font-size:10px}.audit-check.fail i{background:#fff0f0;color:var(--red)}.audit-check strong,.audit-check small,.audit-check em{display:block}.audit-check strong{font-size:10px}.audit-check small{color:var(--muted);font:8px var(--mono)}.audit-check em{margin-top:3px;color:var(--muted);font-size:9px;font-style:normal}.footer{display:flex;justify-content:space-between;gap:16px;padding:6px 2px;color:var(--muted);font-size:9px}.footer a{color:var(--blue)}@media(max-width:1050px){.metrics{grid-template-columns:repeat(3,1fr)}.metric:nth-child(3n){border-right:0}.case-layout{grid-template-columns:1fr}.chart-panel{border-right:0;border-bottom:1px solid var(--line)}.trade-sidebar{display:grid;grid-template-columns:1fr 1fr}.actions{grid-column:1/-1}.audit-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:680px){.report{width:100%;margin:0}.report-header,.panel,.trade-case{border-radius:0;border-left:0;border-right:0}.report-header{display:block}.header-meta{margin-top:8px}.generated{width:100%;margin:2px 0 0}.metrics{grid-template-columns:repeat(2,1fr)}.metric:nth-child(3n){border-right:1px solid var(--line)}.metric:nth-child(2n){border-right:0}.filters{flex-wrap:wrap}.filters select{flex:1}.filters input{order:2;flex-basis:100%}.case-head{align-items:flex-start}.case-head>div>span{display:block;margin-top:2px}.case-result{align-items:flex-end;flex-direction:column;gap:4px}.chart-toolbar{height:auto;align-items:flex-start;flex-direction:column}.timeframe-tabs{width:100%}.timeframe-tabs button{flex:1}.tv-chart{height:330px}.trade-sidebar{display:block}.audit-grid{grid-template-columns:1fr}.audit-panel>summary small{display:none}.footer{padding:8px 10px;display:block}}@media print{body{background:#fff}.report{width:100%;margin:0}.filters{display:none}.panel,.trade-case,.report-header{break-inside:avoid}.tv-chart{height:300px}}
+  :root{color-scheme:light;--bg:#f5f5f5;--panel:#fff;--line:#e5e5e5;--line-strong:#d4d4d4;--text:#171717;--muted:#737373;--green:#059669;--red:#dc2626;--blue:#2563eb;--soft:#fafafa;--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--text);font:13px/1.45 Inter,-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}.report{width:min(1440px,calc(100% - 32px));margin:0 auto;border:1px solid var(--line)}.report-header,.panel,.trade-case{background:var(--panel);border:1px solid var(--line);border-left:0;border-right:0}.report>:first-child{border-top:0}.report>*+*{margin-top:10px}.report-header{display:flex;align-items:center;gap:18px;padding:14px 16px}.report-title{min-width:260px}.report-title h1{font-size:18px;margin:0}.report-title p{margin:2px 0 0;color:var(--muted);font:11px var(--mono)}.header-meta{display:flex;align-items:center;gap:6px;flex:1;flex-wrap:wrap}.chip,.status{display:inline-flex;align-items:center;min-height:24px;padding:3px 8px;border:1px solid var(--line);border-radius:4px;background:var(--soft);font-size:11px;white-space:nowrap}.audit-state{font-weight:650}.audit-state.pass{color:var(--green);border-color:#a7d8c7;background:#f0fdf8}.audit-state.fail{color:var(--red);border-color:#efb4b4;background:#fff5f5}.generated{margin-left:auto;color:var(--muted);font:10px var(--mono);white-space:nowrap}.summary{padding:0;overflow:hidden}.panel-title{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 12px;border-bottom:1px solid var(--line)}.panel-title h2{font-size:13px;margin:0}.panel-title span{color:var(--muted);font-size:11px}.metrics{display:grid;grid-template-columns:repeat(6,1fr);border-bottom:1px solid var(--line)}.metric{min-width:0;padding:10px 12px;border-right:1px solid var(--line)}.metric:nth-child(6n){border-right:0}.metric span,.metric small{display:block;color:var(--muted);font-size:10px}.metric strong{display:block;margin:3px 0 1px;font:600 18px var(--mono);letter-spacing:-.03em}.positive{color:var(--green)!important}.negative{color:var(--red)!important}.neutral{color:var(--text)}.config-strip{display:flex;gap:0;overflow:auto}.config-strip div{flex:1;min-width:112px;padding:8px 12px;border-right:1px solid var(--line)}.config-strip div:last-child{border:0}.config-strip span,.config-strip strong{display:block}.config-strip span{color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.04em}.config-strip strong{margin-top:2px;font:600 11px var(--mono)}.table-scroll{overflow:auto}.compact-table{width:100%;border-collapse:collapse;min-width:880px}.compact-table th{padding:7px 10px;background:var(--soft);border-bottom:1px solid var(--line);color:var(--muted);font-size:9px;text-align:left;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}.compact-table td{padding:8px 10px;border-bottom:1px solid #f5f5f5;vertical-align:middle;white-space:nowrap}.compact-table tbody tr:last-child td{border-bottom:0}.compact-table tbody tr:hover{background:#fafafa}.compact-table strong,.compact-table small{display:block}.compact-table small{color:var(--muted);font-size:9px}.mono{font-family:var(--mono)}a{color:inherit}.filters{display:flex;gap:6px;padding:8px 10px;border-bottom:1px solid var(--line)}.filters select,.filters input{height:30px;padding:0 9px;border:1px solid var(--line-strong);border-radius:4px;background:#fff;color:var(--text);font:11px inherit;outline:none}.filters select:focus,.filters input:focus{border-color:var(--blue);box-shadow:0 0 0 2px #dbeafe}.filters input{flex:1;min-width:180px}.filters>span{align-self:center;margin-left:auto;color:var(--muted);font:10px var(--mono)}.case-row[hidden],.trade-case[hidden]{display:none}.status.positive{background:#eefbf5;border-color:#b4e2d0}.status.negative{background:#fff3f3;border-color:#efb8b8}.trade-case{overflow:hidden;scroll-margin-top:10px}.case-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border-bottom:1px solid var(--line)}.case-head h3{display:inline;margin:0 8px 0 0;font-size:15px}.case-head>div>span{color:var(--muted);font-size:10px}.case-result{display:flex;align-items:center;gap:10px}.case-result strong{font:650 17px var(--mono)}.case-layout{display:grid;grid-template-columns:minmax(0,1fr) 310px}.chart-panel{min-width:0;border-right:1px solid var(--line)}.chart-toolbar{height:48px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 10px;border-bottom:1px solid var(--line)}.chart-toolbar strong,.chart-toolbar span{display:block}.chart-toolbar span{color:var(--muted);font-size:9px}.timeframe-tabs{display:flex;border:1px solid var(--line-strong);border-radius:4px;overflow:hidden}.timeframe-tabs button{height:28px;padding:0 12px;border:0;border-right:1px solid var(--line-strong);background:#fff;color:var(--muted);font:11px inherit;cursor:pointer}.timeframe-tabs button:last-child{border-right:0}.timeframe-tabs button.active{background:#e5e5e5;color:var(--text);font-weight:650}.tv-chart{height:360px;position:relative;background:#fff}.chart-marker-tooltip{position:absolute;pointer-events:none;background:#171717;color:#fff;padding:6px 8px;border-radius:4px;font:10px var(--mono);line-height:1.5;max-width:240px;z-index:30;box-shadow:0 6px 20px rgba(0,0,0,.18);display:none;white-space:normal}.chart-marker-tooltip div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.chart-loading,.chart-error{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-size:11px}.chart-error{color:var(--red)}.chart-legend{height:31px;display:flex;align-items:center;gap:14px;padding:0 10px;border-top:1px solid var(--line);color:var(--muted);font-size:9px}.chart-legend span{display:flex;align-items:center;gap:5px}.chart-legend i{display:block;width:14px;height:2px}.chart-legend i.entry{background:var(--blue)}.chart-legend i.target{background:var(--green)}.chart-legend i.stop{background:var(--red)}.chart-range{margin-left:auto!important;font-family:var(--mono)}.trade-sidebar{background:#fafafa}.trade-sidebar>section,.actions{padding:10px 12px;border-bottom:1px solid var(--line)}.trade-sidebar h4{margin:0 0 8px;font-size:11px}.facts{display:grid;grid-template-columns:1fr 1fr;gap:7px 12px;margin:0}.facts div{min-width:0}.facts dt{color:var(--muted);font-size:9px}.facts dd{margin:1px 0 0;font:600 11px var(--mono)}.entry-text{color:var(--blue)}.rationale{margin:8px 0 0;padding-top:8px;border-top:1px solid var(--line);color:var(--muted);font-size:10px}.actions{padding:0}.actions summary{display:flex;justify-content:space-between;padding:9px 12px;cursor:pointer;font-size:10px;font-weight:650}.actions summary span{color:var(--muted)}.actions p{margin:0;padding:0 12px 10px;color:var(--muted);font-size:10px}.actions ol{list-style:none;margin:0;padding:0 12px 8px}.actions li{display:grid;grid-template-columns:22px 58px 1fr;gap:6px;padding:5px 0;border-top:1px solid var(--line);font-size:9px}.actions li>span,.actions li small{color:var(--muted);font-family:var(--mono)}.audit-panel>summary{display:flex;align-items:center;justify-content:space-between;padding:11px 12px;cursor:pointer;font-size:12px;font-weight:650}.audit-panel>summary small{margin-left:8px;color:var(--muted);font-weight:400}.audit-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border-top:1px solid var(--line)}.audit-check{display:grid;grid-template-columns:20px 1fr;gap:7px;padding:8px;background:#fff}.audit-check i{display:grid;place-items:center;width:18px;height:18px;border-radius:50%;background:#e9f9f2;color:var(--green);font-style:normal;font-size:10px}.audit-check.fail i{background:#fff0f0;color:var(--red)}.audit-check strong,.audit-check small,.audit-check em{display:block}.audit-check strong{font-size:10px}.audit-check small{color:var(--muted);font:8px var(--mono)}.audit-check em{margin-top:3px;color:var(--muted);font-size:9px;font-style:normal}.footer{display:flex;justify-content:space-between;gap:16px;padding:6px 12px;color:var(--muted);font-size:9px}.footer a{color:var(--blue)}@media(max-width:1050px){.metrics{grid-template-columns:repeat(3,1fr)}.metric:nth-child(3n){border-right:0}.case-layout{grid-template-columns:1fr}.chart-panel{border-right:0;border-bottom:1px solid var(--line)}.trade-sidebar{display:grid;grid-template-columns:1fr 1fr}.actions{grid-column:1/-1}.audit-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:680px){.report{width:100%;margin:0}.report-header,.panel,.trade-case{border-left:0;border-right:0}.report-header{display:block}.header-meta{margin-top:8px}.generated{width:100%;margin:2px 0 0}.metrics{grid-template-columns:repeat(2,1fr)}.metric:nth-child(3n){border-right:1px solid var(--line)}.metric:nth-child(2n){border-right:0}.filters{flex-wrap:wrap}.filters select{flex:1}.filters input{order:2;flex-basis:100%}.case-head{align-items:flex-start}.case-head>div>span{display:block;margin-top:2px}.case-result{align-items:flex-end;flex-direction:column;gap:4px}.chart-toolbar{height:auto;align-items:flex-start;flex-direction:column}.timeframe-tabs{width:100%}.timeframe-tabs button{flex:1}.tv-chart{height:330px}.trade-sidebar{display:block}.audit-grid{grid-template-columns:1fr}.audit-panel>summary small{display:none}.footer{padding:8px 10px;display:block}}@media print{body{background:#fff}.report{width:100%;margin:0}.filters{display:none}.panel,.trade-case,.report-header{break-inside:avoid}.tv-chart{height:300px}}
 `;
 
 const PROCESS_STYLES = String.raw`
-  .chart-legend i.decision{background:#7c3aed}.process-panel{border-top:1px solid var(--line);background:#fbfcfd}.process-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 10px;border-bottom:1px solid var(--line)}.process-head>div:first-child strong,.process-head>div:first-child span{display:block}.process-head>div:first-child strong{font-size:11px}.process-head>div:first-child span{margin-top:1px;color:var(--muted);font:9px var(--mono)}.process-head>div:last-child{display:flex;align-items:center;gap:6px}.process-score,.process-reset{height:25px;padding:0 8px;border:1px solid var(--line-strong);border-radius:4px;background:#fff;font:9px inherit}.process-score{display:inline-flex;align-items:center}.process-score.pass{color:var(--green);border-color:#a7d8c7;background:#f0fdf8}.process-score.fail{color:var(--red);border-color:#efb4b4;background:#fff5f5}.process-reset{cursor:pointer;color:var(--text)}.process-reset:hover{background:var(--soft)}.process-rail{display:flex;gap:14px;padding:10px;overflow-x:auto;scrollbar-width:thin}.process-node{position:relative;flex:0 0 154px;min-height:94px;padding:8px 9px;border:1px solid var(--line);border-top:3px solid #94a3b8;border-radius:5px;background:#fff;color:var(--text);text-align:left;cursor:pointer}.process-node::after{content:"";position:absolute;top:42px;left:calc(100% + 1px);width:14px;height:1px;background:var(--line-strong)}.process-node:last-child::after{display:none}.process-node:hover{border-color:#94a3b8;background:#f8fafc}.process-node.active{border-color:#7c3aed;box-shadow:0 0 0 2px #ede9fe;background:#faf9ff}.process-node.data{border-top-color:#2563eb}.process-node.observe{border-top-color:#d97706}.process-node.decision{border-top-color:#7c3aed}.process-node.manage{border-top-color:#059669}.process-node.warning{border-top-color:#dc2626;background:#fffafa}.process-node.warning .process-bar{color:#dc2626}.process-node.error{border-color:var(--red);border-top-color:var(--red)}.process-index{position:absolute;top:6px;right:7px;color:#9aa2ad;font:8px var(--mono)}.process-bar{display:block;color:#7c3aed;font:650 10px var(--mono)}.process-node strong,.process-node small,.process-node em{display:block}.process-node strong{margin-top:5px;font-size:10px}.process-node small{margin-top:2px;color:var(--muted);font-size:8px;line-height:1.3}.process-node em{margin-top:6px;color:#87909b;font:7px var(--mono);font-style:normal}.process-checks{display:flex;align-items:center;gap:14px;min-height:31px;padding:6px 10px;border-top:1px solid var(--line);background:#fff;overflow-x:auto}.process-checks>span{display:inline-flex;align-items:center;gap:4px;white-space:nowrap;font-size:8px;color:var(--muted)}.process-checks i{display:grid;place-items:center;width:14px;height:14px;border-radius:50%;font-style:normal}.process-checks .pass i{color:var(--green);background:#e9f9f2}.process-checks .fail i{color:var(--red);background:#fff0f0}.process-checks small{font:7px var(--mono);color:#99a1ab}.process-empty{margin:0;padding:12px;color:var(--muted);font-size:10px}.trade-ledger{padding:0!important;border-bottom:1px solid var(--line)}.trade-ledger>h4,.trade-ledger>p{margin:0;padding:9px 12px}.trade-ledger>p{padding-top:0;color:var(--muted);font-size:9px}.trade-ledger>summary{display:flex;justify-content:space-between;padding:9px 12px;cursor:pointer;font-size:10px;font-weight:650}.trade-ledger>summary span{color:var(--muted)}.trade-ledger ol{list-style:none;margin:0;padding:0 12px 8px}.trade-ledger li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px 8px;padding:7px 0;border-top:1px solid var(--line)}.trade-ledger li>div:first-child strong,.trade-ledger li>div:first-child small{display:block}.trade-ledger li>div:first-child strong{font-size:9px}.trade-ledger li>div:first-child small{color:var(--muted);font:7px var(--mono)}.trade-prices{grid-column:1/-1;display:flex;gap:7px;color:var(--muted);font:7px var(--mono);white-space:nowrap}.trade-ledger li>strong{grid-column:2;grid-row:1;font:650 10px var(--mono)}@media(max-width:680px){.process-head{align-items:flex-start;flex-direction:column}.process-head>div:last-child{width:100%;justify-content:space-between}.process-node{flex-basis:146px}.process-checks{gap:10px}.process-checks small{display:none}}@media print{.process-reset{display:none}.process-rail{flex-wrap:wrap;overflow:visible}.process-node{flex-basis:140px}}
+  .chart-legend i.decision{background:#7c3aed}.process-panel{border-top:1px solid var(--line);background:#fafafa}.process-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 10px;border-bottom:1px solid var(--line)}.process-head>div:first-child strong,.process-head>div:first-child span{display:block}.process-head>div:first-child strong{font-size:11px}.process-head>div:first-child span{margin-top:1px;color:var(--muted);font:9px var(--mono)}.process-head>div:last-child{display:flex;align-items:center;gap:6px}.process-score,.process-reset{height:25px;padding:0 8px;border:1px solid var(--line-strong);border-radius:4px;background:#fff;font:9px inherit}.process-score{display:inline-flex;align-items:center}.process-score.pass{color:var(--green);border-color:#a7d8c7;background:#f0fdf8}.process-score.fail{color:var(--red);border-color:#efb4b4;background:#fff5f5}.process-reset{cursor:pointer;color:var(--text)}.process-reset:hover{background:var(--soft)}.process-rail{display:flex;gap:14px;padding:10px;overflow-x:auto;scrollbar-width:thin}.process-node{position:relative;flex:0 0 154px;min-height:94px;padding:8px 9px;border:1px solid var(--line);border-top:3px solid #a3a3a3;border-radius:5px;background:#fff;color:var(--text);text-align:left;cursor:pointer}.process-node::after{content:"";position:absolute;top:42px;left:calc(100% + 1px);width:14px;height:1px;background:var(--line-strong)}.process-node:last-child::after{display:none}.process-node:hover{border-color:#a3a3a3;background:#fafafa}.process-node.active{border-color:#7c3aed;box-shadow:0 0 0 2px #ede9fe;background:#faf9ff}.process-node.data{border-top-color:#2563eb}.process-node.observe{border-top-color:#d97706}.process-node.decision{border-top-color:#7c3aed}.process-node.manage{border-top-color:#059669}.process-node.warning{border-top-color:#dc2626;background:#fffafa}.process-node.warning .process-bar{color:#dc2626}.process-node.error{border-color:var(--red);border-top-color:var(--red)}.process-index{position:absolute;top:6px;right:7px;color:#a3a3a3;font:8px var(--mono)}.process-bar{display:block;color:#7c3aed;font:650 10px var(--mono)}.process-node strong,.process-node small,.process-node em{display:block}.process-node strong{margin-top:5px;font-size:10px}.process-node small{margin-top:2px;color:var(--muted);font-size:8px;line-height:1.3}.process-node em{margin-top:6px;color:#a3a3a3;font:7px var(--mono);font-style:normal}.process-checks{display:flex;align-items:center;gap:14px;min-height:31px;padding:6px 10px;border-top:1px solid var(--line);background:#fff;overflow-x:auto}.process-checks>span{display:inline-flex;align-items:center;gap:4px;white-space:nowrap;font-size:8px;color:var(--muted)}.process-checks i{display:grid;place-items:center;width:14px;height:14px;border-radius:50%;font-style:normal}.process-checks .pass i{color:var(--green);background:#e9f9f2}.process-checks .fail i{color:var(--red);background:#fff0f0}.process-checks small{font:7px var(--mono);color:#a3a3a3}.process-empty{margin:0;padding:12px;color:var(--muted);font-size:10px}.trade-ledger{padding:0!important;border-bottom:1px solid var(--line)}.trade-ledger>h4,.trade-ledger>p{margin:0;padding:9px 12px}.trade-ledger>p{padding-top:0;color:var(--muted);font-size:9px}.trade-ledger>summary{display:flex;justify-content:space-between;padding:9px 12px;cursor:pointer;font-size:10px;font-weight:650}.trade-ledger>summary span{color:var(--muted)}.trade-ledger ol{list-style:none;margin:0;padding:0 12px 8px}.trade-ledger li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px 8px;padding:7px 0;border-top:1px solid var(--line)}.trade-ledger li>div:first-child strong,.trade-ledger li>div:first-child small{display:block}.trade-ledger li>div:first-child strong{font-size:9px}.trade-ledger li>div:first-child small{color:var(--muted);font:7px var(--mono)}.trade-prices{grid-column:1/-1;display:flex;gap:7px;color:var(--muted);font:7px var(--mono);white-space:nowrap}.trade-ledger li>strong{grid-column:2;grid-row:1;font:650 10px var(--mono)}@media(max-width:680px){.process-head{align-items:flex-start;flex-direction:column}.process-head>div:last-child{width:100%;justify-content:space-between}.process-node{flex-basis:146px}.process-checks{gap:10px}.process-checks small{display:none}}@media print{.process-reset{display:none}.process-rail{flex-wrap:wrap;overflow:visible}.process-node{flex-basis:140px}}
 `;
 
 const REASON_STYLES = String.raw`
-  .reason-panel{margin-bottom:10px}.reason-empty{margin:0;padding:12px;color:var(--muted);font-size:10px}.reason-table{min-width:720px}.decision-reason{margin:8px 0 0;padding-top:8px;border-top:1px solid var(--line);color:var(--muted);font-size:10px}.decision-reason b,.trade-reason b{display:inline-block;margin-right:6px;color:#7c3aed}.trade-ledger li>div:first-child .trade-reason{margin-top:4px;color:var(--text);font:9px/1.45 inherit}.actions li{grid-template-columns:22px minmax(0,1fr);gap:6px;padding:7px 0}.actions li>div strong,.actions li>div small,.actions li>div em{display:block}.actions li>div strong{font-size:9px}.actions li>div small{margin-top:2px;color:var(--text);font:9px/1.4 inherit}.actions li>div em{margin-top:3px;color:var(--muted);font:7px var(--mono);font-style:normal}
+  .reason-empty{margin:0;padding:12px;color:var(--muted);font-size:10px}.reason-table{min-width:720px}.decision-reason{margin:8px 0 0;padding-top:8px;border-top:1px solid var(--line);color:var(--muted);font-size:10px}.decision-reason b,.trade-reason b{display:inline-block;margin-right:6px;color:#7c3aed}.trade-ledger li>div:first-child .trade-reason{margin-top:4px;color:var(--text);font:9px/1.45 inherit}.actions li{grid-template-columns:22px minmax(0,1fr);gap:6px;padding:7px 0}.actions li>div strong,.actions li>div small,.actions li>div em{display:block}.actions li>div strong{font-size:9px}.actions li>div small{margin-top:2px;color:var(--text);font:9px/1.4 inherit}.actions li>div em{margin-top:3px;color:var(--muted);font:7px var(--mono);font-style:normal}
 `;
 
 const SCRIPT = String.raw`
@@ -1310,6 +1360,44 @@ const SCRIPT = String.raw`
     const instances = new Map();
     const viewState = new Map();
     const library = window.LightweightCharts;
+
+    function createHistoricalBackground(chart, splitTime) {
+      if (splitTime == null) return null;
+      const renderer = {
+        draw(target) {
+          target.useBitmapCoordinateSpace((scope) => {
+            const x = chart.timeScale().timeToCoordinate(splitTime);
+            if (x == null) return;
+            const ctx = scope.context;
+            const dpr = scope.horizontalPixelRatio;
+            const cutX = Math.round((x + 0.5) * dpr);
+            const h = scope.bitmapSize.height;
+            ctx.save();
+            ctx.fillStyle = 'rgba(148,163,184,0.14)';
+            ctx.fillRect(0, 0, cutX, h);
+            ctx.strokeStyle = 'rgba(124,58,237,0.55)';
+            ctx.lineWidth = Math.max(1, dpr);
+            ctx.setLineDash([Math.max(4, dpr * 3), Math.max(3, dpr * 2)]);
+            ctx.beginPath();
+            ctx.moveTo(cutX, 0);
+            ctx.lineTo(cutX, h);
+            ctx.stroke();
+            ctx.restore();
+          });
+        },
+      };
+      const paneView = {
+        renderer: () => renderer,
+        zOrder: () => 'bottom',
+        update: () => {},
+      };
+      return {
+        updateAllViews() {},
+        paneViews() { return [paneView]; },
+        attached() {},
+        detached() {},
+      };
+    }
 
     function mergeBars(base, updates) {
       const merged = new Map(base.map((bar) => [String(bar.time), bar]));
@@ -1358,14 +1446,14 @@ const SCRIPT = String.raw`
         autoSize: true,
         layout: {
           background: { type: 'solid', color: '#ffffff' },
-          textColor: '#69717c',
+          textColor: '#737373',
           fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif',
           fontSize: 10,
-          panes: { separatorColor: '#dfe3e8', separatorHoverColor: '#c7cdd4', enableResize: false },
+          panes: { separatorColor: '#e5e5e5', separatorHoverColor: '#d4d4d4', enableResize: false },
         },
-        grid: { vertLines: { color: '#f0f2f4' }, horzLines: { color: '#f0f2f4' } },
-        rightPriceScale: { borderColor: '#dfe3e8', scaleMargins: { top: 0.08, bottom: 0.08 } },
-        timeScale: { borderColor: '#dfe3e8', timeVisible: timeframe === 'h1', secondsVisible: false },
+        grid: { vertLines: { color: '#f5f5f5' }, horzLines: { color: '#f5f5f5' } },
+        rightPriceScale: { borderColor: '#e5e5e5', scaleMargins: { top: 0.08, bottom: 0.08 } },
+        timeScale: { borderColor: '#e5e5e5', timeVisible: timeframe === 'h1', secondsVisible: false },
         crosshair: { mode: library.CrosshairMode.MagnetOHLC },
         handleScale: true,
         handleScroll: true,
@@ -1375,6 +1463,10 @@ const SCRIPT = String.raw`
         wickUpColor: '#0e9f6e', wickDownColor: '#e02424', priceLineVisible: false,
       });
       candles.setData(data.map((bar) => ({ time: bar.time, open: bar.open, high: bar.high, low: bar.low, close: bar.close })));
+      const historicBars = payload.baseRanges[timeframe] || [];
+      const splitTime = historicBars.length ? historicBars[historicBars.length - 1].time : null;
+      const bg = createHistoricalBackground(chart, splitTime);
+      if (bg && typeof candles.attachPrimitive === 'function') candles.attachPrimitive(bg);
       const volume = chart.addSeries(library.HistogramSeries, {
         priceFormat: { type: 'volume' }, priceLineVisible: false, lastValueVisible: false,
       }, 1);
@@ -1385,7 +1477,37 @@ const SCRIPT = String.raw`
       }));
       const availableTimes = new Set(data.map((bar) => String(bar.time)));
       const markers = (payload.markers[timeframe] || []).filter((marker) => availableTimes.has(String(marker.time)));
-      if (markers.length) library.createSeriesMarkers(candles, markers, { autoScale: true });
+      const tooltipMap = new Map();
+      for (const m of markers) {
+        const key = String(m.time);
+        const arr = tooltipMap.get(key) || [];
+        if (m.text) arr.push(m.text);
+        tooltipMap.set(key, arr);
+      }
+      const silentMarkers = markers.map((m) => ({ time: m.time, position: m.position, color: m.color, shape: m.shape, text: '' }));
+      if (silentMarkers.length) library.createSeriesMarkers(candles, silentMarkers, { autoScale: true });
+      const tip = document.createElement('div');
+      tip.className = 'chart-marker-tooltip';
+      container.appendChild(tip);
+      chart.subscribeCrosshairMove((param) => {
+        if (!param || !param.time || !param.point) { tip.style.display = 'none'; return; }
+        const texts = tooltipMap.get(String(param.time));
+        if (!texts || !texts.length) { tip.style.display = 'none'; return; }
+        tip.textContent = '';
+        for (const line of texts) {
+          const row = document.createElement('div');
+          row.textContent = line;
+          tip.appendChild(row);
+        }
+        tip.style.display = 'block';
+        const rect = container.getBoundingClientRect();
+        const tw = tip.offsetWidth;
+        const th = tip.offsetHeight;
+        const px = param.point.x + 14;
+        const py = param.point.y + 14;
+        tip.style.left = Math.max(4, Math.min(px, rect.width - tw - 6)) + 'px';
+        tip.style.top = Math.max(4, Math.min(py, rect.height - th - 6)) + 'px';
+      });
       const visibleBars = timeframe === 'h1' ? 90 : timeframe === 'day' ? 120 : 104;
       chart.timeScale().setVisibleLogicalRange({ from: Math.max(-0.5, data.length - visibleBars - 0.5), to: data.length + 6 });
       const panes = chart.panes();
@@ -1411,7 +1533,8 @@ const SCRIPT = String.raw`
       button.addEventListener('click', () => {
         document.querySelectorAll('[data-process-node][data-chart="' + button.dataset.chart + '"]').forEach((node) => node.classList.remove('active'));
         button.classList.add('active');
-        renderChart(button.dataset.chart, button.dataset.timeframe || 'h1', button.dataset.barIndex);
+        const cp = payloads.get(button.dataset.chart);
+        renderChart(button.dataset.chart, button.dataset.timeframe || cp?.defaultTimeframe || 'day', button.dataset.barIndex);
       });
     });
     document.querySelectorAll('[data-process-reset]').forEach((button) => {
@@ -1419,12 +1542,15 @@ const SCRIPT = String.raw`
         const payload = payloads.get(button.dataset.chart);
         const state = viewState.get(button.dataset.chart);
         document.querySelectorAll('[data-process-node][data-chart="' + button.dataset.chart + '"]').forEach((node) => node.classList.remove('active'));
-        if (payload) renderChart(button.dataset.chart, state?.timeframe || 'h1', payload.finalBarIndex);
+        if (payload) renderChart(button.dataset.chart, state?.timeframe || payload.defaultTimeframe || 'day', payload.finalBarIndex);
       });
     });
     const initialize = (element) => {
       const id = element.dataset.chartId;
-      if (id && !instances.has(id)) renderChart(id, 'h1', payloads.get(id)?.finalBarIndex);
+      if (id && !instances.has(id)) {
+        const cp = payloads.get(id);
+        renderChart(id, cp?.defaultTimeframe || 'day', cp?.finalBarIndex);
+      }
     };
     if ('IntersectionObserver' in window) {
       const observer = new IntersectionObserver((entries) => entries.forEach((entry) => {
@@ -1526,7 +1652,14 @@ export function renderEpisodeReportHtml(input: EpisodeReportInput): {
     ...new Set(input.answers.map((answer) => answer.mode)),
   ];
   const html = `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="color-scheme" content="light"/><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%232563eb'/%3E%3Cpath d='M8 7h4v7l7-7h5l-8 8 9 10h-5l-8-9v9H8z' fill='white'/%3E%3C/svg%3E"/><title>${escapeHtml(runId)} · Episode Bench Report</title><style>${STYLES}${PROCESS_STYLES}${REASON_STYLES}</style></head><body><main class="report">
-    <header class="report-header"><div class="report-title"><h1>Episode Bench Report</h1><p>${escapeHtml(runId)}</p></div><div class="header-meta"><span class="chip">${escapeHtml(input.config.datasetVersion ?? input.config.config?.datasetVersion ?? '—')}</span><span class="chip">${escapeHtml(models.join(' · '))}</span><span class="chip">${escapeHtml(modes.map((mode) => MODE_LABELS[mode] ?? mode).join(' / '))}</span><span class="chip">${input.config.costBps ?? 0} bps</span><span class="chip audit-state ${auditPassed === true ? 'pass' : auditPassed === false ? 'fail' : ''}">${auditPassed === true ? '长桥数据已校验' : auditPassed === false ? '数据审计失败' : '未附加数据审计'}</span><span class="generated">${escapeHtml(generatedAt)}</span></div></header>
+    <header class="report-header"><div class="report-title"><h1>Episode Bench Report</h1><p>${escapeHtml(runId)}</p></div><div class="header-meta"><span class="chip">${(() => {
+  const id = input.config.datasetVersion ?? input.config.config?.datasetVersion ?? '—';
+  const meta = input.datasetMeta;
+  const bits: string[] = [escapeHtml(id)];
+  if (meta?.label) bits.push(escapeHtml(meta.label));
+  if (meta?.kind) bits.push(escapeHtml(PLAYSTYLE_LABEL[meta.kind] ?? meta.kind));
+  return bits.join(' · ');
+})()}</span><span class="chip">${escapeHtml(models.join(' · '))}</span><span class="chip">${escapeHtml(modes.map((mode) => MODE_LABELS[mode] ?? mode).join(' / '))}</span><span class="chip">${input.config.costBps ?? 0} bps</span><span class="chip audit-state ${auditPassed === true ? 'pass' : auditPassed === false ? 'fail' : ''}">${auditPassed === true ? '长桥数据已校验' : auditPassed === false ? '数据审计失败' : '未附加数据审计'}</span><span class="generated">${escapeHtml(generatedAt)}</span></div></header>
     <section class="panel summary"><div class="panel-title"><h2>运行总览</h2><span>${metrics.completed}/${metrics.cases} 完成 · ${metrics.trades} 笔完整交易</span></div><div class="metrics">
       ${metricCell('平均净 R / case', `${fmtSigned(metrics.avgNetRPerCase, 3)} R`, `累计 ${fmtSigned(metrics.totalNetR, 3)} R`, valueClass(metrics.avgNetRPerCase))}
       ${metricCell('Episode 胜率', fmtPercent(metrics.winRate), `${metrics.wins} / ${metrics.completed} cases`, 'positive')}
