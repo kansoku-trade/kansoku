@@ -19,6 +19,7 @@ interface OverlayResolveContext {
     importer: string | undefined,
     options: { skipSelf: boolean },
   ): OverlayHostResolveResult | null | Promise<OverlayHostResolveResult | null>;
+  addWatchFile?(id: string): void;
 }
 
 export interface ProOverlayPlugin {
@@ -137,12 +138,26 @@ export function resolveProOverlayId(
 
 export { isProModule, proLeakGuard, type ProLeakGuardOptions } from './chunkGuard.js';
 
+// Overlay projections are symlinks; the bundler's watcher tracks the symlink
+// path itself and does not follow it to the real target, so an edit to the
+// private source produces no rebuild. Explicitly watching the realpath keeps
+// dev rebuilds working without turning on preserveSymlinks (forbidden — it
+// breaks pnpm's node_modules resolution).
+function watchOverlayTarget(context: OverlayResolveContext, candidate: string): void {
+  if (typeof context.addWatchFile !== 'function') return;
+  context.addWatchFile(realpathSync(candidate));
+}
+
 export function proOverlayPlugin(options: ProOverlayOptions = {}): ProOverlayPlugin {
   return {
     name: 'kansoku-pro-overlay',
     enforce: 'pre',
     async resolveId(source, importer) {
-      if (source.startsWith('.')) return resolveProOverlayId(source, importer, options);
+      if (source.startsWith('.')) {
+        const resolved = resolveProOverlayId(source, importer, options);
+        if (resolved) watchOverlayTarget(this, splitQuery(resolved).path);
+        return resolved;
+      }
       if (options.enabled === false) return null;
       if (source.includes('\0') || externalUrlPattern.test(source)) return null;
       if (importer === undefined) return null;
@@ -157,6 +172,7 @@ export function proOverlayPlugin(options: ProOverlayOptions = {}): ProOverlayPlu
 
       const importerPath = splitQuery(importer).path;
       const candidate = overlayCandidateForFile(resolvedParts.path, options, importerPath);
+      if (candidate) watchOverlayTarget(this, candidate);
       return candidate ? `${candidate}${resolvedParts.query}` : null;
     },
   };

@@ -15,12 +15,26 @@ let electron = null;
 let restarting = false;
 let shuttingDown = false;
 
+// vite.main.config.ts imports @kansoku/build-overlay, whose NodeNext `.js`
+// specifiers over `.ts` sources the default config loader cannot resolve for
+// an externalized workspace package — needs --configLoader runner, same as
+// the `build` script. vite.preload.config.ts has no such import, so it keeps
+// the default loader (the runner loader is experimental; no reason to widen
+// its blast radius).
+const configLoaderArgs = {
+  'vite.main.config.ts': ['--configLoader', 'runner'],
+  'vite.preload.config.ts': [],
+};
 const watchers = ['vite.main.config.ts', 'vite.preload.config.ts'].map((config) => {
-  const child = spawn('pnpm', ['exec', 'vite', 'build', '--watch', '-c', config], {
-    cwd: desktopRoot,
-    stdio: 'inherit',
-    env: { ...process.env, KANSOKU_DESKTOP_DEV: '1' },
-  });
+  const child = spawn(
+    'pnpm',
+    ['exec', 'vite', 'build', '--watch', '-c', config, ...configLoaderArgs[config]],
+    {
+      cwd: desktopRoot,
+      stdio: 'inherit',
+      env: { ...process.env, KANSOKU_DESKTOP_DEV: '1' },
+    },
+  );
   child.on('exit', (code) => {
     if (!shuttingDown) shutdown(code ?? 1);
   });
