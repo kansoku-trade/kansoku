@@ -103,11 +103,14 @@ listed here only for completeness:
 - `GET /api/symbols/:sym/latest` — the latest `intraday` chart doc in full, plus `prediction_stale`
 
 The client-side indicator toggle bar (show/hide 金叉死叉、自动背离、自动背驰、123
-结构、K线形态、AI 标注、价位线、EMA 均线; state in localStorage) has no API surface —
-it's a pure front-end feature on both the cockpit and archive pages. Swing 高低点
-are not one of the toggles — they're baked into the divergence/beichi/pattern123
-detectors as the underlying pivot data, not a standalone overlay (deliberate
-deviation from the earlier spec draft).
+结构、SB 结构、K线形态、AI 标注、价位线、EMA 均线; state in localStorage) has no API
+surface — it's a pure front-end feature on both the cockpit and archive pages.
+Swing 高低点 are not one of the toggles — they're baked into the
+divergence/beichi/pattern123/SB detectors as the underlying pivot data, not a
+standalone overlay (deliberate deviation from the earlier spec draft). SB（第二次
+突破/跌破，对应 Al Brooks 的 High 2 / Low 2）标注顺势回调后第二次尝试冲破前高/前低
+的结构：图上灰色 H1/L1 是失败的第一次尝试，金色 H2/L2 箭头是确认成功的第二次突破；
+`technicals` 里对应 `second_breakouts` 这一行。
 
 ### POST body per type
 
@@ -205,7 +208,8 @@ climax top (volume ≥ 2.5×20MA + red close + local high), MA50/MA200 breakdown
    (当日 session VWAP，m5/m15), `emas` (latest
    fast/mid/slow EMA values — price vs EMA stack tells the short-term trend
    posture), recent swing highs/lows, `last_cross` (金叉/死叉),
-   `divergence_candidates`, `beichi_candidates`. Also read `meta.day_context`:
+   `divergence_candidates`, `beichi_candidates`, `second_breakouts` (SB 结构，
+   H2/L2). Also read `meta.day_context`:
    `daily_trend` (up/down/range vs 日线 MA20/MA50), `daily_ma20`/`daily_ma50`,
    `high_20d`/`low_20d`, `prev_day` (昨日高/低/收), `pre_market` 区间,
    `opening_range` (开盘前 30 分钟), `vwap` — the server draws these as the
@@ -252,7 +256,7 @@ climax top (volume ≥ 2.5×20MA + red close + local high), MA50/MA200 breakdown
     },
   ],
   "signals": [
-    // 可选；背离/背驰/K线形态/123 结构均由服务端自动检测绘制，无需在此重复
+    // 可选；背离/背驰/K线形态/123 结构/SB 结构均由服务端自动检测绘制，无需在此重复
     {
       "type": "other",
       "timeframe": "m5",

@@ -6,6 +6,7 @@ export type IndicatorToggleKey =
   | 'divergence'
   | 'beichi'
   | 'pattern123'
+  | 'sb'
   | 'candle'
   | 'ai'
   | 'levels'
@@ -22,6 +23,7 @@ export const INDICATOR_TOGGLE_ORDER: IndicatorToggleKey[] = [
   'daylevel',
   'fvg',
   'pattern123',
+  'sb',
   'optwall',
   'crosses',
   'divergence',
@@ -35,6 +37,7 @@ export const INDICATOR_TOGGLE_LABELS: Record<IndicatorToggleKey, string> = {
   divergence: '自动背离',
   beichi: '自动背驰',
   pattern123: '123 结构',
+  sb: 'SB 结构',
   candle: 'K线形态',
   ai: 'AI 标注',
   levels: '价位线',
@@ -52,6 +55,7 @@ export const INDICATOR_TOGGLE_COLORS: Record<IndicatorToggleKey, string> = {
   daylevel: theme.textPrimary,
   fvg: theme.up,
   pattern123: theme.accent,
+  sb: theme.accent,
   optwall: theme.down,
   crosses: theme.up,
   divergence: theme.down,
@@ -64,7 +68,7 @@ export const INDICATOR_TOGGLE_KEYS = INDICATOR_TOGGLE_ORDER;
 
 const STORAGE_KEY = 'intraday-indicators';
 
-const DEFAULT_ON = new Set<IndicatorToggleKey>(['ema', 'vwap', 'levels', 'daylevel']);
+const DEFAULT_ON = new Set<IndicatorToggleKey>(['ema', 'vwap', 'levels', 'daylevel', 'sb']);
 
 function defaultToggles(): Record<IndicatorToggleKey, boolean> {
   return Object.fromEntries(INDICATOR_TOGGLE_KEYS.map((k) => [k, DEFAULT_ON.has(k)])) as Record<
