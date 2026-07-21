@@ -34,6 +34,28 @@ describe("dodoClient", () => {
     expect(JSON.parse(init.body)).toEqual({ license_key: "lic_1", name: "my-mac" });
   });
 
+  it("activate/validate include device_public_key only when provided", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse(201, { id: "lki_abc" }))
+      .mockResolvedValueOnce(jsonResponse(200, { valid: true }));
+    const client = createDodoClient({ fetch: fetchMock, baseUrl: "https://worker.example" });
+
+    await client.activate({ licenseKey: "lic_1", name: "my-mac", devicePublicKey: "PUBKEY_B64" });
+    await client.validate({ licenseKey: "lic_1", instanceId: "lki_abc", devicePublicKey: "PUBKEY_B64" });
+
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
+      license_key: "lic_1",
+      name: "my-mac",
+      device_public_key: "PUBKEY_B64",
+    });
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual({
+      license_key: "lic_1",
+      license_key_instance_id: "lki_abc",
+      device_public_key: "PUBKEY_B64",
+    });
+  });
+
   it("validate returns ok:true with valid:false as a normal (non-network) result", async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, { valid: false }));
     const client = createDodoClient({ fetch: fetchMock, baseUrl: "https://test.dodopayments.com" });

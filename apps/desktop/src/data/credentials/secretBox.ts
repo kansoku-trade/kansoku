@@ -1,4 +1,4 @@
-import { chmodSync, existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
 import type { MasterKeyStatus, SecretBox } from '@kansoku/pro-api';
 import {
@@ -72,16 +72,10 @@ function readLegacyKey(path: string): Buffer | null {
   return readFileSync(path);
 }
 
-function writeLegacyKey(path: string, key: Buffer): void {
-  writeFileSync(path, key, { mode: 0o600 });
-  chmodSync(path, 0o600);
-}
-
 // Migration order on every boot: prefer an already-wrapped key (steady
-// state); else wrap a pre-P3 plaintext keyfile in place, keeping the
-// original file untouched (never delete user data); else mint a fresh key.
-// The legacy plaintext file, if wrapped, is intentionally left on disk —
-// this function only adds a safeStorage-wrapped copy alongside it.
+// state); else wrap a pre-P3 plaintext keyfile and DELETE the plaintext —
+// leaving the bare key on disk next to the Keychain-wrapped copy would
+// defeat the wrapping entirely; else mint a fresh key.
 function resolveKey(deps: DesktopSecretBoxDeps): Buffer | null {
   const wrapped = readWrappedKey(deps.wrappedKeyPath, deps.safeStorage);
   if (wrapped) return wrapped;
@@ -91,6 +85,13 @@ function resolveKey(deps: DesktopSecretBoxDeps): Buffer | null {
   const legacy = readLegacyKey(deps.legacyKeyPath);
   if (legacy) {
     writeWrappedKey(deps.wrappedKeyPath, legacy, deps.safeStorage);
+    try {
+      rmSync(deps.legacyKeyPath, { force: true });
+    } catch (error) {
+      // The wrapped copy is already in place, so a failed unlink is not
+      // fatal — but the plaintext key is still on disk, so make noise.
+      console.warn('[secretBox] migrated master key but could not delete legacy keyfile:', error);
+    }
     return legacy;
   }
 
@@ -130,11 +131,9 @@ export function createDesktopSecretBox(deps: DesktopSecretBoxDeps): SecretBox {
       }
       const fresh = randomBytes(KEY_BYTES);
       writeWrappedKey(deps.wrappedKeyPath, fresh, deps.safeStorage);
-      // A bare-Node host sharing this data root (no Electron, no safeStorage)
-      // reads the master key straight from legacyKeyPath — if that file is
-      // still around, keep it in lockstep or it'd decrypt with a stale key
-      // after this reset.
-      if (readLegacyKey(deps.legacyKeyPath)) writeLegacyKey(deps.legacyKeyPath, fresh);
+      // Never write the fresh key back to the legacy plaintext path — the
+      // bare keyfile is gone for good once the safeStorage wrap exists.
+      rmSync(deps.legacyKeyPath, { force: true });
     },
   };
 }

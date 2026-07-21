@@ -38,6 +38,7 @@ function fakeLicenseManager(overrides: Partial<LicenseManager> = {}): LicenseMan
   return {
     getLicenseSnapshot: () => ({ state: 'licensed', deviceName: 'test', maskedKey: '••••1234' }),
     getBundleKey: () => undefined,
+    getBundleKeyId: () => undefined,
     activate: async () => ({ activated: true }),
     deactivate: async () => ({}) as never,
     revalidate: async () => {},

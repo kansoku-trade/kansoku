@@ -1,6 +1,7 @@
 import { hostname as osHostname } from "node:os";
 import type { Db } from "../db/index.js";
 import type { SecretBox } from "../ai/settings/secretBox.js";
+import { generateDeviceKeyPair, unwrapBundleKey } from "./bundleKeyWrap.js";
 import { createDodoClient, type DodoClient } from "./dodoClient.js";
 import { createLicenseStore, type LicenseRecord, type LicenseStore } from "./licenseStore.js";
 
@@ -18,6 +19,7 @@ export type ActivateResult = { activated: true } | { activated: false; error: st
 export interface LicenseManager {
   getLicenseSnapshot(): LicenseSnapshot;
   getBundleKey(): string | undefined;
+  getBundleKeyId(): string | undefined;
   activate(key: string): Promise<ActivateResult>;
   deactivate(): Promise<void>;
   revalidate(): Promise<void>;
@@ -57,12 +59,28 @@ export function createLicenseManager(deps: LicenseManagerDeps): LicenseManager {
     },
 
     getBundleKey(): string | undefined {
-      return deps.store.read()?.bundleKey;
+      const record = deps.store.read();
+      if (!record?.bundleKey) return undefined;
+      if (!record.bundleKeyWrap) return record.bundleKey;
+      // Device-bound key: only unwraps with this device's private key, which
+      // lives inside this same (safeStorage-encrypted) record.
+      if (!record.devicePrivateKey) return undefined;
+      try {
+        return unwrapBundleKey(record.bundleKey, record.bundleKeyWrap, record.devicePrivateKey);
+      } catch (error) {
+        console.warn("licenseState: failed to unwrap device-bound bundle key:", error instanceof Error ? error.message : error);
+        return undefined;
+      }
+    },
+
+    getBundleKeyId(): string | undefined {
+      return deps.store.read()?.keyId;
     },
 
     async activate(key: string): Promise<ActivateResult> {
       const deviceName = deps.hostname();
-      const result = await deps.client.activate({ licenseKey: key, name: deviceName });
+      const device = generateDeviceKeyPair();
+      const result = await deps.client.activate({ licenseKey: key, name: deviceName, devicePublicKey: device.publicKey });
       if (!result.ok) return { activated: false, error: result.error };
       deps.store.write({
         key,
@@ -72,6 +90,9 @@ export function createLicenseManager(deps: LicenseManagerDeps): LicenseManager {
         lastOutcome: "success",
         bundleKey: result.data.bundleKey,
         keyId: result.data.keyId,
+        bundleKeyWrap: result.data.bundleKeyWrap,
+        devicePublicKey: device.publicKey,
+        devicePrivateKey: device.privateKey,
       });
       return { activated: true };
     },
@@ -91,13 +112,17 @@ export function createLicenseManager(deps: LicenseManagerDeps): LicenseManager {
     async revalidate(): Promise<void> {
       const record = deps.store.read();
       if (!record) return;
-      const result = await deps.client.validate({ licenseKey: record.key, instanceId: record.instanceId ?? undefined });
+      const result = await deps.client.validate({
+        licenseKey: record.key,
+        instanceId: record.instanceId ?? undefined,
+        devicePublicKey: record.devicePublicKey,
+      });
       if (!result.ok) {
         if (record.lastOutcome !== "invalid") deps.store.write({ ...record, lastOutcome: "network_fail" });
         return;
       }
       if (!result.data.valid) {
-        deps.store.write({ ...record, lastOutcome: "invalid", bundleKey: undefined, keyId: undefined });
+        deps.store.write({ ...record, lastOutcome: "invalid", bundleKey: undefined, keyId: undefined, bundleKeyWrap: undefined });
         return;
       }
       deps.store.write({
@@ -106,6 +131,7 @@ export function createLicenseManager(deps: LicenseManagerDeps): LicenseManager {
         lastOutcome: "success",
         bundleKey: result.data.bundleKey ?? record.bundleKey,
         keyId: result.data.keyId ?? record.keyId,
+        bundleKeyWrap: result.data.bundleKeyWrap ?? record.bundleKeyWrap,
       });
     },
   };
@@ -130,6 +156,10 @@ export function initLicenseManager(
 
 export function getActiveBundleKey(): string | undefined {
   return active?.getBundleKey();
+}
+
+export function getActiveBundleKeyId(): string | undefined {
+  return active?.getBundleKeyId();
 }
 
 export function getLicenseManager(): LicenseManager {

@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { generateDeviceKeyPair, wrapBundleKey } from "../src/license/bundleKeyWrap.js";
 import type { DodoClient, DodoResult } from "../src/license/dodoClient.js";
 import { createLicenseManager, type LicenseManagerDeps } from "../src/license/licenseState.js";
 import type { LicenseRecord, LicenseStore } from "../src/license/licenseStore.js";
@@ -142,16 +143,22 @@ describe("licenseState activate", () => {
     const result = await manager.activate("lic_1234567890");
 
     expect(result).toEqual({ activated: true });
-    expect(client.activate).toHaveBeenCalledWith({ licenseKey: "lic_1234567890", name: "my-mac" });
-    expect(store.read()).toEqual({
+    expect(client.activate).toHaveBeenCalledWith({
+      licenseKey: "lic_1234567890",
+      name: "my-mac",
+      devicePublicKey: expect.any(String),
+    });
+    const stored = store.read();
+    expect(stored).toMatchObject({
       key: "lic_1234567890",
       instanceId: "lki_new",
       deviceName: "my-mac",
       lastValidatedAt: new Date(now()).toISOString(),
       lastOutcome: "success",
-      bundleKey: undefined,
-      keyId: undefined,
     });
+    expect(stored?.bundleKey).toBeUndefined();
+    expect(stored?.devicePublicKey).toEqual(expect.any(String));
+    expect(stored?.devicePrivateKey).toEqual(expect.any(String));
     expect(manager.getLicenseSnapshot().state).toBe("licensed");
   });
 
@@ -367,5 +374,97 @@ describe("licenseState revalidate", () => {
     await manager.revalidate();
 
     expect(store.read()).toMatchObject({ bundleKey: "b".repeat(64), keyId: "key-1" });
+  });
+});
+
+
+describe("licenseState device-bound bundleKey", () => {
+  const BUNDLE_KEY_HEX = "b".repeat(64);
+
+  it("activate stores the wrapped key + device keypair and getBundleKey unwraps it", async () => {
+    // Simulate the Worker: wrap the bundle key to whatever device public key
+    // the client uploaded.
+    const client = fakeClient({
+      activate: vi.fn(async (input: { devicePublicKey?: string }) => {
+        const { wrapped, wrap } = wrapBundleKey(BUNDLE_KEY_HEX, input.devicePublicKey!);
+        return { ok: true, data: { id: "lki_new", bundleKey: wrapped, keyId: "key-1", bundleKeyWrap: wrap } };
+      }) as DodoClient["activate"],
+    });
+    const { manager, store } = harness({ client });
+
+    await manager.activate("lic_1234567890");
+
+    const stored = store.read();
+    expect(stored?.bundleKeyWrap?.alg).toBe("p256-hkdf-sha256-aes256gcm");
+    expect(stored?.bundleKey).not.toBe(BUNDLE_KEY_HEX);
+    expect(manager.getBundleKey()).toBe(BUNDLE_KEY_HEX);
+    expect(manager.getBundleKeyId()).toBe("key-1");
+  });
+
+  it("getBundleKey is undefined when the record carries a wrapped key but no device private key", () => {
+    const device = generateDeviceKeyPair();
+    const { wrapped, wrap } = wrapBundleKey(BUNDLE_KEY_HEX, device.publicKey);
+    const { manager } = harness({
+      store: fakeStore({
+        key: "lic_1234567890",
+        instanceId: "lki_abc",
+        deviceName: "my-mac",
+        lastValidatedAt: "2026-07-14T00:00:00.000Z",
+        lastOutcome: "success",
+        bundleKey: wrapped,
+        bundleKeyWrap: wrap,
+        keyId: "key-1",
+        // no devicePrivateKey — simulates a record copied off this device
+      }),
+    });
+
+    expect(manager.getBundleKey()).toBeUndefined();
+  });
+
+  it("getBundleKey returns the plaintext key for legacy (unwrapped) records", () => {
+    const { manager } = harness({
+      store: fakeStore({
+        key: "lic_1234567890",
+        instanceId: "lki_abc",
+        deviceName: "my-mac",
+        lastValidatedAt: "2026-07-14T00:00:00.000Z",
+        lastOutcome: "success",
+        bundleKey: BUNDLE_KEY_HEX,
+        keyId: "key-1",
+      }),
+    });
+
+    expect(manager.getBundleKey()).toBe(BUNDLE_KEY_HEX);
+  });
+
+  it("revalidate uploads the stored device public key and refreshes the wrapped key", async () => {
+    const device = generateDeviceKeyPair();
+    const record: LicenseRecord = {
+      key: "lic_1234567890",
+      instanceId: "lki_abc",
+      deviceName: "my-mac",
+      lastValidatedAt: "2026-07-01T00:00:00.000Z",
+      lastOutcome: "success",
+      devicePublicKey: device.publicKey,
+      devicePrivateKey: device.privateKey,
+    };
+    const client = fakeClient({
+      validate: vi.fn(async (input: { devicePublicKey?: string }) => {
+        const { wrapped, wrap } = wrapBundleKey(BUNDLE_KEY_HEX, input.devicePublicKey!);
+        return { ok: true, data: { valid: true, bundleKey: wrapped, keyId: "key-2", bundleKeyWrap: wrap } };
+      }) as DodoClient["validate"],
+    });
+    const { manager, store } = harness({ store: fakeStore(record), client });
+
+    await manager.revalidate();
+
+    expect(client.validate).toHaveBeenCalledWith({
+      licenseKey: "lic_1234567890",
+      instanceId: "lki_abc",
+      devicePublicKey: device.publicKey,
+    });
+    expect(store.read()?.bundleKeyWrap?.alg).toBe("p256-hkdf-sha256-aes256gcm");
+    expect(manager.getBundleKey()).toBe(BUNDLE_KEY_HEX);
+    expect(manager.getBundleKeyId()).toBe("key-2");
   });
 });
