@@ -12,7 +12,7 @@ import {
   type Market,
   type TimeInput,
 } from '@kansoku/shared/time';
-import { type TimeDisplayPreference, useTimeDisplayPreference } from '../timeDisplayPreference';
+import { type TimeDisplayPreference, useTimeDisplayPreference } from '../lib/timeDisplayPreference';
 import { Tooltip } from './Tooltip';
 
 type MarketTimeFormat = 'clock' | 'date-time' | 'month-day-time';

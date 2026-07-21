@@ -3,8 +3,8 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Router } from './PageRouter';
 
-vi.mock('./pages/Home', () => ({ Home: () => <div data-testid="home" /> }));
-vi.mock('./pages/SymbolCockpit', () => ({
+vi.mock('./features/home/Home', () => ({ Home: () => <div data-testid="home" /> }));
+vi.mock('./features/cockpit/SymbolCockpit', () => ({
   SymbolCockpit: ({ sym }: { sym: string }) => <div data-testid="symbol-cockpit">{sym}</div>,
 }));
 

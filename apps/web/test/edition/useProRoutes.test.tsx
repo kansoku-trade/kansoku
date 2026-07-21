@@ -3,9 +3,9 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const loadProComposition = vi.hoisted(() => vi.fn());
-vi.mock('../../src/edition/pro', () => ({ loadProComposition }));
+vi.mock('../../src/features/edition/pro', () => ({ loadProComposition }));
 
-import { resetProRoutesForTests, useProRoutes } from '../../src/edition/useProRoutes';
+import { resetProRoutesForTests, useProRoutes } from '../../src/features/edition/useProRoutes';
 
 describe('useProRoutes', () => {
   beforeEach(() => {

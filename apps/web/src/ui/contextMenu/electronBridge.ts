@@ -1,4 +1,4 @@
-import { getShellRpc } from '../../desktop/shellRpc';
+import { getShellRpc } from '../../features/desktop/shellRpc';
 import type { ElectronContextMenuPopupRequest, ElectronContextMenuPopupResult } from './types';
 
 export interface DesktopContextMenuBridge {

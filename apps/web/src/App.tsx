@@ -1,14 +1,14 @@
 import { AppSkeleton } from './AppSkeleton';
-import { DesktopShell } from './desktop/DesktopShell';
-import { Onboarding } from './onboarding/Onboarding';
-import { useCredentialsGate } from './onboarding/useCredentialsGate';
-import { CommandPalette } from './palette/CommandPalette';
+import { DesktopShell } from './features/desktop/DesktopShell';
+import { Onboarding } from './features/onboarding/Onboarding';
+import { useCredentialsGate } from './features/onboarding/useCredentialsGate';
+import { CommandPalette } from './features/palette/CommandPalette';
 import { Router } from './PageRouter';
-import { RestrictedBanner } from './RestrictedBanner';
-import { isDesktopRealtime } from './portTransport';
+import { RestrictedBanner } from './features/edition/RestrictedBanner';
+import { isDesktopRealtime } from './lib/portTransport';
 import { matchPopoutSymbolRoute, navigate, routePathname, useRoute } from './router';
 import { ContextMenuHost, ModalHost } from './ui';
-import { RoutedGlobalNotifications } from './GlobalNotifications';
+import { RoutedGlobalNotifications } from './features/notifications/GlobalNotifications';
 
 export function App() {
   const gate = useCredentialsGate();

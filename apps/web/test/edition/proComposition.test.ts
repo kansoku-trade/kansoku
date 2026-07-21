@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { loadProComposition } from '../../src/edition/pro';
+import { loadProComposition } from '../../src/features/edition/pro';
 
 // Which module resolves here (`pro.ts` vs. the overlay's `pro.pro.ts`) is a
 // build-time decision made by @kansoku/build-overlay's resolver plugin, not

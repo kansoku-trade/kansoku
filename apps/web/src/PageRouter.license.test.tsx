@@ -1,18 +1,18 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { getLicenseModalStateForTests, resetLicenseModalStoreForTests } from './licenseModalStore';
+import { getLicenseModalStateForTests, resetLicenseModalStoreForTests } from './features/edition/licenseModalStore';
 import { Router } from './PageRouter';
 
 let capabilities: { pro: boolean | null; licensed: boolean } = { pro: null, licensed: false };
 
-vi.mock('./capabilitiesStore', () => ({
+vi.mock('./features/edition/capabilitiesStore', () => ({
   useCapabilities: () => capabilities,
 }));
-vi.mock('./pages/research/ResearchPage', () => ({
+vi.mock('./features/research/ResearchPage', () => ({
   ResearchPage: () => <div data-testid="research-page" />,
 }));
-vi.mock('./pages/assistant/AssistantChatPage', () => ({
+vi.mock('./features/assistant/AssistantChatPage', () => ({
   AssistantChatPage: () => <div data-testid="chat-page" />,
 }));
 
