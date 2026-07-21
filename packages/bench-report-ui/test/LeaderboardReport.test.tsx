@@ -8,7 +8,7 @@ function makeData(): LeaderboardReportViewData {
     runId: 'run-1',
     generatedAt: '2026-07-21T00:00:00.000Z',
     title: '模型交易判断力总榜',
-    subtitle: '2 个模型 · 1 条基线 · 10 cells',
+    subtitle: { prefix: '2 个模型 · 1 条基线 · 10 cells', beatenLabel: '2/2' },
     n: 3,
     kvs: [{ label: 'DATASET', value: 'v1' }],
     realRows: [

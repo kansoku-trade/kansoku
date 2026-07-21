@@ -172,7 +172,7 @@ export function buildLeaderboardReportViewData(
   const repeat = config.config?.repeat;
   const weights = scores.weights;
   const beatenCount = buyHoldJ == null ? null : realModels.filter((m) => m.judgment > buyHoldJ).length;
-  const beatenLabel = beatenCount != null ? `${beatenCount}/${realModels.length}` : `${realModels.length}`;
+  const beatenLabel = beatenCount != null ? `${beatenCount}/${realModels.length}` : null;
 
   const kvs = [
     { label: 'DATASET', value: String(datasetVersion) },
@@ -193,9 +193,10 @@ export function buildLeaderboardReportViewData(
     runId,
     generatedAt,
     title: '模型交易判断力总榜',
-    subtitle: `${realModels.length} 个模型 · ${baselines.length} 条基线 · ${scores.cells.length} cells${
-      beatenCount != null ? ` · ${beatenLabel} 判断分跑赢买入持有` : ''
-    }`,
+    subtitle: {
+      prefix: `${realModels.length} 个模型 · ${baselines.length} 条基线 · ${scores.cells.length} cells`,
+      beatenLabel,
+    },
     n: sorted.length,
     kvs,
     realRows: realModels.map((m, i) => buildRow(m, i + 1, false, buyHoldJ)),

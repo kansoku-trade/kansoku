@@ -356,11 +356,16 @@ export interface LeaderboardDetailCardView {
   sections: LeaderboardDetailSection[];
 }
 
+export interface LeaderboardReportSubtitle {
+  prefix: string;
+  beatenLabel: string | null;
+}
+
 export interface LeaderboardReportViewData {
   runId: string;
   generatedAt: string;
   title: string;
-  subtitle: string;
+  subtitle: LeaderboardReportSubtitle;
   n: number;
   kvs: LeaderboardKvItem[];
   realRows: LeaderboardModelRowView[];
