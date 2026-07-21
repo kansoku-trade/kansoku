@@ -25,10 +25,6 @@ vi.mock('@web/features/research/ResearchPage', () => ({
 vi.mock('@web/features/assistant/AssistantChatPage', () => ({
   AssistantChatPage: () => <div data-testid="chat-page" />,
 }));
-vi.mock('@web/features/research/ResearchAssistantPage', () => ({
-  ResearchAssistantPage: () => <div data-testid="research-assistant-stub" />,
-}));
-
 const loadProComposition = vi.hoisted(() => vi.fn());
 vi.mock('@web/features/edition/pro', () => ({ loadProComposition }));
 
@@ -125,10 +121,10 @@ describe('pro-supplied /research/assistant route', () => {
       }),
     );
     renderRoute('/research/assistant');
-    expect(screen.queryByTestId('research-assistant-stub')).toBeNull();
+    expect(screen.queryByTestId('research-page')).toBeNull();
     expect(screen.queryByTestId('pro-research-assistant')).toBeNull();
     resolveComposition({ routes: {} });
-    await waitFor(() => expect(screen.getByTestId('research-assistant-stub')).toBeTruthy());
+    await waitFor(() => expect(screen.getByTestId('research-page')).toBeTruthy());
   });
 
   it('renders the pro component once the composition supplies it', async () => {
@@ -139,11 +135,11 @@ describe('pro-supplied /research/assistant route', () => {
     await waitFor(() => expect(screen.getByTestId('pro-research-assistant')).toBeTruthy());
   });
 
-  it('falls back to the free stub when the composition supplies no routes', async () => {
+  it('redirects to /research when the composition supplies no routes', async () => {
     loadProComposition.mockResolvedValue({ routes: {} });
     renderRoute('/research/assistant');
     await waitFor(() => expect(loadProComposition).toHaveBeenCalled());
-    await waitFor(() => expect(screen.getByTestId('research-assistant-stub')).toBeTruthy());
+    await waitFor(() => expect(screen.getByTestId('research-page')).toBeTruthy());
     expect(screen.queryByTestId('pro-research-assistant')).toBeNull();
   });
 });
