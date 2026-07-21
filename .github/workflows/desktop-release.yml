@@ -215,23 +215,68 @@ jobs:
           grep -q '^  identity: null$' electron-builder.yml
           sed -i '' '/^  identity: null$/d' electron-builder.yml
 
+      # 每个 release 换一把新 bundle key:这里只生成(不推送),打包成功后由
+      # 后面的 "push rotated bundle key" 步骤 wrangler secret put 到 Worker。
+      # 故意拆开:构建失败时 Worker 继续发旧 key,已安装的旧包不受影响;推送
+      # 失败则 workflow 在发布前挂掉,不会发出一把 Worker 不认识的 key。旧安装
+      # 包下次 revalidate 领到新 key 后,客户端 keyId 校验拒绝旧 bundle —— 某版
+      # key 泄漏的影响限于该版。CLOUDFLARE_API_TOKEN 未配置时回退到静态
+      # KANSOKU_BUNDLE_KEY/_ID secrets(老行为,不轮换也不推送)。
+      - name: generate bundle key for this release (pro builds only)
+        id: bundlekey
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          STATIC_BUNDLE_KEY: ${{ secrets.KANSOKU_BUNDLE_KEY }}
+          STATIC_BUNDLE_KEY_ID: ${{ secrets.KANSOKU_BUNDLE_KEY_ID }}
+        run: |
+          if [ ! -d apps/pro ]; then
+            echo "pro slot absent — free build, no bundle key needed"
+            echo "push=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ -n "$CLOUDFLARE_API_TOKEN" ]; then
+            OUT="$(node apps/license-worker/scripts/rotateBundleKey.mjs --key-id "${{ steps.version.outputs.tag }}")"
+            KEY="$(echo "$OUT" | sed -n 's/^key=//p')"
+            KEY_ID="$(echo "$OUT" | sed -n 's/^keyId=//p')"
+            echo "push=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::CLOUDFLARE_API_TOKEN not set — falling back to static KANSOKU_BUNDLE_KEY secrets (no per-release rotation)"
+            KEY="$STATIC_BUNDLE_KEY"
+            KEY_ID="$STATIC_BUNDLE_KEY_ID"
+            echo "push=false" >> "$GITHUB_OUTPUT"
+          fi
+          if [ -z "$KEY" ] || [ -z "$KEY_ID" ]; then
+            echo "::error::pro slot present but no bundle key available (neither CLOUDFLARE_API_TOKEN nor static secrets)"
+            exit 1
+          fi
+          echo "::add-mask::$KEY"
+          echo "KANSOKU_BUNDLE_KEY=$KEY" >> "$GITHUB_ENV"
+          echo "KANSOKU_BUNDLE_KEY_ID=$KEY_ID" >> "$GITHUB_ENV"
+
       - name: package desktop (dmg + zip; Developer ID + notarization when secrets present, ad-hoc otherwise)
         working-directory: apps/desktop
-        # KANSOKU_BUNDLE_KEY / KANSOKU_BUNDLE_KEY_ID only matter when the pro
-        # slot got fetched above — stagePro.mjs no-ops on a free build. When
-        # the slot IS present, scripts/packEnc.mjs (apps/pro) hard-fails
-        # without these, which is intentional: a pro release must never ship
-        # without encryption. See apps/pro README「发版：KANSOKU_BUNDLE_KEY 来源
-        # 与 keyId 轮换」for how the secrets are provisioned/rotated.
+        # KANSOKU_BUNDLE_KEY / KANSOKU_BUNDLE_KEY_ID come from the generation
+        # step above (via GITHUB_ENV) — fresh per release, or the static repo
+        # secrets as fallback. stagePro.mjs no-ops on a free build; with the
+        # pro slot present, scripts/packEnc.mjs (apps/pro) hard-fails without
+        # these, which is intentional: a pro release must never ship without
+        # encryption.
         env:
-          KANSOKU_BUNDLE_KEY: ${{ secrets.KANSOKU_BUNDLE_KEY }}
-          KANSOKU_BUNDLE_KEY_ID: ${{ secrets.KANSOKU_BUNDLE_KEY_ID }}
           CSC_LINK: ${{ secrets.CSC_LINK }}
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: pnpm package
+
+      # 打包成功了才把新 key 推上 Worker;推送失败直接挂掉 workflow,发布步骤
+      # 不会执行。key 走环境变量(KANSOKU_BUNDLE_KEY 在生成步骤已写入 GITHUB_ENV),
+      # 不落命令行参数。
+      - name: push rotated bundle key to the license Worker
+        if: steps.bundlekey.outputs.push == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: node apps/license-worker/scripts/rotateBundleKey.mjs --push
 
       - name: verify signature (dmg + zip both embed the already-signed app)
         working-directory: apps/desktop

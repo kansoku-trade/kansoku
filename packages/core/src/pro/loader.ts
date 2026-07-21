@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { getActiveBundleKey } from '../license/licenseState.js';
+import { isBundleKeyEnvAllowed } from '../license/licenseGate.js';
+import { getActiveBundleKey, getActiveBundleKeyId } from '../license/licenseState.js';
 import { setEncBundlePresent } from './bundleState.js';
 import { decryptProBlob, registerVirtualModules } from './encLoader.js';
 
@@ -10,6 +11,21 @@ export interface ProPayload {
 
 const NODE_PREFIX = 'node/';
 const WEB_PREFIX = 'web/';
+
+function resolveBundleKey(): { keyHex: string; expectedKeyId?: string } | null {
+  const licenseKey = getActiveBundleKey();
+  if (licenseKey) {
+    // The bundle must have been packed for exactly the key the server issued
+    // — a keyId mismatch means a stale key is decrypting a newer bundle (or
+    // vice versa), which is exactly what per-version key rotation relies on
+    // being caught.
+    return { keyHex: licenseKey, expectedKeyId: getActiveBundleKeyId() };
+  }
+  if (!isBundleKeyEnvAllowed()) return null;
+  const envKey = process.env.KANSOKU_BUNDLE_KEY;
+  if (!envKey) return null;
+  return { keyHex: envKey, expectedKeyId: process.env.KANSOKU_BUNDLE_KEY_ID };
+}
 
 export async function loadPro(appDir?: string): Promise<ProPayload | null> {
   if (!appDir) {
@@ -21,14 +37,19 @@ export async function loadPro(appDir?: string): Promise<ProPayload | null> {
   setEncBundlePresent(present);
   if (!present) return null;
 
-  const keyHex = getActiveBundleKey() ?? process.env.KANSOKU_BUNDLE_KEY;
-  if (!keyHex) {
+  const resolved = resolveBundleKey();
+  if (!resolved) {
     console.info('pro slot: encrypted bundle present but no key, running free');
     return null;
   }
 
   try {
-    const manifest = decryptProBlob(readFileSync(encPath), keyHex);
+    const manifest = decryptProBlob(readFileSync(encPath), resolved.keyHex);
+    if (resolved.expectedKeyId && manifest.keyId !== resolved.expectedKeyId) {
+      throw new Error(
+        `pro.enc keyId mismatch: bundle was packed for keyId=${manifest.keyId}, active key is keyId=${resolved.expectedKeyId}`,
+      );
+    }
     const nodeFiles = new Map<string, string>();
     const webFiles = new Map<string, Buffer>();
     for (const [rel, base64] of Object.entries(manifest.files)) {

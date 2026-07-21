@@ -1,3 +1,4 @@
+import { createDecipheriv, createPrivateKey, createPublicKey, diffieHellman, generateKeyPairSync, hkdfSync } from "node:crypto";
 import { describe, expect, it, vi } from "vitest";
 import type { Env } from "../src/env.js";
 import { createRequestHandler } from "../src/index.js";
@@ -8,6 +9,27 @@ const env: Env = {
   BUNDLE_KEY: "b".repeat(64),
   BUNDLE_KEY_ID: "key-1",
 };
+
+// Independent node:crypto unwrap of the Worker's WebCrypto wrap — mirrors
+// packages/core/src/license/bundleKeyWrap.ts (the production unwrap path).
+function unwrapForTest(wrappedB64: string, wrap: { eph: string; iv: string }, privateKeyB64: string): string {
+  const privateKey = createPrivateKey({ key: Buffer.from(privateKeyB64, "base64"), format: "der", type: "pkcs8" });
+  const eph = createPublicKey({ key: Buffer.from(wrap.eph, "base64"), format: "der", type: "spki" });
+  const shared = diffieHellman({ privateKey, publicKey: eph });
+  const key = Buffer.from(hkdfSync("sha256", shared, "", "kansoku-bundle-key-wrap-v1", 32));
+  const blob = Buffer.from(wrappedB64, "base64");
+  const decipher = createDecipheriv("aes-256-gcm", key, Buffer.from(wrap.iv, "base64"));
+  decipher.setAuthTag(blob.subarray(blob.length - 16));
+  return Buffer.concat([decipher.update(blob.subarray(0, blob.length - 16)), decipher.final()]).toString("utf8");
+}
+
+function deviceKeyPair(): { publicKey: string; privateKey: string } {
+  const { publicKey, privateKey } = generateKeyPairSync("ec", { namedCurve: "prime256v1" });
+  return {
+    publicKey: publicKey.export({ format: "der", type: "spki" }).toString("base64"),
+    privateKey: privateKey.export({ format: "der", type: "pkcs8" }).toString("base64"),
+  };
+}
 
 function post(path: string, body: unknown): Request {
   return new Request(`https://worker.example${path}`, {
@@ -49,6 +71,40 @@ describe("license-worker activate", () => {
     expect(res.status).toBe(400);
     await expect(res.json()).resolves.toEqual({ error: "invalid license" });
   });
+
+  it("wraps the bundleKey to the device public key and strips it before forwarding", async () => {
+    const device = deviceKeyPair();
+    const fetchImpl = fakeFetch({ status: 201, body: { id: "lki_1" } });
+    const handler = handlerWith(fetchImpl);
+
+    const res = await handler(
+      post("/activate", { license_key: "lic_1", name: "my-mac", device_public_key: device.publicKey }),
+    );
+
+    // Dodo must never see the device key field
+    expect(fetchImpl).toHaveBeenCalledWith(
+      "https://test.dodopayments.com/licenses/activate",
+      expect.objectContaining({ method: "POST", body: JSON.stringify({ license_key: "lic_1", name: "my-mac" }) }),
+    );
+    const body = (await res.json()) as {
+      bundleKey: string;
+      keyId: string;
+      bundleKeyWrap: { alg: string; eph: string; iv: string };
+    };
+    expect(body.keyId).toBe(env.BUNDLE_KEY_ID);
+    expect(body.bundleKeyWrap.alg).toBe("p256-hkdf-sha256-aes256gcm");
+    expect(body.bundleKey).not.toBe(env.BUNDLE_KEY);
+    expect(unwrapForTest(body.bundleKey, body.bundleKeyWrap, device.privateKey)).toBe(env.BUNDLE_KEY);
+  });
+
+  it("falls back to a plaintext bundleKey when the device public key is malformed", async () => {
+    const fetchImpl = fakeFetch({ status: 201, body: { id: "lki_1" } });
+    const handler = handlerWith(fetchImpl);
+
+    const res = await handler(post("/activate", { license_key: "lic_1", name: "my-mac", device_public_key: "!!!" }));
+
+    await expect(res.json()).resolves.toEqual({ id: "lki_1", bundleKey: env.BUNDLE_KEY, keyId: env.BUNDLE_KEY_ID });
+  });
 });
 
 describe("license-worker validate", () => {
@@ -88,6 +144,32 @@ describe("license-worker validate", () => {
     const res = await handler(post("/validate", { license_key: "lic_1", license_key_instance_id: "lki_1" }));
 
     await expect(res.json()).resolves.toEqual({ valid: false });
+  });
+
+  it("wraps the bundleKey on validate when the client uploads its device key", async () => {
+    const device = deviceKeyPair();
+    const fetchImpl = fakeFetch({ status: 200, body: { valid: true } });
+    const handler = handlerWith(fetchImpl);
+
+    const res = await handler(
+      post("/validate", {
+        license_key: "lic_1",
+        license_key_instance_id: "lki_1",
+        device_public_key: device.publicKey,
+      }),
+    );
+
+    expect(fetchImpl).toHaveBeenCalledWith(
+      "https://test.dodopayments.com/licenses/validate",
+      expect.objectContaining({
+        body: JSON.stringify({ license_key: "lic_1", license_key_instance_id: "lki_1" }),
+      }),
+    );
+    const body = (await res.json()) as {
+      bundleKey: string;
+      bundleKeyWrap: { alg: string; eph: string; iv: string };
+    };
+    expect(unwrapForTest(body.bundleKey, body.bundleKeyWrap, device.privateKey)).toBe(env.BUNDLE_KEY);
   });
 });
 

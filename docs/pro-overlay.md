@@ -73,8 +73,8 @@ node 侧构建还给 `ssr.noExternal: true`（只有 `electron`、`better-sqlite
 - **`packEnc.mjs`**：把 node/web 两份 `__pro__` 文件收集成一个 manifest（`node/` / `web/` 前缀 + base64 内容），注入 `bundle.json`（`formatVersion`、`buildId`、`publicCommit`、`proCommit`，只做诊断用，不再有 ABI 版本字段），用 `KANSOKU_BUNDLE_KEY`（64 位十六进制、32 字节）+ `KANSOKU_BUNDLE_KEY_ID` 做 AES-256-GCM 加密，字节格式是 `MAGIC("KPRO1") + 12 字节 IV + 16 字节 authTag + gzip(JSON) 密文`——这个格式被公开仓的 golden fixture 钉死，改格式要重新生成 fixture。web 侧 chunk 还会被扫一遍，确认没有引用 `electron` 或 `node:` 内置模块（浏览器侧代码不能有 Node/Electron 专属引用）。
 - **运行时解密**（`packages/core/src/pro/loader.ts` 的 `loadPro`）：
   - 找不到 `pro.enc` → 直接返回 `null`（免费）。
-  - 找到但没 key（`getActiveBundleKey()` 和 `process.env.KANSOKU_BUNDLE_KEY` 都拿不到）→ 打日志说明，返回 `null`（免费）。
-  - 有 key 但解密/校验失败（错 key、被篡改）→ `catch` 住，打警告日志，返回 `null`（免费）。**永远不抛出去让宿主崩溃。**
+  - 找到但没 key（`getActiveBundleKey()` 拿不到，且非打包环境下 `process.env.KANSOKU_BUNDLE_KEY` 也拿不到）→ 打日志说明，返回 `null`（免费）。`KANSOKU_BUNDLE_KEY` 环境变量只在非打包构建里生效（`isBundleKeyEnvAllowed`，和 `KANSOKU_LICENSE_BYPASS` 同一套 `isPackaged` 判断）——打包版不认这个变量，堵住「设个环境变量就用泄漏 key」的后门。
+  - 有 key 但解密/校验失败（错 key、被篡改、**manifest.keyId 与当前 key 的 keyId 不一致**）→ `catch` 住，打警告日志，返回 `null`（免费）。**永远不抛出去让宿主崩溃。** keyId 一致性是每版轮换 key 的 enforcement：旧 key 解不开新包，revalidate 领到新 key 后旧包也会因为 keyId 对不上而停在免费模式，直到 App 更新到配套版本。
   - 成功：node 侧文件被注册成虚拟模块，路径映射回它们在 `dist-main/__pro__` 下**原本的位置**（`packages/core/src/pro/encLoader.ts` 的 `registerVirtualModules`），所以 pro chunk 之间的相对 import（`../chunk-x.mjs`）能落到正确的虚拟文件上；web 侧文件保留在内存 `Map<string, Buffer>` 里，交给协议层。
 - **泄漏闸门**：pro 入口链（`apps/pro/src/entries/canary.ts`）埋了一个 canary 常量；`apps/desktop/scripts/afterPack.cjs` 在打包后扫描 `app.asar` 原始字节找这个常量，命中就让打包失败——这是 `proLeakGuard` 之外的第二道独立防线，专门防明文 pro 代码混进最终产物。
 
