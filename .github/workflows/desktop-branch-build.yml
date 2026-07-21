@@ -1,0 +1,254 @@
+name: desktop-branch-build
+
+# Packages a downloadable Electron app for every code push to main and every
+# PR, so any branch state can be installed and verified by hand.
+#
+# Deliberately NOT the nightly/release path:
+#   - artifacts only, never a GitHub Release and never an appcast.xml, so the
+#     shipped updater feed can never resolve to one of these builds;
+#   - no test/typecheck gates — ci.yml is the merge gate; this workflow only
+#     answers "does this branch package into a working app".
+# Fork PRs run with no secrets: fetch-pro is a no-op (free build) and signing
+# falls back to ad-hoc, both already supported paths below.
+
+on:
+  pull_request:
+    paths:
+      - 'apps/**'
+      - 'packages/**'
+      - 'patches/**'
+      - 'scripts/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - '.github/**'
+  push:
+    branches:
+      - main
+    paths:
+      - 'apps/**'
+      - 'packages/**'
+      - 'patches/**'
+      - 'scripts/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - '.github/**'
+  workflow_dispatch:
+
+concurrency:
+  group: desktop-branch-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  package:
+    runs-on: macos-14
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: derive build version and artifact id
+        id: version
+        env:
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          SHA="$(git rev-parse --short=7 HEAD)"
+          # electron-builder feeds the version into the bundle metadata, so the
+          # branch name is sanitised down to semver-prerelease-safe characters.
+          SAFE_BRANCH="$(printf '%s' "$BRANCH" | tr -c 'a-zA-Z0-9-' '-' | sed 's/-*$//;s/^-*//')"
+          PKG_VERSION="$(node -p "require('./apps/desktop/package.json').version")"
+          echo "version=${PKG_VERSION}-${SAFE_BRANCH}.${SHA}" >> "$GITHUB_OUTPUT"
+          echo "branch=${SAFE_BRANCH}" >> "$GITHUB_OUTPUT"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+
+      # Same all-or-nothing rule as the nightly/release workflows: a partial
+      # secret set is a configuration error, not a degraded mode. Fork PRs see
+      # zero secrets and land on the ad-hoc path.
+      - name: detect signing secrets (all 5 → sign + notarize, none → ad-hoc)
+        id: signing
+        env:
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          missing=""
+          for v in CSC_LINK CSC_KEY_PASSWORD APPLE_ID APPLE_APP_SPECIFIC_PASSWORD APPLE_TEAM_ID; do
+            if [ -z "${!v}" ]; then
+              missing="$missing $v"
+            fi
+          done
+          if [ -z "$missing" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+            echo "Developer ID signing + notarization enabled"
+          elif [ "$(echo "$missing" | wc -w)" -eq 5 ]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "no signing secrets — ad-hoc signed build (Gatekeeper will require a manual open)"
+          else
+            echo "::error::partial signing secrets — missing:$missing. Configure all five or none."
+            exit 1
+          fi
+
+      - name: setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          package_json_file: package.json
+
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          # Only the content-addressable store is cached, never node_modules — a
+          # cached node_modules can carry a stale @electron/rebuild forge-meta
+          # entry claiming better-sqlite3 is already built for Electron's ABI.
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      # Without KANSOKU_PRO_REPO_URL (fork PRs, or the secret unset) this is a
+      # no-op and the artifact is a free build — the summary says which.
+      - name: fetch pro slot
+        id: pro
+        env:
+          KANSOKU_PRO_REPO_URL: ${{ secrets.KANSOKU_PRO_REPO_URL }}
+        run: |
+          if scripts/fetch-pro.sh; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::pro slot not configured — this artifact is a FREE build"
+          fi
+
+      - name: install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # The pro overlay projections are gitignored symlinks created from
+      # apps/pro/overlays — a fresh checkout has none, and without them the
+      # build silently emits a free module graph.
+      - name: project pro overlays into the public tree
+        if: steps.pro.outputs.present == 'true'
+        run: |
+          pnpm overlay:sync
+          pnpm overlay:check
+
+      - name: link first-party skills into .agents
+        run: python3 scripts/sync-agents-skills.py
+
+      - name: refresh third-party license credits (About page)
+        run: pnpm credits
+
+      - name: stamp the branch version into apps/desktop/package.json
+        working-directory: apps/desktop
+        # electron-builder reads the version from package.json, so an installed
+        # branch build self-identifies (e.g. 0.20.0-my-branch.a1b2c3d) in About.
+        # Never committed — this edit lives only in the runner's checkout.
+        run: |
+          node -e '
+            const fs = require("node:fs");
+            const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+            pkg.version = process.env.BRANCH_VERSION;
+            fs.writeFileSync("package.json", JSON.stringify(pkg, null, 2) + "\n");
+          '
+        env:
+          BRANCH_VERSION: ${{ steps.version.outputs.version }}
+
+      - name: clear native-module rebuild cache (pnpm package forces the real rebuild)
+        working-directory: apps/desktop
+        run: rm -rf node_modules/better-sqlite3/build "$HOME/Library/Caches/electron-rebuild"
+
+      # A branch build never serves updates, so a missing Sparkle key downgrades
+      # to a warning instead of the hard failure the nightly/release paths use.
+      - name: inject SUPublicEDKey into electron-builder.yml
+        env:
+          SPARKLE_ED_PUBLIC_KEY: ${{ secrets.SPARKLE_ED_PUBLIC_KEY }}
+        run: |
+          if [ -z "$SPARKLE_ED_PUBLIC_KEY" ]; then
+            echo "::warning::SPARKLE_ED_PUBLIC_KEY missing — building with an empty update public key"
+          else
+            pnpm --filter @kansoku/desktop exec -- electron-sparkle-updater inject-public-key \
+              --file electron-builder.yml
+          fi
+
+      - name: build web
+        run: pnpm --filter @kansoku/web build
+
+      - name: enable Developer ID signing (drop identity:null from electron-builder.yml)
+        if: steps.signing.outputs.enabled == 'true'
+        working-directory: apps/desktop
+        run: |
+          grep -q '^  identity: null$' electron-builder.yml
+          sed -i '' '/^  identity: null$/d' electron-builder.yml
+
+      # Identical to the release path, including the pro encryption when the pro
+      # slot is present — packEnc hard-fails without the bundle secrets, which is
+      # what makes a pro-flagged artifact real evidence rather than a lookalike.
+      - name: package desktop (dmg + zip)
+        working-directory: apps/desktop
+        env:
+          KANSOKU_BUNDLE_KEY: ${{ secrets.KANSOKU_BUNDLE_KEY }}
+          KANSOKU_BUNDLE_KEY_ID: ${{ secrets.KANSOKU_BUNDLE_KEY_ID }}
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: pnpm package
+
+      - name: verify signature
+        working-directory: apps/desktop
+        env:
+          SIGNING_ENABLED: ${{ steps.signing.outputs.enabled }}
+        run: |
+          verify_app() {
+            codesign --verify --deep --strict "$1"
+            if [ "$SIGNING_ENABLED" = "true" ]; then
+              codesign --display --verbose=2 "$1" 2>&1 | grep -q 'Authority=Developer ID Application'
+              xcrun stapler validate "$1"
+              spctl --assess --type execute --verbose=2 "$1"
+            fi
+          }
+
+          ZIP_PATH="$PWD/$(echo release/*.zip)"
+
+          ZIP_EXTRACT_DIR="$(mktemp -d)"
+          ditto -x -k "$ZIP_PATH" "$ZIP_EXTRACT_DIR"
+          verify_app "$ZIP_EXTRACT_DIR"/*.app
+          rm -rf "$ZIP_EXTRACT_DIR"
+
+      # These artifacts must never look like an update feed source.
+      - name: assert no appcast was produced
+        working-directory: apps/desktop
+        run: |
+          if ls release/appcast.xml >/dev/null 2>&1; then
+            echo "::error::release/appcast.xml exists — a branch build must never generate an update feed"
+            exit 1
+          fi
+
+      - name: upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: kansoku-${{ steps.version.outputs.branch }}-${{ steps.version.outputs.sha }}
+          path: |
+            apps/desktop/release/*.dmg
+            apps/desktop/release/*.zip
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: summary
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          BRANCH: ${{ steps.version.outputs.branch }}
+          SHA: ${{ steps.version.outputs.sha }}
+          PRO_PRESENT: ${{ steps.pro.outputs.present }}
+          SIGNING_ENABLED: ${{ steps.signing.outputs.enabled }}
+        run: |
+          {
+            echo "## Branch build $VERSION"
+            echo
+            echo "- artifact: \`kansoku-$BRANCH-$SHA\` (dmg + zip, Actions → this run → Artifacts)"
+            echo "- pro slot: $([ "$PRO_PRESENT" = "true" ] && echo 'present (encrypted pro.enc staged)' || echo '**absent — free build**')"
+            echo "- signing: $([ "$SIGNING_ENABLED" = "true" ] && echo 'Developer ID + notarized' || echo 'ad-hoc (right-click → Open on first launch)')"
+          } >> "$GITHUB_STEP_SUMMARY"
