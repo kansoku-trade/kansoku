@@ -5,8 +5,8 @@ const BRAND = 'Kansoku';
 let activeTitleSink: ((title: string) => void) | null = null;
 
 // Desktop tab mode points this at the active tab's title setter before
-// mounting that tab's page tree, mirroring __setActiveRouteStore in
-// router.ts. Only TabsProvider (web/src/desktop) calls this.
+// mounting that tab's page tree, mirroring setActiveRouter in lib/router.
+// Only the desktop tabs controller (web/src/features/desktop) calls this.
 export function __setActiveTitleSink(sink: ((title: string) => void) | null): void {
   activeTitleSink = sink;
 }

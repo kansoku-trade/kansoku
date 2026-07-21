@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowLeft, Copy, FolderOpen, RefreshCw } from 'lucide-react';
-import { navigate } from '@web/router';
+import { navigate } from '@web/lib/router';
 import { useTitle } from '@web/lib/useTitle';
 import { Button, ErrorBox } from '@web/ui';
 import { getDesktopLogsBridge } from './desktopLogs';

@@ -2,7 +2,7 @@ import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import { persistOptions, queryClient } from './lib/queryClient';
-import { installRouter } from './router';
+import { installRouter } from './lib/router';
 import './styles.css';
 
 installRouter();

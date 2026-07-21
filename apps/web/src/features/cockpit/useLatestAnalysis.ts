@@ -3,7 +3,7 @@ import type { ChartDoc, SymbolAnalysisRow } from '@kansoku/shared/types';
 import { useQuery } from '@web/lib/apiHooks';
 import { client } from '@web/lib/client';
 import { easternToday } from '@web/lib/easternDate';
-import { navigate, useQueryParam } from '@web/router';
+import { navigate, useQueryParam } from '@web/lib/router';
 import { subscribeChannel } from '@web/lib/ws/wsHub';
 import {
   applyAnalysisBroadcast,

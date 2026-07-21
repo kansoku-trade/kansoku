@@ -3,7 +3,7 @@ import { Library, MessageCircle, Settings, Sparkles } from 'lucide-react';
 import { useCapabilities } from '@web/features/edition/capabilitiesStore';
 import { openLicenseModal } from '@web/features/edition/licenseModalStore';
 import { normalizeSymbol } from '@web/lib/symbol';
-import { navigate } from '@web/router';
+import { navigate } from '@web/lib/router';
 import { listRecentSymbols } from '@web/features/charts/recentCharts';
 import { Chip, Input } from '@web/ui';
 

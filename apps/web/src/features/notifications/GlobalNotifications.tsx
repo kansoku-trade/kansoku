@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import type { CockpitComment, Notice } from '@kansoku/shared/types';
 import { maybeNotify, requestNotificationPermissionOnce } from '../../lib/notifications';
 import { symbolFromRoute } from '../../lib/symbol';
-import { useRoute } from '../../router';
+import { useRoute } from '../../lib/router';
 import { subscribeChannel } from '../../lib/ws/wsHub';
 
 interface NotificationEnvelope {

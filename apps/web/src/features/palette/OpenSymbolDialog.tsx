@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { normalizeSymbol } from '../../lib/symbol';
 import { listRecentSymbols } from '../charts/recentCharts';
-import { navigate } from '../../router';
+import { navigate } from '../../lib/router';
 import { Button, Chip, Input, openModal } from '../../ui';
 
 function OpenSymbolForm({

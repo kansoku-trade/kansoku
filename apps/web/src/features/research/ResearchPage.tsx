@@ -3,7 +3,7 @@ import { BookOpen, ChartCandlestick, FileText, Library, RefreshCw, Search } from
 import type { ResearchDocument, ResearchDocumentMeta } from '@kansoku/core/contract/index';
 import { useQuery } from '@web/lib/apiHooks';
 import { client } from '@web/lib/client';
-import { navigate, useQueryParam } from '@web/router';
+import { navigate, useQueryParam } from '@web/lib/router';
 import { Badge, Empty, ErrorBox, Input, MarketTime, ResizablePanel, Spinner } from '@web/ui';
 import { useTitle } from '@web/lib/useTitle';
 import { Markdown } from '../cockpit/markdown';

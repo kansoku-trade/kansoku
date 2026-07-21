@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { navigate } from '@web/router';
+import { navigate } from '@web/lib/router';
 import { Button } from '@web/ui';
 import { getDesktopLogsBridge } from '../logs/desktopLogs';
 

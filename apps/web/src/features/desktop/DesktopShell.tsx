@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Router } from '../../PageRouter';
+import { RouterProvider } from 'react-router';
 import { GlobalNotifications } from '../notifications/GlobalNotifications';
 import { symbolFromRoute } from '../../lib/symbol';
 import { CommandPalette } from '../palette/CommandPalette';
@@ -27,7 +27,7 @@ export function DesktopShell() {
       <GlobalNotifications route={controller.activeTab.route} />
       <div className="desktop-content" key={controller.activeTab.id}>
         <RestrictedBanner />
-        <Router />
+        <RouterProvider router={controller.activeRouter} />
       </div>
       <CommandPalette onOpenRoute={controller.openTab} />
       <LinkHoverStatus />

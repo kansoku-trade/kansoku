@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useQuery } from '@web/lib/apiHooks';
 import { client } from '@web/lib/client';
-import { navigate } from '@web/router';
+import { navigate } from '@web/lib/router';
 import { Button, Card, ErrorBox, SectionTitle } from '@web/ui';
 import { useTitle } from '@web/lib/useTitle';
 import { DataRootSection } from './DataRootSection';

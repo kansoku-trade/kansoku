@@ -1,6 +1,6 @@
 import { getDesktopCredentialsBridge } from '../settings/desktopCredentials';
 import { dismissRestrictedBanner, useRestrictedMode } from './restrictedMode';
-import { navigate } from '../../router';
+import { navigate } from '../../lib/router';
 
 export function RestrictedBanner() {
   const { restricted, dismissed } = useRestrictedMode();

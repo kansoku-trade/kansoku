@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { navigate } from '@web/router';
+import { navigate } from '@web/lib/router';
 
 export function ResearchAssistantPage() {
   useEffect(() => {

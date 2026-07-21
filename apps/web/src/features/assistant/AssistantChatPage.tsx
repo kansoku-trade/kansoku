@@ -3,7 +3,7 @@ import type { ResearchDocumentMeta } from '@kansoku/core/contract/index';
 import { errorMessage } from '@web/lib/api';
 import { useQuery } from '@web/lib/apiHooks';
 import { client } from '@web/lib/client';
-import { navigate, useQueryParam } from '@web/router';
+import { navigate, useQueryParam } from '@web/lib/router';
 import { Button, Empty, Spinner } from '@web/ui';
 import { useTitle } from '@web/lib/useTitle';
 import { saveRole } from '../settings/roleShared';

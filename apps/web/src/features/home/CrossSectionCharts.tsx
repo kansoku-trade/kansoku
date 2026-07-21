@@ -3,7 +3,7 @@ import { marketDate } from '@kansoku/shared/time';
 import { useQuery } from '@web/lib/apiHooks';
 import { SimpleChartView } from '@web/features/charts/simple/SimpleChartView';
 import { client } from '@web/lib/client';
-import { useQueryParam } from '@web/router';
+import { useQueryParam } from '@web/lib/router';
 import { Card, Empty, ErrorBox, SectionTitle } from '@web/ui';
 
 export const CROSS_SECTION_TYPES = 'flow,cohort';

@@ -3,7 +3,7 @@ import type { ChartMeta, OverviewBoard, PortfolioSummary } from '@kansoku/shared
 import { marketDate } from '@kansoku/shared/time';
 import { useQuery } from '../../lib/apiHooks';
 import { client } from '../../lib/client';
-import { navigate, useQueryParam } from '../../router';
+import { navigate, useQueryParam } from '../../lib/router';
 import { QuoteBar } from '../quotes/QuoteBar';
 import { isDesktopRealtime } from '../../lib/portTransport';
 import { Badge, DataAgeBadge, ErrorBox, SectionTitle } from '../../ui';
