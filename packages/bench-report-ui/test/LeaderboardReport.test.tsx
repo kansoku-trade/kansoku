@@ -180,4 +180,26 @@ describe('LeaderboardReport', () => {
     );
     expect(screen.getByText('anthropic/claude · 10 cells · avg 2.0 tool-calls')).toBeDefined();
   });
+
+  it('renders beaten label in subtitle when beatenLabel is present', () => {
+    const { container } = render(<LeaderboardReport data={makeData()} />);
+    const subtitle = container.querySelector('.sub');
+    const beatenBold = subtitle?.querySelector('b');
+
+    expect(beatenBold).toBeDefined();
+    expect(beatenBold?.textContent).toBe('2/2');
+    expect(subtitle?.textContent).toContain('2/2');
+    expect(subtitle?.textContent).toContain('判断分跑赢买入持有');
+  });
+
+  it('does not render beaten label when beatenLabel is null', () => {
+    const data = makeData();
+    data.subtitle.beatenLabel = null;
+    const { container } = render(<LeaderboardReport data={data} />);
+    const subtitle = container.querySelector('.sub');
+    const beatenBold = subtitle?.querySelector('b');
+
+    expect(beatenBold).toBeNull();
+    expect(subtitle?.textContent).not.toContain('判断分跑赢买入持有');
+  });
 });
