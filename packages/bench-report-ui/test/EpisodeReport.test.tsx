@@ -182,7 +182,7 @@ function makeData(): EpisodeReportViewData {
       auditChip: { label: '未附加数据审计', tone: 'neutral' },
     },
     summarySubtitle: '2/2 完成',
-    metrics: [],
+    metrics: [{ label: '胜率', value: '100%', note: '2 / 2', tone: 'positive' }],
     configStrip: [],
     reasonTable: { coverageLabel: '—', rows: [] },
     modelTable: [],
@@ -206,6 +206,11 @@ describe('EpisodeReport', () => {
     expect(container.querySelector('.report-title p')?.textContent).toBe('Episode 42');
     expect(container.querySelectorAll('.case-row')).toHaveLength(2);
     expect(container.querySelectorAll('.trade-case')).toHaveLength(2);
+  });
+
+  it('carries the metric tone class on each metric cell', () => {
+    const { container } = render(<EpisodeReport data={makeData()} />);
+    expect(container.querySelector('.metric')?.classList.contains('positive')).toBe(true);
   });
 
   it('filters hide both table rows and detail articles', () => {

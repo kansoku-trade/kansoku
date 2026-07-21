@@ -33,7 +33,7 @@ export function ReasonTable({ data }: { data: EpisodeReportViewData }) {
                   .map((item) => `${item.actionLabel} ${item.count}`)
                   .join(' · ');
                 return (
-                  <tr key={`-`}>
+                  <tr key={`${stat.model}-${stat.category}`}>
                     <td>
                       <strong>{stat.model}</strong>
                     </td>

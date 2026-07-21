@@ -9,7 +9,9 @@ import { ReasonTable } from './ReasonTable';
 import { SummaryPanel } from './SummaryPanel';
 import { useCaseFilters } from './useCaseFilters';
 import './styles/theme.css';
-import './styles/report.css';
+import './styles/reportBase.css';
+import './styles/chart.css';
+import './styles/sidebar.css';
 import './styles/process.css';
 import './styles/reason.css';
 

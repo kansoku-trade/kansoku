@@ -9,7 +9,7 @@ export function SummaryPanel({ data }: { data: EpisodeReportViewData }) {
       </div>
       <div className="metrics">
         {data.metrics.map((cell) => (
-          <div className={`metric `} key={cell.label}>
+          <div className={`metric ${cell.tone}`} key={cell.label}>
             <span>{cell.label}</span>
             <strong>{cell.value}</strong>
             <small>{cell.note}</small>
