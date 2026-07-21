@@ -83,7 +83,7 @@ src/
 
 - 新增 `react-router` v7（单包）与 `vite-plugin-route-builder`（devDependency）。
 - 插件配置（`vite.config.ts`）：
-  - `pagePattern`: 匹配 `src/pages/**/*.tsx` 与 `*.sync.tsx`，**必须排除 `*.test.*` 与 `*.pro.*`**——pro overlay 以同名 `.pro.tsx` 文件投影进源码树，若被扫进公共路由清单会把 pro 模块静态引入公共 bundle，`proLeakGuard` 会拦截构建失败。
+  - `pagePattern`: 匹配 `src/pages/**/*.tsx` 与 `*.sync.tsx`。插件的 `pagePattern` 是单字符串 glob，不支持排除模式（实施时已验证），因此 `*.test.*` / `*.pro.*` 的隔离靠两层保障：约定上 `pages/` 只允许路由壳文件（测试与 overlay 文件都住在 `features/`，overlay 不向 `pages/` 投影）；万一 pro 模块被静态引入公共 bundle，`proLeakGuard` 会拦截构建失败。
   - `outputPath`: `src/generated-routes.ts`，**提交进 git**（CI 与 vitest 不跑 vite dev server，需要产物在场）。
   - `enableInDev: true`，dev 下增删页面文件自动重生成。
 - 页面默认 lazy（`.tsx`），获得页面级 code splitting；首屏关键页（`index.tsx`）可视情况用 `.sync.tsx`。pro chunk 命名边界（`__pro__/`）不受影响，由现有 `chunkFileNamesFor` 继续判定。
