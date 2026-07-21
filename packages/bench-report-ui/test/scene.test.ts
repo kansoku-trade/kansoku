@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildChartScene } from '../src/episode/chart/scene';
+import { chartTheme } from '../src/styles/chartTheme';
 import type {
   EpisodeReportChartBar,
   EpisodeReportChartPayload,
@@ -62,9 +63,9 @@ describe('buildChartScene', () => {
   it('swaps to solid trade lines and recenters on the per-timeframe decision bar', () => {
     const h1 = buildChartScene(payload, 'h1', 20, { kind: 'trade', tradeId: 1, trade });
     expect(h1.priceLines).toEqual([
-      { price: 100, color: '#2563eb', title: 'T1 成交', dashed: false },
-      { price: 90, color: '#dc2626', title: 'T1 止损', dashed: false },
-      { price: 120, color: '#059669', title: 'T1 止盈', dashed: false },
+      { price: 100, color: chartTheme.textPrimary, title: 'T1 成交', dashed: false },
+      { price: 90, color: chartTheme.down, title: 'T1 止损', dashed: false },
+      { price: 120, color: chartTheme.up, title: 'T1 止盈', dashed: false },
     ]);
     expect(h1.highlightTime).toBe(10);
     expect(h1.visibleRange).toEqual({ from: 9 - 45, to: 9 + 45 });

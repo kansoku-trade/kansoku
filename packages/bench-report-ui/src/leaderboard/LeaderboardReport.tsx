@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import type { LeaderboardReportViewData } from '../types';
 import { DetailCard } from './DetailCard';
-import { FilterBar } from './FilterBar';
 import { Footer } from './Footer';
 import { LeaderboardTable } from './LeaderboardTable';
 import { MetricStrip } from './MetricStrip';
 import { ScatterPanel } from './ScatterPanel';
 import { TopBar } from './TopBar';
-import './styles/theme.css';
+import '../styles/theme.css';
+import '../ui/styles/controls.css';
 import './styles/topbar.css';
 import './styles/table.css';
 import './styles/scatter.css';
@@ -22,7 +22,6 @@ export function LeaderboardReport({ data }: { data: LeaderboardReportViewData })
       <div className="page">
         <MetricStrip data={data} />
         <div className="shell">
-          <FilterBar />
           <div className="grid">
             <LeaderboardTable data={data} selectedId={selectedId} onSelect={setSelectedId} />
             <div className="plotwrap">

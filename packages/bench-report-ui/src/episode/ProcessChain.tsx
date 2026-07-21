@@ -1,4 +1,6 @@
 import type { EpisodeReportCaseDetailView, EpisodeReportChartTimeframe } from '../types';
+import { ScrollArea } from '../ui/ScrollArea';
+import { Tooltip } from '../ui/Tooltip';
 
 export function ProcessChain({
   detail,
@@ -44,41 +46,57 @@ export function ProcessChain({
           </button>
         </div>
       </div>
-      <div className="process-rail" role="list" aria-label="工具调用链">
-        {process.events.map((event) => {
-          const rawTimeframe = event.timeframe ?? defaultTimeframe;
-          const timeframe = availableTimeframes.includes(rawTimeframe)
-            ? rawTimeframe
-            : defaultTimeframe;
-          return (
-            <button
-              type="button"
-              role="listitem"
-              className={`process-node ${event.kind}${event.isError ? ' error' : ''}${
-                activeNodeSeq === event.sequence ? ' active' : ''
-              }`}
-              key={event.sequence}
-              title={event.tool}
-              onClick={() => onNodeClick(timeframe, event.snapshotBar, event.sequence)}
-            >
-              <span className="process-index">{String(event.sequence).padStart(2, '0')}</span>
-              <span className="process-bar">{event.barLabel}</span>
-              <strong>{event.label}</strong>
-              <small>{event.detail}</small>
-              <em>
-                {event.transitionLabel}
-                {event.durationLabel ? ` · ${event.durationLabel}` : ''}
-              </em>
-            </button>
-          );
-        })}
-      </div>
+      <ScrollArea className="process-rail" orientation="horizontal">
+        <div className="process-track" role="list" aria-label="工具调用链">
+          {process.events.map((event) => {
+            const rawTimeframe = event.timeframe ?? defaultTimeframe;
+            const timeframe = availableTimeframes.includes(rawTimeframe)
+              ? rawTimeframe
+              : defaultTimeframe;
+            return (
+              <Tooltip
+                key={event.sequence}
+                className="process-tip"
+                content={
+                  <div className="process-tip">
+                    <strong>{event.tool}</strong>
+                    {event.detail ? <p>{event.detail}</p> : null}
+                  </div>
+                }
+                render={
+                  <button
+                    type="button"
+                    role="listitem"
+                    className={`process-node ${event.kind}${event.isError ? ' error' : ''}${
+                      activeNodeSeq === event.sequence ? ' active' : ''
+                    }`}
+                    onClick={() => onNodeClick(timeframe, event.snapshotBar, event.sequence)}
+                  />
+                }
+              >
+                <>
+                  <span className="process-index">{String(event.sequence).padStart(2, '0')}</span>
+                  <span className="process-bar">{event.barLabel}</span>
+                  <strong>{event.label}</strong>
+                  <small>{event.detail}</small>
+                  <em>
+                    {event.transitionLabel}
+                    {event.durationLabel ? ` · ${event.durationLabel}` : ''}
+                  </em>
+                </>
+              </Tooltip>
+            );
+          })}
+        </div>
+      </ScrollArea>
       <div className="process-checks">
         {process.checks.map((check) => (
-          <span className={check.pass ? 'pass' : 'fail'} title={check.detail} key={check.label}>
-            <i>{check.pass ? '✓' : '!'}</i>
-            {check.label} <small>{check.detail}</small>
-          </span>
+          <Tooltip key={check.label} content={check.detail}>
+            <span className={check.pass ? 'pass' : 'fail'}>
+              <i>{check.pass ? '✓' : '!'}</i>
+              {check.label}
+            </span>
+          </Tooltip>
         ))}
       </div>
     </section>

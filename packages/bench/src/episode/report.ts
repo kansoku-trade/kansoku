@@ -168,7 +168,7 @@ export function renderEpisodeReportHtml(input: EpisodeReportInput): {
   });
 
   const assets = loadBenchReportUiAssets('episode');
-  const html = `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="color-scheme" content="light"/><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%232563eb'/%3E%3Cpath d='M8 7h4v7l7-7h5l-8 8 9 10h-5l-8-9v9H8z' fill='white'/%3E%3C/svg%3E"/><title>${escapeHtml(runId)} · Episode Bench Report</title><style>${assets.css}</style></head><body><div id="root"></div><script>window.__KANSOKU_REPORT_DATA__=${serializeForScript(viewData)};</script><script>${assets.js}</script></body></html>`;
+  const html = `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="color-scheme" content="dark"/><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23ffb000'/%3E%3Cpath d='M8 7h4v7l7-7h5l-8 8 9 10h-5l-8-9v9H8z' fill='%230a0a0a'/%3E%3C/svg%3E"/><title>${escapeHtml(runId)} · Episode Bench Report</title><style>${assets.css}</style></head><body><div id="root"></div><script>window.__KANSOKU_REPORT_DATA__=${serializeForScript(viewData)};</script><script>${assets.js}</script></body></html>`;
 
   return { html, summary };
 }

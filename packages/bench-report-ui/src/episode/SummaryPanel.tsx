@@ -1,4 +1,5 @@
 import type { EpisodeReportViewData } from '../types';
+import { Term } from './Term';
 
 export function SummaryPanel({ data }: { data: EpisodeReportViewData }) {
   return (
@@ -10,7 +11,9 @@ export function SummaryPanel({ data }: { data: EpisodeReportViewData }) {
       <div className="metrics">
         {data.metrics.map((cell) => (
           <div className={`metric ${cell.tone}`} key={cell.label}>
-            <span>{cell.label}</span>
+            <span>
+              <Term label={cell.label} />
+            </span>
             <strong>{cell.value}</strong>
             <small>{cell.note}</small>
           </div>

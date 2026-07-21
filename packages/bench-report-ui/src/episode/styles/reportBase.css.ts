@@ -1,15 +1,15 @@
 import { globalStyle } from '@vanilla-extract/css';
-import { vars } from './theme.css';
+import { vars } from '../../styles/theme.css';
 
 globalStyle('.report', {
   width: 'min(1440px,calc(100% - 32px))',
   margin: '0 auto',
-  border: `1px solid ${vars.line}`,
+  border: `1px solid ${vars.border}`,
 });
 
 globalStyle('.report-header, .panel, .trade-case', {
-  background: vars.panel,
-  border: `1px solid ${vars.line}`,
+  background: vars.bgSurface,
+  border: `1px solid ${vars.border}`,
   borderLeft: 0,
   borderRight: 0,
 });
@@ -19,13 +19,17 @@ globalStyle('.report > :first-child', {
 });
 
 globalStyle('.report > * + *', {
-  marginTop: '10px',
+  marginTop: '8px',
+});
+
+globalStyle('.report > .case-details, .report > .audit-panel', {
+  marginTop: '28px',
 });
 
 globalStyle('.report-header', {
   display: 'flex',
   alignItems: 'center',
-  gap: '18px',
+  gap: '16px',
   padding: '14px 16px',
 });
 
@@ -35,13 +39,15 @@ globalStyle('.report-title', {
 
 globalStyle('.report-title h1', {
   fontSize: '18px',
-  margin: 0,
+  fontWeight: 600,
+  letterSpacing: '-.02em',
 });
 
 globalStyle('.report-title p', {
-  margin: '2px 0 0',
-  color: vars.muted,
-  font: `11px ${vars.mono}`,
+  marginTop: '3px',
+  color: vars.textMuted,
+  fontFamily: vars.fontMono,
+  fontSize: vars.fsSm,
 });
 
 globalStyle('.header-meta', {
@@ -57,33 +63,35 @@ globalStyle('.chip, .status', {
   alignItems: 'center',
   minHeight: '24px',
   padding: '3px 8px',
-  border: `1px solid ${vars.line}`,
-  borderRadius: '4px',
-  background: vars.soft,
-  fontSize: '11px',
+  border: `1px solid ${vars.border}`,
+  borderRadius: vars.radius,
+  background: vars.bgElement,
+  color: vars.textSecondary,
+  fontSize: vars.fsSm,
   whiteSpace: 'nowrap',
 });
 
 globalStyle('.audit-state', {
-  fontWeight: 650,
+  fontWeight: 600,
 });
 
 globalStyle('.audit-state.pass', {
-  color: vars.green,
-  borderColor: '#a7d8c7',
-  background: '#f0fdf8',
+  color: vars.up,
+  borderColor: vars.stateOkBorder,
+  background: vars.stateOkBg,
 });
 
 globalStyle('.audit-state.fail', {
-  color: vars.red,
-  borderColor: '#efb4b4',
-  background: '#fff5f5',
+  color: vars.down,
+  borderColor: vars.stateBadBorder,
+  background: vars.stateBadBg,
 });
 
 globalStyle('.generated', {
   marginLeft: 'auto',
-  color: vars.muted,
-  font: `10px ${vars.mono}`,
+  color: vars.textMuted,
+  fontFamily: vars.fontMono,
+  fontSize: vars.fsXs,
   whiteSpace: 'nowrap',
 });
 
@@ -98,63 +106,68 @@ globalStyle('.panel-title', {
   justifyContent: 'space-between',
   gap: '16px',
   padding: '10px 12px',
-  borderBottom: `1px solid ${vars.line}`,
+  borderBottom: `1px solid ${vars.border}`,
 });
 
 globalStyle('.panel-title h2', {
-  fontSize: '13px',
-  margin: 0,
+  fontSize: vars.fsMd,
+  fontWeight: 600,
 });
 
-globalStyle('.panel-title span', {
-  color: vars.muted,
-  fontSize: '11px',
+globalStyle('.panel-title > span', {
+  color: vars.textMuted,
+  fontSize: vars.fsSm,
 });
 
 globalStyle('.metrics', {
   display: 'grid',
-  gridTemplateColumns: 'repeat(6,1fr)',
-  borderBottom: `1px solid ${vars.line}`,
+  gridTemplateColumns: 'repeat(6,minmax(0,1fr))',
+  gap: '1px',
+  background: vars.border,
+  borderBottom: `1px solid ${vars.border}`,
+});
+
+globalStyle('.metrics', {
+  '@media': {
+    '(max-width:1180px)': { gridTemplateColumns: 'repeat(4,minmax(0,1fr))' },
+    '(max-width:860px)': { gridTemplateColumns: 'repeat(3,minmax(0,1fr))' },
+    '(max-width:600px)': { gridTemplateColumns: 'repeat(2,minmax(0,1fr))' },
+  },
 });
 
 globalStyle('.metric', {
   minWidth: 0,
   padding: '10px 12px',
-  borderRight: `1px solid ${vars.line}`,
+  background: vars.bgSurface,
 });
 
-globalStyle('.metric:nth-child(6n)', {
-  borderRight: 0,
-});
-
-globalStyle('.metric span, .metric small', {
+globalStyle('.metric > span, .metric small', {
   display: 'block',
-  color: vars.muted,
-  fontSize: '10px',
+  color: vars.textMuted,
+  fontSize: vars.fsXs,
 });
 
 globalStyle('.metric strong', {
   display: 'block',
-  margin: '3px 0 1px',
-  font: `600 18px ${vars.mono}`,
+  margin: '4px 0 2px',
+  fontFamily: vars.fontMono,
+  fontSize: '18px',
+  fontWeight: 600,
+  fontVariantNumeric: 'tabular-nums',
   letterSpacing: '-.03em',
 });
 
 globalStyle('.config-strip', {
-  display: 'flex',
-  gap: 0,
-  overflow: 'auto',
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fit,minmax(124px,1fr))',
+  gap: '1px',
+  background: vars.border,
 });
 
 globalStyle('.config-strip div', {
-  flex: 1,
-  minWidth: '112px',
+  minWidth: 0,
   padding: '8px 12px',
-  borderRight: `1px solid ${vars.line}`,
-});
-
-globalStyle('.config-strip div:last-child', {
-  border: 0,
+  background: vars.bgSurface,
 });
 
 globalStyle('.config-strip span, .config-strip strong', {
@@ -162,15 +175,18 @@ globalStyle('.config-strip span, .config-strip strong', {
 });
 
 globalStyle('.config-strip span', {
-  color: vars.muted,
-  fontSize: '9px',
+  color: vars.textMuted,
+  fontSize: vars.fsXs,
   textTransform: 'uppercase',
   letterSpacing: '.04em',
 });
 
 globalStyle('.config-strip strong', {
-  marginTop: '2px',
-  font: `600 11px ${vars.mono}`,
+  marginTop: '3px',
+  fontFamily: vars.fontMono,
+  fontSize: vars.fsSm,
+  fontWeight: 600,
+  fontVariantNumeric: 'tabular-nums',
 });
 
 globalStyle('.table-scroll', {
@@ -184,11 +200,12 @@ globalStyle('.compact-table', {
 });
 
 globalStyle('.compact-table th', {
-  padding: '7px 10px',
-  background: vars.soft,
-  borderBottom: `1px solid ${vars.line}`,
-  color: vars.muted,
-  fontSize: '9px',
+  padding: '8px 10px',
+  background: vars.bgElement,
+  borderBottom: `1px solid ${vars.border}`,
+  color: vars.textMuted,
+  fontSize: vars.fsXs,
+  fontWeight: 500,
   textAlign: 'left',
   textTransform: 'uppercase',
   letterSpacing: '.04em',
@@ -197,7 +214,7 @@ globalStyle('.compact-table th', {
 
 globalStyle('.compact-table td', {
   padding: '8px 10px',
-  borderBottom: '1px solid #f5f5f5',
+  borderBottom: `1px solid ${vars.border}`,
   verticalAlign: 'middle',
   whiteSpace: 'nowrap',
 });
@@ -207,51 +224,51 @@ globalStyle('.compact-table tbody tr:last-child td', {
 });
 
 globalStyle('.compact-table tbody tr:hover', {
-  background: '#fafafa',
+  background: vars.bgHover,
 });
 
 globalStyle('.compact-table strong, .compact-table small', {
   display: 'block',
 });
 
+globalStyle('.compact-table strong', {
+  fontWeight: 600,
+});
+
 globalStyle('.compact-table small', {
-  color: vars.muted,
-  fontSize: '9px',
+  marginTop: '2px',
+  color: vars.textMuted,
+  fontSize: vars.fsXs,
+});
+
+globalStyle('.compact-table .mono', {
+  fontVariantNumeric: 'tabular-nums',
+});
+
+globalStyle('.provenance-alias', {
+  color: vars.textMuted,
+  fontWeight: 400,
 });
 
 globalStyle('.filters', {
   display: 'flex',
+  alignItems: 'center',
   gap: '6px',
   padding: '8px 10px',
-  borderBottom: `1px solid ${vars.line}`,
+  borderBottom: `1px solid ${vars.border}`,
 });
 
-globalStyle('.filters select, .filters input', {
-  height: '30px',
-  padding: '0 9px',
-  border: `1px solid ${vars.lineStrong}`,
-  borderRadius: '4px',
-  background: '#fff',
-  color: vars.text,
-  font: '11px inherit',
-  outline: 'none',
-});
-
-globalStyle('.filters select:focus, .filters input:focus', {
-  borderColor: vars.blue,
-  boxShadow: '0 0 0 2px #dbeafe',
-});
-
-globalStyle('.filters input', {
+globalStyle('.filters .ui-input', {
   flex: 1,
   minWidth: '180px',
 });
 
 globalStyle('.filters > span', {
-  alignSelf: 'center',
   marginLeft: 'auto',
-  color: vars.muted,
-  font: `10px ${vars.mono}`,
+  color: vars.textMuted,
+  fontFamily: vars.fontMono,
+  fontSize: vars.fsXs,
+  fontVariantNumeric: 'tabular-nums',
 });
 
 globalStyle('.case-row[hidden], .trade-case[hidden]', {
@@ -259,18 +276,26 @@ globalStyle('.case-row[hidden], .trade-case[hidden]', {
 });
 
 globalStyle('.status.positive', {
-  background: '#eefbf5',
-  borderColor: '#b4e2d0',
+  color: vars.up,
+  background: vars.stateOkBg,
+  borderColor: vars.stateOkBorder,
 });
 
 globalStyle('.status.negative', {
-  background: '#fff3f3',
-  borderColor: '#efb8b8',
+  color: vars.down,
+  background: vars.stateBadBg,
+  borderColor: vars.stateBadBorder,
+});
+
+globalStyle('.case-details', {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '28px',
 });
 
 globalStyle('.trade-case', {
   overflow: 'hidden',
-  scrollMarginTop: '10px',
+  scrollMarginTop: '28px',
 });
 
 globalStyle('.case-head', {
@@ -279,18 +304,27 @@ globalStyle('.case-head', {
   justifyContent: 'space-between',
   gap: '12px',
   padding: '10px 12px',
-  borderBottom: `1px solid ${vars.line}`,
+  borderBottom: `1px solid ${vars.border}`,
 });
 
 globalStyle('.case-head h3', {
   display: 'inline',
-  margin: '0 8px 0 0',
-  fontSize: '15px',
+  marginRight: '8px',
+  fontSize: vars.fsLg,
+  fontWeight: 600,
 });
 
 globalStyle('.case-head > div > span', {
-  color: vars.muted,
-  fontSize: '10px',
+  color: vars.textMuted,
+  fontSize: vars.fsSm,
+});
+
+globalStyle('.provenance-line', {
+  display: 'block',
+  marginTop: '3px',
+  color: vars.textMuted,
+  fontFamily: vars.fontMono,
+  fontSize: vars.fsXs,
 });
 
 globalStyle('.case-result', {
@@ -300,43 +334,28 @@ globalStyle('.case-result', {
 });
 
 globalStyle('.case-result strong', {
-  font: `650 17px ${vars.mono}`,
+  fontFamily: vars.fontMono,
+  fontSize: '17px',
+  fontWeight: 600,
+  fontVariantNumeric: 'tabular-nums',
 });
 
 globalStyle('.case-layout', {
   display: 'grid',
-  gridTemplateColumns: 'minmax(0,1fr) 310px',
+  gridTemplateColumns: 'minmax(0,1fr) 330px',
 });
 
 globalStyle('.footer', {
   display: 'flex',
   justifyContent: 'space-between',
   gap: '16px',
-  padding: '6px 12px',
-  color: vars.muted,
-  fontSize: '9px',
+  padding: '8px 12px',
+  color: vars.textMuted,
+  fontSize: vars.fsXs,
 });
 
 globalStyle('.footer a', {
-  color: vars.blue,
-});
-
-globalStyle('.metrics', {
-  '@media': {
-    '(max-width:1050px)': {
-      gridTemplateColumns: 'repeat(3,1fr)',
-    },
-    '(max-width:680px)': {
-      gridTemplateColumns: 'repeat(2,1fr)',
-    },
-  },
-});
-
-globalStyle('.metric:nth-child(3n)', {
-  '@media': {
-    '(max-width:1050px)': { borderRight: 0 },
-    '(max-width:680px)': { borderRight: `1px solid ${vars.line}` },
-  },
+  color: vars.textSecondary,
 });
 
 globalStyle('.case-layout', {
@@ -348,12 +367,6 @@ globalStyle('.case-layout', {
 globalStyle('.report', {
   '@media': {
     '(max-width:680px)': { width: '100%', margin: 0 },
-  },
-});
-
-globalStyle('.report-header, .panel, .trade-case', {
-  '@media': {
-    '(max-width:680px)': { borderLeft: 0, borderRight: 0 },
   },
 });
 
@@ -371,13 +384,7 @@ globalStyle('.header-meta', {
 
 globalStyle('.generated', {
   '@media': {
-    '(max-width:680px)': { width: '100%', margin: '2px 0 0' },
-  },
-});
-
-globalStyle('.metric:nth-child(2n)', {
-  '@media': {
-    '(max-width:680px)': { borderRight: 0 },
+    '(max-width:680px)': { width: '100%', marginTop: '4px' },
   },
 });
 
@@ -387,13 +394,7 @@ globalStyle('.filters', {
   },
 });
 
-globalStyle('.filters select', {
-  '@media': {
-    '(max-width:680px)': { flex: 1 },
-  },
-});
-
-globalStyle('.filters input', {
+globalStyle('.filters .ui-input', {
   '@media': {
     '(max-width:680px)': { order: 2, flexBasis: '100%' },
   },
@@ -419,30 +420,6 @@ globalStyle('.case-result', {
 
 globalStyle('.footer', {
   '@media': {
-    '(max-width:680px)': { padding: '8px 10px', display: 'block' },
-  },
-});
-
-globalStyle('body', {
-  '@media': {
-    print: { background: '#fff' },
-  },
-});
-
-globalStyle('.report', {
-  '@media': {
-    print: { width: '100%', margin: 0 },
-  },
-});
-
-globalStyle('.filters', {
-  '@media': {
-    print: { display: 'none' },
-  },
-});
-
-globalStyle('.panel, .trade-case, .report-header', {
-  '@media': {
-    print: { breakInside: 'avoid' },
+    '(max-width:680px)': { display: 'block' },
   },
 });

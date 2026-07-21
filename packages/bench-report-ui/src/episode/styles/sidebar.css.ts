@@ -1,8 +1,8 @@
 import { globalStyle } from '@vanilla-extract/css';
-import { vars } from './theme.css';
+import { vars } from '../../styles/theme.css';
 
 globalStyle('.trade-sidebar', {
-  background: '#fafafa',
+  background: vars.bgCanvas,
   position: 'relative',
   minHeight: 0,
 });
@@ -10,25 +10,43 @@ globalStyle('.trade-sidebar', {
 globalStyle('.trade-sidebar-scroll', {
   position: 'absolute',
   inset: 0,
-  overflowY: 'auto',
-  scrollbarWidth: 'thin',
 });
 
-globalStyle('.trade-sidebar section, .actions', {
-  padding: '10px 12px',
-  borderBottom: `1px solid ${vars.line}`,
+globalStyle('.trade-sidebar-inner', {
+  height: '100%',
 });
 
-globalStyle('.trade-sidebar h4', {
-  margin: '0 0 8px',
-  fontSize: '11px',
+globalStyle('.trade-sidebar section', {
+  borderBottom: `1px solid ${vars.border}`,
+});
+
+globalStyle('.trade-sidebar section > h4, .trade-sidebar .ui-disclosure-trigger', {
+  position: 'sticky',
+  top: 0,
+  zIndex: 2,
+  padding: '9px 12px',
+  background: vars.bgElement,
+  borderBottom: `1px solid ${vars.border}`,
+  color: vars.textSecondary,
+  fontSize: vars.fsXs,
+  fontWeight: 600,
+  textTransform: 'uppercase',
+  letterSpacing: '.06em',
+});
+
+globalStyle('.trade-sidebar h4 span', {
+  marginLeft: '6px',
+  color: vars.textMuted,
+  fontFamily: vars.fontMono,
+  fontWeight: 400,
+  letterSpacing: 0,
 });
 
 globalStyle('.facts', {
   display: 'grid',
   gridTemplateColumns: '1fr 1fr',
-  gap: '7px 12px',
-  margin: 0,
+  gap: '10px 14px',
+  padding: '10px 12px',
 });
 
 globalStyle('.facts div', {
@@ -36,97 +54,67 @@ globalStyle('.facts div', {
 });
 
 globalStyle('.facts dt', {
-  color: vars.muted,
-  fontSize: '9px',
+  color: vars.textMuted,
+  fontSize: vars.fsXs,
 });
 
 globalStyle('.facts dd', {
-  margin: '1px 0 0',
-  font: `600 11px ${vars.mono}`,
+  marginTop: '3px',
+  fontFamily: vars.fontMono,
+  fontSize: vars.fsBase,
+  fontWeight: 600,
+  fontVariantNumeric: 'tabular-nums',
 });
 
-globalStyle('.rationale', {
-  margin: '8px 0 0',
-  paddingTop: '8px',
-  borderTop: `1px solid ${vars.line}`,
-  color: vars.muted,
-  fontSize: '10px',
+globalStyle('.decision-reason', {
+  margin: '0 12px 11px',
+  paddingTop: '9px',
+  borderTop: `1px solid ${vars.border}`,
+  color: vars.textSecondary,
+  fontSize: vars.fsSm,
+  lineHeight: 1.55,
 });
 
-globalStyle('.actions', {
-  padding: 0,
+globalStyle('.decision-reason b', {
+  display: 'inline-block',
+  marginBottom: '3px',
+  color: vars.kindDecision,
+  fontSize: vars.fsXs,
 });
 
-globalStyle('.actions summary', {
-  display: 'flex',
-  justifyContent: 'space-between',
-  padding: '9px 12px',
-  cursor: 'pointer',
-  fontSize: '10px',
-  fontWeight: 650,
-});
-
-globalStyle('.actions summary span', {
-  color: vars.muted,
-});
-
-globalStyle('.actions p', {
-  margin: 0,
-  padding: '0 12px 10px',
-  color: vars.muted,
-  fontSize: '10px',
-});
-
-globalStyle('.actions ol', {
-  listStyle: 'none',
-  margin: 0,
-  padding: '0 12px 8px',
-});
-
-globalStyle('.actions li', {
-  display: 'grid',
-  gridTemplateColumns: '22px 58px 1fr',
-  gap: '6px',
-  padding: '5px 0',
-  borderTop: `1px solid ${vars.line}`,
-  fontSize: '9px',
-});
-
-globalStyle('.actions li > span, .actions li small', {
-  color: vars.muted,
-  fontFamily: vars.mono,
-});
-
-globalStyle('.audit-panel > summary', {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
+globalStyle('.audit-panel .ui-disclosure-trigger', {
   padding: '11px 12px',
-  cursor: 'pointer',
-  fontSize: '12px',
-  fontWeight: 650,
+  fontSize: vars.fsBase,
+  fontWeight: 600,
 });
 
-globalStyle('.audit-panel > summary small', {
+globalStyle('.audit-panel .ui-disclosure-trigger small', {
   marginLeft: '8px',
-  color: vars.muted,
+  color: vars.textMuted,
   fontWeight: 400,
+});
+
+globalStyle('.audit-panel strong', {
+  marginLeft: 'auto',
+  marginRight: '10px',
+  fontFamily: vars.fontMono,
+  fontVariantNumeric: 'tabular-nums',
 });
 
 globalStyle('.audit-grid', {
   display: 'grid',
-  gridTemplateColumns: 'repeat(3,1fr)',
+  gridTemplateColumns: 'repeat(auto-fit,minmax(260px,1fr))',
   gap: '1px',
-  background: vars.line,
-  borderTop: `1px solid ${vars.line}`,
+  background: vars.border,
+  borderTop: `1px solid ${vars.border}`,
 });
 
 globalStyle('.audit-check', {
   display: 'grid',
   gridTemplateColumns: '20px 1fr',
-  gap: '7px',
-  padding: '8px',
-  background: '#fff',
+  gap: '8px',
+  padding: '9px 10px',
+  background: vars.bgSurface,
 });
 
 globalStyle('.audit-check i', {
@@ -134,16 +122,16 @@ globalStyle('.audit-check i', {
   placeItems: 'center',
   width: '18px',
   height: '18px',
-  borderRadius: '50%',
-  background: '#e9f9f2',
-  color: vars.green,
+  borderRadius: vars.radiusFull,
+  background: vars.stateOkBg,
+  color: vars.up,
   fontStyle: 'normal',
-  fontSize: '10px',
+  fontSize: vars.fsXs,
 });
 
 globalStyle('.audit-check.fail i', {
-  background: '#fff0f0',
-  color: vars.red,
+  background: vars.stateBadBg,
+  color: vars.down,
 });
 
 globalStyle('.audit-check strong, .audit-check small, .audit-check em', {
@@ -151,48 +139,39 @@ globalStyle('.audit-check strong, .audit-check small, .audit-check em', {
 });
 
 globalStyle('.audit-check strong', {
-  fontSize: '10px',
+  fontSize: vars.fsSm,
+  fontWeight: 600,
 });
 
 globalStyle('.audit-check small', {
-  color: vars.muted,
-  font: `8px ${vars.mono}`,
+  marginTop: '2px',
+  color: vars.textMuted,
+  fontFamily: vars.fontMono,
+  fontSize: vars.fsXs,
 });
 
 globalStyle('.audit-check em', {
-  marginTop: '3px',
-  color: vars.muted,
-  fontSize: '9px',
+  marginTop: '4px',
+  color: vars.textSecondary,
+  fontSize: vars.fsXs,
   fontStyle: 'normal',
+  lineHeight: 1.5,
 });
 
 globalStyle('.trade-sidebar-scroll', {
   '@media': {
-    '(max-width:1050px)': {
-      position: 'static',
-      overflow: 'visible',
-      display: 'grid',
-      gridTemplateColumns: '1fr 1fr',
-    },
-    '(max-width:680px)': { display: 'block' },
+    '(max-width:1050px)': { position: 'static' },
   },
 });
 
-globalStyle('.audit-grid', {
+globalStyle('.trade-sidebar-inner', {
   '@media': {
-    '(max-width:1050px)': { gridTemplateColumns: 'repeat(2,1fr)' },
-    '(max-width:680px)': { gridTemplateColumns: '1fr' },
+    '(max-width:1050px)': { height: 'auto' },
   },
 });
 
-globalStyle('.audit-panel > summary small', {
+globalStyle('.audit-panel .ui-disclosure-trigger small', {
   '@media': {
     '(max-width:680px)': { display: 'none' },
-  },
-});
-
-globalStyle('.trade-sidebar-scroll', {
-  '@media': {
-    print: { position: 'static', overflow: 'visible' },
   },
 });

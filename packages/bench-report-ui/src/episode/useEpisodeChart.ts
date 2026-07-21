@@ -12,6 +12,7 @@ import {
   type Time,
 } from 'lightweight-charts';
 import { createBarHighlight, createHistoricalBackground } from './chart/primitives';
+import { chartTheme } from '../styles/chartTheme';
 import type { ChartScene } from './chart/scene';
 
 function renderScene(container: HTMLElement, scene: ChartScene): IChartApi {
@@ -20,26 +21,30 @@ function renderScene(container: HTMLElement, scene: ChartScene): IChartApi {
   const chart = createChart(container, {
     autoSize: true,
     layout: {
-      background: { color: '#ffffff' },
-      textColor: '#737373',
-      fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif',
+      background: { color: chartTheme.bgSurface },
+      textColor: chartTheme.textSecondary,
+      fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif',
       fontSize: 10,
-      panes: { separatorColor: '#e5e5e5', separatorHoverColor: '#d4d4d4', enableResize: false },
+      panes: {
+        separatorColor: chartTheme.border,
+        separatorHoverColor: chartTheme.borderStrong,
+        enableResize: false,
+      },
     },
-    grid: { vertLines: { color: '#f5f5f5' }, horzLines: { color: '#f5f5f5' } },
-    rightPriceScale: { borderColor: '#e5e5e5', scaleMargins: { top: 0.08, bottom: 0.08 } },
-    timeScale: { borderColor: '#e5e5e5', timeVisible, secondsVisible: false },
+    grid: { vertLines: { color: chartTheme.gridLine }, horzLines: { color: chartTheme.gridLine } },
+    rightPriceScale: { borderColor: chartTheme.border, scaleMargins: { top: 0.08, bottom: 0.08 } },
+    timeScale: { borderColor: chartTheme.border, timeVisible, secondsVisible: false },
     crosshair: { mode: CrosshairMode.MagnetOHLC },
     handleScale: true,
     handleScroll: true,
   });
 
   const candles = chart.addSeries(CandlestickSeries, {
-    upColor: '#0e9f6e',
-    downColor: '#e02424',
+    upColor: chartTheme.up,
+    downColor: chartTheme.down,
     borderVisible: false,
-    wickUpColor: '#0e9f6e',
-    wickDownColor: '#e02424',
+    wickUpColor: chartTheme.up,
+    wickDownColor: chartTheme.down,
     priceLineVisible: false,
   });
   candles.setData(scene.candles.map((bar) => ({ ...bar, time: bar.time as Time })));
@@ -56,7 +61,7 @@ function renderScene(container: HTMLElement, scene: ChartScene): IChartApi {
 
   if (scene.ema) {
     const ema = chart.addSeries(LineSeries, {
-      color: '#f59e0b',
+      color: chartTheme.ema,
       lineWidth: 1,
       priceLineVisible: false,
       lastValueVisible: false,

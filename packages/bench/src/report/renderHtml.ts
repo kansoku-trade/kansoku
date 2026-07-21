@@ -28,6 +28,7 @@ export function renderReportHtml(
 <html lang="zh"><head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="color-scheme" content="dark"/>
 <title>Kansoku Trading Benchmark · ${escapeHtml(runId)}</title>
 <style>${assets.css}</style>
 </head><body><div id="root"></div>

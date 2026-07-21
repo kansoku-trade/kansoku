@@ -1,17 +1,17 @@
 import { globalStyle } from '@vanilla-extract/css';
-import { vars } from './theme.css';
+import { vars } from '../../styles/theme.css';
 
 globalStyle('.plotwrap', {
   position: 'sticky',
-  top: '66px',
+  top: '51px',
   display: 'flex',
   flexDirection: 'column',
   gap: '10px',
 });
 
 globalStyle('.plotpanel', {
-  background: vars.panel,
-  border: `1px solid ${vars.line}`,
+  background: vars.bgSurface,
+  border: `1px solid ${vars.border}`,
   padding: '14px',
 });
 
@@ -23,13 +23,13 @@ globalStyle('.plotpanel .head', {
 });
 
 globalStyle('.plotpanel .head h3', {
-  fontSize: '12.5px',
+  fontSize: vars.fsMd,
   fontWeight: 600,
 });
 
 globalStyle('.plotpanel .head .note', {
-  fontSize: '11px',
-  color: vars.ink3,
+  fontSize: vars.fsSm,
+  color: vars.textMuted,
 });
 
 globalStyle('.plotpanel svg', {
@@ -39,53 +39,53 @@ globalStyle('.plotpanel svg', {
 });
 
 globalStyle('.axlab', {
-  fontFamily: vars.mono,
-  fontSize: '9.5px',
-  fill: vars.ink3,
+  fontFamily: vars.fontMono,
+  fontSize: vars.fsXs,
+  fill: vars.textMuted,
   letterSpacing: '.04em',
 });
 
 globalStyle('.axtitle', {
-  fontFamily: vars.mono,
-  fontSize: '10px',
-  fill: vars.ink2,
+  fontFamily: vars.fontMono,
+  fontSize: vars.fsXs,
+  fill: vars.textSecondary,
   letterSpacing: '.08em',
   textTransform: 'uppercase',
 });
 
 globalStyle('.gridln', {
-  stroke: vars.line,
+  stroke: vars.border,
   strokeWidth: 1,
 });
 
 globalStyle('.gridln.dash', {
   strokeDasharray: '2 3',
-  stroke: vars.line2,
+  stroke: vars.gridLine,
 });
 
 globalStyle('.baseln', {
-  stroke: vars.neg,
+  stroke: vars.down,
   strokeWidth: 1.2,
   strokeDasharray: '4 3',
 });
 
 globalStyle('.baslab', {
-  fontFamily: vars.mono,
-  fontSize: '9.5px',
-  fill: vars.neg,
+  fontFamily: vars.fontMono,
+  fontSize: vars.fsXs,
+  fill: vars.down,
   letterSpacing: '.04em',
 });
 
 globalStyle('.dot', {
   fill: vars.accent,
-  stroke: '#fff',
+  stroke: vars.bgSurface,
   strokeWidth: 1.5,
   cursor: 'pointer',
   transition: 'r .12s',
 });
 
 globalStyle('.dot.sel', {
-  fill: vars.ink,
+  fill: vars.textPrimary,
 });
 
 globalStyle('.dot.lead', {
@@ -93,35 +93,35 @@ globalStyle('.dot.lead', {
 });
 
 globalStyle('.dot.below', {
-  fill: vars.ink4,
-  opacity: 0.6,
+  fill: vars.textMuted,
+  opacity: 0.7,
 });
 
 globalStyle('.dotlab', {
-  fontFamily: 'system-ui,sans-serif',
-  fontSize: '10px',
-  fill: vars.ink2,
+  fontFamily: 'inherit',
+  fontSize: vars.fsXs,
+  fill: vars.textSecondary,
   fontWeight: 500,
   pointerEvents: 'none',
 });
 
 globalStyle('.dotlab.sel', {
-  fill: vars.ink,
+  fill: vars.textPrimary,
   fontWeight: 700,
 });
 
 globalStyle('.dotlab.dim', {
-  fill: vars.ink4,
+  fill: vars.textMuted,
 });
 
 globalStyle('.plotlegend', {
   marginTop: '10px',
   paddingTop: '10px',
-  borderTop: `1px solid ${vars.line}`,
+  borderTop: `1px solid ${vars.border}`,
   display: 'flex',
   gap: '14px',
-  fontSize: '11px',
-  color: vars.ink3,
+  fontSize: vars.fsSm,
+  color: vars.textMuted,
   flexWrap: 'wrap',
 });
 
@@ -134,11 +134,32 @@ globalStyle('.plotlegend span', {
 globalStyle('.plotlegend .sw', {
   width: '8px',
   height: '8px',
-  borderRadius: '50%',
+  borderRadius: vars.radiusFull,
   background: vars.accent,
 });
 
 globalStyle('.plotlegend .sw.below', {
-  background: vars.ink4,
-  opacity: 0.6,
+  background: vars.textMuted,
+  opacity: 0.7,
+});
+
+globalStyle('.dot-tip', {
+  display: 'grid',
+  gap: '3px',
+  marginTop: '5px',
+});
+
+globalStyle('.dot-tip div', {
+  display: 'flex',
+  justifyContent: 'space-between',
+  gap: '14px',
+});
+
+globalStyle('.dot-tip dt', {
+  color: vars.textMuted,
+});
+
+globalStyle('.dot-tip dd', {
+  fontFamily: vars.fontMono,
+  fontVariantNumeric: 'tabular-nums',
 });

@@ -1,12 +1,5 @@
-import type { KeyboardEvent } from 'react';
 import type { EpisodeReportActionRecordView } from '../types';
-
-function activateOnKey(event: KeyboardEvent, handler: () => void) {
-  if (event.key === 'Enter' || event.key === ' ') {
-    event.preventDefault();
-    handler();
-  }
-}
+import { Disclosure, MoreText } from '../ui/Disclosure';
 
 export function ActionsList({
   actions,
@@ -18,44 +11,58 @@ export function ActionsList({
   onToggle: (record: EpisodeReportActionRecordView) => void;
 }) {
   return (
-    <details className="actions">
-      <summary>
-        回放动作与理由 <span>{actions.length}</span>
-      </summary>
-      {actions.length === 0 ? (
-        <p>没有动作记录</p>
-      ) : (
-        <ol>
-          {actions.map((record) => {
-            const selectable = record.chartTimes != null;
-            const select = () => onToggle(record);
-            return (
-              <li
-                key={record.step}
-                {...(selectable
-                  ? {
-                      'data-action-select': '',
-                      role: 'button',
-                      tabIndex: 0,
-                      className: activeStep === record.step ? 'active' : undefined,
-                      onClick: select,
-                      onKeyDown: (event: KeyboardEvent) => activateOnKey(event, select),
-                    }
-                  : {})}
-              >
-                <span>{String(record.step).padStart(2, '0')}</span>
-                <div>
-                  <strong>
-                    {record.actionLabel} · {record.reasonCategoryLabel ?? '未记录理由'}
-                  </strong>
-                  {record.reasonSummary ? <small>{record.reasonSummary}</small> : null}
-                  <em>{record.timeLabel}</em>
-                </div>
-              </li>
-            );
-          })}
-        </ol>
-      )}
-    </details>
+    <section className="actions">
+      <Disclosure
+        summary={
+          <h4>
+            回放动作与理由 <span>{actions.length}</span>
+          </h4>
+        }
+      >
+        {actions.length === 0 ? (
+          <p className="ledger-hint">没有动作记录</p>
+        ) : (
+          <ol>
+            {actions.map((record) => {
+              const selectable = record.chartTimes != null;
+              const active = activeStep === record.step;
+              const head = (
+                <>
+                  <span className="ac-step">{String(record.step).padStart(2, '0')}</span>
+                  <span className="ac-body">
+                    <strong>
+                      {record.actionLabel} · {record.reasonCategoryLabel ?? '未记录理由'}
+                    </strong>
+                    <em>{record.timeLabel}</em>
+                  </span>
+                </>
+              );
+              return (
+                <li key={record.step}>
+                  {selectable ? (
+                    <button
+                      type="button"
+                      data-action-select=""
+                      aria-pressed={active}
+                      className={active ? 'ac-select active' : 'ac-select'}
+                      onClick={() => onToggle(record)}
+                    >
+                      {head}
+                    </button>
+                  ) : (
+                    <div className="ac-select">{head}</div>
+                  )}
+                  {record.reasonSummary ? (
+                    <div className="ac-reason">
+                      <MoreText text={record.reasonSummary} />
+                    </div>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ol>
+        )}
+      </Disclosure>
+    </section>
   );
 }

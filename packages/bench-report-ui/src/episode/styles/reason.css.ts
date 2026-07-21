@@ -1,83 +1,150 @@
 import { globalStyle } from '@vanilla-extract/css';
-import { vars } from './theme.css';
+import { vars } from '../../styles/theme.css';
 
 globalStyle('.reason-empty', {
-  margin: 0,
   padding: '12px',
-  color: vars.muted,
-  fontSize: '10px',
+  color: vars.textMuted,
+  fontSize: vars.fsSm,
 });
 
 globalStyle('.reason-table', {
   minWidth: '720px',
 });
 
-globalStyle('.decision-reason', {
-  margin: '8px 0 0',
-  paddingTop: '8px',
-  borderTop: `1px solid ${vars.line}`,
-  color: vars.muted,
-  fontSize: '10px',
+globalStyle('.trade-ledger ol, .actions ol', {
+  listStyle: 'none',
 });
 
-globalStyle('.decision-reason b, .trade-reason b', {
-  display: 'inline-block',
-  marginRight: '6px',
-  color: '#7c3aed',
+globalStyle('.trade-ledger li, .actions li', {
+  borderBottom: `1px solid ${vars.border}`,
 });
 
-globalStyle('.trade-ledger li > div:first-child .trade-reason', {
-  marginTop: '4px',
-  color: vars.text,
-  font: '9px/1.45 inherit',
-});
-
-globalStyle('.actions li', {
-  gridTemplateColumns: '22px minmax(0,1fr)',
-  gap: '6px',
-  padding: '7px 0',
-});
-
-globalStyle('.actions li > div strong, .actions li > div small, .actions li > div em', {
-  display: 'block',
-});
-
-globalStyle('.actions li > div strong', {
-  fontSize: '9px',
-});
-
-globalStyle('.actions li > div small', {
-  marginTop: '2px',
-  color: vars.text,
-  font: '9px/1.4 inherit',
-});
-
-globalStyle('.actions li > div em', {
-  marginTop: '3px',
-  color: vars.muted,
-  font: `7px ${vars.mono}`,
-  fontStyle: 'normal',
+globalStyle('.trade-ledger li:last-child, .actions li:last-child', {
+  borderBottom: 0,
 });
 
 globalStyle('.ledger-hint', {
-  margin: 0,
-  padding: '0 12px 6px',
-  color: vars.muted,
-  fontSize: '8px',
+  padding: '8px 12px 0',
+  color: vars.textMuted,
+  fontSize: vars.fsXs,
+  lineHeight: 1.5,
 });
 
-globalStyle('li[data-trade-select], li[data-action-select]', {
-  cursor: 'pointer',
-  paddingLeft: '6px !important',
-  marginLeft: '-6px',
+globalStyle('.tl-select, .ac-select', {
+  display: 'block',
+  width: '100%',
+  padding: '9px 12px',
+  border: 0,
   borderLeft: '2px solid transparent',
+  background: 'transparent',
+  color: 'inherit',
+  fontFamily: 'inherit',
+  textAlign: 'left',
 });
 
-globalStyle('li[data-trade-select]:hover, li[data-action-select]:hover', {
-  background: '#f5f3ff',
+globalStyle('button.tl-select, button.ac-select', {
+  cursor: 'pointer',
 });
 
-globalStyle('li[data-trade-select].active, li[data-action-select].active', {
-  background: '#faf9ff',
-  borderLeftColor: '#7c3aed',
+globalStyle('button.tl-select:hover, button.ac-select:hover', {
+  background: vars.bgSurface,
+});
+
+globalStyle('.tl-select.active, .ac-select.active', {
+  background: vars.kindDecisionBg,
+  borderLeftColor: vars.kindDecision,
+});
+
+globalStyle('.tl-head', {
+  display: 'flex',
+  alignItems: 'baseline',
+  justifyContent: 'space-between',
+  gap: '10px',
+});
+
+globalStyle('.tl-head strong:first-child', {
+  fontSize: vars.fsBase,
+  fontWeight: 600,
+});
+
+globalStyle('.tl-head strong:last-child', {
+  fontFamily: vars.fontMono,
+  fontSize: vars.fsBase,
+  fontWeight: 600,
+  fontVariantNumeric: 'tabular-nums',
+});
+
+globalStyle('.tl-bars', {
+  display: 'block',
+  marginTop: '3px',
+  color: vars.textMuted,
+  fontFamily: vars.fontMono,
+  fontSize: vars.fsXs,
+});
+
+globalStyle('.tl-prices', {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(4,1fr)',
+  gap: '8px',
+  padding: '0 12px 9px',
+});
+
+globalStyle('.tl-prices dt', {
+  color: vars.textMuted,
+  fontFamily: vars.fontMono,
+  fontSize: vars.fsXs,
+});
+
+globalStyle('.tl-prices dd', {
+  marginTop: '1px',
+  fontFamily: vars.fontMono,
+  fontSize: vars.fsSm,
+  fontVariantNumeric: 'tabular-nums',
+});
+
+globalStyle('.tl-reason, .ac-reason', {
+  padding: '0 12px 10px',
+  color: vars.textSecondary,
+  fontSize: vars.fsSm,
+  lineHeight: 1.55,
+});
+
+globalStyle('.tl-reason b', {
+  display: 'inline-block',
+  marginBottom: '3px',
+  color: vars.kindDecision,
+  fontSize: vars.fsXs,
+});
+
+globalStyle('.ac-select', {
+  display: 'grid',
+  gridTemplateColumns: '24px minmax(0,1fr)',
+  gap: '8px',
+});
+
+globalStyle('.ac-step', {
+  color: vars.textMuted,
+  fontFamily: vars.fontMono,
+  fontSize: vars.fsXs,
+});
+
+globalStyle('.ac-body strong, .ac-body em', {
+  display: 'block',
+});
+
+globalStyle('.ac-body strong', {
+  fontSize: vars.fsSm,
+  fontWeight: 600,
+});
+
+globalStyle('.ac-body em', {
+  marginTop: '3px',
+  color: vars.textMuted,
+  fontFamily: vars.fontMono,
+  fontSize: vars.fsXs,
+  fontStyle: 'normal',
+});
+
+globalStyle('.ac-reason', {
+  paddingLeft: '46px',
 });

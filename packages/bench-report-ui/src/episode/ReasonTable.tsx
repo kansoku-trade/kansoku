@@ -1,5 +1,6 @@
 import type { EpisodeReportViewData } from '../types';
 import { fmtPercent, fmtSigned } from './format';
+import { Term } from './Term';
 
 export function ReasonTable({ data }: { data: EpisodeReportViewData }) {
   const { reasonTable } = data;
@@ -23,8 +24,8 @@ export function ReasonTable({ data }: { data: EpisodeReportViewData }) {
                 <th>动作</th>
                 <th>入场 / 成交</th>
                 <th>胜率</th>
-                <th>AVG NET R</th>
-                <th>TOTAL NET R</th>
+                <th><Term label="AVG NET R" /></th>
+                <th><Term label="TOTAL NET R" /></th>
               </tr>
             </thead>
             <tbody>

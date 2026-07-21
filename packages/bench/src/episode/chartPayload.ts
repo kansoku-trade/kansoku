@@ -262,7 +262,7 @@ export function buildChartPayload(row: ReportRow, index: number): ChartPayload |
         markers[timeframe].push({
           time: entryTime,
           position: trade.direction === 'short' ? 'aboveBar' : 'belowBar',
-          color: '#2563eb',
+          color: '#e8e8e8',
           shape: trade.direction === 'short' ? 'arrowDown' : 'arrowUp',
           text: `T${trade.tradeId} 成交 ${fmt(trade.entry.price)} · S ${fmt(trade.initialStop)} · T ${fmt(trade.target)}`,
         });
@@ -273,7 +273,7 @@ export function buildChartPayload(row: ReportRow, index: number): ChartPayload |
         markers[timeframe].push({
           time: exitTime,
           position: trade.direction === 'short' ? 'belowBar' : 'aboveBar',
-          color: trade.netR >= 0 ? '#059669' : '#dc2626',
+          color: trade.netR >= 0 ? '#26a69a' : '#ef5350',
           shape: 'circle',
           text: `T${trade.tradeId} ${exitLabel} ${fmt(trade.exit.price)} · ${fmtSigned(trade.netR, 2)}R`,
         });
@@ -283,9 +283,9 @@ export function buildChartPayload(row: ReportRow, index: number): ChartPayload |
   }
   const plan = row.answer.initialSubmission?.entry_plan;
   const levels: ChartPayload['levels'] = [];
-  if (plan?.entry != null) levels.push({ title: '计划入场', price: plan.entry, color: '#2563eb' });
-  if (plan?.stop != null) levels.push({ title: '止损', price: plan.stop, color: '#dc2626' });
-  if (plan?.target1 != null) levels.push({ title: '止盈', price: plan.target1, color: '#059669' });
+  if (plan?.entry != null) levels.push({ title: '计划入场', price: plan.entry, color: '#e8e8e8' });
+  if (plan?.stop != null) levels.push({ title: '止损', price: plan.stop, color: '#ef5350' });
+  if (plan?.target1 != null) levels.push({ title: '止盈', price: plan.target1, color: '#26a69a' });
   const chartTrades: ChartTradeRef[] = trades.map((trade) => {
     const times = {} as Record<ChartTimeframe, ChartTradeTimes>;
     for (const tf of CHART_TIMEFRAME_ORDER) {

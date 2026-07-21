@@ -4,6 +4,7 @@ import type {
   EpisodeReportChartPayload,
   EpisodeReportChartTimeframe,
 } from '../types';
+import { ToggleGroup } from '../ui/ToggleGroup';
 import { ProcessChain } from './ProcessChain';
 import { buildChartScene, type ChartScene, type ChartSelection } from './chart/scene';
 import { useEpisodeChart } from './useEpisodeChart';
@@ -53,18 +54,15 @@ export function ChartPanel({
           <strong>K 线与成交量</strong>
           <span>点击工具节点可回看该 B 编号当时可见的数据</span>
         </div>
-        <div className="timeframe-tabs" role="tablist" aria-label="K 线周期">
-          {detail.availableTimeframes.map((tf) => (
-            <button
-              type="button"
-              key={tf}
-              className={tf === timeframe ? 'active' : undefined}
-              onClick={() => onSelectTimeframe(tf)}
-            >
-              {TIMEFRAME_LABEL[tf]}
-            </button>
-          ))}
-        </div>
+        <ToggleGroup
+          ariaLabel="K 线周期"
+          value={timeframe}
+          options={detail.availableTimeframes.map((tf) => ({
+            value: tf,
+            label: TIMEFRAME_LABEL[tf],
+          }))}
+          onChange={onSelectTimeframe}
+        />
       </div>
       {payload && scene ? (
         <LiveChart chartId={detail.chartId} scene={scene} />

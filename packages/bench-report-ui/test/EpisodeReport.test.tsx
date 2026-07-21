@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import * as lw from 'lightweight-charts';
 import { EpisodeReport } from '../src/episode/EpisodeReport';
@@ -60,8 +60,8 @@ describe('EpisodeReport', () => {
     const count = container.querySelector('[id="visible-count"]');
     expect(count?.textContent).toBe('2 / 2');
 
-    const modelSelect = container.querySelector('[id="model-filter"]') as HTMLSelectElement;
-    fireEvent.change(modelSelect, { target: { value: 'model-b' } });
+    const search = container.querySelector('[id="case-search"]') as HTMLInputElement;
+    fireEvent.change(search, { target: { value: 'sym1' } });
 
     expect(count?.textContent).toBe('1 / 2');
     const rows = [...container.querySelectorAll<HTMLElement>('.case-row')];
@@ -72,9 +72,25 @@ describe('EpisodeReport', () => {
     expect(articles[1].hidden).toBe(false);
   });
 
+  it('filters by model through the select popup', async () => {
+    const { container } = render(<EpisodeReport data={makeEpisodeViewData()} />);
+    const count = container.querySelector('[id="visible-count"]');
+
+    fireEvent.click(screen.getByRole('combobox', { name: '模型' }));
+    const option = await screen.findByRole('option', { name: 'model-b' });
+    fireEvent.pointerDown(option, { pointerType: 'mouse' });
+    fireEvent.pointerUp(option, { pointerType: 'mouse' });
+    fireEvent.click(option);
+
+    expect(count?.textContent).toBe('1 / 2');
+    const rows = [...container.querySelectorAll<HTMLElement>('.case-row')];
+    expect(rows[0].hidden).toBe(true);
+    expect(rows[1].hidden).toBe(false);
+  });
+
   it('marks a ledger item active and passes its trade lines to the chart layer', () => {
     const { container } = render(<EpisodeReport data={makeEpisodeViewData()} />);
-    const item = container.querySelector('li[data-trade-select]') as HTMLElement;
+    const item = container.querySelector('[data-trade-select]') as HTMLElement;
     expect(item.classList.contains('active')).toBe(false);
 
     priceLineCalls.length = 0;
@@ -111,7 +127,7 @@ describe('EpisodeReport', () => {
     };
     const { container } = render(<EpisodeReport data={data} />);
 
-    const tradeItem = container.querySelector('li[data-trade-select]') as HTMLElement;
+    const tradeItem = container.querySelector('[data-trade-select]') as HTMLElement;
     fireEvent.click(tradeItem);
     expect(tradeItem.classList.contains('active')).toBe(true);
 

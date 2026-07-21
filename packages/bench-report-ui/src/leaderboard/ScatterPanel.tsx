@@ -1,4 +1,24 @@
-import type { LeaderboardReportViewData } from '../types';
+import type { LeaderboardDetailCardView, LeaderboardReportViewData } from '../types';
+import { Tooltip } from '../ui/Tooltip';
+
+function dotSummary(detail: LeaderboardDetailCardView | undefined) {
+  if (!detail) return null;
+  const rows = detail.sections.flatMap((section) => section.rows).slice(0, 4);
+  if (rows.length === 0) return null;
+  return (
+    <>
+      <strong>{detail.name}</strong>
+      <dl className="dot-tip">
+        {rows.map((row) => (
+          <div key={row.label}>
+            <dt>{row.label}</dt>
+            <dd className={row.tone || undefined}>{row.value}</dd>
+          </div>
+        ))}
+      </dl>
+    </>
+  );
+}
 
 export function ScatterPanel({
   data,
@@ -57,16 +77,26 @@ export function ScatterPanel({
             .filter(Boolean)
             .join(' ');
           const labelClass = ['dotlab', sel ? 'sel' : '', dot.below ? 'dim' : ''].filter(Boolean).join(' ');
+          const summary = dotSummary(data.details[dot.id]);
+          const circle = (
+            <circle
+              className={dotClass}
+              data-model={dot.id}
+              cx={dot.cx}
+              cy={dot.cy}
+              r={dot.r}
+              onClick={() => onSelect(dot.id)}
+            />
+          );
           return (
             <g key={dot.id}>
-              <circle
-                className={dotClass}
-                data-model={dot.id}
-                cx={dot.cx}
-                cy={dot.cy}
-                r={dot.r}
-                onClick={() => onSelect(dot.id)}
-              />
+              {summary ? (
+                <Tooltip content={summary} render={circle}>
+                  <></>
+                </Tooltip>
+              ) : (
+                circle
+              )}
               <text className={labelClass} x={dot.labelX} y={dot.labelY} textAnchor={dot.anchor}>
                 {dot.name}
               </text>

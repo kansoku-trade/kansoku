@@ -1,9 +1,9 @@
 import { globalStyle } from '@vanilla-extract/css';
-import { vars } from './theme.css';
+import { vars } from '../../styles/theme.css';
 
 globalStyle('.chart-panel', {
   minWidth: 0,
-  borderRight: `1px solid ${vars.line}`,
+  borderRight: `1px solid ${vars.border}`,
 });
 
 globalStyle('.chart-toolbar', {
@@ -13,64 +13,44 @@ globalStyle('.chart-toolbar', {
   justifyContent: 'space-between',
   gap: '12px',
   padding: '7px 10px',
-  borderBottom: `1px solid ${vars.line}`,
+  borderBottom: `1px solid ${vars.border}`,
 });
 
-globalStyle('.chart-toolbar strong, .chart-toolbar span', {
+globalStyle('.chart-toolbar strong, .chart-toolbar > div > span', {
   display: 'block',
 });
 
-globalStyle('.chart-toolbar span', {
-  color: vars.muted,
-  fontSize: '9px',
+globalStyle('.chart-toolbar strong', {
+  fontSize: vars.fsBase,
+  fontWeight: 600,
 });
 
-globalStyle('.timeframe-tabs', {
-  display: 'flex',
-  border: `1px solid ${vars.lineStrong}`,
-  borderRadius: '4px',
-  overflow: 'hidden',
-});
-
-globalStyle('.timeframe-tabs button', {
-  height: '28px',
-  padding: '0 12px',
-  border: 0,
-  borderRight: `1px solid ${vars.lineStrong}`,
-  background: '#fff',
-  color: vars.muted,
-  font: '11px inherit',
-  cursor: 'pointer',
-});
-
-globalStyle('.timeframe-tabs button:last-child', {
-  borderRight: 0,
-});
-
-globalStyle('.timeframe-tabs button.active', {
-  background: '#e5e5e5',
-  color: vars.text,
-  fontWeight: 650,
+globalStyle('.chart-toolbar > div > span', {
+  marginTop: '2px',
+  color: vars.textMuted,
+  fontSize: vars.fsXs,
 });
 
 globalStyle('.tv-chart', {
   height: '360px',
   position: 'relative',
-  background: '#fff',
+  background: vars.bgSurface,
 });
 
 globalStyle('.chart-marker-tooltip', {
   position: 'absolute',
   pointerEvents: 'none',
-  background: '#171717',
-  color: '#fff',
+  background: vars.bgElement,
+  border: `1px solid ${vars.borderStrong}`,
+  color: vars.textPrimary,
   padding: '6px 8px',
-  borderRadius: '4px',
-  font: `10px ${vars.mono}`,
+  borderRadius: vars.radius,
+  fontFamily: vars.fontMono,
+  fontSize: vars.fsXs,
   lineHeight: 1.5,
   maxWidth: '240px',
   zIndex: 30,
-  boxShadow: '0 6px 20px rgba(0,0,0,.18)',
+  boxShadow: '0 8px 28px rgb(0 0 0 / 0.55)',
   display: 'none',
   whiteSpace: 'normal',
 });
@@ -86,23 +66,23 @@ globalStyle('.chart-loading, .chart-error', {
   inset: 0,
   display: 'grid',
   placeItems: 'center',
-  color: vars.muted,
-  fontSize: '11px',
+  color: vars.textMuted,
+  fontSize: vars.fsSm,
 });
 
 globalStyle('.chart-error', {
-  color: vars.red,
+  color: vars.down,
 });
 
 globalStyle('.chart-legend', {
-  height: '31px',
+  height: '32px',
   display: 'flex',
   alignItems: 'center',
   gap: '14px',
   padding: '0 10px',
-  borderTop: `1px solid ${vars.line}`,
-  color: vars.muted,
-  fontSize: '9px',
+  borderTop: `1px solid ${vars.border}`,
+  color: vars.textMuted,
+  fontSize: vars.fsXs,
 });
 
 globalStyle('.chart-legend span', {
@@ -117,24 +97,25 @@ globalStyle('.chart-legend i', {
   height: '2px',
 });
 
-globalStyle('.chart-legend i.entry', { background: vars.blue });
+globalStyle('.chart-legend i.entry', { background: vars.textPrimary });
 
-globalStyle('.chart-legend i.target', { background: vars.green });
+globalStyle('.chart-legend i.target', { background: vars.up });
 
-globalStyle('.chart-legend i.stop', { background: vars.red });
+globalStyle('.chart-legend i.stop', { background: vars.down });
 
-globalStyle('.chart-legend i.ema', { background: '#f59e0b' });
+globalStyle('.chart-legend i.ema', { background: '#facc15' });
 
 globalStyle('.chart-range', {
   marginLeft: 'auto !important',
-  fontFamily: vars.mono,
+  fontFamily: vars.fontMono,
+  fontVariantNumeric: 'tabular-nums',
 });
 
 globalStyle('.chart-panel', {
   '@media': {
     '(max-width:1050px)': {
       borderRight: 0,
-      borderBottom: `1px solid ${vars.line}`,
+      borderBottom: `1px solid ${vars.border}`,
     },
   },
 });
@@ -145,21 +126,8 @@ globalStyle('.chart-toolbar', {
   },
 });
 
-globalStyle('.timeframe-tabs', {
-  '@media': {
-    '(max-width:680px)': { width: '100%' },
-  },
-});
-
-globalStyle('.timeframe-tabs button', {
-  '@media': {
-    '(max-width:680px)': { flex: 1 },
-  },
-});
-
 globalStyle('.tv-chart', {
   '@media': {
     '(max-width:680px)': { height: '330px' },
-    print: { height: '300px' },
   },
 });

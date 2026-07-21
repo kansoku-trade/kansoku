@@ -1,4 +1,8 @@
+import { Input } from '@base-ui/react/input';
+import { useMemo } from 'react';
 import type { EpisodeReportViewData } from '../types';
+import { Select } from '../ui/Select';
+import { Term } from './Term';
 import { fmt, fmtSigned, fmtUsd } from './format';
 import type { CaseFiltersState } from './useCaseFilters';
 
@@ -9,6 +13,22 @@ export function CasesTable({
   data: EpisodeReportViewData;
   filters: CaseFiltersState;
 }) {
+  const modelOptions = useMemo(
+    () => [
+      { value: '', label: '全部模型' },
+      ...data.filters.models.map((value) => ({ value, label: value })),
+    ],
+    [data.filters.models],
+  );
+  const modeOptions = useMemo(
+    () => [{ value: '', label: '全部模式' }, ...data.filters.modes],
+    [data.filters.modes],
+  );
+  const outcomeOptions = useMemo(
+    () => [{ value: '', label: '全部结果' }, ...data.filters.outcomes],
+    [data.filters.outcomes],
+  );
+
   return (
     <section className="panel cases-panel">
       <div className="panel-title">
@@ -16,48 +36,29 @@ export function CasesTable({
         <span>选择记录查看三周期 K 线和交易标注</span>
       </div>
       <div className="filters">
-        <select
-          id="model-filter"
-          aria-label="模型"
+        <Select
           value={filters.model}
-          onChange={(event) => filters.setModel(event.target.value)}
-        >
-          <option value="">全部模型</option>
-          {data.filters.models.map((value) => (
-            <option value={value} key={value}>
-              {value}
-            </option>
-          ))}
-        </select>
-        <select
-          id="mode-filter"
-          aria-label="模式"
+          options={modelOptions}
+          onChange={filters.setModel}
+          ariaLabel="模型"
+        />
+        <Select
           value={filters.mode}
-          onChange={(event) => filters.setMode(event.target.value)}
-        >
-          <option value="">全部模式</option>
-          {data.filters.modes.map((item) => (
-            <option value={item.value} key={item.value}>
-              {item.label}
-            </option>
-          ))}
-        </select>
-        <select
-          id="outcome-filter"
-          aria-label="结果"
+          options={modeOptions}
+          onChange={filters.setMode}
+          ariaLabel="模式"
+        />
+        <Select
           value={filters.outcome}
-          onChange={(event) => filters.setOutcome(event.target.value)}
-        >
-          <option value="">全部结果</option>
-          {data.filters.outcomes.map((item) => (
-            <option value={item.value} key={item.value}>
-              {item.label}
-            </option>
-          ))}
-        </select>
-        <input
+          options={outcomeOptions}
+          onChange={filters.setOutcome}
+          ariaLabel="结果"
+        />
+        <Input
           id="case-search"
           type="search"
+          className="ui-input"
+          aria-label="搜索"
           placeholder="搜索 symbol / case id"
           value={filters.search}
           onChange={(event) => filters.setSearch(event.target.value)}
@@ -73,11 +74,19 @@ export function CasesTable({
               <th>CASE</th>
               <th>模型 / 模式</th>
               <th>方向 / 决策</th>
-              <th>计划 E / S / T</th>
-              <th>实际 E / X</th>
+              <th>
+                <Term label="计划 E / S / T" />
+              </th>
+              <th>
+                <Term label="实际 E / X" />
+              </th>
               <th>结果</th>
-              <th>NET R</th>
-              <th>MFE / MAE</th>
+              <th>
+                <Term label="NET R" />
+              </th>
+              <th>
+                <Term label="MFE / MAE" />
+              </th>
               <th>成本 / 耗时</th>
             </tr>
           </thead>

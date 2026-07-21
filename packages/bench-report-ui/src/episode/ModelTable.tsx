@@ -1,5 +1,6 @@
 import type { EpisodeReportViewData } from '../types';
 import { fmtPercent, fmtSigned, fmtUsd } from './format';
+import { Term } from './Term';
 
 export function ModelTable({ data }: { data: EpisodeReportViewData }) {
   return (
@@ -14,11 +15,11 @@ export function ModelTable({ data }: { data: EpisodeReportViewData }) {
             <tr>
               <th>#</th>
               <th>模型</th>
-              <th>CASE / TRADE</th>
-              <th>AVG NET R</th>
-              <th>EPISODE / 交易胜率</th>
-              <th>方向命中</th>
-              <th>成交率</th>
+              <th><Term label="CASE / TRADE" /></th>
+              <th><Term label="AVG NET R" /></th>
+              <th><Term label="EPISODE / 交易胜率" /></th>
+              <th><Term label="方向命中" /></th>
+              <th><Term label="成交率" /></th>
               <th>成本</th>
             </tr>
           </thead>

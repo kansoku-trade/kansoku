@@ -1,14 +1,14 @@
 import { globalStyle } from '@vanilla-extract/css';
-import { vars } from './theme.css';
+import { vars } from '../../styles/theme.css';
 
 globalStyle('.detailcard', {
-  background: vars.panel,
-  border: `1px solid ${vars.line}`,
+  background: vars.bgSurface,
+  border: `1px solid ${vars.border}`,
   padding: '14px 16px',
 });
 
 globalStyle('.detail h4', {
-  fontSize: '12.5px',
+  fontSize: vars.fsMd,
   fontWeight: 600,
   letterSpacing: '-.01em',
   display: 'flex',
@@ -18,9 +18,9 @@ globalStyle('.detail h4', {
 });
 
 globalStyle('.detail .did', {
-  fontFamily: vars.mono,
-  fontSize: '11px',
-  color: vars.ink3,
+  fontFamily: vars.fontMono,
+  fontSize: vars.fsSm,
+  color: vars.textMuted,
   marginBottom: '12px',
 });
 
@@ -33,40 +33,40 @@ globalStyle('.detailgrid', {
 globalStyle('.drow', {
   display: 'flex',
   justifyContent: 'space-between',
-  fontSize: '12px',
+  fontSize: vars.fsBase,
   padding: '5px 0',
-  borderBottom: '1px dotted #e5e5e5',
+  borderBottom: `1px dotted ${vars.border}`,
 });
 
 globalStyle('.drow .k', {
-  color: vars.ink3,
+  color: vars.textMuted,
 });
 
 globalStyle('.drow .v', {
-  fontFamily: vars.mono,
+  fontFamily: vars.fontMono,
   fontVariantNumeric: 'tabular-nums',
-  color: vars.ink,
+  color: vars.textPrimary,
   fontWeight: 500,
 });
 
 globalStyle('.drow .v.positive', {
-  color: vars.pos,
+  color: vars.up,
 });
 
 globalStyle('.drow .v.negative', {
-  color: vars.neg,
+  color: vars.down,
 });
 
 globalStyle('.dsec', {
   gridColumn: 'span 2',
-  fontFamily: vars.mono,
-  fontSize: '10px',
+  fontFamily: vars.fontMono,
+  fontSize: vars.fsXs,
   letterSpacing: '.1em',
   textTransform: 'uppercase',
   color: vars.accent,
   paddingTop: '10px',
   marginTop: '6px',
-  borderTop: `1px solid ${vars.line}`,
+  borderTop: `1px solid ${vars.border}`,
 });
 
 globalStyle('.dsec:first-of-type', {

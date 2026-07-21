@@ -1,9 +1,9 @@
 import { globalStyle } from '@vanilla-extract/css';
-import { vars } from './theme.css';
+import { vars } from '../../styles/theme.css';
 
 globalStyle('.top', {
-  borderBottom: `1px solid ${vars.line}`,
-  background: vars.panel,
+  borderBottom: `1px solid ${vars.border}`,
+  background: vars.bgSurface,
   position: 'sticky',
   top: 0,
   zIndex: 10,
@@ -36,51 +36,27 @@ globalStyle('.brand::before', {
 });
 
 globalStyle('.brand span', {
-  color: vars.ink3,
+  color: vars.textMuted,
   fontWeight: 400,
-});
-
-globalStyle('.nav', {
-  display: 'flex',
-  gap: '2px',
-  marginLeft: '8px',
-});
-
-globalStyle('.nav a', {
-  padding: '6px 10px',
-  fontSize: '12.5px',
-  color: vars.ink3,
-  textDecoration: 'none',
-  borderRadius: '5px',
-});
-
-globalStyle('.nav a.on', {
-  color: vars.ink,
-  background: vars.hover,
-  fontWeight: 500,
-});
-
-globalStyle('.nav a:hover', {
-  color: vars.ink,
 });
 
 globalStyle('.top .r', {
   marginLeft: 'auto',
   display: 'flex',
   gap: '14px',
-  fontSize: '11.5px',
-  color: vars.ink3,
+  fontSize: vars.fsSm,
+  color: vars.textMuted,
   alignItems: 'center',
 });
 
 globalStyle('.top .r kbd', {
-  fontFamily: vars.mono,
-  fontSize: '10.5px',
-  border: `1px solid ${vars.line2}`,
-  borderRadius: '3px',
-  padding: '1px 5px',
-  background: vars.bg,
-  color: vars.ink2,
+  fontFamily: vars.fontMono,
+  fontSize: vars.fsXs,
+  border: `1px solid ${vars.border}`,
+  borderRadius: vars.radius,
+  padding: '2px 6px',
+  background: vars.bgElement,
+  color: vars.textSecondary,
 });
 
 globalStyle('.page', {
@@ -98,50 +74,47 @@ globalStyle('.mstrip', {
 });
 
 globalStyle('.mstrip h1', {
-  fontSize: '20px',
+  fontSize: vars.fsXl,
   fontWeight: 600,
   letterSpacing: '-.02em',
 });
 
 globalStyle('.mstrip .sub', {
-  color: vars.ink3,
-  fontSize: '13px',
+  color: vars.textMuted,
+  fontSize: vars.fsMd,
 });
 
 globalStyle('.mstrip .kvs', {
   marginLeft: 'auto',
   display: 'flex',
-  gap: 0,
-  fontSize: '11.5px',
-  color: vars.ink3,
-  border: `1px solid ${vars.line}`,
-  background: vars.panel,
+  gap: '1px',
+  fontSize: vars.fsSm,
+  color: vars.textSecondary,
+  border: `1px solid ${vars.border}`,
+  borderRadius: vars.radius,
+  background: vars.border,
   overflow: 'hidden',
 });
 
 globalStyle('.mstrip .kvs span', {
   padding: '6px 12px',
-  borderRight: `1px solid ${vars.line}`,
+  background: vars.bgSurface,
   whiteSpace: 'nowrap',
 });
 
-globalStyle('.mstrip .kvs span:last-child', {
-  borderRight: 0,
-});
-
 globalStyle('.mstrip .kvs b', {
-  color: vars.ink,
+  color: vars.textPrimary,
   fontWeight: 500,
   marginLeft: '6px',
-  fontFamily: vars.mono,
+  fontFamily: vars.fontMono,
   fontVariantNumeric: 'tabular-nums',
 });
 
 globalStyle('.foot', {
   marginTop: '20px',
   padding: '14px 0',
-  fontSize: '11.5px',
-  color: vars.ink3,
+  fontSize: vars.fsSm,
+  color: vars.textMuted,
   display: 'flex',
   justifyContent: 'space-between',
   flexWrap: 'wrap',
@@ -149,7 +122,7 @@ globalStyle('.foot', {
 });
 
 globalStyle('.foot a', {
-  color: vars.accent,
+  color: vars.textSecondary,
   textDecoration: 'none',
 });
 

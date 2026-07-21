@@ -41,9 +41,9 @@ export function createHistoricalBackground(
       const cutX = Math.round((x + 0.5) * dpr);
       const h = scope.bitmapSize.height;
       ctx.save();
-      ctx.fillStyle = 'rgba(148,163,184,0.14)';
+      ctx.fillStyle = 'rgba(232,232,232,0.05)';
       ctx.fillRect(0, 0, cutX, h);
-      ctx.strokeStyle = 'rgba(124,58,237,0.55)';
+      ctx.strokeStyle = 'rgba(167,139,250,0.6)';
       ctx.lineWidth = Math.max(1, dpr);
       ctx.setLineDash([Math.max(4, dpr * 3), Math.max(3, dpr * 2)]);
       ctx.beginPath();
@@ -71,9 +71,9 @@ export function createBarHighlight(
       const half = Math.max(3 * dpr, spacing / 2);
       const h = scope.bitmapSize.height;
       ctx.save();
-      ctx.fillStyle = 'rgba(124,58,237,0.14)';
+      ctx.fillStyle = 'rgba(167,139,250,0.16)';
       ctx.fillRect(cx - half, 0, half * 2, h);
-      ctx.strokeStyle = 'rgba(124,58,237,0.65)';
+      ctx.strokeStyle = 'rgba(167,139,250,0.7)';
       ctx.lineWidth = Math.max(1, dpr);
       ctx.strokeRect(cx - half, 0, half * 2, h);
       ctx.restore();

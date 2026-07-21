@@ -3,6 +3,7 @@ import type {
   EpisodeReportChartTimeframe,
   EpisodeReportChartTradeRef,
 } from '../../types';
+import { chartTheme } from '../../styles/chartTheme';
 import { computeEma20 } from './ema';
 import { rangesForBar } from './ranges';
 
@@ -84,9 +85,19 @@ function fmt(value: number): string {
 
 function tradePriceLines(trade: EpisodeReportChartTradeRef): ScenePriceLine[] {
   return [
-    { price: trade.entry, color: '#2563eb', title: `T${trade.tradeId} 成交`, dashed: false },
-    { price: trade.stop, color: '#dc2626', title: `T${trade.tradeId} 止损`, dashed: false },
-    { price: trade.target, color: '#059669', title: `T${trade.tradeId} 止盈`, dashed: false },
+    {
+      price: trade.entry,
+      color: chartTheme.textPrimary,
+      title: `T${trade.tradeId} 成交`,
+      dashed: false,
+    },
+    { price: trade.stop, color: chartTheme.down, title: `T${trade.tradeId} 止损`, dashed: false },
+    {
+      price: trade.target,
+      color: chartTheme.up,
+      title: `T${trade.tradeId} 止盈`,
+      dashed: false,
+    },
   ];
 }
 
@@ -108,7 +119,7 @@ export function buildChartScene(
   const volume: SceneVolume[] = bars.map((bar) => ({
     time: bar.time,
     value: bar.volume,
-    color: bar.close >= bar.open ? 'rgba(14,159,110,.45)' : 'rgba(224,36,36,.42)',
+    color: bar.close >= bar.open ? 'rgba(38,166,154,.45)' : 'rgba(239,83,80,.42)',
   }));
 
   const emaPoints = computeEma20(bars.map((bar) => bar.close));

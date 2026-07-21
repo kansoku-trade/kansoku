@@ -1,11 +1,11 @@
 import { globalStyle } from '@vanilla-extract/css';
-import { vars } from './theme.css';
+import { vars } from '../../styles/theme.css';
 
-globalStyle('.chart-legend i.decision', { background: '#7c3aed' });
+globalStyle('.chart-legend i.decision', { background: vars.kindDecision });
 
 globalStyle('.process-panel', {
-  borderTop: `1px solid ${vars.line}`,
-  background: '#fafafa',
+  borderTop: `1px solid ${vars.border}`,
+  background: vars.bgCanvas,
 });
 
 globalStyle('.process-head', {
@@ -14,7 +14,7 @@ globalStyle('.process-head', {
   justifyContent: 'space-between',
   gap: '12px',
   padding: '9px 10px',
-  borderBottom: `1px solid ${vars.line}`,
+  borderBottom: `1px solid ${vars.border}`,
 });
 
 globalStyle('.process-head > div:first-child strong, .process-head > div:first-child span', {
@@ -22,13 +22,15 @@ globalStyle('.process-head > div:first-child strong, .process-head > div:first-c
 });
 
 globalStyle('.process-head > div:first-child strong', {
-  fontSize: '11px',
+  fontSize: vars.fsBase,
+  fontWeight: 600,
 });
 
 globalStyle('.process-head > div:first-child span', {
-  marginTop: '1px',
-  color: vars.muted,
-  font: `9px ${vars.mono}`,
+  marginTop: '2px',
+  color: vars.textMuted,
+  fontFamily: vars.fontMono,
+  fontSize: vars.fsXs,
 });
 
 globalStyle('.process-head > div:last-child', {
@@ -39,11 +41,13 @@ globalStyle('.process-head > div:last-child', {
 
 globalStyle('.process-score, .process-reset', {
   height: '25px',
-  padding: '0 8px',
-  border: `1px solid ${vars.lineStrong}`,
-  borderRadius: '4px',
-  background: '#fff',
-  font: '9px inherit',
+  padding: '0 9px',
+  border: `1px solid ${vars.border}`,
+  borderRadius: vars.radius,
+  background: vars.bgElement,
+  color: vars.textSecondary,
+  fontFamily: 'inherit',
+  fontSize: vars.fsXs,
 });
 
 globalStyle('.process-score', {
@@ -52,44 +56,50 @@ globalStyle('.process-score', {
 });
 
 globalStyle('.process-score.pass', {
-  color: vars.green,
-  borderColor: '#a7d8c7',
-  background: '#f0fdf8',
+  color: vars.up,
+  borderColor: vars.stateOkBorder,
+  background: vars.stateOkBg,
 });
 
 globalStyle('.process-score.fail', {
-  color: vars.red,
-  borderColor: '#efb4b4',
-  background: '#fff5f5',
+  color: vars.down,
+  borderColor: vars.stateBadBorder,
+  background: vars.stateBadBg,
 });
 
 globalStyle('.process-reset', {
   cursor: 'pointer',
-  color: vars.text,
 });
 
 globalStyle('.process-reset:hover', {
-  background: vars.soft,
+  background: vars.bgHover,
+  color: vars.textPrimary,
 });
 
 globalStyle('.process-rail', {
+  padding: '10px 10px 4px',
+});
+
+globalStyle('.process-track', {
   display: 'flex',
-  gap: '14px',
-  padding: '10px',
-  overflowX: 'auto',
-  scrollbarWidth: 'thin',
+  gap: '16px',
+  paddingBottom: '6px',
 });
 
 globalStyle('.process-node', {
   position: 'relative',
-  flex: '0 0 154px',
-  minHeight: '94px',
-  padding: '8px 9px',
-  border: `1px solid ${vars.line}`,
-  borderTop: '3px solid #a3a3a3',
-  borderRadius: '5px',
-  background: '#fff',
-  color: vars.text,
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'stretch',
+  flex: '0 0 178px',
+  minHeight: '104px',
+  padding: '9px 10px',
+  border: `1px solid ${vars.border}`,
+  borderTop: `3px solid ${vars.textMuted}`,
+  borderRadius: vars.radius,
+  background: vars.bgSurface,
+  color: vars.textPrimary,
+  fontFamily: 'inherit',
   textAlign: 'left',
   cursor: 'pointer',
 });
@@ -97,81 +107,89 @@ globalStyle('.process-node', {
 globalStyle('.process-node::after', {
   content: '""',
   position: 'absolute',
-  top: '42px',
+  top: '46px',
   left: 'calc(100% + 1px)',
-  width: '14px',
+  width: '16px',
   height: '1px',
-  background: vars.lineStrong,
+  background: vars.borderStrong,
 });
 
-globalStyle('.process-node:last-child::after', {
+globalStyle('.process-track > :last-child .process-node::after', {
   display: 'none',
 });
 
 globalStyle('.process-node:hover', {
-  borderColor: '#a3a3a3',
-  background: '#fafafa',
+  borderColor: vars.borderStrong,
+  background: vars.bgElement,
 });
 
 globalStyle('.process-node.active', {
-  borderColor: '#7c3aed',
-  boxShadow: '0 0 0 2px #ede9fe',
-  background: '#faf9ff',
+  borderColor: vars.kindDecision,
+  background: vars.kindDecisionBg,
 });
 
-globalStyle('.process-node.data', { borderTopColor: '#2563eb' });
-globalStyle('.process-node.observe', { borderTopColor: '#d97706' });
-globalStyle('.process-node.decision', { borderTopColor: '#7c3aed' });
-globalStyle('.process-node.manage', { borderTopColor: '#059669' });
+globalStyle('.process-node.data', { borderTopColor: vars.kindData });
+globalStyle('.process-node.observe', { borderTopColor: vars.kindObserve });
+globalStyle('.process-node.decision', { borderTopColor: vars.kindDecision });
+globalStyle('.process-node.manage', { borderTopColor: vars.kindManage });
 
 globalStyle('.process-node.warning', {
-  borderTopColor: '#dc2626',
-  background: '#fffafa',
+  borderTopColor: vars.down,
 });
 
 globalStyle('.process-node.warning .process-bar', {
-  color: '#dc2626',
+  color: vars.down,
 });
 
 globalStyle('.process-node.error', {
-  borderColor: vars.red,
-  borderTopColor: vars.red,
+  borderColor: vars.down,
+  borderTopColor: vars.down,
 });
 
 globalStyle('.process-index', {
   position: 'absolute',
-  top: '6px',
-  right: '7px',
-  color: '#a3a3a3',
-  font: `8px ${vars.mono}`,
+  top: '7px',
+  right: '8px',
+  color: vars.textMuted,
+  fontFamily: vars.fontMono,
+  fontSize: vars.fsXs,
 });
 
 globalStyle('.process-bar', {
   display: 'block',
-  color: '#7c3aed',
-  font: `650 10px ${vars.mono}`,
+  color: vars.kindDecision,
+  fontFamily: vars.fontMono,
+  fontSize: vars.fsSm,
+  fontWeight: 600,
 });
 
-globalStyle('.process-node strong, .process-node small, .process-node em', {
+globalStyle('.process-node strong, .process-node em', {
   display: 'block',
 });
 
 globalStyle('.process-node strong', {
-  marginTop: '5px',
-  fontSize: '10px',
+  marginTop: '6px',
+  fontSize: vars.fsBase,
+  fontWeight: 600,
 });
 
 globalStyle('.process-node small', {
-  marginTop: '2px',
-  color: vars.muted,
-  fontSize: '8px',
-  lineHeight: 1.3,
+  display: '-webkit-box',
+  WebkitLineClamp: 4,
+  WebkitBoxOrient: 'vertical',
+  overflow: 'hidden',
+  marginTop: '3px',
+  color: vars.textSecondary,
+  fontSize: vars.fsSm,
+  lineHeight: 1.45,
 });
 
 globalStyle('.process-node em', {
-  marginTop: '6px',
-  color: '#a3a3a3',
-  font: `7px ${vars.mono}`,
+  marginTop: 'auto',
+  paddingTop: '8px',
+  color: vars.textMuted,
+  fontFamily: vars.fontMono,
+  fontSize: vars.fsXs,
   fontStyle: 'normal',
 });
 
@@ -179,122 +197,49 @@ globalStyle('.process-checks', {
   display: 'flex',
   alignItems: 'center',
   gap: '14px',
-  minHeight: '31px',
+  minHeight: '32px',
   padding: '6px 10px',
-  borderTop: `1px solid ${vars.line}`,
-  background: '#fff',
+  borderTop: `1px solid ${vars.border}`,
+  background: vars.bgSurface,
   overflowX: 'auto',
 });
 
-globalStyle('.process-checks > span', {
+globalStyle('.process-checks .ui-tip', {
+  borderBottom: 0,
+});
+
+globalStyle('.process-checks span', {
   display: 'inline-flex',
   alignItems: 'center',
-  gap: '4px',
+  gap: '5px',
   whiteSpace: 'nowrap',
-  fontSize: '8px',
-  color: vars.muted,
+  fontSize: vars.fsXs,
+  color: vars.textSecondary,
 });
 
 globalStyle('.process-checks i', {
   display: 'grid',
   placeItems: 'center',
-  width: '14px',
-  height: '14px',
-  borderRadius: '50%',
+  width: '15px',
+  height: '15px',
+  borderRadius: vars.radiusFull,
   fontStyle: 'normal',
 });
 
 globalStyle('.process-checks .pass i', {
-  color: vars.green,
-  background: '#e9f9f2',
+  color: vars.up,
+  background: vars.stateOkBg,
 });
 
 globalStyle('.process-checks .fail i', {
-  color: vars.red,
-  background: '#fff0f0',
-});
-
-globalStyle('.process-checks small', {
-  font: `7px ${vars.mono}`,
-  color: '#a3a3a3',
+  color: vars.down,
+  background: vars.stateBadBg,
 });
 
 globalStyle('.process-empty', {
-  margin: 0,
   padding: '12px',
-  color: vars.muted,
-  fontSize: '10px',
-});
-
-globalStyle('.trade-ledger', {
-  padding: '0 !important',
-  borderBottom: `1px solid ${vars.line}`,
-});
-
-globalStyle('.trade-ledger > h4, .trade-ledger > p', {
-  margin: 0,
-  padding: '9px 12px',
-});
-
-globalStyle('.trade-ledger > p', {
-  paddingTop: 0,
-  color: vars.muted,
-  fontSize: '9px',
-});
-
-globalStyle('.trade-ledger > summary', {
-  display: 'flex',
-  justifyContent: 'space-between',
-  padding: '9px 12px',
-  cursor: 'pointer',
-  fontSize: '10px',
-  fontWeight: 650,
-});
-
-globalStyle('.trade-ledger > summary span', {
-  color: vars.muted,
-});
-
-globalStyle('.trade-ledger ol', {
-  listStyle: 'none',
-  margin: 0,
-  padding: '0 12px 8px',
-});
-
-globalStyle('.trade-ledger li', {
-  display: 'grid',
-  gridTemplateColumns: 'minmax(0,1fr) auto',
-  gap: '5px 8px',
-  padding: '7px 0',
-  borderTop: `1px solid ${vars.line}`,
-});
-
-globalStyle('.trade-ledger li > div:first-child strong, .trade-ledger li > div:first-child small', {
-  display: 'block',
-});
-
-globalStyle('.trade-ledger li > div:first-child strong', {
-  fontSize: '9px',
-});
-
-globalStyle('.trade-ledger li > div:first-child small', {
-  color: vars.muted,
-  font: `7px ${vars.mono}`,
-});
-
-globalStyle('.trade-prices', {
-  gridColumn: '1/-1',
-  display: 'flex',
-  gap: '7px',
-  color: vars.muted,
-  font: `7px ${vars.mono}`,
-  whiteSpace: 'nowrap',
-});
-
-globalStyle('.trade-ledger li > strong', {
-  gridColumn: 2,
-  gridRow: 1,
-  font: `650 10px ${vars.mono}`,
+  color: vars.textMuted,
+  fontSize: vars.fsSm,
 });
 
 globalStyle('.process-head', {
@@ -311,31 +256,17 @@ globalStyle('.process-head > div:last-child', {
 
 globalStyle('.process-node', {
   '@media': {
-    '(max-width:680px)': { flexBasis: '146px' },
-    print: { flexBasis: '140px' },
+    '(max-width:680px)': { flexBasis: '164px' },
   },
 });
 
-globalStyle('.process-checks', {
-  '@media': {
-    '(max-width:680px)': { gap: '10px' },
-  },
+globalStyle('.process-tip strong', {
+  display: 'block',
+  fontFamily: vars.fontMono,
+  fontSize: vars.fsXs,
+  color: vars.textMuted,
 });
 
-globalStyle('.process-checks small', {
-  '@media': {
-    '(max-width:680px)': { display: 'none' },
-  },
-});
-
-globalStyle('.process-reset', {
-  '@media': {
-    print: { display: 'none' },
-  },
-});
-
-globalStyle('.process-rail', {
-  '@media': {
-    print: { flexWrap: 'wrap', overflow: 'visible' },
-  },
+globalStyle('.process-tip p', {
+  marginTop: '4px',
 });

@@ -428,6 +428,9 @@ importers:
 
   packages/bench-report-ui:
     dependencies:
+      '@base-ui/react':
+        specifier: ^1.6.0
+        version: 1.6.0(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       lightweight-charts:
         specifier: ^5.2.0
         version: 5.2.0

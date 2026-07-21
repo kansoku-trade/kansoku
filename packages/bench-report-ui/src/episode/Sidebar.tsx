@@ -1,4 +1,10 @@
-import type { EpisodeReportActionRecordView, EpisodeReportCaseDetailView, EpisodeReportFactItem } from '../types';
+import type {
+  EpisodeReportActionRecordView,
+  EpisodeReportCaseDetailView,
+  EpisodeReportFactItem,
+} from '../types';
+import { MoreText } from '../ui/Disclosure';
+import { ScrollArea } from '../ui/ScrollArea';
 import { ActionsList } from './ActionsList';
 import { TradeLedger } from './TradeLedger';
 
@@ -36,16 +42,19 @@ export function Sidebar({
   return (
     <aside className="trade-sidebar">
       <div className="trade-sidebar-scroll">
+        <ScrollArea className="trade-sidebar-inner">
         <section>
           <h4>首次计划</h4>
           <Facts facts={detail.planFacts} />
           {detail.planReasonCategoryLabel ? (
-            <p className="decision-reason">
+            <div className="decision-reason">
               <b>{detail.planReasonCategoryLabel}</b>
-              {detail.planReasonSummary}
-            </p>
+              <MoreText text={detail.planReasonSummary ?? ''} />
+            </div>
           ) : detail.planRationale ? (
-            <p className="rationale">{detail.planRationale}</p>
+            <div className="decision-reason">
+              <MoreText text={detail.planRationale} />
+            </div>
           ) : null}
         </section>
         <section>
@@ -58,6 +67,7 @@ export function Sidebar({
           activeStep={activeActionStep}
           onToggle={onToggleAction}
         />
+        </ScrollArea>
       </div>
     </aside>
   );
