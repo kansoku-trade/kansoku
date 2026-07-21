@@ -451,6 +451,19 @@ function updateExcursions(position: PositionState, bar: RawBar): PositionState {
   };
 }
 
+// An intrabar fill splits its own bar: everything before the fill belongs to the pending order,
+// not to the position, and OHLC cannot say when inside the bar the extremes happened. Only the
+// extreme on the far side of the approach is provably post-fill — price had to travel through the
+// entry to reach it — so the near-side extreme collapses to the fill price or the close, whichever
+// is worse for the side it replaces. Without this, a breakout order that filled after a dip is
+// stopped out on its own entry bar, and a limit order that filled after a spike takes profit on it.
+function postFillBar(bar: RawBar, entryPrice: number, roseIntoFill: boolean): RawBar {
+  const close = numberOf(bar.close);
+  return roseIntoFill
+    ? { ...bar, low: Math.min(entryPrice, close) }
+    : { ...bar, high: Math.max(entryPrice, close) };
+}
+
 function stopHit(position: PositionState, bar: RawBar): boolean {
   return position.direction === 'long'
     ? numberOf(bar.low) <= position.stop
@@ -670,10 +683,13 @@ function advanceEpisodeSingle(
   }
 
   let fillTiming: EntryFill['timing'] | null = null;
+  let roseIntoFill = false;
   if (working.phase === 'pending' && working.order) {
     const order = { ...working.order, waitedBars: working.order.waitedBars + 1 };
-    const fill = entryFill(order, visibleReferencePrice(question, state), bar);
+    const reference = visibleReferencePrice(question, state);
+    const fill = entryFill(order, reference, bar);
     if (fill !== null) {
+      roseIntoFill = order.entry >= reference;
       const fillPrice = fill.price;
       const initialRisk = Math.abs(fillPrice - order.initialStop);
       if (initialRisk === 0) throw new Error('filled entry equals the initial stop');
@@ -749,15 +765,19 @@ function advanceEpisodeSingle(
       return { state: working, asOf: bar.time, bar, event, terminal: false, result: null };
     }
   }
-  const position = updateExcursions(working.position, bar);
-  working = { ...working, position };
   const allowOpenGap = fillTiming !== 'intrabar';
+  const exitBar =
+    fillTiming === 'intrabar'
+      ? postFillBar(bar, working.position.entryPrice, roseIntoFill)
+      : bar;
+  const position = updateExcursions(working.position, exitBar);
+  working = { ...working, position };
 
-  if (stopHit(position, bar)) {
+  if (stopHit(position, exitBar)) {
     working = closePosition(
       working,
       'stop',
-      { time: bar.time, price: stopExitPrice(position, bar, allowOpenGap) },
+      { time: bar.time, price: stopExitPrice(position, exitBar, allowOpenGap) },
       options,
     );
     if (remainingEpisodeBars(working, question) === 0) {
@@ -772,11 +792,11 @@ function advanceEpisodeSingle(
       result: null,
     };
   }
-  if (targetHit(position, bar)) {
+  if (targetHit(position, exitBar)) {
     working = closePosition(
       working,
       'target',
-      { time: bar.time, price: targetExitPrice(position, bar, allowOpenGap) },
+      { time: bar.time, price: targetExitPrice(position, exitBar, allowOpenGap) },
       options,
     );
     if (remainingEpisodeBars(working, question) === 0) {

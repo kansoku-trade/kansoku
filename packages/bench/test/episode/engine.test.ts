@@ -116,6 +116,34 @@ describe('episode engine', () => {
     expect(finished.result!.trades!.map((trade) => trade.direction)).toEqual(['long', 'short']);
   });
 
+  it('does not stop out on the entry bar using a low the order could only have reached before filling', () => {
+    // Stop entry at 103 fills only on the way up from a 99 open, so the 96 low belongs to the
+    // pending window, not to the position. Only the close is provably after the fill.
+    const q = question([
+      bar('2026-03-23T14:30:00Z', 99, 104, 96, 103.5),
+      bar('2026-03-23T15:30:00Z', 103.5, 105, 103, 104),
+    ]);
+    const submitted = submitEpisode(createEpisodeState(), q, prediction('long', 103, 97, 110));
+    const filled = advanceEpisode(submitted.state, q, reasoned({ type: 'hold' }));
+    expect(filled.event).not.toBe('stop_hit');
+    expect(filled.state.phase).toBe('open');
+    expect(filled.state.trades).toHaveLength(0);
+  });
+
+  it('does not take profit on the entry bar using a high the order could only have reached before filling', () => {
+    // Limit entry at 98 fills on the way down from a 99.5 open, so the 105 high precedes the fill.
+    const q = question([
+      bar('2026-03-23T14:30:00Z', 99.5, 105, 97.5, 98.5),
+      bar('2026-03-23T15:30:00Z', 98.5, 99, 98, 98.5),
+    ]);
+    const submitted = submitEpisode(createEpisodeState(), q, prediction('long', 98, 95, 104));
+    const filled = advanceEpisode(submitted.state, q, reasoned({ type: 'hold' }));
+    expect(filled.event).not.toBe('target_hit');
+    expect(filled.state.phase).toBe('open');
+    // Favourable excursion on the entry bar may only count the close, not the pre-fill high.
+    expect(filled.state.position!.mfeR).toBeCloseTo(0.5 / 3, 6);
+  });
+
   it('keeps observation optional and only activates a delayed order on the following hidden bar', () => {
     const q = question();
     const observed = observeEpisode(createEpisodeState(), q);
@@ -219,7 +247,9 @@ describe('episode engine', () => {
   });
 
   it('prices a same-bar stop from an intrabar entry at the stop instead of the earlier open', () => {
-    const q = question([bar('2026-02-06T14:30:00Z', 98.147166, 100.917579, 97.989683, 100.284433)]);
+    // The close sits below the stop so the stop is provably reached after the intrabar fill; the
+    // 97.99 low alone would not trigger it, since a breakout order only fills on the way up.
+    const q = question([bar('2026-02-06T14:30:00Z', 98.147166, 100.917579, 97.989683, 98.4)]);
     const result = advanceEpisode(
       submitEpisode(createEpisodeState(), q, prediction('long', 100.1, 98.6, 101.8)).state,
       q,
