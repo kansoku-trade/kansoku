@@ -231,6 +231,7 @@ const metricsSchema = Type.Object(
     toolCalls: Type.Integer({ minimum: 0 }),
     inputTokens: Type.Integer({ minimum: 0 }),
     outputTokens: Type.Integer({ minimum: 0 }),
+    guardrailHits: Type.Optional(Type.Integer({ minimum: 0 })),
   },
   { additionalProperties: false },
 );
