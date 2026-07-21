@@ -430,7 +430,12 @@ function applyAmendment(
   const target = action.target == null ? position.target : finite(action.target, 'target');
   const wrongStop = position.direction === 'long' ? stop >= reference : stop <= reference;
   const wrongTarget = position.direction === 'long' ? target <= reference : target >= reference;
+  const widensStop = position.direction === 'long' ? stop < position.stop : stop > position.stop;
   if (wrongStop) throw new Error(`amended ${position.direction} stop crosses the visible price`);
+  if (widensStop)
+    throw new Error(
+      `amended ${position.direction} stop increases the risk already committed; an open position's stop may only tighten`,
+    );
   if (wrongTarget)
     throw new Error(`amended ${position.direction} target crosses the visible price`);
   return { ...position, stop, target };

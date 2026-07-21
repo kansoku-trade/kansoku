@@ -175,6 +175,40 @@ describe('episode engine', () => {
     expect(stopped.state.trades[0]).toMatchObject({ exitReason: 'stop', grossR: 0.2 });
   });
 
+  it('rejects an amendment that moves the stop away from entry, in either direction', () => {
+    const q = question();
+    const longFilled = advanceEpisode(
+      submitEpisode(createEpisodeState(), q, prediction('long', 100, 95, 120)).state,
+      q,
+      reasoned({ type: 'hold' }),
+    );
+    expect(() => advanceEpisode(longFilled.state, q, reasoned({ type: 'amend', stop: 94 }))).toThrow(
+      /may only tighten/,
+    );
+
+    const shortFilled = advanceEpisode(
+      submitEpisode(createEpisodeState(), q, prediction('short', 105, 110, 90)).state,
+      q,
+      reasoned({ type: 'hold' }),
+    );
+    expect(() =>
+      advanceEpisode(shortFilled.state, q, reasoned({ type: 'amend', stop: 111 })),
+    ).toThrow(/may only tighten/);
+  });
+
+  it('still accepts a tightening amendment and an unchanged stop', () => {
+    const q = question();
+    const filled = advanceEpisode(
+      submitEpisode(createEpisodeState(), q, prediction('long', 100, 95, 120)).state,
+      q,
+      reasoned({ type: 'hold' }),
+    );
+    expect(advanceEpisode(filled.state, q, reasoned({ type: 'amend', stop: 97 })).state.position)
+      .toMatchObject({ stop: 97 });
+    expect(advanceEpisode(filled.state, q, reasoned({ type: 'amend', target: 118 })).state.position)
+      .toMatchObject({ stop: 95, target: 118 });
+  });
+
   it('executes a manual exit at the next bar open and keeps the episode active', () => {
     const q = question();
     const filled = advanceEpisode(
