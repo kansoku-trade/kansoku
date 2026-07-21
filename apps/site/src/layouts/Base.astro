@@ -1,0 +1,250 @@
+---
+interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+const ogImage = new URL('/brand/kansoku-product-banner.png', Astro.site);
+const canonical = new URL(Astro.url.pathname, Astro.site);
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Kansoku" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="author" content="Innei" />
+    <slot name="head" />
+  </head>
+  <body>
+    <header class="nav">
+      <a class="nav-name" href="/">KANSOKU <b>観測</b></a>
+      <nav class="nav-links">
+        <a href="/pricing">定价</a>
+        <a href="/changelog">更新日志</a>
+        <a href="/docs">文档</a>
+        <a href="https://github.com/kansoku-trade/kansoku" target="_blank" rel="noreferrer">GitHub</a>
+      </nav>
+    </header>
+    <main>
+      <slot />
+    </main>
+    <footer class="footer">
+      <p>
+        Kansoku（観測）· local-first ·
+        <a href="https://github.com/kansoku-trade/kansoku" target="_blank" rel="noreferrer"
+          >github</a
+        >
+        ·
+        <a
+          href="https://github.com/kansoku-trade/kansoku/blob/main/LICENSE"
+          target="_blank"
+          rel="noreferrer">agpl-3.0 + commons clause</a
+        >
+        · © {new Date().getFullYear()}
+      </p>
+      <p>
+        <a href="/about">关于</a> · <a href="/privacy">隐私</a> · <a href="/terms">条款</a> ·
+        <a
+          href="https://github.com/kansoku-trade/kansoku/issues"
+          target="_blank"
+          rel="noreferrer">联系 / issues</a
+        >
+      </p>
+    </footer>
+  </body>
+</html>
+
+<style is:global>
+  :root {
+    --bg: #0a0a0a;
+    --surface: #141414;
+    --element: #1e1e1e;
+    --border: #262626;
+    --border-strong: #3a3a3a;
+    --text: #e8e8e8;
+    --text-2: #9a9a9a;
+    --text-3: #5c5c5c;
+    --accent: #ffb000;
+    --up: #26a69a;
+    --down: #ef5350;
+    --mono: ui-monospace, 'SF Mono', Menlo, monospace;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    background: var(--bg);
+    color: var(--text);
+    font-family:
+      -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Helvetica Neue',
+      sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  main {
+    flex: 1;
+    width: 100%;
+  }
+
+  h1,
+  h2,
+  h3 {
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+  }
+
+  img {
+    max-width: 100%;
+  }
+
+  a {
+    color: var(--text);
+  }
+
+  .mono {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 1120px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 18px 24px;
+  }
+
+  .nav-name {
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: 0.12em;
+    text-decoration: none;
+    color: var(--text);
+  }
+
+  .nav-name b {
+    color: var(--accent);
+    font-weight: 400;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 22px;
+    font-size: 13px;
+  }
+
+  .nav-links a {
+    color: var(--text-2);
+    text-decoration: none;
+  }
+
+  .nav-links a:hover {
+    color: var(--text);
+  }
+
+  .btn {
+    font-size: 14px;
+    text-decoration: none;
+    display: inline-block;
+    border: 1px solid var(--accent);
+    border-radius: 2px;
+    color: var(--bg);
+    background: var(--accent);
+    padding: 12px 26px;
+    font-weight: 600;
+    transition:
+      background 150ms ease,
+      border-color 150ms ease,
+      color 150ms ease;
+  }
+
+  .btn:hover {
+    background: #ffc23d;
+  }
+
+  .btn-ghost {
+    border: 1px solid var(--border-strong);
+    background: transparent;
+    color: var(--text);
+    font-weight: 400;
+  }
+
+  .btn-ghost:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: transparent;
+  }
+
+  .ver {
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+
+  .rule {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-3);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .rule::before,
+  .rule::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .footer {
+    border-top: 1px solid var(--border);
+    margin-top: 96px;
+    padding: 32px 24px 48px;
+    text-align: center;
+    color: var(--text-3);
+    font-size: 12px;
+    font-family: var(--mono);
+    letter-spacing: 0.04em;
+  }
+
+  .footer p {
+    margin: 0 0 8px;
+  }
+
+  .footer a {
+    color: var(--text-2);
+    text-decoration: none;
+  }
+
+  .footer a:hover {
+    color: var(--accent);
+  }
+</style>

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 168" role="img" aria-labelledby="title desc">
+  <title id="title">Kansoku lockup</title>
+  <desc id="desc">Kansoku wordmark with the minimal observer symbol.</desc>
+  <rect width="560" height="168" rx="24" fill="#080D14"/>
+  <g transform="translate(28 17)">
+    <path d="M18 36 C60 19 115 22 162 44" fill="none" stroke="#E2E8F0" stroke-opacity="0.34" stroke-width="3" stroke-linecap="round"/>
+    <path d="M18 67 C61 54 112 57 162 67" fill="none" stroke="#FACC15" stroke-width="4.2" stroke-linecap="round"/>
+    <path d="M18 100 C64 119 116 113 162 86" fill="none" stroke="#E2E8F0" stroke-opacity="0.34" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="124" cy="63" r="7.8" fill="#FEF08A"/>
+  </g>
+  <text x="222" y="82" fill="#F8FAFC" font-family="Arial" font-size="46" font-weight="600" letter-spacing="0">Kansoku</text>
+  <text x="224" y="112" fill="#9CA3AF" font-family="Arial" font-size="14" font-weight="500" letter-spacing="1.6">OBSERVED PATH</text>
+</svg>

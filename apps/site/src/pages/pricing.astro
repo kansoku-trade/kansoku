@@ -1,0 +1,397 @@
+---
+import features from '../data/features.json';
+import Base from '../layouts/Base.astro';
+import { subscription } from '../lib/pricing';
+import { dmgAsset, fetchDesktopReleases, releaseVersion } from '../lib/releases';
+
+const releases = await fetchDesktopReleases();
+const latest = releases[0]!;
+const version = releaseVersion(latest);
+const dmg = dmgAsset(latest);
+if (!dmg) throw new Error(`release ${latest.tag_name} has no dmg asset`);
+
+const monthlyAmount = subscription.priceLabel.split(' / ')[0];
+const yearlyAmount = subscription.yearly.priceLabel.split(' / ')[0];
+
+const matrix = [
+  ...features.matrixFree.map((section) => ({
+    group: section.group,
+    rows: section.items.map((cap) => ({ cap, free: true })),
+  })),
+  {
+    group: '自动化研究（pro）',
+    rows: features.pro.map((f) => ({ cap: f.matrix, free: false })),
+  },
+];
+
+const faq = [
+  {
+    q: '订阅后怎么激活？',
+    a: '付款完成后收到 license key，在应用「设置 → 授权」里粘贴激活，绑定你自己的设备。',
+  },
+  {
+    q: '试用需要绑卡吗？',
+    a: `走 Dodo Payments 的订阅流程，${subscription.trialDays} 天试用期内取消不收费。`,
+  },
+  {
+    q: '不订阅会失去什么？',
+    a: `只是 ${features.pro.length} 项 Pro 自动化能力不可用；看盘本体和免费 AI 永久免费，数据始终在你本机。`,
+  },
+];
+---
+
+<Base
+  title="定价 — Kansoku"
+  description={`Kansoku 免费版即完整看盘工具；Pro ${subscription.priceLabel}，${subscription.yearly.priceLabel}（${subscription.yearly.savingsLabel}），${subscription.trialDays} 天免费试用。`}
+>
+  <section class="head">
+    <div class="eyebrow">two tickets · one desk</div>
+    <h1>定价</h1>
+    <p>像下单一样清楚：一张免费，一张付费。</p>
+  </section>
+
+  <section class="desk">
+    <div class="ticket">
+      <div class="t-head"><span>order · free</span><span>#0000</span></div>
+      <div class="t-body">
+        {
+          features.freeTicket.map((item) => (
+            <div class="t-row">
+              <span class="k">{item}</span>
+              <span class="v up">included</span>
+            </div>
+          ))
+        }
+        <div class="t-row"><span class="k">license</span><span class="v">agpl-3.0 + cc</span></div>
+      </div>
+      <div class="t-total"><span>total</span><b>$0</b></div>
+      <div class="t-cta">
+        <a class="btn btn-ghost" href={dmg.browser_download_url}>↓ 下载 v{version}</a>
+      </div>
+    </div>
+
+    <div class="ticket ticket--pro">
+      <div class="t-head"><span>order · pro</span><span>#0001</span></div>
+      <div class="t-body">
+        <div class="t-row"><span class="k">free 全部</span><span class="v up">included</span></div>
+        {
+          features.pro.map((f) => (
+            <div class="t-row">
+              <span class="k">{f.ticket}</span>
+              <span class="v up">+ added</span>
+            </div>
+          ))
+        }
+        <div class="t-row">
+          <span class="k">trial</span><span class="v">{subscription.trialDays} days · $0</span>
+        </div>
+      </div>
+      <div class="t-total">
+        <span>total</span>
+        <b>{monthlyAmount}<small>/月</small></b>
+      </div>
+      <div class="t-cta">
+        <a class="btn" href={subscription.url} target="_blank" rel="noreferrer"
+          >免费试用 {subscription.trialDays} 天</a
+        >
+        <p class="t-alt">
+          或 <a href={subscription.yearly.url} target="_blank" rel="noreferrer"
+            >{yearlyAmount}/年（{subscription.yearly.savingsLabel}）</a
+          >
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="matrix">
+    <div class="rule">full breakdown</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th></th><th class="col">Free</th><th class="col pro">Pro</th></tr>
+        </thead>
+        <tbody>
+          {
+            matrix.map((section) => (
+              <>
+                <tr class="group">
+                  <td colspan="3">{section.group}</td>
+                </tr>
+                {section.rows.map((row) => (
+                  <tr>
+                    <td class="cap">{row.cap}</td>
+                    <td class={row.free ? 'mark yes' : 'mark no'}>{row.free ? '✓' : '—'}</td>
+                    <td class="mark yes pro-col">✓</td>
+                  </tr>
+                ))}
+              </>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="faq">
+    <div class="rule">faq</div>
+    <dl>
+      {
+        faq.map((item) => (
+          <>
+            <dt>{item.q}</dt>
+            <dd>{item.a}</dd>
+          </>
+        ))
+      }
+    </dl>
+  </section>
+</Base>
+
+<style>
+  .head {
+    max-width: 1120px;
+    margin: 0 auto;
+    text-align: center;
+    padding: 72px 24px 8px;
+  }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 20px;
+  }
+
+  .head h1 {
+    font-size: 44px;
+    margin: 0 0 12px;
+  }
+
+  .head p {
+    color: var(--text-2);
+    margin: 0;
+  }
+
+  .desk {
+    max-width: 940px;
+    margin: 48px auto 0;
+    padding: 0 24px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    align-items: stretch;
+  }
+
+  .ticket {
+    border: 1px solid var(--border-strong);
+    border-radius: 2px;
+    background: var(--surface);
+    font-family: var(--mono);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .ticket--pro {
+    border-color: var(--accent);
+  }
+
+  .t-head {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 18px;
+    border-bottom: 1px dashed var(--border-strong);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-2);
+  }
+
+  .ticket--pro .t-head {
+    color: var(--accent);
+  }
+
+  .t-body {
+    padding: 8px 18px 14px;
+    flex: 1;
+  }
+
+  .t-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--text-2);
+  }
+
+  .t-row .k {
+    color: var(--text-3);
+  }
+
+  .t-row .v {
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .t-row .v.up {
+    color: var(--up);
+  }
+
+  .t-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 14px 18px;
+    font-size: 13px;
+    border-top: 1px dashed var(--border-strong);
+  }
+
+  .t-total b {
+    color: var(--accent);
+    font-weight: 400;
+    font-size: 20px;
+  }
+
+  .t-total small {
+    font-size: 12px;
+    color: var(--text-2);
+  }
+
+  .t-cta {
+    padding: 0 18px 18px;
+  }
+
+  .t-cta .btn,
+  .t-cta .btn-ghost {
+    display: block;
+    width: 100%;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 13px;
+  }
+
+  .t-alt {
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-3);
+    margin: 10px 0 0;
+  }
+
+  .t-alt a {
+    color: var(--text-2);
+  }
+
+  .matrix {
+    max-width: 880px;
+    margin: 88px auto 0;
+    padding: 0 24px;
+  }
+
+  .matrix .rule {
+    margin-bottom: 28px;
+  }
+
+  .table-wrap {
+    overflow-x: auto;
+  }
+
+  table {
+    width: 100%;
+    min-width: 560px;
+    border-collapse: collapse;
+    border: 1px solid var(--border-strong);
+  }
+
+  th,
+  td {
+    border: 1px solid var(--border);
+    padding: 12px 16px;
+    font-size: 13px;
+    text-align: left;
+  }
+
+  thead th {
+    background: var(--surface);
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-2);
+  }
+
+  thead th.col {
+    width: 15%;
+    text-align: center;
+  }
+
+  thead th.pro {
+    color: var(--accent);
+  }
+
+  .group td {
+    background: var(--surface);
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-3);
+    padding: 6px 16px;
+  }
+
+  td.cap {
+    color: var(--text-2);
+  }
+
+  td.mark {
+    font-family: var(--mono);
+    text-align: center;
+  }
+
+  .yes {
+    color: var(--up);
+  }
+
+  .no {
+    color: var(--text-3);
+  }
+
+  .pro-col {
+    background: rgba(255, 176, 0, 0.04);
+  }
+
+  .faq {
+    max-width: 640px;
+    margin: 88px auto 0;
+    padding: 0 24px;
+  }
+
+  .faq .rule {
+    margin-bottom: 24px;
+  }
+
+  .faq dt {
+    font-weight: 600;
+    margin-top: 24px;
+    font-size: 15px;
+  }
+
+  .faq dd {
+    color: var(--text-2);
+    margin: 8px 0 0;
+    line-height: 1.8;
+    font-size: 14px;
+  }
+
+  @media (max-width: 720px) {
+    .head h1 {
+      font-size: 36px;
+    }
+
+    .desk {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

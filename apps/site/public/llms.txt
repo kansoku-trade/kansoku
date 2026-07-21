@@ -1,0 +1,22 @@
+# Kansoku（観測）
+
+> 本地优先的 AI 看盘 macOS 应用：行情从用户自己的长桥（Longbridge）账户拉取，技术指标在本机实算，AI 使用用户自己配置的模型（自带 API key / 本机 codex 登录态 / LobeHub Cloud）进行盘中点评、追问分析与研究改稿，结论落成本地 markdown/JSON 文件。数据和 key 不离开用户机器。作者：Innei（https://innei.in）。
+
+## 核心事实
+
+- 平台：macOS（Apple Silicon），Electron 桌面应用，内置 Sparkle 自动更新
+- 前置依赖：本机安装并登录 longbridge CLI
+- 免费版：完整看盘本体（多周期 K 线、画线、SEPA 仪表盘、盘面与复盘、美/港/A 股行情）+ 免费 AI（对话、复评、AI 设置、宏观事件过滤、研究库浏览）
+- Pro（$9.9/月 或 $99/年，7 天试用，Dodo Payments 结算）：个股自动跟踪（后台巡检 + 通知）、深度研究、研究库 AI 助手
+- 许可：AGPL-3.0 + Commons Clause（source-available；禁止转售）
+
+## Pages
+
+- [首页](https://kansoku.trade/)：产品介绍，按交易日时间线（盘前/开盘/盘中/收盘后）组织
+- [定价](https://kansoku.trade/pricing/)：免费 vs Pro 完整对照表与订阅入口
+- [更新日志](https://kansoku.trade/changelog/)：随 GitHub Releases 自动同步的版本历史
+- [关于](https://kansoku.trade/about/)：作者与联系方式
+- [隐私](https://kansoku.trade/privacy/)：网站无跟踪；应用本地优先的数据边界
+- [条款](https://kansoku.trade/terms/)：许可、订阅、非投资建议免责声明
+- [GitHub 仓库](https://github.com/kansoku-trade/kansoku)：源码与 README
+- [下载](https://github.com/kansoku-trade/kansoku/releases)：desktop-v* Releases 的 dmg

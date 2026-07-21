@@ -1,0 +1,650 @@
+---
+import features from '../data/features.json';
+import Base from '../layouts/Base.astro';
+import { dmgAsset, fetchDesktopReleases, releaseVersion } from '../lib/releases';
+
+const releases = await fetchDesktopReleases();
+const latest = releases[0]!;
+const version = releaseVersion(latest);
+const dmg = dmgAsset(latest);
+if (!dmg) throw new Error(`release ${latest.tag_name} has no dmg asset`);
+
+const shot = (name: string) =>
+  `https://github.com/kansoku-trade/kansoku/releases/download/web-preview/${name}`;
+
+const proShorts = features.pro.map((f) => f.short).join('、');
+
+const slots = [
+  {
+    time: '08:30',
+    session: '盘前',
+    tag: 'premarket · calendar',
+    live: false,
+    title: '先扫一眼今天',
+    body: '盘前打开盘面：自选和持仓的隔夜行情、当日资金流向，财报与宏观事件日历挂在个股右栏——今天有什么事，开盘前心里有数。',
+    image: shot('app-home.png'),
+    alt: '盘面看板',
+  },
+  {
+    time: '09:30',
+    session: '开盘',
+    tag: 'prediction',
+    live: true,
+    title: '开盘就有判断',
+    body: '多周期 K 线加形态标注，AI 给出短线方向和 Bull/Base/Bear 三档推演——概率合计 100%，每档写明触发条件，不说模棱两可的话。',
+    image: shot('app-cockpit.png'),
+    alt: '个股驾驶舱',
+  },
+  {
+    time: '11:00',
+    session: '盘中',
+    tag: 'chat · annotate',
+    live: false,
+    title: '不服就追问',
+    body: '对着任何一份分析问「凭什么」。AI 先读你的画线再结合实时行情回答，让它标价位就直接画到图上；查了什么数据全程留痕，点开可查。',
+    image: shot('app-chat.png'),
+    alt: '追问分析',
+  },
+  {
+    time: '16:00',
+    session: '收盘后',
+    tag: 'research · review',
+    live: false,
+    title: '复盘落成文件',
+    body: '判断对没对，系统替你记账：判断与结果追踪、历史命中率。研究库 AI 帮你改稿、按信源刷新内容，结论落成本地 markdown，随时可审计。',
+    image: shot('app-research.png'),
+    alt: '研究库',
+  },
+];
+
+const substrate = [
+  '多周期 K 线（5m/15m/1h）实时刷新，均线、MACD、形态标注、价位线',
+  '画线工具：趋势线、多段线、水平线、矩形、斐波那契，带样式预设',
+  'SEPA 仪表盘：Minervini 趋势模板 8 条逐项打钩，自动给出结论',
+  '盘中看板与历史复盘自动切换，判断与结果追踪、历史命中率',
+  '美股为主，港股与 A 股已接入，交易时段按各自市场处理',
+  '标签页、⌘K 命令面板、实时推送、Sparkle 自动更新',
+];
+
+const locals = [
+  { tag: '✓ 本地拉取', body: '行情和账户数据从你自己的长桥账户拉，不经过任何中间服务器。' },
+  { tag: '✓ 本地实算', body: '均线、MACD、RS、趋势模板、背离全部在本机 TypeScript 实算。' },
+  { tag: '✓ 本地存 key', body: 'AI key 加密存本地 SQLite；用什么模型、花了多少钱，都在你自己的账上。' },
+  { tag: '✓ 本地落盘', body: '结论和图表快照落成本地 markdown / JSON，可审计、可迁移。' },
+];
+
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'Kansoku',
+  alternateName: '観測',
+  operatingSystem: 'macOS',
+  applicationCategory: 'FinanceApplication',
+  softwareVersion: version,
+  dateModified: latest.published_at,
+  url: 'https://kansoku.trade',
+  downloadUrl: dmg.browser_download_url,
+  author: { '@type': 'Person', name: 'Innei', url: 'https://innei.in' },
+  offers: [
+    { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+    { '@type': 'Offer', price: '9.9', priceCurrency: 'USD' },
+  ],
+};
+---
+
+<Base
+  title="Kansoku（観測）— 陪你走完每一个交易日的 AI 看盘搭子 · 本地优先 macOS 看盘应用"
+  description="本地优先的 AI 看盘应用：行情走你自己的券商，分析用你自己的模型，判断和复盘都留在本机。"
+>
+  <script is:inline type="application/ld+json" slot="head" set:html={JSON.stringify(schema)} />
+  <section class="hero">
+    <div class="eyebrow">premarket 04:00 — afterhours 20:00 · 它一直在看</div>
+    <h1>陪你走完<br />每一个交易日</h1>
+    <p class="sub">
+      本地优先的 AI
+      看盘应用：行情走你自己的券商，分析用你自己的模型，判断和复盘都留在本机。
+    </p>
+    <div class="cta">
+      <a class="btn" href={dmg.browser_download_url}>下载 <span class="ver">v{version}</span></a>
+      <a class="btn btn-ghost" href="/pricing">查看定价</a>
+    </div>
+    <p class="hero-note">
+      macOS · apple silicon · 需 <a
+        href="https://open.longbridge.com/docs/cli/install"
+        target="_blank"
+        rel="noreferrer">longbridge CLI</a
+      > · 首次打开右键 →「打开」
+    </p>
+  </section>
+
+  <section class="day">
+    {
+      slots.map((s) => (
+        <div class="slot">
+          <div class="slot-time">
+            <b>{s.time}</b>
+            {s.session}
+          </div>
+          <div class="slot-body">
+            <div>
+              <div class="slot-tag">
+                {s.live && <em>● live</em>}
+                {s.live ? ` · ${s.tag}` : s.tag}
+              </div>
+              <h2>{s.title}</h2>
+              <p>{s.body}</p>
+            </div>
+            <img src={s.image} alt={s.alt} loading="lazy" width="3200" height="2000" />
+          </div>
+        </div>
+      ))
+    }
+  </section>
+
+  <section class="afterhours">
+    <div class="rule">market closed · kansoku still watching</div>
+    <h2>关掉图表，它还在巡检</h2>
+    <p>开启跟进后 AI 按行情后台巡检，盘前、盘后、夜盘都算数，判断变了就通知你。</p>
+  </section>
+
+  <section class="substrate">
+    <div class="substrate-inner">
+      <div class="substrate-copy">
+        <h2>AI 之下，是一套完整的本地看盘工具</h2>
+        <ul>
+          {substrate.map((line) => <li>{line}</li>)}
+        </ul>
+      </div>
+      <img src={shot('app-sepa.png')} alt="SEPA 仪表盘" loading="lazy" width="2880" height="1800" />
+    </div>
+  </section>
+
+  <section class="locals">
+    {
+      locals.map((l) => (
+        <div class="local">
+          <h3 class="local-tag">{l.tag}</h3>
+          <p>{l.body}</p>
+        </div>
+      ))
+    }
+  </section>
+
+  <section class="pricing-strip">
+    <div class="pricing-inner">
+      <div>
+        <h2>免费版就是完整的看盘工具</h2>
+        <p>
+          Pro 解锁{proShorts} —— <span class="mono amber">$9.9/月</span> 或
+          <span class="mono amber">$99/年</span> · 7 天试用
+        </p>
+      </div>
+      <div class="pricing-cta">
+        <a class="btn" href={dmg.browser_download_url}>下载 <span class="ver">v{version}</span></a>
+        <a class="btn btn-ghost" href="/pricing">免费版 vs Pro</a>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .hero {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 88px 24px 56px;
+    text-align: center;
+  }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 24px;
+  }
+
+  .eyebrow::after {
+    content: '▊';
+    margin-left: 8px;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .eyebrow::after {
+      animation: blink 1.2s steps(2, jump-none) infinite;
+    }
+
+    .slot-tag em {
+      animation: pulse 2.4s ease-in-out infinite;
+    }
+  }
+
+  @keyframes blink {
+    50% {
+      opacity: 0;
+    }
+  }
+
+  @keyframes pulse {
+    50% {
+      opacity: 0.3;
+    }
+  }
+
+  h1 {
+    font-size: clamp(40px, 6vw, 60px);
+    line-height: 1.12;
+    margin: 0 0 24px;
+    letter-spacing: -0.02em;
+  }
+
+  .sub {
+    color: var(--text-2);
+    font-size: 16px;
+    line-height: 1.8;
+    max-width: 520px;
+    margin: 0 auto 36px;
+  }
+
+  .cta {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .hero-note {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-3);
+    margin-top: 18px;
+    letter-spacing: 0.04em;
+  }
+
+  .hero-note a {
+    color: var(--text-2);
+  }
+
+  .day {
+    max-width: 1120px;
+    margin: 32px auto 0;
+    padding: 0 24px;
+    position: relative;
+  }
+
+  .day::before {
+    content: '';
+    position: absolute;
+    left: 144px;
+    top: 12px;
+    bottom: 12px;
+    width: 1px;
+    background: var(--border-strong);
+    transform: scaleY(var(--axis, 1));
+    transform-origin: top;
+  }
+
+  .slot {
+    display: grid;
+    grid-template-columns: 96px 1fr;
+    gap: 52px;
+    padding: 56px 0;
+  }
+
+  .slot + .slot {
+    border-top: 1px dashed var(--border);
+  }
+
+  .slot-time {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-3);
+    text-align: right;
+    position: relative;
+  }
+
+  .slot-time b {
+    display: block;
+    color: var(--accent);
+    font-weight: 400;
+    font-size: 17px;
+    margin-bottom: 2px;
+    transition: color 400ms ease;
+  }
+
+  .slot-time::after {
+    content: '';
+    position: absolute;
+    right: -27.5px;
+    top: 8px;
+    width: 7px;
+    height: 7px;
+    background: var(--accent);
+    transform: rotate(45deg);
+    transition: background 400ms ease;
+  }
+
+  :global(html.motion) .slot:not(.in-view) .slot-time b {
+    color: var(--text-3);
+  }
+
+  :global(html.motion) .slot:not(.in-view) .slot-time::after {
+    background: var(--border-strong);
+  }
+
+  .slot-body {
+    transition:
+      opacity 550ms ease,
+      transform 550ms ease;
+  }
+
+  :global(html.motion) .slot:not(.in-view) .slot-body {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+
+  .slot-body {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr;
+    gap: 40px;
+    align-items: center;
+  }
+
+  .slot h2 {
+    font-size: 24px;
+    margin: 0 0 10px;
+  }
+
+  .slot p {
+    color: var(--text-2);
+    font-size: 14px;
+    line-height: 1.85;
+    margin: 0;
+  }
+
+  .slot img {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 10;
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: 2px;
+    display: block;
+  }
+
+  .slot-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-3);
+    margin-bottom: 10px;
+  }
+
+  .slot-tag em {
+    font-style: normal;
+    color: var(--up);
+  }
+
+  .afterhours {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 64px 24px 8px;
+    text-align: center;
+  }
+
+  .afterhours .rule {
+    margin-bottom: 40px;
+  }
+
+  .afterhours .rule::before {
+    transform-origin: right;
+    transition: transform 700ms ease;
+  }
+
+  .afterhours .rule::after {
+    transform-origin: left;
+    transition: transform 700ms ease;
+  }
+
+  :global(html.motion) .afterhours:not(.in-view) .rule::before,
+  :global(html.motion) .afterhours:not(.in-view) .rule::after {
+    transform: scaleX(0);
+  }
+
+  .afterhours h2 {
+    font-size: 30px;
+    margin: 0 0 12px;
+  }
+
+  .afterhours > p {
+    color: var(--text-2);
+    margin: 0 auto;
+    max-width: 560px;
+    line-height: 1.8;
+  }
+
+  .substrate {
+    max-width: 1120px;
+    margin: 72px auto 0;
+    padding: 0 24px;
+  }
+
+  .substrate-inner {
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    background: var(--surface);
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    overflow: hidden;
+  }
+
+  .substrate-copy {
+    padding: 36px;
+    border-right: 1px solid var(--border);
+  }
+
+  .substrate h2 {
+    font-size: 24px;
+    margin: 0 0 16px;
+  }
+
+  .substrate ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .substrate li {
+    color: var(--text-2);
+    font-size: 13px;
+    line-height: 1.7;
+    padding: 9px 0 9px 18px;
+    position: relative;
+    border-top: 1px solid var(--border);
+  }
+
+  .substrate li::before {
+    content: '▸';
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-size: 11px;
+  }
+
+  .substrate img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: left top;
+    background: var(--surface);
+    display: block;
+  }
+
+  @media (max-width: 720px) {
+    .substrate img {
+      height: auto;
+      aspect-ratio: 16 / 10;
+    }
+  }
+
+  .locals {
+    max-width: 1120px;
+    margin: 72px auto 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+  }
+
+  .local {
+    background: var(--bg);
+    padding: 22px;
+  }
+
+  .local-tag {
+    margin: 0 0 10px;
+    font-weight: 400;
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--up);
+  }
+
+  .local p {
+    margin: 0;
+    color: var(--text-2);
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .pricing-strip {
+    max-width: 1120px;
+    margin: 72px auto 0;
+    padding: 0 24px;
+  }
+
+  .pricing-inner {
+    border: 1px solid var(--border-strong);
+    border-radius: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 28px 32px;
+    background: var(--surface);
+    flex-wrap: wrap;
+  }
+
+  .pricing-inner h2 {
+    font-size: 20px;
+    margin: 0 0 6px;
+  }
+
+  .pricing-inner p {
+    margin: 0;
+    color: var(--text-2);
+    font-size: 13px;
+  }
+
+  .amber {
+    color: var(--accent);
+  }
+
+  .pricing-cta {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  @media (max-width: 900px) {
+    .locals {
+      grid-template-columns: 1fr 1fr;
+      margin-left: 24px;
+      margin-right: 24px;
+    }
+  }
+
+  @media (max-width: 720px) {
+    .day::before {
+      display: none;
+    }
+
+    .slot {
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .slot-time {
+      text-align: left;
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+
+    .slot-time::after {
+      display: none;
+    }
+
+    .slot-body {
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+
+    .substrate-inner {
+      grid-template-columns: 1fr;
+    }
+
+    .substrate-copy {
+      border-right: none;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .locals {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<script>
+  const motion = matchMedia('(prefers-reduced-motion: no-preference)').matches;
+  if (motion) {
+    document.documentElement.classList.add('motion');
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('in-view');
+            observer.unobserve(entry.target);
+          }
+        }
+      },
+      { threshold: 0.2, rootMargin: '0px 0px -8% 0px' },
+    );
+    for (const el of document.querySelectorAll('.slot, .afterhours')) observer.observe(el);
+
+    const day = document.querySelector('.day');
+    if (day instanceof HTMLElement) {
+      let ticking = false;
+      const update = () => {
+        ticking = false;
+        const rect = day.getBoundingClientRect();
+        const progress = Math.min(1, Math.max(0, (innerHeight * 0.8 - rect.top) / rect.height));
+        day.style.setProperty('--axis', String(progress));
+      };
+      const schedule = () => {
+        if (!ticking) {
+          ticking = true;
+          requestAnimationFrame(update);
+        }
+      };
+      update();
+      addEventListener('scroll', schedule, { passive: true });
+      addEventListener('resize', schedule);
+    }
+  }
+</script>

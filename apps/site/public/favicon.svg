@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Kansoku icon</title>
+  <desc id="desc">Kansoku minimal observer icon on a dark background.</desc>
+  <rect width="512" height="512" rx="112" fill="#080D14"/>
+  <path d="M82 164 C183 117 321 125 430 184" fill="none" stroke="#E2E8F0" stroke-opacity="0.34" stroke-width="22" stroke-linecap="round"/>
+  <path d="M82 256 C184 221 318 227 430 256" fill="none" stroke="#FACC15" stroke-width="30" stroke-linecap="round"/>
+  <path d="M82 348 C189 408 322 387 430 318" fill="none" stroke="#E2E8F0" stroke-opacity="0.34" stroke-width="22" stroke-linecap="round"/>
+  <circle cx="334" cy="246" r="31" fill="#FEF08A"/>
+</svg>

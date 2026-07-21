@@ -1,0 +1,55 @@
+---
+import Base from '../layouts/Base.astro';
+---
+
+<Base title="文档 — Kansoku" description="Kansoku 使用文档，建设中。">
+  <section class="placeholder">
+    <div class="rule">docs · under construction</div>
+    <h1>文档还在路上</h1>
+    <p>
+      眼下可以先看
+      <a href="https://github.com/kansoku-trade/kansoku#readme" target="_blank" rel="noreferrer"
+        >GitHub README</a
+      >，装好应用后也有首次启动引导带你连数据、配 AI。
+    </p>
+    <p>
+      遇到问题去
+      <a href="https://github.com/kansoku-trade/kansoku/issues" target="_blank" rel="noreferrer"
+        >Issues</a
+      > 提问。
+    </p>
+  </section>
+</Base>
+
+<style>
+  .placeholder {
+    max-width: 560px;
+    margin: 0 auto;
+    text-align: center;
+    padding: 120px 24px;
+  }
+
+  .placeholder .rule {
+    margin-bottom: 40px;
+  }
+
+  .placeholder h1 {
+    font-size: 36px;
+    margin: 0 0 16px;
+  }
+
+  .placeholder p {
+    color: var(--text-2);
+    line-height: 1.9;
+    margin: 0 0 12px;
+  }
+
+  .placeholder a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  .placeholder a:hover {
+    text-decoration: underline;
+  }
+</style>

@@ -1,0 +1,75 @@
+---
+import Base from '../layouts/Base.astro';
+---
+
+<Base
+  title="条款 — Kansoku 的许可、订阅与免责声明"
+  description="Kansoku 的软件许可（AGPL-3.0 + Commons Clause）、Pro 订阅与退订、以及不构成投资建议的免责声明。"
+>
+  <section class="page">
+    <div class="rule">terms</div>
+    <h1>条款</h1>
+
+    <h2>软件许可是什么？</h2>
+    <p>
+      Kansoku 以 AGPL-3.0 + Commons Clause 授权（source-available，非 OSI
+      开源认证）：允许个人使用、公司内部自用、fork、学习和修改；禁止把本软件本体或其功能的实质部分作为收费产品或服务转售。全文见
+      <a
+        href="https://github.com/kansoku-trade/kansoku/blob/main/LICENSE"
+        target="_blank"
+        rel="noreferrer">LICENSE</a
+      >。
+    </p>
+
+    <h2>Pro 订阅怎么算？</h2>
+    <p>
+      Pro 按月或按年订阅，经
+      <a href="https://dodopayments.com" target="_blank" rel="noreferrer">Dodo Payments</a>
+      结算，7 天试用期内取消不收费；随时可在订阅管理里退订，退订后已付周期用完为止。免费版功能不受订阅状态影响。
+    </p>
+
+    <h2>它构成投资建议吗？</h2>
+    <p>
+      不构成。Kansoku 的一切 AI
+      分析、方向判断、情景推演都是信息工具的输出，仅供研究参考，不是投资建议；市场有风险，交易决策与后果由你自己承担。软件按「现状」提供，不对可用性、准确性或任何交易结果作保证。
+    </p>
+  </section>
+</Base>
+
+<style>
+  .page {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 72px 24px 24px;
+  }
+
+  .page .rule {
+    margin-bottom: 32px;
+  }
+
+  h1 {
+    font-size: 36px;
+    margin: 0 0 8px;
+  }
+
+  h2 {
+    font-size: 18px;
+    margin: 36px 0 8px;
+  }
+
+  p {
+    color: var(--text-2);
+    line-height: 1.9;
+    margin: 0;
+    font-size: 14px;
+  }
+
+  a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+</style>

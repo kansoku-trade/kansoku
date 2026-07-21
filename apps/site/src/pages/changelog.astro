@@ -1,0 +1,187 @@
+---
+import { marked } from 'marked';
+
+import Base from '../layouts/Base.astro';
+import { dmgAsset, fetchDesktopReleases, releaseVersion } from '../lib/releases';
+
+const releases = await fetchDesktopReleases();
+
+const entries = await Promise.all(
+  releases.map(async (r) => ({
+    version: releaseVersion(r),
+    date: r.published_at.slice(0, 10),
+    html: await marked.parse(r.body ?? ''),
+    dmg: dmgAsset(r),
+  })),
+);
+---
+
+<Base title="更新日志 — Kansoku" description="Kansoku 桌面版全部版本的更新说明，随发版自动同步。">
+  <section class="head">
+    <div class="eyebrow">synced with github releases</div>
+    <h1>更新日志</h1>
+    <p>随 GitHub Releases 自动同步，最新版本在最上面。</p>
+  </section>
+
+  <section class="timeline">
+    {
+      entries.map((e) => (
+        <article class="entry">
+          <header>
+            <span class="node" />
+            <h2 class="mono">v{e.version}</h2>
+            <time class="mono" datetime={e.date}>
+              {e.date}
+            </time>
+            {e.dmg && (
+              <a class="dl mono" href={e.dmg.browser_download_url}>
+                ↓ dmg
+              </a>
+            )}
+          </header>
+          <div class="body" set:html={e.html} />
+        </article>
+      ))
+    }
+  </section>
+</Base>
+
+<style>
+  .head {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 72px 24px 24px;
+  }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 20px;
+  }
+
+  .head h1 {
+    font-size: 44px;
+    margin: 0 0 12px;
+  }
+
+  .head p {
+    color: var(--text-2);
+    margin: 0;
+  }
+
+  .timeline {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 0 24px;
+    position: relative;
+  }
+
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 27px;
+    top: 12px;
+    bottom: 12px;
+    width: 1px;
+    background: var(--border);
+  }
+
+  .entry {
+    padding: 36px 0 12px 28px;
+    position: relative;
+  }
+
+  .entry + .entry {
+    border-top: 1px dashed var(--border);
+  }
+
+  .entry header {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+  }
+
+  .node {
+    position: absolute;
+    left: 0.5px;
+    margin-top: 4px;
+    width: 7px;
+    height: 7px;
+    background: var(--accent);
+    transform: rotate(45deg);
+  }
+
+  .entry h2 {
+    font-size: 18px;
+    margin: 0;
+    color: var(--accent);
+    font-weight: 400;
+  }
+
+  .entry time {
+    color: var(--text-3);
+    font-size: 12px;
+  }
+
+  .dl {
+    font-size: 12px;
+    margin-left: auto;
+    color: var(--text-2);
+    text-decoration: none;
+    border: 1px solid var(--border-strong);
+    border-radius: 2px;
+    padding: 3px 10px;
+  }
+
+  .dl:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .body {
+    color: var(--text-2);
+    line-height: 1.9;
+    font-size: 14px;
+  }
+
+  .body :global(ul) {
+    padding-left: 20px;
+  }
+
+  .body :global(li)::marker {
+    color: var(--text-3);
+  }
+
+  .body :global(code) {
+    font-family: var(--mono);
+    font-size: 12px;
+    background: var(--element);
+    padding: 1px 5px;
+    border-radius: 2px;
+  }
+
+  @media (max-width: 720px) {
+    .head h1 {
+      font-size: 36px;
+    }
+
+    .timeline::before {
+      display: none;
+    }
+
+    .entry {
+      padding-left: 0;
+    }
+
+    .node {
+      display: none;
+    }
+
+    .entry header {
+      flex-wrap: wrap;
+    }
+  }
+</style>
