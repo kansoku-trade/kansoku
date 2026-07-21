@@ -378,6 +378,9 @@ importers:
       '@earendil-works/pi-ai':
         specifier: ^0.80.7
         version: 0.80.10(ws@8.21.1)(zod@4.4.3)
+      '@kansoku/bench-report-ui':
+        specifier: workspace:*
+        version: link:../bench-report-ui
       '@kansoku/core':
         specifier: workspace:*
         version: link:../core

@@ -4,6 +4,7 @@
   "license": "SEE LICENSE IN LICENSE",
   "type": "module",
   "exports": {
+    "./package.json": "./package.json",
     "./types": {
       "types": "./src/types.ts"
     }

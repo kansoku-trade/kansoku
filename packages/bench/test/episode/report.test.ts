@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { EpisodeReportViewData } from '@kansoku/bench-report-ui/types';
 import type { EpisodeAnswer } from '../../src/schema/episode.js';
 import type { Question } from '../../src/schema/question.js';
 import type { EpisodeDataAudit } from '../../src/episode/audit.js';
@@ -6,6 +7,15 @@ import { renderEpisodeReportHtml, type EpisodeReportTraceLine } from '../../src/
 
 function bar(time: string, open: number, high: number, low: number, close: number) {
   return { time, open, high, low, close, volume: 1_000 };
+}
+
+function extractViewData(html: string): EpisodeReportViewData {
+  const marker = 'window.__KANSOKU_REPORT_DATA__=';
+  const start = html.indexOf(marker);
+  if (start === -1) throw new Error('missing window.__KANSOKU_REPORT_DATA__ assignment');
+  const end = html.indexOf(';</script><script>', start);
+  if (end === -1) throw new Error('missing script boundary after embedded data');
+  return JSON.parse(html.slice(start + marker.length, end)) as EpisodeReportViewData;
 }
 
 const question: Question = {
@@ -277,48 +287,63 @@ describe('episode HTML report', () => {
     traces,
     now: () => new Date('2026-07-18T12:00:00Z'),
   });
+  const viewData = extractViewData(rendered.html);
 
-  it('renders a compact report with return, risk, and three TradingView ranges', () => {
+  it('renders an embed shell carrying the view data and UI bundle', () => {
     expect(rendered.html).toContain('<!doctype html>');
+    expect(rendered.html).toContain('<div id="root"></div>');
+    expect(rendered.html).toContain('window.__KANSOKU_REPORT_DATA__=');
     expect(rendered.html).toContain('episode-test');
-    expect(rendered.html).toContain('平均净 R / case');
-    expect(rendered.html).toContain('Episode 胜率');
-    expect(rendered.html).toContain('交易胜率');
-    expect(rendered.html).toContain('止损');
-    expect(rendered.html).toContain('止盈');
-    expect(rendered.html).toContain('379.50');
-    expect(rendered.html).toContain('389.20');
-    expect(rendered.html).toContain('361.00');
-    expect(rendered.html).toContain('lightweight-charts@5.2.0');
-    expect(rendered.html).toContain('CandlestickSeries');
-    expect(rendered.html).toContain('HistogramSeries');
-    expect(rendered.html).toContain('data-timeframe="h1"');
-    expect(rendered.html).toContain('data-timeframe="day"');
-    expect(rendered.html).toContain('data-timeframe="week"');
-    expect(rendered.html).toContain('T1 成交 364.77');
-    expect(rendered.html).toContain('T1 止盈 361.00');
-    expect(rendered.html).toContain('长桥数据已校验');
-    expect(rendered.html).toContain('CASE START · B0');
-    expect(rendered.html).toContain('B1 · 首根回放');
-    expect(rendered.html).toContain('T1 决策 B1');
-    expect(rendered.html).toContain('B2 · 强制结算');
-    expect(rendered.html).toContain('可观察决策链');
-    expect(rendered.html).toContain('周线 × 30');
-    expect(rendered.html).toContain('data-bar-index="1"');
-    expect(rendered.html).toContain('T-2 强平提醒');
-    expect(rendered.html).toContain('T-1 强平提醒');
-    expect(rendered.html).toContain('过程检查 5/5');
-    expect(rendered.html).toContain('交易原因统计');
-    expect(rendered.html).toContain('理由覆盖 2/2 · 100.0%');
-    expect(rendered.html).toContain('日线与周线同步跌破关键支撑');
-    expect(rendered.html).toContain('止损仍有效，继续执行原计划');
-    expect(rendered.html).toContain('payload.snapshotPatches');
+    expect(rendered.html).not.toContain('lightweight-charts@5.2.0');
+    expect(rendered.html).not.toContain('openai-codex/<gpt-5.5>');
+    expect(JSON.stringify(viewData)).not.toMatch(/NaN|undefined/);
   });
 
-  it('escapes dynamic values and never emits invalid numeric placeholders', () => {
-    expect(rendered.html).toContain('openai-codex/&lt;gpt-5.5&gt;');
-    expect(rendered.html).not.toContain('openai-codex/<gpt-5.5>');
-    expect(rendered.html).not.toMatch(/NaN|undefined/);
+  it('exposes a display-ready episode view data contract', () => {
+    expect(viewData.runId).toBe('episode-test');
+    expect(viewData.gitSha).toBe('deadbeef');
+    expect(viewData.header.modelsChip).toBe(answer.model);
+    expect(viewData.header.auditChip).toEqual({ label: '长桥数据已校验', tone: 'pass' });
+    expect(viewData.metrics.find((cell) => cell.label === '平均净 R / case')?.value).toBe('+0.443 R');
+
+    expect(viewData.cases).toHaveLength(1);
+    const [caseRow] = viewData.cases;
+    expect(caseRow.symbol).toBe('MU.US');
+    expect(caseRow.planEntry).toBe(379.5);
+    expect(caseRow.planStop).toBe(389.2);
+    expect(caseRow.planTarget).toBe(361);
+    expect(caseRow.outcomeLabel).toBe('到期平仓');
+
+    expect(viewData.charts).toHaveLength(1);
+    const [chart] = viewData.charts;
+    expect(chart.trades).toHaveLength(1);
+    expect(chart.trades[0]).toMatchObject({
+      tradeId: 1,
+      direction: 'short',
+      entry: 364.771,
+      stop: 389.2,
+      target: 361,
+      netR: 0.4428025,
+    });
+    expect(chart.trades[0].times.h1.entry).not.toBeNull();
+    expect(chart.trades[0].times.day.decision).not.toBeNull();
+
+    expect(viewData.caseDetails).toHaveLength(1);
+    const [detail] = viewData.caseDetails;
+    expect(detail.process.hasTrace).toBe(true);
+    expect(detail.process.checks).toHaveLength(5);
+    expect(detail.process.checks.every((check) => check.pass)).toBe(true);
+    expect(detail.trades).toHaveLength(1);
+    expect(detail.trades[0].entryReasonSummary).toBe('日线与周线同步跌破关键支撑。');
+    expect(detail.actions).toHaveLength(3);
+    expect(detail.planReasonSummary).toBe('日线与周线同步跌破关键支撑。');
+
+    expect(viewData.reasonTable.coverageLabel).toBe('理由覆盖 2/2 · 100.0%');
+    expect(viewData.reasonTable.rows).toHaveLength(2);
+
+    expect(viewData.audit.attached).toBe(true);
+    expect(viewData.audit.passed).toBe(1);
+    expect(viewData.audit.total).toBe(1);
   });
 
   it('returns a machine-readable summary', () => {
