@@ -1,0 +1,81 @@
+---
+import Base from '../layouts/Base.astro';
+---
+
+<Base
+  title="隐私 — Kansoku 收集什么数据（几乎没有）"
+  description="kansoku.trade 网站无 cookie 无跟踪；Kansoku 应用本地优先，行情、AI key、研究结论都留在你的机器上。"
+>
+  <section class="page">
+    <div class="rule">privacy</div>
+    <h1>隐私</h1>
+
+    <h2>这个网站收集什么？</h2>
+    <p>
+      不收集。kansoku.trade
+      是纯静态页面：没有 cookie、没有埋点、没有第三方分析脚本。页面上的应用截图托管在 GitHub。
+    </p>
+
+    <h2>应用收集什么？</h2>
+    <p>
+      Kansoku 是本地优先的桌面应用：行情和账户数据从你自己的长桥账户拉取、不经过我们的服务器；AI
+      key 加密存在本地 SQLite；分析结论与图表快照落成本地文件。我们没有你的行情数据、持仓、对话内容。
+    </p>
+
+    <h2>哪些环节会联网到第三方？</h2>
+    <p>
+      三处，各自最小化：行情走你与长桥之间的连接；AI 请求从你的机器直接发给你配置的模型服务商；购买
+      Pro 走
+      <a href="https://dodopayments.com" target="_blank" rel="noreferrer">Dodo Payments</a
+      >（支付信息由其处理，我们只拿到 license 状态），license
+      激活时会向授权服务发送激活所需的最小信息。应用内置的 Sparkle 自动更新会向 GitHub Releases
+      检查新版本。
+    </p>
+
+    <h2>有疑问？</h2>
+    <p>
+      开
+      <a href="https://github.com/kansoku-trade/kansoku/issues" target="_blank" rel="noreferrer"
+        >GitHub Issue</a
+      > 问；代码开源，行为可审计。
+    </p>
+  </section>
+</Base>
+
+<style>
+  .page {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 72px 24px 24px;
+  }
+
+  .page .rule {
+    margin-bottom: 32px;
+  }
+
+  h1 {
+    font-size: 36px;
+    margin: 0 0 8px;
+  }
+
+  h2 {
+    font-size: 18px;
+    margin: 36px 0 8px;
+  }
+
+  p {
+    color: var(--text-2);
+    line-height: 1.9;
+    margin: 0;
+    font-size: 14px;
+  }
+
+  a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+</style>

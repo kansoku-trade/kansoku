@@ -72,12 +72,31 @@ const locals = [
   { tag: '✓ 本地存 key', body: 'AI key 加密存本地 SQLite；用什么模型、花了多少钱，都在你自己的账上。' },
   { tag: '✓ 本地落盘', body: '结论和图表快照落成本地 markdown / JSON，可审计、可迁移。' },
 ];
+
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'Kansoku',
+  alternateName: '観測',
+  operatingSystem: 'macOS',
+  applicationCategory: 'FinanceApplication',
+  softwareVersion: version,
+  dateModified: latest.published_at,
+  url: 'https://kansoku.trade',
+  downloadUrl: dmg.browser_download_url,
+  author: { '@type': 'Person', name: 'Innei', url: 'https://innei.in' },
+  offers: [
+    { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+    { '@type': 'Offer', price: '9.9', priceCurrency: 'USD' },
+  ],
+};
 ---
 
 <Base
-  title="Kansoku — 陪你走完每一个交易日的 AI 看盘搭子"
+  title="Kansoku（観測）— 陪你走完每一个交易日的 AI 看盘搭子 · 本地优先 macOS 看盘应用"
   description="本地优先的 AI 看盘应用：行情走你自己的券商，分析用你自己的模型，判断和复盘都留在本机。"
 >
+  <script is:inline type="application/ld+json" slot="head" set:html={JSON.stringify(schema)} />
   <section class="hero">
     <div class="eyebrow">premarket 04:00 — afterhours 20:00 · 它一直在看</div>
     <h1>陪你走完<br />每一个交易日</h1>
@@ -144,7 +163,7 @@ const locals = [
     {
       locals.map((l) => (
         <div class="local">
-          <div class="local-tag">{l.tag}</div>
+          <h3 class="local-tag">{l.tag}</h3>
           <p>{l.body}</p>
         </div>
       ))
@@ -486,12 +505,13 @@ const locals = [
   }
 
   .local-tag {
+    margin: 0 0 10px;
+    font-weight: 400;
     font-family: var(--mono);
     font-size: 10px;
     text-transform: uppercase;
     letter-spacing: 0.12em;
     color: var(--up);
-    margin-bottom: 10px;
   }
 
   .local p {

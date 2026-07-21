@@ -26,6 +26,8 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <meta property="og:url" content={canonical} />
     <meta property="og:image" content={ogImage} />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="author" content="Innei" />
+    <slot name="head" />
   </head>
   <body>
     <header class="nav">
@@ -41,15 +43,27 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
       <slot />
     </main>
     <footer class="footer">
-      KANSOKU 観測 · local-first ·
-      <a href="https://github.com/kansoku-trade/kansoku" target="_blank" rel="noreferrer">github</a>
-      ·
-      <a
-        href="https://github.com/kansoku-trade/kansoku/blob/main/LICENSE"
-        target="_blank"
-        rel="noreferrer">agpl-3.0 + commons clause</a
-      >
-      · © {new Date().getFullYear()}
+      <p>
+        Kansoku（観測）· local-first ·
+        <a href="https://github.com/kansoku-trade/kansoku" target="_blank" rel="noreferrer"
+          >github</a
+        >
+        ·
+        <a
+          href="https://github.com/kansoku-trade/kansoku/blob/main/LICENSE"
+          target="_blank"
+          rel="noreferrer">agpl-3.0 + commons clause</a
+        >
+        · © {new Date().getFullYear()}
+      </p>
+      <p>
+        <a href="/about">关于</a> · <a href="/privacy">隐私</a> · <a href="/terms">条款</a> ·
+        <a
+          href="https://github.com/kansoku-trade/kansoku/issues"
+          target="_blank"
+          rel="noreferrer">联系 / issues</a
+        >
+      </p>
     </footer>
   </body>
 </html>
@@ -219,6 +233,10 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     font-size: 12px;
     font-family: var(--mono);
     letter-spacing: 0.04em;
+  }
+
+  .footer p {
+    margin: 0 0 8px;
   }
 
   .footer a {

@@ -1,0 +1,75 @@
+---
+import Base from '../layouts/Base.astro';
+---
+
+<Base
+  title="关于 Kansoku — 谁在做这个应用，为什么做"
+  description="Kansoku（観測）是独立开发者 Innei 开发的本地优先 AI 看盘 macOS 应用。关于作者、项目动机与联系方式。"
+>
+  <section class="page">
+    <div class="rule">about</div>
+    <h1>关于 Kansoku</h1>
+
+    <h2>Kansoku 是什么？</h2>
+    <p>
+      Kansoku（観測）是一个本地优先的 AI 看盘 macOS
+      应用：行情从你自己的长桥账户拉，指标在本机实算，AI 用你自己配置的模型盯盘、答疑、改研究稿，结论落成本地文件。代码以
+      AGPL-3.0 + Commons Clause 开源在
+      <a href="https://github.com/kansoku-trade/kansoku" target="_blank" rel="noreferrer"
+        >GitHub</a
+      >。
+    </p>
+
+    <h2>谁在做它？</h2>
+    <p>
+      作者是 <a href="https://innei.in" target="_blank" rel="noreferrer">Innei</a
+      >，独立开发者。这个应用最初是自用的交易研究工作台，逐步长成现在的产品——所以它的取舍都偏向真实使用：数据不出机器、判断可追溯、复盘落成文件。
+    </p>
+
+    <h2>怎么联系？</h2>
+    <p>
+      问题与反馈走
+      <a href="https://github.com/kansoku-trade/kansoku/issues" target="_blank" rel="noreferrer"
+        >GitHub Issues</a
+      >；作者主页见 <a href="https://innei.in" target="_blank" rel="noreferrer">innei.in</a>。
+    </p>
+  </section>
+</Base>
+
+<style>
+  .page {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 72px 24px 24px;
+  }
+
+  .page .rule {
+    margin-bottom: 32px;
+  }
+
+  h1 {
+    font-size: 36px;
+    margin: 0 0 8px;
+  }
+
+  h2 {
+    font-size: 18px;
+    margin: 36px 0 8px;
+  }
+
+  p {
+    color: var(--text-2);
+    line-height: 1.9;
+    margin: 0;
+    font-size: 14px;
+  }
+
+  a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+</style>
