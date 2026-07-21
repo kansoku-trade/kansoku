@@ -282,8 +282,7 @@ export interface Zhongshu {
   priceLow: number;
   priceHigh: number;
   startTime: number;
-  endTime: number | null; // null = still active
-  isActive: boolean;
+  endTime: number | null;
 }
 
 export type BuySellPointKind = 'buy1' | 'sell1' | 'buy2' | 'sell2' | 'buy3' | 'sell3';

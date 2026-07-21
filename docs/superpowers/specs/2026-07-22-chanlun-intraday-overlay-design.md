@@ -112,8 +112,7 @@ interface Zhongshu {
   priceLow: number;            // 重叠区下沿
   priceHigh: number;
   startTime: number;
-  endTime: number | null;      // null = still active
-  isActive: boolean;
+  endTime: number | null;      // null = 仍在延续
 }
 
 type BuySellPointKind = 'buy1' | 'sell1' | 'buy2' | 'sell2' | 'buy3' | 'sell3';
