@@ -86,7 +86,7 @@ describe('AgentKitSection', () => {
         },
       })
       .mockResolvedValueOnce({ ok: true, data: baseStatus });
-    const resolveConflict = vi.fn(() => ({ ok: true, data: { dest: 'a.md' } }));
+    const resolveConflict = vi.fn((_input?: unknown) => ({ ok: true, data: { dest: 'a.md' } }));
     mockDesktop({
       'agentKit.getStatus': () => getStatus(),
       'agentKit.resolveConflict': (input) => resolveConflict(input),
