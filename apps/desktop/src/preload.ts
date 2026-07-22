@@ -2,6 +2,10 @@ import { contextBridge, ipcRenderer } from 'electron';
 import { CREDENTIALS_CHANNELS } from './data/credentials/channels.js';
 import { IPC_GROUPS } from './kernel/ipc/groups.js';
 import {
+  DEEP_LINK_NAVIGATE_CHANNEL,
+  type DeepLinkTarget,
+} from './platform/deepLink/deepLink.js';
+import {
   RENDERER_CALL_REQUEST_CHANNEL,
   RENDERER_CALL_RESPONSE_CHANNEL,
   type RendererCallRequest,
@@ -102,6 +106,14 @@ if (isPrivilegedOrigin) {
       const listener = (_event: Electron.IpcRendererEvent, status: unknown) => cb(status);
       ipcRenderer.on(UPDATER_CHANNELS.status, listener);
       return () => ipcRenderer.removeListener(UPDATER_CHANNELS.status, listener);
+    },
+  };
+
+  desktopApi.deepLink = {
+    onNavigate(cb: (target: DeepLinkTarget) => void) {
+      const listener = (_event: Electron.IpcRendererEvent, target: DeepLinkTarget) => cb(target);
+      ipcRenderer.on(DEEP_LINK_NAVIGATE_CHANNEL, listener);
+      return () => ipcRenderer.removeListener(DEEP_LINK_NAVIGATE_CHANNEL, listener);
     },
   };
 }

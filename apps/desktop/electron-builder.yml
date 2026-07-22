@@ -76,6 +76,8 @@ extraResources:
   # symlinks into .agents that electron-builder would copy as dead links.
   - from: dist-skills
     to: skills
+  - from: dist-agent-kit
+    to: kansoku-agent-kit
 extraFiles:
   - from: node_modules/electron-sparkle-updater/native/vendor/Sparkle.framework
     to: Frameworks/Sparkle.framework
@@ -107,3 +109,7 @@ mac:
     SUPublicEDKey: SPARKLE_ED_PUBLIC_KEY_PLACEHOLDER
     SUEnableInstallerLauncherService: false
     SUScheduledCheckInterval: 3600
+    CFBundleURLTypes:
+      - CFBundleURLName: dev.innei.kansoku
+        CFBundleURLSchemes:
+          - kansoku

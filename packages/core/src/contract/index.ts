@@ -1,3 +1,4 @@
+import { agentKitRoutes, type AgentKitApi } from './agentKit.js';
 import { annotationsRoutes, type AnnotationsApi } from './annotations.js';
 import { assistantRoutes, type AssistantApi } from './assistant.js';
 import { capabilitiesRoutes, type CapabilitiesApi } from './capabilities.js';
@@ -19,6 +20,7 @@ export interface AppApi {
   charts: ChartsApi;
   chat: ChatApi;
   symbols: SymbolsApi;
+  agentKit: AgentKitApi;
   annotations: AnnotationsApi;
   positions: PositionsApi;
   research: ResearchApi;
@@ -36,6 +38,7 @@ export const allRoutes = {
   charts: chartsRoutes,
   chat: chatRoutes,
   symbols: symbolsRoutes,
+  agentKit: agentKitRoutes,
   annotations: annotationsRoutes,
   positions: positionsRoutes,
   research: researchRoutes,
@@ -47,6 +50,7 @@ export const allRoutes = {
   license: licenseRoutes,
 };
 
+export * from './agentKit.js';
 export * from './annotations.js';
 export * from './assistant.js';
 export * from './capabilities.js';

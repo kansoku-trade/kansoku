@@ -24,6 +24,7 @@ export interface WindowManager {
   restoreWindows(): void;
   windowCount(): number;
   flushSync(): void;
+  getPrimaryWindow(): BrowserWindow | null;
 }
 
 export async function createWindowManager(options: WindowManagerOptions): Promise<WindowManager> {
@@ -120,6 +121,10 @@ export async function createWindowManager(options: WindowManagerOptions): Promis
 
     flushSync(): void {
       fileStore.flushSync();
+    },
+
+    getPrimaryWindow(): BrowserWindow | null {
+      return registry.values().next().value ?? null;
     },
   };
 }

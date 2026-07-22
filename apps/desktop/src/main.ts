@@ -13,7 +13,8 @@ import { createServices } from 'electron-ipc-decorator';
 import { AppControlIpc } from './shell/appControl/ipc.js';
 import { createAppMenuManager } from './shell/menu/appMenuManager.js';
 import { bootKernel } from './boot/kernel.js';
-import { createWindowManager } from './shell/window/windowManager.js';
+import { createWindowManager, type WindowManager } from './shell/window/windowManager.js';
+import { dispatchDeepLink, findDeepLinkArg } from './platform/deepLink/deepLink.js';
 import { showFatalErrorWindow } from './shell/window/fatalErrorWindow.js';
 import { applyDevDockIcon } from './shell/window/dockIcon.js';
 import {
@@ -64,6 +65,53 @@ console.log(`[desktop] logging to ${fileLogger.path}`);
 // that ordering impossible to get wrong regardless of what else this file
 // grows into.
 registerAppScheme();
+
+if (!app.isDefaultProtocolClient('kansoku')) {
+  app.setAsDefaultProtocolClient('kansoku');
+}
+
+// Electron quits before firing 'ready' when the lock is lost, so nothing
+// below this block runs in the losing process — no wrapping else needed.
+const gotDeepLinkLock = app.requestSingleInstanceLock();
+if (!gotDeepLinkLock) {
+  app.quit();
+}
+
+let windowManagerRef: WindowManager | null = null;
+let pendingDeepLinkUrl = findDeepLinkArg(process.argv);
+
+function handleDeepLink(url: string): void {
+  const win = windowManagerRef?.getPrimaryWindow() ?? BrowserWindow.getAllWindows()[0] ?? null;
+  if (!win) {
+    pendingDeepLinkUrl = url;
+    return;
+  }
+  dispatchDeepLink(win, url);
+}
+
+// macOS delivers a cold-start deep link via the open-url Apple Event ahead of
+// whenReady() — registering the listener inside will-finish-launching is the
+// documented way to catch it instead of losing it; the same listener keeps
+// handling every later open-url call once the app is already running.
+app.on('will-finish-launching', () => {
+  app.on('open-url', (event, url) => {
+    event.preventDefault();
+    handleDeepLink(url);
+  });
+});
+
+app.on('second-instance', (_event, argv) => {
+  const url = findDeepLinkArg(argv);
+  if (url) {
+    handleDeepLink(url);
+    return;
+  }
+  const win = BrowserWindow.getAllWindows()[0];
+  if (win) {
+    if (win.isMinimized()) win.restore();
+    win.focus();
+  }
+});
 
 interface InstallAppMenuOptions {
   checkForUpdates: () => void;
@@ -216,6 +264,20 @@ app.whenReady().then(async () => {
       rendererCalls: createRendererCallClient(),
     });
     windowManager.restoreWindows();
+    windowManagerRef = windowManager;
+
+    if (pendingDeepLinkUrl) {
+      const url = pendingDeepLinkUrl;
+      pendingDeepLinkUrl = undefined;
+      const win = windowManager.getPrimaryWindow();
+      if (win) {
+        if (win.webContents.isLoading()) {
+          win.webContents.once('did-finish-load', () => dispatchDeepLink(win, url));
+        } else {
+          dispatchDeepLink(win, url);
+        }
+      }
+    }
 
     app.on('activate', () => {
       if (windowManager.windowCount() === 0) windowManager.restoreWindows();

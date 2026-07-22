@@ -1,6 +1,4 @@
 import type { IntradayEventRisk, MacroEventItem } from '@kansoku/shared/types';
-import { filterMacroForSymbol } from '../ai/personas/eventFilter.js';
-import { activeSettingsRevision } from '../ai/settings/settingsStore.js';
 import { getProvider } from './registry.js';
 import { easternDate } from './session.js';
 import { marketOf, type Market } from '../symbols/symbol.utils.js';
@@ -62,12 +60,20 @@ async function relevantMacro(
 ): Promise<MacroEventItem[]> {
   const upcoming = macro.filter((m) => Date.parse(m.ts) > now.getTime());
   if (!upcoming.length) return upcoming;
-  const fingerprint = `${activeSettingsRevision()}|${upcoming.map((m) => `${m.ts}|${m.title}`).join('\n')}`;
-  const hit = relevanceCache.get(symbol);
-  if (hit && hit.fingerprint === fingerprint && Date.now() - hit.at < MACRO_TTL_MS) return hit.val;
-  const val = await filterMacroForSymbol(symbol, upcoming).catch(() => upcoming);
-  relevanceCache.set(symbol, { at: Date.now(), fingerprint, val });
-  return val;
+  try {
+    const [{ activeSettingsRevision }, { filterMacroForSymbol }] = await Promise.all([
+      import('../ai/settings/settingsStore.js'),
+      import('../ai/personas/eventFilter.js'),
+    ]);
+    const fingerprint = `${activeSettingsRevision()}|${upcoming.map((m) => `${m.ts}|${m.title}`).join('\n')}`;
+    const hit = relevanceCache.get(symbol);
+    if (hit && hit.fingerprint === fingerprint && Date.now() - hit.at < MACRO_TTL_MS) return hit.val;
+    const val = await filterMacroForSymbol(symbol, upcoming).catch(() => upcoming);
+    relevanceCache.set(symbol, { at: Date.now(), fingerprint, val });
+    return val;
+  } catch {
+    return upcoming;
+  }
 }
 
 export async function getEventRisk(

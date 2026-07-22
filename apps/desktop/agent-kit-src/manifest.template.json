@@ -1,0 +1,10 @@
+{
+  "kitVersion": "__KIT_VERSION__",
+  "appVersion": "__APP_VERSION__",
+  "templates": [
+    { "path": "templates/CLAUDE.md.tpl", "dest": "CLAUDE.md", "sha256": "__SHA_CLAUDE__" },
+    { "path": "templates/AGENTS.md.tpl", "dest": "AGENTS.md", "sha256": "__SHA_AGENTS__" },
+    { "path": "templates/env.tpl", "dest": ".env", "sha256": "__SHA_ENV__" },
+    { "path": "<runtime>", "dest": "journal/personal.md", "sha256": "__RENDER_VERSION__", "source": "app-config" }
+  ]
+}

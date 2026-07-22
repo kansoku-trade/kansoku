@@ -43,6 +43,52 @@ latest front-end code.
 Skip when the user only wants a single number or a tiny series — a Unicode
 sparkline in the chat reply is faster.
 
+## Data-root scenario (kansoku-cli)
+
+在 Kansoku 数据目录里跑（外部 Claude Code、无本地 dev server），走
+`kansoku-cli` 而不是 HTTP。判据：环境变量 `$KANSOKU_CLI` 有值 → 走 CLI；
+无 → 回退 HTTP。
+
+CLI 与 HTTP 契约一致——body 就是原本 POST /api/charts 的 body，
+返回 `{id, url, technicals?}` 也不变；CLI 侧额外多带一个 `deepLink`
+字段（见下方数据目录场景说明）。
+
+先加载 runtime.env（这一步只需做一次）：
+
+```sh
+set -a
+[ -f .kansoku-agent-kit/runtime.env ] && . .kansoku-agent-kit/runtime.env
+set +a
+```
+
+之后：
+
+| HTTP 版 | CLI 等价 |
+|---|---|
+| `curl -s http://localhost:5199/api/health` | `"$KANSOKU_CLI" info kit-version` |
+| `POST /api/charts` body 为 X | `printf '%s' "$X" \| "$KANSOKU_CLI" chart create --type <T> --symbol <S> --json-input -` |
+| `GET /api/charts?type=&symbol=` | `"$KANSOKU_CLI" chart list [--symbol X]` |
+| `GET /api/charts/<id>` | `"$KANSOKU_CLI" chart get <id>` |
+| `PATCH /api/charts/<id>` | *(暂不支持——PATCH 仍走 HTTP；数据目录场景 PATCH 目前只在 intraday-signal 里出现，届时 fallback HTTP)* |
+| 打开 `data.url`（浏览器访问 `http://localhost:5199/...`） | 打开 `data.deepLink`（`kansoku://route/...`，见下） |
+
+body/response 完全一致，写入的图表 JSON 落在 `journal/charts/data/<id>.json`
+（跟 HTTP 版本相同）。
+
+数据目录场景通常没有本机 dev server（Kit 用户不会跑 `pnpm start`），
+`data.url` 里的 `http://localhost:5199/...` 打不开。CLI 的 chart create
+响应现在多带一个 `deepLink` 字段（`url` 照旧保留，向后兼容 dev 场景），
+指向 `kansoku://route/...` 这个自定义协议。想让用户看到图表时，打开这个
+deep link 即可——它会启动 Kansoku.app（若已在运行则直接切到前台）并跳转到
+对应图表页面：
+
+```sh
+open "$(echo "$response" | jq -r .deepLink)"
+```
+
+macOS 用 `open`，Windows 用 `start`，Linux 用 `xdg-open`——三者都认协议处理器，
+换平台只需换这一条命令。
+
 ## Server lifecycle
 
 The app must be running before any API call:
@@ -50,6 +96,8 @@ The app must be running before any API call:
 ```bash
 curl -s http://localhost:5199/api/health # {"ok":true,...} = up
 ```
+
+CLI 等价：`"$KANSOKU_CLI" info kit-version`
 
 If it is down, start it (long-running process — use run_in_background):
 
@@ -138,6 +186,13 @@ The server fetches Longbridge data itself when `symbol` is given; pass `data`
   "prediction": null }                                // omit for preview mode
 ```
 
+CLI 等价（body 走 stdin，`--json-input -`）：
+
+- flow → `"$KANSOKU_CLI" chart create --type flow --symbol MU.US --json-input -`
+- cohort → `"$KANSOKU_CLI" chart create --type cohort --json-input -`（无单一 symbol，省略 `--symbol`）
+- sepa → `"$KANSOKU_CLI" chart create --type sepa --symbol MRVL.US --json-input -`
+- intraday → `"$KANSOKU_CLI" chart create --type intraday --symbol MU.US --json-input -`
+
 Success returns `data.id`, `data.url` (paste this into journal entries), plus
 type-specific meta: sepa → `verdict_tier / passes / fails / bars`; intraday →
 `mode / bars / technicals`.
@@ -218,6 +273,10 @@ climax top (volume ≥ 2.5×20MA + red close + local high), MA50/MA200 breakdown
 2. **PATCH `/api/charts/:id` with `{"prediction": {...}}`** → final dashboard.
    Add `"refresh": true` to any PATCH to refetch the latest bars (incl. pre/post
    market) and recompute everything before rebuilding — same id, same URL.
+
+CLI 等价：第 1 步（POST 预览）可用
+`"$KANSOKU_CLI" chart create --type intraday --symbol MU.US --json-input -`；
+第 2 步（PATCH 写入 prediction）目前无 CLI 等价，仍走 HTTP。
 
 `prediction` schema:
 

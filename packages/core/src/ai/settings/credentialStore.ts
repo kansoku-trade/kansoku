@@ -7,7 +7,8 @@ import type { Db } from '../../db/index.js';
 import { providerCredentials } from '../../db/schema.js';
 import type { SecretBox } from './secretBox.js';
 
-export const LICENSE_PROVIDER_KEY = 'kansoku-license';
+import { LICENSE_PROVIDER_KEY } from '../../license/constants.js';
+export { LICENSE_PROVIDER_KEY };
 
 const CODEX_PROVIDER = 'openai-codex';
 

@@ -3,6 +3,7 @@ dist/
 dist-main/
 dist-preload/
 dist-skills/
+dist-agent-kit/
 release/
 *.tsbuildinfo
 /pro/

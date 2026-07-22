@@ -1,0 +1,15 @@
+#!/bin/sh
+# Shim: run the packaged CLI bundle with Electron acting as Node runtime.
+# The Kit is symlinked into user-picked directories, so $0 may be a symlink
+# — resolve the chain before anchoring the relative path chain against the
+# App bundle layout (macOS lacks GNU readlink -f, so hand-walk symlinks).
+target="$0"
+while [ -L "$target" ]; do
+  link="$(readlink "$target")"
+  case "$link" in
+    /*) target="$link" ;;
+    *) target="$(cd "$(dirname "$target")" && pwd)/$link" ;;
+  esac
+done
+here="$(cd "$(dirname "$target")" && pwd)"
+ELECTRON_RUN_AS_NODE=1 exec "$here/../../../MacOS/Kansoku" "$here/../cli.js" "$@"

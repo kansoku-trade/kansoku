@@ -5,6 +5,7 @@ import { client } from '@web/lib/client';
 import { navigate } from '@web/lib/router';
 import { Button, Card, ErrorBox, ScrollArea, SectionTitle } from '@web/ui';
 import { useTitle } from '@web/lib/useTitle';
+import { AgentKitSection } from './AgentKitSection';
 import { DataRootSection } from './DataRootSection';
 import { DiagnosticsSection } from './DiagnosticsSection';
 import { LicenseSection } from './LicenseSection';
@@ -100,6 +101,7 @@ function SettingsWorkspace({
             </div>
             <LongbridgeSection />
             <DataRootSection />
+            <AgentKitSection />
             <DiagnosticsSection />
           </Card>
         </div>

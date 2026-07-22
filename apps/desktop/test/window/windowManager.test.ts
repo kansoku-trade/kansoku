@@ -168,6 +168,22 @@ describe('createWindowManager', () => {
     expect(manager.windowCount()).toBe(2);
   });
 
+  it('exposes the first still-open window as the primary window', async () => {
+    dir = await mkdtemp(join(tmpdir(), 'window-manager-'));
+    const manager = await createWindowManager({ userDataDir: dir, debounceMs: 10 });
+
+    expect(manager.getPrimaryWindow()).toBeNull();
+
+    const w1 = manager.openWindow();
+    manager.openWindow();
+    expect(manager.getPrimaryWindow()).toBe(w1);
+
+    asFake(w1).emitClosed();
+    expect(manager.getPrimaryWindow()).not.toBeNull();
+    expect(manager.getPrimaryWindow()).not.toBe(w1);
+    await new Promise((resolve) => setTimeout(resolve, 30));
+  });
+
   it('flushes a pending debounced save immediately', async () => {
     dir = await mkdtemp(join(tmpdir(), 'window-manager-'));
     const manager = await createWindowManager({ userDataDir: dir, debounceMs: 500 });
