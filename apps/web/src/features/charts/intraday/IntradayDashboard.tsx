@@ -6,10 +6,12 @@ import { useFeature } from '@web/features/edition/useFeature';
 import type { SidebarTab } from '../SidebarTabs';
 import { DrawingToolbar } from '../drawings/DrawingToolbar';
 import { useDrawings, type DrawingsHandle } from '../drawings/useDrawings';
-import { LayerPanel, type LayerGroup, type LayerPreset } from '../LayerPanel';
+import { LayerPanel, type LayerGroup, type LayerItem, type LayerPreset } from '../LayerPanel';
 import type { ConclusionReassess } from './ConclusionCard';
 import { IntradaySidebar } from './IntradaySidebar';
 import {
+  CHAN_BUYSELL_TOGGLE_KEYS,
+  CHAN_STRUCTURE_TOGGLE_KEYS,
   INDICATOR_FEATURE_GATES,
   INDICATOR_PRESETS,
   INDICATOR_TOGGLE_COLORS,
@@ -33,8 +35,18 @@ const clampMacdHeight = (h: number) => Math.min(MACD_MAX, Math.max(MACD_MIN, h))
 const LAYER_GROUP_DEFS: { title: string; keys: IndicatorToggleKey[] }[] = [
   { title: '参照', keys: ['ema', 'vwap', 'levels', 'daylevel', 'optwall'] },
   { title: '结构', keys: ['fvg', 'pattern123', 'sb', 'candle'] },
-  { title: '信号', keys: ['crosses', 'divergence', 'beichi', 'ai'] },
+  { title: '信号', keys: ['crosses', 'divergence', 'macdBeichi', 'ai'] },
 ];
+
+const toLayerItem = (
+  key: IndicatorToggleKey,
+  setToggle: (key: IndicatorToggleKey, value: boolean) => void,
+): LayerItem => ({
+  key,
+  label: INDICATOR_TOGGLE_LABELS[key],
+  color: INDICATOR_TOGGLE_COLORS[key],
+  toggle: (v: boolean) => setToggle(key, v),
+});
 
 interface IntradayDashboardProps {
   symbol: string;
@@ -135,28 +147,37 @@ export function IntradayChartOnly({
     return keys;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoPatternsFeature.active, optionsWallsFeature.active]);
-  const layerGroups: LayerGroup[] = useMemo(
-    () =>
-      LAYER_GROUP_DEFS.map(({ title, keys }) => ({
-        title,
-        items: keys.map((key) => {
-          const featureKey = INDICATOR_FEATURE_GATES[key];
-          const locked = lockedToggleKeys.has(key);
-          return {
-            key,
-            label: INDICATOR_TOGGLE_LABELS[key],
-            color: INDICATOR_TOGGLE_COLORS[key],
-            toggle: (v: boolean) => setToggle(key, v),
-            locked,
-            onLockedClick: featureKey
-              ? () => gatedFeatures[featureKey]?.guard(() => {})
-              : undefined,
-          };
-        }),
-      })),
+  const layerGroups: LayerGroup[] = useMemo(() => {
+    const staticGroups = LAYER_GROUP_DEFS.map(({ title, keys }) => ({
+      title,
+      items: keys.map((key) => {
+        const featureKey = INDICATOR_FEATURE_GATES[key];
+        const locked = lockedToggleKeys.has(key);
+        return {
+          key,
+          label: INDICATOR_TOGGLE_LABELS[key],
+          color: INDICATOR_TOGGLE_COLORS[key],
+          toggle: (v: boolean) => setToggle(key, v),
+          locked,
+          onLockedClick: featureKey ? () => gatedFeatures[featureKey]?.guard(() => {}) : undefined,
+        };
+      }),
+    }));
+    const chanStructureOn = CHAN_STRUCTURE_TOGGLE_KEYS.filter((key) => toggles[key]).length;
+    const chanBuySellOn = CHAN_BUYSELL_TOGGLE_KEYS.filter((key) => toggles[key]).length;
+    return [
+      ...staticGroups,
+      {
+        title: `缠论结构 ${chanStructureOn}/${CHAN_STRUCTURE_TOGGLE_KEYS.length}`,
+        items: CHAN_STRUCTURE_TOGGLE_KEYS.map((key) => toLayerItem(key, setToggle)),
+      },
+      {
+        title: `缠论买卖点 ${chanBuySellOn}/${CHAN_BUYSELL_TOGGLE_KEYS.length}`,
+        items: CHAN_BUYSELL_TOGGLE_KEYS.map((key) => toLayerItem(key, setToggle)),
+      },
+    ];
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [lockedToggleKeys, setToggle, autoPatternsFeature.locked, optionsWallsFeature.locked],
-  );
+  }, [lockedToggleKeys, setToggle, autoPatternsFeature.locked, optionsWallsFeature.locked, toggles]);
   const filteredPresets: LayerPreset[] = useMemo(
     () =>
       INDICATOR_PRESETS.map((p) => ({

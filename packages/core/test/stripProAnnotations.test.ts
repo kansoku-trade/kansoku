@@ -111,7 +111,7 @@ function tfData(overrides: Partial<IntradayTfData> = {}): IntradayTfData {
     markers: [
       marker({ id: 'ai-1', group: 'ai' }),
       marker({ id: 'div-1', group: 'divergence' }),
-      marker({ id: 'beichi-1', group: 'beichi' }),
+      marker({ id: 'beichi-1', group: 'macdBeichi' }),
       marker({ id: 'p123-1', group: 'pattern123' }),
       marker({ id: 'candle-1', group: 'candle' }),
       marker({ id: 'plain-1' }),
@@ -121,7 +121,7 @@ function tfData(overrides: Partial<IntradayTfData> = {}): IntradayTfData {
       connector({ group: 'ai' }),
       connector({ group: 'pattern123', recent: false }),
     ],
-    macdConnectors: [connector({ group: 'beichi' }), connector({ group: 'candle' })],
+    macdConnectors: [connector({ group: 'macdBeichi' }), connector({ group: 'candle' })],
     autoDivergence: [
       {
         kind: 'top',

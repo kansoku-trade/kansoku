@@ -13,6 +13,8 @@ import {
 import type {
   IntradayBuilt,
   IntradayPriceZone,
+  OverlayGroup,
+  PriceRectangle,
   SecondBreakout,
   SeriesMarker,
   TimeframeKey,
@@ -38,6 +40,7 @@ import type { IndicatorToggleKey, MarkerRange } from './useIndicatorToggles';
 import { AnchorBgPrimitive } from './anchorPrimitive';
 import { FvgPrimitive } from './fvgPrimitive';
 import { SessionBgPrimitive } from './sessionPrimitive';
+import { ZhongshuPrimitive } from './zhongshuPrimitive';
 import { seriesPalette, theme } from '@web/lib/theme';
 
 export const EMA_COLORS = [
@@ -75,6 +78,7 @@ interface Handle {
   planLines: ReturnType<typeof addPriceLine>[];
   fvg: FvgPrimitive;
   anchorBg: AnchorBgPrimitive;
+  zhongshu: ZhongshuPrimitive;
 }
 
 const NEAR_LEFT_BARS = 10;
@@ -88,10 +92,23 @@ const fmtOi = (oi: number) => (oi >= 1000 ? `${(oi / 1000).toFixed(1)}k` : Strin
 const zoneTitle = (z: IntradayPriceZone, edge?: '上沿' | '下沿') =>
   `${z.label}${edge ? edge : ''} $${(edge === '上沿' ? z.high : z.low).toFixed(2)}`;
 
+const CHAN_GROUP_TOGGLE: Partial<Record<OverlayGroup, IndicatorToggleKey>> = {
+  fenxing: 'chanFenxing',
+  bi: 'chanBi',
+  xianduan: 'chanXianduan',
+  'chan-buy1': 'chanBuySell1',
+  'chan-sell1': 'chanBuySell1',
+  'chan-buy2': 'chanBuySell2',
+  'chan-sell2': 'chanBuySell2',
+  'chan-buy3': 'chanBuySell3',
+  'chan-sell3': 'chanBuySell3',
+};
+
 const groupAllowed = (
   toggles: Record<IndicatorToggleKey, boolean>,
   group?: SeriesMarker['group'],
-) => group === undefined || toggles[group as IndicatorToggleKey];
+) =>
+  group === undefined || toggles[CHAN_GROUP_TOGGLE[group] ?? (group as IndicatorToggleKey)];
 
 const filterByGroup = <T extends { group?: SeriesMarker['group'] }>(
   items: T[],
@@ -201,6 +218,8 @@ export function useIntradayCharts(
     candle.attachPrimitive(fvg);
     const anchorBg = new AnchorBgPrimitive();
     candle.attachPrimitive(anchorBg);
+    const zhongshu = new ZhongshuPrimitive();
+    candle.attachPrimitive(zhongshu);
 
     const emaCount = builtRef.current.timeframes.m5?.emas?.length ?? 0;
     const emaSeries = Array.from({ length: emaCount }, (_, i) =>
@@ -276,6 +295,7 @@ export function useIntradayCharts(
       planLines: [],
       fvg,
       anchorBg,
+      zhongshu,
     };
     lastTfRef.current = null;
     firstTimeRef.current = null;
@@ -323,6 +343,20 @@ export function useIntradayCharts(
     });
     h.vwapSeries.setData(toggles.vwap && d.vwap ? padLineData(d.vwap, timeline) : []);
     h.fvg.setData(toggles.fvg ? (d.fvgZones ?? []) : []);
+    const lastBarTime = d.candles.at(-1)?.time;
+    const zhongshus = d.chanStructure?.zhongshus ?? [];
+    const zhongshuRects: PriceRectangle[] =
+      toggles.chanZhongshu && lastBarTime !== undefined
+        ? zhongshus.map((z) => ({
+            startTime: z.startTime,
+            endTime: z.endTime ?? lastBarTime,
+            priceLow: z.priceLow,
+            priceHigh: z.priceHigh,
+            color: '#808080',
+            group: 'zhongshu',
+          }))
+        : [];
+    h.zhongshu.setData(zhongshuRects);
     const anchor = built.sidebar.prediction?.anchor;
     const anchorHere = anchor && anchor.timeframe === activeTf ? anchor : null;
     h.anchorBg.setData(

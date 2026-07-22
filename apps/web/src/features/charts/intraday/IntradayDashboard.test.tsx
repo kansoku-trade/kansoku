@@ -66,7 +66,7 @@ describe('IntradayChartOnly pro annotation layer locks', () => {
   it('excludes locked layers from the layer count', () => {
     render(<IntradayChartOnly symbol="NVDA.US" built={built} activeTf="m5" />);
 
-    expect(screen.getByText(/^图层 \d+\/7$/)).toBeTruthy();
+    expect(screen.getByText(/^图层 \d+\/14$/)).toBeTruthy();
   });
 
   it('filters locked keys out of preset options so applying a preset cannot enable them', () => {
@@ -77,7 +77,7 @@ describe('IntradayChartOnly pro annotation layer locks', () => {
     );
     fireEvent.click(allPresetInput!);
 
-    expect(screen.getByText(/^图层 7\/7$/)).toBeTruthy();
+    expect(screen.getByText(/^图层 7\/14$/)).toBeTruthy();
   });
 
   it('renders gated layers locked on a public-only build where features are absent', () => {
@@ -88,7 +88,7 @@ describe('IntradayChartOnly pro annotation layer locks', () => {
     expect(screen.getByText('SB 结构').closest('.lp-locked')).toBeTruthy();
     expect(screen.getByText('123 结构').closest('.lp-locked')).toBeTruthy();
     expect(screen.getByText('期权墙').closest('.lp-locked')).toBeTruthy();
-    expect(screen.getByText(/^图层 \d+\/7$/)).toBeTruthy();
+    expect(screen.getByText(/^图层 \d+\/14$/)).toBeTruthy();
   });
 
   it('renders gated layers locked before capabilities load (features undefined)', () => {
@@ -106,6 +106,6 @@ describe('IntradayChartOnly pro annotation layer locks', () => {
 
     expect(screen.getByText('SB 结构').closest('label')?.querySelector('input')).toBeTruthy();
     expect(screen.getByText('期权墙').closest('label')?.querySelector('input')).toBeTruthy();
-    expect(screen.getByText(/^图层 \d+\/13$/)).toBeTruthy();
+    expect(screen.getByText(/^图层 \d+\/20$/)).toBeTruthy();
   });
 });

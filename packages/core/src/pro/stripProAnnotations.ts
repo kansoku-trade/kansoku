@@ -9,7 +9,7 @@ import type {
 } from '@kansoku/shared/types';
 import { featureStateSync } from './features.js';
 
-const PATTERN_GROUPS = new Set<OverlayGroup>(['divergence', 'beichi', 'pattern123', 'candle']);
+const PATTERN_GROUPS = new Set<OverlayGroup>(['divergence', 'macdBeichi', 'pattern123', 'candle']);
 
 function stripOverlay<T extends SeriesMarker | Connector>(items: T[]): T[] {
   const kept = items.filter((item) => !item.group || !PATTERN_GROUPS.has(item.group));

@@ -236,7 +236,7 @@ describe('marker consolidation helpers', () => {
   it('keeps auto markers of a different type or beyond the merge window', () => {
     const ai = [marker(1000, 'ai', '⚡', '⚡ AI 标注信号\n顶背离')];
     const auto = [
-      marker(1000, 'beichi', '🌀', '🌀 自动·顶背驰（简化算法，仅供参考）\n详情'),
+      marker(1000, 'macdBeichi', '🌀', '🌀 自动·顶 MACD 背离（K 线级）（简化算法，仅供参考）\n详情'),
       marker(1240, 'divergence', '📉', '📉 自动·顶背离（简化算法，仅供参考）\n详情'),
     ];
     const out = mergeAiAutoMarkers(ai, auto, barIndex);

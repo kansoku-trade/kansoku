@@ -257,7 +257,7 @@ export function PredictionTab({
             kindKey: `divergence-${d.kind}`,
             pair: d,
           })),
-          ...(tfData?.autoBeichi ?? []).map((d) => ({ kindKey: `beichi-${d.kind}`, pair: d })),
+          ...(tfData?.autoBeichi ?? []).map((d) => ({ kindKey: `macdBeichi-${d.kind}`, pair: d })),
         ];
         if (!autoItems.length && !patterns123.length) return null;
         return (
