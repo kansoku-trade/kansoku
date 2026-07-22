@@ -8,6 +8,7 @@ import {
   createLocalWatchlistStore,
   setActiveLocalWatchlistStore,
 } from '@kansoku/core/marketdata/localWatchlistStore';
+import { stampDefaultProvider } from '@kansoku/core/marketdata/defaultProvider';
 import {
   createWatchedMarketsStore,
   setActiveWatchedMarketsStore,
@@ -50,6 +51,7 @@ export async function initServerHostRuntime(opts?: ServerRuntimeOptions): Promis
   setActiveWatchedMarketsStore(createWatchedMarketsStore(getDb()));
   setActiveLocalWatchlistStore(createLocalWatchlistStore(getDb()));
   initAiSettings(getDb(), { secretBox: opts?.secretBox });
+  await stampDefaultProvider();
 
   const productionHost = opts?.productionHost ?? process.env.NODE_ENV === 'production';
   setProductionHost(productionHost);

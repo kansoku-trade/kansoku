@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { getProvider, getStream, listProviders } from '../src/marketdata/registry.js';
+import {
+  getDefaultProviderName,
+  getProvider,
+  getStream,
+  listProviders,
+  setDefaultProviderName,
+} from '../src/marketdata/registry.js';
 import { getYahooStream, resetYahooStream } from '../src/marketdata/yahoo/stream.js';
 import type { Capability, MarketDataProvider } from '../src/marketdata/types.js';
 
@@ -65,6 +71,36 @@ describe('marketdata registry', () => {
   it('selects the yahoo provider when named by MARKET_PROVIDER', () => {
     vi.stubEnv('MARKET_PROVIDER', 'yahoo');
     expect(getProvider().name).toBe('yahoo');
+  });
+});
+
+describe('stamped default provider', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    setDefaultProviderName('longbridge');
+  });
+
+  it('is visible via getDefaultProviderName after setDefaultProviderName', () => {
+    setDefaultProviderName('yahoo');
+    expect(getDefaultProviderName()).toBe('yahoo');
+  });
+
+  it('resolveProviderName falls back to the stamped default with no env', () => {
+    setDefaultProviderName('yahoo');
+    expect(getProvider().name).toBe('yahoo');
+  });
+
+  it('a global MARKET_PROVIDER env beats the stamped default', () => {
+    setDefaultProviderName('yahoo');
+    vi.stubEnv('MARKET_PROVIDER', 'longbridge');
+    expect(getProvider().name).toBe('longbridge');
+  });
+
+  it('a per-market MARKET_PROVIDER_<market> env beats the stamped default', () => {
+    setDefaultProviderName('yahoo');
+    vi.stubEnv('MARKET_PROVIDER_HK', 'longbridge');
+    expect(getProvider('HK').name).toBe('longbridge');
+    expect(getProvider('US').name).toBe('yahoo');
   });
 });
 

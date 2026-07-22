@@ -42,6 +42,9 @@ vi.mock('@kansoku/core/marketdata/localWatchlistStore', () => ({
   setActiveLocalWatchlistStore,
 }));
 
+const stampDefaultProvider = vi.hoisted(() => vi.fn(async () => 'longbridge' as const));
+vi.mock('@kansoku/core/marketdata/defaultProvider', () => ({ stampDefaultProvider }));
+
 const initAuthUrlOpener = vi.hoisted(() => vi.fn());
 vi.mock('@kansoku/core/credentials/authUrlOpener', () => ({ initAuthUrlOpener }));
 
@@ -170,7 +173,9 @@ describe('bootKernel pro composition activation (real seam, not mocked away)', (
     expect(setProPresent).toHaveBeenCalledWith(true);
     expect(registerProHooks).toHaveBeenCalledTimes(1);
     expect(registerProAiExtension).toHaveBeenCalledTimes(1);
-    expect(registerProAiExtension).toHaveBeenCalledWith(expect.objectContaining({ tag: 'desktop' }));
+    expect(registerProAiExtension).toHaveBeenCalledWith(
+      expect.objectContaining({ tag: 'desktop' }),
+    );
     expect(registerProChannels).toHaveBeenCalledTimes(1);
     expect(registerProChannels).toHaveBeenCalledWith(['desktop-channel']);
 

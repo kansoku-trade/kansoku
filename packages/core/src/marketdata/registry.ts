@@ -18,8 +18,20 @@ const streamFactories: Record<string, () => QuoteStream> = {
   yahoo: getYahooStream,
 };
 
+let defaultProviderName = 'longbridge';
+
+export function setDefaultProviderName(name: string): void {
+  defaultProviderName = name;
+}
+
+export function getDefaultProviderName(): string {
+  return defaultProviderName;
+}
+
 function resolveProviderName(market: Market): string {
-  return process.env[`MARKET_PROVIDER_${market}`] || process.env.MARKET_PROVIDER || 'longbridge';
+  return (
+    process.env[`MARKET_PROVIDER_${market}`] || process.env.MARKET_PROVIDER || defaultProviderName
+  );
 }
 
 export function getProvider(market: Market = 'US'): MarketDataProvider {
