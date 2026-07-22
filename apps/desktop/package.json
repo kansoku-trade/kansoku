@@ -43,6 +43,7 @@
     "hono": "4.12.30",
     "partial-json": "^0.1.7",
     "reflect-metadata": "0.2.2",
+    "tsdown": "^0.22.13",
     "typescript": "^7.0.2",
     "vite": "^8.1.5",
     "vitest": "^4.1.10"
