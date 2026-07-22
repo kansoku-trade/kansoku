@@ -229,6 +229,13 @@ climax top (volume ≥ 2.5×20MA + red close + local high), MA50/MA200 breakdown
     // ≥ 2, probabilities ≈ 100
     { "label": "继续探底", "probability": 45, "path": "...", "trigger": "..." },
   ],
+  "invalidation": [
+    // 必填，1–4 条：什么条件一旦发生即证伪本论点（具体价位/结构/事件），服务端拒空
+    "反弹站上 1060 且 m15 收盘不回落",
+  ],
+  // 必填：各周期方向分，−5 强烈看空 … +5 强烈看多，0=无信号；方向单须与其共振
+  // （按方向折算合计 ≥4 且反向镜头 ≤1），否则 400
+  "lens_scores": { "m5": -2, "m15": -3, "h1": -2, "day": 0 },
   "range_bound_plan": {
     "condition": "...",
     "long_tactic": "...",

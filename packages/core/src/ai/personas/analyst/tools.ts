@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import type { AgentTool } from '@earendil-works/pi-agent-core';
 import { Check } from 'typebox/value';
 import {
+  type AiProvenance,
   type CockpitComment,
   type CommentLevel,
   type IntradayPrediction,
@@ -11,10 +12,12 @@ import {
 } from '@kansoku/shared/types';
 import type { ReassessPhase } from '../../../contract/symbols.js';
 import { chartUrl } from '../../../platform/chartUrl.js';
+import { redact } from '../../../platform/redact.js';
 import { buildChart } from '../../../charts/build.js';
 import { validatePrediction } from '../../../analysis/predictionRules.js';
 import type { SkillMeta } from '../../agents/skills.js';
 import { createChart } from '../../../charts/store.js';
+import { appendRunCard } from '../../../journal/hypotheses.js';
 import type { ExecFn } from '../../agents/agentTools/execTool.js';
 import type { FsReadMount } from '../../agents/agentTools/fsMounts.js';
 import { buildResearchTools } from '../../agents/agentTools/researchTools.js';
@@ -46,7 +49,7 @@ export function buildJournalTool(
     description: `Write journal/YYYY-MM-DD-${base}-intraday.md according to Skill Step 7 and the US Eastern trading date. Append a section when the same-day file exists; never overwrite it. Provide Markdown content only.`,
     parameters: journalSchema,
     execute: async (_id, params) => {
-      const content = params.content;
+      const content = redact(params.content);
       if (!content.trim()) return textResult('rejected: content is empty');
       const file = `${usSessionDate(now())}-${base}-intraday.md`;
       const path = join(journalDir, file);
@@ -124,6 +127,15 @@ export interface SubmitPredictionHooks {
   isDone: () => boolean;
   reportProgress?: (phase: ReassessPhase, activity: string) => void;
   onSubmitted?: (chartId: string, params: PredictionParams) => void;
+  provenance?: AiProvenance;
+  appendHypothesisRunCard?: (id: string, card: Record<string, unknown>) => Promise<void>;
+}
+
+async function defaultAppendHypothesisRunCard(
+  id: string,
+  card: Record<string, unknown>,
+): Promise<void> {
+  await appendRunCard(id, card as Parameters<typeof appendRunCard>[1]);
 }
 
 export function buildSubmitPredictionTool(
@@ -155,9 +167,15 @@ export function buildSubmitPredictionTool(
         symbol,
         session: 'all',
         origin: 'analyst',
-        prediction,
+        prediction: hooks.provenance ? { ...prediction, provenance: hooks.provenance } : prediction,
       });
       hooks.onSubmitted?.(chart.id, params);
+      if (params.hypothesis_id) {
+        await (hooks.appendHypothesisRunCard ?? defaultAppendHypothesisRunCard)(
+          params.hypothesis_id,
+          { kind: 'prediction', ref: chart.id, summary: comment, outcome: 'open' },
+        ).catch(() => {});
+      }
       await hooks.appendComment({
         ts: new Date().toISOString(),
         symbol,
@@ -165,6 +183,7 @@ export function buildSubmitPredictionTool(
         text: comment,
         source: 'analyst',
         chartId: chart.id,
+        ...(hooks.provenance ? { provenance: hooks.provenance } : {}),
       });
       return textResult(JSON.stringify({ chartId: chart.id, url: chart.url }), true);
     },
@@ -183,6 +202,8 @@ export function buildTools(
     now: () => number;
     skillIndex: SkillMeta[];
     readMounts: FsReadMount[];
+    provenance?: AiProvenance;
+    appendHypothesisRunCard?: (id: string, card: Record<string, unknown>) => Promise<void>;
   },
   state: RunState,
   isDone: () => boolean,
@@ -223,6 +244,7 @@ export function buildTools(
         text: params.text,
         source: 'analyst',
         ...(state.chartId ? { chartId: state.chartId } : {}),
+        ...(deps.provenance ? { provenance: deps.provenance } : {}),
       });
       return textResult('recorded');
     },
@@ -237,6 +259,8 @@ export function buildTools(
       state.chartId = chartId;
       state.submitted = true;
     },
+    provenance: deps.provenance,
+    appendHypothesisRunCard: deps.appendHypothesisRunCard,
   });
 
   const researchTools = buildResearchTools({

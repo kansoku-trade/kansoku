@@ -43,12 +43,43 @@ export const rangePlanSchema = Type.Object({
   high: Type.Optional(Type.Number({ description: 'Upper bound of the range; required for neutral.' })),
 });
 
+const lensScoreSchema = Type.Integer({ minimum: -5, maximum: 5 });
+
+export const lensScoresSchema = Type.Object(
+  {
+    m5: lensScoreSchema,
+    m15: lensScoreSchema,
+    h1: lensScoreSchema,
+    day: lensScoreSchema,
+  },
+  {
+    description:
+      'Per-timeframe directional score: −5 strongly bearish … +5 strongly bullish, 0 = no signal on that timeframe. A long/short call must resonate with these scores (aligned sum ≥ 4, at most one opposing lens) or it is rejected — submit neutral instead.',
+  },
+);
+
 export const predictionSchema = Type.Object({
   direction: Type.Union([Type.Literal('long'), Type.Literal('short'), Type.Literal('neutral')]),
   anchor: anchorSchema,
   entry_plan: Type.Optional(entryPlanSchema),
   scenarios: Type.Array(scenarioSchema, { minItems: 2, maxItems: 4 }),
+  lens_scores: lensScoresSchema,
+  invalidation: Type.Array(
+    Type.String({ description: 'One concrete condition that would falsify this thesis.' }),
+    {
+      minItems: 1,
+      maxItems: 4,
+      description:
+        'Conditions that would falsify this thesis: a price break, a structure loss, or an event outcome. When a condition maps to a concrete price level, quote that price so it lines up with the stop or range bound drawn on the chart.',
+    },
+  ),
   range_plan: Type.Optional(rangePlanSchema),
+  hypothesis_id: Type.Optional(
+    Type.String({
+      description:
+        "Optional. When this call tests one of the registered hypotheses listed in data_snapshot.hypotheses, reference its id here; the settlement will then be booked against that thesis. Omit when none applies — never invent an id.",
+    }),
+  ),
   comment: Type.String({ description: 'A one-sentence plain-language conclusion to store as a comment.' }),
 });
 

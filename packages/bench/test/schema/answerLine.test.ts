@@ -9,6 +9,8 @@ const validSubmission = {
     { label: 'breakout', probability: 60 },
     { label: 'fade', probability: 40 },
   ],
+  invalidation: ['h1 收盘跌破 100'],
+  lens_scores: { m5: 2, m15: 2, h1: 2, day: 0 },
   comment: '跟随趋势做多',
 };
 

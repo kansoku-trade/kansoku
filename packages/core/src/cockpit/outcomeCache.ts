@@ -1,7 +1,16 @@
 import { inArray } from 'drizzle-orm';
-import type { AnalysisOutcome, OutcomeStatus } from '@kansoku/shared/types';
+import type {
+  AnalysisOutcome,
+  ChartDoc,
+  Hypothesis,
+  HypothesisRunCard,
+  IntradayPrediction,
+  OutcomeStatus,
+} from '@kansoku/shared/types';
 import { getDb, type Db } from '../db/index.js';
 import { outcomes } from '../db/schema.js';
+import { loadChart as defaultLoadChart } from '../charts/store.js';
+import { appendRunCard as defaultAppendRunCard } from '../journal/hypotheses.js';
 
 export interface OutcomeKey {
   chartId: string;
@@ -27,13 +36,50 @@ export async function getResolvedOutcomes(
   );
 }
 
+export interface OutcomeSettleHooks {
+  loadChart?: (id: string) => Promise<ChartDoc | null>;
+  appendRunCard?: (
+    id: string,
+    card: Omit<HypothesisRunCard, 'at'> & { at?: string },
+  ) => Promise<Hypothesis>;
+}
+
+function hypothesisIdOf(doc: ChartDoc): string | undefined {
+  const built = doc.built as { kind?: string; sidebar?: { prediction?: IntradayPrediction | null } };
+  const prediction =
+    (built?.kind === 'intraday' ? built.sidebar?.prediction : null) ??
+    (doc.input?.prediction as IntradayPrediction | null | undefined);
+  return prediction?.hypothesis_id;
+}
+
+async function settleHypothesisRunCard(
+  key: OutcomeKey,
+  outcome: AnalysisOutcome,
+  hooks: OutcomeSettleHooks,
+): Promise<void> {
+  try {
+    const doc = await (hooks.loadChart ?? defaultLoadChart)(key.chartId);
+    const hypothesisId = doc && hypothesisIdOf(doc);
+    if (!hypothesisId) return;
+    await (hooks.appendRunCard ?? defaultAppendRunCard)(hypothesisId, {
+      kind: 'prediction',
+      ref: key.chartId,
+      summary: `${key.symbol} ${key.direction} 预测结算 ${outcome.status}（自锚点 ${outcome.pct_since_anchor.toFixed(2)}%）`,
+      outcome: outcome.status === 'hit_target' || outcome.status === 'held_range' ? 'support' : 'against',
+    });
+  } catch {
+    return;
+  }
+}
+
 export async function saveResolvedOutcome(
   key: OutcomeKey,
   outcome: AnalysisOutcome,
   db: Db = getDb(),
+  hooks: OutcomeSettleHooks = {},
 ): Promise<void> {
   if (outcome.status === 'open' || outcome.resolved_at == null) return;
-  await db
+  const inserted = await db
     .insert(outcomes)
     .values({
       chartId: key.chartId,
@@ -44,5 +90,7 @@ export async function saveResolvedOutcome(
       resolvedAt: outcome.resolved_at,
       judgedAt: new Date().toISOString(),
     })
-    .onConflictDoNothing();
+    .onConflictDoNothing()
+    .returning({ chartId: outcomes.chartId });
+  if (inserted.length > 0) await settleHypothesisRunCard(key, outcome, hooks);
 }

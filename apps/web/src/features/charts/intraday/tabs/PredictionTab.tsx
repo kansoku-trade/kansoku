@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from 'react';
+import { Fragment, type CSSProperties, type ReactNode } from 'react';
 import { TriangleAlert } from 'lucide-react';
 import type { IntradayBuilt, TimeframeKey } from '@kansoku/shared/types';
 import { fmt, signed } from '@web/lib/format';
@@ -21,6 +21,13 @@ const SIGNAL_ICON: Record<string, string> = {
   macd_beichi: '🌀',
 };
 const TF_ORDER: TimeframeKey[] = ['m5', 'm15', 'h1'];
+const LENS_ORDER = ['m5', 'm15', 'h1', 'day'] as const;
+const LENS_LABEL: Record<(typeof LENS_ORDER)[number], string> = {
+  m5: '5分钟',
+  m15: '15分钟',
+  h1: '1小时',
+  day: '日线',
+};
 
 function rrTone(ep: { rr_great: boolean; rr_ok: boolean }): string {
   if (ep.rr_great) return 'up';
@@ -66,6 +73,8 @@ export function PredictionTab({
   });
   const totalProb = scenarios.reduce((acc, sc) => acc + Number(sc.probability || 0), 0);
   const rbp = p?.range_bound_plan;
+  const falsifiers = (p?.invalidation ?? []).filter((item) => item && item.trim());
+  const lens = p?.lens_scores;
   const signals = p?.signals ?? [];
   const targetContexts = ep?.target_contexts ?? [];
   const priceZones = (ep?.price_zones ?? []).filter((zone) => zone.kind === 'resistance');
@@ -115,6 +124,26 @@ export function PredictionTab({
       )}
       {!p && emptyCta}
 
+      {p && lens && (
+        <>
+          <SectionTitle>多镜头打分</SectionTitle>
+          <div className="grid2">
+            {LENS_ORDER.map((key) => {
+              const score = Number(lens[key] ?? 0);
+              return (
+                <Fragment key={key}>
+                  <div className="k">{LENS_LABEL[key]}</div>
+                  <div className={`v ${score > 0 ? 'up' : score < 0 ? 'down' : ''}`}>
+                    {score > 0 ? `+${score}` : `${score}`}
+                  </div>
+                </Fragment>
+              );
+            })}
+          </div>
+          <div className="note-block">−5 强烈看空 … +5 强烈看多，0 为该周期无信号</div>
+        </>
+      )}
+
       {p && scenarios.length > 0 && (
         <>
           <SectionTitle>
@@ -139,6 +168,18 @@ export function PredictionTab({
               </div>
             </div>
           ))}
+        </>
+      )}
+
+      {p && falsifiers.length > 0 && (
+        <>
+          <SectionTitle>证伪条件</SectionTitle>
+          {falsifiers.map((item, i) => (
+            <div key={i} className="zone-item" style={{ '--zc': theme.down } as CSSProperties}>
+              <div className="zone-meta md">{item}</div>
+            </div>
+          ))}
+          <div className="note-block">任一条件成立即视为本次判断失效，应重新复评</div>
         </>
       )}
 

@@ -6,6 +6,7 @@ import { ChartsModule } from './charts/charts.module.js';
 import { ChatModule } from './chat/chat.module.js';
 import { CredentialsModule } from './credentials/credentials.module.js';
 import { HealthModule } from './health/health.module.js';
+import { HypothesesModule } from './hypotheses/hypotheses.module.js';
 import { LegacyModule } from './legacy/legacy.module.js';
 import { LicenseModule } from './license/license.module.js';
 import { LobeHubModule } from './lobehub/lobehub.module.js';
@@ -27,6 +28,7 @@ import { SymbolsModule } from './symbols/symbols.module.js';
     AssistantModule,
     ChatModule,
     ResearchModule,
+    HypothesesModule,
     LobeHubModule,
     LegacyModule,
     CredentialsModule,

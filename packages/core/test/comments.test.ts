@@ -42,6 +42,38 @@ describe('comments storage', () => {
     expect(await listComments('NVDA.US', '2026-07-02')).toEqual([]);
   });
 
+  it('persists and returns aggregator verdict and resonance', async () => {
+    await appendComment(
+      comment({
+        symbol: 'AGG.US',
+        source: 'aggregator',
+        text: '统一判定',
+        verdict: 'long',
+        resonance: 63,
+      }),
+    );
+    const [row] = await listComments('AGG.US', '2026-07-02');
+    expect(row.verdict).toBe('long');
+    expect(row.resonance).toBe(63);
+    expect(row.source).toBe('aggregator');
+  });
+
+  it('persists and returns ai provenance', async () => {
+    await appendComment(
+      comment({
+        symbol: 'PROV.US',
+        text: 'stamped',
+        provenance: { provider: 'anthropic', model: 'claude-haiku-4-5', promptVersion: 'abc123' },
+      }),
+    );
+    const [row] = await listComments('PROV.US', '2026-07-02');
+    expect(row.provenance).toEqual({
+      provider: 'anthropic',
+      model: 'claude-haiku-4-5',
+      promptVersion: 'abc123',
+    });
+  });
+
   it('groups by the US-Eastern date of the comment ts', async () => {
     await appendComment(
       comment({ symbol: 'AMD.US', ts: '2026-07-02T02:00:00.000Z', text: 'late' }),

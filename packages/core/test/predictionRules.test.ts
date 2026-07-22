@@ -11,6 +11,8 @@ const validPrediction: IntradayPrediction = {
     { label: '震荡', probability: 30 },
     { label: '下破', probability: 20 },
   ],
+  invalidation: ['跌破 97 且 m15 收不回来', '午盘前量能持续萎缩到昨日一半以下'],
+  lens_scores: { m5: 2, m15: 3, h1: 2, day: 1 },
 };
 
 describe('validatePrediction', () => {
@@ -133,6 +135,82 @@ describe('validatePrediction', () => {
       entry_plan: { entry: 100, stop: 97 },
     });
     expect(issues.join('')).toContain('必须给出 target1 或 target1_pct');
+  });
+
+  it('rejects a prediction without lens scores', () => {
+    const { lens_scores: _scores, ...rest } = validPrediction;
+    const issues = validatePrediction({ ...rest });
+    expect(issues.join('')).toContain('lens_scores 必填');
+  });
+
+  it('rejects lens scores outside the -5..+5 integer range', () => {
+    const issues = validatePrediction({
+      ...validPrediction,
+      lens_scores: { m5: 7, m15: 2.5, h1: 2, day: 1 },
+    });
+    expect(issues.join('')).toContain('−5 到 +5 的整数');
+  });
+
+  it('rejects a long call whose lens scores sum against the direction', () => {
+    const issues = validatePrediction({
+      ...validPrediction,
+      lens_scores: { m5: -3, m15: -2, h1: 1, day: 0 },
+    });
+    expect(issues.join('')).toContain('自相矛盾');
+  });
+
+  it('forces neutral when aligned lens sum is below the resonance floor', () => {
+    const issues = validatePrediction({
+      ...validPrediction,
+      lens_scores: { m5: 1, m15: 1, h1: 1, day: 0 },
+    });
+    expect(issues.join('')).toContain('共振不足');
+  });
+
+  it('forces neutral when two or more lenses point against the direction', () => {
+    const issues = validatePrediction({
+      ...validPrediction,
+      lens_scores: { m5: 3, m15: 3, h1: -1, day: -1 },
+    });
+    expect(issues.join('')).toContain('共振不足');
+  });
+
+  it('accepts a short call with coherent negative lens scores', () => {
+    const issues = validatePrediction({
+      ...validPrediction,
+      direction: 'short',
+      entry_plan: { entry: 100, stop: 103, target1: 96 },
+      lens_scores: { m5: -2, m15: -3, h1: -2, day: 0 },
+    });
+    expect(issues).toEqual([]);
+  });
+
+  it('leaves a neutral call free of the resonance gate', () => {
+    const { entry_plan: _plan, ...rest } = validPrediction;
+    expect(
+      validatePrediction({
+        ...rest,
+        direction: 'neutral',
+        range_plan: { low: 97, high: 104 },
+        lens_scores: { m5: 4, m15: 4, h1: 4, day: 4 },
+      }),
+    ).toEqual([]);
+  });
+
+  it('rejects a prediction without invalidation conditions', () => {
+    const { invalidation: _invalidation, ...rest } = validPrediction;
+    const issues = validatePrediction({ ...rest });
+    expect(issues.join('')).toContain('invalidation 必填');
+  });
+
+  it('rejects an empty invalidation list', () => {
+    const issues = validatePrediction({ ...validPrediction, invalidation: [] });
+    expect(issues.join('')).toContain('invalidation 必填');
+  });
+
+  it('rejects invalidation entries that are blank strings', () => {
+    const issues = validatePrediction({ ...validPrediction, invalidation: ['  ', ''] });
+    expect(issues.join('')).toContain('invalidation 必填');
   });
 
   it('rejects a missing anchor', () => {

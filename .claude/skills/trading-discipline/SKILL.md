@@ -43,6 +43,16 @@ description: >
 
 **TD-DATA-02 — Attribute the vintage of every number.** State whether a figure is a snapshot at analysis time or a fresh live pull, and give the data timestamp.
 
+**TD-SKIP-01 — A skipped step must leave a formatted trace.** When a workflow step or data pull cannot be completed (source down, no auth, market closed, field absent), write an explicit marker in the output — `ℹ️ [<skill-or-step>]: skipped — <reason>` — and move on. Never fill the gap by inference, memory, or analogy; a silent skip and an invented number are the same failure (TD-DATA-01). The marker makes coverage auditable: a reader must be able to tell "not analysed" apart from "analysed, found nothing".
+
+**TD-SELFCHECK-01 — Three-point self-check before the final output.** Before emitting the final artifact (note, report, comment, journal section), verify in order:
+
+1. **Data fidelity** — every number traces to a fetched source with its vintage stated (TD-DATA-01/02); anything unfetchable is marked per TD-SKIP-01.
+2. **Logic consistency** — the conclusion follows from the evidence actually cited; no section contradicts another; directions, levels, and probabilities agree across the artifact.
+3. **Risk disclosure** — the artifact states what would falsify the read or what being wrong costs; a conclusion with no failure mode disclosed is incomplete.
+
+Structured submissions with mechanical validation (e.g. `submit_prediction`) already enforce most of this; the rule chiefly binds prose artifacts.
+
 ---
 
 ## C. Judgment Discipline (applies to any agent that concludes)

@@ -50,12 +50,26 @@ const rangePlanSchema = Type.Object(
   { additionalProperties: false },
 );
 
+const lensScoreSchema = Type.Integer({ minimum: -5, maximum: 5 });
+
+const lensScoresSchema = Type.Object(
+  {
+    m5: lensScoreSchema,
+    m15: lensScoreSchema,
+    h1: lensScoreSchema,
+    day: lensScoreSchema,
+  },
+  { additionalProperties: false },
+);
+
 export const submissionSchema = Type.Object(
   {
     direction: Type.Union([Type.Literal('long'), Type.Literal('short'), Type.Literal('neutral')]),
     anchor: anchorSchema,
     entry_plan: Type.Optional(entryPlanSchema),
     scenarios: Type.Array(scenarioSchema, { minItems: 2, maxItems: 4 }),
+    invalidation: Type.Array(Type.String(), { minItems: 1, maxItems: 4 }),
+    lens_scores: lensScoresSchema,
     range_plan: Type.Optional(rangePlanSchema),
     decision_reason: Type.Optional(episodeTradeReasonSchema),
     comment: Type.String(),

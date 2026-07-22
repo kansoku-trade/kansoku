@@ -94,6 +94,20 @@ describe('runCommentator', () => {
     expect(typeof c.ts).toBe('string');
   });
 
+  it('stamps ai provenance on the submitted comment', async () => {
+    const { deps, comments } = harness((_tools, record) => ({
+      prompt: async () => {
+        await record(false);
+      },
+      abort: () => {},
+    }));
+    await runCommentator({ symbol: 'MU.US', pack: makePack('MU.US'), trigger, deps });
+
+    expect(comments[0].provenance?.provider).toBe('anthropic');
+    expect(comments[0].provenance?.model).toBe('claude-haiku-4-5');
+    expect(comments[0].provenance?.promptVersion).toMatch(/^[\da-f]{12}$/);
+  });
+
   it('returns escalate:false when the tool reports no escalation', async () => {
     const { deps } = harness((_tools, record) => ({
       prompt: async () => {

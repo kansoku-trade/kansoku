@@ -25,6 +25,7 @@ export interface AiUsageLogContext {
   layer:
     | 'commentator'
     | 'analyst'
+    | 'aggregator'
     | 'event-filter'
     | 'chat'
     | 'chat-suggest'

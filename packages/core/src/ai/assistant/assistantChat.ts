@@ -1,3 +1,4 @@
+import type { AiProvenance } from '@kansoku/shared/types';
 import { PROJECT_ROOT } from '../../platform/env.js';
 import type { Db } from '../../db/index.js';
 import type { ExecFn } from '../agents/agentTools/execTool.js';
@@ -18,7 +19,9 @@ import {
   DisciplineMissingError,
   loadSharedDiscipline,
 } from '../runtime/promptPolicy.js';
+import { buildProvenance } from '../runtime/provenance.js';
 import { buildResearchLibraryTools } from '../agents/researchLibraryTools.js';
+import { buildHypothesisTools } from '../agents/agentTools/hypothesisTools.js';
 import type { AiModel } from '../runtime/models.js';
 import { prepareProAiTurn } from '../../pro/aiExtension.js';
 
@@ -42,6 +45,7 @@ function buildSystemPrompt(disciplineText: string): string {
     'You have read-only bash access for the longbridge CLI and .claude/skills/**/scripts/*.py scripts to inspect market, macro, and file data. You can also read repository files and complete skills, and search and read research-library documents.',
     'When a user message contains an @path (for example, @stocks/MU.md), read that file with the file-reading tool before answering.',
     'Cite the file path for conclusions drawn from files, and state the retrieval timestamp when citing live data.',
+    'register_hypothesis is for explicit user requests only; never register a hypothesis on your own initiative. Call list_hypotheses first to avoid duplicates.',
   ].join('\n');
   return composeWithDiscipline(disciplineText, own);
 }
@@ -53,6 +57,7 @@ function prepareTurn(
   deps: AssistantChatDeps,
 ): ConversationPreparedTurn {
   const rootDir = deps.rootDir ?? PROJECT_ROOT;
+  let provenance: AiProvenance | undefined;
   return {
     model,
     agentFactory: deps.agentFactory,
@@ -61,11 +66,13 @@ function prepareTurn(
       getSession: () => getAssistantSession(sessionId, deps.db),
       createSession: () => Promise.resolve(session),
       listMessages: (id) => listAssistantMessages(id, deps.db),
-      appendMessages: (id, messages) => appendAssistantMessages(id, messages, deps.db),
+      appendMessages: (id, messages) =>
+        appendAssistantMessages(id, messages, deps.db, provenance),
     },
     buildTurn: async (activeSessionId) => {
       const disciplineText = deps.disciplineText ?? loadSharedDiscipline(rootDir);
       if (!disciplineText) throw new DisciplineMissingError();
+      provenance = buildProvenance(model, buildSystemPrompt(disciplineText));
       const proTurn = await prepareProAiTurn({
         surface: 'assistant',
         sessionId: activeSessionId,
@@ -83,7 +90,11 @@ function prepareTurn(
         symbol: 'ASSISTANT',
         origin: 'assistant',
         systemPrompt: buildSystemPrompt(disciplineText),
-        tools: [...researchTools, ...buildResearchLibraryTools(rootDir)],
+        tools: [
+          ...researchTools,
+          ...buildResearchLibraryTools(rootDir),
+          ...buildHypothesisTools(),
+        ],
         transformContext: async (messages) => (await messageEngine.process(messages)).messages,
         onTurnComplete: proTurn.onTurnComplete,
       };

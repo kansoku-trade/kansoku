@@ -58,6 +58,8 @@ const SUBMISSION: Submission = {
   direction: 'long',
   anchor: { timeframe: 'h1', time: QUESTION.cutoff, price: 100 },
   entry_plan: { entry: 100, stop: 90, target1: 120 },
+  invalidation: ['h1 收盘跌破 90'],
+  lens_scores: { m5: 2, m15: 2, h1: 2, day: 0 },
   scenarios: [
     { label: '上涨', probability: 60 },
     { label: '回撤', probability: 40 },

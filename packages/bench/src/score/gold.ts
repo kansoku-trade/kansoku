@@ -69,6 +69,8 @@ export function goldSubmissionFor(question: Question): Submission {
         { label: '区间震荡', probability: 60 },
         { label: '突破', probability: 40 },
       ],
+      invalidation: ['放量离开区间并站稳'],
+      lens_scores: { m5: 0, m15: 0, h1: 0, day: 0 },
       range_plan: { low: round(cutoffClose * 0.98), high: round(cutoffClose * 1.02) },
       comment: 'gold: 事后无干净的方向性行情，观望。',
     };
@@ -82,6 +84,11 @@ export function goldSubmissionFor(question: Question): Submission {
       { label: pick.direction === 'long' ? '续涨' : '续跌', probability: 70 },
       { label: pick.direction === 'long' ? '回落' : '反弹', probability: 30 },
     ],
+    invalidation: [pick.direction === 'long' ? '收盘跌破止损价' : '收盘站上止损价'],
+    lens_scores:
+      pick.direction === 'long'
+        ? { m5: 2, m15: 2, h1: 2, day: 2 }
+        : { m5: -2, m15: -2, h1: -2, day: -2 },
     comment: 'gold: 事后最优的机械方向答卷。',
   };
 }

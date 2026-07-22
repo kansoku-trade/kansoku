@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { AgentMessage, AgentTool } from '@earendil-works/pi-agent-core';
 import { Type } from 'typebox';
 import type {
+  AiProvenance,
   Annotation,
   ChartDoc,
   CockpitComment,
@@ -11,13 +12,13 @@ import type {
 } from '@kansoku/shared/types';
 import { PROJECT_ROOT } from '../../platform/env.js';
 import { annotationsService } from '../../charts/annotations.service.js';
-import { getProvider } from '../../marketdata/registry.js';
 import { marketOf } from '../../symbols/symbol.utils.js';
 import { easternDate } from '../../marketdata/session.js';
 import { loadChart as defaultLoadChart } from '../../charts/store.js';
 import type { AiAgentFactory } from '../agents/agentSession.js';
 import type { ExecFn } from '../agents/agentTools/execTool.js';
 import { buildResearchTools } from '../agents/agentTools/researchTools.js';
+import { buildHypothesisTools } from '../agents/agentTools/hypothesisTools.js';
 import {
   appendMessages,
   type ChatMessageRow,
@@ -40,7 +41,8 @@ import {
   buildReadDrawingsTool,
   textResult,
 } from '../agents/dataTools.js';
-import { buildReassessPack as defaultBuildReassessPack, type ReassessPack } from '../agents/datapack.js';
+import type { ReassessPack } from '../agents/datapack.js';
+import { resolveSymbolContext } from '../agents/symbolContext.js';
 import { MessagesEngine } from '../conversation/messages/messageEngine.js';
 import { SkillCatalogProvider, toSkillContexts } from '../conversation/messages/sharedProviders.js';
 import type { AiModel } from '../runtime/models.js';
@@ -56,6 +58,7 @@ import {
   DisciplineMissingError,
   loadSharedDiscipline,
 } from '../runtime/promptPolicy.js';
+import { buildProvenance } from '../runtime/provenance.js';
 import { isUsage } from '../runtime/usage.js';
 import {
   type DirectionalVerification,
@@ -304,6 +307,7 @@ function buildTools(
       now: deps.now,
       genId: deps.genId,
     }),
+    ...buildHypothesisTools({ symbol }),
   ];
   // The verification pair only exists on turns where the user actually made a directional claim.
   // Handing it to every turn would train the model to route ordinary questions through a gate
@@ -320,6 +324,7 @@ function prepareTurn(
   deps: ChatDeps,
 ): ConversationPreparedTurn {
   const nowFn = () => (deps.now ? deps.now() : Date.now());
+  let provenance: AiProvenance | undefined;
   return {
     model,
     agentFactory: deps.agentFactory,
@@ -329,15 +334,20 @@ function prepareTurn(
       getSession: () => getSessionByChartId(chartId),
       createSession: (title) => createSession({ chartId, symbol, title }),
       listMessages: (sessionId) => listMessages(sessionId),
-      appendMessages: (sessionId, messages) => appendMessages(sessionId, messages),
+      appendMessages: (sessionId, messages) =>
+        appendMessages(sessionId, messages, undefined, provenance),
     },
     buildTurn: async (activeSessionId) => {
       const listCommentsFn = deps.listComments ?? defaultListComments;
-      const buildPackFn = deps.buildPack ?? defaultBuildReassessPack;
-      const fetchKlineFn =
-        deps.fetchKline ??
-        ((sym, period, count) => getProvider(marketOf(sym)).getKline(sym, period, count));
-      const fetchNewsFn = deps.fetchNews ?? ((sym) => getProvider(marketOf(sym)).getNews(sym));
+      const {
+        buildPack: buildPackFn,
+        fetchKline: fetchKlineFn,
+        fetchNews: fetchNewsFn,
+      } = resolveSymbolContext({
+        buildPack: deps.buildPack,
+        fetchKline: deps.fetchKline,
+        fetchNews: deps.fetchNews,
+      });
       const readAnnotationsFn =
         deps.readAnnotations ?? ((sym) => annotationsService.list({ symbol: sym }));
       const writeAnnotationsFn =
@@ -354,6 +364,7 @@ function prepareTurn(
       const disciplineText =
         deps.disciplineText ?? loadSharedDiscipline(deps.repoRoot ?? PROJECT_ROOT);
       if (!disciplineText) throw new DisciplineMissingError();
+      provenance = buildProvenance(model, CHAT_DIALOG_RULES, disciplineText);
       const systemPrompt = buildChatSystemPrompt(doc, analysisDayComments, disciplineText);
 
       const gated = isDirectionalClaim(text);

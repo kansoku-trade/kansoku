@@ -1,7 +1,35 @@
-import type { IntradayPrediction } from '@kansoku/shared/types';
+import type { IntradayPrediction, LensScores } from '@kansoku/shared/types';
 
 const SCENARIO_SUM_TOLERANCE = 10;
 const MIN_T1_RR = 1;
+const LENS_KEYS = ['m5', 'm15', 'h1', 'day'] as const;
+const MIN_ALIGNED_SUM = 4;
+const MAX_OPPOSING_LENSES = 1;
+
+function validLensScores(scores: LensScores | undefined): scores is LensScores {
+  return (
+    scores != null &&
+    LENS_KEYS.every((key) => {
+      const value = scores[key];
+      return Number.isInteger(value) && value >= -5 && value <= 5;
+    })
+  );
+}
+
+export function lensResonance(
+  scores: LensScores,
+  direction: 'long' | 'short',
+): { alignedSum: number; opposing: number } {
+  const sign = direction === 'long' ? 1 : -1;
+  let alignedSum = 0;
+  let opposing = 0;
+  for (const key of LENS_KEYS) {
+    const aligned = scores[key] * sign;
+    alignedSum += aligned;
+    if (aligned <= -1) opposing += 1;
+  }
+  return { alignedSum, opposing };
+}
 
 function resolveTarget(
   entry: number,
@@ -42,6 +70,24 @@ export function validatePrediction(prediction: IntradayPrediction): string[] {
     }
   }
 
+  const falsifiers = (prediction.invalidation ?? []).filter(
+    (item) => typeof item === 'string' && item.trim().length > 0,
+  );
+  if (falsifiers.length === 0) {
+    issues.push(
+      'invalidation 必填——写明什么条件会证伪这个论点（跌破某价、结构破坏、事件落地等），至少一条，空字符串不算',
+    );
+  }
+
+  const scores = prediction.lens_scores;
+  if (scores == null) {
+    issues.push(
+      'lens_scores 必填——m5 / m15 / h1 / day 各给一个 −5（强烈看空）到 +5（强烈看多）的整数分，0 表示该周期无信号',
+    );
+  } else if (!validLensScores(scores)) {
+    issues.push('lens_scores 每项必须是 −5 到 +5 的整数');
+  }
+
   if (direction !== 'long' && direction !== 'short' && direction !== 'neutral') {
     issues.push('direction 必须是 long / short / neutral');
     return issues;
@@ -67,6 +113,18 @@ export function validatePrediction(prediction: IntradayPrediction): string[] {
   }
 
   if (direction === 'long' || direction === 'short') {
+    if (validLensScores(scores)) {
+      const { alignedSum, opposing } = lensResonance(scores, direction);
+      if (alignedSum <= 0) {
+        issues.push(
+          `方向与镜头分自相矛盾——direction 为 ${direction} 但四镜头按方向折算合计 ${alignedSum} ≤ 0，先把分析理顺再提交`,
+        );
+      } else if (alignedSum < MIN_ALIGNED_SUM || opposing > MAX_OPPOSING_LENSES) {
+        issues.push(
+          `多镜头共振不足——按方向折算合计 ${alignedSum}（需 ≥ ${MIN_ALIGNED_SUM}），反向镜头 ${opposing} 个（最多 ${MAX_OPPOSING_LENSES} 个）；要么转 neutral 观望，要么重做分析`,
+        );
+      }
+    }
     if (!plan) {
       issues.push('long / short 必须给出 entry_plan（入场、止损、目标）');
       return issues;

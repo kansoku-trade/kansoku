@@ -1,6 +1,7 @@
 import type { AgentMessage } from '@earendil-works/pi-agent-core';
 import { asc, eq, type AnyColumn } from 'drizzle-orm';
 import type { SQLiteTable } from 'drizzle-orm/sqlite-core';
+import type { AiProvenance } from '@kansoku/shared/types';
 import { getDb, type Db } from '../../db/index.js';
 import { chatMessages } from '../../db/schema.js';
 import { nextSnowflake } from '../../db/snowflake.js';
@@ -11,6 +12,9 @@ export interface ConversationMessageRow {
   ts: string;
   role: string;
   payload: AgentMessage;
+  provider?: string | null;
+  model?: string | null;
+  promptVersion?: string | null;
 }
 
 export function titleFromText(text: string): string {
@@ -36,7 +40,12 @@ export interface ConversationStore<TSession extends ConversationSessionBase, TIn
   getSessionByKey(key: string, db?: Db): Promise<TSession | null>;
   createSession(input: TInput, db?: Db): Promise<TSession>;
   listMessages(sessionId: string, db?: Db): Promise<ConversationMessageRow[]>;
-  appendMessages(sessionId: string, messages: AgentMessage[], db?: Db): Promise<void>;
+  appendMessages(
+    sessionId: string,
+    messages: AgentMessage[],
+    db?: Db,
+    provenance?: AiProvenance,
+  ): Promise<void>;
 }
 
 export function createConversationStore<TSession extends ConversationSessionBase, TInput>(
@@ -74,13 +83,27 @@ export function createConversationStore<TSession extends ConversationSessionBase
     sessionId: string,
     messages: AgentMessage[],
     db: Db = getDb(),
+    provenance?: AiProvenance,
   ): Promise<void> {
     if (messages.length === 0) return;
     const now = new Date().toISOString();
     db.transaction((tx) => {
       for (const message of messages) {
         tx.insert(chatMessages)
-          .values({ id: nextSnowflake(), sessionId, ts: now, role: message.role, payload: message })
+          .values({
+            id: nextSnowflake(),
+            sessionId,
+            ts: now,
+            role: message.role,
+            payload: message,
+            ...(provenance && message.role === 'assistant'
+              ? {
+                  provider: provenance.provider,
+                  model: provenance.model,
+                  promptVersion: provenance.promptVersion,
+                }
+              : {}),
+          })
           .run();
       }
       tx.update(config.sessionTable)

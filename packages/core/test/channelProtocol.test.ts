@@ -228,6 +228,7 @@ function makePack(): ReassessPack {
     news: [],
     prediction: null,
     prediction_chart_id: null,
+    hypotheses: [],
     position: null,
   };
 }

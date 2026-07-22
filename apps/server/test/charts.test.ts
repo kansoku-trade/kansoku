@@ -108,6 +108,8 @@ describe('PATCH /:id prediction_updated_at', () => {
         { label: '上破', probability: 40 },
         { label: '下破', probability: 60 },
       ],
+      invalidation: ['站上 103 且不回落'],
+      lens_scores: { m5: -2, m15: -3, h1: -2, day: 0 },
     };
     build.rebuild.mockReturnValue({
       type: 'intraday',
@@ -215,6 +217,8 @@ describe('POST / prediction validation', () => {
       { label: '上破', probability: 60 },
       { label: '下破', probability: 40 },
     ],
+    invalidation: ['跌破 97 且收不回来'],
+    lens_scores: { m5: 2, m15: 3, h1: 2, day: 1 },
   };
 
   it('rejects an intraday prediction with a T1 R/R below 1:1', async () => {
@@ -283,6 +287,8 @@ describe('PATCH /:id prediction validation', () => {
       { label: '上破', probability: 60 },
       { label: '下破', probability: 40 },
     ],
+    invalidation: ['跌破 97 且收不回来'],
+    lens_scores: { m5: 2, m15: 3, h1: 2, day: 1 },
   };
 
   it('rejects a PATCH with an invalid prediction', async () => {

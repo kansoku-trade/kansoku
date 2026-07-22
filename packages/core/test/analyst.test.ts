@@ -31,6 +31,7 @@ function makePack(overrides: Partial<ReassessPack> = {}): ReassessPack {
     news: [],
     prediction: null,
     prediction_chart_id: null,
+    hypotheses: [],
     position: null,
     ...overrides,
   };
@@ -168,6 +169,8 @@ const validPrediction = {
     { label: '震荡', probability: 30 },
     { label: '下破', probability: 20 },
   ],
+  invalidation: ['跌破 97 且 m15 收不回来'],
+  lens_scores: { m5: 2, m15: 3, h1: 2, day: 1 },
   comment: '多头结构完好，站上 100 看 104。',
 };
 
@@ -218,6 +221,56 @@ describe('analyst tools', () => {
     expect(analyst).toHaveLength(1);
     expect(analyst[0].chartId).toBe('chart-new');
     expect(analyst[0].text).toContain('多头结构');
+  });
+
+  it('books an open run card on the hypothesis when the submission references one', async () => {
+    const cards: [string, Record<string, unknown>][] = [];
+    const { deps } = harness(async (tools) => {
+      await tool(tools, 'submit_prediction').execute('c1', {
+        ...validPrediction,
+        hypothesis_id: 'h-9',
+      });
+    });
+    deps.appendHypothesisRunCard = async (id, card) => {
+      cards.push([id, card as Record<string, unknown>]);
+    };
+    await executeAnalystRun('MU.US', deps);
+    expect(cards).toHaveLength(1);
+    expect(cards[0][0]).toBe('h-9');
+    expect(cards[0][1]).toMatchObject({ kind: 'prediction', ref: 'chart-new', outcome: 'open' });
+  });
+
+  it('fires the aggregator after a successful submission, not after a failed run', async () => {
+    const calls: { symbol: string; chartId: string | null }[] = [];
+    const { deps } = harness(async (tools) => {
+      await tool(tools, 'submit_prediction').execute('c1', validPrediction);
+    });
+    deps.runAggregator = (input) => calls.push(input);
+    await executeAnalystRun('MU.US', deps);
+    expect(calls).toEqual([{ symbol: 'MU.US', chartId: 'chart-new' }]);
+
+    const idle: { symbol: string; chartId: string | null }[] = [];
+    const { deps: neverSubmits } = harness(async () => {});
+    neverSubmits.runAggregator = (input) => idle.push(input);
+    await executeAnalystRun('MU.US', neverSubmits);
+    expect(idle).toEqual([]);
+  });
+
+  it('stamps ai provenance on the submitted prediction and its comment', async () => {
+    const { deps, comments, createCalls } = harness(async (tools) => {
+      await tool(tools, 'submit_prediction').execute('c1', validPrediction);
+    });
+    await executeAnalystRun('MU.US', deps);
+
+    const prediction = createCalls[0].prediction as {
+      provenance?: { provider: string; model: string; promptVersion: string };
+    };
+    expect(prediction.provenance?.provider).toBe('anthropic');
+    expect(prediction.provenance?.model).toBe('claude-haiku-4-5');
+    expect(prediction.provenance?.promptVersion).toMatch(/^[\da-f]{12}$/);
+
+    const analyst = comments.find((c) => c.source === 'analyst');
+    expect(analyst?.provenance).toEqual(prediction.provenance);
   });
 
   it('append_comment persists an analyst comment carrying the current chartId', async () => {
@@ -386,6 +439,18 @@ describe('buildJournalTool', () => {
     const journal = buildJournalTool('MU.US', dir, now);
     const res = await journal.execute('c1', { content: '   ' });
     expect((res.content[0] as { text: string }).text).toContain('rejected');
+  });
+
+  it('redacts secrets before persisting', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'journal-test-'));
+    const journal = buildJournalTool('MU.US', dir, now);
+    await journal.execute('c1', {
+      content: '## 复盘\nLONGPORT_ACCESS_TOKEN=abcdef1234567890\n止损 97，看 104。',
+    });
+    const file = readFileSync(join(dir, '2026-07-13-MU-intraday.md'), 'utf8');
+    expect(file).toContain('LONGPORT_ACCESS_TOKEN=[REDACTED]');
+    expect(file).not.toContain('abcdef1234567890');
+    expect(file).toContain('止损 97，看 104。');
   });
 });
 

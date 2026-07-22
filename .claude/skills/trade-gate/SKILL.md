@@ -122,7 +122,12 @@ description: >
 
 输出必须包含：六层分项得分（硬门用 pass/fail，软分用数字）、判定、每项依据的
 关键数据（带 `source` + `at`，即 `key_data`）、若 `buy_staged` 则附
-`plan`（止损、机械减仓规则、名义上限、建议的分批节奏）。然后落盘（见 Step 4）。
+`plan`（止损、机械减仓规则、名义上限、建议的分批节奏）。
+
+**`killSwitch` 必填**：无论判定是什么（含否决），都要写下至少一条"什么情况一旦
+发生，这个判定就不再成立"的具体条件（价格、结构、事件），这是 AI 对自己判定的
+证伪条件，跟 ② 层用户写的 `falsifier` 是两回事，用户拒写 `falsifier` 也不能免掉
+`killSwitch`。然后落盘（见 Step 4）。
 
 ## Step 2 — 卖出触发器
 
@@ -182,7 +187,9 @@ description: >
 "为什么是这个判定"，而不是套死板算式（卖出端本来就是复用用户已有规则，不
 新增打分体系）。
 
-落盘见 Step 4。
+卖出判定同样 **`killSwitch` 必填**：写下至少一条会推翻本次判定的具体条件
+（比如 `hold` 判定写"SMH 收盘跌破 $560 则改判"，`blocked_by_flush` 写"三取二
+洗净后重跑"）。落盘见 Step 4。
 
 ## Step 3 — 巡检模式
 
@@ -191,7 +198,8 @@ description: >
 1. 拉 `longbridge positions --format json` 取全部持仓。
 2. 先跑一次 Step 2 第 4 项（爆仓潮检查）——这是全局性判据，只需要查一次，
    所有持仓共用同一份结果。
-3. 对每个持仓分别跑 Step 2 的第 1–3 项，得到各自的 `triggers` + `verdict`。
+3. 对每个持仓分别跑 Step 2 的第 1–3 项，得到各自的 `triggers` + `verdict` +
+   `killSwitch`（每个持仓的判定各写各的失效条件）。
 4. 输出一张汇总表：每个持仓 × 每组触发器的状态（未触发 / 触发 / 数据未获取
    到），触发项展开说明；顶部先亮出爆仓潮检查的全局结论。
 5. 落盘一条 `action: "patrol"` 记录（结构见 schema.md，`flush_check` 在顶层，
@@ -215,6 +223,10 @@ journal/decisions/YYYY-MM-DD-patrol.json
 同日同票第二次决策，文件名追加序号（`-2`，然后 `-3`……），永远不覆盖已有
 文件。`executed` / `violation` 两个字段决策当下一律写 `null`，由 Step 5 的
 核对逻辑回填。
+
+落盘内容（含 `key_data.fact`、`thesis`、`emotion` 等自由文本）**永远不得包含
+API key、token、密码或账号原文**——引用数据来源写工具名（如 `longbridge
+positions`），不要把凭证或账号号码抄进记录。
 
 ## Step 5 — 执行核对（不靠自觉汇报）
 
@@ -242,6 +254,9 @@ journal/decisions/YYYY-MM-DD-patrol.json
 3. 对每条记录的 `symbol` 调 `longbridge-profit-analysis` 取已实现/未实现盈亏。
 4. 输出：违规笔数、违规合计盈亏；守规笔数（`executed: true, violation: false`）
    合计盈亏；两者对比结论（比如"违规的那几笔平均亏 X%，守规的平均赚 Y%"）。
+5. 带 `hypothesisId` 的记录另按 thesis 分组：每个假设各算一组执行/违规/盈亏，
+   顺带把结果作为一张 `trade_gate` 对账卡（`POST /api/hypotheses/<id>/run-cards`
+   或直接说给用户）关联回该假设。
 
 阶段一由 Claude 现场读 JSON 现算，不写统计脚本；如果将来 JSON 文件多到现算
 吃力，再补一个 stdlib-only 的统计脚本（不在本次范围内）。
@@ -262,6 +277,8 @@ journal/decisions/YYYY-MM-DD-patrol.json
 
 - ❌ 能力圈笔记不存在时跳过硬门直接打分——必须先终止并建议跑 `stock-deep-dive`
 - ❌ 拿不到长桥数据时用记忆/猜测填 `key_data`，而不是老实写"数据未获取到"
+- ❌ `killSwitch` 留空、写空话（"情况变化再看"），或把用户的 `falsifier` 原样
+  抄进去充数
 - ❌ 爆仓潮未洗净时仍然给出 `exit`/`trim` 判定——反向保护必须覆盖其他触发器
 - ❌ 询问用户持仓/现金/成本价——直接查长桥（`longbridge-positions` /
   `longbridge-portfolio`）

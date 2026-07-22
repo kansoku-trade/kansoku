@@ -51,6 +51,17 @@ function toComment(row: typeof comments.$inferSelect): CockpitComment {
     source: row.source as CommentSource,
     ...(row.escalated != null ? { escalated: row.escalated } : {}),
     ...(row.chartId != null ? { chartId: row.chartId } : {}),
+    ...(row.provider != null && row.model != null && row.promptVersion != null
+      ? {
+          provenance: {
+            provider: row.provider,
+            model: row.model,
+            promptVersion: row.promptVersion,
+          },
+        }
+      : {}),
+    ...(row.verdict != null ? { verdict: row.verdict as CockpitComment['verdict'] } : {}),
+    ...(row.resonance != null ? { resonance: row.resonance } : {}),
   };
 }
 
@@ -124,6 +135,11 @@ export async function appendComment(comment: CockpitComment, db: Db = getDb()): 
     source: comment.source,
     escalated: comment.escalated ?? null,
     chartId: comment.chartId ?? null,
+    provider: comment.provenance?.provider ?? null,
+    model: comment.provenance?.model ?? null,
+    promptVersion: comment.provenance?.promptVersion ?? null,
+    verdict: comment.verdict ?? null,
+    resonance: comment.resonance ?? null,
   });
   broadcast(comment);
 }

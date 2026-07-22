@@ -68,6 +68,8 @@ const answer: EpisodeAnswer = {
       target1: 361,
       rationale: '日线与周线共同转弱。',
     },
+    invalidation: ['h1 收盘站上 389.2'],
+    lens_scores: { m5: -2, m15: -2, h1: -2, day: 0 },
     scenarios: [
       { label: '下跌', probability: 60 },
       { label: '反弹', probability: 40 },

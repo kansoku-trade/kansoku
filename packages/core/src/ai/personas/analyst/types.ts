@@ -17,6 +17,8 @@ export interface AnalystDeps {
   fetchKline?: (symbol: string, period: string, count: number) => Promise<RawBar[]>;
   createChart?: CreateChart;
   appendComment?: (comment: CockpitComment) => Promise<void>;
+  runAggregator?: (input: { symbol: string; chartId: string | null }) => void;
+  appendHypothesisRunCard?: (id: string, card: Record<string, unknown>) => Promise<void>;
   timeoutMs?: number;
   now?: () => number;
   origin?: AnalystOrigin;

@@ -4,6 +4,7 @@ import type {
   CockpitComment,
   CockpitPosition,
   FlowRow,
+  Hypothesis,
   IntradayDayContext,
   IntradayEventRisk,
   IntradayOptionsLevels,
@@ -28,6 +29,7 @@ import {
 import { lastVwap, sessionVwap } from '../../analysis/vwap.js';
 import { macd } from '../../analysis/indicators.js';
 import { getEventRisk } from '../../marketdata/events.js';
+import { listHypotheses as defaultListHypotheses } from '../../journal/hypotheses.js';
 import { coerceIntradayTimeframe } from '../../analysis/intraday/timeframe.js';
 import { computeRelativeVolume } from '../../analysis/relvol.js';
 import { readActiveLessons } from './lessons.js';
@@ -65,6 +67,7 @@ export interface DatapackDeps {
   fetchOptionsLevels: (symbol: string) => Promise<IntradayOptionsLevels | null>;
   fetchEventRisk: (symbol: string) => Promise<IntradayEventRisk | null>;
   readLessons: () => Promise<string[]>;
+  listHypotheses: () => Promise<Hypothesis[]>;
   now: () => Date;
 }
 
@@ -88,6 +91,7 @@ export const defaultDatapackDeps: DatapackDeps = {
   },
   fetchEventRisk: getEventRisk,
   readLessons: readActiveLessons,
+  listHypotheses: defaultListHypotheses,
   now: () => new Date(),
 };
 
@@ -138,6 +142,7 @@ export interface ReassessPack {
   prediction: IntradayPrediction | null;
   prediction_chart_id: string | null;
   position: CockpitPosition | null;
+  hypotheses: { id: string; thesis: string; invalidation_notes: string[] }[];
 }
 
 export async function findTodayLatestIntradayDoc(
@@ -274,6 +279,7 @@ export async function buildReassessPack(
     optionsLevels,
     eventRisk,
     lessons,
+    allHypotheses,
   ] = await Promise.all([
     Promise.all(REASSESS_TIMEFRAMES.map((tf) => deps.fetchKline(symbol, tf.period, KLINE_COUNT))),
     deps.fetchFlow(symbol),
@@ -287,6 +293,7 @@ export async function buildReassessPack(
     deps.fetchOptionsLevels(symbol).catch(() => null),
     deps.fetchEventRisk(symbol).catch(() => null),
     deps.readLessons().catch(() => [] as string[]),
+    deps.listHypotheses().catch(() => [] as Hypothesis[]),
   ]);
 
   const timeframes = {} as Record<TimeframeKey, ReassessTimeframe>;
@@ -333,6 +340,9 @@ export async function buildReassessPack(
     prediction,
     prediction_chart_id: doc?.id ?? null,
     position,
+    hypotheses: allHypotheses
+      .filter((h) => h.status === 'active' && (!h.symbol || h.symbol === symbol))
+      .map(({ id, thesis, invalidation_notes }) => ({ id, thesis, invalidation_notes })),
   };
 }
 

@@ -106,6 +106,7 @@ function makeDeps(overrides: Partial<DatapackDeps> = {}): DatapackDeps {
     fetchOptionsLevels: async () => null,
     fetchEventRisk: async () => null,
     readLessons: async () => [],
+    listHypotheses: async () => [],
     now: () => NOW,
     ...overrides,
   };
@@ -298,6 +299,34 @@ describe('buildCommentPack', () => {
 });
 
 describe('buildReassessPack', () => {
+  it('injects active hypotheses for this symbol and symbol-less ones only', async () => {
+    const hypothesis = (over: Record<string, unknown>) => ({
+      id: 'h-x',
+      thesis: 't',
+      status: 'active',
+      invalidation_notes: ['n'],
+      run_cards: [],
+      createdAt: '2026-07-01T00:00:00.000Z',
+      updatedAt: '2026-07-01T00:00:00.000Z',
+      ...over,
+    });
+    const deps = makeDeps({
+      listHypotheses: async () => [
+        hypothesis({ id: 'h-mine', symbol: 'MU.US', thesis: 'HBM 短缺' }),
+        hypothesis({ id: 'h-global', thesis: '流动性宽松' }),
+        hypothesis({ id: 'h-other', symbol: 'NVDA.US' }),
+        hypothesis({ id: 'h-dead', symbol: 'MU.US', status: 'invalidated' }),
+      ] as never,
+    });
+    const pack = await buildReassessPack('MU.US', deps);
+    expect(pack.hypotheses.map((h) => h.id)).toEqual(['h-mine', 'h-global']);
+    expect(pack.hypotheses[0]).toEqual({
+      id: 'h-mine',
+      thesis: 'HBM 短缺',
+      invalidation_notes: ['n'],
+    });
+  });
+
   it('assembles m5/m15/h1 bars + indicators, flow, full prediction, position', async () => {
     const positions: RawPosition[] = [
       {

@@ -91,6 +91,38 @@ describe('assistant chat', () => {
     expect(messages.map((row) => row.role)).toEqual(['user', 'assistant']);
   });
 
+  it('stamps ai provenance on persisted assistant rows only', async () => {
+    const session = await createAssistantSession({ title: '新对话' }, db);
+    const factory: AiAgentFactory = (config) => {
+      const state = { messages: [...(config.messages ?? [])] };
+      return {
+        prompt: async (text) => {
+          state.messages.push({ role: 'user', content: text, timestamp: Date.now() });
+          state.messages.push(assistant('你好，我是助手。'));
+        },
+        abort: () => undefined,
+        state,
+      };
+    };
+
+    const result = await runAssistantChatTurn(session.id, '你好', {
+      model,
+      rootDir: root,
+      db,
+      agentFactory: factory,
+      disciplineText: '# trading-discipline\n测试纪律。',
+    });
+    expect(result.started).toBe(true);
+    if (result.started) await result.done;
+
+    const messages = await listAssistantMessages(session.id, db);
+    const assistantRow = messages.find((row) => row.role === 'assistant');
+    expect(assistantRow?.provider).toBe('anthropic');
+    expect(assistantRow?.model).toBe('test-model');
+    expect(assistantRow?.promptVersion).toMatch(/^[\da-f]{12}$/);
+    expect(messages.find((row) => row.role === 'user')?.provider).toBeNull();
+  });
+
   it('rejects when no model is configured', async () => {
     const session = await createAssistantSession({ title: '新对话' }, db);
     const result = await runAssistantChatTurn(session.id, '你好', {
@@ -240,9 +272,11 @@ describe('assistant chat', () => {
     expect([...capturedToolNames].sort()).toEqual(
       [
         'bash',
+        'list_hypotheses',
         'read_file',
         'read_research_document',
         'read_skill',
+        'register_hypothesis',
         'search_research_documents',
       ].sort(),
     );

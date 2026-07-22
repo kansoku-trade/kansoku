@@ -15,10 +15,11 @@ const lazy5 = () => import("./pages/logs")
 const lazy6 = () => import("./pages/overview")
 const lazy7 = () => import("./pages/popout/symbol/[sym]")
 const lazy8 = () => import("./pages/research/assistant")
-const lazy9 = () => import("./pages/research/index")
-const lazy10 = () => import("./pages/settings")
-const lazy11 = () => import("./pages/symbol/[sym]")
-const lazy12 = () => import("./pages/index")
+const lazy9 = () => import("./pages/research/hypotheses")
+const lazy10 = () => import("./pages/research/index")
+const lazy11 = () => import("./pages/settings")
+const lazy12 = () => import("./pages/symbol/[sym]")
+const lazy13 = () => import("./pages/index")
 
 // Generated route configuration
 export const routes: RouteObject[] = [
@@ -77,27 +78,31 @@ export const routes: RouteObject[] = [
         "lazy": lazy8
       },
       {
-        "path": "",
+        "path": "hypotheses",
         "lazy": lazy9
+      },
+      {
+        "path": "",
+        "lazy": lazy10
       }
     ]
   },
   {
     "path": "settings",
-    "lazy": lazy10
+    "lazy": lazy11
   },
   {
     "path": "symbol",
     "children": [
       {
         "path": ":sym",
-        "lazy": lazy11
+        "lazy": lazy12
       }
     ]
   },
   {
     "path": "",
-    "lazy": lazy12
+    "lazy": lazy13
   }
 ]
 

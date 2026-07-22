@@ -1,4 +1,5 @@
 import type { AgentMessage } from '@earendil-works/pi-agent-core';
+import type { AiProvenance } from '@kansoku/shared/types';
 import { desc, eq } from 'drizzle-orm';
 import { getDb, type Db } from '../../db/index.js';
 import { assistantSessions, chatMessages } from '../../db/schema.js';
@@ -44,8 +45,9 @@ export function appendAssistantMessages(
   sessionId: string,
   messages: AgentMessage[],
   db?: Db,
+  provenance?: AiProvenance,
 ): Promise<void> {
-  return store.appendMessages(sessionId, messages, db);
+  return store.appendMessages(sessionId, messages, db, provenance);
 }
 
 export function listAssistantSessions(db: Db = getDb()): Promise<AssistantSession[]> {

@@ -30,6 +30,70 @@ describe('outcome cache', () => {
     expect(map.get('c3')).toBeUndefined();
   });
 
+  it('appends a hypothesis run card once when the settled prediction references one', async () => {
+    const db = createDb(':memory:');
+    const cards: [string, Record<string, unknown>][] = [];
+    const hooks = {
+      loadChart: async () =>
+        ({
+          id: 'c1',
+          built: {
+            kind: 'intraday',
+            sidebar: { prediction: { direction: 'long', hypothesis_id: 'h-1' } },
+          },
+          input: {},
+        }) as never,
+      appendRunCard: async (id: string, card: Record<string, unknown>) => {
+        cards.push([id, card]);
+        return {} as never;
+      },
+    };
+    await saveResolvedOutcome(
+      { chartId: 'c1', symbol: 'MU.US', direction: 'long' },
+      outcome('hit_target', 4.2),
+      db,
+      hooks,
+    );
+    expect(cards).toHaveLength(1);
+    expect(cards[0][0]).toBe('h-1');
+    expect(cards[0][1]).toMatchObject({ kind: 'prediction', ref: 'c1', outcome: 'support' });
+
+    await saveResolvedOutcome(
+      { chartId: 'c1', symbol: 'MU.US', direction: 'long' },
+      outcome('hit_target', 4.2),
+      db,
+      hooks,
+    );
+    expect(cards).toHaveLength(1);
+  });
+
+  it('maps a losing settlement to an against run card', async () => {
+    const db = createDb(':memory:');
+    const cards: Record<string, unknown>[] = [];
+    const hooks = {
+      loadChart: async () =>
+        ({
+          id: 'c2',
+          built: {
+            kind: 'intraday',
+            sidebar: { prediction: { direction: 'short', hypothesis_id: 'h-2' } },
+          },
+          input: {},
+        }) as never,
+      appendRunCard: async (_id: string, card: Record<string, unknown>) => {
+        cards.push(card);
+        return {} as never;
+      },
+    };
+    await saveResolvedOutcome(
+      { chartId: 'c2', symbol: 'MU.US', direction: 'short' },
+      outcome('hit_stop', -2),
+      db,
+      hooks,
+    );
+    expect(cards[0]).toMatchObject({ kind: 'prediction', outcome: 'against' });
+  });
+
   it('refuses to store open outcomes', async () => {
     const db = createDb(':memory:');
     await saveResolvedOutcome(

@@ -21,6 +21,7 @@ const pack: ReassessPack = {
   news: [],
   prediction: null,
   prediction_chart_id: null,
+  hypotheses: [],
   position: null,
 };
 

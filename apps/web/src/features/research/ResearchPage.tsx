@@ -256,7 +256,8 @@ export function ResearchPage() {
           <div>
             <h1>研究库</h1>
             <p>
-              {stockCount} 篇股票档案 · {journalCount} 篇研究日志
+              {stockCount} 篇股票档案 · {journalCount} 篇研究日志 ·{' '}
+              <a href="/research/hypotheses">我的假设</a>
             </p>
           </div>
         </div>

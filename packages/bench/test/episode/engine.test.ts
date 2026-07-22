@@ -55,6 +55,9 @@ function prediction(
       { label: '主情景', probability: 60 },
       { label: '反向情景', probability: 40 },
     ],
+    invalidation: ['收盘越过止损价'],
+    lens_scores:
+      direction === 'long' ? { m5: 2, m15: 2, h1: 2, day: 0 } : { m5: -2, m15: -2, h1: -2, day: 0 },
     decision_reason: { category: 'breakout', summary: '价格突破关键结构，按计划入场。' },
     comment: '测试交易计划',
   };
@@ -68,6 +71,8 @@ function neutral(): Submission {
       { label: '区间', probability: 60 },
       { label: '突破', probability: 40 },
     ],
+    invalidation: ['放量突破区间并站稳'],
+    lens_scores: { m5: 0, m15: 0, h1: 0, day: 0 },
     decision_reason: { category: 'no_setup', summary: '当前没有满足风险收益要求的机会。' },
     comment: '继续观察',
   };

@@ -20,6 +20,9 @@ journal/decisions/YYYY-MM-DD-patrol.json
 | `key_data`  | array           | 支撑判定的关键数据点，见下方「key_data 元素」                                                                  |
 | `executed`  | boolean \| null | 执行核对结果，决策当下永远是 `null`，由下次运行时回填；仅适用于 buy 和 sell 记录                               |
 | `violation` | boolean \| null | 违规判定，决策当下永远是 `null`，由下次运行时回填；仅适用于 buy 和 sell 记录（巡检不是一次决策，没有对应成交） |
+| `killSwitch` | array of string | **必填，至少一条。** AI 给本次 `verdict` 写的失效条件：什么情况一旦发生，这个判定就不再成立、必须重新跑一遍关卡。每条要具体可查验（价格、结构、事件），空话（"情况变化再看"）不算。跟着 `verdict` 走：buy/sell 记录写在顶层，patrol 记录写在每个 `positions[]` 元素里。注意与 `falsifier` 的分工——`falsifier` 是用户对自己论点的证伪条件，用户拒写时可以为空；`killSwitch` 是 AI 对自己判定的证伪条件，永远不能为空，也不能拿 `falsifier` 原样充数 |
+| `model`     | string \| null  | 做出本次判定的模型标识（如 `claude-fable-5`），落盘时填写，供换模型后回看哪个模型做的判定。能确定就写，确定不了写 `null`，禁止猜测 |
+| `hypothesisId` | string \| null | 可选。本次决策在验证的假设 id（`journal/hypotheses/<id>.json`，研究库「我的假设」页登记）。填了它，违规账单就能按 thesis 分组算胜率；这笔决策与哪个论点无关就写 `null` |
 
 ### key_data 元素
 
@@ -53,6 +56,8 @@ journal/decisions/YYYY-MM-DD-patrol.json
       "at": "2026-07-14T09:30:00-04:00"
     }
   ],
+  "killSwitch": ["MU 收盘跌破 $138（20日均线）", "周期见顶清单触发数从 1 升到 3"],
+  "model": "claude-fable-5",
   "plan": {
     "stop": 58.5,
     "trim_rule": "跌破止损减半，反抽不站上前低清仓",
@@ -126,6 +131,8 @@ journal/decisions/YYYY-MM-DD-patrol.json
       "at": "2026-07-14T21:00:00+09:00"
     }
   ],
+  "killSwitch": ["三取二洗净条件满足（cleared_count ≥ 2）", "SMH 收盘跌破 $560 触发持有计划 B 线"],
+  "model": "claude-fable-5",
   "plan": {
     "stop": null,
     "trim_rule": "洗净后再执行既定减仓比例",
@@ -190,6 +197,7 @@ journal/decisions/YYYY-MM-DD-patrol.json
 {
   "action": "patrol",
   "date": "2026-07-14",
+  "model": "claude-fable-5",
   "flush_check": {
     "in_unclean_flush": true,
     "criteria": {
@@ -225,7 +233,8 @@ journal/decisions/YYYY-MM-DD-patrol.json
           "position_imbalance": "问句"
         }
       },
-      "verdict": "blocked_by_flush"
+      "verdict": "blocked_by_flush",
+      "killSwitch": ["三取二洗净条件满足（cleared_count ≥ 2）后重跑卖出触发器"]
     }
   ]
 }

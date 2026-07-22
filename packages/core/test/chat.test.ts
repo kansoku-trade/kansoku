@@ -236,6 +236,8 @@ describe('runChatTurn tools', () => {
       'fetch_news',
       'read_drawings',
       'draw_annotations',
+      'list_hypotheses',
+      'register_hypothesis',
       'read_skill',
       'bash',
       'read_file',
@@ -376,6 +378,33 @@ describe('runChatTurn persistence', () => {
     expect(rows.map((r) => r.role)).toEqual(['user', 'assistant', 'toolResult']);
     expect(rows[1].payload).toEqual(reply);
     expect(rows[2].payload).toEqual(toolResult);
+  });
+
+  it('stamps ai provenance on persisted assistant rows only', async () => {
+    const chartId = 'persist-prov';
+    const reply = assistantMessage('答案');
+    const factory: AiAgentFactory = (config) => ({
+      prompt: async () => {},
+      abort: () => {},
+      state: {
+        messages: [
+          ...(config.messages ?? []),
+          { role: 'user', content: '问题', timestamp: 0 },
+          reply,
+        ],
+      },
+    });
+
+    const result = await runChatTurn(chartId, '问题', baseDeps({ agentFactory: factory }));
+    expect(result.started).toBe(true);
+    if (result.started) await result.done;
+
+    const rows = await expectSessionRows(chartId);
+    expect(rows.map((r) => r.role)).toEqual(['user', 'assistant']);
+    expect(rows[1].provider).toBe('anthropic');
+    expect(rows[1].model).toBe('claude-haiku-4-5');
+    expect(rows[1].promptVersion).toMatch(/^[\da-f]{12}$/);
+    expect(rows[0].provider).toBeNull();
   });
 
   it('replays prior session history excluding the newly-persisted user row, and forwards the prompt text', async () => {

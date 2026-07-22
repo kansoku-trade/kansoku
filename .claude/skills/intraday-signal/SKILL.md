@@ -187,10 +187,20 @@ timeframe data + Step 3's numbers, decide:
    the dashboard's default tab. Anchor on m5 only for a pure scalp call, on h1
    only for a swing-level statement. Align `anchor.time` to a bar boundary of its
    timeframe (m15 → :00/:15/:30/:45).
+   - **Lens scores（多镜头打分，必填）** — `lens_scores`: m5 / m15 / h1 / day
+     各给一个 −5（强烈看空）到 +5（强烈看多）的整数分，0 = 该周期无信号。
+     这是把上面周期分工的读数变成可对账的数字。服务端机械把关：方向单要求
+     按方向折算合计 ≥ 4 且反向镜头至多 1 个，否则拒收并要求转 neutral；
+     分数与方向自相矛盾（折算合计 ≤ 0）同样拒收。观望不受共振门槛约束，
+     但分数照填，作为当时读数的存档。
 2. **Scenarios** — 2 to 4, by real structure（通常是上破/震荡/下破三个，不要为
    凑数硬编一个 5% 的情景）, probabilities summing to ~100%, each with a `path`
    (what the K-line likely does) and a `trigger` (what confirms it). Reuse the
    3-scenario discipline from `market-session-tracker` (Bull/Base/Bear-style).
+   - **Invalidation（证伪条件，必填）** — `invalidation`: 1–4 条"什么条件一旦
+     发生即证伪本论点"，每条落在具体可查验的价位/结构/事件上（如"跌破 97 且
+     m15 收不回来"），价位类条件应与止损/箱体边界的数值互相呼应。服务端拒收
+     空列表——写不出证伪条件的论点是不可对账的空话。
 3. **Range-bound playbook** — if one scenario is "震荡/oscillating", fill
    `range_bound_plan` with an explicit tactic for **both** directions (`long_tactic`
    and `short_tactic`) — never describe only one side of a two-sided range.
@@ -270,7 +280,7 @@ call (see `chart` skill's `prediction` / `context` schemas for the full shapes):
 curl -s -X PATCH http://localhost:5199/api/charts/ \
   'Content-Type: application/json' \
   -d '{
-    "prediction": { "direction": "short", "anchor": {"timeframe":"m15","time":"2026-07-06T14:15:00Z","price":61.10}, "scenarios": [ ... ] },
+    "prediction": { "direction": "short", "anchor": {"timeframe":"m15","time":"2026-07-06T14:15:00Z","price":61.10}, "scenarios": [ ... ], "invalidation": ["反弹站上 61.80 且 m15 收盘不回落"], "lens_scores": {"m5":-2,"m15":-3,"h1":-2,"day":0} },
     "context": {
       "generated_at": "2026-07-06T14:30:00Z",
       "conclusion": { "stance": "short", "summary": "一句话综合判断", "action": "现在该做什么" },

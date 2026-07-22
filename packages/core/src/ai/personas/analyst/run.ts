@@ -1,6 +1,5 @@
 import type { ReassessPhase, ReassessResult } from '../../../contract/symbols.js';
 import { JOURNAL_DIR, PROJECT_ROOT, skillSearchDirs } from '../../../platform/env.js';
-import { getProvider } from '../../../marketdata/registry.js';
 import { marketOf } from '../../../symbols/symbol.utils.js';
 import { loadSkillIndex, readSkill } from '../../agents/skills.js';
 import { prepareProAiTurn } from '../../../pro/aiExtension.js';
@@ -8,9 +7,11 @@ import { AgentTimeoutError, createAgentSession } from '../../agents/agentSession
 import { AnalystMessagesEngine } from '../../conversation/messages/analystMessagesEngine.js';
 import { ANALYST_ADAPTER_PROMPT, ANALYST_RETRY_PROMPT, ANALYST_SYSTEM_PROMPT } from '../../runtime/prompts.js';
 import { DisciplineMissingError, loadAppDiscipline } from '../../runtime/promptPolicy.js';
+import { buildProvenance } from '../../runtime/provenance.js';
 import { createDefaultExec } from '../../agents/agentTools/execTool.js';
 import { appendComment as defaultAppendComment } from '../comments.js';
-import { buildReassessPack as defaultBuildReassessPack } from '../../agents/datapack.js';
+import { maybeRunAggregator } from '../aggregator.js';
+import { resolveSymbolContext } from '../../agents/symbolContext.js';
 import { aiConfig } from '../../runtime/models.js';
 import { emitNotice } from '../notices.js';
 import {
@@ -73,7 +74,12 @@ export async function executeAnalystRun(symbol: string, deps: AnalystDeps): Prom
   try {
     const runStartedAt = now();
     reportProgress('researching', '正在整理多周期行情、资金流与持仓');
-    const dataPack = await (deps.buildReassessPack ?? defaultBuildReassessPack)(symbol);
+    const symbolContext = resolveSymbolContext({
+      buildPack: deps.buildReassessPack,
+      fetchKline: deps.fetchKline,
+      fetchNews: deps.fetchNews,
+    });
+    const dataPack = await symbolContext.buildPack(symbol);
     if (dataPack.prediction_chart_id) state.chartId = dataPack.prediction_chart_id;
     const sessionId = `analyst:${symbol}:${runStartedAt}`;
     const proTurn = await prepareProAiTurn({
@@ -87,11 +93,8 @@ export async function executeAnalystRun(symbol: string, deps: AnalystDeps): Prom
       symbol,
       {
         buildReassessPack: async () => dataPack,
-        fetchNews: deps.fetchNews ?? ((symbol) => getProvider(marketOf(symbol)).getNews(symbol)),
-        fetchKline:
-          deps.fetchKline ??
-          ((symbol, period, count) =>
-            getProvider(marketOf(symbol)).getKline(symbol, period, count)),
+        fetchNews: symbolContext.fetchNews,
+        fetchKline: symbolContext.fetchKline,
         createChart: deps.createChart ?? defaultCreateChart,
         appendComment: append,
         repoRoot,
@@ -100,6 +103,14 @@ export async function executeAnalystRun(symbol: string, deps: AnalystDeps): Prom
         now,
         skillIndex,
         readMounts: proTurn.readMounts,
+        provenance: buildProvenance(
+          deps.model,
+          ANALYST_SYSTEM_PROMPT,
+          ANALYST_ADAPTER_PROMPT,
+          skillText,
+          disciplineText,
+        ),
+        appendHypothesisRunCard: deps.appendHypothesisRunCard,
       },
       state,
       () => session?.isDone() ?? false,
@@ -160,6 +171,7 @@ export async function executeAnalystRun(symbol: string, deps: AnalystDeps): Prom
         body: '多周期重估已落图，打开 cockpit 查看结论。',
         at: new Date().toISOString(),
       });
+      (deps.runAggregator ?? maybeRunAggregator)({ symbol, chartId: state.chartId });
     }
   } catch (err) {
     const text =

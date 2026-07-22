@@ -5,6 +5,7 @@ import { chartsRoutes, type ChartsApi } from './charts.js';
 import { chatRoutes, type ChatApi } from './chat.js';
 import { credentialsRoutes, type CredentialsApi } from './credentials.js';
 import { healthRoutes, type HealthApi } from './health.js';
+import { hypothesesRoutes, type HypothesesApi } from './hypotheses.js';
 import { licenseRoutes, type LicenseApi } from './license.js';
 import { lobehubRoutes, type LobeHubApi } from './lobehub.js';
 import { overviewRoutes, type OverviewApi } from './overview.js';
@@ -22,6 +23,7 @@ export interface AppApi {
   annotations: AnnotationsApi;
   positions: PositionsApi;
   research: ResearchApi;
+  hypotheses: HypothesesApi;
   overview: OverviewApi;
   settings: SettingsApi;
   credentials: CredentialsApi;
@@ -39,6 +41,7 @@ export const allRoutes = {
   annotations: annotationsRoutes,
   positions: positionsRoutes,
   research: researchRoutes,
+  hypotheses: hypothesesRoutes,
   overview: overviewRoutes,
   settings: settingsRoutes,
   credentials: credentialsRoutes,
@@ -55,6 +58,7 @@ export * from './chat.js';
 export * from './credentials.js';
 export * from './defineRoutes.js';
 export * from './health.js';
+export * from './hypotheses.js';
 export * from './license.js';
 export * from './lobehub.js';
 export * from './overview.js';

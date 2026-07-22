@@ -55,6 +55,8 @@ describe('scoreCell neutral channel', () => {
           { label: 'a', probability: 60 },
           { label: 'b', probability: 40 },
         ],
+        invalidation: ['放量离开 95–115 区间并站稳'],
+        lens_scores: { m5: 0, m15: 0, h1: 0, day: 0 },
         range_plan: { low: 95, high: 115 },
         comment: 'neutral',
       },

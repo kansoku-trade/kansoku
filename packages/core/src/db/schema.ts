@@ -23,6 +23,11 @@ export const comments = sqliteTable(
     source: text('source').notNull(),
     escalated: integer('escalated', { mode: 'boolean' }),
     chartId: text('chart_id'),
+    provider: text('provider'),
+    model: text('model'),
+    promptVersion: text('prompt_version'),
+    verdict: text('verdict'),
+    resonance: integer('resonance'),
   },
   (t) => [index('comments_symbol_date').on(t.symbol, t.easternDate)],
 );
@@ -94,6 +99,9 @@ export const chatMessages = sqliteTable(
     ts: text('ts').notNull(),
     role: text('role').notNull(),
     payload: text('payload', { mode: 'json' }).$type<AgentMessagePayload>().notNull(),
+    provider: text('provider'),
+    model: text('model'),
+    promptVersion: text('prompt_version'),
   },
   (t) => [index('chat_messages_session').on(t.sessionId)],
 );
@@ -149,6 +157,9 @@ export const researchRefreshTasks = sqliteTable(
     startedAt: text('started_at').notNull(),
     updatedAt: text('updated_at').notNull(),
     finishedAt: text('finished_at'),
+    provider: text('provider'),
+    model: text('model'),
+    promptVersion: text('prompt_version'),
   },
   (t) => [
     index('research_refresh_tasks_path').on(t.path, t.startedAt),

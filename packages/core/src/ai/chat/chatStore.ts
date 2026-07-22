@@ -1,4 +1,5 @@
 import type { AgentMessage } from '@earendil-works/pi-agent-core';
+import type { AiProvenance } from '@kansoku/shared/types';
 import type { Db } from '../../db/index.js';
 import { chatSessions } from '../../db/schema.js';
 import { nextSnowflake } from '../../db/snowflake.js';
@@ -57,6 +58,7 @@ export function appendMessages(
   sessionId: string,
   messages: AgentMessage[],
   db?: Db,
+  provenance?: AiProvenance,
 ): Promise<void> {
-  return store.appendMessages(sessionId, messages, db);
+  return store.appendMessages(sessionId, messages, db, provenance);
 }

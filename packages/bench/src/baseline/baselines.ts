@@ -39,6 +39,8 @@ function longSubmission(question: RunnerQuestion, close: number): Submission {
       { label: '续涨', probability: 60 },
       { label: '回落', probability: 40 },
     ],
+    invalidation: ['收盘跌破止损价'],
+    lens_scores: { m5: 2, m15: 2, h1: 2, day: 2 },
     comment: '基线策略：做多，持有到期。',
   };
 }
@@ -52,6 +54,8 @@ function shortSubmission(question: RunnerQuestion, close: number): Submission {
       { label: '续跌', probability: 60 },
       { label: '反弹', probability: 40 },
     ],
+    invalidation: ['收盘站上止损价'],
+    lens_scores: { m5: -2, m15: -2, h1: -2, day: -2 },
     comment: '基线策略：做空，持有到期。',
   };
 }
@@ -64,6 +68,8 @@ function neutralSubmission(question: RunnerQuestion, close: number): Submission 
       { label: '区间震荡', probability: 60 },
       { label: '突破', probability: 40 },
     ],
+    invalidation: ['放量突破区间上沿并站稳'],
+    lens_scores: { m5: 0, m15: 0, h1: 0, day: 0 },
     range_plan: { low: round(close * 0.97), high: round(close * 1.03) },
     comment: '基线策略：永远观望，不给方向。',
   };

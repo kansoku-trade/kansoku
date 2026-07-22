@@ -106,6 +106,11 @@ export function directionalAnswer(
         { label: 'a', probability: 60 },
         { label: 'b', probability: 40 },
       ],
+      invalidation: ['收盘越过止损价'],
+      lens_scores:
+        direction === 'long'
+          ? { m5: 2, m15: 2, h1: 2, day: 0 }
+          : { m5: -2, m15: -2, h1: -2, day: 0 },
       comment: 'test',
     },
     metrics: { durationMs: 0, costUsd: 0, toolCalls: 0, inputTokens: 0, outputTokens: 0 },

@@ -515,10 +515,18 @@ export interface RangeBoundPlan {
   high?: number;
 }
 
+export interface LensScores {
+  m5: number;
+  m15: number;
+  h1: number;
+  day: number;
+}
+
 export interface IntradayPrediction {
   direction: 'long' | 'short' | 'neutral';
   anchor?: { timeframe: TimeframeKey; time: string; price: number };
   scenarios?: PredictionScenario[];
+  lens_scores?: LensScores;
   range_bound_plan?: RangeBoundPlan;
   range_plan?: RangeBoundPlan;
   entry_plan?: {
@@ -543,6 +551,9 @@ export interface IntradayPrediction {
   };
   price_zones?: Partial<IntradayPriceZone>[];
   signals?: PredictionSignal[];
+  invalidation?: string[];
+  provenance?: AiProvenance;
+  hypothesis_id?: string;
 }
 
 export type ContextStance = 'long' | 'short' | 'neutral';
@@ -912,7 +923,34 @@ export interface OverviewRecap {
 }
 
 export type CommentLevel = 'info' | 'warn' | 'alert' | 'error';
-export type CommentSource = 'commentator' | 'analyst' | 'system';
+export type CommentSource = 'commentator' | 'analyst' | 'system' | 'aggregator';
+
+export interface AiProvenance {
+  provider: string;
+  model: string;
+  promptVersion: string;
+}
+
+export type HypothesisStatus = 'active' | 'confirmed' | 'invalidated' | 'retired';
+
+export interface HypothesisRunCard {
+  at: string;
+  kind: 'prediction' | 'trade_gate' | 'note';
+  summary: string;
+  ref?: string;
+  outcome?: 'support' | 'against' | 'open';
+}
+
+export interface Hypothesis {
+  id: string;
+  thesis: string;
+  symbol?: string;
+  status: HypothesisStatus;
+  invalidation_notes: string[];
+  run_cards: HypothesisRunCard[];
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface CockpitComment {
   ts: string;
@@ -923,6 +961,9 @@ export interface CockpitComment {
   source: CommentSource;
   escalated?: boolean;
   chartId?: string;
+  provenance?: AiProvenance;
+  verdict?: 'long' | 'short' | 'neutral';
+  resonance?: number;
 }
 
 export type NoticeKind = 'analysis_done' | 'deep_dive_done' | 'deep_dive_failed';

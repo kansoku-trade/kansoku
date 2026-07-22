@@ -7,6 +7,7 @@ import { appendComment as defaultAppendComment } from './comments.js';
 import { buildCommentUpdate, type CommentPack } from '../agents/datapack.js';
 import type { AiModel } from '../runtime/models.js';
 import { COMMENTATOR_PROMPT, COMMENTATOR_RETRY_PROMPT } from '../runtime/prompts.js';
+import { buildProvenance } from '../runtime/provenance.js';
 import { MessagesEngine } from '../conversation/messages/messageEngine.js';
 import { composeWithDiscipline, OBSERVER_CONTRACT } from '../runtime/promptPolicy.js';
 import { createRunLock } from '../agents/runLock.js';
@@ -146,10 +147,11 @@ export async function runCommentator({
 
   try {
     let escalate: boolean | null = null;
+    const provenance = buildProvenance(deps.model, SYSTEM_PROMPT);
     const tool = buildSubmitTool(
       symbol,
       reason,
-      append,
+      (comment) => append({ ...comment, provenance }),
       (value) => {
         escalate = value;
       },

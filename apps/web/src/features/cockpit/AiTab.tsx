@@ -23,12 +23,20 @@ const LEVEL_TONE: Record<string, 'up' | 'down' | 'accent' | 'solid' | undefined>
   alert: 'down',
   error: 'solid',
 };
-const SOURCE_LABEL: Record<string, string> = { analyst: '分析员', system: '系统' };
+const SOURCE_LABEL: Record<string, string> = { analyst: '分析员', system: '系统', aggregator: '裁判' };
+const VERDICT_LABEL: Record<string, string> = { long: '看多', short: '看空', neutral: '观望' };
 
 function CommentItem({ symbol, comment }: { symbol: string; comment: CockpitComment }) {
   const market = marketOfSymbol(symbol);
   const dim = comment.source === 'commentator' && comment.level === 'info';
   const meta: React.ReactNode[] = [];
+  if (comment.verdict)
+    meta.push(
+      <span key="verdict">
+        统一判定：{VERDICT_LABEL[comment.verdict] ?? comment.verdict}
+        {comment.resonance != null ? ` · 共振 ${comment.resonance}%` : ''}
+      </span>,
+    );
   if (comment.trigger) meta.push(<span key="trigger">触发：{comment.trigger}</span>);
   if (comment.escalated) meta.push(<span key="escalated">已升级重估</span>);
   if (comment.chartId)
