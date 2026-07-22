@@ -44,9 +44,9 @@ describe('AgentKitSection', () => {
 
     render(<AgentKitSection />);
 
-    expect(await screen.findByText('已启用')).toBeTruthy();
-    expect(screen.getByText(/1\.2\.0/)).toBeTruthy();
+    expect(await screen.findByText(/1\.2\.0/)).toBeTruthy();
     expect(screen.getByText(/2026-07-22T00:00:00\.000Z/)).toBeTruthy();
+    expect(screen.getByRole('switch').getAttribute('aria-checked')).toBe('true');
   });
 
   it('renders a row with an action button per pending conflict and update', async () => {
@@ -128,7 +128,9 @@ describe('AgentKitSection', () => {
     const toggle = await screen.findByRole('switch');
     fireEvent.click(toggle);
 
-    await screen.findByText('已启用');
+    await vi.waitFor(() =>
+      expect(screen.getByRole('switch').getAttribute('aria-checked')).toBe('true'),
+    );
     expect(setEnabled).toHaveBeenCalledWith({ enabled: true });
     expect(getStatus).toHaveBeenCalledTimes(2);
   });
@@ -143,7 +145,7 @@ describe('AgentKitSection', () => {
 
     render(<AgentKitSection />);
 
-    const button = await screen.findByRole('button', { name: '重刷 Agent Kit' });
+    const button = await screen.findByRole('button', { name: '重刷' });
     fireEvent.click(button);
 
     await vi.waitFor(() => expect(getStatus).toHaveBeenCalledTimes(2));
@@ -161,7 +163,7 @@ describe('AgentKitSection', () => {
 
     render(<AgentKitSection />);
 
-    const button = await screen.findByRole('button', { name: '清理 Agent Kit' });
+    const button = await screen.findByRole('button', { name: '清理' });
     fireEvent.click(button);
 
     expect(confirmSpy).toHaveBeenCalledTimes(1);
