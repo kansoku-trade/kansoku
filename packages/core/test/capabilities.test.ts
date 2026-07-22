@@ -6,6 +6,7 @@ import {
 } from '../src/license/licenseState.js';
 import { setEncBundlePresent, setProPresent } from '../src/pro/bundleState.js';
 import { setActiveWatchedMarketsStore } from '../src/marketdata/watchedMarketsStore.js';
+import { setDefaultProviderName } from '../src/marketdata/registry.js';
 import { capabilitiesService } from '../src/capabilities/capabilities.service.js';
 
 const featureKeys = Object.keys(FEATURES) as Array<keyof typeof FEATURES>;
@@ -25,6 +26,7 @@ afterEach(() => {
   setEncBundlePresent(false);
   setLicenseManagerForTests(null);
   setActiveWatchedMarketsStore(null);
+  setDefaultProviderName('longbridge');
   delete process.env.MARKET_PROVIDER_HK;
 });
 
@@ -44,6 +46,12 @@ describe('capabilitiesService.get', () => {
   it('reports the longbridge datasource for the default watched market', async () => {
     const result = await capabilitiesService.get();
     expect(result.datasources).toEqual([{ market: 'US', name: 'longbridge', realtime: true }]);
+  });
+
+  it('reports a non-realtime datasource when the default provider is yahoo', async () => {
+    setDefaultProviderName('yahoo');
+    const result = await capabilitiesService.get();
+    expect(result.datasources).toEqual([{ market: 'US', name: 'yahoo', realtime: false }]);
   });
 
   it('marks pro-tier keys locked and reports hasEncBundle when only the enc bundle is present', async () => {

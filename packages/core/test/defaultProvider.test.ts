@@ -6,9 +6,12 @@ vi.mock('../src/credentials/credentials.service.js', () => ({
   credentialsService: { status: (...args: unknown[]) => status(...args) },
 }));
 
-const { stampDefaultProvider } = await import('../src/marketdata/defaultProvider.js');
-const { getDefaultProviderName, setDefaultProviderName } =
+const { stampDefaultProvider, restampFromCredentialStatus } = await import(
+  '../src/marketdata/defaultProvider.js'
+);
+const { getDefaultProviderName, setDefaultProviderName, onProviderRoutingChanged, disposeMarketData } =
   await import('../src/marketdata/registry.js');
+const { getLongbridgeStream } = await import('../src/marketdata/longbridgeStream.js');
 
 describe('stampDefaultProvider', () => {
   afterEach(() => {
@@ -32,5 +35,35 @@ describe('stampDefaultProvider', () => {
     status.mockRejectedValue(new Error('probe crashed'));
     await expect(stampDefaultProvider()).resolves.toBe('yahoo');
     expect(getDefaultProviderName()).toBe('yahoo');
+  });
+});
+
+describe('restampFromCredentialStatus', () => {
+  afterEach(() => {
+    setDefaultProviderName('longbridge');
+    disposeMarketData();
+  });
+
+  it('fires the routing-changed callback exactly once when the stamped name flips', () => {
+    setDefaultProviderName('yahoo');
+    const cb = vi.fn();
+    const off = onProviderRoutingChanged(cb);
+    try {
+      expect(restampFromCredentialStatus(true)).toBe('longbridge');
+      expect(cb).toHaveBeenCalledTimes(1);
+      expect(restampFromCredentialStatus(true)).toBe('longbridge');
+      expect(cb).toHaveBeenCalledTimes(1);
+    } finally {
+      off();
+    }
+  });
+
+  it('disposes the stream singletons on a flip but leaves them intact on a no-op', () => {
+    setDefaultProviderName('longbridge');
+    const before = getLongbridgeStream();
+    restampFromCredentialStatus(true);
+    expect(getLongbridgeStream()).toBe(before);
+    restampFromCredentialStatus(false);
+    expect(getLongbridgeStream()).not.toBe(before);
   });
 });

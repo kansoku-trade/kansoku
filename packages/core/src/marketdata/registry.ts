@@ -20,12 +20,25 @@ const streamFactories: Record<string, () => QuoteStream> = {
 
 let defaultProviderName = 'longbridge';
 
+const routingChangeListeners = new Set<() => void>();
+
 export function setDefaultProviderName(name: string): void {
   defaultProviderName = name;
 }
 
 export function getDefaultProviderName(): string {
   return defaultProviderName;
+}
+
+export function onProviderRoutingChanged(listener: () => void): () => void {
+  routingChangeListeners.add(listener);
+  return () => {
+    routingChangeListeners.delete(listener);
+  };
+}
+
+export function emitProviderRoutingChanged(): void {
+  for (const listener of routingChangeListeners) listener();
 }
 
 function resolveProviderName(market: Market): string {

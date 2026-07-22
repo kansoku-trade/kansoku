@@ -35,9 +35,17 @@ const entryPlan = vi.hoisted(() => ({
   entryPlanFromDoc: vi.fn(() => null),
 }));
 
+const routing = vi.hoisted(() => ({ cb: null as (() => void) | null }));
+
 vi.mock('../src/marketdata/registry.js', () => ({
   getProvider: () => provider,
   getStream: () => stream,
+  onProviderRoutingChanged: (cb: () => void) => {
+    routing.cb = cb;
+    return () => {
+      routing.cb = null;
+    };
+  },
 }));
 vi.mock('../src/cockpit/entryPlan.js', () => entryPlan);
 
@@ -84,8 +92,8 @@ describe('subscribePosition', () => {
     vi.useFakeTimers();
     stream.snapshots.clear();
     stream.listeners.clear();
-    stream.retain.mockClear();
-    stream.release.mockClear();
+    stream.retain.mockReset().mockResolvedValue(undefined);
+    stream.release.mockReset().mockResolvedValue(undefined);
     provider.getPositions.mockReset().mockResolvedValue([
       {
         symbol: 'MU.US',
@@ -172,5 +180,28 @@ describe('subscribePosition', () => {
     stream.push(cell('MU.US', 999));
     await vi.advanceTimersByTimeAsync(2000);
     expect(events).toHaveLength(countBefore);
+  });
+
+  it('re-retains and keeps pushing after a provider routing change', async () => {
+    const events: unknown[] = [];
+    const unsub = subscribePosition('MU.US', (env) => events.push(JSON.parse(env)));
+    await vi.advanceTimersByTimeAsync(0);
+    stream.retain.mockClear();
+    stream.onUpdate.mockClear();
+    events.length = 0;
+
+    routing.cb?.();
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(stream.retain).toHaveBeenCalledWith(['MU.US']);
+    expect(stream.onUpdate).toHaveBeenCalledTimes(1);
+
+    events.length = 0;
+    stream.push(cell('MU.US', 175));
+    await vi.advanceTimersByTimeAsync(1000);
+    const dataEvents = events.filter((e: any) => e.type === 'data');
+    expect(dataEvents.length).toBeGreaterThan(0);
+    expect((dataEvents.at(-1) as any).data.position.last).toBe(175);
+    unsub();
   });
 });

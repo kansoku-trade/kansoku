@@ -1,5 +1,5 @@
 import type { QuoteCell, QuoteSnapshot } from '@kansoku/shared/types';
-import { getProvider, getStream } from '../marketdata/registry.js';
+import { getProvider, getStream, onProviderRoutingChanged } from '../marketdata/registry.js';
 import {
   distinctStreams,
   releaseSymbols,
@@ -53,6 +53,7 @@ const listeners = new Set<(env: string) => void>();
 const dedup = new Set<string>();
 let coalesceTimer: ReturnType<typeof setTimeout> | null = null;
 let listenerHandles: Array<() => void> | null = null;
+let routingUnsub: (() => void) | null = null;
 let baseRefreshTimer: ReturnType<typeof setInterval> | null = null;
 let baseRetained = false;
 let degraded = false;
@@ -98,10 +99,32 @@ function scheduleFlush(symbol: string): void {
 }
 
 function ensureListener(): void {
+  if (!routingUnsub) routingUnsub = onProviderRoutingChanged(rewireStreamsForRoutingChange);
   if (listenerHandles) return;
   listenerHandles = distinctStreams().map((stream) =>
     stream.onUpdate((cell) => scheduleFlush(cell.symbol)),
   );
+}
+
+function rewireStreamsForRoutingChange(): void {
+  if (listenerHandles) {
+    for (const unsub of listenerHandles) unsub();
+    listenerHandles = null;
+  }
+  lastEnvelope = null;
+  if (!listeners.size) {
+    baseRetained = false;
+    return;
+  }
+  ensureListener();
+  const symbols = new Set<string>(extras.keys());
+  if (baseRetained) for (const s of baseSymbols) symbols.add(s);
+  const list = [...symbols];
+  if (list.length) {
+    void retainSymbols(list)
+      .then(() => scheduleFlush(list[0]))
+      .catch(() => {});
+  }
 }
 
 async function ensureBase(): Promise<void> {
@@ -138,6 +161,10 @@ function stopIfIdle(): void {
   if (listenerHandles) {
     for (const unsub of listenerHandles) unsub();
     listenerHandles = null;
+  }
+  if (routingUnsub) {
+    routingUnsub();
+    routingUnsub = null;
   }
   lastEnvelope = null;
   if (baseRetained && baseSymbols.length) {

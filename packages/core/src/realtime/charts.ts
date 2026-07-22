@@ -5,7 +5,7 @@ import { getEventRisk } from '../marketdata/events.js';
 import { TIMEFRAME_ORDER } from '../analysis/intraday/constants.js';
 import { activeProDetectors } from '../pro/detectors.js';
 import { featureStateSync } from '../pro/features.js';
-import { getStream } from '../marketdata/registry.js';
+import { getStream, onProviderRoutingChanged } from '../marketdata/registry.js';
 import type { CandlePeriod } from '../marketdata/quoteStream.js';
 import { classifySession, isCurrentSessionId } from '../marketdata/session.js';
 import { predictionStale } from '../platform/staleness.js';
@@ -90,6 +90,7 @@ interface LatestDoc {
 
 interface CandleState {
   viewCount: number | undefined;
+  symbol: string;
   market: Market;
   timeframes: Partial<Record<TimeframeKey, RawBar[]>>;
   frozenRanges: Partial<Record<TimeframeKey, FrozenBarRange>>;
@@ -187,7 +188,22 @@ async function runPushRebuild(key: string): Promise<void> {
   handle.pushData(await buildFromState(state, latest));
 }
 
+let routingUnsub: (() => void) | null = null;
+
+function ensureRoutingSubscription(): void {
+  if (!routingUnsub) routingUnsub = onProviderRoutingChanged(rewireCandleStreams);
+}
+
+function rewireCandleStreams(): void {
+  for (const [key, state] of candleStates) {
+    for (const unsub of state.unsubs) unsub();
+    state.unsubs = [];
+    wireCandleState(key, state.symbol, state);
+  }
+}
+
 function wireCandleState(key: string, symbol: string, state: CandleState): void {
+  ensureRoutingSubscription();
   candleStates.set(key, state);
   const stream = getStream(marketOf(symbol));
   for (const tf of TIMEFRAME_ORDER) {
@@ -228,6 +244,7 @@ function setupCandleState(
   };
   const state: CandleState = {
     viewCount,
+    symbol,
     market: marketOf(symbol),
     timeframes,
     frozenRanges: frozenRangesOf(timeframes),
@@ -259,6 +276,7 @@ function setupPreviewCandleState(
   const timeframes = { ...(input.timeframes as Partial<Record<TimeframeKey, RawBar[]>>) };
   const state: CandleState = {
     viewCount: undefined,
+    symbol,
     market: marketOf(symbol),
     timeframes,
     frozenRanges: frozenRangesOf(timeframes),
@@ -285,6 +303,10 @@ function teardownCandleState(key: string): void {
   if (state.debounceTimer) clearTimeout(state.debounceTimer);
   for (const unsub of state.unsubs) unsub();
   candleStates.delete(key);
+  if (candleStates.size === 0 && routingUnsub) {
+    routingUnsub();
+    routingUnsub = null;
+  }
 }
 
 export async function subscribeChart(

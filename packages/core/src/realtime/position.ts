@@ -5,7 +5,7 @@ import {
   latestIntradayDoc,
   type EntryPlan,
 } from '../cockpit/entryPlan.js';
-import { getProvider, getStream } from '../marketdata/registry.js';
+import { getProvider, getStream, onProviderRoutingChanged } from '../marketdata/registry.js';
 import type { RawPosition } from '../marketdata/types.js';
 import { computeRelativeVolume } from '../analysis/relvol.js';
 import { marketOf } from '../symbols/symbol.utils.js';
@@ -32,6 +32,21 @@ interface State {
 }
 
 const states = new Map<string, State>();
+
+let routingUnsub: (() => void) | null = null;
+
+function rewirePositionStreams(): void {
+  for (const [symbol, state] of states) {
+    state.quoteUnsub?.();
+    state.quoteUnsub = getStream(marketOf(symbol)).onUpdate((cell) => {
+      if (cell.symbol === symbol) schedulePush(state, symbol);
+    });
+    void getStream(marketOf(symbol))
+      .retain([symbol])
+      .catch((err) => console.warn('[ws-position] rewire retain failed', err));
+    void refresh(symbol, state);
+  }
+}
 
 /** Pure: cached position snapshot × a live quote → the channel payload. */
 export function buildPositionPayload(
@@ -86,6 +101,7 @@ async function refresh(symbol: string, state: State): Promise<void> {
 }
 
 export function subscribePosition(symbol: string, push: (envelope: string) => void): () => void {
+  if (!routingUnsub) routingUnsub = onProviderRoutingChanged(rewirePositionStreams);
   let state = states.get(symbol);
   const fresh = !state;
   if (!state) {
@@ -133,6 +149,10 @@ export function subscribePosition(symbol: string, push: (envelope: string) => vo
       void getStream(marketOf(symbol))
         .release([symbol])
         .catch(() => {});
+      if (states.size === 0 && routingUnsub) {
+        routingUnsub();
+        routingUnsub = null;
+      }
     }
   };
 }

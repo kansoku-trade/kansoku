@@ -1,14 +1,27 @@
 import { credentialsService } from '../credentials/credentials.service.js';
-import { setDefaultProviderName } from './registry.js';
+import {
+  disposeMarketData,
+  emitProviderRoutingChanged,
+  getDefaultProviderName,
+  setDefaultProviderName,
+} from './registry.js';
+
+export function restampFromCredentialStatus(configured: boolean): 'longbridge' | 'yahoo' {
+  const name = configured ? 'longbridge' : 'yahoo';
+  const previous = getDefaultProviderName();
+  setDefaultProviderName(name);
+  if (name !== previous) {
+    disposeMarketData();
+    emitProviderRoutingChanged();
+  }
+  return name;
+}
 
 export async function stampDefaultProvider(): Promise<'longbridge' | 'yahoo'> {
   try {
     const { configured } = await credentialsService.status();
-    const name = configured ? 'longbridge' : 'yahoo';
-    setDefaultProviderName(name);
-    return name;
+    return restampFromCredentialStatus(configured);
   } catch {
-    setDefaultProviderName('yahoo');
-    return 'yahoo';
+    return restampFromCredentialStatus(false);
   }
 }

@@ -22,6 +22,7 @@ let streams: Record<string, QuoteStream>;
 vi.mock('../src/marketdata/registry.js', () => ({
   getProvider: () => provider,
   getStream: (market: string) => streams[market],
+  onProviderRoutingChanged: () => () => {},
 }));
 
 function flush(ms = 30): Promise<void> {
