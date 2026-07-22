@@ -218,4 +218,27 @@ describe('detectXianduan', () => {
       },
     ]);
   });
+
+  it('marks a segment pending, not broken, when a single dangling retracement bi trails the input', () => {
+    const bis = biChain([
+      { kind: 'bottom', bar: 0, price: 90 },
+      { kind: 'top', bar: 5, price: 100 },
+      { kind: 'bottom', bar: 10, price: 94 },
+      { kind: 'top', bar: 15, price: 108 },
+      { kind: 'bottom', bar: 20, price: 101 },
+    ]);
+
+    const result = detectXianduan(bis);
+
+    expect(result).toEqual([
+      {
+        bis: bis.slice(0, 3),
+        direction: 'up',
+        startTime: bis[0].start.time,
+        endTime: null,
+        broken: false,
+      },
+    ]);
+    expect(result[0].bis).toHaveLength(3);
+  });
 });

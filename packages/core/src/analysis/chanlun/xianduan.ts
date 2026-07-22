@@ -25,26 +25,32 @@ export function detectXianduan(bis: Bi[]): Xianduan[] {
     let lastEnd = end2;
     let j = i + 3;
 
+    let broken = false;
+
     while (j + 1 < bis.length) {
-      if (bis[j].direction === dir || bis[j + 1].direction !== dir) break;
+      if (bis[j].direction === dir || bis[j + 1].direction !== dir) {
+        broken = true;
+        break;
+      }
 
       const candidate = bis[j + 1].end.price;
       const stepExtends = dir === 'up' ? candidate > lastEnd : candidate < lastEnd;
-      if (!stepExtends) break;
+      if (!stepExtends) {
+        broken = true;
+        break;
+      }
 
       segBis.push(bis[j], bis[j + 1]);
       lastEnd = candidate;
       j += 2;
     }
 
-    const pending = j >= bis.length;
-
     segments.push({
       bis: segBis,
       direction: dir,
       startTime: segBis[0].start.time,
-      endTime: pending ? null : segBis[segBis.length - 1].end.time,
-      broken: !pending,
+      endTime: broken ? segBis[segBis.length - 1].end.time : null,
+      broken,
     });
 
     i = j;
