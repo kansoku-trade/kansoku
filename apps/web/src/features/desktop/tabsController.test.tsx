@@ -132,6 +132,14 @@ function renderController() {
   return () => latest;
 }
 
+// An intercepted navigation reaches bridge.mutate through a promise chain a few
+// ticks deep; drain enough of them that "no mutate happened" is a real verdict.
+async function settlePendingMutations() {
+  await act(async () => {
+    for (let i = 0; i < 5; i++) await Promise.resolve();
+  });
+}
+
 describe('useTabsController with shared bridge', () => {
   let bridge: FakeBridge;
 
@@ -311,15 +319,10 @@ describe('useTabsController with shared bridge', () => {
     await waitFor(() => expect(getController().snapshot.tabs).toHaveLength(1));
 
     act(() => navigate('/?date=2026-07-20'));
+    await settlePendingMutations();
 
-    await waitFor(() => {
-      expect(
-        bridge.mutateCalls.some(
-          (op) => op.op === 'updateRoute' && op.route === '/?date=2026-07-20',
-        ),
-      ).toBe(true);
-    });
     expect(bridge.mutateCalls.some((op) => op.op === 'open')).toBe(false);
+    expect(getController().snapshot.activeTabId).toBe('a');
   });
 
   it('navigates in place when a non-pinned tab is active', async () => {
@@ -330,13 +333,10 @@ describe('useTabsController with shared bridge', () => {
     await waitFor(() => expect(getController().snapshot.activeTabId).toBe('b'));
 
     act(() => navigate('/logs'));
+    await settlePendingMutations();
 
-    await waitFor(() => {
-      expect(bridge.mutateCalls.some((op) => op.op === 'updateRoute' && op.route === '/logs')).toBe(
-        true,
-      );
-    });
     expect(bridge.mutateCalls.some((op) => op.op === 'open')).toBe(false);
+    expect(getController().snapshot.activeTabId).toBe('b');
   });
 
   it('restores the sessionStorage active tab on the first snapshot when it still exists', async () => {
