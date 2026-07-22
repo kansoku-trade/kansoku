@@ -1,13 +1,16 @@
 import {
   AUTO_SIGNAL_META,
+  type ChanStructure,
   type Connector,
   type DivergencePair,
   type IntradayPrediction,
+  type OverlayGroup,
   type Pattern123,
   type SeriesMarker,
   type SwingPoint,
   type TimeframeKey,
 } from '@kansoku/shared/types';
+import { buySellPointMarkerText, buySellPointTooltip, fenxingTooltip } from '../chanlun/tooltip.js';
 import { toTs } from '../indicators.js';
 import {
   AI_AUTO_MERGE_BAR_WINDOW,
@@ -293,5 +296,61 @@ export function pattern123Overlay(
       });
     }
   }
+  return { markers, priceConnectors, macdConnectors: [] };
+}
+
+export function chanOverlay(chan: ChanStructure, timeframe: TimeframeKey): TfOverlay {
+  const markers: SeriesMarker[] = [];
+  const priceConnectors: Connector[] = [];
+
+  for (const f of chan.fenxings) {
+    markers.push({
+      time: f.time,
+      position: f.kind === 'top' ? 'aboveBar' : 'belowBar',
+      color: f.kind === 'top' ? '#ef5350' : '#26a69a',
+      shape: 'circle',
+      text: f.confirmed ? '' : '?',
+      tooltip: fenxingTooltip(f, timeframe),
+      group: 'fenxing',
+    });
+  }
+
+  for (const b of chan.bis) {
+    priceConnectors.push({
+      color: b.direction === 'up' ? '#26a69a' : '#ef5350',
+      group: 'bi',
+      data: [
+        { time: b.start.time, value: b.start.price },
+        { time: b.end.time, value: b.end.price },
+      ],
+    });
+  }
+
+  for (const x of chan.xianduans) {
+    const firstBi = x.bis[0];
+    const lastBi = x.bis[x.bis.length - 1];
+    priceConnectors.push({
+      color: x.direction === 'up' ? '#00695c' : '#c62828',
+      group: 'xianduan',
+      data: [
+        { time: firstBi.start.time, value: firstBi.start.price },
+        { time: lastBi.end.time, value: lastBi.end.price },
+      ],
+    });
+  }
+
+  for (const p of chan.buySellPoints) {
+    const isBuy = p.kind.startsWith('buy');
+    markers.push({
+      time: p.time,
+      position: isBuy ? 'belowBar' : 'aboveBar',
+      color: isBuy ? '#26a69a' : '#ef5350',
+      shape: isBuy ? 'arrowUp' : 'arrowDown',
+      text: buySellPointMarkerText(p.kind),
+      tooltip: buySellPointTooltip(p),
+      group: `chan-${p.kind}` as OverlayGroup,
+    });
+  }
+
   return { markers, priceConnectors, macdConnectors: [] };
 }

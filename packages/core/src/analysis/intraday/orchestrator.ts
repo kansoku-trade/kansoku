@@ -35,6 +35,7 @@ import {
   autoPatternMarkers,
   buildIntradaySignals,
   capMarkersPerBar,
+  chanOverlay,
   mergeAiAutoMarkers,
   pattern123Overlay,
 } from './markers.js';
@@ -174,6 +175,7 @@ export function buildIntraday(input: IntradayInput): { built: IntradayBuilt; met
     const autoDiv = autoPatternMarkers(tf.autoDivergence, 'divergence', '#ab47bc');
     const autoBei = autoPatternMarkers(tf.autoBeichi, 'macdBeichi', '#ff8f00');
     const auto123 = pattern123Overlay(tf.pattern123, tf.candles.at(-1)!.time);
+    const chanOv = chanOverlay(tf.chanStructure, k);
     const tangleSuffix = tf.structure.tangle ? `\n${ZERO_TANGLE_NOTE}` : '';
     const crossMarkers: SeriesMarker[] = tf.structure.signals.map((s, i) => {
       const meta = MACD_STRUCTURE_META[s.kind];
@@ -245,12 +247,14 @@ export function buildIntraday(input: IntradayInput): { built: IntradayBuilt; met
         ...mergeAiAutoMarkers(sig.markers, [...autoDiv.markers, ...autoBei.markers], barIndex),
         ...auto123.markers,
         ...patternMarkers,
+        ...chanOv.markers,
       ]).map((m, i) => ({ ...m, id: `m-${i}` })),
       priceConnectors: [
         ...sig.priceConnectors,
         ...autoDiv.priceConnectors,
         ...autoBei.priceConnectors,
         ...auto123.priceConnectors,
+        ...chanOv.priceConnectors,
       ],
       macdConnectors: [...sig.macdConnectors, ...autoDiv.macdConnectors, ...autoBei.macdConnectors],
       autoDivergence: tf.autoDivergence,
@@ -258,6 +262,7 @@ export function buildIntraday(input: IntradayInput): { built: IntradayBuilt; met
       pattern123: tf.pattern123,
       secondBreakouts: tf.secondBreakouts,
       fvgZones: tf.fvgZones,
+      chanStructure: tf.chanStructure,
       offSession: offSessionSegments(
         tf.candles.map((c) => c.time),
         marketOf(symbol),

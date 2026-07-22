@@ -1,5 +1,6 @@
 import {
   type CandlePattern,
+  type ChanStructure,
   type ColoredPoint,
   type DivergencePair,
   type DivergencePoint,
@@ -11,7 +12,9 @@ import {
   type Pattern123,
   type RawBar,
   type SecondBreakout,
+  type TimeframeKey,
 } from '@kansoku/shared/types';
+import { computeChanStructure } from '../chanlun/index.js';
 import { ClientError } from '../../platform/errors.js';
 import { detectFvgZones } from '../fvg.js';
 import { lastVwap, sessionVwap } from '../vwap.js';
@@ -52,6 +55,7 @@ export interface CoercedTimeframe {
   pattern123: Pattern123[];
   secondBreakouts: SecondBreakout[];
   fvgZones: IntradayFvgZone[];
+  chanStructure: ChanStructure;
   lastClose: number;
   summary: IntradayTfSummary;
 }
@@ -67,7 +71,7 @@ export function sanitizeEmaPeriods(raw: unknown): number[] {
 
 export function coerceIntradayTimeframe(
   bars: RawBar[],
-  key: string,
+  key: TimeframeKey,
   emaPeriods = DEFAULT_EMA_PERIODS,
 ): CoercedTimeframe {
   if (!bars || bars.length < MACD_MIN_BARS) {
@@ -173,6 +177,7 @@ export function coerceIntradayTimeframe(
         .filter((sb) => keepSignal(sb.trigger?.time ?? sb.signal.time))
     : [];
   structure.signals = structure.signals.filter((s) => keepSignal(s.time));
+  const chanStructure = computeChanStructure(bars, hist, key);
 
   return {
     candles,
@@ -190,6 +195,7 @@ export function coerceIntradayTimeframe(
     pattern123,
     secondBreakouts,
     fvgZones,
+    chanStructure,
     lastClose: closes.at(-1)!,
     summary: {
       last_dif: lastNonNull(dif),
