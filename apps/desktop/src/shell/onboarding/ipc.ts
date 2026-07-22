@@ -20,4 +20,9 @@ export class OnboardingIpc extends IpcService {
   complete() {
     return this.store.complete();
   }
+
+  @IpcMethod()
+  skipLongbridge() {
+    return this.store.skipLongbridge();
+  }
 }

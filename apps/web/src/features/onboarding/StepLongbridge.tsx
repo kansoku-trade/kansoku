@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { errorMessage } from '../../lib/api';
 import { Button, Card } from '../../ui';
 import type { CredentialsGetResult } from '../settings/desktopCredentials';
 
@@ -6,10 +8,26 @@ const INSTALL_URL = 'https://open.longbridge.com/docs/cli/install';
 export function StepLongbridge({
   status,
   onRecheck,
+  onSkip,
 }: {
   status: CredentialsGetResult | null;
   onRecheck: () => void;
+  onSkip: () => Promise<void>;
 }) {
+  const [skipBusy, setSkipBusy] = useState(false);
+  const [skipError, setSkipError] = useState<string | null>(null);
+
+  const skip = async () => {
+    setSkipBusy(true);
+    setSkipError(null);
+    try {
+      await onSkip();
+    } catch (err) {
+      setSkipError(errorMessage(err));
+      setSkipBusy(false);
+    }
+  };
+
   const state = status?.state ?? 'cli_missing';
   const title =
     state === 'cli_missing'
@@ -50,6 +68,19 @@ export function StepLongbridge({
           重新检测
         </Button>
       </div>
+
+      {skipError ? (
+        <div className="settings-test-result settings-test-result--fail">{skipError}</div>
+      ) : null}
+
+      <div className="onboarding-skip-row">
+        <button className="onboarding-skip-link" disabled={skipBusy} onClick={() => void skip()}>
+          暂时跳过，先用免费行情
+        </button>
+      </div>
+      <p className="onboarding-skip-hint">
+        免费行情为轮询更新，可能有延迟；之后可以在设置里接入长桥。
+      </p>
     </Card>
   );
 }

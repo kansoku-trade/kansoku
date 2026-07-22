@@ -60,11 +60,13 @@ export function Onboarding({
   status,
   onRecheck,
   onComplete,
+  onSkipLongbridge,
 }: {
   step: OnboardingStep;
   status: CredentialsGetResult | null;
   onRecheck: () => void;
   onComplete: () => Promise<void>;
+  onSkipLongbridge: () => Promise<void>;
 }) {
   const [localStep, setLocalStep] = useState<OnboardingStep>(step === 'longbridge' ? 'ai' : step);
   const renderStep = resolveRenderStep(step, localStep);
@@ -82,7 +84,7 @@ export function Onboarding({
           <Brand />
           <Progress step={renderStep} steps={steps} />
           {renderStep === 'longbridge' ? (
-            <StepLongbridge status={status} onRecheck={onRecheck} />
+            <StepLongbridge status={status} onRecheck={onRecheck} onSkip={onSkipLongbridge} />
           ) : renderStep === 'ai' ? (
             <StepAi onNext={() => setLocalStep('twitter')} />
           ) : renderStep === 'twitter' ? (

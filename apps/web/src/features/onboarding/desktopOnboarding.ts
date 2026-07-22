@@ -2,11 +2,13 @@ import { getShellRpc } from '../desktop/shellRpc';
 
 export interface OnboardingState {
   completed: boolean;
+  longbridgeSkipped: boolean;
 }
 
 export interface DesktopOnboardingBridge {
   getState(): Promise<OnboardingState>;
   complete(): Promise<OnboardingState>;
+  skipLongbridge(): Promise<OnboardingState>;
 }
 
 export function getDesktopOnboardingBridge(
@@ -17,5 +19,6 @@ export function getDesktopOnboardingBridge(
   return {
     getState: () => rpc.invoke('onboarding.getState') as Promise<OnboardingState>,
     complete: () => rpc.invoke('onboarding.complete') as Promise<OnboardingState>,
+    skipLongbridge: () => rpc.invoke('onboarding.skipLongbridge') as Promise<OnboardingState>,
   };
 }

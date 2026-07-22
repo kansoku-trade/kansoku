@@ -8,7 +8,12 @@ import {
 import { refreshCapabilities } from '../edition/capabilitiesStore';
 import { clearRestricted } from '../edition/restrictedMode';
 import { getDesktopOnboardingBridge, type OnboardingState } from './desktopOnboarding';
-import { computeGateStatus, type GateStatus, type OnboardingStep } from './gateStatus';
+import {
+  computeGateStatus,
+  computeStatusLoading,
+  type GateStatus,
+  type OnboardingStep,
+} from './gateStatus';
 
 export function useCredentialsGate(): {
   status: GateStatus;
@@ -17,6 +22,7 @@ export function useCredentialsGate(): {
   details: CredentialsGetResult | null;
   recheck: () => void;
   completeOnboarding: () => Promise<void>;
+  skipLongbridge: () => Promise<void>;
 } {
   const bridge = getDesktopCredentialsBridge();
   const onboardingBridge = getDesktopOnboardingBridge();
@@ -41,9 +47,11 @@ export function useCredentialsGate(): {
     }
   }, [data?.configured]);
 
-  // Only block on the AI flag once Longbridge is actually connected — otherwise
-  // a slow flag read would flash the main app before bouncing to the AI step.
-  const statusLoading = loading || (data?.configured === true && onboardingLoading);
+  const statusLoading = computeStatusLoading({
+    credentialsLoading: loading,
+    configured: data ? data.configured : null,
+    onboardingLoading,
+  });
 
   const { status, step } = computeGateStatus({
     hasDesktopBridge: bridge !== null,
@@ -54,6 +62,11 @@ export function useCredentialsGate(): {
         ? onboardingState.completed
         : null
       : true,
+    longbridgeSkipped: onboardingBridge
+      ? onboardingState
+        ? onboardingState.longbridgeSkipped
+        : null
+      : false,
   });
 
   const completeOnboarding = useCallback(async () => {
@@ -61,5 +74,18 @@ export function useCredentialsGate(): {
     reloadOnboarding();
   }, [onboardingBridge, reloadOnboarding]);
 
-  return { status, step, bridge, details: data ?? null, recheck: reload, completeOnboarding };
+  const skipLongbridge = useCallback(async () => {
+    if (onboardingBridge) await onboardingBridge.skipLongbridge();
+    reloadOnboarding();
+  }, [onboardingBridge, reloadOnboarding]);
+
+  return {
+    status,
+    step,
+    bridge,
+    details: data ?? null,
+    recheck: reload,
+    completeOnboarding,
+    skipLongbridge,
+  };
 }

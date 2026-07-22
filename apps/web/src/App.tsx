@@ -35,6 +35,7 @@ export function App() {
         status={gate.details}
         onRecheck={gate.recheck}
         onComplete={gate.completeOnboarding}
+        onSkipLongbridge={gate.skipLongbridge}
       />
     );
   }

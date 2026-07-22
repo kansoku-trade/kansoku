@@ -6703,6 +6703,13 @@ a.zone-item:hover {
   justify-content: center;
   margin-top: 14px;
 }
+.onboarding-skip-hint {
+  margin: 6px 0 0;
+  text-align: center;
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  line-height: 1.5;
+}
 
 .onboarding-shell {
   max-width: 480px;
