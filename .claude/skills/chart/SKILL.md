@@ -50,7 +50,8 @@ sparkline in the chat reply is faster.
 无 → 回退 HTTP。
 
 CLI 与 HTTP 契约一致——body 就是原本 POST /api/charts 的 body，
-返回 `{id, url, technicals?}` 也不变。
+返回 `{id, url, technicals?}` 也不变；CLI 侧额外多带一个 `deepLink`
+字段（见下方数据目录场景说明）。
 
 先加载 runtime.env（这一步只需做一次）：
 
@@ -69,9 +70,24 @@ set +a
 | `GET /api/charts?type=&symbol=` | `"$KANSOKU_CLI" chart list [--symbol X]` |
 | `GET /api/charts/<id>` | `"$KANSOKU_CLI" chart get <id>` |
 | `PATCH /api/charts/<id>` | *(暂不支持——PATCH 仍走 HTTP；数据目录场景 PATCH 目前只在 intraday-signal 里出现，届时 fallback HTTP)* |
+| 打开 `data.url`（浏览器访问 `http://localhost:5199/...`） | 打开 `data.deepLink`（`kansoku://route/...`，见下） |
 
 body/response 完全一致，写入的图表 JSON 落在 `journal/charts/data/<id>.json`
 （跟 HTTP 版本相同）。
+
+数据目录场景通常没有本机 dev server（Kit 用户不会跑 `pnpm start`），
+`data.url` 里的 `http://localhost:5199/...` 打不开。CLI 的 chart create
+响应现在多带一个 `deepLink` 字段（`url` 照旧保留，向后兼容 dev 场景），
+指向 `kansoku://route/...` 这个自定义协议。想让用户看到图表时，打开这个
+deep link 即可——它会启动 Kansoku.app（若已在运行则直接切到前台）并跳转到
+对应图表页面：
+
+```sh
+open "$(echo "$response" | jq -r .deepLink)"
+```
+
+macOS 用 `open`，Windows 用 `start`，Linux 用 `xdg-open`——三者都认协议处理器，
+换平台只需换这一条命令。
 
 ## Server lifecycle
 

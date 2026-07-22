@@ -83,6 +83,7 @@ describe('runChartCreate (real sqlite + fixture data, no network)', () => {
     const emitted = JSON.parse((write.mock.calls[0] as [string])[0]);
     expect(emitted.id).toBeTruthy();
     expect(typeof emitted.url).toBe('string');
+    expect(emitted.deepLink).toMatch(/^kansoku:\/\/route\//);
 
     const db = getDb();
     const rows = await db.select().from(chartMeta);
@@ -111,6 +112,7 @@ describe('runChartCreate (real sqlite + fixture data, no network)', () => {
     const emitted = JSON.parse((write.mock.calls[0] as [string])[0]);
     expect(emitted.id).toBeTruthy();
     expect(emitted.symbol).toBe('MU.US');
+    expect(emitted.deepLink).toBe(`kansoku://route/symbol/MU.US?analysis=${emitted.id}`);
     expect(providerStub.getNews).toHaveBeenCalledWith('MU.US');
   });
 
@@ -128,6 +130,7 @@ describe('runChartCreate (real sqlite + fixture data, no network)', () => {
     expect(write).toHaveBeenCalledTimes(1);
     const emitted = JSON.parse((write.mock.calls[0] as [string])[0]);
     expect(emitted.id).toBeTruthy();
+    expect(emitted.deepLink).toMatch(/^kansoku:\/\/route\//);
   });
 
   it('exits 64 with a stderr message when a required field (symbol) is missing', async () => {

@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import type { ChartUrlDoc } from '@kansoku/shared/chartUrl';
 import { emit } from '../../report.js';
 
 interface CreateArgs {
@@ -70,7 +71,8 @@ export async function runChartCreate(argv: string[], create?: CreateChartFn): Pr
     const createChart =
       create ?? (await import('@kansoku/core/charts/charts.service')).chartsService.create;
     const result = await createChart(payload);
-    emit(result.data);
+    const { chartDeepLink } = await import('@kansoku/core/platform/chartUrl');
+    emit({ ...result.data, deepLink: chartDeepLink(result.data as unknown as ChartUrlDoc) });
   } catch (err) {
     return fail(err instanceof Error ? err.message : String(err));
   }
