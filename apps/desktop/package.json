@@ -39,6 +39,7 @@
     "electron-context-menu": "^4.1.2",
     "electron-ipc-decorator": "^1.0.1",
     "electron-window-state": "5.0.3",
+    "esbuild": "^0.24.2",
     "hono": "4.12.30",
     "partial-json": "^0.1.7",
     "reflect-metadata": "0.2.2",
