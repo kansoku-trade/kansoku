@@ -22,6 +22,10 @@ describe('detectFvgZones', () => {
       kind: 'bullish',
       low: 10,
       high: 12,
+      activeLow: 10,
+      activeHigh: 12,
+      mitigationRatio: 0,
+      ageBars: 1,
       startTime: candles[1].time,
     });
   });
@@ -38,6 +42,10 @@ describe('detectFvgZones', () => {
       kind: 'bearish',
       low: 10,
       high: 12,
+      activeLow: 10,
+      activeHigh: 12,
+      mitigationRatio: 0,
+      ageBars: 1,
       startTime: candles[1].time,
     });
   });
@@ -60,7 +68,31 @@ describe('detectFvgZones', () => {
     ]);
     const zones = detectFvgZones(candles);
     expect(zones).toHaveLength(1);
-    expect(zones[0].kind).toBe('bullish');
+    expect(zones[0]).toMatchObject({
+      kind: 'bullish',
+      activeLow: 10,
+      activeHigh: 11,
+      mitigationRatio: 0.5,
+      ageBars: 2,
+    });
+  });
+
+  it('keeps only the remaining upper portion of a partially mitigated bearish gap', () => {
+    const candles = series([
+      [12, 13],
+      [9, 11],
+      [8, 10],
+      [8.5, 11],
+    ]);
+    const zones = detectFvgZones(candles);
+    expect(zones).toHaveLength(1);
+    expect(zones[0]).toMatchObject({
+      kind: 'bearish',
+      activeLow: 11,
+      activeHigh: 12,
+      mitigationRatio: 0.5,
+      ageBars: 2,
+    });
   });
 
   it('drops a gap once a later bar fully crosses its far edge', () => {

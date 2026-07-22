@@ -251,6 +251,16 @@ export interface IntradayFvgZone {
   low: number;
   high: number;
   kind: 'bullish' | 'bearish';
+  /** 尚未被价格成交覆盖的有效区间下沿；旧图表数据缺省时回退到 low。 */
+  activeLow?: number;
+  /** 尚未被价格成交覆盖的有效区间上沿；旧图表数据缺省时回退到 high。 */
+  activeHigh?: number;
+  /** 已回补比例，范围为 0–1。 */
+  mitigationRatio?: number;
+  /** 从形成到最新 K 线的根数。 */
+  ageBars?: number;
+  /** 原始缺口宽度相对中线价的比例。 */
+  gapRatio?: number;
 }
 
 export interface Fenxing {

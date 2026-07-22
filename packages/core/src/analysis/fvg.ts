@@ -59,15 +59,37 @@ export function detectFvgZones(candles: Candle[]): IntradayFvgZone[] {
     if (a !== null && size < FVG_ATR_RATIO * a) continue;
 
     let filled = false;
+    let activeLow = low;
+    let activeHigh = high;
     for (let j = i + 2; j < n; j++) {
-      if (kind === 'bullish' ? candles[j].low <= low : candles[j].high >= high) {
-        filled = true;
-        break;
+      if (kind === 'bullish') {
+        if (candles[j].low <= low) {
+          filled = true;
+          break;
+        }
+        if (candles[j].low < activeHigh) activeHigh = candles[j].low;
+      } else {
+        if (candles[j].high >= high) {
+          filled = true;
+          break;
+        }
+        if (candles[j].high > activeLow) activeLow = candles[j].high;
       }
     }
     if (filled) continue;
 
-    out.push({ startTime: candles[i].time, low, high, kind });
+    const activeSize = activeHigh - activeLow;
+    out.push({
+      startTime: candles[i].time,
+      low,
+      high,
+      kind,
+      activeLow,
+      activeHigh,
+      mitigationRatio: Math.max(0, Math.min(1, 1 - activeSize / size)),
+      ageBars: n - 1 - i,
+      gapRatio: size / ((high + low) / 2),
+    });
   }
 
   return out;

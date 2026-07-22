@@ -44,6 +44,26 @@ function openCustomLayers() {
 }
 
 describe('IntradayChartOnly pro annotation layer locks', () => {
+  it('shows the number of active FVG zones for the selected timeframe', () => {
+    const builtWithFvg = {
+      sidebar: { technicals: { m5: { emas: [] } } },
+      timeframes: {
+        m5: {
+          candles: [],
+          fvgZones: [
+            { high: 12, kind: 'bullish', low: 10, startTime: 1 },
+            { high: 18, kind: 'bearish', low: 16, startTime: 2 },
+          ],
+        },
+      },
+    } as unknown as IntradayBuilt;
+
+    render(<IntradayChartOnly symbol="NVDA.US" built={builtWithFvg} activeTf="m5" />);
+    openCustomLayers();
+
+    expect(screen.getByText('FVG 缺口 · 2')).toBeTruthy();
+  });
+
   it('renders locked gated layers with a lock icon and free layers as normal checkboxes', () => {
     render(<IntradayChartOnly symbol="NVDA.US" built={built} activeTf="m5" />);
     openCustomLayers();

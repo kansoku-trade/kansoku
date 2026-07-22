@@ -38,7 +38,7 @@ import {
 } from '../lw';
 import type { IndicatorToggleKey, MarkerRange } from './useIndicatorToggles';
 import { AnchorBgPrimitive } from './anchorPrimitive';
-import { FvgPrimitive } from './fvgPrimitive';
+import { FvgPrimitive, fvgTooltip, type FvgTooltipHandle } from './fvgPrimitive';
 import { SessionBgPrimitive } from './sessionPrimitive';
 import { ZhongshuPrimitive } from './zhongshuPrimitive';
 import { seriesPalette, theme } from '@web/lib/theme';
@@ -77,6 +77,7 @@ interface Handle {
   dynamic: { chart: IChartApi; series: ISeriesApi<'Line'> }[];
   planLines: ReturnType<typeof addPriceLine>[];
   fvg: FvgPrimitive;
+  fvgTip: FvgTooltipHandle;
   anchorBg: AnchorBgPrimitive;
   zhongshu: ZhongshuPrimitive;
 }
@@ -93,9 +94,9 @@ const zoneTitle = (z: IntradayPriceZone, edge?: '上沿' | '下沿') =>
   `${z.label}${edge ? edge : ''} $${(edge === '上沿' ? z.high : z.low).toFixed(2)}`;
 
 const CHAN_GROUP_TOGGLE: Partial<Record<OverlayGroup, IndicatorToggleKey>> = {
-  fenxing: 'chanFenxing',
-  bi: 'chanBi',
-  xianduan: 'chanXianduan',
+  'fenxing': 'chanFenxing',
+  'bi': 'chanBi',
+  'xianduan': 'chanXianduan',
   'chan-buy1': 'chanBuySell1',
   'chan-sell1': 'chanBuySell1',
   'chan-buy2': 'chanBuySell2',
@@ -107,8 +108,7 @@ const CHAN_GROUP_TOGGLE: Partial<Record<OverlayGroup, IndicatorToggleKey>> = {
 const groupAllowed = (
   toggles: Record<IndicatorToggleKey, boolean>,
   group?: SeriesMarker['group'],
-) =>
-  group === undefined || toggles[CHAN_GROUP_TOGGLE[group] ?? (group as IndicatorToggleKey)];
+) => group === undefined || toggles[CHAN_GROUP_TOGGLE[group] ?? (group as IndicatorToggleKey)];
 
 const filterByGroup = <T extends { group?: SeriesMarker['group'] }>(
   items: T[],
@@ -269,6 +269,7 @@ export function useIntradayCharts(
     const observers = [observeSize(mainEl, main), observeSize(macdEl, macd)];
     const mainTip = markerTooltip(main, mainEl);
     const macdTip = markerTooltip(macd, macdEl);
+    const fvgTip = fvgTooltip(main, mainEl);
 
     const onRangeChange = (range: LogicalRange | null) => {
       if (range && range.from < NEAR_LEFT_BARS) onNearRef.current?.();
@@ -294,6 +295,7 @@ export function useIntradayCharts(
       dynamic: [],
       planLines: [],
       fvg,
+      fvgTip,
       anchorBg,
       zhongshu,
     };
@@ -306,6 +308,7 @@ export function useIntradayCharts(
       main.timeScale().unsubscribeVisibleLogicalRangeChange(onRangeChange);
       mainTip.destroy();
       macdTip.destroy();
+      fvgTip.destroy();
       observers.forEach((ro) => ro.disconnect());
       stopCrosshairSync();
       stopTimeScaleSync();
@@ -341,9 +344,17 @@ export function useIntradayCharts(
       const emaLine = d.emas[i];
       s.setData(toggles.ema && emaLine ? padLineData(emaLine.data, timeline) : []);
     });
-    h.vwapSeries.setData(toggles.vwap && d.vwap ? padLineData(d.vwap, timeline) : []);
-    h.fvg.setData(toggles.fvg ? (d.fvgZones ?? []) : []);
     const lastBarTime = d.candles.at(-1)?.time;
+    const currentPrice = d.candles.at(-1)?.close;
+    const fvgZones = toggles.fvg ? (d.fvgZones ?? []) : [];
+    const fvgContext = {
+      currentPrice,
+      lastBarTime,
+      timeframeLabel: activeTf === 'h1' ? '1h' : activeTf === 'm15' ? '15m' : '5m',
+    };
+    h.vwapSeries.setData(toggles.vwap && d.vwap ? padLineData(d.vwap, timeline) : []);
+    h.fvg.setData(fvgZones, fvgContext);
+    h.fvgTip.setData(fvgZones, fvgContext);
     const zhongshus = d.chanStructure?.zhongshus ?? [];
     const zhongshuRects: PriceRectangle[] =
       toggles.chanZhongshu && lastBarTime !== undefined
