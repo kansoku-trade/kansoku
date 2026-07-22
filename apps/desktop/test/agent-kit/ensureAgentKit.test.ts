@@ -119,4 +119,24 @@ describe('ensureAgentKit', () => {
     expect(result).toEqual({ conflicts: [], updates: [] });
     expect(await readFile(join(dataRoot, 'CLAUDE.md'), 'utf8')).toBe(claudeMdBefore);
   });
+
+  it('does not re-write template state or duplicate entries on a second, up-to-date pass', async () => {
+    const nowFirst = () => new Date('2026-07-22T00:00:00.000Z');
+    const nowSecond = () => new Date('2026-07-23T00:00:00.000Z');
+
+    await ensureAgentKit({ dataRoot, resourcesPath, db, now: nowFirst });
+    const writtenAtFirst = readState(dataRoot)?.templates['CLAUDE.md']?.writtenAt;
+
+    const result = await ensureAgentKit({ dataRoot, resourcesPath, db, now: nowSecond });
+    expect(result).toEqual({ conflicts: [], updates: [] });
+
+    const stateAfterSecond = readState(dataRoot);
+    expect(stateAfterSecond?.templates['CLAUDE.md']?.writtenAt).toBe(writtenAtFirst);
+    expect(stateAfterSecond?.syncedAt).toBe(nowSecond().toISOString());
+    expect(Object.keys(stateAfterSecond?.templates ?? {}).sort()).toEqual([
+      'AGENTS.md',
+      'CLAUDE.md',
+      'journal/personal.md',
+    ]);
+  });
 });
