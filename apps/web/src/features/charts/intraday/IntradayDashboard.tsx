@@ -136,7 +136,15 @@ export function IntradayChartOnly({
     [built, activeTf],
   );
   const drawingsApi = useDrawings(drawingHandle, symbol, barTimes);
-  const activeFvgCount = built.timeframes[activeTf]?.fvgZones?.length ?? 0;
+  const activeTfData = built.timeframes[activeTf];
+  const layerDataCounts: Partial<Record<IndicatorToggleKey, number>> = {
+    fvg: activeTfData?.fvgZones?.length ?? 0,
+    pattern123: activeTfData?.pattern123?.length ?? 0,
+    sb: activeTfData?.secondBreakouts?.length ?? 0,
+    divergence: activeTfData?.autoDivergence?.length ?? 0,
+    macdBeichi: activeTfData?.autoBeichi?.length ?? 0,
+    candle: activeTfData?.markers?.filter((marker) => marker.group === 'candle').length ?? 0,
+  };
   const lockedToggleKeys = useMemo(() => {
     const keys = new Set<IndicatorToggleKey>();
     for (const [key, featureKey] of Object.entries(INDICATOR_FEATURE_GATES) as [
@@ -157,9 +165,9 @@ export function IntradayChartOnly({
         return {
           key,
           label:
-            key === 'fvg'
-              ? `${INDICATOR_TOGGLE_LABELS[key]} · ${activeFvgCount}`
-              : INDICATOR_TOGGLE_LABELS[key],
+            layerDataCounts[key] === undefined
+              ? INDICATOR_TOGGLE_LABELS[key]
+              : `${INDICATOR_TOGGLE_LABELS[key]} · ${layerDataCounts[key]}`,
           color: INDICATOR_TOGGLE_COLORS[key],
           toggle: (v: boolean) => setToggle(key, v),
           locked,
@@ -182,7 +190,7 @@ export function IntradayChartOnly({
     ];
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    activeFvgCount,
+    activeTfData,
     lockedToggleKeys,
     setToggle,
     autoPatternsFeature.locked,

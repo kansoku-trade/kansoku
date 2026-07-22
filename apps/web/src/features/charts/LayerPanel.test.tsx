@@ -99,4 +99,28 @@ describe('LayerPanel locks', () => {
     const activeInput = document.querySelector<HTMLInputElement>('.lp-presets input:checked');
     expect(activeInput?.value).toBe('std');
   });
+
+  it('keeps the active preset selected when an unrelated layer is enabled', () => {
+    const groups: LayerGroup[] = [
+      ...makeGroups(),
+      {
+        title: '缠论结构',
+        items: [{ key: 'chanBi', label: '笔', color: '#fff', toggle: vi.fn() }],
+      },
+    ];
+    const presets: LayerPreset[] = [
+      { key: 'lean', label: '精简', on: ['ema'] },
+      { key: 'all', label: '全部', on: ['ema', 'vwap'] },
+    ];
+    render(
+      <LayerPanel
+        groups={groups}
+        checked={{ ema: true, vwap: true, sb: false, chanBi: true }}
+        presets={presets}
+      />,
+    );
+
+    const activeInput = document.querySelector<HTMLInputElement>('.lp-presets input:checked');
+    expect(activeInput?.value).toBe('all');
+  });
 });

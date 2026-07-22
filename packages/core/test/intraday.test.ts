@@ -4,7 +4,11 @@ import {
   computeIntradayEntryPlan,
   resolveEntryPlanStatus,
 } from '../src/analysis/intraday/entryPlan.js';
-import { capMarkersPerBar, mergeAiAutoMarkers } from '../src/analysis/intraday/markers.js';
+import {
+  capMarkersPerBar,
+  dedupeMarkers,
+  mergeAiAutoMarkers,
+} from '../src/analysis/intraday/markers.js';
 import { buildIntraday, type IntradayInput } from '../src/analysis/intraday/orchestrator.js';
 import { coerceIntradayTimeframe } from '../src/analysis/intraday/timeframe.js';
 import { approxDiff, loadFixture } from './helpers.js';
@@ -196,12 +200,10 @@ describe('intraday parity vs python golden fixture', () => {
     expect(resolveEntryPlanStatus(plan, 'long', null, falling)).toBeNull();
   });
 
-  it('caps visible markers per bar in built output', () => {
+  it('keeps the full marker set in built output for client-side layer selection', () => {
     const { built } = buildIntraday(input);
     for (const tf of Object.values(built.timeframes)) {
-      const perBar = new Map<number, number>();
-      for (const m of tf.markers) perBar.set(m.time, (perBar.get(m.time) ?? 0) + 1);
-      for (const count of perBar.values()) expect(count).toBeLessThanOrEqual(2);
+      expect(tf.markers).toEqual(dedupeMarkers(tf.markers));
     }
   });
 
@@ -236,7 +238,12 @@ describe('marker consolidation helpers', () => {
   it('keeps auto markers of a different type or beyond the merge window', () => {
     const ai = [marker(1000, 'ai', '⚡', '⚡ AI 标注信号\n顶背离')];
     const auto = [
-      marker(1000, 'macdBeichi', '🌀', '🌀 自动·顶 MACD 背离（K 线级）（简化算法，仅供参考）\n详情'),
+      marker(
+        1000,
+        'macdBeichi',
+        '🌀',
+        '🌀 自动·顶 MACD 背离（K 线级）（简化算法，仅供参考）\n详情',
+      ),
       marker(1240, 'divergence', '📉', '📉 自动·顶背离（简化算法，仅供参考）\n详情'),
     ];
     const out = mergeAiAutoMarkers(ai, auto, barIndex);
@@ -266,5 +273,19 @@ describe('marker consolidation helpers', () => {
     expect(out[1].tooltip).toContain('本根另有');
     expect(out[1].tooltip).toContain('顶部123');
     expect(out[1].tooltip).toContain('十字星');
+  });
+
+  it('deduplicates same-bar markers without discarding lower-priority layer data', () => {
+    const stacked = [
+      marker(1000, 'ai', '🌀', '🌀 AI 标注信号\n背驰'),
+      marker(1000, 'divergence', '📉', '📉 自动·顶背离\n详情'),
+      marker(1000, 'pattern123', '③', '🔢 自动·顶部123\n详情'),
+    ];
+
+    expect(dedupeMarkers(stacked).map((item) => item.group)).toEqual([
+      'ai',
+      'divergence',
+      'pattern123',
+    ]);
   });
 });

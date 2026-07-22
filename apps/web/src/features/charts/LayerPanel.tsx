@@ -71,9 +71,13 @@ export function LayerPanel({
   const headerLabel = `${title} ${onCount}/${totalCount}`;
 
   const hasPresets = Boolean(presets?.length);
+  const presetKeys = hasPresets ? new Set(presets!.flatMap((preset) => preset.on)) : null;
   const activePreset = hasPresets
-    ? (presets!.find((p) => allItems.every((it) => effectiveOn(it) === p.on.includes(it.key)))
-        ?.key ?? null)
+    ? (presets!.find((p) =>
+        allItems
+          .filter((item) => presetKeys!.has(item.key))
+          .every((item) => effectiveOn(item) === p.on.includes(item.key)),
+      )?.key ?? null)
     : null;
 
   const toggleCollapsed = () => setCollapsed((c) => !c);

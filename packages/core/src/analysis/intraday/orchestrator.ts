@@ -34,8 +34,8 @@ import { computeIntradayEntryPlan, resolveEntryPlanStatus } from './entryPlan.js
 import {
   autoPatternMarkers,
   buildIntradaySignals,
-  capMarkersPerBar,
   chanOverlay,
+  dedupeMarkers,
   mergeAiAutoMarkers,
   pattern123Overlay,
 } from './markers.js';
@@ -243,7 +243,7 @@ export function buildIntraday(input: IntradayInput): { built: IntradayBuilt; met
       macdDea: tf.macdDea,
       macdHist: tf.macdHist,
       macdCrossMarkers: crossMarkers,
-      markers: capMarkersPerBar([
+      markers: dedupeMarkers([
         ...mergeAiAutoMarkers(sig.markers, [...autoDiv.markers, ...autoBei.markers], barIndex),
         ...auto123.markers,
         ...patternMarkers,

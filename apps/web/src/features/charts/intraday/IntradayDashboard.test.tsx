@@ -64,12 +64,38 @@ describe('IntradayChartOnly pro annotation layer locks', () => {
     expect(screen.getByText('FVG 缺口 · 2')).toBeTruthy();
   });
 
+  it('shows detector result counts so an empty layer is distinguishable from a render failure', () => {
+    capabilities = { features: { 'auto-patterns': 'active', 'options-walls': 'active' } };
+    const builtWithPatterns = {
+      sidebar: { technicals: { m5: { emas: [] } } },
+      timeframes: {
+        m5: {
+          candles: [],
+          markers: [{ group: 'candle' }, { group: 'candle' }],
+          autoDivergence: [{}, {}],
+          autoBeichi: [{}],
+          pattern123: [{}, {}, {}],
+          secondBreakouts: [{}],
+        },
+      },
+    } as unknown as IntradayBuilt;
+
+    render(<IntradayChartOnly symbol="NVDA.US" built={builtWithPatterns} activeTf="m5" />);
+    openCustomLayers();
+
+    expect(screen.getByText('123 结构 · 3')).toBeTruthy();
+    expect(screen.getByText('SB 结构 · 1')).toBeTruthy();
+    expect(screen.getByText('自动背离 · 2')).toBeTruthy();
+    expect(screen.getByText('MACD 背离（K 线级） · 1')).toBeTruthy();
+    expect(screen.getByText('K线形态 · 2')).toBeTruthy();
+  });
+
   it('renders locked gated layers with a lock icon and free layers as normal checkboxes', () => {
     render(<IntradayChartOnly symbol="NVDA.US" built={built} activeTf="m5" />);
     openCustomLayers();
 
-    expect(screen.getByText('SB 结构').closest('.lp-locked')).toBeTruthy();
-    expect(screen.getByText('123 结构').closest('.lp-locked')).toBeTruthy();
+    expect(screen.getByText(/^SB 结构/).closest('.lp-locked')).toBeTruthy();
+    expect(screen.getByText(/^123 结构/).closest('.lp-locked')).toBeTruthy();
     expect(screen.getByText('期权墙').closest('.lp-locked')).toBeTruthy();
     expect(screen.getByText('EMA 均线').closest('label')?.querySelector('input')).toBeTruthy();
   });
@@ -78,7 +104,7 @@ describe('IntradayChartOnly pro annotation layer locks', () => {
     render(<IntradayChartOnly symbol="NVDA.US" built={built} activeTf="m5" />);
     openCustomLayers();
 
-    fireEvent.click(screen.getByText('SB 结构'));
+    fireEvent.click(screen.getByText(/^SB 结构/));
 
     expect(getLicenseModalStateForTests()).toEqual({ open: true, trigger: 'guard' });
   });
@@ -105,8 +131,8 @@ describe('IntradayChartOnly pro annotation layer locks', () => {
     render(<IntradayChartOnly symbol="NVDA.US" built={built} activeTf="m5" />);
     openCustomLayers();
 
-    expect(screen.getByText('SB 结构').closest('.lp-locked')).toBeTruthy();
-    expect(screen.getByText('123 结构').closest('.lp-locked')).toBeTruthy();
+    expect(screen.getByText(/^SB 结构/).closest('.lp-locked')).toBeTruthy();
+    expect(screen.getByText(/^123 结构/).closest('.lp-locked')).toBeTruthy();
     expect(screen.getByText('期权墙').closest('.lp-locked')).toBeTruthy();
     expect(screen.getByText(/^图层 \d+\/14$/)).toBeTruthy();
   });
@@ -124,7 +150,12 @@ describe('IntradayChartOnly pro annotation layer locks', () => {
     render(<IntradayChartOnly symbol="NVDA.US" built={built} activeTf="m5" />);
     openCustomLayers();
 
-    expect(screen.getByText('SB 结构').closest('label')?.querySelector('input')).toBeTruthy();
+    expect(
+      screen
+        .getByText(/^SB 结构/)
+        .closest('label')
+        ?.querySelector('input'),
+    ).toBeTruthy();
     expect(screen.getByText('期权墙').closest('label')?.querySelector('input')).toBeTruthy();
     expect(screen.getByText(/^图层 \d+\/20$/)).toBeTruthy();
   });

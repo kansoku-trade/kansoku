@@ -32,7 +32,9 @@ vi.mock('@kansoku/core/env', () => ({ CHART_DATA_DIR: '/tmp/chart-data' }));
 const getActiveBundleKey = vi.hoisted(() => vi.fn(() => undefined));
 vi.mock('@kansoku/core/license/licenseState', () => ({ getActiveBundleKey }));
 
-const loadPro = vi.hoisted(() => vi.fn(async () => null as { webFiles: Map<string, Buffer> } | null));
+const loadPro = vi.hoisted(() =>
+  vi.fn(async () => null as { webFiles: Map<string, Buffer> } | null),
+);
 vi.mock('@kansoku/core/pro/loader', () => ({ loadPro }));
 
 const loadProComposition = vi.hoisted(() =>
@@ -73,6 +75,8 @@ vi.mock('electron', () => ({
 // bundleState's isProPresent() (still read by capabilities.service, features.ts
 // and proActivationWatch.ts) correct based on whether the pro composition loads.
 const { isProPresent, setProPresent } = await import('@kansoku/core/pro/bundleState');
+const { currentProDetectors, resetProDetectorsForTests } =
+  await import('@kansoku/core/pro/detectors');
 const { bootKernel } = await import('@desktop/boot/kernel.js');
 
 describe('bootKernel keeps pro presence in sync', () => {
@@ -84,10 +88,12 @@ describe('bootKernel keeps pro presence in sync', () => {
     loadPro.mockResolvedValue(null);
     loadProComposition.mockResolvedValue(null);
     setProPresent(false);
+    resetProDetectorsForTests();
   });
 
   afterEach(() => {
     setProPresent(false);
+    resetProDetectorsForTests();
   });
 
   it('leaves isProPresent() false when the pro composition never loads', async () => {
@@ -110,5 +116,18 @@ describe('bootKernel keeps pro presence in sync', () => {
     await bootKernel();
 
     expect(isProPresent()).toBe(true);
+  });
+
+  it('registers detectors supplied by the desktop pro composition', async () => {
+    const detect123Patterns = vi.fn(() => []);
+    loadProComposition.mockResolvedValueOnce({
+      ipcServices: [],
+      realtimeChannels: [],
+      detectors: { detect123Patterns } as never,
+    });
+
+    await bootKernel();
+
+    expect(currentProDetectors().detect123Patterns).toBe(detect123Patterns);
   });
 });

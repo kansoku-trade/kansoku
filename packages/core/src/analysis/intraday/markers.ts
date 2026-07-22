@@ -16,12 +16,12 @@ import {
   AI_AUTO_MERGE_BAR_WINDOW,
   AI_ICON_TO_AUTO_GROUP,
   barTimeShort,
-  MARKER_GROUP_RANK,
-  MAX_MARKERS_PER_BAR,
   SIGNAL_BIAS_STYLE,
   SIGNAL_ICON,
   TIMEFRAME_ORDER,
 } from './constants.js';
+
+export { capMarkersPerBar, dedupeMarkers } from '@kansoku/shared/markerPolicy';
 
 export interface TfOverlay {
   markers: SeriesMarker[];
@@ -121,55 +121,6 @@ export function mergeAiAutoMarkers(
     if (note && !near.tooltip?.includes(note)) near.tooltip = `${near.tooltip}\n${note}`;
   }
   return [...merged, ...kept];
-}
-
-export function capMarkersPerBar(
-  markers: SeriesMarker[],
-  cap = MAX_MARKERS_PER_BAR,
-): SeriesMarker[] {
-  const bySlot = new Map<string, SeriesMarker>();
-  const deduped: SeriesMarker[] = [];
-  for (const m of markers) {
-    const slot = `${m.time}|${m.group ?? ''}|${m.text ?? ''}`;
-    const prev = bySlot.get(slot);
-    if (!prev) {
-      const copy = { ...m };
-      bySlot.set(slot, copy);
-      deduped.push(copy);
-    } else {
-      if (m.tooltip && prev.tooltip !== m.tooltip && !prev.tooltip?.includes(m.tooltip)) {
-        prev.tooltip = `${prev.tooltip}\n———\n${m.tooltip}`;
-      }
-      if (prev.recent === false && m.recent !== false) prev.recent = m.recent;
-    }
-  }
-  const byTime = new Map<number, SeriesMarker[]>();
-  for (const m of deduped) {
-    const list = byTime.get(m.time);
-    if (list) list.push(m);
-    else byTime.set(m.time, [m]);
-  }
-  const out: SeriesMarker[] = [];
-  for (const group of byTime.values()) {
-    if (group.length <= cap) {
-      out.push(...group);
-      continue;
-    }
-    const ranked = [...group].sort(
-      (a, b) => (MARKER_GROUP_RANK[a.group ?? ''] ?? 9) - (MARKER_GROUP_RANK[b.group ?? ''] ?? 9),
-    );
-    const keep = ranked.slice(0, cap).map((m) => ({ ...m }));
-    const dropped = ranked
-      .slice(cap)
-      .map((m) => m.tooltip?.split('\n')[0])
-      .filter((t): t is string => Boolean(t));
-    if (dropped.length) {
-      const last = keep.at(-1)!;
-      last.tooltip = `${last.tooltip}\n———\n本根另有：${dropped.join('；')}`;
-    }
-    out.push(...keep);
-  }
-  return out.sort((a, b) => a.time - b.time);
 }
 
 export function autoPatternMarkers(

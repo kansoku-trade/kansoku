@@ -13,7 +13,6 @@ import {
 import type {
   IntradayBuilt,
   IntradayPriceZone,
-  OverlayGroup,
   PriceRectangle,
   SecondBreakout,
   SeriesMarker,
@@ -41,6 +40,7 @@ import { AnchorBgPrimitive } from './anchorPrimitive';
 import { FvgPrimitive, fvgTooltip, type FvgTooltipHandle } from './fvgPrimitive';
 import { SessionBgPrimitive } from './sessionPrimitive';
 import { ZhongshuPrimitive } from './zhongshuPrimitive';
+import { filterVisibleOverlayItems, selectVisibleMarkers } from './markerSelection';
 import { seriesPalette, theme } from '@web/lib/theme';
 
 export const EMA_COLORS = [
@@ -93,31 +93,6 @@ const fmtOi = (oi: number) => (oi >= 1000 ? `${(oi / 1000).toFixed(1)}k` : Strin
 const zoneTitle = (z: IntradayPriceZone, edge?: '上沿' | '下沿') =>
   `${z.label}${edge ? edge : ''} $${(edge === '上沿' ? z.high : z.low).toFixed(2)}`;
 
-const CHAN_GROUP_TOGGLE: Partial<Record<OverlayGroup, IndicatorToggleKey>> = {
-  'fenxing': 'chanFenxing',
-  'bi': 'chanBi',
-  'xianduan': 'chanXianduan',
-  'chan-buy1': 'chanBuySell1',
-  'chan-sell1': 'chanBuySell1',
-  'chan-buy2': 'chanBuySell2',
-  'chan-sell2': 'chanBuySell2',
-  'chan-buy3': 'chanBuySell3',
-  'chan-sell3': 'chanBuySell3',
-};
-
-const groupAllowed = (
-  toggles: Record<IndicatorToggleKey, boolean>,
-  group?: SeriesMarker['group'],
-) => group === undefined || toggles[CHAN_GROUP_TOGGLE[group] ?? (group as IndicatorToggleKey)];
-
-const filterByGroup = <T extends { group?: SeriesMarker['group'] }>(
-  items: T[],
-  toggles: Record<IndicatorToggleKey, boolean>,
-): T[] => items.filter((item) => groupAllowed(toggles, item.group));
-
-const filterByRange = <T extends { recent?: boolean }>(items: T[], range: MarkerRange): T[] =>
-  range === 'all' ? items : items.filter((item) => item.recent !== false);
-
 const RECENT_SB_COUNT = 2;
 
 const secondBreakoutMarkers = (sbs: SecondBreakout[]): SeriesMarker[] => {
@@ -134,6 +109,7 @@ const secondBreakoutMarkers = (sbs: SecondBreakout[]): SeriesMarker[] => {
       shape: 'circle',
       text: firstText,
       tooltip: `${firstText}（第一次${attemptVerb}尝试，未成立）`,
+      group: 'sb',
     });
     if (sb.status === 'forming') {
       markers.push({
@@ -144,6 +120,7 @@ const secondBreakoutMarkers = (sbs: SecondBreakout[]): SeriesMarker[] => {
         shape: 'circle',
         text: '',
         tooltip: `SB 结构酝酿中：等待收盘${attemptVerb} $${sb.signal.price.toFixed(2)}`,
+        group: 'sb',
       });
     } else if (sb.trigger) {
       const extremeText = bullish ? '最高' : '最低';
@@ -155,6 +132,7 @@ const secondBreakoutMarkers = (sbs: SecondBreakout[]): SeriesMarker[] => {
         shape: bullish ? 'arrowUp' : 'arrowDown',
         text: sb.kind,
         tooltip: `${sb.kind} 结构确认\n${extremeText} $${sb.trigger.price.toFixed(2)} ${attemptVerb}信号棒`,
+        group: 'sb',
       });
     }
   });
@@ -378,10 +356,7 @@ export function useIntradayCharts(
         ? (d.secondBreakouts ?? [])
         : (d.secondBreakouts ?? []).slice(-RECENT_SB_COUNT);
     const sbMarkers = toggles.sb ? secondBreakoutMarkers(sbSource) : [];
-    const markers = [
-      ...filterByGroup(filterByRange(d.markers, markerRange), toggles),
-      ...sbMarkers,
-    ].sort((a, b) => a.time - b.time);
+    const markers = selectVisibleMarkers([...d.markers, ...sbMarkers], toggles, markerRange);
     h.candleMarkers.setMarkers(toMarkers(markers));
     h.mainTip.setMarkers(markers);
     h.dif.setData(padLineData(d.macdDif, timeline));
@@ -398,12 +373,12 @@ export function useIntradayCharts(
       lastValueVisible: false,
       crosshairMarkerVisible: false,
     };
-    filterByGroup(filterByRange(d.priceConnectors ?? [], markerRange), toggles).forEach((c) => {
+    filterVisibleOverlayItems(d.priceConnectors ?? [], toggles, markerRange).forEach((c) => {
       const s = h.main.addSeries(LineSeries, { color: c.color, ...connectorOpts });
       s.setData(toLineData(c.data));
       h.dynamic.push({ chart: h.main, series: s });
     });
-    filterByGroup(filterByRange(d.macdConnectors ?? [], markerRange), toggles).forEach((c) => {
+    filterVisibleOverlayItems(d.macdConnectors ?? [], toggles, markerRange).forEach((c) => {
       const s = h.macd.addSeries(LineSeries, { color: c.color, ...connectorOpts });
       s.setData(toLineData(c.data));
       h.dynamic.push({ chart: h.macd, series: s });

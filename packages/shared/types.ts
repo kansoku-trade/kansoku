@@ -33,6 +33,7 @@ export type OverlayGroup =
   | 'divergence'
   | 'macdBeichi'
   | 'pattern123'
+  | 'sb'
   | 'candle'
   | 'fenxing'
   | 'bi'
