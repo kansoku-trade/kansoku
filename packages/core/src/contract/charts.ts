@@ -8,6 +8,7 @@ export interface ChartListItem extends ChartMeta {
 
 export interface ChartWithStale extends ChartDoc {
   prediction_stale: boolean;
+  sepa_stale?: boolean;
 }
 
 export interface ChartBuiltResult {

@@ -8,7 +8,7 @@ import { useViewTimeframe } from '../charts/intraday/useViewTimeframe';
 import { IntradayControlsProvider } from '../charts/intraday/controlsContext';
 import { resolveIntradayTf, useIntradayDoc } from '../charts/intraday/useIntradayDoc';
 import type { SidebarTab } from '../charts/SidebarTabs';
-import { SepaDashboard } from '../charts/sepa/SepaDashboard';
+import { SepaCockpit, type SepaDocView } from '../charts/sepa/SepaCockpit';
 import { TopbarQuote } from '../quotes/QuoteBar';
 import { marketOfSymbol } from '../../lib/market';
 import { recordRecentSymbol } from '../charts/recentCharts';
@@ -51,6 +51,7 @@ export function SymbolCockpit({ sym }: { sym: string }) {
   const {
     doc,
     error,
+    reload,
     degraded,
     live,
     canLoadForward,
@@ -159,23 +160,8 @@ export function SymbolCockpit({ sym }: { sym: string }) {
   if (!doc) return <CockpitSkeleton />;
 
   if (doc.built.kind === 'sepa') {
-    return (
-      <div className="fullpage">
-        <div className="detail-topbar">
-          <a href="/">
-            <ArrowLeft className="icon" size={13} /> 列表
-          </a>
-          <span className="title">{doc.title}</span>
-          <span className="meta">{sym}</span>
-          <span className="topbar-actions">
-            {doc.symbol && <TopbarQuote quote={liveQuote} />}
-          </span>
-        </div>
-        <div className="detail-body">
-          <SepaDashboard built={doc.built} />
-        </div>
-      </div>
-    );
+    const sepaDoc: SepaDocView = { ...doc, built: doc.built };
+    return <SepaCockpit sym={sym} doc={sepaDoc} reload={reload} liveQuote={liveQuote} />;
   }
 
   if (doc.built.kind !== 'intraday')

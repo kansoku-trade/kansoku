@@ -47,6 +47,7 @@ export interface SepaInput {
   news?: NewsItem[];
   position?: { shares?: number; cost?: number };
   context?: SepaContext;
+  origin?: string | null;
 }
 
 export interface SepaMeta {

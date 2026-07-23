@@ -1,4 +1,4 @@
-import { symbolAnalysisPath, symbolLivePath } from './chartUrl.js';
+import { symbolAnalysisPath, symbolLivePath, symbolSepaPath } from './chartUrl.js';
 
 const RELATIVE_APP_ORIGIN = 'https://kansoku.internal';
 const LOCAL_APP_HOSTS = new Set(['localhost', '127.0.0.1']);
@@ -6,6 +6,7 @@ const LOCAL_APP_HOSTS = new Set(['localhost', '127.0.0.1']);
 export type AppDeepLink =
   | { kind: 'symbol-analysis'; route: string; symbol: string; analysisId: string }
   | { kind: 'symbol-cockpit'; route: string; symbol: string; analysisId: null }
+  | { kind: 'symbol-sepa'; route: string; symbol: string; analysisId: string | null }
   | { kind: 'chart'; route: string; chartId: string };
 
 function isKnownAppOrigin(url: URL, relative: boolean): boolean {
@@ -39,6 +40,25 @@ export function parseAppDeepLink(href: string | undefined): AppDeepLink | null {
     } catch {
       return null;
     }
+  }
+
+  const sepaMatch = url.pathname.match(/^\/symbol\/sepa\/([^/]+)\/?$/);
+  if (sepaMatch) {
+    let sepaSymbol: string;
+    try {
+      sepaSymbol = decodeURIComponent(sepaMatch[1]);
+    } catch {
+      return null;
+    }
+    if (!sepaSymbol || !/^[\w.-]+$/.test(sepaSymbol)) return null;
+
+    const sepaAnalysisId = url.searchParams.get('analysis')?.trim() || null;
+    return {
+      kind: 'symbol-sepa',
+      route: symbolSepaPath(sepaSymbol, sepaAnalysisId),
+      symbol: sepaSymbol,
+      analysisId: sepaAnalysisId,
+    };
   }
 
   const symbolMatch = url.pathname.match(/^\/symbol\/([^/]+)\/?$/);

@@ -7,7 +7,7 @@ import { ALL_TYPES, buildChart, mergeForPatch, rebuild, refreshBody } from './bu
 import { clampViewCount } from '../analysis/history.js';
 import { TIMEFRAME_ORDER } from '../analysis/intraday/constants.js';
 import { validatePrediction } from '../analysis/predictionRules.js';
-import { predictionStale } from '../platform/staleness.js';
+import { predictionStale, sepaStale } from '../platform/staleness.js';
 import { createChart, deleteChart, listCharts, loadChart, saveChart } from './store.js';
 import { buildViewTimeframe } from './viewTimeframe.js';
 import { localizeChartDocName } from '../symbols/securityName.js';
@@ -54,7 +54,12 @@ export const chartsService: ChartsApi = {
       featureStateSync('options-walls') === 'active'
         ? localized
         : { ...localized, input: { ...localized.input, options_levels: null } };
-    return { ...served, prediction_stale: predictionStale(served, new Date()) };
+    const now = new Date();
+    return {
+      ...served,
+      prediction_stale: predictionStale(served, now),
+      sepa_stale: sepaStale(served, now),
+    };
   },
 
   async create(input) {

@@ -207,6 +207,7 @@ function LobeHubAuthRow({
       const info = await client.lobehub.startDeviceLogin();
       openModal({
         title: '连接 LobeHub Cloud',
+        size: 'sm',
         body: (closeModal) => (
           <DeviceLoginDialog login={info} closeModal={closeModal} onConnected={onChanged} />
         ),
@@ -376,6 +377,7 @@ export function ProviderCredentialsSection({
   const handleReset = () => {
     openModal({
       title: '重置全部凭据',
+      size: 'sm',
       body: (closeModal) => (
         <ResetCredentialsDialog closeModal={closeModal} onChanged={onChanged} />
       ),

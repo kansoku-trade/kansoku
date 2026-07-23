@@ -1,5 +1,6 @@
-import type { ChartDoc } from '@kansoku/shared/types';
-import { classifySession } from '../marketdata/session.js';
+import type { ChartDoc, SepaBuilt } from '@kansoku/shared/types';
+import { classifySession, marketDate, marketSessionDate } from '../marketdata/session.js';
+import { marketOf } from '../symbols/symbol.utils.js';
 
 export const PREDICTION_STALE_MS = 15 * 60_000;
 
@@ -23,4 +24,28 @@ export function predictionStale(doc: ChartDoc, now: Date): boolean {
   })();
 
   return predictionCondition || contextCondition;
+}
+
+function shiftIsoDate(iso: string, days: number): string {
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+function mostRecentTradingDate(symbol: string, now: Date): string {
+  const today = marketDate(marketOf(symbol), now);
+  const weekday = new Date(`${today}T00:00:00Z`).getUTCDay();
+  if (weekday === 0) return shiftIsoDate(today, -2);
+  if (weekday === 6) return shiftIsoDate(today, -1);
+  return today;
+}
+
+export function sepaStale(doc: ChartDoc, now: Date): boolean {
+  if (doc.type !== 'sepa') return false;
+  const symbol = doc.symbol;
+  if (!symbol) return false;
+  const asOf = (doc.built as SepaBuilt).sidebar?.asOf;
+  if (!asOf) return false;
+  const lastBarDate = marketSessionDate(symbol, asOf);
+  return lastBarDate < mostRecentTradingDate(symbol, now);
 }

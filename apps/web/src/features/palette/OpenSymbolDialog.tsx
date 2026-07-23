@@ -55,6 +55,7 @@ function OpenSymbolForm({
 export function openSymbolDialog(onOpen: (route: string) => void = navigate): void {
   openModal({
     title: '打开个股',
+    size: 'sm',
     body: (close) => <OpenSymbolForm onOpen={onOpen} onDone={close} />,
   });
 }

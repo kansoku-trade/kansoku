@@ -1,5 +1,5 @@
 import type { OffSessionSegment, SessionKind } from '@kansoku/shared/types';
-import type { Market } from '../symbols/symbol.utils.js';
+import { marketOf, type Market } from '../symbols/symbol.utils.js';
 
 interface MarketSessionConfig {
   timeZone: string;
@@ -71,6 +71,11 @@ export function marketDate(market: Market, date: Date = new Date()): string {
 
 export function easternDate(date: Date = new Date()): string {
   return marketDate('US', date);
+}
+
+export function marketSessionDate(symbol: string, iso: string): string {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso;
+  return marketDate(marketOf(symbol), new Date(iso));
 }
 
 export function isCurrentSessionId(id: string, market: Market = 'US'): boolean {

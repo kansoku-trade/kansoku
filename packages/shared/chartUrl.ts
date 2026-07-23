@@ -14,6 +14,11 @@ export function symbolLivePath(symbol: string): string {
   return `${symbolAnalysisPath(symbol, null)}?view=live`;
 }
 
+export function symbolSepaPath(symbol: string, analysisId?: string | null): string {
+  const base = `/symbol/sepa/${encodeURIComponent(symbol)}`;
+  return analysisId ? `${base}?analysis=${encodeURIComponent(analysisId)}` : base;
+}
+
 /**
  * Single source of truth for "chart doc -> page it lives on".
  * Symbol charts (intraday/sepa) pin the symbol page to this analysis;

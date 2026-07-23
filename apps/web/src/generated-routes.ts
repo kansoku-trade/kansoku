@@ -18,7 +18,8 @@ const lazy8 = () => import("./pages/research/assistant")
 const lazy9 = () => import("./pages/research/index")
 const lazy10 = () => import("./pages/settings")
 const lazy11 = () => import("./pages/symbol/[sym]")
-const lazy12 = () => import("./pages/index")
+const lazy12 = () => import("./pages/symbol/sepa/[sym]")
+const lazy13 = () => import("./pages/index")
 
 // Generated route configuration
 export const routes: RouteObject[] = [
@@ -92,12 +93,21 @@ export const routes: RouteObject[] = [
       {
         "path": ":sym",
         "lazy": lazy11
+      },
+      {
+        "path": "sepa",
+        "children": [
+          {
+            "path": ":sym",
+            "lazy": lazy12
+          }
+        ]
       }
     ]
   },
   {
     "path": "",
-    "lazy": lazy12
+    "lazy": lazy13
   }
 ]
 

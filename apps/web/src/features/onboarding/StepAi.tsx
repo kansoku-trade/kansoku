@@ -89,6 +89,7 @@ export function StepAi({ onNext }: { onNext: () => void }) {
       const info = await client.lobehub.startDeviceLogin();
       openModal({
         title: '连接 LobeHub Cloud',
+        size: 'sm',
         body: (closeModal) => (
           <DeviceLoginDialog
             login={info}

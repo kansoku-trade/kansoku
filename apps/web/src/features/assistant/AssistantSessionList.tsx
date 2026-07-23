@@ -15,6 +15,7 @@ interface AssistantSessionListProps {
 function confirmDelete(session: AssistantSessionMeta, onDelete: (id: string) => void): void {
   openModal({
     title: '删除会话',
+    size: 'sm',
     body: (close) => (
       <div className="assistant-confirm">
         <p>删除「{session.title}」后无法恢复，确定继续吗？</p>

@@ -8,7 +8,7 @@ import { useWsChannel } from '@web/lib/ws/useWsChannel';
 
 const LIVE_TYPES = new Set(['flow', 'intraday']);
 
-export type ChartDocView = ChartDoc & { prediction_stale?: boolean };
+export type ChartDocView = ChartDoc & { prediction_stale?: boolean; sepa_stale?: boolean };
 
 export function resolveIntradayTf(built: IntradayBuilt, preferred: ChartTf | null): ChartTf {
   if (preferred && (isViewPeriod(preferred) || preferred in built.timeframes)) return preferred;
@@ -25,7 +25,11 @@ export function useIntradayDoc(id: string | null) {
   const docRef = useRef<ChartDocView | null>(null);
   const viewCountRef = useRef<number | null>(null);
   const historyTokenRef = useRef<object | null>(null);
-  const { data: initialDoc, error } = useQuery<ChartDocView>(
+  const {
+    data: initialDoc,
+    error,
+    reload,
+  } = useQuery<ChartDocView>(
     id ? `charts.get:${id}` : null,
     () => client.charts.get({ id: id! }),
     { persist: false },
@@ -123,6 +127,7 @@ export function useIntradayDoc(id: string | null) {
   return {
     doc,
     error,
+    reload,
     degraded,
     live,
     canLoadForward,

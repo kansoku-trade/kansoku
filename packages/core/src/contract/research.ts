@@ -110,6 +110,16 @@ export interface ResearchRefreshTask {
   finishedAt: string | null;
 }
 
+export type ResearchCreateInput =
+  | { kind: 'stock'; symbol: string }
+  | { kind: 'journal'; title: string; date?: string };
+
+export interface ResearchCreateResult {
+  document: ResearchDocument;
+  sepaChartId: string | null;
+  existed: boolean;
+}
+
 export type ResearchPostMessageResult =
   | { status: 202; body: { accepted: true } }
   | { status: 409; body: { error: string } }
@@ -121,6 +131,7 @@ export type ResearchAbortResult =
 export interface ResearchApi {
   list(input: { kind?: ResearchKind; query?: string }): Promise<ResearchDocumentMeta[]>;
   get(input: { path: string }): Promise<ResearchDocument>;
+  create(input: ResearchCreateInput): Promise<ResearchCreateResult>;
   getChat(input: { path: string }): Promise<ResearchChatState>;
   postMessage(input: { path: string; text: string }): Promise<ResearchPostMessageResult>;
   abortChat(input: { path: string }): Promise<ResearchAbortResult>;
@@ -143,6 +154,7 @@ export interface ResearchApi {
 export const researchRoutes = defineRoutes<ResearchApi>('research', {
   list: { method: 'GET', path: '/' },
   get: { method: 'GET', path: '/document' },
+  create: { method: 'POST', path: '/documents' },
   getChat: { method: 'GET', path: '/chat', raw: 'body' },
   postMessage: { method: 'POST', path: '/chat/messages', raw: 'statusBody' },
   abortChat: { method: 'POST', path: '/chat/abort', raw: 'statusBody' },

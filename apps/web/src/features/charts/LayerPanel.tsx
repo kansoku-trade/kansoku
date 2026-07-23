@@ -90,7 +90,8 @@ export function LayerPanel({
         <span className="lp-range-label">标注范围</span>
         <SegmentedControl
           ariaLabel="标注范围"
-          className="lp-seg"
+          size="sm"
+          fit
           value={range}
           onChange={(r) => onRangeChange?.(r)}
           options={RANGE_ORDER.map((r) => ({ value: r, label: RANGE_LABELS[r] }))}
@@ -172,7 +173,8 @@ export function LayerPanel({
           <>
             <SegmentedControl
               ariaLabel="预设档"
-              className="lp-seg lp-presets"
+              className="lp-presets"
+              size="sm"
               value={activePreset ?? ''}
               onChange={(key) => {
                 const preset = presets!.find((p) => p.key === key);

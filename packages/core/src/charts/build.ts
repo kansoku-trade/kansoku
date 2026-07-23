@@ -8,7 +8,7 @@ import { getEventRisk } from '../marketdata/events.js';
 import { activeProDetectors } from '../pro/detectors.js';
 import { resolveSecurityName } from '../symbols/securityName.js';
 import { buildSepa, type SepaInput } from '../analysis/sepa.js';
-import { marketDate } from '../marketdata/session.js';
+import { marketSessionDate } from '../marketdata/session.js';
 import { cleanCohortRows, type CohortRow, type FlowRow } from '../analysis/simple.js';
 import { marketOf } from '../symbols/symbol.utils.js';
 
@@ -45,12 +45,7 @@ function symbolSlug(symbol: string, suffix: string): string {
   return `${slugify(sym, 'chart')}-${suffix}`;
 }
 
-function marketSessionDate(symbol: string, iso: string): string {
-  if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso;
-  return marketDate(marketOf(symbol), new Date(iso));
-}
-
-function localToday(): string {
+export function localToday(): string {
   const d = new Date();
   const p = (n: number) => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
@@ -107,6 +102,7 @@ async function prepareInput(type: ChartType, body: Body): Promise<Record<string,
         news,
         position: body.position,
         context: body.context,
+        origin: body.origin,
       };
     }
     case 'intraday': {
@@ -317,7 +313,14 @@ export function refreshBody(
       };
     }
     case 'sepa': {
-      return { type, symbol, name: input.name, position: input.position, context: input.context };
+      return {
+        type,
+        symbol,
+        name: input.name,
+        position: input.position,
+        context: input.context,
+        origin: input.origin,
+      };
     }
     case 'cohort': {
       return null;

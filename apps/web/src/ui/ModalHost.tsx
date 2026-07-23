@@ -17,11 +17,18 @@ function ModalFrame({ entry }: { entry: ModalEntry }) {
   const body = typeof entry.body === 'function' ? entry.body(close) : entry.body;
   const headerAction =
     typeof entry.headerAction === 'function' ? entry.headerAction(close) : entry.headerAction;
+  const panelClasses = [
+    'modal-panel',
+    entry.size && entry.size !== 'lg' && `modal-panel--${entry.size}`,
+    entry.panelClassName,
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   return (
     <div className="modal-backdrop" data-state={entry.state} onClick={close}>
       <div
-        className={entry.panelClassName ? `modal-panel ${entry.panelClassName}` : 'modal-panel'}
+        className={panelClasses}
         data-state={entry.state}
         role="dialog"
         aria-modal="true"

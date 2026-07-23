@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mergeForPatch } from '../src/charts/build.js';
+import { mergeForPatch, refreshBody } from '../src/charts/build.js';
 
 describe('mergeForPatch intraday', () => {
   it('merges session so a cash-session PATCH persists', () => {
@@ -36,5 +36,19 @@ describe('mergeForPatch intraday', () => {
     const input = { symbol: 'MRVL.US', context };
     const merged = mergeForPatch('intraday', input, { title: 'new title' });
     expect(merged.context).toEqual(context);
+  });
+});
+
+describe('refreshBody sepa', () => {
+  it('retains origin so a refresh: true rebuild keeps the research marker', () => {
+    const input = { symbol: 'MU.US', name: 'Micron', origin: 'research' };
+    const body = refreshBody('sepa', input);
+    expect(body).toMatchObject({ type: 'sepa', symbol: 'MU.US', origin: 'research' });
+  });
+
+  it('carries origin: undefined through untouched when the chart has none', () => {
+    const input = { symbol: 'MU.US' };
+    const body = refreshBody('sepa', input);
+    expect(body?.origin).toBeUndefined();
   });
 });

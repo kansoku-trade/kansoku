@@ -31,7 +31,7 @@ export function openLicenseModal(nextTrigger: LicenseModalTrigger): void {
   if (closeFn) return;
   const close = openModal({
     title: '订阅与授权',
-    panelClassName: 'license-modal-panel',
+    size: 'sm',
     body: (closeModal) => <LicenseModalBody close={closeModal} />,
     onClose: () => {
       if (closeFn !== close) return;

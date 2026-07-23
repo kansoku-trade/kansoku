@@ -1,12 +1,26 @@
 import { useDeferredValue, useEffect, useState } from 'react';
-import { BookOpen, ChartCandlestick, FileText, Library, RefreshCw, Search } from 'lucide-react';
-import type { ResearchDocument, ResearchDocumentMeta } from '@kansoku/core/contract/index';
+import {
+  BookOpen,
+  ChartCandlestick,
+  FileText,
+  Library,
+  Plus,
+  RefreshCw,
+  Search,
+} from 'lucide-react';
+import type {
+  ResearchCreateResult,
+  ResearchDocument,
+  ResearchDocumentMeta,
+} from '@kansoku/core/contract/index';
 import { useQuery } from '@web/lib/apiHooks';
 import { client } from '@web/lib/client';
+import { queryClient } from '@web/lib/queryClient';
 import { navigate, useQueryParam } from '@web/lib/router';
 import { Badge, Empty, ErrorBox, Input, MarketTime, ResizablePanel, Spinner } from '@web/ui';
 import { useTitle } from '@web/lib/useTitle';
 import { Markdown } from '../cockpit/markdown';
+import { openCreateResearchDialog } from './CreateResearchDialog';
 import { ResearchAssistant } from './ResearchAssistant';
 import {
   kindForView,
@@ -19,6 +33,8 @@ import {
   type ResearchView,
   viewForKind,
 } from './researchModel';
+
+const CREATE_HINT_MS = 4000;
 
 const VIEW_OPTIONS: { key: ResearchView; label: string }[] = [
   { key: 'stocks', label: '股票档案' },
@@ -179,8 +195,15 @@ export function ResearchPage() {
   const view = parseResearchView(useQueryParam('view'));
   const selectedPath = useQueryParam('path');
   const [query, setQuery] = useState('');
+  const [createHint, setCreateHint] = useState<string | null>(null);
   const deferredQuery = useDeferredValue(query.trim());
   const kind = kindForView(view);
+
+  useEffect(() => {
+    if (!createHint) return;
+    const timer = setTimeout(() => setCreateHint(null), CREATE_HINT_MS);
+    return () => clearTimeout(timer);
+  }, [createHint]);
 
   const {
     data: allDocuments,
@@ -240,6 +263,19 @@ export function ResearchPage() {
     reloadSearch();
     reloadDocument();
   };
+  const handleResearchCreated = (result: ResearchCreateResult) => {
+    queryClient.setQueryData<ResearchDocumentMeta[]>(['research.list:all'], (current) => {
+      if (!current || current.some((item) => item.path === result.document.path)) return current;
+      return [result.document, ...current];
+    });
+    queryClient.setQueryData<ResearchDocument>(
+      [`research.get:${result.document.path}`],
+      result.document,
+    );
+    reloadAll();
+    if (result.existed) setCreateHint('已存在，已为你打开');
+  };
+  const openCreateDialog = () => openCreateResearchDialog(kind, handleResearchCreated);
 
   const stockCount = (allDocuments ?? []).filter((item) => item.kind === 'stock').length;
   const journalCount = (allDocuments ?? []).filter((item) => item.kind === 'journal').length;
@@ -275,6 +311,9 @@ export function ResearchPage() {
               </button>
             ))}
           </div>
+          <button type="button" className="research-new" onClick={openCreateDialog}>
+            <Plus size={14} /> 新建
+          </button>
           <div className="research-search-actions">
             <label className="research-search">
               <Search size={14} aria-hidden="true" />
@@ -324,6 +363,11 @@ export function ResearchPage() {
           </aside>
         </ResizablePanel>
         <main className="research-reader">
+          {createHint && (
+            <div className="research-create-hint" role="status">
+              {createHint}
+            </div>
+          )}
           <ResearchReader document={document} loading={documentLoading} error={documentError} />
         </main>
         <ResearchContext

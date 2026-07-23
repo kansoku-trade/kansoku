@@ -84,6 +84,7 @@ export function AgentKitSection() {
   const openConflict = (conflict: PendingConflict) =>
     openModal({
       title: <>处理冲突 · {conflict.dest}</>,
+      size: 'sm',
       body: (close) => (
         <AgentKitConflictDialog
           conflict={conflict}
@@ -97,6 +98,7 @@ export function AgentKitSection() {
   const openUpdate = (update: PendingUpdate) =>
     openModal({
       title: <>新模板可用 · {update.dest}</>,
+      size: 'sm',
       body: (close) => (
         <AgentKitUpdateDialog update={update} bridge={bridge} onResolved={reload} close={close} />
       ),

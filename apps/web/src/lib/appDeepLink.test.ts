@@ -23,6 +23,35 @@ describe('parseAppDeepLink', () => {
     expect(parseAppDeepLink('/symbol/MU.US?view=live')?.route).toBe('/symbol/MU.US?view=live');
   });
 
+  it('recognizes a pinned SEPA dashboard link', () => {
+    expect(
+      parseAppDeepLink('http://localhost:5199/symbol/sepa/TSM.US?analysis=2026-07-20-tsm-sepa'),
+    ).toEqual({
+      kind: 'symbol-sepa',
+      route: '/symbol/sepa/TSM.US?analysis=2026-07-20-tsm-sepa',
+      symbol: 'TSM.US',
+      analysisId: '2026-07-20-tsm-sepa',
+    });
+  });
+
+  it('recognizes the living-dashboard SEPA link (no pinned analysis)', () => {
+    expect(parseAppDeepLink('/symbol/sepa/TSM.US')).toEqual({
+      kind: 'symbol-sepa',
+      route: '/symbol/sepa/TSM.US',
+      symbol: 'TSM.US',
+      analysisId: null,
+    });
+  });
+
+  it('does not let the SEPA route fall through to the generic symbol-cockpit match', () => {
+    const link = parseAppDeepLink('/symbol/sepa/MU.US');
+    expect(link?.kind).toBe('symbol-sepa');
+  });
+
+  it('rejects a malformed encoded symbol on the SEPA route', () => {
+    expect(parseAppDeepLink('/symbol/sepa/%ZZ')).toBeNull();
+  });
+
   it('normalizes legacy chart-id links so the existing chart redirect can resolve them', () => {
     expect(parseAppDeepLink('http://localhost:5199/charts/2026-07-06-mu-intraday-2')).toEqual({
       kind: 'chart',

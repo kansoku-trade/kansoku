@@ -194,6 +194,7 @@ function LicensedStatus({
         onClick={() =>
           openModal({
             title: '停用本机',
+            size: 'sm',
             body: (closeModal) => <DeactivateConfirm closeModal={closeModal} />,
           })
         }

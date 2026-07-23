@@ -194,8 +194,16 @@
 
 .ui-segmented-control {
   display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius);
+}
+.ui-segmented-control--sm .ui-segmented-control-option span {
+  padding: 2px 8px;
+}
+.ui-segmented-control--fit {
+  grid-auto-columns: auto;
 }
 .ui-segmented-control-option {
   position: relative;
@@ -217,6 +225,7 @@
   height: 100%;
   align-items: center;
   justify-content: center;
+  padding: 4px 10px;
   color: var(--text-muted);
   font-size: var(--fs-xs);
   white-space: nowrap;
@@ -1549,13 +1558,6 @@ a.zone-item:hover {
   flex-shrink: 0;
   opacity: 0.7;
 }
-.lp-seg {
-  grid-auto-flow: column;
-  grid-auto-columns: 1fr;
-}
-.lp-seg .ui-segmented-control-option span {
-  padding: 2px 8px;
-}
 .lp-presets {
   margin-bottom: 4px;
 }
@@ -1564,9 +1566,6 @@ a.zone-item:hover {
   align-items: center;
   gap: 6px;
   margin-bottom: 4px;
-}
-.lp-range .lp-seg {
-  grid-auto-columns: auto;
 }
 .lp-range-label {
   color: var(--text-muted);
@@ -2402,6 +2401,12 @@ a.zone-item:hover {
 .modal-panel[data-state='closing'] {
   transform: translateY(8px) scale(0.97);
   opacity: 0;
+}
+.modal-panel--sm {
+  width: min(440px, 100%);
+}
+.modal-panel--md {
+  width: min(640px, 100%);
 }
 .modal-head {
   display: flex;
@@ -5299,6 +5304,29 @@ a.zone-item:hover {
   margin-top: 4px;
 }
 
+.create-research-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 360px;
+}
+.create-research-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+}
+.create-research-symbol-input {
+  text-transform: uppercase;
+}
+.create-research-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
 .desktop-hub-status {
   display: inline-flex;
   align-items: center;
@@ -5879,9 +5907,6 @@ a.zone-item:hover {
   text-decoration: underline;
 }
 
-.license-modal-panel {
-  width: min(440px, 100%);
-}
 .license-deactivate-button {
   flex: 0 0 auto;
   white-space: nowrap;
@@ -6337,6 +6362,37 @@ a.zone-item:hover {
   color: var(--text-primary);
   border-color: var(--border-strong);
   background: var(--bg-hover);
+}
+.research-new {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: var(--fs-sm);
+  cursor: pointer;
+}
+.research-new:hover {
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+  background: var(--bg-hover);
+}
+.research-create-hint {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  width: fit-content;
+  margin: 14px auto 0;
+  padding: 6px 12px;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border-radius: var(--radius-full);
+  font-size: var(--fs-sm);
 }
 .research-workspace {
   flex: 1 1 auto;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ChartDoc } from '@kansoku/shared/types';
-import { PREDICTION_STALE_MS, predictionStale } from '../src/platform/staleness.js';
+import { PREDICTION_STALE_MS, predictionStale, sepaStale } from '../src/platform/staleness.js';
 
 const REGULAR_TS = '2026-07-02T15:00:00.000Z';
 const PRE_MARKET_TS = '2026-07-02T12:00:00.000Z';
@@ -142,5 +142,57 @@ describe('predictionStale', () => {
       prediction_updated_at: undefined,
     });
     expect(predictionStale(doc, now)).toBe(false);
+  });
+});
+
+function makeSepaDoc(asOf: string, overrides: Partial<ChartDoc> = {}): ChartDoc {
+  return {
+    id: '2026-07-17-mu-sepa',
+    schema_version: 2,
+    type: 'sepa',
+    title: 'MU SEPA Dashboard',
+    symbol: 'MU.US',
+    created_at: '2026-07-17T20:00:00.000Z',
+    updated_at: '2026-07-17T20:00:00.000Z',
+    input: { symbol: 'MU.US' },
+    built: { kind: 'sepa', sidebar: { asOf } } as unknown as ChartDoc['built'],
+    ...overrides,
+  };
+}
+
+describe('sepaStale', () => {
+  it('is stale when the last daily bar is from before today (a weekday)', () => {
+    const doc = makeSepaDoc('2026-07-22');
+    expect(sepaStale(doc, new Date('2026-07-23T18:00:00.000Z'))).toBe(true);
+  });
+
+  it('is not stale when the last daily bar matches the latest trading day', () => {
+    const doc = makeSepaDoc('2026-07-23');
+    expect(sepaStale(doc, new Date('2026-07-23T18:00:00.000Z'))).toBe(false);
+  });
+
+  it('is not stale on Saturday when the last bar is Friday (no newer trading day yet)', () => {
+    const doc = makeSepaDoc('2026-07-17');
+    expect(sepaStale(doc, new Date('2026-07-18T18:00:00.000Z'))).toBe(false);
+  });
+
+  it('is not stale on Sunday when the last bar is Friday', () => {
+    const doc = makeSepaDoc('2026-07-17');
+    expect(sepaStale(doc, new Date('2026-07-19T18:00:00.000Z'))).toBe(false);
+  });
+
+  it('is stale on Monday when the last bar is still Friday', () => {
+    const doc = makeSepaDoc('2026-07-17');
+    expect(sepaStale(doc, new Date('2026-07-20T18:00:00.000Z'))).toBe(true);
+  });
+
+  it('is never stale for non-sepa chart types', () => {
+    const doc = makeSepaDoc('2026-07-01', { type: 'intraday' });
+    expect(sepaStale(doc, new Date('2026-07-23T18:00:00.000Z'))).toBe(false);
+  });
+
+  it('is not stale when the doc has no symbol', () => {
+    const doc = makeSepaDoc('2026-07-01', { symbol: null });
+    expect(sepaStale(doc, new Date('2026-07-23T18:00:00.000Z'))).toBe(false);
   });
 });

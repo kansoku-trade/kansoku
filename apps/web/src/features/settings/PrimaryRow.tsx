@@ -80,6 +80,7 @@ export function PrimaryRow({
   const clear = () => {
     openModal({
       title: '清除主模型',
+      size: 'sm',
       body: (closeModal) => (
         <div className="settings-reset-confirm">
           <p>清除后，所有「跟随主模型」的用途将变为未配置，直到重新设置主模型。确定继续吗？</p>

@@ -9,6 +9,7 @@ import {
   resetLicenseModalStoreForTests,
 } from './features/edition/licenseModalStore';
 import { resetProRoutesForTests } from './features/edition/useProRoutes';
+import { setActiveRouter } from './lib/router';
 
 let capabilities: { pro: boolean | null; licensed: boolean } = { pro: null, licensed: false };
 
@@ -18,6 +19,13 @@ vi.mock('@web/features/edition/capabilitiesStore', () => ({
 vi.mock('@web/features/home/Home', () => ({ Home: () => <div data-testid="home" /> }));
 vi.mock('@web/features/cockpit/SymbolCockpit', () => ({
   SymbolCockpit: ({ sym }: { sym: string }) => <div data-testid="symbol-cockpit">{sym}</div>,
+}));
+vi.mock('@web/features/charts/sepa/SepaSymbolPage', () => ({
+  SepaSymbolPage: ({ sym, analysisId }: { sym: string; analysisId: string | null }) => (
+    <div data-testid="sepa-symbol-page">
+      {sym}:{analysisId ?? 'latest'}
+    </div>
+  ),
 }));
 vi.mock('@web/features/research/ResearchPage', () => ({
   ResearchPage: () => <div data-testid="research-page" />,
@@ -30,11 +38,13 @@ vi.mock('@web/features/edition/pro', () => ({ loadProComposition }));
 
 function renderRoute(path: string) {
   const router = createMemoryRouter(routes, { initialEntries: [path] });
+  setActiveRouter(router);
   render(<RouterProvider router={router} />);
 }
 
 afterEach(() => {
   cleanup();
+  setActiveRouter(null);
   capabilities = { pro: null, licensed: false };
   loadProComposition.mockReset();
   resetProRoutesForTests();
@@ -50,6 +60,21 @@ describe('symbol route', () => {
   it('does not crash on a malformed encoded symbol', async () => {
     renderRoute('/symbol/%ZZ');
     expect(await screen.findByTestId('home')).toBeTruthy();
+  });
+});
+
+describe('symbol sepa route', () => {
+  it('routes /symbol/sepa/:sym to the dedicated SEPA page instead of the generic cockpit', async () => {
+    renderRoute('/symbol/sepa/tsm');
+    expect((await screen.findByTestId('sepa-symbol-page')).textContent).toBe('TSM.US:latest');
+    expect(screen.queryByTestId('symbol-cockpit')).toBeNull();
+  });
+
+  it('passes a pinned ?analysis= id through to the SEPA page', async () => {
+    renderRoute('/symbol/sepa/tsm?analysis=2026-07-20-tsm-sepa');
+    expect((await screen.findByTestId('sepa-symbol-page')).textContent).toBe(
+      'TSM.US:2026-07-20-tsm-sepa',
+    );
   });
 });
 
