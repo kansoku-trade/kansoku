@@ -439,6 +439,69 @@ describe('analystRunsStore', () => {
     off();
   });
 
+  it('retains lastEnded content when a reconnect init omits a running symbol', () => {
+    const off = store.subscribeAnalystRuns(vi.fn());
+    const activities = [{ at: '2026-07-16T00:00:01.000Z', text: '正在读 5 分钟 K 线' }];
+    const sections = { technical: { trends: [], levels: [], summary: '摘要' } };
+    subs[0].onPayload({
+      type: 'update',
+      symbol: 'NVDA',
+      status: running('researching', { activities, sections }),
+    });
+
+    subs[0].onPayload({ type: 'init', runs: [] });
+
+    const lastEnded = store.getAnalystRunLastEnded('NVDA');
+    expect(lastEnded).not.toBeNull();
+    expect(lastEnded?.activities).toEqual(activities);
+    expect(lastEnded?.sections).toEqual(sections);
+    expect(currentRuns().has('NVDA')).toBe(false);
+    off();
+  });
+
+  it('retains lastEnded content when a reconnect init lists the symbol as running:false', () => {
+    const off = store.subscribeAnalystRuns(vi.fn());
+    const activities = [{ at: '2026-07-16T00:00:01.000Z', text: '正在读 5 分钟 K 线' }];
+    const sections = { technical: { trends: [], levels: [], summary: '摘要' } };
+    subs[0].onPayload({
+      type: 'update',
+      symbol: 'NVDA',
+      status: running('researching', { activities, sections }),
+    });
+
+    subs[0].onPayload({
+      type: 'init',
+      runs: [{ symbol: 'NVDA', status: { running: false } }],
+    });
+
+    const lastEnded = store.getAnalystRunLastEnded('NVDA');
+    expect(lastEnded).not.toBeNull();
+    expect(lastEnded?.activities).toEqual(activities);
+    expect(lastEnded?.sections).toEqual(sections);
+    expect(currentRuns().has('NVDA')).toBe(false);
+    off();
+  });
+
+  it('does not retain lastEnded when a reconnect init still lists the symbol as running', () => {
+    const off = store.subscribeAnalystRuns(vi.fn());
+    const activities = [{ at: '2026-07-16T00:00:01.000Z', text: '正在读 5 分钟 K 线' }];
+    const sections = { technical: { trends: [], levels: [], summary: '摘要' } };
+    subs[0].onPayload({
+      type: 'update',
+      symbol: 'NVDA',
+      status: running('researching', { activities, sections }),
+    });
+
+    subs[0].onPayload({
+      type: 'init',
+      runs: [{ symbol: 'NVDA', status: running('writing') }],
+    });
+
+    expect(store.getAnalystRunLastEnded('NVDA')).toBeNull();
+    expect(currentRuns().has('NVDA')).toBe(true);
+    off();
+  });
+
   it('clears lastEnded for a symbol when a new run starts, leaving other symbols untouched', () => {
     const off = store.subscribeAnalystRuns(vi.fn());
     const activities = [{ at: '2026-07-16T00:00:01.000Z', text: '正在查新闻' }];
