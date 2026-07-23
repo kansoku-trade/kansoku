@@ -24,6 +24,7 @@ interface UsageTotal extends UsageSnapshot {
 export interface AiUsageLogContext {
   layer:
     | 'commentator'
+    | 'explainer'
     | 'analyst'
     | 'event-filter'
     | 'chat'

@@ -4,6 +4,7 @@ import type {
   CockpitComment,
   CockpitFlow,
   CockpitPosition,
+  ExplainResult,
   RelativeVolume,
   SymbolAnalysisRow,
 } from '@kansoku/shared/types';
@@ -70,6 +71,7 @@ export interface SymbolsApi {
   journalEntry(input: { sym: string; name: string }): Promise<JournalEntry>;
   reassess(input: { sym: string }): Promise<ReassessResult>;
   reassessStatus(input: { sym: string }): Promise<ReassessStatus>;
+  explain(input: { sym: string }): Promise<ExplainResult>;
   note(input: { sym: string }): Promise<NoteResult>;
   deepDive(input: { sym: string }): Promise<DeepDiveStartResult>;
   deepDiveStatus(input: { sym: string }): Promise<DeepDiveState>;
@@ -91,6 +93,7 @@ export const symbolsRoutes = defineRoutes<SymbolsApi>('symbols', {
   journalEntry: { method: 'GET', path: '/:sym/journal/:name' },
   reassess: { method: 'POST', path: '/:sym/reassess' },
   reassessStatus: { method: 'GET', path: '/:sym/reassess/status' },
+  explain: { method: 'POST', path: '/:sym/explain' },
   note: { method: 'GET', path: '/:sym/note', raw: 'body' },
   deepDive: { method: 'POST', path: '/:sym/deep-dive', raw: 'body', feature: 'deep-dive' },
   deepDiveStatus: {
