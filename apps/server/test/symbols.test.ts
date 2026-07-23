@@ -18,12 +18,15 @@ const store = vi.hoisted(() => ({
   loadChart: vi.fn(),
 }));
 
+const explainer = vi.hoisted(() => ({ explainSymbol: vi.fn() }));
+
 vi.mock('@kansoku/core/marketdata/registry', () => ({ getProvider: () => provider }));
 vi.mock('@kansoku/core/charts/store', () => store);
 vi.mock('@kansoku/core/cockpit/outcomeCache', () => ({
   getResolvedOutcomes: async () => new Map(),
   saveResolvedOutcome: async () => {},
 }));
+vi.mock('@kansoku/core/ai/personas/explainer', () => explainer);
 
 const { tsukiRequest } = await import('./helpers.js');
 
@@ -61,6 +64,7 @@ beforeEach(() => {
   provider.getQuotes.mockReset();
   store.listCharts.mockReset();
   store.loadChart.mockReset();
+  explainer.explainSymbol.mockReset();
 });
 
 describe('symbol normalization', () => {
@@ -257,5 +261,38 @@ describe('GET /:sym/latest', () => {
     store.listCharts.mockResolvedValue([]);
     const res = await tsukiRequest('/api/symbols/MU.US/latest');
     expect(res.status).toBe(404);
+  });
+});
+
+describe('POST /:sym/explain', () => {
+  it('wraps a successful ExplainResult in { ok: true, data } and normalizes the symbol', async () => {
+    const comment = {
+      ts: '2026-07-24T14:00:00.000Z',
+      symbol: 'MU.US',
+      level: 'info',
+      text: '图上有什么……一句话结论：不构成动作。',
+      stance: 'no_action',
+      trigger: 'manual: 解读请求',
+      source: 'explainer',
+    };
+    explainer.explainSymbol.mockResolvedValue({ ok: true, comment });
+    const res = await tsukiRequest('/api/symbols/mu/explain', { method: 'POST' });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true, data: { ok: true, comment } });
+    expect(explainer.explainSymbol).toHaveBeenCalledWith('MU.US');
+  });
+
+  it('propagates a busy ExplainResult unchanged', async () => {
+    explainer.explainSymbol.mockResolvedValue({ ok: false, reason: 'busy' });
+    const res = await tsukiRequest('/api/symbols/MU.US/explain', { method: 'POST' });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true, data: { ok: false, reason: 'busy' } });
+  });
+
+  it('propagates a disabled ExplainResult unchanged', async () => {
+    explainer.explainSymbol.mockResolvedValue({ ok: false, reason: 'disabled' });
+    const res = await tsukiRequest('/api/symbols/MU.US/explain', { method: 'POST' });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true, data: { ok: false, reason: 'disabled' } });
   });
 });

@@ -13,6 +13,7 @@ const symbols = vi.hoisted(() => ({
   reassessStatus: vi.fn(),
   deepDive: vi.fn(),
   deepDiveStatus: vi.fn(),
+  explain: vi.fn(),
 }));
 
 vi.mock('@kansoku/core/overview/overview.service', () => ({ overviewService: overview }));
@@ -39,6 +40,7 @@ beforeEach(() => {
     .mockReset()
     .mockResolvedValue({ started: false, reason: 'analyst layer disabled' });
   symbols.reassessStatus.mockReset().mockResolvedValue({ running: false });
+  symbols.explain.mockReset().mockResolvedValue({ ok: false, reason: 'disabled' });
 });
 
 describe('desktop AI IPC parity with pro absent', () => {
@@ -72,5 +74,21 @@ describe('desktop AI IPC parity with pro absent', () => {
     expect(deepDive).toEqual({ ok: true, data: { started: false, reason: 'disabled' } });
     const status = await new SymbolsIpc().deepDiveStatus({ sym: 'MU' });
     expect(status).toEqual({ ok: true, data: { running: false } });
+  });
+
+  it('serves symbols.explain without a pro gate', async () => {
+    const comment = {
+      ts: '2026-07-24T14:00:00.000Z',
+      symbol: 'MU.US',
+      level: 'info',
+      text: '图上有什么……一句话结论：不构成动作。',
+      stance: 'no_action',
+      trigger: 'manual: 解读请求',
+      source: 'explainer',
+    };
+    symbols.explain.mockResolvedValue({ ok: true, comment });
+    const result = await new SymbolsIpc().explain({ sym: 'MU' });
+    expect(result).toEqual({ ok: true, data: { ok: true, comment } });
+    expect(symbols.explain).toHaveBeenCalledWith({ sym: 'MU' });
   });
 });
