@@ -17,7 +17,7 @@
   - `overlay-manifest-consistency`：`.pro.ts` 文件本身是否登记进 `overlay.private-only.json`，要跟它是否存在默认兄弟保持一致（即上一条同步校验的 lint 版）。
   - 另有 `no-escaping-import`：禁止绝对路径 import，禁止相对 import 逃出 workspace 根。
 
-这套机制因为软链接是普通文件系统对象，`apps/desktop`、`apps/web` 各自的 `tsconfig.json`（`include: ["src", ...]`）会自然把落在 `src/` 下的 `.pro.ts` 软链接一起纳入 typecheck——不需要额外的 `moduleSuffixes` 配置或单独的 pro typecheck 目标；`pnpm typecheck:desktop` / `pnpm --filter @kansoku/web typecheck` 本身就覆盖了已同步的 overlay 文件。
+这套机制因为软链接是普通文件系统对象，`apps/desktop`、`apps/web` 各自的 `tsconfig.json`（`include: ["src", ...]`）会自然把落在 `src/` 下的 `.pro.ts` 软链接一起纳入 typecheck；`pnpm typecheck:desktop` / `pnpm --filter @kansoku/web typecheck` 本身就覆盖了已同步的 overlay 文件。需要注意的是，若在默认文件中交叉引用一个私有专属 overlay（没有默认兄弟文件），host 应用的 `tsconfig.json` 必须配置 `"moduleSuffixes": [".pro", ""]` 才能正确解析该导入——`apps/web/tsconfig.json` 因此需要这一配置。
 
 ## 2. 组合点与唯一的动态 import 边界
 
