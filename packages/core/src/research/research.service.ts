@@ -274,6 +274,21 @@ export function createResearchService(rootDir: string): ResearchLibraryApi {
   };
 }
 
+export async function writeMarkdownFileAtomic(
+  path: string,
+  markdown: string,
+  mode?: number,
+): Promise<void> {
+  const tempPath = `${path}.${process.pid}.${randomUUID()}.tmp`;
+  try {
+    await fs.writeFile(tempPath, markdown, mode === undefined ? 'utf8' : { encoding: 'utf8', mode });
+    await fs.rename(tempPath, path);
+  } catch (error) {
+    await fs.rm(tempPath, { force: true }).catch(() => undefined);
+    throw error;
+  }
+}
+
 export async function writeResearchDocumentAtomic(input: {
   rootDir: string;
   path: string;
@@ -292,15 +307,8 @@ export async function writeResearchDocumentAtomic(input: {
     );
   }
 
-  const tempPath = `${resolved.path}.${process.pid}.${randomUUID()}.tmp`;
-  try {
-    const stat = await fs.stat(resolved.path);
-    await fs.writeFile(tempPath, input.markdown, { encoding: 'utf8', mode: stat.mode });
-    await fs.rename(tempPath, resolved.path);
-  } catch (error) {
-    await fs.rm(tempPath, { force: true }).catch(() => undefined);
-    throw error;
-  }
+  const stat = await fs.stat(resolved.path);
+  await writeMarkdownFileAtomic(resolved.path, input.markdown, stat.mode);
   return readDocument(input.rootDir, resolved.path, resolved.kind);
 }
 
