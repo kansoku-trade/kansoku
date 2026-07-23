@@ -1,26 +1,25 @@
-const KLINE_PERIOD_LABELS: Record<string, string> = {
+const KLINE_PERIOD_LABELS: Record<string, string> = Object.assign(Object.create(null), {
   m5: '5 分钟',
   m15: '15 分钟',
   h1: '1 小时',
-  day: '日线',
-};
+});
 
-const FIXED_TOOL_ACTIVITIES: Record<string, string> = {
+const FIXED_TOOL_ACTIVITIES: Record<string, string> = Object.assign(Object.create(null), {
   read_data_pack: '正在读取数据包',
   fetch_news: '正在查最新新闻',
   append_comment: '正在记录阶段点评',
   write_journal: '正在写观察日志',
   submit_prediction: '正在提交预测',
   submit_section: '正在提交中间读数',
-};
+});
 
-const RESEARCH_TOOL_ARG_KEYS: Record<string, string> = {
+const RESEARCH_TOOL_ARG_KEYS: Record<string, string> = Object.assign(Object.create(null), {
   bash: 'command',
   read_file: 'path',
   list_files: 'path',
   grep: 'pattern',
   read_skill: 'name',
-};
+});
 
 const ARG_SUMMARY_MAX_CHARS = 40;
 
@@ -40,6 +39,7 @@ function summarizeResearchArgs(name: string, args: unknown): string | null {
 
 function describeFetchKline(args: unknown): string {
   const period = isPlainObject(args) && typeof args.period === 'string' ? args.period : undefined;
+  if (period === 'day') return '正在读日 K 线';
   const label = period ? KLINE_PERIOD_LABELS[period] : undefined;
   return label ? `正在读 ${label} K 线` : '正在读 K 线';
 }

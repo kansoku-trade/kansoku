@@ -66,7 +66,7 @@ describe('describeToolCall', () => {
     expect(describeToolCall('fetch_kline', { period: 'm5' })).toBe('正在读 5 分钟 K 线');
     expect(describeToolCall('fetch_kline', { period: 'm15' })).toBe('正在读 15 分钟 K 线');
     expect(describeToolCall('fetch_kline', { period: 'h1' })).toBe('正在读 1 小时 K 线');
-    expect(describeToolCall('fetch_kline', { period: 'day' })).toBe('正在读 日线 K 线');
+    expect(describeToolCall('fetch_kline', { period: 'day' })).toBe('正在读日 K 线');
   });
 
   it('falls back to a bare K-line message for an unknown or missing period', () => {
