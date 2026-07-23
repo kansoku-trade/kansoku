@@ -37,8 +37,9 @@ export interface ServerRuntimeOptions {
 export async function initServerHostRuntime(opts?: ServerRuntimeOptions): Promise<void> {
   loadDotenv();
 
-  // 1h prompt-cache TTL: commentator sessions re-run at 5-min heartbeats, the
-  // default 5-min ephemeral TTL expires right at the boundary and misses.
+  // 1h prompt-cache TTL: trigger-driven commentary can go long, irregular
+  // stretches between runs, so the default 5-min ephemeral TTL would expire
+  // between them and miss the cache.
   process.env.PI_CACHE_RETENTION ??= 'long';
 
   initCredentialProvider(opts?.credentialProvider);
