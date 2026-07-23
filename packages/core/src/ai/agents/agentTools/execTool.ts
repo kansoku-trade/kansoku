@@ -1,9 +1,14 @@
 import { exec as nodeExec } from 'node:child_process';
-import { delimiter, dirname } from 'node:path';
+import { dirname } from 'node:path';
 import { promisify } from 'node:util';
 import type { AgentTool } from '@earendil-works/pi-agent-core';
 import { Type } from 'typebox';
+import { locateOpencli } from '../../../credentials/opencli.js';
 import { locateLongbridgeCli } from '../../../marketdata/longbridgeCli.js';
+import {
+  resolveAugmentedPath,
+  resetUserPathCacheForTests,
+} from '../../../platform/userPath.js';
 import { textResult } from '../dataTools.js';
 
 const OUTPUT_TRUNCATE_CHARS = 30_000;
@@ -16,27 +21,26 @@ export type ExecFn = (command: string) => Promise<ExecResult>;
 
 const nodeExecAsync = promisify(nodeExec);
 
-const EXTRA_BIN_DIRS = ['/opt/homebrew/bin', '/usr/local/bin'];
-
-function mergePathDirs(basePath: string | undefined, extraDirs: string[]): string {
-  const dirs = (basePath ?? '').split(delimiter).filter(Boolean);
-  for (const dir of extraDirs) {
-    if (!dirs.includes(dir)) dirs.push(dir);
-  }
-  return dirs.join(delimiter);
-}
-
 let cachedExecPathPromise: Promise<string> | null = null;
 
-// Finder-launched Electron inherits a bare PATH (/usr/bin:/bin:...), so the
-// longbridge CLI resolvable by the kernel is invisible to plain `sh -c`.
+export function resetExecPathCacheForTests(): void {
+  cachedExecPathPromise = null;
+  resetUserPathCacheForTests();
+}
+
+// Finder-launched Electron inherits a bare PATH (/usr/bin:/bin:...), so CLIs
+// installed via n/nvm/homebrew are invisible to plain `sh -c` without help.
 function resolveExecPath(): Promise<string> {
   cachedExecPathPromise ??= (async () => {
-    const extra = [...EXTRA_BIN_DIRS];
+    const extra: string[] = [];
     try {
       extra.push(dirname(await locateLongbridgeCli()));
     } catch {}
-    return mergePathDirs(process.env.PATH, extra);
+    try {
+      const opencli = await locateOpencli();
+      if (opencli) extra.push(dirname(opencli));
+    } catch {}
+    return resolveAugmentedPath({ extraDirs: extra });
   })();
   return cachedExecPathPromise;
 }

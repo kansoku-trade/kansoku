@@ -1,6 +1,6 @@
-import { chmodSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { probeOpencli, resetOpencliCacheForTests } from '../src/credentials/opencli.js';
 
@@ -20,6 +20,12 @@ function fakeCli(): string {
   return path;
 }
 
+function isolatedNotFoundEnv(): NodeJS.ProcessEnv {
+  const home = mkdtempSync(join(tmpdir(), 'opencli-home-'));
+  dirs.push(home);
+  return { PATH: '', SHELL: '/bin/false', HOME: home };
+}
+
 const DOCTOR_OK = `opencli v1.8.4 doctor (node v24.16.0)
 
 [OK] Daemon: running on port 19825 (v1.8.4)
@@ -33,11 +39,38 @@ Profiles:
 describe('probeOpencli', () => {
   it('reports not_installed when the binary cannot be located', async () => {
     const result = await probeOpencli({
-      env: { PATH: '', SHELL: '/bin/false' },
+      env: isolatedNotFoundEnv(),
       standardPaths: [],
+      homeBinDirs: [],
     });
     expect(result.state).toBe('not_installed');
     expect(result.cliPath).toBeNull();
+  });
+
+  it('locates opencli under a home bin dir when PATH is bare', async () => {
+    const home = mkdtempSync(join(tmpdir(), 'opencli-home-'));
+    dirs.push(home);
+    const bin = join(home, '.n', 'bin');
+    mkdirSync(bin, { recursive: true });
+    const cli = join(bin, 'opencli');
+    writeFileSync(cli, '#!/bin/sh\nexit 0\n');
+    chmodSync(cli, 0o755);
+
+    const exec = vi
+      .fn()
+      .mockResolvedValueOnce({ stdout: DOCTOR_OK, stderr: '' })
+      .mockResolvedValueOnce({ stdout: '@someone', stderr: '' });
+
+    const result = await probeOpencli({
+      env: { PATH: '/usr/bin:/bin', SHELL: '/bin/false', HOME: home },
+      standardPaths: [],
+      homeBinDirs: [bin],
+      exec,
+    });
+
+    expect(result).toEqual({ state: 'ready', cliPath: cli, lastError: null });
+    const doctorOpts = exec.mock.calls[0][2] as { env?: NodeJS.ProcessEnv };
+    expect(doctorOpts.env?.PATH?.split(':')).toContain(bin);
   });
 
   it('reports ready when doctor and twitter profile both succeed', async () => {
@@ -46,10 +79,17 @@ describe('probeOpencli', () => {
       .fn()
       .mockResolvedValueOnce({ stdout: DOCTOR_OK, stderr: '' })
       .mockResolvedValueOnce({ stdout: '@someone', stderr: '' });
-    const result = await probeOpencli({ env: { OPENCLI_PATH: cli, PATH: '' }, exec });
+    const result = await probeOpencli({
+      env: { OPENCLI_PATH: cli, PATH: '', HOME: dirname(cli) },
+      homeBinDirs: [],
+      standardPaths: [],
+      exec,
+    });
     expect(result).toEqual({ state: 'ready', cliPath: cli, lastError: null });
     expect(exec).toHaveBeenNthCalledWith(1, cli, ['doctor'], expect.any(Object));
     expect(exec).toHaveBeenNthCalledWith(2, cli, ['twitter', 'profile'], expect.any(Object));
+    const doctorOpts = exec.mock.calls[0][2] as { env?: NodeJS.ProcessEnv };
+    expect(doctorOpts.env?.PATH?.split(':')).toContain(dirname(cli));
   });
 
   it('reports extension_missing when doctor output lacks an [OK] Extension line', async () => {
@@ -59,10 +99,36 @@ describe('probeOpencli', () => {
         'opencli v1.8.4 doctor\n\n[OK] Daemon: running on port 19825 (v1.8.4)\n[FAIL] Extension: not connected\n',
       stderr: '',
     });
-    const result = await probeOpencli({ env: { OPENCLI_PATH: cli, PATH: '' }, exec });
+    const result = await probeOpencli({
+      env: { OPENCLI_PATH: cli, PATH: '', HOME: dirname(cli) },
+      homeBinDirs: [],
+      standardPaths: [],
+      exec,
+    });
     expect(result.state).toBe('extension_missing');
     expect(result.cliPath).toBe(cli);
-    expect(result.lastError).toBeTruthy();
+    expect(result.lastError).toContain('[FAIL] Extension');
+  });
+
+  it('reports extension_missing for [MISSING] Extension lines from newer opencli', async () => {
+    const cli = fakeCli();
+    const exec = vi.fn().mockResolvedValueOnce({
+      stdout: `opencli v1.8.4 doctor
+
+[OK] Daemon: running on port 19825 (v1.8.4)
+[MISSING] Extension: not connected
+[FAIL] Connectivity: failed (Browser Bridge extension not connected)
+`,
+      stderr: '',
+    });
+    const result = await probeOpencli({
+      env: { OPENCLI_PATH: cli, PATH: '', HOME: dirname(cli) },
+      homeBinDirs: [],
+      standardPaths: [],
+      exec,
+    });
+    expect(result.state).toBe('extension_missing');
+    expect(result.lastError).toContain('[MISSING] Extension');
   });
 
   it('reports extension_missing when doctor exits non-zero, using the stderr excerpt as lastError', async () => {
@@ -72,7 +138,12 @@ describe('probeOpencli', () => {
       .mockRejectedValueOnce(
         Object.assign(new Error('Command failed'), { stdout: DOCTOR_OK, stderr: 'boom', code: 1 }),
       );
-    const result = await probeOpencli({ env: { OPENCLI_PATH: cli, PATH: '' }, exec });
+    const result = await probeOpencli({
+      env: { OPENCLI_PATH: cli, PATH: '', HOME: dirname(cli) },
+      homeBinDirs: [],
+      standardPaths: [],
+      exec,
+    });
     expect(result.state).toBe('extension_missing');
     expect(result.lastError).toContain('boom');
   });
@@ -88,7 +159,12 @@ describe('probeOpencli', () => {
           stderr: 'No session for twitter.com',
         }),
       );
-    const result = await probeOpencli({ env: { OPENCLI_PATH: cli, PATH: '' }, exec });
+    const result = await probeOpencli({
+      env: { OPENCLI_PATH: cli, PATH: '', HOME: dirname(cli) },
+      homeBinDirs: [],
+      standardPaths: [],
+      exec,
+    });
     expect(result.state).toBe('no_session');
     expect(result.cliPath).toBe(cli);
     expect(result.lastError).toContain('No session for twitter.com');
@@ -101,7 +177,12 @@ describe('probeOpencli', () => {
       .mockRejectedValueOnce(
         Object.assign(new Error('Command timed out'), { killed: true, signal: 'SIGTERM' }),
       );
-    const result = await probeOpencli({ env: { OPENCLI_PATH: cli, PATH: '' }, exec });
+    const result = await probeOpencli({
+      env: { OPENCLI_PATH: cli, PATH: '', HOME: dirname(cli) },
+      homeBinDirs: [],
+      standardPaths: [],
+      exec,
+    });
     expect(result.state).toBe('not_installed');
     expect(result.cliPath).toBe(cli);
   });
@@ -115,7 +196,12 @@ describe('probeOpencli', () => {
         stdout: 'opencli v1.8.4 doctor\n\n[OK] Daemon: running on port 19825 (v1.8.4)\n',
       }),
     );
-    const result = await probeOpencli({ env: { OPENCLI_PATH: cli, PATH: '' }, exec });
+    const result = await probeOpencli({
+      env: { OPENCLI_PATH: cli, PATH: '', HOME: dirname(cli) },
+      homeBinDirs: [],
+      standardPaths: [],
+      exec,
+    });
     expect(result.state).toBe('not_installed');
     expect(result.cliPath).toBe(cli);
   });
@@ -126,11 +212,17 @@ describe('probeOpencli', () => {
       .fn()
       .mockResolvedValueOnce({ stdout: DOCTOR_OK, stderr: '' })
       .mockResolvedValueOnce({ stdout: '@someone', stderr: '' });
-    await probeOpencli({ env: { OPENCLI_PATH: cli, PATH: '' }, exec });
+    await probeOpencli({
+      env: { OPENCLI_PATH: cli, PATH: '', HOME: dirname(cli) },
+      homeBinDirs: [],
+      standardPaths: [],
+      exec,
+    });
     resetOpencliCacheForTests();
     const result = await probeOpencli({
-      env: { PATH: '', SHELL: '/bin/false' },
+      env: isolatedNotFoundEnv(),
       standardPaths: [],
+      homeBinDirs: [],
     });
     expect(result.state).toBe('not_installed');
   });

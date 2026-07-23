@@ -1,20 +1,27 @@
 import { execFile } from 'node:child_process';
 import { access, constants, stat } from 'node:fs/promises';
-import { delimiter, isAbsolute } from 'node:path';
+import { delimiter, dirname, isAbsolute, join } from 'node:path';
 import { promisify } from 'node:util';
 import type { OpencliStatus } from '../contract/credentials.js';
+import {
+  homeExtraBinDirs,
+  resolveHomeDir,
+  staticAugmentedPath,
+  SYSTEM_EXTRA_BIN_DIRS,
+  type PathExec,
+} from '../platform/userPath.js';
 
 const execFileAsync = promisify(execFile);
 const DOCTOR_TIMEOUT_MS = 20_000;
 const PROFILE_TIMEOUT_MS = 30_000;
 const MAX_ERROR_LENGTH = 200;
-const STANDARD_PATHS = ['/opt/homebrew/bin/opencli', '/usr/local/bin/opencli', '/usr/bin/opencli'];
 
 export interface OpencliDeps {
   env?: NodeJS.ProcessEnv;
-  exec?: typeof execFileAsync;
+  exec?: PathExec;
   shell?: string;
   standardPaths?: string[];
+  homeBinDirs?: string[];
 }
 
 let cachedCliPath: string | null = null;
@@ -34,36 +41,51 @@ async function isExecutable(path: string): Promise<boolean> {
   }
 }
 
-function pathCandidates(env: NodeJS.ProcessEnv, standardPaths: string[]): string[] {
-  const entries = (env.PATH ?? '')
+function pathCandidates(env: NodeJS.ProcessEnv, deps: OpencliDeps): string[] {
+  const home = resolveHomeDir(env);
+  const homeBins = deps.homeBinDirs ?? homeExtraBinDirs(home);
+  const standardPaths =
+    deps.standardPaths ??
+    [...SYSTEM_EXTRA_BIN_DIRS.map((dir) => join(dir, 'opencli')), '/usr/bin/opencli'];
+  const pathEntries = (env.PATH ?? '')
     .split(delimiter)
     .filter(Boolean)
-    .map((dir) => `${dir}/opencli`);
-  return [env.OPENCLI_PATH, ...entries, ...standardPaths].filter(
+    .map((dir) => join(dir, 'opencli'));
+  const homeEntries = homeBins.map((dir) => join(dir, 'opencli'));
+  return [env.OPENCLI_PATH, ...pathEntries, ...standardPaths, ...homeEntries].filter(
     (value): value is string => typeof value === 'string' && value.length > 0,
   );
 }
 
-async function loginShellCandidate(deps: OpencliDeps): Promise<string | null> {
+async function shellCommandCandidate(
+  deps: OpencliDeps,
+  command: string,
+): Promise<string | null> {
   const exec = deps.exec ?? execFileAsync;
-  const shell = deps.shell ?? deps.env?.SHELL ?? process.env.SHELL ?? '/bin/zsh';
+  const env = deps.env ?? process.env;
+  const shell = deps.shell ?? env.SHELL ?? process.env.SHELL ?? '/bin/zsh';
   try {
-    const { stdout } = await exec(shell, ['-lc', 'command -v opencli'], {
+    const { stdout } = await exec(shell, ['-lic', command], {
       timeout: 5_000,
       maxBuffer: 64 * 1024,
+      env: { ...env, TERM: 'dumb' },
     });
-    const candidate = stdout.trim().split('\n')[0];
-    return candidate && isAbsolute(candidate) ? candidate : null;
+    const candidate = stdout
+      .trim()
+      .split('\n')
+      .map((line) => line.trim())
+      .find((line) => isAbsolute(line));
+    return candidate ?? null;
   } catch {
     return null;
   }
 }
 
-async function locateOpencli(deps: OpencliDeps): Promise<string | null> {
+export async function locateOpencli(deps: OpencliDeps = {}): Promise<string | null> {
   if (cachedCliPath && (await isExecutable(cachedCliPath))) return cachedCliPath;
   const env = deps.env ?? process.env;
   const seen = new Set<string>();
-  for (const candidate of pathCandidates(env, deps.standardPaths ?? STANDARD_PATHS)) {
+  for (const candidate of pathCandidates(env, deps)) {
     if (seen.has(candidate)) continue;
     seen.add(candidate);
     if (await isExecutable(candidate)) {
@@ -71,7 +93,7 @@ async function locateOpencli(deps: OpencliDeps): Promise<string | null> {
       return candidate;
     }
   }
-  const shellCandidate = await loginShellCandidate(deps);
+  const shellCandidate = await shellCommandCandidate(deps, 'command -v opencli');
   if (shellCandidate && (await isExecutable(shellCandidate))) {
     cachedCliPath = shellCandidate;
     return shellCandidate;
@@ -90,9 +112,19 @@ function firstFailingDoctorLine(stdout: string): string | null {
   return (
     stdout
       .split('\n')
-      .find((line) => /^\[(FAIL|WARN)]\s*(Extension|Connectivity):/.test(line.trim()))
+      .find((line) =>
+        /^\[(FAIL|WARN|MISSING)]\s*(Extension|Connectivity):/.test(line.trim()),
+      )
       ?.trim() ?? null
   );
+}
+
+function runEnvForCli(cliPath: string, deps: OpencliDeps): NodeJS.ProcessEnv {
+  const env = deps.env ?? process.env;
+  return {
+    ...env,
+    PATH: staticAugmentedPath(env.PATH, resolveHomeDir(env), [dirname(cliPath)]),
+  };
 }
 
 export async function probeOpencli(deps: OpencliDeps = {}): Promise<OpencliStatus> {
@@ -102,13 +134,14 @@ export async function probeOpencli(deps: OpencliDeps = {}): Promise<OpencliStatu
   }
 
   const exec = deps.exec ?? execFileAsync;
+  const runEnv = runEnvForCli(cliPath, deps);
   let doctorStdout: string;
   let doctorError: unknown = null;
   try {
     const { stdout } = await exec(cliPath, ['doctor'], {
       timeout: DOCTOR_TIMEOUT_MS,
       maxBuffer: 1024 * 1024,
-      env: deps.env ?? process.env,
+      env: runEnv,
     });
     doctorStdout = stdout;
   } catch (error) {
@@ -140,7 +173,7 @@ export async function probeOpencli(deps: OpencliDeps = {}): Promise<OpencliStatu
     await exec(cliPath, ['twitter', 'profile'], {
       timeout: PROFILE_TIMEOUT_MS,
       maxBuffer: 1024 * 1024,
-      env: deps.env ?? process.env,
+      env: runEnv,
     });
     return { state: 'ready', cliPath, lastError: null };
   } catch (error) {

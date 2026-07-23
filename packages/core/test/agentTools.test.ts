@@ -2,18 +2,24 @@ import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { createDefaultExec } from '../src/ai/agents/agentTools/execTool.js';
+import {
+  createDefaultExec,
+  resetExecPathCacheForTests,
+} from '../src/ai/agents/agentTools/execTool.js';
 import { buildResearchTools } from '../src/ai/agents/agentTools/researchTools.js';
 import type { SkillMeta } from '../src/ai/agents/skills.js';
+import { homeExtraBinDirs } from '../src/platform/userPath.js';
 
 let repoRoot: string;
 
 beforeEach(() => {
   repoRoot = mkdtempSync(join(tmpdir(), 'agent-tools-test-'));
+  resetExecPathCacheForTests();
 });
 
 afterEach(() => {
   rmSync(repoRoot, { recursive: true, force: true });
+  resetExecPathCacheForTests();
 });
 
 function writeSkill(dir: string, name: string, content: string) {
@@ -77,6 +83,9 @@ describe('buildResearchTools', () => {
     const dirs = stdout.trim().split(':');
     expect(dirs).toContain('/opt/homebrew/bin');
     expect(dirs).toContain('/usr/local/bin');
+    for (const dir of homeExtraBinDirs()) {
+      expect(dirs).toContain(dir);
+    }
   });
 
   it('uses a custom exec for the bash tool', async () => {
