@@ -1,7 +1,6 @@
 import type { ChartDoc, SepaBuilt } from '@kansoku/shared/types';
-import { classifySession, marketDate } from '../marketdata/session.js';
+import { classifySession, marketDate, marketSessionDate } from '../marketdata/session.js';
 import { marketOf } from '../symbols/symbol.utils.js';
-import { marketSessionDate } from '../charts/build.js';
 
 export const PREDICTION_STALE_MS = 15 * 60_000;
 

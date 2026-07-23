@@ -8,7 +8,7 @@ import { getEventRisk } from '../marketdata/events.js';
 import { activeProDetectors } from '../pro/detectors.js';
 import { resolveSecurityName } from '../symbols/securityName.js';
 import { buildSepa, type SepaInput } from '../analysis/sepa.js';
-import { marketDate } from '../marketdata/session.js';
+import { marketSessionDate } from '../marketdata/session.js';
 import { cleanCohortRows, type CohortRow, type FlowRow } from '../analysis/simple.js';
 import { marketOf } from '../symbols/symbol.utils.js';
 
@@ -43,11 +43,6 @@ export function slugify(s: string, fallback: string): string {
 function symbolSlug(symbol: string, suffix: string): string {
   const sym = symbol.replace(/\.(us|hk)$/i, '').toLowerCase();
   return `${slugify(sym, 'chart')}-${suffix}`;
-}
-
-export function marketSessionDate(symbol: string, iso: string): string {
-  if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso;
-  return marketDate(marketOf(symbol), new Date(iso));
 }
 
 function localToday(): string {
