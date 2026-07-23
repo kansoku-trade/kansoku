@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ResearchCreateInput } from '../src/contract/research.js';
 import { localToday } from '../src/charts/build.js';
 import { createResearchDocument } from '../src/research/createResearch.js';
 
@@ -192,5 +193,51 @@ describe('createResearchDocument: journal', () => {
     expect(result.existed).toBe(true);
     expect(result.sepaChartId).toBeNull();
     expect(result.document.markdown).toBe('# 正常标题\n\n人工写过的内容。\n');
+  });
+});
+
+describe('createResearchDocument: malformed input', () => {
+  it('rejects an empty object with a ClientError instead of throwing a TypeError', async () => {
+    const buildSepaChart = vi.fn();
+
+    await expect(
+      createResearchDocument({} as unknown as ResearchCreateInput, {
+        rootDir: root,
+        buildSepaChart,
+      }),
+    ).rejects.toMatchObject({ name: 'ClientError', status: 400 });
+
+    expect(buildSepaChart).not.toHaveBeenCalled();
+    expect(existsSync(join(root, 'stocks'))).toBe(false);
+    expect(existsSync(join(root, 'journal'))).toBe(false);
+  });
+
+  it('rejects an unknown kind with a ClientError instead of throwing a TypeError', async () => {
+    const buildSepaChart = vi.fn();
+
+    await expect(
+      createResearchDocument({ kind: 'foo' } as unknown as ResearchCreateInput, {
+        rootDir: root,
+        buildSepaChart,
+      }),
+    ).rejects.toMatchObject({ name: 'ClientError', status: 400 });
+
+    expect(buildSepaChart).not.toHaveBeenCalled();
+    expect(existsSync(join(root, 'stocks'))).toBe(false);
+    expect(existsSync(join(root, 'journal'))).toBe(false);
+  });
+
+  it('rejects a journal input missing a title with a ClientError instead of throwing a TypeError', async () => {
+    const buildSepaChart = vi.fn();
+
+    await expect(
+      createResearchDocument({ kind: 'journal' } as unknown as ResearchCreateInput, {
+        rootDir: root,
+        buildSepaChart,
+      }),
+    ).rejects.toMatchObject({ name: 'ClientError', status: 400 });
+
+    expect(buildSepaChart).not.toHaveBeenCalled();
+    expect(existsSync(join(root, 'journal'))).toBe(false);
   });
 });

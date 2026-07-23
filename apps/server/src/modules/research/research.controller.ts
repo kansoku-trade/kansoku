@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Post, Query } from '@tsuki-hono/common';
-import type { ResearchKind } from '@kansoku/core/contract/research';
+import type { ResearchCreateInput, ResearchKind } from '@kansoku/core/contract/research';
 import { ClientError } from '@kansoku/core/platform/errors';
 import { researchCreate } from '@kansoku/core/research/createResearch';
 import { researchService } from '@kansoku/core/research/research.service';
@@ -40,7 +40,7 @@ export class ResearchController {
   @Post('/documents')
   async create(@Body() body: unknown) {
     const parsed = jsonBody(body, 'e.g. {"kind": "stock", "symbol": "MRVL"}');
-    const data = await researchCreate(parsed as any);
+    const data = await researchCreate(parsed as ResearchCreateInput);
     return { ok: true, data };
   }
 }

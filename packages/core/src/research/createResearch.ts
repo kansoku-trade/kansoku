@@ -72,6 +72,12 @@ async function createJournalDocument(
   input: { title: string; date?: string },
   deps: CreateResearchDeps,
 ): Promise<ResearchCreateResult> {
+  if (typeof input.title !== 'string') {
+    throw new ClientError(
+      'research journal title is required',
+      'expected a string "title" field',
+    );
+  }
   const date = input.date ?? localToday();
   if (!DATE_RE.test(date)) {
     throw new ClientError(`invalid date: ${date}`, 'expected YYYY-MM-DD');
@@ -102,6 +108,13 @@ export async function createResearchDocument(
   input: ResearchCreateInput,
   deps: CreateResearchDeps,
 ): Promise<ResearchCreateResult> {
+  if (
+    input === null ||
+    typeof input !== 'object' ||
+    (input.kind !== 'stock' && input.kind !== 'journal')
+  ) {
+    throw new ClientError('invalid research kind', 'expected kind "stock" or "journal"');
+  }
   if (input.kind === 'stock') return createStockDocument(input.symbol, deps);
   return createJournalDocument(input, deps);
 }
