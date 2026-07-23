@@ -1,8 +1,19 @@
 import { useSyncExternalStore } from 'react';
-import type { ReassessStatus } from '@kansoku/core/contract/symbols';
+import type {
+  AnalystActivity,
+  AnalystSections,
+  ReassessStatus,
+} from '@kansoku/core/contract/symbols';
 import { subscribeChannel } from '../../lib/ws/wsHub.js';
 
 export type RunningReassessStatus = Extract<ReassessStatus, { running: true }>;
+
+export interface AnalystRunLastEnded {
+  readonly activities: AnalystActivity[];
+  readonly sections: AnalystSections;
+  readonly startedAt: string;
+  readonly endedAt: string;
+}
 
 export interface AnalystRunsSnapshot {
   runs: ReadonlyMap<string, RunningReassessStatus>;
@@ -17,6 +28,7 @@ export interface AnalystRunEventState {
 }
 
 const NULL_STATUS: RunningReassessStatus | null = null;
+const NULL_LAST_ENDED: AnalystRunLastEnded | null = null;
 const NOOP = () => {};
 const NOOP_SUBSCRIBE = () => NOOP;
 const INDICATORS = [
@@ -28,6 +40,7 @@ const INDICATORS = [
 
 let runs = new Map<string, RunningReassessStatus>();
 let unseen = new Set<string>();
+let lastEnded = new Map<string, AnalystRunLastEnded>();
 let snapshot: AnalystRunsSnapshot = { runs, unseen };
 const listeners = new Set<() => void>();
 
@@ -70,6 +83,41 @@ function markUnseenIfInactive(symbol: string): void {
   }
 }
 
+function normalizeActivities(value: unknown): AnalystActivity[] {
+  return Array.isArray(value) ? (value as AnalystActivity[]) : [];
+}
+
+function normalizeSections(value: unknown): AnalystSections {
+  return value !== null && typeof value === 'object' ? (value as AnalystSections) : {};
+}
+
+function normalizeRunningStatus(status: RunningReassessStatus): RunningReassessStatus {
+  return {
+    ...status,
+    activities: normalizeActivities(status.activities),
+    sections: normalizeSections(status.sections),
+  };
+}
+
+function clearLastEnded(symbol: string): void {
+  if (!lastEnded.has(symbol)) return;
+  lastEnded = new Map(lastEnded);
+  lastEnded.delete(symbol);
+}
+
+function retainLastEnded(symbol: string, status: RunningReassessStatus | undefined): void {
+  const activities = status?.activities ?? [];
+  const sections = status?.sections ?? {};
+  if (activities.length === 0 && Object.keys(sections).length === 0) return;
+  lastEnded = new Map(lastEnded);
+  lastEnded.set(symbol, {
+    activities,
+    sections,
+    startedAt: status?.startedAt ?? new Date().toISOString(),
+    endedAt: new Date().toISOString(),
+  });
+}
+
 function handleInit(payload: { runs?: unknown }): void {
   if (!Array.isArray(payload.runs)) return;
   const next = new Map<string, RunningReassessStatus>();
@@ -79,8 +127,10 @@ function handleInit(payload: { runs?: unknown }): void {
     const { symbol, status } = entry as { symbol?: unknown; status?: unknown };
     if (typeof symbol !== 'string' || !isReassessStatus(status)) continue;
     eventStates.set(symbol, status.running);
-    if (status.running) next.set(symbol, status);
-    else next.delete(symbol);
+    if (status.running) {
+      clearLastEnded(symbol);
+      next.set(symbol, normalizeRunningStatus(status));
+    } else next.delete(symbol);
   }
 
   const staleCandidates = new Set(runs.keys());
@@ -88,6 +138,7 @@ function handleInit(payload: { runs?: unknown }): void {
   for (const symbol of staleCandidates) {
     if (next.has(symbol)) continue;
     eventStates.set(symbol, false);
+    retainLastEnded(symbol, runs.get(symbol));
     markUnseenIfInactive(symbol);
   }
   pendingSinceDisconnect = new Set();
@@ -103,12 +154,14 @@ function handleUpdate(payload: { symbol?: unknown; status?: unknown }): void {
   recordEvent(symbol, status.running);
 
   if (status.running) {
+    clearLastEnded(symbol);
     runs = new Map(runs);
-    runs.set(symbol, status);
+    runs.set(symbol, normalizeRunningStatus(status));
     emit();
     return;
   }
 
+  retainLastEnded(symbol, runs.get(symbol));
   runs = new Map(runs);
   runs.delete(symbol);
   markUnseenIfInactive(symbol);
@@ -158,6 +211,10 @@ export function getLatestAnalystRunEvent(symbol: string): AnalystRunEventState |
   return latestEvents.get(symbol) ?? null;
 }
 
+export function getAnalystRunLastEnded(symbol: string): AnalystRunLastEnded | null {
+  return lastEnded.get(symbol) ?? null;
+}
+
 export function setActiveSymbol(symbol: string | null): void {
   activeSymbol = symbol;
   if (symbol === null || !unseen.has(symbol)) return;
@@ -177,6 +234,16 @@ export function useAnalystRunStatus(symbol: string, enabled = true): RunningReas
   );
 }
 
+export function useAnalystRunLastEnded(
+  symbol: string,
+  enabled = true,
+): AnalystRunLastEnded | null {
+  return useSyncExternalStore(
+    enabled ? subscribeAnalystRuns : NOOP_SUBSCRIBE,
+    enabled ? () => getAnalystRunLastEnded(symbol) : () => NULL_LAST_ENDED,
+  );
+}
+
 export function useAnalystRunIndicator(symbol: string): AnalystRunIndicator {
   return useSyncExternalStore(subscribeAnalystRuns, () => {
     const index = (runs.has(symbol) ? 2 : 0) + (unseen.has(symbol) ? 1 : 0);
@@ -187,6 +254,7 @@ export function useAnalystRunIndicator(symbol: string): AnalystRunIndicator {
 export function resetAnalystRunsStoreForTests(): void {
   runs = new Map();
   unseen = new Set();
+  lastEnded = new Map();
   pendingSinceDisconnect = new Set();
   latestEvents = new Map();
   nextEventRevision = 0;

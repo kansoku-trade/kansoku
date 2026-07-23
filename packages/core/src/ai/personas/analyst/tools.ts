@@ -22,7 +22,16 @@ import { buildDataPackTool, buildKlineTool, buildNewsTool, textResult } from '..
 import type { ReassessPack } from '../../agents/datapack.js';
 import { DISCIPLINE_SKILL } from '../../runtime/promptPolicy.js';
 import type { AnalystSkillContext } from '../../conversation/messages/analystMessagesEngine.js';
-import { commentSchema, journalSchema, predictionSchema, type PredictionParams } from './schemas.js';
+import {
+  commentSchema,
+  journalSchema,
+  predictionSchema,
+  submitSectionSchema,
+  validateSubmitSection,
+  type PredictionParams,
+  type SubmitSectionParams,
+} from './schemas.js';
+import { setAnalystSection } from './runState.js';
 import type { AnalystDeps, CreateChart } from './types.js';
 
 export const SKILL_NAME = 'intraday-signal';
@@ -171,6 +180,46 @@ export function buildSubmitPredictionTool(
   };
 }
 
+export interface SubmitSectionHooks {
+  now: () => number;
+}
+
+export function buildSubmitSectionTool(
+  symbol: string,
+  hooks: SubmitSectionHooks,
+): AgentTool<typeof submitSectionSchema> {
+  return {
+    name: 'submit_section',
+    label: 'Submit Section',
+    description: 'Submit an intermediate section for this run: technical after reading the data pack, context after covering news/flows. Keep it short. submit_prediction supersedes both at the end.',
+    parameters: submitSectionSchema,
+    execute: async (_id, params: SubmitSectionParams) => {
+      if (!Check(submitSectionSchema, params)) {
+        return textResult(
+          'section has an invalid structure. kind must be technical (trends/levels/summary) or context (summary/bias). Correct it and retry.',
+        );
+      }
+      const issues = validateSubmitSection(params);
+      if (issues.length) {
+        return textResult(
+          `section rejected: ${issues.join('; ')}. Correct it and call submit_section again.`,
+        );
+      }
+      setAnalystSection(
+        symbol,
+        params.kind === 'technical'
+          ? {
+              kind: 'technical',
+              data: { trends: params.trends ?? [], levels: params.levels ?? [], summary: params.summary },
+            }
+          : { kind: 'context', data: { summary: params.summary, bias: params.bias ?? 'neutral' } },
+        hooks.now,
+      );
+      return textResult(`${params.kind} section recorded`);
+    },
+  };
+}
+
 export function buildTools(
   symbol: string,
   deps: Required<Pick<AnalystDeps, 'createChart' | 'appendComment'>> & {
@@ -239,6 +288,8 @@ export function buildTools(
     },
   });
 
+  const submitSection = buildSubmitSectionTool(symbol, { now: deps.now });
+
   const researchTools = buildResearchTools({
     repoRoot: deps.repoRoot,
     exec: (command) => {
@@ -256,6 +307,7 @@ export function buildTools(
     fetchKlineTool,
     appendCommentTool,
     submitPrediction,
+    submitSection,
     ...researchTools,
     buildJournalTool(symbol, deps.journalDir, deps.now, () => {
       state.journalWritten = true;

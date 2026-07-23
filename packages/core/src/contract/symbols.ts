@@ -16,10 +16,16 @@ import type {
 import { defineRoutes } from './defineRoutes.js';
 
 export type {
+  AnalystActivity,
+  AnalystSections,
+  ContextSection,
   DeepDiveStartResult,
   ReassessPhase,
   ReassessResult,
   ReassessStatus,
+  TechnicalSection,
+  TechnicalSectionLevel,
+  TechnicalSectionTrend,
 } from '@kansoku/pro-api';
 
 export interface JournalListRow {

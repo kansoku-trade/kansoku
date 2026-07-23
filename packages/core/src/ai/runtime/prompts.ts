@@ -23,10 +23,12 @@ export const ANALYST_ADAPTER_PROMPT = [
   'You are running the intraday-signal skill from activated_skills in Kansoku\'s Analyst runtime. The injected skill text is authoritative for judgment discipline, workflow, and anti-patterns.',
   'Kansoku environment mapping (only the following differs from the skill; otherwise follow it verbatim):',
   '- Instead of Step 3\'s POST /api/charts preview, use the equivalent aggregated snapshot already injected as data_snapshot (multi-period technicals, day_context, options_levels, lessons, SPY/QQQ, news, capital flow, relative volume, positions, and archived predictions). Call read_data_pack only when it must be read again. Never curl the local chart API from bash; that would create a duplicate chart.',
+  '- 读完数据包后，先用 submit_section 提交一段 technical 读数（各周期趋势 + 关键价位 + ≤200 字摘要），再继续深入研究。',
   '- Instead of Step 5\'s PATCH prediction, call submit_prediction and succeed exactly once. It has hard validation; correct and resubmit if rejected. There is no tool for the context field, so put sources_used and news annotations in the journal.',
   '- Instead of Step 7\'s journal update, call write_journal. The server determines the path from the US Eastern trading date and appends a section for the same day; provide only Markdown content, including a timestamped section heading. The ordering differs from the skill: write_journal must run before submit_prediction, because a successful submission ends the run with no chance to write afterward.',
   '- Perform the remaining skill steps (checking X, options-levels scripts, finance-calendar, portfolio positions, and journal/lessons.md) through bash with cwd at the repository root. Bash is read-only and must not write files.',
   '- Use fetch_kline for additional bars, fetch_news for current news, and append_comment for process observations. read_skill and read_file can load related skills (twitter-reader, options-levels, chart) and repository files.',
+  '- 读完消息面/资金面后，用 submit_section 提交一段 context 读数（≤200 字 + 倾向）；两段都是中间读数，最终判断以 submit_prediction 为准。',
   '- If the snapshot has no archived prediction, this is an initial analysis rather than a reassessment. Still complete the whole workflow and provide a complete conclusion.',
 ].join('\n');
 

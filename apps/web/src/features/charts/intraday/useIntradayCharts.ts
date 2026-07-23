@@ -88,6 +88,7 @@ const VWAP_COLOR = '#c084fc';
 const DAY_LEVEL_COLOR = '#8b949e';
 const CALL_WALL_COLOR = '#e3b341';
 const PUT_WALL_COLOR = '#39c5cf';
+const PREVIEW_LEVEL_COLOR = 'rgba(154, 154, 154, 0.45)';
 
 const fmtOi = (oi: number) => (oi >= 1000 ? `${(oi / 1000).toFixed(1)}k` : String(oi));
 
@@ -520,6 +521,18 @@ export function useIntradayCharts(
           }),
         );
       }
+    }
+
+    for (const lv of built.previewLevels ?? []) {
+      h.planLines.push(
+        addPriceLine(h.candle, {
+          price: lv.price,
+          color: PREVIEW_LEVEL_COLOR,
+          lineWidth: 1,
+          lineStyle: 2,
+          title: `预读 · ${lv.label}`,
+        }),
+      );
     }
 
     if (lastTfRef.current !== activeTf) {

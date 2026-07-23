@@ -18,13 +18,14 @@ interface Sub {
   unsub: ReturnType<typeof vi.fn>;
 }
 
-const running = (activity: string) => ({
+const running = (activity: string, extra: Record<string, unknown> = {}) => ({
   running: true as const,
   origin: 'manual' as const,
   phase: 'researching' as const,
   activity,
   startedAt: '2026-07-16T00:00:00.000Z',
   updatedAt: '2026-07-16T00:00:00.000Z',
+  ...extra,
 });
 
 describe('analystRunsStore', () => {
@@ -66,7 +67,11 @@ describe('analystRunsStore', () => {
 
     expect(currentRuns().has('NVDA')).toBe(true);
     expect(currentRuns().has('MU')).toBe(true);
-    expect(currentRuns().get('NVDA')).toEqual(running('preparing'));
+    expect(currentRuns().get('NVDA')).toEqual({
+      ...running('preparing'),
+      activities: [],
+      sections: {},
+    });
     off();
   });
 
@@ -332,5 +337,215 @@ describe('analystRunsStore', () => {
 
     expect(currentRuns().has('NVDA')).toBe(false);
     expect(currentUnseen().has('AMD')).toBe(true);
+  });
+
+  it('carries activities and sections from an update payload', () => {
+    const off = store.subscribeAnalystRuns(vi.fn());
+    const activities = [{ at: '2026-07-16T00:00:01.000Z', text: '正在读 5 分钟 K 线' }];
+    const sections = { technical: { trends: [], levels: [], summary: '摘要' } };
+    subs[0].onPayload({
+      type: 'update',
+      symbol: 'NVDA',
+      status: running('researching', { activities, sections }),
+    });
+
+    const status = store.getAnalystRunStatus('NVDA');
+    expect(status?.activities).toEqual(activities);
+    expect(status?.sections).toEqual(sections);
+    off();
+  });
+
+  it('normalizes missing activities/sections to empty array/object on update', () => {
+    const off = store.subscribeAnalystRuns(vi.fn());
+    subs[0].onPayload({ type: 'update', symbol: 'NVDA', status: running('researching') });
+
+    const status = store.getAnalystRunStatus('NVDA');
+    expect(status?.activities).toEqual([]);
+    expect(status?.sections).toEqual({});
+    off();
+  });
+
+  it('hydrates activities/sections from the init payload', () => {
+    const off = store.subscribeAnalystRuns(vi.fn());
+    const activities = [{ at: '2026-07-16T00:00:01.000Z', text: '正在查 NVDA 新闻' }];
+    const sections = { context: { summary: '消息面平淡', bias: 'neutral' as const } };
+    subs[0].onPayload({
+      type: 'init',
+      runs: [{ symbol: 'NVDA', status: running('writing', { activities, sections }) }],
+    });
+
+    const status = store.getAnalystRunStatus('NVDA');
+    expect(status?.activities).toEqual(activities);
+    expect(status?.sections).toEqual(sections);
+    off();
+  });
+
+  it('normalizes missing activities/sections to empty array/object on init', () => {
+    const off = store.subscribeAnalystRuns(vi.fn());
+    subs[0].onPayload({
+      type: 'init',
+      runs: [{ symbol: 'NVDA', status: running('writing') }],
+    });
+
+    const status = store.getAnalystRunStatus('NVDA');
+    expect(status?.activities).toEqual([]);
+    expect(status?.sections).toEqual({});
+    off();
+  });
+
+  it('retains lastEnded content when a run with activities/sections ends', () => {
+    const off = store.subscribeAnalystRuns(vi.fn());
+    const activities = [{ at: '2026-07-16T00:00:01.000Z', text: '正在读 5 分钟 K 线' }];
+    subs[0].onPayload({
+      type: 'update',
+      symbol: 'NVDA',
+      status: running('researching', { activities }),
+    });
+
+    subs[0].onPayload({ type: 'update', symbol: 'NVDA', status: { running: false } });
+
+    const lastEnded = store.getAnalystRunLastEnded('NVDA');
+    expect(lastEnded).not.toBeNull();
+    expect(lastEnded?.activities).toEqual(activities);
+    expect(lastEnded?.sections).toEqual({});
+    expect(lastEnded?.startedAt).toBe('2026-07-16T00:00:00.000Z');
+    expect(typeof lastEnded?.endedAt).toBe('string');
+    off();
+  });
+
+  it('retains lastEnded content when a run ends with only sections (no activities)', () => {
+    const off = store.subscribeAnalystRuns(vi.fn());
+    const sections = { context: { summary: '消息面平淡', bias: 'neutral' as const } };
+    subs[0].onPayload({
+      type: 'update',
+      symbol: 'NVDA',
+      status: running('researching', { sections }),
+    });
+
+    subs[0].onPayload({ type: 'update', symbol: 'NVDA', status: { running: false } });
+
+    const lastEnded = store.getAnalystRunLastEnded('NVDA');
+    expect(lastEnded).not.toBeNull();
+    expect(lastEnded?.activities).toEqual([]);
+    expect(lastEnded?.sections).toEqual(sections);
+    expect(lastEnded?.startedAt).toBe('2026-07-16T00:00:00.000Z');
+    off();
+  });
+
+  it('does not retain lastEnded when a run ends with no activities or sections', () => {
+    const off = store.subscribeAnalystRuns(vi.fn());
+    subs[0].onPayload({ type: 'update', symbol: 'NVDA', status: running('researching') });
+    subs[0].onPayload({ type: 'update', symbol: 'NVDA', status: { running: false } });
+
+    expect(store.getAnalystRunLastEnded('NVDA')).toBeNull();
+    off();
+  });
+
+  it('retains lastEnded content when a reconnect init omits a running symbol', () => {
+    const off = store.subscribeAnalystRuns(vi.fn());
+    const activities = [{ at: '2026-07-16T00:00:01.000Z', text: '正在读 5 分钟 K 线' }];
+    const sections = { technical: { trends: [], levels: [], summary: '摘要' } };
+    subs[0].onPayload({
+      type: 'update',
+      symbol: 'NVDA',
+      status: running('researching', { activities, sections }),
+    });
+
+    subs[0].onPayload({ type: 'init', runs: [] });
+
+    const lastEnded = store.getAnalystRunLastEnded('NVDA');
+    expect(lastEnded).not.toBeNull();
+    expect(lastEnded?.activities).toEqual(activities);
+    expect(lastEnded?.sections).toEqual(sections);
+    expect(lastEnded?.startedAt).toBe('2026-07-16T00:00:00.000Z');
+    expect(currentRuns().has('NVDA')).toBe(false);
+    off();
+  });
+
+  it('retains lastEnded content when a reconnect init lists the symbol as running:false', () => {
+    const off = store.subscribeAnalystRuns(vi.fn());
+    const activities = [{ at: '2026-07-16T00:00:01.000Z', text: '正在读 5 分钟 K 线' }];
+    const sections = { technical: { trends: [], levels: [], summary: '摘要' } };
+    subs[0].onPayload({
+      type: 'update',
+      symbol: 'NVDA',
+      status: running('researching', { activities, sections }),
+    });
+
+    subs[0].onPayload({
+      type: 'init',
+      runs: [{ symbol: 'NVDA', status: { running: false } }],
+    });
+
+    const lastEnded = store.getAnalystRunLastEnded('NVDA');
+    expect(lastEnded).not.toBeNull();
+    expect(lastEnded?.activities).toEqual(activities);
+    expect(lastEnded?.sections).toEqual(sections);
+    expect(lastEnded?.startedAt).toBe('2026-07-16T00:00:00.000Z');
+    expect(currentRuns().has('NVDA')).toBe(false);
+    off();
+  });
+
+  it('does not retain lastEnded when a reconnect init still lists the symbol as running', () => {
+    const off = store.subscribeAnalystRuns(vi.fn());
+    const activities = [{ at: '2026-07-16T00:00:01.000Z', text: '正在读 5 分钟 K 线' }];
+    const sections = { technical: { trends: [], levels: [], summary: '摘要' } };
+    subs[0].onPayload({
+      type: 'update',
+      symbol: 'NVDA',
+      status: running('researching', { activities, sections }),
+    });
+
+    subs[0].onPayload({
+      type: 'init',
+      runs: [{ symbol: 'NVDA', status: running('writing') }],
+    });
+
+    expect(store.getAnalystRunLastEnded('NVDA')).toBeNull();
+    expect(currentRuns().has('NVDA')).toBe(true);
+    off();
+  });
+
+  it('clears lastEnded for a symbol when a new run starts, leaving other symbols untouched', () => {
+    const off = store.subscribeAnalystRuns(vi.fn());
+    const activities = [{ at: '2026-07-16T00:00:01.000Z', text: '正在查新闻' }];
+    subs[0].onPayload({
+      type: 'update',
+      symbol: 'NVDA',
+      status: running('researching', { activities }),
+    });
+    subs[0].onPayload({ type: 'update', symbol: 'NVDA', status: { running: false } });
+    subs[0].onPayload({
+      type: 'update',
+      symbol: 'MU',
+      status: running('researching', { activities }),
+    });
+    subs[0].onPayload({ type: 'update', symbol: 'MU', status: { running: false } });
+
+    expect(store.getAnalystRunLastEnded('NVDA')).not.toBeNull();
+    expect(store.getAnalystRunLastEnded('MU')).not.toBeNull();
+
+    subs[0].onPayload({ type: 'update', symbol: 'NVDA', status: running('preparing') });
+
+    expect(store.getAnalystRunLastEnded('NVDA')).toBeNull();
+    expect(store.getAnalystRunLastEnded('MU')).not.toBeNull();
+    off();
+  });
+
+  it('exposes lastEnded reactively via useAnalystRunLastEnded', () => {
+    const { result } = renderHook(() => store.useAnalystRunLastEnded('NVDA'));
+    expect(result.current).toBeNull();
+
+    const activities = [{ at: '2026-07-16T00:00:01.000Z', text: '正在查新闻' }];
+    act(() => {
+      subs[0].onPayload({
+        type: 'update',
+        symbol: 'NVDA',
+        status: running('researching', { activities }),
+      });
+      subs[0].onPayload({ type: 'update', symbol: 'NVDA', status: { running: false } });
+    });
+
+    expect(result.current?.activities).toEqual(activities);
   });
 });

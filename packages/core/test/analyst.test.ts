@@ -414,6 +414,8 @@ describe('runAnalyst gating', () => {
       activity: '正在整理多周期行情、资金流与持仓',
       startedAt,
       updatedAt: startedAt,
+      activities: [],
+      sections: {},
     });
 
     release();

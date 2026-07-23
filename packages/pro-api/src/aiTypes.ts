@@ -93,6 +93,38 @@ export type DeepDiveStartResult =
 
 export type ReassessResult = { started: boolean; reason?: string };
 export type ReassessPhase = 'preparing' | 'researching' | 'writing' | 'finalizing';
+
+export interface AnalystActivity {
+  at: string;
+  text: string;
+}
+
+export interface TechnicalSectionTrend {
+  timeframe: 'm5' | 'm15' | 'h1' | 'day';
+  trend: 'up' | 'down' | 'sideways';
+}
+
+export interface TechnicalSectionLevel {
+  price: number;
+  label: string;
+}
+
+export interface TechnicalSection {
+  trends: TechnicalSectionTrend[];
+  levels: TechnicalSectionLevel[];
+  summary: string;
+}
+
+export interface ContextSection {
+  summary: string;
+  bias: 'bullish' | 'bearish' | 'neutral';
+}
+
+export interface AnalystSections {
+  technical?: TechnicalSection;
+  context?: ContextSection;
+}
+
 export type ReassessStatus =
   | { running: false }
   | {
@@ -102,6 +134,8 @@ export type ReassessStatus =
       activity: string;
       startedAt: string;
       updatedAt: string;
+      activities?: AnalystActivity[];
+      sections?: AnalystSections;
     };
 
 export interface ChatSession {

@@ -58,3 +58,63 @@ export const commentSchema = Type.Object({
   level: Type.Union([Type.Literal('info'), Type.Literal('warn'), Type.Literal('alert')]),
   text: Type.String({ description: 'A plain-language observation.' }),
 });
+
+export const submitSectionSchema = Type.Object({
+  kind: Type.Union([Type.Literal('technical'), Type.Literal('context')]),
+  summary: Type.String({ minLength: 1, maxLength: 200 }),
+  trends: Type.Optional(
+    Type.Array(
+      Type.Object({
+        timeframe: Type.Union([
+          Type.Literal('m5'),
+          Type.Literal('m15'),
+          Type.Literal('h1'),
+          Type.Literal('day'),
+        ]),
+        trend: Type.Union([Type.Literal('up'), Type.Literal('down'), Type.Literal('sideways')]),
+      }),
+      { minItems: 1, maxItems: 4 },
+    ),
+  ),
+  levels: Type.Optional(
+    Type.Array(
+      Type.Object({
+        price: Type.Number({ exclusiveMinimum: 0 }),
+        label: Type.String({ minLength: 1, maxLength: 30 }),
+      }),
+      { minItems: 1, maxItems: 8 },
+    ),
+  ),
+  bias: Type.Optional(
+    Type.Union([Type.Literal('bullish'), Type.Literal('bearish'), Type.Literal('neutral')]),
+  ),
+});
+
+export type SubmitSectionParams = Static<typeof submitSectionSchema>;
+
+export function validateSubmitSection(params: SubmitSectionParams): string[] {
+  const issues: string[] = [];
+  if (params.kind === 'technical') {
+    if (!params.trends || !params.levels) {
+      issues.push('technical 必须提供 trends 和 levels');
+    }
+    if (params.bias) {
+      issues.push('technical 不应提供 bias（context 专属字段）');
+    }
+    if (params.trends) {
+      const seen = new Set<string>();
+      for (const trend of params.trends) {
+        if (seen.has(trend.timeframe)) issues.push(`trends 中周期 ${trend.timeframe} 重复`);
+        seen.add(trend.timeframe);
+      }
+    }
+  } else {
+    if (!params.bias) {
+      issues.push('context 必须提供 bias');
+    }
+    if (params.trends || params.levels) {
+      issues.push('context 不应提供 trends/levels（technical 专属字段）');
+    }
+  }
+  return issues;
+}

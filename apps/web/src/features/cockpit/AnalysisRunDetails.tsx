@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Dot, MarketTime } from '@web/ui';
 import type { RunningReassessStatus } from './useAnalystRun';
 
-const PHASE_LABEL: Record<RunningReassessStatus['phase'], string> = {
+export const PHASE_LABEL: Record<RunningReassessStatus['phase'], string> = {
   preparing: '准备环境',
   researching: '收集资料',
   writing: '写入复盘',

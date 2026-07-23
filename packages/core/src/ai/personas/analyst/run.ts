@@ -1,3 +1,4 @@
+import type { AgentEvent } from '@earendil-works/pi-agent-core';
 import type { ReassessPhase, ReassessResult } from '../../../contract/symbols.js';
 import { JOURNAL_DIR, PROJECT_ROOT, skillSearchDirs } from '../../../platform/env.js';
 import { getProvider } from '../../../marketdata/registry.js';
@@ -16,11 +17,13 @@ import { emitNotice } from '../notices.js';
 import {
   analystRunLock,
   analystRunStates,
+  appendAnalystActivity,
   emitAnalystRunChange,
   escalationOnCooldown,
   lastEscalationStart,
   updateAnalystRunStatus,
 } from './runState.js';
+import { describeToolCall, describeTurnStart } from './activity.js';
 import {
   buildAnalystSkillContexts,
   buildTools,
@@ -46,6 +49,18 @@ export async function executeAnalystRun(symbol: string, deps: AnalystDeps): Prom
 
   const writeError = (text: string) =>
     append({ ts: new Date().toISOString(), symbol, level: 'error', text, source: 'system' });
+
+  let turnNumber = 0;
+  const onAgentEvent = (event: AgentEvent) => {
+    try {
+      if (event.type === 'turn_start') {
+        turnNumber += 1;
+        appendAnalystActivity(symbol, describeTurnStart(turnNumber), now);
+      } else if (event.type === 'tool_execution_start') {
+        appendAnalystActivity(symbol, describeToolCall(event.toolName, event.args), now);
+      }
+    } catch {}
+  };
 
   const state: RunState = {
     chartId: null,
@@ -135,6 +150,7 @@ export async function executeAnalystRun(symbol: string, deps: AnalystDeps): Prom
       sessionId,
       transformContext: async (messages) => (await messagesEngine.process(messages)).messages,
       agentFactory: deps.agentFactory,
+      onEvent: onAgentEvent,
     });
 
     reportProgress('researching', '正在规划分析步骤并读取市场信息');
@@ -189,6 +205,8 @@ export function runAnalyst({ symbol, origin, deps }: RunAnalystInput): StartResu
     activity: '正在准备分析环境',
     startedAt,
     updatedAt: startedAt,
+    activities: [],
+    sections: {},
   };
   analystRunStates.set(symbol, initialStatus);
   emitAnalystRunChange(symbol, initialStatus);

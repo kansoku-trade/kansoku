@@ -22,6 +22,7 @@ import { AnalysisTimeline } from './AnalysisTimeline';
 import { ChatDock } from './chat/ChatDock';
 import { GenerateAnalysisCta } from './GenerateAnalysisCta';
 import { PreviewCockpit } from './PreviewCockpit';
+import { ReanalyzeStrip } from './ReanalyzeStrip';
 import { conclusionOutdated } from '../charts/intraday/ConclusionCard';
 import { PredictionTab } from '../charts/intraday/tabs/PredictionTab';
 import { buildSharedSidebarTabs } from './sharedSidebarTabs';
@@ -215,20 +216,23 @@ export function SymbolCockpit({ sym }: { sym: string }) {
       key: 'prediction',
       label: '预测',
       content: (
-        <PredictionTab
-          built={doc.built}
-          activeTf={sidebarTf}
-          predictionUpdatedAt={doc.prediction_updated_at}
-          predictionStale={doc.prediction_stale}
-          reassess={conclusionReassess}
-          emptyCta={
-            <GenerateAnalysisCta
-              sym={sym}
-              title="还没有预测结论"
-              desc="这份图目前只有技术面——生成一份 AI 分析，图上会标出关键位和多空判断"
-            />
-          }
-        />
+        <>
+          <ReanalyzeStrip sym={sym} />
+          <PredictionTab
+            built={doc.built}
+            activeTf={sidebarTf}
+            predictionUpdatedAt={doc.prediction_updated_at}
+            predictionStale={doc.prediction_stale}
+            reassess={conclusionReassess}
+            emptyCta={
+              <GenerateAnalysisCta
+                sym={sym}
+                title="还没有预测结论"
+                desc="这份图目前只有技术面——生成一份 AI 分析，图上会标出关键位和多空判断"
+              />
+            }
+          />
+        </>
       ),
     },
     ...buildSharedSidebarTabs({

@@ -10,6 +10,7 @@ import { MaLinesMenu } from '@web/features/charts/intraday/MaLinesMenu';
 import {
   isViewPeriod,
   tfDataOf,
+  withPreviewLevels,
   withViewTimeframe,
 } from '@web/features/charts/intraday/timeframes';
 import { useViewTimeframe } from '@web/features/charts/intraday/useViewTimeframe';
@@ -21,7 +22,9 @@ import type { SidebarTab } from '@web/features/charts/SidebarTabs';
 import { TopbarQuote } from '@web/features/quotes/QuoteBar';
 import { Dot, Empty, ErrorBox } from '@web/ui';
 import { useTitle } from '@web/lib/useTitle';
+import { AnalystRunFeed } from './AnalystRunFeed';
 import { AnalysisTimeline } from './AnalysisTimeline';
+import { useAnalystRunLastEnded, useAnalystRunStatus } from './analystRunsStore';
 import { CockpitSkeleton } from './CockpitSkeleton';
 import { GenerateAnalysis } from './GenerateAnalysis';
 import { GenerateAnalysisCta } from './GenerateAnalysisCta';
@@ -69,6 +72,13 @@ export function PreviewCockpit({
   const { comments, error: commentsError, loaded: commentsLoaded } = useCockpitComments(sym);
   const { unread } = useAiUnreadBadge(sym, comments, commentsLoaded, activeTab);
   const viewTimeframe = useViewTimeframe(sym, intradayTf ?? 'm15', { live: true, liveQuote });
+  const analystRunStatus = useAnalystRunStatus(sym);
+  const analystRunLastEndedRaw = useAnalystRunLastEnded(sym);
+  const analystRunLastEnded =
+    analystRunLastEndedRaw &&
+    analysesRows.some((row) => row.created_at >= analystRunLastEndedRaw.startedAt)
+      ? null
+      : analystRunLastEndedRaw;
 
   if (error) {
     return (
@@ -86,7 +96,14 @@ export function PreviewCockpit({
   if (!built) return <CockpitSkeleton />;
 
   const activeIntradayTf = resolveIntradayTf(built, intradayTf);
-  const chartBuilt = withViewTimeframe(built, activeIntradayTf, viewTimeframe.tf);
+  const previewLevels = built.sidebar.prediction
+    ? undefined
+    : (analystRunStatus?.sections?.technical?.levels ??
+      analystRunLastEnded?.sections?.technical?.levels);
+  const chartBuilt = withPreviewLevels(
+    withViewTimeframe(built, activeIntradayTf, viewTimeframe.tf),
+    previewLevels,
+  );
   const sidebarTf = isViewPeriod(activeIntradayTf) ? built.defaultTf : activeIntradayTf;
 
   const sidebarTabs: SidebarTab[] = [
@@ -101,6 +118,13 @@ export function PreviewCockpit({
             predictionUpdatedAt={predictionUpdatedAt}
             predictionStale={predictionStale}
           />
+          <GenerateAnalysis sym={sym} />
+        </>
+      ) : analystRunStatus ? (
+        <AnalystRunFeed sym={sym} />
+      ) : analystRunLastEnded ? (
+        <>
+          <AnalystRunFeed sym={sym} />
           <GenerateAnalysis sym={sym} />
         </>
       ) : analysesRows.length > 0 ? (

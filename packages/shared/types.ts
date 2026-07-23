@@ -651,6 +651,7 @@ export interface IntradayBuilt {
   defaultTf: TimeframeKey;
   entryPlan: IntradayEntryPlan | null;
   sidebar: IntradaySidebar;
+  previewLevels?: Array<{ price: number; label: string }>;
 }
 
 export interface FlowRow {

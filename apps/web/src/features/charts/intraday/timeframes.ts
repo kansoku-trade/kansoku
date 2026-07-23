@@ -55,6 +55,14 @@ export function withViewTimeframe(
   };
 }
 
+export function withPreviewLevels(
+  built: IntradayBuilt,
+  levels: IntradayBuilt['previewLevels'],
+): IntradayBuilt {
+  if (!levels || levels.length === 0) return built;
+  return { ...built, previewLevels: levels };
+}
+
 const STORAGE_KEY = 'intraday-timeframes';
 
 export function sanitizeTimeframes(raw: unknown): ChartTf[] {

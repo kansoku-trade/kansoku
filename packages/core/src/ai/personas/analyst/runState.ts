@@ -1,6 +1,14 @@
-import type { ReassessPhase, ReassessStatus } from '../../../contract/symbols.js';
+import type {
+  AnalystSections,
+  ContextSection,
+  ReassessPhase,
+  ReassessStatus,
+  TechnicalSection,
+} from '../../../contract/symbols.js';
 import { createRunLock } from '../../agents/runLock.js';
 import type { RunningAnalystRunStatus } from './types.js';
+
+const MAX_ACTIVITIES = 50;
 
 const ESCALATION_COOLDOWN_MS = 30 * 60_000;
 
@@ -47,6 +55,35 @@ function updateAnalystRunStatus(
     ...current,
     phase,
     activity,
+    updatedAt: new Date(now()).toISOString(),
+  };
+  analystRunStates.set(symbol, next);
+  emitAnalystRunChange(symbol, next);
+}
+
+export function appendAnalystActivity(symbol: string, text: string, now: () => number): void {
+  const current = analystRunStates.get(symbol);
+  if (!current) return;
+  const at = new Date(now()).toISOString();
+  const activities = [...(current.activities ?? []), { at, text }].slice(-MAX_ACTIVITIES);
+  const next: RunningAnalystRunStatus = { ...current, activities, updatedAt: at };
+  analystRunStates.set(symbol, next);
+  emitAnalystRunChange(symbol, next);
+}
+
+export function setAnalystSection(
+  symbol: string,
+  section: { kind: 'technical'; data: TechnicalSection } | { kind: 'context'; data: ContextSection },
+  now: () => number,
+): void {
+  const current = analystRunStates.get(symbol);
+  if (!current) return;
+  const sections: AnalystSections = { ...current.sections };
+  if (section.kind === 'technical') sections.technical = section.data;
+  else sections.context = section.data;
+  const next: RunningAnalystRunStatus = {
+    ...current,
+    sections,
     updatedAt: new Date(now()).toISOString(),
   };
   analystRunStates.set(symbol, next);
