@@ -1,7 +1,9 @@
 import { existsSync, lstatSync, realpathSync } from 'node:fs';
 import path from 'node:path';
 
-const { dirname, extname, isAbsolute, relative, resolve, sep } = path;
+const { dirname, extname, isAbsolute, join, relative, resolve, sep } = path;
+
+const FS_URL_PREFIX = '/@fs';
 
 export interface ProOverlayOptions {
   enabled?: boolean;
@@ -25,6 +27,7 @@ interface OverlayResolveContext {
 export interface ProOverlayPlugin {
   name: string;
   enforce: 'pre';
+  configResolved(config: { root: string }): void;
   resolveId(
     this: OverlayResolveContext,
     source: string,
@@ -153,11 +156,45 @@ function watchOverlayTarget(context: OverlayResolveContext, candidate: string): 
   context.addWatchFile(realpathSync(candidate));
 }
 
+// A dynamic import is re-fetched by the browser as a standalone URL request,
+// so it reaches resolveId with no importer. Left to vite that request goes to
+// the default resolver, which follows the projection symlink to its real path
+// under the overlay root — and every relative import in the module then
+// resolves against the private tree instead of the public one. Returning the
+// symlink path verbatim keeps the module's identity in the public tree, which
+// is what its relative imports are written against.
+function projectionForRootUrl(
+  source: string,
+  root: string,
+  overlayRoot: string | undefined,
+): string | null {
+  if (!overlayRoot || !source.startsWith('/')) return null;
+  const { path: urlPath, query } = splitQuery(source);
+  const candidate = urlPath.startsWith(`${FS_URL_PREFIX}/`)
+    ? urlPath.slice(FS_URL_PREFIX.length)
+    : join(root, urlPath);
+  if (!existsSync(candidate) || !lstatSync(candidate).isSymbolicLink()) return null;
+  const rel = relative(realpathSync(overlayRoot), realpathSync(candidate));
+  if (rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel)) return null;
+  return `${candidate}${query}`;
+}
+
 export function proOverlayPlugin(options: ProOverlayOptions = {}): ProOverlayPlugin {
+  let root = process.cwd();
   return {
     name: 'kansoku-pro-overlay',
     enforce: 'pre',
+    configResolved(config) {
+      root = config.root;
+    },
     async resolveId(source, importer) {
+      if (source.startsWith('/') && options.enabled !== false) {
+        const projected = projectionForRootUrl(source, root, options.overlayRoot);
+        if (projected) {
+          watchOverlayTarget(this, splitQuery(projected).path);
+          return projected;
+        }
+      }
       if (source.startsWith('.')) {
         const resolved = resolveProOverlayId(source, importer, options);
         if (resolved) watchOverlayTarget(this, splitQuery(resolved).path);
