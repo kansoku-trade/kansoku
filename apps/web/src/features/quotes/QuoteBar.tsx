@@ -62,15 +62,14 @@ export function TopbarQuote({ quote }: { quote: QuoteCell | null }) {
       <span className={`num qc-price ${pctTone(quote.pct)}`}>{money(quote.last)}</span>
       <span className={`num qc-pct ${pctTone(quote.pct)}`}>{pctText(quote.pct)}</span>
       <Badge className="qc-session">{quote.session}</Badge>
-      {quote.asOf && (
-        <MarketTime
-          className="topbar-quote-time"
-          value={quote.asOf}
-          format="clock-seconds"
-          includeZone
-          market={marketOfSymbol(quote.symbol)}
-        />
-      )}
+      <MarketTime
+        className="topbar-quote-time"
+        value={quote.asOf || 0}
+        live
+        format="clock-seconds"
+        includeZone
+        market={marketOfSymbol(quote.symbol)}
+      />
     </span>
   );
 }
