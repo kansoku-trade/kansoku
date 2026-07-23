@@ -240,4 +240,32 @@ describe('createResearchDocument: malformed input', () => {
     expect(buildSepaChart).not.toHaveBeenCalled();
     expect(existsSync(join(root, 'journal'))).toBe(false);
   });
+
+  it('rejects a stock input missing a symbol with a ClientError instead of throwing a TypeError', async () => {
+    const buildSepaChart = vi.fn();
+
+    await expect(
+      createResearchDocument({ kind: 'stock' } as unknown as ResearchCreateInput, {
+        rootDir: root,
+        buildSepaChart,
+      }),
+    ).rejects.toMatchObject({ name: 'ClientError', status: 400 });
+
+    expect(buildSepaChart).not.toHaveBeenCalled();
+    expect(existsSync(join(root, 'stocks'))).toBe(false);
+  });
+
+  it('rejects a stock input with a non-string symbol with a ClientError instead of throwing a TypeError', async () => {
+    const buildSepaChart = vi.fn();
+
+    await expect(
+      createResearchDocument({ kind: 'stock', symbol: 123 } as unknown as ResearchCreateInput, {
+        rootDir: root,
+        buildSepaChart,
+      }),
+    ).rejects.toMatchObject({ name: 'ClientError', status: 400 });
+
+    expect(buildSepaChart).not.toHaveBeenCalled();
+    expect(existsSync(join(root, 'stocks'))).toBe(false);
+  });
 });

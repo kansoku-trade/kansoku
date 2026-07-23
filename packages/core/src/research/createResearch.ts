@@ -45,6 +45,9 @@ async function createStockDocument(
   symbol: string,
   deps: CreateResearchDeps,
 ): Promise<ResearchCreateResult> {
+  if (typeof symbol !== 'string') {
+    throw new ClientError('research stock symbol is required', 'expected a string "symbol" field');
+  }
   const fileSymbol = noteFileName(symbol);
   const fullSymbol = fileSymbol.includes('.') ? fileSymbol : `${fileSymbol}.US`;
   const relativePath = `stocks/${fileSymbol}.md`;
