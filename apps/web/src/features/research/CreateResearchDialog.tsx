@@ -59,6 +59,7 @@ export function CreateResearchDialog({
   return (
     <div className="create-research-dialog">
       <SegmentedControl
+        className="create-research-seg"
         ariaLabel="新建研究类型"
         value={kind}
         onChange={changeKind}

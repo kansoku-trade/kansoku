@@ -5152,6 +5152,13 @@ a.zone-item:hover {
   gap: 14px;
   min-width: 360px;
 }
+.create-research-seg {
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+}
+.create-research-seg .ui-segmented-control-option span {
+  padding: 6px 10px;
+}
 .create-research-field {
   display: flex;
   flex-direction: column;
