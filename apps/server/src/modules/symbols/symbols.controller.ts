@@ -89,6 +89,12 @@ export class SymbolsController {
     return { ok: true, data };
   }
 
+  @Post('/:sym/explain')
+  async explain(@Param('sym') sym: string) {
+    const data = await symbolsService.explain({ sym });
+    return { ok: true, data };
+  }
+
   @Get('/:sym/note')
   async getNote(@Param('sym') sym: string) {
     return symbolsService.note({ sym });

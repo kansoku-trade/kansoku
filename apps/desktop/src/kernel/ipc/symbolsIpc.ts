@@ -77,6 +77,11 @@ export class SymbolsIpc extends IpcService implements WrapEnvelope<SymbolsApi> {
   }
 
   @IpcMethod()
+  explain(input: Parameters<SymbolsApi['explain']>[0]) {
+    return toEnvelope('symbols.explain', () => symbolsService.explain(input));
+  }
+
+  @IpcMethod()
   note(input: Parameters<SymbolsApi['note']>[0]) {
     return toEnvelope('symbols.note', () => symbolsService.note(input));
   }

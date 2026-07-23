@@ -6,6 +6,7 @@ import { withFeatureGates } from '../pro/withFeatureGates.js';
 import { chartUrl } from '../platform/chartUrl.js';
 import { analystRunStatus } from '../ai/personas/analyst/runState.js';
 import { reassessSymbol } from '../ai/personas/analyst/run.js';
+import { explainSymbol } from '../ai/personas/explainer.js';
 import { listCommentDates, listComments } from '../ai/personas/comments.js';
 import { setSymbolFollowing, symbolFollowState } from '../ai/personas/follows.js';
 import { symbolsRoutes, type SymbolsApi } from '../contract/symbols.js';
@@ -197,6 +198,10 @@ export const symbolsService: SymbolsApi = withFeatureGates(symbolsRoutes, {
 
   async reassessStatus(input) {
     return analystRunStatus(normalizeSymbol(input.sym));
+  },
+
+  async explain(input) {
+    return explainSymbol(normalizeSymbol(input.sym));
   },
 
   async note(input) {

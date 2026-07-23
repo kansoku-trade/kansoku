@@ -924,7 +924,7 @@ export interface OverviewRecap {
 }
 
 export type CommentLevel = 'info' | 'warn' | 'alert' | 'error';
-export type CommentSource = 'commentator' | 'analyst' | 'system';
+export type CommentSource = 'commentator' | 'analyst' | 'system' | 'explainer';
 export type CommentStance = 'act_per_plan' | 'wait_confirm' | 'no_action';
 
 export interface CockpitComment {
@@ -940,6 +940,10 @@ export interface CockpitComment {
   stance?: CommentStance;
   stanceNote?: string;
 }
+
+export type ExplainResult =
+  | { ok: true; comment: CockpitComment }
+  | { ok: false; reason: 'disabled' | 'busy' | 'failed' };
 
 export type NoticeKind = 'analysis_done' | 'deep_dive_done' | 'deep_dive_failed';
 
