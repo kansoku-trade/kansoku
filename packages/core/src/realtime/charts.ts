@@ -1,6 +1,12 @@
 import type { ChartDoc, RawBar, TimeframeKey } from '@kansoku/shared/types';
 import { ClientError } from '../platform/errors.js';
-import { buildChart, rebuild, refreshBody } from '../charts/build.js';
+import {
+  buildChart,
+  getDayKlineCached,
+  hasDayKlineCached,
+  rebuild,
+  refreshBody,
+} from '../charts/build.js';
 import { getEventRisk } from '../marketdata/events.js';
 import { TIMEFRAME_ORDER } from '../analysis/intraday/constants.js';
 import { activeProDetectors } from '../pro/detectors.js';
@@ -17,6 +23,7 @@ import {
   type FrozenBarRange,
   type PushBar,
 } from './candleMerge.js';
+import { loadCandleCache, maybeSaveCandleCache, saveCandleCache } from './candleCache.js';
 import { createPoller, type PollerHandle } from './poller.js';
 import { isPushFresh, pollIntervalMs } from './pushFallback.js';
 import { overlayAnalysisInput } from './previewOverlay.js';
@@ -29,6 +36,26 @@ const DEBOUNCE_MS = 250;
 const PUSH_FRESH_WINDOW_MS = 3_000;
 
 const chartMarkets = new Map<string, Market>();
+
+// Cache pool: after the last subscriber leaves, chart state lingers (streams
+// unwired, polling stopped, zero quota spend) so a revisit gets the cached
+// frame instantly and only backfills the tail. LRU-bounded across symbols.
+const LINGER_MS = 30 * 60_000;
+const LINGER_MAX = 12;
+const lingeringKeys = new Set<string>();
+
+const TAIL_MARGIN_BARS = 5;
+const TAIL_BASE_TF_MS = 5 * 60_000;
+const FULL_FETCH_COUNT = 1000;
+
+export function tailFetchCount(
+  lastFetchAt: number,
+  now: number,
+  fullCount = FULL_FETCH_COUNT,
+): number {
+  const elapsed = Math.max(0, now - lastFetchAt);
+  return Math.min(fullCount, Math.ceil(elapsed / TAIL_BASE_TF_MS) + TAIL_MARGIN_BARS);
+}
 
 function chartIntervalMs(key?: string): number {
   const state = key ? candleStates.get(key) : undefined;
@@ -89,15 +116,18 @@ interface LatestDoc {
 }
 
 interface CandleState {
+  symbol: string;
   viewCount: number | undefined;
   market: Market;
   timeframes: Partial<Record<TimeframeKey, RawBar[]>>;
   frozenRanges: Partial<Record<TimeframeKey, FrozenBarRange>>;
   lastPushAt: number | null;
+  lastFetchAt: number;
   lastRebuildAt: number;
   pushMode: boolean;
   debounceTimer: ReturnType<typeof setTimeout> | null;
   unsubs: Array<() => void>;
+  baseInput?: Record<string, unknown>;
   loadDoc: () => Promise<LatestDoc | null>;
 }
 
@@ -187,13 +217,13 @@ async function runPushRebuild(key: string): Promise<void> {
   handle.pushData(await buildFromState(state, latest));
 }
 
-function wireCandleState(key: string, symbol: string, state: CandleState): void {
-  candleStates.set(key, state);
-  const stream = getStream(marketOf(symbol));
+function wireCandleStream(key: string, state: CandleState): void {
+  if (state.unsubs.length > 0) return;
+  const stream = getStream(state.market);
   for (const tf of TIMEFRAME_ORDER) {
     const period = TF_TO_CANDLE_PERIOD[tf];
     const unsub = stream.subscribeCandlesticks(
-      symbol,
+      state.symbol,
       period,
       (bar) => {
         const cur = candleStates.get(key);
@@ -217,6 +247,54 @@ function wireCandleState(key: string, symbol: string, state: CandleState): void 
   }
 }
 
+function unwireCandleStream(state: CandleState): void {
+  for (const unsub of state.unsubs) unsub();
+  state.unsubs = [];
+  if (state.debounceTimer) {
+    clearTimeout(state.debounceTimer);
+    state.debounceTimer = null;
+  }
+}
+
+function wireCandleState(key: string, symbol: string, state: CandleState): void {
+  candleStates.set(key, state);
+  wireCandleStream(key, state);
+}
+
+function lingerOptions(key: string) {
+  return {
+    lingerMs: LINGER_MS,
+    onIdle: () => {
+      const state = candleStates.get(key);
+      if (state) {
+        unwireCandleStream(state);
+        if (key.startsWith('preview:')) {
+          saveCandleCache(state.symbol, {
+            timeframes: state.timeframes,
+            dayKline: (state.baseInput?.day_kline as RawBar[] | undefined) ?? null,
+            lastFetchAt: state.lastFetchAt,
+          });
+        }
+      }
+      lingeringKeys.delete(key);
+      lingeringKeys.add(key);
+      while (lingeringKeys.size > LINGER_MAX) {
+        const oldest = lingeringKeys.values().next().value as string;
+        lingeringKeys.delete(oldest);
+        chartPollers.get(oldest)?.destroy();
+      }
+    },
+    onResume: () => {
+      lingeringKeys.delete(key);
+      const state = candleStates.get(key);
+      if (state) {
+        state.lastPushAt = null;
+        wireCandleStream(key, state);
+      }
+    },
+  };
+}
+
 function setupCandleState(
   key: string,
   id: string,
@@ -232,11 +310,13 @@ function setupCandleState(
     >),
   };
   const state: CandleState = {
+    symbol,
     viewCount,
     market: marketOf(symbol),
     timeframes,
     frozenRanges: frozenRangesOf(timeframes),
     lastPushAt: null,
+    lastFetchAt: 0,
     lastRebuildAt: 0,
     pushMode: false,
     debounceTimer: null,
@@ -263,15 +343,18 @@ function setupPreviewCandleState(
   if (candleStates.has(key)) return;
   const timeframes = { ...(input.timeframes as Partial<Record<TimeframeKey, RawBar[]>>) };
   const state: CandleState = {
+    symbol,
     viewCount: undefined,
     market: marketOf(symbol),
     timeframes,
     frozenRanges: frozenRangesOf(timeframes),
     lastPushAt: null,
+    lastFetchAt: Date.now(),
     lastRebuildAt: 0,
     pushMode: false,
     debounceTimer: null,
     unsubs: [],
+    baseInput: input,
     loadDoc: async () => {
       const latestDoc = await latestIntradayDoc(symbol);
       return {
@@ -287,8 +370,7 @@ function setupPreviewCandleState(
 function teardownCandleState(key: string): void {
   const state = candleStates.get(key);
   if (!state) return;
-  if (state.debounceTimer) clearTimeout(state.debounceTimer);
-  for (const unsub of state.unsubs) unsub();
+  unwireCandleStream(state);
   candleStates.delete(key);
 }
 
@@ -325,79 +407,24 @@ export async function subscribeChart(
         if (!latest) throw new ClientError(`chart not found: ${id}`, undefined, 404);
         const body = refreshBody(latest.type, latest.input);
         if (!body) return { built: latest.built, ...predictionFields(latest) };
-        const result = await buildChart(
-          viewCount === undefined ? body : { ...body, count: viewCount },
-        );
-        if (latest.type === 'intraday') {
+        const state = latest.type === 'intraday' ? candleStates.get(key) : undefined;
+        const count = state
+          ? tailFetchCount(
+              state.lastFetchAt,
+              Date.now(),
+              Math.max(FULL_FETCH_COUNT, state.viewCount ?? 0),
+            )
+          : viewCount;
+        const result = await buildChart(count === undefined ? body : { ...body, count });
+        if (state) {
+          state.lastFetchAt = Date.now();
           // Safety net converges WITHOUT clobbering the frozen analysis snapshot:
-          // fold the full refetch into state.timeframes while pinning the original
+          // fold the tail refetch into state.timeframes while pinning the original
           // snapshot range. The immutable range lets a later poll fill any gap
           // behind an already-appended live bar and retain requested older history.
-          const state = candleStates.get(key);
-          if (state) {
-            const freshTf = (result.input.timeframes ?? {}) as Partial<
-              Record<TimeframeKey, RawBar[]>
-            >;
-            for (const tf of TIMEFRAME_ORDER) {
-              const incoming = freshTf[tf];
-              if (incoming) {
-                state.timeframes[tf] = mergeFreshBars(
-                  state.timeframes[tf] ?? [],
-                  incoming,
-                  state.frozenRanges[tf],
-                );
-              }
-            }
-            return await buildFromState(state, {
-              title: latest.title,
-              input: latest.input as Record<string, unknown>,
-              prediction: predictionFields(latest),
-            });
-          }
-        }
-        return { built: result.built, ...predictionFields(latest) };
-      },
-      onStop: () => {
-        chartPollers.delete(key);
-        chartMarkets.delete(key);
-        teardownCandleState(key);
-      },
-    });
-  });
-  return handle.subscribe(push);
-}
-
-const previewInitialBuilt = new Map<string, unknown>();
-
-export async function subscribePreview(
-  symbol: string,
-  push: (envelope: string) => void,
-): Promise<() => void> {
-  const normalized = normalizeSymbol(symbol);
-  const key = `preview:${normalized}`;
-
-  const handle = await getOrCreatePoller(key, async () => {
-    const result = await buildChart({ type: 'intraday', symbol: normalized, session: 'all' });
-    chartMarkets.set(key, marketOf(normalized));
-    setupPreviewCandleState(key, normalized, result.input, result.title);
-    const initialState = candleStates.get(key);
-    const initialLatest = initialState ? await initialState.loadDoc() : null;
-    const initialData =
-      initialState && initialLatest
-        ? await buildFromState(initialState, initialLatest)
-        : { built: result.built };
-    previewInitialBuilt.set(key, initialData);
-    return createPoller({
-      intervalMs: () => chartIntervalMs(key),
-      task: async () => {
-        const state = candleStates.get(key);
-        if (!state) return { built: result.built };
-        const latest = await state.loadDoc();
-        if (!latest) return { built: result.built };
-        const body = refreshBody('intraday', latest.input);
-        if (body) {
-          const fresh = await buildChart(body);
-          const freshTf = (fresh.input.timeframes ?? {}) as Partial<Record<TimeframeKey, RawBar[]>>;
+          const freshTf = (result.input.timeframes ?? {}) as Partial<
+            Record<TimeframeKey, RawBar[]>
+          >;
           for (const tf of TIMEFRAME_ORDER) {
             const incoming = freshTf[tf];
             if (incoming) {
@@ -408,20 +435,130 @@ export async function subscribePreview(
               );
             }
           }
+          return await buildFromState(state, {
+            title: latest.title,
+            input: latest.input as Record<string, unknown>,
+            prediction: predictionFields(latest),
+          });
         }
-        return await buildFromState(state, latest);
+        return { built: result.built, ...predictionFields(latest) };
       },
+      ...lingerOptions(key),
       onStop: () => {
+        lingeringKeys.delete(key);
         chartPollers.delete(key);
         chartMarkets.delete(key);
         teardownCandleState(key);
-        previewInitialBuilt.delete(key);
+      },
+    });
+  });
+  return handle.subscribe(push);
+}
+
+
+export async function subscribePreview(
+  symbol: string,
+  push: (envelope: string) => void,
+): Promise<() => void> {
+  const normalized = normalizeSymbol(symbol);
+  const key = `preview:${normalized}`;
+
+  // The cold build runs inside the poller task, not the setup factory: a
+  // rate-limited first fetch then surfaces as a degraded status the poller
+  // retries with backoff, instead of a hard error the client cannot recover
+  // from without re-navigating.
+  const handle = await getOrCreatePoller(key, async () => {
+    chartMarkets.set(key, marketOf(normalized));
+    return createPoller({
+      intervalMs: () => chartIntervalMs(key),
+      task: async () => {
+        let state = candleStates.get(key);
+        if (!state) {
+          const cached = loadCandleCache(normalized);
+          const result = await buildChart({
+            type: 'intraday',
+            symbol: normalized,
+            session: 'all',
+            skip_news: true,
+            day_kline_lazy: true,
+            ...(cached
+              ? {
+                  timeframes: cached.timeframes,
+                  ...(cached.dayKline?.length ? { day_kline: cached.dayKline } : {}),
+                }
+              : {}),
+          });
+          setupPreviewCandleState(key, normalized, result.input, result.title);
+          state = candleStates.get(key);
+          if (!state) return { built: result.built };
+          if (cached) state.lastFetchAt = cached.lastFetchAt;
+          backfillDayKline(key, normalized);
+          const latest = await state.loadDoc();
+          if (!latest) return { built: result.built };
+          if (cached) {
+            try {
+              await refreshPreviewTail(normalized, state, latest.input);
+            } catch (err) {
+              console.warn('[chart-live] tail refresh after cache seed failed', key, err);
+            }
+          }
+          return await buildFromState(state, latest);
+        }
+        const latest = await state.loadDoc();
+        if (!latest) throw new ClientError(`preview doc unavailable: ${normalized}`);
+        await refreshPreviewTail(normalized, state, latest.input);
+        return await buildFromState(state, latest);
+      },
+      ...lingerOptions(key),
+      onStop: () => {
+        lingeringKeys.delete(key);
+        chartPollers.delete(key);
+        chartMarkets.delete(key);
+        teardownCandleState(key);
       },
     });
   });
 
-  const initial = previewInitialBuilt.get(key);
-  if (initial !== undefined && !handle.hasData())
-    push(JSON.stringify({ type: 'data', data: initial }));
   return handle.subscribe(push);
+}
+
+async function refreshPreviewTail(
+  symbol: string,
+  state: CandleState,
+  latestInput: Record<string, unknown>,
+): Promise<void> {
+  const body = refreshBody('intraday', latestInput);
+  if (!body) return;
+  const fresh = await buildChart({
+    ...body,
+    count: tailFetchCount(state.lastFetchAt, Date.now()),
+  });
+  state.lastFetchAt = Date.now();
+  const freshTf = (fresh.input.timeframes ?? {}) as Partial<Record<TimeframeKey, RawBar[]>>;
+  for (const tf of TIMEFRAME_ORDER) {
+    const incoming = freshTf[tf];
+    if (incoming) {
+      state.timeframes[tf] = mergeFreshBars(
+        state.timeframes[tf] ?? [],
+        incoming,
+        state.frozenRanges[tf],
+      );
+    }
+  }
+  maybeSaveCandleCache(symbol, {
+    timeframes: state.timeframes,
+    dayKline: (state.baseInput?.day_kline as RawBar[] | undefined) ?? null,
+    lastFetchAt: state.lastFetchAt,
+  });
+}
+
+function backfillDayKline(key: string, symbol: string): void {
+  if (hasDayKlineCached(symbol)) return;
+  void getDayKlineCached(symbol).then((bars) => {
+    const state = candleStates.get(key);
+    const base = state?.baseInput;
+    if (!bars.length || !base) return;
+    base.day_kline = bars;
+    chartPollers.get(key)?.refresh();
+  });
 }

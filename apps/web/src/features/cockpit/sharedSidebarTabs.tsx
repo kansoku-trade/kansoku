@@ -42,7 +42,8 @@ export function buildSharedSidebarTabs(params: {
     commentsLoaded,
     unread,
   } = params;
-  const hasNews = Boolean(sidebar.context?.news?.length) || Boolean(sidebar.news?.length);
+  const hasNews =
+    Boolean(sidebar.context?.news?.length) || Boolean(sidebar.news?.length) || Boolean(sym);
 
   return [
     {
@@ -65,7 +66,7 @@ export function buildSharedSidebarTabs(params: {
       key: 'news',
       label: '消息',
       hidden: !hasNews,
-      content: <NewsTab context={sidebar.context} news={sidebar.news ?? []} />,
+      content: <NewsTab context={sidebar.context} news={sidebar.news ?? []} sym={sym} />,
     },
     {
       key: 'review',

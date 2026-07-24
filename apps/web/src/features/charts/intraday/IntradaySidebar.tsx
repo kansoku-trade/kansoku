@@ -57,7 +57,8 @@ export function IntradaySidebar({
   const active = activeProp ?? internalActive;
   const setActive = onActiveChange ?? setInternalActive;
 
-  const hasNews = Boolean(s.context?.news?.length) || Boolean(s.news?.length);
+  const hasNews =
+    Boolean(s.context?.news?.length) || Boolean(s.news?.length) || Boolean(s.symbol);
   const hasPosition = s.position !== null;
 
   const defaultTabs: SidebarTab[] = [
@@ -78,7 +79,7 @@ export function IntradaySidebar({
       key: 'news',
       label: '消息',
       hidden: !hasNews,
-      content: <NewsTab context={s.context} news={s.news ?? []} />,
+      content: <NewsTab context={s.context} news={s.news ?? []} sym={s.symbol} />,
     },
     {
       key: 'position',

@@ -3,6 +3,8 @@ export interface PollerHandle {
   subscriberCount(): number;
   pushData(data: unknown): void;
   hasData(): boolean;
+  refresh(): void;
+  destroy(): void;
 }
 
 export interface PollerOptions {
@@ -11,15 +13,21 @@ export interface PollerOptions {
   failThreshold?: number;
   backoffMs?: number;
   onStop?: () => void;
+  lingerMs?: number;
+  onIdle?: () => void;
+  onResume?: () => void;
 }
 
 export function createPoller(opts: PollerOptions): PollerHandle {
   const failThreshold = opts.failThreshold ?? 5;
   const backoffMs = opts.backoffMs ?? 300_000;
+  const lingerMs = opts.lingerMs ?? 0;
   const listeners = new Set<(envelope: string) => void>();
   let timer: ReturnType<typeof setTimeout> | null = null;
+  let lingerTimer: ReturnType<typeof setTimeout> | null = null;
   let running = false;
   let stopped = false;
+  let destroyed = false;
   let lastData: string | null = null;
   let failStreak = 0;
   let degraded = false;
@@ -34,6 +42,14 @@ export function createPoller(opts: PollerOptions): PollerHandle {
       lastData = serialized;
       emit(serialized);
     }
+  };
+
+  const destroyNow = () => {
+    if (destroyed) return;
+    destroyed = true;
+    if (lingerTimer) clearTimeout(lingerTimer);
+    lingerTimer = null;
+    opts.onStop?.();
   };
 
   const tick = async () => {
@@ -72,6 +88,11 @@ export function createPoller(opts: PollerOptions): PollerHandle {
       listeners.add(listener);
       if (lastData !== null) listener(lastData);
       if (listeners.size === 1) {
+        if (lingerTimer) {
+          clearTimeout(lingerTimer);
+          lingerTimer = null;
+          opts.onResume?.();
+        }
         stopped = false;
         void tick();
       }
@@ -81,7 +102,12 @@ export function createPoller(opts: PollerOptions): PollerHandle {
           stopped = true;
           if (timer) clearTimeout(timer);
           timer = null;
-          opts.onStop?.();
+          if (lingerMs > 0 && !destroyed) {
+            opts.onIdle?.();
+            lingerTimer = setTimeout(destroyNow, lingerMs);
+          } else {
+            destroyNow();
+          }
         }
       };
     },
@@ -94,6 +120,16 @@ export function createPoller(opts: PollerOptions): PollerHandle {
     },
     hasData() {
       return lastData !== null;
+    },
+    refresh() {
+      if (stopped || listeners.size === 0) return;
+      if (timer) clearTimeout(timer);
+      timer = null;
+      void tick();
+    },
+    destroy() {
+      if (listeners.size > 0) return;
+      destroyNow();
     },
   };
 }

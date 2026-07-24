@@ -35,6 +35,12 @@ export class SymbolsController {
     return { ok: true, data };
   }
 
+  @Get('/:sym/news')
+  async getNews(@Param('sym') sym: string) {
+    const data = await symbolsService.news({ sym });
+    return { ok: true, data };
+  }
+
   @Get('/:sym/comments')
   async getComments(@Param('sym') sym: string, @Query('date') date: string | undefined) {
     const data = await symbolsService.comments({ sym, date });

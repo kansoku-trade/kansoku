@@ -32,6 +32,11 @@ export class SymbolsIpc extends IpcService implements WrapEnvelope<SymbolsApi> {
   }
 
   @IpcMethod()
+  news(input: Parameters<SymbolsApi['news']>[0]) {
+    return toEnvelope('symbols.news', () => symbolsService.news(input));
+  }
+
+  @IpcMethod()
   comments(input: Parameters<SymbolsApi['comments']>[0]) {
     return toEnvelope('symbols.comments', () => symbolsService.comments(input));
   }

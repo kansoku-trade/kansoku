@@ -1,4 +1,5 @@
 import type { AgentMessagePayload } from '@kansoku/pro-api';
+import type { RawBar, TimeframeKey } from '@kansoku/shared/types';
 import type {
   ResearchEditOperation,
   ResearchEditStatus,
@@ -198,5 +199,15 @@ export const symbolFollows = sqliteTable('symbol_follows', {
 export const watchedMarketsSettings = sqliteTable('watched_markets_settings', {
   id: integer('id').primaryKey(),
   markets: text('markets', { mode: 'json' }).$type<Market[]>().notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
+
+export const symbolCandleCache = sqliteTable('symbol_candle_cache', {
+  symbol: text('symbol').primaryKey(),
+  timeframes: text('timeframes', { mode: 'json' })
+    .$type<Partial<Record<TimeframeKey, RawBar[]>>>()
+    .notNull(),
+  dayKline: text('day_kline', { mode: 'json' }).$type<RawBar[]>(),
+  lastFetchAt: integer('last_fetch_at').notNull(),
   updatedAt: text('updated_at').notNull(),
 });

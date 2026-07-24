@@ -5,8 +5,10 @@ import type {
   IntradayContext,
   NewsItem,
 } from '@kansoku/shared/types';
-import { Badge, MarketTime, SectionTitle } from '@web/ui';
+import { Badge, MarketTime, SectionTitle, Spinner } from '@web/ui';
 import { NewsSection } from '@web/features/charts/NewsSection';
+import { useQuery } from '@web/lib/apiHooks';
+import { client } from '@web/lib/client';
 
 const TAG_LABEL: Record<ContextNewsTag, string> = {
   catalyst: '催化',
@@ -48,10 +50,16 @@ function ContextNewsRow({ item }: { item: ContextNewsItem }) {
 interface NewsTabProps {
   context: IntradayContext | null;
   news: NewsItem[];
+  sym?: string | null;
 }
 
-export function NewsTab({ context, news }: NewsTabProps) {
+export function NewsTab({ context, news, sym }: NewsTabProps) {
   const contextNews = context?.news ?? [];
+  const { data: fetched, loading } = useQuery<NewsItem[]>(
+    sym && news.length === 0 ? `symbols.news:${sym}` : null,
+    () => client.symbols.news({ sym: sym! }),
+  );
+  const items = news.length > 0 ? news : (fetched ?? []);
 
   return (
     <>
@@ -63,7 +71,7 @@ export function NewsTab({ context, news }: NewsTabProps) {
           ))}
         </>
       )}
-      <NewsSection news={news} />
+      {loading && items.length === 0 ? <Spinner /> : <NewsSection news={items} />}
     </>
   );
 }

@@ -20,15 +20,30 @@ const TF_PERIODS: Record<string, string> = { m5: '5m', m15: '15m', h1: '1h' };
 // re-hit the provider for the same 60 bars.
 const DAY_KLINE_TTL_MS = 10 * 60_000;
 const dayKlineCache = new Map<string, { at: number; bars: RawBar[] }>();
+const dayKlineInflight = new Map<string, Promise<RawBar[]>>();
 
-async function getDayKlineCached(symbol: string): Promise<RawBar[]> {
+export function hasDayKlineCached(symbol: string): boolean {
+  const hit = dayKlineCache.get(symbol);
+  return Boolean(hit && Date.now() - hit.at < DAY_KLINE_TTL_MS);
+}
+
+export async function getDayKlineCached(symbol: string): Promise<RawBar[]> {
   const hit = dayKlineCache.get(symbol);
   if (hit && Date.now() - hit.at < DAY_KLINE_TTL_MS) return hit.bars;
-  const bars = await getProvider(marketOf(symbol))
+  const inflight = dayKlineInflight.get(symbol);
+  if (inflight) return inflight;
+  const request = getProvider(marketOf(symbol))
     .getKline(symbol, 'day', 60)
-    .catch(() => [] as RawBar[]);
-  if (bars.length) dayKlineCache.set(symbol, { at: Date.now(), bars });
-  return bars;
+    .catch(() => [] as RawBar[])
+    .then((bars) => {
+      if (bars.length) dayKlineCache.set(symbol, { at: Date.now(), bars });
+      return bars;
+    })
+    .finally(() => {
+      dayKlineInflight.delete(symbol);
+    });
+  dayKlineInflight.set(symbol, request);
+  return request;
 }
 
 export function slugify(s: string, fallback: string): string {
@@ -113,7 +128,7 @@ async function prepareInput(type: ChartType, body: Body): Promise<Record<string,
       let dayKline = body.day_kline as RawBar[] | undefined;
       const provider = getProvider(marketOf(symbol));
       const namePromise = resolveSecurityName(symbol, body.name, provider);
-      const newsPromise = provider.getNews(symbol);
+      const newsPromise = body.skip_news === true ? Promise.resolve([]) : provider.getNews(symbol);
       const getOptions = activeProDetectors().getOptionsLevels;
       const optionsPromise = getOptions ? getOptions(symbol) : Promise.resolve(null);
       const eventRiskPromise = getEventRisk(symbol).catch(() => null);
@@ -124,7 +139,12 @@ async function prepareInput(type: ChartType, body: Body): Promise<Record<string,
         timeframes = { m5, m15, h1 };
       }
       if (!dayKline) {
-        dayKline = await getDayKlineCached(symbol);
+        // day_kline_lazy keeps the first preview frame off the day-kline fetch:
+        // a cache miss yields [] and the caller backfills + repushes once warmed.
+        dayKline =
+          body.day_kline_lazy === true && !hasDayKlineCached(symbol)
+            ? []
+            : await getDayKlineCached(symbol);
       }
       const lastM5 = timeframes.m5?.at(-1);
       return {
@@ -310,6 +330,7 @@ export function refreshBody(
         prediction: input.prediction,
         context: input.context,
         origin: input.origin,
+        skip_news: true,
       };
     }
     case 'sepa': {

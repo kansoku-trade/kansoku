@@ -5,6 +5,7 @@ import type {
   CockpitFlow,
   CockpitPosition,
   ExplainResult,
+  NewsItem,
   RelativeVolume,
   SymbolAnalysisRow,
 } from '@kansoku/shared/types';
@@ -62,6 +63,7 @@ export interface SymbolsApi {
   position(input: { sym: string }): Promise<CockpitPosition | null>;
   analyses(input: { sym: string }): Promise<SymbolAnalysisRow[]>;
   relvol(input: { sym: string }): Promise<RelativeVolume | null>;
+  news(input: { sym: string }): Promise<NewsItem[]>;
   comments(input: { sym: string; date?: string }): Promise<CockpitComment[]>;
   commentDates(input: { sym: string }): Promise<string[]>;
   followStatus(input: { sym: string }): Promise<SymbolFollowStatus>;
@@ -84,6 +86,7 @@ export const symbolsRoutes = defineRoutes<SymbolsApi>('symbols', {
   position: { method: 'GET', path: '/:sym/position' },
   analyses: { method: 'GET', path: '/:sym/analyses' },
   relvol: { method: 'GET', path: '/:sym/relvol' },
+  news: { method: 'GET', path: '/:sym/news' },
   comments: { method: 'GET', path: '/:sym/comments' },
   commentDates: { method: 'GET', path: '/:sym/comment-dates' },
   followStatus: { method: 'GET', path: '/:sym/follow' },

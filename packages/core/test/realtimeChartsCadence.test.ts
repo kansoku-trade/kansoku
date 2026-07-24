@@ -7,6 +7,8 @@ const build = vi.hoisted(() => ({
   buildChart: vi.fn(),
   refreshBody: vi.fn(),
   rebuild: vi.fn(),
+  hasDayKlineCached: vi.fn().mockReturnValue(true),
+  getDayKlineCached: vi.fn().mockResolvedValue([]),
 }));
 const longbridgeStream = vi.hoisted(() => ({
   subscribeCandlesticks: vi.fn(() => vi.fn()),
@@ -19,6 +21,11 @@ vi.mock('../src/marketdata/longbridgeStream.js', () => ({
   getLongbridgeStream: () => longbridgeStream,
 }));
 vi.mock('../src/marketdata/events.js', () => ({ getEventRisk: vi.fn().mockResolvedValue(null) }));
+vi.mock('../src/realtime/candleCache.js', () => ({
+  loadCandleCache: vi.fn().mockReturnValue(null),
+  saveCandleCache: vi.fn(),
+  maybeSaveCandleCache: vi.fn(),
+}));
 vi.mock('../src/realtime/poller.js', () => ({
   createPoller: (opts: { intervalMs: number | (() => number) }) => {
     capturedIntervalMs.fn =

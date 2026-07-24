@@ -1,6 +1,6 @@
 import { promises as fs } from 'node:fs';
 import { join } from 'node:path';
-import type { IntradayPrediction, RawBar, SymbolAnalysisRow } from '@kansoku/shared/types';
+import type { IntradayPrediction, NewsItem, RawBar, SymbolAnalysisRow } from '@kansoku/shared/types';
 import { currentProHooks } from '../pro/hooks.js';
 import { withFeatureGates } from '../pro/withFeatureGates.js';
 import { chartUrl } from '../platform/chartUrl.js';
@@ -31,6 +31,9 @@ import { classifySession, easternDate } from '../marketdata/session.js';
 import { predictionStale } from '../platform/staleness.js';
 import { listCharts, loadChart } from '../charts/store.js';
 import { marketOf, noteFileName, normalizeSymbol } from './symbol.utils.js';
+
+const NEWS_TTL_MS = 5 * 60_000;
+const newsCache = new Map<string, { at: number; items: NewsItem[] }>();
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const JOURNAL_FILE_RE = /^(\d{4}-\d{2}-\d{2})-([\w-]+)\.md$/;
@@ -125,6 +128,15 @@ export const symbolsService: SymbolsApi = withFeatureGates(symbolsRoutes, {
     const sym = normalizeSymbol(input.sym);
     const bars = await getProvider(marketOf(sym)).getKline(sym, '15m', 500);
     return computeRelativeVolume(bars);
+  },
+
+  async news(input) {
+    const sym = normalizeSymbol(input.sym);
+    const hit = newsCache.get(sym);
+    if (hit && Date.now() - hit.at < NEWS_TTL_MS) return hit.items;
+    const items = await getProvider(marketOf(sym)).getNews(sym);
+    newsCache.set(sym, { at: Date.now(), items });
+    return items;
   },
 
   async comments(input) {

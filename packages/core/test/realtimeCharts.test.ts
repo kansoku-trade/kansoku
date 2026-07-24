@@ -9,6 +9,8 @@ const build = vi.hoisted(() => ({
   buildChart: vi.fn(),
   refreshBody: vi.fn(),
   rebuild: vi.fn(),
+  hasDayKlineCached: vi.fn().mockReturnValue(true),
+  getDayKlineCached: vi.fn().mockResolvedValue([]),
 }));
 const longbridgeStream = vi.hoisted(() => ({
   subscribeCandlesticks: vi.fn(),
@@ -20,6 +22,11 @@ vi.mock('../src/marketdata/longbridgeStream.js', () => ({
   getLongbridgeStream: () => longbridgeStream,
 }));
 vi.mock('../src/marketdata/events.js', () => ({ getEventRisk: vi.fn().mockResolvedValue(null) }));
+vi.mock('../src/realtime/candleCache.js', () => ({
+  loadCandleCache: vi.fn().mockReturnValue(null),
+  saveCandleCache: vi.fn(),
+  maybeSaveCandleCache: vi.fn(),
+}));
 
 const { subscribeChart, subscribePreview } = await import('../src/realtime/charts.js');
 
@@ -413,7 +420,7 @@ describe('subscribeChart candlestick-push wiring', () => {
     await vi.advanceTimersByTimeAsync(0);
     await vi.advanceTimersByTimeAsync(0);
 
-    expect(build.buildChart).toHaveBeenCalledWith(expect.objectContaining({ count: 1 }));
+    expect(build.buildChart).toHaveBeenCalledWith(expect.objectContaining({ count: 1000 }));
 
     const m5cb = callbacksByPeriod.get('5m')!;
     m5cb({
@@ -511,12 +518,12 @@ describe('subscribePreview', () => {
   it('loads all sessions so an unanalyzed symbol preview keeps extended-hours shading', async () => {
     const events: string[] = [];
     const unsub = await subscribePreview('PQQ1.US', (e) => events.push(e));
+    await vi.advanceTimersByTimeAsync(0);
+    await vi.advanceTimersByTimeAsync(0);
 
-    expect(build.buildChart).toHaveBeenCalledWith({
-      type: 'intraday',
-      symbol: 'PQQ1.US',
-      session: 'all',
-    });
+    expect(build.buildChart).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'intraday', symbol: 'PQQ1.US', session: 'all' }),
+    );
     const parsed = JSON.parse(events[0]);
     expect(parsed.type).toBe('data');
     expect(parsed.data.built.kind).toBe('intraday');
@@ -540,6 +547,8 @@ describe('subscribePreview', () => {
 
     const events: string[] = [];
     const unsub = await subscribePreview('POVA.US', (e) => events.push(e));
+    await vi.advanceTimersByTimeAsync(0);
+    await vi.advanceTimersByTimeAsync(0);
 
     const parsed = JSON.parse(events[0]);
     expect(parsed.type).toBe('data');
@@ -557,6 +566,8 @@ describe('subscribePreview', () => {
   it('omits prediction fields on the initial envelope when the symbol has no analysis', async () => {
     const events: string[] = [];
     const unsub = await subscribePreview('POVB.US', (e) => events.push(e));
+    await vi.advanceTimersByTimeAsync(0);
+    await vi.advanceTimersByTimeAsync(0);
 
     const parsed = JSON.parse(events[0]);
     expect(parsed.data).not.toHaveProperty('prediction_updated_at');
@@ -636,6 +647,8 @@ describe('subscribePreview', () => {
       subscribePreview('PQQ7.US', (e) => events1.push(e)),
       subscribePreview('PQQ7.US', (e) => events2.push(e)),
     ]);
+    await vi.advanceTimersByTimeAsync(0);
+    await vi.advanceTimersByTimeAsync(0);
 
     expect(build.buildChart).toHaveBeenCalledTimes(1);
     expect(longbridgeStream.subscribeCandlesticks).toHaveBeenCalledTimes(3);
@@ -673,7 +686,7 @@ describe('subscribePreview', () => {
     unsub2();
   });
 
-  it('tears down state once both subscribers leave and rebuilds from scratch on a fresh subscribe', async () => {
+  it('lingers state after both subscribers leave, reuses it on resubscribe, rebuilds after expiry', async () => {
     const unsub1 = await subscribePreview('PQQ4.US', () => {});
     const unsub2 = await subscribePreview('PQQ4.US', () => {});
     await vi.advanceTimersByTimeAsync(0);
@@ -689,10 +702,21 @@ describe('subscribePreview', () => {
 
     build.buildChart.mockClear();
     const unsub3 = await subscribePreview('PQQ4.US', () => {});
-    expect(build.buildChart).toHaveBeenCalledWith(
-      expect.objectContaining({ type: 'intraday', symbol: 'PQQ4.US' }),
+    await vi.advanceTimersByTimeAsync(0);
+    expect(build.buildChart).not.toHaveBeenCalledWith(
+      expect.objectContaining({ day_kline_lazy: true }),
     );
     expect(longbridgeStream.subscribeCandlesticks).toHaveBeenCalledTimes(6);
     unsub3();
+
+    await vi.advanceTimersByTimeAsync(30 * 60_000);
+
+    build.buildChart.mockClear();
+    const unsub4 = await subscribePreview('PQQ4.US', () => {});
+    expect(build.buildChart).toHaveBeenCalledWith(
+      expect.objectContaining({ symbol: 'PQQ4.US', day_kline_lazy: true }),
+    );
+    expect(longbridgeStream.subscribeCandlesticks).toHaveBeenCalledTimes(9);
+    unsub4();
   });
 });
