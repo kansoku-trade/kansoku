@@ -172,6 +172,18 @@ export function liveOptionsLevels(fetched: unknown, latestInput: Record<string, 
     : null;
 }
 
+// A frame must not stall on sidebar enrichment: cold options/event-risk
+// fetches get this long, then the frame ships with the persisted fallback and
+// the warmed cache fills the next rebuild.
+const ENRICH_WAIT_MS = 250;
+
+function enrichWithin<T>(request: Promise<T>, fallback: T): Promise<T> {
+  return Promise.race([
+    request,
+    new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ENRICH_WAIT_MS)),
+  ]);
+}
+
 // Rebuild an intraday chart from the live in-memory candle state (the frozen
 // analysis snapshot plus whatever bars push/poller have merged in). Both the
 // streaming push path and the poller safety net funnel through here so the two
@@ -191,8 +203,11 @@ async function buildFromState(
   const [optionsLevels, eventRisk] =
     typeof symbol === 'string'
       ? await Promise.all([
-          getOptions ? getOptions(symbol).catch(() => null) : Promise.resolve(null),
-          getEventRisk(symbol).catch(() => null),
+          enrichWithin(
+            getOptions ? getOptions(symbol).catch(() => null) : Promise.resolve(null),
+            null,
+          ),
+          enrichWithin(getEventRisk(symbol).catch(() => null), null),
         ])
       : [null, null];
   const input: Record<string, unknown> = {
@@ -481,6 +496,7 @@ export async function subscribePreview(
             session: 'all',
             skip_news: true,
             day_kline_lazy: true,
+            enrichment_lazy: true,
             ...(cached
               ? {
                   timeframes: cached.timeframes,
@@ -493,6 +509,7 @@ export async function subscribePreview(
           if (!state) return { built: result.built };
           if (cached) state.lastFetchAt = cached.lastFetchAt;
           backfillDayKline(key, normalized);
+          backfillEnrichment(key, normalized);
           const latest = await state.loadDoc();
           if (!latest) return { built: result.built };
           if (cached) {
@@ -561,4 +578,11 @@ function backfillDayKline(key: string, symbol: string): void {
     base.day_kline = bars;
     chartPollers.get(key)?.refresh();
   });
+}
+
+function backfillEnrichment(key: string, symbol: string): void {
+  const getOptions = activeProDetectors().getOptionsLevels;
+  const jobs: Promise<unknown>[] = [getEventRisk(symbol).catch(() => null)];
+  if (getOptions) jobs.push(getOptions(symbol).catch(() => null));
+  void Promise.allSettled(jobs).then(() => chartPollers.get(key)?.refresh());
 }

@@ -147,6 +147,11 @@ async function prepareInput(type: ChartType, body: Body): Promise<Record<string,
             : await getDayKlineCached(symbol);
       }
       const lastM5 = timeframes.m5?.at(-1);
+      // enrichment_lazy keeps the first live frame off the options/event-risk
+      // fetches: both getters stay in flight to warm their caches and the
+      // caller repushes an enriched frame once they settle.
+      const lazyEnrich = body.enrichment_lazy === true;
+      if (lazyEnrich) void optionsPromise.catch(() => null);
       return {
         symbol,
         name: await namePromise,
@@ -156,8 +161,8 @@ async function prepareInput(type: ChartType, body: Body): Promise<Record<string,
         day_kline: dayKline,
         ema_periods: body.ema_periods,
         news: await newsPromise,
-        options_levels: await optionsPromise,
-        event_risk: await eventRiskPromise,
+        options_levels: lazyEnrich ? null : await optionsPromise,
+        event_risk: lazyEnrich ? null : await eventRiskPromise,
         position: body.position,
         prediction: body.prediction ?? null,
         context: body.context ?? null,

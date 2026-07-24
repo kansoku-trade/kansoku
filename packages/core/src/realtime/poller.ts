@@ -18,6 +18,9 @@ export interface PollerOptions {
   onResume?: () => void;
 }
 
+const COLD_RETRY_BASE_MS = 2_000;
+const COLD_RETRY_MAX_MS = 30_000;
+
 export function createPoller(opts: PollerOptions): PollerHandle {
   const failThreshold = opts.failThreshold ?? 5;
   const backoffMs = opts.backoffMs ?? 300_000;
@@ -77,7 +80,16 @@ export function createPoller(opts: PollerOptions): PollerHandle {
       running = false;
       if (!stopped && listeners.size > 0) {
         const base = typeof opts.intervalMs === 'function' ? opts.intervalMs() : opts.intervalMs;
-        const interval = failStreak >= failThreshold ? backoffMs : base;
+        let interval = failStreak >= failThreshold ? backoffMs : base;
+        // Before the first frame ever lands, a failure must not wait out a full
+        // poll tier (5min off-session): subscribers are staring at a skeleton
+        // while the upstream rate-limit window clears within seconds.
+        if (lastData === null && failStreak > 0) {
+          interval = Math.min(
+            interval,
+            Math.min(COLD_RETRY_MAX_MS, COLD_RETRY_BASE_MS * 2 ** (failStreak - 1)),
+          );
+        }
         timer = setTimeout(tick, interval);
       }
     }

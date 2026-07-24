@@ -46,7 +46,7 @@ describe('poller', () => {
   });
 
   it('backs off after repeated failures and recovers', async () => {
-    let fail = true;
+    let fail = false;
     let calls = 0;
     const poller = createPoller({
       intervalMs: 1000,
@@ -55,25 +55,29 @@ describe('poller', () => {
       task: async () => {
         calls++;
         if (fail) throw new Error('boom');
-        return 'ok';
+        return `ok-${calls}`;
       },
     });
     const events: { type: string; degraded?: boolean }[] = [];
     const unsub = poller.subscribe((e) => events.push(JSON.parse(e)));
 
     await vi.advanceTimersByTimeAsync(0);
+    expect(calls).toBe(1);
+
+    fail = true;
     await vi.advanceTimersByTimeAsync(1000);
     await vi.advanceTimersByTimeAsync(1000);
-    expect(calls).toBe(3);
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(calls).toBe(4);
     expect(events.filter((e) => e.type === 'status' && e.degraded)).toHaveLength(3);
 
     await vi.advanceTimersByTimeAsync(1000);
-    expect(calls).toBe(3);
+    expect(calls).toBe(4);
     fail = false;
     await vi.advanceTimersByTimeAsync(59_000);
-    expect(calls).toBe(4);
+    expect(calls).toBe(5);
     expect(events.some((e) => e.type === 'status' && e.degraded === false)).toBe(true);
-    expect(events.some((e) => e.type === 'data')).toBe(true);
+    expect(events.filter((e) => e.type === 'data').length).toBeGreaterThanOrEqual(2);
     unsub();
   });
 
@@ -157,6 +161,42 @@ describe('poller', () => {
     await vi.advanceTimersByTimeAsync(0);
     poller.destroy();
     expect(stops).toBe(0);
+    unsub();
+  });
+
+  it('retries fast while no frame has ever landed, then falls back to the normal cadence', async () => {
+    let fail = true;
+    let calls = 0;
+    const poller = createPoller({
+      intervalMs: 300_000,
+      task: async () => {
+        calls++;
+        if (fail) throw new Error('rate limited');
+        return 'frame';
+      },
+    });
+    const events: string[] = [];
+    const unsub = poller.subscribe((e) => events.push(e));
+
+    await vi.advanceTimersByTimeAsync(0);
+    expect(calls).toBe(1);
+    await vi.advanceTimersByTimeAsync(2_000);
+    expect(calls).toBe(2);
+    await vi.advanceTimersByTimeAsync(4_000);
+    expect(calls).toBe(3);
+
+    fail = false;
+    await vi.advanceTimersByTimeAsync(8_000);
+    expect(calls).toBe(4);
+    expect(events.some((e) => JSON.parse(e).type === 'data')).toBe(true);
+
+    fail = true;
+    await vi.advanceTimersByTimeAsync(300_000);
+    expect(calls).toBe(5);
+    await vi.advanceTimersByTimeAsync(30_000);
+    expect(calls).toBe(5);
+    await vi.advanceTimersByTimeAsync(270_000);
+    expect(calls).toBe(6);
     unsub();
   });
 
