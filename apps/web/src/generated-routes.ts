@@ -6,54 +6,68 @@
 import type { RouteObject } from "react-router"
 
 // Imports for page components
-const lazy0 = () => import("./pages/[...fallback]")
-const lazy1 = () => import("./pages/about")
-const lazy2 = () => import("./pages/charts/[id]")
-const lazy3 = () => import("./pages/charts/index")
-const lazy4 = () => import("./pages/chat")
-const lazy5 = () => import("./pages/logs")
-const lazy6 = () => import("./pages/overview")
-const lazy7 = () => import("./pages/popout/symbol/[sym]")
-const lazy8 = () => import("./pages/research/index")
-const lazy9 = () => import("./pages/settings")
-const lazy10 = () => import("./pages/symbol/[sym]")
-const lazy11 = () => import("./pages/symbol/sepa/[sym]")
-const lazy12 = () => import("./pages/index")
+import * as SyncComponent0 from "./pages/[...fallback].sync"
+import * as SyncComponent1 from "./pages/about.sync"
+import * as SyncComponent2 from "./pages/charts/[id].sync"
+import * as SyncComponent3 from "./pages/charts/index.sync"
+import * as SyncComponent4 from "./pages/chat.sync"
+import * as SyncComponent5 from "./pages/logs.sync"
+import * as SyncComponent6 from "./pages/overview.sync"
+import * as SyncComponent7 from "./pages/popout/symbol/[sym].sync"
+import * as SyncComponent8 from "./pages/research/index.sync"
+import * as SyncComponent9 from "./pages/settings.sync"
+import * as SyncComponent10 from "./pages/symbol/[sym].sync"
+import * as SyncComponent11 from "./pages/symbol/sepa/[sym].sync"
+import * as SyncComponent12 from "./pages/index.sync"
 
 // Generated route configuration
 export const routes: RouteObject[] = [
   {
     "path": "*",
-    "lazy": lazy0
+    "Component": SyncComponent0.Component,
+    "loader": SyncComponent0.loader,
+    "handle": SyncComponent0.handle
   },
   {
     "path": "about",
-    "lazy": lazy1
+    "Component": SyncComponent1.Component,
+    "loader": SyncComponent1.loader,
+    "handle": SyncComponent1.handle
   },
   {
     "path": "charts",
     "children": [
       {
         "path": ":id",
-        "lazy": lazy2
+        "Component": SyncComponent2.Component,
+        "loader": SyncComponent2.loader,
+        "handle": SyncComponent2.handle
       },
       {
         "path": "",
-        "lazy": lazy3
+        "Component": SyncComponent3.Component,
+        "loader": SyncComponent3.loader,
+        "handle": SyncComponent3.handle
       }
     ]
   },
   {
     "path": "chat",
-    "lazy": lazy4
+    "Component": SyncComponent4.Component,
+    "loader": SyncComponent4.loader,
+    "handle": SyncComponent4.handle
   },
   {
     "path": "logs",
-    "lazy": lazy5
+    "Component": SyncComponent5.Component,
+    "loader": SyncComponent5.loader,
+    "handle": SyncComponent5.handle
   },
   {
     "path": "overview",
-    "lazy": lazy6
+    "Component": SyncComponent6.Component,
+    "loader": SyncComponent6.loader,
+    "handle": SyncComponent6.handle
   },
   {
     "path": "popout",
@@ -63,7 +77,9 @@ export const routes: RouteObject[] = [
         "children": [
           {
             "path": ":sym",
-            "lazy": lazy7
+            "Component": SyncComponent7.Component,
+            "loader": SyncComponent7.loader,
+            "handle": SyncComponent7.handle
           }
         ]
       }
@@ -74,27 +90,35 @@ export const routes: RouteObject[] = [
     "children": [
       {
         "path": "",
-        "lazy": lazy8
+        "Component": SyncComponent8.Component,
+        "loader": SyncComponent8.loader,
+        "handle": SyncComponent8.handle
       }
     ]
   },
   {
     "path": "settings",
-    "lazy": lazy9
+    "Component": SyncComponent9.Component,
+    "loader": SyncComponent9.loader,
+    "handle": SyncComponent9.handle
   },
   {
     "path": "symbol",
     "children": [
       {
         "path": ":sym",
-        "lazy": lazy10
+        "Component": SyncComponent10.Component,
+        "loader": SyncComponent10.loader,
+        "handle": SyncComponent10.handle
       },
       {
         "path": "sepa",
         "children": [
           {
             "path": ":sym",
-            "lazy": lazy11
+            "Component": SyncComponent11.Component,
+            "loader": SyncComponent11.loader,
+            "handle": SyncComponent11.handle
           }
         ]
       }
@@ -102,7 +126,9 @@ export const routes: RouteObject[] = [
   },
   {
     "path": "",
-    "lazy": lazy12
+    "Component": SyncComponent12.Component,
+    "loader": SyncComponent12.loader,
+    "handle": SyncComponent12.handle
   }
 ]
 
