@@ -69,6 +69,7 @@ export function TopbarQuote({ quote }: { quote: QuoteCell | null }) {
         format="clock-seconds"
         includeZone
         market={marketOfSymbol(quote.symbol)}
+        zone="market"
       />
     </span>
   );
