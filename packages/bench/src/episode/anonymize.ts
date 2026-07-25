@@ -127,7 +127,8 @@ function foldByDay(bars: RawBar[]): RawBar[] {
 export function anonymizeEpisodeQuestion(
   source: Question,
   transform: BlindCaseTransform,
-): { question: Question; provenance: BlindCaseProvenance } {
+  epilogueBars?: RawBar[],
+): { question: Question; provenance: BlindCaseProvenance; epilogue?: RawBar[] } {
   if (!/^ASSET\d{3}$/.test(transform.alias))
     throw new Error(`invalid blind alias: ${transform.alias}`);
   const sourceCutoffDate = marketDate(source.cutoff);
@@ -279,5 +280,6 @@ export function anonymizeEpisodeQuestion(
       priceScale,
       volumeScale,
     },
+    ...(epilogueBars ? { epilogue: transformBars(epilogueBars) } : {}),
   };
 }

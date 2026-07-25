@@ -537,3 +537,80 @@ describe('blind episode anonymization — 1m ladder quote consistency', () => {
     );
   });
 });
+
+const EPILOGUE_BARS: RawBar[] = [
+  rawBar('2024-03-28T13:40:00Z', 50.4, 50.9, 50.1, 50.7, 800),
+  rawBar('2024-03-28T13:45:00Z', 50.7, 50.8, 39, 39.5, 100000),
+];
+
+const EPILOGUE_LEAK_CANARY_BARS: RawBar[] = [
+  rawBar('2024-03-28T13:40:00Z', 50.4, 50.9, 50.1, 50.7, 800),
+  rawBar('1901-01-01T00:00:00Z', 918273.645, 918273.645, 918273.645, 918273.645, 837465921),
+];
+
+describe('blind episode anonymization — epilogue', () => {
+  it('omits the epilogue field entirely when no epilogue bars are supplied', () => {
+    const result = anonymizeEpisodeQuestion(FIVE_MIN_SOURCE, {
+      alias: 'ASSET011',
+      syntheticCutoff: '2026-03-25',
+    });
+
+    expect(result).not.toHaveProperty('epilogue');
+  });
+
+  it('returns byte-identical question and provenance whether or not the epilogue argument is passed', () => {
+    const transform = { alias: 'ASSET012', syntheticCutoff: '2026-03-25' };
+    const withoutThirdArg = anonymizeEpisodeQuestion(FIVE_MIN_SOURCE, transform);
+    const withUndefinedEpilogue = anonymizeEpisodeQuestion(FIVE_MIN_SOURCE, transform, undefined);
+
+    expect(withUndefinedEpilogue).not.toHaveProperty('epilogue');
+    expect(JSON.stringify(withUndefinedEpilogue)).toBe(JSON.stringify(withoutThirdArg));
+  });
+
+  it("scales the epilogue with the case's own price/volume scale, continuing the last case bar without a jump at the boundary", () => {
+    const { question, provenance, epilogue } = anonymizeEpisodeQuestion(
+      FIVE_MIN_SOURCE,
+      { alias: 'ASSET013', syntheticCutoff: '2026-03-25' },
+      EPILOGUE_BARS,
+    );
+
+    expect(epilogue).toHaveLength(2);
+    const lastCaseBar = question.replay.bars.at(-1)!;
+    expect(Number(epilogue![0].open)).toBeCloseTo(Number(lastCaseBar.close), 6);
+    expect(Number(epilogue![0].open)).toBeCloseTo(50.4 * provenance.priceScale, 6);
+    expect(Number(epilogue![0].volume)).toBeCloseTo(800 * provenance.volumeScale, 3);
+    expect(Number(epilogue![1].close)).toBeCloseTo(39.5 * provenance.priceScale, 6);
+
+    // If the epilogue were rescaled from its own data (last close 39.5) rather than the
+    // case's own scale, this same bar would land near 50.4 * (100 / 39.5) ≈ 127.6, not 100.8.
+    const independentlyScaledOpen = 50.4 * (100 / 39.5);
+    expect(Number(epilogue![0].open)).not.toBeCloseTo(independentlyScaledOpen, 0);
+  });
+
+  it('shifts the epilogue bars by the same dayShift as the case body', () => {
+    const { provenance, epilogue } = anonymizeEpisodeQuestion(
+      FIVE_MIN_SOURCE,
+      { alias: 'ASSET014', syntheticCutoff: '2026-03-25' },
+      EPILOGUE_BARS,
+    );
+
+    const expectedDate = dateOffset(marketDate('2024-03-28T13:40:00Z'), provenance.dayShift);
+    expect(marketDate(epilogue![0].time)).toBe(expectedDate);
+  });
+
+  it('keeps the epilogue out of the returned question and carries no recognisable real timestamp or price into either output', () => {
+    const { question, epilogue } = anonymizeEpisodeQuestion(
+      FIVE_MIN_SOURCE,
+      { alias: 'ASSET015', syntheticCutoff: '2026-03-25' },
+      EPILOGUE_LEAK_CANARY_BARS,
+    );
+
+    expect(question).not.toHaveProperty('epilogue');
+    const serializedQuestion = JSON.stringify(question);
+    const serializedEpilogue = JSON.stringify(epilogue);
+    for (const needle of ['1901-01-01', '918273.645', '837465921']) {
+      expect(serializedQuestion).not.toContain(needle);
+      expect(serializedEpilogue).not.toContain(needle);
+    }
+  });
+});
