@@ -31,6 +31,68 @@ function bar(time: string, index: number): QuoteBar {
   };
 }
 
+function timeAt(date: string, minutesSinceMidnight: number): string {
+  const hour = Math.floor(minutesSinceMidnight / 60);
+  const minute = minutesSinceMidnight % 60;
+  return `${date}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00-04:00`;
+}
+
+function sessionBars(date: string, minutes: number, startIndex: number): QuoteBar[] {
+  const count = Math.ceil(390 / minutes);
+  return Array.from({ length: count }, (_, i) =>
+    bar(timeAt(date, 570 + i * minutes), startIndex + i),
+  );
+}
+
+function intradayBarsForDates(dates: string[], minutes: number): QuoteBar[] {
+  let index = 0;
+  return dates.flatMap((date) => {
+    const bars = sessionBars(date, minutes, index);
+    index += bars.length;
+    return bars;
+  });
+}
+
+function fivePeriodFixture(cutoffDate = '2026-03-25', horizonSessions = 4) {
+  const pastDates = businessDates(dateOffset(cutoffDate, -60), cutoffDate);
+  const futureDates = businessDates(dateOffset(cutoffDate, 1), dateOffset(cutoffDate, 20)).slice(
+    0,
+    horizonSessions,
+  );
+  const allDates = [...pastDates, ...futureDates];
+  return assembleEpisodeQuestion({
+    symbol: 'MRVL.US',
+    layer: 'high-vol-tech',
+    cutoffDate,
+    basePeriod: '5m',
+    baseBars: intradayBarsForDates(allDates, 5),
+    midBars: intradayBarsForDates(allDates, 15),
+    topBars: intradayBarsForDates(allDates, 60),
+    horizonSessions,
+    calendar: {},
+  });
+}
+
+function onePeriodFixture(cutoffDate = '2026-03-25', horizonSessions = 4) {
+  const pastDates = businessDates(dateOffset(cutoffDate, -20), cutoffDate);
+  const futureDates = businessDates(dateOffset(cutoffDate, 1), dateOffset(cutoffDate, 20)).slice(
+    0,
+    horizonSessions,
+  );
+  const allDates = [...pastDates, ...futureDates];
+  return assembleEpisodeQuestion({
+    symbol: 'MRVL.US',
+    layer: 'high-vol-tech',
+    cutoffDate,
+    basePeriod: '1m',
+    baseBars: intradayBarsForDates(allDates, 1),
+    midBars: intradayBarsForDates(allDates, 5),
+    topBars: intradayBarsForDates(allDates, 15),
+    horizonSessions,
+    calendar: {},
+  });
+}
+
 function fixture() {
   const cutoffDate = '2026-03-25';
   const dates = businessDates(dateOffset(cutoffDate, -60), dateOffset(cutoffDate, 20));
@@ -83,5 +145,94 @@ describe('episode data audit', () => {
     expect(audit.checks.find((check) => check.id === 'source-day')).toMatchObject({
       status: 'fail',
     });
+  });
+
+  it('runs exactly the same checks for a 1h case as before the ladder generalisation', () => {
+    const { question, sources } = fixture();
+    const audit = auditEpisodeQuestion(question, sources, '2026-07-18T00:00:00.000Z');
+    expect(audit.checks.map((check) => check.id)).toEqual([
+      'base-period',
+      'initial-h1-count',
+      'initial-day-count',
+      'initial-week-count',
+      'horizon-bars',
+      'horizon-sessions',
+      'decision-window',
+      'entry-expiry',
+      'day-rollup-count',
+      'sort-h1',
+      'sort-day',
+      'sort-week',
+      'cutoff-timezone',
+      'visibility-boundary',
+      'quote',
+      'indicators',
+      'partial-week',
+      'source-h1',
+      'source-day',
+      'source-week-history',
+      'source-week-rollups',
+      'source-quote-turnover',
+    ]);
+  });
+});
+
+describe('episode data audit — five-period ladder', () => {
+  it('passes a well-formed 5m case', () => {
+    const question = fivePeriodFixture();
+    const audit = auditEpisodeQuestion(question);
+    expect(audit.passed).toBe(true);
+    expect(audit.checks.every((check) => check.status === 'pass')).toBe(true);
+  });
+
+  it('passes a well-formed 1m case, requiring 780 base bars', () => {
+    const question = onePeriodFixture();
+    expect(question.fixtures.kline['1m']).toHaveLength(780);
+    const audit = auditEpisodeQuestion(question);
+    expect(audit.checks.find((check) => check.id === 'initial-1m-count')).toMatchObject({
+      status: 'pass',
+      expected: 780,
+      actual: 780,
+    });
+    expect(audit.passed).toBe(true);
+  });
+
+  it('fails, naming the base tier, when the base window is short', () => {
+    const question = fivePeriodFixture();
+    question.fixtures.kline['5m'] = question.fixtures.kline['5m'].slice(1);
+    const audit = auditEpisodeQuestion(question);
+    expect(audit.passed).toBe(false);
+    expect(audit.checks.find((check) => check.id === 'initial-5m-count')).toMatchObject({
+      status: 'fail',
+    });
+  });
+
+  it('fails, naming the mid tier, when the mid window is short', () => {
+    const question = fivePeriodFixture();
+    question.fixtures.kline['15m'] = question.fixtures.kline['15m'].slice(1);
+    const audit = auditEpisodeQuestion(question);
+    expect(audit.passed).toBe(false);
+    expect(audit.checks.find((check) => check.id === 'initial-15m-count')).toMatchObject({
+      status: 'fail',
+    });
+  });
+
+  it('fails, naming the tier, when that tier is missing its rollups', () => {
+    const question = fivePeriodFixture();
+    expect(question.replay.rollups!['15m'].length).toBeGreaterThan(0);
+    question.replay.rollups!['15m'] = [];
+    const audit = auditEpisodeQuestion(question);
+    expect(audit.passed).toBe(false);
+    expect(audit.checks.find((check) => check.id === '15m-rollup-count')).toMatchObject({
+      status: 'fail',
+    });
+  });
+
+  it('fails the quote check when it disagrees with the base-folded day the producer built, on a ladder with no day tier', () => {
+    const question = fivePeriodFixture();
+    (question.fixtures.quote as Record<string, unknown>).last = 999_999;
+    const audit = auditEpisodeQuestion(question);
+    expect(audit.passed).toBe(false);
+    expect(audit.checks.find((check) => check.id === 'quote')).toMatchObject({ status: 'fail' });
   });
 });
