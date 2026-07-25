@@ -216,6 +216,10 @@ function indicatorsLabel(mid: EpisodeViewPeriod, top: EpisodeViewPeriod): string
     : `指标只由当前可见 ${mid} 和 ${top} 重算`;
 }
 
+function baseSessionSpanLabel(period: EpisodeViewPeriod): string {
+  return `${period} 基础层至少跨两个交易日，折算 quote 才有效`;
+}
+
 function rollupCountLabel(period: EpisodeViewPeriod): string {
   return period === 'day'
     ? '每个回放交易日都有长桥原生日线'
@@ -413,6 +417,16 @@ export function auditEpisodeQuestion(
     EPISODE_REQUIRED_TOP,
     initialTop.length,
   );
+  if (ladderMid !== 'day' && ladderTop !== 'day') {
+    const initialBaseSessions = sessionCount(initialBase);
+    add(
+      `${periodToken(ladderBase)}-session-span`,
+      baseSessionSpanLabel(ladderBase),
+      initialBaseSessions >= 2,
+      2,
+      initialBaseSessions,
+    );
+  }
   add(
     'horizon-bars',
     '回放 bar 数',

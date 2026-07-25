@@ -207,6 +207,27 @@ describe('episode data audit — five-period ladder', () => {
     });
   });
 
+  it('fails, naming the base tier, when the base bars meet the count requirement but all sit inside one trading day', () => {
+    const question = fivePeriodFixture();
+    const baseBars = question.fixtures.kline['5m'];
+    expect(baseBars.length).toBeGreaterThanOrEqual(210);
+    const singleSessionDate = '2026-03-25';
+    question.fixtures.kline['5m'] = baseBars.map((entry, index) => ({
+      ...entry,
+      time: timeAt(singleSessionDate, 570 + index),
+    }));
+    const audit = auditEpisodeQuestion(question);
+    expect(audit.passed).toBe(false);
+    expect(audit.checks.find((check) => check.id === 'initial-5m-count')).toMatchObject({
+      status: 'pass',
+    });
+    expect(audit.checks.find((check) => check.id === '5m-session-span')).toMatchObject({
+      status: 'fail',
+      expected: 2,
+      actual: 1,
+    });
+  });
+
   it('fails, naming the mid tier, when the mid window is short', () => {
     const question = fivePeriodFixture();
     question.fixtures.kline['15m'] = question.fixtures.kline['15m'].slice(1);
