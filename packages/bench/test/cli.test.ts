@@ -186,6 +186,99 @@ describe('bench generate-episode-case argument validation', () => {
     expect(result.exitCode).toBe(1);
     expect(result.stderr).toContain('--horizon-sessions must be a positive integer');
   });
+
+  it('rejects a non-positive bar horizon', async () => {
+    const result = await runMain([
+      'generate-episode-case',
+      '--symbol',
+      'MU.US',
+      '--cutoff',
+      '2026-03-25',
+      '--version',
+      'v2',
+      '--base-period',
+      '5m',
+      '--horizon-bars',
+      '0',
+    ]);
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain('--horizon-bars must be a positive integer');
+  });
+
+  it.each(['1m', '5m', '15m', '30m', '1h'] as const)(
+    'accepts --base-period %s, reaching symbol validation with no base-period error',
+    async (basePeriod) => {
+      const result = await runMain([
+        'generate-episode-case',
+        '--symbol',
+        'NOTREAL.US',
+        '--cutoff',
+        '2026-03-25',
+        '--version',
+        'v2',
+        '--base-period',
+        basePeriod,
+        '--horizon-bars',
+        '10',
+      ]);
+      expect(result.exitCode).toBe(1);
+      expect(result.stderr).toContain('unknown symbol NOTREAL.US');
+    },
+  );
+
+  it('rejects an unknown base period, naming the valid set', async () => {
+    const result = await runMain([
+      'generate-episode-case',
+      '--symbol',
+      'MU.US',
+      '--cutoff',
+      '2026-03-25',
+      '--version',
+      'v2',
+      '--base-period',
+      '2h',
+    ]);
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain('--base-period must be one of 1m|5m|15m|30m|1h, got: 2h');
+  });
+
+  it('requires an explicit horizon when the base period is not 1h', async () => {
+    const result = await runMain([
+      'generate-episode-case',
+      '--symbol',
+      'MU.US',
+      '--cutoff',
+      '2026-03-25',
+      '--version',
+      'v2',
+      '--base-period',
+      '5m',
+    ]);
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain(
+      '--horizon-sessions or --horizon-bars is required when --base-period is not 1h',
+    );
+  });
+
+  it('rejects passing both --horizon-sessions and --horizon-bars', async () => {
+    const result = await runMain([
+      'generate-episode-case',
+      '--symbol',
+      'MU.US',
+      '--cutoff',
+      '2026-03-25',
+      '--version',
+      'v2',
+      '--horizon-sessions',
+      '10',
+      '--horizon-bars',
+      '180',
+    ]);
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain(
+      'specify only one of --horizon-sessions or --horizon-bars, not both',
+    );
+  });
 });
 
 describe('bench generate-episode-dataset argument validation', () => {
