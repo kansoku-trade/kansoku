@@ -616,6 +616,21 @@ describe('blind episode anonymization — epilogue', () => {
     ).toThrow('blind epilogue bars must be strictly increasing in time');
   });
 
+  it('accepts an epilogue that begins after a market gap (e.g. a weekend) rather than exactly one base-period interval', () => {
+    const weekendGapEpilogue: RawBar[] = [
+      rawBar('2024-04-01T13:30:00Z', 50.5, 51, 50.2, 50.8, 900),
+      rawBar('2024-04-01T13:35:00Z', 50.8, 51.2, 50.6, 51, 950),
+    ];
+
+    const { epilogue } = anonymizeEpisodeQuestion(
+      FIVE_MIN_SOURCE,
+      { alias: 'ASSET019', syntheticCutoff: '2026-03-25' },
+      weekendGapEpilogue,
+    );
+
+    expect(epilogue).toHaveLength(2);
+  });
+
   it('shifts the epilogue bars by the same dayShift as the case body', () => {
     const { provenance, epilogue } = anonymizeEpisodeQuestion(
       FIVE_MIN_SOURCE,
