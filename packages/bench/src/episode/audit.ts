@@ -376,6 +376,9 @@ export function auditEpisodeQuestion(
   const rawBasePeriod = questionBasePeriod(question);
   const knownBasePeriod = Object.hasOwn(EPISODE_PERIOD_LADDER, rawBasePeriod);
   const basePeriod = knownBasePeriod ? rawBasePeriod : '1h';
+  const validBasePeriod =
+    question.replay.basePeriod != null &&
+    Object.hasOwn(EPISODE_PERIOD_LADDER, question.replay.basePeriod);
   const [ladderBase, ladderMid, ladderTop] = episodePeriodLadder(basePeriod);
   const requiredBase = requiredBaseBars(basePeriod);
 
@@ -392,7 +395,7 @@ export function auditEpisodeQuestion(
   add(
     'base-period',
     basePeriodLabel(rawBasePeriod),
-    knownBasePeriod,
+    validBasePeriod,
     Object.keys(EPISODE_PERIOD_LADDER),
     question.replay.basePeriod ?? null,
   );

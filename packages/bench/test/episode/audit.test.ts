@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { QuoteBar } from '../../src/generate/assemble.js';
 import { auditEpisodeQuestion } from '../../src/episode/audit.js';
 import { assembleEpisodeQuestion } from '../../src/episode/generate.js';
+import { periodBucketStart } from '../../src/episode/periods.js';
 
 function dateOffset(date: string, days: number): string {
   const value = new Date(`${date}T00:00:00Z`);
@@ -93,6 +94,32 @@ function onePeriodFixture(cutoffDate = '2026-03-25', horizonSessions = 4) {
   });
 }
 
+function fifteenPeriodFixture(cutoffDate = '2026-03-25', horizonSessions = 4) {
+  const pastDates = businessDates(dateOffset(cutoffDate, -60), cutoffDate);
+  const futureDates = businessDates(dateOffset(cutoffDate, 1), dateOffset(cutoffDate, 20)).slice(
+    0,
+    horizonSessions,
+  );
+  const allDates = [...pastDates, ...futureDates];
+  const baseBars = intradayBarsForDates(allDates, 15);
+  const midBars = intradayBarsForDates(allDates, 60);
+  const topBars = businessDates(dateOffset(cutoffDate, -500), dateOffset(cutoffDate, 20)).map(
+    (date, index) => bar(`${date}T20:00:00Z`, index),
+  );
+  const question = assembleEpisodeQuestion({
+    symbol: 'MRVL.US',
+    layer: 'high-vol-tech',
+    cutoffDate,
+    basePeriod: '15m',
+    baseBars,
+    midBars,
+    topBars,
+    horizonSessions,
+    calendar: {},
+  });
+  return { question, sources: { hourBars: baseBars, dayBars: midBars, weekBars: topBars } };
+}
+
 function fixture() {
   const cutoffDate = '2026-03-25';
   const dates = businessDates(dateOffset(cutoffDate, -60), dateOffset(cutoffDate, 20));
@@ -144,6 +171,17 @@ describe('episode data audit', () => {
     expect(audit.passed).toBe(false);
     expect(audit.checks.find((check) => check.id === 'source-day')).toMatchObject({
       status: 'fail',
+    });
+  });
+
+  it('fails, naming the base period, when the basePeriod field is missing', () => {
+    const { question, sources } = fixture();
+    delete question.replay.basePeriod;
+    const audit = auditEpisodeQuestion(question, sources, '2026-07-18T00:00:00.000Z');
+    expect(audit.passed).toBe(false);
+    expect(audit.checks.find((check) => check.id === 'base-period')).toMatchObject({
+      status: 'fail',
+      actual: null,
     });
   });
 
@@ -199,7 +237,7 @@ describe('episode data audit — five-period ladder', () => {
 
   it('fails, naming the base tier, when the base window is short', () => {
     const question = fivePeriodFixture();
-    question.fixtures.kline['5m'] = question.fixtures.kline['5m'].slice(1);
+    question.fixtures.kline['5m'] = question.fixtures.kline['5m']!.slice(1);
     const audit = auditEpisodeQuestion(question);
     expect(audit.passed).toBe(false);
     expect(audit.checks.find((check) => check.id === 'initial-5m-count')).toMatchObject({
@@ -209,7 +247,7 @@ describe('episode data audit — five-period ladder', () => {
 
   it('fails, naming the base tier, when the base bars meet the count requirement but all sit inside one trading day', () => {
     const question = fivePeriodFixture();
-    const baseBars = question.fixtures.kline['5m'];
+    const baseBars = question.fixtures.kline['5m']!;
     expect(baseBars.length).toBeGreaterThanOrEqual(210);
     const singleSessionDate = '2026-03-25';
     question.fixtures.kline['5m'] = baseBars.map((entry, index) => ({
@@ -230,7 +268,7 @@ describe('episode data audit — five-period ladder', () => {
 
   it('fails, naming the mid tier, when the mid window is short', () => {
     const question = fivePeriodFixture();
-    question.fixtures.kline['15m'] = question.fixtures.kline['15m'].slice(1);
+    question.fixtures.kline['15m'] = question.fixtures.kline['15m']!.slice(1);
     const audit = auditEpisodeQuestion(question);
     expect(audit.passed).toBe(false);
     expect(audit.checks.find((check) => check.id === 'initial-15m-count')).toMatchObject({
@@ -255,5 +293,42 @@ describe('episode data audit — five-period ladder', () => {
     const audit = auditEpisodeQuestion(question);
     expect(audit.passed).toBe(false);
     expect(audit.checks.find((check) => check.id === 'quote')).toMatchObject({ status: 'fail' });
+  });
+
+  it('passes a well-formed 15m case audited with sources, exercising the folded mid tier / native top tier split', () => {
+    const { question, sources } = fifteenPeriodFixture();
+    const audit = auditEpisodeQuestion(question, sources);
+    expect(audit.passed).toBe(true);
+    expect(audit.checks.every((check) => check.status === 'pass')).toBe(true);
+    expect(audit.checks.map((check) => check.id)).toEqual(
+      expect.arrayContaining([
+        'source-15m',
+        'source-h1-history',
+        'source-h1-rollups',
+        'source-day',
+        'partial-h1',
+      ]),
+    );
+    expect(audit.checks.map((check) => check.id)).not.toContain('partial-day');
+    expect(audit.checks.map((check) => check.id)).not.toContain('15m-session-span');
+  });
+
+  it('fails, naming the folded mid-tier source check, when the live 1h source disagrees with the fixture', () => {
+    const { question, sources } = fifteenPeriodFixture();
+    const cutoffBucketStart = periodBucketStart('1h', question.cutoff);
+    const targetIndex = sources.dayBars.reduce(
+      (lastIndex, entry, index) =>
+        periodBucketStart('1h', entry.time) < cutoffBucketStart ? index : lastIndex,
+      -1,
+    );
+    expect(targetIndex).toBeGreaterThanOrEqual(0);
+    const corruptedDayBars = sources.dayBars.map((entry, index) =>
+      index === targetIndex ? { ...entry, close: '9999' } : entry,
+    );
+    const audit = auditEpisodeQuestion(question, { ...sources, dayBars: corruptedDayBars });
+    expect(audit.passed).toBe(false);
+    expect(audit.checks.find((check) => check.id === 'source-h1-history')).toMatchObject({
+      status: 'fail',
+    });
   });
 });
