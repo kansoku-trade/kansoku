@@ -1,7 +1,7 @@
 import type { RawBar } from '@kansoku/shared/types';
 import { buildDayIndicators, buildWeekIndicators } from '../generate/indicatorsFixture.js';
 import type { EpisodeState } from './engine.js';
-import { periodBucketKey, type EpisodeViewPeriod } from './periods.js';
+import { periodBucketKey, periodBucketStart, type EpisodeViewPeriod } from './periods.js';
 import {
   questionBaseBars,
   questionBarsForPeriod,
@@ -28,12 +28,6 @@ function marketDate(time: string): string {
   return `${part('year')}-${part('month')}-${part('day')}`;
 }
 
-function bucketOpenTime(period: EpisodeViewPeriod, bars: RawBar[]): string {
-  return period === 'day' || period === 'week'
-    ? periodBucketKey(period, bars[0].time)
-    : bars[0].time;
-}
-
 function aggregate(time: string, bars: RawBar[]): RawBar {
   return {
     time,
@@ -54,7 +48,7 @@ function groupBars(period: EpisodeViewPeriod, bars: RawBar[]): RawBar[] {
     else groups.set(key, [bar]);
   }
   return [...groups.values()]
-    .map((group) => aggregate(bucketOpenTime(period, group), group))
+    .map((group) => aggregate(periodBucketStart(period, group[0].time), group))
     .sort((a, b) => Date.parse(a.time) - Date.parse(b.time));
 }
 

@@ -6,6 +6,7 @@ import {
   episodePeriodLadder,
   isEpisodeViewPeriod,
   periodBucketKey,
+  periodBucketStart,
 } from '../../src/episode/periods.js';
 
 const GRANULARITY_ORDER = ['1m', '5m', '15m', '30m', '1h', 'day', 'week'];
@@ -96,5 +97,35 @@ describe('periodBucketKey', () => {
   it('agrees with weekKey for the week period', () => {
     const time = '2026-03-25T15:00:00Z';
     expect(periodBucketKey('week', time)).toBe(weekKey(marketDate(time)));
+  });
+});
+
+describe('periodBucketStart', () => {
+  it('returns the half-hour-aligned bucket open under EDT (13:30Z open), not the queried bar time', () => {
+    expect(periodBucketStart('15m', '2026-03-25T13:30:00Z')).toBe('2026-03-25T13:30:00Z');
+    expect(periodBucketStart('15m', '2026-03-25T13:40:00Z')).toBe('2026-03-25T13:30:00Z');
+    expect(periodBucketStart('1h', '2026-03-25T14:25:00Z')).toBe('2026-03-25T13:30:00Z');
+  });
+
+  it('returns the half-hour-aligned bucket open under EST (14:30Z open), not the queried bar time', () => {
+    expect(periodBucketStart('15m', '2026-01-15T14:30:00Z')).toBe('2026-01-15T14:30:00Z');
+    expect(periodBucketStart('15m', '2026-01-15T14:40:00Z')).toBe('2026-01-15T14:30:00Z');
+    expect(periodBucketStart('1h', '2026-01-15T15:25:00Z')).toBe('2026-01-15T14:30:00Z');
+  });
+
+  it('never disagrees with periodBucketKey: same bucket key implies same bucket start', () => {
+    const a = '2026-03-25T14:05:00Z';
+    const b = '2026-03-25T14:25:00Z';
+    for (const period of BASE_PERIODS) {
+      if (periodBucketKey(period, a) === periodBucketKey(period, b)) {
+        expect(periodBucketStart(period, a)).toBe(periodBucketStart(period, b));
+      }
+    }
+  });
+
+  it('matches periodBucketKey directly for day and week, where the key already is the boundary', () => {
+    const time = '2026-03-25T15:00:00Z';
+    expect(periodBucketStart('day', time)).toBe(periodBucketKey('day', time));
+    expect(periodBucketStart('week', time)).toBe(periodBucketKey('week', time));
   });
 });

@@ -201,6 +201,14 @@ describe('episode rolling view for a non-1h base period', () => {
       volume: 460,
     });
     expect(view.fixtures.kline.day).toEqual(FIVE_MINUTE_QUESTION.fixtures.kline.day);
+    expect(view.fixtures.quote).toMatchObject({
+      last: 102,
+      open: 100,
+      high: 102.5,
+      low: 99,
+      volume: 460,
+      prev_close: 98,
+    });
   });
 
   it('opens a new 1h bucket and applies only rollups visible as of the cursor', () => {
@@ -211,11 +219,11 @@ describe('episode rolling view for a non-1h base period', () => {
     expect(view.fixtures.kline['15m'].map((entry) => entry.time)).toEqual([
       '2026-03-23T13:30:00Z',
       '2026-03-23T13:45:00Z',
-      '2026-03-23T14:35:00Z',
+      '2026-03-23T14:30:00Z',
     ]);
     expect(view.fixtures.kline['1h'].map((entry) => entry.time)).toEqual([
       '2026-03-23T13:30:00Z',
-      '2026-03-23T14:35:00Z',
+      '2026-03-23T14:30:00Z',
       '2026-03-23T15:30:00Z',
     ]);
     expect(view.fixtures.kline['1h']).not.toContainEqual(
