@@ -343,15 +343,18 @@ describe('episode engine', () => {
   });
 
   it('reports the newly revealed bar at its own base period, not a hardcoded 1h tier', () => {
-    const fiveMinute: Question = {
-      id: 'swing-FIVEMIN-01',
+    // The 1m ladder is ['1m','5m','15m'] — there is no 1h tier at all, so a
+    // hardcoded fixtures.kline['1h'] lookup hits a genuinely absent key on both
+    // sides of the advance and reports no new bars, no matter what was revealed.
+    const oneMinute: Question = {
+      id: 'swing-ONEMIN-01',
       bank: 'swing',
       symbol: 'MU.US',
       cutoff: '2026-03-23T13:25:00Z',
       layer: 'high-vol-tech',
       adversarial: false,
       fixtures: {
-        kline: { '5m': [], '15m': [], '1h': [], day: [] },
+        kline: { day: [] },
         indicators: {},
         quote: { last: 100 },
         capitalFlow: {},
@@ -360,16 +363,16 @@ describe('episode engine', () => {
         calendar: {},
       },
       replay: {
-        basePeriod: '5m',
+        basePeriod: '1m',
         horizonBars: 2,
         bars: [
           bar('2026-03-23T13:30:00Z', 100, 101, 99, 100.5),
-          bar('2026-03-23T13:35:00Z', 100.5, 101.5, 100, 101),
+          bar('2026-03-23T13:31:00Z', 100.5, 101.5, 100, 101),
         ],
       },
     };
-    const first = observeEpisode(createEpisodeState(), fiveMinute);
-    expect(first.newBars.h1).toEqual([fiveMinute.replay.bars[0]]);
+    const first = observeEpisode(createEpisodeState(), oneMinute);
+    expect(first.newBars.h1).toEqual([oneMinute.replay.bars[0]]);
     expect(first.newBars.day).toEqual([]);
     expect(first.newBars.week).toEqual([]);
   });
