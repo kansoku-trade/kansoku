@@ -112,11 +112,9 @@ export function buildEpisodeQuestionViewAtCursor(
   const midBars = tierBars(question, midPeriod, revealed, cutoff);
   const topBars = tierBars(question, topPeriod, midBars, cutoff);
   const quoteDayBars =
-    midPeriod === 'day'
-      ? midBars
-      : topPeriod === 'day'
-        ? topBars
-        : tierBars(question, 'day', baseBars, cutoff);
+    midPeriod === 'day' || topPeriod === 'day'
+      ? tierBars(question, 'day', revealed, cutoff)
+      : tierBars(question, 'day', baseBars, cutoff);
   return {
     id: question.id,
     bank: question.bank,

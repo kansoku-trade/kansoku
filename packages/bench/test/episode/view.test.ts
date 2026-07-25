@@ -291,3 +291,44 @@ describe('episode quote day-bar seeding for ladders without a native day tier', 
     expect(view.fixtures.quote.prev_close).toBe(92);
   });
 });
+
+const FIFTEEN_MINUTE_DAY_TIER_QUESTION: Question = {
+  id: 'swing-FIFTEENMIN-DAY-01',
+  bank: 'swing',
+  symbol: 'MU.US',
+  cutoff: '2026-03-20T20:00:00Z',
+  layer: 'high-vol-tech',
+  adversarial: false,
+  fixtures: {
+    kline: {
+      '15m': [bar('2026-03-20T19:45:00Z', 91.7, 92.2, 91.5, 92, 1000)],
+      '1h': [
+        bar('2026-03-20T13:30:00Z', 91, 91.6, 90.5, 91.4, 7000),
+        bar('2026-03-20T19:30:00Z', 91.6, 92, 91.3, 91.7, 6500),
+      ],
+      'day': [
+        bar('2026-03-19', 88, 89.5, 87, 89, 40_000),
+        bar('2026-03-20', 91, 93, 89, 92, 50_000),
+      ],
+    },
+    indicators: {},
+    quote: { last: 92, open: 91, high: 93, low: 89, volume: 50_000, prev_close: 89 },
+    capitalFlow: {},
+    news: [],
+    fundamentals: {},
+    calendar: {},
+  },
+  replay: {
+    basePeriod: '15m',
+    horizonBars: 1,
+    bars: [bar('2026-03-23T13:30:00Z', 92.1, 92.6, 91.8, 92.3, 100)],
+  },
+};
+
+describe('episode quote day-bar seeding for the 15m/30m ladder (native day tier)', () => {
+  it('keeps the native cutoff-day volume at cursor -1 instead of folding it from 1h bars', () => {
+    const view = buildEpisodeQuestionViewAtCursor(FIFTEEN_MINUTE_DAY_TIER_QUESTION, -1);
+    expect(view.fixtures.quote.volume).toBe(FIFTEEN_MINUTE_DAY_TIER_QUESTION.fixtures.quote.volume);
+    expect(view.fixtures.quote.volume).toBe(50_000);
+  });
+});
