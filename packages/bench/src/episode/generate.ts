@@ -412,17 +412,6 @@ function addDays(date: string, count: number): string {
   return value.toISOString().slice(0, 10);
 }
 
-function isFetchableKlinePeriod(period: EpisodeViewPeriod): period is EpisodeKlinePeriod {
-  return period === '1h' || period === 'day' || period === 'week';
-}
-
-function fetchablePeriod(period: EpisodeViewPeriod): EpisodeKlinePeriod {
-  if (!isFetchableKlinePeriod(period)) {
-    throw new Error(`cannot fetch ${period} kline: FetchEpisodeKlineHistory only supports 1h/day/week`);
-  }
-  return period;
-}
-
 function tierLookbackStart(period: EpisodeViewPeriod, cutoffDate: string, required: number): string {
   if (period === 'day' || period === 'week') return '2022-01-01';
   const perSession = Math.ceil(REGULAR_SESSION_MINUTES / EPISODE_INTRADAY_MINUTES[period]);
@@ -451,9 +440,9 @@ export async function generateEpisodeCase(options: GenerateEpisodeCaseOptions) {
   );
 
   const [baseBars, midBars, topBars, calendarEvents] = await Promise.all([
-    options.fetchKlineHistory(options.symbol, fetchablePeriod(ladderBase), baseStart, rangeEnd),
-    options.fetchKlineHistory(options.symbol, fetchablePeriod(ladderMid), midStart, rangeEnd),
-    options.fetchKlineHistory(options.symbol, fetchablePeriod(ladderTop), topStart, rangeEnd),
+    options.fetchKlineHistory(options.symbol, ladderBase, baseStart, rangeEnd),
+    options.fetchKlineHistory(options.symbol, ladderMid, midStart, rangeEnd),
+    options.fetchKlineHistory(options.symbol, ladderTop, topStart, rangeEnd),
     options.fetchCalendar
       ? options
           .fetchCalendar(options.symbol, options.cutoffDate, addDays(options.cutoffDate, 180))

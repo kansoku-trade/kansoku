@@ -1,5 +1,9 @@
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { QuoteBar } from '../../src/generate/assemble.js';
+import type { EpisodeKlinePeriod } from '../../src/generate/source.js';
 import {
   EPISODE_REQUIRED_BASE,
   EPISODE_REQUIRED_DAY,
@@ -11,7 +15,7 @@ import {
   generateEpisodeCase,
   marketCloseIso,
 } from '../../src/episode/generate.js';
-import { periodBucketStart } from '../../src/episode/periods.js';
+import { EPISODE_INTRADAY_MINUTES, periodBucketStart } from '../../src/episode/periods.js';
 import { Value } from 'typebox/value';
 import { questionSchema } from '../../src/schema/question.js';
 
@@ -362,21 +366,71 @@ describe('assembleEpisodeQuestion', () => {
 });
 
 describe('generateEpisodeCase', () => {
-  it('rejects a non-1h base before ever calling the injected fetcher', async () => {
-    const fetchKlineHistory = async (): Promise<QuoteBar[]> => {
-      throw new Error('fetchKlineHistory should not be called');
+  it('fetches the 5m/15m/1h ladder using the tier lookback windows tierLookbackStart intends', async () => {
+    const cutoffDate = '2026-03-25';
+    const pastDates = businessDates(dateOffset(cutoffDate, -60), cutoffDate);
+    const futureDates = businessDates(dateOffset(cutoffDate, 1), dateOffset(cutoffDate, 20)).slice(0, 4);
+    const allDates = [...pastDates, ...futureDates];
+
+    const barsByPeriod: Partial<Record<EpisodeKlinePeriod, QuoteBar[]>> = {
+      '5m': intradayBarsForDates(allDates, 5),
+      '15m': intradayBarsForDates(allDates, 15),
+      '1h': intradayBarsForDates(allDates, 60),
     };
 
-    await expect(
-      generateEpisodeCase({
-        symbol: 'MRVL.US',
-        layer: 'high-vol-tech',
-        cutoffDate: '2026-03-25',
-        version: 'v-test',
-        basePeriod: '5m',
-        datasetsRoot: '/does-not-matter',
-        fetchKlineHistory,
-      }),
-    ).rejects.toThrow('cannot fetch 5m kline');
+    const calls: { period: EpisodeKlinePeriod; start: string; end: string }[] = [];
+    const fetchKlineHistory = async (
+      _symbol: string,
+      period: EpisodeKlinePeriod,
+      start: string,
+      end: string,
+    ): Promise<QuoteBar[]> => {
+      calls.push({ period, start, end });
+      return barsByPeriod[period] ?? [];
+    };
+
+    const datasetsRoot = mkdtempSync(join(tmpdir(), 'bench-episode-'));
+
+    const result = await generateEpisodeCase({
+      symbol: 'MRVL.US',
+      layer: 'high-vol-tech',
+      cutoffDate,
+      version: 'v-test',
+      basePeriod: '5m',
+      horizonSessions: 4,
+      datasetsRoot,
+      fetchKlineHistory,
+    });
+
+    expect(Value.Check(questionSchema, result.question)).toBe(true);
+    expect(result.question.replay.basePeriod).toBe('5m');
+    expect(result.question.fixtures.kline['5m']).toHaveLength(EPISODE_REQUIRED_BASE);
+    expect(result.question.fixtures.kline['15m']).toHaveLength(EPISODE_REQUIRED_MID);
+    expect(result.question.fixtures.kline['1h']).toHaveLength(EPISODE_REQUIRED_TOP);
+
+    expect(calls).toHaveLength(3);
+
+    const rangeEnd = dateOffset(cutoffDate, Math.ceil(4 * 2.5) + 14);
+    const expectedStart = (period: '5m' | '15m' | '1h', required: number): string => {
+      const perSession = Math.ceil(390 / EPISODE_INTRADAY_MINUTES[period]);
+      const neededSessions = Math.ceil(required / perSession);
+      return dateOffset(cutoffDate, -(Math.ceil(neededSessions * 2.5) + 14));
+    };
+
+    expect(calls).toContainEqual({
+      period: '5m',
+      start: expectedStart('5m', EPISODE_REQUIRED_BASE),
+      end: rangeEnd,
+    });
+    expect(calls).toContainEqual({
+      period: '15m',
+      start: expectedStart('15m', EPISODE_REQUIRED_MID),
+      end: rangeEnd,
+    });
+    expect(calls).toContainEqual({
+      period: '1h',
+      start: expectedStart('1h', EPISODE_REQUIRED_TOP),
+      end: rangeEnd,
+    });
   });
 });

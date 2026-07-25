@@ -2,7 +2,7 @@ import type { FetchEpisodeKlineHistory } from '../episode/generate.js';
 import type { QuoteBar } from './assemble.js';
 import type { EpisodeKlinePeriod } from './source.js';
 
-const YAHOO_INTERVAL: Record<EpisodeKlinePeriod, string> = {
+const YAHOO_INTERVAL: Partial<Record<EpisodeKlinePeriod, string>> = {
   '1h': '60m',
   day: '1d',
   week: '1wk',
@@ -58,7 +58,11 @@ export const fetchKlineHistoryYahoo: FetchEpisodeKlineHistory = async (
   end,
 ) => {
   const interval = YAHOO_INTERVAL[period];
-  if (!interval) throw new Error(`yahoo fetcher does not support period: ${period}`);
+  if (!interval) {
+    throw new Error(
+      `yahoo fetcher cannot fetch ${period} kline: only supports 1h/day/week (Yahoo caps finer intraday intervals to a trailing 30-60 day window, unusable for historical episode cutoffs)`,
+    );
+  }
   const result = await fetchYahooChart(symbol, interval, start, end);
   const ts = result.timestamp ?? [];
   const quote = result.indicators?.quote?.[0] ?? {};
