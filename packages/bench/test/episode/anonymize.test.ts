@@ -147,6 +147,12 @@ function rawBar(
   return { time, open, high, low, close, volume };
 }
 
+function median(values: number[]): number {
+  const sorted = [...values].sort((a, b) => a - b);
+  const middle = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 0 ? (sorted[middle - 1] + sorted[middle]) / 2 : sorted[middle];
+}
+
 const FIVE_MIN_SOURCE: Question = {
   id: 'swing-FMSRC-2024-03-27-01',
   bank: 'swing',
@@ -172,6 +178,9 @@ const FIVE_MIN_SOURCE: Question = {
       '1h': [
         rawBar('2024-03-27T13:30:00Z', 49, 49.6, 48.5, 49.4, 7000),
         rawBar('2024-03-27T19:30:00Z', 999, 999, 999, 999, 999),
+      ],
+      'week': [
+        rawBar('2024-01-15T20:00:00Z', 12345.678, 12345.678, 12345.678, 12345.678, 87654321),
       ],
     },
     indicators: {},
@@ -205,8 +214,49 @@ const FIVE_MIN_SOURCE: Question = {
   },
 };
 
+const STALE_MID_BUCKET_SOURCE: Question = {
+  id: 'swing-STALEMID-2024-03-27-01',
+  bank: 'swing',
+  symbol: 'ACME.US',
+  cutoff: '2024-03-27T20:00:00Z',
+  layer: 'high-vol-tech',
+  adversarial: false,
+  fixtures: {
+    kline: {
+      '5m': [
+        rawBar('2024-03-26T13:30:00Z', 48, 48.5, 47.5, 48.2, 900),
+        rawBar('2024-03-26T13:35:00Z', 48.2, 48.6, 47.8, 48.4, 950),
+        rawBar('2024-03-27T13:30:00Z', 49, 49.5, 48.5, 49.2, 1000),
+        rawBar('2024-03-27T13:35:00Z', 49.2, 49.7, 48.9, 49.5, 1050),
+        rawBar('2024-03-27T19:30:00Z', 49.6, 50, 49.3, 49.7, 1100),
+        rawBar('2024-03-27T19:45:00Z', 49.7, 50.2, 49.5, 50, 1150),
+      ],
+      '15m': [
+        rawBar('2024-03-27T13:30:00Z', 49, 49.6, 48.5, 49.4, 3000),
+        rawBar('2024-03-27T18:30:00Z', 49.6, 50, 49.3, 49.7, 3100),
+        rawBar('2024-03-27T18:45:00Z', 49.7, 50.2, 49.5, 50, 3200),
+      ],
+      '1h': [
+        rawBar('2024-03-27T13:30:00Z', 49, 49.6, 48.5, 49.4, 7000),
+        rawBar('2024-03-27T18:30:00Z', 999, 999, 999, 999, 999),
+      ],
+    },
+    indicators: {},
+    quote: { last: 50 },
+    capitalFlow: {},
+    news: [],
+    fundamentals: {},
+    calendar: {},
+  },
+  replay: {
+    basePeriod: '5m',
+    horizonBars: 1,
+    bars: [rawBar('2024-03-28T13:30:00Z', 50.1, 50.5, 49.8, 50.3, 1200)],
+  },
+};
+
 describe('blind episode anonymization — five-period ladder', () => {
-  it('anonymises a 5m-based case without throwing and carries the ladder tier keys', () => {
+  it('anonymises a 5m-based case without throwing, carries only the ladder tier keys, and drops the out-of-ladder week series without leaking its real data', () => {
     const { question } = anonymizeEpisodeQuestion(FIVE_MIN_SOURCE, {
       alias: 'ASSET003',
       syntheticCutoff: '2026-03-25',
@@ -218,6 +268,11 @@ describe('blind episode anonymization — five-period ladder', () => {
     expect(question.fixtures.kline).not.toHaveProperty('day');
     expect(question.fixtures.kline).not.toHaveProperty('week');
     expect(Value.Check(questionSchema, question)).toBe(true);
+
+    const serialized = JSON.stringify(question);
+    expect(serialized).not.toContain('2024-01-15');
+    expect(serialized).not.toContain('12345.678');
+    expect(serialized).not.toContain('87654321');
   });
 
   it('derives a well-formed per-trading-day quote when the ladder has no day tier, with the cutoff close landing at 100', () => {
@@ -233,6 +288,9 @@ describe('blind episode anonymization — five-period ladder', () => {
     expect(question.fixtures.quote.low).toBeCloseTo(97, 6);
     expect(question.fixtures.quote.prev_close).toBeCloseTo(96.8, 6);
     expect(question.fixtures.quote.volume).toBeCloseTo(4300 * provenance.volumeScale, 3);
+
+    const baseVolumes = question.fixtures.kline['5m'].map((entry) => Number(entry.volume));
+    expect(median(baseVolumes)).toBeCloseTo(1_000_000, 3);
   });
 
   it("shifts rollup availableAt consistently with bar timestamps for the ladder's mid/top tiers", () => {
@@ -265,6 +323,22 @@ describe('blind episode anonymization — five-period ladder', () => {
   it("rebuilds the cutoff top-tier (1h) bar from that bucket's mid-tier (15m) bars instead of keeping the stale fixture bar", () => {
     const { question, provenance } = anonymizeEpisodeQuestion(FIVE_MIN_SOURCE, {
       alias: 'ASSET006',
+      syntheticCutoff: '2026-03-25',
+    });
+
+    const rebuiltHour = question.fixtures.kline['1h'].at(-1)!;
+    const scale = provenance.priceScale;
+    expect(question.fixtures.kline['1h']).toHaveLength(2);
+    expect(rebuiltHour.open).toBeCloseTo(49.6 * scale, 6);
+    expect(rebuiltHour.high).toBeCloseTo(50.2 * scale, 6);
+    expect(rebuiltHour.low).toBeCloseTo(49.3 * scale, 6);
+    expect(rebuiltHour.close).toBeCloseTo(50 * scale, 6);
+    expect(rebuiltHour.volume).toBeCloseTo((3100 + 3200) * provenance.volumeScale, 3);
+  });
+
+  it('rebuilds the top-tier bucket containing the last mid-tier bar even when that bucket is not the market-close bucket', () => {
+    const { question, provenance } = anonymizeEpisodeQuestion(STALE_MID_BUCKET_SOURCE, {
+      alias: 'ASSET007',
       syntheticCutoff: '2026-03-25',
     });
 

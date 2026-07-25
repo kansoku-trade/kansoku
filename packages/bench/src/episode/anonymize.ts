@@ -143,8 +143,7 @@ export function anonymizeEpisodeQuestion(
   }
 
   const syntheticCutoff = marketCloseIso(transform.syntheticCutoff);
-  const ladder = questionLadder(source);
-  const [basePeriod, midPeriod, topPeriod] = ladder;
+  const [basePeriod, midPeriod, topPeriod] = questionLadder(source);
 
   const baseBarsSource = questionBaseBars(source);
   const cutoffBase = baseBarsSource.at(-1);
@@ -167,18 +166,21 @@ export function anonymizeEpisodeQuestion(
   const midBars = transformBars(questionBarsForPeriod(source, midPeriod));
   const topBars = transformBars(questionBarsForPeriod(source, topPeriod));
 
-  const cutoffTopKey = periodBucketKey(topPeriod, syntheticCutoff);
-  const currentTopBucketMidBars = midBars.filter(
-    (bar) => periodBucketKey(topPeriod, bar.time) === cutoffTopKey,
-  );
-  const currentTopIndex = topBars.findIndex(
-    (bar) => periodBucketKey(topPeriod, bar.time) === cutoffTopKey,
-  );
-  if (currentTopIndex >= 0 && currentTopBucketMidBars.length > 0) {
-    topBars[currentTopIndex] = aggregateBucket(
-      periodBucketStart(topPeriod, syntheticCutoff),
-      currentTopBucketMidBars,
+  const lastMidBar = midBars.at(-1);
+  if (lastMidBar) {
+    const cutoffTopKey = periodBucketKey(topPeriod, lastMidBar.time);
+    const currentTopBucketMidBars = midBars.filter(
+      (bar) => periodBucketKey(topPeriod, bar.time) === cutoffTopKey,
     );
+    const currentTopIndex = topBars.findIndex(
+      (bar) => periodBucketKey(topPeriod, bar.time) === cutoffTopKey,
+    );
+    if (currentTopIndex >= 0) {
+      topBars[currentTopIndex] = aggregateBucket(
+        periodBucketStart(topPeriod, lastMidBar.time),
+        currentTopBucketMidBars,
+      );
+    }
   }
 
   const replayBars = transformBars(source.replay.bars);
@@ -205,12 +207,6 @@ export function anonymizeEpisodeQuestion(
       : null,
   };
 
-  const passthroughKline = Object.fromEntries(
-    Object.entries(source.fixtures.kline).filter(
-      ([key]) => !ladder.includes(key as EpisodeViewPeriod),
-    ),
-  );
-
   const aliasSymbol = `${transform.alias}.SIM`;
   const outputId = `swing-${transform.alias}-${transform.syntheticCutoff}-01`;
   const question: Question = {
@@ -222,7 +218,6 @@ export function anonymizeEpisodeQuestion(
     adversarial: source.adversarial,
     fixtures: {
       kline: {
-        ...passthroughKline,
         ...(baseBars.length ? { [basePeriod]: baseBars } : {}),
         [midPeriod]: midBars,
         [topPeriod]: topBars,
