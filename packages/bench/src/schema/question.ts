@@ -15,9 +15,22 @@ const replayRollupSchema = Type.Object(
   { additionalProperties: false },
 );
 
+const klineSchema = Type.Object(
+  {
+    '1m': Type.Optional(Type.Array(barSchema)),
+    '5m': Type.Optional(Type.Array(barSchema)),
+    '15m': Type.Optional(Type.Array(barSchema)),
+    '30m': Type.Optional(Type.Array(barSchema)),
+    '1h': Type.Optional(Type.Array(barSchema)),
+    day: Type.Optional(Type.Array(barSchema)),
+    week: Type.Optional(Type.Array(barSchema)),
+  },
+  { additionalProperties: false },
+);
+
 const fixturesSchema = Type.Object(
   {
-    kline: Type.Record(Type.String(), Type.Array(barSchema)),
+    kline: klineSchema,
     indicators: jsonRecordSchema,
     quote: jsonRecordSchema,
     capitalFlow: jsonRecordSchema,

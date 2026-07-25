@@ -476,8 +476,8 @@ export async function generateEpisodeCase(options: GenerateEpisodeCaseOptions) {
   await fs.mkdir(dir, { recursive: true });
   await fs.writeFile(file, `${JSON.stringify(question, null, 2)}\n`, 'utf8');
   log(
-    `${question.id}: ${question.fixtures.kline[ladderBase].length} initial ${ladderBase}, ` +
-      `${question.fixtures.kline[ladderMid].length} ${ladderMid}, ${question.fixtures.kline[ladderTop].length} ${ladderTop}, ` +
+    `${question.id}: ${question.fixtures.kline[ladderBase]!.length} initial ${ladderBase}, ` +
+      `${question.fixtures.kline[ladderMid]!.length} ${ladderMid}, ${question.fixtures.kline[ladderTop]!.length} ${ladderTop}, ` +
       `${question.replay.horizonBars} replay ${ladderBase}` +
       (question.replay.horizonSessions != null ? ` across ${question.replay.horizonSessions} sessions` : ''),
   );

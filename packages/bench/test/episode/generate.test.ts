@@ -114,7 +114,7 @@ describe('assembleEpisodeQuestion', () => {
     expect(question.fixtures.kline.day).toHaveLength(EPISODE_REQUIRED_DAY);
     expect(question.fixtures.kline.week).toHaveLength(EPISODE_REQUIRED_WEEK);
     const cutoffDay = days.find((value) => value.time.startsWith(cutoffDate))!;
-    expect(question.fixtures.kline.week.at(-1)).toMatchObject({
+    expect(question.fixtures.kline.week!.at(-1)).toMatchObject({
       time: '2026-03-23',
       close: Number(cutoffDay.close),
     });
@@ -128,7 +128,7 @@ describe('assembleEpisodeQuestion', () => {
     expect(question.replay.rollups?.week).toHaveLength(1);
     expect(question.replay.rollups?.week[0].bar.close).toBe(poisonedCurrentWeek.close);
     expect(
-      question.fixtures.kline['1h'].every(
+      question.fixtures.kline['1h']!.every(
         (value) => Date.parse(value.time) < Date.parse(question.cutoff),
       ),
     ).toBe(true);
@@ -334,7 +334,7 @@ describe('assembleEpisodeQuestion', () => {
     );
     expect(bucketBaseBars).toHaveLength(2);
 
-    const lastMidBar = question.fixtures.kline['1h'].at(-1)!;
+    const lastMidBar = question.fixtures.kline['1h']!.at(-1)!;
     expect(Date.parse(lastMidBar.time)).toBe(Date.parse(expectedBucketStart));
     expect(Number(lastMidBar.open)).toBe(Number(bucketBaseBars[0].open));
     expect(Number(lastMidBar.close)).toBe(Number(bucketBaseBars[1].close));

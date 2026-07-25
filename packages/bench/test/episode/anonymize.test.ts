@@ -117,9 +117,9 @@ describe('blind episode anonymization', () => {
     expect(question.id).toBe('swing-ASSET001-2026-03-25-01');
     expect(question.symbol).toBe('ASSET001.SIM');
     expect(question.layer).toBe('anonymous');
-    expect(question.fixtures.kline['1h'].at(-1)?.close).toBeCloseTo(100, 6);
+    expect(question.fixtures.kline['1h']!.at(-1)?.close).toBeCloseTo(100, 6);
     expect(question.fixtures.quote.last).toBeCloseTo(
-      Number(source.fixtures.kline.day.at(-1)!.close) * provenance.priceScale,
+      Number(source.fixtures.kline.day!.at(-1)!.close) * provenance.priceScale,
       6,
     );
     expect(question.fixtures.news).toEqual([]);
@@ -340,7 +340,7 @@ describe('blind episode anonymization — five-period ladder', () => {
       syntheticCutoff: '2026-03-25',
     });
 
-    expect(question.fixtures.kline['5m'].at(-1)?.close).toBeCloseTo(100, 6);
+    expect(question.fixtures.kline['5m']!.at(-1)?.close).toBeCloseTo(100, 6);
     expect(question.fixtures.quote.last).toBeCloseTo(100, 6);
     expect(question.fixtures.quote.open).toBeCloseTo(98, 6);
     expect(question.fixtures.quote.high).toBeCloseTo(100.4, 6);
@@ -348,7 +348,7 @@ describe('blind episode anonymization — five-period ladder', () => {
     expect(question.fixtures.quote.prev_close).toBeCloseTo(96.8, 6);
     expect(question.fixtures.quote.volume).toBeCloseTo(4300 * provenance.volumeScale, 3);
 
-    const baseVolumes = question.fixtures.kline['5m'].map((entry) => Number(entry.volume));
+    const baseVolumes = question.fixtures.kline['5m']!.map((entry) => Number(entry.volume));
     expect(median(baseVolumes)).toBeCloseTo(1_000_000, 3);
   });
 
@@ -385,7 +385,7 @@ describe('blind episode anonymization — five-period ladder', () => {
       syntheticCutoff: '2026-03-25',
     });
 
-    const rebuiltHour = question.fixtures.kline['1h'].at(-1)!;
+    const rebuiltHour = question.fixtures.kline['1h']!.at(-1)!;
     const scale = provenance.priceScale;
     expect(question.fixtures.kline['1h']).toHaveLength(2);
     expect(rebuiltHour.open).toBeCloseTo(49.6 * scale, 6);
@@ -401,7 +401,7 @@ describe('blind episode anonymization — five-period ladder', () => {
       syntheticCutoff: '2026-03-25',
     });
 
-    const rebuiltHour = question.fixtures.kline['1h'].at(-1)!;
+    const rebuiltHour = question.fixtures.kline['1h']!.at(-1)!;
     const scale = provenance.priceScale;
     expect(question.fixtures.kline['1h']).toHaveLength(2);
     expect(rebuiltHour.open).toBeCloseTo(49.6 * scale, 6);

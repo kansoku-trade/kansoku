@@ -80,18 +80,18 @@ describe('episode rolling multi-timeframe view', () => {
     const first = advanceEpisode(submitted.state, QUESTION, HOLD);
     const view = buildEpisodeQuestionView(QUESTION, first.state);
 
-    expect(view.fixtures.kline['1h'].map((entry) => entry.time)).toEqual([
+    expect(view.fixtures.kline['1h']!.map((entry) => entry.time)).toEqual([
       '2026-03-20T19:30:00Z',
       '2026-03-23T13:30:00Z',
     ]);
     expect(view.fixtures.kline['1h']).not.toContainEqual(QUESTION.replay.bars[1]);
-    expect(view.fixtures.kline.day.at(-1)).toMatchObject({
+    expect(view.fixtures.kline.day!.at(-1)).toMatchObject({
       time: '2026-03-23',
       open: 100,
       close: 102,
       volume: 200,
     });
-    expect(view.fixtures.kline.week.at(-1)).toMatchObject({ time: '2026-03-23', close: 102 });
+    expect(view.fixtures.kline.week!.at(-1)).toMatchObject({ time: '2026-03-23', close: 102 });
     expect(view.fixtures.quote).toMatchObject({ last: 102, prev_close: 100 });
     expect(view.cutoff).toBe('2026-03-23T13:30:00Z');
   });
@@ -101,7 +101,7 @@ describe('episode rolling multi-timeframe view', () => {
     state = advanceEpisode(state, QUESTION, HOLD).state;
     state = advanceEpisode(state, QUESTION, HOLD).state;
     let view = buildEpisodeQuestionView(QUESTION, state);
-    expect(view.fixtures.kline.day.at(-1)).toMatchObject({
+    expect(view.fixtures.kline.day!.at(-1)).toMatchObject({
       time: '2026-03-23',
       open: 99.5,
       high: 105.5,
@@ -120,16 +120,16 @@ describe('episode rolling multi-timeframe view', () => {
     state = advanceEpisode(state, QUESTION, HOLD).state;
     view = buildEpisodeQuestionView(QUESTION, state);
     expect(view.fixtures.kline['1h']).toHaveLength(4);
-    expect(view.fixtures.kline.day.slice(-2).map((entry) => entry.time)).toEqual([
+    expect(view.fixtures.kline.day!.slice(-2).map((entry) => entry.time)).toEqual([
       '2026-03-23',
       '2026-03-24',
     ]);
-    expect(view.fixtures.kline.day.at(-1)).toMatchObject({
+    expect(view.fixtures.kline.day!.at(-1)).toMatchObject({
       time: '2026-03-24',
       close: 105.2,
       volume: 450,
     });
-    expect(view.fixtures.kline.week.at(-1)).toMatchObject({ time: '2026-03-23', close: 105.2 });
+    expect(view.fixtures.kline.week!.at(-1)).toMatchObject({ time: '2026-03-23', close: 105.2 });
     expect(view.fixtures.indicators).toHaveProperty('day');
     expect(view.fixtures.indicators).toHaveProperty('week');
   });
@@ -187,12 +187,12 @@ describe('episode rolling view for a non-1h base period', () => {
 
     expect(view.fixtures.kline['5m']).toHaveLength(4);
     expect(view.fixtures.kline['15m']).toHaveLength(2);
-    expect(view.fixtures.kline['15m'].map((entry) => entry.time)).toEqual([
+    expect(view.fixtures.kline['15m']!.map((entry) => entry.time)).toEqual([
       '2026-03-23T13:30:00Z',
       '2026-03-23T13:45:00Z',
     ]);
     expect(view.fixtures.kline['1h']).toHaveLength(1);
-    expect(view.fixtures.kline['1h'][0]).toMatchObject({
+    expect(view.fixtures.kline['1h']![0]).toMatchObject({
       time: '2026-03-23T13:30:00Z',
       open: 100,
       high: 102.5,
@@ -216,12 +216,12 @@ describe('episode rolling view for a non-1h base period', () => {
 
     expect(view.cutoff).toBe('2026-03-23T14:35:00Z');
     expect(view.fixtures.kline['15m']).toHaveLength(3);
-    expect(view.fixtures.kline['15m'].map((entry) => entry.time)).toEqual([
+    expect(view.fixtures.kline['15m']!.map((entry) => entry.time)).toEqual([
       '2026-03-23T13:30:00Z',
       '2026-03-23T13:45:00Z',
       '2026-03-23T14:30:00Z',
     ]);
-    expect(view.fixtures.kline['1h'].map((entry) => entry.time)).toEqual([
+    expect(view.fixtures.kline['1h']!.map((entry) => entry.time)).toEqual([
       '2026-03-23T13:30:00Z',
       '2026-03-23T14:30:00Z',
       '2026-03-23T15:30:00Z',

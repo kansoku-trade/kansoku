@@ -85,4 +85,29 @@ describe('questionSchema', () => {
     };
     expect(Value.Check(questionSchema, question)).toBe(false);
   });
+
+  it('rejects a question whose fixtures.kline carries a key outside the period ladder', () => {
+    const question = {
+      ...validQuestionFixture,
+      fixtures: {
+        ...(validQuestionFixture.fixtures as Record<string, unknown>),
+        kline: {
+          ...((validQuestionFixture.fixtures as Record<string, unknown>).kline as object),
+          '2h': [],
+        },
+      },
+    };
+    expect(Value.Check(questionSchema, question)).toBe(false);
+  });
+
+  it('accepts a kline object carrying every ladder-period key', () => {
+    const question = {
+      ...validQuestionFixture,
+      fixtures: {
+        ...(validQuestionFixture.fixtures as Record<string, unknown>),
+        kline: { '1m': [], '5m': [], '15m': [], '30m': [], '1h': [], day: [], week: [] },
+      },
+    };
+    expect(Value.Check(questionSchema, question)).toBe(true);
+  });
 });
