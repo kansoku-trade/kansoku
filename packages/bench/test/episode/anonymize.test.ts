@@ -41,6 +41,26 @@ function marketTime(date: string, time: string): string {
   return `${date}T${time}${offset}`;
 }
 
+function timeAt(date: string, minutesSinceMidnight: number): string {
+  const hour = Math.floor(minutesSinceMidnight / 60);
+  const minute = minutesSinceMidnight % 60;
+  return `${date}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00-04:00`;
+}
+
+function sessionBars(date: string, minutes: number, startIndex: number): QuoteBar[] {
+  const count = Math.ceil(390 / minutes);
+  return Array.from({ length: count }, (_, i) => bar(timeAt(date, 570 + i * minutes), startIndex + i));
+}
+
+function intradayBarsForDates(dates: string[], minutes: number): QuoteBar[] {
+  let index = 0;
+  return dates.flatMap((date) => {
+    const bars = sessionBars(date, minutes, index);
+    index += bars.length;
+    return bars;
+  });
+}
+
 function sourceQuestion(cutoff = '2024-03-27', horizonSessions = 4) {
   const hourDates = businessDates(
     dateOffset(cutoff, -60),
@@ -350,5 +370,53 @@ describe('blind episode anonymization — five-period ladder', () => {
     expect(rebuiltHour.low).toBeCloseTo(49.3 * scale, 6);
     expect(rebuiltHour.close).toBeCloseTo(50 * scale, 6);
     expect(rebuiltHour.volume).toBeCloseTo((3100 + 3200) * provenance.volumeScale, 3);
+  });
+});
+
+describe('blind episode anonymization — 1m ladder quote consistency', () => {
+  it('produces a blind quote that is the transform of the live 1m quote, with a stable prev_close and scaled turnover on both sides', () => {
+    const cutoffDate = '2026-03-25';
+    const pastDates = businessDates(dateOffset(cutoffDate, -20), cutoffDate);
+    const futureDates = businessDates(dateOffset(cutoffDate, 1), dateOffset(cutoffDate, 20)).slice(0, 4);
+    const allDates = [...pastDates, ...futureDates];
+
+    const source = assembleEpisodeQuestion({
+      symbol: 'MRVL.US',
+      layer: 'high-vol-tech',
+      cutoffDate,
+      basePeriod: '1m',
+      baseBars: intradayBarsForDates(allDates, 1),
+      midBars: intradayBarsForDates(allDates, 5),
+      topBars: intradayBarsForDates(allDates, 15),
+      horizonSessions: 4,
+      calendar: {},
+    });
+
+    const sourceQuote = source.fixtures.quote as Record<string, unknown>;
+    expect(sourceQuote.prev_close).not.toBeNull();
+    expect(sourceQuote.turnover).not.toBeNull();
+
+    const { question, provenance } = anonymizeEpisodeQuestion(source, {
+      alias: 'ASSET008',
+      syntheticCutoff: dateOffset(cutoffDate, 7),
+    });
+    const blindQuote = question.fixtures.quote as Record<string, unknown>;
+
+    expect(Number(blindQuote.last)).toBeCloseTo(Number(sourceQuote.last) * provenance.priceScale, 6);
+    expect(Number(blindQuote.open)).toBeCloseTo(Number(sourceQuote.open) * provenance.priceScale, 6);
+    expect(Number(blindQuote.high)).toBeCloseTo(Number(sourceQuote.high) * provenance.priceScale, 6);
+    expect(Number(blindQuote.low)).toBeCloseTo(Number(sourceQuote.low) * provenance.priceScale, 6);
+    expect(Number(blindQuote.prev_close)).toBeCloseTo(
+      Number(sourceQuote.prev_close) * provenance.priceScale,
+      6,
+    );
+    expect(Number(blindQuote.volume)).toBeCloseTo(
+      Number(sourceQuote.volume) * provenance.volumeScale,
+      3,
+    );
+    expect(Number(blindQuote.turnover)).toBeCloseTo(
+      Number(sourceQuote.turnover) * provenance.priceScale * provenance.volumeScale,
+      3,
+    );
   });
 });

@@ -14,6 +14,7 @@ import {
   assembleEpisodeQuestion,
   generateEpisodeCase,
   marketCloseIso,
+  requiredBaseBars,
 } from '../../src/episode/generate.js';
 import { EPISODE_INTRADAY_MINUTES, periodBucketStart } from '../../src/episode/periods.js';
 import { Value } from 'typebox/value';
@@ -363,6 +364,98 @@ describe('assembleEpisodeQuestion', () => {
       }),
     ).toThrow('insufficient 15m history');
   });
+
+  it('requires 780 1m base bars, twice a session, while leaving every other ladder at 210', () => {
+    expect(requiredBaseBars('1m')).toBe(780);
+    expect(requiredBaseBars('5m')).toBe(EPISODE_REQUIRED_BASE);
+    expect(requiredBaseBars('15m')).toBe(EPISODE_REQUIRED_BASE);
+    expect(requiredBaseBars('30m')).toBe(EPISODE_REQUIRED_BASE);
+    expect(requiredBaseBars('1h')).toBe(EPISODE_REQUIRED_BASE);
+  });
+
+  it('derives a 1m quote spanning the full current trading day, with turnover carried through, rather than a partial window', () => {
+    const cutoffDate = '2026-03-25';
+    const pastDates = businessDates(dateOffset(cutoffDate, -20), cutoffDate);
+    const futureDates = businessDates(dateOffset(cutoffDate, 1), dateOffset(cutoffDate, 20)).slice(0, 1);
+    const allDates = [...pastDates, ...futureDates];
+    const baseBars = intradayBarsForDates(allDates, 1);
+
+    const question = assembleEpisodeQuestion({
+      symbol: 'MRVL.US',
+      layer: 'high-vol-tech',
+      cutoffDate,
+      basePeriod: '1m',
+      baseBars,
+      midBars: intradayBarsForDates(allDates, 5),
+      topBars: intradayBarsForDates(allDates, 15),
+      horizonBars: 30,
+      calendar: {},
+    });
+
+    const cutoffDayBars = baseBars.filter((b) => b.time.startsWith(cutoffDate));
+    expect(cutoffDayBars.length).toBeGreaterThan(200);
+
+    expect(question.fixtures.quote.open).toBeCloseTo(Number(cutoffDayBars[0].open), 6);
+    expect(question.fixtures.quote.high).toBeCloseTo(
+      Math.max(...cutoffDayBars.map((b) => Number(b.high))),
+      6,
+    );
+    expect(question.fixtures.quote.low).toBeCloseTo(
+      Math.min(...cutoffDayBars.map((b) => Number(b.low))),
+      6,
+    );
+    expect(question.fixtures.quote.volume).toBeCloseTo(
+      cutoffDayBars.reduce((sum, b) => sum + Number(b.volume), 0),
+      6,
+    );
+    expect(question.fixtures.quote.turnover).toBeCloseTo(
+      cutoffDayBars.reduce((sum, b) => sum + Number(b.turnover), 0),
+      3,
+    );
+  });
+
+  it('derives a stable, non-null prev_close for a 1m case whose last-780 base bars span two sessions', () => {
+    const cutoffDate = '2026-03-25';
+    const pastDates = businessDates(dateOffset(cutoffDate, -20), cutoffDate);
+    const futureDates = businessDates(dateOffset(cutoffDate, 1), dateOffset(cutoffDate, 20)).slice(0, 1);
+    const allDates = [...pastDates, ...futureDates];
+    const previousDate = pastDates.at(-2)!;
+    const baseBars = intradayBarsForDates(allDates, 1);
+
+    const question = assembleEpisodeQuestion({
+      symbol: 'MRVL.US',
+      layer: 'high-vol-tech',
+      cutoffDate,
+      basePeriod: '1m',
+      baseBars,
+      midBars: intradayBarsForDates(allDates, 5),
+      topBars: intradayBarsForDates(allDates, 15),
+      horizonBars: 30,
+      calendar: {},
+    });
+
+    const previousDayBars = baseBars.filter((b) => b.time.startsWith(previousDate));
+    expect(question.fixtures.quote.prev_close).not.toBeNull();
+    expect(question.fixtures.quote.prev_close).toBeCloseTo(
+      Number(previousDayBars.at(-1)!.close),
+      6,
+    );
+  });
+
+  it('rejects a 1m-base case with fewer than 780 base bars, naming the tier', () => {
+    const cutoffDate = '2026-03-25';
+
+    expect(() =>
+      assembleEpisodeQuestion({
+        symbol: 'MRVL.US',
+        layer: 'high-vol-tech',
+        cutoffDate,
+        basePeriod: '1m',
+        baseBars: intradayBarsForDates([cutoffDate], 1),
+        horizonBars: 1,
+      }),
+    ).toThrow('insufficient 1m history: need 780, got 390');
+  });
 });
 
 describe('generateEpisodeCase', () => {
@@ -430,6 +523,58 @@ describe('generateEpisodeCase', () => {
     expect(calls).toContainEqual({
       period: '1h',
       start: expectedStart('1h', EPISODE_REQUIRED_TOP),
+      end: rangeEnd,
+    });
+  });
+
+  it('widens the 1m base-tier fetch lookback to cover the 780-bar requirement', async () => {
+    const cutoffDate = '2026-03-25';
+    const pastDates = businessDates(dateOffset(cutoffDate, -60), cutoffDate);
+    const futureDates = businessDates(dateOffset(cutoffDate, 1), dateOffset(cutoffDate, 20)).slice(0, 4);
+    const allDates = [...pastDates, ...futureDates];
+
+    const barsByPeriod: Partial<Record<EpisodeKlinePeriod, QuoteBar[]>> = {
+      '1m': intradayBarsForDates(allDates, 1),
+      '5m': intradayBarsForDates(allDates, 5),
+      '15m': intradayBarsForDates(allDates, 15),
+    };
+
+    const calls: { period: EpisodeKlinePeriod; start: string; end: string }[] = [];
+    const fetchKlineHistory = async (
+      _symbol: string,
+      period: EpisodeKlinePeriod,
+      start: string,
+      end: string,
+    ): Promise<QuoteBar[]> => {
+      calls.push({ period, start, end });
+      return barsByPeriod[period] ?? [];
+    };
+
+    const datasetsRoot = mkdtempSync(join(tmpdir(), 'bench-episode-'));
+
+    const result = await generateEpisodeCase({
+      symbol: 'MRVL.US',
+      layer: 'high-vol-tech',
+      cutoffDate,
+      version: 'v-test',
+      basePeriod: '1m',
+      horizonSessions: 4,
+      datasetsRoot,
+      fetchKlineHistory,
+    });
+
+    expect(Value.Check(questionSchema, result.question)).toBe(true);
+    expect(result.question.fixtures.kline['1m']).toHaveLength(requiredBaseBars('1m'));
+
+    const requiredBase = requiredBaseBars('1m');
+    const perSession = Math.ceil(390 / EPISODE_INTRADAY_MINUTES['1m']);
+    const neededSessions = Math.ceil(requiredBase / perSession);
+    const expectedBaseStart = dateOffset(cutoffDate, -(Math.ceil(neededSessions * 2.5) + 14));
+    const rangeEnd = dateOffset(cutoffDate, Math.ceil(4 * 2.5) + 14);
+
+    expect(calls).toContainEqual({
+      period: '1m',
+      start: expectedBaseStart,
       end: rangeEnd,
     });
   });

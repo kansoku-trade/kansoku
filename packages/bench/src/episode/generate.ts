@@ -84,6 +84,7 @@ function aggregateBucket(time: string, bars: QuoteBar[]): QuoteBar {
     if (parsed == null) throw new Error(`invalid numeric bar value: ${value}`);
     return parsed;
   };
+  const hasTurnover = bars.every((bar) => bar.turnover !== undefined);
   return {
     time,
     open: numeric(bars[0].open),
@@ -91,6 +92,9 @@ function aggregateBucket(time: string, bars: QuoteBar[]): QuoteBar {
     low: Math.min(...bars.map((bar) => numeric(bar.low))),
     close: numeric(bars.at(-1)!.close),
     volume: bars.reduce((sum, bar) => sum + numeric(bar.volume), 0),
+    ...(hasTurnover
+      ? { turnover: String(bars.reduce((sum, bar) => sum + numeric(bar.turnover!), 0)) }
+      : {}),
   };
 }
 
@@ -133,6 +137,10 @@ function barsInFirstSessions(bars: QuoteBar[], sessions: number): number {
 
 function barsPerSession(basePeriod: EpisodeBasePeriod): number {
   return Math.ceil(REGULAR_SESSION_MINUTES / EPISODE_INTRADAY_MINUTES[basePeriod]);
+}
+
+export function requiredBaseBars(basePeriod: EpisodeBasePeriod): number {
+  return Math.max(EPISODE_REQUIRED_BASE, 2 * barsPerSession(basePeriod));
 }
 
 function nativeDayInitial(nativeBars: QuoteBar[], cutoffDate: string, required: number): QuoteBar[] {
@@ -260,10 +268,11 @@ export function assembleEpisodeQuestion(input: AssembleEpisodeQuestionInput): Qu
 
   const cutoff = marketCloseIso(input.cutoffDate);
   const cutoffMs = Date.parse(cutoff);
+  const requiredBase = requiredBaseBars(basePeriod);
 
   const initialBase = baseSource
     .filter((bar) => Date.parse(bar.time) < cutoffMs)
-    .slice(-EPISODE_REQUIRED_BASE);
+    .slice(-requiredBase);
 
   const initialMid =
     ladderMid === 'day'
@@ -284,9 +293,9 @@ export function assembleEpisodeQuestion(input: AssembleEpisodeQuestionInput): Qu
     replay = takeSessionsAfter(baseSource, cutoffMs, horizonSessions);
   }
 
-  if (initialBase.length < EPISODE_REQUIRED_BASE) {
+  if (initialBase.length < requiredBase) {
     throw new Error(
-      `insufficient ${ladderBase} history: need ${EPISODE_REQUIRED_BASE}, got ${initialBase.length}`,
+      `insufficient ${ladderBase} history: need ${requiredBase}, got ${initialBase.length}`,
     );
   }
   if (initialMid.length < EPISODE_REQUIRED_MID) {
@@ -431,7 +440,7 @@ export async function generateEpisodeCase(options: GenerateEpisodeCaseOptions) {
       : sessions!;
   const rangeEnd = addDays(options.cutoffDate, Math.ceil(neededSessions * 2.5) + 14);
 
-  const baseStart = tierLookbackStart(ladderBase, options.cutoffDate, EPISODE_REQUIRED_BASE);
+  const baseStart = tierLookbackStart(ladderBase, options.cutoffDate, requiredBaseBars(basePeriod));
   const midStart = tierLookbackStart(ladderMid, options.cutoffDate, EPISODE_REQUIRED_MID);
   const topStart = tierLookbackStart(ladderTop, options.cutoffDate, EPISODE_REQUIRED_TOP);
 
