@@ -62,6 +62,32 @@ describe('periodBucketKey', () => {
     }
   });
 
+  it('aligns 1h buckets to the half-hour open under EDT (13:30Z)', () => {
+    const open = periodBucketKey('1h', '2026-03-25T13:30:00Z');
+    const sameBucket30m = periodBucketKey('1h', '2026-03-25T14:00:00Z');
+    const nextBucket30m = periodBucketKey('1h', '2026-03-25T14:30:00Z');
+    const sameBucket5m = periodBucketKey('1h', '2026-03-25T14:25:00Z');
+    const nextBucket5m = periodBucketKey('1h', '2026-03-25T14:30:00Z');
+
+    expect(open).toBe(sameBucket30m);
+    expect(open).not.toBe(nextBucket30m);
+    expect(open).toBe(sameBucket5m);
+    expect(open).not.toBe(nextBucket5m);
+  });
+
+  it('aligns 1h buckets to the half-hour open under EST (14:30Z)', () => {
+    const open = periodBucketKey('1h', '2026-01-15T14:30:00Z');
+    const sameBucket30m = periodBucketKey('1h', '2026-01-15T15:00:00Z');
+    const nextBucket30m = periodBucketKey('1h', '2026-01-15T15:30:00Z');
+    const sameBucket5m = periodBucketKey('1h', '2026-01-15T15:25:00Z');
+    const nextBucket5m = periodBucketKey('1h', '2026-01-15T15:30:00Z');
+
+    expect(open).toBe(sameBucket30m);
+    expect(open).not.toBe(nextBucket30m);
+    expect(open).toBe(sameBucket5m);
+    expect(open).not.toBe(nextBucket5m);
+  });
+
   it('agrees with marketDate for the day period', () => {
     const time = '2026-03-25T15:00:00Z';
     expect(periodBucketKey('day', time)).toBe(marketDate(time));

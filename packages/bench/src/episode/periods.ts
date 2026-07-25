@@ -44,6 +44,8 @@ export function periodBucketKey(period: EpisodeViewPeriod, isoTime: string): str
   const minutes = EPISODE_INTRADAY_MINUTES[period];
   const time = new Date(isoTime);
   const minutesSinceUtcMidnight = time.getUTCHours() * 60 + time.getUTCMinutes();
-  const bucketIndex = Math.floor(minutesSinceUtcMidnight / minutes);
+  // Sessions open on the half hour (13:30Z EDT / 14:30Z EST); subtract 30 before
+  // dividing so bucket boundaries stay aligned to the open under both DST regimes.
+  const bucketIndex = Math.floor((minutesSinceUtcMidnight - 30) / minutes);
   return `${marketDate(isoTime)}:${bucketIndex}`;
 }
