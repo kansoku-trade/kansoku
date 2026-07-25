@@ -10,6 +10,7 @@ import type { Question } from '../schema/question.js';
 import type { Submission } from '../schema/submission.js';
 import type { EpisodeTradeReason } from '../schema/tradeReason.js';
 import { marketDate, weekKey } from './generate.js';
+import { questionBasePeriod } from './questionLadder.js';
 import { buildEpisodeQuestionViewAtCursor } from './view.js';
 
 export type EpisodePhase = 'flat' | 'pending' | 'open' | 'terminal';
@@ -129,14 +130,15 @@ function computeNewBars(
   if (nextCursor <= prevCursor) return { h1: [], day: [], week: [] };
   const prevView = buildEpisodeQuestionViewAtCursor(question, prevCursor);
   const nextView = buildEpisodeQuestionViewAtCursor(question, nextCursor);
-  const prevH1 = prevView.fixtures.kline['1h'] ?? [];
-  const nextH1 = nextView.fixtures.kline['1h'] ?? [];
+  const basePeriod = questionBasePeriod(question);
+  const prevBase = prevView.fixtures.kline[basePeriod] ?? [];
+  const nextBase = nextView.fixtures.kline[basePeriod] ?? [];
   const prevDay = prevView.fixtures.kline.day ?? [];
   const nextDay = nextView.fixtures.kline.day ?? [];
   const prevWeek = prevView.fixtures.kline.week ?? [];
   const nextWeek = nextView.fixtures.kline.week ?? [];
   return {
-    h1: diffBars(prevH1, nextH1),
+    h1: diffBars(prevBase, nextBase),
     day: diffBars(prevDay, nextDay),
     week: diffBars(prevWeek, nextWeek),
   };

@@ -341,4 +341,36 @@ describe('episode engine', () => {
       exit: { price: 102 },
     });
   });
+
+  it('reports the newly revealed bar at its own base period, not a hardcoded 1h tier', () => {
+    const fiveMinute: Question = {
+      id: 'swing-FIVEMIN-01',
+      bank: 'swing',
+      symbol: 'MU.US',
+      cutoff: '2026-03-23T13:25:00Z',
+      layer: 'high-vol-tech',
+      adversarial: false,
+      fixtures: {
+        kline: { '5m': [], '15m': [], '1h': [], day: [] },
+        indicators: {},
+        quote: { last: 100 },
+        capitalFlow: {},
+        news: [],
+        fundamentals: {},
+        calendar: {},
+      },
+      replay: {
+        basePeriod: '5m',
+        horizonBars: 2,
+        bars: [
+          bar('2026-03-23T13:30:00Z', 100, 101, 99, 100.5),
+          bar('2026-03-23T13:35:00Z', 100.5, 101.5, 100, 101),
+        ],
+      },
+    };
+    const first = observeEpisode(createEpisodeState(), fiveMinute);
+    expect(first.newBars.h1).toEqual([fiveMinute.replay.bars[0]]);
+    expect(first.newBars.day).toEqual([]);
+    expect(first.newBars.week).toEqual([]);
+  });
 });
