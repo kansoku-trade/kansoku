@@ -7,6 +7,17 @@ const nullableNumber = Type.Union([Type.Number(), Type.Null()]);
 const requiredReason = { reason: episodeTradeReasonSchema };
 const optionalReason = { reason: Type.Optional(episodeTradeReasonSchema) };
 
+const advancePeriodSchema = Type.Union([
+  Type.Literal('h1'),
+  Type.Literal('1m'),
+  Type.Literal('5m'),
+  Type.Literal('15m'),
+  Type.Literal('30m'),
+  Type.Literal('1h'),
+  Type.Literal('day'),
+  Type.Literal('week'),
+]);
+
 export const episodeSubmissionSchema = Type.Object(
   {
     ...submissionSchema.properties,
@@ -22,9 +33,7 @@ export const episodeTradeActionSchema = Type.Union([
     {
       type: Type.Literal('hold'),
       bars: Type.Optional(Type.Integer({ minimum: 1, maximum: 20 })),
-      period: Type.Optional(
-        Type.Union([Type.Literal('h1'), Type.Literal('day'), Type.Literal('week')]),
-      ),
+      period: Type.Optional(advancePeriodSchema),
       ...optionalReason,
     },
     { additionalProperties: false },
@@ -60,9 +69,7 @@ export const episodeTradeActionToolSchema = Type.Object(
       Type.Literal('exit_next_open'),
     ]),
     bars: Type.Optional(Type.Integer({ minimum: 1, maximum: 20 })),
-    period: Type.Optional(
-      Type.Union([Type.Literal('h1'), Type.Literal('day'), Type.Literal('week')]),
-    ),
+    period: Type.Optional(advancePeriodSchema),
     stop: Type.Optional(Type.Number()),
     target: Type.Optional(Type.Number()),
     ...optionalReason,
@@ -93,9 +100,7 @@ const episodeRecordedTradeActionSchema = Type.Union([
     {
       type: Type.Literal('hold'),
       bars: Type.Optional(Type.Integer({ minimum: 1, maximum: 20 })),
-      period: Type.Optional(
-        Type.Union([Type.Literal('h1'), Type.Literal('day'), Type.Literal('week')]),
-      ),
+      period: Type.Optional(advancePeriodSchema),
       ...optionalReason,
     },
     { additionalProperties: false },

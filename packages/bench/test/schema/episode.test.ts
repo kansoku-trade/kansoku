@@ -48,4 +48,18 @@ describe('episodeTradeActionToolSchema', () => {
     expect(Value.Check(episodeTradeActionToolSchema, mixed)).toBe(true);
     expect(Value.Check(episodeTradeActionSchema, mixed)).toBe(false);
   });
+
+  it('accepts every ladder period alongside the h1 sentinel', () => {
+    for (const period of ['h1', '1m', '5m', '15m', '30m', '1h', 'day', 'week']) {
+      const hold = { type: 'hold', period };
+      expect(Value.Check(episodeTradeActionSchema, hold)).toBe(true);
+      expect(Value.Check(episodeTradeActionToolSchema, hold)).toBe(true);
+    }
+  });
+
+  it('rejects a period that is not a recognised period name', () => {
+    const hold = { type: 'hold', period: '2h' };
+    expect(Value.Check(episodeTradeActionSchema, hold)).toBe(false);
+    expect(Value.Check(episodeTradeActionToolSchema, hold)).toBe(false);
+  });
 });
