@@ -1,12 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import type { QuoteBar } from '../../src/generate/assemble.js';
 import {
+  EPISODE_ENTRY_EXPIRY_SESSIONS,
+  EPISODE_REQUIRED_BASE,
   EPISODE_REQUIRED_DAY,
   EPISODE_REQUIRED_H1,
+  EPISODE_REQUIRED_MID,
+  EPISODE_REQUIRED_TOP,
   EPISODE_REQUIRED_WEEK,
   assembleEpisodeQuestion,
   marketCloseIso,
 } from '../../src/episode/generate.js';
+import { periodBucketStart } from '../../src/episode/periods.js';
 import { Value } from 'typebox/value';
 import { questionSchema } from '../../src/schema/question.js';
 
@@ -61,6 +66,26 @@ function weeklyBars(cutoff: string): QuoteBar[] {
   return Array.from({ length: 120 }, (_, index) =>
     bar(`${dateOffset(cutoff, (index - 120) * 7)}T20:00:00Z`, index),
   );
+}
+
+function timeAt(date: string, minutesSinceMidnight: number): string {
+  const hour = Math.floor(minutesSinceMidnight / 60);
+  const minute = minutesSinceMidnight % 60;
+  return `${date}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00-04:00`;
+}
+
+function sessionBars(date: string, minutes: number, startIndex: number): QuoteBar[] {
+  const count = Math.ceil(390 / minutes);
+  return Array.from({ length: count }, (_, i) => bar(timeAt(date, 570 + i * minutes), startIndex + i));
+}
+
+function intradayBarsForDates(dates: string[], minutes: number): QuoteBar[] {
+  let index = 0;
+  return dates.flatMap((date) => {
+    const bars = sessionBars(date, minutes, index);
+    index += bars.length;
+    return bars;
+  });
 }
 
 describe('assembleEpisodeQuestion', () => {
@@ -122,5 +147,159 @@ describe('assembleEpisodeQuestion', () => {
         horizonSessions: 4,
       }),
     ).toThrow('insufficient replay sessions');
+  });
+
+  it('assembles a 5m-base case with the 5m/15m/1h ladder populated and rollups emitted', () => {
+    const cutoffDate = '2026-03-25';
+    const pastDates = businessDates(dateOffset(cutoffDate, -60), cutoffDate);
+    const futureDates = businessDates(dateOffset(cutoffDate, 1), dateOffset(cutoffDate, 20)).slice(0, 4);
+    const allDates = [...pastDates, ...futureDates];
+
+    const question = assembleEpisodeQuestion({
+      symbol: 'MRVL.US',
+      layer: 'high-vol-tech',
+      cutoffDate,
+      basePeriod: '5m',
+      baseBars: intradayBarsForDates(allDates, 5),
+      midBars: intradayBarsForDates(allDates, 15),
+      topBars: intradayBarsForDates(allDates, 60),
+      horizonSessions: 4,
+      calendar: {},
+    });
+
+    expect(Value.Check(questionSchema, question)).toBe(true);
+    expect(question.replay.basePeriod).toBe('5m');
+    expect(question.fixtures.kline['5m']).toHaveLength(EPISODE_REQUIRED_BASE);
+    expect(question.fixtures.kline['15m']).toHaveLength(EPISODE_REQUIRED_MID);
+    expect(question.fixtures.kline['1h']).toHaveLength(EPISODE_REQUIRED_TOP);
+    expect(question.replay.horizonSessions).toBe(4);
+    expect(question.replay.rollups?.['15m']?.length).toBeGreaterThan(0);
+    expect(question.replay.rollups?.['1h']?.length).toBeGreaterThan(0);
+  });
+
+  it('takes exactly the requested horizonBars on the bars-based path', () => {
+    const cutoffDate = '2026-03-25';
+    const question = assembleEpisodeQuestion({
+      symbol: 'MU.US',
+      layer: 'high-vol-tech',
+      cutoffDate,
+      hourBars: hourBarsForCutoff(cutoffDate, 4),
+      dayBars: dailyBars(cutoffDate),
+      weekBars: weeklyBars(cutoffDate),
+      horizonBars: 10,
+      calendar: {},
+    });
+
+    expect(Value.Check(questionSchema, question)).toBe(true);
+    expect(question.replay.horizonBars).toBe(10);
+    expect(question.replay.bars).toHaveLength(10);
+    expect(question.replay.horizonSessions).toBeUndefined();
+    expect(question.replay.entryExpiryBars).toBe(EPISODE_ENTRY_EXPIRY_SESSIONS * 7);
+  });
+
+  it('rejects a bars-based horizon that the source data cannot cover', () => {
+    const cutoffDate = '2026-03-25';
+    expect(() =>
+      assembleEpisodeQuestion({
+        symbol: 'MU.US',
+        layer: 'high-vol-tech',
+        cutoffDate,
+        hourBars: hourBarsForCutoff(cutoffDate, 1),
+        dayBars: dailyBars(cutoffDate),
+        weekBars: weeklyBars(cutoffDate),
+        horizonBars: 50,
+      }),
+    ).toThrow('insufficient replay bars');
+  });
+
+  it('emits mid and top rollups keyed by the ladder tiers, with availableAt at the last base bar of the bucket', () => {
+    const cutoffDate = '2026-03-25';
+    const pastDates = businessDates(dateOffset(cutoffDate, -60), cutoffDate);
+    const futureDates = businessDates(dateOffset(cutoffDate, 1), dateOffset(cutoffDate, 20)).slice(0, 1);
+    const allDates = [...pastDates, ...futureDates];
+    const futureDate = futureDates[0];
+
+    const midBars = intradayBarsForDates(allDates, 15);
+    const topBars = intradayBarsForDates(allDates, 60);
+
+    const question = assembleEpisodeQuestion({
+      symbol: 'MRVL.US',
+      layer: 'high-vol-tech',
+      cutoffDate,
+      basePeriod: '5m',
+      baseBars: intradayBarsForDates(allDates, 5),
+      midBars,
+      topBars,
+      horizonSessions: 1,
+      calendar: {},
+    });
+
+    const firstMidRollup = question.replay.rollups!['15m'][0];
+    expect(firstMidRollup.availableAt).toBe(timeAt(futureDate, 570 + 2 * 5));
+    const nativeMidBar = midBars.find((entry) => entry.time === timeAt(futureDate, 570));
+    expect(firstMidRollup.bar.close).toBe(nativeMidBar!.close);
+
+    const firstTopRollup = question.replay.rollups!['1h'][0];
+    expect(firstTopRollup.availableAt).toBe(timeAt(futureDate, 570 + 11 * 5));
+    const nativeTopBar = topBars.find((entry) => entry.time === timeAt(futureDate, 570));
+    expect(firstTopRollup.bar.close).toBe(nativeTopBar!.close);
+  });
+
+  it('folds a mid-bucket cutoff into a single partial bar covering the whole elapsed part of the bucket', () => {
+    const cutoffDate = '2026-03-25';
+    const pastDates = businessDates(dateOffset(cutoffDate, -90), cutoffDate);
+    const futureDates = businessDates(dateOffset(cutoffDate, 1), dateOffset(cutoffDate, 20)).slice(0, 1);
+    const allDates = [...pastDates, ...futureDates];
+
+    const baseBars = intradayBarsForDates(allDates, 15);
+
+    const question = assembleEpisodeQuestion({
+      symbol: 'MRVL.US',
+      layer: 'high-vol-tech',
+      cutoffDate,
+      basePeriod: '15m',
+      baseBars,
+      midBars: intradayBarsForDates(allDates, 60),
+      topBars: dailyBars(cutoffDate),
+      horizonSessions: 1,
+      calendar: {},
+    });
+
+    const cutoffIso = marketCloseIso(cutoffDate);
+    const expectedBucketStart = periodBucketStart('1h', cutoffIso);
+    const bucketBaseBars = baseBars.filter(
+      (b) => b.time === timeAt(cutoffDate, 15 * 60 + 30) || b.time === timeAt(cutoffDate, 15 * 60 + 45),
+    );
+    expect(bucketBaseBars).toHaveLength(2);
+
+    const lastMidBar = question.fixtures.kline['1h'].at(-1)!;
+    expect(Date.parse(lastMidBar.time)).toBe(Date.parse(expectedBucketStart));
+    expect(Number(lastMidBar.open)).toBe(Number(bucketBaseBars[0].open));
+    expect(Number(lastMidBar.close)).toBe(Number(bucketBaseBars[1].close));
+    expect(Number(lastMidBar.high)).toBe(Math.max(...bucketBaseBars.map((b) => Number(b.high))));
+    expect(Number(lastMidBar.low)).toBe(Math.min(...bucketBaseBars.map((b) => Number(b.low))));
+    expect(Number(lastMidBar.volume)).toBe(
+      bucketBaseBars.reduce((sum, b) => sum + Number(b.volume), 0),
+    );
+  });
+
+  it('rejects a 5m-base case with insufficient mid-tier (15m) history, naming the tier', () => {
+    const cutoffDate = '2026-03-25';
+    const pastDates = businessDates(dateOffset(cutoffDate, -60), cutoffDate);
+    const futureDates = businessDates(dateOffset(cutoffDate, 1), dateOffset(cutoffDate, 20)).slice(0, 4);
+    const allDates = [...pastDates, ...futureDates];
+
+    expect(() =>
+      assembleEpisodeQuestion({
+        symbol: 'MRVL.US',
+        layer: 'high-vol-tech',
+        cutoffDate,
+        basePeriod: '5m',
+        baseBars: intradayBarsForDates(allDates, 5),
+        midBars: intradayBarsForDates(pastDates.slice(-3), 15),
+        topBars: intradayBarsForDates(allDates, 60),
+        horizonSessions: 4,
+      }),
+    ).toThrow('insufficient 15m history');
   });
 });
