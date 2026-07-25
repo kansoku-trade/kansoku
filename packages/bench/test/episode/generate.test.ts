@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { QuoteBar } from '../../src/generate/assemble.js';
 import {
-  EPISODE_ENTRY_EXPIRY_SESSIONS,
   EPISODE_REQUIRED_BASE,
   EPISODE_REQUIRED_DAY,
   EPISODE_REQUIRED_H1,
@@ -9,6 +8,7 @@ import {
   EPISODE_REQUIRED_TOP,
   EPISODE_REQUIRED_WEEK,
   assembleEpisodeQuestion,
+  generateEpisodeCase,
   marketCloseIso,
 } from '../../src/episode/generate.js';
 import { periodBucketStart } from '../../src/episode/periods.js';
@@ -194,7 +194,32 @@ describe('assembleEpisodeQuestion', () => {
     expect(question.replay.horizonBars).toBe(10);
     expect(question.replay.bars).toHaveLength(10);
     expect(question.replay.horizonSessions).toBeUndefined();
-    expect(question.replay.entryExpiryBars).toBe(EPISODE_ENTRY_EXPIRY_SESSIONS * 7);
+    expect(question.replay.entryExpiryBars).toBe(1);
+    expect(question.replay.entryExpiryBars!).toBeLessThan(question.replay.horizonBars);
+  });
+
+  it('bounds entryExpiryBars by horizonBars for a 1m-base episode', () => {
+    const cutoffDate = '2026-03-25';
+    const pastDates = businessDates(dateOffset(cutoffDate, -20), cutoffDate);
+    const futureDates = businessDates(dateOffset(cutoffDate, 1), dateOffset(cutoffDate, 20)).slice(0, 1);
+    const allDates = [...pastDates, ...futureDates];
+
+    const question = assembleEpisodeQuestion({
+      symbol: 'MRVL.US',
+      layer: 'high-vol-tech',
+      cutoffDate,
+      basePeriod: '1m',
+      baseBars: intradayBarsForDates(allDates, 1),
+      midBars: intradayBarsForDates(allDates, 5),
+      topBars: intradayBarsForDates(allDates, 15),
+      horizonBars: 180,
+      calendar: {},
+    });
+
+    expect(Value.Check(questionSchema, question)).toBe(true);
+    expect(question.replay.horizonBars).toBe(180);
+    expect(question.replay.entryExpiryBars).toBe(14);
+    expect(question.replay.entryExpiryBars!).toBeLessThan(question.replay.horizonBars);
   });
 
   it('rejects a bars-based horizon that the source data cannot cover', () => {
@@ -243,6 +268,38 @@ describe('assembleEpisodeQuestion', () => {
     expect(firstTopRollup.availableAt).toBe(timeAt(futureDate, 570 + 11 * 5));
     const nativeTopBar = topBars.find((entry) => entry.time === timeAt(futureDate, 570));
     expect(firstTopRollup.bar.close).toBe(nativeTopBar!.close);
+  });
+
+  it('withholds a mid rollup for a bucket the bars-based horizon only partially revealed', () => {
+    const cutoffDate = '2026-03-25';
+    const pastDates = businessDates(dateOffset(cutoffDate, -60), cutoffDate);
+    const futureDates = businessDates(dateOffset(cutoffDate, 1), dateOffset(cutoffDate, 20)).slice(0, 1);
+    const allDates = [...pastDates, ...futureDates];
+    const futureDate = futureDates[0];
+
+    const midBars = intradayBarsForDates(allDates, 15);
+    const topBars = intradayBarsForDates(allDates, 60);
+
+    const question = assembleEpisodeQuestion({
+      symbol: 'MRVL.US',
+      layer: 'high-vol-tech',
+      cutoffDate,
+      basePeriod: '5m',
+      baseBars: intradayBarsForDates(allDates, 5),
+      midBars,
+      topBars,
+      horizonBars: 4,
+      calendar: {},
+    });
+
+    expect(question.replay.bars).toHaveLength(4);
+    expect(question.replay.rollups!['15m']).toHaveLength(1);
+    expect(question.replay.rollups!['15m'][0].availableAt).toBe(timeAt(futureDate, 570 + 2 * 5));
+    const secondBucketNativeBar = midBars.find((entry) => entry.time === timeAt(futureDate, 570 + 3 * 5));
+    expect(
+      question.replay.rollups!['15m'].some((entry) => entry.bar.close === secondBucketNativeBar!.close),
+    ).toBe(false);
+    expect(question.replay.rollups!['1h']).toHaveLength(0);
   });
 
   it('folds a mid-bucket cutoff into a single partial bar covering the whole elapsed part of the bucket', () => {
@@ -301,5 +358,25 @@ describe('assembleEpisodeQuestion', () => {
         horizonSessions: 4,
       }),
     ).toThrow('insufficient 15m history');
+  });
+});
+
+describe('generateEpisodeCase', () => {
+  it('rejects a non-1h base before ever calling the injected fetcher', async () => {
+    const fetchKlineHistory = async (): Promise<QuoteBar[]> => {
+      throw new Error('fetchKlineHistory should not be called');
+    };
+
+    await expect(
+      generateEpisodeCase({
+        symbol: 'MRVL.US',
+        layer: 'high-vol-tech',
+        cutoffDate: '2026-03-25',
+        version: 'v-test',
+        basePeriod: '5m',
+        datasetsRoot: '/does-not-matter',
+        fetchKlineHistory,
+      }),
+    ).rejects.toThrow('cannot fetch 5m kline');
   });
 });

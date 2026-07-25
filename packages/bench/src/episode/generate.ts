@@ -189,18 +189,21 @@ function buildReplayRollups(
   topSource: QuoteBar[],
   baseSource: QuoteBar[],
   replay: QuoteBar[],
+  requireCompleteMidBucket: boolean,
 ): Record<string, ReplayRollupEntry[]> {
   const replayByMidBucket = groupByBucketStart(midPeriod, replay);
-  const baseByMidBucket = groupByBucketStart(midPeriod, baseSource);
   const midByBucket = new Map(midSource.map((bar) => [periodBucketStart(midPeriod, bar.time), bar]));
   const topByBucket = new Map(topSource.map((bar) => [periodBucketStart(topPeriod, bar.time), bar]));
   const midFullByTopBucket = groupByBucketStart(topPeriod, midSource);
 
-  const completeMidBuckets = new Set(
-    [...replayByMidBucket.entries()]
-      .filter(([key, bars]) => bars.length === (baseByMidBucket.get(key)?.length ?? -1))
-      .map(([key]) => key),
-  );
+  const baseByMidBucket = requireCompleteMidBucket ? groupByBucketStart(midPeriod, baseSource) : null;
+  const completeMidBuckets = baseByMidBucket
+    ? new Set(
+        [...replayByMidBucket.entries()]
+          .filter(([key, bars]) => bars.length === (baseByMidBucket.get(key)?.length ?? -1))
+          .map(([key]) => key),
+      )
+    : new Set(replayByMidBucket.keys());
 
   const mid: ReplayRollupEntry[] = [...completeMidBuckets].flatMap((key) => {
     const nativeBar = midByBucket.get(key);
@@ -309,7 +312,10 @@ export function assembleEpisodeQuestion(input: AssembleEpisodeQuestionInput): Qu
 
   const entryExpiryBars =
     input.horizonBars != null
-      ? EPISODE_ENTRY_EXPIRY_SESSIONS * barsPerSession(basePeriod)
+      ? Math.min(
+          EPISODE_ENTRY_EXPIRY_SESSIONS * barsPerSession(basePeriod),
+          Math.ceil((input.horizonBars * EPISODE_ENTRY_EXPIRY_SESSIONS) / EPISODE_DEFAULT_HORIZON_SESSIONS),
+        )
       : barsInFirstSessions(replay, EPISODE_ENTRY_EXPIRY_SESSIONS);
 
   const dayBars =
@@ -358,7 +364,15 @@ export function assembleEpisodeQuestion(input: AssembleEpisodeQuestionInput): Qu
       ...(horizonSessions != null ? { horizonSessions } : {}),
       horizonBars: replay.length,
       bars: replay.map(strip),
-      rollups: buildReplayRollups(ladderMid, ladderTop, midSource, topSource, baseSource, replay),
+      rollups: buildReplayRollups(
+        ladderMid,
+        ladderTop,
+        midSource,
+        topSource,
+        baseSource,
+        replay,
+        input.horizonBars != null,
+      ),
     },
   };
 
