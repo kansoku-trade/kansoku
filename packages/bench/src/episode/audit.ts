@@ -7,6 +7,8 @@ import {
   marketCloseIso,
   marketDate,
   requiredBaseBars,
+  EPISODE_DEFAULT_HORIZON_SESSIONS,
+  EPISODE_ENTRY_EXPIRY_SESSIONS,
   EPISODE_REQUIRED_MID,
   EPISODE_REQUIRED_TOP,
 } from './generate.js';
@@ -14,6 +16,7 @@ import {
   episodePeriodLadder,
   periodBucketKey,
   periodBucketStart,
+  EPISODE_INTRADAY_MINUTES,
   EPISODE_PERIOD_LADDER,
   type EpisodeBasePeriod,
   type EpisodeViewPeriod,
@@ -220,6 +223,25 @@ function baseSessionSpanLabel(period: EpisodeViewPeriod): string {
   return `${period} 基础层至少跨两个交易日，折算 quote 才有效`;
 }
 
+const REGULAR_SESSION_MINUTES = 390;
+
+function barsPerSession(period: EpisodeBasePeriod): number {
+  return Math.ceil(REGULAR_SESSION_MINUTES / EPISODE_INTRADAY_MINUTES[period]);
+}
+
+function barsHorizonEntryExpiry(basePeriod: EpisodeBasePeriod, horizonBars: number): number {
+  return Math.min(
+    EPISODE_ENTRY_EXPIRY_SESSIONS * barsPerSession(basePeriod),
+    Math.ceil((horizonBars * EPISODE_ENTRY_EXPIRY_SESSIONS) / EPISODE_DEFAULT_HORIZON_SESSIONS),
+  );
+}
+
+function entryExpiryLabel(isBarsHorizon: boolean): string {
+  return isBarsHorizon
+    ? '待成交窗口不超过三个交易日等效 bar 数，且不超过总回放 bar 数的 3/40'
+    : '待成交窗口覆盖前三个交易日';
+}
+
 function rollupCountLabel(period: EpisodeViewPeriod): string {
   return period === 'day'
     ? '每个回放交易日都有长桥原生日线'
@@ -391,6 +413,7 @@ export function auditEpisodeQuestion(
   const cutoffDate = marketDate(question.cutoff);
   const sessions = sessionCount(replay);
   const expiryBars = firstSessionBarCount(replay, 3);
+  const isBarsHorizon = question.replay.horizonSessions == null;
 
   add(
     'base-period',
@@ -437,13 +460,15 @@ export function auditEpisodeQuestion(
     replay.length,
     question.replay.horizonBars,
   );
-  add(
-    'horizon-sessions',
-    '回放交易日数',
-    question.replay.horizonSessions === sessions,
-    sessions,
-    question.replay.horizonSessions ?? null,
-  );
+  if (!isBarsHorizon) {
+    add(
+      'horizon-sessions',
+      '回放交易日数',
+      question.replay.horizonSessions === sessions,
+      sessions,
+      question.replay.horizonSessions ?? null,
+    );
+  }
   add(
     'decision-window',
     'B0 起可交易且没有强制决策窗口',
@@ -451,11 +476,14 @@ export function auditEpisodeQuestion(
     null,
     question.replay.decisionExpiryBars ?? null,
   );
+  const expectedEntryExpiryBars = isBarsHorizon
+    ? barsHorizonEntryExpiry(basePeriod, replay.length)
+    : expiryBars;
   add(
     'entry-expiry',
-    '待成交窗口覆盖前三个交易日',
-    question.replay.entryExpiryBars === expiryBars,
-    expiryBars,
+    entryExpiryLabel(isBarsHorizon),
+    question.replay.entryExpiryBars === expectedEntryExpiryBars,
+    expectedEntryExpiryBars,
     question.replay.entryExpiryBars ?? null,
   );
   add(

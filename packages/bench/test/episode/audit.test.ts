@@ -74,6 +74,26 @@ function fivePeriodFixture(cutoffDate = '2026-03-25', horizonSessions = 4) {
   });
 }
 
+function fivePeriodBarsHorizonFixture(cutoffDate = '2026-03-25', horizonBars = 156) {
+  const pastDates = businessDates(dateOffset(cutoffDate, -60), cutoffDate);
+  const futureDates = businessDates(dateOffset(cutoffDate, 1), dateOffset(cutoffDate, 20)).slice(
+    0,
+    10,
+  );
+  const allDates = [...pastDates, ...futureDates];
+  return assembleEpisodeQuestion({
+    symbol: 'MRVL.US',
+    layer: 'high-vol-tech',
+    cutoffDate,
+    basePeriod: '5m',
+    baseBars: intradayBarsForDates(allDates, 5),
+    midBars: intradayBarsForDates(allDates, 15),
+    topBars: intradayBarsForDates(allDates, 60),
+    horizonBars,
+    calendar: {},
+  });
+}
+
 function onePeriodFixture(cutoffDate = '2026-03-25', horizonSessions = 4) {
   const pastDates = businessDates(dateOffset(cutoffDate, -20), cutoffDate);
   const futureDates = businessDates(dateOffset(cutoffDate, 1), dateOffset(cutoffDate, 20)).slice(
@@ -329,6 +349,33 @@ describe('episode data audit — five-period ladder', () => {
     expect(audit.passed).toBe(false);
     expect(audit.checks.find((check) => check.id === 'source-h1-history')).toMatchObject({
       status: 'fail',
+    });
+  });
+
+  it('passes a well-formed 5m case with a bars-based horizon', () => {
+    const question = fivePeriodBarsHorizonFixture();
+    expect(question.replay.horizonSessions).toBeUndefined();
+    expect(question.replay.horizonBars).toBe(156);
+    const audit = auditEpisodeQuestion(question);
+    expect(audit.passed).toBe(true);
+    expect(audit.checks.every((check) => check.status === 'pass')).toBe(true);
+    expect(audit.checks.map((check) => check.id)).not.toContain('horizon-sessions');
+    expect(audit.checks.find((check) => check.id === 'entry-expiry')).toMatchObject({
+      status: 'pass',
+      expected: 12,
+      actual: 12,
+    });
+  });
+
+  it('fails, naming entry-expiry, when entryExpiryBars is wrong for a bars-based horizon', () => {
+    const question = fivePeriodBarsHorizonFixture();
+    question.replay.entryExpiryBars = 999;
+    const audit = auditEpisodeQuestion(question);
+    expect(audit.passed).toBe(false);
+    expect(audit.checks.find((check) => check.id === 'entry-expiry')).toMatchObject({
+      status: 'fail',
+      expected: 12,
+      actual: 999,
     });
   });
 });
