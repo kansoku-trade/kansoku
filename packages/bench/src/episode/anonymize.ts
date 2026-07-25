@@ -131,6 +131,21 @@ export function anonymizeEpisodeQuestion(
 ): { question: Question; provenance: BlindCaseProvenance; epilogue?: RawBar[] } {
   if (!/^ASSET\d{3}$/.test(transform.alias))
     throw new Error(`invalid blind alias: ${transform.alias}`);
+  if (epilogueBars?.length) {
+    const lastCaseBar = source.replay.bars.at(-1);
+    if (lastCaseBar && Date.parse(epilogueBars[0].time) <= Date.parse(lastCaseBar.time)) {
+      throw new Error(
+        `blind epilogue must start strictly after the case's last bar: case ends ${lastCaseBar.time}, epilogue starts ${epilogueBars[0].time}`,
+      );
+    }
+    for (let index = 1; index < epilogueBars.length; index++) {
+      if (Date.parse(epilogueBars[index].time) <= Date.parse(epilogueBars[index - 1].time)) {
+        throw new Error(
+          `blind epilogue bars must be strictly increasing in time: ${epilogueBars[index - 1].time} then ${epilogueBars[index].time}`,
+        );
+      }
+    }
+  }
   const sourceCutoffDate = marketDate(source.cutoff);
   const sourceDateMs = Date.parse(`${sourceCutoffDate}T00:00:00Z`);
   const syntheticDateMs = Date.parse(`${transform.syntheticCutoff}T00:00:00Z`);

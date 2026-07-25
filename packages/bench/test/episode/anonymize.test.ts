@@ -545,7 +545,7 @@ const EPILOGUE_BARS: RawBar[] = [
 
 const EPILOGUE_LEAK_CANARY_BARS: RawBar[] = [
   rawBar('2024-03-28T13:40:00Z', 50.4, 50.9, 50.1, 50.7, 800),
-  rawBar('1901-01-01T00:00:00Z', 918273.645, 918273.645, 918273.645, 918273.645, 837465921),
+  rawBar('2099-01-01T00:00:00Z', 918273.645, 918273.645, 918273.645, 918273.645, 837465921),
 ];
 
 describe('blind episode anonymization — epilogue', () => {
@@ -587,6 +587,35 @@ describe('blind episode anonymization — epilogue', () => {
     expect(Number(epilogue![0].open)).not.toBeCloseTo(independentlyScaledOpen, 0);
   });
 
+  it("rejects an epilogue that does not start strictly after the case's last bar", () => {
+    const nonAdjacentEpilogue: RawBar[] = [
+      rawBar('2024-03-28T13:35:00Z', 50.4, 50.9, 50.1, 50.7, 800),
+    ];
+
+    expect(() =>
+      anonymizeEpisodeQuestion(
+        FIVE_MIN_SOURCE,
+        { alias: 'ASSET017', syntheticCutoff: '2026-03-25' },
+        nonAdjacentEpilogue,
+      ),
+    ).toThrow("blind epilogue must start strictly after the case's last bar");
+  });
+
+  it('rejects an epilogue whose own bars are not strictly increasing in time', () => {
+    const outOfOrderEpilogue: RawBar[] = [
+      rawBar('2024-03-28T13:45:00Z', 50.7, 50.8, 39, 39.5, 100000),
+      rawBar('2024-03-28T13:40:00Z', 50.4, 50.9, 50.1, 50.7, 800),
+    ];
+
+    expect(() =>
+      anonymizeEpisodeQuestion(
+        FIVE_MIN_SOURCE,
+        { alias: 'ASSET018', syntheticCutoff: '2026-03-25' },
+        outOfOrderEpilogue,
+      ),
+    ).toThrow('blind epilogue bars must be strictly increasing in time');
+  });
+
   it('shifts the epilogue bars by the same dayShift as the case body', () => {
     const { provenance, epilogue } = anonymizeEpisodeQuestion(
       FIVE_MIN_SOURCE,
@@ -594,8 +623,8 @@ describe('blind episode anonymization — epilogue', () => {
       EPILOGUE_BARS,
     );
 
-    const expectedDate = dateOffset(marketDate('2024-03-28T13:40:00Z'), provenance.dayShift);
-    expect(marketDate(epilogue![0].time)).toBe(expectedDate);
+    expect(provenance.dayShift).toBe(728);
+    expect(epilogue![0].time).toBe('2026-03-26T13:40:00.000Z');
   });
 
   it('keeps the epilogue out of the returned question and carries no recognisable real timestamp or price into either output', () => {
@@ -608,7 +637,7 @@ describe('blind episode anonymization — epilogue', () => {
     expect(question).not.toHaveProperty('epilogue');
     const serializedQuestion = JSON.stringify(question);
     const serializedEpilogue = JSON.stringify(epilogue);
-    for (const needle of ['1901-01-01', '918273.645', '837465921']) {
+    for (const needle of ['2099-01-01', '918273.645', '837465921']) {
       expect(serializedQuestion).not.toContain(needle);
       expect(serializedEpilogue).not.toContain(needle);
     }
