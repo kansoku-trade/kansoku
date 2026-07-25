@@ -230,7 +230,46 @@ const FIVE_MIN_SOURCE: Question = {
           bar: rawBar('2024-03-27T19:30:00Z', 49.6, 50.25, 49.3, 50.05, 6500),
         },
       ],
+      'week': [
+        {
+          availableAt: '2024-01-15T20:00:00Z',
+          bar: rawBar('2024-01-15T20:00:00Z', 24681.357, 24681.357, 24681.357, 24681.357, 13579246),
+        },
+      ],
     },
+  },
+};
+
+const FIFTEEN_MIN_DAY_SOURCE: Question = {
+  id: 'swing-FMDAY-2024-03-27-01',
+  bank: 'swing',
+  symbol: 'ACME.US',
+  cutoff: '2024-03-27T20:00:00Z',
+  layer: 'high-vol-tech',
+  adversarial: false,
+  fixtures: {
+    kline: {
+      '15m': [rawBar('2024-03-27T19:45:00Z', 49.7, 50.2, 49.5, 50, 1000)],
+      '1h': [
+        rawBar('2024-03-27T13:30:00Z', 49, 49.6, 48.5, 49.4, 7000),
+        rawBar('2024-03-27T19:30:00Z', 49.6, 50, 49.3, 49.7, 6500),
+      ],
+      'day': [
+        rawBar('2024-03-26T20:00:00Z', 47, 47.5, 46.5, 47.2, 40000),
+        rawBar('2024-03-27T20:00:00Z', 49, 51, 48, 50, 50000),
+      ],
+    },
+    indicators: {},
+    quote: { last: 50 },
+    capitalFlow: {},
+    news: [],
+    fundamentals: {},
+    calendar: {},
+  },
+  replay: {
+    basePeriod: '15m',
+    horizonBars: 1,
+    bars: [rawBar('2024-03-28T13:30:00Z', 50.1, 50.5, 49.8, 50.3, 1200)],
   },
 };
 
@@ -326,12 +365,16 @@ describe('blind episode anonymization — five-period ladder', () => {
     );
     expect(question.fixtures.kline).not.toHaveProperty('day');
     expect(question.fixtures.kline).not.toHaveProperty('week');
+    expect(Object.keys(question.replay.rollups ?? {}).sort()).toEqual(['15m', '1h'].sort());
+    expect(question.replay.rollups).not.toHaveProperty('week');
     expect(Value.Check(questionSchema, question)).toBe(true);
 
     const serialized = JSON.stringify(question);
     expect(serialized).not.toContain('2024-01-15');
     expect(serialized).not.toContain('12345.678');
     expect(serialized).not.toContain('87654321');
+    expect(serialized).not.toContain('24681.357');
+    expect(serialized).not.toContain('13579246');
   });
 
   it('derives a well-formed per-trading-day quote when the ladder has no day tier, with the cutoff close landing at 100', () => {
@@ -418,6 +461,32 @@ describe('blind episode anonymization — five-period ladder', () => {
         syntheticCutoff: '2026-03-25',
       }),
     ).toThrow('insufficient 5m history for a stable blind quote: need 2 trading days, got 1');
+  });
+});
+
+describe('blind episode anonymization — day-tier top period (15m ladder)', () => {
+  it('keeps the native cutoff-day bar as-is instead of folding it from 1h bars', () => {
+    const { question, provenance } = anonymizeEpisodeQuestion(FIFTEEN_MIN_DAY_SOURCE, {
+      alias: 'ASSET010',
+      syntheticCutoff: '2026-03-25',
+    });
+
+    const scale = provenance.priceScale;
+    const cutoffDayBar = question.fixtures.kline.day!.at(-1)!;
+    expect(question.fixtures.kline.day).toHaveLength(2);
+    expect(cutoffDayBar.open).toBeCloseTo(49 * scale, 6);
+    expect(cutoffDayBar.high).toBeCloseTo(51 * scale, 6);
+    expect(cutoffDayBar.low).toBeCloseTo(48 * scale, 6);
+    expect(cutoffDayBar.close).toBeCloseTo(50 * scale, 6);
+    expect(cutoffDayBar.volume).toBeCloseTo(50000 * provenance.volumeScale, 3);
+
+    expect(question.fixtures.quote.high).toBeCloseTo(51 * scale, 6);
+    expect(question.fixtures.quote.low).toBeCloseTo(48 * scale, 6);
+    expect(question.fixtures.quote.last).toBeCloseTo(50 * scale, 6);
+    expect(question.fixtures.quote.volume).toBeCloseTo(50000 * provenance.volumeScale, 3);
+
+    const quoteCheck = auditEpisodeQuestion(question).checks.find((check) => check.id === 'quote');
+    expect(quoteCheck?.status).toBe('pass');
   });
 });
 

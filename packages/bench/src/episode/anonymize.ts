@@ -167,7 +167,7 @@ export function anonymizeEpisodeQuestion(
   const topBars = transformBars(questionBarsForPeriod(source, topPeriod));
 
   const lastMidBar = midBars.at(-1);
-  if (lastMidBar) {
+  if (topPeriod !== 'day' && lastMidBar) {
     const cutoffTopKey = periodBucketKey(topPeriod, lastMidBar.time);
     const currentTopBucketMidBars = midBars.filter(
       (bar) => periodBucketKey(topPeriod, bar.time) === cutoffTopKey,

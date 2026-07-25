@@ -26,6 +26,7 @@ import {
   EPISODE_INTRADAY_MINUTES,
   type EpisodeViewPeriod,
 } from './periods.js';
+import { questionLadder } from './questionLadder.js';
 import type { EpisodeDatasetPlan, EpisodeDatasetPlanCase } from './datasetPlan.js';
 
 export interface BuildEpisodeDatasetOptions {
@@ -306,6 +307,7 @@ function policyChecks(
       realIdentityRetained: question.symbol === entry.symbol,
     };
   }
+  const ladder = questionLadder(question);
   return {
     cutoffSynthetic2026: marketDate(question.cutoff).startsWith('2026-'),
     replaySynthetic2026: replayYears2026,
@@ -317,6 +319,12 @@ function policyChecks(
     calendarEmpty: Object.keys(question.fixtures.calendar).length === 0,
     fundamentalsEmpty: Object.keys(question.fixtures.fundamentals).length === 0,
     capitalFlowEmpty: Object.keys(question.fixtures.capitalFlow).length === 0,
+    klineKeysInLadder: Object.keys(question.fixtures.kline).every((key) =>
+      ladder.includes(key as EpisodeViewPeriod),
+    ),
+    rollupKeysInLadder: Object.keys(question.replay.rollups ?? {}).every((key) =>
+      ladder.includes(key as EpisodeViewPeriod),
+    ),
   };
 }
 

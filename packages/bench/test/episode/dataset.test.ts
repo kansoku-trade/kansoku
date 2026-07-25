@@ -160,3 +160,47 @@ describe('buildEpisodeDataset basePeriod threading', () => {
     expect(question.fixtures.kline.week).toBeUndefined();
   });
 });
+
+describe('buildEpisodeDataset blind-anonymous policy checks', () => {
+  it('flags klineKeysInLadder/rollupKeysInLadder true for a ladder-conformant 5m blind case', async () => {
+    const cutoffDate = '2026-03-25';
+    const syntheticCutoff = dateOffset(cutoffDate, 7);
+    const pastDates = businessDates(dateOffset(cutoffDate, -60), cutoffDate);
+    const futureDates = businessDates(dateOffset(cutoffDate, 1), dateOffset(cutoffDate, 20)).slice(
+      0,
+      10,
+    );
+    const allDates = [...pastDates, ...futureDates];
+
+    const plan = assertEpisodeDatasetPlan({
+      schemaVersion: 1,
+      id: `test-blind-${Math.random().toString(36).slice(2)}`,
+      cohort: 'blind-anonymous',
+      basePeriod: '5m',
+      horizonSessions: 5,
+      cases: [{ symbol: 'MU.US', cutoff: cutoffDate, alias: 'ASSET001', syntheticCutoff }],
+    });
+
+    const barsByPeriod: Partial<Record<EpisodeKlinePeriod, QuoteBar[]>> = {
+      '5m': intradayBarsForDates(allDates, 5),
+      '15m': intradayBarsForDates(allDates, 15),
+      '1h': intradayBarsForDates(allDates, 60),
+    };
+    const fetchKlineHistory = async (
+      _symbol: string,
+      period: EpisodeKlinePeriod,
+      _start: string,
+      _end: string,
+    ): Promise<QuoteBar[]> => barsByPeriod[period] ?? [];
+
+    const datasetsRoot = mkdtempSync(join(tmpdir(), 'bench-dataset-'));
+    const sourceCacheRoot = mkdtempSync(join(tmpdir(), 'bench-dataset-cache-'));
+
+    await buildEpisodeDataset({ plan, datasetsRoot, sourceCacheRoot, fetchKlineHistory });
+    const quality = await finalizeEpisodeDataset(plan, datasetsRoot);
+
+    expect(quality.passed).toBe(true);
+    expect(quality.cases[0].policyChecks.klineKeysInLadder).toBe(true);
+    expect(quality.cases[0].policyChecks.rollupKeysInLadder).toBe(true);
+  });
+});

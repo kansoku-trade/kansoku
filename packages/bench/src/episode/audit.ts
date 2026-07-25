@@ -5,6 +5,7 @@ import type { EpisodeKlinePeriod } from '../generate/source.js';
 import type { Question, ReplayRollupEntry } from '../schema/question.js';
 import {
   barsPerSession,
+  deriveDayBarsFromBase,
   marketCloseIso,
   marketDate,
   requiredBaseBars,
@@ -256,19 +257,6 @@ function partialBucketDetail(period: EpisodeViewPeriod): string {
 
 function distinctBucketCount(period: EpisodeViewPeriod, bars: RawBar[]): number {
   return new Set(bars.map((bar) => periodBucketKey(period, bar.time))).size;
-}
-
-function foldByDay(bars: RawBar[]): RawBar[] {
-  const groups = new Map<string, RawBar[]>();
-  for (const bar of bars) {
-    const key = periodBucketKey('day', bar.time);
-    const group = groups.get(key);
-    if (group) group.push(bar);
-    else groups.set(key, [bar]);
-  }
-  return [...groups.values()]
-    .map((group) => aggregate(periodBucketStart('day', group[0].time), group as QuoteBar[]))
-    .sort((a, b) => Date.parse(a.time) - Date.parse(b.time));
 }
 
 function partialBucketAggregate(
@@ -531,7 +519,7 @@ export function auditEpisodeQuestion(
   };
   const quoteDays = initialTierBarsByPeriod.day?.length
     ? initialTierBarsByPeriod.day
-    : foldByDay(initialBase);
+    : deriveDayBarsFromBase(initialBase);
   const cutoffDay = quoteDays.at(-1);
   const previousDay = quoteDays.at(-2);
   const quote = question.fixtures.quote as Record<string, unknown>;

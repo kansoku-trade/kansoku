@@ -246,3 +246,48 @@ describe('episode rolling view for a non-1h base period', () => {
     expect(view.fixtures.kline['1h']).toEqual([]);
   });
 });
+
+const FIVE_MINUTE_NO_DAY_TIER_QUESTION: Question = {
+  id: 'swing-FIVEMIN-NODAY-01',
+  bank: 'swing',
+  symbol: 'MU.US',
+  cutoff: '2026-03-20T20:00:00Z',
+  layer: 'high-vol-tech',
+  adversarial: false,
+  fixtures: {
+    kline: {
+      '5m': [
+        bar('2026-03-19T13:30:00Z', 90, 91, 89, 90.5, 500),
+        bar('2026-03-19T19:55:00Z', 90.5, 91.5, 90, 91, 520),
+        bar('2026-03-20T13:30:00Z', 91, 92, 90.5, 91.5, 540),
+        bar('2026-03-20T19:55:00Z', 91.5, 92.5, 91, 92, 560),
+      ],
+      '15m': [],
+      '1h': [],
+    },
+    indicators: {},
+    quote: { last: 92, prev_close: 91 },
+    capitalFlow: {},
+    news: [],
+    fundamentals: {},
+    calendar: {},
+  },
+  replay: {
+    basePeriod: '5m',
+    horizonBars: 1,
+    bars: [bar('2026-03-23T13:30:00Z', 92.1, 92.6, 91.8, 92.3, 100)],
+  },
+};
+
+describe('episode quote day-bar seeding for ladders without a native day tier', () => {
+  it('keeps prev_close populated at cursor -1 (nothing revealed yet)', () => {
+    const view = buildEpisodeQuestionViewAtCursor(FIVE_MINUTE_NO_DAY_TIER_QUESTION, -1);
+    expect(view.fixtures.quote.prev_close).toBe(91);
+  });
+
+  it('keeps prev_close populated past cursor 0 instead of dropping to null', () => {
+    const view = buildEpisodeQuestionViewAtCursor(FIVE_MINUTE_NO_DAY_TIER_QUESTION, 0);
+    expect(view.fixtures.quote.prev_close).not.toBeNull();
+    expect(view.fixtures.quote.prev_close).toBe(92);
+  });
+});

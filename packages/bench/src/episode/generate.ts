@@ -166,7 +166,7 @@ function foldInitialTier(
   return [...completed, ...(partial ? [partial] : [])].slice(-required);
 }
 
-function deriveDayBarsFromBase(bars: QuoteBar[]): QuoteBar[] {
+export function deriveDayBarsFromBase(bars: QuoteBar[]): QuoteBar[] {
   const groups = new Map<string, QuoteBar[]>();
   for (const bar of bars) {
     const date = marketDate(bar.time);

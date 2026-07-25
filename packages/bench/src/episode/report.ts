@@ -93,8 +93,8 @@ function buildConfigSummary(firstQuestion: Question | undefined): EpisodeConfigS
     bars: firstQuestion.replay.horizonBars,
     decisionExpiry: firstQuestion.replay.decisionExpiryBars ?? null,
     expiry: firstQuestion.replay.entryExpiryBars ?? null,
-    dayRollups: firstQuestion.replay.rollups?.day.length ?? 0,
-    weekRollups: firstQuestion.replay.rollups?.week.length ?? 0,
+    dayRollups: firstQuestion.replay.rollups?.day?.length ?? 0,
+    weekRollups: firstQuestion.replay.rollups?.week?.length ?? 0,
   };
 }
 
