@@ -9,11 +9,18 @@ import type {
 import type { Question } from '../schema/question.js';
 import type { Submission } from '../schema/submission.js';
 import type { EpisodeTradeReason } from '../schema/tradeReason.js';
-import { marketDate, weekKey } from './generate.js';
+import {
+  episodePeriodLadder,
+  isEpisodeViewPeriod,
+  periodBucketKey,
+  type EpisodeBasePeriod,
+  type EpisodeViewPeriod,
+} from './periods.js';
 import { questionBasePeriod } from './questionLadder.js';
 import { buildEpisodeQuestionViewAtCursor } from './view.js';
 
 export type EpisodePhase = 'flat' | 'pending' | 'open' | 'terminal';
+export type EpisodeEntryMode = 'limit' | 'market';
 export type EpisodeEvent =
   | 'observed'
   | 'abstained'
@@ -38,6 +45,7 @@ export interface PendingOrderState {
   target: number;
   waitedBars: number;
   entryReason: EpisodeTradeReason;
+  entryMode: EpisodeEntryMode;
 }
 
 export interface PositionState {
@@ -282,6 +290,7 @@ function validateDirectionalSubmission(
   decisionBar: number,
   decisionTime: string,
   entryReason: EpisodeTradeReason,
+  entryMode: EpisodeEntryMode,
 ): PendingOrderState {
   if (submission.direction === 'neutral') throw new Error('neutral submission has no order');
   const plan = submission.entry_plan;
@@ -307,6 +316,7 @@ function validateDirectionalSubmission(
     target,
     waitedBars: 0,
     entryReason,
+    entryMode,
   };
 }
 
@@ -341,6 +351,7 @@ export function submitEpisode(
   question: Question,
   submission: Submission,
   _options: EpisodeEngineOptions = {},
+  entryMode: EpisodeEntryMode = 'limit',
 ): EpisodeAdvanceResult {
   if (state.phase === 'terminal') throw new Error('episode already terminated');
   if (state.phase !== 'flat') throw new Error('a new prediction is only valid while flat');
@@ -388,6 +399,7 @@ export function submitEpisode(
     decisionBar,
     decisionTime,
     reason,
+    entryMode,
   );
   const submitted: EpisodeState = {
     ...recorded,
@@ -705,7 +717,10 @@ function advanceEpisodeSingle(
   if (working.phase === 'pending' && working.order) {
     const order = { ...working.order, waitedBars: working.order.waitedBars + 1 };
     const reference = visibleReferencePrice(question, state);
-    const fill = entryFill(order, reference, bar);
+    const fill: EntryFill | null =
+      order.entryMode === 'market'
+        ? { price: numberOf(bar.open), timing: 'open' }
+        : entryFill(order, reference, bar);
     if (fill !== null) {
       roseIntoFill = order.entry >= reference;
       const fillPrice = fill.price;
@@ -854,23 +869,32 @@ function isBoringEvent(event: EpisodeEvent): boolean {
   return event === 'holding' || event === 'waiting_fill' || event === 'observed';
 }
 
+function resolveBatchPeriod(
+  basePeriod: EpisodeBasePeriod,
+  requested: EpisodeViewPeriod | 'h1' | undefined,
+): EpisodeViewPeriod {
+  if (requested === undefined || requested === 'h1') return basePeriod;
+  if (!isEpisodeViewPeriod(basePeriod, requested)) {
+    const ladder = episodePeriodLadder(basePeriod).join(', ');
+    throw new Error(`period '${requested}' is not part of the ${basePeriod} ladder (${ladder})`);
+  }
+  return requested;
+}
+
 function computeBatchTargetBars(
   state: EpisodeState,
   question: Question,
   action: Extract<EpisodeTradeAction, { type: 'hold' }>,
 ): number {
   const barsRequested = action.bars ?? 1;
-  const period = action.period ?? 'h1';
+  const basePeriod = questionBasePeriod(question);
+  const period = resolveBatchPeriod(basePeriod, action.period);
   const allBars = question.replay.bars;
   const remaining = allBars.length - state.cursor - 1;
   if (remaining <= 0) return 0;
-  if (period === 'h1') return Math.min(barsRequested, remaining);
-  const keyOf =
-    period === 'day'
-      ? (time: string) => marketDate(time)
-      : (time: string) => weekKey(marketDate(time));
-  const startKey =
-    state.cursor >= 0 ? keyOf(allBars[state.cursor].time) : keyOf(question.cutoff);
+  if (period === basePeriod) return Math.min(barsRequested, remaining);
+  const keyOf = (time: string) => periodBucketKey(period, time);
+  const startKey = state.cursor >= 0 ? keyOf(allBars[state.cursor].time) : keyOf(question.cutoff);
   let currentKey = startKey;
   let unitsCompleted = 0;
   let lastMatchingIndex = state.cursor;

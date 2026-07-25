@@ -6,6 +6,7 @@ import {
   observeEpisode,
   submitEpisode,
 } from '../../src/episode/engine.js';
+import { periodBucketKey } from '../../src/episode/periods.js';
 import type { EpisodeTradeAction } from '../../src/schema/episode.js';
 import type { Question } from '../../src/schema/question.js';
 import type { Submission } from '../../src/schema/submission.js';
@@ -71,6 +72,10 @@ function neutral(): Submission {
     decision_reason: { category: 'no_setup', summary: '当前没有满足风险收益要求的机会。' },
     comment: '继续观察',
   };
+}
+
+function holdAction<T extends Record<string, unknown>>(action: T): EpisodeTradeAction {
+  return action as EpisodeTradeAction;
 }
 
 function reasoned<T extends Record<string, unknown>>(action: T): EpisodeTradeAction {
@@ -375,5 +380,237 @@ describe('episode engine', () => {
     expect(first.newBars.h1).toEqual([oneMinute.replay.bars[0]]);
     expect(first.newBars.day).toEqual([]);
     expect(first.newBars.week).toEqual([]);
+  });
+
+  function fiveMinuteQuestion(bars: ReturnType<typeof bar>[], horizonBars = bars.length): Question {
+    return {
+      id: 'swing-FIVEMIN-01',
+      bank: 'swing',
+      symbol: 'MU.US',
+      cutoff: '2026-03-23T13:00:00Z',
+      layer: 'high-vol-tech',
+      adversarial: false,
+      fixtures: {
+        kline: { day: [] },
+        indicators: {},
+        quote: { last: 100 },
+        capitalFlow: {},
+        news: [],
+        fundamentals: {},
+        calendar: {},
+      },
+      replay: { basePeriod: '5m', entryExpiryBars: 3, horizonBars, bars },
+    };
+  }
+
+  it('advances a mid-tier period on a 5m episode by exactly its base-bar count and lands on the bucket boundary', () => {
+    const q = fiveMinuteQuestion([
+      bar('2026-03-23T13:30:00Z', 100, 101, 99, 100.2),
+      bar('2026-03-23T13:35:00Z', 100.2, 101, 99.5, 100.4),
+      bar('2026-03-23T13:40:00Z', 100.4, 101, 99.5, 100.6),
+      bar('2026-03-23T13:45:00Z', 100.6, 101, 100, 100.8),
+      bar('2026-03-23T13:50:00Z', 100.8, 101.2, 100.2, 100.9),
+      bar('2026-03-23T13:55:00Z', 100.9, 101.3, 100.3, 101),
+      bar('2026-03-23T14:00:00Z', 101, 101.5, 100.5, 101.2),
+    ]);
+    let state = createEpisodeState();
+    state = observeEpisode(state, q).state;
+    state = observeEpisode(state, q).state;
+    state = observeEpisode(state, q).state;
+    expect(state.cursor).toBe(2);
+
+    const action = holdAction({ type: 'hold', bars: 1, period: '15m' });
+    const result = advanceEpisode(state, q, action);
+
+    expect(result.batchAdvancedBars).toBe(3);
+    expect(result.state.cursor).toBe(5);
+    expect(periodBucketKey('15m', q.replay.bars[5].time)).not.toBe(
+      periodBucketKey('15m', q.replay.bars[6].time),
+    );
+  });
+
+  it('rejects a batch-advance period outside the episode ladder instead of silently falling back', () => {
+    const oneMinute: Question = {
+      id: 'swing-ONEMIN-02',
+      bank: 'swing',
+      symbol: 'MU.US',
+      cutoff: '2026-03-23T13:25:00Z',
+      layer: 'high-vol-tech',
+      adversarial: false,
+      fixtures: {
+        kline: { day: [] },
+        indicators: {},
+        quote: { last: 100 },
+        capitalFlow: {},
+        news: [],
+        fundamentals: {},
+        calendar: {},
+      },
+      replay: {
+        basePeriod: '1m',
+        horizonBars: 3,
+        bars: [
+          bar('2026-03-23T13:30:00Z', 100, 101, 99, 100.5),
+          bar('2026-03-23T13:31:00Z', 100.5, 101.5, 100, 101),
+          bar('2026-03-23T13:32:00Z', 101, 102, 100.5, 101.5),
+        ],
+      },
+    };
+    const action = holdAction({ type: 'hold', bars: 1, period: '1h' });
+    expect(() => advanceEpisode(createEpisodeState(), oneMinute, action)).toThrow(
+      "period '1h' is not part of the 1m ladder (1m, 5m, 15m)",
+    );
+  });
+
+  it('a batch advance across a stop-hit bar produces the identical trade outcome to stepping one bar at a time', () => {
+    const bars = [
+      bar('2026-03-23T13:30:00Z', 100, 101, 99, 100.3),
+      bar('2026-03-23T13:35:00Z', 100.3, 101, 100, 100.5),
+      bar('2026-03-23T13:40:00Z', 100.5, 101, 94, 95),
+      bar('2026-03-23T13:45:00Z', 95, 96, 93, 94),
+      bar('2026-03-23T13:50:00Z', 94, 95, 92, 93),
+      bar('2026-03-23T13:55:00Z', 93, 94, 91, 92),
+      bar('2026-03-23T14:00:00Z', 92, 93, 90, 91),
+      bar('2026-03-23T14:05:00Z', 91, 92, 89, 90),
+      bar('2026-03-23T14:10:00Z', 90, 91, 88, 89),
+    ];
+    const q = fiveMinuteQuestion(bars);
+    const plan = prediction('long', 100, 97, 110);
+
+    const filledA = advanceEpisode(
+      submitEpisode(createEpisodeState(), q, plan).state,
+      q,
+      reasoned({ type: 'hold' }),
+    );
+    const stepA1 = advanceEpisode(filledA.state, q, reasoned({ type: 'hold' }));
+    const stepA2 = advanceEpisode(stepA1.state, q, reasoned({ type: 'hold' }));
+    expect(stepA2.event).toBe('stop_hit');
+
+    const filledB = advanceEpisode(
+      submitEpisode(createEpisodeState(), q, plan).state,
+      q,
+      reasoned({ type: 'hold' }),
+    );
+    const batchB = advanceEpisode(
+      filledB.state,
+      q,
+      reasoned({ type: 'hold', bars: 5, period: '15m' }),
+    );
+
+    expect(batchB.event).toBe('stop_hit');
+    expect(batchB.batchAdvancedBars).toBe(2);
+    expect(batchB.state.cursor).toBe(stepA2.state.cursor);
+    expect(batchB.state.phase).toBe(stepA2.state.phase);
+    expect(batchB.state.trades).toEqual(stepA2.state.trades);
+  });
+
+  it('1h batch advance by day and by week behaves exactly as today', () => {
+    const bars = [
+      bar('2026-03-23T14:30:00Z', 100, 103, 99, 101),
+      bar('2026-03-23T15:30:00Z', 101, 104, 100, 102),
+      bar('2026-03-23T16:30:00Z', 102, 105, 101, 103),
+      bar('2026-03-23T17:30:00Z', 103, 106, 102, 104),
+      bar('2026-03-24T14:30:00Z', 104, 107, 103, 105),
+      bar('2026-03-24T15:30:00Z', 105, 108, 104, 106),
+      bar('2026-03-30T14:30:00Z', 106, 109, 105, 107),
+      bar('2026-04-06T14:30:00Z', 107, 110, 106, 108),
+    ];
+    const q = question(bars);
+    let state = createEpisodeState();
+    for (let i = 0; i < 4; i++) state = observeEpisode(state, q).state;
+    expect(state.cursor).toBe(3);
+
+    const dayAction = { type: 'hold', bars: 1, period: 'day' } as EpisodeTradeAction;
+    const dayResult = advanceEpisode(state, q, dayAction);
+    expect(dayResult.batchAdvancedBars).toBe(2);
+    expect(dayResult.state.cursor).toBe(5);
+    expect(periodBucketKey('day', bars[5].time)).not.toBe(periodBucketKey('day', bars[6].time));
+
+    const weekAction = { type: 'hold', bars: 1, period: 'week' } as EpisodeTradeAction;
+    const weekResult = advanceEpisode(dayResult.state, q, weekAction);
+    expect(weekResult.batchAdvancedBars).toBe(1);
+    expect(weekResult.state.cursor).toBe(6);
+    expect(periodBucketKey('week', bars[6].time)).not.toBe(periodBucketKey('week', bars[7].time));
+  });
+
+  it('fills a market-now entry at the next bar open, not the visible price at submission, and still requires stop and target', () => {
+    const q: Question = {
+      id: 'swing-MARKETNOW-01',
+      bank: 'swing',
+      symbol: 'MU.US',
+      cutoff: '2026-03-23T13:00:00Z',
+      layer: 'high-vol-tech',
+      adversarial: false,
+      fixtures: {
+        kline: { day: [] },
+        indicators: {},
+        quote: { last: 95 },
+        capitalFlow: {},
+        news: [],
+        fundamentals: {},
+        calendar: {},
+      },
+      replay: {
+        basePeriod: '1h',
+        entryExpiryBars: 3,
+        horizonBars: 2,
+        bars: [
+          bar('2026-03-23T14:30:00Z', 100, 103, 98, 101),
+          bar('2026-03-23T15:30:00Z', 101, 104, 99, 102),
+        ],
+      },
+    };
+
+    const marketSubmitted = submitEpisode(
+      createEpisodeState(),
+      q,
+      prediction('long', 95, 90, 108),
+      {},
+      'market',
+    );
+    const marketFilled = advanceEpisode(marketSubmitted.state, q, reasoned({ type: 'hold' }));
+    expect(marketFilled.event).toBe('filled');
+    expect(marketFilled.state.phase).toBe('open');
+    expect(marketFilled.state.position).toMatchObject({
+      direction: 'long',
+      entryPrice: 100,
+      entryTime: '2026-03-23T14:30:00Z',
+      stop: 90,
+      target: 108,
+    });
+
+    const limitSubmitted = submitEpisode(createEpisodeState(), q, prediction('long', 100, 90, 108));
+    const limitFilled = advanceEpisode(limitSubmitted.state, q, reasoned({ type: 'hold' }));
+    expect(Object.keys(marketFilled.state.position!).sort()).toEqual(
+      Object.keys(limitFilled.state.position!).sort(),
+    );
+    expect(marketFilled.state.position).toEqual(limitFilled.state.position);
+  });
+
+  it('does not let entryExpiryBars apply to a market-now order', () => {
+    const q = question([
+      bar('2026-03-23T14:30:00Z', 100, 103, 98, 101),
+      bar('2026-03-23T15:30:00Z', 101, 104, 99, 102),
+    ]);
+    const submitted = submitEpisode(
+      createEpisodeState(),
+      q,
+      prediction('long', 100, 95, 120),
+      {},
+      'market',
+    );
+    const filled = advanceEpisode(submitted.state, q, reasoned({ type: 'hold' }));
+    expect(filled.event).toBe('filled');
+    expect(filled.state.order).toBeNull();
+  });
+
+  it('routes market-now entries through the same stop/target validation as limit entries', () => {
+    const q = question();
+    expect(() =>
+      submitEpisode(createEpisodeState(), q, prediction('long', 100, 105, 110), {}, 'market'),
+    ).toThrow('invalid long stop');
+    expect(() =>
+      submitEpisode(createEpisodeState(), q, prediction('long', 100, 95, 90), {}, 'market'),
+    ).toThrow('invalid long target');
   });
 });
