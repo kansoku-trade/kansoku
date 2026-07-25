@@ -135,7 +135,7 @@ function barsInFirstSessions(bars: QuoteBar[], sessions: number): number {
   return count;
 }
 
-function barsPerSession(basePeriod: EpisodeBasePeriod): number {
+export function barsPerSession(basePeriod: EpisodeBasePeriod): number {
   return Math.ceil(REGULAR_SESSION_MINUTES / EPISODE_INTRADAY_MINUTES[basePeriod]);
 }
 

@@ -359,7 +359,26 @@ describe('episode data audit — five-period ladder', () => {
     const audit = auditEpisodeQuestion(question);
     expect(audit.passed).toBe(true);
     expect(audit.checks.every((check) => check.status === 'pass')).toBe(true);
-    expect(audit.checks.map((check) => check.id)).not.toContain('horizon-sessions');
+    expect(audit.checks.map((check) => check.id)).toEqual([
+      'base-period',
+      'initial-5m-count',
+      'initial-15m-count',
+      'initial-h1-count',
+      '5m-session-span',
+      'horizon-bars',
+      'decision-window',
+      'entry-expiry',
+      '15m-rollup-count',
+      'sort-5m',
+      'sort-15m',
+      'sort-h1',
+      'cutoff-timezone',
+      'visibility-boundary',
+      'quote',
+      'indicators',
+      'partial-15m',
+      'partial-h1',
+    ]);
     expect(audit.checks.find((check) => check.id === 'entry-expiry')).toMatchObject({
       status: 'pass',
       expected: 12,

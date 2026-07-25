@@ -4,6 +4,7 @@ import { buildDayIndicators, buildWeekIndicators } from '../generate/indicatorsF
 import type { EpisodeKlinePeriod } from '../generate/source.js';
 import type { Question, ReplayRollupEntry } from '../schema/question.js';
 import {
+  barsPerSession,
   marketCloseIso,
   marketDate,
   requiredBaseBars,
@@ -16,7 +17,6 @@ import {
   episodePeriodLadder,
   periodBucketKey,
   periodBucketStart,
-  EPISODE_INTRADAY_MINUTES,
   EPISODE_PERIOD_LADDER,
   type EpisodeBasePeriod,
   type EpisodeViewPeriod,
@@ -221,12 +221,6 @@ function indicatorsLabel(mid: EpisodeViewPeriod, top: EpisodeViewPeriod): string
 
 function baseSessionSpanLabel(period: EpisodeViewPeriod): string {
   return `${period} 基础层至少跨两个交易日，折算 quote 才有效`;
-}
-
-const REGULAR_SESSION_MINUTES = 390;
-
-function barsPerSession(period: EpisodeBasePeriod): number {
-  return Math.ceil(REGULAR_SESSION_MINUTES / EPISODE_INTRADAY_MINUTES[period]);
 }
 
 function barsHorizonEntryExpiry(basePeriod: EpisodeBasePeriod, horizonBars: number): number {
