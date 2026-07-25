@@ -2,7 +2,14 @@ import { Value } from 'typebox/value';
 import type { RawBar } from '@kansoku/shared/types';
 import { buildDayIndicators, buildWeekIndicators } from '../generate/indicatorsFixture.js';
 import { questionSchema, type Question } from '../schema/question.js';
-import { marketCloseIso, marketDate, weekKey } from './generate.js';
+import { marketCloseIso, marketDate } from './generate.js';
+import { periodBucketKey, periodBucketStart, type EpisodeViewPeriod } from './periods.js';
+import {
+  questionBaseBars,
+  questionBarsForPeriod,
+  questionLadder,
+  questionRollupsForPeriod,
+} from './questionLadder.js';
 
 export interface BlindCaseTransform {
   alias: string;
@@ -93,15 +100,28 @@ function transformBar(
   };
 }
 
-function aggregateWeek(key: string, bars: RawBar[]): RawBar {
+function aggregateBucket(time: string, bars: RawBar[]): RawBar {
   return {
-    time: key,
+    time,
     open: numberOf(bars[0].open),
     high: Math.max(...bars.map((bar) => numberOf(bar.high))),
     low: Math.min(...bars.map((bar) => numberOf(bar.low))),
     close: numberOf(bars.at(-1)!.close),
     volume: bars.reduce((sum, bar) => sum + numberOf(bar.volume), 0),
   };
+}
+
+function foldByDay(bars: RawBar[]): RawBar[] {
+  const groups = new Map<string, RawBar[]>();
+  for (const bar of bars) {
+    const key = periodBucketKey('day', bar.time);
+    const group = groups.get(key);
+    if (group) group.push(bar);
+    else groups.set(key, [bar]);
+  }
+  return [...groups.values()]
+    .map((group) => aggregateBucket(periodBucketStart('day', group[0].time), group))
+    .sort((a, b) => Date.parse(a.time) - Date.parse(b.time));
 }
 
 export function anonymizeEpisodeQuestion(
@@ -123,32 +143,54 @@ export function anonymizeEpisodeQuestion(
   }
 
   const syntheticCutoff = marketCloseIso(transform.syntheticCutoff);
-  const cutoffDay = source.fixtures.kline.day.at(-1);
-  if (!cutoffDay) throw new Error(`blind source question has no daily cutoff bar: ${source.id}`);
-  const cutoffClose = numberOf(cutoffDay.close);
+  const ladder = questionLadder(source);
+  const [basePeriod, midPeriod, topPeriod] = ladder;
+
+  const baseBarsSource = questionBaseBars(source);
+  const cutoffBase = baseBarsSource.at(-1);
+  if (!cutoffBase)
+    throw new Error(`blind source question has no base-tier cutoff bar: ${source.id}`);
+  const cutoffClose = numberOf(cutoffBase.close);
   if (cutoffClose <= 0) throw new Error(`blind source cutoff close must be positive: ${source.id}`);
-  const dailyVolumes = source.fixtures.kline.day
+  const baseVolumes = baseBarsSource
     .map((bar) => numberOf(bar.volume))
     .filter((value) => value > 0);
-  if (dailyVolumes.length === 0)
-    throw new Error(`blind source has no positive daily volume: ${source.id}`);
+  if (baseVolumes.length === 0)
+    throw new Error(`blind source has no positive base-tier volume: ${source.id}`);
   const priceScale = 100 / cutoffClose;
-  const volumeScale = 1_000_000 / median(dailyVolumes);
+  const volumeScale = 1_000_000 / median(baseVolumes);
 
-  const transformBars = (bars: RawBar[] | undefined): RawBar[] =>
-    (bars ?? []).map((bar) => transformBar(bar, dayShift, priceScale, volumeScale));
-  const day = transformBars(source.fixtures.kline.day);
-  const cutoffWeek = weekKey(transform.syntheticCutoff);
-  const week = transformBars(source.fixtures.kline.week);
-  const currentWeekDays = day.filter((bar) => weekKey(marketDate(bar.time)) === cutoffWeek);
-  const currentWeekIndex = week.findIndex((bar) => weekKey(marketDate(bar.time)) === cutoffWeek);
-  if (currentWeekIndex >= 0 && currentWeekDays.length > 0) {
-    week[currentWeekIndex] = aggregateWeek(cutoffWeek, currentWeekDays);
+  const transformBars = (bars: RawBar[]): RawBar[] =>
+    bars.map((bar) => transformBar(bar, dayShift, priceScale, volumeScale));
+
+  const baseBars = transformBars(baseBarsSource);
+  const midBars = transformBars(questionBarsForPeriod(source, midPeriod));
+  const topBars = transformBars(questionBarsForPeriod(source, topPeriod));
+
+  const cutoffTopKey = periodBucketKey(topPeriod, syntheticCutoff);
+  const currentTopBucketMidBars = midBars.filter(
+    (bar) => periodBucketKey(topPeriod, bar.time) === cutoffTopKey,
+  );
+  const currentTopIndex = topBars.findIndex(
+    (bar) => periodBucketKey(topPeriod, bar.time) === cutoffTopKey,
+  );
+  if (currentTopIndex >= 0 && currentTopBucketMidBars.length > 0) {
+    topBars[currentTopIndex] = aggregateBucket(
+      periodBucketStart(topPeriod, syntheticCutoff),
+      currentTopBucketMidBars,
+    );
   }
-  const oneHour = transformBars(source.fixtures.kline['1h']);
+
   const replayBars = transformBars(source.replay.bars);
-  const previousDay = day.at(-2);
-  const transformedCutoffDay = day.at(-1)!;
+
+  const tierBarsByPeriod: Partial<Record<EpisodeViewPeriod, RawBar[]>> = {
+    [basePeriod]: baseBars,
+    [midPeriod]: midBars,
+    [topPeriod]: topBars,
+  };
+  const quoteDays = tierBarsByPeriod.day?.length ? tierBarsByPeriod.day : foldByDay(baseBars);
+  const transformedCutoffDay = quoteDays.at(-1)!;
+  const previousDay = quoteDays.at(-2);
   const sourceQuote = source.fixtures.quote as Record<string, unknown>;
   const sourceTurnover = Number(sourceQuote.turnover);
   const quote: Record<string, unknown> = {
@@ -163,6 +205,12 @@ export function anonymizeEpisodeQuestion(
       : null,
   };
 
+  const passthroughKline = Object.fromEntries(
+    Object.entries(source.fixtures.kline).filter(
+      ([key]) => !ladder.includes(key as EpisodeViewPeriod),
+    ),
+  );
+
   const aliasSymbol = `${transform.alias}.SIM`;
   const outputId = `swing-${transform.alias}-${transform.syntheticCutoff}-01`;
   const question: Question = {
@@ -173,8 +221,16 @@ export function anonymizeEpisodeQuestion(
     layer: 'anonymous',
     adversarial: source.adversarial,
     fixtures: {
-      kline: { '1h': oneHour, day, week },
-      indicators: { day: buildDayIndicators(day), week: buildWeekIndicators(week) },
+      kline: {
+        ...passthroughKline,
+        ...(baseBars.length ? { [basePeriod]: baseBars } : {}),
+        [midPeriod]: midBars,
+        [topPeriod]: topBars,
+      },
+      indicators: {
+        [midPeriod]: buildDayIndicators(midBars),
+        [topPeriod]: buildWeekIndicators(topBars),
+      },
       quote,
       capitalFlow: {},
       news: [],
@@ -186,11 +242,11 @@ export function anonymizeEpisodeQuestion(
       bars: replayBars,
       rollups: source.replay.rollups
         ? {
-            day: source.replay.rollups.day.map((item) => ({
+            [midPeriod]: questionRollupsForPeriod(source, midPeriod).map((item) => ({
               availableAt: shiftTime(item.availableAt, dayShift),
               bar: transformBar(item.bar, dayShift, priceScale, volumeScale),
             })),
-            week: source.replay.rollups.week.map((item) => ({
+            [topPeriod]: questionRollupsForPeriod(source, topPeriod).map((item) => ({
               availableAt: shiftTime(item.availableAt, dayShift),
               bar: transformBar(item.bar, dayShift, priceScale, volumeScale),
             })),
