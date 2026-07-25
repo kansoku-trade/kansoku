@@ -190,7 +190,16 @@ export function anonymizeEpisodeQuestion(
     [midPeriod]: midBars,
     [topPeriod]: topBars,
   };
-  const quoteDays = tierBarsByPeriod.day?.length ? tierBarsByPeriod.day : foldByDay(baseBars);
+  const hasDayTier = Boolean(tierBarsByPeriod.day?.length);
+  const quoteDays = hasDayTier ? tierBarsByPeriod.day! : foldByDay(baseBars);
+  // Relies on generate.ts's requiredBaseBars() having given `source` at least two
+  // sessions of base bars whenever the ladder has no day tier; this is a backstop
+  // for any caller that hands anonymizeEpisodeQuestion a question built another way.
+  if (!hasDayTier && quoteDays.length < 2) {
+    throw new Error(
+      `insufficient ${basePeriod} history for a stable blind quote: need 2 trading days, got ${quoteDays.length} (source ${source.id})`,
+    );
+  }
   const transformedCutoffDay = quoteDays.at(-1)!;
   const previousDay = quoteDays.at(-2);
   const sourceQuote = source.fixtures.quote as Record<string, unknown>;

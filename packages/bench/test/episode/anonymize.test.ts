@@ -275,6 +275,45 @@ const STALE_MID_BUCKET_SOURCE: Question = {
   },
 };
 
+const SINGLE_SESSION_SOURCE: Question = {
+  id: 'swing-SINGLESESSION-2024-03-27-01',
+  bank: 'swing',
+  symbol: 'ACME.US',
+  cutoff: '2024-03-27T20:00:00Z',
+  layer: 'high-vol-tech',
+  adversarial: false,
+  fixtures: {
+    kline: {
+      '5m': [
+        rawBar('2024-03-27T13:30:00Z', 49, 49.5, 48.5, 49.2, 1000),
+        rawBar('2024-03-27T13:35:00Z', 49.2, 49.7, 48.9, 49.5, 1050),
+        rawBar('2024-03-27T19:30:00Z', 49.6, 50, 49.3, 49.7, 1100),
+        rawBar('2024-03-27T19:45:00Z', 49.7, 50.2, 49.5, 50, 1150),
+      ],
+      '15m': [
+        rawBar('2024-03-27T13:30:00Z', 49, 49.6, 48.5, 49.4, 3000),
+        rawBar('2024-03-27T19:30:00Z', 49.6, 50, 49.3, 49.7, 3100),
+        rawBar('2024-03-27T19:45:00Z', 49.7, 50.2, 49.5, 50, 3200),
+      ],
+      '1h': [
+        rawBar('2024-03-27T13:30:00Z', 49, 49.6, 48.5, 49.4, 7000),
+        rawBar('2024-03-27T19:30:00Z', 999, 999, 999, 999, 999),
+      ],
+    },
+    indicators: {},
+    quote: { last: 50 },
+    capitalFlow: {},
+    news: [],
+    fundamentals: {},
+    calendar: {},
+  },
+  replay: {
+    basePeriod: '5m',
+    horizonBars: 1,
+    bars: [rawBar('2024-03-28T13:30:00Z', 50.1, 50.5, 49.8, 50.3, 1200)],
+  },
+};
+
 describe('blind episode anonymization — five-period ladder', () => {
   it('anonymises a 5m-based case without throwing, carries only the ladder tier keys, and drops the out-of-ladder week series without leaking its real data', () => {
     const { question } = anonymizeEpisodeQuestion(FIVE_MIN_SOURCE, {
@@ -370,6 +409,15 @@ describe('blind episode anonymization — five-period ladder', () => {
     expect(rebuiltHour.low).toBeCloseTo(49.3 * scale, 6);
     expect(rebuiltHour.close).toBeCloseTo(50 * scale, 6);
     expect(rebuiltHour.volume).toBeCloseTo((3100 + 3200) * provenance.volumeScale, 3);
+  });
+
+  it('rejects a source whose base bars fold to a single trading session, naming the ladder and what was found', () => {
+    expect(() =>
+      anonymizeEpisodeQuestion(SINGLE_SESSION_SOURCE, {
+        alias: 'ASSET009',
+        syntheticCutoff: '2026-03-25',
+      }),
+    ).toThrow('insufficient 5m history for a stable blind quote: need 2 trading days, got 1');
   });
 });
 
