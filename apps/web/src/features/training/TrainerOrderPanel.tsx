@@ -14,8 +14,22 @@ import {
 } from './orderDraft';
 import { useOrderBoxDrag } from './useOrderBoxDrag';
 
-const BOX_FAR_PAST = 0;
-const BOX_FAR_FUTURE = Number.MAX_SAFE_INTEGER;
+const BOX_SPAN_SEC = 100 * 24 * 3600;
+
+// PositionBoxPrimitive falls back to the visible range's edges when a time falls outside the
+// series' own bar range (see positionBoxPrimitive.ts), which is how this box is made to span the
+// full chart width regardless of zoom. A truly extreme sentinel (e.g. Number.MAX_SAFE_INTEGER)
+// does not hit that fallback — lightweight-charts' timeToCoordinate extrapolates it to a
+// nonsensical finite pixel instead of returning null, collapsing the box to a sliver near the last
+// bar. A bounded offset (here, 100 days past the real data) stays inside timeToCoordinate's normal
+// extrapolation range while still being far outside any realistic zoom level.
+function boxTimeRange(view: TrainerView): { startTime: number; endTime: number } {
+  const lastBar = view.bars.base.at(-1);
+  const lastTime = lastBar
+    ? Math.floor(Date.parse(lastBar.time) / 1000)
+    : Math.floor(Date.now() / 1000);
+  return { startTime: lastTime - BOX_SPAN_SEC, endTime: lastTime + BOX_SPAN_SEC };
+}
 
 export interface TrainerOrderPanelProps {
   view: TrainerView;
@@ -56,15 +70,18 @@ export function TrainerOrderPanel({
       return;
     }
     box.setData({
-      startTime: BOX_FAR_PAST,
-      endTime: BOX_FAR_FUTURE,
+      ...boxTimeRange(view),
       entry: draft.entry,
       stop: draft.stop,
       target1: draft.target1,
       target2: draft.target1,
       dimmed: false,
     });
-  }, [draft, flat]);
+    // handle is a dependency (unused directly in the body) because the box in boxRef.current is
+    // only non-null once the sibling effect above has attached it to that handle — without this,
+    // the initial draft never reaches the box: it gets attached, but this effect last ran before
+    // boxRef.current existed and has no other reason to run again.
+  }, [draft, flat, view, handle]);
 
   const updateDraft = (patch: Partial<Pick<OrderDraft, 'entry' | 'stop' | 'target1'>>) => {
     setDraft((prev) => {
