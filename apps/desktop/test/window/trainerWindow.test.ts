@@ -16,13 +16,16 @@ class FakeWindow {
   webContents = new FakeWebContents();
   options: Record<string, unknown>;
   private readyHandlers: Handler[] = [];
+  private closedHandlers: Handler[] = [];
   loadedUrl: string | null = null;
 
   constructor(options: Record<string, unknown>) {
     this.options = options;
   }
 
-  on(): void {}
+  on(event: string, cb: Handler): void {
+    if (event === 'closed') this.closedHandlers.push(cb);
+  }
 
   once(event: string, cb: Handler): void {
     if (event === 'ready-to-show') this.readyHandlers.push(cb);
@@ -33,6 +36,10 @@ class FakeWindow {
   }
 
   show(): void {}
+
+  emitClosed(): void {
+    for (const cb of this.closedHandlers) cb();
+  }
 }
 
 const createdWindows: FakeWindow[] = [];
@@ -47,7 +54,9 @@ const app = { getAppPath: vi.fn(() => '/app') };
 vi.mock('electron', () => ({ app, BrowserWindow }));
 vi.mock('@desktop/boot/env.js', () => ({ IS_DEV: false }));
 
-const { createTrainerWindow, trainerUrl } = await import('@desktop/shell/window/trainerWindow.js');
+const { createTrainerWindow, isTrainerWindow, trainerUrl } = await import(
+  '@desktop/shell/window/trainerWindow.js'
+);
 
 describe('trainerUrl', () => {
   it('resolves against the prod app:// origin outside dev', () => {
@@ -79,5 +88,16 @@ describe('createTrainerWindow', () => {
       }),
     );
     expect((win as unknown as FakeWindow).loadedUrl).toBe('app://-/train.html');
+  });
+
+  it('is recognized by isTrainerWindow until it closes', () => {
+    const win = createTrainerWindow();
+
+    expect(isTrainerWindow(win)).toBe(true);
+    expect(isTrainerWindow({} as never)).toBe(false);
+
+    (win as unknown as FakeWindow).emitClosed();
+
+    expect(isTrainerWindow(win)).toBe(false);
   });
 });

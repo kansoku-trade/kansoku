@@ -53,6 +53,17 @@ describe('CommandPalette trainer entry', () => {
     expect(getLicenseModalStateForTests()).toEqual({ open: true, trigger: 'guard' });
   });
 
+  it('no-ops instead of showing the Pro prompt while capabilities are still loading', () => {
+    trainerBridge = { openTrainer };
+    capabilities = { pro: null, licensed: false };
+    render(<CommandPalette onOpenRoute={vi.fn()} />);
+    openPalette();
+    fireEvent.click(screen.getByText('开始盲盘训练'));
+
+    expect(openTrainer).not.toHaveBeenCalled();
+    expect(getLicenseModalStateForTests().open).toBe(false);
+  });
+
   it('never touches the desktop rpc when the build has no pro module at all', () => {
     trainerBridge = { openTrainer };
     capabilities = { pro: false, licensed: false };

@@ -53,6 +53,7 @@ import { initUpdater } from './shell/updater/updater.js';
 import { UpdaterIpc } from './shell/updater/ipc.js';
 import { isPopoutWindow } from './shell/window/popoutWindow.js';
 import { isAboutWindow, openAboutWindow } from './shell/window/aboutWindow.js';
+import { isTrainerWindow } from './shell/window/trainerWindow.js';
 
 const fileLogger = createFileLogger({
   logFilePath: resolveMainLogPath(app.getPath('logs')),
@@ -128,7 +129,8 @@ function installAppMenu({
 }: InstallAppMenuOptions): void {
   function focusedTabWindow(): BrowserWindow | null {
     const focused = BrowserWindow.getFocusedWindow();
-    if (!focused || isPopoutWindow(focused) || isAboutWindow(focused)) return null;
+    if (!focused || isPopoutWindow(focused) || isAboutWindow(focused) || isTrainerWindow(focused))
+      return null;
     return focused;
   }
 
@@ -202,7 +204,7 @@ function installAppMenu({
       closeTab: () => {
         const focused = BrowserWindow.getFocusedWindow();
         if (!focused) return;
-        if (isPopoutWindow(focused) || isAboutWindow(focused)) {
+        if (isPopoutWindow(focused) || isAboutWindow(focused) || isTrainerWindow(focused)) {
           focused.close();
           return;
         }

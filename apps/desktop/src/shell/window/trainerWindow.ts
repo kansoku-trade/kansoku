@@ -2,7 +2,13 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { app, BrowserWindow } from 'electron';
 import { IS_DEV } from '../../boot/env.js';
-import { APP_ICON_PNG, applyWindowSecurity, DEV_WEB_URL, WINDOW_BG } from './mainWindow.js';
+import {
+  APP_ICON_PNG,
+  applyWindowSecurity,
+  DEV_WEB_URL,
+  PROD_APP_URL,
+  WINDOW_BG,
+} from './mainWindow.js';
 
 export const TRAINER_DEFAULT_WIDTH = 1280;
 export const TRAINER_DEFAULT_HEIGHT = 860;
@@ -10,7 +16,13 @@ export const TRAINER_MIN_WIDTH = 960;
 export const TRAINER_MIN_HEIGHT = 640;
 
 export function trainerUrl(): string {
-  return IS_DEV ? `${DEV_WEB_URL}/train.html` : 'app://-/train.html';
+  return IS_DEV ? `${DEV_WEB_URL}/train.html` : new URL('train.html', PROD_APP_URL).toString();
+}
+
+const trainerWindows = new Set<BrowserWindow>();
+
+export function isTrainerWindow(win: BrowserWindow): boolean {
+  return trainerWindows.has(win);
 }
 
 export function createTrainerWindow(): BrowserWindow {
@@ -31,6 +43,11 @@ export function createTrainerWindow(): BrowserWindow {
       nodeIntegration: false,
       preload: join(app.getAppPath(), 'dist-preload', 'preload.cjs'),
     },
+  });
+
+  trainerWindows.add(win);
+  win.on('closed', () => {
+    trainerWindows.delete(win);
   });
 
   win.once('ready-to-show', () => {

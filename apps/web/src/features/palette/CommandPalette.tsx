@@ -50,6 +50,7 @@ function PalettePanel({
   const run = (cmd: PaletteCommand) => {
     onClose();
     if (cmd.kind === 'trainer') {
+      if (pro === null) return;
       if (pro && licensed) {
         void trainerBridge?.openTrainer();
       } else {
