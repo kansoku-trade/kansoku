@@ -1,0 +1,108 @@
+import type { TrainerView, TrainerViewPeriod } from '@kansoku/pro-api';
+import { toTs } from '@kansoku/core/analysis/indicators';
+import type {
+  Candle,
+  ColoredPoint,
+  IntradayBuilt,
+  IntradaySidebar,
+  IntradayTfData,
+  IntradayTfSummary,
+  RawBar,
+} from '@kansoku/shared/types';
+import type { ChartTf } from '../charts/intraday/timeframes';
+
+export const TRAINER_PERIOD_TO_CHART_TF: Record<TrainerViewPeriod, ChartTf> = {
+  '1m': '1m',
+  '5m': 'm5',
+  '15m': 'm15',
+  '30m': '30m',
+  '1h': 'h1',
+  'day': 'day',
+  'week': 'week',
+};
+
+export type TrainerLadder = readonly [TrainerViewPeriod, TrainerViewPeriod, TrainerViewPeriod];
+
+export function isTrainerLadderTf(ladder: TrainerLadder, tf: ChartTf): boolean {
+  return ladder.some((period) => TRAINER_PERIOD_TO_CHART_TF[period] === tf);
+}
+
+function rawBarsToTfData(bars: RawBar[]): IntradayTfData {
+  const candles: Candle[] = bars.map((b) => ({
+    time: toTs(b.time),
+    open: Number(b.open),
+    high: Number(b.high),
+    low: Number(b.low),
+    close: Number(b.close),
+  }));
+  const volumes: ColoredPoint[] = bars.map((b) => ({
+    time: toTs(b.time),
+    value: Number(b.volume),
+  }));
+  return {
+    candles,
+    volumes,
+    emas: [],
+    macdDif: [],
+    macdDea: [],
+    macdHist: [],
+    macdCrossMarkers: [],
+    markers: [],
+    priceConnectors: [],
+    macdConnectors: [],
+    autoDivergence: [],
+    autoBeichi: [],
+  };
+}
+
+function emptyTfSummary(): IntradayTfSummary {
+  return {
+    last_dif: null,
+    last_dea: null,
+    last_hist: null,
+    emas: [],
+    recent_swing_highs: [],
+    recent_swing_lows: [],
+    last_cross: null,
+    divergence_candidates: [],
+    beichi_candidates: [],
+  };
+}
+
+// Required by IntradaySidebar's type, but IntradayChartOnly never reads it —
+// the trainer chart has no sidebar. Kept genuinely empty rather than faked.
+function buildSidebar(view: TrainerView): IntradaySidebar {
+  const lastBar = view.bars.base.at(-1);
+  return {
+    symbol: view.symbol,
+    name: view.symbol,
+    asOf: view.asOf,
+    last: lastBar ? Number(lastBar.close) : 0,
+    prediction: null,
+    entryPlan: null,
+    position: null,
+    technicals: { m5: emptyTfSummary(), m15: emptyTfSummary(), h1: emptyTfSummary() },
+    dayContext: null,
+    optionsLevels: null,
+    eventRisk: null,
+    news: [],
+    context: null,
+  };
+}
+
+export function buildTrainerIntradayBuilt(view: TrainerView): IntradayBuilt {
+  const tierBars: readonly RawBar[][] = [view.bars.base, view.bars.mid, view.bars.top];
+  const timeframes: Record<string, IntradayTfData> = {};
+  view.ladder.forEach((period, i) => {
+    timeframes[TRAINER_PERIOD_TO_CHART_TF[period]] = rawBarsToTfData(tierBars[i]);
+  });
+  return {
+    kind: 'intraday',
+    // Only IntradayDashboard's sidebar reads defaultTf, and the trainer chart
+    // never renders one — the value here is inert, not a real tf pick.
+    defaultTf: 'm5',
+    timeframes: timeframes as IntradayBuilt['timeframes'],
+    entryPlan: null,
+    sidebar: buildSidebar(view),
+  };
+}

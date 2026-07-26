@@ -63,7 +63,7 @@ export function withPreviewLevels(
   return { ...built, previewLevels: levels };
 }
 
-const STORAGE_KEY = 'intraday-timeframes';
+export const TIMEFRAMES_STORAGE_KEY = 'intraday-timeframes';
 
 export function sanitizeTimeframes(raw: unknown): ChartTf[] {
   const picked = Array.isArray(raw)
@@ -73,9 +73,9 @@ export function sanitizeTimeframes(raw: unknown): ChartTf[] {
   return TF_ORDER.filter((k) => wanted.has(k));
 }
 
-function loadStored(): ChartTf[] {
+function loadStored(storageKey: string): ChartTf[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(storageKey);
     if (!raw) return [...ANALYSIS_TFS];
     return sanitizeTimeframes(JSON.parse(raw));
   } catch {
@@ -88,12 +88,12 @@ export interface TimeframesApi {
   toggleTf: (tf: ChartTf) => void;
 }
 
-export function useVisibleTimeframes(): TimeframesApi {
-  const [visibleTfs, setVisibleTfs] = useState(loadStored);
+export function useVisibleTimeframes(storageKey: string = TIMEFRAMES_STORAGE_KEY): TimeframesApi {
+  const [visibleTfs, setVisibleTfs] = useState(() => loadStored(storageKey));
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(visibleTfs));
-  }, [visibleTfs]);
+    localStorage.setItem(storageKey, JSON.stringify(visibleTfs));
+  }, [storageKey, visibleTfs]);
 
   const toggleTf = useCallback((tf: ChartTf) => {
     if (ANALYSIS_SET.has(tf)) return;

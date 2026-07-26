@@ -130,7 +130,7 @@ export const INDICATOR_PRESETS: IndicatorPreset[] = [
   { key: 'all', label: '全部', on: [...BASE_TOGGLE_ORDER] },
 ];
 
-const STORAGE_KEY = 'intraday-indicators';
+export const INDICATOR_STORAGE_KEY = 'intraday-indicators';
 
 const DEFAULT_ON = new Set<IndicatorToggleKey>(['ema', 'vwap', 'levels', 'daylevel', 'sb']);
 
@@ -141,11 +141,14 @@ function defaultToggles(): Record<IndicatorToggleKey, boolean> {
   >;
 }
 
-function loadStored(): { toggles: Record<IndicatorToggleKey, boolean>; markerRange: MarkerRange } {
+function loadStored(storageKey: string): {
+  toggles: Record<IndicatorToggleKey, boolean>;
+  markerRange: MarkerRange;
+} {
   const toggles = defaultToggles();
   let markerRange: MarkerRange = 'recent';
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(storageKey);
     if (!raw) return { toggles, markerRange };
     const stored = JSON.parse(raw) as Partial<Record<string, unknown>>;
     for (const key of INDICATOR_TOGGLE_KEYS) {
@@ -158,12 +161,12 @@ function loadStored(): { toggles: Record<IndicatorToggleKey, boolean>; markerRan
   return { toggles, markerRange };
 }
 
-export function useIndicatorToggles() {
-  const [{ toggles, markerRange }, setState] = useState(loadStored);
+export function useIndicatorToggles(storageKey: string = INDICATOR_STORAGE_KEY) {
+  const [{ toggles, markerRange }, setState] = useState(() => loadStored(storageKey));
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...toggles, markerRange }));
-  }, [toggles, markerRange]);
+    localStorage.setItem(storageKey, JSON.stringify({ ...toggles, markerRange }));
+  }, [storageKey, toggles, markerRange]);
 
   const set = useCallback((key: IndicatorToggleKey, value: boolean) => {
     setState((prev) =>
