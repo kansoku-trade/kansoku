@@ -13,6 +13,11 @@ export interface OrderDraft {
   target1: number;
 }
 
+export interface AmendDraft {
+  stop: number;
+  target: number;
+}
+
 export const MIN_GAP = 0.01;
 export const MIN_REWARD_RISK = 1.5;
 

@@ -9,6 +9,7 @@ export interface OrderBoxDragSnapshot {
 export interface OrderBoxDragCallbacks {
   onStopDrag: (price: number) => void;
   onTargetDrag: (price: number) => void;
+  onDragEnd?: () => void;
 }
 
 const EDGE_HIT_PX = 6;
@@ -52,7 +53,9 @@ export function useOrderBoxDrag(
     };
 
     const onPointerUp = () => {
+      if (!dragEdge) return;
       dragEdge = null;
+      callbacksRef.current.onDragEnd?.();
     };
 
     container.addEventListener('pointerdown', onPointerDown);

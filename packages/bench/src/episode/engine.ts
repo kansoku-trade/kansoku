@@ -447,9 +447,14 @@ export class EpisodeGuardrailError extends Error {
   }
 }
 
+export interface EpisodeAmendment {
+  stop?: number;
+  target?: number;
+}
+
 function applyAmendment(
   position: PositionState,
-  action: Extract<EpisodeTradeAction, { type: 'amend' }>,
+  action: EpisodeAmendment,
   reference: number,
 ): PositionState {
   if (action.stop == null && action.target == null)
@@ -459,14 +464,41 @@ function applyAmendment(
   const wrongStop = position.direction === 'long' ? stop >= reference : stop <= reference;
   const wrongTarget = position.direction === 'long' ? target <= reference : target >= reference;
   const widensStop = position.direction === 'long' ? stop < position.stop : stop > position.stop;
+  const pastBreakeven =
+    position.direction === 'long' ? stop < position.entryPrice : stop > position.entryPrice;
   if (wrongStop) throw new Error(`amended ${position.direction} stop crosses the visible price`);
   if (widensStop)
     throw new EpisodeGuardrailError(
       `amended ${position.direction} stop increases the risk already committed; an open position's stop may only tighten`,
     );
+  // TD-EXIT-01 binds on relocating the stop, not on holding one. A position already 1R up may keep
+  // a stop it never touched — and amend only its target — but may not move that stop to a level
+  // that would hand a booked gain back. Dropping the `stop !== position.stop` term would turn the
+  // rule into a mandate to trail, which TD-EXIT-01 does not impose.
+  if (stop !== position.stop && position.mfeR >= 1 && pastBreakeven)
+    throw new EpisodeGuardrailError(
+      `amended ${position.direction} stop stays ${position.direction === 'long' ? 'below' : 'above'} the ${position.entryPrice} entry while the position has already run to ${position.mfeR.toFixed(2)}R; at 1R or better the stop may not give back a booked gain`,
+    );
   if (wrongTarget)
     throw new Error(`amended ${position.direction} target crosses the visible price`);
   return { ...position, stop, target };
+}
+
+// Dry run of the amendment the engine would actually perform: same checks, same errors, same
+// EpisodeGuardrailError vs Error split, on a state it never writes to. A caller that wants to know
+// whether an amendment is allowed must ask this rather than restate the rule, which is how the
+// trainer UI and the engine drifted apart before.
+export function checkEpisodeAmendment(
+  state: EpisodeState,
+  question: Question,
+  amendment: EpisodeAmendment,
+): void {
+  if (state.phase === 'terminal') throw new Error('episode already terminated');
+  if (state.phase === 'flat') throw new Error('action amend is invalid while flat');
+  if (state.phase === 'pending')
+    throw new Error('action amend is invalid while the order is pending');
+  if (!state.position) throw new Error('open episode is missing its position');
+  applyAmendment(state.position, amendment, visibleReferencePrice(question, state));
 }
 
 function updateExcursions(position: PositionState, bar: RawBar): PositionState {

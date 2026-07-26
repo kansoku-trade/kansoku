@@ -10,7 +10,6 @@ import type {
 import { PositionBoxPrimitive } from '../charts/intraday/positionBoxPrimitive';
 import type { DrawingChartHandle } from '../charts/intraday/useIntradayCharts';
 import type { TrainerBridge } from '../desktop/desktopTrainerBridge';
-import { clampAmendStop, clampAmendTarget, widensStop, type AmendDraft } from './amendDraft';
 import {
   buildOrderSubmission,
   clampStop,
@@ -21,8 +20,10 @@ import {
   meetsRewardRiskFloor,
   rewardRiskRatio,
   withDirection,
+  type AmendDraft,
   type OrderDraft,
 } from './orderDraft';
+import { freshVerdict, useAmendCheck, type AmendVerdict } from './useAmendCheck';
 import { useOrderBoxDrag } from './useOrderBoxDrag';
 
 const BOX_SPAN_SEC = 100 * 24 * 3600;
@@ -70,18 +71,23 @@ export function TrainerOrderPanel({
   // position's stop/target reach the input fields and the drag box on the very same commit —
   // an effect-based reset would land a frame after paint, flashing the plain status line first.
   const [amendDraft, setAmendDraft] = useState<AmendDraft | null>(null);
+  const [settledAmend, setSettledAmend] = useState<AmendDraft | null>(null);
   const [amendDraftTradeId, setAmendDraftTradeId] = useState<number | null>(null);
   const [amendReason, setAmendReason] = useState('');
   const [exitReason, setExitReason] = useState('');
   if (position && position.tradeId !== amendDraftTradeId) {
     setAmendDraftTradeId(position.tradeId);
     setAmendDraft({ stop: position.stop, target: position.target });
+    setSettledAmend({ stop: position.stop, target: position.target });
     setAmendReason('');
     setExitReason('');
   } else if (!position && amendDraftTradeId !== null) {
     setAmendDraftTradeId(null);
     setAmendDraft(null);
+    setSettledAmend(null);
   }
+  const amendDraftRef = useRef<AmendDraft | null>(null);
+  amendDraftRef.current = amendDraft;
 
   const [cancelReason, setCancelReason] = useState('');
   const [cancelReasonOrderId, setCancelReasonOrderId] = useState<number | null>(null);
@@ -139,32 +145,37 @@ export function TrainerOrderPanel({
     });
   };
 
-  const updateAmendStop = (price: number) => {
+  // Every edit stays local; only a settled one is sent to the engine's dry run, so dragging never
+  // waits on an IPC round trip.
+  const applyAmend = (patch: Partial<AmendDraft>, settle: boolean) => {
     if (!position) return;
     const reference = lastClose(view);
-    setAmendDraft((prev) => ({
-      stop: clampAmendStop(position.direction, reference, position.stop, price),
-      target: prev?.target ?? position.target,
-    }));
-  };
-
-  const updateAmendTarget = (price: number) => {
-    if (!position) return;
-    const reference = lastClose(view);
-    setAmendDraft((prev) => ({
-      stop: prev?.stop ?? position.stop,
-      target: clampAmendTarget(position.direction, reference, price),
-    }));
+    const base = amendDraftRef.current ?? { stop: position.stop, target: position.target };
+    const next: AmendDraft = {
+      stop: clampStop(position.direction, reference, patch.stop ?? base.stop),
+      target: clampTarget(position.direction, reference, patch.target ?? base.target),
+    };
+    amendDraftRef.current = next;
+    setAmendDraft(next);
+    if (settle) setSettledAmend(next);
   };
 
   useOrderBoxDrag(
     boxActive ? handle : null,
     { stop: boxStop, target1: boxTarget },
     {
-      onStopDrag: flat ? (price) => updateDraft({ stop: price }) : updateAmendStop,
-      onTargetDrag: flat ? (price) => updateDraft({ target1: price }) : updateAmendTarget,
+      onStopDrag: flat
+        ? (price) => updateDraft({ stop: price })
+        : (price) => applyAmend({ stop: price }, false),
+      onTargetDrag: flat
+        ? (price) => updateDraft({ target1: price })
+        : (price) => applyAmend({ target: price }, false),
+      onDragEnd: flat ? undefined : () => setSettledAmend(amendDraftRef.current),
     },
   );
+
+  const checked = useAmendCheck(bridge, sessionId, view.cursor, settledAmend);
+  const verdict = freshVerdict(checked, amendDraft, view.cursor);
 
   const runAction = async (call: () => Promise<TrainerEnvelope<TrainerStepResult>>) => {
     setSubmitting(true);
@@ -217,10 +228,11 @@ export function TrainerOrderPanel({
         <TrainerPositionPanel
           position={position}
           amendDraft={amendDraft}
+          verdict={verdict}
           amendReason={amendReason}
           onAmendReasonChange={setAmendReason}
-          onStopChange={updateAmendStop}
-          onTargetChange={updateAmendTarget}
+          onStopChange={(price) => applyAmend({ stop: price }, true)}
+          onTargetChange={(price) => applyAmend({ target: price }, true)}
           onConfirmAmend={confirmAmend}
           exitReason={exitReason}
           onExitReasonChange={setExitReason}
@@ -360,6 +372,7 @@ export function TrainerOrderPanel({
 interface TrainerPositionPanelProps {
   position: TrainerPosition;
   amendDraft: AmendDraft;
+  verdict: AmendVerdict | null;
   amendReason: string;
   onAmendReasonChange: (value: string) => void;
   onStopChange: (price: number) => void;
@@ -375,6 +388,7 @@ interface TrainerPositionPanelProps {
 function TrainerPositionPanel({
   position,
   amendDraft,
+  verdict,
   amendReason,
   onAmendReasonChange,
   onStopChange,
@@ -386,10 +400,7 @@ function TrainerPositionPanel({
   submitting,
   error,
 }: TrainerPositionPanelProps) {
-  const amendLocked =
-    submitting ||
-    amendReason.trim().length === 0 ||
-    widensStop(position.direction, position.stop, amendDraft.stop);
+  const amendLocked = submitting || amendReason.trim().length === 0 || !verdict?.allowed;
   const exitLocked = submitting || exitReason.trim().length === 0;
 
   const summary = `持仓中：${position.direction === 'long' ? '多头' : '空头'} @${position.entryPrice} 止损 ${position.stop} 目标 ${position.target}`;
@@ -440,6 +451,12 @@ function TrainerPositionPanel({
         <button className="btn btn--accent" disabled={amendLocked} onClick={onConfirmAmend}>
           确认调整
         </button>
+        {verdict === null && <span className="trainer-order-guard">校验中…</span>}
+        {verdict && !verdict.allowed && (
+          <span className="trainer-order-guard trainer-order-guard--blocked" role="status">
+            {verdict.error ?? '这笔调整不被允许'}
+          </span>
+        )}
       </div>
       <div className="trainer-order-row">
         <label>

@@ -230,6 +230,15 @@ export interface TrainerSubmission {
   comment: string;
 }
 
+// A refused amendment is the answer, not a transport failure, so this rides home on `ok: true`.
+// The envelope's `ok: false` stays reserved for the caller getting the question itself wrong —
+// an unknown session, an unreadable case — which is not something the trader can act on.
+export interface TrainerAmendCheck {
+  allowed: boolean;
+  code: TrainerErrorCode | null;
+  error: string | null;
+}
+
 export type TrainerAdvancePeriod = TrainerViewPeriod | 'h1';
 
 export type TrainerAction =
@@ -254,6 +263,11 @@ export interface TrainerApi {
     target?: number;
     reason: TrainerReason;
   }): TrainerStepResult;
+  validateAmend(input: {
+    sessionId: string;
+    stop?: number;
+    target?: number;
+  }): TrainerAmendCheck;
   cancel(input: { sessionId: string; reason: TrainerReason }): TrainerStepResult;
   exitNextOpen(input: { sessionId: string; reason: TrainerReason }): TrainerStepResult;
   reveal(input: { sessionId: string }): TrainerReveal;

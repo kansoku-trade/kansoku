@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   advanceEpisode,
+  checkEpisodeAmendment,
   createEpisodeState,
   EpisodeGuardrailError,
   observeEpisode,
@@ -240,19 +241,153 @@ describe('episode engine', () => {
     );
   });
 
-  it('still accepts a tightening amendment and an unchanged stop', () => {
-    const q = question();
+  it('still accepts a tightening amendment and an unchanged stop below 1R', () => {
+    const q = question([
+      bar('2026-03-23T14:30:00Z', 100, 102, 99, 101),
+      bar('2026-03-23T15:30:00Z', 101, 103, 100, 102),
+      bar('2026-03-23T16:30:00Z', 102, 103, 101, 102),
+    ]);
     const filled = advanceEpisode(
       submitEpisode(createEpisodeState(), q, prediction('long', 100, 95, 120)).state,
       q,
       reasoned({ type: 'hold' }),
     );
+    expect(filled.state.position!.mfeR).toBeCloseTo(0.4, 6);
     expect(
       advanceEpisode(filled.state, q, reasoned({ type: 'amend', stop: 97 })).state.position,
     ).toMatchObject({ stop: 97 });
     expect(
       advanceEpisode(filled.state, q, reasoned({ type: 'amend', target: 118 })).state.position,
     ).toMatchObject({ stop: 95, target: 118 });
+  });
+
+  it('refuses to relocate the stop past breakeven once the position has booked 1R (TD-EXIT-01)', () => {
+    const q = question([
+      bar('2026-03-23T14:30:00Z', 100, 102, 99.5, 101.5),
+      bar('2026-03-23T15:30:00Z', 101.5, 102, 101, 101.5),
+      bar('2026-03-23T16:30:00Z', 101.5, 102, 101, 101.5),
+    ]);
+    const filled = advanceEpisode(
+      submitEpisode(createEpisodeState(), q, prediction('long', 100, 99, 105)).state,
+      q,
+      reasoned({ type: 'hold' }),
+    );
+    expect(filled.state.position).toMatchObject({ entryPrice: 100, stop: 99, mfeR: 2 });
+
+    // The ratchet alone accepts this: 99.5 is tighter than 99, yet it still sits below breakeven
+    // while the trade is 2R up — exactly the give-back TD-EXIT-01 exists to refuse.
+    expect(() =>
+      advanceEpisode(filled.state, q, reasoned({ type: 'amend', stop: 99.5 })),
+    ).toThrow(EpisodeGuardrailError);
+    expect(
+      advanceEpisode(filled.state, q, reasoned({ type: 'amend', stop: 100 })).state.position,
+    ).toMatchObject({ stop: 100 });
+    expect(
+      advanceEpisode(filled.state, q, reasoned({ type: 'amend', stop: 100.5 })).state.position,
+    ).toMatchObject({ stop: 100.5 });
+  });
+
+  it('refuses the same relocation on a short position', () => {
+    const q = question([
+      bar('2026-03-23T14:30:00Z', 100, 100.5, 98, 98.5),
+      bar('2026-03-23T15:30:00Z', 98.5, 99, 98, 98.5),
+      bar('2026-03-23T16:30:00Z', 98.5, 99, 98, 98.5),
+    ]);
+    const filled = advanceEpisode(
+      submitEpisode(createEpisodeState(), q, prediction('short', 100, 101, 95)).state,
+      q,
+      reasoned({ type: 'hold' }),
+    );
+    expect(filled.state.position).toMatchObject({ entryPrice: 100, stop: 101, mfeR: 2 });
+
+    expect(() =>
+      advanceEpisode(filled.state, q, reasoned({ type: 'amend', stop: 100.5 })),
+    ).toThrow(EpisodeGuardrailError);
+    expect(
+      advanceEpisode(filled.state, q, reasoned({ type: 'amend', stop: 100 })).state.position,
+    ).toMatchObject({ stop: 100 });
+  });
+
+  it('places the breakeven floor at exactly 1R, not above or below it', () => {
+    const atOneR = question([
+      bar('2026-03-23T14:30:00Z', 100, 101, 99.5, 100.5),
+      bar('2026-03-23T15:30:00Z', 100.5, 101, 100, 100.5),
+      bar('2026-03-23T16:30:00Z', 100.5, 101, 100, 100.5),
+    ]);
+    const filledAtOneR = advanceEpisode(
+      submitEpisode(createEpisodeState(), atOneR, prediction('long', 100, 99, 105)).state,
+      atOneR,
+      reasoned({ type: 'hold' }),
+    );
+    expect(filledAtOneR.state.position!.mfeR).toBe(1);
+    expect(() =>
+      advanceEpisode(filledAtOneR.state, atOneR, reasoned({ type: 'amend', stop: 99.5 })),
+    ).toThrow(EpisodeGuardrailError);
+
+    const belowOneR = question([
+      bar('2026-03-23T14:30:00Z', 100, 100.9, 99.5, 100.5),
+      bar('2026-03-23T15:30:00Z', 100.5, 100.9, 100, 100.5),
+      bar('2026-03-23T16:30:00Z', 100.5, 100.9, 100, 100.5),
+    ]);
+    const filledBelowOneR = advanceEpisode(
+      submitEpisode(createEpisodeState(), belowOneR, prediction('long', 100, 99, 105)).state,
+      belowOneR,
+      reasoned({ type: 'hold' }),
+    );
+    expect(filledBelowOneR.state.position!.mfeR).toBeLessThan(1);
+    expect(
+      advanceEpisode(filledBelowOneR.state, belowOneR, reasoned({ type: 'amend', stop: 99.5 }))
+        .state.position,
+    ).toMatchObject({ stop: 99.5 });
+  });
+
+  it('lets a 1R position amend its target while keeping the stop it never moved', () => {
+    const q = question([
+      bar('2026-03-23T14:30:00Z', 100, 102, 99.5, 101.5),
+      bar('2026-03-23T15:30:00Z', 101.5, 102, 101, 101.5),
+      bar('2026-03-23T16:30:00Z', 101.5, 102, 101, 101.5),
+    ]);
+    const filled = advanceEpisode(
+      submitEpisode(createEpisodeState(), q, prediction('long', 100, 99, 105)).state,
+      q,
+      reasoned({ type: 'hold' }),
+    );
+    expect(
+      advanceEpisode(filled.state, q, reasoned({ type: 'amend', target: 108 })).state.position,
+    ).toMatchObject({ stop: 99, target: 108 });
+    expect(
+      advanceEpisode(filled.state, q, reasoned({ type: 'amend', stop: 99, target: 108 })).state
+        .position,
+    ).toMatchObject({ stop: 99, target: 108 });
+  });
+
+  it('answers the same question through checkEpisodeAmendment without moving the episode', () => {
+    const q = question([
+      bar('2026-03-23T14:30:00Z', 100, 102, 99.5, 101.5),
+      bar('2026-03-23T15:30:00Z', 101.5, 102, 101, 101.5),
+      bar('2026-03-23T16:30:00Z', 101.5, 102, 101, 101.5),
+    ]);
+    const filled = advanceEpisode(
+      submitEpisode(createEpisodeState(), q, prediction('long', 100, 99, 105)).state,
+      q,
+      reasoned({ type: 'hold' }),
+    );
+    const before = filled.state;
+
+    expect(() => checkEpisodeAmendment(before, q, { stop: 99.5 })).toThrow(EpisodeGuardrailError);
+    expect(() => checkEpisodeAmendment(before, q, { stop: 98 })).toThrow(EpisodeGuardrailError);
+    expect(() => checkEpisodeAmendment(before, q, { stop: 100 })).not.toThrow();
+    expect(() => checkEpisodeAmendment(before, q, {})).toThrow(/requires stop or target/);
+    expect(filled.state).toBe(before);
+    expect(before.position).toMatchObject({ stop: 99, target: 105 });
+    expect(before.cursor).toBe(0);
+
+    const flat = createEpisodeState();
+    expect(() => checkEpisodeAmendment(flat, q, { stop: 99 })).toThrow(/invalid while flat/);
+    const pending = submitEpisode(flat, q, prediction('long', 100, 99, 105)).state;
+    expect(() => checkEpisodeAmendment(pending, q, { stop: 99 })).toThrow(
+      /invalid while the order is pending/,
+    );
   });
 
   it('executes a manual exit at the next bar open and keeps the episode active', () => {

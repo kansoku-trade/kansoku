@@ -1,4 +1,5 @@
 import type {
+  TrainerAmendCheck,
   TrainerApi,
   TrainerEnvelope,
   TrainerOpened,
@@ -27,6 +28,7 @@ export function getTrainerBridge(
     submit: (input) => call<TrainerStepResult>('submit', input),
     step: (input) => call<TrainerStepResult>('step', input),
     amend: (input) => call<TrainerStepResult>('amend', input),
+    validateAmend: (input) => call<TrainerAmendCheck>('validateAmend', input),
     cancel: (input) => call<TrainerStepResult>('cancel', input),
     exitNextOpen: (input) => call<TrainerStepResult>('exitNextOpen', input),
     reveal: (input) => call<TrainerReveal>('reveal', input),

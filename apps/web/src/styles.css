@@ -641,6 +641,14 @@ a:hover {
   color: var(--down);
   font-size: var(--fs-sm);
 }
+.trainer-order-guard {
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  max-width: 420px;
+}
+.trainer-order-guard--blocked {
+  color: var(--down);
+}
 .trainer-order-field--warn {
   color: var(--accent);
 }

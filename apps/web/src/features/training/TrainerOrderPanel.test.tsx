@@ -95,17 +95,56 @@ function makeBridge(): { bridge: TrainerBridge; submit: ReturnType<typeof vi.fn>
   return { bridge, submit };
 }
 
-function makeAmendBridge(nextView: TrainerView): {
+// The engine is the authority on what an amendment may do; this stub only stands in for its
+// answer so the panel's plumbing can be tested. Engine agreement itself is pinned in
+// packages/bench and in apps/pro's trainer.validateAmend suite.
+type AmendVerdictStub = (input: { stop?: number; target?: number }) => {
+  allowed: boolean;
+  code: 'TRAINER_GUARDRAIL' | null;
+  error: string | null;
+};
+
+const ALWAYS_ALLOWED: AmendVerdictStub = () => ({ allowed: true, code: null, error: null });
+
+function makeAmendBridge(
+  nextView: TrainerView,
+  verdict: AmendVerdictStub = ALWAYS_ALLOWED,
+): {
   bridge: TrainerBridge;
   amend: ReturnType<typeof vi.fn>;
+  validateAmend: ReturnType<typeof vi.fn>;
 } {
   const amend = vi.fn(async () => ({
     ok: true as const,
     data: { view: nextView, events: [], advancedBars: 0, terminal: false, result: null },
   }));
-  const bridge = { amend } as unknown as TrainerBridge;
-  return { bridge, amend };
+  const validateAmend = vi.fn(async (input: { stop?: number; target?: number }) => ({
+    ok: true as const,
+    data: verdict(input),
+  }));
+  const bridge = { amend, validateAmend } as unknown as TrainerBridge;
+  return { bridge, amend, validateAmend };
 }
+
+// What the engine does to a long at entry 100 once mfeR >= 1: a stop below breakeven is refused
+// even though it tightens.
+const REFUSE_BELOW: AmendVerdictStub = ({ stop }) =>
+  stop !== undefined && stop < 100
+    ? {
+        allowed: false,
+        code: 'TRAINER_GUARDRAIL',
+        error: 'amended long stop stays below the 100 entry while the position has already run',
+      }
+    : { allowed: true, code: null, error: null };
+
+const REFUSE_ABOVE: AmendVerdictStub = ({ stop }) =>
+  stop !== undefined && stop > 100
+    ? {
+        allowed: false,
+        code: 'TRAINER_GUARDRAIL',
+        error: 'amended short stop stays above the 100 entry while the position has already run',
+      }
+    : { allowed: true, code: null, error: null };
 
 function makeCancelBridge(nextView: TrainerView): {
   bridge: TrainerBridge;
@@ -465,10 +504,10 @@ describe('TrainerOrderPanel TD-RR-01 gate', () => {
 });
 
 describe('TrainerOrderPanel TD-EXIT-01 gate (position amend)', () => {
-  it('long: allows tightening the stop to breakeven and above, rejects widening back into loss', () => {
+  it('long: unlocks confirm at breakeven and above, and blocks on the engine refusal below it', async () => {
     const { handle } = makeHandle();
-    const { bridge } = makeAmendBridge(makeOpenView('long', 102));
     const view = makeOpenView('long', 102); // entry 100 / stop 99 / reference 102 (past 1R)
+    const { bridge, amend } = makeAmendBridge(makeOpenView('long', 102), REFUSE_BELOW);
     render(
       <TrainerOrderPanel
         view={view}
@@ -479,21 +518,32 @@ describe('TrainerOrderPanel TD-EXIT-01 gate (position amend)', () => {
       />,
     );
     const stopInput = screen.getByLabelText('止损') as HTMLInputElement;
+    fireEvent.change(screen.getByLabelText('调整原因'), { target: { value: '止损上移锁利' } });
+    const confirmButton = screen.getByRole('button', { name: '确认调整' }) as HTMLButtonElement;
 
     fireEvent.change(stopInput, { target: { value: '100' } });
     expect(Number(stopInput.value)).toBe(100);
+    await waitFor(() => expect(confirmButton.disabled).toBe(false));
 
     fireEvent.change(stopInput, { target: { value: '100.5' } });
     expect(Number(stopInput.value)).toBe(100.5);
+    await waitFor(() => expect(confirmButton.disabled).toBe(false));
 
+    // The value is no longer snapped back to the committed stop — the field shows what the trader
+    // asked for, and the engine's own refusal is what stops it reaching the session.
     fireEvent.change(stopInput, { target: { value: '97' } });
-    expect(Number(stopInput.value)).toBe(99); // clamped back to the committed stop, not to 97
+    expect(Number(stopInput.value)).toBe(97);
+    await waitFor(() => expect(confirmButton.disabled).toBe(true));
+    expect(screen.getByRole('status').textContent).toContain('stays below the 100 entry');
+
+    fireEvent.click(confirmButton);
+    expect(amend).not.toHaveBeenCalled();
   });
 
-  it('short: allows tightening the stop to breakeven and above, rejects widening back into loss', () => {
+  it('short: unlocks confirm at breakeven and below, and blocks on the engine refusal above it', async () => {
     const { handle } = makeHandle();
-    const { bridge } = makeAmendBridge(makeOpenView('short', 98));
     const view = makeOpenView('short', 98); // entry 100 / stop 101 / reference 98 (past 1R)
+    const { bridge, amend } = makeAmendBridge(makeOpenView('short', 98), REFUSE_ABOVE);
     render(
       <TrainerOrderPanel
         view={view}
@@ -504,18 +554,57 @@ describe('TrainerOrderPanel TD-EXIT-01 gate (position amend)', () => {
       />,
     );
     const stopInput = screen.getByLabelText('止损') as HTMLInputElement;
+    fireEvent.change(screen.getByLabelText('调整原因'), { target: { value: '止损下移锁利' } });
+    const confirmButton = screen.getByRole('button', { name: '确认调整' }) as HTMLButtonElement;
 
     fireEvent.change(stopInput, { target: { value: '100' } });
     expect(Number(stopInput.value)).toBe(100);
+    await waitFor(() => expect(confirmButton.disabled).toBe(false));
 
     fireEvent.change(stopInput, { target: { value: '99.5' } });
     expect(Number(stopInput.value)).toBe(99.5);
+    await waitFor(() => expect(confirmButton.disabled).toBe(false));
 
     fireEvent.change(stopInput, { target: { value: '102' } });
-    expect(Number(stopInput.value)).toBe(101); // clamped back to the committed stop, not to 102
+    expect(Number(stopInput.value)).toBe(102);
+    await waitFor(() => expect(confirmButton.disabled).toBe(true));
+    expect(screen.getByRole('status').textContent).toContain('stays above the 100 entry');
+
+    fireEvent.click(confirmButton);
+    expect(amend).not.toHaveBeenCalled();
   });
 
-  it('locks the confirm button until a reason is entered', () => {
+  it('asks the engine once the drag settles, never while the pointer is moving', async () => {
+    const { handle, container } = makeHandle();
+    const view = makeOpenView('long', 102);
+    const { bridge, validateAmend } = makeAmendBridge(makeOpenView('long', 102), REFUSE_BELOW);
+    render(
+      <TrainerOrderPanel
+        view={view}
+        handle={handle}
+        bridge={bridge}
+        sessionId="run-1"
+        onViewChange={() => {}}
+      />,
+    );
+    // One seeding check for the position's committed stop/target fires on mount.
+    await waitFor(() => expect(validateAmend).toHaveBeenCalledTimes(1));
+
+    // stop 99 sits at y=201 under the linear map; drag it down through four frames.
+    fireEvent.pointerDown(container, { clientY: 201 });
+    fireEvent.pointerMove(window, { clientY: 202 });
+    fireEvent.pointerMove(window, { clientY: 203 });
+    fireEvent.pointerMove(window, { clientY: 204 });
+    fireEvent.pointerMove(window, { clientY: 205 });
+    expect(validateAmend).toHaveBeenCalledTimes(1);
+    expect(Number((screen.getByLabelText('止损') as HTMLInputElement).value)).toBe(95);
+
+    fireEvent.pointerUp(window);
+    await waitFor(() => expect(validateAmend).toHaveBeenCalledTimes(2));
+    expect(validateAmend).toHaveBeenLastCalledWith({ sessionId: 'run-1', stop: 95, target: 103 });
+  });
+
+  it('locks the confirm button until a reason is entered', async () => {
     const { handle } = makeHandle();
     const view = makeOpenView('long', 102);
     const { bridge } = makeAmendBridge(view);
@@ -536,7 +625,31 @@ describe('TrainerOrderPanel TD-EXIT-01 gate (position amend)', () => {
     fireEvent.change(screen.getByLabelText('调整原因'), {
       target: { value: '止损上移到 100.5 锁利' },
     });
-    expect(confirmButton.disabled).toBe(false);
+    await waitFor(() => expect(confirmButton.disabled).toBe(false));
+  });
+
+  it('keeps confirm locked while an edit is still waiting on its verdict', async () => {
+    const { handle } = makeHandle();
+    const view = makeOpenView('long', 102);
+    const { bridge } = makeAmendBridge(view);
+    render(
+      <TrainerOrderPanel
+        view={view}
+        handle={handle}
+        bridge={bridge}
+        sessionId="run-1"
+        onViewChange={() => {}}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText('调整原因'), { target: { value: '止损上移锁利' } });
+    const confirmButton = screen.getByRole('button', { name: '确认调整' }) as HTMLButtonElement;
+    await waitFor(() => expect(confirmButton.disabled).toBe(false));
+
+    fireEvent.change(screen.getByLabelText('止损'), { target: { value: '100.5' } });
+    expect(confirmButton.disabled).toBe(true);
+    expect(screen.getByText('校验中…')).toBeTruthy();
+
+    await waitFor(() => expect(confirmButton.disabled).toBe(false));
   });
 
   it('submits the amended stop/target with the entered reason and applies the returned view', async () => {
@@ -559,7 +672,9 @@ describe('TrainerOrderPanel TD-EXIT-01 gate (position amend)', () => {
     fireEvent.change(screen.getByLabelText('调整原因'), {
       target: { value: '止损上移到 100.5 锁利' },
     });
-    fireEvent.click(screen.getByRole('button', { name: '确认调整' }));
+    const confirmButton = screen.getByRole('button', { name: '确认调整' }) as HTMLButtonElement;
+    await waitFor(() => expect(confirmButton.disabled).toBe(false));
+    fireEvent.click(confirmButton);
 
     await waitFor(() => expect(amend).toHaveBeenCalledTimes(1));
     expect(amend).toHaveBeenCalledWith({
