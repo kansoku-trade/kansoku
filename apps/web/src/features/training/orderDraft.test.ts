@@ -112,7 +112,7 @@ describe('buildOrderSubmission', () => {
     const submission = buildOrderSubmission(makeView(), draft, 'limit');
     expect(submission.entry_plan).toEqual({ entry: 101, stop: 99, target1: 108 });
     expect(submission.direction).toBe('long');
-    expect(submission.scenarios.length).toBeGreaterThanOrEqual(2);
+    expect(submission.scenarios).toEqual([]);
   });
 
   it('overrides entry with the live price for a market order, keeping stop/target as drafted', () => {

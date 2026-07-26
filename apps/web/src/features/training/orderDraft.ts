@@ -92,10 +92,10 @@ export function buildOrderSubmission(
     direction: draft.direction,
     anchor: deriveAnchor(view),
     entry_plan: { entry, stop: draft.stop, target1: draft.target1 },
-    scenarios: [
-      { label: '按计划触发目标', probability: 60 },
-      { label: '触发止损', probability: 40 },
-    ],
+    // submitEpisode never reads scenarios (that field only feeds the AI runner's Bull/Base/Bear
+    // scoring) — the trainer has none to give, so this is an honest "none supplied", not a
+    // placeholder standing in for real trader input.
+    scenarios: [],
     comment: '',
   };
 }
