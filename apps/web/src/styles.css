@@ -686,6 +686,40 @@ a:hover {
   font-style: italic;
 }
 
+.trainer-settlement {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--border);
+  overflow-y: auto;
+  max-height: 40vh;
+}
+.trainer-settlement-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+.trainer-settlement-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.trainer-settlement-trade {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--fs-sm);
+}
+.trainer-settlement-epilogue-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+}
+
 .fullpage {
   height: 100vh;
   display: flex;

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { TrainerView } from '@kansoku/pro-api';
+import type { RawBar } from '@kansoku/shared/types';
 import { IntradayControlsProvider } from '../charts/intraday/controlsContext';
 import { IntradayChartOnly } from '../charts/intraday/IntradayChartOnly';
 import type { ChartTf } from '../charts/intraday/timeframes';
@@ -14,6 +15,7 @@ import {
 import { TrainerAdvanceControls } from './TrainerAdvanceControls';
 import { TrainerOrderPanel } from './TrainerOrderPanel';
 import { TrainerPeriodSwitch } from './TrainerPeriodSwitch';
+import { TrainerSettlement } from './TrainerSettlement';
 
 const STORAGE_NAMESPACE = 'trainer';
 
@@ -25,7 +27,8 @@ export interface TrainerChartProps {
 }
 
 export function TrainerChart({ view, sessionId, bridge, onViewChange }: TrainerChartProps) {
-  const built = useMemo(() => buildTrainerIntradayBuilt(view), [view]);
+  const [epilogueBars, setEpilogueBars] = useState<RawBar[] | null>(null);
+  const built = useMemo(() => buildTrainerIntradayBuilt(view, epilogueBars), [view, epilogueBars]);
   const baseTf = TRAINER_PERIOD_TO_CHART_TF[view.basePeriod];
   const [requestedTf, setRequestedTf] = useState<ChartTf>(baseTf);
   const activeTf = isTrainerLadderTf(view.ladder, requestedTf) ? requestedTf : baseTf;
@@ -50,22 +53,34 @@ export function TrainerChart({ view, sessionId, bridge, onViewChange }: TrainerC
         // key remounts these panels (and their draft state) on a new case instead of
         // syncing them with an effect.
         <>
-          <TrainerAdvanceControls
-            key={`advance-${view.caseId}`}
-            view={view}
-            period={trainerAdvancePeriod(view.ladder, activeTf)}
-            bridge={bridge}
-            sessionId={sessionId}
-            onViewChange={onViewChange}
-          />
-          <TrainerOrderPanel
-            key={`order-${view.caseId}`}
-            view={view}
-            handle={chartHandle}
-            bridge={bridge}
-            sessionId={sessionId}
-            onViewChange={onViewChange}
-          />
+          {view.terminal ? (
+            <TrainerSettlement
+              key={`settlement-${view.caseId}`}
+              view={view}
+              bridge={bridge}
+              sessionId={sessionId}
+              onEpilogueBarsChange={setEpilogueBars}
+            />
+          ) : (
+            <>
+              <TrainerAdvanceControls
+                key={`advance-${view.caseId}`}
+                view={view}
+                period={trainerAdvancePeriod(view.ladder, activeTf)}
+                bridge={bridge}
+                sessionId={sessionId}
+                onViewChange={onViewChange}
+              />
+              <TrainerOrderPanel
+                key={`order-${view.caseId}`}
+                view={view}
+                handle={chartHandle}
+                bridge={bridge}
+                sessionId={sessionId}
+                onViewChange={onViewChange}
+              />
+            </>
+          )}
         </>
       )}
     </div>

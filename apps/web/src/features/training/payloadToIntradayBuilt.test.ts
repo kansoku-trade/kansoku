@@ -104,6 +104,51 @@ describe('buildTrainerIntradayBuilt', () => {
   });
 });
 
+describe('buildTrainerIntradayBuilt epilogue', () => {
+  const EPILOGUE_BARS: RawBar[] = [
+    bar('2026-01-05T14:25:00.000Z', 105),
+    bar('2026-01-05T14:30:00.000Z', 106),
+  ];
+
+  it('extends only the base tier, appended after the last case bar', () => {
+    const view = makeView();
+    const built = buildTrainerIntradayBuilt(view, EPILOGUE_BARS);
+    const baseTf = TRAINER_PERIOD_TO_CHART_TF[view.basePeriod];
+    const candles = tfDataOf(built, baseTf)?.candles ?? [];
+
+    expect(candles).toHaveLength(BASE_BARS.length + EPILOGUE_BARS.length);
+    expect(candles.map((c) => c.time)).toEqual(
+      [...BASE_BARS, ...EPILOGUE_BARS].map((b) => toTs(b.time)),
+    );
+  });
+
+  it('leaves the mid and top tiers untouched', () => {
+    const view = makeView();
+    const built = buildTrainerIntradayBuilt(view, EPILOGUE_BARS);
+    const midTf = TRAINER_PERIOD_TO_CHART_TF['15m'];
+    const topTf = TRAINER_PERIOD_TO_CHART_TF['1h'];
+
+    expect(tfDataOf(built, midTf)?.candles.map((c) => c.time)).toEqual(
+      MID_BARS.map((b) => toTs(b.time)),
+    );
+    expect(tfDataOf(built, topTf)?.candles.map((c) => c.time)).toEqual(
+      TOP_BARS.map((b) => toTs(b.time)),
+    );
+  });
+
+  it('is a no-op when the epilogue is omitted, null, or empty', () => {
+    const view = makeView();
+    const baseTf = TRAINER_PERIOD_TO_CHART_TF[view.basePeriod];
+    const omitted = tfDataOf(buildTrainerIntradayBuilt(view), baseTf)?.candles ?? [];
+    const nulled = tfDataOf(buildTrainerIntradayBuilt(view, null), baseTf)?.candles ?? [];
+    const emptied = tfDataOf(buildTrainerIntradayBuilt(view, []), baseTf)?.candles ?? [];
+
+    expect(omitted).toHaveLength(BASE_BARS.length);
+    expect(nulled).toHaveLength(BASE_BARS.length);
+    expect(emptied).toHaveLength(BASE_BARS.length);
+  });
+});
+
 describe('trainerAdvancePeriod', () => {
   const LADDER: TrainerView['ladder'] = ['5m', '15m', '1h'];
 

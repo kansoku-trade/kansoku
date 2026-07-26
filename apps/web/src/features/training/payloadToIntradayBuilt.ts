@@ -92,8 +92,14 @@ function buildSidebar(view: TrainerView): IntradaySidebar {
   };
 }
 
-export function buildTrainerIntradayBuilt(view: TrainerView): IntradayBuilt {
-  const tierBars: readonly RawBar[][] = [view.bars.base, view.bars.mid, view.bars.top];
+export function buildTrainerIntradayBuilt(
+  view: TrainerView,
+  epilogueBars?: RawBar[] | null,
+): IntradayBuilt {
+  // The epilogue is stored at the case's base period, so it only ever extends the base tier —
+  // it is not re-aggregated into the mid/top tiers.
+  const base = epilogueBars?.length ? [...view.bars.base, ...epilogueBars] : view.bars.base;
+  const tierBars: readonly RawBar[][] = [base, view.bars.mid, view.bars.top];
   const timeframes: Record<string, IntradayTfData> = {};
   view.ladder.forEach((period, i) => {
     timeframes[TRAINER_PERIOD_TO_CHART_TF[period]] = rawBarsToTfData(tierBars[i]);

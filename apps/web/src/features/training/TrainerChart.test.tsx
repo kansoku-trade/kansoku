@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { TrainerView } from '@kansoku/pro-api';
+import type { TrainerProvenance, TrainerReveal, TrainerView } from '@kansoku/pro-api';
 import type { RawBar } from '@kansoku/shared/types';
+import type { TrainerBridge } from '../desktop/desktopTrainerBridge';
 
 const useDrawingsMock = vi.fn(() => ({}));
 
@@ -18,6 +19,11 @@ vi.mock('../charts/drawings/useDrawings', () => ({
 vi.mock('../charts/drawings/DrawingToolbar', () => ({
   DrawingToolbar: () => null,
 }));
+
+vi.mock('./payloadToIntradayBuilt', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./payloadToIntradayBuilt')>();
+  return { ...actual, buildTrainerIntradayBuilt: vi.fn(actual.buildTrainerIntradayBuilt) };
+});
 
 const { TrainerChart } = await import('./TrainerChart');
 const { IntradayChartOnly } = await import('../charts/intraday/IntradayChartOnly');
@@ -54,7 +60,24 @@ afterEach(() => {
   cleanup();
   localStorage.clear();
   useDrawingsMock.mockClear();
+  vi.mocked(buildTrainerIntradayBuilt).mockClear();
 });
+
+const PROVENANCE: TrainerProvenance = {
+  outputId: 'case-1',
+  aliasSymbol: 'TRAIN01',
+  sourceId: 'src-1',
+  sourceSymbol: 'REALCANARY.US',
+  sourceCutoff: '2019-04-01T20:00:00.000Z',
+  syntheticCutoff: '2026-01-05T14:05:00.000Z',
+  dayShift: 1064,
+  priceScale: 0.123456,
+  volumeScale: 7.654321,
+};
+
+function makeTerminalView(): TrainerView {
+  return { ...makeView(), phase: 'terminal', terminal: true };
+}
 
 describe('TrainerChart', () => {
   it('calls useDrawings once the lazy chunk resolves, when drawings is enabled (control)', async () => {
@@ -91,16 +114,9 @@ describe('TrainerChart', () => {
   });
 
   it('renders the order panel once bridge/sessionId/onViewChange are supplied', () => {
-    const bridge = { submit: vi.fn() } as unknown as Parameters<
-      typeof TrainerChart
-    >[0]['bridge'];
+    const bridge = { submit: vi.fn() } as unknown as Parameters<typeof TrainerChart>[0]['bridge'];
     render(
-      <TrainerChart
-        view={makeView()}
-        bridge={bridge}
-        sessionId="run-1"
-        onViewChange={() => {}}
-      />,
+      <TrainerChart view={makeView()} bridge={bridge} sessionId="run-1" onViewChange={() => {}} />,
     );
     expect(screen.getByLabelText('止损')).toBeTruthy();
   });
@@ -123,6 +139,55 @@ describe('TrainerChart', () => {
     expect(step).toHaveBeenCalledWith({
       sessionId: 'run-1',
       action: { type: 'hold', bars: 1, period: '1h' },
+    });
+  });
+});
+
+describe('TrainerChart terminal state', () => {
+  function makeRevealBridge(epilogue: RawBar[]): TrainerBridge {
+    const reveal = vi.fn(async () => ({
+      ok: true as const,
+      data: { provenance: PROVENANCE, epilogue } satisfies TrainerReveal,
+    }));
+    return { reveal } as unknown as TrainerBridge;
+  }
+
+  it('renders the settlement pane instead of the advance/order panels once the view is terminal', () => {
+    render(
+      <TrainerChart
+        view={makeTerminalView()}
+        bridge={makeRevealBridge([])}
+        sessionId="run-1"
+        onViewChange={() => {}}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: /步进/ })).toBeNull();
+    expect(screen.queryByLabelText('止损')).toBeNull();
+    expect(screen.getByRole('checkbox')).toBeTruthy();
+  });
+
+  it('threads the revealed epilogue bars into the chart build only once the toggle is switched on', async () => {
+    const epilogue = [bar('2026-01-05T14:10:00.000Z', 999)];
+    render(
+      <TrainerChart
+        view={makeTerminalView()}
+        bridge={makeRevealBridge(epilogue)}
+        sessionId="run-1"
+        onViewChange={() => {}}
+      />,
+    );
+
+    await waitFor(() => {
+      const lastCall = vi.mocked(buildTrainerIntradayBuilt).mock.calls.at(-1);
+      expect(lastCall?.[1]).toBeFalsy();
+    });
+
+    fireEvent.click(await screen.findByRole('checkbox'));
+
+    await waitFor(() => {
+      const lastCall = vi.mocked(buildTrainerIntradayBuilt).mock.calls.at(-1);
+      expect(lastCall?.[1]).toEqual(epilogue);
     });
   });
 });
