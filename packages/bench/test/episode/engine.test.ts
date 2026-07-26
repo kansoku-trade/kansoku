@@ -6,7 +6,13 @@ import {
   observeEpisode,
   submitEpisode,
 } from '../../src/episode/engine.js';
-import { periodBucketKey } from '../../src/episode/periods.js';
+import {
+  episodePeriodLadder,
+  periodBucketKey,
+  periodBucketStart,
+  type EpisodeBasePeriod,
+  type EpisodeViewPeriod,
+} from '../../src/episode/periods.js';
 import type { EpisodeTradeAction } from '../../src/schema/episode.js';
 import type { Question } from '../../src/schema/question.js';
 import type { Submission } from '../../src/schema/submission.js';
@@ -216,9 +222,9 @@ describe('episode engine', () => {
       q,
       reasoned({ type: 'hold' }),
     );
-    expect(() => advanceEpisode(longFilled.state, q, reasoned({ type: 'amend', stop: 94 }))).toThrow(
-      EpisodeGuardrailError,
-    );
+    expect(() =>
+      advanceEpisode(longFilled.state, q, reasoned({ type: 'amend', stop: 94 })),
+    ).toThrow(EpisodeGuardrailError);
 
     const shortFilled = advanceEpisode(
       submitEpisode(createEpisodeState(), q, prediction('short', 105, 110, 90)).state,
@@ -241,10 +247,12 @@ describe('episode engine', () => {
       q,
       reasoned({ type: 'hold' }),
     );
-    expect(advanceEpisode(filled.state, q, reasoned({ type: 'amend', stop: 97 })).state.position)
-      .toMatchObject({ stop: 97 });
-    expect(advanceEpisode(filled.state, q, reasoned({ type: 'amend', target: 118 })).state.position)
-      .toMatchObject({ stop: 95, target: 118 });
+    expect(
+      advanceEpisode(filled.state, q, reasoned({ type: 'amend', stop: 97 })).state.position,
+    ).toMatchObject({ stop: 97 });
+    expect(
+      advanceEpisode(filled.state, q, reasoned({ type: 'amend', target: 118 })).state.position,
+    ).toMatchObject({ stop: 95, target: 118 });
   });
 
   it('executes a manual exit at the next bar open and keeps the episode active', () => {
@@ -377,10 +385,136 @@ describe('episode engine', () => {
       },
     };
     const first = observeEpisode(createEpisodeState(), oneMinute);
-    expect(first.newBars.h1).toEqual([oneMinute.replay.bars[0]]);
-    expect(first.newBars.day).toEqual([]);
-    expect(first.newBars.week).toEqual([]);
+    expect(first.newBars.base).toEqual([oneMinute.replay.bars[0]]);
   });
+
+  function ladderQuestion(basePeriod: EpisodeBasePeriod, bars: ReturnType<typeof bar>[]): Question {
+    return {
+      id: `swing-LADDER-${basePeriod}`,
+      bank: 'swing',
+      symbol: 'MU.US',
+      cutoff: '2026-03-20T20:00:00-04:00',
+      layer: 'high-vol-tech',
+      adversarial: false,
+      fixtures: {
+        kline: { day: [], week: [] },
+        indicators: {},
+        quote: { last: 100 },
+        capitalFlow: {},
+        news: [],
+        fundamentals: {},
+        calendar: {},
+      },
+      replay: { basePeriod, horizonBars: bars.length, bars },
+    };
+  }
+
+  function firstBoundaryCrossing(
+    period: EpisodeViewPeriod,
+    bars: ReturnType<typeof bar>[],
+  ): number {
+    for (let i = 1; i < bars.length; i++) {
+      if (periodBucketKey(period, bars[i - 1].time) !== periodBucketKey(period, bars[i].time)) {
+        return i;
+      }
+    }
+    throw new Error(`fixture never crosses a ${period} boundary`);
+  }
+
+  function observeAll(q: Question) {
+    let state = createEpisodeState();
+    const results: ReturnType<typeof observeEpisode>[] = [];
+    for (let i = 0; i < q.replay.bars.length; i++) {
+      const result = observeEpisode(state, q);
+      results.push(result);
+      state = result.state;
+    }
+    return results;
+  }
+
+  it.each([
+    [
+      '1m' as const,
+      Array.from({ length: 20 }, (_, i) =>
+        bar(
+          `2026-03-23T13:${String(30 + i).padStart(2, '0')}:00Z`,
+          100 + i,
+          101 + i,
+          99 + i,
+          100.5 + i,
+        ),
+      ),
+    ],
+    [
+      '5m' as const,
+      [
+        bar('2026-03-23T13:30:00Z', 100, 101, 99, 100.2),
+        bar('2026-03-23T13:35:00Z', 100, 101, 99, 100.2),
+        bar('2026-03-23T13:40:00Z', 100, 101, 99, 100.2),
+        bar('2026-03-23T13:45:00Z', 100, 101, 99, 100.2),
+        bar('2026-03-23T13:50:00Z', 100, 101, 99, 100.2),
+        bar('2026-03-23T13:55:00Z', 100, 101, 99, 100.2),
+        bar('2026-03-23T14:00:00Z', 100, 101, 99, 100.2),
+        bar('2026-03-23T14:05:00Z', 100, 101, 99, 100.2),
+        bar('2026-03-23T14:10:00Z', 100, 101, 99, 100.2),
+        bar('2026-03-23T14:15:00Z', 100, 101, 99, 100.2),
+        bar('2026-03-23T14:20:00Z', 100, 101, 99, 100.2),
+        bar('2026-03-23T14:25:00Z', 100, 101, 99, 100.2),
+        bar('2026-03-23T14:30:00Z', 100, 101, 99, 100.2),
+        bar('2026-03-23T14:35:00Z', 100, 101, 99, 100.2),
+        bar('2026-03-23T14:40:00Z', 100, 101, 99, 100.2),
+      ],
+    ],
+    [
+      '15m' as const,
+      [
+        bar('2026-03-23T13:30:00Z', 100, 101, 99, 100.2),
+        bar('2026-03-23T13:45:00Z', 100, 101, 99, 100.2),
+        bar('2026-03-23T14:00:00Z', 100, 101, 99, 100.2),
+        bar('2026-03-23T14:15:00Z', 100, 101, 99, 100.2),
+        bar('2026-03-23T14:30:00Z', 100, 101, 99, 100.2),
+        bar('2026-03-24T13:30:00Z', 100, 101, 99, 100.2),
+        bar('2026-03-24T13:45:00Z', 100, 101, 99, 100.2),
+      ],
+    ],
+    [
+      '30m' as const,
+      [
+        bar('2026-03-23T13:30:00Z', 100, 101, 99, 100.2),
+        bar('2026-03-23T14:00:00Z', 100, 101, 99, 100.2),
+        bar('2026-03-23T14:30:00Z', 100, 101, 99, 100.2),
+        bar('2026-03-24T13:30:00Z', 100, 101, 99, 100.2),
+      ],
+    ],
+    [
+      '1h' as const,
+      [
+        bar('2026-03-23T14:30:00Z', 100, 101, 99, 100.2),
+        bar('2026-03-23T15:30:00Z', 100, 101, 99, 100.2),
+        bar('2026-03-24T14:30:00Z', 100, 101, 99, 100.2),
+        bar('2026-03-30T14:30:00Z', 100, 101, 99, 100.2),
+      ],
+    ],
+  ])(
+    'reports a fresh mid bar at the ladder mid boundary and a fresh top bar at the ladder top boundary for a %s episode',
+    (basePeriod, bars) => {
+      const [, midPeriod, topPeriod] = episodePeriodLadder(basePeriod);
+      const midCrossAt = firstBoundaryCrossing(midPeriod, bars);
+      const topCrossAt = firstBoundaryCrossing(topPeriod, bars);
+      const results = observeAll(ladderQuestion(basePeriod, bars));
+
+      expect(
+        results[midCrossAt].newBars.mid.some(
+          (b) => b.time === periodBucketStart(midPeriod, bars[midCrossAt].time),
+        ),
+      ).toBe(true);
+      expect(
+        results[topCrossAt].newBars.top.some(
+          (b) => b.time === periodBucketStart(topPeriod, bars[topCrossAt].time),
+        ),
+      ).toBe(true);
+    },
+  );
 
   function fiveMinuteQuestion(bars: ReturnType<typeof bar>[], horizonBars = bars.length): Question {
     return {

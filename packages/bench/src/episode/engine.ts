@@ -85,9 +85,9 @@ export interface EpisodeEngineOptions {
 }
 
 export interface EpisodeNewBars {
-  h1: RawBar[];
-  day: RawBar[];
-  week: RawBar[];
+  base: RawBar[];
+  mid: RawBar[];
+  top: RawBar[];
 }
 
 export type EpisodeAdvanceCore = {
@@ -105,7 +105,7 @@ export interface EpisodeAdvanceResult extends EpisodeAdvanceCore {
   newBars: EpisodeNewBars;
 }
 
-const EMPTY_NEW_BARS: EpisodeNewBars = { h1: [], day: [], week: [] };
+const EMPTY_NEW_BARS: EpisodeNewBars = { base: [], mid: [], top: [] };
 
 function diffBars(prev: readonly RawBar[], next: readonly RawBar[]): RawBar[] {
   const prevMap = new Map<string, RawBar>();
@@ -135,20 +135,23 @@ function computeNewBars(
   prevCursor: number,
   nextCursor: number,
 ): EpisodeNewBars {
-  if (nextCursor <= prevCursor) return { h1: [], day: [], week: [] };
+  if (nextCursor <= prevCursor) return { base: [], mid: [], top: [] };
   const prevView = buildEpisodeQuestionViewAtCursor(question, prevCursor);
   const nextView = buildEpisodeQuestionViewAtCursor(question, nextCursor);
-  const basePeriod = questionBasePeriod(question);
-  const prevBase = prevView.fixtures.kline[basePeriod] ?? [];
-  const nextBase = nextView.fixtures.kline[basePeriod] ?? [];
-  const prevDay = prevView.fixtures.kline.day ?? [];
-  const nextDay = nextView.fixtures.kline.day ?? [];
-  const prevWeek = prevView.fixtures.kline.week ?? [];
-  const nextWeek = nextView.fixtures.kline.week ?? [];
+  const [basePeriod, midPeriod, topPeriod] = episodePeriodLadder(questionBasePeriod(question));
   return {
-    h1: diffBars(prevBase, nextBase),
-    day: diffBars(prevDay, nextDay),
-    week: diffBars(prevWeek, nextWeek),
+    base: diffBars(
+      prevView.fixtures.kline[basePeriod] ?? [],
+      nextView.fixtures.kline[basePeriod] ?? [],
+    ),
+    mid: diffBars(
+      prevView.fixtures.kline[midPeriod] ?? [],
+      nextView.fixtures.kline[midPeriod] ?? [],
+    ),
+    top: diffBars(
+      prevView.fixtures.kline[topPeriod] ?? [],
+      nextView.fixtures.kline[topPeriod] ?? [],
+    ),
   };
 }
 
@@ -800,9 +803,7 @@ function advanceEpisodeSingle(
   }
   const allowOpenGap = fillTiming !== 'intrabar';
   const exitBar =
-    fillTiming === 'intrabar'
-      ? postFillBar(bar, working.position.entryPrice, roseIntoFill)
-      : bar;
+    fillTiming === 'intrabar' ? postFillBar(bar, working.position.entryPrice, roseIntoFill) : bar;
   const position = updateExcursions(working.position, exitBar);
   working = { ...working, position };
 
