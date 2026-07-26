@@ -176,6 +176,93 @@ describe('TrainerAdvanceControls hold-reason gate', () => {
   });
 });
 
+describe('TrainerAdvanceControls reuse marker', () => {
+  it('shows the marker once a reason has been sent and the field still matches it', async () => {
+    const view = makeView({ phase: 'open', position: makePosition() });
+    const step = vi.fn(async () => ({
+      ok: true as const,
+      data: stepResult({ view }),
+    }));
+    render(
+      <TrainerAdvanceControls
+        view={view}
+        period="5m"
+        bridge={makeBridge(step)}
+        sessionId="run-1"
+        onViewChange={() => {}}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText('继续持有理由'), {
+      target: { value: '价格仍在均线上方，继续持有' },
+    });
+    expect(screen.queryByText('沿用上一次理由')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: /步进/ }));
+    await waitFor(() => expect(step).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(screen.getByText('沿用上一次理由')).toBeTruthy());
+  });
+
+  it('hides the marker the instant the reason text is edited away from what was sent', async () => {
+    const view = makeView({ phase: 'open', position: makePosition() });
+    const step = vi.fn(async () => ({ ok: true as const, data: stepResult({ view }) }));
+    render(
+      <TrainerAdvanceControls
+        view={view}
+        period="5m"
+        bridge={makeBridge(step)}
+        sessionId="run-1"
+        onViewChange={() => {}}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText('继续持有理由'), {
+      target: { value: '价格仍在均线上方，继续持有' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /步进/ }));
+    await waitFor(() => expect(screen.getByText('沿用上一次理由')).toBeTruthy());
+
+    fireEvent.change(screen.getByLabelText('继续持有理由'), {
+      target: { value: '跌破均线了，改主意' },
+    });
+    expect(screen.queryByText('沿用上一次理由')).toBeNull();
+  });
+
+  it('clears the reuse marker and the reason field once the position changes', async () => {
+    const openView = makeView({ phase: 'open', position: makePosition({ tradeId: 1 }) });
+    const step = vi.fn(async () => ({ ok: true as const, data: stepResult({ view: openView }) }));
+    const { rerender } = render(
+      <TrainerAdvanceControls
+        view={openView}
+        period="5m"
+        bridge={makeBridge(step)}
+        sessionId="run-1"
+        onViewChange={() => {}}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText('继续持有理由'), {
+      target: { value: '价格仍在均线上方，继续持有' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /步进/ }));
+    await waitFor(() => expect(screen.getByText('沿用上一次理由')).toBeTruthy());
+
+    const nextTradeView = makeView({ phase: 'open', position: makePosition({ tradeId: 2 }) });
+    rerender(
+      <TrainerAdvanceControls
+        view={nextTradeView}
+        period="5m"
+        bridge={makeBridge(step)}
+        sessionId="run-1"
+        onViewChange={() => {}}
+      />,
+    );
+
+    expect(screen.queryByText('沿用上一次理由')).toBeNull();
+    expect((screen.getByLabelText('继续持有理由') as HTMLInputElement).value).toBe('');
+  });
+});
+
 describe('TrainerAdvanceControls failure handling', () => {
   it('adopts the failure envelope view instead of assuming the session did not move (M-2)', async () => {
     const actualView = makeView({ cursor: 3 });

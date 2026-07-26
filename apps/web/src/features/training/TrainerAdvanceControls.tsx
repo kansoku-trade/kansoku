@@ -29,6 +29,7 @@ export function TrainerAdvanceControls({
   const [lastEvents, setLastEvents] = useState<TrainerStepEvent[]>([]);
   const [holdReason, setHoldReason] = useState('');
   const [holdReasonKey, setHoldReasonKey] = useState<number | null>(null);
+  const [lastSentReason, setLastSentReason] = useState<string | null>(null);
 
   // Resetting during render (rather than in an effect) lands the cleared field on the same
   // commit that shows the new order/position, matching TrainerOrderPanel's amend-draft reset.
@@ -36,11 +37,16 @@ export function TrainerAdvanceControls({
   if (activeTradeId !== holdReasonKey) {
     setHoldReasonKey(activeTradeId);
     setHoldReason('');
+    setLastSentReason(null);
   }
 
   const needsReason = view.phase !== 'flat';
   const reasonMissing = needsReason && holdReason.trim().length === 0;
   const disabled = busy || view.terminal || reasonMissing;
+  // True exactly when clicking step/play right now would resend the same words already on
+  // record for this trade — the record must not read as a fresh judgment every bar when it is
+  // really one thesis carried forward untouched.
+  const reasonReused = needsReason && lastSentReason !== null && holdReason.trim() === lastSentReason;
 
   // advanceEpisodeSingle throws if a hold while pending/open carries no reason, and the
   // playback loop below always reads this ref, never component-render-time values — a stale
@@ -73,6 +79,7 @@ export function TrainerAdvanceControls({
     }
     current.onViewChange(result.data.view);
     setLastEvents(result.data.events);
+    if (reason) setLastSentReason(reason.summary);
     return { paused: result.data.events.length > 0 || result.data.terminal };
   };
 
@@ -147,6 +154,7 @@ export function TrainerAdvanceControls({
               onChange={(e) => setHoldReason(e.target.value)}
             />
           </label>
+          {reasonReused && <span className="trainer-advance-reason-reused">沿用上一次理由</span>}
         </div>
       )}
       {narrative && <div className="trainer-advance-events">{narrative}</div>}

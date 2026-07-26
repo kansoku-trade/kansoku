@@ -680,6 +680,11 @@ a:hover {
   color: var(--text-secondary);
   font-size: var(--fs-sm);
 }
+.trainer-advance-reason-reused {
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  font-style: italic;
+}
 
 .fullpage {
   height: 100vh;
