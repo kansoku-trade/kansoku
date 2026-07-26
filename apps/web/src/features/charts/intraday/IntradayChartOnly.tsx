@@ -5,7 +5,7 @@ import type { DrawingsHandle } from '../drawings/useDrawings';
 import { namespacedKey, useIntradayControls } from './controlsContext';
 import { isSessionlessTf, tfDataOf, type ChartTf } from './timeframes';
 import { useMaSeries } from './useMaLines';
-import { useIntradayCharts } from './useIntradayCharts';
+import { useIntradayCharts, type DrawingChartHandle } from './useIntradayCharts';
 
 const MACD_MIN = 100;
 const MACD_MAX = 340;
@@ -37,6 +37,7 @@ export interface IntradayChartOnlyProps {
   onLoadHistory?: () => void;
   drawings?: boolean;
   storageNamespace?: string;
+  onChartHandle?: (handle: DrawingChartHandle | null) => void;
 }
 
 export function IntradayChartOnly({
@@ -46,6 +47,7 @@ export function IntradayChartOnly({
   onLoadHistory,
   drawings = true,
   storageNamespace,
+  onChartHandle,
 }: IntradayChartOnlyProps) {
   const macdHeightKey = namespacedKey(MACD_HEIGHT_KEY, storageNamespace);
   const [macdHeight, setMacdHeight] = useState(() => {
@@ -68,7 +70,10 @@ export function IntradayChartOnly({
     toggles,
     markerRange,
     maSeries,
-    setDrawingHandle,
+    (handle) => {
+      setDrawingHandle(handle);
+      onChartHandle?.(handle);
+    },
   );
   const barTimes = useMemo(() => candles.map((c) => c.time), [candles]);
 

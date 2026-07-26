@@ -84,4 +84,24 @@ describe('TrainerChart', () => {
     fireEvent.click(screen.getByRole('button', { name: '1h' }));
     expect(screen.getByRole('button', { name: '1h' }).getAttribute('aria-pressed')).toBe('true');
   });
+
+  it('renders no order panel when bridge/sessionId/onViewChange are omitted', () => {
+    render(<TrainerChart view={makeView()} />);
+    expect(screen.queryByLabelText('止损')).toBeNull();
+  });
+
+  it('renders the order panel once bridge/sessionId/onViewChange are supplied', () => {
+    const bridge = { submit: vi.fn() } as unknown as Parameters<
+      typeof TrainerChart
+    >[0]['bridge'];
+    render(
+      <TrainerChart
+        view={makeView()}
+        bridge={bridge}
+        sessionId="run-1"
+        onViewChange={() => {}}
+      />,
+    );
+    expect(screen.getByLabelText('止损')).toBeTruthy();
+  });
 });
