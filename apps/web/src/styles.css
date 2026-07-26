@@ -652,6 +652,35 @@ a:hover {
   border-color: var(--accent);
 }
 
+.trainer-advance-controls {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--border);
+}
+.trainer-advance-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.trainer-advance-row label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+}
+.trainer-advance-speed {
+  display: flex;
+  gap: 4px;
+}
+.trainer-advance-events {
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+}
+
 .fullpage {
   height: 100vh;
   display: flex;

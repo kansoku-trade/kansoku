@@ -104,4 +104,25 @@ describe('TrainerChart', () => {
     );
     expect(screen.getByLabelText('止损')).toBeTruthy();
   });
+
+  it('advances by the ladder tier currently selected in the period switch', () => {
+    const step = vi.fn(async () => ({
+      ok: true as const,
+      data: { view: makeView(), events: [], advancedBars: 1, terminal: false, result: null },
+    }));
+    const bridge = { submit: vi.fn(), step } as unknown as Parameters<
+      typeof TrainerChart
+    >[0]['bridge'];
+    render(
+      <TrainerChart view={makeView()} bridge={bridge} sessionId="run-1" onViewChange={() => {}} />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: '1h' }));
+    fireEvent.click(screen.getByRole('button', { name: /步进/ }));
+
+    expect(step).toHaveBeenCalledWith({
+      sessionId: 'run-1',
+      action: { type: 'hold', bars: 1, period: '1h' },
+    });
+  });
 });

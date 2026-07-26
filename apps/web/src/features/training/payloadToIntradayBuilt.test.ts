@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { toTs } from '@kansoku/core/analysis/indicators';
 import type { TrainerView } from '@kansoku/pro-api';
 import type { RawBar } from '@kansoku/shared/types';
-import { buildTrainerIntradayBuilt, TRAINER_PERIOD_TO_CHART_TF } from './payloadToIntradayBuilt';
+import {
+  buildTrainerIntradayBuilt,
+  TRAINER_PERIOD_TO_CHART_TF,
+  trainerAdvancePeriod,
+} from './payloadToIntradayBuilt';
 import { tfDataOf } from '../charts/intraday/timeframes';
 
 function bar(iso: string, close: number): RawBar {
@@ -97,5 +101,19 @@ describe('buildTrainerIntradayBuilt', () => {
 
     expect(data?.volumes).toHaveLength(BASE_BARS.length);
     expect(data?.volumes.map((v) => v.value)).toEqual(BASE_BARS.map((b) => Number(b.volume)));
+  });
+});
+
+describe('trainerAdvancePeriod', () => {
+  const LADDER: TrainerView['ladder'] = ['5m', '15m', '1h'];
+
+  it('maps the active chart timeframe back to its ladder period', () => {
+    expect(trainerAdvancePeriod(LADDER, 'm5')).toBe('5m');
+    expect(trainerAdvancePeriod(LADDER, 'm15')).toBe('15m');
+    expect(trainerAdvancePeriod(LADDER, 'h1')).toBe('1h');
+  });
+
+  it('falls back to the base period for a timeframe outside the ladder', () => {
+    expect(trainerAdvancePeriod(LADDER, 'day')).toBe('5m');
   });
 });

@@ -9,7 +9,9 @@ import {
   buildTrainerIntradayBuilt,
   isTrainerLadderTf,
   TRAINER_PERIOD_TO_CHART_TF,
+  trainerAdvancePeriod,
 } from './payloadToIntradayBuilt';
+import { TrainerAdvanceControls } from './TrainerAdvanceControls';
 import { TrainerOrderPanel } from './TrainerOrderPanel';
 import { TrainerPeriodSwitch } from './TrainerPeriodSwitch';
 
@@ -45,16 +47,26 @@ export function TrainerChart({ view, sessionId, bridge, onViewChange }: TrainerC
         </div>
       </IntradayControlsProvider>
       {bridge && sessionId && onViewChange && (
-        // key remounts the panel (and its draft state) on a new case instead of
-        // syncing it with an effect.
-        <TrainerOrderPanel
-          key={view.caseId}
-          view={view}
-          handle={chartHandle}
-          bridge={bridge}
-          sessionId={sessionId}
-          onViewChange={onViewChange}
-        />
+        // key remounts these panels (and their draft state) on a new case instead of
+        // syncing them with an effect.
+        <>
+          <TrainerAdvanceControls
+            key={`advance-${view.caseId}`}
+            view={view}
+            period={trainerAdvancePeriod(view.ladder, activeTf)}
+            bridge={bridge}
+            sessionId={sessionId}
+            onViewChange={onViewChange}
+          />
+          <TrainerOrderPanel
+            key={`order-${view.caseId}`}
+            view={view}
+            handle={chartHandle}
+            bridge={bridge}
+            sessionId={sessionId}
+            onViewChange={onViewChange}
+          />
+        </>
       )}
     </div>
   );

@@ -27,6 +27,10 @@ export function isTrainerLadderTf(ladder: TrainerLadder, tf: ChartTf): boolean {
   return ladder.some((period) => TRAINER_PERIOD_TO_CHART_TF[period] === tf);
 }
 
+export function trainerAdvancePeriod(ladder: TrainerLadder, tf: ChartTf): TrainerViewPeriod {
+  return ladder.find((period) => TRAINER_PERIOD_TO_CHART_TF[period] === tf) ?? ladder[0];
+}
+
 function rawBarsToTfData(bars: RawBar[]): IntradayTfData {
   const candles: Candle[] = bars.map((b) => ({
     time: toTs(b.time),
