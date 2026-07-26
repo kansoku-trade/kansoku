@@ -11,4 +11,14 @@ describe('IPC_GROUPS', () => {
     expect(IPC_GROUPS).toEqual([...KERNEL_IPC_GROUPS, ...SHELL_IPC_GROUPS]);
     expect(new Set(IPC_GROUPS).size).toBe(IPC_GROUPS.length);
   });
+
+  // Same predicate the preload guards `rpc.invoke` with: an unregistered group turns every call
+  // the renderer trainer bridge makes into a throw, with nothing else pointing at the cause.
+  it('lets the renderer reach the trainer channels', () => {
+    const allowed = (channel: string) =>
+      IPC_GROUPS.some((group) => channel.startsWith(`${group}.`));
+
+    expect(allowed('trainer.open')).toBe(true);
+    expect(allowed('trainer.reveal')).toBe(true);
+  });
 });

@@ -25,6 +25,7 @@ export const SHELL_IPC_GROUPS = [
   'logs',
   'contextMenu',
   'updater',
+  'trainer',
 ] as const;
 
 export const IPC_GROUPS = [...KERNEL_IPC_GROUPS, ...SHELL_IPC_GROUPS] as const;
