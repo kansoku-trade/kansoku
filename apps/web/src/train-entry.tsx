@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import type { TrainerView } from '@kansoku/pro-api';
 import { getTrainerBridge } from './features/desktop/desktopTrainerBridge';
 import { TrainerChart } from './features/training/TrainerChart';
+import './styles.css';
 
 function TrainerRoot() {
   const [view, setView] = useState<TrainerView | null>(null);

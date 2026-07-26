@@ -10,6 +10,8 @@ import {
 } from './payloadToIntradayBuilt';
 import { TrainerPeriodSwitch } from './TrainerPeriodSwitch';
 
+const STORAGE_NAMESPACE = 'trainer';
+
 export interface TrainerChartProps {
   view: TrainerView;
 }
@@ -21,9 +23,19 @@ export function TrainerChart({ view }: TrainerChartProps) {
   const activeTf = isTrainerLadderTf(view.ladder, requestedTf) ? requestedTf : baseTf;
 
   return (
-    <IntradayControlsProvider storageNamespace="trainer">
-      <TrainerPeriodSwitch ladder={view.ladder} activeTf={activeTf} onChange={setRequestedTf} />
-      <IntradayChartOnly symbol={view.symbol} built={built} activeTf={activeTf} drawings={false} />
-    </IntradayControlsProvider>
+    <div className="trainer-shell">
+      <IntradayControlsProvider storageNamespace={STORAGE_NAMESPACE}>
+        <TrainerPeriodSwitch ladder={view.ladder} activeTf={activeTf} onChange={setRequestedTf} />
+        <div className="trainer-body">
+          <IntradayChartOnly
+            symbol={view.symbol}
+            built={built}
+            activeTf={activeTf}
+            drawings={false}
+            storageNamespace={STORAGE_NAMESPACE}
+          />
+        </div>
+      </IntradayControlsProvider>
+    </div>
   );
 }

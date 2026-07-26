@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { TrainerView } from '@kansoku/pro-api';
 import type { RawBar } from '@kansoku/shared/types';
@@ -20,6 +20,9 @@ vi.mock('../charts/drawings/DrawingToolbar', () => ({
 }));
 
 const { TrainerChart } = await import('./TrainerChart');
+const { IntradayChartOnly } = await import('../charts/intraday/IntradayChartOnly');
+const { IntradayControlsProvider } = await import('../charts/intraday/controlsContext');
+const { buildTrainerIntradayBuilt } = await import('./payloadToIntradayBuilt');
 
 function bar(iso: string, close: number): RawBar {
   return { time: iso, open: close - 1, high: close + 1, low: close - 1.5, close, volume: 1000 };
@@ -54,8 +57,19 @@ afterEach(() => {
 });
 
 describe('TrainerChart', () => {
-  it('never calls the annotations/drawings hook', () => {
+  it('calls useDrawings once the lazy chunk resolves, when drawings is enabled (control)', async () => {
+    const built = buildTrainerIntradayBuilt(makeView());
+    render(
+      <IntradayControlsProvider>
+        <IntradayChartOnly symbol="TRAIN01" built={built} activeTf="m5" />
+      </IntradayControlsProvider>,
+    );
+    await waitFor(() => expect(useDrawingsMock).toHaveBeenCalled());
+  });
+
+  it('never calls the annotations/drawings hook, even after the lazy chunk would have resolved', async () => {
     render(<TrainerChart view={makeView()} />);
+    await new Promise((resolve) => setTimeout(resolve, 200));
     expect(useDrawingsMock).not.toHaveBeenCalled();
   });
 

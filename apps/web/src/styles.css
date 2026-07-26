@@ -583,6 +583,21 @@ a:hover {
   height: 100%;
 }
 
+.trainer-shell {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.trainer-body {
+  flex: 1;
+  min-height: 0;
+}
+.trainer-body .charts-col {
+  border-right: none;
+  height: 100%;
+}
+
 .fullpage {
   height: 100vh;
   display: flex;

@@ -21,7 +21,7 @@ export const TRAINER_PERIOD_TO_CHART_TF: Record<TrainerViewPeriod, ChartTf> = {
   'week': 'week',
 };
 
-export type TrainerLadder = readonly [TrainerViewPeriod, TrainerViewPeriod, TrainerViewPeriod];
+export type TrainerLadder = TrainerView['ladder'];
 
 export function isTrainerLadderTf(ladder: TrainerLadder, tf: ChartTf): boolean {
   return ladder.some((period) => TRAINER_PERIOD_TO_CHART_TF[period] === tf);
@@ -69,8 +69,6 @@ function emptyTfSummary(): IntradayTfSummary {
   };
 }
 
-// Required by IntradaySidebar's type, but IntradayChartOnly never reads it —
-// the trainer chart has no sidebar. Kept genuinely empty rather than faked.
 function buildSidebar(view: TrainerView): IntradaySidebar {
   const lastBar = view.bars.base.at(-1);
   return {
@@ -98,8 +96,6 @@ export function buildTrainerIntradayBuilt(view: TrainerView): IntradayBuilt {
   });
   return {
     kind: 'intraday',
-    // Only IntradayDashboard's sidebar reads defaultTf, and the trainer chart
-    // never renders one — the value here is inert, not a real tf pick.
     defaultTf: 'm5',
     timeframes: timeframes as IntradayBuilt['timeframes'],
     entryPlan: null,

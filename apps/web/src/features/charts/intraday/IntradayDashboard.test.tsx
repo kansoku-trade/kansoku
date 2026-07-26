@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render } from '@testing-library/react';
+import { cleanup, fireEvent, render } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { IntradayBuilt } from '@kansoku/shared/types';
 
@@ -52,5 +52,45 @@ describe('IntradayChartOnly', () => {
     );
 
     expect(container.querySelector('.layer-panel')).toBeNull();
+  });
+});
+
+describe('IntradayChartOnly MACD height storage', () => {
+  it('reads and writes the plain key when no namespace is given', () => {
+    localStorage.setItem('intraday-macd-height', '250');
+    const { container } = render(
+      <IntradayControlsProvider>
+        <IntradayChartOnly symbol="NVDA.US" built={built} activeTf="m5" />
+      </IntradayControlsProvider>,
+    );
+
+    const macdBlock = container.querySelector('.chart-block.macd') as HTMLElement;
+    expect(macdBlock.style.flex).toBe('0 0 250px');
+  });
+
+  it('with a namespace, reads and writes only its own prefixed key', () => {
+    localStorage.setItem('intraday-macd-height', '300');
+    localStorage.setItem('trainer-intraday-macd-height', '200');
+    const { container } = render(
+      <IntradayControlsProvider storageNamespace="trainer">
+        <IntradayChartOnly
+          symbol="NVDA.US"
+          built={built}
+          activeTf="m5"
+          storageNamespace="trainer"
+        />
+      </IntradayControlsProvider>,
+    );
+
+    const macdBlock = container.querySelector('.chart-block.macd') as HTMLElement;
+    expect(macdBlock.style.flex).toBe('0 0 200px');
+
+    const resizer = container.querySelector('.pane-resizer') as HTMLElement;
+    fireEvent.pointerDown(resizer, { clientY: 500 });
+    fireEvent.pointerMove(window, { clientY: 440 });
+    fireEvent.pointerUp(window);
+
+    expect(localStorage.getItem('trainer-intraday-macd-height')).toBe('260');
+    expect(localStorage.getItem('intraday-macd-height')).toBe('300');
   });
 });

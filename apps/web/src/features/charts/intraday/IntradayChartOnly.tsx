@@ -1,8 +1,8 @@
-import { lazy, Suspense, useMemo, useRef, useState } from 'react';
+import { Component, lazy, Suspense, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { IntradayBuilt } from '@kansoku/shared/types';
 import { fmt } from '@web/lib/format';
 import type { DrawingsHandle } from '../drawings/useDrawings';
-import { useIntradayControls } from './controlsContext';
+import { namespacedKey, useIntradayControls } from './controlsContext';
 import { isSessionlessTf, tfDataOf, type ChartTf } from './timeframes';
 import { useMaSeries } from './useMaLines';
 import { useIntradayCharts } from './useIntradayCharts';
@@ -18,12 +18,25 @@ const DrawingsLayer = lazy(() =>
   import('./DrawingsLayer').then((m) => ({ default: m.DrawingsLayer })),
 );
 
+class DrawingsBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  render() {
+    return this.state.failed ? null : this.props.children;
+  }
+}
+
 export interface IntradayChartOnlyProps {
   symbol: string;
   built: IntradayBuilt;
   activeTf: ChartTf;
   onLoadHistory?: () => void;
   drawings?: boolean;
+  storageNamespace?: string;
 }
 
 export function IntradayChartOnly({
@@ -32,9 +45,11 @@ export function IntradayChartOnly({
   activeTf,
   onLoadHistory,
   drawings = true,
+  storageNamespace,
 }: IntradayChartOnlyProps) {
+  const macdHeightKey = namespacedKey(MACD_HEIGHT_KEY, storageNamespace);
   const [macdHeight, setMacdHeight] = useState(() => {
-    const saved = Number(localStorage.getItem(MACD_HEIGHT_KEY));
+    const saved = Number(localStorage.getItem(macdHeightKey));
     return Number.isFinite(saved) && saved > 0 ? clampMacdHeight(saved) : MACD_DEFAULT;
   });
   const [dragging, setDragging] = useState(false);
@@ -70,7 +85,7 @@ export function IntradayChartOnly({
       window.removeEventListener('pointerup', onUp, true);
       setDragging(false);
       setMacdHeight((h) => {
-        localStorage.setItem(MACD_HEIGHT_KEY, String(h));
+        localStorage.setItem(macdHeightKey, String(h));
         return h;
       });
     };
@@ -106,9 +121,11 @@ export function IntradayChartOnly({
           )}
         </div>
         {drawings && (
-          <Suspense fallback={null}>
-            <DrawingsLayer symbol={symbol} handle={drawingHandle} barTimes={barTimes} />
-          </Suspense>
+          <DrawingsBoundary>
+            <Suspense fallback={null}>
+              <DrawingsLayer symbol={symbol} handle={drawingHandle} barTimes={barTimes} />
+            </Suspense>
+          </DrawingsBoundary>
         )}
         <div ref={mainRef} className="chart-host" />
       </div>

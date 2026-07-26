@@ -7,7 +7,7 @@ type IntradayControls = ReturnType<typeof useIndicatorToggles> & MaLinesApi & Ti
 
 const ControlsContext = createContext<IntradayControls | null>(null);
 
-function namespacedKey(key: string, storageNamespace: string | undefined): string {
+export function namespacedKey(key: string, storageNamespace: string | undefined): string {
   return storageNamespace ? `${storageNamespace}-${key}` : key;
 }
 
