@@ -641,6 +641,12 @@ a:hover {
   color: var(--down);
   font-size: var(--fs-sm);
 }
+.trainer-order-field--warn {
+  color: var(--accent);
+}
+.trainer-order-field--warn .input {
+  border-color: var(--accent);
+}
 
 .fullpage {
   height: 100vh;

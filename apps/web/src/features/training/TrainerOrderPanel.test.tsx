@@ -1,7 +1,12 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { TrainerSubmission, TrainerView } from '@kansoku/pro-api';
+import type {
+  TrainerDirection,
+  TrainerPosition,
+  TrainerSubmission,
+  TrainerView,
+} from '@kansoku/pro-api';
 import type { RawBar } from '@kansoku/shared/types';
 import type { DrawingChartHandle } from '../charts/intraday/useIntradayCharts';
 import type { TrainerBridge } from '../desktop/desktopTrainerBridge';
@@ -34,6 +39,38 @@ function makeView(overrides: Partial<TrainerView> = {}): TrainerView {
   };
 }
 
+function makePosition(
+  direction: TrainerDirection,
+  overrides: Partial<TrainerPosition> = {},
+): TrainerPosition {
+  return {
+    tradeId: 1,
+    direction,
+    decisionBar: 0,
+    decisionTime: '2026-01-05T14:00:00.000Z',
+    entryPrice: 100,
+    entryTime: '2026-01-05T14:00:00.000Z',
+    initialStop: direction === 'long' ? 99 : 101,
+    initialRisk: 1,
+    stop: direction === 'long' ? 99 : 101,
+    target: direction === 'long' ? 103 : 97,
+    holdingBars: 5,
+    mfeR: 1.5,
+    maeR: 0,
+    entryReason: { category: 'breakout', summary: '' },
+    ...overrides,
+  };
+}
+
+function makeOpenView(direction: TrainerDirection, referenceClose: number): TrainerView {
+  const base = [bar('2026-01-05T14:00:00.000Z', referenceClose)];
+  return makeView({
+    phase: 'open',
+    position: makePosition(direction),
+    bars: { base, mid: base, top: base },
+  });
+}
+
 // Linear price/pixel map (y = 300 - price) so the drag math is checkable by hand:
 // default draft off a $100 close is stop=99 (y=201) / target1=102 (y=198).
 function makeHandle() {
@@ -56,6 +93,18 @@ function makeBridge(): { bridge: TrainerBridge; submit: ReturnType<typeof vi.fn>
   }));
   const bridge = { submit } as unknown as TrainerBridge;
   return { bridge, submit };
+}
+
+function makeAmendBridge(nextView: TrainerView): {
+  bridge: TrainerBridge;
+  amend: ReturnType<typeof vi.fn>;
+} {
+  const amend = vi.fn(async () => ({
+    ok: true as const,
+    data: { view: nextView, events: [], advancedBars: 0, terminal: false, result: null },
+  }));
+  const bridge = { amend } as unknown as TrainerBridge;
+  return { bridge, amend };
 }
 
 afterEach(() => {
@@ -222,6 +271,11 @@ describe('TrainerOrderPanel submit', () => {
     fireEvent.pointerDown(container, { clientY: 201 });
     fireEvent.pointerMove(window, { clientY: 210 });
     fireEvent.pointerUp(window);
+    // Also widen the target so the resulting draft still clears the TD-RR-01 floor — the default
+    // target1=102 against a stop dragged to 90 would be a 0.2:1 ratio and lock the button.
+    fireEvent.pointerDown(container, { clientY: 198 });
+    fireEvent.pointerMove(window, { clientY: 178 });
+    fireEvent.pointerUp(window);
 
     fireEvent.click(screen.getByRole('button', { name: '照现价立刻进' }));
 
@@ -291,5 +345,172 @@ describe('TrainerOrderPanel non-flat phase', () => {
 
     expect(screen.queryByLabelText('止损')).toBeNull();
     expect(screen.getByText(/挂单中/)).toBeTruthy();
+  });
+});
+
+describe('TrainerOrderPanel TD-RR-01 gate', () => {
+  it('locks the submit buttons and warns the target field just below the 1.5:1 floor', () => {
+    const { handle } = makeHandle();
+    const { bridge, submit } = makeBridge();
+    render(
+      <TrainerOrderPanel
+        view={makeView()}
+        handle={handle}
+        bridge={bridge}
+        sessionId="run-1"
+        onViewChange={() => {}}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText('目标'), { target: { value: '101.499' } });
+
+    const limitButton = screen.getByRole('button', { name: '提交限价单' }) as HTMLButtonElement;
+    const marketButton = screen.getByRole('button', { name: '照现价立刻进' }) as HTMLButtonElement;
+    expect(limitButton.disabled).toBe(true);
+    expect(marketButton.disabled).toBe(true);
+    expect(
+      screen
+        .getByLabelText('目标')
+        .closest('label')
+        ?.classList.contains('trainer-order-field--warn'),
+    ).toBe(true);
+
+    fireEvent.click(limitButton);
+    expect(submit).not.toHaveBeenCalled();
+  });
+
+  it('unlocks exactly at the 1.5:1 floor', () => {
+    const { handle } = makeHandle();
+    const { bridge } = makeBridge();
+    render(
+      <TrainerOrderPanel
+        view={makeView()}
+        handle={handle}
+        bridge={bridge}
+        sessionId="run-1"
+        onViewChange={() => {}}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText('目标'), { target: { value: '101.5' } });
+
+    const limitButton = screen.getByRole('button', { name: '提交限价单' }) as HTMLButtonElement;
+    const marketButton = screen.getByRole('button', { name: '照现价立刻进' }) as HTMLButtonElement;
+    expect(limitButton.disabled).toBe(false);
+    expect(marketButton.disabled).toBe(false);
+    expect(
+      screen
+        .getByLabelText('目标')
+        .closest('label')
+        ?.classList.contains('trainer-order-field--warn'),
+    ).toBe(false);
+  });
+});
+
+describe('TrainerOrderPanel TD-EXIT-01 gate (position amend)', () => {
+  it('long: allows tightening the stop to breakeven and above, rejects widening back into loss', () => {
+    const { handle } = makeHandle();
+    const { bridge } = makeAmendBridge(makeOpenView('long', 102));
+    const view = makeOpenView('long', 102); // entry 100 / stop 99 / reference 102 (past 1R)
+    render(
+      <TrainerOrderPanel
+        view={view}
+        handle={handle}
+        bridge={bridge}
+        sessionId="run-1"
+        onViewChange={() => {}}
+      />,
+    );
+    const stopInput = screen.getByLabelText('止损') as HTMLInputElement;
+
+    fireEvent.change(stopInput, { target: { value: '100' } });
+    expect(Number(stopInput.value)).toBe(100);
+
+    fireEvent.change(stopInput, { target: { value: '100.5' } });
+    expect(Number(stopInput.value)).toBe(100.5);
+
+    fireEvent.change(stopInput, { target: { value: '97' } });
+    expect(Number(stopInput.value)).toBe(99); // clamped back to the committed stop, not to 97
+  });
+
+  it('short: allows tightening the stop to breakeven and above, rejects widening back into loss', () => {
+    const { handle } = makeHandle();
+    const { bridge } = makeAmendBridge(makeOpenView('short', 98));
+    const view = makeOpenView('short', 98); // entry 100 / stop 101 / reference 98 (past 1R)
+    render(
+      <TrainerOrderPanel
+        view={view}
+        handle={handle}
+        bridge={bridge}
+        sessionId="run-1"
+        onViewChange={() => {}}
+      />,
+    );
+    const stopInput = screen.getByLabelText('止损') as HTMLInputElement;
+
+    fireEvent.change(stopInput, { target: { value: '100' } });
+    expect(Number(stopInput.value)).toBe(100);
+
+    fireEvent.change(stopInput, { target: { value: '99.5' } });
+    expect(Number(stopInput.value)).toBe(99.5);
+
+    fireEvent.change(stopInput, { target: { value: '102' } });
+    expect(Number(stopInput.value)).toBe(101); // clamped back to the committed stop, not to 102
+  });
+
+  it('locks the confirm button until a reason is entered', () => {
+    const { handle } = makeHandle();
+    const view = makeOpenView('long', 102);
+    const { bridge } = makeAmendBridge(view);
+    render(
+      <TrainerOrderPanel
+        view={view}
+        handle={handle}
+        bridge={bridge}
+        sessionId="run-1"
+        onViewChange={() => {}}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText('止损'), { target: { value: '100.5' } });
+    const confirmButton = screen.getByRole('button', { name: '确认调整' }) as HTMLButtonElement;
+    expect(confirmButton.disabled).toBe(true);
+
+    fireEvent.change(screen.getByLabelText('调整原因'), {
+      target: { value: '止损上移到 100.5 锁利' },
+    });
+    expect(confirmButton.disabled).toBe(false);
+  });
+
+  it('submits the amended stop/target with the entered reason and applies the returned view', async () => {
+    const { handle } = makeHandle();
+    const view = makeOpenView('long', 102);
+    const nextView = makeOpenView('long', 102);
+    const { bridge, amend } = makeAmendBridge(nextView);
+    const onViewChange = vi.fn();
+    render(
+      <TrainerOrderPanel
+        view={view}
+        handle={handle}
+        bridge={bridge}
+        sessionId="run-1"
+        onViewChange={onViewChange}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText('止损'), { target: { value: '100.5' } });
+    fireEvent.change(screen.getByLabelText('调整原因'), {
+      target: { value: '止损上移到 100.5 锁利' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: '确认调整' }));
+
+    await waitFor(() => expect(amend).toHaveBeenCalledTimes(1));
+    expect(amend).toHaveBeenCalledWith({
+      sessionId: 'run-1',
+      stop: 100.5,
+      target: 103,
+      reason: { category: 'risk_management', summary: '止损上移到 100.5 锁利' },
+    });
+    await waitFor(() => expect(onViewChange).toHaveBeenCalledWith(nextView));
   });
 });

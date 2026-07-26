@@ -7,6 +7,7 @@ import {
   clampTarget,
   defaultOrderDraft,
   deriveAnchor,
+  meetsRewardRiskFloor,
   rewardRiskRatio,
   withDirection,
   type OrderDraft,
@@ -95,6 +96,31 @@ describe('rewardRiskRatio', () => {
   it('returns null when risk is zero', () => {
     const draft: OrderDraft = { direction: 'long', entry: 100, stop: 100, target1: 103 };
     expect(rewardRiskRatio(draft)).toBeNull();
+  });
+});
+
+describe('meetsRewardRiskFloor (TD-RR-01)', () => {
+  it('allows exactly the 1.5:1 floor', () => {
+    const draft: OrderDraft = { direction: 'long', entry: 100, stop: 99, target1: 101.5 };
+    expect(rewardRiskRatio(draft)).toBe(1.5);
+    expect(meetsRewardRiskFloor(draft)).toBe(true);
+  });
+
+  it('rejects just below the floor', () => {
+    const draft: OrderDraft = { direction: 'long', entry: 100, stop: 99, target1: 101.499 };
+    expect(meetsRewardRiskFloor(draft)).toBe(false);
+  });
+
+  it('rejects when risk is zero (no ratio to floor)', () => {
+    const draft: OrderDraft = { direction: 'long', entry: 100, stop: 100, target1: 110 };
+    expect(meetsRewardRiskFloor(draft)).toBe(false);
+  });
+
+  it('applies the same floor to a short draft', () => {
+    const atFloor: OrderDraft = { direction: 'short', entry: 100, stop: 101, target1: 98.5 };
+    const belowFloor: OrderDraft = { direction: 'short', entry: 100, stop: 101, target1: 98.501 };
+    expect(meetsRewardRiskFloor(atFloor)).toBe(true);
+    expect(meetsRewardRiskFloor(belowFloor)).toBe(false);
   });
 });
 
