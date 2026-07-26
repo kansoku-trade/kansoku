@@ -644,6 +644,10 @@ a:hover {
 .trainer-order-field--warn {
   color: var(--accent);
 }
+/* .trainer-order-row label's own color rule (0,1,1) otherwise outranks this class alone (0,1,0). */
+.trainer-order-row label.trainer-order-field--warn {
+  color: var(--accent);
+}
 .trainer-order-field--warn .input {
   border-color: var(--accent);
 }

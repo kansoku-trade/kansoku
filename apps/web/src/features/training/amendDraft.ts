@@ -10,7 +10,7 @@ export interface AmendDraft {
 // purpose: the engine forbids any stop widening unconditionally, not only a retreat into loss
 // after 1R (TD-EXIT-01's own wording). Gating this UI to TD-EXIT-01's narrower rule would let the
 // button submit an amendment the engine then throws EpisodeGuardrailError for. Keep this in
-// lockstep with the engine's rule, which is the actual, stricter boundary — see task-7-report.md.
+// lockstep with the engine's rule, which is the actual, stricter boundary.
 export function widensStop(
   direction: TrainerDirection,
   currentStop: number,
