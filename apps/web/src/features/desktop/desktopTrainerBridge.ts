@@ -1,4 +1,3 @@
-import { getShellRpc } from './shellRpc';
 import type {
   TrainerApi,
   TrainerEnvelope,
@@ -7,7 +6,8 @@ import type {
   TrainerReveal,
   TrainerStepResult,
   WrapTrainerEnvelope,
-} from './trainerContract';
+} from '@kansoku/pro-api';
+import { getShellRpc } from './shellRpc';
 
 export type TrainerBridge = WrapTrainerEnvelope<TrainerApi>;
 
