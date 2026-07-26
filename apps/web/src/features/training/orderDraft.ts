@@ -96,6 +96,7 @@ export function buildOrderSubmission(
   view: TrainerView,
   draft: OrderDraft,
   entryMode: 'limit' | 'market',
+  reason: string,
 ): TrainerSubmission {
   const entry = entryMode === 'market' ? lastClose(view) : draft.entry;
   return {
@@ -106,6 +107,7 @@ export function buildOrderSubmission(
     // scoring) — the trainer has none to give, so this is an honest "none supplied", not a
     // placeholder standing in for real trader input.
     scenarios: [],
+    decision_reason: { category: 'other', summary: reason.trim() },
     comment: '',
   };
 }

@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import type {
   TrainerEntryMode,
+  TrainerEnvelope,
+  TrainerOrder,
   TrainerPosition,
-  TrainerReason,
+  TrainerStepResult,
   TrainerView,
 } from '@kansoku/pro-api';
 import { PositionBoxPrimitive } from '../charts/intraday/positionBoxPrimitive';
@@ -56,11 +58,13 @@ export function TrainerOrderPanel({
   onViewChange,
 }: TrainerOrderPanelProps) {
   const [draft, setDraft] = useState<OrderDraft>(() => defaultOrderDraft(view));
+  const [entryReason, setEntryReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const boxRef = useRef<PositionBoxPrimitive | null>(null);
   const flat = view.phase === 'flat';
   const position = view.position;
+  const order = view.order;
 
   // Reset (or seed) the amend draft during render rather than in a useEffect, so a fresh
   // position's stop/target reach the input fields and the drag box on the very same commit —
@@ -68,13 +72,24 @@ export function TrainerOrderPanel({
   const [amendDraft, setAmendDraft] = useState<AmendDraft | null>(null);
   const [amendDraftTradeId, setAmendDraftTradeId] = useState<number | null>(null);
   const [amendReason, setAmendReason] = useState('');
+  const [exitReason, setExitReason] = useState('');
   if (position && position.tradeId !== amendDraftTradeId) {
     setAmendDraftTradeId(position.tradeId);
     setAmendDraft({ stop: position.stop, target: position.target });
     setAmendReason('');
+    setExitReason('');
   } else if (!position && amendDraftTradeId !== null) {
     setAmendDraftTradeId(null);
     setAmendDraft(null);
+  }
+
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelReasonOrderId, setCancelReasonOrderId] = useState<number | null>(null);
+  if (order && order.tradeId !== cancelReasonOrderId) {
+    setCancelReasonOrderId(order.tradeId);
+    setCancelReason('');
+  } else if (!order && cancelReasonOrderId !== null) {
+    setCancelReasonOrderId(null);
   }
 
   useEffect(() => {
@@ -151,17 +166,10 @@ export function TrainerOrderPanel({
     },
   );
 
-  const confirmAmend = async () => {
-    if (!position || !amendDraft) return;
+  const runAction = async (call: () => Promise<TrainerEnvelope<TrainerStepResult>>) => {
     setSubmitting(true);
     setError(null);
-    const reason: TrainerReason = { category: 'risk_management', summary: amendReason.trim() };
-    const result = await bridge.amend({
-      sessionId,
-      stop: amendDraft.stop,
-      target: amendDraft.target,
-      reason,
-    });
+    const result = await call();
     setSubmitting(false);
     if (result.ok) {
       onViewChange(result.data.view);
@@ -171,31 +179,75 @@ export function TrainerOrderPanel({
     if (result.view) onViewChange(result.view);
   };
 
+  const confirmAmend = () => {
+    if (!position || !amendDraft) return;
+    void runAction(() =>
+      bridge.amend({
+        sessionId,
+        stop: amendDraft.stop,
+        target: amendDraft.target,
+        reason: { category: 'risk_management', summary: amendReason.trim() },
+      }),
+    );
+  };
+
+  const confirmExitNextOpen = () => {
+    if (!position) return;
+    void runAction(() =>
+      bridge.exitNextOpen({
+        sessionId,
+        reason: { category: 'thesis_invalidated', summary: exitReason.trim() },
+      }),
+    );
+  };
+
+  const confirmCancel = () => {
+    if (!order) return;
+    void runAction(() =>
+      bridge.cancel({
+        sessionId,
+        reason: { category: 'thesis_invalidated', summary: cancelReason.trim() },
+      }),
+    );
+  };
+
   if (!flat) {
     if (position && amendDraft) {
       return (
         <TrainerPositionPanel
           position={position}
           amendDraft={amendDraft}
-          reason={amendReason}
-          onReasonChange={setAmendReason}
+          amendReason={amendReason}
+          onAmendReasonChange={setAmendReason}
           onStopChange={updateAmendStop}
           onTargetChange={updateAmendTarget}
-          onConfirm={confirmAmend}
+          onConfirmAmend={confirmAmend}
+          exitReason={exitReason}
+          onExitReasonChange={setExitReason}
+          onExitNextOpen={confirmExitNextOpen}
           submitting={submitting}
           error={error}
         />
       );
     }
-    const order = view.order;
-    const summary = order
-      ? `挂单中：${order.direction === 'long' ? '多头' : '空头'} @${order.entry} 止损 ${order.stop} 目标 ${order.target}`
-      : '本局已结束';
-    return <div className="trainer-order-panel trainer-order-panel--status">{summary}</div>;
+    if (order) {
+      return (
+        <TrainerPendingOrderPanel
+          order={order}
+          reason={cancelReason}
+          onReasonChange={setCancelReason}
+          onConfirm={confirmCancel}
+          submitting={submitting}
+          error={error}
+        />
+      );
+    }
+    return <div className="trainer-order-panel trainer-order-panel--status">本局已结束</div>;
   }
 
   const rr = rewardRiskRatio(draft);
   const rrOk = meetsRewardRiskFloor(draft);
+  const entryReasonOk = entryReason.trim().length > 0;
 
   const handleNumberChange =
     (field: 'entry' | 'stop' | 'target1') => (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -206,10 +258,11 @@ export function TrainerOrderPanel({
   const submit = async (entryMode: TrainerEntryMode) => {
     setSubmitting(true);
     setError(null);
-    const submission = buildOrderSubmission(view, draft, entryMode);
+    const submission = buildOrderSubmission(view, draft, entryMode, entryReason);
     const result = await bridge.submit({ sessionId, submission, entryMode });
     setSubmitting(false);
     if (result.ok) {
+      setEntryReason('');
       onViewChange(result.data.view);
       return;
     }
@@ -273,14 +326,29 @@ export function TrainerOrderPanel({
         </span>
       </div>
       <div className="trainer-order-row">
+        <label>
+          入场理由
+          <input
+            className="input"
+            type="text"
+            value={entryReason}
+            onChange={(e) => setEntryReason(e.target.value)}
+          />
+        </label>
+      </div>
+      <div className="trainer-order-row">
         <button
           className="btn btn--accent"
-          disabled={submitting || !rrOk}
+          disabled={submitting || !rrOk || !entryReasonOk}
           onClick={() => submit('limit')}
         >
           提交限价单
         </button>
-        <button className="btn" disabled={submitting || !rrOk} onClick={() => submit('market')}>
+        <button
+          className="btn"
+          disabled={submitting || !rrOk || !entryReasonOk}
+          onClick={() => submit('market')}
+        >
           照现价立刻进
         </button>
       </div>
@@ -292,11 +360,14 @@ export function TrainerOrderPanel({
 interface TrainerPositionPanelProps {
   position: TrainerPosition;
   amendDraft: AmendDraft;
-  reason: string;
-  onReasonChange: (value: string) => void;
+  amendReason: string;
+  onAmendReasonChange: (value: string) => void;
   onStopChange: (price: number) => void;
   onTargetChange: (price: number) => void;
-  onConfirm: () => void;
+  onConfirmAmend: () => void;
+  exitReason: string;
+  onExitReasonChange: (value: string) => void;
+  onExitNextOpen: () => void;
   submitting: boolean;
   error: string | null;
 }
@@ -304,18 +375,22 @@ interface TrainerPositionPanelProps {
 function TrainerPositionPanel({
   position,
   amendDraft,
-  reason,
-  onReasonChange,
+  amendReason,
+  onAmendReasonChange,
   onStopChange,
   onTargetChange,
-  onConfirm,
+  onConfirmAmend,
+  exitReason,
+  onExitReasonChange,
+  onExitNextOpen,
   submitting,
   error,
 }: TrainerPositionPanelProps) {
-  const locked =
+  const amendLocked =
     submitting ||
-    reason.trim().length === 0 ||
+    amendReason.trim().length === 0 ||
     widensStop(position.direction, position.stop, amendDraft.stop);
+  const exitLocked = submitting || exitReason.trim().length === 0;
 
   const summary = `持仓中：${position.direction === 'long' ? '多头' : '空头'} @${position.entryPrice} 止损 ${position.stop} 目标 ${position.target}`;
 
@@ -356,14 +431,74 @@ function TrainerPositionPanel({
           <input
             className="input"
             type="text"
+            value={amendReason}
+            onChange={(e) => onAmendReasonChange(e.target.value)}
+          />
+        </label>
+      </div>
+      <div className="trainer-order-row">
+        <button className="btn btn--accent" disabled={amendLocked} onClick={onConfirmAmend}>
+          确认调整
+        </button>
+      </div>
+      <div className="trainer-order-row">
+        <label>
+          平仓原因
+          <input
+            className="input"
+            type="text"
+            value={exitReason}
+            onChange={(e) => onExitReasonChange(e.target.value)}
+          />
+        </label>
+      </div>
+      <div className="trainer-order-row">
+        <button className="btn" disabled={exitLocked} onClick={onExitNextOpen}>
+          下一根开盘平仓
+        </button>
+      </div>
+      {error && <div className="trainer-order-error">{error}</div>}
+    </div>
+  );
+}
+
+interface TrainerPendingOrderPanelProps {
+  order: TrainerOrder;
+  reason: string;
+  onReasonChange: (value: string) => void;
+  onConfirm: () => void;
+  submitting: boolean;
+  error: string | null;
+}
+
+function TrainerPendingOrderPanel({
+  order,
+  reason,
+  onReasonChange,
+  onConfirm,
+  submitting,
+  error,
+}: TrainerPendingOrderPanelProps) {
+  const locked = submitting || reason.trim().length === 0;
+  const summary = `挂单中：${order.direction === 'long' ? '多头' : '空头'} @${order.entry} 止损 ${order.stop} 目标 ${order.target}`;
+
+  return (
+    <div className="trainer-order-panel">
+      <div className="trainer-order-row trainer-order-panel--status">{summary}</div>
+      <div className="trainer-order-row">
+        <label>
+          撤单原因
+          <input
+            className="input"
+            type="text"
             value={reason}
             onChange={(e) => onReasonChange(e.target.value)}
           />
         </label>
       </div>
       <div className="trainer-order-row">
-        <button className="btn btn--accent" disabled={locked} onClick={onConfirm}>
-          确认调整
+        <button className="btn" disabled={locked} onClick={onConfirm}>
+          撤销挂单
         </button>
       </div>
       {error && <div className="trainer-order-error">{error}</div>}

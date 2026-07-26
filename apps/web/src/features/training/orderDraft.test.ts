@@ -159,7 +159,7 @@ describe('deriveAnchor', () => {
 describe('buildOrderSubmission', () => {
   it('carries the drafted entry/stop/target1 through for a limit order', () => {
     const draft: OrderDraft = { direction: 'long', entry: 101, stop: 99, target1: 108 };
-    const submission = buildOrderSubmission(makeView(), draft, 'limit');
+    const submission = buildOrderSubmission(makeView(), draft, 'limit', '突破前高，放量确认');
     expect(submission.entry_plan).toEqual({ entry: 101, stop: 99, target1: 108 });
     expect(submission.direction).toBe('long');
     expect(submission.scenarios).toEqual([]);
@@ -167,7 +167,16 @@ describe('buildOrderSubmission', () => {
 
   it('overrides entry with the live price for a market order, keeping stop/target as drafted', () => {
     const draft: OrderDraft = { direction: 'long', entry: 101, stop: 99, target1: 108 };
-    const submission = buildOrderSubmission(makeView(), draft, 'market');
+    const submission = buildOrderSubmission(makeView(), draft, 'market', '突破前高，放量确认');
     expect(submission.entry_plan).toEqual({ entry: 100, stop: 99, target1: 108 });
+  });
+
+  it('records the trimmed reason as decision_reason instead of leaving it for the placeholder fallback', () => {
+    const draft: OrderDraft = { direction: 'long', entry: 101, stop: 99, target1: 108 };
+    const submission = buildOrderSubmission(makeView(), draft, 'limit', '  突破前高，放量确认  ');
+    expect(submission.decision_reason).toEqual({
+      category: 'other',
+      summary: '突破前高，放量确认',
+    });
   });
 });

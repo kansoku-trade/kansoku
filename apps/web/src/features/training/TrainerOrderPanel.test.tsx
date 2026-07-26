@@ -107,6 +107,49 @@ function makeAmendBridge(nextView: TrainerView): {
   return { bridge, amend };
 }
 
+function makeCancelBridge(nextView: TrainerView): {
+  bridge: TrainerBridge;
+  cancel: ReturnType<typeof vi.fn>;
+} {
+  const cancel = vi.fn(async () => ({
+    ok: true as const,
+    data: { view: nextView, events: [], advancedBars: 0, terminal: false, result: null },
+  }));
+  const bridge = { cancel } as unknown as TrainerBridge;
+  return { bridge, cancel };
+}
+
+function makeExitBridge(nextView: TrainerView): {
+  bridge: TrainerBridge;
+  exitNextOpen: ReturnType<typeof vi.fn>;
+} {
+  const exitNextOpen = vi.fn(async () => ({
+    ok: true as const,
+    data: { view: nextView, events: [], advancedBars: 0, terminal: false, result: null },
+  }));
+  const bridge = { exitNextOpen } as unknown as TrainerBridge;
+  return { bridge, exitNextOpen };
+}
+
+function makePendingView(): TrainerView {
+  return makeView({
+    phase: 'pending',
+    order: {
+      tradeId: 1,
+      direction: 'long',
+      decisionBar: 0,
+      decisionTime: '2026-01-05T14:05:00.000Z',
+      entry: 101,
+      initialStop: 99,
+      stop: 99,
+      target: 108,
+      waitedBars: 0,
+      entryReason: { category: 'breakout', summary: '' },
+      entryMode: 'limit',
+    },
+  });
+}
+
 afterEach(() => {
   cleanup();
 });
@@ -241,6 +284,9 @@ describe('TrainerOrderPanel submit', () => {
     fireEvent.pointerDown(container, { clientY: 198 });
     fireEvent.pointerMove(window, { clientY: 150 });
     fireEvent.pointerUp(window);
+    fireEvent.change(screen.getByLabelText('入场理由'), {
+      target: { value: '5 分钟突破前高，放量确认' },
+    });
 
     fireEvent.click(screen.getByRole('button', { name: '提交限价单' }));
 
@@ -253,6 +299,10 @@ describe('TrainerOrderPanel submit', () => {
     expect(call.sessionId).toBe('run-1');
     expect(call.entryMode).toBe('limit');
     expect(call.submission.entry_plan).toEqual({ entry: 100, stop: 90, target1: 150 });
+    expect(call.submission.decision_reason).toEqual({
+      category: 'other',
+      summary: '5 分钟突破前高，放量确认',
+    });
   });
 
   it('the market button submits entryMode market with the live price as entry', async () => {
@@ -276,6 +326,7 @@ describe('TrainerOrderPanel submit', () => {
     fireEvent.pointerDown(container, { clientY: 198 });
     fireEvent.pointerMove(window, { clientY: 178 });
     fireEvent.pointerUp(window);
+    fireEvent.change(screen.getByLabelText('入场理由'), { target: { value: '照现价追多' } });
 
     fireEvent.click(screen.getByRole('button', { name: '照现价立刻进' }));
 
@@ -308,6 +359,7 @@ describe('TrainerOrderPanel submit', () => {
       />,
     );
 
+    fireEvent.change(screen.getByLabelText('入场理由'), { target: { value: '突破前高' } });
     fireEvent.click(screen.getByRole('button', { name: '提交限价单' }));
     await waitFor(() => expect(onViewChange).toHaveBeenCalledWith(nextView));
   });
@@ -396,6 +448,7 @@ describe('TrainerOrderPanel TD-RR-01 gate', () => {
     );
 
     fireEvent.change(screen.getByLabelText('目标'), { target: { value: '101.5' } });
+    fireEvent.change(screen.getByLabelText('入场理由'), { target: { value: '突破前高' } });
 
     const limitButton = screen.getByRole('button', { name: '提交限价单' }) as HTMLButtonElement;
     const marketButton = screen.getByRole('button', { name: '照现价立刻进' }) as HTMLButtonElement;
@@ -514,6 +567,149 @@ describe('TrainerOrderPanel TD-EXIT-01 gate (position amend)', () => {
       stop: 100.5,
       target: 103,
       reason: { category: 'risk_management', summary: '止损上移到 100.5 锁利' },
+    });
+    await waitFor(() => expect(onViewChange).toHaveBeenCalledWith(nextView));
+  });
+});
+
+describe('TrainerOrderPanel entry reason (TD-REASON-01)', () => {
+  it('locks the submit buttons until an entry reason is entered', () => {
+    const { handle } = makeHandle();
+    const { bridge, submit } = makeBridge();
+    render(
+      <TrainerOrderPanel
+        view={makeView()}
+        handle={handle}
+        bridge={bridge}
+        sessionId="run-1"
+        onViewChange={() => {}}
+      />,
+    );
+
+    const limitButton = screen.getByRole('button', { name: '提交限价单' }) as HTMLButtonElement;
+    const marketButton = screen.getByRole('button', { name: '照现价立刻进' }) as HTMLButtonElement;
+    expect(limitButton.disabled).toBe(true);
+    expect(marketButton.disabled).toBe(true);
+
+    fireEvent.click(limitButton);
+    expect(submit).not.toHaveBeenCalled();
+
+    fireEvent.change(screen.getByLabelText('入场理由'), {
+      target: { value: '5 分钟级别突破前高，放量确认' },
+    });
+    expect(limitButton.disabled).toBe(false);
+    expect(marketButton.disabled).toBe(false);
+  });
+});
+
+describe('TrainerOrderPanel pending order cancel', () => {
+  it('locks the cancel button until a reason is entered', () => {
+    const { handle } = makeHandle();
+    const view = makePendingView();
+    const { bridge } = makeCancelBridge(view);
+    render(
+      <TrainerOrderPanel
+        view={view}
+        handle={handle}
+        bridge={bridge}
+        sessionId="run-1"
+        onViewChange={() => {}}
+      />,
+    );
+
+    const cancelButton = screen.getByRole('button', { name: '撤销挂单' }) as HTMLButtonElement;
+    expect(cancelButton.disabled).toBe(true);
+
+    fireEvent.change(screen.getByLabelText('撤单原因'), {
+      target: { value: '行情走弱，不想再等成交' },
+    });
+    expect(cancelButton.disabled).toBe(false);
+  });
+
+  it('submits the cancel with the entered reason and applies the returned view', async () => {
+    const { handle } = makeHandle();
+    const view = makePendingView();
+    const nextView = makeView({ phase: 'flat' });
+    const { bridge, cancel } = makeCancelBridge(nextView);
+    const onViewChange = vi.fn();
+    render(
+      <TrainerOrderPanel
+        view={view}
+        handle={handle}
+        bridge={bridge}
+        sessionId="run-1"
+        onViewChange={onViewChange}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText('撤单原因'), {
+      target: { value: '行情走弱，不想再等成交' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: '撤销挂单' }));
+
+    await waitFor(() => expect(cancel).toHaveBeenCalledTimes(1));
+    expect(cancel).toHaveBeenCalledWith({
+      sessionId: 'run-1',
+      reason: { category: 'thesis_invalidated', summary: '行情走弱，不想再等成交' },
+    });
+    await waitFor(() => expect(onViewChange).toHaveBeenCalledWith(nextView));
+  });
+});
+
+describe('TrainerOrderPanel exit next open', () => {
+  it('locks the exit button until a reason is entered, independent of the amend reason', () => {
+    const { handle } = makeHandle();
+    const view = makeOpenView('long', 102);
+    const { bridge } = makeExitBridge(view);
+    render(
+      <TrainerOrderPanel
+        view={view}
+        handle={handle}
+        bridge={bridge}
+        sessionId="run-1"
+        onViewChange={() => {}}
+      />,
+    );
+
+    const exitButton = screen.getByRole('button', { name: '下一根开盘平仓' }) as HTMLButtonElement;
+    expect(exitButton.disabled).toBe(true);
+
+    fireEvent.change(screen.getByLabelText('调整原因'), {
+      target: { value: '止损上移到 100.5 锁利' },
+    });
+    expect(exitButton.disabled).toBe(true);
+
+    fireEvent.change(screen.getByLabelText('平仓原因'), {
+      target: { value: '结构走坏，提前离场' },
+    });
+    expect(exitButton.disabled).toBe(false);
+  });
+
+  it('submits exitNextOpen with the entered reason and applies the returned view', async () => {
+    const { handle } = makeHandle();
+    const view = makeOpenView('long', 102);
+    const nextView = makeView({ phase: 'flat' });
+    const { bridge, exitNextOpen } = makeExitBridge(nextView);
+    const onViewChange = vi.fn();
+    render(
+      <TrainerOrderPanel
+        view={view}
+        handle={handle}
+        bridge={bridge}
+        sessionId="run-1"
+        onViewChange={onViewChange}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText('平仓原因'), {
+      target: { value: '结构走坏，提前离场' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: '下一根开盘平仓' }));
+
+    await waitFor(() => expect(exitNextOpen).toHaveBeenCalledTimes(1));
+    expect(exitNextOpen).toHaveBeenCalledWith({
+      sessionId: 'run-1',
+      reason: { category: 'thesis_invalidated', summary: '结构走坏，提前离场' },
     });
     await waitFor(() => expect(onViewChange).toHaveBeenCalledWith(nextView));
   });
