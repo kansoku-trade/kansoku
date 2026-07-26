@@ -587,7 +587,6 @@ describe('TrainerOrderPanel TD-EXIT-01 gate (position amend)', () => {
         onViewChange={() => {}}
       />,
     );
-    // One seeding check for the position's committed stop/target fires on mount.
     await waitFor(() => expect(validateAmend).toHaveBeenCalledTimes(1));
 
     // stop 99 sits at y=201 under the linear map; drag it down through four frames.
@@ -602,6 +601,39 @@ describe('TrainerOrderPanel TD-EXIT-01 gate (position amend)', () => {
     fireEvent.pointerUp(window);
     await waitFor(() => expect(validateAmend).toHaveBeenCalledTimes(2));
     expect(validateAmend).toHaveBeenLastCalledWith({ sessionId: 'run-1', stop: 95, target: 103 });
+  });
+
+  // getTrainerBridge() returns a new object literal per call. A mounting site that forgets to
+  // memoise it must not turn every render — every drag frame — into an engine round trip.
+  it('does not re-ask the engine just because the bridge object identity changed', async () => {
+    const { handle } = makeHandle();
+    const view = makeOpenView('long', 102);
+    const { bridge, amend, validateAmend } = makeAmendBridge(view);
+    const { rerender } = render(
+      <TrainerOrderPanel
+        view={view}
+        handle={handle}
+        bridge={bridge}
+        sessionId="run-1"
+        onViewChange={() => {}}
+      />,
+    );
+    await waitFor(() => expect(validateAmend).toHaveBeenCalledTimes(1));
+
+    for (let i = 0; i < 5; i += 1) {
+      rerender(
+        <TrainerOrderPanel
+          view={view}
+          handle={handle}
+          bridge={{ amend, validateAmend } as unknown as TrainerBridge}
+          sessionId="run-1"
+          onViewChange={() => {}}
+        />,
+      );
+    }
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    expect(validateAmend).toHaveBeenCalledTimes(1);
   });
 
   it('locks the confirm button until a reason is entered', async () => {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { TrainerBridge } from '../desktop/desktopTrainerBridge';
 import type { AmendDraft } from './orderDraft';
 
@@ -20,6 +20,13 @@ export function useAmendCheck(
   settled: AmendDraft | null,
 ): AmendVerdict | null {
   const [verdict, setVerdict] = useState<AmendVerdict | null>(null);
+  // The bridge is read through a ref and deliberately kept out of the dependency list.
+  // getTrainerBridge() mints a fresh object on every call, so depending on its identity would make
+  // an unmemoised caller re-ask the engine on every render — including every frame of a drag, which
+  // is the one thing this hook exists to avoid. sessionId is what actually identifies the episode
+  // being asked about, and it is a dependency.
+  const bridgeRef = useRef(bridge);
+  bridgeRef.current = bridge;
 
   useEffect(() => {
     if (!settled) {
@@ -30,7 +37,7 @@ export function useAmendCheck(
     const ask = async () => {
       const asked = { stop: settled.stop, target: settled.target, cursor };
       try {
-        const envelope = await bridge.validateAmend({
+        const envelope = await bridgeRef.current.validateAmend({
           sessionId,
           stop: settled.stop,
           target: settled.target,
@@ -54,7 +61,7 @@ export function useAmendCheck(
     return () => {
       cancelled = true;
     };
-  }, [bridge, sessionId, cursor, settled]);
+  }, [sessionId, cursor, settled]);
 
   return verdict;
 }

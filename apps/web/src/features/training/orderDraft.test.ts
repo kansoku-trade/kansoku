@@ -9,6 +9,7 @@ import {
   deriveAnchor,
   formatRewardRisk,
   meetsRewardRiskFloor,
+  MIN_GAP,
   MIN_REWARD_RISK,
   rewardRiskRatio,
   withDirection,
@@ -66,6 +67,17 @@ describe('clampStop / clampTarget', () => {
   it('passes through already-valid prices unchanged', () => {
     expect(clampStop('long', 100, 98)).toBe(98);
     expect(clampTarget('long', 100, 110)).toBe(110);
+  });
+
+  // Asserting the exact landing price, not just the side: a clamp that parks the stop right on the
+  // reference is what the engine refuses as crossing the visible price, so the offset is the part
+  // that has to hold, and a direction-only assertion would not notice MIN_GAP changing.
+  it('lands a clamped price exactly MIN_GAP away from the reference', () => {
+    expect(clampStop('long', 101, 102)).toBe(101 - MIN_GAP);
+    expect(clampStop('short', 99, 98)).toBe(99 + MIN_GAP);
+    expect(clampTarget('long', 101, 99)).toBe(101 + MIN_GAP);
+    expect(clampTarget('short', 99, 101)).toBe(99 - MIN_GAP);
+    expect(MIN_GAP).toBe(0.01);
   });
 });
 
