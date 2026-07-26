@@ -7,7 +7,9 @@ import {
   clampTarget,
   defaultOrderDraft,
   deriveAnchor,
+  formatRewardRisk,
   meetsRewardRiskFloor,
+  MIN_REWARD_RISK,
   rewardRiskRatio,
   withDirection,
   type OrderDraft,
@@ -121,6 +123,28 @@ describe('meetsRewardRiskFloor (TD-RR-01)', () => {
     const belowFloor: OrderDraft = { direction: 'short', entry: 100, stop: 101, target1: 98.501 };
     expect(meetsRewardRiskFloor(atFloor)).toBe(true);
     expect(meetsRewardRiskFloor(belowFloor)).toBe(false);
+  });
+});
+
+describe('formatRewardRisk', () => {
+  it('rounds down, never up to the floor, for a ratio just below 1.5', () => {
+    const draft: OrderDraft = { direction: 'long', entry: 100, stop: 99, target1: 101.499 };
+    const rr = rewardRiskRatio(draft)!;
+    expect(formatRewardRisk(rr)).toBe('1.49');
+    // The displayed value must never claim to clear a floor the gate has locked on.
+    expect(Number(formatRewardRisk(rr)) >= MIN_REWARD_RISK).toBe(false);
+    expect(meetsRewardRiskFloor(draft)).toBe(false);
+  });
+
+  it('shows exactly the floor when the ratio is exactly 1.5', () => {
+    const draft: OrderDraft = { direction: 'long', entry: 100, stop: 99, target1: 101.5 };
+    const rr = rewardRiskRatio(draft)!;
+    expect(formatRewardRisk(rr)).toBe('1.50');
+    expect(meetsRewardRiskFloor(draft)).toBe(true);
+  });
+
+  it('rounds down a comfortably-above-floor ratio too', () => {
+    expect(formatRewardRisk(3.987)).toBe('3.98');
   });
 });
 

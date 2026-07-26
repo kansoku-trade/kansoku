@@ -67,6 +67,14 @@ export function meetsRewardRiskFloor(draft: OrderDraft): boolean {
   return rr !== null && rr >= MIN_REWARD_RISK;
 }
 
+// Rounds down (not to nearest), so the displayed ratio can never read as meeting
+// MIN_REWARD_RISK while meetsRewardRiskFloor has locked the submit button on the same underlying
+// value — e.g. 1.499 must show "1.49", not "1.50" via ordinary rounding, or the trader sees a
+// ratio that claims the floor is met right where the UI is refusing the order.
+export function formatRewardRisk(rr: number): string {
+  return (Math.floor(rr * 100) / 100).toFixed(2);
+}
+
 const ANCHOR_TF_BY_BASE_PERIOD: Record<TrainerBasePeriod, TrainerAnchor['timeframe']> = {
   '1m': 'm5',
   '5m': 'm5',

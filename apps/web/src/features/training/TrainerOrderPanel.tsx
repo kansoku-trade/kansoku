@@ -14,6 +14,7 @@ import {
   clampStop,
   clampTarget,
   defaultOrderDraft,
+  formatRewardRisk,
   lastClose,
   meetsRewardRiskFloor,
   rewardRiskRatio,
@@ -268,7 +269,7 @@ export function TrainerOrderPanel({
       </div>
       <div className="trainer-order-row">
         <span className={`trainer-order-rr${rrOk ? '' : ' trainer-order-field--warn'}`}>
-          盈亏比 {rr === null ? '—' : `${rr.toFixed(2)} : 1`}
+          盈亏比 {rr === null ? '—' : `${formatRewardRisk(rr)} : 1`}
         </span>
       </div>
       <div className="trainer-order-row">

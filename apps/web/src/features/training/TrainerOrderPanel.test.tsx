@@ -374,6 +374,9 @@ describe('TrainerOrderPanel TD-RR-01 gate', () => {
         .closest('label')
         ?.classList.contains('trainer-order-field--warn'),
     ).toBe(true);
+    // The readout must round down, not to nearest — it must never display "1.50" (which would
+    // read as clearing the floor) while the buttons above are disabled for missing it.
+    expect(screen.getByText(/盈亏比/).textContent).toContain('1.49 : 1');
 
     fireEvent.click(limitButton);
     expect(submit).not.toHaveBeenCalled();
@@ -404,6 +407,7 @@ describe('TrainerOrderPanel TD-RR-01 gate', () => {
         .closest('label')
         ?.classList.contains('trainer-order-field--warn'),
     ).toBe(false);
+    expect(screen.getByText(/盈亏比/).textContent).toContain('1.50 : 1');
   });
 });
 
