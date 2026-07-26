@@ -28,6 +28,14 @@ export interface TrainerChartProps {
 
 export function TrainerChart({ view, sessionId, bridge, onViewChange }: TrainerChartProps) {
   const [epilogueBars, setEpilogueBars] = useState<RawBar[] | null>(null);
+  // Reset during render (see TrainerOrderPanel's amend-draft reset for the same idiom): the
+  // epilogue is revealed post-cursor data for one specific case, so it must never survive into a
+  // render for a different case, not even for the one frame an effect-based reset would take.
+  const [epilogueCaseId, setEpilogueCaseId] = useState(view.caseId);
+  if (epilogueCaseId !== view.caseId) {
+    setEpilogueCaseId(view.caseId);
+    setEpilogueBars(null);
+  }
   const built = useMemo(() => buildTrainerIntradayBuilt(view, epilogueBars), [view, epilogueBars]);
   const baseTf = TRAINER_PERIOD_TO_CHART_TF[view.basePeriod];
   const [requestedTf, setRequestedTf] = useState<ChartTf>(baseTf);

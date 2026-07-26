@@ -190,4 +190,38 @@ describe('TrainerChart terminal state', () => {
       expect(lastCall?.[1]).toEqual(epilogue);
     });
   });
+
+  it('clears a revealed epilogue once the view moves to a new case, so nothing post-cursor leaks onto the next blind chart', async () => {
+    const epilogue = [bar('2026-01-05T14:10:00.000Z', 999)];
+    const { rerender } = render(
+      <TrainerChart
+        view={makeTerminalView()}
+        bridge={makeRevealBridge(epilogue)}
+        sessionId="run-1"
+        onViewChange={() => {}}
+      />,
+    );
+
+    fireEvent.click(await screen.findByRole('checkbox'));
+    await waitFor(() => {
+      const lastCall = vi.mocked(buildTrainerIntradayBuilt).mock.calls.at(-1);
+      expect(lastCall?.[1]).toEqual(epilogue);
+    });
+
+    const nextCaseView: TrainerView = { ...makeView(), caseId: 'case-2' };
+    rerender(
+      <TrainerChart
+        view={nextCaseView}
+        bridge={makeRevealBridge([])}
+        sessionId="run-1"
+        onViewChange={() => {}}
+      />,
+    );
+
+    await waitFor(() => {
+      const lastCall = vi.mocked(buildTrainerIntradayBuilt).mock.calls.at(-1);
+      expect(lastCall?.[0].caseId).toBe('case-2');
+      expect(lastCall?.[1]).toBeFalsy();
+    });
+  });
 });
