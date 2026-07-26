@@ -4,6 +4,7 @@ import type { BrowserWindow } from 'electron';
 import { createWindow } from './mainWindow.js';
 import { WindowsIpc } from './ipc.js';
 import { createPopoutWindow } from './popoutWindow.js';
+import { createTrainerWindow } from './trainerWindow.js';
 import {
   addWindowEntry,
   createWindowsFileStore,
@@ -67,6 +68,9 @@ export async function createWindowManager(options: WindowManagerOptions): Promis
     },
     openWindow(activeTabId) {
       openWithActiveTab(activeTabId);
+    },
+    openTrainer() {
+      createTrainerWindow();
     },
   });
 

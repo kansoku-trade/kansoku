@@ -4,6 +4,9 @@ import { useQuery } from '../../lib/apiHooks';
 import { client } from '../../lib/client';
 import { listRecentSymbols } from '../charts/recentCharts';
 import { Input } from '../../ui';
+import { getOpenTrainerBridge } from '../desktop/desktopWindowsBridge';
+import { useCapabilities } from '../edition/capabilitiesStore';
+import { openLicenseModal } from '../edition/licenseModalStore';
 import { buildPaletteCommands, type PaletteCommand } from './commands';
 import { usePalette } from './usePalette';
 
@@ -28,13 +31,15 @@ function PalettePanel({
   );
   const [query, setQuery] = useState('');
   const [index, setIndex] = useState(0);
+  const trainerBridge = getOpenTrainerBridge();
+  const { pro, licensed } = useCapabilities();
 
   const symbols = [
     ...(board?.rows.map((r) => r.symbol) ?? []),
     ...(portfolio?.positions.map((p) => p.symbol) ?? []),
     ...listRecentSymbols().map((s) => s.symbol),
   ];
-  const commands = buildPaletteCommands(query, symbols);
+  const commands = buildPaletteCommands(query, symbols, trainerBridge !== null);
   const active = Math.max(0, Math.min(index, commands.length - 1));
   const activeId = commands[active]?.id;
 
@@ -44,7 +49,15 @@ function PalettePanel({
 
   const run = (cmd: PaletteCommand) => {
     onClose();
-    onOpenRoute(cmd.route);
+    if (cmd.kind === 'trainer') {
+      if (pro && licensed) {
+        void trainerBridge?.openTrainer();
+      } else {
+        openLicenseModal('guard');
+      }
+      return;
+    }
+    if (cmd.route) onOpenRoute(cmd.route);
   };
 
   const moveDown = () => setIndex((i) => Math.min(i + 1, commands.length - 1));

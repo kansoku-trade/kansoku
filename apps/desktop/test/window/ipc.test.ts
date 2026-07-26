@@ -15,6 +15,7 @@ vi.mock('electron', () => ({ ipcMain }));
 const WINDOWS_CONTEXT_CHANNEL = 'windows.getContext';
 const WINDOWS_ACTIVE_TAB_CHANNEL = 'windows.reportActiveTab';
 const WINDOWS_POPOUT_CHANNEL = 'windows.openPopout';
+const WINDOWS_TRAINER_CHANNEL = 'windows.openTrainer';
 
 // electron-ipc-decorator's IpcHandler singleton dedupes channel registration,
 // so each test resets modules to re-register against fresh deps.
@@ -37,6 +38,7 @@ describe('WindowsIpc', () => {
       reportActiveTab: vi.fn(),
       openPopout: vi.fn(),
       openWindow: vi.fn(),
+      openTrainer: vi.fn(),
     });
 
     const result = await handlers.get(WINDOWS_CONTEXT_CHANNEL)?.({ sender: { id: 7 } } as never);
@@ -52,6 +54,7 @@ describe('WindowsIpc', () => {
       reportActiveTab: vi.fn(),
       openPopout: vi.fn(),
       openWindow: vi.fn(),
+      openTrainer: vi.fn(),
     });
 
     const result = await handlers.get(WINDOWS_CONTEXT_CHANNEL)?.({ sender: { id: 99 } } as never);
@@ -66,6 +69,7 @@ describe('WindowsIpc', () => {
       reportActiveTab,
       openPopout: vi.fn(),
       openWindow: vi.fn(),
+      openTrainer: vi.fn(),
     });
 
     await handlers
@@ -82,10 +86,26 @@ describe('WindowsIpc', () => {
       reportActiveTab: vi.fn(),
       openPopout,
       openWindow: vi.fn(),
+      openTrainer: vi.fn(),
     });
 
     await handlers.get(WINDOWS_POPOUT_CHANNEL)?.({ sender: { id: 1 } } as never, 'NVDA' as never);
 
     expect(openPopout).toHaveBeenCalledWith('NVDA');
+  });
+
+  it('opens a trainer window', async () => {
+    const openTrainer = vi.fn();
+    await registerWindowsIpc({
+      getContext: vi.fn(),
+      reportActiveTab: vi.fn(),
+      openPopout: vi.fn(),
+      openWindow: vi.fn(),
+      openTrainer,
+    });
+
+    await handlers.get(WINDOWS_TRAINER_CHANNEL)?.({ sender: { id: 1 } } as never);
+
+    expect(openTrainer).toHaveBeenCalled();
   });
 });

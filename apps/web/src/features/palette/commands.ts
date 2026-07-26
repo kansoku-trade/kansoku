@@ -5,7 +5,8 @@ export interface PaletteCommand {
   title: string;
   hint?: string;
   keywords: string[];
-  route: string;
+  route?: string;
+  kind?: 'trainer';
 }
 
 const MAX_COMMANDS = 12;
@@ -28,6 +29,13 @@ const STATIC_COMMANDS: PaletteCommand[] = [
   { id: 'nav:logs', title: '查看日志', keywords: ['logs', 'log', '日志', 'debug'], route: '/logs' },
 ];
 
+const TRAINER_COMMAND: PaletteCommand = {
+  id: 'action:trainer',
+  title: '开始盲盘训练',
+  keywords: ['trainer', 'blind', 'replay', '训练', '盲盘', '复盘'],
+  kind: 'trainer',
+};
+
 function symbolCommand(sym: string): PaletteCommand {
   const short = sym.replace(/\.US$/, '');
   return {
@@ -39,7 +47,11 @@ function symbolCommand(sym: string): PaletteCommand {
   };
 }
 
-export function buildPaletteCommands(query: string, symbols: string[]): PaletteCommand[] {
+export function buildPaletteCommands(
+  query: string,
+  symbols: string[],
+  showTrainer = false,
+): PaletteCommand[] {
   const q = query.trim().toLowerCase();
   const seen = new Set<string>();
   const symbolCommands: PaletteCommand[] = [];
@@ -53,7 +65,8 @@ export function buildPaletteCommands(query: string, symbols: string[]): PaletteC
     !q ||
     cmd.title.toLowerCase().includes(q) ||
     cmd.keywords.some((k) => k.toLowerCase().includes(q));
-  const out = [...symbolCommands, ...STATIC_COMMANDS].filter(matches);
+  const staticCommands = showTrainer ? [...STATIC_COMMANDS, TRAINER_COMMAND] : STATIC_COMMANDS;
+  const out = [...symbolCommands, ...staticCommands].filter(matches);
 
   const direct = q ? normalizeSymbol(query) : null;
   if (direct && !seen.has(direct)) out.unshift(symbolCommand(direct));

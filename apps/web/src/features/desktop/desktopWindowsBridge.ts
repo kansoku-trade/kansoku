@@ -51,3 +51,17 @@ export function getPopoutBridge(
     openPopout: (symbol: string) => rpc.invoke('windows.openPopout', symbol) as Promise<void>,
   };
 }
+
+export interface OpenTrainerBridge {
+  openTrainer(): Promise<void>;
+}
+
+export function getOpenTrainerBridge(
+  win: unknown = typeof window === 'undefined' ? undefined : window,
+): OpenTrainerBridge | null {
+  const rpc = getShellRpc(win);
+  if (!rpc) return null;
+  return {
+    openTrainer: () => rpc.invoke('windows.openTrainer') as Promise<void>,
+  };
+}

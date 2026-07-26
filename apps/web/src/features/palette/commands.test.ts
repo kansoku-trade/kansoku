@@ -61,4 +61,22 @@ describe('buildPaletteCommands', () => {
     const symbols = Array.from({ length: 30 }, (_, i) => `SYM${i}.US`);
     expect(buildPaletteCommands('', symbols).length).toBeLessThanOrEqual(12);
   });
+
+  it('omits the trainer command by default', () => {
+    expect(buildPaletteCommands('', []).some((c) => c.id === 'action:trainer')).toBe(false);
+  });
+
+  it('exposes the trainer command as a non-route action when requested', () => {
+    const commands = buildPaletteCommands('', [], true);
+    const trainer = commands.find((c) => c.id === 'action:trainer');
+    expect(trainer).toMatchObject({ kind: 'trainer' });
+    expect(trainer?.route).toBeUndefined();
+  });
+
+  it('matches the trainer command by keyword', () => {
+    expect(buildPaletteCommands('训练', [], true).map((c) => c.id)).toContain('action:trainer');
+    expect(buildPaletteCommands('训练', [], false).map((c) => c.id)).not.toContain(
+      'action:trainer',
+    );
+  });
 });

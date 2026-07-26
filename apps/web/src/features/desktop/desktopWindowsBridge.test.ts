@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { getPopoutBridge, getWindowsBridge } from './desktopWindowsBridge';
+import { getOpenTrainerBridge, getPopoutBridge, getWindowsBridge } from './desktopWindowsBridge';
 
 describe('getWindowsBridge', () => {
   it('returns null when desktop rpc is absent', () => {
@@ -29,5 +29,18 @@ describe('getPopoutBridge', () => {
     const bridge = getPopoutBridge({ desktop: { rpc: { invoke } } });
     await bridge?.openPopout('NVDA.US');
     expect(invoke).toHaveBeenCalledWith('windows.openPopout', 'NVDA.US');
+  });
+});
+
+describe('getOpenTrainerBridge', () => {
+  it('returns null when desktop rpc is absent', () => {
+    expect(getOpenTrainerBridge({})).toBeNull();
+  });
+
+  it('invokes windows.openTrainer', async () => {
+    const invoke = vi.fn(async () => undefined);
+    const bridge = getOpenTrainerBridge({ desktop: { rpc: { invoke } } });
+    await bridge?.openTrainer();
+    expect(invoke).toHaveBeenCalledWith('windows.openTrainer');
   });
 });
