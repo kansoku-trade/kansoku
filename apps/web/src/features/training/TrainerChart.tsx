@@ -3,9 +3,10 @@ import type { TrainerView } from '@kansoku/pro-api';
 import type { RawBar } from '@kansoku/shared/types';
 import { IntradayControlsProvider } from '../charts/intraday/controlsContext';
 import { IntradayChartOnly } from '../charts/intraday/IntradayChartOnly';
-import type { ChartTf } from '../charts/intraday/timeframes';
+import { tfLabel, type ChartTf } from '../charts/intraday/timeframes';
 import type { DrawingChartHandle } from '../charts/intraday/useIntradayCharts';
 import type { TrainerBridge } from '../desktop/desktopTrainerBridge';
+import { getShellRpc } from '../desktop/shellRpc';
 import {
   buildTrainerIntradayBuilt,
   isTrainerLadderTf,
@@ -41,11 +42,19 @@ export function TrainerChart({ view, sessionId, bridge, onViewChange }: TrainerC
   const [requestedTf, setRequestedTf] = useState<ChartTf>(baseTf);
   const activeTf = isTrainerLadderTf(view.ladder, requestedTf) ? requestedTf : baseTf;
   const [chartHandle, setChartHandle] = useState<DrawingChartHandle | null>(null);
+  const isDesktop = getShellRpc() !== null;
 
   return (
     <div className="trainer-shell">
       <IntradayControlsProvider storageNamespace={STORAGE_NAMESPACE}>
-        <TrainerPeriodSwitch ladder={view.ladder} activeTf={activeTf} onChange={setRequestedTf} />
+        <div className="trainer-header">
+          {isDesktop && <div className="popout-traffic-spacer" />}
+          <span className="trainer-title">盲盘训练</span>
+          <span className="trainer-meta">
+            {view.symbol} · {tfLabel(baseTf)} · 剩余 {view.remainingBars} 根
+          </span>
+          <TrainerPeriodSwitch ladder={view.ladder} activeTf={activeTf} onChange={setRequestedTf} />
+        </div>
         <div className="trainer-body">
           <IntradayChartOnly
             symbol={view.symbol}

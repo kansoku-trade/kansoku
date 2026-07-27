@@ -589,6 +589,30 @@ a:hover {
   flex-direction: column;
   overflow: hidden;
 }
+.trainer-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  -webkit-app-region: drag;
+  user-select: none;
+}
+.trainer-title {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+.trainer-meta {
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+}
+.trainer-header .chart-timeframe-switch {
+  margin-left: auto;
+  -webkit-app-region: no-drag;
+}
 .trainer-body {
   flex: 1;
   min-height: 0;
