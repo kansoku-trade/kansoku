@@ -5,6 +5,8 @@ import {
   plannedRewardRisk,
   settlementSummary,
   settlementTradeRows,
+  settlementTrack,
+  trackGeometry,
 } from './settlementStats';
 
 function trade(overrides: Partial<TrainerClosedTrade> = {}): TrainerClosedTrade {
@@ -83,6 +85,69 @@ describe('settlementTradeRows', () => {
 
   it('returns an empty array for a session with no trades', () => {
     expect(settlementTradeRows([])).toEqual([]);
+  });
+});
+
+describe('settlementTrack', () => {
+  it('totals planned R, banked R and giveback across every trade', () => {
+    const track = settlementTrack([
+      trade({ netR: 1.4, mfeR: 2.2 }),
+      trade({ tradeId: 2, target: 104, initialRisk: 2, netR: -1, mfeR: 0.5 }),
+    ]);
+    expect(track!.plannedR).toBeCloseTo(5, 6);
+    expect(track!.gotR).toBeCloseTo(0.4, 6);
+    expect(track!.givebackR).toBeCloseTo(2.3, 6);
+    expect(track!.tradeCount).toBe(2);
+  });
+
+  it('is null for a session with no trades', () => {
+    expect(settlementTrack([])).toBeNull();
+  });
+
+  it('reproduces the real stopped-on-fill session: 4.46 planned, nothing banked', () => {
+    const track = settlementTrack([
+      trade({
+        entry: { time: '', price: 98.881109 },
+        target: 101.2,
+        initialStop: 99.4,
+        initialRisk: 0.5188910000000106,
+        netR: 0,
+        mfeR: 0,
+        exitReason: 'stop',
+      }),
+    ])!;
+    expect(track.plannedR).toBeCloseTo(4.4689, 4);
+    expect(track.gotR).toBe(0);
+    expect(track.givebackR).toBe(0);
+  });
+});
+
+describe('trackGeometry', () => {
+  it('scales the banked and given-back bars against the plan', () => {
+    const geom = trackGeometry({ plannedR: 4, gotR: 1, givebackR: 1, tradeCount: 1 });
+    expect(geom).toEqual({ gotPct: 25, gotNegative: false, giveLeftPct: 25, givePct: 25 });
+  });
+
+  it('widens the scale when banked plus giveback overshoots the plan', () => {
+    const geom = trackGeometry({ plannedR: 2, gotR: 3, givebackR: 1, tradeCount: 1 });
+    expect(geom.gotPct).toBe(75);
+    expect(geom.givePct).toBe(25);
+  });
+
+  it('flags a losing session and starts its bar from zero', () => {
+    const geom = trackGeometry({ plannedR: 3, gotR: -1.5, givebackR: 0, tradeCount: 1 });
+    expect(geom.gotNegative).toBe(true);
+    expect(geom.gotPct).toBe(50);
+    expect(geom.giveLeftPct).toBe(0);
+  });
+
+  it('never divides by zero when the plan promised nothing', () => {
+    expect(trackGeometry({ plannedR: 0, gotR: 0, givebackR: 0, tradeCount: 1 })).toEqual({
+      gotPct: 0,
+      gotNegative: false,
+      giveLeftPct: 0,
+      givePct: 0,
+    });
   });
 });
 

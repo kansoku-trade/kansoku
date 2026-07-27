@@ -104,6 +104,11 @@ export function TrainerOrderPanel({
     handle.series.attachPrimitive(box);
     boxRef.current = box;
     return () => {
+      // The chart outlives this panel — it stays mounted through the switch to the settlement
+      // screen. Dropping only the ref would leave the draft box painted on the settlement chart
+      // as a position that was never taken.
+      box.setData(null);
+      handle.series.detachPrimitive(box);
       boxRef.current = null;
     };
   }, [handle]);

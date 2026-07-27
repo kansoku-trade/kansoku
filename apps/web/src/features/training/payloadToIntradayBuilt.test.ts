@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { macd, toTs } from '@kansoku/core/analysis/indicators';
-import type { TrainerView } from '@kansoku/pro-api';
+import type { TrainerClosedTrade, TrainerView } from '@kansoku/pro-api';
 import type { RawBar } from '@kansoku/shared/types';
 import {
   buildTrainerIntradayBuilt,
@@ -168,7 +168,7 @@ describe('buildTrainerIntradayBuilt MACD', () => {
     expect(data?.macdHist).toEqual([]);
   });
 
-  it('computes dif/dea/hist with @kansoku/core\'s macd() once the tier has enough bars', () => {
+  it("computes dif/dea/hist with @kansoku/core's macd() once the tier has enough bars", () => {
     const bars = seriesBars(80);
     const view = makeView({ bars: { base: bars, mid: MID_BARS, top: TOP_BARS } });
     const built = buildTrainerIntradayBuilt(view);
@@ -198,5 +198,94 @@ describe('trainerAdvancePeriod', () => {
 
   it('falls back to the base period for a timeframe outside the ladder', () => {
     expect(trainerAdvancePeriod(LADDER, 'day')).toBe('5m');
+  });
+});
+
+function closedTrade(overrides: Partial<TrainerClosedTrade> = {}): TrainerClosedTrade {
+  return {
+    tradeId: 1,
+    direction: 'long',
+    decisionBar: 0,
+    decisionTime: BASE_BARS[0].time,
+    entry: { time: '2026-01-05T14:05:00.000Z', price: 101 },
+    exit: { time: '2026-01-05T14:15:00.000Z', price: 103 },
+    exitReason: 'target',
+    initialStop: 99,
+    finalStop: 99,
+    target: 106,
+    initialRisk: 2,
+    grossR: 1,
+    frictionR: 0,
+    netR: 1,
+    mfeR: 1.2,
+    maeR: 0.1,
+    holdingBars: 2,
+    ...overrides,
+  };
+}
+
+function baseMarkers(trades: TrainerClosedTrade[]) {
+  const view = makeView({ trades, terminal: true, phase: 'terminal' });
+  const built = buildTrainerIntradayBuilt(view);
+  return tfDataOf(built, TRAINER_PERIOD_TO_CHART_TF['5m'])!.markers;
+}
+
+describe('buildTrainerIntradayBuilt trade marks', () => {
+  it('marks nothing until the episode is over', () => {
+    const view = makeView({ trades: [closedTrade()] });
+    const built = buildTrainerIntradayBuilt(view);
+    expect(tfDataOf(built, TRAINER_PERIOD_TO_CHART_TF['5m'])!.markers).toEqual([]);
+  });
+
+  it('emits an entry mark and an exit mark, each on its own bar', () => {
+    const markers = baseMarkers([closedTrade()]);
+    expect(markers).toHaveLength(2);
+    expect(markers[0].id).toBe('trade-1-entry');
+    expect(markers[0].time).toBe(toTs('2026-01-05T14:05:00.000Z'));
+    expect(markers[0].text).toBe('进 101.00');
+    expect(markers[1].id).toBe('trade-1-exit');
+    expect(markers[1].time).toBe(toTs('2026-01-05T14:15:00.000Z'));
+    expect(markers[1].text).toBe('离场 103.00 · 止盈');
+  });
+
+  // A stopped-out long left at the bottom of the move; an exit mark floating above the bar reads as
+  // a price level rather than as the moment the trade ended.
+  it('puts the exit mark on the side the price actually went', () => {
+    const stopped = baseMarkers([
+      closedTrade({ exitReason: 'stop', exit: { time: '2026-01-05T14:15:00.000Z', price: 99 } }),
+    ]);
+    expect(stopped[0].position).toBe('belowBar');
+    expect(stopped[1].position).toBe('belowBar');
+    expect(stopped[1].text).toBe('离场 99.00 · 止损');
+
+    const won = baseMarkers([closedTrade()]);
+    expect(won[1].position).toBe('aboveBar');
+  });
+
+  it('splits a round trip that closed at its entry price onto opposite sides', () => {
+    const flat = baseMarkers([
+      closedTrade({ exit: { time: '2026-01-05T14:05:00.000Z', price: 101 }, exitReason: 'stop' }),
+    ]);
+    expect(flat[0].position).toBe('belowBar');
+    expect(flat[1].position).toBe('aboveBar');
+  });
+
+  it('snaps a mark onto the aggregated bar that contains it on the upper tiers', () => {
+    const view = makeView({
+      trades: [
+        closedTrade({
+          entry: { time: '2026-01-05T20:30:00.000Z', price: 9001 },
+          exit: { time: '2026-01-05T21:45:00.000Z', price: 9002 },
+        }),
+      ],
+      terminal: true,
+      phase: 'terminal',
+    });
+    const built = buildTrainerIntradayBuilt(view);
+    const mid = tfDataOf(built, TRAINER_PERIOD_TO_CHART_TF['15m'])!.markers;
+    expect(mid.map((m) => m.time)).toEqual([
+      toTs('2026-01-05T20:00:00.000Z'),
+      toTs('2026-01-05T21:00:00.000Z'),
+    ]);
   });
 });

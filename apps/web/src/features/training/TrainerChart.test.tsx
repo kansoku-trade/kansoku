@@ -20,6 +20,13 @@ vi.mock('../charts/drawings/DrawingToolbar', () => ({
   DrawingToolbar: () => null,
 }));
 
+// The settlement thumbnail owns a real lightweight-charts instance rather than going through the
+// mocked useIntradayCharts, and createChart needs a browser. Its rendering is covered by the
+// primitive unit tests; here only the choice of which chart the mode shows is under test.
+vi.mock('./TrainerThumbnail', () => ({
+  TrainerThumbnail: () => <div data-testid="trainer-thumbnail" />,
+}));
+
 vi.mock('./payloadToIntradayBuilt', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./payloadToIntradayBuilt')>();
   return { ...actual, buildTrainerIntradayBuilt: vi.fn(actual.buildTrainerIntradayBuilt) };
@@ -165,6 +172,25 @@ describe('TrainerChart terminal state', () => {
     expect(screen.queryByRole('button', { name: /步进/ })).toBeNull();
     expect(screen.queryByLabelText('止损')).toBeNull();
     expect(screen.getByRole('checkbox')).toBeTruthy();
+  });
+
+  it('shows the thumbnail while settling and the full chart once expanded', () => {
+    render(
+      <TrainerChart
+        view={makeTerminalView()}
+        bridge={makeRevealBridge([])}
+        sessionId="run-1"
+        onViewChange={() => {}}
+      />,
+    );
+
+    expect(screen.getByTestId('trainer-thumbnail')).toBeTruthy();
+    expect(document.querySelector('.trainer-shell--settle')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: /展开复盘/ }));
+
+    expect(screen.queryByTestId('trainer-thumbnail')).toBeNull();
+    expect(document.querySelector('.trainer-shell--review')).toBeTruthy();
   });
 
   it('threads the revealed epilogue bars into the chart build only once the toggle is switched on', async () => {

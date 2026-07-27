@@ -63,13 +63,21 @@ function draw(primitive: PositionBoxPrimitive): Recording {
   return rec;
 }
 
-function makePrimitive(data: PositionBoxData | null, priceScale: (p: number) => number) {
+function makePrimitive(
+  data: PositionBoxData | null,
+  priceScale: (p: number) => number,
+  barSpacing = 6,
+) {
   const primitive = new PositionBoxPrimitive();
   const chart = {
+    paneSize: () => ({ width: 500, height: 300 }),
     timeScale: () => ({
       getVisibleRange: () => ({ from: 0, to: 1000 }),
-      width: () => 500,
+      // 0 mirrors what lightweight-charts reports for a hidden time axis; the primitive must not
+      // read its drawing width from here.
+      width: () => 0,
       timeToCoordinate: (t: Time) => Number(t),
+      options: () => ({ barSpacing }),
     }),
   };
   const series = { priceToCoordinate: priceScale };
@@ -147,6 +155,21 @@ describe('PositionBoxPrimitive', () => {
     expect(rec.fills[2].style).toBe('rgba(38, 166, 154, 0.11)');
     expect(rec.texts).toHaveLength(1);
     expect(rec.texts[0].text).toBe('已止损');
+  });
+
+  it('widens a same-bar trade to one bar spacing instead of collapsing it away', () => {
+    const rec = draw(
+      makePrimitive({ ...longData, startTime: 200, endTime: 200 }, (price) => 200 - price, 8),
+    );
+    expect(rec.fills).toHaveLength(3);
+    expect(rec.fills[0].x).toBe(196);
+    expect(rec.fills[0].w).toBe(8);
+  });
+
+  it('leaves a box already wider than one bar spacing where it is', () => {
+    const rec = draw(makePrimitive(longData, (price) => 200 - price, 8));
+    expect(rec.fills[0].x).toBe(100);
+    expect(rec.fills[0].w).toBe(300);
   });
 
   it('produces nothing when data is null', () => {

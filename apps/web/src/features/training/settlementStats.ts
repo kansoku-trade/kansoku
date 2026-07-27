@@ -41,6 +41,42 @@ export function settlementTradeRows(trades: readonly TrainerClosedTrade[]): Sett
   }));
 }
 
+export interface SettlementTrack {
+  plannedR: number;
+  gotR: number;
+  givebackR: number;
+  tradeCount: number;
+}
+
+export interface TrackGeometry {
+  gotPct: number;
+  gotNegative: boolean;
+  giveLeftPct: number;
+  givePct: number;
+}
+
+export function settlementTrack(trades: readonly TrainerClosedTrade[]): SettlementTrack | null {
+  if (trades.length === 0) return null;
+  return {
+    plannedR: trades.reduce((sum, t) => sum + Math.max(0, plannedRewardRisk(t) ?? 0), 0),
+    gotR: trades.reduce((sum, t) => sum + t.netR, 0),
+    givebackR: trades.reduce((sum, t) => sum + mfeGivebackR(t), 0),
+    tradeCount: trades.length,
+  };
+}
+
+export function trackGeometry(track: SettlementTrack): TrackGeometry {
+  const banked = Math.max(0, track.gotR);
+  const scale = Math.max(track.plannedR, banked + track.givebackR, Math.abs(track.gotR), 1);
+  const pct = (value: number) => (value / scale) * 100;
+  return {
+    gotPct: pct(Math.abs(track.gotR)),
+    gotNegative: track.gotR < 0,
+    giveLeftPct: pct(banked),
+    givePct: pct(track.givebackR),
+  };
+}
+
 export function settlementSummary(result: TrainerResult | null): SettlementSummary | null {
   if (!result) return null;
   return {

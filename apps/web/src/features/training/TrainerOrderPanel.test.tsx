@@ -8,6 +8,7 @@ import type {
   TrainerView,
 } from '@kansoku/pro-api';
 import type { RawBar } from '@kansoku/shared/types';
+import type { PositionBoxPrimitive } from '../charts/intraday/positionBoxPrimitive';
 import type { DrawingChartHandle } from '../charts/intraday/useIntradayCharts';
 import type { TrainerBridge } from '../desktop/desktopTrainerBridge';
 import { TrainerOrderPanel } from './TrainerOrderPanel';
@@ -79,11 +80,12 @@ function makeHandle() {
     ({ top: 0, left: 0, right: 300, bottom: 300, width: 300, height: 300, x: 0, y: 0 }) as DOMRect;
   const series = {
     attachPrimitive: vi.fn(),
+    detachPrimitive: vi.fn(),
     priceToCoordinate: (price: number) => 300 - price,
     coordinateToPrice: (y: number) => 300 - y,
   };
   const handle = { chart: {}, series, container } as unknown as DrawingChartHandle;
-  return { handle, container };
+  return { handle, container, series };
 }
 
 function makeBridge(): { bridge: TrainerBridge; submit: ReturnType<typeof vi.fn> } {
@@ -859,5 +861,32 @@ describe('TrainerOrderPanel exit next open', () => {
       reason: { category: 'thesis_invalidated', summary: '结构走坏，提前离场' },
     });
     await waitFor(() => expect(onViewChange).toHaveBeenCalledWith(nextView));
+  });
+});
+
+describe('TrainerOrderPanel position box lifecycle', () => {
+  // The chart is not remounted when the episode ends, so a box left attached keeps painting the
+  // last draft — a band at a price the trader never traded — over the settlement chart.
+  it('detaches and clears its box when the panel unmounts', () => {
+    const { handle, series } = makeHandle();
+    const { bridge } = makeBridge();
+    const { unmount } = render(
+      <TrainerOrderPanel
+        view={makeView()}
+        handle={handle}
+        bridge={bridge}
+        sessionId="run-1"
+        onViewChange={vi.fn()}
+      />,
+    );
+
+    expect(series.attachPrimitive).toHaveBeenCalledTimes(1);
+    const box = series.attachPrimitive.mock.calls[0][0] as PositionBoxPrimitive;
+    expect(box.state().data).not.toBeNull();
+
+    unmount();
+
+    expect(series.detachPrimitive).toHaveBeenCalledWith(box);
+    expect(box.state().data).toBeNull();
   });
 });

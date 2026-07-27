@@ -1,0 +1,48 @@
+import { useEffect } from 'react';
+import type { TrainerClosedTrade } from '@kansoku/pro-api';
+import {
+  PositionBoxPrimitive,
+  type PositionBoxData,
+} from '../charts/intraday/positionBoxPrimitive';
+import { ReplayBandPrimitive, type ReplayBand } from '../charts/intraday/replayBandPrimitive';
+import type { DrawingChartHandle } from '../charts/intraday/useIntradayCharts';
+
+export function tradeBox(trade: TrainerClosedTrade): PositionBoxData {
+  return {
+    startTime: Math.floor(Date.parse(trade.entry.time) / 1000),
+    endTime: Math.floor(Date.parse(trade.exit.time) / 1000),
+    entry: trade.entry.price,
+    stop: trade.initialStop,
+    target1: trade.target,
+    target2: trade.target,
+    dimmed: trade.exitReason === 'stop',
+  };
+}
+
+export function useTrainerReviewOverlay(
+  handle: DrawingChartHandle | null,
+  trades: readonly TrainerClosedTrade[],
+  bands: readonly ReplayBand[],
+): void {
+  useEffect(() => {
+    if (!handle) return;
+    const { series } = handle;
+    const bandLayer = new ReplayBandPrimitive();
+    series.attachPrimitive(bandLayer);
+    bandLayer.setData([...bands]);
+    const boxes = trades.map((trade) => {
+      const box = new PositionBoxPrimitive();
+      series.attachPrimitive(box);
+      box.setData(tradeBox(trade));
+      return box;
+    });
+    // The play chart is parked on the last bar, which is the wrong frame for a settlement: the
+    // trade and the visibility bands both sit further left, and at thumbnail height only the whole
+    // case is legible. Refits when the epilogue is toggled, since that changes what "whole" means.
+    if (bands.length > 0) handle.chart.timeScale().fitContent();
+    return () => {
+      series.detachPrimitive(bandLayer);
+      for (const box of boxes) series.detachPrimitive(box);
+    };
+  }, [handle, trades, bands]);
+}

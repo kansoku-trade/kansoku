@@ -156,9 +156,68 @@ describe('TrainerSettlement trade record', () => {
       />,
     );
 
-    expect(screen.getByText(/计划盈亏比/).textContent).toContain('3.00 : 1');
-    expect(screen.getByText(/净 R（实际拿到）/).textContent).toContain('1.40');
-    expect(screen.getByText(/最大浮盈回吐/).textContent).toContain('0.80');
+    const row = screen.getByTestId('trainer-settlement-trades').textContent;
+    expect(row).toContain('3.00 : 1');
+    expect(row).toContain('1.40');
+    expect(row).toContain('0.80');
+
+    const figures = screen.getByTestId('trainer-settlement-stats').textContent;
+    expect(figures).toContain('计划盈亏比');
+    expect(figures).toContain('实际拿到');
+    expect(figures).toContain('最大浮盈回吐');
+  });
+
+  // 98.881109 is the fill price the engine actually recorded; the settlement is a report, not a
+  // raw dump, so it rounds for display while the trade data keeps every digit.
+  it('rounds displayed prices to two decimals', async () => {
+    const trades = [
+      closedTrade({
+        entry: { time: '2026-01-05T14:00:00.000Z', price: 98.881109 },
+        exit: { time: '2026-01-05T14:00:00.000Z', price: 98.881109 },
+        exitReason: 'stop',
+      }),
+    ];
+    const reveal = vi.fn(async () => ({
+      ok: true as const,
+      data: { provenance: PROVENANCE, epilogue: [] } satisfies TrainerReveal,
+    }));
+    render(
+      <TrainerSettlement
+        view={makeView({ trades, result: terminalResult(trades) })}
+        bridge={makeBridge(reveal)}
+        sessionId="run-1"
+      />,
+    );
+
+    const row = screen.getByTestId('trainer-settlement-trades').textContent!;
+    expect(row).toContain('98.88');
+    expect(row).not.toContain('98.881109');
+  });
+});
+
+describe('TrainerSettlement review bar', () => {
+  it('collapses to a single bar carrying the identity, the numbers and the way back', async () => {
+    const trades = [closedTrade()];
+    const onCollapse = vi.fn();
+    const reveal = vi.fn(async () => ({
+      ok: true as const,
+      data: { provenance: PROVENANCE, epilogue: [] } satisfies TrainerReveal,
+    }));
+    render(
+      <TrainerSettlement
+        view={makeView({ trades, result: terminalResult(trades) })}
+        bridge={makeBridge(reveal)}
+        sessionId="run-1"
+        expanded
+        onCollapse={onCollapse}
+      />,
+    );
+
+    await screen.findByText('REALCANARY.US');
+    expect(screen.queryByTestId('trainer-settlement-stats')).toBeNull();
+    expect(screen.queryByTestId('trainer-settlement-trades')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /收起/ }));
+    expect(onCollapse).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -213,17 +272,20 @@ describe('TrainerSettlement epilogue toggle', () => {
 
     await waitFor(() => expect(reveal).toHaveBeenCalled());
     const checkbox = await screen.findByRole('checkbox');
-    const before = screen.getByTestId('trainer-settlement-stats').textContent;
+    const shown = () => [
+      screen.getByTestId('trainer-settlement-stats').textContent,
+      screen.getByTestId('trainer-settlement-trades').textContent,
+    ];
+    const before = shown();
 
     fireEvent.click(checkbox);
     await waitFor(() => expect((checkbox as HTMLInputElement).checked).toBe(true));
 
-    const after = screen.getByTestId('trainer-settlement-stats').textContent;
-    expect(after).toBe(before);
+    expect(shown()).toEqual(before);
 
     fireEvent.click(checkbox);
     await waitFor(() => expect((checkbox as HTMLInputElement).checked).toBe(false));
-    expect(screen.getByTestId('trainer-settlement-stats').textContent).toBe(before);
+    expect(shown()).toEqual(before);
   });
 
   it('keeps the toggle disabled until reveal resolves', () => {

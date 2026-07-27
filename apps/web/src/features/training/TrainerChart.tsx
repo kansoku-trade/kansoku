@@ -13,10 +13,13 @@ import {
   TRAINER_PERIOD_TO_CHART_TF,
   trainerAdvancePeriod,
 } from './payloadToIntradayBuilt';
+import { replayBands } from './replayBands';
 import { TrainerAdvanceControls } from './TrainerAdvanceControls';
 import { TrainerOrderPanel } from './TrainerOrderPanel';
 import { TrainerPeriodSwitch } from './TrainerPeriodSwitch';
-import { TrainerSettlement } from './TrainerSettlement';
+import { TrainerBandLegend, TrainerSettlement } from './TrainerSettlement';
+import { TrainerThumbnail } from './TrainerThumbnail';
+import { useTrainerReviewOverlay } from './useTrainerReviewOverlay';
 
 const STORAGE_NAMESPACE = 'trainer';
 
@@ -29,6 +32,7 @@ export interface TrainerChartProps {
 
 export function TrainerChart({ view, sessionId, bridge, onViewChange }: TrainerChartProps) {
   const [epilogueBars, setEpilogueBars] = useState<RawBar[] | null>(null);
+  const [expanded, setExpanded] = useState(false);
   // Reset during render (see TrainerOrderPanel's amend-draft reset for the same idiom): the
   // epilogue is revealed post-cursor data for one specific case, so it must never survive into a
   // render for a different case, not even for the one frame an effect-based reset would take.
@@ -36,6 +40,7 @@ export function TrainerChart({ view, sessionId, bridge, onViewChange }: TrainerC
   if (epilogueCaseId !== view.caseId) {
     setEpilogueCaseId(view.caseId);
     setEpilogueBars(null);
+    setExpanded(false);
   }
   const built = useMemo(() => buildTrainerIntradayBuilt(view, epilogueBars), [view, epilogueBars]);
   const baseTf = TRAINER_PERIOD_TO_CHART_TF[view.basePeriod];
@@ -44,26 +49,51 @@ export function TrainerChart({ view, sessionId, bridge, onViewChange }: TrainerC
   const [chartHandle, setChartHandle] = useState<DrawingChartHandle | null>(null);
   const isDesktop = getShellRpc() !== null;
 
+  const bands = useMemo(
+    () => (view.terminal ? replayBands(view, epilogueBars) : []),
+    [view, epilogueBars],
+  );
+  const overlayTrades = view.terminal ? view.trades : NO_TRADES;
+  useTrainerReviewOverlay(chartHandle, overlayTrades, bands);
+
+  const settling = view.terminal && bridge != null && sessionId != null && onViewChange != null;
+  const shellMode = settling
+    ? expanded
+      ? ' trainer-shell--review'
+      : ' trainer-shell--settle'
+    : '';
+
   return (
-    <div className="trainer-shell">
+    <div className={`trainer-shell${shellMode}`}>
       <IntradayControlsProvider storageNamespace={STORAGE_NAMESPACE}>
         <div className="trainer-header">
           {isDesktop && <div className="popout-traffic-spacer" />}
           <span className="trainer-title">盲盘训练</span>
           <span className="trainer-meta">
-            {view.symbol} · {tfLabel(baseTf)} · 剩余 {view.remainingBars} 根
+            {view.symbol} · {tfLabel(baseTf)} ·{' '}
+            {view.terminal ? '已收盘' : `剩余 ${view.remainingBars} 根`}
           </span>
           <TrainerPeriodSwitch ladder={view.ladder} activeTf={activeTf} onChange={setRequestedTf} />
         </div>
         <div className="trainer-body">
-          <IntradayChartOnly
-            symbol={view.symbol}
-            built={built}
-            activeTf={activeTf}
-            drawings={false}
-            storageNamespace={STORAGE_NAMESPACE}
-            onChartHandle={setChartHandle}
-          />
+          {settling && !expanded ? (
+            <>
+              <TrainerThumbnail built={built} activeTf={activeTf} onChartHandle={setChartHandle} />
+              <button className="trainer-thumb-cover" onClick={() => setExpanded(true)}>
+                <TrainerBandLegend />
+                <span className="trainer-thumb-expand">展开复盘 ⤢</span>
+              </button>
+            </>
+          ) : (
+            <IntradayChartOnly
+              symbol={view.symbol}
+              built={built}
+              activeTf={activeTf}
+              drawings={false}
+              storageNamespace={STORAGE_NAMESPACE}
+              onChartHandle={setChartHandle}
+            />
+          )}
         </div>
       </IntradayControlsProvider>
       {bridge && sessionId && onViewChange && (
@@ -76,6 +106,8 @@ export function TrainerChart({ view, sessionId, bridge, onViewChange }: TrainerC
               view={view}
               bridge={bridge}
               sessionId={sessionId}
+              expanded={expanded}
+              onCollapse={() => setExpanded(false)}
               onEpilogueBarsChange={setEpilogueBars}
             />
           ) : (
@@ -103,3 +135,5 @@ export function TrainerChart({ view, sessionId, bridge, onViewChange }: TrainerC
     </div>
   );
 }
+
+const NO_TRADES: TrainerView['trades'] = [];

@@ -718,31 +718,255 @@ a:hover {
   font-style: italic;
 }
 
-.trainer-settlement {
+/* Settlement (state A) reads reveal → track → figures → chart thumbnail → trades, but the chart
+   must keep its position in the DOM across both states or lightweight-charts is torn down and
+   rebuilt on every expand. The reading order is therefore a flex `order` on siblings. */
+.trainer-shell--settle {
+  overflow-y: auto;
+}
+.trainer-shell--settle .trainer-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  order: 0;
+}
+.trainer-shell--settle .trainer-settle-stage {
+  order: 1;
+}
+.trainer-shell--settle .trainer-body {
+  order: 2;
+}
+.trainer-shell--settle .trainer-settle-tail {
+  order: 3;
+}
+
+.trainer-settle-stage,
+.trainer-settle-tail {
   flex: 0 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 8px 12px;
-  border-top: 1px solid var(--border);
-  overflow-y: auto;
-  max-height: 40vh;
+  gap: 14px;
+  padding: 14px 16px;
 }
-.trainer-settlement-row {
+.trainer-settle-tail {
+  gap: 10px;
+  padding-top: 12px;
+}
+.trainer-shell--settle .trainer-body {
+  position: relative;
+  flex: 0 0 118px;
+  min-height: 0;
+  margin: 0 16px;
+  border: 1px solid var(--border);
+}
+.trainer-thumb-host {
+  width: 100%;
+  height: 100%;
+}
+
+.trainer-thumb-cover {
+  position: absolute;
+  inset: 0;
+  z-index: 12;
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 16px;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 8px 10px;
+  background: transparent;
+  border: 0;
+  font: inherit;
+  color: var(--text-secondary);
+  cursor: pointer;
 }
+.trainer-thumb-cover:hover {
+  background: rgb(232 232 232 / 0.03);
+}
+.trainer-thumb-expand {
+  align-self: flex-end;
+  font-size: var(--fs-sm);
+  color: var(--text-primary);
+  background: rgb(10 10 10 / 0.86);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 3px 9px;
+}
+
+.trainer-reveal {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.trainer-reveal-key {
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.trainer-reveal-sym {
+  font-size: var(--fs-xl);
+  font-weight: 700;
+}
+.trainer-reveal-date {
+  color: var(--text-secondary);
+  font-size: var(--fs-md);
+}
+.trainer-reveal-jump {
+  margin-left: auto;
+  color: var(--accent);
+  border-color: var(--border-strong);
+}
+
 .trainer-settlement-stats {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 14px;
 }
-.trainer-settlement-trade {
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
+.trainer-leak {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.trainer-leak-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.trainer-leak-head h2 {
+  margin: 0;
+  font-size: var(--fs-md);
+  font-weight: 600;
+}
+.trainer-leak-head em {
+  font-style: normal;
+  color: var(--text-muted);
   font-size: var(--fs-sm);
+}
+.trainer-track {
+  position: relative;
+  height: 46px;
+  background: var(--bg-element);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.trainer-track-plan {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(115deg, #191919 0 7px, var(--bg-surface) 7px 14px);
+}
+.trainer-track-got {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  background: var(--up);
+  opacity: 0.85;
+}
+.trainer-track-got--loss {
+  background: var(--down);
+}
+.trainer-track-give {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: var(--down);
+  opacity: 0.28;
+}
+.trainer-track-zero {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 2px;
+  background: var(--accent);
+}
+.trainer-track-caption {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+}
+.trainer-track-scale {
+  display: flex;
+  justify-content: space-between;
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+}
+
+.trainer-figures {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+}
+.trainer-fig {
+  margin: 0;
+  background: var(--bg-surface);
+  padding: 12px 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.trainer-fig figcaption {
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+}
+.trainer-fig-val {
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+.trainer-fig-val--zero {
+  color: var(--text-muted);
+}
+.trainer-fig-unit {
+  font-size: var(--fs-lg);
+  color: var(--text-muted);
+}
+.trainer-fig-sub {
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+}
+
+.trainer-trade-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.trainer-trade-table thead th {
+  text-align: left;
+  font-weight: 500;
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  letter-spacing: 0.05em;
+  padding: 0 10px 7px;
+  border-bottom: 1px solid var(--border);
+}
+.trainer-trade-table tbody td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.trainer-trade-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+.trainer-trade-table .r {
+  text-align: right;
+}
+.trainer-tag--stop {
+  color: var(--down);
+}
+
+.trainer-settle-foot {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 .trainer-settlement-epilogue-toggle {
   display: flex;
@@ -750,6 +974,72 @@ a:hover {
   gap: 6px;
   color: var(--text-secondary);
   font-size: var(--fs-sm);
+}
+.trainer-settlement-epilogue-toggle input {
+  accent-color: var(--accent);
+}
+.trainer-settle-hint {
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+}
+.trainer-ghost-slots {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+}
+.trainer-ghost-slots span {
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius);
+  padding: 3px 9px;
+}
+
+.trainer-review-bar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 10px 16px;
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+.trainer-review-sym {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+.trainer-review-collapse {
+  margin-left: auto;
+}
+
+.trainer-band-legend {
+  display: flex;
+  gap: 12px;
+  font-size: var(--fs-xs);
+  color: var(--text-secondary);
+}
+.trainer-thumb-cover .trainer-band-legend {
+  background: rgb(10 10 10 / 0.72);
+  border-radius: var(--radius);
+  padding: 2px 7px;
+}
+.trainer-band-swatch {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 4px;
+  vertical-align: -1px;
+}
+.trainer-band-swatch--given {
+  background: #161616;
+}
+.trainer-band-swatch--played {
+  background: #14211f;
+}
+.trainer-band-swatch--epilogue {
+  background: #241a10;
 }
 
 .fullpage {
