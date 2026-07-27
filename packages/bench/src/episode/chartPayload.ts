@@ -1,8 +1,15 @@
 import type { RawBar } from '@kansoku/shared/types';
 import type { Question } from '../schema/question.js';
 import { buildEpisodeQuestionViewAtCursor } from './view.js';
-import { fmt, fmtSigned } from './labels.js';
-import { closedTrades, tradeExitLabel, type ReportRow } from './rows.js';
+import { FILL_LABELS, fmt, fmtSigned, fmtSize } from './labels.js';
+import {
+  closedTrades,
+  exitReasonLabel,
+  tradeEntryFills,
+  tradeExitFills,
+  tradeExitLabel,
+  type ReportRow,
+} from './rows.js';
 import type { ChartTimeframe } from './process.js';
 
 export type { ChartTimeframe } from './process.js';
@@ -146,7 +153,10 @@ function visibleCursor(row: ReportRow): number {
   return cursor;
 }
 
-function rangesAtBarIndex(question: Question, barIndex: number): Record<ChartTimeframe, ChartBar[]> {
+function rangesAtBarIndex(
+  question: Question,
+  barIndex: number,
+): Record<ChartTimeframe, ChartBar[]> {
   const clamped = Math.max(0, Math.min(question.replay.bars.length, Math.floor(barIndex)));
   const view = buildEpisodeQuestionViewAtCursor(question, clamped - 1);
   return {
@@ -257,27 +267,40 @@ export function buildChartPayload(row: ReportRow, index: number): ChartPayload |
   for (const timeframe of ['h1', 'day', 'week'] as const) {
     const available = new Set(finalRanges[timeframe].map((bar) => String(bar.time)));
     for (const trade of trades) {
-      const entryTime = chartTime(trade.entry.time, timeframe);
-      if (available.has(String(entryTime))) {
+      // Each fill gets its own marker. The averaged `entry` / `exit` prices would otherwise be
+      // drawn on the bar of the first lot and the last exit — a price that was never traded there.
+      const entryFills = tradeEntryFills(trade);
+      const exitFills = tradeExitFills(trade);
+      const entrySize = (size: number) => (entryFills.length > 1 ? ` ${fmtSize(size)}` : '');
+      entryFills.forEach((fill, index) => {
+        const entryTime = chartTime(fill.time, timeframe);
+        if (!available.has(String(entryTime))) return;
         markers[timeframe].push({
           time: entryTime,
           position: trade.direction === 'short' ? 'aboveBar' : 'belowBar',
           color: '#e8e8e8',
           shape: trade.direction === 'short' ? 'arrowDown' : 'arrowUp',
-          text: `T${trade.tradeId} 成交 ${fmt(trade.entry.price)} · S ${fmt(trade.initialStop)} · T ${fmt(trade.target)}`,
+          text:
+            index === 0
+              ? `T${trade.tradeId} 成交 ${fmt(fill.price)}${entrySize(fill.size)} · S ${fmt(trade.initialStop)} · T ${fmt(trade.target)}`
+              : `T${trade.tradeId} ${FILL_LABELS.add} ${fmt(fill.price)}${entrySize(fill.size)}`,
         });
-      }
-      const exitTime = chartTime(trade.exit.time, timeframe);
-      const exitLabel = tradeExitLabel(trade);
-      if (available.has(String(exitTime))) {
+      });
+      exitFills.forEach((fill, index) => {
+        const exitTime = chartTime(fill.time, timeframe);
+        if (!available.has(String(exitTime))) return;
+        const exitLabel =
+          exitFills.length > 1 ? exitReasonLabel(fill.reason) : tradeExitLabel(trade);
+        const size = exitFills.length > 1 ? ` ${fmtSize(fill.size)}` : '';
+        const net = index === exitFills.length - 1 ? ` · ${fmtSigned(trade.netR, 2)}R` : '';
         markers[timeframe].push({
           time: exitTime,
           position: trade.direction === 'short' ? 'belowBar' : 'aboveBar',
           color: trade.netR >= 0 ? '#26a69a' : '#ef5350',
           shape: 'circle',
-          text: `T${trade.tradeId} ${exitLabel} ${fmt(trade.exit.price)} · ${fmtSigned(trade.netR, 2)}R`,
+          text: `T${trade.tradeId} ${exitLabel} ${fmt(fill.price)}${size}${net}`,
         });
-      }
+      });
     }
     markers[timeframe].sort((a, b) => String(a.time).localeCompare(String(b.time)));
   }

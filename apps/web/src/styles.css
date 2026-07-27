@@ -972,6 +972,26 @@ a:hover {
 .trainer-trade-table .r {
   text-align: right;
 }
+.trainer-fill-list {
+  display: grid;
+  gap: 3px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.trainer-fill {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.trainer-fill-price {
+  min-width: 4.5em;
+}
+.trainer-fill-tag,
+.trainer-fill-size {
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+}
 .trainer-tag--stop {
   color: var(--down);
 }

@@ -39,6 +39,26 @@ function closedTrade(overrides: Partial<TrainerClosedTrade> = {}): TrainerClosed
   };
 }
 
+function scaledTrade(overrides: Partial<TrainerClosedTrade> = {}): TrainerClosedTrade {
+  return closedTrade({
+    entry: { time: '2026-01-05T14:00:00.000Z', price: 98 },
+    exit: { time: '2026-01-05T17:00:00.000Z', price: 104 },
+    lots: [
+      { time: '2026-01-05T14:00:00.000Z', price: 100, size: 0.5 },
+      { time: '2026-01-05T15:00:00.000Z', price: 96, size: 0.5 },
+    ],
+    exits: [
+      { time: '2026-01-05T16:00:00.000Z', price: 106, size: 0.5, reason: 'target' },
+      { time: '2026-01-05T17:00:00.000Z', price: 102, size: 0.5, reason: 'stop' },
+    ],
+    initialStop: 98,
+    initialRisk: 2,
+    target: 106,
+    exitReason: 'stop',
+    ...overrides,
+  });
+}
+
 function terminalResult(trades: TrainerClosedTrade[]): TrainerResult {
   return {
     terminationReason: 'horizon',
@@ -167,6 +187,29 @@ describe('TrainerSettlement trade record', () => {
     expect(figures).toContain('最大浮盈回吐');
   });
 
+  it('lists every fill of a scaled-in, scaled-out trade with its size and its own ending', async () => {
+    const trades = [scaledTrade()];
+    const reveal = vi.fn(async () => ({
+      ok: true as const,
+      data: { provenance: PROVENANCE, epilogue: [] } satisfies TrainerReveal,
+    }));
+    render(
+      <TrainerSettlement
+        view={makeView({ trades, result: terminalResult(trades) })}
+        bridge={makeBridge(reveal)}
+        sessionId="run-1"
+      />,
+    );
+
+    const row = screen.getByTestId('trainer-settlement-trades').textContent!;
+    expect(row).toContain('100.00建仓50%');
+    expect(row).toContain('96.00加仓50%');
+    expect(row).toContain('106.00止盈50%');
+    expect(row).toContain('102.00止损50%');
+    expect(row).not.toContain('98.00');
+    expect(row).toContain('3.00 : 1');
+  });
+
   // 98.881109 is the fill price the engine actually recorded; the settlement is a report, not a
   // raw dump, so it rounds for display while the trade data keeps every digit.
   it('rounds displayed prices to two decimals', async () => {
@@ -254,7 +297,7 @@ describe('TrainerSettlement epilogue toggle', () => {
   // displayed number obvious rather than a rounding-sized discrepancy.
   it('leaves every displayed statistic unchanged when the epilogue is revealed', async () => {
     const trades = [
-      closedTrade(),
+      scaledTrade(),
       closedTrade({ tradeId: 2, direction: 'short', netR: -0.5, mfeR: 0.2, target: 94 }),
     ];
     const reveal = vi.fn(async () => ({

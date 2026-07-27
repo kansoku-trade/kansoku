@@ -9,7 +9,7 @@ import type { RawBar } from '@kansoku/shared/types';
 import { fmt } from '@web/lib/format';
 import { getPopoutBridge } from '../desktop/desktopWindowsBridge';
 import type { TrainerBridge } from '../desktop/desktopTrainerBridge';
-import { formatRewardRisk } from './orderDraft';
+import { formatPositionSize, formatRewardRisk } from './orderDraft';
 import { unreachedBars } from './replayBands';
 import {
   settlementSummary,
@@ -149,7 +149,6 @@ export function TrainerSettlement({
                 <th>方向</th>
                 <th>入场</th>
                 <th>离场</th>
-                <th>结局</th>
                 <th className="r">计划盈亏比</th>
                 <th className="r">实际拿到 R</th>
                 <th className="r">最大浮盈回吐</th>
@@ -163,14 +162,30 @@ export function TrainerSettlement({
                       {row.direction === 'long' ? '多' : '空'}
                     </span>
                   </td>
-                  <td className="num">{fmt(row.entryPrice)}</td>
-                  <td className="num">{fmt(row.exitPrice)}</td>
                   <td>
-                    <span
-                      className={`badge badge--muted${row.exitReason === 'stop' ? ' trainer-tag--stop' : ''}`}
-                    >
-                      {EXIT_REASON_LABEL[row.exitReason]}
-                    </span>
+                    <ul className="trainer-fill-list">
+                      {row.entries.map((fill, index) => (
+                        <FillLine
+                          key={index}
+                          price={fill.price}
+                          size={fill.size}
+                          label={index === 0 ? '建仓' : '加仓'}
+                        />
+                      ))}
+                    </ul>
+                  </td>
+                  <td>
+                    <ul className="trainer-fill-list">
+                      {row.exits.map((fill, index) => (
+                        <FillLine
+                          key={index}
+                          price={fill.price}
+                          size={fill.size}
+                          label={EXIT_REASON_LABEL[fill.reason]}
+                          stop={fill.reason === 'stop'}
+                        />
+                      ))}
+                    </ul>
                   </td>
                   <td className="r num">
                     {row.plannedRewardRisk === null
@@ -207,6 +222,26 @@ export function TrainerSettlement({
         </div>
       </div>
     </>
+  );
+}
+
+function FillLine({
+  price,
+  size,
+  label,
+  stop = false,
+}: {
+  price: number;
+  size: number;
+  label: string;
+  stop?: boolean;
+}) {
+  return (
+    <li className="trainer-fill">
+      <span className="num trainer-fill-price">{fmt(price)}</span>
+      <span className={`trainer-fill-tag${stop ? ' trainer-tag--stop' : ''}`}>{label}</span>
+      <span className="num trainer-fill-size">{formatPositionSize(size)}</span>
+    </li>
   );
 }
 
@@ -279,7 +314,7 @@ function TrainerFigures({ track, summary }: TrackProps) {
         </div>
         <div className="trainer-fig-sub">
           {single
-            ? '按实际成交价计'
+            ? '按首次成交价计'
             : `${track.tradeCount} 笔平均，合计 ${formatRewardRisk(track.plannedR)}R`}
         </div>
       </figure>

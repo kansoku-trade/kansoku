@@ -4,6 +4,7 @@ import type {
   EpisodeReportFactItem,
   EpisodeReportProcessCheckView,
   EpisodeReportProcessEventView,
+  EpisodeReportTradeFillItem,
   EpisodeReportTradeLedgerItem,
   ToneClass,
 } from '@kansoku/bench-report-ui/types';
@@ -12,6 +13,7 @@ import { chartTime, type ChartTimeframe } from './chartPayload.js';
 import {
   ACTION_LABELS,
   DIRECTION_LABELS,
+  FILL_LABELS,
   MODE_LABELS,
   REASON_LABELS,
   TERMINATION_LABELS,
@@ -19,6 +21,7 @@ import {
   fmtDuration,
   fmtPercent,
   fmtSigned,
+  fmtSize,
   phaseLabel,
   valueClass,
 } from './labels.js';
@@ -27,10 +30,13 @@ import {
   actionReason,
   closedTrades,
   decisionBar,
+  exitReasonLabel,
   formatProvenanceLine,
   observationBars,
   replayBarIndex,
+  tradeEntryFills,
   tradeEntryReason,
+  tradeExitFills,
   tradeExitLabel,
   type ReportRow,
 } from './rows.js';
@@ -63,6 +69,28 @@ function processEventView(event: ProcessEvent): EpisodeReportProcessEventView {
   };
 }
 
+function tradeFillItems(row: ReportRow, trade: EpisodeClosedTrade): EpisodeReportTradeFillItem[] {
+  const bar = (time: string) => {
+    const index = replayBarIndex(row.question, time);
+    return index == null ? '—' : `B${index}`;
+  };
+  const entries = tradeEntryFills(trade).map((fill, index) => ({
+    kind: 'entry' as const,
+    label: index === 0 ? FILL_LABELS.open : FILL_LABELS.add,
+    barLabel: bar(fill.time),
+    priceLabel: fmt(fill.price),
+    sizeLabel: fmtSize(fill.size),
+  }));
+  const exits = tradeExitFills(trade).map((fill) => ({
+    kind: 'exit' as const,
+    label: exitReasonLabel(fill.reason),
+    barLabel: bar(fill.time),
+    priceLabel: fmt(fill.price),
+    sizeLabel: fmtSize(fill.size),
+  }));
+  return [...entries, ...exits];
+}
+
 function tradeLedgerItem(row: ReportRow, trade: EpisodeClosedTrade): EpisodeReportTradeLedgerItem {
   const entryBar = replayBarIndex(row.question, trade.entry.time);
   const exitBar = replayBarIndex(row.question, trade.exit.time);
@@ -84,6 +112,7 @@ function tradeLedgerItem(row: ReportRow, trade: EpisodeClosedTrade): EpisodeRepo
     finalStop: trade.finalStop,
     target: trade.target,
     exitPrice: trade.exit.price,
+    fills: tradeFillItems(row, trade),
     netR: trade.netR,
     tone: valueClass(trade.netR),
   };

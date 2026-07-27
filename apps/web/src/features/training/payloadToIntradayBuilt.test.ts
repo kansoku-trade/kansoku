@@ -240,12 +240,46 @@ describe('buildTrainerIntradayBuilt trade marks', () => {
   it('emits an entry mark and an exit mark, each on its own bar', () => {
     const markers = baseMarkers([closedTrade()]);
     expect(markers).toHaveLength(2);
-    expect(markers[0].id).toBe('trade-1-entry');
+    expect(markers[0].id).toBe('trade-1-entry-0');
     expect(markers[0].time).toBe(toTs('2026-01-05T14:05:00.000Z'));
     expect(markers[0].text).toBe('进 101.00');
-    expect(markers[1].id).toBe('trade-1-exit');
+    expect(markers[1].id).toBe('trade-1-exit-0');
     expect(markers[1].time).toBe(toTs('2026-01-05T14:15:00.000Z'));
     expect(markers[1].text).toBe('离场 103.00 · 止盈');
+  });
+
+  // The trade-level entry/exit are size-weighted averages — 99.00 and 104.00 here — and neither was
+  // ever traded. Marking them would also hide the add and the partial take-profit entirely.
+  it('marks every lot and every exit of a scaled trade at its own bar and price', () => {
+    const markers = baseMarkers([
+      closedTrade({
+        entry: { time: '2026-01-05T14:05:00.000Z', price: 99 },
+        exit: { time: '2026-01-05T14:20:00.000Z', price: 104 },
+        lots: [
+          { time: '2026-01-05T14:05:00.000Z', price: 101, size: 0.5 },
+          { time: '2026-01-05T14:10:00.000Z', price: 97, size: 0.5 },
+        ],
+        exits: [
+          { time: '2026-01-05T14:15:00.000Z', price: 106, size: 0.5, reason: 'target' },
+          { time: '2026-01-05T14:20:00.000Z', price: 102, size: 0.5, reason: 'stop' },
+        ],
+        exitReason: 'stop',
+      }),
+    ]);
+    expect(markers.map((marker) => marker.text)).toEqual([
+      '进 101.00 50%',
+      '加 97.00 50%',
+      '离场 106.00 50% · 止盈',
+      '离场 102.00 50% · 止损',
+    ]);
+    expect(markers.map((marker) => marker.id)).toEqual([
+      'trade-1-entry-0',
+      'trade-1-entry-1',
+      'trade-1-exit-0',
+      'trade-1-exit-1',
+    ]);
+    expect(markers[2].time).toBe(toTs('2026-01-05T14:15:00.000Z'));
+    expect(markers[3].time).toBe(toTs('2026-01-05T14:20:00.000Z'));
   });
 
   // A stopped-out long left at the bottom of the move; an exit mark floating above the bar reads as

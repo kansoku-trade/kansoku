@@ -79,11 +79,7 @@ function chartPayload(index: number): EpisodeReportChartPayload {
   };
 }
 
-function caseDetail(
-  index: number,
-  model: string,
-  withTrade: boolean,
-): EpisodeReportCaseDetailView {
+function caseDetail(index: number, model: string, withTrade: boolean): EpisodeReportCaseDetailView {
   return {
     index,
     anchorId: `case-${index}`,
@@ -122,6 +118,22 @@ function caseDetail(
             finalStop: 95,
             target: 125,
             exitPrice: 125,
+            fills: [
+              {
+                kind: 'entry',
+                label: '建仓',
+                barLabel: 'B4',
+                priceLabel: '105.00',
+                sizeLabel: '100%',
+              },
+              {
+                kind: 'exit',
+                label: '止盈',
+                barLabel: 'B8',
+                priceLabel: '125.00',
+                sizeLabel: '100%',
+              },
+            ],
             netR: 1,
             tone: 'positive',
           },

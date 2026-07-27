@@ -6,12 +6,17 @@ import {
 } from '../charts/intraday/positionBoxPrimitive';
 import { ReplayBandPrimitive, type ReplayBand } from '../charts/intraday/replayBandPrimitive';
 import type { DrawingChartHandle } from '../charts/intraday/useIntradayCharts';
+import { tradeEntryFills } from './settlementStats';
 
+// The box is the plan as it was drawn, so its entry line is the first fill — the price `initialStop`
+// and `target` were set against. Using the size-weighted average instead collapses the risk side of
+// the box towards the stop on a scaled trade and shows a reward-to-risk nobody planned.
 export function tradeBox(trade: TrainerClosedTrade): PositionBoxData {
+  const first = tradeEntryFills(trade)[0];
   return {
-    startTime: Math.floor(Date.parse(trade.entry.time) / 1000),
+    startTime: Math.floor(Date.parse(first.time) / 1000),
     endTime: Math.floor(Date.parse(trade.exit.time) / 1000),
-    entry: trade.entry.price,
+    entry: first.price,
     stop: trade.initialStop,
     target1: trade.target,
     target2: trade.target,

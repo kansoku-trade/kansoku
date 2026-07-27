@@ -7,6 +7,8 @@ import {
   settlementTradeRows,
   settlementTrack,
   trackGeometry,
+  tradeEntryFills,
+  tradeExitFills,
 } from './settlementStats';
 
 function trade(overrides: Partial<TrainerClosedTrade> = {}): TrainerClosedTrade {
@@ -32,11 +34,69 @@ function trade(overrides: Partial<TrainerClosedTrade> = {}): TrainerClosedTrade 
   };
 }
 
+// A half-in, half-added long: two lots at 100 and 96, so the trade-level averaged entry is 98 while
+// the engine's risk unit stayed locked against 100. Any statistic that reads 98 here is measuring
+// the plan with a ruler the plan was never drawn against.
+function scaledInTrade(overrides: Partial<TrainerClosedTrade> = {}): TrainerClosedTrade {
+  return trade({
+    entry: { time: '2026-01-05T14:00:00.000Z', price: 98 },
+    exit: { time: '2026-01-05T16:00:00.000Z', price: 104 },
+    lots: [
+      { time: '2026-01-05T14:00:00.000Z', price: 100, size: 0.5 },
+      { time: '2026-01-05T15:00:00.000Z', price: 96, size: 0.5 },
+    ],
+    exits: [
+      { time: '2026-01-05T16:00:00.000Z', price: 106, size: 0.5, reason: 'target' },
+      { time: '2026-01-05T17:00:00.000Z', price: 102, size: 0.5, reason: 'stop' },
+    ],
+    initialStop: 98,
+    initialRisk: 2,
+    target: 106,
+    exitReason: 'stop',
+    ...overrides,
+  });
+}
+
+describe('tradeEntryFills / tradeExitFills', () => {
+  it('reads the recorded lots and exits when the trade carries them', () => {
+    const row = scaledInTrade();
+    expect(tradeEntryFills(row).map((fill) => [fill.price, fill.size])).toEqual([
+      [100, 0.5],
+      [96, 0.5],
+    ]);
+    expect(tradeExitFills(row).map((fill) => [fill.price, fill.size, fill.reason])).toEqual([
+      [106, 0.5, 'target'],
+      [102, 0.5, 'stop'],
+    ]);
+  });
+
+  it('reads a pre-sizing trade as one full-size fill each way rather than dropping it', () => {
+    const old = trade();
+    expect(old.lots).toBeUndefined();
+    expect(tradeEntryFills(old)).toEqual([
+      { time: '2026-01-05T14:00:00.000Z', price: 100, size: 1 },
+    ]);
+    expect(tradeExitFills(old)).toEqual([
+      { time: '2026-01-05T15:00:00.000Z', price: 103, size: 1, reason: 'target' },
+    ]);
+  });
+
+  it('falls back the same way when the arrays are present but empty', () => {
+    const empty = trade({ lots: [], exits: [] });
+    expect(tradeEntryFills(empty)).toHaveLength(1);
+    expect(tradeExitFills(empty)).toHaveLength(1);
+  });
+});
+
 describe('plannedRewardRisk', () => {
   it('is target distance over initial risk, not the eventual exit', () => {
     expect(
       plannedRewardRisk(trade({ target: 106, entry: { time: '', price: 100 }, initialRisk: 2 })),
     ).toBe(3);
+  });
+
+  it('is judged at the first fill, not at the average entry an add moved', () => {
+    expect(plannedRewardRisk(scaledInTrade())).toBe(3);
   });
 
   it('returns null when initial risk is zero or negative (no meaningful ratio)', () => {
@@ -72,15 +132,22 @@ describe('settlementTradeRows', () => {
     expect(rows).toHaveLength(2);
     expect(rows[0].tradeId).toBe(1);
     expect(rows[0].direction).toBe('long');
-    expect(rows[0].entryPrice).toBe(100);
-    expect(rows[0].exitPrice).toBe(103);
-    expect(rows[0].exitReason).toBe('target');
+    expect(rows[0].entries).toEqual([{ time: '2026-01-05T14:00:00.000Z', price: 100, size: 1 }]);
+    expect(rows[0].exits).toEqual([
+      { time: '2026-01-05T15:00:00.000Z', price: 103, size: 1, reason: 'target' },
+    ]);
     expect(rows[0].plannedRewardRisk).toBe(3);
     expect(rows[0].netR).toBe(1.4);
     expect(rows[0].mfeGivebackR).toBeCloseTo(0.8, 6);
     expect(rows[1].direction).toBe('short');
     expect(rows[1].plannedRewardRisk).toBe(3);
     expect(rows[1].mfeGivebackR).toBeCloseTo(1.5, 6);
+  });
+
+  it('carries every fill of a scaled-in, scaled-out trade in the order it happened', () => {
+    const [row] = settlementTradeRows([scaledInTrade()]);
+    expect(row.entries.map((fill) => fill.price)).toEqual([100, 96]);
+    expect(row.exits.map((fill) => fill.reason)).toEqual(['target', 'stop']);
   });
 
   it('returns an empty array for a session with no trades', () => {
