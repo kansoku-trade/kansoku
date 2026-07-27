@@ -1,0 +1,1992 @@
+[
+  {
+    "name": "two-round-trips-to-horizon",
+    "events": ["waiting_fill", "target_hit", "waiting_fill", "target_hit", "horizon_exit"],
+    "netR": 1.6,
+    "result": {
+      "terminationReason": "horizon",
+      "direction": "short",
+      "entry": {
+        "time": "2026-03-23T14:30:00Z",
+        "price": 100
+      },
+      "exit": {
+        "time": "2026-03-23T15:30:00Z",
+        "price": 101
+      },
+      "initialRisk": 5,
+      "grossR": 1.6,
+      "frictionR": 0,
+      "netR": 1.6,
+      "mfeR": 1.2,
+      "maeR": 0.2,
+      "holdingBars": 2,
+      "steps": 5,
+      "decisionBar": 0,
+      "decisionTime": "2026-03-20T20:00:00-04:00",
+      "observationBars": 0,
+      "trades": [
+        {
+          "tradeId": 1,
+          "direction": "long",
+          "decisionBar": 0,
+          "decisionTime": "2026-03-20T20:00:00-04:00",
+          "entry": {
+            "time": "2026-03-23T14:30:00Z",
+            "price": 100
+          },
+          "exit": {
+            "time": "2026-03-23T14:30:00Z",
+            "price": 104
+          },
+          "exitReason": "target",
+          "initialStop": 95,
+          "finalStop": 95,
+          "target": 104,
+          "initialRisk": 5,
+          "grossR": 0.8,
+          "frictionR": 0,
+          "netR": 0.8,
+          "mfeR": 1.2,
+          "maeR": 0.2,
+          "holdingBars": 1,
+          "entryReason": {
+            "category": "breakout",
+            "summary": "价格突破关键结构，按计划入场。"
+          }
+        },
+        {
+          "tradeId": 2,
+          "direction": "short",
+          "decisionBar": 1,
+          "decisionTime": "2026-03-23T14:30:00Z",
+          "entry": {
+            "time": "2026-03-23T15:30:00Z",
+            "price": 105
+          },
+          "exit": {
+            "time": "2026-03-23T15:30:00Z",
+            "price": 101
+          },
+          "exitReason": "target",
+          "initialStop": 110,
+          "finalStop": 110,
+          "target": 101,
+          "initialRisk": 5,
+          "grossR": 0.8,
+          "frictionR": 0,
+          "netR": 0.8,
+          "mfeR": 1.2,
+          "maeR": 0.2,
+          "holdingBars": 1,
+          "entryReason": {
+            "category": "breakout",
+            "summary": "价格突破关键结构，按计划入场。"
+          }
+        }
+      ],
+      "tradeCount": 2,
+      "winCount": 2,
+      "lossCount": 0,
+      "maxDrawdownR": 0,
+      "actions": [
+        {
+          "step": 1,
+          "tradeId": 1,
+          "at": "2026-03-20T20:00:00-04:00",
+          "effectiveBarTime": "2026-03-23T14:30:00Z",
+          "action": {
+            "type": "submit",
+            "direction": "long",
+            "entry": 100,
+            "stop": 95,
+            "target": 104,
+            "reason": {
+              "category": "breakout",
+              "summary": "价格突破关键结构，按计划入场。"
+            }
+          }
+        },
+        {
+          "step": 2,
+          "tradeId": 1,
+          "at": "2026-03-20T20:00:00-04:00",
+          "effectiveBarTime": "2026-03-23T14:30:00Z",
+          "action": {
+            "type": "hold",
+            "reason": {
+              "category": "risk_management",
+              "summary": "结构尚未失效，继续按既定风险计划执行。"
+            }
+          }
+        },
+        {
+          "step": 3,
+          "tradeId": 2,
+          "at": "2026-03-23T14:30:00Z",
+          "effectiveBarTime": "2026-03-23T15:30:00Z",
+          "action": {
+            "type": "submit",
+            "direction": "short",
+            "entry": 105,
+            "stop": 110,
+            "target": 101,
+            "reason": {
+              "category": "breakout",
+              "summary": "价格突破关键结构，按计划入场。"
+            }
+          }
+        },
+        {
+          "step": 4,
+          "tradeId": 2,
+          "at": "2026-03-23T14:30:00Z",
+          "effectiveBarTime": "2026-03-23T15:30:00Z",
+          "action": {
+            "type": "hold",
+            "reason": {
+              "category": "risk_management",
+              "summary": "结构尚未失效，继续按既定风险计划执行。"
+            }
+          }
+        },
+        {
+          "step": 5,
+          "tradeId": null,
+          "at": "2026-03-23T15:30:00Z",
+          "effectiveBarTime": "2026-03-23T16:30:00Z",
+          "action": {
+            "type": "observe"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "stop-entry-does-not-stop-out-on-its-own-bar",
+    "events": ["waiting_fill", "filled", "horizon_exit"],
+    "netR": 0.16666666666666666,
+    "result": {
+      "terminationReason": "horizon",
+      "direction": "long",
+      "entry": {
+        "time": "2026-03-23T14:30:00Z",
+        "price": 103
+      },
+      "exit": {
+        "time": "2026-03-23T15:30:00Z",
+        "price": 104
+      },
+      "initialRisk": 6,
+      "grossR": 0.16666666666666666,
+      "frictionR": 0,
+      "netR": 0.16666666666666666,
+      "mfeR": 0.3333333333333333,
+      "maeR": 0,
+      "holdingBars": 2,
+      "steps": 3,
+      "decisionBar": 0,
+      "decisionTime": "2026-03-20T20:00:00-04:00",
+      "observationBars": 0,
+      "trades": [
+        {
+          "tradeId": 1,
+          "direction": "long",
+          "decisionBar": 0,
+          "decisionTime": "2026-03-20T20:00:00-04:00",
+          "entry": {
+            "time": "2026-03-23T14:30:00Z",
+            "price": 103
+          },
+          "exit": {
+            "time": "2026-03-23T15:30:00Z",
+            "price": 104
+          },
+          "exitReason": "horizon",
+          "initialStop": 97,
+          "finalStop": 97,
+          "target": 110,
+          "initialRisk": 6,
+          "grossR": 0.16666666666666666,
+          "frictionR": 0,
+          "netR": 0.16666666666666666,
+          "mfeR": 0.3333333333333333,
+          "maeR": 0,
+          "holdingBars": 2,
+          "entryReason": {
+            "category": "breakout",
+            "summary": "价格突破关键结构，按计划入场。"
+          }
+        }
+      ],
+      "tradeCount": 1,
+      "winCount": 1,
+      "lossCount": 0,
+      "maxDrawdownR": 0,
+      "actions": [
+        {
+          "step": 1,
+          "tradeId": 1,
+          "at": "2026-03-20T20:00:00-04:00",
+          "effectiveBarTime": "2026-03-23T14:30:00Z",
+          "action": {
+            "type": "submit",
+            "direction": "long",
+            "entry": 103,
+            "stop": 97,
+            "target": 110,
+            "reason": {
+              "category": "breakout",
+              "summary": "价格突破关键结构，按计划入场。"
+            }
+          }
+        },
+        {
+          "step": 2,
+          "tradeId": 1,
+          "at": "2026-03-20T20:00:00-04:00",
+          "effectiveBarTime": "2026-03-23T14:30:00Z",
+          "action": {
+            "type": "hold",
+            "reason": {
+              "category": "risk_management",
+              "summary": "结构尚未失效，继续按既定风险计划执行。"
+            }
+          }
+        },
+        {
+          "step": 3,
+          "tradeId": 1,
+          "at": "2026-03-23T14:30:00Z",
+          "effectiveBarTime": "2026-03-23T15:30:00Z",
+          "action": {
+            "type": "hold",
+            "reason": {
+              "category": "risk_management",
+              "summary": "结构尚未失效，继续按既定风险计划执行。"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "limit-entry-does-not-take-profit-on-its-own-bar",
+    "events": ["waiting_fill", "filled", "horizon_exit"],
+    "netR": 0.16666666666666666,
+    "result": {
+      "terminationReason": "horizon",
+      "direction": "long",
+      "entry": {
+        "time": "2026-03-23T14:30:00Z",
+        "price": 98
+      },
+      "exit": {
+        "time": "2026-03-23T15:30:00Z",
+        "price": 98.5
+      },
+      "initialRisk": 3,
+      "grossR": 0.16666666666666666,
+      "frictionR": 0,
+      "netR": 0.16666666666666666,
+      "mfeR": 0.3333333333333333,
+      "maeR": 0.16666666666666666,
+      "holdingBars": 2,
+      "steps": 3,
+      "decisionBar": 0,
+      "decisionTime": "2026-03-20T20:00:00-04:00",
+      "observationBars": 0,
+      "trades": [
+        {
+          "tradeId": 1,
+          "direction": "long",
+          "decisionBar": 0,
+          "decisionTime": "2026-03-20T20:00:00-04:00",
+          "entry": {
+            "time": "2026-03-23T14:30:00Z",
+            "price": 98
+          },
+          "exit": {
+            "time": "2026-03-23T15:30:00Z",
+            "price": 98.5
+          },
+          "exitReason": "horizon",
+          "initialStop": 95,
+          "finalStop": 95,
+          "target": 104,
+          "initialRisk": 3,
+          "grossR": 0.16666666666666666,
+          "frictionR": 0,
+          "netR": 0.16666666666666666,
+          "mfeR": 0.3333333333333333,
+          "maeR": 0.16666666666666666,
+          "holdingBars": 2,
+          "entryReason": {
+            "category": "breakout",
+            "summary": "价格突破关键结构，按计划入场。"
+          }
+        }
+      ],
+      "tradeCount": 1,
+      "winCount": 1,
+      "lossCount": 0,
+      "maxDrawdownR": 0,
+      "actions": [
+        {
+          "step": 1,
+          "tradeId": 1,
+          "at": "2026-03-20T20:00:00-04:00",
+          "effectiveBarTime": "2026-03-23T14:30:00Z",
+          "action": {
+            "type": "submit",
+            "direction": "long",
+            "entry": 98,
+            "stop": 95,
+            "target": 104,
+            "reason": {
+              "category": "breakout",
+              "summary": "价格突破关键结构，按计划入场。"
+            }
+          }
+        },
+        {
+          "step": 2,
+          "tradeId": 1,
+          "at": "2026-03-20T20:00:00-04:00",
+          "effectiveBarTime": "2026-03-23T14:30:00Z",
+          "action": {
+            "type": "hold",
+            "reason": {
+              "category": "risk_management",
+              "summary": "结构尚未失效，继续按既定风险计划执行。"
+            }
+          }
+        },
+        {
+          "step": 3,
+          "tradeId": 1,
+          "at": "2026-03-23T14:30:00Z",
+          "effectiveBarTime": "2026-03-23T15:30:00Z",
+          "action": {
+            "type": "hold",
+            "reason": {
+              "category": "risk_management",
+              "summary": "结构尚未失效，继续按既定风险计划执行。"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "observe-then-delayed-short-target",
+    "events": ["observed", "waiting_fill", "target_hit", "horizon_exit"],
+    "netR": 0.8,
+    "result": {
+      "terminationReason": "horizon",
+      "direction": "short",
+      "entry": {
+        "time": "2026-03-23T15:30:00Z",
+        "price": 105
+      },
+      "exit": {
+        "time": "2026-03-23T15:30:00Z",
+        "price": 101
+      },
+      "initialRisk": 5,
+      "grossR": 0.8,
+      "frictionR": 0,
+      "netR": 0.8,
+      "mfeR": 1.2,
+      "maeR": 0.2,
+      "holdingBars": 1,
+      "steps": 4,
+      "decisionBar": 1,
+      "decisionTime": "2026-03-23T14:30:00Z",
+      "observationBars": 1,
+      "trades": [
+        {
+          "tradeId": 1,
+          "direction": "short",
+          "decisionBar": 1,
+          "decisionTime": "2026-03-23T14:30:00Z",
+          "entry": {
+            "time": "2026-03-23T15:30:00Z",
+            "price": 105
+          },
+          "exit": {
+            "time": "2026-03-23T15:30:00Z",
+            "price": 101
+          },
+          "exitReason": "target",
+          "initialStop": 110,
+          "finalStop": 110,
+          "target": 101,
+          "initialRisk": 5,
+          "grossR": 0.8,
+          "frictionR": 0,
+          "netR": 0.8,
+          "mfeR": 1.2,
+          "maeR": 0.2,
+          "holdingBars": 1,
+          "entryReason": {
+            "category": "breakout",
+            "summary": "价格突破关键结构，按计划入场。"
+          }
+        }
+      ],
+      "tradeCount": 1,
+      "winCount": 1,
+      "lossCount": 0,
+      "maxDrawdownR": 0,
+      "actions": [
+        {
+          "step": 1,
+          "tradeId": null,
+          "at": "2026-03-20T20:00:00-04:00",
+          "effectiveBarTime": "2026-03-23T14:30:00Z",
+          "action": {
+            "type": "observe"
+          }
+        },
+        {
+          "step": 2,
+          "tradeId": 1,
+          "at": "2026-03-23T14:30:00Z",
+          "effectiveBarTime": "2026-03-23T15:30:00Z",
+          "action": {
+            "type": "submit",
+            "direction": "short",
+            "entry": 105,
+            "stop": 110,
+            "target": 101,
+            "reason": {
+              "category": "breakout",
+              "summary": "价格突破关键结构，按计划入场。"
+            }
+          }
+        },
+        {
+          "step": 3,
+          "tradeId": 1,
+          "at": "2026-03-23T14:30:00Z",
+          "effectiveBarTime": "2026-03-23T15:30:00Z",
+          "action": {
+            "type": "hold",
+            "reason": {
+              "category": "risk_management",
+              "summary": "结构尚未失效，继续按既定风险计划执行。"
+            }
+          }
+        },
+        {
+          "step": 4,
+          "tradeId": null,
+          "at": "2026-03-23T15:30:00Z",
+          "effectiveBarTime": "2026-03-23T16:30:00Z",
+          "action": {
+            "type": "observe"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "stop-then-reenter",
+    "events": ["waiting_fill", "stop_hit", "waiting_fill", "filled", "target_hit"],
+    "netR": 1,
+    "result": {
+      "terminationReason": "horizon",
+      "direction": "long",
+      "entry": {
+        "time": "2026-03-23T14:30:00Z",
+        "price": 100
+      },
+      "exit": {
+        "time": "2026-03-23T16:30:00Z",
+        "price": 104
+      },
+      "initialRisk": 5,
+      "grossR": 1,
+      "frictionR": 0,
+      "netR": 1,
+      "mfeR": 2,
+      "maeR": 1.2,
+      "holdingBars": 3,
+      "steps": 5,
+      "decisionBar": 0,
+      "decisionTime": "2026-03-20T20:00:00-04:00",
+      "observationBars": 0,
+      "trades": [
+        {
+          "tradeId": 1,
+          "direction": "long",
+          "decisionBar": 0,
+          "decisionTime": "2026-03-20T20:00:00-04:00",
+          "entry": {
+            "time": "2026-03-23T14:30:00Z",
+            "price": 100
+          },
+          "exit": {
+            "time": "2026-03-23T14:30:00Z",
+            "price": 95
+          },
+          "exitReason": "stop",
+          "initialStop": 95,
+          "finalStop": 95,
+          "target": 120,
+          "initialRisk": 5,
+          "grossR": -1,
+          "frictionR": 0,
+          "netR": -1,
+          "mfeR": 0.2,
+          "maeR": 1.2,
+          "holdingBars": 1,
+          "entryReason": {
+            "category": "breakout",
+            "summary": "价格突破关键结构，按计划入场。"
+          }
+        },
+        {
+          "tradeId": 2,
+          "direction": "long",
+          "decisionBar": 1,
+          "decisionTime": "2026-03-23T14:30:00Z",
+          "entry": {
+            "time": "2026-03-23T15:30:00Z",
+            "price": 96
+          },
+          "exit": {
+            "time": "2026-03-23T16:30:00Z",
+            "price": 104
+          },
+          "exitReason": "target",
+          "initialStop": 92,
+          "finalStop": 92,
+          "target": 104,
+          "initialRisk": 4,
+          "grossR": 2,
+          "frictionR": 0,
+          "netR": 2,
+          "mfeR": 2,
+          "maeR": 0,
+          "holdingBars": 2,
+          "entryReason": {
+            "category": "breakout",
+            "summary": "价格突破关键结构，按计划入场。"
+          }
+        }
+      ],
+      "tradeCount": 2,
+      "winCount": 1,
+      "lossCount": 1,
+      "maxDrawdownR": 1,
+      "actions": [
+        {
+          "step": 1,
+          "tradeId": 1,
+          "at": "2026-03-20T20:00:00-04:00",
+          "effectiveBarTime": "2026-03-23T14:30:00Z",
+          "action": {
+            "type": "submit",
+            "direction": "long",
+            "entry": 100,
+            "stop": 95,
+            "target": 120,
+            "reason": {
+              "category": "breakout",
+              "summary": "价格突破关键结构，按计划入场。"
+            }
+          }
+        },
+        {
+          "step": 2,
+          "tradeId": 1,
+          "at": "2026-03-20T20:00:00-04:00",
+          "effectiveBarTime": "2026-03-23T14:30:00Z",
+          "action": {
+            "type": "hold",
+            "reason": {
+              "category": "risk_management",
+              "summary": "结构尚未失效，继续按既定风险计划执行。"
+            }
+          }
+        },
+        {
+          "step": 3,
+          "tradeId": 2,
+          "at": "2026-03-23T14:30:00Z",
+          "effectiveBarTime": "2026-03-23T15:30:00Z",
+          "action": {
+            "type": "submit",
+            "direction": "long",
+            "entry": 96,
+            "stop": 92,
+            "target": 104,
+            "reason": {
+              "category": "breakout",
+              "summary": "价格突破关键结构，按计划入场。"
+            }
+          }
+        },
+        {
+          "step": 4,
+          "tradeId": 2,
+          "at": "2026-03-23T14:30:00Z",
+          "effectiveBarTime": "2026-03-23T15:30:00Z",
+          "action": {
+            "type": "hold",
+            "reason": {
+              "category": "risk_management",
+              "summary": "结构尚未失效，继续按既定风险计划执行。"
+            }
+          }
+        },
+        {
+          "step": 5,
+          "tradeId": 2,
+          "at": "2026-03-23T15:30:00Z",
+          "effectiveBarTime": "2026-03-23T16:30:00Z",
+          "action": {
+            "type": "hold",
+            "reason": {
+              "category": "risk_management",
+              "summary": "结构尚未失效，继续按既定风险计划执行。"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "amended-stop-applies-to-the-next-bar",
+    "events": ["waiting_fill", "filled", "stop_hit", "horizon_exit"],
+    "netR": 0.2,
+    "result": {
+      "terminationReason": "horizon",
+      "direction": "long",
+      "entry": {
+        "time": "2026-03-23T14:30:00Z",
+        "price": 100
+      },
+      "exit": {
+        "time": "2026-03-23T15:30:00Z",
+        "price": 101
+      },
+      "initialRisk": 5,
+      "grossR": 0.2,
+      "frictionR": 0,
+      "netR": 0.2,
+      "mfeR": 0.8,
+      "maeR": 0.2,
+      "holdingBars": 2,
+      "steps": 4,
+      "decisionBar": 0,
+      "decisionTime": "2026-03-20T20:00:00-04:00",
+      "observationBars": 0,
+      "trades": [
+        {
+          "tradeId": 1,
+          "direction": "long",
+          "decisionBar": 0,
+          "decisionTime": "2026-03-20T20:00:00-04:00",
+          "entry": {
+            "time": "2026-03-23T14:30:00Z",
+            "price": 100
+          },
+          "exit": {
+            "time": "2026-03-23T15:30:00Z",
+            "price": 101
+          },
+          "exitReason": "stop",
+          "initialStop": 95,
+          "finalStop": 101,
+          "target": 110,
+          "initialRisk": 5,
+          "grossR": 0.2,
+          "frictionR": 0,
+          "netR": 0.2,
+          "mfeR": 0.8,
+          "maeR": 0.2,
+          "holdingBars": 2,
+          "entryReason": {
+            "category": "breakout",
+            "summary": "价格突破关键结构，按计划入场。"
+          }
+        }
+      ],
+      "tradeCount": 1,
+      "winCount": 1,
+      "lossCount": 0,
+      "maxDrawdownR": 0,
+      "actions": [
+        {
+          "step": 1,
+          "tradeId": 1,
+          "at": "2026-03-20T20:00:00-04:00",
+          "effectiveBarTime": "2026-03-23T14:30:00Z",
+          "action": {
+            "type": "submit",
+            "direction": "long",
+            "entry": 100,
+            "stop": 95,
+            "target": 110,
+            "reason": {
+              "category": "breakout",
+              "summary": "价格突破关键结构，按计划入场。"
+            }
+          }
+        },
+        {
+          "step": 2,
+          "tradeId": 1,
+          "at": "2026-03-20T20:00:00-04:00",
+          "effectiveBarTime": "2026-03-23T14:30:00Z",
+          "action": {
+            "type": "hold",
+            "reason": {
+              "category": "risk_management",
+              "summary": "结构尚未失效，继续按既定风险计划执行。"
+            }
+          }
+        },
+        {
+          "step": 3,
+          "tradeId": 1,
+          "at": "2026-03-23T14:30:00Z",
+          "effectiveBarTime": "2026-03-23T15:30:00Z",
+          "action": {
+            "type": "amend",
+            "stop": 101,
+            "reason": {
+              "category": "risk_management",
+              "summary": "结构尚未失效，继续按既定风险计划执行。"
+            }
+          }
+        },
+        {
+          "step": 4,
+          "tradeId": null,
+          "at": "2026-03-23T15:30:00Z",
+          "effectiveBarTime": "2026-03-23T16:30:00Z",
+          "action": {
+            "type": "observe"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "amend-target-then-manual-exit",
+    "events": ["waiting_fill", "filled", "holding", "manual_exit", "horizon_exit"],
+    "netR": 0.4,
+    "result": {
+      "terminationReason": "horizon",
+      "direction": "long",
+      "entry": {
+        "time": "2026-03-23T14:30:00Z",
+        "price": 100
+      },
+      "exit": {
+        "time": "2026-03-23T16:30:00Z",
+        "price": 102
+      },
+      "initialRisk": 5,
+      "grossR": 0.4,
+      "frictionR": 0,
+      "netR": 0.4,
+      "mfeR": 0.6,
+      "maeR": 0.2,
+      "holdingBars": 2,
+      "steps": 5,
+      "decisionBar": 0,
+      "decisionTime": "2026-03-20T20:00:00-04:00",
+      "observationBars": 0,
+      "trades": [
+        {
+          "tradeId": 1,
+          "direction": "long",
+          "decisionBar": 0,
+          "decisionTime": "2026-03-20T20:00:00-04:00",
+          "entry": {
+            "time": "2026-03-23T14:30:00Z",
+            "price": 100
+          },
+          "exit": {
+            "time": "2026-03-23T16:30:00Z",
+            "price": 102
+          },
+          "exitReason": "manual",
+          "initialStop": 95,
+          "finalStop": 97,
+          "target": 118,
+          "initialRisk": 5,
+          "grossR": 0.4,
+          "frictionR": 0,
+          "netR": 0.4,
+          "mfeR": 0.6,
+          "maeR": 0.2,
+          "holdingBars": 2,
+          "entryReason": {
+            "category": "breakout",
+            "summary": "价格突破关键结构，按计划入场。"
+          }
+        }
+      ],
+      "tradeCount": 1,
+      "winCount": 1,
+      "lossCount": 0,
+      "maxDrawdownR": 0,
+      "actions": [
+        {
+          "step": 1,
+          "tradeId": 1,
+          "at": "2026-03-20T20:00:00-04:00",
+          "effectiveBarTime": "2026-03-23T14:30:00Z",
+          "action": {
+            "type": "submit",
+            "direction": "long",
+            "entry": 100,
+            "stop": 95,
+            "target": 120,
+            "reason": {
+              "category": "breakout",
+              "summary": "价格突破关键结构，按计划入场。"
+            }
+          }
+        },
+        {
+          "step": 2,
+          "tradeId": 1,
+          "at": "2026-03-20T20:00:00-04:00",
+          "effectiveBarTime": "2026-03-23T14:30:00Z",
+          "action": {
+            "type": "hold",
+            "reason": {
+              "category": "risk_management",
+              "summary": "结构尚未失效，继续按既定风险计划执行。"
+            }
+          }
+        },
+        {
+          "step": 3,
+          "tradeId": 1,
+          "at": "2026-03-23T14:30:00Z",
+          "effectiveBarTime": "2026-03-23T15:30:00Z",
+          "action": {
+            "type": "amend",
+            "stop": 97,
+            "target": 118,
+            "reason": {
+              "category": "risk_management",
+              "summary": "结构尚未失效，继续按既定风险计划执行。"
+            }
+          }
+        },
+        {
+          "step": 4,
+          "tradeId": 1,
+          "at": "2026-03-23T15:30:00Z",
+          "effectiveBarTime": "2026-03-23T16:30:00Z",
+          "action": {
+            "type": "exit_next_open",
+            "reason": {
+              "category": "risk_management",
+              "summary": "结构尚未失效，继续按既定风险计划执行。"
+            }
+          }
+        },
+        {
+          "step": 5,
+          "tradeId": null,
+          "at": "2026-03-23T16:30:00Z",
+          "effectiveBarTime": "2026-03-23T17:30:00Z",
+          "action": {
+            "type": "observe"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "expired-order-then-cancel",
+    "events": [
+      "waiting_fill",
+      "waiting_fill",
+      "waiting_fill",
+      "no_fill",
+      "waiting_fill",
+      "cancelled",
+      "horizon_exit"
+    ],
+    "netR": 0,
+    "result": {
+      "terminationReason": "no_trade",
+      "direction": "neutral",
+      "entry": null,
+      "exit": null,
+      "initialRisk": null,
+      "grossR": 0,
+      "frictionR": 0,
+      "netR": 0,
+      "mfeR": null,
+      "maeR": null,
+      "holdingBars": 0,
+      "steps": 7,
+      "decisionBar": 0,
+      "decisionTime": "2026-03-20T20:00:00-04:00",
+      "observationBars": 0,
+      "trades": [],
+      "tradeCount": 0,
+      "winCount": 0,
+      "lossCount": 0,
+      "maxDrawdownR": 0,
+      "actions": [
+        {
+          "step": 1,
+          "tradeId": 1,
+          "at": "2026-03-20T20:00:00-04:00",
+          "effectiveBarTime": "2026-03-23T14:30:00Z",
+          "action": {
+            "type": "submit",
+            "direction": "long",
+            "entry": 90,
+            "stop": 85,
+            "target": 100,
+            "reason": {
+              "category": "breakout",
+              "summary": "价格突破关键结构，按计划入场。"
+            }
+          }
+        },
+        {
+          "step": 2,
+          "tradeId": 1,
+          "at": "2026-03-20T20:00:00-04:00",
+          "effectiveBarTime": "2026-03-23T14:30:00Z",
+          "action": {
+            "type": "hold",
+            "reason": {
+              "category": "risk_management",
+              "summary": "结构尚未失效，继续按既定风险计划执行。"
+            }
+          }
+        },
+        {
+          "step": 3,
+          "tradeId": 1,
+          "at": "2026-03-23T14:30:00Z",
+          "effectiveBarTime": "2026-03-23T15:30:00Z",
+          "action": {
+            "type": "hold",
+            "reason": {
+              "category": "risk_management",
+              "summary": "结构尚未失效，继续按既定风险计划执行。"
+            }
+          }
+        },
+        {
+          "step": 4,
+          "tradeId": 1,
+          "at": "2026-03-23T15:30:00Z",
+          "effectiveBarTime": "2026-03-23T16:30:00Z",
+          "action": {
+            "type": "hold",
+            "reason": {
+              "category": "risk_management",
+              "summary": "结构尚未失效，继续按既定风险计划执行。"
+            }
+          }
+        },
+        {
+          "step": 5,
+          "tradeId": 2,
+          "at": "2026-03-23T16:30:00Z",
+          "effectiveBarTime": "2026-03-23T17:30:00Z",
+          "action": {
+            "type": "submit",
+            "direction": "long",
+            "entry": 90,
+            "stop": 85,
+            "target": 100,
+            "reason": {
+              "category": "breakout",
+              "summary": "价格突破关键结构，按计划入场。"
+            }
+          }
+        },
+        {
+          "step": 6,
+          "tradeId": 2,
+          "at": "2026-03-23T16:30:00Z",
+          "effectiveBarTime": null,
+          "action": {
+            "type": "cancel",
+            "reason": {
+              "category": "risk_management",
+              "summary": "结构尚未失效，继续按既定风险计划执行。"
+            }
+          }
+        },
+        {
+          "step": 7,
+          "tradeId": null,
+          "at": "2026-03-23T16:30:00Z",
+          "effectiveBarTime": "2026-03-23T17:30:00Z",
+          "action": {
+            "type": "observe"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "same-bar-stop-resolves-before-target",
+    "events": ["waiting_fill", "stop_hit"],
+    "netR": -1,
+    "result": {
+      "terminationReason": "horizon",
+      "direction": "long",
+      "entry": {
+        "time": "2026-03-23T14:30:00Z",
+        "price": 100
+      },
+      "exit": {
+        "time": "2026-03-23T14:30:00Z",
+        "price": 95
+      },
+      "initialRisk": 5,
+      "grossR": -1,
+      "frictionR": 0,
+      "netR": -1,
+      "mfeR": 2,
+      "maeR": 2,
+      "holdingBars": 1,
+      "steps": 2,
+      "decisionBar": 0,
+      "decisionTime": "2026-03-20T20:00:00-04:00",
+      "observationBars": 0,
+      "trades": [
+        {
+          "tradeId": 1,
+          "direction": "long",
+          "decisionBar": 0,
+          "decisionTime": "2026-03-20T20:00:00-04:00",
+          "entry": {
+            "time": "2026-03-23T14:30:00Z",
+            "price": 100
+          },
+          "exit": {
+            "time": "2026-03-23T14:30:00Z",
+            "price": 95
+          },
+          "exitReason": "stop",
+          "initialStop": 95,
+          "finalStop": 95,
+          "target": 106,
+          "initialRisk": 5,
+          "grossR": -1,
+          "frictionR": 0,
+          "netR": -1,
+          "mfeR": 2,
+          "maeR": 2,
+          "holdingBars": 1,
+          "entryReason": {
+            "category": "breakout",
+            "summary": "价格突破关键结构，按计划入场。"
+          }
+        }
+      ],
+      "tradeCount": 1,
+      "winCount": 0,
+      "lossCount": 1,
+      "maxDrawdownR": 1,
+      "actions": [
+        {
+          "step": 1,
+          "tradeId": 1,
+          "at": "2026-03-20T20:00:00-04:00",
+          "effectiveBarTime": "2026-03-23T14:30:00Z",
+          "action": {
+            "type": "submit",
+            "direction": "long",
+            "entry": 100,
+            "stop": 95,
+            "target": 106,
+            "reason": {
+              "category": "breakout",
+              "summary": "价格突破关键结构，按计划入场。"
+            }
+          }
+        },
+        {
+          "step": 2,
+          "tradeId": 1,
+          "at": "2026-03-20T20:00:00-04:00",
+          "effectiveBarTime": "2026-03-23T14:30:00Z",
+          "action": {
+            "type": "hold",
+            "reason": {
+              "category": "risk_management",
+              "summary": "结构尚未失效，继续按既定风险计划执行。"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "intrabar-entry-prices-its-stop-at-the-stop",
+    "events": ["waiting_fill", "stop_hit"],
+    "netR": -1,
+    "result": {
+      "terminationReason": "horizon",
+      "direction": "long",
+      "entry": {
+        "time": "2026-02-06T14:30:00Z",
+        "price": 100.1
+      },
+      "exit": {
+        "time": "2026-02-06T14:30:00Z",
+        "price": 98.6
+      },
+      "initialRisk": 1.5,
+      "grossR": -1,
+      "frictionR": 0,
+      "netR": -1,
+      "mfeR": 0.5450526666666727,
+      "maeR": 1.1333333333333258,
+      "holdingBars": 1,
+      "steps": 2,
+      "decisionBar": 0,
+      "decisionTime": "2026-03-20T20:00:00-04:00",
+      "observationBars": 0,
+      "trades": [
+        {
+          "tradeId": 1,
+          "direction": "long",
+          "decisionBar": 0,
+          "decisionTime": "2026-03-20T20:00:00-04:00",
+          "entry": {
+            "time": "2026-02-06T14:30:00Z",
+            "price": 100.1
+          },
+          "exit": {
+            "time": "2026-02-06T14:30:00Z",
+            "price": 98.6
+          },
+          "exitReason": "stop",
+          "initialStop": 98.6,
+          "finalStop": 98.6,
+          "target": 101.8,
+          "initialRisk": 1.5,
+          "grossR": -1,
+          "frictionR": 0,
+          "netR": -1,
+          "mfeR": 0.5450526666666727,
+          "maeR": 1.1333333333333258,
+          "holdingBars": 1,
+          "entryReason": {
+            "category": "breakout",
+            "summary": "价格突破关键结构，按计划入场。"
+          }
+        }
+      ],
+      "tradeCount": 1,
+      "winCount": 0,
+      "lossCount": 1,
+      "maxDrawdownR": 1,
+      "actions": [
+        {
+          "step": 1,
+          "tradeId": 1,
+          "at": "2026-03-20T20:00:00-04:00",
+          "effectiveBarTime": "2026-02-06T14:30:00Z",
+          "action": {
+            "type": "submit",
+            "direction": "long",
+            "entry": 100.1,
+            "stop": 98.6,
+            "target": 101.8,
+            "reason": {
+              "category": "breakout",
+              "summary": "价格突破关键结构，按计划入场。"
+            }
+          }
+        },
+        {
+          "step": 2,
+          "tradeId": 1,
+          "at": "2026-03-20T20:00:00-04:00",
+          "effectiveBarTime": "2026-02-06T14:30:00Z",
+          "action": {
+            "type": "hold",
+            "reason": {
+              "category": "risk_management",
+              "summary": "结构尚未失效，继续按既定风险计划执行。"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "gap-fill-already-past-its-bracket",
+    "events": ["waiting_fill", "target_hit"],
+    "netR": 0,
+    "result": {
+      "terminationReason": "horizon",
+      "direction": "short",
+      "entry": {
+        "time": "2026-03-23T14:30:00Z",
+        "price": 85
+      },
+      "exit": {
+        "time": "2026-03-23T14:30:00Z",
+        "price": 85
+      },
+      "initialRisk": 20,
+      "grossR": 0,
+      "frictionR": 0,
+      "netR": 0,
+      "mfeR": 0,
+      "maeR": 0,
+      "holdingBars": 0,
+      "steps": 2,
+      "decisionBar": 0,
+      "decisionTime": "2026-03-20T20:00:00-04:00",
+      "observationBars": 0,
+      "trades": [
+        {
+          "tradeId": 1,
+          "direction": "short",
+          "decisionBar": 0,
+          "decisionTime": "2026-03-20T20:00:00-04:00",
+          "entry": {
+            "time": "2026-03-23T14:30:00Z",
+            "price": 85
+          },
+          "exit": {
+            "time": "2026-03-23T14:30:00Z",
+            "price": 85
+          },
+          "exitReason": "target",
+          "initialStop": 105,
+          "finalStop": 105,
+          "target": 90,
+          "initialRisk": 20,
+          "grossR": 0,
+          "frictionR": 0,
+          "netR": 0,
+          "mfeR": 0,
+          "maeR": 0,
+          "holdingBars": 0,
+          "entryReason": {
+            "category": "breakout",
+            "summary": "价格突破关键结构，按计划入场。"
+          }
+        }
+      ],
+      "tradeCount": 1,
+      "winCount": 0,
+      "lossCount": 0,
+      "maxDrawdownR": 0,
+      "actions": [
+        {
+          "step": 1,
+          "tradeId": 1,
+          "at": "2026-03-20T20:00:00-04:00",
+          "effectiveBarTime": "2026-03-23T14:30:00Z",
+          "action": {
+            "type": "submit",
+            "direction": "short",
+            "entry": 95,
+            "stop": 105,
+            "target": 90,
+            "reason": {
+              "category": "breakout",
+              "summary": "价格突破关键结构，按计划入场。"
+            }
+          }
+        },
+        {
+          "step": 2,
+          "tradeId": 1,
+          "at": "2026-03-20T20:00:00-04:00",
+          "effectiveBarTime": "2026-03-23T14:30:00Z",
+          "action": {
+            "type": "hold",
+            "reason": {
+              "category": "risk_management",
+              "summary": "结构尚未失效，继续按既定风险计划执行。"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "horizon-forced-exit",
+    "events": ["waiting_fill", "horizon_exit"],
+    "netR": 0.4,
+    "result": {
+      "terminationReason": "horizon",
+      "direction": "long",
+      "entry": {
+        "time": "2026-03-23T14:30:00Z",
+        "price": 100
+      },
+      "exit": {
+        "time": "2026-03-23T14:30:00Z",
+        "price": 102
+      },
+      "initialRisk": 5,
+      "grossR": 0.4,
+      "frictionR": 0,
+      "netR": 0.4,
+      "mfeR": 0.6,
+      "maeR": 0.2,
+      "holdingBars": 1,
+      "steps": 2,
+      "decisionBar": 0,
+      "decisionTime": "2026-03-20T20:00:00-04:00",
+      "observationBars": 0,
+      "trades": [
+        {
+          "tradeId": 1,
+          "direction": "long",
+          "decisionBar": 0,
+          "decisionTime": "2026-03-20T20:00:00-04:00",
+          "entry": {
+            "time": "2026-03-23T14:30:00Z",
+            "price": 100
+          },
+          "exit": {
+            "time": "2026-03-23T14:30:00Z",
+            "price": 102
+          },
+          "exitReason": "horizon",
+          "initialStop": 95,
+          "finalStop": 95,
+          "target": 120,
+          "initialRisk": 5,
+          "grossR": 0.4,
+          "frictionR": 0,
+          "netR": 0.4,
+          "mfeR": 0.6,
+          "maeR": 0.2,
+          "holdingBars": 1,
+          "entryReason": {
+            "category": "breakout",
+            "summary": "价格突破关键结构，按计划入场。"
+          }
+        }
+      ],
+      "tradeCount": 1,
+      "winCount": 1,
+      "lossCount": 0,
+      "maxDrawdownR": 0,
+      "actions": [
+        {
+          "step": 1,
+          "tradeId": 1,
+          "at": "2026-03-20T20:00:00-04:00",
+          "effectiveBarTime": "2026-03-23T14:30:00Z",
+          "action": {
+            "type": "submit",
+            "direction": "long",
+            "entry": 100,
+            "stop": 95,
+            "target": 120,
+            "reason": {
+              "category": "breakout",
+              "summary": "价格突破关键结构，按计划入场。"
+            }
+          }
+        },
+        {
+          "step": 2,
+          "tradeId": 1,
+          "at": "2026-03-20T20:00:00-04:00",
+          "effectiveBarTime": "2026-03-23T14:30:00Z",
+          "action": {
+            "type": "hold",
+            "reason": {
+              "category": "risk_management",
+              "summary": "结构尚未失效，继续按既定风险计划执行。"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "neutral-abstain",
+    "events": ["abstained", "observed", "observed", "horizon_exit"],
+    "netR": 0,
+    "result": {
+      "terminationReason": "no_trade",
+      "direction": "neutral",
+      "entry": null,
+      "exit": null,
+      "initialRisk": null,
+      "grossR": 0,
+      "frictionR": 0,
+      "netR": 0,
+      "mfeR": null,
+      "maeR": null,
+      "holdingBars": 0,
+      "steps": 4,
+      "decisionBar": null,
+      "decisionTime": null,
+      "observationBars": 3,
+      "trades": [],
+      "tradeCount": 0,
+      "winCount": 0,
+      "lossCount": 0,
+      "maxDrawdownR": 0,
+      "actions": [
+        {
+          "step": 1,
+          "tradeId": null,
+          "at": "2026-03-20T20:00:00-04:00",
+          "effectiveBarTime": "2026-03-23T14:30:00Z",
+          "action": {
+            "type": "submit",
+            "direction": "neutral",
+            "reason": {
+              "category": "no_setup",
+              "summary": "当前没有满足风险收益要求的机会。"
+            }
+          }
+        },
+        {
+          "step": 2,
+          "tradeId": null,
+          "at": "2026-03-20T20:00:00-04:00",
+          "effectiveBarTime": "2026-03-23T14:30:00Z",
+          "action": {
+            "type": "observe"
+          }
+        },
+        {
+          "step": 3,
+          "tradeId": null,
+          "at": "2026-03-23T14:30:00Z",
+          "effectiveBarTime": "2026-03-23T15:30:00Z",
+          "action": {
+            "type": "observe"
+          }
+        },
+        {
+          "step": 4,
+          "tradeId": null,
+          "at": "2026-03-23T15:30:00Z",
+          "effectiveBarTime": "2026-03-23T16:30:00Z",
+          "action": {
+            "type": "observe"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "batch-advance-across-a-stop",
+    "events": [
+      "waiting_fill",
+      "filled",
+      "stop_hit",
+      "observed",
+      "observed",
+      "observed",
+      "observed",
+      "observed",
+      "horizon_exit"
+    ],
+    "netR": -1,
+    "result": {
+      "terminationReason": "horizon",
+      "direction": "long",
+      "entry": {
+        "time": "2026-03-23T13:30:00Z",
+        "price": 100
+      },
+      "exit": {
+        "time": "2026-03-23T13:40:00Z",
+        "price": 97
+      },
+      "initialRisk": 3,
+      "grossR": -1,
+      "frictionR": 0,
+      "netR": -1,
+      "mfeR": 0.3333333333333333,
+      "maeR": 2,
+      "holdingBars": 3,
+      "steps": 9,
+      "decisionBar": 0,
+      "decisionTime": "2026-03-20T20:00:00-04:00",
+      "observationBars": 0,
+      "trades": [
+        {
+          "tradeId": 1,
+          "direction": "long",
+          "decisionBar": 0,
+          "decisionTime": "2026-03-20T20:00:00-04:00",
+          "entry": {
+            "time": "2026-03-23T13:30:00Z",
+            "price": 100
+          },
+          "exit": {
+            "time": "2026-03-23T13:40:00Z",
+            "price": 97
+          },
+          "exitReason": "stop",
+          "initialStop": 97,
+          "finalStop": 97,
+          "target": 110,
+          "initialRisk": 3,
+          "grossR": -1,
+          "frictionR": 0,
+          "netR": -1,
+          "mfeR": 0.3333333333333333,
+          "maeR": 2,
+          "holdingBars": 3,
+          "entryReason": {
+            "category": "breakout",
+            "summary": "价格突破关键结构，按计划入场。"
+          }
+        }
+      ],
+      "tradeCount": 1,
+      "winCount": 0,
+      "lossCount": 1,
+      "maxDrawdownR": 1,
+      "actions": [
+        {
+          "step": 1,
+          "tradeId": 1,
+          "at": "2026-03-20T20:00:00-04:00",
+          "effectiveBarTime": "2026-03-23T13:30:00Z",
+          "action": {
+            "type": "submit",
+            "direction": "long",
+            "entry": 100,
+            "stop": 97,
+            "target": 110,
+            "reason": {
+              "category": "breakout",
+              "summary": "价格突破关键结构，按计划入场。"
+            }
+          }
+        },
+        {
+          "step": 2,
+          "tradeId": 1,
+          "at": "2026-03-20T20:00:00-04:00",
+          "effectiveBarTime": "2026-03-23T13:30:00Z",
+          "action": {
+            "type": "hold",
+            "reason": {
+              "category": "risk_management",
+              "summary": "结构尚未失效，继续按既定风险计划执行。"
+            }
+          }
+        },
+        {
+          "step": 3,
+          "tradeId": 1,
+          "at": "2026-03-23T13:30:00Z",
+          "effectiveBarTime": "2026-03-23T13:35:00Z",
+          "action": {
+            "type": "hold",
+            "bars": 5,
+            "period": "15m",
+            "reason": {
+              "category": "risk_management",
+              "summary": "结构尚未失效，继续按既定风险计划执行。"
+            }
+          }
+        },
+        {
+          "step": 4,
+          "tradeId": null,
+          "at": "2026-03-23T13:40:00Z",
+          "effectiveBarTime": "2026-03-23T13:45:00Z",
+          "action": {
+            "type": "observe"
+          }
+        },
+        {
+          "step": 5,
+          "tradeId": null,
+          "at": "2026-03-23T13:45:00Z",
+          "effectiveBarTime": "2026-03-23T13:50:00Z",
+          "action": {
+            "type": "observe"
+          }
+        },
+        {
+          "step": 6,
+          "tradeId": null,
+          "at": "2026-03-23T13:50:00Z",
+          "effectiveBarTime": "2026-03-23T13:55:00Z",
+          "action": {
+            "type": "observe"
+          }
+        },
+        {
+          "step": 7,
+          "tradeId": null,
+          "at": "2026-03-23T13:55:00Z",
+          "effectiveBarTime": "2026-03-23T14:00:00Z",
+          "action": {
+            "type": "observe"
+          }
+        },
+        {
+          "step": 8,
+          "tradeId": null,
+          "at": "2026-03-23T14:00:00Z",
+          "effectiveBarTime": "2026-03-23T14:05:00Z",
+          "action": {
+            "type": "observe"
+          }
+        },
+        {
+          "step": 9,
+          "tradeId": null,
+          "at": "2026-03-23T14:05:00Z",
+          "effectiveBarTime": "2026-03-23T14:10:00Z",
+          "action": {
+            "type": "observe"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "market-entry-fills-at-the-next-open",
+    "events": ["waiting_fill", "filled", "horizon_exit"],
+    "netR": 0.2,
+    "result": {
+      "terminationReason": "horizon",
+      "direction": "long",
+      "entry": {
+        "time": "2026-03-23T14:30:00Z",
+        "price": 100
+      },
+      "exit": {
+        "time": "2026-03-23T15:30:00Z",
+        "price": 102
+      },
+      "initialRisk": 10,
+      "grossR": 0.2,
+      "frictionR": 0,
+      "netR": 0.2,
+      "mfeR": 0.4,
+      "maeR": 0.2,
+      "holdingBars": 2,
+      "steps": 3,
+      "decisionBar": 0,
+      "decisionTime": "2026-03-20T20:00:00-04:00",
+      "observationBars": 0,
+      "trades": [
+        {
+          "tradeId": 1,
+          "direction": "long",
+          "decisionBar": 0,
+          "decisionTime": "2026-03-20T20:00:00-04:00",
+          "entry": {
+            "time": "2026-03-23T14:30:00Z",
+            "price": 100
+          },
+          "exit": {
+            "time": "2026-03-23T15:30:00Z",
+            "price": 102
+          },
+          "exitReason": "horizon",
+          "initialStop": 90,
+          "finalStop": 90,
+          "target": 108,
+          "initialRisk": 10,
+          "grossR": 0.2,
+          "frictionR": 0,
+          "netR": 0.2,
+          "mfeR": 0.4,
+          "maeR": 0.2,
+          "holdingBars": 2,
+          "entryReason": {
+            "category": "breakout",
+            "summary": "价格突破关键结构，按计划入场。"
+          }
+        }
+      ],
+      "tradeCount": 1,
+      "winCount": 1,
+      "lossCount": 0,
+      "maxDrawdownR": 0,
+      "actions": [
+        {
+          "step": 1,
+          "tradeId": 1,
+          "at": "2026-03-20T20:00:00-04:00",
+          "effectiveBarTime": "2026-03-23T14:30:00Z",
+          "action": {
+            "type": "submit",
+            "direction": "long",
+            "entry": 95,
+            "stop": 90,
+            "target": 108,
+            "reason": {
+              "category": "breakout",
+              "summary": "价格突破关键结构，按计划入场。"
+            }
+          }
+        },
+        {
+          "step": 2,
+          "tradeId": 1,
+          "at": "2026-03-20T20:00:00-04:00",
+          "effectiveBarTime": "2026-03-23T14:30:00Z",
+          "action": {
+            "type": "hold",
+            "reason": {
+              "category": "risk_management",
+              "summary": "结构尚未失效，继续按既定风险计划执行。"
+            }
+          }
+        },
+        {
+          "step": 3,
+          "tradeId": 1,
+          "at": "2026-03-23T14:30:00Z",
+          "effectiveBarTime": "2026-03-23T15:30:00Z",
+          "action": {
+            "type": "hold",
+            "reason": {
+              "category": "risk_management",
+              "summary": "结构尚未失效，继续按既定风险计划执行。"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "costed-target-hit-at-25bps",
+    "events": ["waiting_fill", "target_hit", "observed", "horizon_exit"],
+    "netR": 0.6980000000000001,
+    "result": {
+      "terminationReason": "horizon",
+      "direction": "long",
+      "entry": {
+        "time": "2026-03-23T14:30:00Z",
+        "price": 100
+      },
+      "exit": {
+        "time": "2026-03-23T14:30:00Z",
+        "price": 104
+      },
+      "initialRisk": 5,
+      "grossR": 0.8,
+      "frictionR": 0.10200000000000001,
+      "netR": 0.6980000000000001,
+      "mfeR": 1.2,
+      "maeR": 0.2,
+      "holdingBars": 1,
+      "steps": 4,
+      "decisionBar": 0,
+      "decisionTime": "2026-03-20T20:00:00-04:00",
+      "observationBars": 0,
+      "trades": [
+        {
+          "tradeId": 1,
+          "direction": "long",
+          "decisionBar": 0,
+          "decisionTime": "2026-03-20T20:00:00-04:00",
+          "entry": {
+            "time": "2026-03-23T14:30:00Z",
+            "price": 100
+          },
+          "exit": {
+            "time": "2026-03-23T14:30:00Z",
+            "price": 104
+          },
+          "exitReason": "target",
+          "initialStop": 95,
+          "finalStop": 95,
+          "target": 104,
+          "initialRisk": 5,
+          "grossR": 0.8,
+          "frictionR": 0.10200000000000001,
+          "netR": 0.6980000000000001,
+          "mfeR": 1.2,
+          "maeR": 0.2,
+          "holdingBars": 1,
+          "entryReason": {
+            "category": "breakout",
+            "summary": "价格突破关键结构，按计划入场。"
+          }
+        }
+      ],
+      "tradeCount": 1,
+      "winCount": 1,
+      "lossCount": 0,
+      "maxDrawdownR": 0,
+      "actions": [
+        {
+          "step": 1,
+          "tradeId": 1,
+          "at": "2026-03-20T20:00:00-04:00",
+          "effectiveBarTime": "2026-03-23T14:30:00Z",
+          "action": {
+            "type": "submit",
+            "direction": "long",
+            "entry": 100,
+            "stop": 95,
+            "target": 104,
+            "reason": {
+              "category": "breakout",
+              "summary": "价格突破关键结构，按计划入场。"
+            }
+          }
+        },
+        {
+          "step": 2,
+          "tradeId": 1,
+          "at": "2026-03-20T20:00:00-04:00",
+          "effectiveBarTime": "2026-03-23T14:30:00Z",
+          "action": {
+            "type": "hold",
+            "reason": {
+              "category": "risk_management",
+              "summary": "结构尚未失效，继续按既定风险计划执行。"
+            }
+          }
+        },
+        {
+          "step": 3,
+          "tradeId": null,
+          "at": "2026-03-23T14:30:00Z",
+          "effectiveBarTime": "2026-03-23T15:30:00Z",
+          "action": {
+            "type": "observe"
+          }
+        },
+        {
+          "step": 4,
+          "tradeId": null,
+          "at": "2026-03-23T15:30:00Z",
+          "effectiveBarTime": "2026-03-23T16:30:00Z",
+          "action": {
+            "type": "observe"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "costed-short-stop-at-25bps",
+    "events": ["waiting_fill", "stop_hit", "horizon_exit"],
+    "netR": -1.0525,
+    "result": {
+      "terminationReason": "horizon",
+      "direction": "short",
+      "entry": {
+        "time": "2026-03-23T14:30:00Z",
+        "price": 100
+      },
+      "exit": {
+        "time": "2026-03-23T14:30:00Z",
+        "price": 110
+      },
+      "initialRisk": 10,
+      "grossR": -1,
+      "frictionR": 0.052500000000000005,
+      "netR": -1.0525,
+      "mfeR": 0.1,
+      "maeR": 1.2,
+      "holdingBars": 1,
+      "steps": 3,
+      "decisionBar": 0,
+      "decisionTime": "2026-03-20T20:00:00-04:00",
+      "observationBars": 0,
+      "trades": [
+        {
+          "tradeId": 1,
+          "direction": "short",
+          "decisionBar": 0,
+          "decisionTime": "2026-03-20T20:00:00-04:00",
+          "entry": {
+            "time": "2026-03-23T14:30:00Z",
+            "price": 100
+          },
+          "exit": {
+            "time": "2026-03-23T14:30:00Z",
+            "price": 110
+          },
+          "exitReason": "stop",
+          "initialStop": 110,
+          "finalStop": 110,
+          "target": 90,
+          "initialRisk": 10,
+          "grossR": -1,
+          "frictionR": 0.052500000000000005,
+          "netR": -1.0525,
+          "mfeR": 0.1,
+          "maeR": 1.2,
+          "holdingBars": 1,
+          "entryReason": {
+            "category": "breakout",
+            "summary": "价格突破关键结构，按计划入场。"
+          }
+        }
+      ],
+      "tradeCount": 1,
+      "winCount": 0,
+      "lossCount": 1,
+      "maxDrawdownR": 1.0525,
+      "actions": [
+        {
+          "step": 1,
+          "tradeId": 1,
+          "at": "2026-03-20T20:00:00-04:00",
+          "effectiveBarTime": "2026-03-23T14:30:00Z",
+          "action": {
+            "type": "submit",
+            "direction": "short",
+            "entry": 100,
+            "stop": 110,
+            "target": 90,
+            "reason": {
+              "category": "breakout",
+              "summary": "价格突破关键结构，按计划入场。"
+            }
+          }
+        },
+        {
+          "step": 2,
+          "tradeId": 1,
+          "at": "2026-03-20T20:00:00-04:00",
+          "effectiveBarTime": "2026-03-23T14:30:00Z",
+          "action": {
+            "type": "hold",
+            "reason": {
+              "category": "risk_management",
+              "summary": "结构尚未失效，继续按既定风险计划执行。"
+            }
+          }
+        },
+        {
+          "step": 3,
+          "tradeId": null,
+          "at": "2026-03-23T14:30:00Z",
+          "effectiveBarTime": "2026-03-23T15:30:00Z",
+          "action": {
+            "type": "observe"
+          }
+        }
+      ]
+    }
+  }
+]

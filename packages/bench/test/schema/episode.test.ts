@@ -16,18 +16,36 @@ const tool = episodeTradeActionToolSchema as unknown as {
   properties: Record<string, TSchema>;
 };
 
+const TRAINER_ONLY_ACTIONS = ['add', 'reduce'];
+
 describe('episodeTradeActionToolSchema', () => {
   it('is a single top-level object, as OpenAI-compatible function schemas require', () => {
     expect(tool.type).toBe('object');
   });
 
-  it('exposes every field and every action of the strict union', () => {
-    for (const variant of variants) {
+  it('exposes every field and every action of the strict union the model may drive', () => {
+    const modelFacing = variants.filter(
+      (variant) => !TRAINER_ONLY_ACTIONS.includes(variant.properties.type.const ?? ''),
+    );
+    expect(modelFacing).toHaveLength(variants.length - TRAINER_ONLY_ACTIONS.length);
+    for (const variant of modelFacing) {
       for (const field of Object.keys(variant.properties)) {
         expect(Object.keys(tool.properties)).toContain(field);
       }
       expect(Value.Check(tool.properties.type, variant.properties.type.const)).toBe(true);
     }
+  });
+
+  // Position sizing exists for the trainer. Offering it to the model would change the tool
+  // definition every benchmark run is prompted with, and a corpus recorded against the old
+  // definition could no longer be compared with anything recorded after.
+  it('withholds the trainer-only sizing actions from the model tool surface', () => {
+    for (const type of TRAINER_ONLY_ACTIONS) {
+      expect(variants.some((variant) => variant.properties.type.const === type)).toBe(true);
+      expect(Value.Check(tool.properties.type, type)).toBe(false);
+      expect(Value.Check(episodeTradeActionToolSchema, { type, size: 0.5 })).toBe(false);
+    }
+    expect(Object.keys(tool.properties)).not.toContain('size');
   });
 
   it('accepts a hold batch and an amend the strict union also accepts', () => {

@@ -16,8 +16,21 @@ import {
   type EpisodeBasePeriod,
   type EpisodeViewPeriod,
 } from './periods.js';
+import {
+  addLot,
+  closedTradeOf,
+  equityR,
+  FULL_POSITION_SIZE,
+  openPosition,
+  openSize,
+  POSITION_SIZE_EPSILON,
+  reduceLots,
+  type PositionState,
+} from './position.js';
 import { questionBasePeriod } from './questionLadder.js';
 import { buildEpisodeQuestionViewAtCursor } from './view.js';
+
+export type { PositionLot, PositionState } from './position.js';
 
 export type EpisodePhase = 'flat' | 'pending' | 'open' | 'terminal';
 export type EpisodeEntryMode = 'limit' | 'market';
@@ -46,23 +59,7 @@ export interface PendingOrderState {
   waitedBars: number;
   entryReason: EpisodeTradeReason;
   entryMode: EpisodeEntryMode;
-}
-
-export interface PositionState {
-  tradeId: number;
-  direction: 'long' | 'short';
-  decisionBar: number;
-  decisionTime: string;
-  entryPrice: number;
-  entryTime: string;
-  initialStop: number;
-  initialRisk: number;
-  stop: number;
-  target: number;
-  holdingBars: number;
-  mfeR: number;
-  maeR: number;
-  entryReason: EpisodeTradeReason;
+  size: number;
 }
 
 export interface EpisodeState {
@@ -287,6 +284,13 @@ function finishAtHorizon(
   return { state: terminalState, asOf, bar, event, terminal: true, result };
 }
 
+function positionSize(value: unknown, label: string): number {
+  const parsed = finite(value, label);
+  if (parsed <= 0 || parsed > FULL_POSITION_SIZE)
+    throw new Error(`${label} must be a fraction of a full position within (0, 1]`);
+  return parsed;
+}
+
 function validateDirectionalSubmission(
   submission: Submission,
   tradeId: number,
@@ -294,6 +298,7 @@ function validateDirectionalSubmission(
   decisionTime: string,
   entryReason: EpisodeTradeReason,
   entryMode: EpisodeEntryMode,
+  size: number,
 ): PendingOrderState {
   if (submission.direction === 'neutral') throw new Error('neutral submission has no order');
   const plan = submission.entry_plan;
@@ -320,6 +325,7 @@ function validateDirectionalSubmission(
     waitedBars: 0,
     entryReason,
     entryMode,
+    size,
   };
 }
 
@@ -355,12 +361,14 @@ export function submitEpisode(
   submission: Submission,
   _options: EpisodeEngineOptions = {},
   entryMode: EpisodeEntryMode = 'limit',
+  size: number = FULL_POSITION_SIZE,
 ): EpisodeAdvanceResult {
   if (state.phase === 'terminal') throw new Error('episode already terminated');
   if (state.phase !== 'flat') throw new Error('a new prediction is only valid while flat');
   if (remainingEpisodeBars(state, question) === 0)
     throw new Error('episode has no unrevealed replay bar');
 
+  const entrySize = positionSize(size, 'size');
   const decisionBar = state.cursor + 1;
   const decisionTime = currentAsOf(question, state.cursor);
   const plan = submission.entry_plan;
@@ -378,6 +386,7 @@ export function submitEpisode(
             ...(plan.target1 == null ? {} : { target: plan.target1 }),
           }
         : {}),
+      ...(entrySize === FULL_POSITION_SIZE ? {} : { size: entrySize }),
       reason,
     },
     replayBar(question, state.cursor + 1),
@@ -403,6 +412,7 @@ export function submitEpisode(
     decisionTime,
     reason,
     entryMode,
+    entrySize,
   );
   const submitted: EpisodeState = {
     ...recorded,
@@ -501,18 +511,20 @@ export function checkEpisodeAmendment(
   applyAmendment(state.position, amendment, visibleReferencePrice(question, state));
 }
 
+// Excursions track the whole trade's equity curve — realized plus unrealized — so scaling out at
+// +3R and letting the rest fall back to breakeven still reports a 3R peak. mfeR / maeR stay
+// magnitudes rather than the signed max / min of that curve, which is what every downstream reader
+// and the schema's `minimum: 0` already assume.
 function updateExcursions(position: PositionState, bar: RawBar): PositionState {
   const high = numberOf(bar.high);
   const low = numberOf(bar.low);
-  const favorable =
-    position.direction === 'long' ? high - position.entryPrice : position.entryPrice - low;
-  const adverse =
-    position.direction === 'long' ? position.entryPrice - low : high - position.entryPrice;
+  const favorable = equityR(position, position.direction === 'long' ? high : low);
+  const adverse = equityR(position, position.direction === 'long' ? low : high);
   return {
     ...position,
     holdingBars: position.holdingBars + 1,
-    mfeR: Math.max(position.mfeR, favorable / position.initialRisk, 0),
-    maeR: Math.max(position.maeR, adverse / position.initialRisk, 0),
+    mfeR: Math.max(position.mfeR, favorable, 0),
+    maeR: Math.max(position.maeR, -adverse, 0),
   };
 }
 
@@ -595,6 +607,10 @@ function bracketCrossedAtFill(position: PositionState): EpisodeClosedTrade['exit
   return null;
 }
 
+function costRateOf(options: EpisodeEngineOptions): number {
+  return (options.costBps ?? 0) / 10_000;
+}
+
 function closePosition(
   state: EpisodeState,
   exitReason: EpisodeClosedTrade['exitReason'],
@@ -603,37 +619,31 @@ function closePosition(
 ): EpisodeState {
   const position = state.position;
   if (!position) throw new Error('cannot close an empty position');
-  const grossR =
-    position.direction === 'long'
-      ? (exit.price - position.entryPrice) / position.initialRisk
-      : (position.entryPrice - exit.price) / position.initialRisk;
-  const costRate = (options.costBps ?? 0) / 10_000;
-  const frictionR = (costRate * (position.entryPrice + exit.price)) / position.initialRisk;
-  const trade: EpisodeClosedTrade = {
-    tradeId: position.tradeId,
-    direction: position.direction,
-    decisionBar: position.decisionBar,
-    decisionTime: position.decisionTime,
-    entry: { time: position.entryTime, price: position.entryPrice },
-    exit,
-    exitReason,
-    initialStop: position.initialStop,
-    finalStop: position.stop,
-    target: position.target,
-    initialRisk: position.initialRisk,
-    grossR,
-    frictionR,
-    netR: grossR - frictionR,
-    mfeR: position.mfeR,
-    maeR: position.maeR,
-    holdingBars: position.holdingBars,
-    entryReason: position.entryReason,
-  };
+  const closed = reduceLots(
+    position,
+    openSize(position),
+    { ...exit, reason: exitReason },
+    costRateOf(options),
+  );
   return {
     ...state,
     phase: 'flat',
     position: null,
-    trades: [...state.trades, trade],
+    trades: [...state.trades, closedTradeOf(closed)],
+  };
+}
+
+function reducePosition(
+  state: EpisodeState,
+  size: number,
+  exit: { time: string; price: number },
+  options: EpisodeEngineOptions,
+): EpisodeState {
+  const position = state.position;
+  if (!position) throw new Error('cannot reduce an empty position');
+  return {
+    ...state,
+    position: reduceLots(position, size, { ...exit, reason: 'manual' }, costRateOf(options)),
   };
 }
 
@@ -685,7 +695,9 @@ function advanceEpisodeSingle(
     state.phase === 'open' &&
     action.type !== 'hold' &&
     action.type !== 'amend' &&
-    action.type !== 'exit_next_open'
+    action.type !== 'exit_next_open' &&
+    action.type !== 'add' &&
+    action.type !== 'reduce'
   ) {
     throw new Error(`action ${action.type} is invalid while the position is open`);
   }
@@ -727,24 +739,51 @@ function advanceEpisodeSingle(
     };
   }
 
-  if (working.phase === 'open' && working.position && action.type === 'exit_next_open') {
-    working = closePosition(
-      working,
-      'manual',
-      { time: bar.time, price: numberOf(bar.open) },
-      options,
-    );
-    if (remainingEpisodeBars(working, question) === 0) {
-      return finishAtHorizon(working, 'manual_exit', bar.time, bar);
-    }
-    return {
-      state: working,
-      asOf: bar.time,
-      bar,
-      event: 'manual_exit',
-      terminal: false,
-      result: null,
+  if (working.phase === 'open' && working.position && action.type === 'add') {
+    const added = positionSize(action.size, 'add size');
+    const held = openSize(working.position);
+    if (held + added > FULL_POSITION_SIZE + POSITION_SIZE_EPSILON)
+      throw new EpisodeGuardrailError(
+        `adding ${added} to a position already holding ${held} exceeds a full position`,
+      );
+    working = {
+      ...working,
+      position: addLot(working.position, {
+        time: bar.time,
+        price: numberOf(bar.open),
+        size: added,
+      }),
     };
+  }
+
+  if (
+    working.phase === 'open' &&
+    working.position &&
+    (action.type === 'exit_next_open' || action.type === 'reduce')
+  ) {
+    const exit = { time: bar.time, price: numberOf(bar.open) };
+    const held = openSize(working.position);
+    const requested =
+      action.type === 'reduce' && action.size != null
+        ? positionSize(action.size, 'reduce size')
+        : held;
+    if (requested > held + POSITION_SIZE_EPSILON)
+      throw new Error(`cannot reduce ${requested} of a position holding ${held}`);
+    if (requested >= held - POSITION_SIZE_EPSILON) {
+      working = closePosition(working, 'manual', exit, options);
+      if (remainingEpisodeBars(working, question) === 0) {
+        return finishAtHorizon(working, 'manual_exit', bar.time, bar);
+      }
+      return {
+        state: working,
+        asOf: bar.time,
+        bar,
+        event: 'manual_exit',
+        terminal: false,
+        result: null,
+      };
+    }
+    working = reducePosition(working, requested, exit, options);
   }
 
   let fillTiming: EntryFill['timing'] | null = null;
@@ -759,28 +798,26 @@ function advanceEpisodeSingle(
     if (fill !== null) {
       roseIntoFill = order.entry >= reference;
       const fillPrice = fill.price;
-      const initialRisk = Math.abs(fillPrice - order.initialStop);
-      if (initialRisk === 0) throw new Error('filled entry equals the initial stop');
+      const riskUnit = Math.abs(fillPrice - order.initialStop);
+      if (riskUnit === 0) throw new Error('filled entry equals the initial stop');
       working = {
         ...working,
         phase: 'open',
         order: null,
-        position: {
-          tradeId: order.tradeId,
-          direction: order.direction,
-          decisionBar: order.decisionBar,
-          decisionTime: order.decisionTime,
-          entryPrice: fillPrice,
-          entryTime: bar.time,
-          initialStop: order.initialStop,
-          initialRisk,
-          stop: order.stop,
-          target: order.target,
-          holdingBars: 0,
-          mfeR: 0,
-          maeR: 0,
-          entryReason: order.entryReason,
-        },
+        position: openPosition(
+          {
+            tradeId: order.tradeId,
+            direction: order.direction,
+            decisionBar: order.decisionBar,
+            decisionTime: order.decisionTime,
+            initialStop: order.initialStop,
+            riskUnit,
+            stop: order.stop,
+            target: order.target,
+            entryReason: order.entryReason,
+          },
+          { time: bar.time, price: fillPrice, size: order.size },
+        ),
       };
       fillTiming = fill.timing;
     } else {
