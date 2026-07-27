@@ -31,6 +31,8 @@ export function getTrainerBridge(
     validateAmend: (input) => call<TrainerAmendCheck>('validateAmend', input),
     cancel: (input) => call<TrainerStepResult>('cancel', input),
     exitNextOpen: (input) => call<TrainerStepResult>('exitNextOpen', input),
+    add: (input) => call<TrainerStepResult>('add', input),
+    reduce: (input) => call<TrainerStepResult>('reduce', input),
     reveal: (input) => call<TrainerReveal>('reveal', input),
   };
 }

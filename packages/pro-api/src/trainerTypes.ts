@@ -47,6 +47,25 @@ export interface TrainerExecution {
   price: number;
 }
 
+export type TrainerExitReason = 'stop' | 'target' | 'manual' | 'horizon';
+
+export interface TrainerTradeLot {
+  time: string;
+  price: number;
+  size: number;
+}
+
+export interface TrainerPositionLot extends TrainerTradeLot {
+  remaining: number;
+}
+
+export interface TrainerTradeExit {
+  time: string;
+  price: number;
+  size: number;
+  reason: TrainerExitReason;
+}
+
 export interface TrainerOrder {
   tradeId: number;
   direction: TrainerDirection;
@@ -61,15 +80,23 @@ export interface TrainerOrder {
   entryMode: TrainerEntryMode;
 }
 
+// Two fields move on their own and must not be recomputed by a reader. `riskUnit` locks at the
+// first fill and never changes again, so R stays comparable across adds; `entryPrice` is the
+// weighted average of the lots still open, which an add moves and a reduce does not. It is the
+// breakeven line TD-EXIT-01 is measured against, so an add can turn a stop that was legal illegal.
 export interface TrainerPosition {
   tradeId: number;
   direction: TrainerDirection;
   decisionBar: number;
   decisionTime: string;
+  lots: TrainerPositionLot[];
+  exits: TrainerTradeExit[];
   entryPrice: number;
   entryTime: string;
   initialStop: number;
-  initialRisk: number;
+  riskUnit: number;
+  realizedR: number;
+  realizedFrictionR: number;
   stop: number;
   target: number;
   holdingBars: number;
@@ -78,6 +105,9 @@ export interface TrainerPosition {
   entryReason: TrainerReason;
 }
 
+// `entry` / `exit` are the size-weighted averages of `lots` / `exits`, kept so a reader that only
+// wants one price per trade still has one. `lots` / `exits` are optional because answers recorded
+// before position sizing existed carry neither; a live episode always writes both.
 export interface TrainerClosedTrade {
   tradeId: number;
   direction: TrainerDirection;
@@ -85,7 +115,9 @@ export interface TrainerClosedTrade {
   decisionTime: string;
   entry: TrainerExecution;
   exit: TrainerExecution;
-  exitReason: 'stop' | 'target' | 'manual' | 'horizon';
+  lots?: TrainerTradeLot[];
+  exits?: TrainerTradeExit[];
+  exitReason: TrainerExitReason;
   initialStop: number;
   finalStop: number;
   target: number;
@@ -241,11 +273,15 @@ export interface TrainerAmendCheck {
 
 export type TrainerAdvancePeriod = TrainerViewPeriod | 'h1';
 
+// Sizes are fractions of a full position within (0, 1]; a `reduce` without one closes everything
+// still open, which is what `exit_next_open` already does.
 export type TrainerAction =
   | { type: 'hold'; bars?: number; period?: TrainerAdvancePeriod; reason?: TrainerReason }
   | { type: 'amend'; stop?: number; target?: number; reason: TrainerReason }
   | { type: 'cancel'; reason: TrainerReason }
-  | { type: 'exit_next_open'; reason: TrainerReason };
+  | { type: 'exit_next_open'; reason: TrainerReason }
+  | { type: 'add'; size: number; reason: TrainerReason }
+  | { type: 'reduce'; size?: number; reason: TrainerReason };
 
 export interface TrainerApi {
   listPool(): TrainerPoolCounts;
@@ -255,6 +291,7 @@ export interface TrainerApi {
     sessionId: string;
     submission: TrainerSubmission;
     entryMode: TrainerEntryMode;
+    size?: number;
   }): TrainerStepResult;
   step(input: { sessionId: string; action: TrainerAction; bars?: number }): TrainerStepResult;
   amend(input: {
@@ -270,12 +307,15 @@ export interface TrainerApi {
   }): TrainerAmendCheck;
   cancel(input: { sessionId: string; reason: TrainerReason }): TrainerStepResult;
   exitNextOpen(input: { sessionId: string; reason: TrainerReason }): TrainerStepResult;
+  add(input: { sessionId: string; size: number; reason: TrainerReason }): TrainerStepResult;
+  reduce(input: { sessionId: string; size?: number; reason: TrainerReason }): TrainerStepResult;
   reveal(input: { sessionId: string }): TrainerReveal;
 }
 
-// TRAINER_GUARDRAIL is a legal move the risk boundary refused (TD-EXIT-01) and belongs in front of
-// the trader; every other code is a caller or environment fault and belongs in front of a developer.
-// Collapsing them would either hide a refusal the trader must answer or dress a bug as trading advice.
+// TRAINER_GUARDRAIL is a legal move the risk boundary refused — a stop that gives back a booked
+// gain (TD-EXIT-01), an add beyond a full position — and belongs in front of the trader. Every
+// other code is a caller or environment fault and belongs in front of a developer. Collapsing them
+// would either hide a refusal the trader must answer or dress a bug as trading advice.
 export type TrainerErrorCode =
   | 'TRAINER_GUARDRAIL'
   | 'TRAINER_PROTOCOL'
