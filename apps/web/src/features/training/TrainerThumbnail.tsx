@@ -7,7 +7,7 @@ import {
   type ISeriesMarkersPluginApi,
   type Time,
 } from 'lightweight-charts';
-import type { IntradayBuilt } from '@kansoku/shared/types';
+import type { IntradayBuilt, SeriesMarker } from '@kansoku/shared/types';
 import { theme } from '@web/lib/theme';
 import { attachMarkers, observeSize, toCandleData, toMarkers } from '../charts/lw';
 import { tfDataOf, type ChartTf } from '../charts/intraday/timeframes';
@@ -19,6 +19,11 @@ import type { DrawingChartHandle } from '../charts/intraday/useIntradayCharts';
 // and the candles flatten into a line. The strip carries no volume, so it spends its whole height
 // on price.
 const PRICE_MARGINS = { top: 0.06, bottom: 0.06 };
+
+// The strip has no room for text: a label is taller than a candle here and there is no tooltip to
+// recover the detail from, so the arrows carry the whole message and the numbers stay in the table.
+const arrowsOnly = (markers: SeriesMarker[]): SeriesMarker[] =>
+  markers.map((marker) => ({ ...marker, text: '' }));
 
 interface ThumbnailChart {
   chart: IChartApi;
@@ -81,7 +86,7 @@ export function TrainerThumbnail({ built, activeTf, onChartHandle }: TrainerThum
     const data = tfDataOf(built, activeTf);
     if (!current || !data) return;
     current.candle.setData(toCandleData(data.candles));
-    current.markers.setMarkers(toMarkers(data.markers));
+    current.markers.setMarkers(toMarkers(arrowsOnly(data.markers)));
     current.chart.timeScale().fitContent();
   }, [built, activeTf]);
 

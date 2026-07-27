@@ -110,7 +110,20 @@ describe('buildTrainerIntradayBuilt epilogue', () => {
     bar('2026-01-05T14:30:00.000Z', 106),
   ];
 
-  it('extends only the base tier, appended after the last case bar', () => {
+  // Unlike the disjoint MID_BARS / TOP_BARS above, these are the real 15m and 1h roll-ups of
+  // BASE_BARS: the case stopped inside the 14:15Z quarter-hour and inside the 13:30Z hour, so both
+  // tiers end on a bucket the epilogue continues rather than replaces.
+  const ROLLED_MID: RawBar[] = [
+    { time: '2026-01-05T14:00:00Z', open: 99, high: 103, low: 98.5, close: 102, volume: 3303 },
+    { time: '2026-01-05T14:15:00Z', open: 102, high: 105, low: 101.5, close: 104, volume: 2207 },
+  ];
+  const ROLLED_TOP: RawBar[] = [
+    { time: '2026-01-05T13:30:00Z', open: 99, high: 105, low: 98.5, close: 104, volume: 5510 },
+  ];
+  const rolledView = () =>
+    makeView({ bars: { base: BASE_BARS, mid: ROLLED_MID, top: ROLLED_TOP } });
+
+  it('extends the base tier, appended after the last case bar', () => {
     const view = makeView();
     const built = buildTrainerIntradayBuilt(view, EPILOGUE_BARS);
     const baseTf = TRAINER_PERIOD_TO_CHART_TF[view.basePeriod];
@@ -122,30 +135,45 @@ describe('buildTrainerIntradayBuilt epilogue', () => {
     );
   });
 
-  it('leaves the mid and top tiers untouched', () => {
-    const view = makeView();
-    const built = buildTrainerIntradayBuilt(view, EPILOGUE_BARS);
-    const midTf = TRAINER_PERIOD_TO_CHART_TF['15m'];
-    const topTf = TRAINER_PERIOD_TO_CHART_TF['1h'];
+  it('rolls the epilogue into the mid tier instead of leaving it flat', () => {
+    const built = buildTrainerIntradayBuilt(rolledView(), EPILOGUE_BARS);
+    const candles = tfDataOf(built, TRAINER_PERIOD_TO_CHART_TF['15m'])?.candles ?? [];
 
-    expect(tfDataOf(built, midTf)?.candles.map((c) => c.time)).toEqual(
-      MID_BARS.map((b) => toTs(b.time)),
-    );
-    expect(tfDataOf(built, topTf)?.candles.map((c) => c.time)).toEqual(
-      TOP_BARS.map((b) => toTs(b.time)),
-    );
+    expect(candles).toEqual([
+      { time: toTs('2026-01-05T14:00:00Z'), open: 99, high: 103, low: 98.5, close: 102 },
+      { time: toTs('2026-01-05T14:15:00Z'), open: 102, high: 106, low: 101.5, close: 105 },
+      { time: toTs('2026-01-05T14:30:00Z'), open: 105, high: 107, low: 104.5, close: 106 },
+    ]);
   });
 
-  it('is a no-op when the epilogue is omitted, null, or empty', () => {
-    const view = makeView();
-    const baseTf = TRAINER_PERIOD_TO_CHART_TF[view.basePeriod];
-    const omitted = tfDataOf(buildTrainerIntradayBuilt(view), baseTf)?.candles ?? [];
-    const nulled = tfDataOf(buildTrainerIntradayBuilt(view, null), baseTf)?.candles ?? [];
-    const emptied = tfDataOf(buildTrainerIntradayBuilt(view, []), baseTf)?.candles ?? [];
+  it('rolls the epilogue into the top tier on its own wider buckets', () => {
+    const built = buildTrainerIntradayBuilt(rolledView(), EPILOGUE_BARS);
+    const candles = tfDataOf(built, TRAINER_PERIOD_TO_CHART_TF['1h'])?.candles ?? [];
 
-    expect(omitted).toHaveLength(BASE_BARS.length);
-    expect(nulled).toHaveLength(BASE_BARS.length);
-    expect(emptied).toHaveLength(BASE_BARS.length);
+    expect(candles).toEqual([
+      { time: toTs('2026-01-05T13:30:00Z'), open: 99, high: 106, low: 98.5, close: 105 },
+      { time: toTs('2026-01-05T14:30:00Z'), open: 105, high: 107, low: 104.5, close: 106 },
+    ]);
+  });
+
+  it('carries the epilogue volume onto the upper tiers too', () => {
+    const built = buildTrainerIntradayBuilt(rolledView(), EPILOGUE_BARS);
+    const volumes = tfDataOf(built, TRAINER_PERIOD_TO_CHART_TF['15m'])?.volumes ?? [];
+
+    expect(volumes.map((v) => v.value)).toEqual([3303, 3312, 1106]);
+  });
+
+  it('is a no-op on every tier when the epilogue is omitted, null, or empty', () => {
+    const view = rolledView();
+    const tiers = (built: ReturnType<typeof buildTrainerIntradayBuilt>) =>
+      (['m5', 'm15', 'h1'] as const).map((tf) => tfDataOf(built, tf)?.candles);
+    const expected = tiers(buildTrainerIntradayBuilt(view));
+
+    expect(expected[0]).toHaveLength(BASE_BARS.length);
+    expect(expected[1]).toHaveLength(ROLLED_MID.length);
+    expect(expected[2]).toHaveLength(ROLLED_TOP.length);
+    expect(tiers(buildTrainerIntradayBuilt(view, null))).toEqual(expected);
+    expect(tiers(buildTrainerIntradayBuilt(view, []))).toEqual(expected);
   });
 });
 
@@ -224,6 +252,20 @@ function closedTrade(overrides: Partial<TrainerClosedTrade> = {}): TrainerClosed
   };
 }
 
+const SCALED_TRADE = closedTrade({
+  entry: { time: '2026-01-05T14:05:00.000Z', price: 99 },
+  exit: { time: '2026-01-05T14:20:00.000Z', price: 104 },
+  lots: [
+    { time: '2026-01-05T14:05:00.000Z', price: 101, size: 0.5 },
+    { time: '2026-01-05T14:10:00.000Z', price: 97, size: 0.5 },
+  ],
+  exits: [
+    { time: '2026-01-05T14:15:00.000Z', price: 106, size: 0.5, reason: 'target' },
+    { time: '2026-01-05T14:20:00.000Z', price: 102, size: 0.5, reason: 'stop' },
+  ],
+  exitReason: 'stop',
+});
+
 function baseMarkers(trades: TrainerClosedTrade[]) {
   const view = makeView({ trades, terminal: true, phase: 'terminal' });
   const built = buildTrainerIntradayBuilt(view);
@@ -245,41 +287,62 @@ describe('buildTrainerIntradayBuilt trade marks', () => {
     expect(markers[0].text).toBe('进 101.00');
     expect(markers[1].id).toBe('trade-1-exit-0');
     expect(markers[1].time).toBe(toTs('2026-01-05T14:15:00.000Z'));
-    expect(markers[1].text).toBe('离场 103.00 · 止盈');
+    expect(markers[1].text).toBe('离 103.00 止盈');
   });
 
   // The trade-level entry/exit are size-weighted averages — 99.00 and 104.00 here — and neither was
   // ever traded. Marking them would also hide the add and the partial take-profit entirely.
   it('marks every lot and every exit of a scaled trade at its own bar and price', () => {
-    const markers = baseMarkers([
-      closedTrade({
-        entry: { time: '2026-01-05T14:05:00.000Z', price: 99 },
-        exit: { time: '2026-01-05T14:20:00.000Z', price: 104 },
-        lots: [
-          { time: '2026-01-05T14:05:00.000Z', price: 101, size: 0.5 },
-          { time: '2026-01-05T14:10:00.000Z', price: 97, size: 0.5 },
-        ],
-        exits: [
-          { time: '2026-01-05T14:15:00.000Z', price: 106, size: 0.5, reason: 'target' },
-          { time: '2026-01-05T14:20:00.000Z', price: 102, size: 0.5, reason: 'stop' },
-        ],
-        exitReason: 'stop',
-      }),
-    ]);
-    expect(markers.map((marker) => marker.text)).toEqual([
-      '进 101.00 50%',
-      '加 97.00 50%',
-      '离场 106.00 50% · 止盈',
-      '离场 102.00 50% · 止损',
-    ]);
+    const markers = baseMarkers([SCALED_TRADE]);
     expect(markers.map((marker) => marker.id)).toEqual([
       'trade-1-entry-0',
       'trade-1-entry-1',
       'trade-1-exit-0',
       'trade-1-exit-1',
     ]);
-    expect(markers[2].time).toBe(toTs('2026-01-05T14:15:00.000Z'));
-    expect(markers[3].time).toBe(toTs('2026-01-05T14:20:00.000Z'));
+    expect(markers.map((marker) => marker.time)).toEqual([
+      toTs('2026-01-05T14:05:00.000Z'),
+      toTs('2026-01-05T14:10:00.000Z'),
+      toTs('2026-01-05T14:15:00.000Z'),
+      toTs('2026-01-05T14:20:00.000Z'),
+    ]);
+    expect(markers.map((marker) => marker.tooltip)).toEqual([
+      '第 1 笔 · 多\n进场 $101.00 · 50%\n止损 $99.00 · 目标 $106.00',
+      '第 1 笔 · 多\n加仓 $97.00 · 50%\n止损 $99.00 · 目标 $106.00',
+      '第 1 笔 · 多\n离场 $106.00 · 50%（止盈）',
+      '第 1 笔 · 多\n离场 $102.00 · 50%（止损）\n净 1.00 R · 持有 2 根',
+    ]);
+  });
+
+  // Four labels over five bars is what the settlement actually looked like: they overprinted each
+  // other into an unreadable smear. One label per side per trade, and the arrows keep the rest.
+  it('labels only the first entry and the last exit of a scaled trade', () => {
+    const markers = baseMarkers([SCALED_TRADE]);
+    expect(markers.map((marker) => marker.text)).toEqual(['进 101.00 ×2', '', '', '离 102.00 ×2']);
+  });
+
+  it('drops a label that would land on top of one already placed on the same side', () => {
+    const markers = baseMarkers([
+      closedTrade({
+        entry: { time: '2026-01-05T14:00:00.000Z', price: 100 },
+        exit: { time: '2026-01-05T14:05:00.000Z', price: 98 },
+        exitReason: 'stop',
+      }),
+    ]);
+    expect(markers.map((m) => m.position)).toEqual(['belowBar', 'belowBar']);
+    expect(markers.map((m) => m.text)).toEqual(['进 100.00', '']);
+    expect(markers[1].tooltip).toContain('离场 $98.00');
+  });
+
+  it('keeps both labels when the same two marks sit on opposite sides', () => {
+    const markers = baseMarkers([
+      closedTrade({
+        entry: { time: '2026-01-05T14:00:00.000Z', price: 100 },
+        exit: { time: '2026-01-05T14:05:00.000Z', price: 102 },
+      }),
+    ]);
+    expect(markers.map((m) => m.position)).toEqual(['belowBar', 'aboveBar']);
+    expect(markers.map((m) => m.text)).toEqual(['进 100.00', '离 102.00 止盈']);
   });
 
   // A stopped-out long left at the bottom of the move; an exit mark floating above the bar reads as
@@ -290,7 +353,7 @@ describe('buildTrainerIntradayBuilt trade marks', () => {
     ]);
     expect(stopped[0].position).toBe('belowBar');
     expect(stopped[1].position).toBe('belowBar');
-    expect(stopped[1].text).toBe('离场 99.00 · 止损');
+    expect(stopped[1].tooltip).toContain('离场 $99.00');
 
     const won = baseMarkers([closedTrade()]);
     expect(won[1].position).toBe('aboveBar');
