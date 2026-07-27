@@ -3,7 +3,7 @@ import type { TrainerView } from '@kansoku/pro-api';
 import type { RawBar } from '@kansoku/shared/types';
 import { IntradayControlsProvider } from '../charts/intraday/controlsContext';
 import { IntradayChartOnly } from '../charts/intraday/IntradayChartOnly';
-import { tfLabel, type ChartTf } from '../charts/intraday/timeframes';
+import { tfDataOf, tfLabel, type ChartTf } from '../charts/intraday/timeframes';
 import type { DrawingChartHandle } from '../charts/intraday/useIntradayCharts';
 import type { TrainerBridge } from '../desktop/desktopTrainerBridge';
 import { getShellRpc } from '../desktop/shellRpc';
@@ -15,10 +15,12 @@ import {
 } from './payloadToIntradayBuilt';
 import { replayBands } from './replayBands';
 import { TrainerAdvanceControls } from './TrainerAdvanceControls';
+import { TrainerDrawingTools } from './TrainerDrawingTools';
 import { TrainerOrderPanel } from './TrainerOrderPanel';
 import { TrainerPeriodSwitch } from './TrainerPeriodSwitch';
 import { TrainerBandLegend, TrainerSettlement } from './TrainerSettlement';
 import { TrainerThumbnail } from './TrainerThumbnail';
+import { useTrainerDrawings } from './useTrainerDrawings';
 import { useTrainerReviewOverlay } from './useTrainerReviewOverlay';
 
 const STORAGE_NAMESPACE = 'trainer';
@@ -48,6 +50,12 @@ export function TrainerChart({ view, sessionId, bridge, onViewChange }: TrainerC
   const activeTf = isTrainerLadderTf(view.ladder, requestedTf) ? requestedTf : baseTf;
   const [chartHandle, setChartHandle] = useState<DrawingChartHandle | null>(null);
   const isDesktop = getShellRpc() !== null;
+
+  const barTimes = useMemo(
+    () => (tfDataOf(built, activeTf)?.candles ?? []).map((candle) => candle.time),
+    [built, activeTf],
+  );
+  const drawings = useTrainerDrawings(view.terminal ? null : chartHandle, barTimes, view.caseId);
 
   const bands = useMemo(
     () => (view.terminal ? replayBands(view, epilogueBars) : []),
@@ -112,6 +120,7 @@ export function TrainerChart({ view, sessionId, bridge, onViewChange }: TrainerC
             />
           ) : (
             <>
+              <TrainerDrawingTools api={drawings} />
               <TrainerAdvanceControls
                 key={`advance-${view.caseId}`}
                 view={view}
@@ -127,6 +136,8 @@ export function TrainerChart({ view, sessionId, bridge, onViewChange }: TrainerC
                 bridge={bridge}
                 sessionId={sessionId}
                 onViewChange={onViewChange}
+                drawingActive={drawings.tool !== 'off'}
+                onTakeChart={() => drawings.setTool('off')}
               />
             </>
           )}

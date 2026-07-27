@@ -262,7 +262,12 @@ function makePendingView(): TrainerView {
   });
 }
 
-function renderPanel(view: TrainerView, bridge: TrainerBridge, handle: DrawingChartHandle | null) {
+function renderPanel(
+  view: TrainerView,
+  bridge: TrainerBridge,
+  handle: DrawingChartHandle | null,
+  extra: { drawingActive?: boolean; onTakeChart?: () => void } = {},
+) {
   return render(
     <TrainerOrderPanel
       view={view}
@@ -270,6 +275,7 @@ function renderPanel(view: TrainerView, bridge: TrainerBridge, handle: DrawingCh
       bridge={bridge}
       sessionId="run-1"
       onViewChange={() => {}}
+      {...extra}
     />,
   );
 }
@@ -1143,5 +1149,174 @@ describe('TrainerOrderPanel position box lifecycle', () => {
     arm();
 
     expect(box.state().data).toMatchObject({ entry: 100, stop: 100, target1: 100 });
+  });
+});
+
+describe('TrainerOrderPanel quick market entry', () => {
+  // The default fixture's revealed bars bottom at 98.50, so the structural stop is one tick under
+  // it and the target is exactly twice that distance the other way.
+  it('fills all three levels from one press, with no side picked and nothing drawn', () => {
+    const { handle } = makeHandle();
+    const { bridge } = makeBridge();
+    renderPanel(makeView(), bridge, handle);
+
+    fireEvent.click(screen.getByRole('button', { name: '市价做多' }));
+
+    expect(screen.getByText('入场 100.00')).toBeTruthy();
+    expect(screen.getByText('止损 98.49')).toBeTruthy();
+    expect(screen.getByText('目标 103.03')).toBeTruthy();
+    expect(screen.getByText(/盈亏比/).textContent).toContain('2.00 : 1');
+  });
+
+  it('leaves one click between the press and being in', async () => {
+    const { handle } = makeHandle();
+    const { bridge, submit } = makeBridge();
+    renderPanel(makeView(), bridge, handle);
+
+    fireEvent.click(screen.getByRole('button', { name: '市价做多' }));
+    fireEvent.click(screen.getByRole('button', { name: '入场做多 1/2' }));
+
+    await waitFor(() => expect(submit).toHaveBeenCalledTimes(1));
+    const sent = submit.mock.calls[0][0] as {
+      submission: TrainerSubmission;
+      entryMode: string;
+      size: number;
+    };
+    expect(sent.entryMode).toBe('market');
+    expect(sent.size).toBe(0.5);
+    expect(sent.submission.entry_plan).toEqual({ entry: 100, stop: 98.49, target1: 103.03 });
+    expect(sent.submission.direction).toBe('long');
+  });
+
+  it('carries its own direction — 市价做空 needs no side picked first', () => {
+    const { handle } = makeHandle();
+    const { bridge } = makeBridge();
+    renderPanel(makeView(), bridge, handle);
+
+    fireEvent.click(screen.getByRole('button', { name: '市价做空' }));
+
+    expect(screen.getByRole('button', { name: '入场做空 1/2' })).toBeTruthy();
+    expect(screen.getByText('入场 100.00')).toBeTruthy();
+  });
+
+  it('re-locks the size presets when the auto stop is dragged past the ratio floor', () => {
+    const { handle, container } = makeHandle();
+    const { bridge } = makeBridge();
+    renderPanel(makeView(), bridge, handle);
+
+    fireEvent.click(screen.getByRole('button', { name: '市价做多' }));
+    expect(
+      (screen.getByRole('button', { name: '入场做多 1/2' }) as HTMLButtonElement).disabled,
+    ).toBe(false);
+
+    // Dragged to 97.00 (y=203) the risk becomes 3.00 while the auto target still sits 3.03 away,
+    // which is 1.01 : 1 — under the floor the auto-filled pair was built to clear.
+    dragOnChart(container, 300 - 98.49, 203);
+
+    expect(screen.getByText('止损 97.00')).toBeTruthy();
+    expect(screen.getByText(/盈亏比/).textContent).toContain('1.01 : 1');
+    for (const name of ['入场做多 全仓', '入场做多 1/2', '入场做多 1/4']) {
+      expect((screen.getByRole('button', { name }) as HTMLButtonElement).disabled).toBe(true);
+    }
+  });
+
+  it('asks for a hand-drawn stop when the revealed bars offer no structure below', () => {
+    const { handle } = makeHandle();
+    const { bridge } = makeBridge();
+    const flat: RawBar[] = [
+      { time: '2026-01-05T14:00:00.000Z', open: 100, high: 102, low: 100, close: 100, volume: 1 },
+    ];
+    renderPanel(makeView({ bars: { base: flat, mid: flat, top: flat } }), bridge, handle);
+
+    fireEvent.click(screen.getByRole('button', { name: '市价做多' }));
+
+    expect(screen.queryByText(/^止损 /)).toBeNull();
+    expect(screen.getByText(/找不到能放止损的位置/)).toBeTruthy();
+  });
+});
+
+describe('TrainerOrderPanel pointer arbitration with the drawing tools', () => {
+  it('detaches the placement drag while a drawing tool owns the chart', () => {
+    const { handle, container } = makeHandle();
+    const { bridge } = makeBridge();
+    const { rerender } = renderPanel(makeView(), bridge, handle);
+
+    arm();
+    rerender(
+      <TrainerOrderPanel
+        view={makeView()}
+        handle={handle}
+        bridge={bridge}
+        sessionId="run-1"
+        onViewChange={() => {}}
+        drawingActive
+      />,
+    );
+
+    dragOnChart(container, 210, 175);
+    expect(screen.queryByText(/^止损 /)).toBeNull();
+  });
+
+  it('detaches the stop/target handles while a drawing tool owns the chart', () => {
+    const { handle, container } = makeHandle();
+    const { bridge } = makeBridge();
+    const { rerender } = renderPanel(makeView(), bridge, handle);
+
+    placeOrder(container, 210, 175);
+    expect(screen.getByText('止损 90.00')).toBeTruthy();
+
+    rerender(
+      <TrainerOrderPanel
+        view={makeView()}
+        handle={handle}
+        bridge={bridge}
+        sessionId="run-1"
+        onViewChange={() => {}}
+        drawingActive
+      />,
+    );
+    dragOnChart(container, 210, 205);
+
+    expect(screen.getByText('止损 90.00')).toBeTruthy();
+  });
+
+  it('keeps panning off while a drawing tool is active, and hands it back when it ends', () => {
+    const { handle, chart } = makeHandle();
+    const { bridge } = makeBridge();
+    const { rerender } = renderPanel(makeView(), bridge, handle);
+    expect(chart.applyOptions).not.toHaveBeenCalled();
+
+    const withDrawing = (drawingActive: boolean) =>
+      rerender(
+        <TrainerOrderPanel
+          view={makeView()}
+          handle={handle}
+          bridge={bridge}
+          sessionId="run-1"
+          onViewChange={() => {}}
+          drawingActive={drawingActive}
+        />,
+      );
+
+    withDrawing(true);
+    expect(chart.applyOptions).toHaveBeenLastCalledWith({
+      handleScroll: false,
+      handleScale: false,
+    });
+
+    withDrawing(false);
+    expect(chart.applyOptions).toHaveBeenLastCalledWith({ handleScroll: true, handleScale: true });
+  });
+
+  it('takes the chart back from the drawing tools on every direction press', () => {
+    const { handle } = makeHandle();
+    const { bridge } = makeBridge();
+    const onTakeChart = vi.fn();
+    renderPanel(makeView(), bridge, handle, { onTakeChart });
+
+    fireEvent.click(screen.getByRole('button', { name: '做多' }));
+    fireEvent.click(screen.getByRole('button', { name: '市价做空' }));
+
+    expect(onTakeChart).toHaveBeenCalledTimes(2);
   });
 });

@@ -649,9 +649,22 @@ a:hover {
 .trainer-order-row .input {
   width: 90px;
 }
-.trainer-order-panel .btn[aria-pressed='true'] {
+.trainer-order-panel .btn[aria-pressed='true'],
+.trainer-draw-tools .btn[aria-pressed='true'] {
   color: var(--accent);
   border-color: var(--accent);
+}
+.trainer-draw-tools {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--border);
+}
+.trainer-draw-tools .trainer-order-hint {
+  margin-left: 10px;
 }
 .trainer-order-hint {
   color: var(--text-secondary);

@@ -1,8 +1,11 @@
 import type { Annotation, AnnotationKind, AnnotationPoint } from '@kansoku/shared/types';
 import { hitTest, type HitRegion, type Pt } from '@kansoku/shared/drawings';
 
+// 'off' is painted but inert: every branch in useDrawingsInteraction must fall through it, so a
+// second pointer consumer on the same canvas can own the gesture without the drawings layer being
+// torn down and the shapes vanishing mid-analysis.
 export type DrawingTool =
-  'cursor' | 'measure' | 'trendline' | 'hline' | 'rect' | 'fib' | 'polyline';
+  'off' | 'cursor' | 'measure' | 'trendline' | 'hline' | 'rect' | 'fib' | 'polyline';
 
 export type TwoPointTool = 'measure' | 'trendline' | 'rect' | 'fib';
 

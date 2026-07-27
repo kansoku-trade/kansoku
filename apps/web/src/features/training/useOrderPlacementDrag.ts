@@ -16,7 +16,7 @@ export function useOrderPlacementDrag(
 
   useEffect(() => {
     if (!handle || !armed) return;
-    const { chart, series, container } = handle;
+    const { series, container } = handle;
     let stop: number | null = null;
 
     const priceAt = (clientY: number) =>
@@ -44,24 +44,10 @@ export function useOrderPlacementDrag(
       callbacksRef.current.onCommit(pressed, priceAt(e.clientY) ?? pressed);
     };
 
-    // Panning is off for the whole armed window, not just the drag itself: this gesture starts
-    // anywhere on the canvas, so lightweight-charts would otherwise scroll the series out from
-    // under the press. Same lock useDrawings applies while a drawing tool is armed. applyOptions
-    // throws on an already-disposed chart, which is reachable on unmount.
-    const lockScroll = (locked: boolean) => {
-      try {
-        chart.applyOptions({ handleScroll: !locked, handleScale: !locked });
-      } catch {
-        return;
-      }
-    };
-
-    lockScroll(true);
     container.addEventListener('pointerdown', onPointerDown);
     window.addEventListener('pointermove', onPointerMove);
     window.addEventListener('pointerup', onPointerUp);
     return () => {
-      lockScroll(false);
       container.removeEventListener('pointerdown', onPointerDown);
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);

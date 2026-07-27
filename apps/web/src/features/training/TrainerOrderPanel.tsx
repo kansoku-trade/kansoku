@@ -34,7 +34,9 @@ import {
   type OrderDraft,
   type Placement,
 } from './orderDraft';
+import { quickEntryDraft } from './quickEntry';
 import { freshVerdict, useAmendCheck, type AmendVerdict } from './useAmendCheck';
+import { useChartScrollLock } from './useChartScrollLock';
 import { useOrderBoxDrag } from './useOrderBoxDrag';
 import { useOrderPlacementDrag } from './useOrderPlacementDrag';
 
@@ -75,7 +77,11 @@ export interface TrainerOrderPanelProps {
   bridge: TrainerBridge;
   sessionId: string;
   onViewChange: (view: TrainerView) => void;
+  drawingActive?: boolean;
+  onTakeChart?: () => void;
 }
+
+type AutoFill = 'none' | 'filled' | 'unavailable';
 
 export function TrainerOrderPanel({
   view,
@@ -83,11 +89,14 @@ export function TrainerOrderPanel({
   bridge,
   sessionId,
   onViewChange,
+  drawingActive = false,
+  onTakeChart,
 }: TrainerOrderPanelProps) {
   const [direction, setDirection] = useState<TrainerDirection | null>(null);
   const [placing, setPlacing] = useState(false);
   const [placement, setPlacement] = useState<Placement | null>(null);
   const [missedSide, setMissedSide] = useState(false);
+  const [autoFill, setAutoFill] = useState<AutoFill>('none');
   const [entryReason, setEntryReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -191,11 +200,18 @@ export function TrainerOrderPanel({
     if (settle) setSettledAmend(next);
   };
 
-  useOrderPlacementDrag(flat ? handle : null, placing, {
+  // A drawing tool and the order tools both drag on this canvas, so only one of them is ever
+  // attached to it: picking a drawing tool detaches both order drags, and pressing any direction
+  // button calls onTakeChart to put the drawing tool back to 'off'.
+  const orderHandle = drawingActive ? null : handle;
+  useChartScrollLock(handle, placing || drawingActive);
+
+  useOrderPlacementDrag(flat ? orderHandle : null, placing, {
     // The prices are set on every frame, not only on release, so the numbers about to be sent are
     // the ones on screen the whole time.
     onPreview: (stop, target) => {
       setMissedSide(false);
+      setAutoFill('none');
       setPlacement({ stop, target });
     },
     onCommit: (stop, target) => {
@@ -222,7 +238,13 @@ export function TrainerOrderPanel({
     });
   };
 
-  const edgeHandle = flat ? (placing || !draft ? null : handle) : boxActive ? handle : null;
+  const edgeHandle = flat
+    ? placing || !draft
+      ? null
+      : orderHandle
+    : boxActive
+      ? orderHandle
+      : null;
   useOrderBoxDrag(
     edgeHandle,
     { stop: boxStop, target1: boxTarget },
@@ -348,7 +370,9 @@ export function TrainerOrderPanel({
   // side you are already on with nothing drawn backs out instead, which is the only way to hand
   // panning back to the chart once the placement drag has locked it.
   const pickDirection = (next: TrainerDirection) => {
+    onTakeChart?.();
     setMissedSide(false);
+    setAutoFill('none');
     if (direction === next && placement === null) {
       setDirection(null);
       setPlacing(false);
@@ -357,6 +381,25 @@ export function TrainerOrderPanel({
     setDirection(next);
     setPlacement(null);
     setPlacing(true);
+  };
+
+  // Skips the drag entirely: the stop comes from the revealed swing structure and the target from
+  // the default reward-to-risk, leaving one click (a size preset) between here and being in. Both
+  // lines stay draggable afterwards, exactly as if they had been drawn by hand.
+  const quickEntry = (next: TrainerDirection) => {
+    onTakeChart?.();
+    setMissedSide(false);
+    setPlacing(false);
+    setDirection(next);
+    const auto = quickEntryDraft(view, next);
+    if (!auto) {
+      setPlacement(null);
+      setAutoFill('unavailable');
+      setPlacing(true);
+      return;
+    }
+    setPlacement({ stop: auto.stop, target: auto.target1 });
+    setAutoFill('filled');
   };
 
   const submit = async (size: number) => {
@@ -370,6 +413,7 @@ export function TrainerOrderPanel({
       setEntryReason('');
       setPlacement(null);
       setDirection(null);
+      setAutoFill('none');
       onViewChange(result.data.view);
       return;
     }
@@ -379,14 +423,24 @@ export function TrainerOrderPanel({
 
   const hint = ((): { text: string; warn: boolean } => {
     if (!direction)
-      return { text: '先选做多还是做空，再到图上拖一条：按下是止损，松手是目标', warn: false };
+      return {
+        text: '先选做多还是做空，再到图上拖一条：按下是止损，松手是目标；想直接进就按市价',
+        warn: false,
+      };
     if (missedSide) return { text: `${sideRule(direction, entry)}，再拖一次`, warn: true };
+    if (autoFill === 'unavailable')
+      return { text: '已经走出来的这段里找不到能放止损的位置，请自己在图上拖一条', warn: true };
     if (stale)
       return {
         text: `现价 ${fmt(entry)} 已经越过你画的线，再按一次「${DIRECTION_LABEL[direction]}」重画`,
         warn: true,
       };
     if (placing) return { text: `在图上按住拖动：${sideRule(direction, entry)}`, warn: false };
+    if (autoFill === 'filled')
+      return {
+        text: '止损放在最近一个摆动低/高点外一档，目标按 2 : 1 铺好；两条线都能拖，也可以直接选仓位进场',
+        warn: false,
+      };
     return { text: `再按一次「${DIRECTION_LABEL[direction]}」可以重画`, warn: false };
   })();
 
@@ -407,6 +461,13 @@ export function TrainerOrderPanel({
           onClick={() => pickDirection('short')}
         >
           做空
+        </button>
+        <span className="trainer-size-label">快捷</span>
+        <button className="btn btn--accent" onClick={() => quickEntry('long')}>
+          市价做多
+        </button>
+        <button className="btn btn--accent" onClick={() => quickEntry('short')}>
+          市价做空
         </button>
       </div>
       <div className="trainer-order-row">
