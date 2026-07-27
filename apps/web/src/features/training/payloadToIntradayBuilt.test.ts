@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { toTs } from '@kansoku/core/analysis/indicators';
+import { macd, toTs } from '@kansoku/core/analysis/indicators';
 import type { TrainerView } from '@kansoku/pro-api';
 import type { RawBar } from '@kansoku/shared/types';
 import {
@@ -146,6 +146,44 @@ describe('buildTrainerIntradayBuilt epilogue', () => {
     expect(omitted).toHaveLength(BASE_BARS.length);
     expect(nulled).toHaveLength(BASE_BARS.length);
     expect(emptied).toHaveLength(BASE_BARS.length);
+  });
+});
+
+describe('buildTrainerIntradayBuilt MACD', () => {
+  function seriesBars(n: number): RawBar[] {
+    const start = Date.parse('2026-01-05T14:00:00.000Z');
+    return Array.from({ length: n }, (_, i) =>
+      bar(new Date(start + i * 5 * 60_000).toISOString(), 100 + Math.sin(i / 5) * 3 + i * 0.1),
+    );
+  }
+
+  it('leaves the MACD series empty when the tier has too few bars to warm up', () => {
+    const view = makeView();
+    const built = buildTrainerIntradayBuilt(view);
+    const tf = TRAINER_PERIOD_TO_CHART_TF[view.basePeriod];
+    const data = tfDataOf(built, tf);
+
+    expect(data?.macdDif).toEqual([]);
+    expect(data?.macdDea).toEqual([]);
+    expect(data?.macdHist).toEqual([]);
+  });
+
+  it('computes dif/dea/hist with @kansoku/core\'s macd() once the tier has enough bars', () => {
+    const bars = seriesBars(80);
+    const view = makeView({ bars: { base: bars, mid: MID_BARS, top: TOP_BARS } });
+    const built = buildTrainerIntradayBuilt(view);
+    const tf = TRAINER_PERIOD_TO_CHART_TF[view.basePeriod];
+    const data = tfDataOf(built, tf);
+
+    const expected = macd(bars.map((b) => Number(b.close)));
+    const expectedDifCount = expected.dif.filter((v) => v !== null).length;
+    const expectedHistCount = expected.hist.filter((v) => v !== null).length;
+
+    expect(expectedDifCount).toBeGreaterThan(0);
+    expect(data?.macdDif).toHaveLength(expectedDifCount);
+    expect(data?.macdHist).toHaveLength(expectedHistCount);
+    expect(data?.macdDif.at(-1)?.value).toBe(expected.dif.at(-1));
+    expect(data?.macdHist.every((p) => p.color === '#26a69a' || p.color === '#ef5350')).toBe(true);
   });
 });
 

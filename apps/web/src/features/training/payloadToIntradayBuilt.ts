@@ -1,5 +1,5 @@
 import type { TrainerView, TrainerViewPeriod } from '@kansoku/pro-api';
-import { toTs } from '@kansoku/core/analysis/indicators';
+import { lineData, macd, toTs } from '@kansoku/core/analysis/indicators';
 import type {
   Candle,
   ColoredPoint,
@@ -32,24 +32,33 @@ export function trainerAdvancePeriod(ladder: TrainerLadder, tf: ChartTf): Traine
 }
 
 function rawBarsToTfData(bars: RawBar[]): IntradayTfData {
-  const candles: Candle[] = bars.map((b) => ({
-    time: toTs(b.time),
+  const timesTs = bars.map((b) => toTs(b.time));
+  const closes = bars.map((b) => Number(b.close));
+  const candles: Candle[] = bars.map((b, i) => ({
+    time: timesTs[i],
     open: Number(b.open),
     high: Number(b.high),
     low: Number(b.low),
-    close: Number(b.close),
+    close: closes[i],
   }));
-  const volumes: ColoredPoint[] = bars.map((b) => ({
-    time: toTs(b.time),
+  const volumes: ColoredPoint[] = bars.map((b, i) => ({
+    time: timesTs[i],
     value: Number(b.volume),
   }));
+  const { dif, dea, hist } = macd(closes);
+  const macdHist: ColoredPoint[] = [];
+  for (let i = 0; i < timesTs.length; i++) {
+    const h = hist[i];
+    if (h === null) continue;
+    macdHist.push({ time: timesTs[i], value: h, color: h >= 0 ? '#26a69a' : '#ef5350' });
+  }
   return {
     candles,
     volumes,
     emas: [],
-    macdDif: [],
-    macdDea: [],
-    macdHist: [],
+    macdDif: lineData(timesTs, dif),
+    macdDea: lineData(timesTs, dea),
+    macdHist,
     macdCrossMarkers: [],
     markers: [],
     priceConnectors: [],
