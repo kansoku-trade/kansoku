@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { TrainerPosition, TrainerStepResult, TrainerView } from '@kansoku/pro-api';
 import type { RawBar } from '@kansoku/shared/types';
 import type { TrainerBridge } from '../desktop/desktopTrainerBridge';
+import { NO_REASON_GIVEN } from './orderDraft';
 import { TrainerAdvanceControls } from './TrainerAdvanceControls';
 
 function bar(iso: string, close: number): RawBar {
@@ -120,9 +121,11 @@ describe('TrainerAdvanceControls single step', () => {
   });
 });
 
-describe('TrainerAdvanceControls hold-reason gate', () => {
-  it('locks step and play while a position is open until a reason is entered', () => {
-    const step = vi.fn();
+describe('TrainerAdvanceControls hold reason', () => {
+  // The engine refuses a hold with no reason while pending/open, so the field is optional but the
+  // wire value is not: an untyped field records that none was given rather than inventing one.
+  it('steps with an empty reason field, sending the not-given marker', async () => {
+    const step = vi.fn(async () => ({ ok: true as const, data: stepResult() }));
     const view = makeView({ phase: 'open', position: makePosition() });
     render(
       <TrainerAdvanceControls
@@ -136,17 +139,42 @@ describe('TrainerAdvanceControls hold-reason gate', () => {
 
     const stepButton = screen.getByRole('button', { name: /步进/ }) as HTMLButtonElement;
     const playButton = screen.getByRole('button', { name: '播放' }) as HTMLButtonElement;
-    expect(stepButton.disabled).toBe(true);
-    expect(playButton.disabled).toBe(true);
-
-    fireEvent.click(stepButton);
-    expect(step).not.toHaveBeenCalled();
-
-    fireEvent.change(screen.getByLabelText('继续持有理由'), {
-      target: { value: '价格仍在均线上方，继续持有' },
-    });
+    expect((screen.getByLabelText('继续持有理由') as HTMLInputElement).value).toBe('');
     expect(stepButton.disabled).toBe(false);
     expect(playButton.disabled).toBe(false);
+
+    fireEvent.click(stepButton);
+
+    await waitFor(() => expect(step).toHaveBeenCalledTimes(1));
+    expect(step).toHaveBeenCalledWith({
+      sessionId: 'run-1',
+      action: {
+        type: 'hold',
+        bars: 1,
+        period: '5m',
+        reason: { category: 'other', summary: NO_REASON_GIVEN },
+      },
+    });
+  });
+
+  // An empty field sends the same marker every bar by design; flagging that as "reused words"
+  // would put a reuse warning on a trader who never wrote anything to reuse.
+  it('does not flag the reuse marker when the field is empty', async () => {
+    const view = makeView({ phase: 'open', position: makePosition() });
+    const step = vi.fn(async () => ({ ok: true as const, data: stepResult({ view }) }));
+    render(
+      <TrainerAdvanceControls
+        view={view}
+        period="5m"
+        bridge={makeBridge(step)}
+        sessionId="run-1"
+        onViewChange={() => {}}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /步进/ }));
+    await waitFor(() => expect(step).toHaveBeenCalledTimes(1));
+    expect(screen.queryByText('沿用上一次理由')).toBeNull();
   });
 
   it('sends the entered reason on a hold while a position is open', async () => {

@@ -11,6 +11,7 @@ import type { RawBar } from '@kansoku/shared/types';
 import type { PositionBoxPrimitive } from '../charts/intraday/positionBoxPrimitive';
 import type { DrawingChartHandle } from '../charts/intraday/useIntradayCharts';
 import type { TrainerBridge } from '../desktop/desktopTrainerBridge';
+import { NO_REASON_GIVEN } from './orderDraft';
 import { TrainerOrderPanel } from './TrainerOrderPanel';
 
 function bar(iso: string, close: number): RawBar {
@@ -147,9 +148,8 @@ function makeSpyBridge(view: TrainerView) {
   return { bridge: spies as unknown as TrainerBridge, spies, methods };
 }
 
-function arm(container: HTMLElement) {
-  fireEvent.click(screen.getByRole('button', { name: '下单' }));
-  return container;
+function arm(direction: '做多' | '做空' = '做多') {
+  fireEvent.click(screen.getByRole('button', { name: direction }));
 }
 
 function dragOnChart(container: HTMLElement, fromY: number, toY: number, frames = 1) {
@@ -160,8 +160,13 @@ function dragOnChart(container: HTMLElement, fromY: number, toY: number, frames 
   fireEvent.pointerUp(window, { clientY: toY });
 }
 
-function placeOrder(container: HTMLElement, fromY: number, toY: number) {
-  arm(container);
+function placeOrder(
+  container: HTMLElement,
+  fromY: number,
+  toY: number,
+  direction: '做多' | '做空' = '做多',
+) {
+  arm(direction);
   dragOnChart(container, fromY, toY);
 }
 
@@ -273,8 +278,94 @@ afterEach(() => {
   cleanup();
 });
 
+describe('TrainerOrderPanel direction choice', () => {
+  // The direction call is made before the chart is touched; the drag only locates the stop.
+  it('arms the chart on the picked side and never derives a side from the drag', () => {
+    const { handle, container } = makeHandle();
+    const { bridge } = makeBridge();
+    renderPanel(makeView(), bridge, handle);
+
+    expect(screen.queryByRole('button', { name: '下单' })).toBeNull();
+    const long = screen.getByRole('button', { name: '做多' }) as HTMLButtonElement;
+    expect(long.ariaPressed).toBe('false');
+
+    fireEvent.click(long);
+    expect(long.ariaPressed).toBe('true');
+    expect((screen.getByRole('button', { name: '做空' }) as HTMLButtonElement).ariaPressed).toBe(
+      'false',
+    );
+
+    dragOnChart(container, 210, 175);
+    expect(screen.getByText('入场做多')).toBeTruthy();
+    expect(screen.queryByText('入场做空')).toBeNull();
+  });
+
+  it('reads the same drag as a short once 做空 is the picked side', () => {
+    const { handle, container } = makeHandle();
+    const { bridge } = makeBridge();
+    renderPanel(makeView(), bridge, handle);
+
+    placeOrder(container, 190, 225, '做空');
+
+    expect(screen.getByText('止损 110.00')).toBeTruthy();
+    expect(screen.getByText('目标 75.00')).toBeTruthy();
+    expect(screen.getByText('入场做空')).toBeTruthy();
+  });
+
+  it('switches side and drops the drawn lines when the other direction is picked', () => {
+    const { handle, container } = makeHandle();
+    const { bridge } = makeBridge();
+    renderPanel(makeView(), bridge, handle);
+    placeOrder(container, 210, 175);
+    expect(screen.getByText('入场做多')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: '做空' }));
+
+    expect(screen.queryByText(/^止损 /)).toBeNull();
+    expect((screen.getByRole('button', { name: '做空' }) as HTMLButtonElement).ariaPressed).toBe(
+      'true',
+    );
+    dragOnChart(container, 190, 225);
+    expect(screen.getByText('入场做空')).toBeTruthy();
+  });
+
+  it('re-arms and clears the drawn order when the picked side is pressed again', () => {
+    const { handle, container } = makeHandle();
+    const { bridge } = makeBridge();
+    renderPanel(makeView(), bridge, handle);
+    placeOrder(container, 210, 175);
+
+    fireEvent.click(screen.getByRole('button', { name: '做多' }));
+
+    expect(screen.queryByText(/^止损 /)).toBeNull();
+    expect((screen.getByRole('button', { name: '做多' }) as HTMLButtonElement).ariaPressed).toBe(
+      'true',
+    );
+  });
+
+  // Placement arms a canvas-wide pointer capture that turns chart panning off; with the 下单
+  // button gone, pressing the picked side again is the only way back out of it.
+  it('backs out of an armed side with nothing drawn, handing panning back to the chart', () => {
+    const { handle, chart } = makeHandle();
+    const { bridge } = makeBridge();
+    renderPanel(makeView(), bridge, handle);
+
+    arm();
+    expect(chart.applyOptions).toHaveBeenLastCalledWith({
+      handleScroll: false,
+      handleScale: false,
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: '做多' }));
+    expect((screen.getByRole('button', { name: '做多' }) as HTMLButtonElement).ariaPressed).toBe(
+      'false',
+    );
+    expect(chart.applyOptions).toHaveBeenLastCalledWith({ handleScroll: true, handleScale: true });
+  });
+});
+
 describe('TrainerOrderPanel placement drag', () => {
-  it('takes the press as the stop and the release as the target, upward through entry being a long', () => {
+  it('takes the press as the stop and the release as the target', () => {
     const { handle, container } = makeHandle();
     const { bridge } = makeBridge();
     renderPanel(makeView(), bridge, handle);
@@ -284,42 +375,26 @@ describe('TrainerOrderPanel placement drag', () => {
     expect(screen.getByText('止损 90.00')).toBeTruthy();
     expect(screen.getByText('目标 125.00')).toBeTruthy();
     expect(screen.getByText('入场 100.00')).toBeTruthy();
-    expect(screen.getByText('入场做多')).toBeTruthy();
-    expect(screen.queryByText('入场做空')).toBeNull();
   });
 
-  it('shows the direction and the live prices before the pointer is released', () => {
+  it('shows the live prices before the pointer is released', () => {
     const { handle, container } = makeHandle();
     const { bridge } = makeBridge();
     renderPanel(makeView(), bridge, handle);
 
-    arm(container);
+    arm();
     fireEvent.pointerDown(container, { clientY: 210 });
     fireEvent.pointerMove(window, { clientY: 195 });
     expect(screen.getByText('止损 90.00')).toBeTruthy();
     expect(screen.getByText('目标 105.00')).toBeTruthy();
-    expect(screen.getByText('入场做多')).toBeTruthy();
-
-    fireEvent.pointerMove(window, { clientY: 205 });
-    expect(screen.queryByText('入场做多')).toBeNull();
 
     fireEvent.pointerUp(window, { clientY: 195 });
     expect(screen.getByText('目标 105.00')).toBeTruthy();
   });
 
-  it('reads the mirror-image drag as a short, stop above entry', () => {
-    const { handle, container } = makeHandle();
-    const { bridge } = makeBridge();
-    renderPanel(makeView(), bridge, handle);
-
-    placeOrder(container, 190, 225);
-
-    expect(screen.getByText('止损 110.00')).toBeTruthy();
-    expect(screen.getByText('目标 75.00')).toBeTruthy();
-    expect(screen.getByText('入场做空')).toBeTruthy();
-  });
-
-  it('places nothing when the drag never crosses the entry line', () => {
+  // A drag that stays below entry has drawn a long whose target is a loss. Direction is no longer
+  // in question, so the correction names the side that is wrong rather than the missing crossing.
+  it('places nothing when the drag lands on the wrong side for the picked direction', () => {
     const { handle, container } = makeHandle();
     const { bridge } = makeBridge();
     renderPanel(makeView(), bridge, handle);
@@ -327,14 +402,28 @@ describe('TrainerOrderPanel placement drag', () => {
     placeOrder(container, 210, 205);
 
     expect(screen.queryByText(/^止损 /)).toBeNull();
-    expect(screen.getByText(/没有穿过入场线 100.00/)).toBeTruthy();
-    // The tool stays armed so the next attempt needs no second press of 下单.
-    expect((screen.getByRole('button', { name: '取消' }) as HTMLButtonElement).ariaPressed).toBe(
+    expect(screen.getByText(/止损要在入场线 100.00 下方，目标要在上方，再拖一次/)).toBeTruthy();
+    // The side stays armed so the next attempt needs no second press.
+    expect((screen.getByRole('button', { name: '做多' }) as HTMLButtonElement).ariaPressed).toBe(
       'true',
     );
   });
 
-  it('ignores pointer events on the chart until the tool is armed', () => {
+  // The drag that used to *mean* "long" is now just a badly-placed short: the picked side wins and
+  // the panel refuses rather than quietly flipping to the direction the gesture would have implied.
+  it('refuses the long-shaped drag while 做空 is the picked side instead of flipping to a long', () => {
+    const { handle, container } = makeHandle();
+    const { bridge } = makeBridge();
+    renderPanel(makeView(), bridge, handle);
+
+    placeOrder(container, 210, 175, '做空');
+
+    expect(screen.queryByText('入场做多')).toBeNull();
+    expect(screen.queryByText(/^止损 /)).toBeNull();
+    expect(screen.getByText(/止损要在入场线 100.00 上方，目标要在下方，再拖一次/)).toBeTruthy();
+  });
+
+  it('ignores pointer events on the chart until a side is picked', () => {
     const { handle, container } = makeHandle();
     const { bridge } = makeBridge();
     renderPanel(makeView(), bridge, handle);
@@ -342,34 +431,19 @@ describe('TrainerOrderPanel placement drag', () => {
     dragOnChart(container, 210, 175);
 
     expect(screen.queryByText(/^止损 /)).toBeNull();
-    expect(screen.getByRole('button', { name: '下单' })).toBeTruthy();
   });
 
-  it('locks chart panning only while the tool is armed', () => {
+  it('locks chart panning only while a side is armed', () => {
     const { handle, container, chart } = makeHandle();
     const { bridge } = makeBridge();
     renderPanel(makeView(), bridge, handle);
     expect(chart.applyOptions).not.toHaveBeenCalled();
 
-    arm(container);
+    arm();
     expect(chart.applyOptions).toHaveBeenCalledWith({ handleScroll: false, handleScale: false });
 
     dragOnChart(container, 210, 175);
     expect(chart.applyOptions).toHaveBeenLastCalledWith({ handleScroll: true, handleScale: true });
-  });
-
-  it('re-arms and clears the drawn order when 重画 is pressed', () => {
-    const { handle, container } = makeHandle();
-    const { bridge } = makeBridge();
-    renderPanel(makeView(), bridge, handle);
-    placeOrder(container, 210, 175);
-
-    fireEvent.click(screen.getByRole('button', { name: '重画' }));
-
-    expect(screen.queryByText(/^止损 /)).toBeNull();
-    expect((screen.getByRole('button', { name: '取消' }) as HTMLButtonElement).ariaPressed).toBe(
-      'true',
-    );
   });
 
   it('keeps adjusting the drawn lines by their handles after the drag settles', () => {
@@ -464,7 +538,7 @@ describe('TrainerOrderPanel submit', () => {
     const { bridge, submit } = makeBridge();
     renderPanel(makeView(), bridge, handle);
 
-    placeOrder(container, 190, 225);
+    placeOrder(container, 190, 225, '做空');
     fireEvent.change(screen.getByLabelText('入场理由'), { target: { value: '跌破颈线，放量' } });
     fireEvent.click(screen.getByRole('button', { name: '入场做空 1/2' }));
 
@@ -491,6 +565,25 @@ describe('TrainerOrderPanel submit', () => {
     fireEvent.click(screen.getByRole('button', { name }));
 
     expect((submit.mock.calls[0][0] as { size: number }).size).toBe(size);
+  });
+
+  it('sends the entry with no reason typed at all', async () => {
+    const { handle, container } = makeHandle();
+    const { bridge, submit } = makeBridge();
+    renderPanel(makeView(), bridge, handle);
+
+    placeOrder(container, 210, 175);
+    const full = screen.getByRole('button', { name: '入场做多 全仓' }) as HTMLButtonElement;
+    expect(full.disabled).toBe(false);
+    fireEvent.click(full);
+
+    await waitFor(() => expect(submit).toHaveBeenCalledTimes(1));
+    const call = submit.mock.calls[0][0] as { submission: TrainerSubmission };
+    expect(call.submission.entry_plan).toEqual({ entry: 100, stop: 90, target1: 125 });
+    expect(call.submission.decision_reason).toEqual({
+      category: 'other',
+      summary: NO_REASON_GIVEN,
+    });
   });
 
   it('applies the returned view once the submit resolves', async () => {
@@ -522,7 +615,8 @@ describe('TrainerOrderPanel non-flat phase', () => {
     const { bridge } = makeBridge();
     renderPanel(makePendingView(), bridge, handle);
 
-    expect(screen.queryByRole('button', { name: '下单' })).toBeNull();
+    expect(screen.queryByRole('button', { name: '做多' })).toBeNull();
+    expect(screen.queryByRole('button', { name: '做空' })).toBeNull();
     expect(screen.getByText(/挂单中/)).toBeTruthy();
   });
 });
@@ -535,7 +629,6 @@ describe('TrainerOrderPanel TD-RR-01 gate', () => {
 
     // stop 90 (y=210), target 114.99 (y=185.01) → 14.99 / 10 = 1.499
     placeOrder(container, 210, 185.01);
-    fireEvent.change(screen.getByLabelText('入场理由'), { target: { value: '突破前高' } });
 
     for (const name of ['入场做多 全仓', '入场做多 1/2', '入场做多 1/4']) {
       expect((screen.getByRole('button', { name }) as HTMLButtonElement).disabled).toBe(true);
@@ -556,7 +649,6 @@ describe('TrainerOrderPanel TD-RR-01 gate', () => {
 
     // stop 90 (y=210), target 115 (y=185) → 15 / 10 = 1.5
     placeOrder(container, 210, 185);
-    fireEvent.change(screen.getByLabelText('入场理由'), { target: { value: '突破前高' } });
 
     for (const name of ['入场做多 全仓', '入场做多 1/2', '入场做多 1/4']) {
       expect((screen.getByRole('button', { name }) as HTMLButtonElement).disabled).toBe(false);
@@ -573,30 +665,28 @@ describe('TrainerOrderPanel TD-RR-01 gate', () => {
     const { bridge } = makeSizingBridge(view);
     renderPanel(view, bridge, handle);
 
-    fireEvent.change(screen.getByLabelText('加仓理由'), { target: { value: '回踩不破，补仓' } });
     expect((screen.getByRole('button', { name: '加仓 1/2' }) as HTMLButtonElement).disabled).toBe(
       false,
     );
   });
-});
 
-describe('TrainerOrderPanel entry reason (TD-REASON-01)', () => {
-  it('locks the entry buttons until an entry reason is entered', () => {
+  // The gate is about risk, not paperwork: a plan below the floor stays locked however much the
+  // trader writes, and a plan above it is sendable with nothing written at all.
+  it('stays keyed to the ratio alone, not to the entry reason', () => {
     const { handle, container } = makeHandle();
     const { bridge, submit } = makeBridge();
     renderPanel(makeView(), bridge, handle);
 
-    placeOrder(container, 210, 175);
+    placeOrder(container, 210, 185.01);
     const full = screen.getByRole('button', { name: '入场做多 全仓' }) as HTMLButtonElement;
     expect(full.disabled).toBe(true);
 
+    fireEvent.change(screen.getByLabelText('入场理由'), {
+      target: { value: '写得再多也不该解锁' },
+    });
+    expect(full.disabled).toBe(true);
     fireEvent.click(full);
     expect(submit).not.toHaveBeenCalled();
-
-    fireEvent.change(screen.getByLabelText('入场理由'), {
-      target: { value: '5 分钟级别突破前高，放量确认' },
-    });
-    expect(full.disabled).toBe(false);
   });
 });
 
@@ -619,6 +709,22 @@ describe('TrainerOrderPanel position sizing', () => {
     });
   });
 
+  // 加仓 全仓 fills the position up to 100%, so what it sends depends on what is already held.
+  it.each([
+    [[0.25], 0.75],
+    [[0.5, 0.25], 0.25],
+  ])('sends a fill-to-full add of %s as size %s', async (lots, expected) => {
+    const { handle } = makeHandle();
+    const view = makeHeldView(lots);
+    const { bridge, add } = makeSizingBridge(view);
+    renderPanel(view, bridge, handle);
+
+    fireEvent.click(screen.getByRole('button', { name: '加仓 全仓' }));
+
+    await waitFor(() => expect(add).toHaveBeenCalledTimes(1));
+    expect((add.mock.calls[0][0] as { size: number }).size).toBe(expected);
+  });
+
   it('sends a partial close as a sized reduce and a full close as an unsized one', async () => {
     const { handle } = makeHandle();
     const view = makeHeldView([1]);
@@ -635,7 +741,7 @@ describe('TrainerOrderPanel position sizing', () => {
     });
 
     fireEvent.change(screen.getByLabelText('平仓原因'), { target: { value: '结构走坏，全平' } });
-    fireEvent.click(screen.getByRole('button', { name: '平仓 全部' }));
+    fireEvent.click(screen.getByRole('button', { name: '平仓 全仓' }));
     await waitFor(() => expect(reduce).toHaveBeenCalledTimes(2));
     expect(reduce).toHaveBeenLastCalledWith({
       sessionId: 'run-1',
@@ -644,23 +750,16 @@ describe('TrainerOrderPanel position sizing', () => {
     expect(Object.keys(reduce.mock.calls[1][0] as object)).not.toContain('size');
   });
 
-  it('locks add and reduce behind their own reasons, independently of each other', () => {
+  it('sends the quarter close the button names', async () => {
     const { handle } = makeHandle();
-    const view = makeHeldView([0.5]);
-    const { bridge } = makeSizingBridge(view);
+    const view = makeHeldView([1]);
+    const { bridge, reduce } = makeSizingBridge(makeHeldView([0.75]));
     renderPanel(view, bridge, handle);
 
-    const addHalf = screen.getByRole('button', { name: '加仓 1/2' }) as HTMLButtonElement;
-    const exitAll = screen.getByRole('button', { name: '平仓 全部' }) as HTMLButtonElement;
-    expect(addHalf.disabled).toBe(true);
-    expect(exitAll.disabled).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: '平仓 1/4' }));
 
-    fireEvent.change(screen.getByLabelText('加仓理由'), { target: { value: '回踩不破，补仓' } });
-    expect(addHalf.disabled).toBe(false);
-    expect(exitAll.disabled).toBe(true);
-
-    fireEvent.change(screen.getByLabelText('平仓原因'), { target: { value: '收工' } });
-    expect(exitAll.disabled).toBe(false);
+    await waitFor(() => expect(reduce).toHaveBeenCalledTimes(1));
+    expect((reduce.mock.calls[0][0] as { size: number }).size).toBe(0.25);
   });
 
   it('clears the add reason after the add lands, so the next one needs fresh words', async () => {
@@ -683,15 +782,10 @@ describe('TrainerOrderPanel position sizing', () => {
     const full = makeHeldView([0.5, 0.5]);
     const { bridge } = makeSizingBridge(full);
     const { rerender } = renderPanel(full, bridge, handle);
-    fireEvent.change(screen.getByLabelText('加仓理由'), { target: { value: '再补一点' } });
-    fireEvent.change(screen.getByLabelText('平仓原因'), { target: { value: '减半' } });
 
-    expect((screen.getByRole('button', { name: '加仓 1/2' }) as HTMLButtonElement).disabled).toBe(
-      true,
-    );
-    expect((screen.getByRole('button', { name: '加仓 1/4' }) as HTMLButtonElement).disabled).toBe(
-      true,
-    );
+    for (const name of ['加仓 1/2', '加仓 1/4', '加仓 全仓']) {
+      expect((screen.getByRole('button', { name }) as HTMLButtonElement).disabled).toBe(true);
+    }
     expect((screen.getByRole('button', { name: '平仓 1/2' }) as HTMLButtonElement).disabled).toBe(
       false,
     );
@@ -706,16 +800,18 @@ describe('TrainerOrderPanel position sizing', () => {
         onViewChange={() => {}}
       />,
     );
-    fireEvent.change(screen.getByLabelText('加仓理由'), { target: { value: '再补一点' } });
-    fireEvent.change(screen.getByLabelText('平仓原因'), { target: { value: '减半' } });
 
     expect((screen.getByRole('button', { name: '加仓 1/2' }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
+    expect((screen.getByRole('button', { name: '加仓 全仓' }) as HTMLButtonElement).disabled).toBe(
       false,
     );
     expect((screen.getByRole('button', { name: '平仓 1/2' }) as HTMLButtonElement).disabled).toBe(
       true,
     );
-    expect((screen.getByRole('button', { name: '平仓 全部' }) as HTMLButtonElement).disabled).toBe(
+    // 全仓 closes whatever is left, so it is never "larger than the holding".
+    expect((screen.getByRole('button', { name: '平仓 全仓' }) as HTMLButtonElement).disabled).toBe(
       false,
     );
   });
@@ -828,22 +924,6 @@ describe('TrainerOrderPanel TD-EXIT-01 gate (position amend)', () => {
     expect(validateAmend).toHaveBeenCalledTimes(1);
   });
 
-  it('locks the confirm button until a reason is entered', async () => {
-    const { handle } = makeHandle();
-    const view = makeOpenView('long', 102);
-    const { bridge } = makeAmendBridge(view);
-    renderPanel(view, bridge, handle);
-
-    fireEvent.change(screen.getByLabelText('止损'), { target: { value: '100.5' } });
-    const confirmButton = screen.getByRole('button', { name: '确认调整' }) as HTMLButtonElement;
-    expect(confirmButton.disabled).toBe(true);
-
-    fireEvent.change(screen.getByLabelText('调整原因'), {
-      target: { value: '止损上移到 100.5 锁利' },
-    });
-    await waitFor(() => expect(confirmButton.disabled).toBe(false));
-  });
-
   it('keeps confirm locked while an edit is still waiting on its verdict', async () => {
     const { handle } = makeHandle();
     const view = makeOpenView('long', 102);
@@ -901,7 +981,7 @@ describe('TrainerOrderPanel drag path stays off the wire', () => {
     const { bridge, spies, methods } = makeSpyBridge(makeView());
     renderPanel(makeView(), bridge, handle);
 
-    arm(container);
+    arm();
     fireEvent.pointerDown(container, { clientY: 210 });
     for (let i = 1; i <= 12; i += 1) fireEvent.pointerMove(window, { clientY: 210 - i * 3 });
     for (const name of methods) expect(spies[name]).toHaveBeenCalledTimes(0);
@@ -916,21 +996,6 @@ describe('TrainerOrderPanel drag path stays off the wire', () => {
 });
 
 describe('TrainerOrderPanel pending order cancel', () => {
-  it('locks the cancel button until a reason is entered', () => {
-    const { handle } = makeHandle();
-    const view = makePendingView();
-    const { bridge } = makeCancelBridge(view);
-    renderPanel(view, bridge, handle);
-
-    const cancelButton = screen.getByRole('button', { name: '撤销挂单' }) as HTMLButtonElement;
-    expect(cancelButton.disabled).toBe(true);
-
-    fireEvent.change(screen.getByLabelText('撤单原因'), {
-      target: { value: '行情走弱，不想再等成交' },
-    });
-    expect(cancelButton.disabled).toBe(false);
-  });
-
   it('submits the cancel with the entered reason and applies the returned view', async () => {
     const { handle } = makeHandle();
     const view = makePendingView();
@@ -961,6 +1026,92 @@ describe('TrainerOrderPanel pending order cancel', () => {
   });
 });
 
+// Reasons are kept for later review but gate nothing. An empty field must still travel as a
+// non-empty summary: every reason crosses a boundary that validates minLength 1, so sending ''
+// would turn "I had no words" into a protocol error.
+describe('TrainerOrderPanel optional reasons', () => {
+  it('leaves add and reduce unlocked with their reason fields empty, and marks what was sent', async () => {
+    const { handle } = makeHandle();
+    const view = makeHeldView([0.5]);
+    const { bridge, add, reduce } = makeSizingBridge(view);
+    renderPanel(view, bridge, handle);
+
+    expect((screen.getByLabelText('加仓理由') as HTMLInputElement).value).toBe('');
+    expect((screen.getByLabelText('平仓原因') as HTMLInputElement).value).toBe('');
+
+    const addHalf = screen.getByRole('button', { name: '加仓 1/2' }) as HTMLButtonElement;
+    const exitAll = screen.getByRole('button', { name: '平仓 全仓' }) as HTMLButtonElement;
+    expect(addHalf.disabled).toBe(false);
+    expect(exitAll.disabled).toBe(false);
+
+    fireEvent.click(addHalf);
+    await waitFor(() => expect(add).toHaveBeenCalledTimes(1));
+    expect(add).toHaveBeenCalledWith({
+      sessionId: 'run-1',
+      size: 0.5,
+      reason: { category: 'other', summary: NO_REASON_GIVEN },
+    });
+
+    fireEvent.click(exitAll);
+    await waitFor(() => expect(reduce).toHaveBeenCalledTimes(1));
+    expect(reduce).toHaveBeenCalledWith({
+      sessionId: 'run-1',
+      reason: { category: 'other', summary: NO_REASON_GIVEN },
+    });
+  });
+
+  it('leaves the amend confirm unlocked with no reason typed', async () => {
+    const { handle } = makeHandle();
+    const view = makeOpenView('long', 102);
+    const { bridge, amend } = makeAmendBridge(view);
+    renderPanel(view, bridge, handle);
+
+    const confirmButton = screen.getByRole('button', { name: '确认调整' }) as HTMLButtonElement;
+    await waitFor(() => expect(confirmButton.disabled).toBe(false));
+
+    fireEvent.change(screen.getByLabelText('止损'), { target: { value: '100.5' } });
+    await waitFor(() => expect(confirmButton.disabled).toBe(false));
+    fireEvent.click(confirmButton);
+
+    await waitFor(() => expect(amend).toHaveBeenCalledTimes(1));
+    expect(amend).toHaveBeenCalledWith({
+      sessionId: 'run-1',
+      stop: 100.5,
+      target: 103,
+      reason: { category: 'other', summary: NO_REASON_GIVEN },
+    });
+  });
+
+  it('leaves the pending-order cancel unlocked with no reason typed', async () => {
+    const { handle } = makeHandle();
+    const { bridge, cancel } = makeCancelBridge(makeView({ phase: 'flat' }));
+    renderPanel(makePendingView(), bridge, handle);
+
+    const cancelButton = screen.getByRole('button', { name: '撤销挂单' }) as HTMLButtonElement;
+    expect(cancelButton.disabled).toBe(false);
+    fireEvent.click(cancelButton);
+
+    await waitFor(() => expect(cancel).toHaveBeenCalledTimes(1));
+    expect(cancel).toHaveBeenCalledWith({
+      sessionId: 'run-1',
+      reason: { category: 'other', summary: NO_REASON_GIVEN },
+    });
+  });
+
+  // 'risk_management' / 'thesis_invalidated' describe a judgment. Recording one for a field the
+  // trader left blank would put words in their mouth.
+  it('never labels an unwritten reason with the category the field was typed under', () => {
+    const { handle } = makeHandle();
+    const { bridge, amend } = makeAmendBridge(makeOpenView('long', 102));
+    renderPanel(makeOpenView('long', 102), bridge, handle);
+
+    fireEvent.click(screen.getByRole('button', { name: '确认调整' }));
+
+    const sent = amend.mock.calls[0]?.[0] as { reason: { category: string } } | undefined;
+    expect(sent?.reason.category).not.toBe('risk_management');
+  });
+});
+
 describe('TrainerOrderPanel position box lifecycle', () => {
   // The chart is not remounted when the episode ends, so a box left attached keeps painting the
   // last draft — a band at a price the trader never traded — over the settlement chart.
@@ -983,13 +1134,13 @@ describe('TrainerOrderPanel position box lifecycle', () => {
     expect(box.state().data).toBeNull();
   });
 
-  it('draws the entry line alone the moment the tool is armed', () => {
-    const { handle, series, container } = makeHandle();
+  it('draws the entry line alone the moment a side is picked', () => {
+    const { handle, series } = makeHandle();
     const { bridge } = makeBridge();
     renderPanel(makeView(), bridge, handle);
     const box = series.attachPrimitive.mock.calls[0][0] as PositionBoxPrimitive;
 
-    arm(container);
+    arm();
 
     expect(box.state().data).toMatchObject({ entry: 100, stop: 100, target1: 100 });
   });

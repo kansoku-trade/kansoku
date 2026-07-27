@@ -1,7 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
-import type { TrainerReason, TrainerStepEvent, TrainerView, TrainerViewPeriod } from '@kansoku/pro-api';
+import type {
+  TrainerReason,
+  TrainerStepEvent,
+  TrainerView,
+  TrainerViewPeriod,
+} from '@kansoku/pro-api';
 import type { TrainerBridge } from '../desktop/desktopTrainerBridge';
-import { describeStepEvents, PLAYBACK_SPEEDS, playbackIntervalMs, type PlaybackSpeed } from './advanceStep';
+import {
+  describeStepEvents,
+  PLAYBACK_SPEEDS,
+  playbackIntervalMs,
+  type PlaybackSpeed,
+} from './advanceStep';
+import { reasonOrNotGiven } from './orderDraft';
 
 export interface TrainerAdvanceControlsProps {
   view: TrainerView;
@@ -41,12 +52,13 @@ export function TrainerAdvanceControls({
   }
 
   const needsReason = view.phase !== 'flat';
-  const reasonMissing = needsReason && holdReason.trim().length === 0;
-  const disabled = busy || view.terminal || reasonMissing;
+  const disabled = busy || view.terminal;
   // True exactly when clicking step/play right now would resend the same words already on
   // record for this trade — the record must not read as a fresh judgment every bar when it is
-  // really one thesis carried forward untouched.
-  const reasonReused = needsReason && lastSentReason !== null && holdReason.trim() === lastSentReason;
+  // really one thesis carried forward untouched. An empty field is not "reuse": it sends the
+  // not-given marker every bar by design.
+  const reasonReused =
+    needsReason && holdReason.trim().length > 0 && holdReason.trim() === lastSentReason;
 
   // advanceEpisodeSingle throws if a hold while pending/open carries no reason, and the
   // playback loop below always reads this ref, never component-render-time values — a stale
@@ -58,14 +70,10 @@ export function TrainerAdvanceControls({
   const runStep = async (): Promise<StepOutcome> => {
     const current = latestRef.current;
     const currentNeedsReason = current.view.phase !== 'flat';
-    if (currentNeedsReason && current.holdReason.trim().length === 0) {
-      setError('继续持有需要先填写理由');
-      return { paused: true };
-    }
     setBusy(true);
     setError(null);
     const reason: TrainerReason | undefined = currentNeedsReason
-      ? { category: 'time_horizon', summary: current.holdReason.trim() }
+      ? reasonOrNotGiven('time_horizon', current.holdReason)
       : undefined;
     const result = await current.bridge.step({
       sessionId: current.sessionId,
@@ -127,17 +135,17 @@ export function TrainerAdvanceControls({
         <button className="btn" disabled={disabled} onClick={handleStep}>
           步进 · {period}
         </button>
-        <button className="btn" aria-pressed={playing} disabled={playing ? false : disabled} onClick={togglePlay}>
+        <button
+          className="btn"
+          aria-pressed={playing}
+          disabled={playing ? false : disabled}
+          onClick={togglePlay}
+        >
           {playing ? '暂停' : '播放'}
         </button>
         <div className="trainer-advance-speed">
           {PLAYBACK_SPEEDS.map((s) => (
-            <button
-              key={s}
-              className="btn"
-              aria-pressed={speed === s}
-              onClick={() => setSpeed(s)}
-            >
+            <button key={s} className="btn" aria-pressed={speed === s} onClick={() => setSpeed(s)}>
               {s}x
             </button>
           ))}

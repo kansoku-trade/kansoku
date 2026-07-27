@@ -3,6 +3,8 @@ import type {
   TrainerBasePeriod,
   TrainerDirection,
   TrainerPosition,
+  TrainerReason,
+  TrainerReasonCategory,
   TrainerSubmission,
   TrainerView,
 } from '@kansoku/pro-api';
@@ -30,7 +32,23 @@ export const FULL_POSITION = 1;
 export const HALF_POSITION = 0.5;
 export const QUARTER_POSITION = 0.25;
 
+// Every reason the trainer sends crosses a boundary that validates summary with minLength 1
+// (episodeTradeReasonSchema), so an untyped field cannot be sent as an empty string — and a hold
+// while pending/open is refused outright without a reason. This is the wording that records
+// "the trader gave none", matching the string the engine itself falls back to for a submission
+// with no decision_reason, so a reviewer reads one phrase for one meaning.
+export const NO_REASON_GIVEN = '未提供明确的交易理由。';
+
 const SIZE_EPSILON = 1e-9;
+
+// An empty field also drops the category: claiming 'risk_management' or 'thesis_invalidated' for
+// words the trader never wrote would attribute a rationale to them.
+export function reasonOrNotGiven(category: TrainerReasonCategory, text: string): TrainerReason {
+  const summary = text.trim();
+  return summary.length > 0
+    ? { category, summary }
+    : { category: 'other', summary: NO_REASON_GIVEN };
+}
 
 export function roundPrice(price: number): number {
   return Math.round(price * 100) / 100;
@@ -49,19 +67,22 @@ export function clampTarget(direction: TrainerDirection, entry: number, price: n
   return direction === 'long' ? Math.max(price, entry + MIN_GAP) : Math.min(price, entry - MIN_GAP);
 }
 
-// The gesture is the direction call: press below the entry line and release above it and you have
-// drawn a long, the mirror image a short. A drag that stays on one side has drawn a stop and a
-// target on the same side of entry, which is not a tradeable plan in either direction — hence null
-// rather than a guessed side. Recomputed against the live entry on every render, so a plan the
-// price has since run past stops resolving instead of quietly meaning something else.
-export function placementDraft(entry: number, placement: Placement): OrderDraft | null {
+// Direction is chosen before the chart is touched, so the drag only has to land the stop on the
+// losing side of entry and the target on the winning side. A drag that puts either on the wrong
+// side returns null rather than being clamped into shape: clamping would submit prices the trader
+// never drew. Recomputed against the live entry on every render, so a plan the price has since run
+// past stops resolving instead of quietly meaning something else.
+export function directedDraft(
+  direction: TrainerDirection,
+  entry: number,
+  placement: Placement,
+): OrderDraft | null {
   const stop = roundPrice(placement.stop);
   const target1 = roundPrice(placement.target);
-  if (stop <= entry - MIN_GAP && target1 >= entry + MIN_GAP)
-    return { direction: 'long', entry, stop, target1 };
-  if (stop >= entry + MIN_GAP && target1 <= entry - MIN_GAP)
-    return { direction: 'short', entry, stop, target1 };
-  return null;
+  const stopOnLosingSide = direction === 'long' ? stop <= entry - MIN_GAP : stop >= entry + MIN_GAP;
+  const targetOnWinningSide =
+    direction === 'long' ? target1 >= entry + MIN_GAP : target1 <= entry - MIN_GAP;
+  return stopOnLosingSide && targetOnWinningSide ? { direction, entry, stop, target1 } : null;
 }
 
 export function openPositionSize(position: TrainerPosition): number {
@@ -70,6 +91,11 @@ export function openPositionSize(position: TrainerPosition): number {
 
 export function canAddSize(position: TrainerPosition, size: number): boolean {
   return openPositionSize(position) + size <= FULL_POSITION + SIZE_EPSILON;
+}
+
+// 全仓 on the add row means "fill up to 100%", not "add another full position".
+export function addToFullSize(position: TrainerPosition): number {
+  return FULL_POSITION - openPositionSize(position);
 }
 
 export function canReduceSize(position: TrainerPosition, size: number): boolean {
@@ -134,7 +160,7 @@ export function buildOrderSubmission(
     // scoring) — the trainer has none to give, so this is an honest "none supplied", not a
     // placeholder standing in for real trader input.
     scenarios: [],
-    decision_reason: { category: 'other', summary: reason.trim() },
+    decision_reason: reasonOrNotGiven('other', reason),
     comment: '',
   };
 }

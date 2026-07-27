@@ -12,11 +12,13 @@ import { PositionBoxPrimitive } from '../charts/intraday/positionBoxPrimitive';
 import type { DrawingChartHandle } from '../charts/intraday/useIntradayCharts';
 import type { TrainerBridge } from '../desktop/desktopTrainerBridge';
 import {
+  addToFullSize,
   buildOrderSubmission,
   canAddSize,
   canReduceSize,
   clampStop,
   clampTarget,
+  directedDraft,
   formatPositionSize,
   formatRewardRisk,
   FULL_POSITION,
@@ -24,12 +26,13 @@ import {
   lastClose,
   meetsRewardRiskFloor,
   openPositionSize,
-  placementDraft,
   QUARTER_POSITION,
+  reasonOrNotGiven,
   rewardRiskRatio,
   roundPrice,
   type AmendDraft,
   type OrderDraft,
+  type Placement,
 } from './orderDraft';
 import { freshVerdict, useAmendCheck, type AmendVerdict } from './useAmendCheck';
 import { useOrderBoxDrag } from './useOrderBoxDrag';
@@ -37,16 +40,19 @@ import { useOrderPlacementDrag } from './useOrderPlacementDrag';
 
 const BOX_SPAN_SEC = 100 * 24 * 3600;
 
-const ENTRY_SIZES = [
-  { label: '全仓', size: FULL_POSITION },
-  { label: '1/2', size: HALF_POSITION },
+const SIZE_PRESETS = [
   { label: '1/4', size: QUARTER_POSITION },
+  { label: '1/2', size: HALF_POSITION },
+  { label: '全仓', size: FULL_POSITION },
 ];
 
-const ADD_SIZES = [
-  { label: '1/2', size: HALF_POSITION },
-  { label: '1/4', size: QUARTER_POSITION },
-];
+const DIRECTION_LABEL: Record<TrainerDirection, string> = { long: '做多', short: '做空' };
+
+function sideRule(direction: TrainerDirection, entry: number): string {
+  return direction === 'long'
+    ? `止损要在入场线 ${fmt(entry)} 下方，目标要在上方`
+    : `止损要在入场线 ${fmt(entry)} 上方，目标要在下方`;
+}
 
 // PositionBoxPrimitive falls back to the visible range's edges when a time falls outside the
 // series' own bar range (see positionBoxPrimitive.ts), which is how this box is made to span the
@@ -61,12 +67,6 @@ function boxTimeRange(view: TrainerView): { startTime: number; endTime: number }
     ? Math.floor(Date.parse(lastBar.time) / 1000)
     : Math.floor(Date.now() / 1000);
   return { startTime: lastTime - BOX_SPAN_SEC, endTime: lastTime + BOX_SPAN_SEC };
-}
-
-interface PlacementState {
-  direction: TrainerDirection | null;
-  stop: number;
-  target: number;
 }
 
 export interface TrainerOrderPanelProps {
@@ -84,9 +84,10 @@ export function TrainerOrderPanel({
   sessionId,
   onViewChange,
 }: TrainerOrderPanelProps) {
+  const [direction, setDirection] = useState<TrainerDirection | null>(null);
   const [placing, setPlacing] = useState(false);
-  const [placement, setPlacement] = useState<PlacementState | null>(null);
-  const [placementHint, setPlacementHint] = useState<string | null>(null);
+  const [placement, setPlacement] = useState<Placement | null>(null);
+  const [missedSide, setMissedSide] = useState(false);
   const [entryReason, setEntryReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -146,13 +147,10 @@ export function TrainerOrderPanel({
 
   // Re-resolved against the live entry on every render, so a plan the price has since run past
   // stops being a plan instead of quietly meaning something else.
-  const resolved = placement ? placementDraft(entry, placement) : null;
   const draft: OrderDraft | null =
-    placement && placement.direction && resolved?.direction === placement.direction
-      ? resolved
-      : null;
+    direction && placement ? directedDraft(direction, entry, placement) : null;
 
-  const boxActive = flat ? placing || placement !== null : position != null && amendDraft != null;
+  const boxActive = flat ? direction !== null : position != null && amendDraft != null;
   const boxEntry = flat ? entry : (position?.entryPrice ?? 0);
   const boxStop = flat ? (placement?.stop ?? entry) : (amendDraft?.stop ?? 0);
   const boxTarget = flat ? (placement?.target ?? entry) : (amendDraft?.target ?? 0);
@@ -194,40 +192,33 @@ export function TrainerOrderPanel({
   };
 
   useOrderPlacementDrag(flat ? handle : null, placing, {
+    // The prices are set on every frame, not only on release, so the numbers about to be sent are
+    // the ones on screen the whole time.
     onPreview: (stop, target) => {
-      setPlacementHint(null);
-      // The side is resolved on every frame, not only on release, so the prices and the direction
-      // are readable while the drag is still happening — the numbers about to be sent are the ones
-      // on screen the whole time.
-      setPlacement({
-        direction: placementDraft(entry, { stop, target })?.direction ?? null,
-        stop,
-        target,
-      });
+      setMissedSide(false);
+      setPlacement({ stop, target });
     },
     onCommit: (stop, target) => {
-      const placed = placementDraft(entry, { stop, target });
+      if (!direction) return;
+      const placed = directedDraft(direction, entry, { stop, target });
       if (!placed) {
         setPlacement(null);
-        setPlacementHint(`这一拖没有穿过入场线 ${fmt(entry)}，定不出方向，再拖一次`);
+        setMissedSide(true);
         return;
       }
-      setPlacement({
-        direction: placed.direction,
-        stop: placed.stop,
-        target: placed.target1,
-      });
+      setPlacement({ stop: placed.stop, target: placed.target1 });
       setPlacing(false);
     },
   });
 
   const moveDraftPrice = (field: 'stop' | 'target', price: number) => {
+    if (!direction) return;
     setPlacement((prev) => {
-      if (!prev?.direction) return prev;
+      if (!prev) return prev;
       const rounded = roundPrice(price);
       return field === 'stop'
-        ? { ...prev, stop: clampStop(prev.direction, entry, rounded) }
-        : { ...prev, target: clampTarget(prev.direction, entry, rounded) };
+        ? { ...prev, stop: clampStop(direction, entry, rounded) }
+        : { ...prev, target: clampTarget(direction, entry, rounded) };
     });
   };
 
@@ -272,7 +263,7 @@ export function TrainerOrderPanel({
         sessionId,
         stop: amendDraft.stop,
         target: amendDraft.target,
-        reason: { category: 'risk_management', summary: amendReason.trim() },
+        reason: reasonOrNotGiven('risk_management', amendReason),
       }),
     );
   };
@@ -283,7 +274,7 @@ export function TrainerOrderPanel({
       bridge.add({
         sessionId,
         size,
-        reason: { category: 'other', summary: addReason.trim() },
+        reason: reasonOrNotGiven('other', addReason),
       }),
     );
     if (ok) setAddReason('');
@@ -295,7 +286,7 @@ export function TrainerOrderPanel({
       bridge.reduce({
         sessionId,
         ...(size === null ? {} : { size }),
-        reason: { category: 'other', summary: exitReason.trim() },
+        reason: reasonOrNotGiven('other', exitReason),
       }),
     );
     if (ok) setExitReason('');
@@ -306,7 +297,7 @@ export function TrainerOrderPanel({
     void runAction(() =>
       bridge.cancel({
         sessionId,
-        reason: { category: 'thesis_invalidated', summary: cancelReason.trim() },
+        reason: reasonOrNotGiven('thesis_invalidated', cancelReason),
       }),
     );
   };
@@ -351,18 +342,20 @@ export function TrainerOrderPanel({
 
   const rr = draft ? rewardRiskRatio(draft) : null;
   const rrOk = draft != null && meetsRewardRiskFloor(draft);
-  const entryReasonOk = entryReason.trim().length > 0;
-  const stalePlacement = placement?.direction != null && draft === null;
+  const stale = !placing && placement !== null && draft === null;
 
-  const toolLabel = placing ? '取消' : placement ? '重画' : '下单';
-  const toggleTool = () => {
-    if (placing) {
+  // Picking a side always re-arms the chart, so the same button doubles as "redraw"; pressing the
+  // side you are already on with nothing drawn backs out instead, which is the only way to hand
+  // panning back to the chart once the placement drag has locked it.
+  const pickDirection = (next: TrainerDirection) => {
+    setMissedSide(false);
+    if (direction === next && placement === null) {
+      setDirection(null);
       setPlacing(false);
-      if (!draft) setPlacement(null);
       return;
     }
+    setDirection(next);
     setPlacement(null);
-    setPlacementHint(null);
     setPlacing(true);
   };
 
@@ -376,6 +369,7 @@ export function TrainerOrderPanel({
     if (result.ok) {
       setEntryReason('');
       setPlacement(null);
+      setDirection(null);
       onViewChange(result.data.view);
       return;
     }
@@ -383,29 +377,42 @@ export function TrainerOrderPanel({
     if (result.view) onViewChange(result.view);
   };
 
+  const hint = ((): { text: string; warn: boolean } => {
+    if (!direction)
+      return { text: '先选做多还是做空，再到图上拖一条：按下是止损，松手是目标', warn: false };
+    if (missedSide) return { text: `${sideRule(direction, entry)}，再拖一次`, warn: true };
+    if (stale)
+      return {
+        text: `现价 ${fmt(entry)} 已经越过你画的线，再按一次「${DIRECTION_LABEL[direction]}」重画`,
+        warn: true,
+      };
+    if (placing) return { text: `在图上按住拖动：${sideRule(direction, entry)}`, warn: false };
+    return { text: `再按一次「${DIRECTION_LABEL[direction]}」可以重画`, warn: false };
+  })();
+
   return (
     <div className="trainer-order-panel">
-      <div className="trainer-order-row">
-        <button className="btn" aria-pressed={placing} onClick={toggleTool}>
-          {toolLabel}
+      <div className="trainer-order-row trainer-size-group">
+        <span className="trainer-size-label">方向</span>
+        <button
+          className="btn"
+          aria-pressed={direction === 'long'}
+          onClick={() => pickDirection('long')}
+        >
+          做多
         </button>
-        {placing && (
-          <span className="trainer-order-hint">
-            在图上按住拖动：按下的地方是止损，松手的地方是目标，向上穿过入场线 {fmt(entry)}{' '}
-            就是做多，向下就是做空
-          </span>
-        )}
-        {!placing && !draft && !placementHint && (
-          <span className="trainer-order-hint">按「下单」再到图上拖一条：先定止损，再定目标</span>
-        )}
-        {placementHint && (
-          <span className="trainer-order-hint trainer-order-field--warn">{placementHint}</span>
-        )}
-        {stalePlacement && (
-          <span className="trainer-order-hint trainer-order-field--warn">
-            现价 {fmt(entry)} 已经越过你画的线，按「重画」重新拖一次
-          </span>
-        )}
+        <button
+          className="btn"
+          aria-pressed={direction === 'short'}
+          onClick={() => pickDirection('short')}
+        >
+          做空
+        </button>
+      </div>
+      <div className="trainer-order-row">
+        <span className={`trainer-order-hint${hint.warn ? ' trainer-order-field--warn' : ''}`}>
+          {hint.text}
+        </span>
       </div>
       {draft && (
         <>
@@ -431,15 +438,13 @@ export function TrainerOrderPanel({
             </label>
           </div>
           <div className="trainer-order-row trainer-size-group">
-            <span className="trainer-size-label">
-              {draft.direction === 'long' ? '入场做多' : '入场做空'}
-            </span>
-            {ENTRY_SIZES.map(({ label, size }) => (
+            <span className="trainer-size-label">入场{DIRECTION_LABEL[draft.direction]}</span>
+            {SIZE_PRESETS.map(({ label, size }) => (
               <button
                 key={label}
                 className="btn btn--accent"
-                aria-label={`${draft.direction === 'long' ? '入场做多' : '入场做空'} ${label}`}
-                disabled={submitting || !rrOk || !entryReasonOk}
+                aria-label={`入场${DIRECTION_LABEL[draft.direction]} ${label}`}
+                disabled={submitting || !rrOk}
                 onClick={() => void submit(size)}
               >
                 {label}
@@ -490,10 +495,9 @@ function TrainerPositionPanel({
   submitting,
   error,
 }: TrainerPositionPanelProps) {
-  const amendLocked = submitting || amendReason.trim().length === 0 || !verdict?.allowed;
-  const addLocked = submitting || addReason.trim().length === 0;
-  const exitLocked = submitting || exitReason.trim().length === 0;
+  const amendLocked = submitting || !verdict?.allowed;
   const held = openPositionSize(position);
+  const headroom = addToFullSize(position);
 
   const summary = `持仓中：${position.direction === 'long' ? '多头' : '空头'} · 仓位 ${formatPositionSize(held)} @${fmt(position.entryPrice)} 止损 ${fmt(position.stop)} 目标 ${fmt(position.target)}`;
 
@@ -563,17 +567,20 @@ function TrainerPositionPanel({
       </div>
       <div className="trainer-order-row trainer-size-group">
         <span className="trainer-size-label">加仓</span>
-        {ADD_SIZES.map(({ label, size }) => (
-          <button
-            key={label}
-            className="btn"
-            aria-label={`加仓 ${label}`}
-            disabled={addLocked || !canAddSize(position, size)}
-            onClick={() => onAdd(size)}
-          >
-            {label}
-          </button>
-        ))}
+        {SIZE_PRESETS.map(({ label, size }) => {
+          const addSize = size === FULL_POSITION ? headroom : size;
+          return (
+            <button
+              key={label}
+              className="btn"
+              aria-label={`加仓 ${label}`}
+              disabled={submitting || addSize <= 0 || !canAddSize(position, addSize)}
+              onClick={() => onAdd(addSize)}
+            >
+              {label}
+            </button>
+          );
+        })}
       </div>
       <div className="trainer-order-row">
         <label>
@@ -588,22 +595,22 @@ function TrainerPositionPanel({
       </div>
       <div className="trainer-order-row trainer-size-group">
         <span className="trainer-size-label">平仓</span>
-        <button
-          className="btn"
-          aria-label="平仓 1/2"
-          disabled={exitLocked || !canReduceSize(position, HALF_POSITION)}
-          onClick={() => onReduce(HALF_POSITION)}
-        >
-          1/2
-        </button>
-        <button
-          className="btn"
-          aria-label="平仓 全部"
-          disabled={exitLocked}
-          onClick={() => onReduce(null)}
-        >
-          全部
-        </button>
+        {SIZE_PRESETS.map(({ label, size }) => {
+          // 全仓 sends an unsized reduce — "close whatever is left" — so it stays available on a
+          // part-filled holding that a literal 1.0 fraction would exceed.
+          const closesEverything = size === FULL_POSITION;
+          return (
+            <button
+              key={label}
+              className="btn"
+              aria-label={`平仓 ${label}`}
+              disabled={submitting || (!closesEverything && !canReduceSize(position, size))}
+              onClick={() => onReduce(closesEverything ? null : size)}
+            >
+              {label}
+            </button>
+          );
+        })}
       </div>
       {error && <div className="trainer-order-error">{error}</div>}
     </div>
@@ -627,7 +634,6 @@ function TrainerPendingOrderPanel({
   submitting,
   error,
 }: TrainerPendingOrderPanelProps) {
-  const locked = submitting || reason.trim().length === 0;
   const summary = `挂单中：${order.direction === 'long' ? '多头' : '空头'} @${order.entry} 止损 ${order.stop} 目标 ${order.target}`;
 
   return (
@@ -645,7 +651,7 @@ function TrainerPendingOrderPanel({
         </label>
       </div>
       <div className="trainer-order-row">
-        <button className="btn" disabled={locked} onClick={onConfirm}>
+        <button className="btn" disabled={submitting} onClick={onConfirm}>
           撤销挂单
         </button>
       </div>

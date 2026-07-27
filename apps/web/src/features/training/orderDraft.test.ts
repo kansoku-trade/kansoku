@@ -2,19 +2,22 @@ import { describe, expect, it } from 'vitest';
 import type { TrainerPosition, TrainerView } from '@kansoku/pro-api';
 import type { RawBar } from '@kansoku/shared/types';
 import {
+  addToFullSize,
   buildOrderSubmission,
   canAddSize,
   canReduceSize,
   clampStop,
   clampTarget,
   deriveAnchor,
+  directedDraft,
   formatPositionSize,
   formatRewardRisk,
   meetsRewardRiskFloor,
   MIN_GAP,
   MIN_REWARD_RISK,
+  NO_REASON_GIVEN,
   openPositionSize,
-  placementDraft,
+  reasonOrNotGiven,
   rewardRiskRatio,
   type OrderDraft,
 } from './orderDraft';
@@ -46,42 +49,88 @@ function makeView(overrides: Partial<TrainerView> = {}): TrainerView {
   };
 }
 
-describe('placementDraft', () => {
-  it('reads a drag that presses below entry and releases above it as a long', () => {
-    const draft = placementDraft(100, { stop: 98, target: 105 });
-    expect(draft).toEqual({ direction: 'long', entry: 100, stop: 98, target1: 105 });
+describe('directedDraft', () => {
+  it('keeps the chosen side rather than deriving one from the drag', () => {
+    expect(directedDraft('long', 100, { stop: 98, target: 105 })).toEqual({
+      direction: 'long',
+      entry: 100,
+      stop: 98,
+      target1: 105,
+    });
+    expect(directedDraft('short', 100, { stop: 102, target: 95 })).toEqual({
+      direction: 'short',
+      entry: 100,
+      stop: 102,
+      target1: 95,
+    });
   });
 
-  it('reads the mirror-image drag as a short', () => {
-    const draft = placementDraft(100, { stop: 102, target: 95 });
-    expect(draft).toEqual({ direction: 'short', entry: 100, stop: 102, target1: 95 });
+  // The whole point of choosing the side first: the same two prices are a valid long and an
+  // invalid short, so the answer depends on the direction, not on the gesture.
+  it('accepts a drag for one direction that it refuses for the other', () => {
+    const placement = { stop: 98, target: 105 };
+    expect(directedDraft('long', 100, placement)).not.toBeNull();
+    expect(directedDraft('short', 100, placement)).toBeNull();
   });
 
-  it('refuses a drag that never crosses the entry line, in either direction', () => {
-    expect(placementDraft(100, { stop: 98, target: 99 })).toBeNull();
-    expect(placementDraft(100, { stop: 102, target: 101 })).toBeNull();
+  it('refuses a long whose stop or target lands on the wrong side of entry', () => {
+    expect(directedDraft('long', 100, { stop: 102, target: 105 })).toBeNull();
+    expect(directedDraft('long', 100, { stop: 98, target: 99 })).toBeNull();
+  });
+
+  it('refuses a short whose stop or target lands on the wrong side of entry', () => {
+    expect(directedDraft('short', 100, { stop: 98, target: 95 })).toBeNull();
+    expect(directedDraft('short', 100, { stop: 102, target: 101 })).toBeNull();
   });
 
   it('refuses a drag that ends where it started', () => {
-    expect(placementDraft(100, { stop: 100, target: 100 })).toBeNull();
+    expect(directedDraft('long', 100, { stop: 100, target: 100 })).toBeNull();
+    expect(directedDraft('short', 100, { stop: 100, target: 100 })).toBeNull();
   });
 
   // Both edges need a full MIN_GAP of room: a stop or target parked on the entry price is what the
   // engine refuses outright, and rounding to cents happens here so the price shown, the price
   // stored and the price submitted are the same number.
   it('needs MIN_GAP on both sides and rounds the dragged prices to cents', () => {
-    expect(placementDraft(100, { stop: 100 - MIN_GAP, target: 100 + MIN_GAP })).toEqual({
+    expect(directedDraft('long', 100, { stop: 100 - MIN_GAP, target: 100 + MIN_GAP })).toEqual({
       direction: 'long',
       entry: 100,
       stop: 99.99,
       target1: 100.01,
     });
-    expect(placementDraft(100, { stop: 99.995, target: 105 })).toBeNull();
-    expect(placementDraft(100, { stop: 98.126, target: 105.374 })).toEqual({
+    expect(directedDraft('long', 100, { stop: 99.995, target: 105 })).toBeNull();
+    expect(directedDraft('long', 100, { stop: 98.126, target: 105.374 })).toEqual({
       direction: 'long',
       entry: 100,
       stop: 98.13,
       target1: 105.37,
+    });
+  });
+});
+
+describe('reasonOrNotGiven', () => {
+  it('keeps the trimmed words and the category they were typed under', () => {
+    expect(reasonOrNotGiven('risk_management', '  止损上移锁利  ')).toEqual({
+      category: 'risk_management',
+      summary: '止损上移锁利',
+    });
+  });
+
+  // Every reason crosses a boundary that validates summary with minLength 1, so a blank field
+  // cannot travel as an empty string.
+  it('never produces an empty summary', () => {
+    for (const blank of ['', '   ', '\n\t']) {
+      const reason = reasonOrNotGiven('risk_management', blank);
+      expect(reason.summary.length).toBeGreaterThan(0);
+      expect(reason.summary).toBe(NO_REASON_GIVEN);
+    }
+  });
+
+  // Recording 'risk_management' for words nobody wrote would attribute a rationale to the trader.
+  it('drops the category to other when no words were given', () => {
+    expect(reasonOrNotGiven('thesis_invalidated', '')).toEqual({
+      category: 'other',
+      summary: NO_REASON_GIVEN,
     });
   });
 });
@@ -101,6 +150,12 @@ describe('position size helpers', () => {
     expect(canAddSize(position([0.5]), 0.5)).toBe(true);
     expect(canAddSize(position([0.5, 0.25]), 0.5)).toBe(false);
     expect(canAddSize(position([0.5, 0.25]), 0.25)).toBe(true);
+  });
+
+  it('sizes a fill-to-full add by what is left of the headroom, not by a whole position', () => {
+    expect(addToFullSize(position([0.25]))).toBe(0.75);
+    expect(addToFullSize(position([0.5, 0.25]))).toBe(0.25);
+    expect(addToFullSize(position([1]))).toBe(0);
   });
 
   // The engine refuses a reduce larger than the position as a protocol fault, so the button has to
@@ -240,5 +295,11 @@ describe('buildOrderSubmission', () => {
       category: 'other',
       summary: '突破前高，放量确认',
     });
+  });
+
+  it('records that no reason was given rather than inventing one or sending an empty summary', () => {
+    const draft: OrderDraft = { direction: 'long', entry: 100, stop: 99, target1: 108 };
+    const submission = buildOrderSubmission(makeView(), draft, '   ');
+    expect(submission.decision_reason).toEqual({ category: 'other', summary: NO_REASON_GIVEN });
   });
 });
