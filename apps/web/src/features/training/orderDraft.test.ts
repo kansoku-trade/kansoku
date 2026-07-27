@@ -1,18 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import type { TrainerView } from '@kansoku/pro-api';
+import type { TrainerPosition, TrainerView } from '@kansoku/pro-api';
 import type { RawBar } from '@kansoku/shared/types';
 import {
   buildOrderSubmission,
+  canAddSize,
+  canReduceSize,
   clampStop,
   clampTarget,
-  defaultOrderDraft,
   deriveAnchor,
+  formatPositionSize,
   formatRewardRisk,
   meetsRewardRiskFloor,
   MIN_GAP,
   MIN_REWARD_RISK,
+  openPositionSize,
+  placementDraft,
   rewardRiskRatio,
-  withDirection,
   type OrderDraft,
 } from './orderDraft';
 
@@ -43,13 +46,73 @@ function makeView(overrides: Partial<TrainerView> = {}): TrainerView {
   };
 }
 
-describe('defaultOrderDraft', () => {
-  it('anchors entry to the last base bar close', () => {
-    const draft = defaultOrderDraft(makeView());
-    expect(draft.entry).toBe(100);
-    expect(draft.direction).toBe('long');
-    expect(draft.stop).toBeLessThan(draft.entry);
-    expect(draft.target1).toBeGreaterThan(draft.entry);
+describe('placementDraft', () => {
+  it('reads a drag that presses below entry and releases above it as a long', () => {
+    const draft = placementDraft(100, { stop: 98, target: 105 });
+    expect(draft).toEqual({ direction: 'long', entry: 100, stop: 98, target1: 105 });
+  });
+
+  it('reads the mirror-image drag as a short', () => {
+    const draft = placementDraft(100, { stop: 102, target: 95 });
+    expect(draft).toEqual({ direction: 'short', entry: 100, stop: 102, target1: 95 });
+  });
+
+  it('refuses a drag that never crosses the entry line, in either direction', () => {
+    expect(placementDraft(100, { stop: 98, target: 99 })).toBeNull();
+    expect(placementDraft(100, { stop: 102, target: 101 })).toBeNull();
+  });
+
+  it('refuses a drag that ends where it started', () => {
+    expect(placementDraft(100, { stop: 100, target: 100 })).toBeNull();
+  });
+
+  // Both edges need a full MIN_GAP of room: a stop or target parked on the entry price is what the
+  // engine refuses outright, and rounding to cents happens here so the price shown, the price
+  // stored and the price submitted are the same number.
+  it('needs MIN_GAP on both sides and rounds the dragged prices to cents', () => {
+    expect(placementDraft(100, { stop: 100 - MIN_GAP, target: 100 + MIN_GAP })).toEqual({
+      direction: 'long',
+      entry: 100,
+      stop: 99.99,
+      target1: 100.01,
+    });
+    expect(placementDraft(100, { stop: 99.995, target: 105 })).toBeNull();
+    expect(placementDraft(100, { stop: 98.126, target: 105.374 })).toEqual({
+      direction: 'long',
+      entry: 100,
+      stop: 98.13,
+      target1: 105.37,
+    });
+  });
+});
+
+describe('position size helpers', () => {
+  const position = (remaining: number[]): TrainerPosition =>
+    ({
+      lots: remaining.map((r) => ({ time: '', price: 100, size: r, remaining: r })),
+    }) as unknown as TrainerPosition;
+
+  it('adds up what is still open across lots', () => {
+    expect(openPositionSize(position([0.5, 0.25]))).toBe(0.75);
+    expect(openPositionSize(position([]))).toBe(0);
+  });
+
+  it('allows an add exactly up to a full position and refuses beyond it', () => {
+    expect(canAddSize(position([0.5]), 0.5)).toBe(true);
+    expect(canAddSize(position([0.5, 0.25]), 0.5)).toBe(false);
+    expect(canAddSize(position([0.5, 0.25]), 0.25)).toBe(true);
+  });
+
+  // The engine refuses a reduce larger than the position as a protocol fault, so the button has to
+  // be dark before it is pressed rather than surfacing a developer-facing error afterwards.
+  it('allows a reduce only up to what is held', () => {
+    expect(canReduceSize(position([0.5]), 0.5)).toBe(true);
+    expect(canReduceSize(position([0.25]), 0.5)).toBe(false);
+  });
+
+  it('formats a size as a percentage of a full position', () => {
+    expect(formatPositionSize(1)).toBe('100%');
+    expect(formatPositionSize(0.25)).toBe('25%');
   });
 });
 
@@ -78,21 +141,6 @@ describe('clampStop / clampTarget', () => {
     expect(clampTarget('long', 101, 99)).toBe(101 + MIN_GAP);
     expect(clampTarget('short', 99, 101)).toBe(99 - MIN_GAP);
     expect(MIN_GAP).toBe(0.01);
-  });
-});
-
-describe('withDirection', () => {
-  it('mirrors stop/target distance around entry on a real flip', () => {
-    const draft: OrderDraft = { direction: 'long', entry: 100, stop: 99, target1: 102 };
-    const flipped = withDirection(draft, 'short');
-    expect(flipped.direction).toBe('short');
-    expect(flipped.stop).toBe(101);
-    expect(flipped.target1).toBe(98);
-  });
-
-  it('is a no-op when the direction is unchanged', () => {
-    const draft: OrderDraft = { direction: 'long', entry: 100, stop: 99, target1: 102 };
-    expect(withDirection(draft, 'long')).toBe(draft);
   });
 });
 
@@ -169,23 +217,25 @@ describe('deriveAnchor', () => {
 });
 
 describe('buildOrderSubmission', () => {
-  it('carries the drafted entry/stop/target1 through for a limit order', () => {
-    const draft: OrderDraft = { direction: 'long', entry: 101, stop: 99, target1: 108 };
-    const submission = buildOrderSubmission(makeView(), draft, 'limit', '突破前高，放量确认');
-    expect(submission.entry_plan).toEqual({ entry: 101, stop: 99, target1: 108 });
+  it('carries the drafted stop/target1 through and the direction the drag settled on', () => {
+    const draft: OrderDraft = { direction: 'long', entry: 100, stop: 99, target1: 108 };
+    const submission = buildOrderSubmission(makeView(), draft, '突破前高，放量确认');
+    expect(submission.entry_plan).toEqual({ entry: 100, stop: 99, target1: 108 });
     expect(submission.direction).toBe('long');
     expect(submission.scenarios).toEqual([]);
   });
 
-  it('overrides entry with the live price for a market order, keeping stop/target as drafted', () => {
+  // A market order fills at the next bar's open, so the live price is the only entry the engine
+  // will ever honour — a stale draft entry must not be able to reach it.
+  it('always sends the live price as entry, never a stale drafted one', () => {
     const draft: OrderDraft = { direction: 'long', entry: 101, stop: 99, target1: 108 };
-    const submission = buildOrderSubmission(makeView(), draft, 'market', '突破前高，放量确认');
+    const submission = buildOrderSubmission(makeView(), draft, '突破前高，放量确认');
     expect(submission.entry_plan).toEqual({ entry: 100, stop: 99, target1: 108 });
   });
 
   it('records the trimmed reason as decision_reason instead of leaving it for the placeholder fallback', () => {
-    const draft: OrderDraft = { direction: 'long', entry: 101, stop: 99, target1: 108 };
-    const submission = buildOrderSubmission(makeView(), draft, 'limit', '  突破前高，放量确认  ');
+    const draft: OrderDraft = { direction: 'long', entry: 100, stop: 99, target1: 108 };
+    const submission = buildOrderSubmission(makeView(), draft, '  突破前高，放量确认  ');
     expect(submission.decision_reason).toEqual({
       category: 'other',
       summary: '突破前高，放量确认',

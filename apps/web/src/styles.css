@@ -649,13 +649,27 @@ a:hover {
 .trainer-order-row .input {
   width: 90px;
 }
-.trainer-direction-toggle .btn[aria-pressed='true']:nth-child(1) {
-  color: var(--up);
-  border-color: var(--up);
+.trainer-order-panel .btn[aria-pressed='true'] {
+  color: var(--accent);
+  border-color: var(--accent);
 }
-.trainer-direction-toggle .btn[aria-pressed='true']:nth-child(2) {
-  color: var(--down);
-  border-color: var(--down);
+.trainer-order-hint {
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  max-width: 520px;
+}
+.trainer-order-readout {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--fs-sm);
+  gap: 12px;
+}
+.trainer-size-group {
+  gap: 6px;
+}
+.trainer-size-label {
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
 }
 .trainer-order-rr {
   font-family: var(--font-mono);

@@ -1,32 +1,52 @@
 import { useEffect, useRef, useState } from 'react';
 import type {
-  TrainerEntryMode,
+  TrainerDirection,
   TrainerEnvelope,
   TrainerOrder,
   TrainerPosition,
   TrainerStepResult,
   TrainerView,
 } from '@kansoku/pro-api';
+import { fmt } from '@web/lib/format';
 import { PositionBoxPrimitive } from '../charts/intraday/positionBoxPrimitive';
 import type { DrawingChartHandle } from '../charts/intraday/useIntradayCharts';
 import type { TrainerBridge } from '../desktop/desktopTrainerBridge';
 import {
   buildOrderSubmission,
+  canAddSize,
+  canReduceSize,
   clampStop,
   clampTarget,
-  defaultOrderDraft,
+  formatPositionSize,
   formatRewardRisk,
+  FULL_POSITION,
+  HALF_POSITION,
   lastClose,
   meetsRewardRiskFloor,
+  openPositionSize,
+  placementDraft,
+  QUARTER_POSITION,
   rewardRiskRatio,
-  withDirection,
+  roundPrice,
   type AmendDraft,
   type OrderDraft,
 } from './orderDraft';
 import { freshVerdict, useAmendCheck, type AmendVerdict } from './useAmendCheck';
 import { useOrderBoxDrag } from './useOrderBoxDrag';
+import { useOrderPlacementDrag } from './useOrderPlacementDrag';
 
 const BOX_SPAN_SEC = 100 * 24 * 3600;
+
+const ENTRY_SIZES = [
+  { label: '全仓', size: FULL_POSITION },
+  { label: '1/2', size: HALF_POSITION },
+  { label: '1/4', size: QUARTER_POSITION },
+];
+
+const ADD_SIZES = [
+  { label: '1/2', size: HALF_POSITION },
+  { label: '1/4', size: QUARTER_POSITION },
+];
 
 // PositionBoxPrimitive falls back to the visible range's edges when a time falls outside the
 // series' own bar range (see positionBoxPrimitive.ts), which is how this box is made to span the
@@ -41,6 +61,12 @@ function boxTimeRange(view: TrainerView): { startTime: number; endTime: number }
     ? Math.floor(Date.parse(lastBar.time) / 1000)
     : Math.floor(Date.now() / 1000);
   return { startTime: lastTime - BOX_SPAN_SEC, endTime: lastTime + BOX_SPAN_SEC };
+}
+
+interface PlacementState {
+  direction: TrainerDirection | null;
+  stop: number;
+  target: number;
 }
 
 export interface TrainerOrderPanelProps {
@@ -58,7 +84,9 @@ export function TrainerOrderPanel({
   sessionId,
   onViewChange,
 }: TrainerOrderPanelProps) {
-  const [draft, setDraft] = useState<OrderDraft>(() => defaultOrderDraft(view));
+  const [placing, setPlacing] = useState(false);
+  const [placement, setPlacement] = useState<PlacementState | null>(null);
+  const [placementHint, setPlacementHint] = useState<string | null>(null);
   const [entryReason, setEntryReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -66,6 +94,7 @@ export function TrainerOrderPanel({
   const flat = view.phase === 'flat';
   const position = view.position;
   const order = view.order;
+  const entry = lastClose(view);
 
   // Reset (or seed) the amend draft during render rather than in a useEffect, so a fresh
   // position's stop/target reach the input fields and the drag box on the very same commit —
@@ -75,12 +104,14 @@ export function TrainerOrderPanel({
   const [amendDraftTradeId, setAmendDraftTradeId] = useState<number | null>(null);
   const [amendReason, setAmendReason] = useState('');
   const [exitReason, setExitReason] = useState('');
+  const [addReason, setAddReason] = useState('');
   if (position && position.tradeId !== amendDraftTradeId) {
     setAmendDraftTradeId(position.tradeId);
     setAmendDraft({ stop: position.stop, target: position.target });
     setSettledAmend({ stop: position.stop, target: position.target });
     setAmendReason('');
     setExitReason('');
+    setAddReason('');
   } else if (!position && amendDraftTradeId !== null) {
     setAmendDraftTradeId(null);
     setAmendDraft(null);
@@ -113,10 +144,18 @@ export function TrainerOrderPanel({
     };
   }, [handle]);
 
-  const boxActive = flat || (position != null && amendDraft != null);
-  const boxEntry = flat ? draft.entry : (position?.entryPrice ?? 0);
-  const boxStop = flat ? draft.stop : (amendDraft?.stop ?? 0);
-  const boxTarget = flat ? draft.target1 : (amendDraft?.target ?? 0);
+  // Re-resolved against the live entry on every render, so a plan the price has since run past
+  // stops being a plan instead of quietly meaning something else.
+  const resolved = placement ? placementDraft(entry, placement) : null;
+  const draft: OrderDraft | null =
+    placement && placement.direction && resolved?.direction === placement.direction
+      ? resolved
+      : null;
+
+  const boxActive = flat ? placing || placement !== null : position != null && amendDraft != null;
+  const boxEntry = flat ? entry : (position?.entryPrice ?? 0);
+  const boxStop = flat ? (placement?.stop ?? entry) : (amendDraft?.stop ?? 0);
+  const boxTarget = flat ? (placement?.target ?? entry) : (amendDraft?.target ?? 0);
 
   useEffect(() => {
     const box = boxRef.current;
@@ -139,17 +178,6 @@ export function TrainerOrderPanel({
     // boxRef.current existed and has no other reason to run again.
   }, [boxActive, boxEntry, boxStop, boxTarget, view, handle]);
 
-  const updateDraft = (patch: Partial<Pick<OrderDraft, 'entry' | 'stop' | 'target1'>>) => {
-    setDraft((prev) => {
-      const next = { ...prev, ...patch };
-      return {
-        ...next,
-        stop: clampStop(next.direction, next.entry, next.stop),
-        target1: clampTarget(next.direction, next.entry, next.target1),
-      };
-    });
-  };
-
   // Every edit stays local; only a settled one is sent to the engine's dry run, so dragging never
   // waits on an IPC round trip.
   const applyAmend = (patch: Partial<AmendDraft>, settle: boolean) => {
@@ -165,15 +193,54 @@ export function TrainerOrderPanel({
     if (settle) setSettledAmend(next);
   };
 
+  useOrderPlacementDrag(flat ? handle : null, placing, {
+    onPreview: (stop, target) => {
+      setPlacementHint(null);
+      // The side is resolved on every frame, not only on release, so the prices and the direction
+      // are readable while the drag is still happening — the numbers about to be sent are the ones
+      // on screen the whole time.
+      setPlacement({
+        direction: placementDraft(entry, { stop, target })?.direction ?? null,
+        stop,
+        target,
+      });
+    },
+    onCommit: (stop, target) => {
+      const placed = placementDraft(entry, { stop, target });
+      if (!placed) {
+        setPlacement(null);
+        setPlacementHint(`这一拖没有穿过入场线 ${fmt(entry)}，定不出方向，再拖一次`);
+        return;
+      }
+      setPlacement({
+        direction: placed.direction,
+        stop: placed.stop,
+        target: placed.target1,
+      });
+      setPlacing(false);
+    },
+  });
+
+  const moveDraftPrice = (field: 'stop' | 'target', price: number) => {
+    setPlacement((prev) => {
+      if (!prev?.direction) return prev;
+      const rounded = roundPrice(price);
+      return field === 'stop'
+        ? { ...prev, stop: clampStop(prev.direction, entry, rounded) }
+        : { ...prev, target: clampTarget(prev.direction, entry, rounded) };
+    });
+  };
+
+  const edgeHandle = flat ? (placing || !draft ? null : handle) : boxActive ? handle : null;
   useOrderBoxDrag(
-    boxActive ? handle : null,
+    edgeHandle,
     { stop: boxStop, target1: boxTarget },
     {
       onStopDrag: flat
-        ? (price) => updateDraft({ stop: price })
+        ? (price) => moveDraftPrice('stop', price)
         : (price) => applyAmend({ stop: price }, false),
       onTargetDrag: flat
-        ? (price) => updateDraft({ target1: price })
+        ? (price) => moveDraftPrice('target', price)
         : (price) => applyAmend({ target: price }, false),
       onDragEnd: flat ? undefined : () => setSettledAmend(amendDraftRef.current),
     },
@@ -182,17 +249,20 @@ export function TrainerOrderPanel({
   const checked = useAmendCheck(bridge, sessionId, view.cursor, settledAmend);
   const verdict = freshVerdict(checked, amendDraft, view.cursor);
 
-  const runAction = async (call: () => Promise<TrainerEnvelope<TrainerStepResult>>) => {
+  const runAction = async (
+    call: () => Promise<TrainerEnvelope<TrainerStepResult>>,
+  ): Promise<boolean> => {
     setSubmitting(true);
     setError(null);
     const result = await call();
     setSubmitting(false);
     if (result.ok) {
       onViewChange(result.data.view);
-      return;
+      return true;
     }
     setError(result.error);
     if (result.view) onViewChange(result.view);
+    return false;
   };
 
   const confirmAmend = () => {
@@ -207,14 +277,28 @@ export function TrainerOrderPanel({
     );
   };
 
-  const confirmExitNextOpen = () => {
+  const confirmAdd = async (size: number) => {
     if (!position) return;
-    void runAction(() =>
-      bridge.exitNextOpen({
+    const ok = await runAction(() =>
+      bridge.add({
         sessionId,
-        reason: { category: 'thesis_invalidated', summary: exitReason.trim() },
+        size,
+        reason: { category: 'other', summary: addReason.trim() },
       }),
     );
+    if (ok) setAddReason('');
+  };
+
+  const confirmReduce = async (size: number | null) => {
+    if (!position) return;
+    const ok = await runAction(() =>
+      bridge.reduce({
+        sessionId,
+        ...(size === null ? {} : { size }),
+        reason: { category: 'other', summary: exitReason.trim() },
+      }),
+    );
+    if (ok) setExitReason('');
   };
 
   const confirmCancel = () => {
@@ -239,9 +323,12 @@ export function TrainerOrderPanel({
           onStopChange={(price) => applyAmend({ stop: price }, true)}
           onTargetChange={(price) => applyAmend({ target: price }, true)}
           onConfirmAmend={confirmAmend}
+          addReason={addReason}
+          onAddReasonChange={setAddReason}
+          onAdd={confirmAdd}
           exitReason={exitReason}
           onExitReasonChange={setExitReason}
-          onExitNextOpen={confirmExitNextOpen}
+          onReduce={confirmReduce}
           submitting={submitting}
           error={error}
         />
@@ -262,24 +349,33 @@ export function TrainerOrderPanel({
     return <div className="trainer-order-panel trainer-order-panel--status">本局已结束</div>;
   }
 
-  const rr = rewardRiskRatio(draft);
-  const rrOk = meetsRewardRiskFloor(draft);
+  const rr = draft ? rewardRiskRatio(draft) : null;
+  const rrOk = draft != null && meetsRewardRiskFloor(draft);
   const entryReasonOk = entryReason.trim().length > 0;
+  const stalePlacement = placement?.direction != null && draft === null;
 
-  const handleNumberChange =
-    (field: 'entry' | 'stop' | 'target1') => (e: React.ChangeEvent<HTMLInputElement>) => {
-      const value = Number(e.target.value);
-      if (Number.isFinite(value)) updateDraft({ [field]: value });
-    };
+  const toolLabel = placing ? '取消' : placement ? '重画' : '下单';
+  const toggleTool = () => {
+    if (placing) {
+      setPlacing(false);
+      if (!draft) setPlacement(null);
+      return;
+    }
+    setPlacement(null);
+    setPlacementHint(null);
+    setPlacing(true);
+  };
 
-  const submit = async (entryMode: TrainerEntryMode) => {
+  const submit = async (size: number) => {
+    if (!draft) return;
     setSubmitting(true);
     setError(null);
-    const submission = buildOrderSubmission(view, draft, entryMode, entryReason);
-    const result = await bridge.submit({ sessionId, submission, entryMode });
+    const submission = buildOrderSubmission(view, draft, entryReason);
+    const result = await bridge.submit({ sessionId, submission, entryMode: 'market', size });
     setSubmitting(false);
     if (result.ok) {
       setEntryReason('');
+      setPlacement(null);
       onViewChange(result.data.view);
       return;
     }
@@ -289,86 +385,69 @@ export function TrainerOrderPanel({
 
   return (
     <div className="trainer-order-panel">
-      <div className="trainer-order-row trainer-direction-toggle">
-        <button
-          className="btn"
-          aria-pressed={draft.direction === 'long'}
-          onClick={() => setDraft((prev) => withDirection(prev, 'long'))}
-        >
-          多
-        </button>
-        <button
-          className="btn"
-          aria-pressed={draft.direction === 'short'}
-          onClick={() => setDraft((prev) => withDirection(prev, 'short'))}
-        >
-          空
-        </button>
-      </div>
       <div className="trainer-order-row">
-        <label>
-          入场
-          <input
-            className="input"
-            type="number"
-            step="0.01"
-            value={draft.entry}
-            onChange={handleNumberChange('entry')}
-          />
-        </label>
-        <label>
-          止损
-          <input
-            className="input"
-            type="number"
-            step="0.01"
-            value={draft.stop}
-            onChange={handleNumberChange('stop')}
-          />
-        </label>
-        <label className={rrOk ? undefined : 'trainer-order-field--warn'}>
-          目标
-          <input
-            className="input"
-            type="number"
-            step="0.01"
-            value={draft.target1}
-            onChange={handleNumberChange('target1')}
-          />
-        </label>
-      </div>
-      <div className="trainer-order-row">
-        <span className={`trainer-order-rr${rrOk ? '' : ' trainer-order-field--warn'}`}>
-          盈亏比 {rr === null ? '—' : `${formatRewardRisk(rr)} : 1`}
-        </span>
-      </div>
-      <div className="trainer-order-row">
-        <label>
-          入场理由
-          <input
-            className="input"
-            type="text"
-            value={entryReason}
-            onChange={(e) => setEntryReason(e.target.value)}
-          />
-        </label>
-      </div>
-      <div className="trainer-order-row">
-        <button
-          className="btn btn--accent"
-          disabled={submitting || !rrOk || !entryReasonOk}
-          onClick={() => submit('limit')}
-        >
-          提交限价单
+        <button className="btn" aria-pressed={placing} onClick={toggleTool}>
+          {toolLabel}
         </button>
-        <button
-          className="btn"
-          disabled={submitting || !rrOk || !entryReasonOk}
-          onClick={() => submit('market')}
-        >
-          照现价立刻进
-        </button>
+        {placing && (
+          <span className="trainer-order-hint">
+            在图上按住拖动：按下的地方是止损，松手的地方是目标，向上穿过入场线 {fmt(entry)}{' '}
+            就是做多，向下就是做空
+          </span>
+        )}
+        {!placing && !draft && !placementHint && (
+          <span className="trainer-order-hint">按「下单」再到图上拖一条：先定止损，再定目标</span>
+        )}
+        {placementHint && (
+          <span className="trainer-order-hint trainer-order-field--warn">{placementHint}</span>
+        )}
+        {stalePlacement && (
+          <span className="trainer-order-hint trainer-order-field--warn">
+            现价 {fmt(entry)} 已经越过你画的线，按「重画」重新拖一次
+          </span>
+        )}
       </div>
+      {draft && (
+        <>
+          <div className="trainer-order-row trainer-order-readout">
+            <span>入场 {fmt(draft.entry)}</span>
+            <span>止损 {fmt(draft.stop)}</span>
+            <span className={rrOk ? undefined : 'trainer-order-field--warn'}>
+              目标 {fmt(draft.target1)}
+            </span>
+            <span className={`trainer-order-rr${rrOk ? '' : ' trainer-order-field--warn'}`}>
+              盈亏比 {rr === null ? '—' : `${formatRewardRisk(rr)} : 1`}
+            </span>
+          </div>
+          <div className="trainer-order-row">
+            <label>
+              入场理由
+              <input
+                className="input"
+                type="text"
+                value={entryReason}
+                onChange={(e) => setEntryReason(e.target.value)}
+              />
+            </label>
+          </div>
+          <div className="trainer-order-row trainer-size-group">
+            <span className="trainer-size-label">
+              {draft.direction === 'long' ? '入场做多' : '入场做空'}
+            </span>
+            {ENTRY_SIZES.map(({ label, size }) => (
+              <button
+                key={label}
+                className="btn btn--accent"
+                aria-label={`${draft.direction === 'long' ? '入场做多' : '入场做空'} ${label}`}
+                disabled={submitting || !rrOk || !entryReasonOk}
+                onClick={() => void submit(size)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
       {error && <div className="trainer-order-error">{error}</div>}
     </div>
   );
@@ -383,9 +462,12 @@ interface TrainerPositionPanelProps {
   onStopChange: (price: number) => void;
   onTargetChange: (price: number) => void;
   onConfirmAmend: () => void;
+  addReason: string;
+  onAddReasonChange: (value: string) => void;
+  onAdd: (size: number) => void;
   exitReason: string;
   onExitReasonChange: (value: string) => void;
-  onExitNextOpen: () => void;
+  onReduce: (size: number | null) => void;
   submitting: boolean;
   error: string | null;
 }
@@ -399,16 +481,21 @@ function TrainerPositionPanel({
   onStopChange,
   onTargetChange,
   onConfirmAmend,
+  addReason,
+  onAddReasonChange,
+  onAdd,
   exitReason,
   onExitReasonChange,
-  onExitNextOpen,
+  onReduce,
   submitting,
   error,
 }: TrainerPositionPanelProps) {
   const amendLocked = submitting || amendReason.trim().length === 0 || !verdict?.allowed;
+  const addLocked = submitting || addReason.trim().length === 0;
   const exitLocked = submitting || exitReason.trim().length === 0;
+  const held = openPositionSize(position);
 
-  const summary = `持仓中：${position.direction === 'long' ? '多头' : '空头'} @${position.entryPrice} 止损 ${position.stop} 目标 ${position.target}`;
+  const summary = `持仓中：${position.direction === 'long' ? '多头' : '空头'} · 仓位 ${formatPositionSize(held)} @${fmt(position.entryPrice)} 止损 ${fmt(position.stop)} 目标 ${fmt(position.target)}`;
 
   return (
     <div className="trainer-order-panel">
@@ -465,6 +552,31 @@ function TrainerPositionPanel({
       </div>
       <div className="trainer-order-row">
         <label>
+          加仓理由
+          <input
+            className="input"
+            type="text"
+            value={addReason}
+            onChange={(e) => onAddReasonChange(e.target.value)}
+          />
+        </label>
+      </div>
+      <div className="trainer-order-row trainer-size-group">
+        <span className="trainer-size-label">加仓</span>
+        {ADD_SIZES.map(({ label, size }) => (
+          <button
+            key={label}
+            className="btn"
+            aria-label={`加仓 ${label}`}
+            disabled={addLocked || !canAddSize(position, size)}
+            onClick={() => onAdd(size)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      <div className="trainer-order-row">
+        <label>
           平仓原因
           <input
             className="input"
@@ -474,9 +586,23 @@ function TrainerPositionPanel({
           />
         </label>
       </div>
-      <div className="trainer-order-row">
-        <button className="btn" disabled={exitLocked} onClick={onExitNextOpen}>
-          下一根开盘平仓
+      <div className="trainer-order-row trainer-size-group">
+        <span className="trainer-size-label">平仓</span>
+        <button
+          className="btn"
+          aria-label="平仓 1/2"
+          disabled={exitLocked || !canReduceSize(position, HALF_POSITION)}
+          onClick={() => onReduce(HALF_POSITION)}
+        >
+          1/2
+        </button>
+        <button
+          className="btn"
+          aria-label="平仓 全部"
+          disabled={exitLocked}
+          onClick={() => onReduce(null)}
+        >
+          全部
         </button>
       </div>
       {error && <div className="trainer-order-error">{error}</div>}

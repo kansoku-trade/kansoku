@@ -117,7 +117,7 @@ describe('TrainerChart', () => {
 
   it('renders no order panel when bridge/sessionId/onViewChange are omitted', () => {
     render(<TrainerChart view={makeView()} />);
-    expect(screen.queryByLabelText('止损')).toBeNull();
+    expect(screen.queryByRole('button', { name: '下单' })).toBeNull();
   });
 
   it('renders the order panel once bridge/sessionId/onViewChange are supplied', () => {
@@ -125,7 +125,7 @@ describe('TrainerChart', () => {
     render(
       <TrainerChart view={makeView()} bridge={bridge} sessionId="run-1" onViewChange={() => {}} />,
     );
-    expect(screen.getByLabelText('止损')).toBeTruthy();
+    expect(screen.getByRole('button', { name: '下单' })).toBeTruthy();
   });
 
   it('advances by the ladder tier currently selected in the period switch', () => {
