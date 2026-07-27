@@ -267,7 +267,10 @@ describe('TrainerSettlement review bar', () => {
 describe('TrainerSettlement epilogue toggle', () => {
   const EPILOGUE_BARS: RawBar[] = [bar('2026-01-05T14:10:00.000Z', 9999)];
 
-  it('defaults off and does not report epilogue bars until switched on', async () => {
+  // The session is over: there is no decision left to protect, so the aftermath is shown without
+  // being asked for. The checkbox stays because "look at the case again without the answer" is a
+  // thing a reviewer wants; only the statistics are kept away from it, in settlementStats.ts.
+  it('defaults on and reports the epilogue bars as soon as the reveal lands', async () => {
     const trades = [closedTrade()];
     const reveal = vi.fn(async () => ({
       ok: true as const,
@@ -283,13 +286,38 @@ describe('TrainerSettlement epilogue toggle', () => {
       />,
     );
 
-    await waitFor(() => expect(reveal).toHaveBeenCalled());
+    await waitFor(() => expect(onEpilogueBarsChange).toHaveBeenLastCalledWith(EPILOGUE_BARS));
     const checkbox = (await screen.findByRole('checkbox')) as HTMLInputElement;
-    expect(checkbox.checked).toBe(false);
-    expect(onEpilogueBarsChange).toHaveBeenLastCalledWith(null);
+    expect(checkbox.checked).toBe(true);
 
     fireEvent.click(checkbox);
+    await waitFor(() => expect(onEpilogueBarsChange).toHaveBeenLastCalledWith(null));
+  });
+
+  it('offers the same toggle on the collapsed review bar', async () => {
+    const trades = [closedTrade()];
+    const reveal = vi.fn(async () => ({
+      ok: true as const,
+      data: { provenance: PROVENANCE, epilogue: EPILOGUE_BARS } satisfies TrainerReveal,
+    }));
+    const onEpilogueBarsChange = vi.fn();
+    render(
+      <TrainerSettlement
+        view={makeView({ trades, result: terminalResult(trades) })}
+        bridge={makeBridge(reveal)}
+        sessionId="run-1"
+        expanded
+        onCollapse={vi.fn()}
+        onEpilogueBarsChange={onEpilogueBarsChange}
+      />,
+    );
+
     await waitFor(() => expect(onEpilogueBarsChange).toHaveBeenLastCalledWith(EPILOGUE_BARS));
+    const checkbox = (await screen.findByRole('checkbox')) as HTMLInputElement;
+    expect(checkbox.checked).toBe(true);
+
+    fireEvent.click(checkbox);
+    await waitFor(() => expect(onEpilogueBarsChange).toHaveBeenLastCalledWith(null));
   });
 
   // This is the pinned invariant from spec §8: the epilogue exists to look at afterwards, never
@@ -314,7 +342,7 @@ describe('TrainerSettlement epilogue toggle', () => {
     );
 
     await waitFor(() => expect(reveal).toHaveBeenCalled());
-    const checkbox = await screen.findByRole('checkbox');
+    const checkbox = (await screen.findByRole('checkbox')) as HTMLInputElement;
     const shown = () => [
       screen.getByTestId('trainer-settlement-stats').textContent,
       screen.getByTestId('trainer-settlement-trades').textContent,
@@ -322,12 +350,12 @@ describe('TrainerSettlement epilogue toggle', () => {
     const before = shown();
 
     fireEvent.click(checkbox);
-    await waitFor(() => expect((checkbox as HTMLInputElement).checked).toBe(true));
+    await waitFor(() => expect(checkbox.checked).toBe(false));
 
     expect(shown()).toEqual(before);
 
     fireEvent.click(checkbox);
-    await waitFor(() => expect((checkbox as HTMLInputElement).checked).toBe(false));
+    await waitFor(() => expect(checkbox.checked).toBe(true));
     expect(shown()).toEqual(before);
   });
 

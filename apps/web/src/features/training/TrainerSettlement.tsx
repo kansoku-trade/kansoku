@@ -57,7 +57,10 @@ export function TrainerSettlement({
 }: TrainerSettlementProps) {
   const [reveal, setReveal] = useState<TrainerReveal | null>(null);
   const [revealError, setRevealError] = useState<string | null>(null);
-  const [showEpilogue, setShowEpilogue] = useState(false);
+  // On by default: the session is over, so there is nothing left to decide against and the point of
+  // a post-mortem is to see what happened next. What the epilogue must never do is enter a
+  // statistic — that isolation lives in settlementStats.ts, which never receives these bars.
+  const [showEpilogue, setShowEpilogue] = useState(true);
 
   // Guarded on view.terminal even though this component is only ever mounted from the terminal
   // branch of TrainerChart — reveal() throwing before terminal is a rule this UI must never even
@@ -102,6 +105,7 @@ export function TrainerSettlement({
           </>
         )}
         <TrainerBandLegend />
+        <EpilogueToggle checked={showEpilogue} disabled={!reveal} onChange={setShowEpilogue} />
         <button className="btn trainer-review-collapse" onClick={onCollapse}>
           收起 ⤡
         </button>
@@ -200,16 +204,12 @@ export function TrainerSettlement({
           </table>
         )}
         <div className="trainer-settle-foot">
-          <label className="trainer-settlement-epilogue-toggle">
-            <input
-              type="checkbox"
-              checked={showEpilogue}
-              disabled={!reveal}
-              onChange={(e) => setShowEpilogue(e.target.checked)}
-            />
-            显示收盘后走势
-            <span className="trainer-settle-hint">（尾声段，不计入成绩，只用于看结构）</span>
-          </label>
+          <EpilogueToggle
+            checked={showEpilogue}
+            disabled={!reveal}
+            onChange={setShowEpilogue}
+            hint
+          />
           {missed > 0 && (
             <span className="trainer-settle-hint">
               本局提前结束，案例还剩 {missed} 根没走到，图上没有它们
@@ -222,6 +222,31 @@ export function TrainerSettlement({
         </div>
       </div>
     </>
+  );
+}
+
+function EpilogueToggle({
+  checked,
+  disabled,
+  onChange,
+  hint = false,
+}: {
+  checked: boolean;
+  disabled: boolean;
+  onChange: (next: boolean) => void;
+  hint?: boolean;
+}) {
+  return (
+    <label className="trainer-settlement-epilogue-toggle">
+      <input
+        type="checkbox"
+        checked={checked}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.checked)}
+      />
+      显示收盘后走势
+      {hint && <span className="trainer-settle-hint">（尾声段，不计入成绩，只用于看结构）</span>}
+    </label>
   );
 }
 

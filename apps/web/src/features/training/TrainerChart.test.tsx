@@ -193,7 +193,7 @@ describe('TrainerChart terminal state', () => {
     expect(document.querySelector('.trainer-shell--review')).toBeTruthy();
   });
 
-  it('threads the revealed epilogue bars into the chart build only once the toggle is switched on', async () => {
+  it('threads the revealed epilogue bars into the chart build as soon as the reveal lands, and drops them when the toggle is switched off', async () => {
     const epilogue = [bar('2026-01-05T14:10:00.000Z', 999)];
     render(
       <TrainerChart
@@ -206,14 +206,38 @@ describe('TrainerChart terminal state', () => {
 
     await waitFor(() => {
       const lastCall = vi.mocked(buildTrainerIntradayBuilt).mock.calls.at(-1);
-      expect(lastCall?.[1]).toBeFalsy();
+      expect(lastCall?.[1]).toEqual(epilogue);
     });
 
     fireEvent.click(await screen.findByRole('checkbox'));
 
     await waitFor(() => {
       const lastCall = vi.mocked(buildTrainerIntradayBuilt).mock.calls.at(-1);
-      expect(lastCall?.[1]).toEqual(epilogue);
+      expect(lastCall?.[1]).toBeFalsy();
+    });
+  });
+
+  it('keeps the epilogue toggle on the expanded review bar, still switching the same bars', async () => {
+    const epilogue = [bar('2026-01-05T14:10:00.000Z', 999)];
+    render(
+      <TrainerChart
+        view={makeTerminalView()}
+        bridge={makeRevealBridge(epilogue)}
+        sessionId="run-1"
+        onViewChange={() => {}}
+      />,
+    );
+
+    await screen.findByText('REALCANARY.US');
+    fireEvent.click(screen.getByRole('button', { name: /展开复盘/ }));
+
+    const checkbox = screen.getByRole('checkbox') as HTMLInputElement;
+    expect(checkbox.checked).toBe(true);
+    fireEvent.click(checkbox);
+
+    await waitFor(() => {
+      const lastCall = vi.mocked(buildTrainerIntradayBuilt).mock.calls.at(-1);
+      expect(lastCall?.[1]).toBeFalsy();
     });
   });
 
@@ -228,7 +252,6 @@ describe('TrainerChart terminal state', () => {
       />,
     );
 
-    fireEvent.click(await screen.findByRole('checkbox'));
     await waitFor(() => {
       const lastCall = vi.mocked(buildTrainerIntradayBuilt).mock.calls.at(-1);
       expect(lastCall?.[1]).toEqual(epilogue);
