@@ -1,12 +1,6 @@
 import type { TrainerViewPeriod } from '@kansoku/pro-api';
 import type { RawBar } from '@kansoku/shared/types';
-
-const NEW_YORK_DATE = new Intl.DateTimeFormat('en-CA', {
-  timeZone: 'America/New_York',
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-});
+import { easternDate } from '@web/lib/easternDate';
 
 const BUCKET_MINUTES: Record<Exclude<TrainerViewPeriod, 'day' | 'week'>, number> = {
   '1m': 1,
@@ -18,7 +12,7 @@ const BUCKET_MINUTES: Record<Exclude<TrainerViewPeriod, 'day' | 'week'>, number>
 
 function marketDate(time: string): string {
   if (/^\d{4}-\d{2}-\d{2}$/.test(time)) return time;
-  return NEW_YORK_DATE.format(new Date(time));
+  return easternDate(new Date(time));
 }
 
 // A US session opens on the half hour under both daylight-saving regimes (13:30Z in summer,

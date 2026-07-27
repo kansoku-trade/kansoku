@@ -5,8 +5,12 @@ const easternDateFormatter = new Intl.DateTimeFormat('en-CA', {
   day: '2-digit',
 });
 
+export function easternDate(at: Date): string {
+  return easternDateFormatter.format(at);
+}
+
 export function easternToday(now: Date = new Date()): string {
-  return easternDateFormatter.format(now);
+  return easternDate(now);
 }
 
 export function isCurrentSessionId(id: string, now: Date = new Date()): boolean {
