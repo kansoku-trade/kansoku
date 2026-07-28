@@ -1,0 +1,144 @@
+---
+import '../../styles/landing/tokens.css';
+import '../../styles/landing/reveal.css';
+import features from '../../data/features.json';
+import { subscription } from '../../lib/pricing';
+
+interface Props {
+  version: string;
+  downloadUrl: string;
+}
+
+const { version, downloadUrl } = Astro.props;
+const proShorts = features.pro.map((f) => f.short).join('、');
+---
+
+<section class="outro">
+  <div class="outro-scene" data-outro-scene>
+    <canvas class="outro-particle-canvas" data-outro-canvas aria-hidden="true"></canvas>
+    <p class="outro-status">有出处 · 不改口 · 有战绩</p>
+  </div>
+
+  <div class="outro-panel" data-reveal>
+    <div class="outro-copy">
+      <h2>免费版就是完整的看盘工具。</h2>
+      <p class="outro-sub">
+        Pro 解锁{proShorts} —— <span class="mono outro-amount">{subscription.priceLabel}</span> 或
+        <span class="mono outro-amount">{subscription.yearly.priceLabel}</span>（{
+          subscription.yearly.savingsLabel
+        }） · {subscription.trialDays} 天试用
+      </p>
+    </div>
+    <div class="outro-cta">
+      <a class="btn" href={downloadUrl}>下载 <span class="ver">v{version}</span></a>
+      <a class="btn btn-ghost" href="/pricing">免费版 vs Pro</a>
+    </div>
+  </div>
+</section>
+
+<style>
+  .outro {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 72px 24px 96px;
+  }
+
+  .outro-scene {
+    position: relative;
+    height: 84px;
+    max-width: 560px;
+    margin: 0 auto 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .outro-particle-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+  }
+
+  html[data-tier='full'] .outro-particle-canvas,
+  html[data-tier='lite'] .outro-particle-canvas {
+    display: block;
+  }
+
+  .outro-scene.is-faded .outro-particle-canvas {
+    opacity: 0;
+  }
+
+  .outro-status {
+    position: relative;
+    z-index: 1;
+    margin: 0;
+    opacity: 1;
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+  }
+
+  html[data-tier='full'] .outro-status,
+  html[data-tier='lite'] .outro-status {
+    opacity: 0;
+  }
+
+  .outro-scene.is-formed .outro-status {
+    opacity: 1;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    html[data-tier='full'] .outro-particle-canvas,
+    html[data-tier='lite'] .outro-particle-canvas {
+      transition: opacity 400ms ease;
+    }
+
+    html[data-tier='full'] .outro-status,
+    html[data-tier='lite'] .outro-status {
+      transition: opacity 300ms ease;
+    }
+  }
+
+  .outro-panel {
+    border: 1px solid var(--border-strong);
+    border-radius: 2px;
+    background: var(--surface);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 32px 36px;
+    flex-wrap: wrap;
+  }
+
+  .outro-copy h2 {
+    font-size: 22px;
+    margin: 0 0 8px;
+  }
+
+  .outro-sub {
+    margin: 0;
+    color: var(--text-2);
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .outro-amount {
+    color: var(--accent);
+  }
+
+  .outro-cta {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  @media (max-width: 720px) {
+    .outro-panel {
+      padding: 26px 24px;
+    }
+  }
+</style>
