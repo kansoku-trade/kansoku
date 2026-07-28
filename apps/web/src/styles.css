@@ -696,6 +696,12 @@ a:hover {
   background: var(--border);
   margin: 2px 1px;
 }
+.drawing-style-panel.trainer-style-panel {
+  top: 50%;
+  left: 44px;
+  transform: translateY(-50%);
+  pointer-events: auto;
+}
 
 .trainer-chip {
   display: flex;
