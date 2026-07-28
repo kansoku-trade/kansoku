@@ -53,7 +53,12 @@ process.on('SIGINT', () => shutdown(0));
 process.on('SIGTERM', () => shutdown(0));
 
 function startElectron() {
-  electron = spawn(electronBin, ['.'], {
+  // Opt-in CDP port so a debugger or browser-automation tool can attach to the dev
+  // app's renderer. Off by default: an open debugging port is not something a dev
+  // run should expose without being asked.
+  const debugPort = process.env.ELECTRON_REMOTE_DEBUGGING_PORT;
+  const args = debugPort ? ['.', `--remote-debugging-port=${debugPort}`] : ['.'];
+  electron = spawn(electronBin, args, {
     cwd: desktopRoot,
     stdio: 'inherit',
     env: { ...process.env, ELECTRON_DEV: '1' },

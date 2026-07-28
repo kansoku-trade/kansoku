@@ -37,14 +37,14 @@ export function TrainingSection() {
   };
 
   return (
-    <section className="settings-conn-section">
+    <section className="settings-conn-section settings-conn-longbridge">
       <div className="settings-conn-title">
         <span>盲盘训练 · 自动补货</span>
         <Switch ariaLabel="自动补货" checked={enabled} onCheckedChange={toggle} />
       </div>
-      <div className="settings-conn-summary">
-        案例池少于 5 局时自动补到 15
-        局，只在读取案例池或打完一局后检查，不会定时后台运行。连续两次补不到会自动暂停，手动补一次即恢复。
+      <div className="settings-conn-note">
+        案例池少于 5 局时补到 15
+        局。只在读取案例池或打完一局后检查，不定时后台运行；连续两次补不到会自动暂停，手动补一次即恢复。
       </div>
     </section>
   );

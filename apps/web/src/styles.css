@@ -6567,6 +6567,14 @@ a.zone-item:hover {
   font-size: var(--fs-sm);
   font-weight: 600;
 }
+/* Sibling of settings-conn-summary for explanations that need more than one line:
+   the summary clamps to a single line, which silently cuts the tail off a sentence. */
+.settings-conn-note {
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  line-height: 1.6;
+  margin-top: 4px;
+}
 .settings-conn-summary {
   color: var(--text-muted);
   font-family: var(--font-mono);
