@@ -2,7 +2,7 @@
 .noretract,
 .scorecard {
   display: grid;
-  grid-template-columns: minmax(0, 380px) 1fr;
+  grid-template-columns: minmax(320px, 400px) minmax(0, 1fr);
   align-items: start;
   gap: 48px;
   max-width: 1120px;
@@ -164,7 +164,7 @@ html[data-tier='still'] .tl-detail {
 
 .noretract-scene {
   display: grid;
-  grid-template-columns: minmax(0, 260px) 1fr;
+  grid-template-columns: minmax(220px, 300px) minmax(0, 1fr);
   align-items: start;
   gap: 28px;
 }

@@ -192,7 +192,7 @@ const drawBackdropCandles = (
 };
 
 const drawNodes = (ctx: CanvasRenderingContext2D, state: DrawState): void => {
-  ctx.font = '10px ui-monospace, Menlo, monospace';
+  ctx.font = '11px ui-monospace, Menlo, monospace';
   for (let i = 0; i < state.nodePoints.length; i++) {
     const node = state.nodePoints[i];
     const evidence = state.caseData.nodes[i];
@@ -201,8 +201,11 @@ const drawNodes = (ctx: CanvasRenderingContext2D, state: DrawState): void => {
 
     const endX = node.x + (state.cardCenter.x - node.x) * activation;
     const endY = node.y + (state.cardCenter.y - node.y) * activation;
-    ctx.strokeStyle = `rgba(255, 176, 0, ${(0.08 + activation * 0.2).toFixed(3)})`;
-    ctx.lineWidth = 1;
+    ctx.save();
+    ctx.shadowBlur = 10 * activation;
+    ctx.shadowColor = 'rgba(255, 176, 0, 0.85)';
+    ctx.strokeStyle = `rgba(255, 176, 0, ${(0.2 + activation * 0.55).toFixed(3)})`;
+    ctx.lineWidth = 1 + activation * 0.6;
     ctx.setLineDash([2, 4]);
     ctx.lineDashOffset = -state.time * 26;
     ctx.beginPath();
@@ -211,23 +214,39 @@ const drawNodes = (ctx: CanvasRenderingContext2D, state: DrawState): void => {
     ctx.stroke();
     ctx.setLineDash([]);
 
+    ctx.shadowBlur = 6 + activation * 16;
     ctx.beginPath();
-    ctx.arc(node.x, node.y, 3.6 + activation * 1.6, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(255, 176, 0, ${(0.25 + activation * 0.7).toFixed(3)})`;
+    ctx.arc(node.x, node.y, 4 + activation * 2.4, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(255, 196, 74, ${(0.5 + activation * 0.5).toFixed(3)})`;
     ctx.fill();
+
+    if (activation > 0.02) {
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, 8 + activation * 12, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(255, 176, 0, ${(activation * 0.28).toFixed(3)})`;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+    ctx.restore();
 
     const faceRight = Math.cos(node.angle) > -0.15;
     ctx.textAlign = faceRight ? 'left' : 'right';
-    const offsetX = faceRight ? 12 : -12;
+    const offsetX = faceRight ? 14 : -14;
 
-    ctx.fillStyle = `rgba(236, 236, 236, ${(0.3 + activation * 0.55).toFixed(3)})`;
-    ctx.fillText(evidence.tool, node.x + offsetX, node.y - 2);
-    ctx.fillStyle = `rgba(120, 120, 120, ${(0.28 + activation * 0.45).toFixed(3)})`;
+    ctx.save();
+    ctx.shadowBlur = 8 * activation;
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+    ctx.fillStyle = `rgba(245, 245, 245, ${(0.55 + activation * 0.45).toFixed(3)})`;
+    ctx.fillText(evidence.tool, node.x + offsetX, node.y - 3);
+    ctx.fillStyle = `rgba(150, 150, 150, ${(0.45 + activation * 0.4).toFixed(3)})`;
     ctx.fillText(evidence.arg, node.x + offsetX, node.y + 11);
     if (activation > 0.35) {
-      ctx.fillStyle = `rgba(255, 176, 0, ${((activation - 0.35) * 1.4).toFixed(3)})`;
-      ctx.fillText(evidence.value, node.x + offsetX, node.y + 23);
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = 'rgba(255, 176, 0, 0.7)';
+      ctx.fillStyle = `rgba(255, 196, 74, ${((activation - 0.35) * 1.55).toFixed(3)})`;
+      ctx.fillText(evidence.value, node.x + offsetX, node.y + 25);
     }
+    ctx.restore();
   }
   ctx.textAlign = 'left';
 };

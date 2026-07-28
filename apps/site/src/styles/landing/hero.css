@@ -1,11 +1,12 @@
 .hero-evidence {
   display: grid;
-  grid-template-columns: minmax(0, 560px) 1fr;
+  grid-template-columns: minmax(420px, 560px) minmax(0, 1fr);
   align-items: center;
   gap: 48px;
   max-width: 1200px;
   margin: 0 auto;
   padding: 76px 24px 56px;
+  min-height: calc(100vh - 120px);
 }
 
 .hero-evidence-copy {
@@ -104,13 +105,18 @@
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  width: min(280px, 74%);
+  width: min(300px, 76%);
   font-family: var(--mono);
-  border: 1px solid var(--border-strong);
+  background: rgba(9, 9, 9, 0.93);
+  border: 1px solid rgba(255, 176, 0, 0.28);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.6),
+    0 18px 60px rgba(0, 0, 0, 0.85),
+    0 0 48px rgba(255, 176, 0, 0.1);
   padding: 14px 16px 16px;
   opacity: 0;
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
 
 @media (prefers-reduced-motion: no-preference) {
