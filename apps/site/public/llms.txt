@@ -1,6 +1,6 @@
 # Kansoku（観測）
 
-> 本地优先的 AI 看盘 macOS 应用：行情从用户自己的长桥（Longbridge）账户拉取，技术指标在本机实算，AI 使用用户自己配置的模型（自带 API key / 本机 codex 登录态 / LobeHub Cloud）进行盘中点评、追问分析与研究改稿，结论落成本地 markdown/JSON 文件。数据和 key 不离开用户机器。作者：Innei（https://innei.in）。
+> 能查账的 AI 看盘 macOS 应用：AI 给出的每个结论都挂着完整证据链（调用了哪些工具、时间戳、原始数字），已归档的预测冻结不可改写，判断结果按命中率追踪记分。行情从用户自己的长桥（Longbridge）账户拉取，技术指标在本机实算，AI 使用用户自己配置的模型（自带 API key / 本机 codex 登录态 / LobeHub Cloud）——数据与 key 留在本机，是上述可查证性的实现前提。结论落成本地 markdown/JSON 文件。作者：Innei（https://innei.in）。
 
 ## 核心事实
 

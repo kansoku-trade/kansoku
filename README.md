@@ -1,10 +1,10 @@
 <p align="center">
-  <img src="./apps/web/public/brand/kansoku-product-banner.png" alt="Kansoku — 本地优先的 AI 看盘与研究桌面应用" width="100%">
+  <img src="./apps/web/public/brand/kansoku-product-banner.png" alt="Kansoku — 能查账的 AI 看盘搭子" width="100%">
 </p>
 
 # Kansoku
 
-> 装在你 Mac 上的 AI 看盘搭子——用你自己的券商数据和 AI key，盘中点评、追问分析、研究改稿，全部本地完成。
+> 装在你 Mac 上的能查账的 AI 看盘搭子——它说的每句话你都能查：每个结论挂着完整证据链，归档之后不许改口，事后按命中率记分。
 
 **Kansoku（観測）** 是一个 macOS 桌面应用：行情从你自己的长桥账户拉，指标全部本地实算，AI 用你自己配置的模型盯盘、答疑、改研究稿，结论落成本地文件。数据和 key 都不出你的机器。
 

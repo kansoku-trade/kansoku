@@ -2,7 +2,7 @@
   "name": "kansoku",
   "version": "0.0.0",
   "private": true,
-  "description": "Personal US market observatory with trading records, agent skills, and realtime charts",
+  "description": "Auditable AI trading copilot for macOS — every claim is sourced, archived predictions are frozen, and judgments are scored by hit rate",
   "license": "SEE LICENSE IN LICENSE",
   "scripts": {
     "bench": "pnpm --filter @kansoku/bench exec vite-node src/cli.ts",
