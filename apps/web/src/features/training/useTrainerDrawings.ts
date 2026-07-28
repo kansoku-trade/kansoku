@@ -238,6 +238,7 @@ export function useTrainerDrawings(
       historyCursorRef.current = index;
       annotationsRef.current = snapshot;
       setAnnotationsState(snapshot);
+      dragRef.current = null;
       drawingRef.current = null;
       hoverRef.current = null;
       hoverLabelRef.current = null;

@@ -17,6 +17,12 @@ const CLEAR_PATH = 'M4 4 L12 12 M12 4 L4 12';
 const UNDO_PATH = 'M6 3 L3 6 L6 9 M3 6 H10 A3.5 3.5 0 0 1 10 13 H7';
 const REDO_PATH = 'M10 3 L13 6 L10 9 M13 6 H6 A3.5 3.5 0 0 0 6 13 H9';
 
+const isMac =
+  typeof navigator !== 'undefined' &&
+  /mac|iphone|ipad|ipod/i.test(navigator.platform || navigator.userAgent);
+const UNDO_LABEL = isMac ? '撤销（⌘Z）' : '撤销（Ctrl+Z）';
+const REDO_LABEL = isMac ? '重做（⇧⌘Z）' : '重做（Ctrl+Shift+Z）';
+
 export function TrainerDrawingTools({ api }: { api: TrainerDrawingsApi }) {
   return (
     <>
@@ -42,8 +48,8 @@ export function TrainerDrawingTools({ api }: { api: TrainerDrawingsApi }) {
         <div className="trainer-rail-sep" />
         <button
           className="trainer-rail-tool"
-          aria-label="撤销（⌘Z）"
-          title="撤销（⌘Z）"
+          aria-label={UNDO_LABEL}
+          title={UNDO_LABEL}
           disabled={!api.canUndo}
           onClick={api.undo}
         >
@@ -53,8 +59,8 @@ export function TrainerDrawingTools({ api }: { api: TrainerDrawingsApi }) {
         </button>
         <button
           className="trainer-rail-tool"
-          aria-label="重做（⇧⌘Z）"
-          title="重做（⇧⌘Z）"
+          aria-label={REDO_LABEL}
+          title={REDO_LABEL}
           disabled={!api.canRedo}
           onClick={api.redo}
         >
