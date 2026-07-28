@@ -1,0 +1,113 @@
+---
+import '../../styles/landing/tokens.css';
+import '../../styles/landing/hero.css';
+
+interface Props {
+  version: string;
+  downloadUrl: string;
+}
+
+const { version, downloadUrl } = Astro.props;
+
+const nodePositions = [
+  { x: 200, y: 40 },
+  { x: 317.3, y: 81.4 },
+  { x: 346.2, y: 174.5 },
+  { x: 265.1, y: 249.1 },
+  { x: 134.9, y: 249.1 },
+  { x: 53.8, y: 174.5 },
+  { x: 82.7, y: 81.4 },
+];
+
+const barKeys = ['bull', 'base', 'bear'] as const;
+const barLabels: Record<(typeof barKeys)[number], string> = {
+  bull: 'Bull',
+  base: 'Base',
+  bear: 'Bear',
+};
+---
+
+<section class="hero-evidence">
+  <div class="hero-evidence-copy">
+    <p class="hero-eyebrow">[ EVERY CLAIM · SOURCED · TIMESTAMPED · SCORED ]</p>
+    <h1 class="hero-title">它说的每句话，你都能查。</h1>
+    <p class="hero-sub">
+      盘中点评、追问、深度研究——每个结论背后都挂着它查了什么、什么时候查的、原始数字是多少。
+      <b>归档之后不许改口，事后按命中率记分。</b>
+    </p>
+    <div class="hero-cta">
+      <a class="btn" href={downloadUrl}>下载 <span class="ver">v{version}</span></a>
+      <a class="btn btn-ghost" href="/pricing">查看定价</a>
+    </div>
+    <p class="hero-note">
+      macOS · apple silicon · 需 <a
+        href="https://open.longbridge.com/docs/cli/install"
+        target="_blank"
+        rel="noreferrer">longbridge CLI</a
+      > · 首次打开右键 →「打开」
+    </p>
+  </div>
+
+  <div class="hero-evidence-scene" data-hero-scene>
+    <svg
+      class="hero-poster"
+      viewBox="0 0 400 300"
+      preserveAspectRatio="xMidYMid meet"
+      aria-hidden="true"
+      data-hero-poster
+    >
+      {
+        nodePositions.map((node) => (
+          <line
+            x1={node.x}
+            y1={node.y}
+            x2="200"
+            y2="150"
+            stroke="var(--border-strong)"
+            stroke-width="1"
+            stroke-dasharray="2 4"
+          />
+        ))
+      }
+      <rect
+        x="120"
+        y="95"
+        width="160"
+        height="110"
+        fill="none"
+        stroke="var(--border-strong)"
+        stroke-width="1"
+      />
+      {
+        nodePositions.map((node) => (
+          <circle cx={node.x} cy={node.y} r="3.5" fill="var(--border-strong)" />
+        ))
+      }
+    </svg>
+
+    <canvas class="hero-scene-canvas" data-hero-canvas></canvas>
+    <canvas class="hero-particle-canvas" data-hero-particles></canvas>
+
+    <div class="evidence-card" data-hero-card>
+      <div class="evidence-card-head">
+        <span class="evidence-card-sym" data-card-sym></span>
+      </div>
+      <p class="evidence-card-dir" data-card-dir></p>
+      <div class="evidence-card-bars">
+        {
+          barKeys.map((key) => (
+            <div class="evidence-bar-row">
+              <span class="evidence-bar-label">{barLabels[key]}</span>
+              <div class="evidence-bar-track" data-bar-track={key} />
+              <span class="evidence-bar-value" data-bar-value={key}>
+                0%
+              </span>
+            </div>
+          ))
+        }
+      </div>
+      <p class="evidence-card-trig" data-card-trig></p>
+      <span class="evidence-card-stamp" data-card-stamp>ARCHIVED · 冻结</span>
+    </div>
+  </div>
+</section>

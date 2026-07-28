@@ -1,0 +1,240 @@
+.hero-evidence {
+  display: grid;
+  grid-template-columns: minmax(0, 560px) 1fr;
+  align-items: center;
+  gap: 48px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 76px 24px 56px;
+}
+
+.hero-evidence-copy {
+  min-width: 0;
+}
+
+.hero-eyebrow {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 22px;
+}
+
+.hero-title {
+  font-size: clamp(34px, 4.2vw, 58px);
+  line-height: 1.12;
+  margin: 0 0 22px;
+}
+
+.hero-sub {
+  color: var(--text-2);
+  font-size: 15px;
+  line-height: 1.85;
+  margin: 0 0 30px;
+  max-width: 520px;
+}
+
+.hero-sub b {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.hero-cta {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.hero-note {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-3);
+  letter-spacing: 0.04em;
+}
+
+.hero-note a {
+  color: var(--text-2);
+}
+
+.hero-evidence-scene {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  min-height: 320px;
+}
+
+.hero-poster {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.hero-scene-canvas,
+.hero-particle-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hero-poster,
+  .hero-scene-canvas,
+  .hero-particle-canvas {
+    transition: opacity 200ms ease;
+  }
+}
+
+.hero-evidence-scene.is-live .hero-poster {
+  opacity: 0;
+}
+
+.hero-evidence-scene.is-live .hero-scene-canvas,
+.hero-evidence-scene.is-live .hero-particle-canvas {
+  opacity: 1;
+}
+
+.evidence-card {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(280px, 74%);
+  font-family: var(--mono);
+  border: 1px solid var(--border-strong);
+  padding: 14px 16px 16px;
+  opacity: 0;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .evidence-card {
+    transition: opacity 350ms ease;
+  }
+}
+
+.evidence-card.is-visible {
+  opacity: 1;
+}
+
+.evidence-card-head {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+  margin-bottom: 10px;
+}
+
+.evidence-card-sym {
+  color: var(--accent);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+}
+
+.evidence-card-dir {
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0 0 12px;
+  color: var(--text);
+}
+
+.evidence-card-dir[data-tone='up'] {
+  color: var(--up);
+}
+
+.evidence-card-dir[data-tone='down'] {
+  color: var(--down);
+}
+
+.evidence-card-dir[data-tone='neutral'] {
+  color: var(--accent);
+}
+
+.evidence-card-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 11px;
+}
+
+.evidence-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  color: var(--text-2);
+}
+
+.evidence-bar-label {
+  width: 30px;
+  color: var(--text-3);
+}
+
+.evidence-bar-track {
+  flex: 1;
+  height: 4px;
+}
+
+.evidence-bar-value {
+  width: 32px;
+  text-align: right;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.evidence-card-trig {
+  margin: 0;
+  padding-top: 9px;
+  border-top: 1px solid var(--border);
+  font-size: 9.5px;
+  line-height: 1.6;
+  color: var(--text-3);
+}
+
+.evidence-card-stamp {
+  position: absolute;
+  right: -10px;
+  bottom: -10px;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  padding: 4px 9px;
+  background: var(--bg);
+  opacity: 0;
+  transform: rotate(-6deg) scale(1.2);
+}
+
+.evidence-card-stamp.is-visible {
+  opacity: 1;
+  transform: rotate(-6deg) scale(1);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .evidence-card-stamp {
+    transition:
+      opacity 260ms ease,
+      transform 260ms cubic-bezier(0.2, 1.2, 0.4, 1);
+  }
+}
+
+@media (max-width: 900px) {
+  .hero-evidence {
+    grid-template-columns: 1fr;
+    padding: 56px 20px 40px;
+    gap: 32px;
+  }
+
+  .hero-evidence-scene {
+    aspect-ratio: 5 / 4;
+    min-height: 280px;
+  }
+}
