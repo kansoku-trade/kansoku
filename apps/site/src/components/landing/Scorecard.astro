@@ -1,0 +1,39 @@
+---
+import '../../styles/landing/tokens.css';
+import '../../styles/landing/pillars.css';
+import { hitRate, scoredJudgments } from '../../scripts/landing/scorecardData';
+
+const rate = hitRate(scoredJudgments);
+const outcomeMark: Record<'hit' | 'miss', string> = { hit: '✓', miss: '✗' };
+---
+
+<section class="scorecard">
+  <div class="scorecard-copy">
+    <h2>它有判断，也有命中率。</h2>
+    <ul class="scorecard-points">
+      <li>判断与结果追踪、当日记分板。</li>
+      <li>AI 花了多少钱，记在你自己账上。</li>
+    </ul>
+  </div>
+
+  <div class="scorecard-scene" data-scorecard-scene data-reveal>
+    <ol class="sc-list" data-sc-list>
+      {
+        scoredJudgments.map((item, i) => (
+          <li class="sc-row" data-sc-row data-outcome={item.outcome} style={`--i:${i}`}>
+            <span class="sc-sym">{item.symbol}</span>
+            <span class="sc-date">{item.date}</span>
+            <span class="sc-call">{item.call}</span>
+            <span class="sc-mark" aria-hidden="true">
+              {outcomeMark[item.outcome]}
+            </span>
+          </li>
+        ))
+      }
+    </ol>
+    <div class="sc-rate">
+      <span class="sc-rate-label">命中率</span>
+      <span class="sc-rate-value" data-sc-rate-value data-final={rate}>{rate}%</span>
+    </div>
+  </div>
+</section>

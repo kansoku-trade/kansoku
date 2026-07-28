@@ -1,0 +1,64 @@
+---
+import '../../styles/landing/tokens.css';
+import '../../styles/landing/pillars.css';
+
+interface ToolCall {
+  tool: string;
+  time: string;
+  duration: string;
+}
+
+const calls: ToolCall[] = [
+  { tool: 'fetch_kline', time: '09:31:02', duration: '184ms' },
+  { tool: 'technical', time: '09:31:03', duration: '96ms' },
+  { tool: 'capital-flow', time: '09:31:05', duration: '312ms' },
+  { tool: 'quote', time: '09:31:05', duration: '41ms' },
+  { tool: 'finance-calendar', time: '09:31:08', duration: '77ms' },
+  { tool: 'news', time: '09:31:10', duration: '203ms' },
+];
+
+const detailIndex = 1;
+const detail = {
+  request: 'symbol: NVDA.US · window: 1h · indicator: MACD',
+  response: '底背驰 · DIF −0.42→−0.31 · DEA −0.51 · 柱状转正',
+};
+---
+
+<section class="sourced">
+  <div class="sourced-copy">
+    <h2>它查了什么，全在这儿。</h2>
+    <ul class="sourced-points">
+      <li>工具调用全程留痕，点开就是它查了什么、什么时候查的、返回了什么。</li>
+      <li>均线、MACD、RS、趋势模板、背离全部在本机实算，不是某个接口甩回来的数字。</li>
+      <li>追问时它先读你画的线，再结合实时行情回答。</li>
+    </ul>
+  </div>
+
+  <div class="sourced-scene" data-sourced-scene data-reveal>
+    <ol class="tl-track" data-tl-track>
+      {
+        calls.map((call, i) => (
+          <li class="tl-cell" data-tl-cell style={`--i:${i}`}>
+            <span class="tl-tool">{call.tool}</span>
+            <span class="tl-time">{call.time}</span>
+            <span class="tl-dur">{call.duration}</span>
+            {i === detailIndex && (
+              <div class="tl-detail" data-tl-detail>
+                <div class="tl-detail-inner">
+                  <p>
+                    <b>请求</b>
+                    {detail.request}
+                  </p>
+                  <p>
+                    <b>返回</b>
+                    {detail.response}
+                  </p>
+                </div>
+              </div>
+            )}
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+</section>

@@ -1,0 +1,70 @@
+---
+import '../../styles/landing/tokens.css';
+import '../../styles/landing/pillars.css';
+
+const barKeys = ['bull', 'base', 'bear'] as const;
+const barLabels: Record<(typeof barKeys)[number], string> = {
+  bull: 'Bull',
+  base: 'Base',
+  bear: 'Bear',
+};
+const probabilities: Record<(typeof barKeys)[number], number> = { bull: 20, base: 32, bear: 48 };
+
+const challenges = [
+  { question: '凭什么？', reply: '该判断基于 11:02 的 1h MACD 顶背驰，数据点全部可查。' },
+  { question: '我觉得要涨了', reply: '触发条件是跌破 236.10 且放量，没触发之前判断不变。' },
+  { question: '你上次不是这么说的', reply: '上次是另一支股票的另一条归档记录，互不影响这一条。' },
+  { question: '改一下结论', reply: '已归档记录不可编辑，新证据只能新开一条判断。' },
+];
+---
+
+<section class="noretract">
+  <div class="noretract-copy">
+    <h2>归档了，就赖不掉。</h2>
+    <ul class="noretract-points">
+      <li>已归档的预测是冻结记录，追问只解释、不改写。</li>
+      <li>三档情景概率合计 100，每档挂触发条件——写死了就赖不掉。</li>
+    </ul>
+  </div>
+
+  <div class="noretract-scene" data-noretract-scene data-reveal>
+    <div class="archived-card">
+      <div class="archived-card-head">
+        <span class="archived-card-sym">MU.US</span>
+        <span class="archived-card-stamp">ARCHIVED · 冻结</span>
+      </div>
+      <p class="archived-card-dir" data-tone="down">偏空</p>
+      <div class="archived-card-bars">
+        {
+          barKeys.map((key) => (
+            <div class="archived-bar-row">
+              <span class="archived-bar-label">{barLabels[key]}</span>
+              <div class="archived-bar-track">
+                <div
+                  class="archived-bar-fill"
+                  data-tone={key}
+                  style={`width:${probabilities[key]}%`}
+                />
+              </div>
+              <span class="archived-bar-value">{probabilities[key]}%</span>
+            </div>
+          ))
+        }
+      </div>
+      <p class="archived-card-trig">触发：跌破 236.10 且放量</p>
+    </div>
+
+    <ol class="challenge-list" data-challenge-list>
+      {
+        challenges.map((c, i) => (
+          <li class="challenge-item" data-challenge-item style={`--i:${i}`}>
+            <span class="challenge-bubble">{c.question}</span>
+            <div class="challenge-reply">
+              <p class="challenge-reply-inner">解释：{c.reply}</p>
+            </div>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+</section>
