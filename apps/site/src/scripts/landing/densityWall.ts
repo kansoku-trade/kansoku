@@ -43,44 +43,59 @@ const mountElementImageEnhancement = (root: HTMLElement): (() => void) | null =>
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     let width = 0;
     let height = 0;
-
-    const layout = (): void => {
-      const rect = scene.getBoundingClientRect();
-      width = rect.width;
-      height = rect.height;
-      canvas.width = Math.max(1, Math.round(width * dpr));
-      canvas.height = Math.max(1, Math.round(height * dpr));
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    };
-
     let rafId = 0;
-    const tick = (): void => {
-      ctx.clearRect(0, 0, width, height);
-      const sceneRect = scene.getBoundingClientRect();
-      ctx.globalAlpha = 0.16;
-      for (const tile of tiles) {
-        const tileRect = tile.getBoundingClientRect();
-        drawElementImage(
-          tile,
-          tileRect.left - sceneRect.left,
-          tileRect.top - sceneRect.top + 6,
-          tileRect.width,
-          tileRect.height,
-        );
-      }
-      ctx.globalAlpha = 1;
-      rafId = window.requestAnimationFrame(tick);
-    };
+    let disposed = false;
 
-    layout();
-    window.addEventListener('resize', layout);
-    rafId = window.requestAnimationFrame(tick);
-
-    return () => {
+    const degrade = (): void => {
+      if (disposed) return;
+      disposed = true;
       window.cancelAnimationFrame(rafId);
       window.removeEventListener('resize', layout);
       canvas.remove();
     };
+
+    const layout = (): void => {
+      try {
+        const rect = scene.getBoundingClientRect();
+        width = rect.width;
+        height = rect.height;
+        canvas.width = Math.max(1, Math.round(width * dpr));
+        canvas.height = Math.max(1, Math.round(height * dpr));
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      } catch {
+        degrade();
+      }
+    };
+
+    const tick = (): void => {
+      try {
+        ctx.clearRect(0, 0, width, height);
+        const sceneRect = scene.getBoundingClientRect();
+        ctx.globalAlpha = 0.16;
+        for (const tile of tiles) {
+          const tileRect = tile.getBoundingClientRect();
+          drawElementImage(
+            tile,
+            tileRect.left - sceneRect.left,
+            tileRect.top - sceneRect.top + 6,
+            tileRect.width,
+            tileRect.height,
+          );
+        }
+        ctx.globalAlpha = 1;
+      } catch {
+        degrade();
+        return;
+      }
+      rafId = window.requestAnimationFrame(tick);
+    };
+
+    layout();
+    if (disposed) return null;
+    window.addEventListener('resize', layout);
+    rafId = window.requestAnimationFrame(tick);
+
+    return degrade;
   } catch {
     return null;
   }

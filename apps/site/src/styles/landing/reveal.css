@@ -34,6 +34,13 @@ html[data-tier='still'] [data-reveal] {
   }
 
   @supports (animation-timeline: view()) {
+    /* keep animation-name/-timing-function/-fill-mode as separate longhands, not the
+       `animation` shorthand, and don't add the other animation-* longhands (duration,
+       delay, iteration-count, direction, play-state): lightningcss's production
+       minifier collapses a full set back into `animation: ... view()`, which browsers
+       can't parse as a valid shorthand, silently dropping animation-name/-timeline
+       (getComputedStyle().animationName === "none") — invisible in dev, only shows in
+       a real `astro build` output */
     [data-reveal] {
       transition: none;
       animation-name: pillar-reveal;
