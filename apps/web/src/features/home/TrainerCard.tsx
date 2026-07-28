@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router';
 import { GraduationCap } from 'lucide-react';
 import type { TrainerFillState } from '@kansoku/pro-api';
 import { getTrainerBridge } from '@web/features/desktop/desktopTrainerBridge';
@@ -113,6 +114,11 @@ export function TrainerCard() {
             <Button className="trainer-card-cancel" onClick={fill.abortFill}>
               取消
             </Button>
+          )}
+          {licensed && (
+            <Link className="trainer-card-stats" to="/training/stats">
+              统计 →
+            </Link>
           )}
         </div>
       </Card>

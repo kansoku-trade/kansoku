@@ -60,6 +60,7 @@ function makeView(): TrainerView {
     remainingBars: 10,
     terminal: false,
     result: null,
+    submitted: false,
   };
 }
 

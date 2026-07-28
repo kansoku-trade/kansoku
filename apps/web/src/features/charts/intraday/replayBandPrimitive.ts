@@ -9,7 +9,9 @@ import type {
   Time,
 } from 'lightweight-charts';
 
-export type ReplayBandKind = 'given' | 'played' | 'epilogue';
+// `fog` is the stretch the trader never reached — they closed out or were flattened before it.
+// It is drawn on the review chart only, where the whole case is on screen at once.
+export type ReplayBandKind = 'given' | 'played' | 'fog' | 'epilogue';
 
 export interface ReplayBand {
   kind: ReplayBandKind;
@@ -35,6 +37,7 @@ type DrawTarget = Parameters<IPrimitivePaneRenderer['draw']>[0];
 export const REPLAY_BAND_FILL: Record<ReplayBandKind, string> = {
   given: 'rgba(232, 232, 232, 0.045)',
   played: 'rgba(38, 166, 154, 0.10)',
+  fog: 'rgba(232, 232, 232, 0.10)',
   epilogue: 'rgba(255, 176, 0, 0.10)',
 };
 

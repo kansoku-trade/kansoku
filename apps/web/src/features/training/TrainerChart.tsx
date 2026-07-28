@@ -17,7 +17,9 @@ import { remainingBarsAt } from './remainingBars';
 import { replayBands, replayDivider } from './replayBands';
 import { TrainerOverlayLayer, TrainerOverlayProvider } from './trainerOverlay';
 import { TrainerAdvanceControls } from './TrainerAdvanceControls';
+import { TrainerCoachPanel } from './TrainerCoachPanel';
 import { TrainerDrawingTools } from './TrainerDrawingTools';
+import { TrainerReview } from './TrainerReview';
 import { TrainerOrderPanel } from './TrainerOrderPanel';
 import { TrainerPeriodSwitch } from './TrainerPeriodSwitch';
 import { TrainerBandLegend, TrainerSettlement } from './TrainerSettlement';
@@ -26,6 +28,8 @@ import { useTrainerDrawings } from './useTrainerDrawings';
 import { useTrainerReviewOverlay } from './useTrainerReviewOverlay';
 
 const STORAGE_NAMESPACE = 'trainer';
+
+type TrainerTab = 'settlement' | 'review';
 
 export interface TrainerChartProps {
   view: TrainerView;
@@ -77,11 +81,15 @@ export function TrainerChart({ view, sessionId, bridge, onViewChange }: TrainerC
   const remaining = remainingBarsAt(view, advancePeriod);
 
   const settling = view.terminal && bridge != null && sessionId != null && onViewChange != null;
-  const shellMode = settling
-    ? expanded
-      ? ' trainer-shell--review'
-      : ' trainer-shell--settle'
-    : '';
+  const [tab, setTab] = useState<TrainerTab>('settlement');
+  const reviewing = settling && tab === 'review';
+  const shellMode = reviewing
+    ? ' trainer-shell--postmortem'
+    : settling
+      ? expanded
+        ? ' trainer-shell--review'
+        : ' trainer-shell--settle'
+      : '';
 
   return (
     <TrainerOverlayProvider>
@@ -99,13 +107,30 @@ export function TrainerChart({ view, sessionId, bridge, onViewChange }: TrainerC
                 ? '已收盘'
                 : `剩余 ${remaining.approximate ? '约 ' : ''}${remaining.count} 根`}
             </span>
-            <TrainerPeriodSwitch
-              ladder={view.ladder}
-              activeTf={activeTf}
-              onChange={setRequestedTf}
-            />
+            {settling ? (
+              <div className="trainer-tabs">
+                <button
+                  className={`trainer-tab${tab === 'settlement' ? ' trainer-tab--on' : ''}`}
+                  onClick={() => setTab('settlement')}
+                >
+                  本局结算
+                </button>
+                <button
+                  className={`trainer-tab${tab === 'review' ? ' trainer-tab--on' : ''}`}
+                  onClick={() => setTab('review')}
+                >
+                  复盘
+                </button>
+              </div>
+            ) : (
+              <TrainerPeriodSwitch
+                ladder={view.ladder}
+                activeTf={activeTf}
+                onChange={setRequestedTf}
+              />
+            )}
           </div>
-          <div className="trainer-body">
+          <div className="trainer-body" hidden={reviewing}>
             {settling && !expanded ? (
               <>
                 <TrainerThumbnail
@@ -135,7 +160,12 @@ export function TrainerChart({ view, sessionId, bridge, onViewChange }: TrainerC
           // key remounts these panels (and their draft state) on a new case instead of
           // syncing them with an effect.
           <>
-            {view.terminal ? (
+            {/* The review tab is a sibling of the play chart rather than a replacement for it:
+                unmounting that chart would tear down lightweight-charts and rebuild it on every
+                switch back. */}
+            {reviewing ? (
+              <TrainerReview bridge={bridge} sessionId={sessionId} />
+            ) : view.terminal ? (
               <TrainerSettlement
                 key={`settlement-${view.caseId}`}
                 view={view}
@@ -165,6 +195,12 @@ export function TrainerChart({ view, sessionId, bridge, onViewChange }: TrainerC
                   onViewChange={onViewChange}
                   drawingActive={drawings.tool !== 'off'}
                   onTakeChart={() => drawings.setTool('off')}
+                />
+                <TrainerCoachPanel
+                  key={`coach-${view.caseId}`}
+                  view={view}
+                  bridge={bridge}
+                  sessionId={sessionId}
                 />
               </>
             )}

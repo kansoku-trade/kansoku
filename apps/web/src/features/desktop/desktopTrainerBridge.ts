@@ -1,12 +1,16 @@
 import type {
   TrainerAmendCheck,
   TrainerApi,
+  TrainerCoachCall,
   TrainerEnvelope,
   TrainerFillState,
   TrainerFillTask,
+  TrainerLesson,
   TrainerOpened,
   TrainerPoolCounts,
   TrainerReveal,
+  TrainerReviewPayload,
+  TrainerStats,
   TrainerStepResult,
   WrapTrainerEnvelope,
 } from '@kansoku/pro-api';
@@ -40,5 +44,11 @@ export function getTrainerBridge(
     add: (input) => call<TrainerStepResult>('add', input),
     reduce: (input) => call<TrainerStepResult>('reduce', input),
     reveal: (input) => call<TrainerReveal>('reveal', input),
+    coach: (input) => call<TrainerCoachCall>('coach', input),
+    annotate: (input) => call<TrainerCoachCall>('annotate', input),
+    review: (input) => call<TrainerReviewPayload>('review', input),
+    stats: () => call<TrainerStats>('stats'),
+    saveLesson: (input) => call<TrainerLesson>('saveLesson', input),
+    syncLesson: (input) => call<TrainerLesson>('syncLesson', input),
   };
 }

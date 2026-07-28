@@ -9240,3 +9240,290 @@ a.zone-item:hover {
 .settings-about-link a:hover {
   color: var(--text-primary);
 }
+
+/* Blind-replay trainer — AI sparring, review tab and cross-session statistics (M4 / M5). */
+
+.trainer-tabs {
+  margin-left: auto;
+  display: flex;
+  gap: 4px;
+  -webkit-app-region: no-drag;
+}
+.trainer-tab {
+  padding: 3px 10px;
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: var(--fs-sm);
+  cursor: pointer;
+}
+.trainer-tab--on {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.trainer-coach-lane {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 8px 16px;
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border);
+}
+.trainer-coach-comment {
+  margin: 0;
+  flex: 1 1 240px;
+  min-width: 0;
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  line-height: 1.6;
+}
+.trainer-chip--coach {
+  border-left: 2px solid var(--accent);
+}
+.trainer-coach-split {
+  color: var(--accent);
+}
+
+/* The review tab scrolls as one document: the chart is a fixed slab at the top and everything
+   below it is prose the trader reads once, not a pane that has to keep its own scroll position. */
+.trainer-shell--postmortem {
+  overflow-y: auto;
+}
+.trainer-shell--postmortem .trainer-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+.trainer-review {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px 16px;
+}
+.trainer-review-reveal {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.trainer-review-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.trainer-review-chart {
+  height: 320px;
+  border: 1px solid var(--border);
+}
+.trainer-review-legend-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: space-between;
+}
+.trainer-band-swatch--fog {
+  background: #202020;
+}
+
+.trainer-review-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.trainer-review-track {
+  position: relative;
+  height: 18px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+}
+.trainer-review-track-fog {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background: rgb(232 232 232 / 0.05);
+}
+.trainer-review-tick {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  padding: 0 2px;
+  background: transparent;
+  border: 0;
+  color: var(--text-secondary);
+  font-size: 11px;
+  line-height: 16px;
+  cursor: pointer;
+}
+.trainer-review-tick--entry {
+  color: var(--up);
+}
+.trainer-review-tick--stop {
+  color: var(--down);
+}
+.trainer-review-tick--target {
+  color: var(--up);
+}
+.trainer-review-tick--coach {
+  color: var(--accent);
+}
+.trainer-review-brush {
+  width: 100%;
+  accent-color: var(--accent);
+}
+.trainer-review-scale {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.trainer-label {
+  font-size: var(--fs-sm);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.trainer-review-facts,
+.trainer-review-coach,
+.trainer-review-lesson {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.trainer-review-figs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 8px;
+}
+
+.trainer-coach-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-surface);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.trainer-coach-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: var(--fs-sm);
+}
+.trainer-coach-at {
+  cursor: pointer;
+  font: inherit;
+}
+.trainer-coach-body {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  line-height: 1.6;
+}
+.trainer-coach-annotate {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
+}
+.trainer-chip--persuaded {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.trainer-chip--hit {
+  border-color: var(--up);
+  color: var(--up);
+}
+.trainer-chip--miss {
+  border-color: var(--down);
+  color: var(--down);
+}
+
+.trainer-review-lesson-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.trainer-lesson-input {
+  flex: 1 1 260px;
+  min-width: 0;
+  height: var(--control-h);
+  box-sizing: border-box;
+  padding: 0 10px;
+  background: var(--bg-element);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font: inherit;
+}
+
+.training-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+}
+.training-stats-back {
+  margin-left: 10px;
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+}
+.training-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 10px;
+}
+.training-stats-kv {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 3px 0;
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+}
+.training-stats-kv b {
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+/* Hatched rather than merely greyed: a locked card must not read as a card whose numbers happen
+   to be small. */
+.training-stats-locked {
+  background: repeating-linear-gradient(
+    135deg,
+    transparent,
+    transparent 5px,
+    rgb(255 255 255 / 0.028) 5px,
+    rgb(255 255 255 / 0.028) 10px
+  );
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius);
+  padding: 12px 10px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  line-height: 1.6;
+}
+.training-stats-guard-note {
+  border-left: 2px solid var(--accent);
+  padding-left: 10px;
+}
+.trainer-card-stats {
+  align-self: center;
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+}

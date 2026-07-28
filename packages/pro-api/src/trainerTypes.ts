@@ -185,6 +185,11 @@ export interface TrainerView {
   remainingBars: number;
   terminal: boolean;
   result: TrainerResult | null;
+  // Whether the trader has ever committed to a direction, which is what unlocks the AI. Sticky:
+  // cancelling an order does not re-seal it. Carried rather than inferred from `order` / `position`
+  // / `trades`, because an abstention commits a view without producing any of the three, and the
+  // renderer's lock must match the one the runtime enforces.
+  submitted: boolean;
 }
 
 export interface TrainerStepEvent {
@@ -294,6 +299,206 @@ export interface TrainerSubmission {
   comment: string;
 }
 
+export const TRAINER_CASE_TAGS = [
+  'trend-follow',
+  'pullback-entry',
+  'false-breakout',
+  'top-reversal',
+  'range-bound',
+] as const;
+
+export type TrainerCaseTag = (typeof TRAINER_CASE_TAGS)[number];
+
+// The trainer's own outcomes on top of the replay scorer's five: `abstained` is an AI that
+// declined to take a side, which is neither a right nor a wrong direction and must not land in
+// either half of the accuracy ratio.
+export type TrainerCoachOutcome =
+  'win' | 'loss' | 'timeout_flat' | 'no_fill' | 'format_violation' | 'abstained';
+
+// What the trader's own book said at the moment they asked. Derived from engine state rather
+// than sent by the renderer: the whole comparison rests on this snapshot being the judgement
+// they actually held, so it must not be something a caller can restate after the fact.
+export interface TrainerCoachStance {
+  direction: TrainerDirection | 'neutral';
+  entry: number | null;
+  stop: number | null;
+  target: number | null;
+}
+
+// `aligned` is excluded from the persuaded/held comparison on purpose: counting an AI that
+// agreed with the trader as an AI that moved them would water the contrast down to nothing.
+export type TrainerCoachAgreement = 'aligned' | 'persuaded' | 'held';
+
+export interface TrainerCoachVerdict {
+  outcome: TrainerCoachOutcome;
+  /** The plan's own reward-to-risk, before the market had a say. */
+  plannedRewardRisk: number | null;
+  /** What the plan actually collected, in R. */
+  realizedR: number | null;
+  directionCorrect: boolean;
+  agreement: TrainerCoachAgreement;
+  judgedAt: string;
+}
+
+// `skipped` is stored rather than left absent so "looked at it, nothing wrong" stays
+// distinguishable from "never looked".
+export type TrainerAnnotationVerdict =
+  'sound' | 'right_call_wrong_reason' | 'unfounded' | 'skipped';
+
+export interface TrainerAnnotation {
+  verdict: TrainerAnnotationVerdict;
+  at: string;
+}
+
+// `step` is the engine's own monotonic action counter, captured when the question was asked.
+// The attribution window for "did this change their mind" runs from this step to the next
+// call's — `cursor` cannot carry it, because submitting and cancelling leave the cursor where
+// it was, so two calls on the same bar would claim the same change.
+export interface TrainerCoachCall {
+  id: string;
+  cursor: number;
+  step: number;
+  askedAt: string;
+  model: string;
+  humanBefore: TrainerCoachStance;
+  ai: TrainerSubmission;
+  verdict: TrainerCoachVerdict | null;
+  annotation: TrainerAnnotation | null;
+}
+
+// `syncedAt` is null while the lesson lives only in the training area. Nothing writes
+// `journal/lessons.md` without the trader pressing the button — a synthetic, price-scaled,
+// news-free board teaches two different kinds of thing, and only one of them belongs in the
+// list that gates real trades.
+export interface TrainerLesson {
+  text: string;
+  writtenAt: string;
+  syncedAt: string | null;
+}
+
+export type TrainerReviewEventKind =
+  'entry' | 'stop' | 'target' | 'manual_exit' | 'horizon_exit' | 'coach';
+
+export interface TrainerReviewEvent {
+  kind: TrainerReviewEventKind;
+  at: string;
+  /** Index into `replay`, or null when the moment falls outside the playable segment. */
+  barIndex: number | null;
+  price: number | null;
+  label: string;
+  coachId?: string;
+}
+
+// The stop-out's overshoot is measured against the stop the trade was carrying when it was hit,
+// and `reachedTargetAfter` scans the remaining playable bars only — the epilogue is barred from
+// every counted number, here as everywhere else.
+export interface TrainerStopAutopsy {
+  tradeId: number;
+  stop: number;
+  overshoot: number;
+  overshootPct: number;
+  reachedTargetAfter: boolean;
+}
+
+export interface TrainerReviewFacts {
+  stopAutopsy: TrainerStopAutopsy | null;
+  /** Where the last trade would have stood at the end of the epilogue. Observation only. */
+  holdToEpilogueEndR: number | null;
+  /** Best and worst the epilogue reached after the trader was out, in R. Observation only. */
+  afterExitHighR: number | null;
+  afterExitLowR: number | null;
+}
+
+export interface TrainerReviewPayload {
+  sessionId: string;
+  caseId: string;
+  symbol: string;
+  basePeriod: TrainerBasePeriod;
+  ladder: readonly [TrainerViewPeriod, TrainerViewPeriod, TrainerViewPeriod];
+  provenance: TrainerProvenance;
+  tag: TrainerCaseTag | null;
+  /**
+   * Base-period bars handed over before the first playable one — the chart's left half. The
+   * review chart is base-period only: the brush slices these bars directly, and re-deriving the
+   * ladder's upper tiers on the renderer would put a second copy of the aggregation rule there,
+   * free to drift from the one the episode was actually settled on.
+   */
+  lookback: RawBar[];
+  /** The whole playable segment, fog included. */
+  replay: RawBar[];
+  epilogue: RawBar[];
+  /** Cursor the trader stopped at; bars past it were never seen during the session. */
+  playedThrough: number;
+  trades: TrainerClosedTrade[];
+  result: TrainerResult | null;
+  events: TrainerReviewEvent[];
+  coach: TrainerCoachCall[];
+  facts: TrainerReviewFacts;
+  lesson: TrainerLesson | null;
+}
+
+// Every block reports `samples` whether or not it is locked, so a locked card can still say how
+// far off it is. When `locked` is true the ratios are null rather than zero — a missing number
+// and a measured zero are different answers.
+export interface TrainerStatBlock {
+  samples: number;
+  locked: boolean;
+}
+
+export interface TrainerOverviewStats extends TrainerStatBlock {
+  netR: number;
+  winRate: number | null;
+  plannedRewardRisk: number | null;
+  realizedRewardRisk: number | null;
+  mfeGivebackRate: number | null;
+}
+
+export interface TrainerTagStats extends TrainerStatBlock {
+  tag: TrainerCaseTag | null;
+  netR: number;
+  winRate: number | null;
+}
+
+export interface TrainerStopHealthStats extends TrainerStatBlock {
+  reachedTargetAfterStopRate: number | null;
+  averageOvershootPct: number | null;
+}
+
+export interface TrainerCoachInfluenceStats extends TrainerStatBlock {
+  persuadedCount: number;
+  persuadedWinRate: number | null;
+  heldCount: number;
+  heldWinRate: number | null;
+}
+
+export interface TrainerAdvanceStyleStats extends TrainerStatBlock {
+  barByBarWinRate: number | null;
+  fastForwardWinRate: number | null;
+}
+
+// `samples` counts every call, which is the guard's unit; `settled` counts the ones the market
+// actually resolved, which is the accuracy ratio's denominator. Reporting only the first would
+// let "52% over 21 calls" hide the fact that 21 calls produced four scored plans.
+export interface TrainerCoachScorecard extends TrainerStatBlock {
+  settled: number;
+  annotated: number;
+  directionAccuracy: number | null;
+  soundReasonRate: number | null;
+  rightCallWrongReasonRate: number | null;
+}
+
+export interface TrainerStats {
+  completedSessions: number;
+  unfinishedSessions: number;
+  sessionsByBasePeriod: Record<TrainerBasePeriod, number>;
+  overview: TrainerOverviewStats;
+  byTag: TrainerTagStats[];
+  stopHealth: TrainerStopHealthStats;
+  coachInfluence: TrainerCoachInfluenceStats;
+  advanceStyle: TrainerAdvanceStyleStats;
+  coachScorecard: TrainerCoachScorecard;
+}
+
 // A refused amendment is the answer, not a transport failure, so this rides home on `ok: true`.
 // The envelope's `ok: false` stays reserved for the caller getting the question itself wrong —
 // an unknown session, an unreadable case — which is not something the trader can act on.
@@ -342,6 +547,16 @@ export interface TrainerApi {
   add(input: { sessionId: string; size: number; reason: TrainerReason }): TrainerStepResult;
   reduce(input: { sessionId: string; size?: number; reason: TrainerReason }): TrainerStepResult;
   reveal(input: { sessionId: string }): TrainerReveal;
+  coach(input: { sessionId: string }): TrainerCoachCall;
+  annotate(input: {
+    sessionId: string;
+    coachId: string;
+    verdict: TrainerAnnotationVerdict;
+  }): TrainerCoachCall;
+  review(input: { sessionId: string }): TrainerReviewPayload;
+  stats(): TrainerStats;
+  saveLesson(input: { sessionId: string; text: string }): TrainerLesson;
+  syncLesson(input: { sessionId: string }): TrainerLesson;
 }
 
 // TRAINER_GUARDRAIL is a legal move the risk boundary refused — a stop that gives back a booked

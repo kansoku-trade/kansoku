@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { TrainerFillState, TrainerFillTask, TrainerPoolCounts } from '@kansoku/pro-api';
 
@@ -58,6 +59,15 @@ vi.mock('@web/lib/ws/wsHub', () => ({ subscribeChannel: () => () => {} }));
 
 const { TrainerCard } = await import('./TrainerCard');
 
+// The card links to the statistics page, so it needs somewhere for that link to resolve against.
+function renderCard() {
+  return render(
+    <MemoryRouter>
+      <TrainerCard />
+    </MemoryRouter>,
+  );
+}
+
 afterEach(() => {
   cleanup();
   openTrainer.mockClear();
@@ -72,7 +82,7 @@ afterEach(() => {
 
 describe('TrainerCard', () => {
   it('shows the remaining case count and opens a session', async () => {
-    render(<TrainerCard />);
+    renderCard();
 
     await waitFor(() => expect(screen.getByText('案例池还有 3 局')).toBeTruthy());
     screen.getByText('开一局').click();
@@ -81,7 +91,7 @@ describe('TrainerCard', () => {
 
   it('offers a refill instead of an empty dead end when the pool is empty', async () => {
     poolCounts = pool(0);
-    render(<TrainerCard />);
+    renderCard();
 
     await waitFor(() => expect(screen.getByText('案例池是空的')).toBeTruthy());
     screen.getByText('补货').click();
@@ -95,7 +105,7 @@ describe('TrainerCard', () => {
       autoRefillEnabled: true,
       autoRefillSuspended: false,
     };
-    render(<TrainerCard />);
+    renderCard();
 
     await waitFor(() => expect(screen.getByText('正在采样候选（12/20） · 已入池 3')).toBeTruthy());
     screen.getByText('取消').click();
@@ -109,7 +119,7 @@ describe('TrainerCard', () => {
       autoRefillEnabled: true,
       autoRefillSuspended: false,
     };
-    render(<TrainerCard />);
+    renderCard();
 
     await waitFor(() => expect(screen.getByText('上次补货失败：长桥未登录')).toBeTruthy());
     expect(screen.getByText('重试补货')).toBeTruthy();
@@ -122,7 +132,7 @@ describe('TrainerCard', () => {
       autoRefillEnabled: true,
       autoRefillSuspended: false,
     };
-    render(<TrainerCard />);
+    renderCard();
 
     await waitFor(() => expect(screen.getByText('上次补货没找到合规案例')).toBeTruthy());
   });
@@ -134,7 +144,7 @@ describe('TrainerCard', () => {
       autoRefillEnabled: true,
       autoRefillSuspended: true,
     };
-    render(<TrainerCard />);
+    renderCard();
 
     await waitFor(() => expect(screen.getByText('连续两次没补到，自动补货已暂停')).toBeTruthy());
     expect(screen.getByText('手动补货')).toBeTruthy();
@@ -142,7 +152,7 @@ describe('TrainerCard', () => {
 
   it('offers the subscription prompt instead of a count when unlicensed', () => {
     capabilities.licensed = false;
-    render(<TrainerCard />);
+    renderCard();
 
     expect(screen.getByText('订阅后可用')).toBeTruthy();
     screen.getByText('了解订阅').click();
@@ -151,14 +161,14 @@ describe('TrainerCard', () => {
 
   it('renders nothing in a build without the pro module', () => {
     capabilities.pro = false;
-    const { container } = render(<TrainerCard />);
+    const { container } = renderCard();
 
     expect(container.innerHTML).toBe('');
   });
 
   it('renders nothing outside the desktop shell', () => {
     openBridge = null;
-    const { container } = render(<TrainerCard />);
+    const { container } = renderCard();
 
     expect(container.innerHTML).toBe('');
   });

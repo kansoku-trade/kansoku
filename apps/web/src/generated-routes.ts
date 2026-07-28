@@ -18,7 +18,8 @@ import * as SyncComponent8 from "./pages/research/index.sync"
 import * as SyncComponent9 from "./pages/settings.sync"
 import * as SyncComponent10 from "./pages/symbol/[sym].sync"
 import * as SyncComponent11 from "./pages/symbol/sepa/[sym].sync"
-import * as SyncComponent12 from "./pages/index.sync"
+import * as SyncComponent12 from "./pages/training/stats.sync"
+import * as SyncComponent13 from "./pages/index.sync"
 
 // Generated route configuration
 export const routes: RouteObject[] = [
@@ -125,10 +126,21 @@ export const routes: RouteObject[] = [
     ]
   },
   {
+    "path": "training",
+    "children": [
+      {
+        "path": "stats",
+        "Component": SyncComponent12.Component,
+        "loader": SyncComponent12.loader,
+        "handle": SyncComponent12.handle
+      }
+    ]
+  },
+  {
     "path": "",
-    "Component": SyncComponent12.Component,
-    "loader": SyncComponent12.loader,
-    "handle": SyncComponent12.handle
+    "Component": SyncComponent13.Component,
+    "loader": SyncComponent13.loader,
+    "handle": SyncComponent13.handle
   }
 ]
 

@@ -99,6 +99,7 @@ function makeView(overrides: Partial<TrainerView> = {}): TrainerView {
     remainingBars: 0,
     terminal: true,
     result: null,
+    submitted: false,
     ...overrides,
   };
 }

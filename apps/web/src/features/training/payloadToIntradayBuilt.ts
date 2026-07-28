@@ -221,7 +221,7 @@ function episodeMarkers(
   return placed.map((entry) => entry.marker);
 }
 
-function rawBarsToTfData(
+export function rawBarsToTfData(
   bars: RawBar[],
   trades: readonly TrainerClosedTrade[],
   position: TrainerPosition | null,
@@ -269,7 +269,7 @@ function rawBarsToTfData(
   };
 }
 
-function emptyTfSummary(): IntradayTfSummary {
+export function emptyTfSummary(): IntradayTfSummary {
   return {
     last_dif: null,
     last_dea: null,

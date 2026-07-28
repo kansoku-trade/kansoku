@@ -1,7 +1,7 @@
 # 盲盘训练 M4 + M5：AI 陪练、复盘与统计
 
 日期：2026-07-28
-状态：设计已确认，待实现
+状态：已实现（2026-07-29），实现时的偏离见 §10
 上游：[2026-07-25-blind-replay-training-design.md](./2026-07-25-blind-replay-training-design.md)（母设计，本文是它 §7 §8 的落地方案）
 
 ## 1. 范围
@@ -23,13 +23,13 @@
 
 **这件事在 M2 做 bench mock 时已经顺手完成了。** 现状：
 
-| 现成件 | 位置 | 作用 |
-| --- | --- | --- |
-| `AnalystDeps` | `packages/core/src/ai/personas/analyst/types.ts:12` | `fetchKline` / `fetchNews` / `buildReassessPack` / `now` 全部可注入 |
-| `createMockDeps` | `apps/pro/src/bench/mock/index.ts:113` | 把 analyst 整个接到 `Question` fixtures 上 |
-| `composeCellSession` | `apps/pro/src/bench/runner/session.ts:39` | 给定 `RunnerQuestion` → 跑出一个 `Submission` |
-| `buildEpisodeQuestionViewAtCursor` | `packages/bench/src/episode/view.ts:104` | 给定 case + 游标 → 截断到那一刻的 `RunnerQuestion` |
-| `replayDirectional` | `packages/bench/src/score/replay.ts:43` | 给定三价 + 之后的 bars → win / loss / timeout_flat / no_fill + 实际 R |
+| 现成件                             | 位置                                                | 作用                                                                  |
+| ---------------------------------- | --------------------------------------------------- | --------------------------------------------------------------------- |
+| `AnalystDeps`                      | `packages/core/src/ai/personas/analyst/types.ts:12` | `fetchKline` / `fetchNews` / `buildReassessPack` / `now` 全部可注入   |
+| `createMockDeps`                   | `apps/pro/src/bench/mock/index.ts:113`              | 把 analyst 整个接到 `Question` fixtures 上                            |
+| `composeCellSession`               | `apps/pro/src/bench/runner/session.ts:39`           | 给定 `RunnerQuestion` → 跑出一个 `Submission`                         |
+| `buildEpisodeQuestionViewAtCursor` | `packages/bench/src/episode/view.ts:104`            | 给定 case + 游标 → 截断到那一刻的 `RunnerQuestion`                    |
+| `replayDirectional`                | `packages/bench/src/score/replay.ts:43`             | 给定三价 + 之后的 bars → win / loss / timeout_flat / no_fill + 实际 R |
 
 最后两个是同一个接口的两头，**只是从没被接上过**。`session.ts` 已经在用 `buildEpisodeQuestionViewAtCursor` 给人渲染图表；M4 要做的就是把同一个函数的输出再喂给 AI 一次。
 
@@ -75,12 +75,12 @@ session 文件从 `version: 1` 升到 `2`，加一个 `coach: TrainerCoachCall[]
 ```ts
 interface TrainerCoachCall {
   id: string;
-  cursor: number;                     // 召唤时游标
+  cursor: number; // 召唤时游标
   askedAt: string;
-  humanBefore: TrainerSubmission;     // 召唤那一刻人的判断快照
-  ai: TrainerSubmission;              // AI 的判断
-  verdict: TrainerCoachVerdict | null;    // 局终才填
-  annotation: TrainerAnnotation | null;   // 人工标注
+  humanBefore: TrainerSubmission; // 召唤那一刻人的判断快照
+  ai: TrainerSubmission; // AI 的判断
+  verdict: TrainerCoachVerdict | null; // 局终才填
+  annotation: TrainerAnnotation | null; // 人工标注
 }
 ```
 
@@ -94,11 +94,11 @@ interface TrainerCoachCall {
 
 三档判定：
 
-| 情形 | 记为 |
-| --- | --- |
-| AI 与 `humanBefore` **同向** | 不进对照 |
-| **分歧**，且人在归属窗口内按 AI 方向重新 submit | 被说服 |
-| **分歧**，归属窗口内人没改方向 | 坚持 |
+| 情形                                            | 记为     |
+| ----------------------------------------------- | -------- |
+| AI 与 `humanBefore` **同向**                    | 不进对照 |
+| **分歧**，且人在归属窗口内按 AI 方向重新 submit | 被说服   |
+| **分歧**，归属窗口内人没改方向                  | 坚持     |
 
 **归属窗口 = 这次召唤之后、到下一次召唤或局终为止。** 不写死这个窗口的话，一局里召唤三次，人在最后改了方向，三次召唤会同时被记成「说服了他」，一次操作被算三遍。窗口内发生的第一次方向变更归给窗口所属的那次召唤。
 
@@ -272,3 +272,18 @@ bench 是 CLI 跑的，`repoRoot` 现成；训练器跑在 Electron 里，打包
 **实现计划的第一个任务就是探这个，不是写功能。** 探不通就整期停下来重新设计，不带着一个「本地能跑、打包就废」的方案往下滚。
 
 次要风险：session 文件扫全量做统计，局数多了会慢。先不优化——几百局的规模无所谓，真慢了再加索引。
+
+## 10. 实现时的偏离（2026-07-29）
+
+§9 的唯一真风险先探了：**scaffold 在 Electron 里拿得到，不需要重新设计。** app 侧的 analyst 本来就在跑同一条链路（`loadSkillIndex(skillSearchDirs(repoRoot))` + 读 `intraday-signal` SKILL.md + 读 trading-discipline），打包后 `stageSkills.mjs` 把整个 `.claude/skills` 解引用拷进 `Resources/skills`，`boot/env.ts` 软链到数据目录并把 `TRADE_PROJECT_ROOT` 指过去。实测 `loadAnalystScaffold()` 在开发态返回 32 个 skill、21979 字节 skill 正文、12731 字节纪律正文（含 `episode-execution` 章节）；`dist-skills` 里 `intraday-signal/SKILL.md` 与 `trading-discipline/references/episode-execution.md` 都在。
+
+以下几处与前文写法不同，**现状以本节为准**：
+
+- **`humanBefore` 不是完整的 `TrainerSubmission`，是一份精简的方向快照**（`TrainerCoachStance`：方向 + 三价）。它由 pro 侧从引擎状态现读——挂单期读 `order`，持仓期读 `position`，都没有就回落到最后一条 `submit` 动作记录——而不是由前端传上来。整个对照实验的支点是「他当时真的这么想」，这件事不能让调用方事后重述。
+- **`TrainerCoachCall` 多了一个 `step` 字段**，是引擎自己的单调动作计数。§3.4 的归属窗口只能挂在它上面：submit 和 cancel 都不推进游标，光靠 `cursor` 的话同一根上的两次召唤会抢同一次改主意。
+- **`TrainerView` 多了一个 `submitted` 字段**（首次提交后永久为真）。前端的锁与运行时的锁必须是同一个条件——观望提交会立判据成立却不产生挂单/持仓/成交，光看那三样会让按钮比服务端更严。
+- **复盘页的图只画基础周期。** 时间轴刷子直接切基础 K 线；把梯队的上层周期在渲染端重新聚合，等于把「一根上层周期等于几根基础 K 线」这条规则抄第二份到前端，与它真正结算用的那份自由漂移。
+- **不揭晓难度。** 母设计 §8 写了「AI 打的标签与难度」，但 M2 落地的 `CasePick` 只有 `worthy` / `tag` / `reason`，没有难度这个字段。揭晓页只报标签。
+- **`plannedRewardRisk` / `mfeGivebackR` 搬进了 `packages/pro-api`**（`trainerTrade.ts`）。结算面板在 `apps/web`、统计在 `apps/pro`，开源边界不允许 web 反向引 pro，两边各留一份必然漂移，所以这两个纯函数跟着契约走。
+- **`TrainerCoachScorecard` 多报一个 `settled`。** 护栏的样本单位按 §4.3 是总召唤次数，但方向准确率的分母只能是市场真的结算过的那几次（win / loss / timeout_flat）。两个数都报出来，「21 次召唤 52%」才不会盖住「其中只有 4 次跑出了结果」。
+- **`no_fill` / `format_violation` / `abstained` 一律不进方向准确率**，只进样本计数。这三种都不是市场判过对错的方向，算进任何一边都会挪动那个数字而不测量任何东西。

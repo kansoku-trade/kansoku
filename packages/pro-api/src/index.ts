@@ -5,6 +5,7 @@ export * from './aiTypes.js';
 export * from './licenseTypes.js';
 export * from './detectors.js';
 export * from './trainerTypes.js';
+export * from './trainerTrade.js';
 
 // Shared contract between core's registration seam (packages/core/src/pro/hooks.ts)
 // and the pro composition that supplies the real implementation at start() —

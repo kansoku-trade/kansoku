@@ -62,6 +62,7 @@ function makeView(bars: { base: RawBar[]; mid?: RawBar[]; top?: RawBar[] }): Tra
     remainingBars: 10,
     terminal: false,
     result: null,
+    submitted: false,
   };
 }
 
