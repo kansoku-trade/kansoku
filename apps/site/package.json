@@ -9,7 +9,8 @@
     "snapshot": "node scripts/fetch-market-snapshot.mjs && node scripts/fetch-releases.mjs",
     "preview": "astro preview",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "deploy": "astro build && wrangler pages deploy"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.3",
@@ -23,6 +24,7 @@
     "@types/three": "^0.185.1",
     "lucide-static": "^1.27.0",
     "typescript": "^5.9.3",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.10",
+    "wrangler": "^4.112.0"
   }
 }
