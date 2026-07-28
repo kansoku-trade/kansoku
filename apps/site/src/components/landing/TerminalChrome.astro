@@ -1,0 +1,52 @@
+---
+import '../../styles/landing/tokens.css';
+import '../../styles/landing/chrome.css';
+
+interface Props {
+  version: string;
+}
+
+const { version } = Astro.props;
+---
+
+<div class="terminal-chrome">
+  <div class="chrome-corner chrome-corner-tl" aria-hidden="true"></div>
+  <div class="chrome-corner chrome-corner-tr" aria-hidden="true"></div>
+  <div class="chrome-corner chrome-corner-bl" aria-hidden="true"></div>
+  <div class="chrome-corner chrome-corner-br" aria-hidden="true"></div>
+  <div class="chrome-scanlines" aria-hidden="true"></div>
+
+  <header class="chrome-topbar">
+    <div class="chrome-topbar-left">
+      <span class="chrome-brand">KANSOKU</span>
+      <span class="chrome-version">v{version}</span>
+    </div>
+    <div class="chrome-topbar-center">
+      <span class="chrome-et">ET</span>
+      <time class="chrome-clock" data-chrome-clock>--:--:--</time>
+      <span class="chrome-session">
+        <span class="chrome-session-dot" data-chrome-session-dot aria-hidden="true"></span>
+        <span data-chrome-session-text>CLOSED</span>
+      </span>
+    </div>
+    <div class="chrome-topbar-right">
+      <span>AUDIT TRAIL</span>
+      <span class="chrome-audit-state">ON</span>
+    </div>
+  </header>
+
+  <div class="chrome-body">
+    <slot />
+  </div>
+
+  <footer class="chrome-statusbar">
+    <span class="chrome-disclaimer">SYNTHETIC · DECORATIVE · NOT MARKET DATA</span>
+    <span class="chrome-statusbar-right" data-chrome-slot="right"></span>
+  </footer>
+</div>
+
+<script>
+  import { initTerminalChrome } from '../../scripts/landing/chrome';
+
+  initTerminalChrome();
+</script>

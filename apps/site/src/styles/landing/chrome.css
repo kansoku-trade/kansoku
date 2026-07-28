@@ -1,0 +1,167 @@
+.terminal-chrome {
+  position: relative;
+  border: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.chrome-corner {
+  position: absolute;
+  width: var(--chrome-corner-size);
+  height: var(--chrome-corner-size);
+  pointer-events: none;
+  z-index: 3;
+}
+
+.chrome-corner-tl {
+  top: -1px;
+  left: -1px;
+  border-top: var(--chrome-corner-thickness) solid var(--accent);
+  border-left: var(--chrome-corner-thickness) solid var(--accent);
+}
+
+.chrome-corner-tr {
+  top: -1px;
+  right: -1px;
+  border-top: var(--chrome-corner-thickness) solid var(--accent);
+  border-right: var(--chrome-corner-thickness) solid var(--accent);
+}
+
+.chrome-corner-bl {
+  bottom: -1px;
+  left: -1px;
+  border-bottom: var(--chrome-corner-thickness) solid var(--accent);
+  border-left: var(--chrome-corner-thickness) solid var(--accent);
+}
+
+.chrome-corner-br {
+  bottom: -1px;
+  right: -1px;
+  border-bottom: var(--chrome-corner-thickness) solid var(--accent);
+  border-right: var(--chrome-corner-thickness) solid var(--accent);
+}
+
+.chrome-scanlines {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgb(255 255 255 / 3.5%),
+    rgb(255 255 255 / 3.5%) 1px,
+    transparent 1px,
+    transparent var(--chrome-scanline-size)
+  );
+  mix-blend-mode: overlay;
+}
+
+.chrome-topbar {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--chrome-gap);
+  height: var(--chrome-bar-h);
+  padding: 0 var(--chrome-pad-x);
+  border-bottom: 1px solid var(--border);
+  font-family: var(--mono);
+  font-size: var(--chrome-font-size);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+
+.chrome-topbar-left,
+.chrome-topbar-center,
+.chrome-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.chrome-brand {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.chrome-version,
+.chrome-et {
+  color: var(--text-3);
+}
+
+.chrome-clock {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.chrome-session {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chrome-session-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-3);
+}
+
+.chrome-session-dot.is-open {
+  background: var(--up);
+}
+
+.chrome-session-dot.is-pre,
+.chrome-session-dot.is-post {
+  background: var(--accent);
+}
+
+.chrome-session-dot.is-closed {
+  background: var(--text-3);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .chrome-session-dot.is-open {
+    animation: chrome-session-pulse 2s ease-in-out infinite;
+  }
+}
+
+@keyframes chrome-session-pulse {
+  50% {
+    opacity: 0.4;
+  }
+}
+
+.chrome-audit-state {
+  color: var(--accent);
+}
+
+.chrome-body {
+  position: relative;
+  z-index: 1;
+}
+
+.chrome-statusbar {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--chrome-gap);
+  height: var(--chrome-status-h);
+  padding: 0 var(--chrome-pad-x);
+  border-top: 1px solid var(--border);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.chrome-disclaimer {
+  color: var(--text-2);
+}
+
+.chrome-statusbar-right {
+  color: var(--text-3);
+}

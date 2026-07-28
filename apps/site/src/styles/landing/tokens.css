@@ -1,0 +1,11 @@
+:root {
+  --chrome-bar-h: 38px;
+  --chrome-status-h: 30px;
+  --chrome-pad-x: 18px;
+  --chrome-gap: 20px;
+  --chrome-font-size: 11px;
+  --chrome-corner-size: 22px;
+  --chrome-corner-thickness: 1px;
+  --chrome-scanline-size: 3px;
+  --boot-fade: 200ms;
+}

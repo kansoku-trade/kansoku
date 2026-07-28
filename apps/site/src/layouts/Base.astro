@@ -12,6 +12,29 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
 <!doctype html>
 <html lang="zh-CN">
   <head>
+    <script is:inline>
+      (function () {
+        try {
+          var tier = 'full';
+          if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            tier = 'still';
+          } else {
+            var coarsePointer = !window.matchMedia('(pointer: fine)').matches;
+            var narrow = window.innerWidth < 1024;
+            var webgl2 = false;
+            try {
+              webgl2 = !!document.createElement('canvas').getContext('webgl2');
+            } catch (e) {
+              webgl2 = false;
+            }
+            if (coarsePointer || narrow || !webgl2) tier = 'lite';
+          }
+          document.documentElement.setAttribute('data-tier', tier);
+        } catch (e) {
+          document.documentElement.setAttribute('data-tier', 'still');
+        }
+      })();
+    </script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
@@ -137,6 +160,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     width: 100%;
     margin: 0 auto;
     padding: 18px 24px;
+    border-bottom: 1px solid var(--border);
   }
 
   .nav-name {
@@ -154,17 +178,37 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
 
   .nav-links {
     display: flex;
-    gap: 22px;
-    font-size: 13px;
+    gap: 0;
+    font-size: 11px;
   }
 
   .nav-links a {
+    position: relative;
     color: var(--text-2);
     text-decoration: none;
+    font-family: var(--mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0 14px;
+  }
+
+  .nav-links a:first-child {
+    padding-left: 0;
+  }
+
+  .nav-links a:not(:first-child)::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1px;
+    height: 10px;
+    background: var(--border);
   }
 
   .nav-links a:hover {
-    color: var(--text);
+    color: var(--accent);
   }
 
   .btn {
@@ -230,9 +274,10 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     padding: 32px 24px 48px;
     text-align: center;
     color: var(--text-3);
-    font-size: 12px;
+    font-size: 11px;
     font-family: var(--mono);
-    letter-spacing: 0.04em;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
 
   .footer p {

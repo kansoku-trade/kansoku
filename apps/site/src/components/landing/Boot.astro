@@ -1,0 +1,126 @@
+---
+import '../../styles/landing/tokens.css';
+
+interface Props {
+  version: string;
+}
+
+const { version } = Astro.props;
+
+const lines: { text: string; status: string | null; tone: 'up' | 'accent' | null }[] = [
+  { text: `KANSOKU v${version}`, status: null, tone: null },
+  { text: 'LOCAL RUNTIME ......... ', status: 'OK', tone: 'up' },
+  { text: 'BROKER LINK ........... ', status: 'DIRECT', tone: 'up' },
+  { text: 'AUDIT TRAIL ........... ', status: 'ON', tone: 'accent' },
+  { text: 'SCORECARD ............. ', status: 'LOADED', tone: 'accent' },
+  { text: 'READY', status: null, tone: null },
+];
+---
+
+<div class="boot-overlay" data-boot-overlay>
+  <div class="boot-lines">
+    {
+      lines.map((line) => (
+        <p class="boot-line" data-boot-line>
+          {line.text}
+          {line.status && <b class={`boot-status boot-status-${line.tone}`}>{line.status}</b>}
+        </p>
+      ))
+    }
+  </div>
+  <button type="button" class="boot-skip" data-boot-skip>SKIP →</button>
+</div>
+
+<style>
+  .boot-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--boot-fade) ease;
+  }
+
+  .boot-overlay.is-active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .boot-overlay.is-done {
+    opacity: 0;
+  }
+
+  :global(html[data-tier='still']) .boot-overlay {
+    display: none;
+  }
+
+  .boot-lines {
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    line-height: 2;
+  }
+
+  .boot-line {
+    margin: 0;
+    color: var(--text-3);
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .boot-line {
+      transition:
+        opacity 160ms ease,
+        transform 160ms ease;
+    }
+  }
+
+  .boot-line.is-visible {
+    opacity: 1;
+    transform: none;
+  }
+
+  .boot-status {
+    font-weight: 400;
+  }
+
+  .boot-status-up {
+    color: var(--up);
+  }
+
+  .boot-status-accent {
+    color: var(--accent);
+  }
+
+  .boot-skip {
+    position: absolute;
+    right: 24px;
+    bottom: 24px;
+    border: 1px solid var(--border-strong);
+    border-radius: 2px;
+    background: transparent;
+    color: var(--text-2);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 8px 14px;
+    cursor: pointer;
+  }
+
+  .boot-skip:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+</style>
+
+<script>
+  import { initBoot } from '../../scripts/landing/boot';
+
+  initBoot();
+</script>
