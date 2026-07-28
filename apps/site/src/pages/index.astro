@@ -42,6 +42,7 @@ const schema = {
 
 <Base title={title} description={description}>
   <script is:inline type="application/ld+json" slot="head" set:html={JSON.stringify(schema)} />
+  <canvas class="landing-stage" data-stage-canvas aria-hidden="true"></canvas>
   <TerminalChrome version={version}>
     <Boot version={version} />
     <HeroEvidence version={version} downloadUrl={dmg.browser_download_url} />

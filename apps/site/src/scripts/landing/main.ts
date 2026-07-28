@@ -42,6 +42,19 @@ const mountLanding = (): void => {
 
   void (async () => {
     try {
+      const stageCanvas = document.querySelector<HTMLCanvasElement>('[data-stage-canvas]');
+      if (!stageCanvas) return;
+      const { mountStage } = await import('./stage/stage');
+      const stage = await mountStage(stageCanvas, tier);
+      if (stage) document.documentElement.setAttribute('data-stage-live', '');
+      registerCleanup(stage);
+    } catch (error) {
+      console.error('[landing] stage failed to mount', error);
+    }
+  })();
+
+  void (async () => {
+    try {
       const heroRoot = document.querySelector<HTMLElement>('[data-hero-scene]');
       registerCleanup(heroRoot ? await mountHeroScene(heroRoot, tier) : null);
     } catch (error) {
