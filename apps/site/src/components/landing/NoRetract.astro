@@ -27,7 +27,7 @@ const challenges = [
     </ul>
   </div>
 
-  <div class="noretract-scene" data-noretract-scene data-reveal>
+  <div class="noretract-scene" data-noretract-scene>
     <div class="archived-card">
       <div class="archived-card-head">
         <span class="archived-card-sym">MU.US</span>
@@ -54,10 +54,10 @@ const challenges = [
       <p class="archived-card-trig">触发：跌破 236.10 且放量</p>
     </div>
 
-    <ol class="challenge-list" data-challenge-list>
+    <ol class="challenge-list" data-challenge-list data-reveal>
       {
-        challenges.map((c, i) => (
-          <li class="challenge-item" data-challenge-item style={`--i:${i}`}>
+        challenges.map((c) => (
+          <li class="challenge-item" data-challenge-item>
             <span class="challenge-bubble">{c.question}</span>
             <div class="challenge-reply">
               <p class="challenge-reply-inner">解释：{c.reply}</p>
