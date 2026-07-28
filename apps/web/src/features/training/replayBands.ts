@@ -41,3 +41,28 @@ export function replayBands(view: TrainerView, epilogue: readonly RawBar[] | nul
 export function unreachedBars(view: TrainerView): number {
   return Math.max(0, view.remainingBars);
 }
+
+// bars.base is [question bars, revealed replay bars] and the revealed run is exactly cursor + 1
+// long (engine view.ts), so the question's own count never changes as the episode advances and
+// neither does this line.
+//
+// The anchor is the FIRST REPLAYED bar, drawn off its leading edge — not the last question bar off
+// its trailing edge. The two are the same place on the base tier, but on 15m/1h the boundary can
+// fall inside an aggregated bar, and that bar holds replayed prices. Anchoring ahead of it keeps
+// the line from ever claiming a bar is pure setup when the trader has already stepped through part
+// of it. Before the first step there is no replayed bar, so it falls back to the trailing edge of
+// the last bar — which is exactly where "you start here" belongs when nothing has been played.
+export interface ReplayDividerAnchor {
+  time: number;
+  edge: 'before' | 'after';
+}
+
+export function replayDivider(view: TrainerView): ReplayDividerAnchor | null {
+  const base = view.bars.base;
+  const playedCount = Math.min(Math.max(view.cursor + 1, 0), base.length);
+  const givenCount = base.length - playedCount;
+  const firstPlayed = base[givenCount];
+  if (firstPlayed) return { time: sec(firstPlayed.time), edge: 'before' };
+  const lastGiven = base[givenCount - 1];
+  return lastGiven ? { time: sec(lastGiven.time), edge: 'after' } : null;
+}

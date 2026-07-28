@@ -1,6 +1,11 @@
 import type { SeriesAttachedParameter, Time } from 'lightweight-charts';
 import { describe, expect, it, vi } from 'vitest';
-import { ReplayBandPrimitive, REPLAY_BAND_FILL, type ReplayBand } from './replayBandPrimitive';
+import {
+  ReplayBandPrimitive,
+  REPLAY_BAND_FILL,
+  type ReplayBand,
+  type ReplayDivider,
+} from './replayBandPrimitive';
 
 interface Fill {
   style: string;
@@ -118,5 +123,103 @@ describe('ReplayBandPrimitive', () => {
     expect(
       draw(makePrimitive([{ kind: 'epilogue', startTime: 1091, endTime: 1200 }])),
     ).toHaveLength(0);
+  });
+});
+
+interface DividerLine {
+  x: number;
+  height: number;
+  label: string;
+}
+
+// The divider view is the second pane view; the first paints the bands above.
+function drawDividers(primitive: ReplayBandPrimitive): DividerLine[] {
+  const lines: DividerLine[] = [];
+  let from: [number, number] | null = null;
+  let to: [number, number] | null = null;
+  let pendingLabel = '';
+  const ctx = {
+    fillStyle: '',
+    strokeStyle: '',
+    font: '',
+    lineWidth: 0,
+    textAlign: '',
+    textBaseline: '',
+    setLineDash: vi.fn(),
+    beginPath: vi.fn(() => {
+      from = null;
+      to = null;
+    }),
+    moveTo: vi.fn((x: number, y: number) => {
+      from = [x, y];
+    }),
+    lineTo: vi.fn((x: number, y: number) => {
+      to = [x, y];
+    }),
+    stroke: vi.fn(() => {
+      if (from && to) lines.push({ x: from[0], height: to[1] - from[1], label: pendingLabel });
+    }),
+    measureText: vi.fn(() => ({ width: 60 })),
+    fillText: vi.fn((text: string) => {
+      pendingLabel = text;
+      const last = lines.at(-1);
+      if (last) last.label = text;
+    }),
+    save: vi.fn(),
+    restore: vi.fn(),
+  };
+  const target = {
+    useMediaCoordinateSpace: (
+      fn: (scope: { context: typeof ctx; mediaSize: { width: number; height: number } }) => void,
+    ) => fn({ context: ctx, mediaSize: { width: 500, height: 100 } }),
+  };
+  primitive
+    .paneViews()[1]!
+    .renderer()!
+    .draw(target as never);
+  return lines;
+}
+
+function withDividers(dividers: ReplayDivider[]) {
+  const primitive = makePrimitive([]);
+  primitive.setData([], dividers);
+  primitive.updateAllViews();
+  return primitive;
+}
+
+describe('ReplayBandPrimitive dividers', () => {
+  it('draws a full-height line at the leading edge of its anchor bar', () => {
+    const lines = drawDividers(withDividers([{ time: 1030, edge: 'before', label: '题目到此' }]));
+    expect(lines).toHaveLength(1);
+    // The 1030 bar sits at x=30; its leading edge is half a bar earlier.
+    expect(lines[0].x).toBe(25.5);
+    expect(lines[0].height).toBe(100);
+    expect(lines[0].label).toBe('题目到此');
+  });
+
+  it('draws off the trailing edge when the boundary sits after its anchor bar', () => {
+    const lines = drawDividers(withDividers([{ time: 1030, edge: 'after', label: 'x' }]));
+    expect(lines[0].x).toBe(35.5);
+  });
+
+  // The regression this exists for. The divider names a bar on the case's base period, and the 15m
+  // and 1h tiers hold none of those timestamps — asking timeToCoordinate for one returns null,
+  // which silently dropped the whole line the moment the trader switched timeframe.
+  it('still draws when its time is not a bar the series holds', () => {
+    const lines = drawDividers(withDividers([{ time: 1034, edge: 'before', label: 'x' }]));
+    expect(lines).toHaveLength(1);
+    expect(lines[0].x).toBe(25.5);
+  });
+
+  // An aggregated bar straddling the boundary holds replayed prices, so the line goes ahead of it.
+  // Landing it after would mark a bar the trader stepped through as part of the given setup.
+  it('puts a straddling boundary ahead of the bar that contains it', () => {
+    const lines = drawDividers(withDividers([{ time: 1039, edge: 'before', label: 'x' }]));
+    expect(lines[0].x).toBe(25.5);
+  });
+
+  it('draws nothing without dividers, and nothing for one sitting before every bar', () => {
+    expect(drawDividers(withDividers([]))).toHaveLength(0);
+    expect(drawDividers(withDividers([{ time: 900, edge: 'before', label: 'x' }]))).toHaveLength(0);
   });
 });

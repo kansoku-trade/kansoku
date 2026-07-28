@@ -10,7 +10,9 @@ import {
   type SharedTabsBridge,
   type TabsSnapshot as SharedSnapshot,
 } from './desktopTabsBridge';
-import { getWindowsBridge } from './desktopWindowsBridge';
+import { useCapabilities } from '../edition/capabilitiesStore';
+import { requestTrainerWindow } from '../training/requestTrainerWindow';
+import { getOpenTrainerBridge, getWindowsBridge } from './desktopWindowsBridge';
 import { registerGlobalCall } from './globalCalls';
 import * as tabsStore from './tabsStore';
 import {
@@ -122,6 +124,7 @@ function withCurrentScrollCaptured(snapshot: TabsSnapshot): TabsSnapshot {
 
 export function useTabsController(): TabsController {
   const [bridge] = useState<SharedTabsBridge | null>(() => getSharedTabsBridge());
+  const { pro, licensed } = useCapabilities();
 
   const [snapshot, setSnapshot] = useState<TabsSnapshot>(() =>
     bridge ? { tabs: [], activeTabId: readActiveTabId() } : loadTabsSnapshot(),
@@ -484,6 +487,8 @@ export function useTabsController(): TabsController {
       else if (command === 'open-logs') focusOrOpenLogs();
       else if (command === 'open-research') focusOrOpenResearch();
       else if (command === 'open-chat') focusOrOpenChat();
+      else if (command === 'open-trainer')
+        requestTrainerWindow(getOpenTrainerBridge(), { pro, licensed });
     });
   }, [
     closeActiveTab,
@@ -493,6 +498,8 @@ export function useTabsController(): TabsController {
     focusOrOpenLogs,
     focusOrOpenResearch,
     focusOrOpenChat,
+    pro,
+    licensed,
   ]);
 
   return {

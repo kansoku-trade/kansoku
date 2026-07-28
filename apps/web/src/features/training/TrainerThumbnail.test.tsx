@@ -102,9 +102,6 @@ describe('TrainerThumbnail', () => {
 
   it('still labels the same marks on the full-size build it was given', () => {
     const built = buildTrainerIntradayBuilt(terminalView());
-    expect(built.timeframes.m5?.markers.map((marker) => marker.text)).toEqual([
-      '进 100.00',
-      '离 102.00 止盈',
-    ]);
+    expect(built.timeframes.m5?.markers.map((marker) => marker.text)).toEqual(['B', 'T']);
   });
 });

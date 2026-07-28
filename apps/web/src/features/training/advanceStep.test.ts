@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { TrainerStepEvent } from '@kansoku/pro-api';
-import { describeStepEvent, describeStepEvents, PLAYBACK_SPEEDS, playbackIntervalMs } from './advanceStep';
+import {
+  describeStepEvent,
+  describeStepEvents,
+  PLAYBACK_SPEEDS,
+  playbackIntervalMs,
+} from './advanceStep';
 
 function event(barOffset: number, event: TrainerStepEvent['event']): TrainerStepEvent {
   return { barOffset, cursor: barOffset, at: '2026-01-05T14:00:00.000Z', event };

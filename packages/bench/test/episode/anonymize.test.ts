@@ -117,11 +117,7 @@ describe('blind episode anonymization', () => {
     expect(question.id).toBe('swing-ASSET001-2026-03-25-01');
     expect(question.symbol).toBe('ASSET001.SIM');
     expect(question.layer).toBe('anonymous');
-    expect(question.fixtures.kline['1h']!.at(-1)?.close).toBeCloseTo(100, 6);
-    expect(question.fixtures.quote.last).toBeCloseTo(
-      Number(source.fixtures.kline.day!.at(-1)!.close) * provenance.priceScale,
-      6,
-    );
+    expect(question.fixtures.quote.last).toBeCloseTo(100, 6);
     expect(question.fixtures.news).toEqual([]);
     expect(question.fixtures.calendar).toEqual({});
     expect(question.fixtures.fundamentals).toEqual({});
@@ -268,6 +264,78 @@ const FIFTEEN_MIN_DAY_SOURCE: Question = {
   },
   replay: {
     basePeriod: '15m',
+    horizonBars: 1,
+    bars: [rawBar('2024-03-28T13:30:00Z', 50.1, 50.5, 49.8, 50.3, 1200)],
+  },
+};
+
+const FIFTEEN_MIN_DIVERGENT_DAY_SOURCE: Question = {
+  id: 'swing-FMDIV-2024-03-27-01',
+  bank: 'swing',
+  symbol: 'ACME.US',
+  cutoff: '2024-03-27T20:00:00Z',
+  layer: 'high-vol-tech',
+  adversarial: false,
+  fixtures: {
+    kline: {
+      '15m': [
+        rawBar('2024-03-27T19:30:00Z', 49.6, 50, 49.3, 49.7, 900),
+        rawBar('2024-03-27T19:45:00Z', 49.7, 50.2, 49.5, 49.98, 1000),
+      ],
+      '1h': [
+        rawBar('2024-03-27T13:30:00Z', 49, 49.6, 48.5, 49.4, 7000),
+        rawBar('2024-03-27T19:30:00Z', 49.6, 50.2, 49.3, 49.98, 6500),
+      ],
+      'day': [
+        rawBar('2024-03-26T20:00:00Z', 47, 47.5, 46.5, 47.2, 40000),
+        rawBar('2024-03-27T20:00:00Z', 49, 51, 48, 50, 50000),
+      ],
+    },
+    indicators: {},
+    quote: { last: 50 },
+    capitalFlow: {},
+    news: [],
+    fundamentals: {},
+    calendar: {},
+  },
+  replay: {
+    basePeriod: '15m',
+    horizonBars: 1,
+    bars: [rawBar('2024-03-28T13:30:00Z', 50.1, 50.5, 49.8, 50.3, 1200)],
+  },
+};
+
+const HOUR_DIVERGENT_DAY_SOURCE: Question = {
+  id: 'swing-H1DIV-2024-03-27-01',
+  bank: 'swing',
+  symbol: 'ACME.US',
+  cutoff: '2024-03-27T20:00:00Z',
+  layer: 'high-vol-tech',
+  adversarial: false,
+  fixtures: {
+    kline: {
+      '1h': [
+        rawBar('2024-03-27T13:30:00Z', 49, 49.6, 48.5, 49.4, 7000),
+        rawBar('2024-03-27T19:30:00Z', 49.6, 50.2, 49.3, 49.98, 6500),
+      ],
+      'day': [
+        rawBar('2024-03-26T20:00:00Z', 47, 47.5, 46.5, 47.2, 40000),
+        rawBar('2024-03-27T20:00:00Z', 49, 51, 48, 50, 50000),
+      ],
+      'week': [
+        rawBar('2024-03-18T20:00:00Z', 45, 46, 44, 45.5, 200000),
+        rawBar('2024-03-25T20:00:00Z', 46, 51, 45.8, 50, 190000),
+      ],
+    },
+    indicators: {},
+    quote: { last: 50 },
+    capitalFlow: {},
+    news: [],
+    fundamentals: {},
+    calendar: {},
+  },
+  replay: {
+    basePeriod: '1h',
     horizonBars: 1,
     bars: [rawBar('2024-03-28T13:30:00Z', 50.1, 50.5, 49.8, 50.3, 1200)],
   },
@@ -487,6 +555,30 @@ describe('blind episode anonymization — day-tier top period (15m ladder)', () 
 
     const quoteCheck = auditEpisodeQuestion(question).checks.find((check) => check.id === 'quote');
     expect(quoteCheck?.status).toBe('pass');
+  });
+
+  it('normalises quote.last to exactly 100 when the native day close differs from the last 15m close', () => {
+    const { question, provenance } = anonymizeEpisodeQuestion(FIFTEEN_MIN_DIVERGENT_DAY_SOURCE, {
+      alias: 'ASSET011',
+      syntheticCutoff: '2026-03-25',
+    });
+
+    expect(provenance.priceScale).toBeCloseTo(2, 12);
+    expect(question.fixtures.quote.last).toBeCloseTo(100, 6);
+    expect(question.fixtures.kline['15m']!.at(-1)!.close).toBeCloseTo(99.96, 6);
+  });
+});
+
+describe('blind episode anonymization — day-tier mid period (1h ladder)', () => {
+  it('normalises quote.last to exactly 100 when the native day close differs from the last 1h close', () => {
+    const { question, provenance } = anonymizeEpisodeQuestion(HOUR_DIVERGENT_DAY_SOURCE, {
+      alias: 'ASSET012',
+      syntheticCutoff: '2026-03-25',
+    });
+
+    expect(provenance.priceScale).toBeCloseTo(2, 12);
+    expect(question.fixtures.quote.last).toBeCloseTo(100, 6);
+    expect(question.fixtures.kline['1h']!.at(-1)!.close).toBeCloseTo(99.96, 6);
   });
 });
 

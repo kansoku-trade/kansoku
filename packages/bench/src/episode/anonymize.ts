@@ -162,16 +162,37 @@ export function anonymizeEpisodeQuestion(
   const [basePeriod, midPeriod, topPeriod] = questionLadder(source);
 
   const baseBarsSource = questionBaseBars(source);
-  const cutoffBase = baseBarsSource.at(-1);
-  if (!cutoffBase)
+  if (baseBarsSource.length === 0)
     throw new Error(`blind source question has no base-tier cutoff bar: ${source.id}`);
-  const cutoffClose = numberOf(cutoffBase.close);
-  if (cutoffClose <= 0) throw new Error(`blind source cutoff close must be positive: ${source.id}`);
   const baseVolumes = baseBarsSource
     .map((bar) => numberOf(bar.volume))
     .filter((value) => value > 0);
   if (baseVolumes.length === 0)
     throw new Error(`blind source has no positive base-tier volume: ${source.id}`);
+
+  const midBarsSource = questionBarsForPeriod(source, midPeriod);
+  const topBarsSource = questionBarsForPeriod(source, topPeriod);
+  const sourceTierByPeriod: Partial<Record<EpisodeViewPeriod, RawBar[]>> = {
+    [basePeriod]: baseBarsSource,
+    [midPeriod]: midBarsSource,
+    [topPeriod]: topBarsSource,
+  };
+  const hasDayTier = Boolean(sourceTierByPeriod.day?.length);
+  // Relies on generate.ts's requiredBaseBars() having given `source` at least two
+  // sessions of base bars whenever the ladder has no day tier; this is a backstop
+  // for any caller that hands anonymizeEpisodeQuestion a question built another way.
+  const sourceQuoteDays = hasDayTier ? sourceTierByPeriod.day! : foldByDay(baseBarsSource);
+  if (!hasDayTier && sourceQuoteDays.length < 2) {
+    throw new Error(
+      `insufficient ${basePeriod} history for a stable blind quote: need 2 trading days, got ${sourceQuoteDays.length} (source ${source.id})`,
+    );
+  }
+  // Anchor priceScale on the very bar that seeds fixtures.quote.last, not on the base
+  // tier: a native day bar's close and the last intraday bar's close differ by a few
+  // basis points in real data, which would leave quote.last off 100 and fail the
+  // dataset's normalizedCutoffClose policy check.
+  const cutoffClose = numberOf(sourceQuoteDays.at(-1)!.close);
+  if (cutoffClose <= 0) throw new Error(`blind source cutoff close must be positive: ${source.id}`);
   const priceScale = 100 / cutoffClose;
   const volumeScale = 1_000_000 / median(baseVolumes);
 
@@ -179,8 +200,8 @@ export function anonymizeEpisodeQuestion(
     bars.map((bar) => transformBar(bar, dayShift, priceScale, volumeScale));
 
   const baseBars = transformBars(baseBarsSource);
-  const midBars = transformBars(questionBarsForPeriod(source, midPeriod));
-  const topBars = transformBars(questionBarsForPeriod(source, topPeriod));
+  const midBars = transformBars(midBarsSource);
+  const topBars = transformBars(topBarsSource);
 
   const lastMidBar = midBars.at(-1);
   if (topPeriod !== 'day' && lastMidBar) {
@@ -206,16 +227,7 @@ export function anonymizeEpisodeQuestion(
     [midPeriod]: midBars,
     [topPeriod]: topBars,
   };
-  const hasDayTier = Boolean(tierBarsByPeriod.day?.length);
   const quoteDays = hasDayTier ? tierBarsByPeriod.day! : foldByDay(baseBars);
-  // Relies on generate.ts's requiredBaseBars() having given `source` at least two
-  // sessions of base bars whenever the ladder has no day tier; this is a backstop
-  // for any caller that hands anonymizeEpisodeQuestion a question built another way.
-  if (!hasDayTier && quoteDays.length < 2) {
-    throw new Error(
-      `insufficient ${basePeriod} history for a stable blind quote: need 2 trading days, got ${quoteDays.length} (source ${source.id})`,
-    );
-  }
   const transformedCutoffDay = quoteDays.at(-1)!;
   const previousDay = quoteDays.at(-2);
   const sourceQuote = source.fixtures.quote as Record<string, unknown>;

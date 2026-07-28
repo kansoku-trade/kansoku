@@ -9,4 +9,5 @@ export type TabsCommand =
   | 'open-settings'
   | 'open-logs'
   | 'open-research'
-  | 'open-chat';
+  | 'open-chat'
+  | 'open-trainer';

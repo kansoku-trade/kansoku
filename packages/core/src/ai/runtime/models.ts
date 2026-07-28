@@ -1,7 +1,11 @@
 import type { Api, Model, ModelThinkingLevel, ThinkingLevel } from '@earendil-works/pi-ai';
 import { builtinModels } from '@earendil-works/pi-ai/providers/all';
 import { getModelsRuntime } from './modelsRuntime.js';
-import { type AiTaskRole, getActiveSettingsStore, type RoleSetting } from '../settings/settingsStore.js';
+import {
+  type AiTaskRole,
+  getActiveSettingsStore,
+  type RoleSetting,
+} from '../settings/settingsStore.js';
 
 export type ModelRef = { provider: string; id: string; thinkingLevel?: ThinkingLevel };
 
@@ -17,6 +21,7 @@ export type AiConfig = {
   deepDiveModel: AiModel | null;
   chatModel: AiModel | null;
   memoryModel: AiModel | null;
+  casePickModel: AiModel | null;
 };
 
 type ModelLookup = (provider: string, id: string) => AiModel | undefined;
@@ -89,5 +94,6 @@ export function aiConfig(): AiConfig {
     deepDiveModel: resolve('deepDive'),
     chatModel: resolve('chat'),
     memoryModel: resolve('memory'),
+    casePickModel: resolve('casePick'),
   };
 }

@@ -1,4 +1,10 @@
-import type { TrainerClosedTrade, TrainerView, TrainerViewPeriod } from '@kansoku/pro-api';
+import type {
+  TrainerClosedTrade,
+  TrainerDirection,
+  TrainerPosition,
+  TrainerView,
+  TrainerViewPeriod,
+} from '@kansoku/pro-api';
 import { lineData, macd, toTs } from '@kansoku/core/analysis/indicators';
 import type {
   Candle,
@@ -37,6 +43,19 @@ export function trainerAdvancePeriod(ladder: TrainerLadder, tf: ChartTf): Traine
   return ladder.find((period) => TRAINER_PERIOD_TO_CHART_TF[period] === tf) ?? ladder[0];
 }
 
+// One letter per fill. The old labels spelled out price, side and reason, which put a 90px string
+// on top of the candles at the exact bar the trader wants to look at. The letter says what happened
+// to the position, the arrow colour says how it ended, and the tooltip still carries price, size
+// and R for anyone who hovers.
+const ENTRY_MARK: Record<TrainerDirection, string> = { long: 'B', short: 'S' };
+
+const EXIT_MARK: Record<TrainerClosedTrade['exitReason'], string> = {
+  stop: 'X',
+  target: 'T',
+  manual: 'C',
+  horizon: 'E',
+};
+
 const EXIT_MARK_LABEL: Record<TrainerClosedTrade['exitReason'], string> = {
   stop: '止损',
   target: '止盈',
@@ -74,15 +93,14 @@ function exitSide(trade: TrainerClosedTrade, price: number): SeriesMarker['posit
   return trade.direction === 'long' ? 'aboveBar' : 'belowBar';
 }
 
-const MIN_LABEL_GAP_BARS = 4;
-const LABEL_WIDTH_SHARE = 0.07;
+// lightweight-charts resets its marker stack on every new bar, so two labels drawn at the same
+// height overprint each other. A one-character label is about a bar wide, so it only has to clear
+// its immediate neighbour — the old rule scaled the gap with the bar count, which made sense for a
+// 90px string and would now blank letters that had plenty of room.
+const MIN_LABEL_GAP_BARS = 2;
 
-// lightweight-charts resets its marker stack on every new bar, so two labels a few bars apart are
-// drawn at the same height and overprint each other. The settlement chart is fitted to the whole
-// case, which makes a label's width roughly a fixed share of the bar count — anything closer than
-// that share loses its text and keeps only its arrow and its tooltip.
-function thinLabels(placed: { index: number; marker: SeriesMarker }[], barCount: number): void {
-  const minGap = Math.max(MIN_LABEL_GAP_BARS, Math.ceil(barCount * LABEL_WIDTH_SHARE));
+function thinLabels(placed: { index: number; marker: SeriesMarker }[]): void {
+  const minGap = MIN_LABEL_GAP_BARS;
   const lastLabelled = new Map<SeriesMarker['position'], number>();
   for (const { index, marker } of placed) {
     if (!marker.text) continue;
@@ -92,20 +110,61 @@ function thinLabels(placed: { index: number; marker: SeriesMarker }[], barCount:
   }
 }
 
-// Every fill gets its own arrow. The trade-level `entry` / `exit` are size-weighted averages: on a
-// scaled trade they name a price that was never traded, and drawing them would put the whole add
-// and the whole partial take-profit off the chart while the settlement table below lists them.
-// Only the first entry and the last exit carry a price label — with four fills in the last bars a
-// label per fill turns into one unreadable smear, and the arrows already answer where the trade
-// opened and where it ended.
-function tradeMarkers(trades: readonly TrainerClosedTrade[], timesTs: number[]): SeriesMarker[] {
-  const placed: { index: number; marker: SeriesMarker }[] = [];
+type PlacedMarker = { index: number; marker: SeriesMarker };
+
+// The position the trader is still holding gets the same arrows as a finished one — without them
+// the chart says nothing about where they actually got in, which is the one thing they need while
+// deciding what to do next. No label carries an outcome, because there is not one yet.
+function positionMarkers(position: TrainerPosition, timesTs: number[]): PlacedMarker[] {
+  const placed: PlacedMarker[] = [];
+  const long = position.direction === 'long';
+  const label = `第 ${position.tradeId} 笔 · ${long ? '多' : '空'} · 持仓中`;
+  position.lots.forEach((fill, index) => {
+    const at = snapToBar(timesTs, toTs(fill.time));
+    if (at === null) return;
+    placed.push({
+      index: at,
+      marker: {
+        id: `open-${position.tradeId}-entry-${index}`,
+        time: timesTs[at],
+        position: long ? 'belowBar' : 'aboveBar',
+        color: theme.accent,
+        shape: long ? 'arrowUp' : 'arrowDown',
+        text: ENTRY_MARK[position.direction],
+        tooltip: `${label}\n${index === 0 ? '进场' : '加仓'} $${fmt(fill.price)} · ${formatPositionSize(fill.size)}\n止损 $${fmt(position.stop)} · 目标 $${fmt(position.target)}`,
+      },
+    });
+  });
+  position.exits.forEach((fill, index) => {
+    const at = snapToBar(timesTs, toTs(fill.time));
+    if (at === null) return;
+    placed.push({
+      index: at,
+      marker: {
+        id: `open-${position.tradeId}-exit-${index}`,
+        time: timesTs[at],
+        position: fill.price < position.entryPrice ? 'belowBar' : 'aboveBar',
+        color: EXIT_MARK_COLOR[fill.reason],
+        shape: long ? 'arrowDown' : 'arrowUp',
+        text: EXIT_MARK[fill.reason],
+        tooltip: `${label}\n减仓 $${fmt(fill.price)} · ${formatPositionSize(fill.size)}（${EXIT_MARK_LABEL[fill.reason]}）`,
+      },
+    });
+  });
+  return placed;
+}
+
+// Every fill gets its own arrow and its own letter. The trade-level `entry` / `exit` are
+// size-weighted averages: on a scaled trade they name a price that was never traded, and drawing
+// them would put the whole add and the whole partial take-profit off the chart while the settlement
+// table below lists them.
+function tradeMarkers(trades: readonly TrainerClosedTrade[], timesTs: number[]): PlacedMarker[] {
+  const placed: PlacedMarker[] = [];
   for (const trade of trades) {
     const long = trade.direction === 'long';
     const label = `第 ${trade.tradeId} 笔 · ${long ? '多' : '空'}`;
     const entries = tradeEntryFills(trade);
     const exits = tradeExitFills(trade);
-    const count = (total: number) => (total > 1 ? ` ×${total}` : '');
     entries.forEach((fill, index) => {
       const at = snapToBar(timesTs, toTs(fill.time));
       if (at === null) return;
@@ -117,7 +176,7 @@ function tradeMarkers(trades: readonly TrainerClosedTrade[], timesTs: number[]):
           position: long ? 'belowBar' : 'aboveBar',
           color: theme.accent,
           shape: long ? 'arrowUp' : 'arrowDown',
-          text: index === 0 ? `进 ${fmt(fill.price)}${count(entries.length)}` : '',
+          text: ENTRY_MARK[trade.direction],
           tooltip: `${label}\n${index === 0 ? '进场' : '加仓'} $${fmt(fill.price)} · ${formatPositionSize(fill.size)}\n止损 $${fmt(trade.initialStop)} · 目标 $${fmt(trade.target)}${trade.entryReason ? `\n${trade.entryReason.summary}` : ''}`,
         },
       });
@@ -127,7 +186,6 @@ function tradeMarkers(trades: readonly TrainerClosedTrade[], timesTs: number[]):
       if (at === null) return;
       const last = index === exits.length - 1;
       const net = last ? `\n净 ${fmt(trade.netR)} R · 持有 ${trade.holdingBars} 根` : '';
-      const tail = exits.length > 1 ? count(exits.length) : ` ${EXIT_MARK_LABEL[fill.reason]}`;
       placed.push({
         index: at,
         marker: {
@@ -136,18 +194,34 @@ function tradeMarkers(trades: readonly TrainerClosedTrade[], timesTs: number[]):
           position: exitSide(trade, fill.price),
           color: EXIT_MARK_COLOR[fill.reason],
           shape: long ? 'arrowDown' : 'arrowUp',
-          text: last ? `离 ${fmt(fill.price)}${tail}` : '',
+          text: EXIT_MARK[fill.reason],
           tooltip: `${label}\n离场 $${fmt(fill.price)} · ${formatPositionSize(fill.size)}（${EXIT_MARK_LABEL[fill.reason]}）${net}`,
         },
       });
     });
   }
+  return placed;
+}
+
+function episodeMarkers(
+  trades: readonly TrainerClosedTrade[],
+  position: TrainerPosition | null,
+  timesTs: number[],
+): SeriesMarker[] {
+  const placed = [
+    ...tradeMarkers(trades, timesTs),
+    ...(position ? positionMarkers(position, timesTs) : []),
+  ];
   placed.sort((a, b) => a.index - b.index);
-  thinLabels(placed, timesTs.length);
+  thinLabels(placed);
   return placed.map((entry) => entry.marker);
 }
 
-function rawBarsToTfData(bars: RawBar[], trades: readonly TrainerClosedTrade[]): IntradayTfData {
+function rawBarsToTfData(
+  bars: RawBar[],
+  trades: readonly TrainerClosedTrade[],
+  position: TrainerPosition | null,
+): IntradayTfData {
   const timesTs = bars.map((b) => toTs(b.time));
   const closes = bars.map((b) => Number(b.close));
   const candles: Candle[] = bars.map((b, i) => ({
@@ -176,7 +250,7 @@ function rawBarsToTfData(bars: RawBar[], trades: readonly TrainerClosedTrade[]):
     macdDea: lineData(timesTs, dea),
     macdHist,
     macdCrossMarkers: [],
-    markers: tradeMarkers(trades, timesTs),
+    markers: episodeMarkers(trades, position, timesTs),
     priceConnectors: [],
     macdConnectors: [],
     autoDivergence: [],
@@ -229,12 +303,15 @@ export function buildTrainerIntradayBuilt(
     extendTierWithEpilogue(view.ladder[1], view.bars.mid, epilogue),
     extendTierWithEpilogue(view.ladder[2], view.bars.top, epilogue),
   ];
-  // Closed trades are marked only once the episode is over: mid-episode they would put a target
-  // price on the chart the trader is still deciding against.
-  const trades = view.terminal ? view.trades : [];
+  // Every fill the trader has made in this episode is marked, open position included. These are
+  // their own past actions on already-revealed bars, so nothing here is post-cursor: leaving them
+  // off left the chart silent about where they got in, which is exactly what they need to see while
+  // deciding what to do next.
+  const trades = view.trades;
+  const position = view.terminal ? null : view.position;
   const timeframes: Record<string, IntradayTfData> = {};
   view.ladder.forEach((period, i) => {
-    timeframes[TRAINER_PERIOD_TO_CHART_TF[period]] = rawBarsToTfData(tierBars[i], trades);
+    timeframes[TRAINER_PERIOD_TO_CHART_TF[period]] = rawBarsToTfData(tierBars[i], trades, position);
   });
   return {
     kind: 'intraday',

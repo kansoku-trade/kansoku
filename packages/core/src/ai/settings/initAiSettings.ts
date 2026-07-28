@@ -35,7 +35,9 @@ export function setAiRuntimeForTests(next: AiRuntime | null): void {
   runtime = next;
 }
 
-type EnvAiTaskRole = Exclude<AiTaskRole, 'memory'>;
+// Background roles are configured in the settings UI only; they get no env var,
+// so they never anchor the primary role either.
+type EnvAiTaskRole = Exclude<AiTaskRole, 'memory' | 'casePick'>;
 
 const ROLE_ENV_VARS: Record<EnvAiTaskRole, string> = {
   comment: 'AI_COMMENT_MODEL',

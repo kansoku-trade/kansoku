@@ -1,7 +1,7 @@
 import type { Market } from '@kansoku/shared/time';
 
 export type RoleMode = 'custom' | 'disabled' | 'inherit';
-export type Role = 'comment' | 'analyst' | 'deepDive' | 'chat' | 'memory';
+export type Role = 'comment' | 'analyst' | 'deepDive' | 'chat' | 'memory' | 'casePick';
 
 export interface RoleSetting {
   mode: RoleMode;
@@ -61,7 +61,7 @@ export interface Catalog {
   providers: CatalogProvider[];
 }
 
-export const ROLES: Role[] = ['comment', 'analyst', 'deepDive', 'chat', 'memory'];
+export const ROLES: Role[] = ['comment', 'analyst', 'deepDive', 'chat', 'memory', 'casePick'];
 
 function defaultRoleSetting(role: Role | 'primary'): RoleSetting {
   return {
@@ -92,6 +92,7 @@ export const ROLE_LABEL: Record<Role, string> = {
   deepDive: '深度研究',
   chat: '追问',
   memory: '记忆整理',
+  casePick: '案例精选',
 };
 
 export const CODEX_PROVIDER = 'openai-codex';

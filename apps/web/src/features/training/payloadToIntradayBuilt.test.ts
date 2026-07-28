@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { macd, toTs } from '@kansoku/core/analysis/indicators';
-import type { TrainerClosedTrade, TrainerView } from '@kansoku/pro-api';
+import type { TrainerClosedTrade, TrainerPosition, TrainerView } from '@kansoku/pro-api';
 import type { RawBar } from '@kansoku/shared/types';
 import {
   buildTrainerIntradayBuilt,
@@ -272,11 +272,93 @@ function baseMarkers(trades: TrainerClosedTrade[]) {
   return tfDataOf(built, TRAINER_PERIOD_TO_CHART_TF['5m'])!.markers;
 }
 
+function openPosition(overrides: Partial<TrainerPosition> = {}): TrainerPosition {
+  return {
+    tradeId: 2,
+    direction: 'long',
+    decisionBar: 0,
+    decisionTime: '2026-01-05T14:00:00.000Z',
+    lots: [{ time: '2026-01-05T14:05:00.000Z', price: 101, size: 0.5, remaining: 0.5 }],
+    exits: [],
+    entryPrice: 101,
+    entryTime: '2026-01-05T14:05:00.000Z',
+    initialStop: 99,
+    riskUnit: 2,
+    realizedR: 0,
+    realizedFrictionR: 0,
+    stop: 99,
+    target: 105,
+    holdingBars: 2,
+    mfeR: 0,
+    maeR: 0,
+    entryReason: { category: 'breakout', summary: '' },
+    ...overrides,
+  };
+}
+
+function liveMarkers(view: TrainerView) {
+  return tfDataOf(buildTrainerIntradayBuilt(view), TRAINER_PERIOD_TO_CHART_TF['5m'])!.markers;
+}
+
 describe('buildTrainerIntradayBuilt trade marks', () => {
-  it('marks nothing until the episode is over', () => {
-    const view = makeView({ trades: [closedTrade()] });
-    const built = buildTrainerIntradayBuilt(view);
-    expect(tfDataOf(built, TRAINER_PERIOD_TO_CHART_TF['5m'])!.markers).toEqual([]);
+  // Previously nothing was marked before the episode ended. These are the trader's own fills on
+  // bars that are already revealed, so withholding them hid where they got in — the one thing they
+  // need on the chart while deciding what to do next.
+  it('marks the open position mid-episode', () => {
+    const markers = liveMarkers(makeView({ phase: 'open', position: openPosition() }));
+    expect(markers).toHaveLength(1);
+    expect(markers[0].id).toBe('open-2-entry-0');
+    expect(markers[0].time).toBe(toTs('2026-01-05T14:05:00.000Z'));
+    expect(markers[0].text).toBe('B');
+    expect(markers[0].shape).toBe('arrowUp');
+  });
+
+  it('marks each add and each partial close of the open position', () => {
+    const markers = liveMarkers(
+      makeView({
+        phase: 'open',
+        position: openPosition({
+          lots: [
+            { time: '2026-01-05T14:05:00.000Z', price: 101, size: 0.25, remaining: 0.25 },
+            { time: '2026-01-05T14:10:00.000Z', price: 102, size: 0.25, remaining: 0.25 },
+          ],
+          exits: [{ time: '2026-01-05T14:15:00.000Z', price: 104, size: 0.25, reason: 'manual' }],
+        }),
+      }),
+    );
+    expect(markers.map((m) => m.id)).toEqual(['open-2-entry-0', 'open-2-entry-1', 'open-2-exit-0']);
+    expect(markers[1].tooltip).toContain('加仓 $102.00 · 25%');
+    // The add sits on the bar right after the first entry and on the same side of it, so thinLabels
+    // drops its letter to stop the two from overprinting; the arrow and tooltip still carry it. The
+    // partial close stacks above the bar instead, so it keeps its own.
+    expect(markers[1].text).toBe('');
+    expect(markers[2].text).toBe('C');
+  });
+
+  it('marks trades already closed earlier in the same episode', () => {
+    const markers = liveMarkers(makeView({ trades: [closedTrade()] }));
+    expect(markers.map((m) => m.id)).toEqual(['trade-1-entry-0', 'trade-1-exit-0']);
+  });
+
+  // The guardrail the old "mark nothing" rule was really protecting: a mark may never sit on a bar
+  // the trader has not been shown, or it would leak post-cursor price action.
+  it('never places a mark past the last revealed bar', () => {
+    const lastRevealed = toTs(BASE_BARS.at(-1)!.time);
+    const markers = liveMarkers(
+      makeView({ phase: 'open', position: openPosition(), trades: [closedTrade()] }),
+    );
+    expect(markers).not.toHaveLength(0);
+    for (const marker of markers) expect(marker.time as number).toBeLessThanOrEqual(lastRevealed);
+  });
+
+  it('leaves the open position to the closed-trade marks once the episode ends', () => {
+    const view = makeView({
+      terminal: true,
+      phase: 'terminal',
+      position: openPosition(),
+      trades: [closedTrade()],
+    });
+    expect(liveMarkers(view).map((m) => m.id)).toEqual(['trade-1-entry-0', 'trade-1-exit-0']);
   });
 
   it('emits an entry mark and an exit mark, each on its own bar', () => {
@@ -284,10 +366,10 @@ describe('buildTrainerIntradayBuilt trade marks', () => {
     expect(markers).toHaveLength(2);
     expect(markers[0].id).toBe('trade-1-entry-0');
     expect(markers[0].time).toBe(toTs('2026-01-05T14:05:00.000Z'));
-    expect(markers[0].text).toBe('进 101.00');
+    expect(markers[0].text).toBe('B');
     expect(markers[1].id).toBe('trade-1-exit-0');
     expect(markers[1].time).toBe(toTs('2026-01-05T14:15:00.000Z'));
-    expect(markers[1].text).toBe('离 103.00 止盈');
+    expect(markers[1].text).toBe('T');
   });
 
   // The trade-level entry/exit are size-weighted averages — 99.00 and 104.00 here — and neither was
@@ -316,9 +398,14 @@ describe('buildTrainerIntradayBuilt trade marks', () => {
 
   // Four labels over five bars is what the settlement actually looked like: they overprinted each
   // other into an unreadable smear. One label per side per trade, and the arrows keep the rest.
-  it('labels only the first entry and the last exit of a scaled trade', () => {
+  // Each fill carries its own letter now that a label is one character wide: B for a buy, T for a
+  // target exit, X for a stop. The two that come back blank are each one bar behind a letter on the
+  // same side of the bar, which is close enough to overprint it — their arrow colour and tooltip
+  // still say what they were.
+  it('letters every fill of a scaled trade, thinning only what would overprint', () => {
     const markers = baseMarkers([SCALED_TRADE]);
-    expect(markers.map((marker) => marker.text)).toEqual(['进 101.00 ×2', '', '', '离 102.00 ×2']);
+    expect(markers.map((marker) => marker.text)).toEqual(['B', '', 'T', '']);
+    expect(markers[3].tooltip).toContain('止损');
   });
 
   it('drops a label that would land on top of one already placed on the same side', () => {
@@ -330,7 +417,7 @@ describe('buildTrainerIntradayBuilt trade marks', () => {
       }),
     ]);
     expect(markers.map((m) => m.position)).toEqual(['belowBar', 'belowBar']);
-    expect(markers.map((m) => m.text)).toEqual(['进 100.00', '']);
+    expect(markers.map((m) => m.text)).toEqual(['B', '']);
     expect(markers[1].tooltip).toContain('离场 $98.00');
   });
 
@@ -342,7 +429,7 @@ describe('buildTrainerIntradayBuilt trade marks', () => {
       }),
     ]);
     expect(markers.map((m) => m.position)).toEqual(['belowBar', 'aboveBar']);
-    expect(markers.map((m) => m.text)).toEqual(['进 100.00', '离 102.00 止盈']);
+    expect(markers.map((m) => m.text)).toEqual(['B', 'T']);
   });
 
   // A stopped-out long left at the bottom of the move; an exit mark floating above the bar reads as

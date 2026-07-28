@@ -6,6 +6,7 @@ export type MenuActionDeps = {
   openLogs: () => void;
   openResearch: () => void;
   openChat: () => void;
+  openTrainer: () => void;
   checkForUpdates: () => void;
   newWindow: () => void;
   newTab: () => void;

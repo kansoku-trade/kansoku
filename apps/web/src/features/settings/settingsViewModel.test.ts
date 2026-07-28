@@ -41,6 +41,13 @@ const roles = {
     thinkingLevel: null,
     stale: false,
   } satisfies RoleSetting,
+  casePick: {
+    mode: 'inherit',
+    provider: null,
+    modelId: null,
+    thinkingLevel: null,
+    stale: false,
+  } satisfies RoleSetting,
 };
 
 const settings: AiSettings = {
@@ -87,6 +94,7 @@ const usage: UsageToday = {
     deepDive: { calls: 0, cost: 0 },
     chat: { calls: 28, cost: 0.64 },
     memory: { calls: 4, cost: 0.02 },
+    casePick: { calls: 0, cost: 0 },
   },
   total: { calls: 131, cost: 1.84 },
 };

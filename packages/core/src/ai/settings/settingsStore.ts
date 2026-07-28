@@ -2,11 +2,18 @@ import type { ModelThinkingLevel } from '@earendil-works/pi-ai';
 import type { Db } from '../../db/index.js';
 import { aiRoleSettings } from '../../db/schema.js';
 
-export type AiTaskRole = 'comment' | 'analyst' | 'deepDive' | 'chat' | 'memory';
+export type AiTaskRole = 'comment' | 'analyst' | 'deepDive' | 'chat' | 'memory' | 'casePick';
 export type AiRole = AiTaskRole | 'primary';
 export type RoleMode = 'custom' | 'disabled' | 'inherit';
 
-export const TASK_ROLES: AiTaskRole[] = ['comment', 'analyst', 'deepDive', 'chat', 'memory'];
+export const TASK_ROLES: AiTaskRole[] = [
+  'comment',
+  'analyst',
+  'deepDive',
+  'chat',
+  'memory',
+  'casePick',
+];
 
 export interface RoleSetting {
   mode: RoleMode;

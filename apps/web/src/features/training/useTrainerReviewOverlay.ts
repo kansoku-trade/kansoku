@@ -4,7 +4,11 @@ import {
   PositionBoxPrimitive,
   type PositionBoxData,
 } from '../charts/intraday/positionBoxPrimitive';
-import { ReplayBandPrimitive, type ReplayBand } from '../charts/intraday/replayBandPrimitive';
+import {
+  ReplayBandPrimitive,
+  type ReplayBand,
+  type ReplayDivider,
+} from '../charts/intraday/replayBandPrimitive';
 import type { DrawingChartHandle } from '../charts/intraday/useIntradayCharts';
 import { tradeEntryFills } from './settlementStats';
 
@@ -28,13 +32,14 @@ export function useTrainerReviewOverlay(
   handle: DrawingChartHandle | null,
   trades: readonly TrainerClosedTrade[],
   bands: readonly ReplayBand[],
+  dividers: readonly ReplayDivider[] = NO_DIVIDERS,
 ): void {
   useEffect(() => {
     if (!handle) return;
     const { series } = handle;
     const bandLayer = new ReplayBandPrimitive();
     series.attachPrimitive(bandLayer);
-    bandLayer.setData([...bands]);
+    bandLayer.setData([...bands], [...dividers]);
     const boxes = trades.map((trade) => {
       const box = new PositionBoxPrimitive();
       series.attachPrimitive(box);
@@ -49,5 +54,7 @@ export function useTrainerReviewOverlay(
       series.detachPrimitive(bandLayer);
       for (const box of boxes) series.detachPrimitive(box);
     };
-  }, [handle, trades, bands]);
+  }, [handle, trades, bands, dividers]);
 }
+
+const NO_DIVIDERS: readonly ReplayDivider[] = [];

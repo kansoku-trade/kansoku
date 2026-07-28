@@ -24,6 +24,7 @@ import { PositionsCard } from './PositionsCard';
 import { QuickBar } from './QuickBar';
 import { RecapBoard } from './RecapBoard';
 import { SymbolGrid } from './SymbolGrid';
+import { TrainerCard } from './TrainerCard';
 import { WatchBoard } from './WatchBoard';
 
 const SESSION_LABEL: Record<string, string> = {
@@ -187,6 +188,7 @@ export function Home() {
               {hasPositions && positionsSection}
               {eventSection}
               {!hasPositions && positionsSection}
+              <TrainerCard />
             </ScrollArea>
           </div>
         </div>
@@ -204,6 +206,7 @@ export function Home() {
               <SectionTitleWithAge label="收盘定格" at={boardSnapshotAt} />
               <WatchBoard board={board} error={boardError} compact />
               {!hasPositions && positionsSection}
+              <TrainerCard />
             </ScrollArea>
           </div>
         </div>

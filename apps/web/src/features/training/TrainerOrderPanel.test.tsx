@@ -1,18 +1,20 @@
 // @vitest-environment jsdom
+import type { ReactNode } from 'react';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type {
   TrainerDirection,
   TrainerPosition,
+  TrainerStepEvent,
   TrainerSubmission,
   TrainerView,
 } from '@kansoku/pro-api';
 import type { RawBar } from '@kansoku/shared/types';
-import type { PositionBoxPrimitive } from '../charts/intraday/positionBoxPrimitive';
 import type { DrawingChartHandle } from '../charts/intraday/useIntradayCharts';
 import type { TrainerBridge } from '../desktop/desktopTrainerBridge';
 import { NO_REASON_GIVEN } from './orderDraft';
 import { TrainerOrderPanel } from './TrainerOrderPanel';
+import { TrainerOverlayLayer, TrainerOverlayProvider } from './trainerOverlay';
 
 function bar(iso: string, close: number): RawBar {
   return { time: iso, open: close - 1, high: close + 1, low: close - 1.5, close, volume: 1000 };
@@ -119,10 +121,17 @@ function okResult(view: TrainerView) {
   };
 }
 
-function makeBridge(): { bridge: TrainerBridge; submit: ReturnType<typeof vi.fn> } {
+// A market submit is followed by the one-bar advance that fills it, so `step` is part of the
+// minimum surface a submitting panel needs.
+function makeBridge(): {
+  bridge: TrainerBridge;
+  submit: ReturnType<typeof vi.fn>;
+  step: ReturnType<typeof vi.fn>;
+} {
   const submit = vi.fn(async () => okResult(makeView()));
-  const bridge = { submit } as unknown as TrainerBridge;
-  return { bridge, submit };
+  const step = vi.fn(async () => okResult(makeView()));
+  const bridge = { submit, step } as unknown as TrainerBridge;
+  return { bridge, submit, step };
 }
 
 // Every method a spy, so "the drag path made no call" can be asserted against the whole surface
@@ -160,14 +169,26 @@ function dragOnChart(container: HTMLElement, fromY: number, toY: number, frames 
   fireEvent.pointerUp(window, { clientY: toY });
 }
 
+// Levels are pulled out of the entry ticket: press the TP or SL handle, drag, drop. The handle is
+// in the overlay rather than on the canvas, so the drag rides window listeners from pointerdown.
+function pull(handle: 'TP' | 'SL', toY: number, frames = 1) {
+  const button = screen.getByRole('button', { name: `拖出${handle}` });
+  fireEvent.pointerDown(button);
+  for (let i = 1; i <= frames; i += 1) {
+    fireEvent.pointerMove(window, { clientY: 200 + ((toY - 200) * i) / frames });
+  }
+  fireEvent.pointerUp(window, { clientY: toY });
+}
+
 function placeOrder(
-  container: HTMLElement,
-  fromY: number,
-  toY: number,
+  _container: HTMLElement,
+  stopY: number,
+  targetY: number,
   direction: '做多' | '做空' = '做多',
 ) {
   arm(direction);
-  dragOnChart(container, fromY, toY);
+  pull('SL', stopY);
+  pull('TP', targetY);
 }
 
 // The engine is the authority on what an amendment may do; this stub only stands in for its
@@ -262,6 +283,18 @@ function makePendingView(): TrainerView {
   });
 }
 
+// The position status, the amend confirm and every error are painted onto the chart rather than
+// into the lane, so they only exist once an overlay layer is mounted — TrainerChart always mounts
+// one for a live episode.
+function Overlay({ children }: { children: ReactNode }) {
+  return (
+    <TrainerOverlayProvider>
+      {children}
+      <TrainerOverlayLayer />
+    </TrainerOverlayProvider>
+  );
+}
+
 function renderPanel(
   view: TrainerView,
   bridge: TrainerBridge,
@@ -277,7 +310,56 @@ function renderPanel(
       onViewChange={() => {}}
       {...extra}
     />,
+    { wrapper: Overlay },
   );
+}
+
+// The reason field lives behind a popover now: one note per lane, attached to whichever action
+// the trader fires next.
+function note(label = '备注'): HTMLInputElement {
+  const open = screen.queryByLabelText(`${label}内容`);
+  if (open) return open as HTMLInputElement;
+  fireEvent.click(screen.getByRole('button', { name: label }));
+  return screen.getByLabelText(`${label}内容`) as HTMLInputElement;
+}
+
+// The entry buttons live on the ticket and stay on screen while the plan is incomplete or refused,
+// disabled with a reason. So "is there a plan good enough to send" is the button being enabled, not
+// merely present.
+function draftFor(direction: '做多' | '做空') {
+  const button = screen.queryByRole('button', {
+    name: `入场${direction} 全仓`,
+  }) as HTMLButtonElement | null;
+  return button && !button.disabled ? button : null;
+}
+
+// The position box edges are dragged now that the number fields are gone; makeHandle maps
+// y = 300 - price, so a level move is expressible as the two prices it goes between.
+function dragLevel(container: HTMLElement, fromPrice: number, toPrice: number) {
+  dragOnChart(container, 300 - fromPrice, 300 - toPrice);
+}
+
+function typeNote(text: string, label = '备注') {
+  fireEvent.change(note(label), { target: { value: text } });
+}
+
+// The confirm rides the dragged level on the chart and only exists while an edit is pending, so
+// every amend test has to move a line before there is anything to confirm.
+function confirmAmend(): HTMLButtonElement {
+  return screen.getByRole('button', { name: '确认调整' }) as HTMLButtonElement;
+}
+
+// Each level now carries its own ticket on its line; a pending edit turns that ticket into the
+// confirm prompt, so "what is the pending edit showing" is the pill's own text.
+function pendingPill(): HTMLElement | null {
+  const pill = [...document.querySelectorAll('.trainer-level-pill')].find((el) =>
+    el.textContent?.includes('→'),
+  );
+  return (pill as HTMLElement | undefined) ?? null;
+}
+
+function levelPill(kind: 'target' | 'entry' | 'stop'): HTMLElement | null {
+  return document.querySelector(`.trainer-level--${kind} .trainer-level-pill`);
 }
 
 afterEach(() => {
@@ -301,9 +383,10 @@ describe('TrainerOrderPanel direction choice', () => {
       'false',
     );
 
-    dragOnChart(container, 210, 175);
-    expect(screen.getByText('入场做多')).toBeTruthy();
-    expect(screen.queryByText('入场做空')).toBeNull();
+    pull('SL', 210);
+    pull('TP', 175);
+    expect(draftFor('做多')).toBeTruthy();
+    expect(draftFor('做空')).toBeNull();
   });
 
   it('reads the same drag as a short once 做空 is the picked side', () => {
@@ -315,7 +398,7 @@ describe('TrainerOrderPanel direction choice', () => {
 
     expect(screen.getByText('止损 110.00')).toBeTruthy();
     expect(screen.getByText('目标 75.00')).toBeTruthy();
-    expect(screen.getByText('入场做空')).toBeTruthy();
+    expect(draftFor('做空')).toBeTruthy();
   });
 
   it('switches side and drops the drawn lines when the other direction is picked', () => {
@@ -323,7 +406,7 @@ describe('TrainerOrderPanel direction choice', () => {
     const { bridge } = makeBridge();
     renderPanel(makeView(), bridge, handle);
     placeOrder(container, 210, 175);
-    expect(screen.getByText('入场做多')).toBeTruthy();
+    expect(draftFor('做多')).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: '做空' }));
 
@@ -331,11 +414,12 @@ describe('TrainerOrderPanel direction choice', () => {
     expect((screen.getByRole('button', { name: '做空' }) as HTMLButtonElement).ariaPressed).toBe(
       'true',
     );
-    dragOnChart(container, 190, 225);
-    expect(screen.getByText('入场做空')).toBeTruthy();
+    pull('SL', 190);
+    pull('TP', 225);
+    expect(draftFor('做空')).toBeTruthy();
   });
 
-  it('re-arms and clears the drawn order when the picked side is pressed again', () => {
+  it('drops the whole plan when the picked side is pressed again', () => {
     const { handle, container } = makeHandle();
     const { bridge } = makeBridge();
     renderPanel(makeView(), bridge, handle);
@@ -343,30 +427,29 @@ describe('TrainerOrderPanel direction choice', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '做多' }));
 
-    expect(screen.queryByText(/^止损 /)).toBeNull();
+    expect(levelPill('entry')).toBeNull();
+    expect(levelPill('stop')).toBeNull();
     expect((screen.getByRole('button', { name: '做多' }) as HTMLButtonElement).ariaPressed).toBe(
-      'true',
+      'false',
     );
   });
 
-  // Placement arms a canvas-wide pointer capture that turns chart panning off; with the 下单
-  // button gone, pressing the picked side again is the only way back out of it.
-  it('backs out of an armed side with nothing drawn, handing panning back to the chart', () => {
+  // Placement used to arm a canvas-wide pointer capture and turn panning off for as long as a side
+  // was picked. Levels are pulled out of the ticket by their own handles now, so ordinary chart
+  // panning is never taken away — only a drawing tool still claims the canvas.
+  it('never takes chart panning away to place an order', () => {
     const { handle, chart } = makeHandle();
     const { bridge } = makeBridge();
     renderPanel(makeView(), bridge, handle);
 
     arm();
-    expect(chart.applyOptions).toHaveBeenLastCalledWith({
+    pull('SL', 210);
+    pull('TP', 175);
+
+    expect(chart.applyOptions).not.toHaveBeenCalledWith({
       handleScroll: false,
       handleScale: false,
     });
-
-    fireEvent.click(screen.getByRole('button', { name: '做多' }));
-    expect((screen.getByRole('button', { name: '做多' }) as HTMLButtonElement).ariaPressed).toBe(
-      'false',
-    );
-    expect(chart.applyOptions).toHaveBeenLastCalledWith({ handleScroll: true, handleScale: true });
   });
 });
 
@@ -383,50 +466,96 @@ describe('TrainerOrderPanel placement drag', () => {
     expect(screen.getByText('入场 100.00')).toBeTruthy();
   });
 
-  it('shows the live prices before the pointer is released', () => {
-    const { handle, container } = makeHandle();
+  // The pointer leaves the handle immediately and spends the drag over the chart canvas, which
+  // sets its own crosshair cursor. Without a document-level lock the grab silently stops looking
+  // like a grab halfway through.
+  it('holds the resize cursor for the whole pull, and drops it on release', () => {
+    const { handle } = makeHandle();
+    const { bridge } = makeBridge();
+    renderPanel(makeView(), bridge, handle);
+    const held = () => document.body.classList.contains('trainer-dragging-level');
+
+    arm();
+    expect(held()).toBe(false);
+
+    fireEvent.pointerDown(screen.getByRole('button', { name: '拖出SL' }));
+    expect(held()).toBe(true);
+    fireEvent.pointerMove(window, { clientY: 210 });
+    expect(held()).toBe(true);
+
+    fireEvent.pointerUp(window, { clientY: 210 });
+    expect(held()).toBe(false);
+  });
+
+  it('drops the cursor lock when the pointer is cancelled rather than released', () => {
+    const { handle } = makeHandle();
     const { bridge } = makeBridge();
     renderPanel(makeView(), bridge, handle);
 
     arm();
-    fireEvent.pointerDown(container, { clientY: 210 });
-    fireEvent.pointerMove(window, { clientY: 195 });
-    expect(screen.getByText('止损 90.00')).toBeTruthy();
-    expect(screen.getByText('目标 105.00')).toBeTruthy();
+    fireEvent.pointerDown(screen.getByRole('button', { name: '拖出SL' }));
+    fireEvent.pointerCancel(window);
 
-    fireEvent.pointerUp(window, { clientY: 195 });
-    expect(screen.getByText('目标 105.00')).toBeTruthy();
+    expect(document.body.classList.contains('trainer-dragging-level')).toBe(false);
   });
 
-  // A drag that stays below entry has drawn a long whose target is a loss. Direction is no longer
-  // in question, so the correction names the side that is wrong rather than the missing crossing.
-  it('places nothing when the drag lands on the wrong side for the picked direction', () => {
-    const { handle, container } = makeHandle();
+  // Unmounting mid-drag (the case switches, the trade fills) would otherwise strand the whole
+  // document in a resize cursor with no pointer release left to clear it.
+  it('drops the cursor lock if the panel unmounts mid-drag', () => {
+    const { handle } = makeHandle();
+    const { bridge } = makeBridge();
+    const { unmount } = renderPanel(makeView(), bridge, handle);
+
+    arm();
+    fireEvent.pointerDown(screen.getByRole('button', { name: '拖出SL' }));
+    expect(document.body.classList.contains('trainer-dragging-level')).toBe(true);
+
+    unmount();
+    expect(document.body.classList.contains('trainer-dragging-level')).toBe(false);
+  });
+
+  it('shows the level following the pointer before it is released', () => {
+    const { handle } = makeHandle();
     const { bridge } = makeBridge();
     renderPanel(makeView(), bridge, handle);
 
-    placeOrder(container, 210, 205);
+    arm();
+    fireEvent.pointerDown(screen.getByRole('button', { name: '拖出SL' }));
+    fireEvent.pointerMove(window, { clientY: 210 });
+    expect(levelPill('stop')?.textContent).toContain('90.00');
 
-    expect(screen.queryByText(/^止损 /)).toBeNull();
-    expect(screen.getByText(/止损要在入场线 100.00 下方，目标要在上方，再拖一次/)).toBeTruthy();
-    // The side stays armed so the next attempt needs no second press.
-    expect((screen.getByRole('button', { name: '做多' }) as HTMLButtonElement).ariaPressed).toBe(
-      'true',
-    );
+    fireEvent.pointerMove(window, { clientY: 205 });
+    expect(levelPill('stop')?.textContent).toContain('95.00');
+
+    fireEvent.pointerUp(window, { clientY: 205 });
+    expect(levelPill('stop')?.textContent).toContain('95.00');
   });
 
-  // The drag that used to *mean* "long" is now just a badly-placed short: the picked side wins and
-  // the panel refuses rather than quietly flipping to the direction the gesture would have implied.
-  it('refuses the long-shaped drag while 做空 is the picked side instead of flipping to a long', () => {
-    const { handle, container } = makeHandle();
+  // Each level is pulled on its own now, so a level dropped on the wrong side of entry is a slip of
+  // one hand rather than a malformed two-ended gesture. Snapping it to the nearest legal price
+  // keeps the other leg — refusing the whole pull would throw away work the trader did correctly.
+  it('snaps a level dropped on the wrong side of entry instead of discarding the pull', () => {
+    const { handle } = makeHandle();
     const { bridge } = makeBridge();
     renderPanel(makeView(), bridge, handle);
 
-    placeOrder(container, 210, 175, '做空');
+    arm();
+    pull('TP', 175);
+    pull('SL', 195); // 105, above the 100 entry — illegal for a long stop
 
-    expect(screen.queryByText('入场做多')).toBeNull();
-    expect(screen.queryByText(/^止损 /)).toBeNull();
-    expect(screen.getByText(/止损要在入场线 100.00 上方，目标要在下方，再拖一次/)).toBeTruthy();
+    expect(levelPill('stop')?.textContent).toContain('99.99');
+    expect(levelPill('target')?.textContent).toContain('125.00');
+  });
+
+  it('mirrors the clamp for a short, whose stop belongs above entry', () => {
+    const { handle } = makeHandle();
+    const { bridge } = makeBridge();
+    renderPanel(makeView(), bridge, handle);
+
+    arm('做空');
+    pull('SL', 210); // 90, below the 100 entry — illegal for a short stop
+
+    expect(levelPill('stop')?.textContent).toContain('100.01');
   });
 
   it('ignores pointer events on the chart until a side is picked', () => {
@@ -439,17 +568,19 @@ describe('TrainerOrderPanel placement drag', () => {
     expect(screen.queryByText(/^止损 /)).toBeNull();
   });
 
-  it('locks chart panning only while a side is armed', () => {
+  // Panning is the trader's, not the order tool's: a drawing tool is the only thing that still
+  // claims the canvas, and placing an order no longer touches it at any point.
+  it('leaves chart panning alone through a whole placement', () => {
     const { handle, container, chart } = makeHandle();
     const { bridge } = makeBridge();
     renderPanel(makeView(), bridge, handle);
-    expect(chart.applyOptions).not.toHaveBeenCalled();
 
-    arm();
-    expect(chart.applyOptions).toHaveBeenCalledWith({ handleScroll: false, handleScale: false });
+    placeOrder(container, 210, 175);
 
-    dragOnChart(container, 210, 175);
-    expect(chart.applyOptions).toHaveBeenLastCalledWith({ handleScroll: true, handleScale: true });
+    expect(chart.applyOptions).not.toHaveBeenCalledWith({
+      handleScroll: false,
+      handleScale: false,
+    });
   });
 
   it('keeps adjusting the drawn lines by their handles after the drag settles', () => {
@@ -465,7 +596,7 @@ describe('TrainerOrderPanel placement drag', () => {
 
     expect(screen.getByText('止损 95.00')).toBeTruthy();
     expect(screen.getByText('目标 125.00')).toBeTruthy();
-    expect(screen.getByText('入场做多')).toBeTruthy();
+    expect(draftFor('做多')).toBeTruthy();
   });
 
   // A handle drag is fine-tuning, not a fresh direction call, so the stop may not cross to the
@@ -481,7 +612,7 @@ describe('TrainerOrderPanel placement drag', () => {
     fireEvent.pointerUp(window, { clientY: 150 });
 
     expect(screen.getByText('止损 99.99')).toBeTruthy();
-    expect(screen.getByText('入场做多')).toBeTruthy();
+    expect(draftFor('做多')).toBeTruthy();
   });
 
   // The plan is re-read against the live price every render: once price runs past the target the
@@ -491,7 +622,7 @@ describe('TrainerOrderPanel placement drag', () => {
     const { bridge } = makeBridge();
     const { rerender } = renderPanel(makeView(), bridge, handle);
     placeOrder(container, 210, 175);
-    expect(screen.getByText('入场做多')).toBeTruthy();
+    expect(draftFor('做多')).toBeTruthy();
 
     const moved = [bar('2026-01-05T14:00:00.000Z', 130), bar('2026-01-05T14:05:00.000Z', 130)];
     rerender(
@@ -504,8 +635,8 @@ describe('TrainerOrderPanel placement drag', () => {
       />,
     );
 
-    expect(screen.queryByText('入场做多')).toBeNull();
-    expect(screen.getByText(/现价 130.00 已经越过你画的线/)).toBeTruthy();
+    expect(draftFor('做多')).toBeNull();
+    expect(screen.getByText(/现价 130.00 已经越过你放的线/)).toBeTruthy();
   });
 });
 
@@ -516,7 +647,7 @@ describe('TrainerOrderPanel submit', () => {
     renderPanel(makeView(), bridge, handle);
 
     placeOrder(container, 210, 175);
-    fireEvent.change(screen.getByLabelText('入场理由'), {
+    fireEvent.change(note(), {
       target: { value: '5 分钟突破前高，放量确认' },
     });
     fireEvent.click(screen.getByRole('button', { name: '入场做多 全仓' }));
@@ -545,7 +676,7 @@ describe('TrainerOrderPanel submit', () => {
     renderPanel(makeView(), bridge, handle);
 
     placeOrder(container, 190, 225, '做空');
-    fireEvent.change(screen.getByLabelText('入场理由'), { target: { value: '跌破颈线，放量' } });
+    fireEvent.change(note(), { target: { value: '跌破颈线，放量' } });
     fireEvent.click(screen.getByRole('button', { name: '入场做空 1/2' }));
 
     const call = submit.mock.calls[0][0] as {
@@ -567,7 +698,7 @@ describe('TrainerOrderPanel submit', () => {
     renderPanel(makeView(), bridge, handle);
 
     placeOrder(container, 210, 175);
-    fireEvent.change(screen.getByLabelText('入场理由'), { target: { value: '突破前高' } });
+    fireEvent.change(note(), { target: { value: '突破前高' } });
     fireEvent.click(screen.getByRole('button', { name }));
 
     expect((submit.mock.calls[0][0] as { size: number }).size).toBe(size);
@@ -592,11 +723,20 @@ describe('TrainerOrderPanel submit', () => {
     });
   });
 
-  it('applies the returned view once the submit resolves', async () => {
+  // The market order rests in `pending` until a bar is advanced, so the view the trader ends up
+  // looking at is the fill's, not the submit's — applying the submit's would leave them staring at
+  // a resting order that has in fact already filled.
+  it('applies the filled view, not the resting one the submit returned', async () => {
     const { handle, container } = makeHandle();
-    const nextView = makeView({ phase: 'pending' });
-    const submit = vi.fn(async () => okResult(nextView));
-    const bridge = { submit } as unknown as TrainerBridge;
+    const pendingView = makeView({ phase: 'pending' });
+    const filledView = makeOpenView('long', 102);
+    const submit = vi.fn(async () => okResult(pendingView));
+    const step = vi.fn(async () => okResult(filledView));
+    const validateAmend = vi.fn(async () => ({
+      ok: true as const,
+      data: { allowed: true, code: null, error: null },
+    }));
+    const bridge = { submit, step, validateAmend } as unknown as TrainerBridge;
     const onViewChange = vi.fn();
     render(
       <TrainerOrderPanel
@@ -606,12 +746,71 @@ describe('TrainerOrderPanel submit', () => {
         sessionId="run-1"
         onViewChange={onViewChange}
       />,
+      { wrapper: Overlay },
     );
 
     placeOrder(container, 210, 175);
-    fireEvent.change(screen.getByLabelText('入场理由'), { target: { value: '突破前高' } });
+    typeNote('突破前高');
     fireEvent.click(screen.getByRole('button', { name: '入场做多 全仓' }));
-    await waitFor(() => expect(onViewChange).toHaveBeenCalledWith(nextView));
+
+    await waitFor(() => expect(onViewChange).toHaveBeenCalledWith(filledView));
+    expect(onViewChange).not.toHaveBeenCalledWith(pendingView);
+    // One base bar, never the tier the chart happens to be showing: a coarser tier would swallow
+    // several bars of the episode to fill one order.
+    expect(step).toHaveBeenCalledWith({
+      sessionId: 'run-1',
+      action: {
+        type: 'hold',
+        bars: 1,
+        period: '5m',
+        reason: { category: 'other', summary: '突破前高' },
+      },
+    });
+  });
+
+  it('says the fill happened even when the same bar also ends the trade', async () => {
+    const { handle, container } = makeHandle();
+    const submit = vi.fn(async () => okResult(makeView({ phase: 'pending' })));
+    const events: TrainerStepEvent[] = [
+      { barOffset: 1, cursor: 2, at: '2026-01-05T14:10:00.000Z', event: 'stop_hit' },
+    ];
+    const step = vi.fn(async () => ({
+      ok: true as const,
+      data: { view: makeView(), events, advancedBars: 1, terminal: false, result: null },
+    }));
+    const bridge = { submit, step } as unknown as TrainerBridge;
+    const { rerender } = render(
+      <TrainerOrderPanel
+        view={makeView()}
+        handle={handle}
+        bridge={bridge}
+        sessionId="run-1"
+        onViewChange={() => {}}
+      />,
+      { wrapper: Overlay },
+    );
+
+    placeOrder(container, 210, 175);
+    fireEvent.click(screen.getByRole('button', { name: '入场做多 全仓' }));
+
+    await waitFor(() =>
+      expect(document.querySelector('.trainer-overlay-stack')?.textContent).toContain(
+        '按下一根 5m 开盘成交，同一根就打到止损',
+      ),
+    );
+
+    // The sentence is about the bar that filled; once the trader has stepped past it, leaving it on
+    // the chart would describe a bar no longer under the cursor.
+    rerender(
+      <TrainerOrderPanel
+        view={makeView({ cursor: 4 })}
+        handle={handle}
+        bridge={bridge}
+        sessionId="run-1"
+        onViewChange={() => {}}
+      />,
+    );
+    expect(document.querySelector('.trainer-overlay-stack')?.textContent).not.toContain('成交');
   });
 });
 
@@ -639,7 +838,7 @@ describe('TrainerOrderPanel TD-RR-01 gate', () => {
     for (const name of ['入场做多 全仓', '入场做多 1/2', '入场做多 1/4']) {
       expect((screen.getByRole('button', { name }) as HTMLButtonElement).disabled).toBe(true);
     }
-    expect(screen.getByText('目标 114.99').className).toContain('trainer-order-field--warn');
+    expect(screen.getByText('目标 114.99').className).toContain('trainer-lane-num--warn');
     // The readout must round down, not to nearest — it must never display "1.50" (which would
     // read as clearing the floor) while the buttons above are disabled for missing it.
     expect(screen.getByText(/盈亏比/).textContent).toContain('1.49 : 1');
@@ -659,7 +858,7 @@ describe('TrainerOrderPanel TD-RR-01 gate', () => {
     for (const name of ['入场做多 全仓', '入场做多 1/2', '入场做多 1/4']) {
       expect((screen.getByRole('button', { name }) as HTMLButtonElement).disabled).toBe(false);
     }
-    expect(screen.getByText('目标 115.00').className).not.toContain('trainer-order-field--warn');
+    expect(screen.getByText('目标 115.00').className).not.toContain('trainer-lane-num--warn');
     expect(screen.getByText(/盈亏比/).textContent).toContain('1.50 : 1');
   });
 
@@ -687,7 +886,7 @@ describe('TrainerOrderPanel TD-RR-01 gate', () => {
     const full = screen.getByRole('button', { name: '入场做多 全仓' }) as HTMLButtonElement;
     expect(full.disabled).toBe(true);
 
-    fireEvent.change(screen.getByLabelText('入场理由'), {
+    fireEvent.change(note(), {
       target: { value: '写得再多也不该解锁' },
     });
     expect(full.disabled).toBe(true);
@@ -704,7 +903,7 @@ describe('TrainerOrderPanel position sizing', () => {
     const { bridge, add } = makeSizingBridge(nextView);
     renderPanel(view, bridge, handle);
 
-    fireEvent.change(screen.getByLabelText('加仓理由'), { target: { value: '站稳 102，补 1/4' } });
+    fireEvent.change(note(), { target: { value: '站稳 102，补 1/4' } });
     fireEvent.click(screen.getByRole('button', { name: '加仓 1/4' }));
 
     await waitFor(() => expect(add).toHaveBeenCalledTimes(1));
@@ -737,7 +936,7 @@ describe('TrainerOrderPanel position sizing', () => {
     const { bridge, reduce } = makeSizingBridge(makeView({ phase: 'flat' }));
     renderPanel(view, bridge, handle);
 
-    fireEvent.change(screen.getByLabelText('平仓原因'), { target: { value: '到第一目标，减半' } });
+    fireEvent.change(note(), { target: { value: '到第一目标，减半' } });
     fireEvent.click(screen.getByRole('button', { name: '平仓 1/2' }));
     await waitFor(() => expect(reduce).toHaveBeenCalledTimes(1));
     expect(reduce).toHaveBeenCalledWith({
@@ -746,7 +945,7 @@ describe('TrainerOrderPanel position sizing', () => {
       reason: { category: 'other', summary: '到第一目标，减半' },
     });
 
-    fireEvent.change(screen.getByLabelText('平仓原因'), { target: { value: '结构走坏，全平' } });
+    fireEvent.change(note(), { target: { value: '结构走坏，全平' } });
     fireEvent.click(screen.getByRole('button', { name: '平仓 全仓' }));
     await waitFor(() => expect(reduce).toHaveBeenCalledTimes(2));
     expect(reduce).toHaveBeenLastCalledWith({
@@ -774,13 +973,11 @@ describe('TrainerOrderPanel position sizing', () => {
     const { bridge, add } = makeSizingBridge(makeHeldView([0.25, 0.25]));
     renderPanel(view, bridge, handle);
 
-    fireEvent.change(screen.getByLabelText('加仓理由'), { target: { value: '回踩不破，补仓' } });
+    fireEvent.change(note(), { target: { value: '回踩不破，补仓' } });
     fireEvent.click(screen.getByRole('button', { name: '加仓 1/4' }));
 
     await waitFor(() => expect(add).toHaveBeenCalledTimes(1));
-    await waitFor(() =>
-      expect((screen.getByLabelText('加仓理由') as HTMLInputElement).value).toBe(''),
-    );
+    await waitFor(() => expect((note() as HTMLInputElement).value).toBe(''));
   });
 
   it('darkens an add that would exceed a full position and a reduce larger than the holding', () => {
@@ -834,56 +1031,50 @@ describe('TrainerOrderPanel position sizing', () => {
 
 describe('TrainerOrderPanel TD-EXIT-01 gate (position amend)', () => {
   it('long: unlocks confirm at breakeven and above, and blocks on the engine refusal below it', async () => {
-    const { handle } = makeHandle();
+    const { handle, container } = makeHandle();
     const view = makeOpenView('long', 102); // entry 100 / stop 99 / reference 102 (past 1R)
     const { bridge, amend } = makeAmendBridge(makeOpenView('long', 102), REFUSE_BELOW);
     renderPanel(view, bridge, handle);
-    const stopInput = screen.getByLabelText('止损') as HTMLInputElement;
-    fireEvent.change(screen.getByLabelText('调整原因'), { target: { value: '止损上移锁利' } });
-    const confirmButton = screen.getByRole('button', { name: '确认调整' }) as HTMLButtonElement;
+    typeNote('止损上移锁利');
 
-    fireEvent.change(stopInput, { target: { value: '100' } });
-    expect(Number(stopInput.value)).toBe(100);
-    await waitFor(() => expect(confirmButton.disabled).toBe(false));
+    dragLevel(container, 99, 100);
+    await waitFor(() => expect(confirmAmend().disabled).toBe(false));
 
-    fireEvent.change(stopInput, { target: { value: '100.5' } });
-    expect(Number(stopInput.value)).toBe(100.5);
-    await waitFor(() => expect(confirmButton.disabled).toBe(false));
+    dragLevel(container, 100, 100.5);
+    await waitFor(() => expect(confirmAmend().disabled).toBe(false));
 
-    // The value is no longer snapped back to the committed stop — the field shows what the trader
-    // asked for, and the engine's own refusal is what stops it reaching the session.
-    fireEvent.change(stopInput, { target: { value: '97' } });
-    expect(Number(stopInput.value)).toBe(97);
-    await waitFor(() => expect(confirmButton.disabled).toBe(true));
+    // The dragged level is no longer snapped back to the committed stop — the chip shows what the
+    // trader asked for, and the engine's own refusal is what stops it reaching the session.
+    dragLevel(container, 100.5, 97);
+    // From-then-to, in the direction the move actually happens: a ticket reading "97.00 | 99.00 →"
+    // points its arrow at nothing.
+    expect(pendingPill()?.textContent).toMatch(/99\.00\s*→\s*97\.00/);
+    await waitFor(() => expect(confirmAmend().disabled).toBe(true));
     expect(screen.getByRole('status').textContent).toContain('stays below the 100 entry');
 
-    fireEvent.click(confirmButton);
+    fireEvent.click(confirmAmend());
     expect(amend).not.toHaveBeenCalled();
   });
 
   it('short: unlocks confirm at breakeven and below, and blocks on the engine refusal above it', async () => {
-    const { handle } = makeHandle();
+    const { handle, container } = makeHandle();
     const view = makeOpenView('short', 98); // entry 100 / stop 101 / reference 98 (past 1R)
     const { bridge, amend } = makeAmendBridge(makeOpenView('short', 98), REFUSE_ABOVE);
     renderPanel(view, bridge, handle);
-    const stopInput = screen.getByLabelText('止损') as HTMLInputElement;
-    fireEvent.change(screen.getByLabelText('调整原因'), { target: { value: '止损下移锁利' } });
-    const confirmButton = screen.getByRole('button', { name: '确认调整' }) as HTMLButtonElement;
+    typeNote('止损下移锁利');
 
-    fireEvent.change(stopInput, { target: { value: '100' } });
-    expect(Number(stopInput.value)).toBe(100);
-    await waitFor(() => expect(confirmButton.disabled).toBe(false));
+    dragLevel(container, 101, 100);
+    await waitFor(() => expect(confirmAmend().disabled).toBe(false));
 
-    fireEvent.change(stopInput, { target: { value: '99.5' } });
-    expect(Number(stopInput.value)).toBe(99.5);
-    await waitFor(() => expect(confirmButton.disabled).toBe(false));
+    dragLevel(container, 100, 99.5);
+    await waitFor(() => expect(confirmAmend().disabled).toBe(false));
 
-    fireEvent.change(stopInput, { target: { value: '102' } });
-    expect(Number(stopInput.value)).toBe(102);
-    await waitFor(() => expect(confirmButton.disabled).toBe(true));
+    dragLevel(container, 99.5, 102);
+    expect(pendingPill()?.textContent).toMatch(/101\.00\s*→\s*102\.00/);
+    await waitFor(() => expect(confirmAmend().disabled).toBe(true));
     expect(screen.getByRole('status').textContent).toContain('stays above the 100 entry');
 
-    fireEvent.click(confirmButton);
+    fireEvent.click(confirmAmend());
     expect(amend).not.toHaveBeenCalled();
   });
 
@@ -898,7 +1089,7 @@ describe('TrainerOrderPanel TD-EXIT-01 gate (position amend)', () => {
     fireEvent.pointerDown(container, { clientY: 201 });
     for (let y = 202; y <= 213; y += 1) fireEvent.pointerMove(window, { clientY: y });
     expect(validateAmend).toHaveBeenCalledTimes(1);
-    expect(Number((screen.getByLabelText('止损') as HTMLInputElement).value)).toBe(87);
+    expect(pendingPill()?.textContent).toMatch(/99\.00\s*→\s*87\.00/);
 
     fireEvent.pointerUp(window);
     await waitFor(() => expect(validateAmend).toHaveBeenCalledTimes(2));
@@ -931,23 +1122,22 @@ describe('TrainerOrderPanel TD-EXIT-01 gate (position amend)', () => {
   });
 
   it('keeps confirm locked while an edit is still waiting on its verdict', async () => {
-    const { handle } = makeHandle();
+    const { handle, container } = makeHandle();
     const view = makeOpenView('long', 102);
-    const { bridge } = makeAmendBridge(view);
+    const { bridge, validateAmend } = makeAmendBridge(view);
     renderPanel(view, bridge, handle);
-    fireEvent.change(screen.getByLabelText('调整原因'), { target: { value: '止损上移锁利' } });
-    const confirmButton = screen.getByRole('button', { name: '确认调整' }) as HTMLButtonElement;
-    await waitFor(() => expect(confirmButton.disabled).toBe(false));
+    typeNote('止损上移锁利');
+    await waitFor(() => expect(validateAmend).toHaveBeenCalledTimes(1));
 
-    fireEvent.change(screen.getByLabelText('止损'), { target: { value: '100.5' } });
-    expect(confirmButton.disabled).toBe(true);
+    dragLevel(container, 99, 100.5);
+    expect(confirmAmend().disabled).toBe(true);
     expect(screen.getByText('校验中…')).toBeTruthy();
 
-    await waitFor(() => expect(confirmButton.disabled).toBe(false));
+    await waitFor(() => expect(confirmAmend().disabled).toBe(false));
   });
 
   it('submits the amended stop/target with the entered reason and applies the returned view', async () => {
-    const { handle } = makeHandle();
+    const { handle, container } = makeHandle();
     const view = makeOpenView('long', 102);
     const nextView = makeOpenView('long', 102);
     const { bridge, amend } = makeAmendBridge(nextView);
@@ -960,15 +1150,13 @@ describe('TrainerOrderPanel TD-EXIT-01 gate (position amend)', () => {
         sessionId="run-1"
         onViewChange={onViewChange}
       />,
+      { wrapper: Overlay },
     );
 
-    fireEvent.change(screen.getByLabelText('止损'), { target: { value: '100.5' } });
-    fireEvent.change(screen.getByLabelText('调整原因'), {
-      target: { value: '止损上移到 100.5 锁利' },
-    });
-    const confirmButton = screen.getByRole('button', { name: '确认调整' }) as HTMLButtonElement;
-    await waitFor(() => expect(confirmButton.disabled).toBe(false));
-    fireEvent.click(confirmButton);
+    dragLevel(container, 99, 100.5);
+    typeNote('止损上移到 100.5 锁利');
+    await waitFor(() => expect(confirmAmend().disabled).toBe(false));
+    fireEvent.click(confirmAmend());
 
     await waitFor(() => expect(amend).toHaveBeenCalledTimes(1));
     expect(amend).toHaveBeenCalledWith({
@@ -988,15 +1176,16 @@ describe('TrainerOrderPanel drag path stays off the wire', () => {
     renderPanel(makeView(), bridge, handle);
 
     arm();
-    fireEvent.pointerDown(container, { clientY: 210 });
+    pull('SL', 210);
+    fireEvent.pointerDown(screen.getByRole('button', { name: '拖出TP' }));
     for (let i = 1; i <= 12; i += 1) fireEvent.pointerMove(window, { clientY: 210 - i * 3 });
     for (const name of methods) expect(spies[name]).toHaveBeenCalledTimes(0);
 
     fireEvent.pointerUp(window, { clientY: 174 });
     await new Promise((resolve) => setTimeout(resolve, 50));
 
-    expect(screen.getByText('止损 90.00')).toBeTruthy();
-    expect(screen.getByText('目标 126.00')).toBeTruthy();
+    expect(levelPill('stop')?.textContent).toContain('90.00');
+    expect(levelPill('target')?.textContent).toContain('126.00');
     for (const name of methods) expect(spies[name]).toHaveBeenCalledTimes(0);
   });
 });
@@ -1018,7 +1207,7 @@ describe('TrainerOrderPanel pending order cancel', () => {
       />,
     );
 
-    fireEvent.change(screen.getByLabelText('撤单原因'), {
+    fireEvent.change(note(), {
       target: { value: '行情走弱，不想再等成交' },
     });
     fireEvent.click(screen.getByRole('button', { name: '撤销挂单' }));
@@ -1042,8 +1231,8 @@ describe('TrainerOrderPanel optional reasons', () => {
     const { bridge, add, reduce } = makeSizingBridge(view);
     renderPanel(view, bridge, handle);
 
-    expect((screen.getByLabelText('加仓理由') as HTMLInputElement).value).toBe('');
-    expect((screen.getByLabelText('平仓原因') as HTMLInputElement).value).toBe('');
+    expect((note() as HTMLInputElement).value).toBe('');
+    expect((note() as HTMLInputElement).value).toBe('');
 
     const addHalf = screen.getByRole('button', { name: '加仓 1/2' }) as HTMLButtonElement;
     const exitAll = screen.getByRole('button', { name: '平仓 全仓' }) as HTMLButtonElement;
@@ -1067,17 +1256,14 @@ describe('TrainerOrderPanel optional reasons', () => {
   });
 
   it('leaves the amend confirm unlocked with no reason typed', async () => {
-    const { handle } = makeHandle();
+    const { handle, container } = makeHandle();
     const view = makeOpenView('long', 102);
     const { bridge, amend } = makeAmendBridge(view);
     renderPanel(view, bridge, handle);
 
-    const confirmButton = screen.getByRole('button', { name: '确认调整' }) as HTMLButtonElement;
-    await waitFor(() => expect(confirmButton.disabled).toBe(false));
-
-    fireEvent.change(screen.getByLabelText('止损'), { target: { value: '100.5' } });
-    await waitFor(() => expect(confirmButton.disabled).toBe(false));
-    fireEvent.click(confirmButton);
+    dragLevel(container, 99, 100.5);
+    await waitFor(() => expect(confirmAmend().disabled).toBe(false));
+    fireEvent.click(confirmAmend());
 
     await waitFor(() => expect(amend).toHaveBeenCalledTimes(1));
     expect(amend).toHaveBeenCalledWith({
@@ -1106,13 +1292,16 @@ describe('TrainerOrderPanel optional reasons', () => {
 
   // 'risk_management' / 'thesis_invalidated' describe a judgment. Recording one for a field the
   // trader left blank would put words in their mouth.
-  it('never labels an unwritten reason with the category the field was typed under', () => {
-    const { handle } = makeHandle();
+  it('never labels an unwritten reason with the category the field was typed under', async () => {
+    const { handle, container } = makeHandle();
     const { bridge, amend } = makeAmendBridge(makeOpenView('long', 102));
     renderPanel(makeOpenView('long', 102), bridge, handle);
 
-    fireEvent.click(screen.getByRole('button', { name: '确认调整' }));
+    dragLevel(container, 99, 100.5);
+    await waitFor(() => expect(confirmAmend().disabled).toBe(false));
+    fireEvent.click(confirmAmend());
 
+    await waitFor(() => expect(amend).toHaveBeenCalledTimes(1));
     const sent = amend.mock.calls[0]?.[0] as { reason: { category: string } } | undefined;
     expect(sent?.reason.category).not.toBe('risk_management');
   });
@@ -1121,34 +1310,48 @@ describe('TrainerOrderPanel optional reasons', () => {
 describe('TrainerOrderPanel position box lifecycle', () => {
   // The chart is not remounted when the episode ends, so a box left attached keeps painting the
   // last draft — a band at a price the trader never traded — over the settlement chart.
-  it('detaches and clears its box when the panel unmounts', () => {
-    const { handle, series, container } = makeHandle();
+  // The chart outlives this panel: it stays mounted through the switch to the settlement screen, so
+  // a level left behind would paint on the settlement chart as a position that was never taken.
+  it('leaves no level behind when the panel unmounts', () => {
+    const { handle, container } = makeHandle();
     const { bridge } = makeBridge();
     const { unmount } = renderPanel(makeView(), bridge, handle);
 
-    expect(series.attachPrimitive).toHaveBeenCalledTimes(1);
-    const box = series.attachPrimitive.mock.calls[0][0] as PositionBoxPrimitive;
     // Nothing is drawn until an order is being placed — an untouched trainer shows a clean chart.
-    expect(box.state().data).toBeNull();
+    expect(document.querySelectorAll('.trainer-level')).toHaveLength(0);
 
     placeOrder(container, 210, 175);
-    expect(box.state().data).not.toBeNull();
+    expect(document.querySelectorAll('.trainer-level').length).toBeGreaterThan(0);
 
     unmount();
-
-    expect(series.detachPrimitive).toHaveBeenCalledWith(box);
-    expect(box.state().data).toBeNull();
+    expect(document.querySelectorAll('.trainer-level')).toHaveLength(0);
   });
 
+  // The entry is the price the drag has to straddle, so it has to be on the chart while the trader
+  // is still aiming — before there is any stop or target to draw beside it.
   it('draws the entry line alone the moment a side is picked', () => {
-    const { handle, series } = makeHandle();
+    const { handle } = makeHandle();
     const { bridge } = makeBridge();
     renderPanel(makeView(), bridge, handle);
-    const box = series.attachPrimitive.mock.calls[0][0] as PositionBoxPrimitive;
 
     arm();
 
-    expect(box.state().data).toMatchObject({ entry: 100, stop: 100, target1: 100 });
+    expect(levelPill('entry')?.textContent).toContain('100.00');
+    expect(levelPill('stop')).toBeNull();
+    expect(levelPill('target')).toBeNull();
+  });
+
+  it('puts what each level is worth on its own ticket, with the stop at exactly -1R', () => {
+    const { handle, container } = makeHandle();
+    const { bridge } = makeBridge();
+    renderPanel(makeView(), bridge, handle);
+
+    // entry 100, stop 90 (risk 10), target 125 -> +2.5R
+    placeOrder(container, 210, 175);
+
+    expect(levelPill('stop')?.textContent).toContain('-1.0R');
+    expect(levelPill('target')?.textContent).toContain('+2.5R');
+    expect(levelPill('entry')?.textContent).toContain('市价');
   });
 });
 

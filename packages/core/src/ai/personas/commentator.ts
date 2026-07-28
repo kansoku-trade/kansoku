@@ -5,6 +5,7 @@ import { easternDate } from '../../marketdata/session.js';
 import { AgentTimeoutError, type AiAgentFactory, createAgentSession } from '../agents/agentSession.js';
 import { appendComment as defaultAppendComment } from './comments.js';
 import { buildCommentUpdate, type CommentPack } from '../agents/datapack.js';
+import { commentPackPromptText, commentUpdatePromptText } from '../agents/packText.js';
 import type { AiModel } from '../runtime/models.js';
 import { COMMENTATOR_PROMPT, COMMENTATOR_RETRY_PROMPT } from '../runtime/prompts.js';
 import { MessagesEngine } from '../conversation/messages/messageEngine.js';
@@ -179,10 +180,10 @@ export async function runCommentator({
     if (session) {
       session.agentSession.agent.setTools?.([tool]);
       if (nowMs - session.lastRunAt > LONG_GAP_MS) {
-        promptText = JSON.stringify({ pack, trigger }).slice(0, MAX_PROMPT_CHARS);
+        promptText = commentPackPromptText(pack, trigger).slice(0, MAX_PROMPT_CHARS);
       } else {
         const update = buildCommentUpdate(pack, session.lastBarTime);
-        promptText = JSON.stringify({ update, trigger }).slice(0, MAX_PROMPT_CHARS);
+        promptText = commentUpdatePromptText(update, trigger).slice(0, MAX_PROMPT_CHARS);
       }
     } else {
       const messageEngine = new MessagesEngine([]);
@@ -205,7 +206,7 @@ export async function runCommentator({
         lastRunAt: nowMs,
       };
       sessions.set(symbol, session);
-      promptText = JSON.stringify({ pack, trigger }).slice(0, MAX_PROMPT_CHARS);
+      promptText = commentPackPromptText(pack, trigger).slice(0, MAX_PROMPT_CHARS);
     }
 
     await session.agentSession.runTurn(promptText, timeoutMs);

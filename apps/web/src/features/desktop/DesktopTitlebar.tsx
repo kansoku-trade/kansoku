@@ -15,8 +15,10 @@ import { useHubStatus } from '../../lib/ws/useHubStatus';
 import type { HubStatus } from '../../lib/ws/wsHub';
 import { Dot, ScrollArea, showContextMenu, Tooltip, type ContextMenuItem } from '../../ui';
 import { useAnalystRunIndicator } from '../cockpit/analystRunsStore';
+import { useCapabilities } from '../edition/capabilitiesStore';
+import { requestTrainerWindow } from '../training/requestTrainerWindow';
 import { symbolFromRoute } from '../../lib/symbol';
-import { getOpenWindowBridge, getPopoutBridge } from './desktopWindowsBridge';
+import { getOpenTrainerBridge, getOpenWindowBridge, getPopoutBridge } from './desktopWindowsBridge';
 import { getDesktopUpdaterBridge, isAvailableStatus, type UpdaterUiStatus } from './desktopUpdater';
 import { tabKind, type TabState } from './tabsStore';
 import type { TabsController } from './tabsController';
@@ -202,6 +204,10 @@ export function DesktopTitlebar({ controller }: { controller: TabsController }) 
   const updaterStatus = useUpdaterStatus();
   const showUpdateBadge = isAvailableStatus(updaterStatus);
   const activeSymbol = symbolFromRoute(controller.activeTab.route);
+  const { pro, licensed } = useCapabilities();
+  const trainerBridge = getOpenTrainerBridge();
+  const openTrainer =
+    trainerBridge && pro ? () => requestTrainerWindow(trainerBridge, { pro, licensed }) : null;
 
   const openTabMenu = (tab: TabState, index: number) => {
     const tabId = tab.id;
@@ -292,6 +298,7 @@ export function DesktopTitlebar({ controller }: { controller: TabsController }) 
           onOpenChat={focusOrOpenChat}
           onOpenResearch={focusOrOpenResearch}
           onOpenSymbol={openTab}
+          onOpenTrainer={openTrainer}
         />
       </ScrollArea>
       <div className="desktop-titlebar-actions">

@@ -134,6 +134,16 @@ function installAppMenu({
     return focused;
   }
 
+  function anyTabWindow(): BrowserWindow | null {
+    return (
+      focusedTabWindow() ??
+      BrowserWindow.getAllWindows().find(
+        (win) => !isPopoutWindow(win) && !isAboutWindow(win) && !isTrainerWindow(win),
+      ) ??
+      null
+    );
+  }
+
   async function activeTabIdOf(win: BrowserWindow): Promise<string | null> {
     const result = await rendererCalls.call(win, 'tabs.getActiveTabId');
     return typeof result === 'string' && result.length > 0 ? result : null;
@@ -198,6 +208,7 @@ function installAppMenu({
       openLogs: () => sendTabsCommand('open-logs'),
       openResearch: () => sendTabsCommand('open-research'),
       openChat: () => sendTabsCommand('open-chat'),
+      openTrainer: () => sendTabsCommand('open-trainer', anyTabWindow()),
       checkForUpdates,
       newWindow: openWindow,
       newTab: () => sendTabsCommand('new-tab'),

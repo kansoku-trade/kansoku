@@ -616,133 +616,392 @@ a:hover {
 .trainer-body {
   flex: 1;
   min-height: 0;
+  position: relative;
 }
 .trainer-body .charts-col {
   border-right: none;
   height: 100%;
 }
 
-.trainer-order-panel {
-  flex: 0 0 auto;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 16px;
-  padding: 8px 12px;
-  border-top: 1px solid var(--border);
+/* Chart furniture. Every child here is absolutely positioned, so showing or hiding one cannot
+   change the chart's height. The controls below the chart used to grow a row per state — status,
+   playback events, validation, errors — and each of those resized the chart mid-session. */
+.trainer-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 12;
+  pointer-events: none;
 }
-.trainer-order-panel--status {
+.trainer-overlay > * {
+  position: absolute;
+}
+.trainer-overlay > *:empty {
+  display: none;
+}
+.trainer-overlay-rail {
+  top: 50%;
+  left: 8px;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 3px;
+  background: rgb(20 20 20 / 0.86);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  pointer-events: auto;
+}
+.trainer-overlay-stack {
+  top: 8px;
+  right: 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+.trainer-overlay-pinned {
+  inset: 0;
+}
+
+.trainer-rail-tool {
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
   color: var(--text-secondary);
+  cursor: pointer;
 }
-.trainer-order-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.trainer-rail-tool:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--text-primary);
 }
-.trainer-order-row label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--text-secondary);
-  font-size: var(--fs-sm);
-}
-.trainer-order-row .input {
-  width: 90px;
-}
-.trainer-order-panel .btn[aria-pressed='true'],
-.trainer-draw-tools .btn[aria-pressed='true'] {
+.trainer-rail-tool[aria-pressed='true'] {
   color: var(--accent);
   border-color: var(--accent);
 }
-.trainer-draw-tools {
-  flex: 0 0 auto;
+.trainer-rail-tool:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.trainer-rail-tool svg {
+  width: 14px;
+  height: 14px;
+}
+.trainer-rail-sep {
+  height: 1px;
+  background: var(--border);
+  margin: 2px 1px;
+}
+
+.trainer-chip {
   display: flex;
-  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 9px;
+  background: rgb(20 20 20 / 0.88);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  pointer-events: auto;
+}
+.trainer-chip--toast {
+  border-left: 2px solid var(--accent);
+  max-width: 320px;
+}
+.trainer-chip--error {
+  border-left: 2px solid var(--down);
+  color: var(--down);
+}
+.trainer-chip--pinned {
+  position: absolute;
+  left: 46px;
+  transform: translateY(-50%);
+  border-color: var(--accent);
+  padding: 2px 4px 2px 9px;
+}
+
+/* Order levels: one line per price with its ticket sitting on it, the way a chart-native order
+   reads. The line spans the pane and is inert — the drag that moves it is bound to the chart canvas
+   (useOrderBoxDrag) and to the pill's own grip, so the line itself never swallows a pointer. */
+.trainer-level {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  pointer-events: none;
+}
+.trainer-level-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px dashed currentColor;
+  opacity: 0.75;
+}
+.trainer-level--target {
+  color: var(--up);
+}
+.trainer-level--stop {
+  color: var(--down);
+}
+/* Its own hue rather than the accent: the accent already belongs to the replay divider, and an
+   entry line in the same colour reads as another boundary instead of an order. */
+.trainer-level--entry {
+  color: #4a8cff;
+}
+.trainer-level--filled .trainer-level-line {
+  border-top-style: solid;
+  opacity: 1;
+}
+
+.trainer-level-pill {
+  position: relative;
+  margin-right: 70px;
+  display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 12px;
+  padding: 2px 4px 2px 8px;
+  background: rgb(10 10 10 / 0.92);
+  border: 1px solid currentColor;
+  border-radius: var(--radius);
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  pointer-events: auto;
+}
+.trainer-level--filled .trainer-level-pill {
+  background: color-mix(in srgb, currentColor 22%, rgb(10 10 10 / 0.94));
+}
+.trainer-level-pill--drag {
+  cursor: ns-resize;
+}
+/* Held for the length of a level drag. The pointer spends nearly all of it off the handle — over
+   the chart canvas, which sets its own crosshair, or past the pane entirely — so the cursor has to
+   be pinned on every element, not just the one that was grabbed. */
+body.trainer-dragging-level,
+body.trainer-dragging-level * {
+  cursor: ns-resize !important;
+  user-select: none !important;
+}
+.trainer-level-grip {
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+}
+.trainer-level-badge {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+.trainer-level-pull {
+  height: 18px;
+  padding: 0 6px;
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  font-family: inherit;
+  letter-spacing: 0.04em;
+  cursor: ns-resize;
+}
+.trainer-level-pull:hover {
+  color: var(--text-primary);
+  border-color: var(--text-secondary);
+}
+.trainer-level-pull--set.trainer-level-pull--target {
+  color: var(--up);
+  border-color: var(--up);
+}
+.trainer-level-pull--set.trainer-level-pull--stop {
+  color: var(--down);
+  border-color: var(--down);
+}
+.trainer-level-price {
+  font-family: var(--font-mono);
+  color: currentColor;
+}
+.trainer-level-sep {
+  width: 1px;
+  height: 12px;
+  background: var(--border-strong);
+}
+.trainer-level-text {
+  font-family: var(--font-mono);
+  color: currentColor;
+}
+.trainer-level-was {
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+}
+.trainer-level-blocked {
+  color: var(--down);
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.trainer-level-act {
+  height: 20px;
+  padding: 0 6px;
+  background: var(--bg-element);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  font-family: inherit;
+  cursor: pointer;
+}
+.trainer-level-act:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.trainer-level-act:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.trainer-level-act--ok {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.trainer-level-act--go {
+  color: var(--accent);
+  border-color: rgb(255 176 0 / 0.55);
+  min-width: 34px;
+}
+.trainer-level-act--x {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  padding: 0;
+}
+.trainer-level-submit-label {
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+}
+.trainer-chip-long {
+  color: var(--up);
+  font-weight: 600;
+}
+.trainer-chip-short {
+  color: var(--down);
+  font-weight: 600;
+}
+.trainer-chip-dim {
+  color: var(--text-secondary);
+}
+.trainer-chip-blocked {
+  color: var(--down);
+  max-width: 240px;
+}
+
+.trainer-lane {
+  flex: 0 0 auto;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
   border-top: 1px solid var(--border);
+  position: relative;
+  /* The lane's height is the whole point: content that no longer fits is clipped sideways rather
+     than wrapping onto a second line, while `visible` on the block axis lets the note popover
+     escape upwards. */
+  overflow-x: clip;
+  overflow-y: visible;
 }
-.trainer-draw-tools .trainer-order-hint {
-  margin-left: 10px;
+.trainer-lane-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
 }
-.trainer-order-hint {
+.trainer-lane-sep {
+  width: 1px;
+  height: 16px;
+  background: var(--border-strong);
+  flex: 0 0 auto;
+}
+.trainer-lane-spacer {
+  margin-left: auto;
+}
+.trainer-lane-label {
   color: var(--text-secondary);
   font-size: var(--fs-sm);
-  max-width: 520px;
+  flex: 0 0 auto;
 }
-.trainer-order-readout {
+.trainer-lane-hint {
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.trainer-lane-hint--warn {
+  color: var(--accent);
+}
+.trainer-lane-num {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   font-size: var(--fs-sm);
-  gap: 12px;
+  flex: 0 0 auto;
 }
-.trainer-size-group {
-  gap: 6px;
+.trainer-lane-num--stop {
+  color: var(--down);
 }
-.trainer-size-label {
+.trainer-lane-num--target {
+  color: var(--up);
+}
+.trainer-lane-num--rr {
+  color: var(--accent);
+}
+.trainer-lane-num--warn {
+  color: var(--accent);
+}
+.trainer-lane .btn[aria-pressed='true'] {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.trainer-lane .btn--long {
+  color: var(--up);
+  border-color: rgb(38 166 154 / 0.55);
+}
+.trainer-lane .btn--short {
+  color: var(--down);
+  border-color: rgb(239 83 80 / 0.55);
+}
+
+.trainer-note {
+  position: relative;
+  flex: 0 0 auto;
+}
+.trainer-note-pop {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  right: 0;
+  z-index: 30;
+  padding: 8px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.45);
+}
+.trainer-note-pop .input {
+  width: 260px;
+}
+
+.trainer-order-panel--status {
   color: var(--text-secondary);
-  font-size: var(--fs-sm);
-}
-.trainer-order-rr {
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
 }
 .trainer-order-error {
   color: var(--down);
   font-size: var(--fs-sm);
-}
-.trainer-order-guard {
-  color: var(--text-secondary);
-  font-size: var(--fs-sm);
-  max-width: 420px;
-}
-.trainer-order-guard--blocked {
-  color: var(--down);
-}
-.trainer-order-field--warn {
-  color: var(--accent);
-}
-/* .trainer-order-row label's own color rule (0,1,1) otherwise outranks this class alone (0,1,0). */
-.trainer-order-row label.trainer-order-field--warn {
-  color: var(--accent);
-}
-.trainer-order-field--warn .input {
-  border-color: var(--accent);
-}
-
-.trainer-advance-controls {
-  flex: 0 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 8px 12px;
-  border-top: 1px solid var(--border);
-}
-.trainer-advance-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.trainer-advance-row label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--text-secondary);
-  font-size: var(--fs-sm);
-}
-.trainer-advance-speed {
-  display: flex;
-  gap: 4px;
-}
-.trainer-advance-events {
-  color: var(--text-secondary);
-  font-size: var(--fs-sm);
-}
-.trainer-advance-reason-reused {
-  color: var(--text-secondary);
-  font-size: var(--fs-sm);
-  font-style: italic;
 }
 
 /* Settlement (state A) reads reveal → track → figures → chart thumbnail → trades, but the chart
@@ -3953,6 +4212,42 @@ a.zone-item:hover {
   color: var(--text-primary);
 }
 
+.trainer-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+}
+.trainer-card-body {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.trainer-card-body svg {
+  flex: 0 0 auto;
+  opacity: 0.75;
+}
+.trainer-card-hint {
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+}
+.trainer-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+.trainer-card-cancel {
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-muted);
+}
+.trainer-card-cancel:hover {
+  color: var(--text-primary);
+}
+
 .positions-card {
   padding: 10px 12px;
 }
@@ -5406,6 +5701,11 @@ a.zone-item:hover {
 }
 .desktop-new-tab-menu button svg {
   opacity: 0.75;
+}
+.desktop-new-tab-divider {
+  height: 1px;
+  margin: 4px 0;
+  background: var(--border);
 }
 .desktop-new-tab-menu .ui-kbd {
   color: var(--text-muted);

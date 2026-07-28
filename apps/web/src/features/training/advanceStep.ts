@@ -36,3 +36,22 @@ export function describeStepEvents(
 ): string {
   return events.map((event) => describeStepEvent(event, basePeriod)).join('，');
 }
+
+// The bar that fills a market order is also checked against the bracket, and the engine reports
+// only the exit when both land on it — so a trade that filled and stopped inside one bar arrives
+// as a bare 'stop_hit', reading as if the order had vanished without ever opening. Only the caller
+// knows it just submitted, so only the caller can say that the fill happened at all.
+export function describeEntryOutcome(
+  events: readonly TrainerStepEvent[],
+  basePeriod: TrainerBasePeriod,
+): string {
+  const exit = events.find((e) => e.event === 'stop_hit' || e.event === 'target_hit');
+  if (exit) {
+    const what = exit.event === 'stop_hit' ? '打到止损' : '触及目标';
+    return `按下一根 ${basePeriod} 开盘成交，同一根就${what}，这笔已经结束`;
+  }
+  if (events.some((e) => e.event === 'horizon_exit')) {
+    return `按下一根 ${basePeriod} 开盘成交，同一根就到期强制平仓`;
+  }
+  return `已按下一根 ${basePeriod} 的开盘价成交`;
+}

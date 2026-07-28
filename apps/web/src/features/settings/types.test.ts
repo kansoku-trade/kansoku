@@ -18,6 +18,7 @@ describe('normalizeAiRoles', () => {
       deepDive: configured,
       chat: configured,
       memory: configured,
+      casePick: configured,
     };
 
     expect(normalizeAiRoles(roles)).toEqual(roles);

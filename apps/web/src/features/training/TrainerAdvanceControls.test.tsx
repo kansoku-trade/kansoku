@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import type { ReactElement, ReactNode } from 'react';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { TrainerPosition, TrainerStepResult, TrainerView } from '@kansoku/pro-api';
@@ -6,6 +7,29 @@ import type { RawBar } from '@kansoku/shared/types';
 import type { TrainerBridge } from '../desktop/desktopTrainerBridge';
 import { NO_REASON_GIVEN } from './orderDraft';
 import { TrainerAdvanceControls } from './TrainerAdvanceControls';
+import { TrainerOverlayLayer, TrainerOverlayProvider } from './trainerOverlay';
+
+// Playback events and errors are painted onto the chart, not into the lane, so they only exist
+// once an overlay layer is mounted — TrainerChart always mounts one for a live episode.
+function Overlay({ children }: { children: ReactNode }) {
+  return (
+    <TrainerOverlayProvider>
+      {children}
+      <TrainerOverlayLayer />
+    </TrainerOverlayProvider>
+  );
+}
+
+function renderWithOverlay(ui: ReactElement) {
+  return render(ui, { wrapper: Overlay });
+}
+
+function holdNote(): HTMLInputElement {
+  const open = screen.queryByLabelText('持有备注内容');
+  if (open) return open as HTMLInputElement;
+  fireEvent.click(screen.getByRole('button', { name: '持有备注' }));
+  return screen.getByLabelText('持有备注内容') as HTMLInputElement;
+}
 
 function bar(iso: string, close: number): RawBar {
   return { time: iso, open: close - 1, high: close + 1, low: close - 1.5, close, volume: 1000 };
@@ -82,7 +106,7 @@ describe('TrainerAdvanceControls single step', () => {
   it('steps one bar of the active period with no reason while flat', async () => {
     const step = vi.fn(async () => ({ ok: true as const, data: stepResult() }));
     const onViewChange = vi.fn();
-    render(
+    renderWithOverlay(
       <TrainerAdvanceControls
         view={makeView()}
         period="15m"
@@ -106,7 +130,7 @@ describe('TrainerAdvanceControls single step', () => {
     const nextView = makeView({ cursor: 5 });
     const step = vi.fn(async () => ({ ok: true as const, data: stepResult({ view: nextView }) }));
     const onViewChange = vi.fn();
-    render(
+    renderWithOverlay(
       <TrainerAdvanceControls
         view={makeView()}
         period="5m"
@@ -127,7 +151,7 @@ describe('TrainerAdvanceControls hold reason', () => {
   it('steps with an empty reason field, sending the not-given marker', async () => {
     const step = vi.fn(async () => ({ ok: true as const, data: stepResult() }));
     const view = makeView({ phase: 'open', position: makePosition() });
-    render(
+    renderWithOverlay(
       <TrainerAdvanceControls
         view={view}
         period="5m"
@@ -139,7 +163,7 @@ describe('TrainerAdvanceControls hold reason', () => {
 
     const stepButton = screen.getByRole('button', { name: /步进/ }) as HTMLButtonElement;
     const playButton = screen.getByRole('button', { name: '播放' }) as HTMLButtonElement;
-    expect((screen.getByLabelText('继续持有理由') as HTMLInputElement).value).toBe('');
+    expect((holdNote() as HTMLInputElement).value).toBe('');
     expect(stepButton.disabled).toBe(false);
     expect(playButton.disabled).toBe(false);
 
@@ -162,7 +186,7 @@ describe('TrainerAdvanceControls hold reason', () => {
   it('does not flag the reuse marker when the field is empty', async () => {
     const view = makeView({ phase: 'open', position: makePosition() });
     const step = vi.fn(async () => ({ ok: true as const, data: stepResult({ view }) }));
-    render(
+    renderWithOverlay(
       <TrainerAdvanceControls
         view={view}
         period="5m"
@@ -180,7 +204,7 @@ describe('TrainerAdvanceControls hold reason', () => {
   it('sends the entered reason on a hold while a position is open', async () => {
     const step = vi.fn(async () => ({ ok: true as const, data: stepResult() }));
     const view = makeView({ phase: 'open', position: makePosition() });
-    render(
+    renderWithOverlay(
       <TrainerAdvanceControls
         view={view}
         period="5m"
@@ -190,7 +214,7 @@ describe('TrainerAdvanceControls hold reason', () => {
       />,
     );
 
-    fireEvent.change(screen.getByLabelText('继续持有理由'), {
+    fireEvent.change(holdNote(), {
       target: { value: '价格仍在均线上方，继续持有' },
     });
     fireEvent.click(screen.getByRole('button', { name: /步进/ }));
@@ -215,7 +239,7 @@ describe('TrainerAdvanceControls reuse marker', () => {
       ok: true as const,
       data: stepResult({ view }),
     }));
-    render(
+    renderWithOverlay(
       <TrainerAdvanceControls
         view={view}
         period="5m"
@@ -225,7 +249,7 @@ describe('TrainerAdvanceControls reuse marker', () => {
       />,
     );
 
-    fireEvent.change(screen.getByLabelText('继续持有理由'), {
+    fireEvent.change(holdNote(), {
       target: { value: '价格仍在均线上方，继续持有' },
     });
     expect(screen.queryByText('沿用上一次理由')).toBeNull();
@@ -238,7 +262,7 @@ describe('TrainerAdvanceControls reuse marker', () => {
   it('hides the marker the instant the reason text is edited away from what was sent', async () => {
     const view = makeView({ phase: 'open', position: makePosition() });
     const step = vi.fn(async () => ({ ok: true as const, data: stepResult({ view }) }));
-    render(
+    renderWithOverlay(
       <TrainerAdvanceControls
         view={view}
         period="5m"
@@ -248,13 +272,13 @@ describe('TrainerAdvanceControls reuse marker', () => {
       />,
     );
 
-    fireEvent.change(screen.getByLabelText('继续持有理由'), {
+    fireEvent.change(holdNote(), {
       target: { value: '价格仍在均线上方，继续持有' },
     });
     fireEvent.click(screen.getByRole('button', { name: /步进/ }));
     await waitFor(() => expect(screen.getByText('沿用上一次理由')).toBeTruthy());
 
-    fireEvent.change(screen.getByLabelText('继续持有理由'), {
+    fireEvent.change(holdNote(), {
       target: { value: '跌破均线了，改主意' },
     });
     expect(screen.queryByText('沿用上一次理由')).toBeNull();
@@ -263,7 +287,7 @@ describe('TrainerAdvanceControls reuse marker', () => {
   it('clears the reuse marker and the reason field once the position changes', async () => {
     const openView = makeView({ phase: 'open', position: makePosition({ tradeId: 1 }) });
     const step = vi.fn(async () => ({ ok: true as const, data: stepResult({ view: openView }) }));
-    const { rerender } = render(
+    const { rerender } = renderWithOverlay(
       <TrainerAdvanceControls
         view={openView}
         period="5m"
@@ -273,7 +297,7 @@ describe('TrainerAdvanceControls reuse marker', () => {
       />,
     );
 
-    fireEvent.change(screen.getByLabelText('继续持有理由'), {
+    fireEvent.change(holdNote(), {
       target: { value: '价格仍在均线上方，继续持有' },
     });
     fireEvent.click(screen.getByRole('button', { name: /步进/ }));
@@ -291,7 +315,7 @@ describe('TrainerAdvanceControls reuse marker', () => {
     );
 
     expect(screen.queryByText('沿用上一次理由')).toBeNull();
-    expect((screen.getByLabelText('继续持有理由') as HTMLInputElement).value).toBe('');
+    expect((holdNote() as HTMLInputElement).value).toBe('');
   });
 });
 
@@ -306,7 +330,7 @@ describe('TrainerAdvanceControls failure handling', () => {
       view: actualView,
     }));
     const onViewChange = vi.fn();
-    render(
+    renderWithOverlay(
       <TrainerAdvanceControls
         view={makeView()}
         period="5m"
@@ -334,7 +358,7 @@ describe('TrainerAdvanceControls playback', () => {
         }),
       })
       .mockResolvedValue({ ok: true, data: stepResult() });
-    render(
+    renderWithOverlay(
       <TrainerAdvanceControls
         view={makeView()}
         period="5m"
@@ -366,7 +390,7 @@ describe('TrainerAdvanceControls playback', () => {
         ok: true,
         data: stepResult({ terminal: true, view: makeView({ terminal: true }) }),
       });
-    render(
+    renderWithOverlay(
       <TrainerAdvanceControls
         view={makeView()}
         period="5m"
@@ -403,7 +427,7 @@ describe('TrainerAdvanceControls playback', () => {
         ],
       }),
     }));
-    render(
+    renderWithOverlay(
       <TrainerAdvanceControls
         view={makeView()}
         period="1h"
@@ -423,7 +447,7 @@ describe('TrainerAdvanceControls playback', () => {
 describe('TrainerAdvanceControls terminal guard', () => {
   it('disables step and play once the episode has ended', () => {
     const step = vi.fn();
-    render(
+    renderWithOverlay(
       <TrainerAdvanceControls
         view={makeView({ terminal: true })}
         period="5m"

@@ -127,6 +127,7 @@ describe('aiConfig', () => {
       deepDiveModel: null,
       chatModel: null,
       memoryModel: null,
+      casePickModel: null,
     });
   });
 

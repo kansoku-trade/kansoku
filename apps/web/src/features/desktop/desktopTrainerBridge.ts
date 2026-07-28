@@ -2,6 +2,8 @@ import type {
   TrainerAmendCheck,
   TrainerApi,
   TrainerEnvelope,
+  TrainerFillState,
+  TrainerFillTask,
   TrainerOpened,
   TrainerPoolCounts,
   TrainerReveal,
@@ -23,6 +25,10 @@ export function getTrainerBridge(
       : rpc.invoke(`trainer.${channel}`, input)) as Promise<TrainerEnvelope<T>>;
   return {
     listPool: () => call<TrainerPoolCounts>('listPool'),
+    getFill: () => call<TrainerFillState>('getFill'),
+    startFill: (input) => call<TrainerFillTask>('startFill', input),
+    abortFill: (input) => call<TrainerFillTask>('abortFill', input),
+    setAutoRefill: (input) => call<TrainerFillState>('setAutoRefill', input),
     open: (input) => call<TrainerOpened>('open', input),
     resume: (input) => call<TrainerOpened>('resume', input),
     submit: (input) => call<TrainerStepResult>('submit', input),

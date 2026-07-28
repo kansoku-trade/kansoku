@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { DrawingChartHandle } from '../charts/intraday/useIntradayCharts';
+import { beginCursorLock, endCursorLock } from './cursorLock';
 
 export interface OrderBoxDragSnapshot {
   stop: number;
@@ -40,6 +41,9 @@ export function useOrderBoxDrag(
       const distTarget = yTarget === null ? Infinity : Math.abs(y - yTarget);
       if (distStop > EDGE_HIT_PX && distTarget > EDGE_HIT_PX) return;
       dragEdge = distStop <= distTarget ? 'stop' : 'target';
+      // Same reason as the ticket handles: once the pointer leaves the few pixels around the line,
+      // the cursor would revert to the chart's own and the grab would stop looking like a grab.
+      beginCursorLock();
       e.preventDefault();
     };
 
@@ -55,16 +59,21 @@ export function useOrderBoxDrag(
     const onPointerUp = () => {
       if (!dragEdge) return;
       dragEdge = null;
+      endCursorLock();
       callbacksRef.current.onDragEnd?.();
     };
 
     container.addEventListener('pointerdown', onPointerDown);
     window.addEventListener('pointermove', onPointerMove);
     window.addEventListener('pointerup', onPointerUp);
+    window.addEventListener('pointercancel', onPointerUp);
     return () => {
       container.removeEventListener('pointerdown', onPointerDown);
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('pointercancel', onPointerUp);
+      // A handle swap or an unmount mid-drag must not leave the lock held.
+      if (dragEdge) endCursorLock();
     };
   }, [handle]);
 }

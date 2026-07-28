@@ -13,7 +13,9 @@ import {
   TRAINER_PERIOD_TO_CHART_TF,
   trainerAdvancePeriod,
 } from './payloadToIntradayBuilt';
-import { replayBands } from './replayBands';
+import { remainingBarsAt } from './remainingBars';
+import { replayBands, replayDivider } from './replayBands';
+import { TrainerOverlayLayer, TrainerOverlayProvider } from './trainerOverlay';
 import { TrainerAdvanceControls } from './TrainerAdvanceControls';
 import { TrainerDrawingTools } from './TrainerDrawingTools';
 import { TrainerOrderPanel } from './TrainerOrderPanel';
@@ -61,8 +63,18 @@ export function TrainerChart({ view, sessionId, bridge, onViewChange }: TrainerC
     () => (view.terminal ? replayBands(view, epilogueBars) : []),
     [view, epilogueBars],
   );
+  // Everything left of this line is the case as it was handed over; everything right of it is a bar
+  // the trader stepped into. Shown during the episode too, not just at settlement, so they can see
+  // which part of the chart they are actually trading.
+  const dividers = useMemo(() => {
+    const anchor = replayDivider(view);
+    return anchor === null ? [] : [{ ...anchor, label: '题目到此 · 从这里开始操作' }];
+  }, [view]);
   const overlayTrades = view.terminal ? view.trades : NO_TRADES;
-  useTrainerReviewOverlay(chartHandle, overlayTrades, bands);
+  useTrainerReviewOverlay(chartHandle, overlayTrades, bands, dividers);
+
+  const advancePeriod = trainerAdvancePeriod(view.ladder, activeTf);
+  const remaining = remainingBarsAt(view, advancePeriod);
 
   const settling = view.terminal && bridge != null && sessionId != null && onViewChange != null;
   const shellMode = settling
@@ -72,78 +84,94 @@ export function TrainerChart({ view, sessionId, bridge, onViewChange }: TrainerC
     : '';
 
   return (
-    <div className={`trainer-shell${shellMode}`}>
-      <IntradayControlsProvider storageNamespace={STORAGE_NAMESPACE}>
-        <div className="trainer-header">
-          {isDesktop && <div className="popout-traffic-spacer" />}
-          <span className="trainer-title">盲盘训练</span>
-          <span className="trainer-meta">
-            {view.symbol} · {tfLabel(baseTf)} ·{' '}
-            {view.terminal ? '已收盘' : `剩余 ${view.remainingBars} 根`}
-          </span>
-          <TrainerPeriodSwitch ladder={view.ladder} activeTf={activeTf} onChange={setRequestedTf} />
-        </div>
-        <div className="trainer-body">
-          {settling && !expanded ? (
-            <>
-              <TrainerThumbnail built={built} activeTf={activeTf} onChartHandle={setChartHandle} />
-              <button className="trainer-thumb-cover" onClick={() => setExpanded(true)}>
-                <TrainerBandLegend />
-                <span className="trainer-thumb-expand">展开复盘 ⤢</span>
-              </button>
-            </>
-          ) : (
-            <IntradayChartOnly
-              symbol={view.symbol}
-              built={built}
+    <TrainerOverlayProvider>
+      <div className={`trainer-shell${shellMode}`}>
+        <IntradayControlsProvider storageNamespace={STORAGE_NAMESPACE}>
+          <div className="trainer-header">
+            {isDesktop && <div className="popout-traffic-spacer" />}
+            <span className="trainer-title">盲盘训练</span>
+            {/* Both halves describe the tier actually on screen. Naming the base period while
+                quoting a base-bar count made the header read as 5m no matter what was displayed,
+                and the count silently meant something else on every other tier. */}
+            <span className="trainer-meta">
+              {view.symbol} · {tfLabel(activeTf)} ·{' '}
+              {view.terminal
+                ? '已收盘'
+                : `剩余 ${remaining.approximate ? '约 ' : ''}${remaining.count} 根`}
+            </span>
+            <TrainerPeriodSwitch
+              ladder={view.ladder}
               activeTf={activeTf}
-              drawings={false}
-              storageNamespace={STORAGE_NAMESPACE}
-              onChartHandle={setChartHandle}
+              onChange={setRequestedTf}
             />
-          )}
-        </div>
-      </IntradayControlsProvider>
-      {bridge && sessionId && onViewChange && (
-        // key remounts these panels (and their draft state) on a new case instead of
-        // syncing them with an effect.
-        <>
-          {view.terminal ? (
-            <TrainerSettlement
-              key={`settlement-${view.caseId}`}
-              view={view}
-              bridge={bridge}
-              sessionId={sessionId}
-              expanded={expanded}
-              onCollapse={() => setExpanded(false)}
-              onEpilogueBarsChange={setEpilogueBars}
-            />
-          ) : (
-            <>
-              <TrainerDrawingTools api={drawings} />
-              <TrainerAdvanceControls
-                key={`advance-${view.caseId}`}
+          </div>
+          <div className="trainer-body">
+            {settling && !expanded ? (
+              <>
+                <TrainerThumbnail
+                  built={built}
+                  activeTf={activeTf}
+                  onChartHandle={setChartHandle}
+                />
+                <button className="trainer-thumb-cover" onClick={() => setExpanded(true)}>
+                  <TrainerBandLegend />
+                  <span className="trainer-thumb-expand">展开复盘 ⤢</span>
+                </button>
+              </>
+            ) : (
+              <IntradayChartOnly
+                symbol={view.symbol}
+                built={built}
+                activeTf={activeTf}
+                drawings={false}
+                storageNamespace={STORAGE_NAMESPACE}
+                onChartHandle={setChartHandle}
+              />
+            )}
+            {!view.terminal && <TrainerOverlayLayer />}
+          </div>
+        </IntradayControlsProvider>
+        {bridge && sessionId && onViewChange && (
+          // key remounts these panels (and their draft state) on a new case instead of
+          // syncing them with an effect.
+          <>
+            {view.terminal ? (
+              <TrainerSettlement
+                key={`settlement-${view.caseId}`}
                 view={view}
-                period={trainerAdvancePeriod(view.ladder, activeTf)}
                 bridge={bridge}
                 sessionId={sessionId}
-                onViewChange={onViewChange}
+                expanded={expanded}
+                onCollapse={() => setExpanded(false)}
+                onEpilogueBarsChange={setEpilogueBars}
               />
-              <TrainerOrderPanel
-                key={`order-${view.caseId}`}
-                view={view}
-                handle={chartHandle}
-                bridge={bridge}
-                sessionId={sessionId}
-                onViewChange={onViewChange}
-                drawingActive={drawings.tool !== 'off'}
-                onTakeChart={() => drawings.setTool('off')}
-              />
-            </>
-          )}
-        </>
-      )}
-    </div>
+            ) : (
+              <>
+                <TrainerDrawingTools api={drawings} />
+                <TrainerAdvanceControls
+                  key={`advance-${view.caseId}`}
+                  view={view}
+                  period={advancePeriod}
+                  bridge={bridge}
+                  sessionId={sessionId}
+                  onViewChange={onViewChange}
+                />
+                <TrainerOrderPanel
+                  key={`order-${view.caseId}`}
+                  view={view}
+                  handle={chartHandle}
+                  bridge={bridge}
+                  sessionId={sessionId}
+                  onViewChange={onViewChange}
+                  drawingActive={drawings.tool !== 'off'}
+                  onTakeChart={() => drawings.setTool('off')}
+                />
+              </>
+            )}
+          </>
+        )}
+      </div>
+    </TrainerOverlayProvider>
   );
 }
 

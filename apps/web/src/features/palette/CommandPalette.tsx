@@ -6,7 +6,7 @@ import { listRecentSymbols } from '../charts/recentCharts';
 import { Input } from '../../ui';
 import { getOpenTrainerBridge } from '../desktop/desktopWindowsBridge';
 import { useCapabilities } from '../edition/capabilitiesStore';
-import { openLicenseModal } from '../edition/licenseModalStore';
+import { requestTrainerWindow } from '../training/requestTrainerWindow';
 import { buildPaletteCommands, type PaletteCommand } from './commands';
 import { usePalette } from './usePalette';
 
@@ -50,12 +50,7 @@ function PalettePanel({
   const run = (cmd: PaletteCommand) => {
     onClose();
     if (cmd.kind === 'trainer') {
-      if (pro === null) return;
-      if (pro && licensed) {
-        void trainerBridge?.openTrainer();
-      } else {
-        openLicenseModal('guard');
-      }
+      requestTrainerWindow(trainerBridge, { pro, licensed });
       return;
     }
     if (cmd.route) onOpenRoute(cmd.route);

@@ -11,6 +11,7 @@ function makeDeps(overrides: Partial<MenuActionDeps> = {}): MenuActionDeps {
     openLogs: vi.fn(),
     openResearch: vi.fn(),
     openChat: vi.fn(),
+    openTrainer: vi.fn(),
     checkForUpdates: vi.fn(),
     newWindow: vi.fn(),
     newTab: vi.fn(),
@@ -77,6 +78,18 @@ describe('buildAppMenuTemplate', () => {
     );
     expect(deps.openChat).toHaveBeenCalledOnce();
     expect(deps.openResearch).toHaveBeenCalledOnce();
+  });
+
+  it('exposes the blind-replay trainer in the go menu', () => {
+    const deps = makeDeps();
+    const goMenu = asSubmenu(buildAppMenuTemplate('Kansoku', deps)[3]);
+    expect(findByLabel(goMenu, '盲盘训练').accelerator).toBe('CmdOrCtrl+Shift+B');
+    findByLabel(goMenu, '盲盘训练').click?.(
+      undefined as never,
+      undefined as never,
+      undefined as never,
+    );
+    expect(deps.openTrainer).toHaveBeenCalledOnce();
   });
 
   it('keeps about, check updates, settings, and quit in the app menu', () => {

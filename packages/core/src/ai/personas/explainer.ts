@@ -4,6 +4,7 @@ import type { CockpitComment, ExplainResult } from '@kansoku/shared/types';
 import { AgentTimeoutError, type AiAgentFactory, createAgentSession } from '../agents/agentSession.js';
 import { appendComment as defaultAppendComment } from './comments.js';
 import { buildCommentPack, type CommentPack } from '../agents/datapack.js';
+import { explainerPackPromptText } from '../agents/packText.js';
 import type { AiModel } from '../runtime/models.js';
 import { aiConfig } from '../runtime/models.js';
 import { EXPLAINER_PROMPT, EXPLAINER_RETRY_PROMPT } from '../runtime/prompts.js';
@@ -115,7 +116,7 @@ export async function explainSymbol(symbol: string, deps: ExplainerDeps = {}): P
       agentFactory: deps.agentFactory,
     });
 
-    const promptText = JSON.stringify({ pack }).slice(0, MAX_PROMPT_CHARS);
+    const promptText = explainerPackPromptText(pack).slice(0, MAX_PROMPT_CHARS);
     await session.runTurn(promptText, timeoutMs);
     if (submitted === null) {
       await session.runTurn(EXPLAINER_RETRY_PROMPT, timeoutMs);

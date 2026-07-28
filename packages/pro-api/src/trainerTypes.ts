@@ -207,6 +207,38 @@ export interface TrainerPoolCounts {
   byBasePeriod: Record<TrainerBasePeriod, number>;
 }
 
+export type TrainerFillTrigger = 'manual' | 'pool-read' | 'session-end';
+export type TrainerFillStatus = 'running' | 'done' | 'failed' | 'aborted';
+
+// `ai-pick` belongs to the AI selection gate, which lands a phase later than the
+// rest of this contract. Its slot is defined up front so shipping that gate needs
+// no contract change; until then no task row ever carries it.
+export type TrainerFillPhase =
+  'sample' | 'hard-rule-gate' | 'assemble' | 'ai-pick' | 'anonymize' | 'audit';
+
+export interface TrainerFillTask {
+  id: string;
+  basePeriod: TrainerBasePeriod;
+  requested: number;
+  trigger: TrainerFillTrigger;
+  status: TrainerFillStatus;
+  phase: TrainerFillPhase;
+  activity: string;
+  admitted: number;
+  error: string | null;
+  startedAt: string;
+  updatedAt: string;
+  finishedAt: string | null;
+}
+
+export interface TrainerFillState {
+  task: TrainerFillTask | null;
+  // Two separate flags because the card says different things: one is "you turned
+  // it off", the other is "it kept failing and stood down".
+  autoRefillEnabled: boolean;
+  autoRefillSuspended: boolean;
+}
+
 export interface TrainerOpened {
   sessionId: string;
   view: TrainerView;
@@ -285,6 +317,10 @@ export type TrainerAction =
 
 export interface TrainerApi {
   listPool(): TrainerPoolCounts;
+  getFill(): TrainerFillState;
+  startFill(input: { basePeriod: TrainerBasePeriod; count: number }): TrainerFillTask;
+  abortFill(input: { id: string }): TrainerFillTask;
+  setAutoRefill(input: { enabled: boolean }): TrainerFillState;
   open(input: { basePeriod: TrainerBasePeriod }): TrainerOpened;
   resume(input: { sessionId: string }): TrainerOpened;
   submit(input: {
@@ -300,11 +336,7 @@ export interface TrainerApi {
     target?: number;
     reason: TrainerReason;
   }): TrainerStepResult;
-  validateAmend(input: {
-    sessionId: string;
-    stop?: number;
-    target?: number;
-  }): TrainerAmendCheck;
+  validateAmend(input: { sessionId: string; stop?: number; target?: number }): TrainerAmendCheck;
   cancel(input: { sessionId: string; reason: TrainerReason }): TrainerStepResult;
   exitNextOpen(input: { sessionId: string; reason: TrainerReason }): TrainerStepResult;
   add(input: { sessionId: string; size: number; reason: TrainerReason }): TrainerStepResult;
@@ -317,10 +349,7 @@ export interface TrainerApi {
 // other code is a caller or environment fault and belongs in front of a developer. Collapsing them
 // would either hide a refusal the trader must answer or dress a bug as trading advice.
 export type TrainerErrorCode =
-  | 'TRAINER_GUARDRAIL'
-  | 'TRAINER_PROTOCOL'
-  | 'TRAINER_POOL_EMPTY'
-  | 'LICENSE_REQUIRED';
+  'TRAINER_GUARDRAIL' | 'TRAINER_PROTOCOL' | 'TRAINER_POOL_EMPTY' | 'LICENSE_REQUIRED';
 
 // A refused step may still have advanced the episode part of the way, so a failure carries the
 // session's actual state whenever one could be read. Renderers must adopt this view instead of

@@ -11,6 +11,7 @@ import { DiagnosticsSection } from './DiagnosticsSection';
 import { LicenseSection } from './LicenseSection';
 import { LongbridgeSection } from './LongbridgeSection';
 import { ProviderCredentialsSection } from './ProviderCredentialsSection';
+import { TrainingSection } from './TrainingSection';
 import { RoleModelsCard } from './RoleModelsCard';
 import { SettingsStatusStrip } from './SettingsStatusStrip';
 import { TimeDisplaySettingsCard } from './TimeDisplaySettingsCard';
@@ -102,6 +103,7 @@ function SettingsWorkspace({
             <LongbridgeSection />
             <DataRootSection />
             <AgentKitSection />
+            <TrainingSection />
             <DiagnosticsSection />
           </Card>
         </div>

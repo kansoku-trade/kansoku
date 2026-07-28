@@ -41,6 +41,7 @@ function roles(overrides: Partial<AiRoles>): AiRoles {
     deepDive: disabled,
     chat: disabled,
     memory: disabled,
+    casePick: disabled,
     ...overrides,
   };
 }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { TrainerView } from '@kansoku/pro-api';
 import type { RawBar } from '@kansoku/shared/types';
-import { replayBands } from './replayBands';
+import { replayBands, replayDivider } from './replayBands';
 
 function bar(iso: string): RawBar {
   return { time: iso, open: 1, high: 2, low: 0.5, close: 1.5, volume: 100 };
@@ -90,5 +90,58 @@ describe('replayBands', () => {
   it('returns nothing for a case with no bars', () => {
     const empty = makeView({ bars: { base: [], mid: [], top: [] }, cursor: -1 });
     expect(replayBands(empty, null)).toEqual([]);
+  });
+});
+
+describe('replayDivider', () => {
+  const sec = (iso: string) => Math.floor(Date.parse(iso) / 1000);
+
+  // bars.base is [question bars, revealed replay bars] with the revealed run exactly cursor + 1
+  // long, so with 5 bars and cursor 1 the last two are replay and the boundary sits ahead of
+  // index 3.
+  it('anchors ahead of the first replayed bar', () => {
+    expect(replayDivider(makeView({ cursor: 1 }))).toEqual({
+      time: sec('2026-01-05T14:15:00.000Z'),
+      edge: 'before',
+    });
+  });
+
+  // The whole point of the line: it names a fixed bar, so it must not creep as bars are revealed.
+  // Each step appends one bar and raises the cursor by one, leaving the question count unchanged.
+  it('stays on the same bar as the episode advances', () => {
+    const before = replayDivider(makeView({ cursor: 1 }));
+    const after = replayDivider(
+      makeView({
+        cursor: 3,
+        bars: {
+          base: [...BASE, bar('2026-01-05T14:25:00.000Z'), bar('2026-01-05T14:30:00.000Z')],
+          mid: BASE,
+          top: BASE,
+        },
+      }),
+    );
+    expect(after).toEqual(before);
+  });
+
+  // Nothing has been stepped yet, so every visible bar is the question and there is no replayed bar
+  // to sit ahead of — the line goes off the trailing edge of the last one instead.
+  it('falls back to the trailing edge of the final bar before the first step', () => {
+    expect(replayDivider(makeView({ cursor: -1 }))).toEqual({
+      time: sec('2026-01-05T14:20:00.000Z'),
+      edge: 'after',
+    });
+  });
+
+  it('anchors on the very first bar when every bar has been replayed', () => {
+    expect(replayDivider(makeView({ cursor: BASE.length - 1 }))).toEqual({
+      time: sec('2026-01-05T14:00:00.000Z'),
+      edge: 'before',
+    });
+  });
+
+  it('has nowhere to sit with no bars at all', () => {
+    expect(
+      replayDivider(makeView({ cursor: -1, bars: { base: [], mid: [], top: [] } })),
+    ).toBeNull();
   });
 });
