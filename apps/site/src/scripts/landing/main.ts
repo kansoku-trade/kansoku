@@ -1,9 +1,6 @@
-import { mountReplicaScene } from './replica/mount';
+import { mountDemoScene } from './demo/mount';
 import { mountHeroScene } from './scenes/hero';
-import { mountNoRetractScene } from './scenes/noRetract';
 import { mountOutroScene } from './scenes/outro';
-import { mountScorecardScene } from './scenes/scorecard';
-import { mountSourcedScene } from './scenes/sourced';
 import type { Tier } from './tier';
 
 interface Destroyable {
@@ -49,10 +46,7 @@ const mountLanding = (): void => {
     }
   })();
 
-  mountGuarded('sourced', () => mountSourcedScene(root, tier));
-  mountGuarded('noRetract', () => mountNoRetractScene(root, tier));
-  mountGuarded('scorecard', () => mountScorecardScene(root, tier));
-  mountGuarded('replica', () => mountReplicaScene(root, tier));
+  mountGuarded('demo', () => mountDemoScene(root, tier));
   mountGuarded('outro', () => mountOutroScene(root, tier));
 };
 

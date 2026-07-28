@@ -1,11 +1,8 @@
 ---
 import Boot from '../components/landing/Boot.astro';
-import LiveReplica from '../components/landing/LiveReplica.astro';
 import HeroEvidence from '../components/landing/HeroEvidence.astro';
-import NoRetract from '../components/landing/NoRetract.astro';
+import LiveDemo from '../components/landing/LiveDemo.astro';
 import PricingOutro from '../components/landing/PricingOutro.astro';
-import Scorecard from '../components/landing/Scorecard.astro';
-import Sourced from '../components/landing/Sourced.astro';
 import TerminalChrome from '../components/landing/TerminalChrome.astro';
 import Base from '../layouts/Base.astro';
 import { dmgAsset, fetchDesktopReleases, releaseVersion } from '../lib/releases';
@@ -45,10 +42,7 @@ const schema = {
   <TerminalChrome version={version}>
     <Boot version={version} />
     <HeroEvidence version={version} downloadUrl={dmg.browser_download_url} />
-    <Sourced />
-    <NoRetract />
-    <Scorecard />
-    <LiveReplica />
+    <LiveDemo />
     <PricingOutro version={version} downloadUrl={dmg.browser_download_url} />
   </TerminalChrome>
 </Base>
