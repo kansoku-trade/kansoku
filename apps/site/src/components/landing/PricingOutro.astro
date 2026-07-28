@@ -14,8 +14,10 @@ const proShorts = features.pro.map((f) => f.short).join('、');
 ---
 
 <section class="outro">
-  <div class="outro-scene" data-outro-scene>
-    <canvas class="outro-particle-canvas" data-outro-canvas aria-hidden="true"></canvas>
+  <div class="outro-scene" data-outro-scene data-mode="plain">
+    <canvas class="outro-canvas" data-outro-canvas aria-hidden="true" layoutsubtree>
+      <p class="outro-src" data-outro-src>有出处 · 不改口 · 有战绩</p>
+    </canvas>
     <p class="outro-status">有出处 · 不改口 · 有战绩</p>
   </div>
 
@@ -40,7 +42,7 @@ const proShorts = features.pro.map((f) => f.short).join('、');
   .outro {
     max-width: 1120px;
     margin: 0 auto;
-    padding: 72px 24px 96px;
+    padding: 64px 24px 48px;
   }
 
   .outro-scene {
@@ -53,7 +55,7 @@ const proShorts = features.pro.map((f) => f.short).join('、');
     justify-content: center;
   }
 
-  .outro-particle-canvas {
+  .outro-canvas {
     position: absolute;
     inset: 0;
     width: 100%;
@@ -61,33 +63,30 @@ const proShorts = features.pro.map((f) => f.short).join('、');
     display: none;
   }
 
-  html[data-tier='full'] .outro-particle-canvas,
-  html[data-tier='lite'] .outro-particle-canvas {
+  .outro-scene[data-mode='canvas'] .outro-canvas {
     display: block;
   }
 
-  .outro-scene.is-faded .outro-particle-canvas {
-    opacity: 0;
-  }
-
+  .outro-src,
   .outro-status {
-    position: relative;
-    z-index: 1;
     margin: 0;
-    opacity: 1;
     font-family: var(--mono);
     font-size: 13px;
     letter-spacing: 0.1em;
     color: var(--accent);
+    white-space: nowrap;
   }
 
-  html[data-landing-live][data-tier='full'] .outro-status,
-  html[data-landing-live][data-tier='lite'] .outro-status {
-    opacity: 0;
+  .outro-src {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
   }
 
-  .outro-scene.is-formed .outro-status {
-    opacity: 1;
+  .outro-scene[data-mode='canvas'] .outro-status {
+    visibility: hidden;
   }
 
   @media (prefers-reduced-motion: no-preference) {

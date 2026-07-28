@@ -99,7 +99,7 @@ const chapterCopy: Record<string, { title: string; body: string }> = {
             </article>
           ))
         }
-        <div class="demo-hint">滚动即播放 · 点击章节可跳转</div>
+        <div class="demo-hint">滚动即播放</div>
       </div>
 
       <div class="app demo-app">
@@ -264,21 +264,6 @@ const chapterCopy: Record<string, { title: string; body: string }> = {
           </aside>
         </div>
 
-        <footer class="demo-scrub">
-          <div class="demo-scrub-track" data-scrub-track>
-            <div class="demo-scrub-head" data-scrub-head></div>
-          </div>
-          <div class="demo-scrub-markers" data-scrub-markers>
-            {
-              CHAPTERS.map((chapter, i) => (
-                <button type="button" data-scrub-marker data-active={i === 0 ? 'true' : 'false'}>
-                  {chapter.label}
-                </button>
-              ))
-            }
-          </div>
-          <span class="demo-scrub-clock" data-scrub-clock>0.0s</span>
-        </footer>
       </div>
     </div>
   </div>

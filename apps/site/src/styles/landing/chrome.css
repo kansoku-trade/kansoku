@@ -55,6 +55,35 @@
   mix-blend-mode: overlay;
 }
 
+body:has(.terminal-chrome) .nav {
+  display: none;
+}
+
+.chrome-spacer {
+  flex: 1;
+}
+
+.chrome-nav {
+  display: flex;
+  gap: 18px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+.chrome-nav a {
+  color: var(--text-2);
+  text-decoration: none;
+}
+
+.chrome-nav a:hover {
+  color: var(--accent);
+}
+
+.chrome-brand b {
+  color: var(--accent);
+  font-weight: 400;
+}
+
 .chrome-topbar {
   position: relative;
   z-index: 1;
@@ -142,26 +171,3 @@
   z-index: 1;
 }
 
-.chrome-statusbar {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--chrome-gap);
-  height: var(--chrome-status-h);
-  padding: 0 var(--chrome-pad-x);
-  border-top: 1px solid var(--border);
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-.chrome-disclaimer {
-  color: var(--text-2);
-}
-
-.chrome-statusbar-right {
-  color: var(--text-3);
-}
