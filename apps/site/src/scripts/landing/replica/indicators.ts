@@ -1,5 +1,3 @@
-import type { Candle } from '../kline';
-
 export const ema = (values: number[], period: number): Array<number | null> => {
   const out: Array<number | null> = new Array(values.length).fill(null);
   if (values.length < period) return out;
@@ -53,25 +51,5 @@ export const macd = (values: number[]): MacdResult => {
 export interface PriceLevel {
   label: string;
   value: number;
-  tone: 'pre' | 'prev' | 'anchor' | 'last';
+  tone: 'pre' | 'prev' | 'anchor';
 }
-
-export const deriveLevels = (candles: Candle[]): PriceLevel[] => {
-  const recent = candles.slice(-Math.min(candles.length, 60));
-  let high = -Infinity;
-  let low = Infinity;
-  for (const candle of recent) {
-    if (candle.high > high) high = candle.high;
-    if (candle.low < low) low = candle.low;
-  }
-  const last = candles[candles.length - 1];
-  const mid = (high + low) / 2;
-  return [
-    { label: '盘前高', value: high - (high - mid) * 0.12, tone: 'pre' },
-    { label: '盘前低', value: mid + (high - mid) * 0.18, tone: 'pre' },
-    { label: '昨高', value: mid, tone: 'prev' },
-    { label: '锚', value: mid - (mid - low) * 0.35, tone: 'anchor' },
-    { label: '昨低', value: low + (mid - low) * 0.08, tone: 'prev' },
-    { label: '', value: last.close, tone: 'last' },
-  ];
-};

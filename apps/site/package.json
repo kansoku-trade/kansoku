@@ -6,6 +6,7 @@
   "scripts": {
     "build": "astro build",
     "dev": "astro dev",
+    "snapshot": "node scripts/fetch-market-snapshot.mjs && node scripts/fetch-releases.mjs",
     "preview": "astro preview",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
@@ -13,12 +14,14 @@
   "dependencies": {
     "@astrojs/sitemap": "^3.7.3",
     "astro": "^7.1.3",
+    "lightweight-charts": "^5.2.0",
     "marked": "^18.0.7",
     "three": "^0.185.1"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",
     "@types/three": "^0.185.1",
+    "lucide-static": "^1.27.0",
     "typescript": "^5.9.3",
     "vitest": "^4.1.10"
   }

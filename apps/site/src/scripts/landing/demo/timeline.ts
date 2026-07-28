@@ -1,16 +1,24 @@
+export type AppView = 'chart' | 'train' | 'research';
+
 export interface Chapter {
   id: string;
   label: string;
   seconds: number;
+  view: AppView;
 }
 
 export const CHAPTERS: Chapter[] = [
-  { id: 'trace', label: '取证', seconds: 6 },
-  { id: 'verdict', label: '判断', seconds: 5 },
-  { id: 'archive', label: '归档', seconds: 6 },
-  { id: 'score', label: '记分', seconds: 5 },
-  { id: 'tools', label: '工具', seconds: 4 },
+  { id: 'trace', label: '取证', seconds: 6, view: 'chart' },
+  { id: 'verdict', label: '判断', seconds: 5, view: 'chart' },
+  { id: 'archive', label: '归档', seconds: 6, view: 'chart' },
+  { id: 'score', label: '记分', seconds: 5, view: 'chart' },
+  { id: 'tools', label: '工具', seconds: 4, view: 'chart' },
+  { id: 'train', label: '盲盘训练', seconds: 6, view: 'train' },
+  { id: 'research', label: '研究库', seconds: 5, view: 'research' },
 ];
+
+export const chapterIndexOfView = (view: AppView): number =>
+  CHAPTERS.findIndex((chapter) => chapter.view === view);
 
 export const TOTAL_SECONDS = CHAPTERS.reduce((sum, chapter) => sum + chapter.seconds, 0);
 

@@ -5,13 +5,10 @@ import LiveDemo from '../components/landing/LiveDemo.astro';
 import PricingOutro from '../components/landing/PricingOutro.astro';
 import TerminalChrome from '../components/landing/TerminalChrome.astro';
 import Base from '../layouts/Base.astro';
-import { dmgAsset, fetchDesktopReleases, releaseVersion } from '../lib/releases';
+import { latestDesktop } from '../lib/releases';
 
-const releases = await fetchDesktopReleases();
-const latest = releases[0]!;
-const version = releaseVersion(latest);
-const dmg = dmgAsset(latest);
-if (!dmg) throw new Error(`release ${latest.tag_name} has no dmg asset`);
+const latest = await latestDesktop();
+const version = latest.version;
 
 const title = 'Kansoku（観測）— 能查账的 AI 看盘搭子 · macOS 本地看盘应用';
 const description =
@@ -26,9 +23,9 @@ const schema = {
   operatingSystem: 'macOS',
   applicationCategory: 'FinanceApplication',
   softwareVersion: version,
-  dateModified: latest.published_at,
+  dateModified: latest.publishedAt,
   url: 'https://kansoku.trade',
-  downloadUrl: dmg.browser_download_url,
+  downloadUrl: latest.downloadUrl,
   author: { '@type': 'Person', name: 'Innei', url: 'https://innei.in' },
   offers: [
     { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
@@ -41,9 +38,9 @@ const schema = {
   <script is:inline type="application/ld+json" slot="head" set:html={JSON.stringify(schema)} />
   <TerminalChrome version={version}>
     <Boot version={version} />
-    <HeroEvidence version={version} downloadUrl={dmg.browser_download_url} />
+    <HeroEvidence version={version} downloadUrl={latest.downloadUrl} />
     <LiveDemo />
-    <PricingOutro version={version} downloadUrl={dmg.browser_download_url} />
+    <PricingOutro version={version} downloadUrl={latest.downloadUrl} />
   </TerminalChrome>
 </Base>
 

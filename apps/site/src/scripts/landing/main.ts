@@ -46,7 +46,14 @@ const mountLanding = (): void => {
     }
   })();
 
-  mountGuarded('demo', () => mountDemoScene(root, tier));
+  void (async () => {
+    try {
+      registerCleanup(await mountDemoScene(root, tier));
+    } catch (error) {
+      console.error('[landing] demo scene failed to mount', error);
+    }
+  })();
+
   mountGuarded('outro', () => mountOutroScene(root, tier));
 };
 

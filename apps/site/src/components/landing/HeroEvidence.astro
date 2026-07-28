@@ -32,15 +32,21 @@ const barLabels: Record<(typeof barKeys)[number], string> = {
     <p class="hero-eyebrow">[ EVERY CLAIM · SOURCED · TIMESTAMPED · SCORED ]</p>
     <h1 class="hero-title">它说的每句话，你都能查。</h1>
     <p class="hero-sub">
-      盘中点评、追问、深度研究——每个结论背后都挂着它查了什么、什么时候查的、原始数字是多少。
-      <b>归档之后不许改口，事后按命中率记分。</b>
+      一个跑在你自己 Mac 上的看盘台：多周期 K 线、画线、盘口与复盘，外加一个会盘中点评、能追问的 AI 搭子。
+      它每个结论背后都挂着查了什么、什么时候查的、原始数字是多少。<b
+        >归档之后不许改口，事后按命中率记分。</b
+      >
     </p>
     <div class="hero-cta">
-      <a class="btn" href={downloadUrl}>下载 <span class="ver">v{version}</span></a>
-      <a class="btn btn-ghost" href="/pricing">查看定价</a>
+      <a class="btn" href={downloadUrl}>免费下载 <span class="ver">v{version}</span></a>
+      <a class="btn btn-ghost" href="#demo">先看它怎么干活 ↓</a>
     </div>
+    <p class="hero-free">
+      看盘本体和 AI 复评<b>永久免费</b>，不用注册账号；AI 走你自己的 key 或本机 codex
+      登录态，key 不出这台机器。<a class="hero-pro-link" href="/pricing">Pro 加了什么 →</a>
+    </p>
     <p class="hero-note">
-      macOS · apple silicon · 需 <a
+      macOS · apple silicon · 数据源需登录 <a
         href="https://open.longbridge.com/docs/cli/install"
         target="_blank"
         rel="noreferrer">longbridge CLI</a

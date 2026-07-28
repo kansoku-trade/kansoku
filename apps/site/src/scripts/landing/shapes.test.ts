@@ -27,7 +27,7 @@ describe('candleShape', () => {
   });
 
   it('distributes roughly bodyRatio of points inside the candle body', () => {
-    const candle = { open: 100, close: 110, high: 130, low: 90, up: true };
+    const candle = { time: 0, open: 100, close: 110, high: 130, low: 90, up: true };
     const bodyRatio = 0.82;
     const points = candleShape([candle], 5000, { seed: 21, bodyRatio });
 
@@ -48,9 +48,9 @@ describe('candleShape', () => {
 
   it('spreads points horizontally within their own candle slot', () => {
     const threeCandles = [
-      { open: 100, close: 110, high: 130, low: 90, up: true },
-      { open: 110, close: 100, high: 130, low: 90, up: false },
-      { open: 100, close: 115, high: 140, low: 85, up: true },
+      { time: 0, open: 100, close: 110, high: 130, low: 90, up: true },
+      { time: 300, open: 110, close: 100, high: 130, low: 90, up: false },
+      { time: 600, open: 100, close: 115, high: 140, low: 85, up: true },
     ];
     const count = 3000;
     const points = candleShape(threeCandles, count, { seed: 5 });

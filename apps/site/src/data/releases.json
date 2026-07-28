@@ -1,0 +1,395 @@
+{
+  "capturedAt": "2026-07-28T18:45:43.638Z",
+  "releases": [
+    {
+      "tag_name": "desktop-v0.28.0",
+      "body": "\n- （Pro）新增「盲盘训练」：随机抽一段真实历史行情，隐去代码和日期，按 5 分钟 K 线一根根往前放。你在图上拖出止损和目标，下多单或空单，走完后结算——揭晓真身，把你计划的盈亏比和实际拿到的 R 摆在一起对比，还会告诉你最大浮盈回吐了多少，另附 AI 对照和教训沉淀。入口在首页卡片、命令面板「开始盲盘训练」，或菜单 前往 → 盲盘训练（⌘⇧B），单开一个窗口\n- （Pro）训练案例池后台自动补货：开局没案例、玩完一局都会自动补。补货进度、失败原因、连续补不到而自动暂停，都在首页卡片上直说；设置页可以关掉自动补货\n- AI 读 K 线的数据量降了约七成：K 线改成紧凑表格传给模型，时间已经换算成市场时区并标好盘前/盘中/盘后，模型不用再自己换算——同一次点评或研究花的 token 明显更少，也更不容易把时段看错\n- AI 设置里新增「案例精选」角色，可以单独给它指定一个便宜的模型\n\n",
+      "published_at": "2026-07-28T08:36:58Z",
+      "prerelease": false,
+      "draft": false,
+      "assets": [
+        {
+          "name": "Kansoku-0.28.0-arm64.dmg",
+          "browser_download_url": "https://github.com/kansoku-trade/kansoku/releases/download/desktop-v0.28.0/Kansoku-0.28.0-arm64.dmg"
+        }
+      ]
+    },
+    {
+      "tag_name": "desktop-v0.27.3",
+      "body": "\n- 修复设置里「时间显示」偏好失效：选本地时间后，图表与各处时间戳会按本地显示；顶栏实时钟仍固定为市场时区\n- 图表首次打开遇行情限频时，会在几秒内自动重试恢复，不再干等数分钟\n- 期权关键位、事件风险等侧栏信息改为后台补全，不再拖慢图表首屏\n- 各页面切换改为同步加载，进出页面更顺，少闪加载态\n\n",
+      "published_at": "2026-07-24T19:03:20Z",
+      "prerelease": false,
+      "draft": false,
+      "assets": [
+        {
+          "name": "Kansoku-0.27.3-arm64.dmg",
+          "browser_download_url": "https://github.com/kansoku-trade/kansoku/releases/download/desktop-v0.27.3/Kansoku-0.27.3-arm64.dmg"
+        }
+      ]
+    },
+    {
+      "tag_name": "desktop-v0.27.2",
+      "body": "\n- 打开标的图表明显变快：最近看过的标的重新进入直接秒开；重启 app 后第一次打开也能立即出图（K 线数据落到了本地缓存表，后台再自动补最新几根）\n- 行情被长桥限频时，图表页不再卡在报错页——会显示重试状态并自动恢复，不用手动刷新\n- 侧栏「消息」改为点开时才加载新闻，日线参照线（昨高/昨收/昨低）也不再阻塞首屏出图，图表本体先出来\n- 图表后台刷新只拉增量 K 线（原来每次都全量重拉一千根），行情请求量大幅下降，也更不容易触发限频\n\n",
+      "published_at": "2026-07-24T18:11:42Z",
+      "prerelease": false,
+      "draft": false,
+      "assets": [
+        {
+          "name": "Kansoku-0.27.2-arm64.dmg",
+          "browser_download_url": "https://github.com/kansoku-trade/kansoku/releases/download/desktop-v0.27.2/Kansoku-0.27.2-arm64.dmg"
+        }
+      ]
+    },
+    {
+      "tag_name": "desktop-v0.27.1",
+      "body": "\n- 修复部分从测试构建切回正式版后 AI 点评无法加载的问题：升级时会自动修复冲突的本地数据库结构，并保留已有点评数据\n\n",
+      "published_at": "2026-07-24T16:42:54Z",
+      "prerelease": false,
+      "draft": false,
+      "assets": [
+        {
+          "name": "Kansoku-0.27.1-arm64.dmg",
+          "browser_download_url": "https://github.com/kansoku-trade/kansoku/releases/download/desktop-v0.27.1/Kansoku-0.27.1-arm64.dmg"
+        }
+      ]
+    },
+    {
+      "tag_name": "desktop-v0.27.0",
+      "body": "\n- 短线预测图表：AI 入场计划被价格触发（`entry_status = triggered / stopped`）后，原本的入场/止损/T1/T2 四条横线会切换为「仓位盒」——上下两块红绿矩形（红=止损区、浅绿=T1 区、深绿=T2 区），一眼看清风险位和目标位；打止损后盒子自动变淡并在左上角标注「已止损」；未触发前继续保持原来的四条虚线\n\n",
+      "published_at": "2026-07-24T13:11:30Z",
+      "prerelease": false,
+      "draft": false,
+      "assets": [
+        {
+          "name": "Kansoku-0.27.0-arm64.dmg",
+          "browser_download_url": "https://github.com/kansoku-trade/kansoku/releases/download/desktop-v0.27.0/Kansoku-0.27.0-arm64.dmg"
+        }
+      ]
+    },
+    {
+      "tag_name": "desktop-v0.26.0",
+      "body": "\n- AI 点评全面升级为「研判」：每条点评分三段——先说盘面发生了什么（事实），再说怎么理解（解读），最后给结论（按计划执行 / 等确认 / 不构成动作），不再只是一句话感想\n- 去掉定时心跳点评：AI 只在盘面出现真实触发事件（如 MACD 交叉、关键位突破、放量）时才说话，不再定时刷无信息的点评\n- 图表页新增「解读当前盘面」按钮：看不懂图上的指标和线时，点一下让 AI 用大白话解释当前盘面\n- AI 跟踪新增存活线：能直观看到自动跟踪正在运行，而不是猜它有没有在工作\n- （Pro）自动跟踪新增开盘读盘、收盘读盘和宏观数据公布时刻点评；当日回顾同步适配新研判结构\n- 研究库的 AI 助手改为内嵌面板，不再单开一个页面\n- 顶栏时钟修复：始终显示市场时区（美股为 ET）且每秒走动，本地时间移到悬停提示\n- 修复桌面端找不到 opencli 导致 X（Twitter）数据读取失败的问题\n\n",
+      "published_at": "2026-07-24T07:18:25Z",
+      "prerelease": false,
+      "draft": false,
+      "assets": [
+        {
+          "name": "Kansoku-0.26.0-arm64.dmg",
+          "browser_download_url": "https://github.com/kansoku-trade/kansoku/releases/download/desktop-v0.26.0/Kansoku-0.26.0-arm64.dmg"
+        }
+      ]
+    },
+    {
+      "tag_name": "desktop-v0.25.0",
+      "body": "\n- 研究库可以在应用里直接新建：点「新建」选个股档案或日记。建个股档案时会自动带上 SEPA 看板，不用再靠命令行 skill 先写文件\n- 研究库里的 SEPA 图会跟着交易日更新：过期后自动刷新一次，也可以点按钮手动更新；分析当时存下的图仍然保持冻结不动\n- AI 分析等待体验重做：分析进行中会陆续写出技术面、语境两段预读，旁边有活动进度；关键价位也会先画在预览图上（标成「预读」），不用干等最终结论\n- 已有短线预测时重新分析，会在上方收成一条「AI 重新分析中…」，点开可看进度，不挡已有内容\n- 标题栏和行情条小修：弹出窗口控件挪进桌面标题栏，行情更新时间显示到秒；资金流向只标「净流入 / 净流出」，不再叠正负号\n\n",
+      "published_at": "2026-07-23T16:57:50Z",
+      "prerelease": false,
+      "draft": false,
+      "assets": [
+        {
+          "name": "Kansoku-0.25.0-arm64.dmg",
+          "browser_download_url": "https://github.com/kansoku-trade/kansoku/releases/download/desktop-v0.25.0/Kansoku-0.25.0-arm64.dmg"
+        }
+      ]
+    },
+    {
+      "tag_name": "desktop-v0.24.1",
+      "body": "\n- 实时行情更稳:对长桥(Longbridge)的数据请求做了限流,减少短时间内密集拉取被券商限流、导致行情或图表短暂卡顿的情况。\n- Agent Kit 的 skill 链接会自动修复:`.claude/skills/` 与 `.agent/skill/` 现在是指向内置 skills 的软链接,更新、启动或手动刷新时会校验,链接被删掉或改了指向都会自动修好。\n- 短线预测面板底部说明订正:Pin Bar、MACD 背离标注和 MACD 数值改标为「服务端算法自动计算」,只有方向判断、情景推演、入场计划是 AI 分析结论。\n\n",
+      "published_at": "2026-07-23T07:07:05Z",
+      "prerelease": false,
+      "draft": false,
+      "assets": [
+        {
+          "name": "Kansoku-0.24.1-arm64.dmg",
+          "browser_download_url": "https://github.com/kansoku-trade/kansoku/releases/download/desktop-v0.24.1/Kansoku-0.24.1-arm64.dmg"
+        }
+      ]
+    },
+    {
+      "tag_name": "desktop-v0.24.0",
+      "body": "\n- K 线周期不再只有 5m / 15m / 1h：周期切换旁边的齿轮里可以打开 1m、30m、日线、周线、月线。新开的这些是看图用的，切过去现拉现算，不写进分析存档，也不参与 AI 的多周期判断——5m / 15m / 1h 仍是固定的分析周期，撤不掉\n- 均线可以自己配了：点顶部的「均线」能改周期、改颜色、单条显示隐藏，最多 5 条，改完图上立刻重画。这只影响图上画的线，AI 判断和形态打分仍走原来固定的那组\n- 图表顶部控件重排：周期切换、均线、图层收进同一条控制条，跟下方的图表区和右侧面板对齐分成左右两半；原来压在 K 线上的图层浮层挪走了，AI 提醒也从长条收成一个小图标，鼠标移上去看全文\n- 图层列表现在会显示每层检测到的数量（比如「123 结构 · 3」），空图层和渲染失败一眼能分清\n- 设置页新增 Agent Kit：把一套命令行工具和配置装到本机指定目录，Claude Code 这类 agent 就能直接读本应用的数据；位置可以跟随数据目录，也可以自己挑一个\n- 新增 kansoku:// 链接：agent 生成的图表链接可以直接点开跳进应用对应页面，不用再依赖本地开发服务器\n- AI 活动界面细化：分析进行中的每一步、对话里调用了什么工具，显示得更清楚\n- 修复 Pro 的形态标注图层在部分情况下不显示\n\n",
+      "published_at": "2026-07-22T18:37:19Z",
+      "prerelease": false,
+      "draft": false,
+      "assets": [
+        {
+          "name": "Kansoku-0.24.0-arm64.dmg",
+          "browser_download_url": "https://github.com/kansoku-trade/kansoku/releases/download/desktop-v0.24.0/Kansoku-0.24.0-arm64.dmg"
+        }
+      ]
+    },
+    {
+      "tag_name": "desktop-v0.23.0",
+      "body": "\n- 短线预测图新增缠论标注：自动识别分型、笔、线段、中枢（价格反复争夺的重叠区间），并标出一、二、三类买卖点。在图层面板里是两组独立开关，想看哪层勾哪层\n- FVG（价格跳空缺口）标注会跟着行情变化了：被价格回补掉的部分自动收窄，只画还没填完的那段；缺口越旧颜色越淡，鼠标悬停可看回补比例、形成至今多少根 K 线、当前价在不在缺口里\n- 桌面版第一个标签页固定成「盘面」：只显示一个图标，关不掉也拖不走；在盘面里点开个股会自动新开标签，不会把盘面顶掉。只剩这一个标签时按 ⌘W 仍然是关窗口，⌘T 改成直接弹出新建标签的选单\n- 个股页的事件风险改成按天分组：同一天的财报和宏观数据归在一起，不再是一长条平铺列表\n- 首页左右两栏各自滚动，长列表不再把整页撑长；有持仓时持仓排在事件日历上面；市场全景的方块换成正式的悬停提示，不再是系统默认的小黄条\n- 修复实时图丢失盘前盘后阴影的问题：图表每 60 秒自动刷新后，盘前/盘后时段的底色不会再消失\n- 启动时的骨架屏改成与首页真实布局一致，加载完成时不再跳一下\n\n",
+      "published_at": "2026-07-22T16:42:42Z",
+      "prerelease": false,
+      "draft": false,
+      "assets": [
+        {
+          "name": "Kansoku-0.23.0-arm64.dmg",
+          "browser_download_url": "https://github.com/kansoku-trade/kansoku/releases/download/desktop-v0.23.0/Kansoku-0.23.0-arm64.dmg"
+        }
+      ]
+    },
+    {
+      "tag_name": "desktop-v0.22.0",
+      "body": "\n- 首页「市场全景」改成方块面积图：自选/持仓和全市场两个视图都能看，块越大代表体量越大（自选持仓按市值算，全市场按板块涨跌幅算），颜色深浅代表涨跌方向和力度\n- 事件日历从一条时间线换成月历 + 未来 7 天列表：财报和宏观数据用不同颜色的点区分，自己持仓的财报会加重点标出，今天会高亮，点某一天还能只看那天的事件\n- 顶部状态条整合成一行：大盘指数新增道琼斯（.DJI），和市场温度合并显示；复盘板从侧边栏改成点一下弹窗查看，页面更清爽\n\n",
+      "published_at": "2026-07-22T07:54:25Z",
+      "prerelease": false,
+      "draft": false,
+      "assets": [
+        {
+          "name": "Kansoku-0.22.0-arm64.dmg",
+          "browser_download_url": "https://github.com/kansoku-trade/kansoku/releases/download/desktop-v0.22.0/Kansoku-0.22.0-arm64.dmg"
+        }
+      ]
+    },
+    {
+      "tag_name": "desktop-v0.21.0",
+      "body": "\n- 打开个股页默认直接进实时盘面：有最新分析报告时自动叠加显示在图上，不再先落到静态分析页\n- 高级 K 线标注（自动形态识别、期权墙位置）纳入 Pro：免费版图表保留基础标注，付费解锁后自动出现\n- 修复两个分析相关的小问题：图表实时刷新偶尔建立不起来（要重开页面才恢复），以及代码相近的股票（如 DRAM 与 DRAM 期权）可能查到彼此的分析\n- 个股页加载中不再是一行文字，换成与实际布局一致的骨架屏，减少闪动\n- 前端按页面拆分加载：首屏只加载当前页面的代码，打开应用和切换页面更快\n\n",
+      "published_at": "2026-07-21T08:40:43Z",
+      "prerelease": false,
+      "draft": false,
+      "assets": [
+        {
+          "name": "Kansoku-0.21.0-arm64.dmg",
+          "browser_download_url": "https://github.com/kansoku-trade/kansoku/releases/download/desktop-v0.21.0/Kansoku-0.21.0-arm64.dmg"
+        }
+      ]
+    },
+    {
+      "tag_name": "desktop-v0.20.0",
+      "body": "\n- 修复 0.19.2 打包版本里部分付费页面打不开的问题：安装包内网页资源的路径少算了一层，导致付费界面的部分模块加载失败\n- 修复从旧版本升级后打开「设置」页直接崩溃的问题：本地缓存的 AI 模型配置比新版少一项，现在会自动补齐缺失项\n- 短线预测图新增「二次突破（SB）」结构标注：第一次冲高/破低失败、第二次再攻的位置会直接画在图上，各周期的技术要点里也会写明确认价和触发时间\n- 图层面板改版：原来 13 个勾选框换成「精简 / 标准 / 全部」三档预设，想自己调的话展开自定义即可；标注还能在「只看最近 / 看全部」之间切换，切换时不再重新拉数据，反应更快\n- 主图和下方 MACD 图的十字光标联动：鼠标在任一张图上移动，另一张会同步定位到同一时刻，对齐价格和指标不用再靠眼估\n- AI 设置新增「记忆整理」这个模型角色，可以单独给它挑模型，不再跟着其他角色走\n\n",
+      "published_at": "2026-07-20T18:12:20Z",
+      "prerelease": false,
+      "draft": false,
+      "assets": [
+        {
+          "name": "Kansoku-0.20.0-arm64.dmg",
+          "browser_download_url": "https://github.com/kansoku-trade/kansoku/releases/download/desktop-v0.20.0/Kansoku-0.20.0-arm64.dmg"
+        }
+      ]
+    },
+    {
+      "tag_name": "desktop-v0.19.2",
+      "body": "\n- 安装包大幅瘦身：应用核心从 46MB 压缩到约 10MB，下载和自动更新明显更快，启动加载的文件也更少\n- 打包方式重构为单一构建，主程序与付费模块共用同一套运行时，消除了一类「打包后模块找不到、付费功能加载失败」的隐患，并在构建阶段加了防泄漏校验\n\n",
+      "published_at": "2026-07-19T15:42:28Z",
+      "prerelease": false,
+      "draft": false,
+      "assets": [
+        {
+          "name": "Kansoku-0.19.2-arm64.dmg",
+          "browser_download_url": "https://github.com/kansoku-trade/kansoku/releases/download/desktop-v0.19.2/Kansoku-0.19.2-arm64.dmg"
+        }
+      ]
+    },
+    {
+      "tag_name": "desktop-v0.19.0",
+      "body": "\n- 激活体验补完：输入授权码激活成功后，应用会弹窗提示付费功能已解锁并一键重启，不再需要手动退出重开；后台校验拿到解锁凭证时同样会提示重启\n- 修复部分已发布版本激活授权时请求失败的问题（授权服务端已修复，旧版本无需升级也已恢复正常）\n- AI 输出语言口径统一：各 AI 功能（复评、对话、深度研究等）的回复语言更一致，减少中英混杂\n\n",
+      "published_at": "2026-07-19T08:18:09Z",
+      "prerelease": false,
+      "draft": false,
+      "assets": [
+        {
+          "name": "Kansoku-0.19.0-arm64.dmg",
+          "browser_download_url": "https://github.com/kansoku-trade/kansoku/releases/download/desktop-v0.19.0/Kansoku-0.19.0-arm64.dmg"
+        }
+      ]
+    },
+    {
+      "tag_name": "desktop-v0.18.0",
+      "body": "\n- 订阅组件改为加密交付：安装包内不再携带可直接运行的付费代码，激活授权后才会解锁装载，防破解能力显著增强；已订阅用户的功能和数据完全不受影响\n- 激活流程更新：输入授权码激活成功后需要重启一次应用，付费功能才会生效——界面会明确提示「重启后生效」，不会再出现激活了却不知道为什么没解锁的情况\n- 授权激活与校验改走自建的授权服务（kansoku-portal.innei.dev），不再从应用直连支付平台，激活更稳定、重试更友好\n- 付费功能的锁定提示进一步细化：能区分「本构建不含付费组件」和「已含付费组件、激活/重启后可用」两种情况，提示语各自准确\n\n",
+      "published_at": "2026-07-19T05:27:14Z",
+      "prerelease": false,
+      "draft": false,
+      "assets": [
+        {
+          "name": "Kansoku-0.18.0-arm64.dmg",
+          "browser_download_url": "https://github.com/kansoku-trade/kansoku/releases/download/desktop-v0.18.0/Kansoku-0.18.0-arm64.dmg"
+        }
+      ]
+    },
+    {
+      "tag_name": "desktop-v0.17.3",
+      "body": "\n- 修复应用内更新安装:此前点「Install Update」后可能出现窗口关闭却没有安装、也不重启的情况,需要手动重开应用才装上;现在一次点击即可完成\"退出 → 安装 → 自动重启\"\n- 提示:从 0.17.2 升到本版时旧问题还会出现最后一次——如果点安装后应用没有自动重启,手动重新打开即可完成升级\n\n",
+      "published_at": "2026-07-18T15:11:19Z",
+      "prerelease": false,
+      "draft": false,
+      "assets": [
+        {
+          "name": "Kansoku-0.17.3-arm64.dmg",
+          "browser_download_url": "https://github.com/kansoku-trade/kansoku/releases/download/desktop-v0.17.3/Kansoku-0.17.3-arm64.dmg"
+        }
+      ]
+    },
+    {
+      "tag_name": "desktop-v0.17.2",
+      "body": "\n- 订阅新增 7 天免费试用：付费墙和设置页可以直接开启试用，试用期内三项进阶功能（个股自动跟踪、深度研究、研究库 AI）全部可用\n- 新增订阅年付入口，付费墙里可以直接选择按年订阅\n- 试用入口更好找了：新手引导第四步、首页图标、设置页都能进入试用/订阅\n- 修复 AI 自动跟进的授权判断：未订阅时不再能开启自动跟进（此前个别入口可以绕过），已开启的跟进在授权过期后仍然可以正常关闭\n- 付费功能的锁定提示更准确：按具体功能显示\"未解锁 / 试用中 / 已解锁\"状态，不再一刀切\n- 应用更新机制底层重构（更新方式和体验不变）\n\n",
+      "published_at": "2026-07-18T14:08:13Z",
+      "prerelease": false,
+      "draft": false,
+      "assets": [
+        {
+          "name": "Kansoku-0.17.2-arm64.dmg",
+          "browser_download_url": "https://github.com/kansoku-trade/kansoku/releases/download/desktop-v0.17.2/Kansoku-0.17.2-arm64.dmg"
+        }
+      ]
+    },
+    {
+      "tag_name": "desktop-v0.17.1",
+      "body": "\n- 补发 0.17.0：上一版因发布流程故障没有推送成功，本版包含 0.17.0 的全部更新——免费版开放基础 AI（配置自己的 API key 即可使用个股复评、图表对话、AI 助手、宏观事件过滤、研究库浏览），订阅范围收窄为个股自动跟踪、深度研究、研究库 AI 三项进阶功能，详见下方 0.17.0 一节\n- 修复了导致上一版发布失败的流程问题，更新推送恢复正常\n\n",
+      "published_at": "2026-07-18T10:35:44Z",
+      "prerelease": false,
+      "draft": false,
+      "assets": [
+        {
+          "name": "Kansoku-0.17.1-arm64.dmg",
+          "browser_download_url": "https://github.com/kansoku-trade/kansoku/releases/download/desktop-v0.17.1/Kansoku-0.17.1-arm64.dmg"
+        }
+      ]
+    },
+    {
+      "tag_name": "desktop-v0.16.0",
+      "body": "\n- AI 对话回复改为平滑打字输出：文字按稳定节奏逐字出现，不再一坨一坨蹦；带核验关卡的回答也会以打字节奏回放，不再是干等后整段砸出\n- 回复中的 Markdown 边流边渲染更稳：半截的代码块、表格、加粗不再引起样式闪烁和内容跳动\n- 消息发出后立即显示「思考中」的动态圆点占位，AI 组织答案的空窗期不再毫无反馈\n- 对话滚动更跟手：输出时不再被重排拽着跳；往上翻看历史时不会被拉回底部，右下角出现「回到底部」按钮一键跟上\n- 新增「关于」窗口，可查看版本与开源许可信息\n\n",
+      "published_at": "2026-07-16T17:42:29Z",
+      "prerelease": false,
+      "draft": false,
+      "assets": [
+        {
+          "name": "Kansoku-0.16.0-arm64.dmg",
+          "browser_download_url": "https://github.com/kansoku-trade/kansoku/releases/download/desktop-v0.16.0/Kansoku-0.16.0-arm64.dmg"
+        }
+      ]
+    },
+    {
+      "tag_name": "desktop-v0.15.1",
+      "body": "\n- 修复标签页上「分析进行中 / 未读」状态点在断线重连后可能漏标或残留的问题；点开对应标的后未读点会正确消失\n- 修复桌面端内部实时连接在握手超时或重连时可能卡住不恢复的问题，连接更稳定\n- LobeHub 登录无需再手动配置应用 ID，默认开箱可用\n\n",
+      "published_at": "2026-07-16T15:08:52Z",
+      "prerelease": false,
+      "draft": false,
+      "assets": [
+        {
+          "name": "Kansoku-0.15.1-arm64.dmg",
+          "browser_download_url": "https://github.com/kansoku-trade/kansoku/releases/download/desktop-v0.15.1/Kansoku-0.15.1-arm64.dmg"
+        }
+      ]
+    },
+    {
+      "tag_name": "desktop-v0.15.0",
+      "body": "\n- 标签页图标新增分析状态点：AI 分析进行中时右下角显示闪烁的点，分析完成还没查看时右上角显示提示点，切到该标签即清除\n- 分析状态改为实时推送，不再定时轮询，断线重连后运行中/未读状态会自动对齐，不会残留过期状态\n- 修复打包版 app 里 AI 分析找不到 longbridge 命令导致查询失败的问题\n\n",
+      "published_at": "2026-07-16T13:56:11Z",
+      "prerelease": false,
+      "draft": false,
+      "assets": [
+        {
+          "name": "Kansoku-0.15.0-arm64.dmg",
+          "browser_download_url": "https://github.com/kansoku-trade/kansoku/releases/download/desktop-v0.15.0/Kansoku-0.15.0-arm64.dmg"
+        }
+      ]
+    },
+    {
+      "tag_name": "desktop-v0.14.0",
+      "body": "\n- 短线预测结论过时后（隔天或走势已变），结论卡片上可直接点「重新分析」让 AI 重估，不用再手动发起\n- AI 追问输入区与浮动对话面板改为圆角设计，发送按钮贴合窗口圆角，界面统一了圆角规范\n- 行情连接数被占满时不再反复重试把故障拖长：进入约 5 分钟冷却期并明确提示等待恢复\n- 资金流向、资金分布和股票名称改走常驻行情连接，减少「连接数超限」报错\n\n",
+      "published_at": "2026-07-16T09:55:55Z",
+      "prerelease": false,
+      "draft": false,
+      "assets": [
+        {
+          "name": "Kansoku-0.14.0-arm64.dmg",
+          "browser_download_url": "https://github.com/kansoku-trade/kansoku/releases/download/desktop-v0.14.0/Kansoku-0.14.0-arm64.dmg"
+        }
+      ]
+    },
+    {
+      "tag_name": "desktop-v0.13.0",
+      "body": "\n- 支持多窗口：标签页可拖到新窗口或通过右键菜单「在新窗口打开」，各窗口标签实时同步，重启后恢复上次的窗口布局\n- 新增图表弹出小窗：任意股票图表可弹出为独立迷你窗口，方便盯盘时挂在一旁，标题栏可拖动\n- AI 对话全面接入研究工具：普通对话、图表页对话和深度研究现在都能查行情、跨标的对比并调用仓库里的分析技能\n- 修复多窗口下标签栏抖动和标签标题闪烁的问题\n\n",
+      "published_at": "2026-07-15T18:36:08Z",
+      "prerelease": false,
+      "draft": false,
+      "assets": [
+        {
+          "name": "Kansoku-0.13.0-arm64.dmg",
+          "browser_download_url": "https://github.com/kansoku-trade/kansoku/releases/download/desktop-v0.13.0/Kansoku-0.13.0-arm64.dmg"
+        }
+      ]
+    },
+    {
+      "tag_name": "desktop-v0.12.0",
+      "body": "\n- 页面秒开：打开或切换页面时立即显示上次的数据并标注数据时间，新数据到达后自动刷新，不再等待空白加载\n- 行情数据改走常驻连接拉取，K 线与报价刷新更快，也不再因为「连接数超限」间歇性拉取失败\n- 修复盘前/盘后涨跌幅偶尔卡在 +0.00% 的问题：昨收价拉取失败时会显示「—」并自动重试补齐，不再把未知当成没涨没跌\n- 行情拉取失败时日志会记录具体原因，便于排查\n\n",
+      "published_at": "2026-07-15T13:40:48Z",
+      "prerelease": false,
+      "draft": false,
+      "assets": [
+        {
+          "name": "Kansoku-0.12.0-arm64.dmg",
+          "browser_download_url": "https://github.com/kansoku-trade/kansoku/releases/download/desktop-v0.12.0/Kansoku-0.12.0-arm64.dmg"
+        }
+      ]
+    },
+    {
+      "tag_name": "desktop-v0.11.0",
+      "body": "\n- 新增独立 AI 助手页：支持多会话、消息排队与用量展示，输入区可通过 `@` 引用研究资料并随时移除\n- 新增港股与 A 股市场支持：行情、图表和交易时段按市场自动适配，页面会显示美东、香港或北京时间\n- 设置中可配置关注的美股、港股和 A 股市场，AI 分析会自动遵循当前市场范围\n- 新增同花顺 A 股专项数据：支持涨停原因、连板梯队、龙虎榜、异动、热榜与财务数据等研究能力\n- 重构桌面导航与对话输入区：新建标签可直接打开股票、AI 对话或研究库，全局功能统一迁移至原生菜单与桌面标题栏\n\n",
+      "published_at": "2026-07-15T11:42:20Z",
+      "prerelease": false,
+      "draft": false,
+      "assets": [
+        {
+          "name": "Kansoku-0.11.0-arm64.dmg",
+          "browser_download_url": "https://github.com/kansoku-trade/kansoku/releases/download/desktop-v0.11.0/Kansoku-0.11.0-arm64.dmg"
+        }
+      ]
+    },
+    {
+      "tag_name": "desktop-v0.10.0",
+      "body": "\n- 研究文档内新增 AI 助手：可在文档里直接对话；助手能提议改稿（采纳 / 拒绝 / 撤销），也能按信源刷新研究内容\n- 研究助手面板合并为一条对话时间线：刷新结果、改稿提议、相关材料、历史记录都在同一处查看\n- 首页日期切换改为时间线，翻历史交易日更直观\n- 修复打包版缺少第三方 skills 的问题，安装后相关能力可正常使用\n\n",
+      "published_at": "2026-07-14T17:50:02Z",
+      "prerelease": false,
+      "draft": false,
+      "assets": [
+        {
+          "name": "Kansoku-0.10.0-arm64.dmg",
+          "browser_download_url": "https://github.com/kansoku-trade/kansoku/releases/download/desktop-v0.10.0/Kansoku-0.10.0-arm64.dmg"
+        }
+      ]
+    },
+    {
+      "tag_name": "desktop-v0.9.0",
+      "body": "\n- AI 点评支持按股票持续跟进：可在图表右侧或首页看盘卡片直接开启、停止；关闭图表后仍会在后台运行并发送通知，重新开启过期跟进时会立即补一次巡检\n- 桌面版 ⌘K 命令面板只在应用内启用，选择股票或页面后会在新标签页打开，不再覆盖当前标签\n- 鼠标悬停链接时，窗口左下角会显示即将打开的地址，跳转目标更容易确认\n- 修复实时 K 线偶发缺口，断流后会自动补齐遗漏区间\n- 优化研究日志弹窗与文内导航，长内容滚动和页面跳转更加稳定\n\n",
+      "published_at": "2026-07-14T16:06:18Z",
+      "prerelease": false,
+      "draft": false,
+      "assets": [
+        {
+          "name": "Kansoku-0.9.0-arm64.dmg",
+          "browser_download_url": "https://github.com/kansoku-trade/kansoku/releases/download/desktop-v0.9.0/Kansoku-0.9.0-arm64.dmg"
+        }
+      ]
+    },
+    {
+      "tag_name": "desktop-v0.8.0",
+      "body": "\n- 图表画线大升级：新增多段线工具（连续点击接段、双击结束）；画线可改颜色、粗细、虚线，趋势线和多段线还能加方向箭头\n- 画笔预设：选中画线工具后先在面板里调好样式（比如先开箭头），之后画的每条线都自动带上；工具和预设在页面刷新前都会记住，不再画着画着自己弹回「选择」\n- AI 追问能读图也能画图：问「我画的这条线还有效吗」它会先看你的线再结合实时行情判断；让它标关键价位时会直接画到图上（紫色虚线、悬停看它写的说明），工具条上可一键只清 AI 画的线\n- 画线多窗口实时同步：同一只票开两个窗口，一边画、另一边立刻出现\n- 新增「资料」页：直接在应用里翻看和搜索仓库中的股票笔记与交易日志，支持列表/正文分栏拖动\n\n",
+      "published_at": "2026-07-14T12:39:58Z",
+      "prerelease": false,
+      "draft": false,
+      "assets": [
+        {
+          "name": "Kansoku-0.8.0-arm64.dmg",
+          "browser_download_url": "https://github.com/kansoku-trade/kansoku/releases/download/desktop-v0.8.0/Kansoku-0.8.0-arm64.dmg"
+        }
+      ]
+    },
+    {
+      "tag_name": "desktop-v0.7.0",
+      "body": "\n- 图表页支持实时视图：页面打开时图表会跟着行情自动刷新，顶栏和盘中侧栏的报价也实时跳动\n- 追问面板改成浮层：可拖动、缩放、全屏，不再挡住正在看的分析；新增停止生成、工具调用详情展开，以及三条针对分析薄弱处的开场提问建议\n- 新增时间显示偏好：设置里可切换「美东时间 / 本地时间」\n- 图表现在显示股票的中文名称\n- 设置页重新分栏整理，Markdown 排版、滚动区域和面板动效统一了样式\n- 修复：切标签页后 AI 分析进度丢失、分析状态与路由跳转不稳定、导入仓库后图表列表不刷新\n\n",
+      "published_at": "2026-07-13T19:16:53Z",
+      "prerelease": false,
+      "draft": false,
+      "assets": [
+        {
+          "name": "Kansoku-0.7.0-arm64.dmg",
+          "browser_download_url": "https://github.com/kansoku-trade/kansoku/releases/download/desktop-v0.7.0/Kansoku-0.7.0-arm64.dmg"
+        }
+      ]
+    }
+  ]
+}

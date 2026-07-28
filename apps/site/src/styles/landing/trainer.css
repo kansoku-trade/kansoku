@@ -1,0 +1,259 @@
+.trainer-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 38px;
+  padding: 0 12px;
+  border-bottom: 1px solid #1c1e23;
+  background: #101116;
+  flex: none;
+  white-space: nowrap;
+}
+
+.trainer-title {
+  font-weight: 600;
+  font-size: 12.5px;
+}
+
+.trainer-meta {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.trainer-meta b {
+  font-weight: 500;
+  color: var(--text-2);
+}
+
+.trainer-mask {
+  color: #4a4d55;
+  letter-spacing: 0.08em;
+}
+
+.trainer-period {
+  display: flex;
+  gap: 2px;
+  background: #181a1f;
+  padding: 2px;
+}
+
+.trainer-period button {
+  border: 0;
+  background: transparent;
+  color: var(--text-3);
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 3px 9px;
+  cursor: pointer;
+}
+
+.trainer-period button[aria-pressed='true'] {
+  background: #2a2d34;
+  color: #f0f0f0;
+}
+
+.trainer-body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+.trainer-panes {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.trainer-pane-main {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+
+.trainer-ahead {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  background: rgba(255, 176, 0, 0.045);
+  pointer-events: none;
+}
+
+.trainer-divider {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 3;
+  border-left: 1px dashed rgba(255, 176, 0, 0.75);
+  pointer-events: none;
+}
+
+.trainer-divider span {
+  position: absolute;
+  bottom: 34px;
+  left: 7px;
+  white-space: nowrap;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--accent);
+  background: rgba(12, 13, 16, 0.92);
+  border: 1px solid rgba(255, 176, 0, 0.45);
+  padding: 2px 7px;
+}
+
+.trainer-rail {
+  position: absolute;
+  left: 9px;
+  top: 9px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: rgba(14, 15, 19, 0.92);
+  border: 1px solid #24262c;
+  padding: 4px;
+}
+
+.trainer-rail-tool {
+  width: 24px;
+  height: 24px;
+  border: 0;
+  background: transparent;
+  color: var(--text-3);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.trainer-rail-tool:hover {
+  color: #d0d0d0;
+}
+
+.trainer-rail-tool[data-active='true'] {
+  background: rgba(255, 176, 0, 0.14);
+  color: var(--accent);
+}
+
+.trainer-rail-sep {
+  width: 16px;
+  height: 1px;
+  background: #24262c;
+  margin: 3px auto;
+}
+
+.trainer-stack {
+  position: absolute;
+  right: 96px;
+  top: 12px;
+  z-index: 2;
+  display: grid;
+  gap: 5px;
+  justify-items: end;
+  pointer-events: none;
+}
+
+.trainer-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  background: rgba(14, 15, 19, 0.92);
+  border: 1px solid #24262c;
+  padding: 4px 9px;
+  color: var(--text-2);
+}
+
+.trainer-chip--dim {
+  color: var(--text-3);
+  border-color: #1c1e23;
+}
+
+.trainer-chip-long {
+  color: var(--up);
+  font-weight: 600;
+}
+
+.trainer-lane {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 11px;
+  border-top: 1px solid #1c1e23;
+  background: #0e0f13;
+  flex: none;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.trainer-lane-group {
+  display: flex;
+  gap: 3px;
+}
+
+.trainer-lane-sep {
+  width: 1px;
+  height: 16px;
+  background: #24262c;
+}
+
+.trainer-lane-spacer {
+  flex: 1;
+}
+
+.trainer-lane-label {
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.trainer-lane-hint {
+  font-size: 10.5px;
+  color: var(--text-3);
+}
+
+.trainer-lane-num {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-2);
+}
+
+.trainer-lane-num b {
+  font-weight: 600;
+}
+
+.trainer-lane-num b[data-tone='up'] {
+  color: var(--up);
+}
+
+.trainer-lane-num b[data-tone='down'] {
+  color: var(--down);
+}
+
+.trainer-lane-dim {
+  color: var(--text-3);
+  font-size: 10px;
+}
+
+.trainer-lane-num--stop {
+  color: var(--down);
+}
+
+.trainer-lane-num--target {
+  color: var(--up);
+}
+
+.trainer-lane-num--rr {
+  color: var(--accent);
+}
+
+@media (max-width: 1080px) {
+  .trainer-stack {
+    display: none;
+  }
+}

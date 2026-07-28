@@ -48,6 +48,29 @@
   margin-bottom: 18px;
 }
 
+.hero-free {
+  font-size: 12.5px;
+  line-height: 1.75;
+  color: var(--text-2);
+  max-width: 520px;
+  margin: 0 0 10px;
+}
+
+.hero-free b {
+  color: var(--up);
+  font-weight: 600;
+}
+
+.hero-pro-link {
+  color: var(--text-3);
+  white-space: nowrap;
+  margin-left: 6px;
+}
+
+.hero-pro-link:hover {
+  color: var(--accent);
+}
+
 .hero-note {
   font-family: var(--mono);
   font-size: 11px;

@@ -2,13 +2,10 @@
 import features from '../data/features.json';
 import Base from '../layouts/Base.astro';
 import { subscription } from '../lib/pricing';
-import { dmgAsset, fetchDesktopReleases, releaseVersion } from '../lib/releases';
+import { latestDesktop } from '../lib/releases';
 
-const releases = await fetchDesktopReleases();
-const latest = releases[0]!;
-const version = releaseVersion(latest);
-const dmg = dmgAsset(latest);
-if (!dmg) throw new Error(`release ${latest.tag_name} has no dmg asset`);
+const latest = await latestDesktop();
+const version = latest.version;
 
 const monthlyAmount = subscription.priceLabel.split(' / ')[0];
 const yearlyAmount = subscription.yearly.priceLabel.split(' / ')[0];
@@ -19,7 +16,7 @@ const matrix = [
     rows: section.items.map((cap) => ({ cap, free: true })),
   })),
   {
-    group: '自动化研究（pro）',
+    group: 'Pro 能力',
     rows: features.pro.map((f) => ({ cap: f.matrix, free: false })),
   },
 ];
@@ -66,7 +63,7 @@ const faq = [
       </div>
       <div class="t-total"><span>total</span><b>$0</b></div>
       <div class="t-cta">
-        <a class="btn btn-ghost" href={dmg.browser_download_url}>↓ 下载 v{version}</a>
+        <a class="btn btn-ghost" href={latest.downloadUrl}>↓ 下载 v{version}</a>
       </div>
     </div>
 

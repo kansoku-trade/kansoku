@@ -1,4 +1,5 @@
 export interface Candle {
+  time: number;
   open: number;
   close: number;
   high: number;
@@ -10,7 +11,11 @@ export interface KlineOptions {
   seed?: number;
   start?: number;
   volatility?: number;
+  startTime?: number;
+  intervalSeconds?: number;
 }
+
+export const DEFAULT_START_TIME = 1_785_240_000;
 
 const mulberry32 = (seed: number) => {
   let state = seed;
@@ -28,6 +33,9 @@ export const buildCandles = (count: number, options?: KlineOptions): Candle[] =>
   const volatility = options?.volatility ?? 3.2;
   const random = mulberry32(seed);
 
+  const startTime = options?.startTime ?? DEFAULT_START_TIME;
+  const intervalSeconds = options?.intervalSeconds ?? 900;
+
   const candles: Candle[] = [];
   let open = start;
   for (let i = 0; i < count; i++) {
@@ -36,7 +44,14 @@ export const buildCandles = (count: number, options?: KlineOptions): Candle[] =>
     const bodyBottom = Math.min(open, close);
     const high = bodyTop + random() * volatility * 0.5;
     const low = bodyBottom - random() * volatility * 0.5;
-    candles.push({ open, close, high, low, up: close >= open });
+    candles.push({
+      time: startTime + i * intervalSeconds,
+      open,
+      close,
+      high,
+      low,
+      up: close >= open,
+    });
     open = close;
   }
   return candles;

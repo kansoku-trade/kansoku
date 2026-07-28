@@ -1,311 +1,333 @@
-import { buildCandles, type Candle } from '../kline';
-import { deriveLevels, ema, macd, type PriceLevel } from './indicators';
-
-const UP = '#26a69a';
-const DOWN = '#ef5350';
-const AMBER = '#ffb000';
-const EMA_COLORS = ['#e3c14a', '#b18cf0', '#c9c9c9'];
-const EMA_PERIODS = [9, 21, 55];
-
-const AXIS_WIDTH = 62;
-const MACD_HEIGHT = 132;
-const VOLUME_HEIGHT = 74;
-const TIME_HEIGHT = 22;
-const PREMARKET_FRACTION = 0.42;
+import type { CandlestickData, MouseEventParams } from 'lightweight-charts';
+import type { Candle } from '../kline';
+import { detect123, detectCandlePatterns, detectDivergence } from './annotations';
+import { snapshot, toCandles, volumesOf } from './snapshot';
+import { mountDrawings, type DrawingsApi } from './drawings';
+import { ema, macd, type PriceLevel } from './indicators';
+import { buildMarks, markCount, type Detected } from './marks';
+import { EMA_COLORS, EMA_PERIODS, theme } from './theme';
+import {
+  TRAINER_DIVIDER,
+  TRAINER_START_CURSOR,
+  trainerCandles,
+  trainerVolumes,
+  trainerPlan,
+  type TrainerPlan,
+} from './trainerPlan';
 
 export interface ReplicaChart {
   setTimeframe: (timeframe: string) => void;
+  advance: () => number;
+  cursor: () => number;
+  drawings: DrawingsApi;
   destroy: () => void;
 }
 
-interface Series {
+export type ReplicaVariant = 'chart' | 'trainer';
+
+export interface ReplicaChartOptions {
+  variant?: ReplicaVariant;
+}
+
+interface Series extends Detected {
   candles: Candle[];
   emas: Array<Array<number | null>>;
   macd: ReturnType<typeof macd>;
   levels: PriceLevel[];
+  volumes: number[];
 }
 
-const TIMEFRAME_SEEDS: Record<string, { seed: number; volatility: number }> = {
-  '5m': { seed: 424242, volatility: 1.5 },
-  '15m': { seed: 20260714, volatility: 2.4 },
-  '1h': { seed: 991127, volatility: 4.1 },
-};
-
-const buildSeries = (timeframe: string, count: number): Series => {
-  const config = TIMEFRAME_SEEDS[timeframe] ?? TIMEFRAME_SEEDS['15m'];
-  const candles = buildCandles(count, {
-    seed: config.seed,
-    start: 930,
-    volatility: config.volatility,
-  });
+const analyse = (candles: Candle[], volumes: number[], variant: ReplicaVariant): Series => {
   const closes = candles.map((candle) => candle.close);
+  const macdResult = macd(closes);
+  const trainer = variant === 'trainer';
   return {
     candles,
     emas: EMA_PERIODS.map((period) => ema(closes, period)),
-    macd: macd(closes),
-    levels: deriveLevels(candles),
+    macd: macdResult,
+    // A blind case hands over price action and nothing else; prior-session levels would
+    // hand back exactly the context the exercise removes.
+    levels: trainer ? [] : snapshot.chart.levels,
+    volumes,
+    structure: detect123(candles),
+    patterns: detectCandlePatterns(candles, trainer ? 2 : 3),
+    divergence: detectDivergence(candles, macdResult.dif),
   };
 };
 
-export const mountReplicaChart = (root: HTMLElement): ReplicaChart | null => {
-  const canvas = root.querySelector<HTMLCanvasElement>('[data-replica-canvas]');
-  const legend = root.querySelector<HTMLElement>('[data-replica-legend]');
-  if (!canvas) return null;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return null;
+const buildSeries = (timeframe: string): Series => {
+  const bars = snapshot.chart.timeframes[timeframe] ?? snapshot.chart.timeframes['15m'];
+  return analyse(toCandles(bars), volumesOf(bars), 'chart');
+};
 
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  let width = 0;
-  let height = 0;
-  let series = buildSeries('15m', 96);
-  let hoverX = -1;
-  let rafId = 0;
-  let dirty = true;
+const LEVEL_STYLE: Record<PriceLevel['tone'], { color: string; lineStyle: number }> = {
+  pre: { color: 'rgba(190, 190, 190, 0.5)', lineStyle: 2 },
+  prev: { color: 'rgba(190, 190, 190, 0.5)', lineStyle: 2 },
+  anchor: { color: theme.accent, lineStyle: 2 },
+};
 
-  const layout = (): void => {
-    const rect = canvas.getBoundingClientRect();
-    width = rect.width;
-    height = rect.height;
-    canvas.width = Math.max(1, Math.round(width * dpr));
-    canvas.height = Math.max(1, Math.round(height * dpr));
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    dirty = true;
-  };
+export const mountReplicaChart = async (
+  root: HTMLElement,
+  options?: ReplicaChartOptions,
+): Promise<ReplicaChart | null> => {
+  const variant = options?.variant ?? 'chart';
+  const mainEl = root.querySelector<HTMLElement>('[data-lw-main]');
+  const macdEl = root.querySelector<HTMLElement>('[data-lw-macd]');
+  if (!mainEl || !macdEl) return null;
 
-  const priceArea = () => ({
-    top: 8,
-    bottom: height - MACD_HEIGHT - VOLUME_HEIGHT - TIME_HEIGHT,
+  const [lc, lw] = await Promise.all([import('lightweight-charts'), import('./lw')]);
+
+  const legend = root.querySelector<HTMLElement>(
+    variant === 'trainer' ? '[data-trainer-legend]' : '[data-replica-legend]',
+  );
+  const marksLabel = root.querySelector<HTMLElement>('[data-replica-marks]');
+  const dividerEl = root.querySelector<HTMLElement>('[data-lw-divider]');
+  const aheadEl = root.querySelector<HTMLElement>('[data-lw-ahead]');
+
+  const main = lw.baseChart(mainEl);
+  const macdChart = lw.baseChart(macdEl);
+
+  const candleSeries = main.addSeries(lc.CandlestickSeries, {
+    upColor: theme.up,
+    downColor: theme.down,
+    borderVisible: false,
+    wickUpColor: theme.up,
+    wickDownColor: theme.down,
+  });
+  const candleMarkers = lc.createSeriesMarkers(candleSeries, []);
+  const volumeSeries = main.addSeries(lc.HistogramSeries, {
+    priceFormat: { type: 'volume' },
+    priceScaleId: 'vol',
+    priceLineVisible: false,
+    lastValueVisible: false,
+  });
+  main.priceScale('vol').applyOptions({ scaleMargins: { top: 0.78, bottom: 0 } });
+  main.priceScale('right').applyOptions({ scaleMargins: { top: 0.08, bottom: 0.26 } });
+
+  const emaSeries = EMA_PERIODS.map((_, i) =>
+    main.addSeries(lc.LineSeries, {
+      color: EMA_COLORS[i],
+      lineWidth: 1,
+      priceLineVisible: false,
+      lastValueVisible: false,
+      crosshairMarkerVisible: false,
+    }),
+  );
+
+  const histSeries = macdChart.addSeries(lc.HistogramSeries, {
+    priceLineVisible: false,
+    lastValueVisible: false,
+  });
+  const difSeries = macdChart.addSeries(lc.LineSeries, {
+    color: theme.accent,
+    lineWidth: 1,
+    priceLineVisible: false,
+    lastValueVisible: true,
+  });
+  const deaSeries = macdChart.addSeries(lc.LineSeries, {
+    color: '#c9c9c9',
+    lineWidth: 1,
+    priceLineVisible: false,
+    lastValueVisible: true,
   });
 
-  const draw = (): void => {
-    const plotWidth = width - AXIS_WIDTH;
-    const { top, bottom } = priceArea();
-    const visible = series.candles;
-    const step = plotWidth / visible.length;
-    const bodyWidth = Math.max(2, step * 0.62);
+  const stopTimeScales = lw.syncTimeScales([main, macdChart]);
+  const stopCrosshair = lw.syncCrosshair([
+    { chart: main, series: candleSeries },
+    { chart: macdChart, series: difSeries },
+  ]);
 
-    let high = -Infinity;
-    let low = Infinity;
-    for (const candle of visible) {
-      if (candle.high > high) high = candle.high;
-      if (candle.low < low) low = candle.low;
-    }
-    for (const level of series.levels) {
-      if (level.value > high) high = level.value;
-      if (level.value < low) low = level.value;
-    }
-    const pad = (high - low) * 0.06;
-    high += pad;
-    low -= pad;
-    const yOf = (price: number): number =>
-      bottom - ((price - low) / (high - low)) * (bottom - top);
+  let priceLines: ReturnType<typeof candleSeries.createPriceLine>[] = [];
+  let connectorSeries: Array<{ chart: typeof main; series: ReturnType<typeof main.addSeries> }> =
+    [];
 
-    ctx.clearRect(0, 0, width, height);
-    ctx.fillStyle = '#0c0d10';
-    ctx.fillRect(0, 0, width, height);
+  const clearOverlays = (): void => {
+    for (const line of priceLines) candleSeries.removePriceLine(line);
+    priceLines = [];
+    for (const entry of connectorSeries) entry.chart.removeSeries(entry.series);
+    connectorSeries = [];
+  };
 
-    ctx.fillStyle = 'rgba(58, 96, 168, 0.13)';
-    ctx.fillRect(plotWidth * PREMARKET_FRACTION, 0, plotWidth * (1 - PREMARKET_FRACTION), bottom);
+  const plan: TrainerPlan | null = variant === 'trainer' ? trainerPlan() : null;
 
-    ctx.strokeStyle = 'rgba(255,255,255,0.045)';
-    ctx.lineWidth = 1;
-    for (let i = 1; i < 9; i++) {
-      const y = Math.round(top + ((bottom - top) / 9) * i) + 0.5;
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(plotWidth, y);
-      ctx.stroke();
-    }
+  const apply = (series: Series): void => {
+    const times = series.candles.map((candle) => candle.time);
+    candleSeries.setData(lw.toCandleData(series.candles));
+    volumeSeries.setData(
+      series.candles.map((candle, i) => ({
+        time: lw.asTime(candle.time),
+        value: series.volumes[i],
+        color: candle.up ? 'rgba(38,166,154,0.42)' : 'rgba(239,83,80,0.42)',
+      })),
+    );
+    emaSeries.forEach((line, i) => line.setData(lw.toLineData(times, series.emas[i])));
+    histSeries.setData(
+      series.candles.map((candle, i) => ({
+        time: lw.asTime(candle.time),
+        value: series.macd.hist[i] ?? 0,
+        color: (series.macd.hist[i] ?? 0) >= 0 ? 'rgba(38,166,154,0.75)' : 'rgba(239,83,80,0.75)',
+      })),
+    );
+    difSeries.setData(lw.toLineData(times, series.macd.dif));
+    deaSeries.setData(lw.toLineData(times, series.macd.dea));
 
-    visible.forEach((candle, i) => {
-      const cx = i * step + step / 2;
-      const color = candle.up ? UP : DOWN;
-      ctx.strokeStyle = color;
-      ctx.fillStyle = color;
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(Math.round(cx) + 0.5, yOf(candle.high));
-      ctx.lineTo(Math.round(cx) + 0.5, yOf(candle.low));
-      ctx.stroke();
-      const bodyTop = yOf(Math.max(candle.open, candle.close));
-      const bodyHeight = Math.max(1, Math.abs(yOf(candle.open) - yOf(candle.close)));
-      ctx.fillRect(cx - bodyWidth / 2, bodyTop, bodyWidth, bodyHeight);
-    });
+    clearOverlays();
 
-    series.emas.forEach((line, index) => {
-      ctx.strokeStyle = EMA_COLORS[index];
-      ctx.lineWidth = 1.4;
-      ctx.beginPath();
-      let started = false;
-      line.forEach((value, i) => {
-        if (value === null) return;
-        const cx = i * step + step / 2;
-        const cy = yOf(value);
-        if (started) ctx.lineTo(cx, cy);
-        else {
-          ctx.moveTo(cx, cy);
-          started = true;
-        }
+    const marks = buildMarks(series.candles, series);
+    candleMarkers.setMarkers(
+      marks.markers.map((marker) => ({
+        time: lw.asTime(marker.time),
+        position: marker.position,
+        color: marker.color,
+        shape: marker.shape,
+        text: marker.text,
+      })),
+    );
+    for (const connector of marks.connectors) {
+      const chart = connector.pane === 'macd' ? macdChart : main;
+      const line = chart.addSeries(lc.LineSeries, {
+        color: connector.color,
+        ...lw.CONNECTOR_OPTIONS,
       });
-      ctx.stroke();
-    });
-
-    const volumeTop = bottom + 10;
-    let maxVolume = 0;
-    const volumes = visible.map((candle) => Math.abs(candle.close - candle.open) * 900 + 240);
-    for (const value of volumes) if (value > maxVolume) maxVolume = value;
-    visible.forEach((candle, i) => {
-      const cx = i * step + step / 2;
-      const h = (volumes[i] / maxVolume) * (VOLUME_HEIGHT - 14);
-      ctx.fillStyle = candle.up ? 'rgba(38,166,154,0.62)' : 'rgba(239,83,80,0.62)';
-      ctx.fillRect(cx - bodyWidth / 2, volumeTop + (VOLUME_HEIGHT - 14) - h, bodyWidth, h);
-    });
-
-    const macdTop = volumeTop + VOLUME_HEIGHT;
-    const macdBottom = macdTop + MACD_HEIGHT - 24;
-    let macdMax = 0;
-    for (const value of series.macd.hist) {
-      if (value !== null && Math.abs(value) > macdMax) macdMax = Math.abs(value);
-    }
-    for (const value of series.macd.dif) {
-      if (value !== null && Math.abs(value) > macdMax) macdMax = Math.abs(value);
-    }
-    const macdMid = (macdTop + macdBottom) / 2;
-    const macdScale = (macdBottom - macdTop) / 2 / (macdMax || 1);
-
-    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
-    ctx.beginPath();
-    ctx.moveTo(0, Math.round(macdMid) + 0.5);
-    ctx.lineTo(plotWidth, Math.round(macdMid) + 0.5);
-    ctx.stroke();
-
-    series.macd.hist.forEach((value, i) => {
-      if (value === null) return;
-      const cx = i * step + step / 2;
-      const h = value * macdScale;
-      ctx.fillStyle = value >= 0 ? 'rgba(38,166,154,0.75)' : 'rgba(239,83,80,0.75)';
-      ctx.fillRect(cx - bodyWidth / 2, macdMid - Math.max(0, h), bodyWidth, Math.abs(h));
-    });
-
-    (['dif', 'dea'] as const).forEach((key, index) => {
-      ctx.strokeStyle = index === 0 ? '#e3c14a' : '#c9c9c9';
-      ctx.lineWidth = 1.2;
-      ctx.beginPath();
-      let started = false;
-      series.macd[key].forEach((value, i) => {
-        if (value === null) return;
-        const cx = i * step + step / 2;
-        const cy = macdMid - value * macdScale;
-        if (started) ctx.lineTo(cx, cy);
-        else {
-          ctx.moveTo(cx, cy);
-          started = true;
-        }
-      });
-      ctx.stroke();
-    });
-
-    ctx.font = '10px ui-monospace, Menlo, monospace';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = 'rgba(255,255,255,0.42)';
-    for (let i = 0; i <= 8; i++) {
-      const price = low + ((high - low) / 8) * i;
-      ctx.fillText(price.toFixed(2), plotWidth + 8, yOf(price));
+      line.setData(
+        connector.data.map((point) => ({ time: lw.asTime(point.time), value: point.value })),
+      );
+      connectorSeries.push({ chart, series: line });
     }
 
     for (const level of series.levels) {
-      const y = yOf(level.value);
-      const isLast = level.tone === 'last';
-      const color = isLast ? DOWN : level.tone === 'anchor' ? AMBER : 'rgba(190,190,190,0.85)';
-      ctx.strokeStyle = isLast
-        ? 'rgba(239,83,80,0.7)'
-        : level.tone === 'anchor'
-          ? 'rgba(255,176,0,0.55)'
-          : 'rgba(255,255,255,0.16)';
-      ctx.setLineDash(isLast ? [4, 3] : [2, 4]);
-      ctx.beginPath();
-      ctx.moveTo(0, Math.round(y) + 0.5);
-      ctx.lineTo(plotWidth, Math.round(y) + 0.5);
-      ctx.stroke();
-      ctx.setLineDash([]);
+      const style = LEVEL_STYLE[level.tone];
+      priceLines.push(
+        candleSeries.createPriceLine({
+          price: level.value,
+          color: style.color,
+          lineWidth: 1,
+          lineStyle: style.lineStyle as never,
+          axisLabelVisible: true,
+          title: level.label,
+        }),
+      );
+    }
 
-      const text = level.value.toFixed(2);
-      const tagWidth = ctx.measureText(text).width + 12;
-      ctx.fillStyle = isLast ? DOWN : level.tone === 'anchor' ? AMBER : 'rgba(70,70,70,0.95)';
-      ctx.fillRect(plotWidth + 2, y - 8, tagWidth, 16);
-      ctx.fillStyle = isLast || level.tone === 'anchor' ? '#0a0a0a' : '#e8e8e8';
-      ctx.fillText(text, plotWidth + 8, y);
-
-      if (level.label) {
-        const labelWidth = ctx.measureText(level.label).width + 14;
-        ctx.fillStyle = 'rgba(38,38,42,0.92)';
-        ctx.fillRect(plotWidth - labelWidth - 6, y - 8, labelWidth, 16);
-        ctx.fillStyle = 'rgba(220,220,220,0.9)';
-        ctx.fillText(level.label, plotWidth - labelWidth, y);
+    if (plan) {
+      const orders = [
+        { price: plan.target, color: theme.up, title: 'TP' },
+        { price: plan.entry, color: theme.entry, title: '入场' },
+        { price: plan.stop, color: theme.down, title: 'SL' },
+      ];
+      for (const order of orders) {
+        priceLines.push(
+          candleSeries.createPriceLine({
+            price: order.price,
+            color: order.color,
+            lineWidth: order.title === '入场' ? 2 : 1,
+            lineStyle: (order.title === '入场' ? 0 : 2) as never,
+            axisLabelVisible: true,
+            title: order.title,
+          }),
+        );
       }
     }
 
-    if (hoverX >= 0 && hoverX < plotWidth) {
-      const index = Math.min(visible.length - 1, Math.floor(hoverX / step));
-      const candle = visible[index];
-      const cx = index * step + step / 2;
-      ctx.strokeStyle = 'rgba(255,255,255,0.32)';
-      ctx.setLineDash([3, 3]);
-      ctx.beginPath();
-      ctx.moveTo(Math.round(cx) + 0.5, 0);
-      ctx.lineTo(Math.round(cx) + 0.5, macdBottom);
-      ctx.stroke();
-      ctx.setLineDash([]);
-      if (legend) {
-        legend.textContent = `O ${candle.open.toFixed(2)}  H ${candle.high.toFixed(2)}  L ${candle.low.toFixed(2)}  C ${candle.close.toFixed(2)}`;
-        legend.dataset.tone = candle.up ? 'up' : 'down';
-      }
-    } else if (legend) {
-      const emaValues = series.emas.map((line) => {
-        for (let i = line.length - 1; i >= 0; i--) if (line[i] !== null) return line[i] as number;
-        return 0;
-      });
-      legend.textContent = EMA_PERIODS.map(
-        (period, i) => `EMA${period} ${emaValues[i].toFixed(2)}`,
-      ).join('   ');
-      legend.dataset.tone = 'idle';
+    if (marksLabel) marksLabel.textContent = `自动标注 ${markCount(series)}`;
+  };
+
+  const placeDivider = (series: Series): void => {
+    if (!dividerEl || !aheadEl) return;
+    const anchor = series.candles[TRAINER_DIVIDER];
+    if (!anchor) return;
+    const x = main.timeScale().timeToCoordinate(lw.asTime(anchor.time));
+    if (x === null) {
+      dividerEl.hidden = true;
+      aheadEl.hidden = true;
+      return;
     }
+    dividerEl.hidden = false;
+    aheadEl.hidden = false;
+    dividerEl.style.left = `${x}px`;
+    aheadEl.style.left = `${x}px`;
   };
 
-  const loop = (): void => {
-    if (dirty) {
-      draw();
-      dirty = false;
+  const fullCandles = variant === 'trainer' ? trainerCandles() : [];
+  const fullVolumes = variant === 'trainer' ? trainerVolumes() : [];
+  let cursor = TRAINER_START_CURSOR;
+  let series =
+    variant === 'trainer'
+      ? analyse(fullCandles.slice(0, cursor), fullVolumes.slice(0, cursor), variant)
+      : buildSeries('15m');
+
+  const fit = (): void => {
+    main.timeScale().fitContent();
+    placeDivider(series);
+  };
+
+  const drawings = mountDrawings({
+    chart: main,
+    series: candleSeries,
+    container: mainEl,
+    barTimes: series.candles.map((candle) => candle.time),
+  });
+
+  apply(series);
+  fit();
+
+  const onRange = (): void => placeDivider(series);
+  main.timeScale().subscribeVisibleLogicalRangeChange(onRange);
+
+  const onCrosshair = (param: MouseEventParams): void => {
+    if (!legend) return;
+    const bar =
+      param.time === undefined
+        ? null
+        : (param.seriesData.get(candleSeries) as CandlestickData | undefined);
+    if (bar && bar.close !== undefined) {
+      legend.textContent = `O ${bar.open.toFixed(2)}  H ${bar.high.toFixed(2)}  L ${bar.low.toFixed(2)}  C ${bar.close.toFixed(2)}`;
+      legend.dataset.tone = bar.close >= bar.open ? 'up' : 'down';
+      return;
     }
-    rafId = window.requestAnimationFrame(loop);
+    const last = series.emas.map((line) => {
+      for (let i = line.length - 1; i >= 0; i--) if (line[i] !== null) return line[i] as number;
+      return 0;
+    });
+    legend.textContent = EMA_PERIODS.map((period, i) => `EMA${period} ${last[i].toFixed(2)}`).join(
+      '   ',
+    );
+    legend.dataset.tone = 'idle';
   };
+  main.subscribeCrosshairMove(onCrosshair);
+  onCrosshair({ seriesData: new Map() } as MouseEventParams);
 
-  const onPointerMove = (event: PointerEvent): void => {
-    const rect = canvas.getBoundingClientRect();
-    hoverX = event.clientX - rect.left;
-    dirty = true;
-  };
-  const onPointerLeave = (): void => {
-    hoverX = -1;
-    dirty = true;
-  };
-
-  layout();
-  window.addEventListener('resize', layout);
-  canvas.addEventListener('pointermove', onPointerMove);
-  canvas.addEventListener('pointerleave', onPointerLeave);
-  rafId = window.requestAnimationFrame(loop);
+  const onResize = (): void => fit();
+  window.addEventListener('resize', onResize);
 
   return {
     setTimeframe: (timeframe: string) => {
-      series = buildSeries(timeframe, timeframe === '1h' ? 72 : 96);
-      dirty = true;
+      if (variant === 'trainer') return;
+      series = buildSeries(timeframe);
+      apply(series);
+      drawings.setBarTimes(series.candles.map((candle) => candle.time));
+      fit();
     },
+    advance: () => {
+      if (variant !== 'trainer' || cursor >= fullCandles.length) return cursor;
+      cursor += 1;
+      series = analyse(fullCandles.slice(0, cursor), fullVolumes.slice(0, cursor), variant);
+      apply(series);
+      drawings.setBarTimes(series.candles.map((candle) => candle.time));
+      fit();
+      return cursor;
+    },
+    cursor: () => cursor,
+    drawings,
     destroy: () => {
-      window.cancelAnimationFrame(rafId);
-      window.removeEventListener('resize', layout);
-      canvas.removeEventListener('pointermove', onPointerMove);
-      canvas.removeEventListener('pointerleave', onPointerLeave);
+      drawings.destroy();
+      window.removeEventListener('resize', onResize);
+      main.timeScale().unsubscribeVisibleLogicalRangeChange(onRange);
+      main.unsubscribeCrosshairMove(onCrosshair);
+      stopTimeScales();
+      stopCrosshair();
+      main.remove();
+      macdChart.remove();
     },
   };
 };

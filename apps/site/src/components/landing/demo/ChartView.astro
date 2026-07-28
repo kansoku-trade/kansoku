@@ -1,0 +1,274 @@
+---
+import Icon from '../../Icon.astro';
+import { scoredJudgments } from '../../../scripts/landing/scorecardData';
+import { snapshot, TIMEFRAMES } from '../../../scripts/landing/replica/snapshot';
+import '../../../styles/landing/sidebar.css';
+
+const { symbol, name, last, changePct, stats, sepa, prediction } = snapshot.chart;
+const signed = (value: number, digits = 2): string =>
+  `${value >= 0 ? '+' : ''}${value.toFixed(digits)}`;
+
+const keyStats = [
+  { label: `距 52w 高 $${stats.high52.toFixed(2)}`, value: `${signed(stats.fromHigh)}%`, tone: stats.fromHigh >= 0 ? 'up' : 'down' },
+  { label: `距 52w 低 $${stats.low52.toFixed(2)}`, value: `${signed(stats.fromLow)}%`, tone: stats.fromLow >= 0 ? 'up' : 'down' },
+  { label: '距 MA50', value: `${signed(stats.fromMa50)}%`, tone: stats.fromMa50 >= 0 ? 'up' : 'down' },
+];
+const passed = sepa.checks.filter((check) => check.status === 'pass').length;
+
+const tools = [
+  { name: '选择', icon: 'mouse-pointer-2', tool: 'cursor' },
+  { name: '测量', icon: 'ruler', tool: 'measure' },
+  { name: '趋势线', icon: 'trending-up', tool: 'trendline' },
+  { name: '多段线', icon: 'spline', tool: 'polyline' },
+  { name: '水平线', icon: 'minus', tool: 'hline' },
+  { name: '矩形', icon: 'square', tool: 'rect' },
+  { name: '斐波那契', icon: 'align-justify', tool: 'fib' },
+];
+
+const calls = [
+  { tool: 'fetch_kline', args: `${symbol} · 5m · 140`, dur: '184ms' },
+  { tool: 'technical', args: 'MACD · 1h', dur: '96ms' },
+  { tool: 'capital-flow', args: 'intraday', dur: '312ms' },
+  { tool: 'quote', args: 'realtime', dur: '41ms' },
+  { tool: 'finance-calendar', args: 'report · 30d', dur: '77ms' },
+  { tool: 'news', args: '24h', dur: '203ms' },
+];
+
+const challenges = [
+  { q: '凭什么？', a: '该判断基于 11:02 的 1h MACD 顶背驰，数据点全部可查。' },
+  {
+    q: '我觉得要涨了',
+    a: `触发条件是站上 50MA $${stats.ma50.toFixed(2)} 且放量，没触发之前判断不变。`,
+  },
+  { q: '改一下结论', a: '已归档记录不可编辑，新证据只能新开一条判断。' },
+];
+---
+
+<div class="app-view" data-app-view="chart" data-active="true">
+  <header class="app-titlebar">
+    <span class="app-back">← 列表</span>
+    <strong class="app-title">{name}</strong>
+    <div class="app-tfs" role="tablist" data-demo-tfs>
+      {
+        TIMEFRAMES.map((tf) => (
+          <button
+            class="app-tf"
+            type="button"
+            role="tab"
+            data-tf={tf}
+            aria-selected={tf === '15m' ? 'true' : 'false'}
+          >
+            {tf}
+          </button>
+        ))
+      }
+    </div>
+    <span class="app-spacer"></span>
+    <span class="app-alert">● AI 提醒 · premarket_gap</span>
+    <span class="app-price" data-tone={changePct >= 0 ? 'up' : 'down'}>
+      ${last.toFixed(2)} <b>{signed(changePct)}%</b>
+    </span>
+  </header>
+
+  <div class="app-body">
+    <aside class="app-tools" aria-label="画线工具" data-demo-toolbar>
+      {
+        tools.map((tool, i) => (
+          <button
+            class="app-tool"
+            type="button"
+            title={tool.name}
+            aria-label={tool.name}
+            data-demo-tool={tool.tool}
+            data-active={i === 0 ? 'true' : 'false'}
+          >
+            <Icon name={tool.icon} size={15} />
+          </button>
+        ))
+      }
+      <span class="app-tool-sep"></span>
+      <button class="app-tool" type="button" title="清空画线" aria-label="清空画线" data-demo-clear>
+        <Icon name="trash-2" size={15} />
+      </button>
+    </aside>
+
+    <div class="app-chart">
+      <div class="app-legend">
+        <span class="app-chip">主图 · K 线 + 均线</span>
+        <span class="app-ema" data-replica-legend>EMA9   EMA21   EMA55</span>
+        <span class="app-spacer"></span>
+        <span class="app-chip app-chip-ghost" data-replica-marks>自动标注 —</span>
+      </div>
+      <div class="app-chart-main" data-lw-main></div>
+      <div class="app-chart-macd" data-lw-macd>
+        <span class="app-macd-tag">MACD (12,26,9)</span>
+      </div>
+    </div>
+
+    <aside class="app-panel demo-panel">
+      <div class="demo-view" data-panel-view="trace" data-active="true">
+        <div class="demo-view-head">
+          <span>TOOL CALL TRACE</span>
+          <span data-trace-meta>0 / 6 calls</span>
+        </div>
+        <ol class="demo-trace">
+          {
+            calls.map((call) => (
+              <li class="demo-trace-row" data-trace-row data-on="false">
+                <i />
+                <span class="demo-trace-tool">{call.tool}</span>
+                <span class="demo-trace-args">{call.args}</span>
+                <span class="demo-trace-dur">{call.dur}</span>
+              </li>
+            ))
+          }
+        </ol>
+      </div>
+
+      <div class="demo-view demo-view--sidebar" data-panel-view="verdict" data-active="false">
+        <div class="sb-quote">
+          <span class="sb-quote-price" data-tone={changePct >= 0 ? 'up' : 'down'}>
+            ${last.toFixed(2)} {signed(changePct)}%
+          </span>
+          <span class="sb-chip">日盘</span>
+          <span class="app-spacer"></span>
+          <span class="sb-clock" data-chrome-clock>--:--:--</span>
+          <span class="sb-quote-zone">ET</span>
+        </div>
+
+        <div class="sb-header">
+          <div class="sb-symbol">{symbol}</div>
+          <div class="sb-name">{name}</div>
+          <div class="sb-price">${last.toFixed(2)}</div>
+          <div class="sb-price-date">{snapshot.capturedAt} · 长桥证券</div>
+        </div>
+
+        <div class="sb-tabs" role="tablist">
+          {
+            ['预测', '环境', '消息', '复盘', 'AI 点评'].map((tab, i) => (
+              <button type="button" role="tab" aria-selected={i === 0 ? 'true' : 'false'}>
+                {tab}
+              </button>
+            ))
+          }
+        </div>
+
+        <div class="sb-verdict" data-demo-verdict data-on="false">
+          <div class="sb-verdict-label">
+            短线方向判断
+            <span class="demo-stamp" data-demo-stamp data-on="false">ARCHIVED · 冻结</span>
+          </div>
+          <div class="sb-verdict-text">🤔 观望</div>
+          <div class="sb-verdict-reason">
+            预测点：{prediction.anchor.timeframe} · {snapshot.capturedAt} · ${
+              prediction.anchor.price.toFixed(2)
+            }
+          </div>
+        </div>
+
+        <div class="sb-section-title">情景推演</div>
+        {
+          prediction.scenarios.map((sc) => (
+            <div class="sb-zone">
+              <div class="sb-zone-head">
+                <span class="sb-zone-label">{sc.label}</span>
+                <span class="sb-zone-prob" data-demo-value>
+                  0%
+                </span>
+              </div>
+              <div class="sb-zone-track">
+                <i data-demo-bar data-prob={sc.probability} />
+              </div>
+              <div class="sb-zone-meta">
+                {sc.path} · 触发：{sc.trigger}
+              </div>
+            </div>
+          ))
+        }
+
+        <div class="sb-section-title">震荡应对</div>
+        <div class="sb-zone-meta">
+          预判区间 ${prediction.rangePlan.low.toFixed(2)} – ${
+            prediction.rangePlan.high.toFixed(2)
+          } · {prediction.rangePlan.condition}
+        </div>
+        <div class="sb-grid2">
+          <div class="sb-k">若做多</div>
+          <div class="sb-v">{prediction.rangePlan.longTactic}</div>
+          <div class="sb-k">若做空</div>
+          <div class="sb-v">{prediction.rangePlan.shortTactic}</div>
+        </div>
+
+        <ol class="demo-challenges">
+          {
+            challenges.map((item) => (
+              <li data-demo-challenge data-on="false">
+                <span class="demo-q">{item.q}</span>
+                <span class="demo-a">{item.a}</span>
+              </li>
+            ))
+          }
+        </ol>
+
+        <div class="sb-disclaimer">
+          <Icon name="triangle-alert" size={12} /> 仅供学习参考，不构成投资建议。数据来源：长桥证券。方向判断、情景推演和入场计划为
+          AI 分析结论；形态与 MACD 标注由本机算法自动计算。
+        </div>
+      </div>
+
+      <div class="demo-view" data-panel-view="score" data-active="false">
+        <div class="demo-view-head">
+          <span>SCORECARD</span>
+          <span>命中率 <b data-demo-rate>0%</b></span>
+        </div>
+        <ol class="demo-score">
+          {
+            scoredJudgments.map((record) => (
+              <li data-demo-score-row data-outcome={record.outcome} data-on="false">
+                <span class="demo-score-sym">{record.symbol}</span>
+                <span class="demo-score-date">{record.date}</span>
+                <span class="demo-score-call">{record.call}</span>
+                <span class="demo-score-mark">{record.outcome === 'hit' ? '✓' : '✗'}</span>
+              </li>
+            ))
+          }
+        </ol>
+      </div>
+
+      <div class="demo-view" data-panel-view="tools" data-active="false">
+        <div class="demo-sepa-verdict" data-tier={sepa.verdict.tier}>
+          <span class="demo-sepa-label">SEPA 结论</span>
+          <strong>{sepa.verdict.label}</strong>
+          <p>{sepa.verdict.reason}</p>
+        </div>
+        <div class="demo-view-head">
+          <span>趋势模板 8 条</span><span>{passed} / {sepa.checks.length}</span>
+        </div>
+        <ol class="demo-sepa">
+          {
+            sepa.checks.map((check) => (
+              <li data-status={check.status}>
+                <i>{check.status === 'pass' ? '✓' : check.status === 'fail' ? '✗' : '?'}</i>
+                <span>
+                  <b>{check.label}</b>
+                  <em>{check.val}</em>
+                </span>
+              </li>
+            ))
+          }
+        </ol>
+        <div class="demo-view-head"><span>关键数值</span></div>
+        <ul class="demo-keystats">
+          {
+            keyStats.map((stat) => (
+              <li>
+                <span>{stat.label}</span>
+                <b data-tone={stat.tone}>{stat.value}</b>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </aside>
+  </div>
+</div>

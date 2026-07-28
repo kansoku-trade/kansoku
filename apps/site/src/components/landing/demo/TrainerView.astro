@@ -1,0 +1,161 @@
+---
+import Icon from '../../Icon.astro';
+import {
+  signedPct,
+  signedR,
+  TRAINER_START_CURSOR,
+  trainerPlan,
+  trainerStatsAt,
+} from '../../../scripts/landing/replica/trainerPlan';
+import '../../../styles/landing/trainer.css';
+
+const plan = trainerPlan();
+const stats = trainerStatsAt(TRAINER_START_CURSOR);
+
+const railTools = [
+  { name: '选择', icon: 'mouse-pointer-2', tool: 'cursor' },
+  { name: '测量', icon: 'ruler', tool: 'measure' },
+  { name: '趋势线', icon: 'trending-up', tool: 'trendline' },
+  { name: '多段线', icon: 'spline', tool: 'polyline' },
+  { name: '水平线', icon: 'minus', tool: 'hline' },
+  { name: '矩形', icon: 'square', tool: 'rect' },
+];
+
+const speeds = [1, 2, 4];
+const sizes = ['1/4', '1/2', '全仓'];
+const periods = [
+  { key: '5m', label: '5分钟' },
+  { key: '15m', label: '15分钟' },
+  { key: '1h', label: '1小时' },
+];
+const fmt = (value: number): string => value.toFixed(2);
+---
+
+<div class="app-view app-view--stack" data-app-view="train" data-active="false">
+  <header class="trainer-header">
+    <span class="trainer-title">盲盘训练</span>
+    <span class="app-pro-tag">PRO</span>
+    <span class="trainer-meta">
+      <b class="trainer-mask">████</b> · 5分钟 · 剩余 <b data-trainer-remaining>{stats.remaining}</b> 根
+    </span>
+    <span class="app-spacer"></span>
+    <div class="trainer-period" role="group" aria-label="时间周期">
+      {
+        periods.map((period, i) => (
+          <button type="button" title={period.label} aria-pressed={i === 0 ? 'true' : 'false'}>
+            {period.key}
+          </button>
+        ))
+      }
+    </div>
+  </header>
+
+  <div class="app-legend">
+    <span class="app-chip">主图 · K 线 + 均线</span>
+    <span class="app-ema" data-trainer-legend>EMA9   EMA21   EMA55</span>
+    <span class="app-spacer"></span>
+    <span class="app-chip app-chip-ghost">盲盘 · 不给代码 / 日期</span>
+  </div>
+
+  <div class="trainer-body">
+    <div class="trainer-rail" aria-label="画线工具（本局有效）" data-demo-toolbar>
+      {
+        railTools.map((tool, i) => (
+          <button
+            class="trainer-rail-tool"
+            type="button"
+            title={`${tool.name}（本局有效）`}
+            aria-label={tool.name}
+            data-demo-tool={tool.tool}
+            data-active={i === 0 ? 'true' : 'false'}
+          >
+            <Icon name={tool.icon} size={14} />
+          </button>
+        ))
+      }
+      <span class="trainer-rail-sep"></span>
+      <button
+        class="trainer-rail-tool"
+        type="button"
+        title="清空画线"
+        aria-label="清空画线"
+        data-demo-clear
+      >
+        <Icon name="trash-2" size={14} />
+      </button>
+    </div>
+    <div class="trainer-stack">
+      <span class="trainer-chip">
+        <b class="trainer-chip-long">多头</b>
+        <span>仓位 100%</span>
+        <span>@{fmt(plan.entry)}</span>
+      </span>
+      <span class="trainer-chip trainer-chip--dim" data-trainer-toast>盲盘：不给代码、不给日期，只有走势</span>
+    </div>
+    <div class="trainer-panes">
+      <div class="trainer-pane-main" data-lw-main>
+        <div class="trainer-ahead" data-lw-ahead hidden></div>
+        <div class="trainer-divider" data-lw-divider hidden>
+          <span>题目到此 · 从这里开始操作</span>
+        </div>
+      </div>
+      <div class="trainer-pane-macd" data-lw-macd>
+        <span class="app-macd-tag">MACD (12,26,9)</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="trainer-lane">
+    <button class="app-btn app-btn--accent" type="button" data-trainer-step>
+      <Icon name="step-forward" size={13} /> 步进 · 5m
+    </button>
+    <button class="app-btn" type="button" aria-pressed="false" data-trainer-play>
+      <Icon name="play" size={13} /> 播放
+    </button>
+    <div class="trainer-lane-sep"></div>
+    <div class="trainer-lane-group" data-trainer-speeds>
+      {
+        speeds.map((speed) => (
+          <button class="app-btn" type="button" data-speed={speed} aria-pressed={speed === 1 ? 'true' : 'false'}>
+            {speed}x
+          </button>
+        ))
+      }
+    </div>
+    <span class="trainer-lane-spacer"></span>
+    <span class="trainer-lane-num" title="本笔：已落袋加上还没平的部分，按 R 计。R 是一份风险，等于首次成交价到初始止损的距离">
+      <span class="trainer-lane-label">本笔</span>
+      <b data-trainer-trade-r data-tone={stats.tradeR >= 0 ? 'up' : 'down'}>{signedR(stats.tradeR)}</b>
+      <span class="trainer-lane-dim" data-trainer-trade-pct>{signedPct(stats.tradePct)}</span>
+    </span>
+    <span class="trainer-lane-num" title="本局：已平仓的每一笔加上现在这笔的浮动盈亏">
+      <span class="trainer-lane-label">本局</span>
+      <b data-trainer-session-r data-tone={stats.sessionR >= 0 ? 'up' : 'down'}>{signedR(stats.sessionR)}</b>
+    </span>
+  </div>
+
+  <div class="trainer-lane">
+    <span class="trainer-chip-long">做多</span>
+    <span class="trainer-lane-num">入场 {fmt(plan.entry)}</span>
+    <span class="trainer-lane-num trainer-lane-num--stop">止损 {fmt(plan.stop)}</span>
+    <span class="trainer-lane-num trainer-lane-num--target">目标 {fmt(plan.target)}</span>
+    <span class="trainer-lane-num trainer-lane-num--rr">盈亏比 {plan.rewardRisk.toFixed(1)} : 1</span>
+    <div class="trainer-lane-sep"></div>
+    <span class="trainer-lane-label">加仓</span>
+    <div class="trainer-lane-group">
+      {sizes.map((size) => <button class="app-btn" type="button">{size}</button>)}
+    </div>
+    <span class="trainer-lane-label">平仓</span>
+    <div class="trainer-lane-group">
+      {
+        sizes.map((size) => (
+          <button class={size === "全仓" ? "app-btn app-btn--accent" : "app-btn"} type="button">
+            {size}
+          </button>
+        ))
+      }
+    </div>
+    <span class="trainer-lane-spacer"></span>
+    <span class="trainer-lane-hint">止损和目标直接在图上拖</span>
+  </div>
+</div>

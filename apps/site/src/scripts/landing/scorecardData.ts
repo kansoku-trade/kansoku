@@ -7,8 +7,8 @@ export interface ScoredJudgment {
 
 export const scoredJudgments: ScoredJudgment[] = [
   { symbol: 'NVDA.US', date: '2026-07-02', call: '偏多 · 站稳 186.40', outcome: 'hit' },
-  { symbol: 'MU.US', date: '2026-07-03', call: '偏空 · 跌破 236.10', outcome: 'hit' },
-  { symbol: 'SMH.US', date: '2026-07-05', call: '观望 · 342.0–351.5 区间', outcome: 'hit' },
+  { symbol: 'MU.US', date: '2026-07-03', call: '偏空 · 跌破 789.10', outcome: 'hit' },
+  { symbol: 'SMH.US', date: '2026-07-05', call: '观望 · 518.3–536.0 区间', outcome: 'hit' },
   { symbol: 'AVGO.US', date: '2026-07-08', call: '偏多 · 突破前高放量', outcome: 'miss' },
   { symbol: 'TSM.US', date: '2026-07-09', call: '偏空 · 1h MACD 顶背驰', outcome: 'hit' },
   { symbol: 'AMD.US', date: '2026-07-11', call: '偏多 · 站稳 20 日均线', outcome: 'miss' },

@@ -54,6 +54,46 @@
   font-size: 12px;
 }
 
+.app-titlebar,
+.app-legend,
+.app-tools {
+  flex: none;
+}
+
+.app-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid #2a2d34;
+  background: #15171c;
+  color: var(--text-2);
+  font-family: inherit;
+  font-size: 11px;
+  padding: 4px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.app-btn:hover {
+  border-color: #3a3d44;
+  color: #e8e8e8;
+}
+
+.app-btn[aria-pressed='true'] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.app-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.app-btn--accent {
+  border-color: rgba(255, 176, 0, 0.45);
+  color: var(--accent);
+}
+
 .app-titlebar {
   display: flex;
   align-items: center;
@@ -141,8 +181,8 @@
 
 .app-body {
   display: grid;
-  grid-template-columns: 40px minmax(0, 1fr) minmax(300px, 356px);
-  min-height: 520px;
+  grid-template-columns: 40px minmax(0, 1fr) minmax(320px, 372px);
+  min-height: 0;
 }
 
 .app-tools {
@@ -181,6 +221,22 @@
 
 .app-tool[data-active='true'] svg {
   stroke: var(--accent);
+}
+
+.app-pro-tag {
+  font-family: var(--mono);
+  font-size: 8.5px;
+  letter-spacing: 0.14em;
+  color: var(--accent);
+  border: 1px solid rgba(255, 176, 0, 0.4);
+  padding: 1px 5px;
+}
+
+.app-tool-sep {
+  width: 18px;
+  height: 1px;
+  background: #24262c;
+  margin: 4px 0;
 }
 
 .app-tool:hover svg {
@@ -227,18 +283,25 @@
   color: var(--down);
 }
 
-.app-chart canvas {
+.app-chart-main {
   flex: 1;
-  width: 100%;
-  min-height: 470px;
-  display: block;
-  cursor: crosshair;
+  min-height: 0;
+  position: relative;
+}
+
+.app-chart-macd,
+.trainer-pane-macd {
+  position: relative;
+  height: 148px;
+  flex: none;
+  border-top: 1px solid #16181c;
 }
 
 .app-macd-tag {
   position: absolute;
   left: 10px;
-  bottom: 126px;
+  top: 6px;
+  z-index: 2;
   font-family: var(--mono);
   font-size: 10px;
   color: var(--text-2);
