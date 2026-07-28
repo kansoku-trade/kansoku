@@ -101,7 +101,11 @@ READY
 
 **滚动引擎**用 CSS `animation-timeline: scroll() / view()`：Chrome 115+ / Firefox 132+ / Safari 26+ 均已支持（Safari 26.5 于 2026-06 修完进度精度问题），全球覆盖约 84%。其余走 `IntersectionObserver` 兜底。
 
-**three.js 的取舍**：它 gzip 后约 155KB 且 tree-shaking 很差（该数字取自社区较早的测量，实施时以实际打包产物为准），而本页的 WebGL 需求只有一个粒子系统，手写 WebGL2 约 4–6KB 即可达成同等效果。经权衡仍选 three.js——开发与调试成本更低，且 S5 后续可扩展为真 3D 场景。体积代价通过分档加载消化（见性能预算）；若实测超出预算再回退到手写方案。
+**three.js 的取舍**：本页的 WebGL 需求只有一个粒子系统，手写 WebGL2 约 4–6KB 即可达成同等效果，而 three.js 明显更重且 tree-shaking 很差。经权衡仍选 three.js——开发与调试成本更低，且 S5 后续可扩展为真 3D 场景。体积代价通过分档加载消化（见性能预算）。
+
+**实测修订（2026-07-28）**：立项时按社区较早的测量估为 ~155KB gzip，实际构建产物为 **182.6KB gzip**（原始 724KB），故预算表由 170KB 上调至 210KB。接受而非回退的理由：差额落在桌面端、海报帧之后延迟加载的 chunk 上，不进关键路径；`lite` / `still` 档不加载 three.js，移动端不付这个代价。
+
+该选择保持廉价可逆：渲染器藏在 `ParticleRenderer` 接口之后，各段场景只调 `createParticleRenderer`，换实现只需重写 `particles/webgl.ts` 一个文件，与实施进度无关。
 
 ## 模块划分
 
@@ -159,7 +163,7 @@ SYNTHETIC · DECORATIVE · NOT MARKET DATA
 | --- | --- |
 | 首屏 HTML + 关键 CSS | ≤ 50KB gzip |
 | 首屏 JS（分级判定 + 海报帧接管） | ≤ 10KB gzip |
-| 延迟加载特效包（three.js + 场景） | ≈ 170KB gzip，**仅 `full` 档加载** |
+| 延迟加载特效包（three.js + 场景） | ≤ 210KB gzip，**仅 `full` 档加载** |
 | LCP | < 1.5s |
 | CLS | 0（canvas 与图片全部写死宽高比） |
 | 帧率 | `full` 桌面稳 60；`lite` 手机 ≥ 30 |
