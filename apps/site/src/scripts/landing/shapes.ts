@@ -20,6 +20,9 @@ const mulberry32 = (seed: number) => {
   };
 };
 
+const BODY_SLOT_SPREAD = 0.85;
+const WICK_SLOT_SPREAD = 0.2;
+
 export const candleShape = (
   candles: Candle[],
   count: number,
@@ -35,6 +38,8 @@ export const candleShape = (
   const priceMin = Math.min(...candles.map((candle) => candle.low));
   const priceMax = Math.max(...candles.map((candle) => candle.high));
   const priceRange = priceMax - priceMin || 1;
+  const slotWidth = 1 / candles.length;
+  const halfSlotWidth = slotWidth / 2;
 
   for (let i = 0; i < count; i++) {
     const candleIndex = Math.min(candles.length - 1, Math.floor((i / count) * candles.length));
@@ -43,15 +48,21 @@ export const candleShape = (
     const bodyBottom = Math.min(candle.open, candle.close);
 
     let price: number;
+    let slotSpread: number;
     if (random() < bodyRatio) {
       price = bodyBottom + random() * (bodyTop - bodyBottom);
+      slotSpread = BODY_SLOT_SPREAD;
     } else if (random() < 0.5) {
       price = bodyTop + random() * (candle.high - bodyTop);
+      slotSpread = WICK_SLOT_SPREAD;
     } else {
       price = candle.low + random() * (bodyBottom - candle.low);
+      slotSpread = WICK_SLOT_SPREAD;
     }
 
-    const x = (candleIndex + 0.5) / candles.length;
+    const slotCenter = (candleIndex + 0.5) * slotWidth;
+    const jitter = (random() * 2 - 1) * halfSlotWidth * slotSpread;
+    const x = slotCenter + jitter;
     const y = 1 - (price - priceMin) / priceRange;
     points.push({ x, y });
   }

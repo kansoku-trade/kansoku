@@ -45,6 +45,41 @@ describe('candleShape', () => {
     expect(ratio).toBeGreaterThanOrEqual(bodyRatio - 0.05);
     expect(ratio).toBeLessThanOrEqual(bodyRatio + 0.05);
   });
+
+  it('spreads points horizontally within their own candle slot', () => {
+    const threeCandles = [
+      { open: 100, close: 110, high: 130, low: 90, up: true },
+      { open: 110, close: 100, high: 130, low: 90, up: false },
+      { open: 100, close: 115, high: 140, low: 85, up: true },
+    ];
+    const count = 3000;
+    const points = candleShape(threeCandles, count, { seed: 5 });
+    const slotWidth = 1 / threeCandles.length;
+
+    const xsByCandle = new Map<number, number[]>();
+    for (let i = 0; i < count; i++) {
+      const candleIndex = Math.min(
+        threeCandles.length - 1,
+        Math.floor((i / count) * threeCandles.length),
+      );
+      const point = points[i];
+      const slotMin = candleIndex * slotWidth;
+      const slotMax = (candleIndex + 1) * slotWidth;
+      expect(point.x).toBeGreaterThanOrEqual(slotMin);
+      expect(point.x).toBeLessThanOrEqual(slotMax);
+
+      const xs = xsByCandle.get(candleIndex) ?? [];
+      xs.push(point.x);
+      xsByCandle.set(candleIndex, xs);
+    }
+
+    for (const xs of xsByCandle.values()) {
+      expect(new Set(xs).size).toBeGreaterThan(1);
+      const mean = xs.reduce((sum, x) => sum + x, 0) / xs.length;
+      const variance = xs.reduce((sum, x) => sum + (x - mean) ** 2, 0) / xs.length;
+      expect(variance).toBeGreaterThan(1e-6);
+    }
+  });
 });
 
 describe('seedFlow', () => {
