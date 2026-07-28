@@ -1,6 +1,13 @@
 import type { RawBar } from '@kansoku/shared/types';
 import { buildDayIndicators, buildWeekIndicators } from '../generate/indicatorsFixture.js';
 import type { EpisodeState } from './engine.js';
+import { periodBucketKey, periodBucketStart, type EpisodeViewPeriod } from './periods.js';
+import {
+  questionBaseBars,
+  questionBarsForPeriod,
+  questionLadder,
+  questionRollupsForPeriod,
+} from './questionLadder.js';
 import type { Question, RunnerQuestion } from '../schema/question.js';
 
 const MARKET_DATE_FORMATTER = new Intl.DateTimeFormat('en-CA', {
@@ -21,17 +28,9 @@ function marketDate(time: string): string {
   return `${part('year')}-${part('month')}-${part('day')}`;
 }
 
-function weekKey(date: string): string {
-  const value = new Date(`${date}T00:00:00Z`);
-  const day = value.getUTCDay();
-  const delta = day === 0 ? -6 : 1 - day;
-  value.setUTCDate(value.getUTCDate() + delta);
-  return value.toISOString().slice(0, 10);
-}
-
-function aggregate(key: string, bars: RawBar[]): RawBar {
+function aggregate(time: string, bars: RawBar[]): RawBar {
   return {
-    time: key,
+    time,
     open: numberOf(bars[0].open),
     high: Math.max(...bars.map((bar) => numberOf(bar.high))),
     low: Math.min(...bars.map((bar) => numberOf(bar.low))),
@@ -40,43 +39,45 @@ function aggregate(key: string, bars: RawBar[]): RawBar {
   };
 }
 
-function groupBars(bars: RawBar[], keyOf: (bar: RawBar) => string): RawBar[] {
+function groupBars(period: EpisodeViewPeriod, bars: RawBar[]): RawBar[] {
   const groups = new Map<string, RawBar[]>();
   for (const bar of bars) {
-    const key = keyOf(bar);
+    const key = periodBucketKey(period, bar.time);
     const group = groups.get(key);
     if (group) group.push(bar);
     else groups.set(key, [bar]);
   }
-  return [...groups.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([key, group]) => aggregate(key, group));
+  return [...groups.values()]
+    .map((group) => aggregate(periodBucketStart(period, group[0].time), group))
+    .sort((a, b) => Date.parse(a.time) - Date.parse(b.time));
 }
 
-function mergeByTime(base: RawBar[], updates: RawBar[]): RawBar[] {
-  const merged = new Map(base.map((bar) => [bar.time.slice(0, 10), bar]));
-  for (const bar of updates) merged.set(bar.time.slice(0, 10), bar);
+function mergeByTime(period: EpisodeViewPeriod, base: RawBar[], updates: RawBar[]): RawBar[] {
+  const merged = new Map(base.map((bar) => [periodBucketKey(period, bar.time), bar]));
+  for (const bar of updates) merged.set(periodBucketKey(period, bar.time), bar);
   return [...merged.values()].sort((a, b) => Date.parse(a.time) - Date.parse(b.time));
 }
 
-function visibleRollups(question: Question, period: 'day' | 'week', asOf: string): RawBar[] {
+function visibleRollups(question: Question, period: EpisodeViewPeriod, asOf: string): RawBar[] {
   const asOfMs = Date.parse(asOf);
-  return (question.replay.rollups?.[period] ?? [])
+  return questionRollupsForPeriod(question, period)
     .filter((item) => Date.parse(item.availableAt) <= asOfMs)
     .map((item) => item.bar);
 }
 
-function dayView(question: Question, revealed: RawBar[], asOf: string): RawBar[] {
-  const initial = question.fixtures.kline.day ?? [];
-  if (question.replay.basePeriod !== '1h') return [...initial, ...revealed];
-  const updates = groupBars(revealed, (bar) => marketDate(bar.time));
-  return mergeByTime(mergeByTime(initial, updates), visibleRollups(question, 'day', asOf));
-}
-
-function weekView(question: Question, days: RawBar[], asOf: string): RawBar[] {
-  const initial = question.fixtures.kline.week ?? [];
-  const updates = groupBars(days, (bar) => weekKey(marketDate(bar.time)));
-  return mergeByTime(mergeByTime(initial, updates), visibleRollups(question, 'week', asOf));
+function tierBars(
+  question: Question,
+  period: EpisodeViewPeriod,
+  sourceBars: RawBar[],
+  asOf: string,
+): RawBar[] {
+  const initial = questionBarsForPeriod(question, period);
+  const updates = groupBars(period, sourceBars);
+  return mergeByTime(
+    period,
+    mergeByTime(period, initial, updates),
+    visibleRollups(question, period, asOf),
+  );
 }
 
 function quoteView(
@@ -106,12 +107,14 @@ export function buildEpisodeQuestionViewAtCursor(
 ): RunnerQuestion {
   const revealed = cursor >= 0 ? question.replay.bars.slice(0, cursor + 1) : [];
   const cutoff = revealed.at(-1)?.time ?? question.cutoff;
-  const days = dayView(question, revealed, cutoff);
-  const weeks = weekView(question, days, cutoff);
-  const oneHour =
-    question.replay.basePeriod === '1h'
-      ? [...(question.fixtures.kline['1h'] ?? []), ...revealed]
-      : question.fixtures.kline['1h'];
+  const [basePeriod, midPeriod, topPeriod] = questionLadder(question);
+  const baseBars = [...questionBaseBars(question), ...revealed];
+  const midBars = tierBars(question, midPeriod, revealed, cutoff);
+  const topBars = tierBars(question, topPeriod, midBars, cutoff);
+  const quoteDayBars =
+    midPeriod === 'day' || topPeriod === 'day'
+      ? tierBars(question, 'day', revealed, cutoff)
+      : tierBars(question, 'day', baseBars, cutoff);
   return {
     id: question.id,
     bank: question.bank,
@@ -123,16 +126,16 @@ export function buildEpisodeQuestionViewAtCursor(
       ...question.fixtures,
       kline: {
         ...question.fixtures.kline,
-        ...(oneHour ? { '1h': oneHour } : {}),
-        day: days,
-        week: weeks,
+        ...(baseBars.length ? { [basePeriod]: baseBars } : {}),
+        [midPeriod]: midBars,
+        [topPeriod]: topBars,
       },
       indicators: {
         ...question.fixtures.indicators,
-        day: buildDayIndicators(days),
-        week: buildWeekIndicators(weeks),
+        [midPeriod]: buildDayIndicators(midBars),
+        [topPeriod]: buildWeekIndicators(topBars),
       },
-      quote: quoteView(question, days, revealed),
+      quote: quoteView(question, quoteDayBars, revealed),
     },
   };
 }

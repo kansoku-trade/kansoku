@@ -1,4 +1,10 @@
-import type { AgentMessagePayload } from '@kansoku/pro-api';
+import type {
+  AgentMessagePayload,
+  TrainerBasePeriod,
+  TrainerFillPhase,
+  TrainerFillStatus,
+  TrainerFillTrigger,
+} from '@kansoku/pro-api';
 import type { RawBar, TimeframeKey } from '@kansoku/shared/types';
 import type {
   ResearchEditOperation,
@@ -157,6 +163,37 @@ export const researchRefreshTasks = sqliteTable(
   (t) => [
     index('research_refresh_tasks_path').on(t.path, t.startedAt),
     index('research_refresh_tasks_status').on(t.status),
+  ],
+);
+
+export const trainingFillTasks = sqliteTable(
+  'training_fill_tasks',
+  {
+    id: text('id').primaryKey(),
+    basePeriod: text('base_period').$type<TrainerBasePeriod>().notNull(),
+    requested: integer('requested').notNull(),
+    // Records who started this run. Without it an automatic refill is anonymous
+    // after the fact, and "did it fire on its own?" becomes unanswerable.
+    trigger: text('trigger').$type<TrainerFillTrigger>().notNull(),
+    status: text('status').$type<TrainerFillStatus>().notNull(),
+    phase: text('phase').$type<TrainerFillPhase>().notNull(),
+    activity: text('activity').notNull(),
+    admitted: integer('admitted').notNull(),
+    // The whole funnel, because a failed refill is diagnosed by its distribution
+    // ("sampled 400, 3 survived"), not by the one-line error.
+    // Structural rather than imported: the producer's CasePoolStageFunnel lives in
+    // the private pro repo, and the funnel is deliberately kept out of the contract.
+    funnel: text('funnel', { mode: 'json' }).$type<
+      { stage: string; entered: number; survived: number; rejections: Record<string, number> }[]
+    >(),
+    error: text('error'),
+    startedAt: text('started_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+    finishedAt: text('finished_at'),
+  },
+  (t) => [
+    index('training_fill_tasks_status').on(t.status),
+    index('training_fill_tasks_started').on(t.startedAt),
   ],
 );
 

@@ -15,9 +15,22 @@ const replayRollupSchema = Type.Object(
   { additionalProperties: false },
 );
 
+const klineSchema = Type.Object(
+  {
+    '1m': Type.Optional(Type.Array(barSchema)),
+    '5m': Type.Optional(Type.Array(barSchema)),
+    '15m': Type.Optional(Type.Array(barSchema)),
+    '30m': Type.Optional(Type.Array(barSchema)),
+    '1h': Type.Optional(Type.Array(barSchema)),
+    day: Type.Optional(Type.Array(barSchema)),
+    week: Type.Optional(Type.Array(barSchema)),
+  },
+  { additionalProperties: false },
+);
+
 const fixturesSchema = Type.Object(
   {
-    kline: Type.Record(Type.String(), Type.Array(barSchema)),
+    kline: klineSchema,
     indicators: jsonRecordSchema,
     quote: jsonRecordSchema,
     capitalFlow: jsonRecordSchema,
@@ -28,23 +41,23 @@ const fixturesSchema = Type.Object(
   { additionalProperties: false },
 );
 
+const replayBasePeriodSchema = Type.Union([
+  Type.Literal('1m'),
+  Type.Literal('5m'),
+  Type.Literal('15m'),
+  Type.Literal('30m'),
+  Type.Literal('1h'),
+]);
+
 const replaySchema = Type.Object(
   {
-    basePeriod: Type.Optional(Type.Union([Type.Literal('1h'), Type.Literal('day')])),
+    basePeriod: Type.Optional(replayBasePeriodSchema),
     decisionExpiryBars: Type.Optional(Type.Integer({ minimum: 1 })),
     entryExpiryBars: Type.Optional(Type.Integer({ minimum: 1 })),
     horizonSessions: Type.Optional(Type.Integer({ minimum: 1 })),
     horizonBars: Type.Integer({ minimum: 1 }),
     bars: Type.Array(barSchema),
-    rollups: Type.Optional(
-      Type.Object(
-        {
-          day: Type.Array(replayRollupSchema),
-          week: Type.Array(replayRollupSchema),
-        },
-        { additionalProperties: false },
-      ),
-    ),
+    rollups: Type.Optional(Type.Record(Type.String(), Type.Array(replayRollupSchema))),
   },
   { additionalProperties: false },
 );
@@ -66,3 +79,5 @@ export const questionSchema = Type.Object(
 export type Question = Static<typeof questionSchema>;
 
 export type RunnerQuestion = Omit<Question, 'replay'>;
+
+export type ReplayRollupEntry = Static<typeof replayRollupSchema>;

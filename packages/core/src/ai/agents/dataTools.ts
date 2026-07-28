@@ -2,6 +2,7 @@ import type { AgentTool, AgentToolResult } from '@earendil-works/pi-agent-core';
 import { Type } from 'typebox';
 import type { Annotation, NewsItem, RawBar } from '@kansoku/shared/types';
 import type { ReassessPack } from './datapack.js';
+import { klineTable, reassessPackPromptText } from './packText.js';
 
 const KLINE_MAX_COUNT = 500;
 const KLINE_DEFAULT_COUNT = 200;
@@ -16,6 +17,12 @@ const klineSchema = Type.Object({
     Type.Literal('day'),
   ]),
   count: Type.Optional(Type.Number()),
+  sessions: Type.Optional(
+    Type.Union([Type.Literal('all'), Type.Literal('reg')], {
+      description:
+        'all (default) keeps pre-market, regular and after-hours bars; reg keeps only the regular session. Only about a third of US intraday bars are regular-session, so reg is much cheaper when the question is about regular-hours action.',
+    }),
+  ),
 });
 
 const MAX_ANNOTATIONS_PER_CALL = 4;
@@ -97,7 +104,7 @@ export function buildDataPackTool(
         cachedPack = await opts.buildPack(symbol);
         opts.onPack?.(cachedPack);
       }
-      return textResult(JSON.stringify(cachedPack));
+      return textResult(reassessPackPromptText(cachedPack));
     },
   };
 }
@@ -115,7 +122,7 @@ export function buildKlineTool(
       const period = KLINE_PERIODS[params.period];
       const count = clampCount(params.count);
       const bars = await fetchKline(symbol, period, count);
-      return textResult(JSON.stringify({ period: params.period, count, bars }));
+      return textResult(klineTable(symbol, period, bars, undefined, params.sessions));
     },
   };
 }

@@ -26,7 +26,7 @@ describe('createSettingsStore defaults', () => {
     try {
       const db = createDb(path);
       const store = createSettingsStore(db);
-      for (const role of ['comment', 'analyst', 'deepDive', 'chat', 'memory'] as const) {
+      for (const role of ['comment', 'analyst', 'deepDive', 'chat', 'memory', 'casePick'] as const) {
         expect(store.getRole(role)).toEqual({
           mode: 'inherit',
           provider: null,
@@ -40,14 +40,14 @@ describe('createSettingsStore defaults', () => {
         modelId: null,
         thinkingLevel: null,
       });
-      expect(warn).toHaveBeenCalledTimes(6);
+      expect(warn).toHaveBeenCalledTimes(7);
     } finally {
       warn.mockRestore();
       rmSync(dir, { recursive: true, force: true });
     }
   });
 
-  it('listRoles returns primary plus all five task roles', () => {
+  it('listRoles returns primary plus all six task roles', () => {
     const { dir, path } = tempDbPath();
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     try {
@@ -56,6 +56,7 @@ describe('createSettingsStore defaults', () => {
       const all = store.listRoles();
       expect(Object.keys(all).sort()).toEqual([
         'analyst',
+        'casePick',
         'chat',
         'comment',
         'deepDive',

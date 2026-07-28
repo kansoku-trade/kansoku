@@ -1,5 +1,5 @@
 import { Popover } from '@base-ui/react/popover';
-import { LayoutDashboard, Library, MessageCircle, Plus, Search } from 'lucide-react';
+import { GraduationCap, LayoutDashboard, Library, MessageCircle, Plus, Search } from 'lucide-react';
 import { useState } from 'react';
 import { normalizeSymbol } from '../../lib/symbol';
 import { Kbd } from '../../ui';
@@ -11,6 +11,7 @@ interface NewTabLauncherProps {
   onOpenHome(): void;
   onOpenResearch(): void;
   onOpenSymbol(route: string): void;
+  onOpenTrainer?: (() => void) | null;
 }
 
 export function NewTabLauncher({
@@ -20,6 +21,7 @@ export function NewTabLauncher({
   onOpenHome,
   onOpenResearch,
   onOpenSymbol,
+  onOpenTrainer,
 }: NewTabLauncherProps) {
   const [symbol, setSymbol] = useState('');
 
@@ -93,6 +95,16 @@ export function NewTabLauncher({
                 <span>研究库</span>
                 <Kbd keys={['shift', 'mod', 'L']} />
               </button>
+              {onOpenTrainer && (
+                <>
+                  <span className="desktop-new-tab-divider" aria-hidden />
+                  <button type="button" onClick={() => run(onOpenTrainer)}>
+                    <GraduationCap size={14} aria-hidden />
+                    <span>盲盘训练</span>
+                    <Kbd keys={['shift', 'mod', 'B']} />
+                  </button>
+                </>
+              )}
             </div>
           </Popover.Popup>
         </Popover.Positioner>

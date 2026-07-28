@@ -402,3 +402,64 @@ describe('episode HTML report', () => {
     ]);
   });
 });
+
+describe('episode HTML report for a non-1h ladder question', () => {
+  const fiveMinQuestion: Question = {
+    id: 'swing-FIVEMIN-2026-03-25-01',
+    bank: 'swing',
+    symbol: 'MU.US',
+    cutoff: '2026-03-25T16:00:00-04:00',
+    layer: 'high-vol-tech',
+    adversarial: false,
+    fixtures: {
+      kline: {
+        '5m': [bar('2026-03-25T19:55:00Z', 379, 383, 378, 381.861)],
+        '15m': [bar('2026-03-25T19:45:00Z', 379, 383, 378, 381.861)],
+        '1h': [bar('2026-03-25T19:30:00Z', 379, 383, 378, 381.861)],
+      },
+      indicators: {},
+      quote: { last: 381.861 },
+      capitalFlow: {},
+      news: [],
+      fundamentals: {},
+      calendar: {},
+    },
+    replay: {
+      basePeriod: '5m',
+      entryExpiryBars: 21,
+      horizonBars: 1,
+      bars: [bar('2026-03-26T13:30:00Z', 369.908, 374.025, 362.892, 364.731)],
+      rollups: { '15m': [], '1h': [] },
+    },
+  };
+
+  const fiveMinAnswer: EpisodeAnswer = {
+    questionId: fiveMinQuestion.id,
+    symbol: fiveMinQuestion.symbol,
+    layer: fiveMinQuestion.layer,
+    model: 'openai-codex/<gpt-5.5>',
+    mode: 'blind',
+    rep: 0,
+    status: 'timeout',
+    initialSubmission: null,
+    result: null,
+    metrics: { durationMs: 1_000, costUsd: 0.01, toolCalls: 0, inputTokens: 0, outputTokens: 0 },
+    traceRef: 'trace-5m.jsonl',
+  };
+
+  it('renders without throwing and reports zero rollup counts instead of crashing on the missing day/week keys', () => {
+    let rendered: ReturnType<typeof renderEpisodeReportHtml> | undefined;
+    expect(() => {
+      rendered = renderEpisodeReportHtml({
+        answers: [fiveMinAnswer],
+        questions: new Map([[fiveMinQuestion.id, fiveMinQuestion]]),
+        config: { runId: 'episode-5m-test' },
+        now: () => new Date('2026-07-18T12:00:00Z'),
+      });
+    }).not.toThrow();
+
+    const viewData = extractViewData(rendered!.html);
+    const rollupStrip = viewData.configStrip.find((item) => item.label === '长桥日 / 周回填');
+    expect(rollupStrip?.value).toBe('0 / 0');
+  });
+});

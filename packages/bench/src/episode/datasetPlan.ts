@@ -6,11 +6,20 @@ const DATE_PATTERN = '^\\d{4}-\\d{2}-\\d{2}$';
 const DATASET_ID_PATTERN = '^[a-z0-9][a-z0-9-]*$';
 const ALIAS_PATTERN = '^ASSET[0-9]{3}$';
 
+const episodeBasePeriodSchema = Type.Union([
+  Type.Literal('1m'),
+  Type.Literal('5m'),
+  Type.Literal('15m'),
+  Type.Literal('30m'),
+  Type.Literal('1h'),
+]);
+
 export const episodeDatasetPlanSchema = Type.Object(
   {
     schemaVersion: Type.Literal(1),
     id: Type.String({ pattern: DATASET_ID_PATTERN }),
     cohort: Type.Union([Type.Literal('live-2026'), Type.Literal('blind-anonymous')]),
+    basePeriod: Type.Optional(episodeBasePeriodSchema),
     horizonSessions: Type.Integer({ minimum: 5, maximum: 60 }),
     cases: Type.Array(
       Type.Object(

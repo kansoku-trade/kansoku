@@ -32,6 +32,13 @@ export interface AppApi {
   license: LicenseApi;
 }
 
+// Groups whose operations only ever travel over the desktop IPC bridge. They keep
+// route metadata so the typed client can address them uniformly, but the HTTP host
+// deliberately does not serve them: agentKit mutates the user's filesystem and
+// shell state, which has no business behind an HTTP endpoint. The web client
+// reaches these through rpc.invoke, never through the HTTP client.
+export const IPC_ONLY_ROUTE_GROUPS: readonly string[] = ['agentKit'];
+
 export const allRoutes = {
   assistant: assistantRoutes,
   capabilities: capabilitiesRoutes,

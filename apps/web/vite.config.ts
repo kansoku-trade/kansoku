@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import babel from '@rolldown/plugin-babel';
 import { isProModule, proLeakGuard, proOverlayPlugin } from '@kansoku/build-overlay';
@@ -12,6 +13,7 @@ const APP_VERSION = JSON.parse(
   readFileSync(new URL('../desktop/package.json', import.meta.url), 'utf8'),
 ).version;
 
+const webRoot = fileURLToPath(new URL('.', import.meta.url));
 const overlayRoot = fileURLToPath(new URL('../pro/overlays', import.meta.url));
 const proPresent = process.env.KANSOKU_FORCE_FREE !== '1' && existsSync(overlayRoot);
 
@@ -87,6 +89,10 @@ export default defineConfig({
   },
   build: {
     rollupOptions: {
+      input: {
+        main: resolve(webRoot, 'index.html'),
+        train: resolve(webRoot, 'train.html'),
+      },
       output: {
         chunkFileNames: chunkFileNamesFor,
         assetFileNames: assetFileNamesFor,

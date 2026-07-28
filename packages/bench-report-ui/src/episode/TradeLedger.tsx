@@ -1,4 +1,4 @@
-import type { EpisodeReportTradeLedgerItem } from '../types';
+import type { EpisodeReportTradeFillItem, EpisodeReportTradeLedgerItem } from '../types';
 import { Disclosure, MoreText } from '../ui/Disclosure';
 import { fmt, fmtSigned } from './format';
 
@@ -8,6 +8,21 @@ function PriceCell({ label, value }: { label: string; value: string }) {
       <dt>{label}</dt>
       <dd>{value}</dd>
     </div>
+  );
+}
+
+function FillList({ fills }: { fills: EpisodeReportTradeFillItem[] }) {
+  return (
+    <ul className="tl-fills">
+      {fills.map((fill, index) => (
+        <li key={index} className={`tl-fill tl-fill--${fill.kind}`}>
+          <span className="tl-fill-label">{fill.label}</span>
+          <span className="tl-fill-bar">{fill.barLabel}</span>
+          <span className="tl-fill-price">{fill.priceLabel}</span>
+          <span className="tl-fill-size">{fill.sizeLabel}</span>
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -75,6 +90,7 @@ export function TradeLedger({
                   <PriceCell label="T" value={fmt(trade.target)} />
                   <PriceCell label="X" value={fmt(trade.exitPrice)} />
                 </dl>
+                {trade.fills.length > 2 ? <FillList fills={trade.fills} /> : null}
                 {trade.entryReasonCategoryLabel ? (
                   <div className="tl-reason">
                     <b>{trade.entryReasonCategoryLabel}</b>

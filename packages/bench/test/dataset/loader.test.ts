@@ -44,7 +44,7 @@ describe('dataset loader', () => {
     );
     expect(Object.prototype.hasOwnProperty.call(runnerQuestion, 'replay')).toBe(false);
     expect(runnerQuestion.id).toBe('swing-TEST-01');
-    expect(runnerQuestion.fixtures.kline.day.length).toBe(2);
+    expect(runnerQuestion.fixtures.kline.day!.length).toBe(2);
   });
 
   it('rejects a malformed fixture missing cutoff, naming the file and failing path', async () => {

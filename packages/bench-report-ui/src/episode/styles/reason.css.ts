@@ -102,6 +102,36 @@ globalStyle('.tl-prices dd', {
   fontVariantNumeric: 'tabular-nums',
 });
 
+globalStyle('.tl-fills', {
+  listStyle: 'none',
+  display: 'grid',
+  gap: '2px',
+  padding: '0 12px 9px',
+});
+
+globalStyle('.trade-ledger .tl-fills li', {
+  display: 'grid',
+  gridTemplateColumns: '56px 40px 1fr auto',
+  gap: '8px',
+  alignItems: 'baseline',
+  border: 0,
+  fontFamily: vars.fontMono,
+  fontSize: vars.fsXs,
+  fontVariantNumeric: 'tabular-nums',
+});
+
+globalStyle('.tl-fill-label', {
+  color: vars.textSecondary,
+});
+
+globalStyle('.tl-fill-bar, .tl-fill-size', {
+  color: vars.textMuted,
+});
+
+globalStyle('.tl-fill-price', {
+  fontSize: vars.fsSm,
+});
+
 globalStyle('.tl-reason, .ac-reason', {
   padding: '0 12px 10px',
   color: vars.textSecondary,

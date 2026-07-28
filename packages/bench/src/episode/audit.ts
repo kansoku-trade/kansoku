@@ -2,15 +2,33 @@ import type { RawBar } from '@kansoku/shared/types';
 import type { QuoteBar } from '../generate/assemble.js';
 import { buildDayIndicators, buildWeekIndicators } from '../generate/indicatorsFixture.js';
 import type { EpisodeKlinePeriod } from '../generate/source.js';
-import type { Question } from '../schema/question.js';
+import type { Question, ReplayRollupEntry } from '../schema/question.js';
 import {
-  EPISODE_REQUIRED_DAY,
-  EPISODE_REQUIRED_H1,
-  EPISODE_REQUIRED_WEEK,
+  barsPerSession,
+  deriveDayBarsFromBase,
   marketCloseIso,
   marketDate,
-  weekKey,
+  requiredBaseBars,
+  EPISODE_DEFAULT_HORIZON_SESSIONS,
+  EPISODE_ENTRY_EXPIRY_SESSIONS,
+  EPISODE_REQUIRED_MID,
+  EPISODE_REQUIRED_TOP,
 } from './generate.js';
+import {
+  episodePeriodLadder,
+  periodBucketKey,
+  periodBucketStart,
+  EPISODE_PERIOD_LADDER,
+  type EpisodeBasePeriod,
+  type EpisodeViewPeriod,
+} from './periods.js';
+import {
+  questionBaseBars,
+  questionBarsForPeriod,
+  questionBasePeriod,
+  questionLadder,
+  questionRollupsForPeriod,
+} from './questionLadder.js';
 
 export type AuditStatus = 'pass' | 'fail';
 
@@ -152,6 +170,190 @@ function stable(value: unknown): string {
   return JSON.stringify(value);
 }
 
+function periodToken(period: EpisodeViewPeriod): string {
+  return period === '1h' ? 'h1' : period;
+}
+
+function periodNoun(period: EpisodeViewPeriod): string {
+  if (period === 'day') return '日线';
+  if (period === 'week') return '周线';
+  return period;
+}
+
+function basePeriodLabel(period: EpisodeBasePeriod): string {
+  return period === '1h' ? '推进周期为 1 小时' : `推进周期为 ${period}`;
+}
+
+function initialWindowLabel(period: EpisodeViewPeriod): string {
+  return period === 'day' || period === 'week'
+    ? `初始${periodNoun(period)}窗口`
+    : `初始 ${period} 窗口`;
+}
+
+function sortLabel(period: EpisodeViewPeriod): string {
+  return period === 'day' || period === 'week'
+    ? `${periodNoun(period)}数据严格递增`
+    : `${period} 数据严格递增`;
+}
+
+function sourceMatchLabel(period: EpisodeViewPeriod): string {
+  return period === 'day' || period === 'week'
+    ? `${periodNoun(period)}与长桥 CLI 完整匹配`
+    : `${period} 与长桥 CLI 完整匹配`;
+}
+
+function sourceHistoryLabel(period: EpisodeViewPeriod): string {
+  return period === 'week'
+    ? 'cutoff 前完整周线与长桥 CLI 匹配'
+    : `cutoff 前完整 ${period} 与长桥 CLI 匹配`;
+}
+
+function sourceRollupsLabel(period: EpisodeViewPeriod): string {
+  return period === 'week'
+    ? '整周结束后的周线与长桥 CLI 匹配'
+    : `${period} 周期结束后的数据与长桥 CLI 匹配`;
+}
+
+function indicatorsLabel(mid: EpisodeViewPeriod, top: EpisodeViewPeriod): string {
+  return mid === 'day' && top === 'week'
+    ? '指标只由当前可见日线和周线重算'
+    : `指标只由当前可见 ${mid} 和 ${top} 重算`;
+}
+
+function baseSessionSpanLabel(period: EpisodeViewPeriod): string {
+  return `${period} 基础层至少跨两个交易日，折算 quote 才有效`;
+}
+
+function barsHorizonEntryExpiry(basePeriod: EpisodeBasePeriod, horizonBars: number): number {
+  return Math.min(
+    EPISODE_ENTRY_EXPIRY_SESSIONS * barsPerSession(basePeriod),
+    Math.ceil((horizonBars * EPISODE_ENTRY_EXPIRY_SESSIONS) / EPISODE_DEFAULT_HORIZON_SESSIONS),
+  );
+}
+
+function entryExpiryLabel(isBarsHorizon: boolean): string {
+  return isBarsHorizon
+    ? '待成交窗口不超过三个交易日等效 bar 数，且不超过总回放 bar 数的 3/40'
+    : '待成交窗口覆盖前三个交易日';
+}
+
+function rollupCountLabel(period: EpisodeViewPeriod): string {
+  return period === 'day'
+    ? '每个回放交易日都有长桥原生日线'
+    : `每个已完成的 ${period} 周期都有长桥原生数据`;
+}
+
+function partialBucketLabel(period: EpisodeViewPeriod, lowerPeriod: EpisodeViewPeriod): string {
+  return period === 'week' && lowerPeriod === 'day'
+    ? 'cutoff 当周仅聚合已完成日线'
+    : `cutoff 当前 ${period} 仅聚合已完成 ${lowerPeriod}`;
+}
+
+function partialBucketDetail(period: EpisodeViewPeriod): string {
+  return period === 'week'
+    ? '不得直接使用长桥返回的完整历史周线；该周线可能包含 cutoff 之后的交易日。'
+    : `不得直接使用长桥返回的完整历史 ${period} 数据；该数据可能包含 cutoff 之后的时间段。`;
+}
+
+function distinctBucketCount(period: EpisodeViewPeriod, bars: RawBar[]): number {
+  return new Set(bars.map((bar) => periodBucketKey(period, bar.time))).size;
+}
+
+function partialBucketAggregate(
+  period: EpisodeViewPeriod,
+  lowerBars: RawBar[],
+  cutoffIso: string,
+): RawBar | null {
+  const cutoffBucketStart = periodBucketStart(period, cutoffIso);
+  const currentLower = lowerBars.filter(
+    (bar) => periodBucketStart(period, bar.time) === cutoffBucketStart,
+  ) as QuoteBar[];
+  return currentLower.length > 0 ? aggregate(cutoffBucketStart, currentLower) : null;
+}
+
+function bucketFixture(
+  period: EpisodeViewPeriod,
+  tierBars: RawBar[],
+  cutoffIso: string,
+): RawBar | undefined {
+  const cutoffBucketStart = periodBucketStart(period, cutoffIso);
+  return tierBars.find((bar) => periodBucketStart(period, bar.time) === cutoffBucketStart);
+}
+
+function sourceDayTurnover(bars: QuoteBar[], cutoffIso: string): number | null {
+  const key = periodBucketStart('day', cutoffIso);
+  const matches = bars.filter((bar) => periodBucketStart('day', bar.time) === key);
+  if (matches.length === 0) return null;
+  let sum = 0;
+  for (const bar of matches) {
+    const value = numberOf(bar.turnover);
+    if (value == null) return null;
+    sum += value;
+  }
+  return sum;
+}
+
+function auditTierAgainstSource(
+  period: EpisodeViewPeriod,
+  initialTierBars: RawBar[],
+  rollupsForTier: ReplayRollupEntry[],
+  sourceBars: QuoteBar[],
+  cutoffIso: string,
+  add: (
+    id: string,
+    label: string,
+    passed: boolean,
+    expected: unknown,
+    actual: unknown,
+    detail?: string,
+  ) => void,
+): void {
+  if (period === 'day') {
+    const expected = [...initialTierBars, ...rollupsForTier.map((item) => item.bar)];
+    const comparison = compareBars(expected, sourceBars, (bar) =>
+      periodBucketKey(period, bar.time),
+    );
+    add(
+      `source-${periodToken(period)}`,
+      sourceMatchLabel(period),
+      comparison.passed,
+      comparison.expectedCount,
+      comparison.actualCount,
+      comparison.firstMismatch ?? undefined,
+    );
+    return;
+  }
+
+  const cutoffBucketStart = periodBucketStart(period, cutoffIso);
+  const completedInitial = initialTierBars.filter(
+    (bar) => periodBucketStart(period, bar.time) < cutoffBucketStart,
+  );
+  const historyComparison = compareBars(completedInitial, sourceBars, (bar) =>
+    periodBucketKey(period, bar.time),
+  );
+  add(
+    `source-${periodToken(period)}-history`,
+    sourceHistoryLabel(period),
+    historyComparison.passed,
+    historyComparison.expectedCount,
+    historyComparison.actualCount,
+    historyComparison.firstMismatch ?? undefined,
+  );
+
+  const future = rollupsForTier.map((item) => item.bar);
+  const rollupsComparison = compareBars(future, sourceBars, (bar) =>
+    periodBucketKey(period, bar.time),
+  );
+  add(
+    `source-${periodToken(period)}-rollups`,
+    sourceRollupsLabel(period),
+    rollupsComparison.passed,
+    rollupsComparison.expectedCount,
+    rollupsComparison.actualCount,
+    rollupsComparison.firstMismatch ?? undefined,
+  );
+}
+
 export function auditEpisodeQuestion(
   question: Question,
   sources?: EpisodeAuditSources,
@@ -175,44 +377,64 @@ export function auditEpisodeQuestion(
       ...(detail ? { detail } : {}),
     });
 
-  const initialH1 = question.fixtures.kline['1h'] ?? [];
-  const initialDay = question.fixtures.kline.day ?? [];
-  const initialWeek = question.fixtures.kline.week ?? [];
+  const rawBasePeriod = questionBasePeriod(question);
+  const knownBasePeriod = Object.hasOwn(EPISODE_PERIOD_LADDER, rawBasePeriod);
+  const basePeriod = knownBasePeriod ? rawBasePeriod : '1h';
+  const validBasePeriod =
+    question.replay.basePeriod != null &&
+    Object.hasOwn(EPISODE_PERIOD_LADDER, question.replay.basePeriod);
+  const [ladderBase, ladderMid, ladderTop] = episodePeriodLadder(basePeriod);
+  const requiredBase = requiredBaseBars(basePeriod);
+
+  const initialBase = questionBaseBars(question);
+  const initialMid = questionBarsForPeriod(question, ladderMid);
+  const initialTop = questionBarsForPeriod(question, ladderTop);
   const replay = question.replay.bars;
-  const rollups = question.replay.rollups ?? { day: [], week: [] };
+  const rollupsMid = questionRollupsForPeriod(question, ladderMid);
+  const rollupsTop = questionRollupsForPeriod(question, ladderTop);
   const cutoffDate = marketDate(question.cutoff);
-  const cutoffWeek = weekKey(cutoffDate);
   const sessions = sessionCount(replay);
   const expiryBars = firstSessionBarCount(replay, 3);
+  const isBarsHorizon = question.replay.horizonSessions == null;
 
   add(
     'base-period',
-    '推进周期为 1 小时',
-    question.replay.basePeriod === '1h',
-    '1h',
+    basePeriodLabel(rawBasePeriod),
+    validBasePeriod,
+    Object.keys(EPISODE_PERIOD_LADDER),
     question.replay.basePeriod ?? null,
   );
   add(
-    'initial-h1-count',
-    '初始 1h 窗口',
-    initialH1.length === EPISODE_REQUIRED_H1,
-    EPISODE_REQUIRED_H1,
-    initialH1.length,
+    `initial-${periodToken(ladderBase)}-count`,
+    initialWindowLabel(ladderBase),
+    initialBase.length === requiredBase,
+    requiredBase,
+    initialBase.length,
   );
   add(
-    'initial-day-count',
-    '初始日线窗口',
-    initialDay.length === EPISODE_REQUIRED_DAY,
-    EPISODE_REQUIRED_DAY,
-    initialDay.length,
+    `initial-${periodToken(ladderMid)}-count`,
+    initialWindowLabel(ladderMid),
+    initialMid.length === EPISODE_REQUIRED_MID,
+    EPISODE_REQUIRED_MID,
+    initialMid.length,
   );
   add(
-    'initial-week-count',
-    '初始周线窗口',
-    initialWeek.length === EPISODE_REQUIRED_WEEK,
-    EPISODE_REQUIRED_WEEK,
-    initialWeek.length,
+    `initial-${periodToken(ladderTop)}-count`,
+    initialWindowLabel(ladderTop),
+    initialTop.length === EPISODE_REQUIRED_TOP,
+    EPISODE_REQUIRED_TOP,
+    initialTop.length,
   );
+  if (ladderMid !== 'day' && ladderTop !== 'day') {
+    const initialBaseSessions = sessionCount(initialBase);
+    add(
+      `${periodToken(ladderBase)}-session-span`,
+      baseSessionSpanLabel(ladderBase),
+      initialBaseSessions >= 2,
+      2,
+      initialBaseSessions,
+    );
+  }
   add(
     'horizon-bars',
     '回放 bar 数',
@@ -220,13 +442,15 @@ export function auditEpisodeQuestion(
     replay.length,
     question.replay.horizonBars,
   );
-  add(
-    'horizon-sessions',
-    '回放交易日数',
-    question.replay.horizonSessions === sessions,
-    sessions,
-    question.replay.horizonSessions ?? null,
-  );
+  if (!isBarsHorizon) {
+    add(
+      'horizon-sessions',
+      '回放交易日数',
+      question.replay.horizonSessions === sessions,
+      sessions,
+      question.replay.horizonSessions ?? null,
+    );
+  }
   add(
     'decision-window',
     'B0 起可交易且没有强制决策窗口',
@@ -234,40 +458,43 @@ export function auditEpisodeQuestion(
     null,
     question.replay.decisionExpiryBars ?? null,
   );
+  const expectedEntryExpiryBars = isBarsHorizon
+    ? barsHorizonEntryExpiry(basePeriod, replay.length)
+    : expiryBars;
   add(
     'entry-expiry',
-    '待成交窗口覆盖前三个交易日',
-    question.replay.entryExpiryBars === expiryBars,
-    expiryBars,
+    entryExpiryLabel(isBarsHorizon),
+    question.replay.entryExpiryBars === expectedEntryExpiryBars,
+    expectedEntryExpiryBars,
     question.replay.entryExpiryBars ?? null,
   );
   add(
-    'day-rollup-count',
-    '每个回放交易日都有长桥原生日线',
-    rollups.day.length === sessions,
-    sessions,
-    rollups.day.length,
+    `${periodToken(ladderMid)}-rollup-count`,
+    rollupCountLabel(ladderMid),
+    rollupsMid.length === distinctBucketCount(ladderMid, replay),
+    distinctBucketCount(ladderMid, replay),
+    rollupsMid.length,
   );
   add(
-    'sort-h1',
-    '1h 数据严格递增',
-    strictlyIncreasing([...initialH1, ...replay]),
+    `sort-${periodToken(ladderBase)}`,
+    sortLabel(ladderBase),
+    strictlyIncreasing([...initialBase, ...replay]),
     true,
-    strictlyIncreasing([...initialH1, ...replay]),
+    strictlyIncreasing([...initialBase, ...replay]),
   );
   add(
-    'sort-day',
-    '日线数据严格递增',
-    strictlyIncreasing(initialDay),
+    `sort-${periodToken(ladderMid)}`,
+    sortLabel(ladderMid),
+    strictlyIncreasing(initialMid),
     true,
-    strictlyIncreasing(initialDay),
+    strictlyIncreasing(initialMid),
   );
   add(
-    'sort-week',
-    '周线数据严格递增',
-    strictlyIncreasing(initialWeek),
+    `sort-${periodToken(ladderTop)}`,
+    sortLabel(ladderTop),
+    strictlyIncreasing(initialTop),
     true,
-    strictlyIncreasing(initialWeek),
+    strictlyIncreasing(initialTop),
   );
   add(
     'cutoff-timezone',
@@ -278,15 +505,23 @@ export function auditEpisodeQuestion(
   );
   add(
     'visibility-boundary',
-    '初始 1h 与回放在 cutoff 两侧无重叠',
-    initialH1.every((bar) => Date.parse(bar.time) < Date.parse(question.cutoff)) &&
+    `初始 ${ladderBase} 与回放在 cutoff 两侧无重叠`,
+    initialBase.every((bar) => Date.parse(bar.time) < Date.parse(question.cutoff)) &&
       replay.every((bar) => Date.parse(bar.time) >= Date.parse(question.cutoff)),
     'initial < cutoff <= replay',
-    { initialLast: initialH1.at(-1)?.time ?? null, replayFirst: replay[0]?.time ?? null },
+    { initialLast: initialBase.at(-1)?.time ?? null, replayFirst: replay[0]?.time ?? null },
   );
 
-  const cutoffDay = initialDay.at(-1);
-  const previousDay = initialDay.at(-2);
+  const initialTierBarsByPeriod: Partial<Record<EpisodeViewPeriod, RawBar[]>> = {
+    [ladderBase]: initialBase,
+    [ladderMid]: initialMid,
+    [ladderTop]: initialTop,
+  };
+  const quoteDays = initialTierBarsByPeriod.day?.length
+    ? initialTierBarsByPeriod.day
+    : deriveDayBarsFromBase(initialBase);
+  const cutoffDay = quoteDays.at(-1);
+  const previousDay = quoteDays.at(-2);
   const quote = question.fixtures.quote as Record<string, unknown>;
   const quotePassed =
     cutoffDay != null &&
@@ -308,93 +543,68 @@ export function auditEpisodeQuestion(
   );
 
   const expectedIndicators = {
-    day: buildDayIndicators(initialDay),
-    week: buildWeekIndicators(initialWeek),
+    [ladderMid]: buildDayIndicators(initialMid),
+    [ladderTop]: buildWeekIndicators(initialTop),
   };
   const actualIndicators = {
-    day: (question.fixtures.indicators as Record<string, unknown>).day,
-    week: (question.fixtures.indicators as Record<string, unknown>).week,
+    [ladderMid]: (question.fixtures.indicators as Record<string, unknown>)[ladderMid],
+    [ladderTop]: (question.fixtures.indicators as Record<string, unknown>)[ladderTop],
   };
   add(
     'indicators',
-    '指标只由当前可见日线和周线重算',
+    indicatorsLabel(ladderMid, ladderTop),
     stable(expectedIndicators) === stable(actualIndicators),
     expectedIndicators,
     actualIndicators,
   );
 
-  const currentWeekDays = initialDay.filter(
-    (bar) => weekKey(marketDate(bar.time)) === cutoffWeek,
-  ) as QuoteBar[];
-  const currentWeekFixture = initialWeek.find(
-    (bar) => weekKey(marketDate(bar.time)) === cutoffWeek,
-  );
-  const safeCurrentWeek =
-    currentWeekDays.length > 0 ? aggregate(cutoffWeek, currentWeekDays) : null;
-  add(
-    'partial-week',
-    'cutoff 当周仅聚合已完成日线',
-    currentWeekFixture != null &&
-      safeCurrentWeek != null &&
-      sameBar(currentWeekFixture, safeCurrentWeek),
-    safeCurrentWeek,
-    currentWeekFixture ?? null,
-    '不得直接使用长桥返回的完整历史周线；该周线可能包含 cutoff 之后的交易日。',
-  );
+  if (ladderMid !== 'day') {
+    const safe = partialBucketAggregate(ladderMid, initialBase, question.cutoff);
+    const fixture = bucketFixture(ladderMid, initialMid, question.cutoff);
+    add(
+      `partial-${periodToken(ladderMid)}`,
+      partialBucketLabel(ladderMid, ladderBase),
+      safe == null ? fixture == null : fixture != null && sameBar(fixture, safe),
+      safe,
+      fixture ?? null,
+      partialBucketDetail(ladderMid),
+    );
+  }
+  if (ladderTop !== 'day') {
+    const safe = partialBucketAggregate(ladderTop, initialMid, question.cutoff);
+    const fixture = bucketFixture(ladderTop, initialTop, question.cutoff);
+    add(
+      `partial-${periodToken(ladderTop)}`,
+      partialBucketLabel(ladderTop, ladderMid),
+      safe == null ? fixture == null : fixture != null && sameBar(fixture, safe),
+      safe,
+      fixture ?? null,
+      partialBucketDetail(ladderTop),
+    );
+  }
 
   if (sources) {
-    const expectedH1 = [...initialH1, ...replay];
-    const h1Comparison = compareBars(expectedH1, sources.hourBars, (bar) => bar.time);
+    const baseSourceBars = sources.hourBars;
+    const midSourceBars = sources.dayBars;
+    const topSourceBars = sources.weekBars;
+
+    const expectedBase = [...initialBase, ...replay];
+    const baseComparison = compareBars(expectedBase, baseSourceBars, (bar) => bar.time);
     add(
-      'source-h1',
-      '1h 与长桥 CLI 完整匹配',
-      h1Comparison.passed,
-      h1Comparison.expectedCount,
-      h1Comparison.actualCount,
-      h1Comparison.firstMismatch ?? undefined,
+      `source-${periodToken(ladderBase)}`,
+      sourceMatchLabel(ladderBase),
+      baseComparison.passed,
+      baseComparison.expectedCount,
+      baseComparison.actualCount,
+      baseComparison.firstMismatch ?? undefined,
     );
 
-    const expectedDays = [...initialDay, ...rollups.day.map((item) => item.bar)];
-    const dayComparison = compareBars(expectedDays, sources.dayBars, (bar) => marketDate(bar.time));
-    add(
-      'source-day',
-      '日线与长桥 CLI 完整匹配',
-      dayComparison.passed,
-      dayComparison.expectedCount,
-      dayComparison.actualCount,
-      dayComparison.firstMismatch ?? undefined,
-    );
+    auditTierAgainstSource(ladderMid, initialMid, rollupsMid, midSourceBars, question.cutoff, add);
+    auditTierAgainstSource(ladderTop, initialTop, rollupsTop, topSourceBars, question.cutoff, add);
 
-    const completedInitialWeeks = initialWeek.filter(
-      (bar) => weekKey(marketDate(bar.time)) < cutoffWeek,
-    );
-    const completedWeekComparison = compareBars(completedInitialWeeks, sources.weekBars, (bar) =>
-      weekKey(marketDate(bar.time)),
-    );
-    add(
-      'source-week-history',
-      'cutoff 前完整周线与长桥 CLI 匹配',
-      completedWeekComparison.passed,
-      completedWeekComparison.expectedCount,
-      completedWeekComparison.actualCount,
-      completedWeekComparison.firstMismatch ?? undefined,
-    );
-
-    const futureWeeks = rollups.week.map((item) => item.bar);
-    const rollupWeekComparison = compareBars(futureWeeks, sources.weekBars, (bar) =>
-      weekKey(marketDate(bar.time)),
-    );
-    add(
-      'source-week-rollups',
-      '整周结束后的周线与长桥 CLI 匹配',
-      rollupWeekComparison.passed,
-      rollupWeekComparison.expectedCount,
-      rollupWeekComparison.actualCount,
-      rollupWeekComparison.firstMismatch ?? undefined,
-    );
-
-    const sourceCutoffDay = sources.dayBars.find((bar) => marketDate(bar.time) === cutoffDate);
-    const sourceTurnover = numberOf(sourceCutoffDay?.turnover);
+    const turnoverSourceBars =
+      ladderMid === 'day' ? midSourceBars : ladderTop === 'day' ? topSourceBars : baseSourceBars;
+    const sourceTurnover = sourceDayTurnover(turnoverSourceBars, question.cutoff);
     add(
       'source-quote-turnover',
       'cutoff 成交额与长桥日线匹配',
@@ -414,13 +624,13 @@ export function auditEpisodeQuestion(
     configuration: {
       cutoff: question.cutoff,
       basePeriod: question.replay.basePeriod ?? null,
-      initialBars: { h1: initialH1.length, day: initialDay.length, week: initialWeek.length },
+      initialBars: { h1: initialBase.length, day: initialMid.length, week: initialTop.length },
       horizonSessions: question.replay.horizonSessions ?? null,
       horizonBars: question.replay.horizonBars,
       decisionExpiryBars: question.replay.decisionExpiryBars ?? null,
       entryExpiryBars: question.replay.entryExpiryBars ?? null,
-      dayRollups: rollups.day.length,
-      weekRollups: rollups.week.length,
+      dayRollups: rollupsMid.length,
+      weekRollups: rollupsTop.length,
     },
   };
 }
@@ -429,19 +639,20 @@ export async function auditEpisodeQuestionLive(
   question: Question,
   fetchKlineHistory: FetchEpisodeAuditKlines,
 ): Promise<EpisodeDataAudit> {
-  const initialH1 = question.fixtures.kline['1h'] ?? [];
-  const firstHour = initialH1[0];
-  const lastHour = question.replay.bars.at(-1);
-  const firstDay = question.fixtures.kline.day?.[0];
-  const firstWeek = question.fixtures.kline.week?.[0];
-  if (!firstHour || !lastHour || !firstDay || !firstWeek)
+  const [ladderBase, ladderMid, ladderTop] = questionLadder(question);
+  const initialBase = questionBaseBars(question);
+  const firstBase = initialBase[0];
+  const lastBase = question.replay.bars.at(-1);
+  const firstMid = questionBarsForPeriod(question, ladderMid)[0];
+  const firstTop = questionBarsForPeriod(question, ladderTop)[0];
+  if (!firstBase || !lastBase || !firstMid || !firstTop)
     throw new Error('episode question is missing audit ranges');
 
-  const end = marketDate(lastHour.time);
+  const end = marketDate(lastBase.time);
   const [hourBars, dayBars, weekBars] = await Promise.all([
-    fetchKlineHistory(question.symbol, '1h', marketDate(firstHour.time), end),
-    fetchKlineHistory(question.symbol, 'day', marketDate(firstDay.time), end),
-    fetchKlineHistory(question.symbol, 'week', marketDate(firstWeek.time), end),
+    fetchKlineHistory(question.symbol, ladderBase, marketDate(firstBase.time), end),
+    fetchKlineHistory(question.symbol, ladderMid, marketDate(firstMid.time), end),
+    fetchKlineHistory(question.symbol, ladderTop, marketDate(firstTop.time), end),
   ]);
   return auditEpisodeQuestion(question, { hourBars, dayBars, weekBars });
 }

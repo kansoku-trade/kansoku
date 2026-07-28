@@ -37,4 +37,77 @@ describe('questionSchema', () => {
     const question = validQuestionFixture as unknown as Question;
     expect(question.replay).toBeDefined();
   });
+
+  it('accepts a question with no basePeriod and old-shape day/week rollups', () => {
+    const question = {
+      ...validQuestionFixture,
+      replay: {
+        ...(validQuestionFixture.replay as Record<string, unknown>),
+        rollups: {
+          day: [
+            {
+              availableAt: '2026-03-23T20:00:00-04:00',
+              bar: {
+                time: '2026-03-21',
+                open: '102',
+                high: '104',
+                low: '101',
+                close: '103',
+                volume: '600000',
+              },
+            },
+          ],
+          week: [],
+        },
+      },
+    };
+    expect(Value.Check(questionSchema, question)).toBe(true);
+  });
+
+  it('accepts a question with basePeriod 5m', () => {
+    const question = {
+      ...validQuestionFixture,
+      replay: {
+        ...(validQuestionFixture.replay as Record<string, unknown>),
+        basePeriod: '5m',
+      },
+    };
+    expect(Value.Check(questionSchema, question)).toBe(true);
+  });
+
+  it('rejects a question whose basePeriod is not one of the five base periods', () => {
+    const question = {
+      ...validQuestionFixture,
+      replay: {
+        ...(validQuestionFixture.replay as Record<string, unknown>),
+        basePeriod: 'day',
+      },
+    };
+    expect(Value.Check(questionSchema, question)).toBe(false);
+  });
+
+  it('rejects a question whose fixtures.kline carries a key outside the period ladder', () => {
+    const question = {
+      ...validQuestionFixture,
+      fixtures: {
+        ...(validQuestionFixture.fixtures as Record<string, unknown>),
+        kline: {
+          ...((validQuestionFixture.fixtures as Record<string, unknown>).kline as object),
+          '2h': [],
+        },
+      },
+    };
+    expect(Value.Check(questionSchema, question)).toBe(false);
+  });
+
+  it('accepts a kline object carrying every ladder-period key', () => {
+    const question = {
+      ...validQuestionFixture,
+      fixtures: {
+        ...(validQuestionFixture.fixtures as Record<string, unknown>),
+        kline: { '1m': [], '5m': [], '15m': [], '30m': [], '1h': [], day: [], week: [] },
+      },
+    };
+    expect(Value.Check(questionSchema, question)).toBe(true);
+  });
 });

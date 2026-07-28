@@ -7,6 +7,19 @@ const nullableNumber = Type.Union([Type.Number(), Type.Null()]);
 const requiredReason = { reason: episodeTradeReasonSchema };
 const optionalReason = { reason: Type.Optional(episodeTradeReasonSchema) };
 
+const positionSizeSchema = Type.Number({ exclusiveMinimum: 0, maximum: 1 });
+
+const advancePeriodSchema = Type.Union([
+  Type.Literal('h1'),
+  Type.Literal('1m'),
+  Type.Literal('5m'),
+  Type.Literal('15m'),
+  Type.Literal('30m'),
+  Type.Literal('1h'),
+  Type.Literal('day'),
+  Type.Literal('week'),
+]);
+
 export const episodeSubmissionSchema = Type.Object(
   {
     ...submissionSchema.properties,
@@ -22,9 +35,7 @@ export const episodeTradeActionSchema = Type.Union([
     {
       type: Type.Literal('hold'),
       bars: Type.Optional(Type.Integer({ minimum: 1, maximum: 20 })),
-      period: Type.Optional(
-        Type.Union([Type.Literal('h1'), Type.Literal('day'), Type.Literal('week')]),
-      ),
+      period: Type.Optional(advancePeriodSchema),
       ...optionalReason,
     },
     { additionalProperties: false },
@@ -43,6 +54,14 @@ export const episodeTradeActionSchema = Type.Union([
     { type: Type.Literal('exit_next_open'), ...requiredReason },
     { additionalProperties: false },
   ),
+  Type.Object(
+    { type: Type.Literal('add'), size: positionSizeSchema, ...requiredReason },
+    { additionalProperties: false },
+  ),
+  Type.Object(
+    { type: Type.Literal('reduce'), size: Type.Optional(positionSizeSchema), ...requiredReason },
+    { additionalProperties: false },
+  ),
 ]);
 
 export type EpisodeTradeAction = Static<typeof episodeTradeActionSchema>;
@@ -50,7 +69,9 @@ export type EpisodeTradeAction = Static<typeof episodeTradeActionSchema>;
 // Wire shape for the advance_trade tool. OpenAI-compatible function schemas must have a single
 // top-level `type: "object"` — DeepSeek rejects the union above outright — so the variants are
 // flattened into one discriminated object. Per-variant constraints are still enforced: the runner
-// re-checks every call against episodeTradeActionSchema, so any new variant must land in both.
+// re-checks every call against episodeTradeActionSchema, so this schema may never offer a variant
+// that one rejects. The reverse is deliberate: `add` / `reduce` exist for the trainer only, and
+// widening the model's tool surface would make new benchmark runs incomparable with the corpus.
 export const episodeTradeActionToolSchema = Type.Object(
   {
     type: Type.Union([
@@ -60,9 +81,7 @@ export const episodeTradeActionToolSchema = Type.Object(
       Type.Literal('exit_next_open'),
     ]),
     bars: Type.Optional(Type.Integer({ minimum: 1, maximum: 20 })),
-    period: Type.Optional(
-      Type.Union([Type.Literal('h1'), Type.Literal('day'), Type.Literal('week')]),
-    ),
+    period: Type.Optional(advancePeriodSchema),
     stop: Type.Optional(Type.Number()),
     target: Type.Optional(Type.Number()),
     ...optionalReason,
@@ -79,6 +98,7 @@ export const episodeActionSchema = Type.Union([
       entry: Type.Optional(Type.Number()),
       stop: Type.Optional(Type.Number()),
       target: Type.Optional(Type.Number()),
+      size: Type.Optional(positionSizeSchema),
       ...requiredReason,
     },
     { additionalProperties: false },
@@ -93,9 +113,7 @@ const episodeRecordedTradeActionSchema = Type.Union([
     {
       type: Type.Literal('hold'),
       bars: Type.Optional(Type.Integer({ minimum: 1, maximum: 20 })),
-      period: Type.Optional(
-        Type.Union([Type.Literal('h1'), Type.Literal('day'), Type.Literal('week')]),
-      ),
+      period: Type.Optional(advancePeriodSchema),
       ...optionalReason,
     },
     { additionalProperties: false },
@@ -114,6 +132,14 @@ const episodeRecordedTradeActionSchema = Type.Union([
     { type: Type.Literal('exit_next_open'), ...optionalReason },
     { additionalProperties: false },
   ),
+  Type.Object(
+    { type: Type.Literal('add'), size: positionSizeSchema, ...optionalReason },
+    { additionalProperties: false },
+  ),
+  Type.Object(
+    { type: Type.Literal('reduce'), size: Type.Optional(positionSizeSchema), ...optionalReason },
+    { additionalProperties: false },
+  ),
 ]);
 
 const episodeRecordedActionSchema = Type.Union([
@@ -125,6 +151,7 @@ const episodeRecordedActionSchema = Type.Union([
       entry: Type.Optional(Type.Number()),
       stop: Type.Optional(Type.Number()),
       target: Type.Optional(Type.Number()),
+      size: Type.Optional(positionSizeSchema),
       ...optionalReason,
     },
     { additionalProperties: false },
@@ -164,6 +191,35 @@ export const episodeActionRecordSchema = Type.Object(
 
 export type EpisodeActionRecord = Static<typeof episodeActionRecordSchema>;
 
+const episodeExitReasonSchema = Type.Union([
+  Type.Literal('stop'),
+  Type.Literal('target'),
+  Type.Literal('manual'),
+  Type.Literal('horizon'),
+]);
+
+export const episodeTradeLotSchema = Type.Object(
+  { time: Type.String(), price: Type.Number(), size: positionSizeSchema },
+  { additionalProperties: false },
+);
+
+export type EpisodeTradeLot = Static<typeof episodeTradeLotSchema>;
+
+export const episodeTradeExitSchema = Type.Object(
+  {
+    time: Type.String(),
+    price: Type.Number(),
+    size: positionSizeSchema,
+    reason: episodeExitReasonSchema,
+  },
+  { additionalProperties: false },
+);
+
+export type EpisodeTradeExit = Static<typeof episodeTradeExitSchema>;
+
+// `lots` / `exits` are optional so that answers written before position sizing existed still pass
+// Value.Check on read — results.ts silently drops an answer the schema rejects, which would erase
+// the historical corpus rather than fail loudly. The engine always writes both.
 export const episodeClosedTradeSchema = Type.Object(
   {
     tradeId: Type.Integer({ minimum: 1 }),
@@ -172,12 +228,9 @@ export const episodeClosedTradeSchema = Type.Object(
     decisionTime: Type.String(),
     entry: executionPointSchema,
     exit: executionPointSchema,
-    exitReason: Type.Union([
-      Type.Literal('stop'),
-      Type.Literal('target'),
-      Type.Literal('manual'),
-      Type.Literal('horizon'),
-    ]),
+    lots: Type.Optional(Type.Array(episodeTradeLotSchema)),
+    exits: Type.Optional(Type.Array(episodeTradeExitSchema)),
+    exitReason: episodeExitReasonSchema,
     initialStop: Type.Number(),
     finalStop: Type.Number(),
     target: Type.Number(),

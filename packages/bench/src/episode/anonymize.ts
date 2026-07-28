@@ -2,7 +2,14 @@ import { Value } from 'typebox/value';
 import type { RawBar } from '@kansoku/shared/types';
 import { buildDayIndicators, buildWeekIndicators } from '../generate/indicatorsFixture.js';
 import { questionSchema, type Question } from '../schema/question.js';
-import { marketCloseIso, marketDate, weekKey } from './generate.js';
+import { marketCloseIso, marketDate } from './generate.js';
+import { periodBucketKey, periodBucketStart, type EpisodeViewPeriod } from './periods.js';
+import {
+  questionBaseBars,
+  questionBarsForPeriod,
+  questionLadder,
+  questionRollupsForPeriod,
+} from './questionLadder.js';
 
 export interface BlindCaseTransform {
   alias: string;
@@ -93,9 +100,9 @@ function transformBar(
   };
 }
 
-function aggregateWeek(key: string, bars: RawBar[]): RawBar {
+function aggregateBucket(time: string, bars: RawBar[]): RawBar {
   return {
-    time: key,
+    time,
     open: numberOf(bars[0].open),
     high: Math.max(...bars.map((bar) => numberOf(bar.high))),
     low: Math.min(...bars.map((bar) => numberOf(bar.low))),
@@ -104,12 +111,41 @@ function aggregateWeek(key: string, bars: RawBar[]): RawBar {
   };
 }
 
+function foldByDay(bars: RawBar[]): RawBar[] {
+  const groups = new Map<string, RawBar[]>();
+  for (const bar of bars) {
+    const key = periodBucketKey('day', bar.time);
+    const group = groups.get(key);
+    if (group) group.push(bar);
+    else groups.set(key, [bar]);
+  }
+  return [...groups.values()]
+    .map((group) => aggregateBucket(periodBucketStart('day', group[0].time), group))
+    .sort((a, b) => Date.parse(a.time) - Date.parse(b.time));
+}
+
 export function anonymizeEpisodeQuestion(
   source: Question,
   transform: BlindCaseTransform,
-): { question: Question; provenance: BlindCaseProvenance } {
+  epilogueBars?: RawBar[],
+): { question: Question; provenance: BlindCaseProvenance; epilogue?: RawBar[] } {
   if (!/^ASSET\d{3}$/.test(transform.alias))
     throw new Error(`invalid blind alias: ${transform.alias}`);
+  if (epilogueBars?.length) {
+    const lastCaseBar = source.replay.bars.at(-1);
+    if (lastCaseBar && Date.parse(epilogueBars[0].time) <= Date.parse(lastCaseBar.time)) {
+      throw new Error(
+        `blind epilogue must start strictly after the case's last bar: case ends ${lastCaseBar.time}, epilogue starts ${epilogueBars[0].time}`,
+      );
+    }
+    for (let index = 1; index < epilogueBars.length; index++) {
+      if (Date.parse(epilogueBars[index].time) <= Date.parse(epilogueBars[index - 1].time)) {
+        throw new Error(
+          `blind epilogue bars must be strictly increasing in time: ${epilogueBars[index - 1].time} then ${epilogueBars[index].time}`,
+        );
+      }
+    }
+  }
   const sourceCutoffDate = marketDate(source.cutoff);
   const sourceDateMs = Date.parse(`${sourceCutoffDate}T00:00:00Z`);
   const syntheticDateMs = Date.parse(`${transform.syntheticCutoff}T00:00:00Z`);
@@ -123,32 +159,77 @@ export function anonymizeEpisodeQuestion(
   }
 
   const syntheticCutoff = marketCloseIso(transform.syntheticCutoff);
-  const cutoffDay = source.fixtures.kline.day.at(-1);
-  if (!cutoffDay) throw new Error(`blind source question has no daily cutoff bar: ${source.id}`);
-  const cutoffClose = numberOf(cutoffDay.close);
-  if (cutoffClose <= 0) throw new Error(`blind source cutoff close must be positive: ${source.id}`);
-  const dailyVolumes = source.fixtures.kline.day
+  const [basePeriod, midPeriod, topPeriod] = questionLadder(source);
+
+  const baseBarsSource = questionBaseBars(source);
+  if (baseBarsSource.length === 0)
+    throw new Error(`blind source question has no base-tier cutoff bar: ${source.id}`);
+  const baseVolumes = baseBarsSource
     .map((bar) => numberOf(bar.volume))
     .filter((value) => value > 0);
-  if (dailyVolumes.length === 0)
-    throw new Error(`blind source has no positive daily volume: ${source.id}`);
-  const priceScale = 100 / cutoffClose;
-  const volumeScale = 1_000_000 / median(dailyVolumes);
+  if (baseVolumes.length === 0)
+    throw new Error(`blind source has no positive base-tier volume: ${source.id}`);
 
-  const transformBars = (bars: RawBar[] | undefined): RawBar[] =>
-    (bars ?? []).map((bar) => transformBar(bar, dayShift, priceScale, volumeScale));
-  const day = transformBars(source.fixtures.kline.day);
-  const cutoffWeek = weekKey(transform.syntheticCutoff);
-  const week = transformBars(source.fixtures.kline.week);
-  const currentWeekDays = day.filter((bar) => weekKey(marketDate(bar.time)) === cutoffWeek);
-  const currentWeekIndex = week.findIndex((bar) => weekKey(marketDate(bar.time)) === cutoffWeek);
-  if (currentWeekIndex >= 0 && currentWeekDays.length > 0) {
-    week[currentWeekIndex] = aggregateWeek(cutoffWeek, currentWeekDays);
+  const midBarsSource = questionBarsForPeriod(source, midPeriod);
+  const topBarsSource = questionBarsForPeriod(source, topPeriod);
+  const sourceTierByPeriod: Partial<Record<EpisodeViewPeriod, RawBar[]>> = {
+    [basePeriod]: baseBarsSource,
+    [midPeriod]: midBarsSource,
+    [topPeriod]: topBarsSource,
+  };
+  const hasDayTier = Boolean(sourceTierByPeriod.day?.length);
+  // Relies on generate.ts's requiredBaseBars() having given `source` at least two
+  // sessions of base bars whenever the ladder has no day tier; this is a backstop
+  // for any caller that hands anonymizeEpisodeQuestion a question built another way.
+  const sourceQuoteDays = hasDayTier ? sourceTierByPeriod.day! : foldByDay(baseBarsSource);
+  if (!hasDayTier && sourceQuoteDays.length < 2) {
+    throw new Error(
+      `insufficient ${basePeriod} history for a stable blind quote: need 2 trading days, got ${sourceQuoteDays.length} (source ${source.id})`,
+    );
   }
-  const oneHour = transformBars(source.fixtures.kline['1h']);
+  // Anchor priceScale on the very bar that seeds fixtures.quote.last, not on the base
+  // tier: a native day bar's close and the last intraday bar's close differ by a few
+  // basis points in real data, which would leave quote.last off 100 and fail the
+  // dataset's normalizedCutoffClose policy check.
+  const cutoffClose = numberOf(sourceQuoteDays.at(-1)!.close);
+  if (cutoffClose <= 0) throw new Error(`blind source cutoff close must be positive: ${source.id}`);
+  const priceScale = 100 / cutoffClose;
+  const volumeScale = 1_000_000 / median(baseVolumes);
+
+  const transformBars = (bars: RawBar[]): RawBar[] =>
+    bars.map((bar) => transformBar(bar, dayShift, priceScale, volumeScale));
+
+  const baseBars = transformBars(baseBarsSource);
+  const midBars = transformBars(midBarsSource);
+  const topBars = transformBars(topBarsSource);
+
+  const lastMidBar = midBars.at(-1);
+  if (topPeriod !== 'day' && lastMidBar) {
+    const cutoffTopKey = periodBucketKey(topPeriod, lastMidBar.time);
+    const currentTopBucketMidBars = midBars.filter(
+      (bar) => periodBucketKey(topPeriod, bar.time) === cutoffTopKey,
+    );
+    const currentTopIndex = topBars.findIndex(
+      (bar) => periodBucketKey(topPeriod, bar.time) === cutoffTopKey,
+    );
+    if (currentTopIndex >= 0) {
+      topBars[currentTopIndex] = aggregateBucket(
+        periodBucketStart(topPeriod, lastMidBar.time),
+        currentTopBucketMidBars,
+      );
+    }
+  }
+
   const replayBars = transformBars(source.replay.bars);
-  const previousDay = day.at(-2);
-  const transformedCutoffDay = day.at(-1)!;
+
+  const tierBarsByPeriod: Partial<Record<EpisodeViewPeriod, RawBar[]>> = {
+    [basePeriod]: baseBars,
+    [midPeriod]: midBars,
+    [topPeriod]: topBars,
+  };
+  const quoteDays = hasDayTier ? tierBarsByPeriod.day! : foldByDay(baseBars);
+  const transformedCutoffDay = quoteDays.at(-1)!;
+  const previousDay = quoteDays.at(-2);
   const sourceQuote = source.fixtures.quote as Record<string, unknown>;
   const sourceTurnover = Number(sourceQuote.turnover);
   const quote: Record<string, unknown> = {
@@ -173,8 +254,15 @@ export function anonymizeEpisodeQuestion(
     layer: 'anonymous',
     adversarial: source.adversarial,
     fixtures: {
-      kline: { '1h': oneHour, day, week },
-      indicators: { day: buildDayIndicators(day), week: buildWeekIndicators(week) },
+      kline: {
+        ...(baseBars.length ? { [basePeriod]: baseBars } : {}),
+        [midPeriod]: midBars,
+        [topPeriod]: topBars,
+      },
+      indicators: {
+        [midPeriod]: buildDayIndicators(midBars),
+        [topPeriod]: buildWeekIndicators(topBars),
+      },
       quote,
       capitalFlow: {},
       news: [],
@@ -186,11 +274,11 @@ export function anonymizeEpisodeQuestion(
       bars: replayBars,
       rollups: source.replay.rollups
         ? {
-            day: source.replay.rollups.day.map((item) => ({
+            [midPeriod]: questionRollupsForPeriod(source, midPeriod).map((item) => ({
               availableAt: shiftTime(item.availableAt, dayShift),
               bar: transformBar(item.bar, dayShift, priceScale, volumeScale),
             })),
-            week: source.replay.rollups.week.map((item) => ({
+            [topPeriod]: questionRollupsForPeriod(source, topPeriod).map((item) => ({
               availableAt: shiftTime(item.availableAt, dayShift),
               bar: transformBar(item.bar, dayShift, priceScale, volumeScale),
             })),
@@ -219,5 +307,6 @@ export function anonymizeEpisodeQuestion(
       priceScale,
       volumeScale,
     },
+    ...(epilogueBars ? { epilogue: transformBars(epilogueBars) } : {}),
   };
 }

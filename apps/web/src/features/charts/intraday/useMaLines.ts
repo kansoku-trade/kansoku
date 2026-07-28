@@ -20,7 +20,7 @@ export const MAX_MA_LINES = 5;
 export const MIN_MA_PERIOD = 2;
 export const MAX_MA_PERIOD = 500;
 
-const STORAGE_KEY = 'intraday-ma-lines';
+export const MA_LINES_STORAGE_KEY = 'intraday-ma-lines';
 
 export const MA_PALETTE = [
   theme.accent,
@@ -66,9 +66,9 @@ export function sanitizeMaLines(raw: unknown): MaLine[] {
   return lines.length ? lines : defaultMaLines();
 }
 
-function loadStored(): MaLine[] {
+function loadStored(storageKey: string): MaLine[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(storageKey);
     if (!raw) return defaultMaLines();
     return sanitizeMaLines(JSON.parse(raw));
   } catch {
@@ -88,12 +88,12 @@ export interface MaLinesApi {
   updateMaLine: (id: string, patch: Partial<Omit<MaLine, 'id'>>) => void;
 }
 
-export function useMaLines(): MaLinesApi {
-  const [maLines, setMaLines] = useState(loadStored);
+export function useMaLines(storageKey: string = MA_LINES_STORAGE_KEY): MaLinesApi {
+  const [maLines, setMaLines] = useState(() => loadStored(storageKey));
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(maLines));
-  }, [maLines]);
+    localStorage.setItem(storageKey, JSON.stringify(maLines));
+  }, [storageKey, maLines]);
 
   const addMaLine = useCallback(() => {
     setMaLines((prev) => {

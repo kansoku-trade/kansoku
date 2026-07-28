@@ -15,6 +15,12 @@ export function buildGoSection(deps: MenuActionDeps): MenuItemConstructorOptions
         accelerator: 'CmdOrCtrl+Shift+L',
         click: () => deps.openResearch(),
       },
+      { type: 'separator' },
+      {
+        label: '盲盘训练',
+        accelerator: 'CmdOrCtrl+Shift+B',
+        click: () => deps.openTrainer(),
+      },
     ],
   };
 }

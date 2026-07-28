@@ -78,8 +78,8 @@ describe('assembleQuestion', () => {
     });
 
     expect(question.fixtures.kline.day).toHaveLength(250);
-    expect(question.fixtures.kline.week.length).toBeLessThanOrEqual(104);
-    expect(question.fixtures.kline.week.length).toBeGreaterThan(0);
+    expect(question.fixtures.kline.week!.length).toBeLessThanOrEqual(104);
+    expect(question.fixtures.kline.week!.length).toBeGreaterThan(0);
     expect(question.replay.bars).toHaveLength(20);
 
     const indicators = question.fixtures.indicators as {

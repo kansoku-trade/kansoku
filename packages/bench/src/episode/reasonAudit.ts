@@ -1,5 +1,6 @@
 import type { RawBar } from '@kansoku/shared/types';
 import type { EpisodeActionRecord } from '../schema/episode.js';
+import { questionBaseBars } from './questionLadder.js';
 import type { Question } from '../schema/question.js';
 
 // Findings are review candidates, not violations. A reason legitimately names prices the tape has
@@ -52,7 +53,7 @@ function numberOf(value: string | number): number {
 function visibleBars(question: Question, at: string): { bars: RawBar[]; cursor: number } {
   const replay = question.replay.bars;
   const cursor = replay.findIndex((bar) => bar.time === at);
-  const pre = question.fixtures.kline['1h'] ?? [];
+  const pre = questionBaseBars(question);
   if (cursor < 0) return { bars: [...pre], cursor: -1 };
   return { bars: [...pre, ...replay.slice(0, cursor + 1)], cursor };
 }

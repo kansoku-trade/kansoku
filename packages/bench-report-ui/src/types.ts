@@ -153,6 +153,14 @@ export interface EpisodeReportProcessCheckView {
   detail: string;
 }
 
+export interface EpisodeReportTradeFillItem {
+  kind: 'entry' | 'exit';
+  label: string;
+  barLabel: string;
+  priceLabel: string;
+  sizeLabel: string;
+}
+
 export interface EpisodeReportTradeLedgerItem {
   tradeId: number;
   direction: string;
@@ -168,6 +176,7 @@ export interface EpisodeReportTradeLedgerItem {
   finalStop: number;
   target: number;
   exitPrice: number;
+  fills: EpisodeReportTradeFillItem[];
   netR: number;
   tone: ToneClass;
 }

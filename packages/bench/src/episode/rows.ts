@@ -1,10 +1,8 @@
-import type {
-  EpisodeActionRecord,
-  EpisodeAnswer,
-  EpisodeClosedTrade,
-} from '../schema/episode.js';
+import type { EpisodeActionRecord, EpisodeAnswer, EpisodeClosedTrade } from '../schema/episode.js';
 import type { Question } from '../schema/question.js';
 import type { EpisodeTradeReason } from '../schema/tradeReason.js';
+import { FILL_LABELS } from './labels.js';
+import { FULL_POSITION_SIZE } from './position.js';
 import { buildProcessEvents, type ProcessEvent } from './process.js';
 import type { EpisodeProvenanceEntry, EpisodeReportTraceLine } from './report.js';
 
@@ -112,6 +110,33 @@ export function closedTrades(answer: EpisodeAnswer): EpisodeClosedTrade[] {
   ];
 }
 
+export interface TradeEntryFill {
+  time: string;
+  price: number;
+  size: number;
+}
+
+export interface TradeExitFill extends TradeEntryFill {
+  reason: EpisodeClosedTrade['exitReason'];
+}
+
+// Answers recorded before position sizing existed carry no `lots` / `exits`, so both accessors fall
+// back to the single averaged fill the old shape had. That fallback is what keeps the historical
+// corpus readable rather than silently absent from the report.
+export function tradeEntryFills(trade: EpisodeClosedTrade): TradeEntryFill[] {
+  if (trade.lots && trade.lots.length > 0) return trade.lots.map((lot) => ({ ...lot }));
+  return [{ ...trade.entry, size: FULL_POSITION_SIZE }];
+}
+
+export function tradeExitFills(trade: EpisodeClosedTrade): TradeExitFill[] {
+  if (trade.exits && trade.exits.length > 0) return trade.exits.map((exit) => ({ ...exit }));
+  return [{ ...trade.exit, size: FULL_POSITION_SIZE, reason: trade.exitReason }];
+}
+
+export function exitReasonLabel(reason: EpisodeClosedTrade['exitReason']): string {
+  return FILL_LABELS[reason] ?? reason;
+}
+
 export function tradeExitLabel(trade: EpisodeClosedTrade): string {
   const sameOpen =
     trade.entry.time === trade.exit.time && Math.abs(trade.entry.price - trade.exit.price) < 1e-9;
@@ -126,13 +151,14 @@ export function tradeExitLabel(trade: EpisodeClosedTrade): string {
           ? trade.entry.price <= trade.initialStop
           : trade.entry.price >= trade.initialStop
         : false);
-  if (trade.exitReason === 'target') return crossedAtFill ? '止盈（开盘越过）' : '止盈';
-  if (trade.exitReason === 'stop') return crossedAtFill ? '止损（开盘越过）' : '止损';
-  if (trade.exitReason === 'manual') return '主动退出';
-  return '强平';
+  const label = exitReasonLabel(trade.exitReason);
+  return crossedAtFill ? `${label}（开盘越过）` : label;
 }
 
-export function replayBarIndex(question: Question | undefined, time: string | undefined): number | null {
+export function replayBarIndex(
+  question: Question | undefined,
+  time: string | undefined,
+): number | null {
   if (!question || !time) return null;
   const index = question.replay.bars.findIndex((bar) => bar.time === time);
   return index >= 0 ? index + 1 : null;

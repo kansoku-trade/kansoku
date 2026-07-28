@@ -13,7 +13,20 @@ import type { BenchNewsItem } from '../schema/newsItem.js';
 import type { Question } from '../schema/question.js';
 import { anonymizeEpisodeQuestion, type BlindCaseProvenance } from './anonymize.js';
 import { auditEpisodeQuestion, type EpisodeDataAudit } from './audit.js';
-import { assembleEpisodeQuestion, type FetchEpisodeKlineHistory, marketDate } from './generate.js';
+import {
+  assembleEpisodeQuestion,
+  requiredBaseBars,
+  type FetchEpisodeKlineHistory,
+  marketDate,
+  EPISODE_REQUIRED_MID,
+  EPISODE_REQUIRED_TOP,
+} from './generate.js';
+import {
+  episodePeriodLadder,
+  EPISODE_INTRADAY_MINUTES,
+  type EpisodeViewPeriod,
+} from './periods.js';
+import { questionLadder } from './questionLadder.js';
 import type { EpisodeDatasetPlan, EpisodeDatasetPlanCase } from './datasetPlan.js';
 
 export interface BuildEpisodeDatasetOptions {
@@ -60,6 +73,8 @@ interface PreliminaryReport {
   cases: PreliminaryCaseRecord[];
 }
 
+const REGULAR_SESSION_MINUTES = 390;
+
 function addDays(date: string, days: number): string {
   const value = new Date(`${date}T00:00:00Z`);
   value.setUTCDate(value.getUTCDate() + days);
@@ -92,30 +107,52 @@ async function cachedKlines(
   return bars;
 }
 
+function sourceTierLookbackStart(
+  period: EpisodeViewPeriod,
+  cutoffDate: string,
+  required: number,
+): string {
+  if (period === 'day' || period === 'week') return addDays(cutoffDate, -1_100);
+  const perSession = Math.ceil(REGULAR_SESSION_MINUTES / EPISODE_INTRADAY_MINUTES[period]);
+  const neededSessions = Math.ceil(required / perSession);
+  return addDays(cutoffDate, -(Math.ceil(neededSessions * 2.5) + 14));
+}
+
 async function sourceQuestion(
   entry: EpisodeDatasetPlanCase,
   options: BuildEpisodeDatasetOptions,
 ): Promise<{ question: Question; audit: EpisodeDataAudit }> {
   const sessions = options.plan.horizonSessions;
-  const hourStart = addDays(entry.cutoff, -90);
+  const basePeriod = options.plan.basePeriod ?? '1h';
+  const [ladderBase, ladderMid, ladderTop] = episodePeriodLadder(basePeriod);
   const rangeEnd = addDays(entry.cutoff, Math.ceil(sessions * 2.5) + 14);
-  const historyStart = addDays(entry.cutoff, -1_100);
-  const [hourBars, dayBars, weekBars] = await Promise.all([
-    cachedKlines(options, entry.symbol, '1h', hourStart, rangeEnd),
-    cachedKlines(options, entry.symbol, 'day', historyStart, rangeEnd),
-    cachedKlines(options, entry.symbol, 'week', historyStart, rangeEnd),
+  const baseStart =
+    basePeriod === '1h'
+      ? addDays(entry.cutoff, -90)
+      : sourceTierLookbackStart(ladderBase, entry.cutoff, requiredBaseBars(basePeriod));
+  const midStart = sourceTierLookbackStart(ladderMid, entry.cutoff, EPISODE_REQUIRED_MID);
+  const topStart = sourceTierLookbackStart(ladderTop, entry.cutoff, EPISODE_REQUIRED_TOP);
+  const [baseBars, midBars, topBars] = await Promise.all([
+    cachedKlines(options, entry.symbol, ladderBase, baseStart, rangeEnd),
+    cachedKlines(options, entry.symbol, ladderMid, midStart, rangeEnd),
+    cachedKlines(options, entry.symbol, ladderTop, topStart, rangeEnd),
   ]);
   const question = assembleEpisodeQuestion({
     symbol: entry.symbol,
     layer: layerForSymbol(entry.symbol),
     cutoffDate: entry.cutoff,
-    dayBars,
-    weekBars,
-    hourBars,
+    basePeriod,
+    baseBars,
+    midBars,
+    topBars,
     horizonSessions: sessions,
     calendar: {},
   });
-  const audit = auditEpisodeQuestion(question, { hourBars, dayBars, weekBars });
+  const audit = auditEpisodeQuestion(question, {
+    hourBars: baseBars,
+    dayBars: midBars,
+    weekBars: topBars,
+  });
   if (!audit.passed) {
     const failures = audit.checks
       .filter((check) => check.status === 'fail')
@@ -270,6 +307,7 @@ function policyChecks(
       realIdentityRetained: question.symbol === entry.symbol,
     };
   }
+  const ladder = questionLadder(question);
   return {
     cutoffSynthetic2026: marketDate(question.cutoff).startsWith('2026-'),
     replaySynthetic2026: replayYears2026,
@@ -281,6 +319,12 @@ function policyChecks(
     calendarEmpty: Object.keys(question.fixtures.calendar).length === 0,
     fundamentalsEmpty: Object.keys(question.fixtures.fundamentals).length === 0,
     capitalFlowEmpty: Object.keys(question.fixtures.capitalFlow).length === 0,
+    klineKeysInLadder: Object.keys(question.fixtures.kline).every((key) =>
+      ladder.includes(key as EpisodeViewPeriod),
+    ),
+    rollupKeysInLadder: Object.keys(question.replay.rollups ?? {}).every((key) =>
+      ladder.includes(key as EpisodeViewPeriod),
+    ),
   };
 }
 

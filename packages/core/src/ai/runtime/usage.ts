@@ -32,7 +32,8 @@ export interface AiUsageLogContext {
     | 'research-chat'
     | 'research-refresh'
     | 'memory'
-    | 'assistant';
+    | 'assistant'
+    | 'case-pick';
   symbol: string;
   model: { provider?: string; id?: string };
   origin?: string;

@@ -13,6 +13,21 @@ import type { Trigger } from '../src/ai/personas/triggers.js';
 const fakeModel = { provider: 'anthropic', id: 'claude-haiku-4-5' } as unknown as AiModel;
 const trigger: Trigger = { kind: 'macd_cross', detail: 'hist 0.1 -> -0.1' };
 
+// A prompt is now a JSON envelope followed by raw K-line tables, separated by a
+// blank line; the bars no longer live inside the JSON.
+function envelope(promptText: string): Record<string, never> {
+  return JSON.parse(promptText.split('\n\n')[0]);
+}
+
+function tableTimes(promptText: string): string[] {
+  return promptText
+    .split('\n\n')
+    .slice(1)
+    .flatMap((table) => table.split('\n'))
+    .filter((line) => /^\d{2}:\d{2},/.test(line))
+    .map((line) => line.slice(0, 5));
+}
+
 beforeEach(() => {
   resetCommentatorSessions();
 });
@@ -109,14 +124,16 @@ describe('runCommentator', () => {
     };
     const agentFactory: AiAgentFactory = ({ tools }) => ({
       prompt: async () => {
-        await tools.find((t) => t.name === 'submit_comment')?.execute('call-1', {
-          level: 'alert',
-          fact: '5 分钟收盘 575.9，击穿止损位 576.5，跌破当根量能 2.9 倍。',
-          read: '收盘价确认跌破且带量，不是插针；日内结构变成低点递降，做多论点已失效。',
-          stance: 'act_per_plan',
-          stanceNote: '按止损计划执行。',
-          escalate: true,
-        });
+        await tools
+          .find((t) => t.name === 'submit_comment')
+          ?.execute('call-1', {
+            level: 'alert',
+            fact: '5 分钟收盘 575.9，击穿止损位 576.5，跌破当根量能 2.9 倍。',
+            read: '收盘价确认跌破且带量，不是插针；日内结构变成低点递降，做多论点已失效。',
+            stance: 'act_per_plan',
+            stanceNote: '按止损计划执行。',
+            escalate: true,
+          });
       },
       abort: () => {},
     });
@@ -143,13 +160,15 @@ describe('runCommentator', () => {
     const comments: CockpitComment[] = [];
     const agentFactory: AiAgentFactory = ({ tools }) => ({
       prompt: async () => {
-        await tools.find((t) => t.name === 'submit_comment')?.execute('c', {
-          level: 'info',
-          fact: '价格 577.1，进入支撑区。',
-          read: '触区间，等确认。',
-          stance: 'no_action',
-          escalate: false,
-        });
+        await tools
+          .find((t) => t.name === 'submit_comment')
+          ?.execute('c', {
+            level: 'info',
+            fact: '价格 577.1，进入支撑区。',
+            read: '触区间，等确认。',
+            stance: 'no_action',
+            escalate: false,
+          });
       },
       abort: () => {},
     });
@@ -203,20 +222,30 @@ describe('runCommentator', () => {
       symbol: 'MU.US',
       pack: makePack('MU.US', bars1),
       trigger,
-      deps: { model: fakeModel, agentFactory, appendComment, now: () => new Date('2026-07-05T14:55:00.000Z') },
+      deps: {
+        model: fakeModel,
+        agentFactory,
+        appendComment,
+        now: () => new Date('2026-07-05T14:55:00.000Z'),
+      },
     });
     await runCommentator({
       symbol: 'MU.US',
       pack: makePack('MU.US', bars2),
       trigger: { kind: 'level_break', detail: '破位' },
-      deps: { model: fakeModel, agentFactory, appendComment, now: () => new Date('2026-07-05T15:31:00.000Z') },
+      deps: {
+        model: fakeModel,
+        agentFactory,
+        appendComment,
+        now: () => new Date('2026-07-05T15:31:00.000Z'),
+      },
     });
 
     expect(factoryCalls).toBe(1);
     expect(prompts).toHaveLength(2);
-    expect(JSON.parse(prompts[0])).toHaveProperty('pack');
-    expect(JSON.parse(prompts[1])).toHaveProperty('pack');
-    expect(JSON.parse(prompts[1])).not.toHaveProperty('update');
+    expect(envelope(prompts[0])).toHaveProperty('pack');
+    expect(envelope(prompts[1])).toHaveProperty('pack');
+    expect(envelope(prompts[1])).not.toHaveProperty('update');
   });
 
   it('sends an incremental update when the gap since the last run is within the threshold', async () => {
@@ -250,18 +279,28 @@ describe('runCommentator', () => {
       symbol: 'MU.US',
       pack: makePack('MU.US', bars1),
       trigger,
-      deps: { model: fakeModel, agentFactory, appendComment, now: () => new Date('2026-07-05T14:55:00.000Z') },
+      deps: {
+        model: fakeModel,
+        agentFactory,
+        appendComment,
+        now: () => new Date('2026-07-05T14:55:00.000Z'),
+      },
     });
     await runCommentator({
       symbol: 'MU.US',
       pack: makePack('MU.US', bars2),
       trigger: { kind: 'level_break', detail: '破位' },
-      deps: { model: fakeModel, agentFactory, appendComment, now: () => new Date('2026-07-05T15:05:00.000Z') },
+      deps: {
+        model: fakeModel,
+        agentFactory,
+        appendComment,
+        now: () => new Date('2026-07-05T15:05:00.000Z'),
+      },
     });
 
     expect(prompts).toHaveLength(2);
-    expect(JSON.parse(prompts[1])).toHaveProperty('update');
-    expect(JSON.parse(prompts[1])).not.toHaveProperty('pack');
+    expect(envelope(prompts[1])).toHaveProperty('update');
+    expect(envelope(prompts[1])).not.toHaveProperty('pack');
   });
 
   it('returns escalate:false when the tool reports no escalation', async () => {
@@ -285,7 +324,13 @@ describe('runCommentator', () => {
     const { deps } = harness((tools) => ({
       prompt: async () => {
         const submit = tools.find((t) => t.name === 'submit_comment');
-        const res = await submit!.execute('call-1', { level: 'info', fact: 'x', read: 'r', stance: 'no_action', escalate: false });
+        const res = await submit!.execute('call-1', {
+          level: 'info',
+          fact: 'x',
+          read: 'r',
+          stance: 'no_action',
+          escalate: false,
+        });
         terminate = res.terminate;
       },
       abort: () => {},
@@ -352,7 +397,13 @@ describe('runCommentator', () => {
           silentOnce = false;
           await currentTools
             .find((t) => t.name === 'submit_comment')
-            ?.execute('c', { level: 'info', fact: 'x', read: 'r', stance: 'no_action', escalate: false });
+            ?.execute('c', {
+              level: 'info',
+              fact: 'x',
+              read: 'r',
+              stance: 'no_action',
+              escalate: false,
+            });
         },
         abort: () => {},
         setTools: (tools) => {
@@ -488,11 +539,12 @@ describe('runCommentator', () => {
 
     expect(factoryCalls).toBe(1);
     expect(prompts).toHaveLength(2);
-    const first = JSON.parse(prompts[0]);
+    const first = envelope(prompts[0]);
     expect(first).toHaveProperty('pack');
-    const second = JSON.parse(prompts[1]);
+    const second = envelope(prompts[1]);
     expect(second).not.toHaveProperty('pack');
-    expect(second.update.m5.bars.map((b: RawBar) => b.time)).toEqual(['2026-07-05T15:00:00.000Z']);
+    // 15:00Z is 11:00 ET; only the one new bar rides along in the update table.
+    expect(tableTimes(prompts[1])).toEqual(['11:00']);
     // the swapped-in tool must carry the new trigger
     expect(submittedTriggers).toEqual(['macd_cross: hist 0.1 -> -0.1', 'level_break: 破位']);
   });
@@ -505,7 +557,13 @@ describe('runCommentator', () => {
         prompt: async () => {
           await tools
             .find((t) => t.name === 'submit_comment')
-            ?.execute('c', { level: 'info', fact: 'x', read: 'r', stance: 'no_action', escalate: false });
+            ?.execute('c', {
+              level: 'info',
+              fact: 'x',
+              read: 'r',
+              stance: 'no_action',
+              escalate: false,
+            });
         },
         abort: () => {},
       };
@@ -536,7 +594,13 @@ describe('runCommentator', () => {
         prompt: async () => {
           await tools
             .find((t) => t.name === 'submit_comment')
-            ?.execute('c', { level: 'info', fact: 'x', read: 'r', stance: 'no_action', escalate: false });
+            ?.execute('c', {
+              level: 'info',
+              fact: 'x',
+              read: 'r',
+              stance: 'no_action',
+              escalate: false,
+            });
         },
         abort: () => {},
       };
@@ -566,7 +630,13 @@ describe('runCommentator', () => {
         prompt: async () => {
           await tools
             .find((t) => t.name === 'submit_comment')
-            ?.execute('c', { level: 'info', fact: 'x', read: 'r', stance: 'no_action', escalate: false });
+            ?.execute('c', {
+              level: 'info',
+              fact: 'x',
+              read: 'r',
+              stance: 'no_action',
+              escalate: false,
+            });
         },
         abort: () => {},
       };
@@ -606,7 +676,13 @@ describe('runCommentator', () => {
         prompt: async () => {
           await currentTools
             .find((t) => t.name === 'submit_comment')
-            ?.execute('c', { level: 'info', fact: 'x', read: 'r', stance: 'no_action', escalate: false });
+            ?.execute('c', {
+              level: 'info',
+              fact: 'x',
+              read: 'r',
+              stance: 'no_action',
+              escalate: false,
+            });
         },
         abort: () => {},
         setTools: (tools) => {
@@ -648,7 +724,13 @@ describe('runCommentator', () => {
           if (fail) throw new Error('boom');
           await currentTools
             .find((t) => t.name === 'submit_comment')
-            ?.execute('c', { level: 'info', fact: 'x', read: 'r', stance: 'no_action', escalate: false });
+            ?.execute('c', {
+              level: 'info',
+              fact: 'x',
+              read: 'r',
+              stance: 'no_action',
+              escalate: false,
+            });
         },
         abort: () => {},
         setTools: (tools) => {
@@ -665,7 +747,7 @@ describe('runCommentator', () => {
     await runCommentator({ symbol: 'MU.US', pack: makePack('MU.US'), trigger, deps });
 
     expect(factoryCalls).toBe(2);
-    expect(JSON.parse(prompts[2])).toHaveProperty('pack');
+    expect(envelope(prompts[2])).toHaveProperty('pack');
   });
 
   it('drops the session when the agent never calls submit_comment', async () => {
@@ -679,7 +761,13 @@ describe('runCommentator', () => {
           if (silent) return;
           await currentTools
             .find((t) => t.name === 'submit_comment')
-            ?.execute('c', { level: 'info', fact: 'x', read: 'r', stance: 'no_action', escalate: false });
+            ?.execute('c', {
+              level: 'info',
+              fact: 'x',
+              read: 'r',
+              stance: 'no_action',
+              escalate: false,
+            });
         },
         abort: () => {},
         setTools: (tools) => {
@@ -707,7 +795,13 @@ describe('runCommentator', () => {
         prompt: async () => {
           await currentTools
             .find((t) => t.name === 'submit_comment')
-            ?.execute('c', { level: 'info', fact: 'x', read: 'r', stance: 'no_action', escalate: false });
+            ?.execute('c', {
+              level: 'info',
+              fact: 'x',
+              read: 'r',
+              stance: 'no_action',
+              escalate: false,
+            });
         },
         abort: () => {},
         setTools: (tools) => {

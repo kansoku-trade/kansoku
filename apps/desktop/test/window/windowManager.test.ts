@@ -41,9 +41,11 @@ class FakeWindow {
 let nextSenderId = 1;
 const createWindow = vi.fn(() => new FakeWindow(nextSenderId++));
 const createPopoutWindow = vi.fn(() => new FakeWindow(nextSenderId++));
+const createTrainerWindow = vi.fn(() => new FakeWindow(nextSenderId++));
 
 vi.mock('@desktop/shell/window/mainWindow.js', () => ({ createWindow }));
 vi.mock('@desktop/shell/window/popoutWindow.js', () => ({ createPopoutWindow }));
+vi.mock('@desktop/shell/window/trainerWindow.js', () => ({ createTrainerWindow }));
 
 const { createWindowManager } = await import('@desktop/shell/window/windowManager.js');
 
@@ -214,6 +216,27 @@ describe('createWindowManager', () => {
     await popoutHandler?.({} as never, 'NVDA' as never);
 
     expect(createPopoutWindow).toHaveBeenCalledWith('NVDA');
+    expect(manager.windowCount()).toBe(0);
+  });
+
+  it('wires the trainer ipc handler to createTrainerWindow without touching the windows registry', async () => {
+    dir = await mkdtemp(join(tmpdir(), 'window-manager-'));
+    createTrainerWindow.mockClear();
+    ipcMain.handle.mockClear();
+    vi.resetModules();
+    const { createWindowManager: freshCreateWindowManager } = await import(
+      '@desktop/shell/window/windowManager.js'
+    );
+    const manager = await freshCreateWindowManager({ userDataDir: dir, debounceMs: 10 });
+
+    const trainerHandler = ipcMain.handle.mock.calls.find(
+      ([channel]) => channel === 'windows.openTrainer',
+    )?.[1];
+    expect(trainerHandler).toBeDefined();
+
+    await trainerHandler?.({} as never);
+
+    expect(createTrainerWindow).toHaveBeenCalled();
     expect(manager.windowCount()).toBe(0);
   });
 

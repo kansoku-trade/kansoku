@@ -6,13 +6,14 @@ import { Value } from 'typebox/value';
 import { runBackfillNews } from './generate/backfillPipeline.js';
 import type { NewsSourceMode } from './generate/backfillPipeline.js';
 import { fetchArchiveFileLive, readArchiveCsvLive } from './generate/archiveSource.js';
-import { generateEpisodeCase } from './episode/generate.js';
+import { EPISODE_DEFAULT_HORIZON_SESSIONS, generateEpisodeCase } from './episode/generate.js';
 import {
   buildEpisodeDataset,
   finalizeEpisodeDataset,
   hydrateLiveEpisodeNewsFromCache,
 } from './episode/dataset.js';
 import { loadEpisodeDatasetPlan } from './episode/datasetPlan.js';
+import { EPISODE_PERIOD_LADDER, type EpisodeBasePeriod } from './episode/periods.js';
 import { auditEpisodeQuestionLive } from './episode/audit.js';
 import { readEpisodeAnswers } from './episode/results.js';
 import {
@@ -60,7 +61,8 @@ const USAGE = `Usage: bench <command> [options]
 Commands:
   generate       Build benchmark question datasets
   generate-episode-case
-                 Build one multi-timeframe episode case (1h/day/week)
+                 Build one multi-timeframe episode case (--base-period 1m/5m/15m/30m/1h,
+                 default 1h; --horizon-sessions or --horizon-bars)
   generate-episode-dataset
                  Build and audit a planned live or anonymous-blind Episode cohort
   verify-episode-case
@@ -313,7 +315,9 @@ interface GenerateEpisodeCaseArgs {
   symbol: string;
   cutoffDate: string;
   version: string;
-  horizonSessions: number;
+  basePeriod: EpisodeBasePeriod;
+  horizonSessions?: number;
+  horizonBars?: number;
   source: 'longbridge' | 'yahoo';
 }
 
@@ -322,11 +326,19 @@ const KLINE_FETCHERS: Record<GenerateEpisodeCaseArgs['source'], FetchEpisodeKlin
   yahoo: fetchKlineHistoryYahoo,
 };
 
+const EPISODE_BASE_PERIODS = Object.keys(EPISODE_PERIOD_LADDER) as EpisodeBasePeriod[];
+
+function isEpisodeBasePeriod(value: string): value is EpisodeBasePeriod {
+  return (EPISODE_BASE_PERIODS as string[]).includes(value);
+}
+
 function parseGenerateEpisodeCaseArgs(argv: string[]): GenerateEpisodeCaseArgs {
   let symbol: string | undefined;
   let cutoffDate: string | undefined;
   let version: string | undefined;
-  let horizonSessions = 40;
+  let basePeriod: EpisodeBasePeriod = '1h';
+  let horizonSessions: number | undefined;
+  let horizonBars: number | undefined;
   let source: GenerateEpisodeCaseArgs['source'] = 'longbridge';
 
   for (let i = 0; i < argv.length; i++) {
@@ -344,8 +356,22 @@ function parseGenerateEpisodeCaseArgs(argv: string[]): GenerateEpisodeCaseArgs {
         version = argv[++i];
         break;
       }
+      case '--base-period': {
+        const next = argv[++i];
+        if (!isEpisodeBasePeriod(next)) {
+          throw new Error(
+            `--base-period must be one of ${EPISODE_BASE_PERIODS.join('|')}, got: ${next}`,
+          );
+        }
+        basePeriod = next;
+        break;
+      }
       case '--horizon-sessions': {
         horizonSessions = Number(argv[++i]);
+        break;
+      }
+      case '--horizon-bars': {
+        horizonBars = Number(argv[++i]);
         break;
       }
       case '--source': {
@@ -371,12 +397,28 @@ function parseGenerateEpisodeCaseArgs(argv: string[]): GenerateEpisodeCaseArgs {
     throw new Error(`--cutoff must be YYYY-MM-DD, got: ${cutoffDate}`);
   }
   if (!version) throw new Error('--version is required');
-  if (!Number.isInteger(horizonSessions) || horizonSessions < 1) {
+
+  if (horizonSessions != null && horizonBars != null) {
+    throw new Error('specify only one of --horizon-sessions or --horizon-bars, not both');
+  }
+  if (horizonSessions != null && (!Number.isInteger(horizonSessions) || horizonSessions < 1)) {
     throw new Error(`--horizon-sessions must be a positive integer, got: ${horizonSessions}`);
+  }
+  if (horizonBars != null && (!Number.isInteger(horizonBars) || horizonBars < 1)) {
+    throw new Error(`--horizon-bars must be a positive integer, got: ${horizonBars}`);
+  }
+  if (horizonSessions == null && horizonBars == null) {
+    if (basePeriod === '1h') {
+      horizonSessions = EPISODE_DEFAULT_HORIZON_SESSIONS;
+    } else {
+      throw new Error(
+        `--horizon-sessions or --horizon-bars is required when --base-period is not 1h`,
+      );
+    }
   }
 
   layerForSymbol(symbol);
-  return { symbol, cutoffDate, version, horizonSessions, source };
+  return { symbol, cutoffDate, version, basePeriod, horizonSessions, horizonBars, source };
 }
 
 async function runGenerateEpisodeCaseCommand(argv: string[], paths: DatasetPaths): Promise<void> {
@@ -386,7 +428,9 @@ async function runGenerateEpisodeCaseCommand(argv: string[], paths: DatasetPaths
     layer: layerForSymbol(args.symbol),
     cutoffDate: args.cutoffDate,
     version: args.version,
+    basePeriod: args.basePeriod,
     horizonSessions: args.horizonSessions,
+    horizonBars: args.horizonBars,
     datasetsRoot: paths.datasetsRoot,
     fetchKlineHistory: KLINE_FETCHERS[args.source],
     fetchCalendar: fetchCalendarLive,

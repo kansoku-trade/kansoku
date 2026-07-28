@@ -119,7 +119,9 @@ class PositionBoxPaneView implements IPrimitivePaneView {
     if (!chart || !series || !data) return;
     const ts = chart.timeScale();
     const visible = ts.getVisibleRange();
-    const right = ts.width();
+    // paneSize(), not timeScale().width(): the latter reports 0 when the time axis is hidden, which
+    // collapses the box to nothing on a chart that renders no axes.
+    const right = chart.paneSize().width;
 
     const xStart = ts.timeToCoordinate(data.startTime as Time);
     let x1: number;
@@ -136,6 +138,15 @@ class PositionBoxPaneView implements IPrimitivePaneView {
       else return;
     } else {
       x2 = xEnd;
+    }
+    // A trade entered and closed on the same bar has startTime === endTime and would otherwise
+    // collapse to zero width — the one trade shape that most needs to be seen would be the one
+    // that never draws.
+    const minWidth = ts.options().barSpacing;
+    if (x2 - x1 < minWidth) {
+      const mid = (x1 + x2) / 2;
+      x1 = mid - minWidth / 2;
+      x2 = mid + minWidth / 2;
     }
     x1 = Math.max(0, x1);
     x2 = Math.min(right, x2);

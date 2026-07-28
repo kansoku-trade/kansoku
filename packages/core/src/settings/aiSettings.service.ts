@@ -17,7 +17,7 @@ import {
 
 function usageRole(
   record: AiUsageRecord,
-): 'comment' | 'analyst' | 'deepDive' | 'chat' | 'memory' | null {
+): 'comment' | 'analyst' | 'deepDive' | 'chat' | 'memory' | 'casePick' | null {
   switch (record.layer) {
     case 'commentator':
     case 'event-filter':
@@ -36,6 +36,9 @@ function usageRole(
     }
     case 'memory': {
       return 'memory';
+    }
+    case 'case-pick': {
+      return 'casePick';
     }
     default: {
       return null;
@@ -184,6 +187,7 @@ export const aiSettingsService: AiSettingsService = {
       deepDive: { calls: 0, cost: 0 },
       chat: { calls: 0, cost: 0 },
       memory: { calls: 0, cost: 0 },
+      casePick: { calls: 0, cost: 0 },
     };
     const total = { calls: 0, cost: 0 };
     for (const record of records) {

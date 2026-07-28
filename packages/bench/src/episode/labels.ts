@@ -4,7 +4,7 @@ export type ToneClass = 'positive' | 'negative' | 'neutral' | 'entry';
 
 export const PLAYSTYLE_LABEL: Record<string, string> = {
   'single-shot': 'oneshot',
-  episode: 'walkthrough',
+  'episode': 'walkthrough',
 };
 
 export const TERMINATION_LABELS: Record<string, string> = {
@@ -51,7 +51,18 @@ export const ACTION_LABELS: Record<string, string> = {
   hold: '持有',
   amend: '改单',
   cancel: '撤单',
+  add: '加仓',
+  reduce: '减仓',
   exit_next_open: '主动退出',
+};
+
+export const FILL_LABELS: Record<string, string> = {
+  open: '建仓',
+  add: '加仓',
+  stop: '止损',
+  target: '止盈',
+  manual: '主动退出',
+  horizon: '强平',
 };
 
 export const EVENT_LABELS: Record<string, string> = {
@@ -101,6 +112,10 @@ export function fmt(value: number | null | undefined, digits = 2): string {
 export function fmtSigned(value: number | null | undefined, digits = 2): string {
   if (value == null || !Number.isFinite(value)) return '—';
   return `${value > 0 ? '+' : ''}${value.toFixed(digits)}`;
+}
+
+export function fmtSize(value: number | null | undefined): string {
+  return value == null || !Number.isFinite(value) ? '—' : `${Math.round(value * 100)}%`;
 }
 
 export function fmtPercent(value: number | null | undefined, digits = 1): string {

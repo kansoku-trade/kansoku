@@ -10,6 +10,7 @@ export interface WindowsIpcDeps {
   reportActiveTab(senderId: number, activeTabId: string): void;
   openPopout(symbol: string): void;
   openWindow(activeTabId: string): void;
+  openTrainer(): void;
 }
 
 export class WindowsIpc extends IpcService {
@@ -37,5 +38,10 @@ export class WindowsIpc extends IpcService {
   @IpcMethod()
   openWindow(activeTabId: unknown): void {
     this.deps.openWindow(typeof activeTabId === 'string' ? activeTabId : '');
+  }
+
+  @IpcMethod()
+  openTrainer(): void {
+    this.deps.openTrainer();
   }
 }
