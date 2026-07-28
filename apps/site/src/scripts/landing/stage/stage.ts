@@ -2,6 +2,7 @@ import { buildCandles } from '../kline';
 import type { Tier } from '../tier';
 import { CAMERA_WAYPOINTS, sampleCameraPath } from './cameraPath';
 import { createParticleField } from './gpgpu';
+import { readTuning } from './tuning';
 
 const UP_COLOR = 0x26a69a;
 const DOWN_COLOR = 0xef5350;
@@ -28,6 +29,7 @@ export const mountStage = async (
 ): Promise<Stage | null> => {
   if (tier !== 'full') return null;
 
+  const tuning = readTuning();
   const THREE = await import('three');
   const { EffectComposer } = await import('three/examples/jsm/postprocessing/EffectComposer.js');
   const { RenderPass } = await import('three/examples/jsm/postprocessing/RenderPass.js');
@@ -40,18 +42,18 @@ export const mountStage = async (
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.setClearColor(0x050505, 1);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.0;
+  renderer.toneMappingExposure = tuning.exposure;
 
   const scene = new THREE.Scene();
   scene.fog = new THREE.FogExp2(0x060606, 0.012);
 
   const camera = new THREE.PerspectiveCamera(52, 1, 0.1, 400);
 
-  scene.add(new THREE.AmbientLight(0xffffff, 0.18));
+  scene.add(new THREE.AmbientLight(0xffffff, 0.1));
   const key = new THREE.DirectionalLight(0xffd9a0, 0.55);
   key.position.set(-18, 26, 14);
   scene.add(key);
-  const rim = new THREE.PointLight(AMBER, 90, 70, 2);
+  const rim = new THREE.PointLight(AMBER, 38, 60, 2);
   rim.position.set(6, 9, -22);
   scene.add(rim);
 
@@ -169,7 +171,7 @@ export const mountStage = async (
     color: 0xffe0b0,
     size: 0.24,
     transparent: true,
-    opacity: 0.55,
+    opacity: 0.28,
     depthWrite: false,
   });
   disposables.push(starGeometry, starMaterial);
@@ -180,7 +182,7 @@ export const mountStage = async (
 
   const composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene, camera));
-  const bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.95, 0.7, 0.34);
+  const bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), tuning.bloomStrength, tuning.bloomRadius, tuning.bloomThreshold);
   composer.addPass(bloom);
   composer.addPass(new OutputPass());
 

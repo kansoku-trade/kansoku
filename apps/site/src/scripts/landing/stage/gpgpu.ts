@@ -1,4 +1,5 @@
 import type { Tier } from '../tier';
+import { readTuning } from './tuning';
 
 const SIZE = 1024;
 
@@ -35,7 +36,7 @@ void main() {
   vec3 pull = (dist > 0.0001 ? toTarget / dist : vec3(0.0)) * min(dist, 6.0) * 5.2;
 
   vec3 accel = mix(flow, pull, uConverge);
-  accel += normalize(pos + vec3(0.001)) * uBurst * 26.0;
+  accel += normalize(pos + vec3(0.001)) * uBurst * 11.0;
 
   vel += accel * uDelta;
   vel *= mix(0.972, 0.9, uConverge);
@@ -70,6 +71,7 @@ const RENDER_VERTEX = `
 uniform sampler2D uPosition;
 uniform sampler2D uVelocity;
 uniform float uPixelRatio;
+uniform float uPointScale;
 attribute vec2 aReference;
 varying float vSpeed;
 varying float vSeed;
@@ -82,7 +84,7 @@ void main() {
 
   vec4 mv = modelViewMatrix * vec4(posData.xyz, 1.0);
   gl_Position = projectionMatrix * mv;
-  float size = (0.9 + vSpeed * 3.8 + posData.w * 0.8) * uPixelRatio;
+  float size = (0.9 + vSpeed * 3.8 + posData.w * 0.8) * uPixelRatio * uPointScale;
   gl_PointSize = size * (34.0 / max(1.0, -mv.z));
 }
 `;
@@ -91,6 +93,9 @@ const RENDER_FRAGMENT = `
 uniform vec3 uCool;
 uniform vec3 uWarm;
 uniform vec3 uHot;
+uniform float uBaseAlpha;
+uniform float uSpeedAlpha;
+uniform float uHotFrom;
 varying float vSpeed;
 varying float vSeed;
 
@@ -101,10 +106,10 @@ void main() {
   float alpha = smoothstep(0.25, 0.0, r);
 
   vec3 color = mix(uCool, uWarm, smoothstep(0.0, 0.3, vSpeed));
-  color = mix(color, uHot, smoothstep(0.34, 0.86, vSpeed));
-  color *= 0.75 + vSeed * 0.6;
+  color = mix(color, uHot, smoothstep(uHotFrom, 1.0, vSpeed));
+  color *= 0.6 + vSeed * 0.45;
 
-  gl_FragColor = vec4(color, alpha * (0.07 + vSpeed * 0.6));
+  gl_FragColor = vec4(color, alpha * (uBaseAlpha + vSpeed * uSpeedAlpha));
 }
 `;
 
@@ -148,6 +153,7 @@ export const createParticleField = async (
   tier: Tier,
 ): Promise<ParticleField | null> => {
   if (tier !== 'full') return null;
+  const tuning = readTuning();
 
   const THREE = await import('three');
   const { GPUComputationRenderer } = await import(
@@ -221,9 +227,13 @@ export const createParticleField = async (
       uPosition: { value: null },
       uVelocity: { value: null },
       uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) },
-      uCool: { value: new THREE.Color(0x6b3d0a) },
-      uWarm: { value: new THREE.Color(0xffc247) },
-      uHot: { value: new THREE.Color(0xfff2d0) },
+      uBaseAlpha: { value: tuning.baseAlpha },
+      uSpeedAlpha: { value: tuning.speedAlpha },
+      uPointScale: { value: tuning.pointScale },
+      uHotFrom: { value: tuning.hotFrom },
+      uCool: { value: new THREE.Color(tuning.coolColor) },
+      uWarm: { value: new THREE.Color(tuning.warmColor) },
+      uHot: { value: new THREE.Color(tuning.hotColor) },
     },
     vertexShader: RENDER_VERTEX,
     fragmentShader: RENDER_FRAGMENT,
@@ -236,7 +246,7 @@ export const createParticleField = async (
   const points = new THREE.Points(geometry, material);
   points.frustumCulled = false;
 
-  const CYCLE = 15;
+  const CYCLE = tuning.cycleSeconds;
   let clock = 0;
 
   return {
