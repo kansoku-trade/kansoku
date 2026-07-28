@@ -10,8 +10,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ANNOTATION_PALETTE } from '@kansoku/shared/drawings';
-import type { AnnotationStyle } from '@kansoku/shared/types';
+import { StylePanel } from './StylePanel';
 import type { DrawingsApi } from './useDrawings';
 import type { DrawingTool } from './drawingsMachine';
 
@@ -25,7 +24,6 @@ const TOOLS: { tool: DrawingTool; icon: typeof MousePointer2; label: string }[] 
   { tool: 'fib', icon: AlignJustify, label: '斐波那契' },
 ];
 
-const WIDTHS = [1, 2, 3] as const;
 const CLEAR_ARM_MS = 3000;
 
 function useArmedConfirm(ms: number): [boolean, (onConfirm: () => void) => void] {
@@ -108,59 +106,5 @@ export function DrawingToolbar({ api }: { api: DrawingsApi }) {
         )
       )}
     </>
-  );
-}
-
-function StylePanel({
-  style,
-  showArrow,
-  onPatch,
-}: {
-  style: AnnotationStyle | undefined;
-  showArrow: boolean;
-  onPatch: (patch: Partial<AnnotationStyle>) => void;
-}) {
-  return (
-    <div className="drawing-style-panel" aria-label="样式">
-      <div className="drawing-style-row">
-        {ANNOTATION_PALETTE.map((color) => (
-          <button
-            key={color}
-            className={`drawing-style-swatch${style?.color === color ? ' active' : ''}`}
-            style={{ background: color }}
-            title={color}
-            onClick={() => onPatch({ color })}
-          />
-        ))}
-      </div>
-      <div className="drawing-style-row">
-        {WIDTHS.map((width) => (
-          <button
-            key={width}
-            className={`drawing-style-width${style?.width === width ? ' active' : ''}`}
-            title={`粗细 ${width}`}
-            onClick={() => onPatch({ width })}
-          >
-            {width}
-          </button>
-        ))}
-        <button
-          className={`drawing-style-dash${style?.dash ? ' active' : ''}`}
-          title="虚线开关"
-          onClick={() => onPatch({ dash: !style?.dash })}
-        >
-          虚线
-        </button>
-        {showArrow && (
-          <button
-            className={`drawing-style-arrow${style?.arrow ? ' active' : ''}`}
-            title="箭头开关"
-            onClick={() => onPatch({ arrow: !style?.arrow })}
-          >
-            箭头
-          </button>
-        )}
-      </div>
-    </div>
   );
 }
