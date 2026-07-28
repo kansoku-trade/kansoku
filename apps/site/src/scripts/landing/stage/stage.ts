@@ -1,6 +1,7 @@
 import { buildCandles } from '../kline';
 import type { Tier } from '../tier';
 import { CAMERA_WAYPOINTS, sampleCameraPath } from './cameraPath';
+import { createParticleField } from './gpgpu';
 
 const UP_COLOR = 0x26a69a;
 const DOWN_COLOR = 0xef5350;
@@ -42,7 +43,7 @@ export const mountStage = async (
   renderer.toneMappingExposure = 1.0;
 
   const scene = new THREE.Scene();
-  scene.fog = new THREE.FogExp2(0x060606, 0.038);
+  scene.fog = new THREE.FogExp2(0x060606, 0.012);
 
   const camera = new THREE.PerspectiveCamera(52, 1, 0.1, 400);
 
@@ -140,7 +141,7 @@ export const mountStage = async (
   const terrain = new THREE.Group();
   terrain.add(upMesh, downMesh, wickMesh);
   terrain.position.y = -15.5;
-  scene.add(terrain);
+  terrain.visible = false;
 
   const gridGeometry = new THREE.PlaneGeometry(220, 220, 44, 44);
   const gridMaterial = new THREE.MeshBasicMaterial({
@@ -153,7 +154,7 @@ export const mountStage = async (
   const grid = new THREE.Mesh(gridGeometry, gridMaterial);
   grid.rotation.x = -Math.PI / 2;
   grid.position.y = -15.9;
-  scene.add(grid);
+  grid.visible = false;
 
   const starCount = 900;
   const starPositions = new Float32Array(starCount * 3);
@@ -173,6 +174,9 @@ export const mountStage = async (
   });
   disposables.push(starGeometry, starMaterial);
   scene.add(new THREE.Points(starGeometry, starMaterial));
+
+  const field = await createParticleField(renderer, tier);
+  if (field) scene.add(field.object as never);
 
   const composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene, camera));
@@ -203,7 +207,12 @@ export const mountStage = async (
     pointerY = (event.clientY / window.innerHeight - 0.5) * 2;
   };
 
+  let previous = performance.now();
+
   const tick = (now: number): void => {
+    const delta = Math.min(0.05, (now - previous) / 1000);
+    previous = now;
+    if (field) field.update(delta, now / 1000);
     progress += (scrollProgress() - progress) * 0.08;
     const frame = sampleCameraPath(progress);
     desired.set(
@@ -232,6 +241,7 @@ export const mountStage = async (
       window.cancelAnimationFrame(rafId);
       window.removeEventListener('resize', resize);
       window.removeEventListener('pointermove', onPointerMove);
+      if (field) field.dispose();
       for (const item of disposables) item.dispose();
       upMesh.dispose();
       downMesh.dispose();
