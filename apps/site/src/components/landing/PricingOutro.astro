@@ -81,8 +81,8 @@ const proShorts = features.pro.map((f) => f.short).join('、');
     color: var(--accent);
   }
 
-  html[data-tier='full'] .outro-status,
-  html[data-tier='lite'] .outro-status {
+  html[data-landing-live][data-tier='full'] .outro-status,
+  html[data-landing-live][data-tier='lite'] .outro-status {
     opacity: 0;
   }
 
@@ -96,8 +96,8 @@ const proShorts = features.pro.map((f) => f.short).join('、');
       transition: opacity 400ms ease;
     }
 
-    html[data-tier='full'] .outro-status,
-    html[data-tier='lite'] .outro-status {
+    html[data-landing-live][data-tier='full'] .outro-status,
+    html[data-landing-live][data-tier='lite'] .outro-status {
       transition: opacity 300ms ease;
     }
   }

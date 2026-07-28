@@ -11,9 +11,15 @@ interface Destroyable {
 }
 
 const cleanups: Array<() => void> = [];
+let disposed = false;
 
 const registerCleanup = (scene: Destroyable | null): void => {
-  if (scene) cleanups.push(scene.destroy);
+  if (!scene) return;
+  if (disposed) {
+    scene.destroy();
+    return;
+  }
+  cleanups.push(scene.destroy);
 };
 
 const mountGuarded = <T extends Destroyable>(label: string, mount: () => T | null): void => {
@@ -30,6 +36,7 @@ const readTier = (): Tier => {
 };
 
 const mountLanding = (): void => {
+  document.documentElement.setAttribute('data-landing-live', '');
   const tier = readTier();
   const root = document.body;
 
@@ -51,7 +58,9 @@ const mountLanding = (): void => {
 
 mountLanding();
 
-window.addEventListener('pagehide', () => {
+window.addEventListener('pagehide', (event) => {
+  if (event.persisted) return;
+  disposed = true;
   for (const cleanup of cleanups) cleanup();
   cleanups.length = 0;
 });

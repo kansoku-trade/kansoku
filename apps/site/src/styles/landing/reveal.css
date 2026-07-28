@@ -11,37 +11,41 @@
 }
 
 [data-reveal] {
+  opacity: 1;
+  transform: none;
+}
+
+html[data-landing-live] [data-reveal] {
   opacity: 0;
   transform: translateY(20px);
 }
 
-html:not([data-tier]) [data-reveal],
+html[data-landing-live] [data-reveal][data-in],
 html[data-tier='still'] [data-reveal] {
   opacity: 1;
   transform: none;
 }
 
-[data-reveal][data-in] {
-  opacity: 1;
-  transform: none;
-}
-
 @media (prefers-reduced-motion: no-preference) {
-  [data-reveal] {
+  html[data-landing-live] [data-reveal] {
     transition:
       opacity 500ms ease,
       transform 500ms ease;
   }
 
   @supports (animation-timeline: view()) {
-    /* keep animation-name/-timing-function/-fill-mode as separate longhands, not the
-       `animation` shorthand, and don't add the other animation-* longhands (duration,
-       delay, iteration-count, direction, play-state): lightningcss's production
-       minifier collapses a full set back into `animation: ... view()`, which browsers
-       can't parse as a valid shorthand, silently dropping animation-name/-timeline
-       (getComputedStyle().animationName === "none") — invisible in dev, only shows in
-       a real `astro build` output */
+    /* unconditional on [data-landing-live]: this path is pure scroll-driven CSS, not
+       tied to main.ts ever executing, so it must keep working even if the entry
+       script 404s or a CSP blocks it. keep animation-name/-timing-function/-fill-mode
+       as separate longhands, not the `animation` shorthand, and don't add the other
+       animation-* longhands (duration, delay, iteration-count, direction, play-state):
+       lightningcss's production minifier collapses a full set back into
+       `animation: ... view()`, which browsers can't parse as a valid shorthand,
+       silently dropping animation-name/-timeline (getComputedStyle().animationName
+       === "none") — invisible in dev, only shows in a real `astro build` output */
     [data-reveal] {
+      opacity: 0;
+      transform: translateY(20px);
       transition: none;
       animation-name: pillar-reveal;
       animation-timing-function: linear;
