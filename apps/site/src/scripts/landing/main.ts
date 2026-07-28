@@ -1,4 +1,4 @@
-import { mountDensityWall } from './densityWall';
+import { mountReplicaScene } from './replica/mount';
 import { mountHeroScene } from './scenes/hero';
 import { mountNoRetractScene } from './scenes/noRetract';
 import { mountOutroScene } from './scenes/outro';
@@ -42,19 +42,6 @@ const mountLanding = (): void => {
 
   void (async () => {
     try {
-      const stageCanvas = document.querySelector<HTMLCanvasElement>('[data-stage-canvas]');
-      if (!stageCanvas) return;
-      const { mountStage } = await import('./stage/stage');
-      const stage = await mountStage(stageCanvas, tier);
-      if (stage) document.documentElement.setAttribute('data-stage-live', '');
-      registerCleanup(stage);
-    } catch (error) {
-      console.error('[landing] stage failed to mount', error);
-    }
-  })();
-
-  void (async () => {
-    try {
       const heroRoot = document.querySelector<HTMLElement>('[data-hero-scene]');
       registerCleanup(heroRoot ? await mountHeroScene(heroRoot, tier) : null);
     } catch (error) {
@@ -65,7 +52,7 @@ const mountLanding = (): void => {
   mountGuarded('sourced', () => mountSourcedScene(root, tier));
   mountGuarded('noRetract', () => mountNoRetractScene(root, tier));
   mountGuarded('scorecard', () => mountScorecardScene(root, tier));
-  mountGuarded('densityWall', () => mountDensityWall(root, tier));
+  mountGuarded('replica', () => mountReplicaScene(root, tier));
   mountGuarded('outro', () => mountOutroScene(root, tier));
 };
 

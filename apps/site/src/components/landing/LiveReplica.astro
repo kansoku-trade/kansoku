@@ -1,0 +1,172 @@
+---
+import '../../styles/landing/tokens.css';
+import '../../styles/landing/replica.css';
+
+const timeframes = ['5m', '15m', '1h'];
+const panelTabs = ['预测', '环境', '消息', '复盘', 'AI 点评'];
+const tools = [
+  { name: '选择', d: 'M4 2l8 8-3.4.5L11 15l-2 .9-2.3-4.4L4 14z' },
+  { name: '标尺', d: 'M2 6h12v4H2z M5 6v2 M8 6v3 M11 6v2' },
+  { name: '趋势线', d: 'M2 13L7 7l3 3 4-6' },
+  { name: '多段线', d: 'M2 12l4-5 3 3 3-5 2 3' },
+  { name: '水平线', d: 'M2 8h12' },
+  { name: '矩形', d: 'M3 4h10v8H3z' },
+  { name: '斐波那契', d: 'M2 4h12 M2 7h12 M2 10h12 M2 13h12' },
+  { name: '清除', d: 'M4 5h8l-.7 8H4.7z M6 5V3h4v2' },
+];
+
+const scenarios = [
+  {
+    key: 'base',
+    name: 'Base · 区间整理',
+    weight: 64,
+    body: '价格继续在 925.5（下沿）和 943.5（上沿）之间横盘，围绕 930~937 区间小波动。',
+    trigger: '未来 2~3 根 m15 仍在 925.5~943.5 内震荡，且 943.5 无放量有效上破、925.5 无放量有效失守。',
+  },
+  {
+    key: 'bull',
+    name: 'Bull · 有效放量上破上沿',
+    weight: 21,
+    body: '先试探 950，再到 957~968（先遇到 950、1000 附近期权密集区）。失守上沿时可能快速回落。',
+    trigger: 'm15 或 m5 一旦放量站上 943.5，且之后不回踩 935/943 区域，说明买盘延续。',
+  },
+  {
+    key: 'bear',
+    name: 'Bear · 失守下沿延续',
+    weight: 15,
+    body: '先看 922（最近 123 构成低点）和 920.06，若放量突破则向 902.6 下探，转向回撤路径。',
+    trigger: '若 m5 连续 2 根以上跌破 925.5 且后续不能回到 928 以上，且 922/920 失守更是偏空确认。',
+  },
+];
+---
+
+<section class="replica" data-replica-scene>
+  <div class="replica-copy">
+    <h2>AI 之下，是一套完整的本地看盘工具。</h2>
+    <p class="replica-lede">
+      下面不是截图——是这个页面用 HTML 重画的一遍真实界面。你可以把鼠标移到 K 线上看十字光标，切周期，切页签。
+    </p>
+    <ul class="replica-points">
+      <li>多周期 K 线（5m/15m/1h）实时刷新，叠加均线、MACD、形态标注和入场/止损/目标价位线</li>
+      <li>画线工具：趋势线、多段线、水平线、矩形、斐波那契，带样式预设</li>
+      <li>SEPA 策略仪表盘：Minervini 趋势模板 8 条逐项打钩，自动给出结论</li>
+      <li>盘面与复盘随时段自动切换，判断与结果追踪、历史命中率</li>
+      <li>美股为主，港股与 A 股已接入，交易时段按各自市场处理</li>
+      <li>标签页、⌘K 命令面板、实时推送、Sparkle 自动更新</li>
+    </ul>
+  </div>
+
+  <div class="app" data-replica-app>
+    <header class="app-titlebar">
+      <span class="app-back">← 列表</span>
+      <strong class="app-title">MU.US 短线多周期</strong>
+      <span class="app-sym">MU.US <i class="app-dot"></i></span>
+      <div class="app-tfs" role="tablist" data-replica-tfs>
+        {
+          timeframes.map((tf) => (
+            <button
+              class="app-tf"
+              type="button"
+              role="tab"
+              data-tf={tf}
+              aria-selected={tf === '15m' ? 'true' : 'false'}
+            >
+              {tf}
+            </button>
+          ))
+        }
+      </div>
+      <span class="app-spacer"></span>
+      <span class="app-alert">● AI 提醒 06:32 · premarket_gap</span>
+      <span class="app-price">$928.19 <b>+1.86%</b></span>
+      <span class="app-session">日盘</span>
+    </header>
+
+    <div class="app-body">
+      <aside class="app-tools" aria-label="画线工具">
+        {
+          tools.map((tool, i) => (
+            <button
+              class="app-tool"
+              type="button"
+              title={tool.name}
+              aria-label={tool.name}
+              data-active={i === 0 ? 'true' : 'false'}
+            >
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d={tool.d} /></svg>
+            </button>
+          ))
+        }
+      </aside>
+
+      <div class="app-chart">
+        <div class="app-legend">
+          <span class="app-chip">K 线 + 成交量</span>
+          <span class="app-ema" data-replica-legend>EMA9   EMA21   EMA55</span>
+          <span class="app-spacer"></span>
+          <span class="app-chip app-chip-ghost">图层 4/12</span>
+        </div>
+        <canvas data-replica-canvas></canvas>
+        <div class="app-macd-tag">MACD (12,26,9)</div>
+      </div>
+
+      <aside class="app-panel">
+        <div class="app-panel-head">
+          <h3>MU.US</h3>
+          <p class="app-panel-name">美光科技</p>
+          <p class="app-panel-price">$928.19</p>
+          <p class="app-panel-meta">2026-07-14 13:48 ET · 长桥证券</p>
+        </div>
+
+        <div class="app-risk">
+          <div class="app-risk-title">事件风险</div>
+          <div class="app-risk-body">07-14 08:30　美国, CPI（前值 0.63）</div>
+        </div>
+
+        <div class="app-tabs" role="tablist" data-replica-tabs>
+          {
+            panelTabs.map((tab, i) => (
+              <button
+                class="app-tab"
+                type="button"
+                role="tab"
+                data-tab={tab}
+                aria-selected={i === 0 ? 'true' : 'false'}
+              >
+                {tab}
+              </button>
+            ))
+          }
+        </div>
+
+        <div class="app-verdict">
+          <div class="app-verdict-label">短线方向判断</div>
+          <div class="app-verdict-value">🤔 观望</div>
+          <div class="app-verdict-meta">预测点：15 分钟 · 2026-07-13 15:45 ET · $937.00</div>
+        </div>
+
+        <div class="app-scenarios">
+          <div class="app-scenarios-title">情景推演</div>
+          {
+            scenarios.map((s) => (
+              <article class="app-scenario" data-key={s.key}>
+                <header>
+                  <span class="app-scenario-name">{s.name}</span>
+                  <span class="app-scenario-weight">{s.weight}%</span>
+                </header>
+                <div class="app-scenario-bar"><i style={`width:${s.weight}%`}></i></div>
+                <p>{s.body}</p>
+                <p class="app-scenario-trigger">· 触发：{s.trigger}</p>
+              </article>
+            ))
+          }
+        </div>
+
+        <div class="app-ask">
+          <input type="text" placeholder="就这份分析继续追问…" readonly />
+          <button type="button" aria-label="发送">➤</button>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>

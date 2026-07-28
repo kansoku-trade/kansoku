@@ -1,6 +1,6 @@
 ---
 import Boot from '../components/landing/Boot.astro';
-import DensityWall from '../components/landing/DensityWall.astro';
+import LiveReplica from '../components/landing/LiveReplica.astro';
 import HeroEvidence from '../components/landing/HeroEvidence.astro';
 import NoRetract from '../components/landing/NoRetract.astro';
 import PricingOutro from '../components/landing/PricingOutro.astro';
@@ -42,14 +42,13 @@ const schema = {
 
 <Base title={title} description={description}>
   <script is:inline type="application/ld+json" slot="head" set:html={JSON.stringify(schema)} />
-  <canvas class="landing-stage" data-stage-canvas aria-hidden="true"></canvas>
   <TerminalChrome version={version}>
     <Boot version={version} />
     <HeroEvidence version={version} downloadUrl={dmg.browser_download_url} />
     <Sourced />
     <NoRetract />
     <Scorecard />
-    <DensityWall />
+    <LiveReplica />
     <PricingOutro version={version} downloadUrl={dmg.browser_download_url} />
   </TerminalChrome>
 </Base>
