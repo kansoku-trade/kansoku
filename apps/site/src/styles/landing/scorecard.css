@@ -1,0 +1,102 @@
+.sc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 0 20px;
+  padding: 0;
+  list-style: none;
+}
+
+.sc-row {
+  display: grid;
+  grid-template-columns: 90px 64px 1fr 24px;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--border);
+  padding: 8px 10px;
+  font-family: var(--mono);
+  font-size: 11px;
+  opacity: 1;
+  transform: none;
+  transform-origin: top center;
+}
+
+html[data-landing-live] .sc-row {
+  opacity: 0;
+  transform: rotateX(-40deg);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html[data-landing-live] .sc-row {
+    transition:
+      opacity 260ms ease,
+      transform 320ms ease;
+  }
+}
+
+html[data-landing-live] .sc-row.is-flipped,
+html[data-tier='still'] .sc-row {
+  opacity: 1;
+  transform: none;
+}
+
+.sc-sym {
+  color: var(--text);
+}
+
+.sc-date {
+  color: var(--text-3);
+}
+
+.sc-call {
+  overflow: hidden;
+  color: var(--text-2);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sc-mark {
+  text-align: center;
+  font-weight: 600;
+}
+
+.sc-row[data-outcome='hit'] .sc-mark {
+  color: var(--up);
+}
+
+.sc-row[data-outcome='miss'] .sc-mark {
+  color: var(--down);
+}
+
+.sc-rate {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  border-top: 1px solid var(--border-strong);
+  padding-top: 14px;
+}
+
+.sc-rate-label {
+  color: var(--text-3);
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.sc-rate-value {
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 28px;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 640px) {
+  .sc-row {
+    grid-template-columns: 74px 1fr 20px;
+  }
+
+  .sc-date {
+    display: none;
+  }
+}
