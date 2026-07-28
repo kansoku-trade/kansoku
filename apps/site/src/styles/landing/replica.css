@@ -1,7 +1,9 @@
 .replica {
   max-width: 1360px;
   margin: 0 auto;
-  padding: 96px 24px 72px;
+  padding: 88px 24px 64px;
+  min-height: 78vh;
+  align-content: center;
   display: grid;
   gap: 34px;
 }
@@ -44,7 +46,6 @@
 
 .app {
   border: 1px solid #24262c;
-  border-radius: 8px;
   overflow: hidden;
   background: #0c0d10;
   box-shadow:
@@ -97,7 +98,6 @@
   display: flex;
   gap: 2px;
   background: #181a1f;
-  border-radius: 4px;
   padding: 2px;
 }
 
@@ -108,7 +108,6 @@
   font-family: var(--mono);
   font-size: 11px;
   padding: 3px 9px;
-  border-radius: 3px;
   cursor: pointer;
 }
 
@@ -126,7 +125,6 @@
   font-family: var(--mono);
   font-size: 10.5px;
   border: 1px solid rgba(123, 216, 143, 0.3);
-  border-radius: 4px;
   padding: 3px 8px;
 }
 
@@ -161,7 +159,6 @@
   width: 26px;
   height: 26px;
   border: 0;
-  border-radius: 4px;
   background: transparent;
   cursor: pointer;
   display: grid;
@@ -209,7 +206,6 @@
 
 .app-chip {
   border: 1px solid #2a2d34;
-  border-radius: 3px;
   padding: 2px 7px;
   color: var(--text-2);
 }
@@ -248,16 +244,15 @@
   color: var(--text-2);
   background: rgba(20, 21, 26, 0.9);
   border: 1px solid #24262c;
-  border-radius: 3px;
   padding: 2px 6px;
   pointer-events: none;
 }
 
 .app-panel {
-  padding: 14px 14px 12px;
+  padding: 11px 12px 10px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 9px;
   overflow: hidden;
   background: #0e0f13;
 }
@@ -271,13 +266,13 @@
 
 .app-panel-name {
   color: var(--text-3);
-  font-size: 11px;
-  margin-bottom: 8px;
+  font-size: 10.5px;
+  margin-bottom: 5px;
 }
 
 .app-panel-price {
   font-family: var(--mono);
-  font-size: 21px;
+  font-size: 19px;
   font-weight: 600;
 }
 
@@ -290,8 +285,7 @@
 
 .app-risk {
   border: 1px solid #24262c;
-  border-radius: 5px;
-  padding: 9px 10px;
+  padding: 8px 9px;
 }
 
 .app-risk-title {
@@ -308,7 +302,7 @@
 
 .app-tabs {
   display: flex;
-  gap: 14px;
+  gap: 12px;
   border-bottom: 1px solid #1c1e23;
 }
 
@@ -329,8 +323,7 @@
 
 .app-verdict {
   border: 1px solid rgba(255, 176, 0, 0.22);
-  border-radius: 5px;
-  padding: 10px 11px;
+  padding: 9px 10px;
   background: rgba(255, 176, 0, 0.04);
 }
 
@@ -356,7 +349,7 @@
   flex: 1;
   overflow: hidden;
   display: grid;
-  gap: 10px;
+  gap: 8px;
   align-content: start;
 }
 
@@ -404,9 +397,8 @@
 .app-scenario-bar {
   height: 3px;
   background: #1c1e23;
-  border-radius: 2px;
   overflow: hidden;
-  margin-bottom: 6px;
+  margin-bottom: 5px;
 }
 
 .app-scenario-bar i {
@@ -429,8 +421,8 @@
 }
 
 .app-scenario p {
-  font-size: 11px;
-  line-height: 1.65;
+  font-size: 10.5px;
+  line-height: 1.55;
   color: var(--text-2);
 }
 
@@ -443,8 +435,7 @@
   display: flex;
   gap: 8px;
   border: 1px solid #24262c;
-  border-radius: 5px;
-  padding: 7px 9px;
+  padding: 6px 8px;
   align-items: center;
 }
 
