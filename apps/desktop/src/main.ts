@@ -293,7 +293,7 @@ app.whenReady().then(async () => {
     }
 
     app.on('activate', () => {
-      if (windowManager.windowCount() === 0) windowManager.restoreWindows();
+      windowManager.handleActivate();
     });
 
     // Quit must never be interrupted: Sparkle's installer asks the app to

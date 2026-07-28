@@ -1,6 +1,5 @@
 import { join } from 'node:path';
-import { app } from 'electron';
-import type { BrowserWindow } from 'electron';
+import { app, BrowserWindow } from 'electron';
 import { createWindow } from './mainWindow.js';
 import { WindowsIpc } from './ipc.js';
 import { createPopoutWindow } from './popoutWindow.js';
@@ -23,6 +22,7 @@ export interface WindowManagerOptions {
 export interface WindowManager {
   openWindow(): BrowserWindow;
   restoreWindows(): void;
+  handleActivate(): void;
   windowCount(): number;
   flushSync(): void;
   getPrimaryWindow(): BrowserWindow | null;
@@ -104,19 +104,28 @@ export async function createWindowManager(options: WindowManagerOptions): Promis
     return spawn(id, activeTabId);
   }
 
+  function restoreWindows(): void {
+    if (state.length === 0) {
+      spawn(nextWindowId([]), '');
+      return;
+    }
+    for (const entry of state) {
+      spawn(entry.id, entry.activeTabId);
+    }
+  }
+
   return {
     openWindow(): BrowserWindow {
       return openWithActiveTab('');
     },
 
-    restoreWindows(): void {
-      if (state.length === 0) {
-        spawn(nextWindowId([]), '');
-        return;
-      }
-      for (const entry of state) {
-        spawn(entry.id, entry.activeTabId);
-      }
+    restoreWindows,
+
+    handleActivate(): void {
+      // Trainer/popout windows live outside the registry — count every app
+      // window so a Dock click focuses them instead of respawning main windows.
+      if (BrowserWindow.getAllWindows().length > 0) return;
+      restoreWindows();
     },
 
     windowCount(): number {

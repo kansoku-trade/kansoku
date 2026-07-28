@@ -19,7 +19,9 @@ const ipcMain = {
   on: vi.fn((_channel: string, _handler: IpcHandler) => {}),
 };
 
-vi.mock('electron', () => ({ app, ipcMain }));
+const getAllWindows = vi.fn((): unknown[] => []);
+
+vi.mock('electron', () => ({ app, ipcMain, BrowserWindow: { getAllWindows } }));
 
 class FakeWindow {
   webContents: { id: number };
@@ -59,6 +61,8 @@ describe('createWindowManager', () => {
   beforeEach(() => {
     nextSenderId = 1;
     createWindow.mockClear();
+    getAllWindows.mockReset();
+    getAllWindows.mockReturnValue([]);
     quitHandlers.length = 0;
   });
 
@@ -183,6 +187,27 @@ describe('createWindowManager', () => {
     asFake(w1).emitClosed();
     expect(manager.getPrimaryWindow()).not.toBeNull();
     expect(manager.getPrimaryWindow()).not.toBe(w1);
+    await new Promise((resolve) => setTimeout(resolve, 30));
+  });
+
+  it('does not restore main windows on activate while any app window is still open', async () => {
+    dir = await mkdtemp(join(tmpdir(), 'window-manager-'));
+    const manager = await createWindowManager({ userDataDir: dir, debounceMs: 10 });
+
+    getAllWindows.mockReturnValue([new FakeWindow(nextSenderId++)]);
+    manager.handleActivate();
+
+    expect(createWindow).not.toHaveBeenCalled();
+  });
+
+  it('restores main windows on activate when no app window exists', async () => {
+    dir = await mkdtemp(join(tmpdir(), 'window-manager-'));
+    const manager = await createWindowManager({ userDataDir: dir, debounceMs: 10 });
+
+    getAllWindows.mockReturnValue([]);
+    manager.handleActivate();
+
+    expect(createWindow).toHaveBeenCalledTimes(1);
     await new Promise((resolve) => setTimeout(resolve, 30));
   });
 
