@@ -1,18 +1,28 @@
-import { existsSync, lstatSync, readdirSync, readFileSync, readlinkSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { existsSync, lstatSync, readlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { PROJECT_ROOT } from '../src/platform/env.js';
 
 const AGENTS_ROOT = join(PROJECT_ROOT, '.agents', 'skills');
-const CLAUDE_ROOT = join(PROJECT_ROOT, '.claude', 'skills');
 const FIX_HINT = '运行 python3 scripts/sync-agents-skills.py 修复';
 
+// Tracked-ness is the definition of first-party, because .gitignore already draws
+// that exact line: /.claude/skills/* is ignored and each shipped skill is un-ignored
+// by name. Anything else in that directory is a local install — a third-party skill
+// restored into .agents, or a development-only one like `acceptance` — and this
+// guard has no claim on how the user arranges those.
 function firstPartySkills(): string[] {
-  const lock = JSON.parse(readFileSync(join(PROJECT_ROOT, 'skills-lock.json'), 'utf8')) as {
-    skills: Record<string, unknown>;
-  };
-  const locked = new Set(Object.keys(lock.skills));
-  return readdirSync(CLAUDE_ROOT).filter((name) => !locked.has(name));
+  const tracked = execFileSync('git', ['ls-files', '.claude/skills'], {
+    cwd: PROJECT_ROOT,
+    encoding: 'utf8',
+  });
+  const names = new Set<string>();
+  for (const line of tracked.split('\n')) {
+    const name = line.split('/')[2];
+    if (name) names.add(name);
+  }
+  return [...names].sort();
 }
 
 // .agents/ is git-ignored, so nothing in git can stop a first-party skill from being
