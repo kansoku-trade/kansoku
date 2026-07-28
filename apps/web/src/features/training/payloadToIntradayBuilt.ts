@@ -5,7 +5,7 @@ import type {
   TrainerView,
   TrainerViewPeriod,
 } from '@kansoku/pro-api';
-import { lineData, macd, toTs } from '@kansoku/core/analysis/indicators';
+import { lineData, macd, sma, toTs } from '@kansoku/core/analysis/indicators';
 import type {
   Candle,
   ColoredPoint,
@@ -42,6 +42,10 @@ export function isTrainerLadderTf(ladder: TrainerLadder, tf: ChartTf): boolean {
 export function trainerAdvancePeriod(ladder: TrainerLadder, tf: ChartTf): TrainerViewPeriod {
   return ladder.find((period) => TRAINER_PERIOD_TO_CHART_TF[period] === tf) ?? ladder[0];
 }
+
+// Kept in lockstep with coerceIntradayTimeframe in @kansoku/core: the trainer must read exactly
+// like a live symbol chart, or it drills a habit that misfires on the real thing.
+const VOLUME_SURGE_COLOR = '#ff5722';
 
 // One letter per fill. The old labels spelled out price, side and reason, which put a 90px string
 // on top of the candles at the exact bar the trader wants to look at. The letter says what happened
@@ -231,10 +235,17 @@ function rawBarsToTfData(
     low: Number(b.low),
     close: closes[i],
   }));
-  const volumes: ColoredPoint[] = bars.map((b, i) => ({
-    time: timesTs[i],
-    value: Number(b.volume),
-  }));
+  const vols = bars.map((b) => Number(b.volume));
+  const vol20 = sma(vols, 20);
+  const volumes: ColoredPoint[] = bars.map((b, i) => {
+    const v20 = vol20[i];
+    const surge = v20 !== null && vols[i] >= 1.5 * v20;
+    return {
+      time: timesTs[i],
+      value: vols[i],
+      color: surge ? VOLUME_SURGE_COLOR : closes[i] >= Number(b.open) ? theme.up : theme.down,
+    };
+  });
   const { dif, dea, hist } = macd(closes);
   const macdHist: ColoredPoint[] = [];
   for (let i = 0; i < timesTs.length; i++) {

@@ -20,6 +20,17 @@ function bar(iso: string, close: number): RawBar {
   };
 }
 
+function downBar(iso: string, close: number): RawBar {
+  return {
+    time: iso,
+    open: close + 1,
+    high: close + 1.5,
+    low: close - 1,
+    close,
+    volume: 1000 + close,
+  };
+}
+
 const BASE_BARS: RawBar[] = [
   bar('2026-01-05T14:00:00.000Z', 100),
   bar('2026-01-05T14:05:00.000Z', 101),
@@ -101,6 +112,42 @@ describe('buildTrainerIntradayBuilt', () => {
 
     expect(data?.volumes).toHaveLength(BASE_BARS.length);
     expect(data?.volumes.map((v) => v.value)).toEqual(BASE_BARS.map((b) => Number(b.volume)));
+  });
+
+  it('colours volume bars by candle direction, as the main intraday chart does', () => {
+    const mixed: RawBar[] = [
+      bar('2026-01-05T14:00:00.000Z', 100),
+      downBar('2026-01-05T14:05:00.000Z', 99),
+      bar('2026-01-05T14:10:00.000Z', 101),
+      downBar('2026-01-05T14:15:00.000Z', 98),
+    ];
+    const view = makeView({
+      bars: { base: mixed, mid: MID_BARS, top: TOP_BARS },
+      cursor: mixed.length - 1,
+      asOf: mixed.at(-1)!.time,
+    });
+    const built = buildTrainerIntradayBuilt(view);
+    const volumes = tfDataOf(built, TRAINER_PERIOD_TO_CHART_TF['5m'])?.volumes ?? [];
+
+    expect(volumes.map((v) => v.color)).toEqual(['#26a69a', '#ef5350', '#26a69a', '#ef5350']);
+  });
+
+  it('flags a volume spike above 1.5x the 20-bar average with the surge colour', () => {
+    const flat: RawBar[] = Array.from({ length: 25 }, (_, i) => ({
+      ...bar(new Date(Date.UTC(2026, 0, 5, 14, i * 5)).toISOString(), 100 + i),
+      volume: 1000,
+    }));
+    flat[flat.length - 1] = { ...flat[flat.length - 1], volume: 3000 };
+    const view = makeView({
+      bars: { base: flat, mid: MID_BARS, top: TOP_BARS },
+      cursor: flat.length - 1,
+      asOf: flat.at(-1)!.time,
+    });
+    const built = buildTrainerIntradayBuilt(view);
+    const volumes = tfDataOf(built, TRAINER_PERIOD_TO_CHART_TF['5m'])?.volumes ?? [];
+
+    expect(volumes.at(-1)?.color).toBe('#ff5722');
+    expect(volumes.at(-2)?.color).toBe('#26a69a');
   });
 });
 
