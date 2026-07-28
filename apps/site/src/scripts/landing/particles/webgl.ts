@@ -86,9 +86,13 @@ export const createWebglRenderer = async (
   });
 
   const points = new THREE.Points(geometry, material);
+  points.frustumCulled = false;
   scene.add(points);
 
-  renderer.compile(scene, camera);
+  geometry.setDrawRange(0, 1);
+  renderer.render(scene, camera);
+  renderer.clear();
+  geometry.setDrawRange(0, 0);
 
   const resize = (nextWidth: number, nextHeight: number): void => {
     renderer.setSize(nextWidth, nextHeight, false);
