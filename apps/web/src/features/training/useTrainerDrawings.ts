@@ -177,10 +177,10 @@ export function useTrainerDrawings(
       hoverRef.current = null;
       hoverLabelRef.current = null;
       if (!keepMeasure) measureRef.current = null;
-      if (next === 'off') selectedIdRef.current = null;
+      if (next === 'off') setSelected(null);
       pushState();
     },
-    [pushState],
+    [pushState, setSelected],
   );
 
   const setTool = useCallback((next: DrawingTool) => changeTool(next, false), [changeTool]);
@@ -224,12 +224,12 @@ export function useTrainerDrawings(
   }, [annotations, barTimes, pushState]);
 
   const clear = useCallback(() => {
-    selectedIdRef.current = null;
+    setSelected(null);
     drawingRef.current = null;
     hoverRef.current = null;
     hoverLabelRef.current = null;
     commitAnnotations([]);
-  }, [commitAnnotations]);
+  }, [commitAnnotations, setSelected]);
 
   const restoreFromHistory = useCallback(
     (index: number) => {
