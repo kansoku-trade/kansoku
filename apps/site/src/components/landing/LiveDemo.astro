@@ -7,6 +7,29 @@ import '../../styles/landing/demo.css';
 
 const timeframes = ['5m', '15m', '1h'];
 
+const appTabs = [
+  { name: 'Kansoku', active: false },
+  { name: 'NVDA.US 短线多周期', active: true },
+  { name: 'MU', active: false },
+];
+
+const sepaChecks = [
+  { title: '价 > 150MA 且 > 200MA', sub: '价 $928.19 vs 150MA $874.31 / 200MA $836.08' },
+  { title: '150MA > 200MA', sub: '874.31 > 836.08' },
+  { title: '200MA 上行 ≥ 1 月', sub: '1 月斜率 +18.42%，4 月 +36.71%' },
+  { title: '50MA > 150MA 且 > 200MA', sub: '901.55 > 874.31 > 836.08' },
+  { title: '价 > 50MA', sub: '价 $928.19 vs 50MA $901.55 (+2.96%)' },
+  { title: '距 52w 低 ≥ +30%', sub: '+164%（低 $351.02）' },
+  { title: '距 52w 高 ≤ 25% 内', sub: '−6.18%（高 $989.34）' },
+  { title: 'RS > 70 分位 (vs SPY)', sub: '21 天 +12.4 pp，126 天 +88.6 pp' },
+];
+
+const keyStats = [
+  { label: '距 52w 高 $989.34', value: '−6.18%', tone: 'down' },
+  { label: '距 52w 低 $351.02', value: '+164%', tone: 'up' },
+  { label: '距 MA50', value: '+2.96%', tone: 'up' },
+];
+
 const tools = [
   { name: '选择', d: 'M4 2l8 8-3.4.5L11 15l-2 .9-2.3-4.4L4 14z' },
   { name: '趋势线', d: 'M2 13L7 7l3 3 4-6' },
@@ -80,6 +103,19 @@ const chapterCopy: Record<string, { title: string; body: string }> = {
       </div>
 
       <div class="app demo-app">
+        <div class="app-tabbar">
+          {
+            appTabs.map((tab) => (
+              <span class="app-tab-chip" data-active={String(tab.active)}>
+                <i></i>
+                {tab.name}
+              </span>
+            ))
+          }
+          <span class="app-tab-add">＋</span>
+          <span class="app-spacer"></span>
+          <span class="app-tab-action">新建图表</span>
+        </div>
         <header class="app-titlebar">
           <span class="app-back">← 列表</span>
           <strong class="app-title">NVDA.US 短线多周期</strong>
@@ -191,23 +227,39 @@ const chapterCopy: Record<string, { title: string; body: string }> = {
             </div>
 
             <div class="demo-view" data-panel-view="tools" data-active="false">
-              <div class="demo-view-head"><span>TREND TEMPLATE · SEPA</span><span>8 / 8</span></div>
+              <div class="demo-sepa-verdict">
+                <span class="demo-sepa-label">SEPA 结论</span>
+                <strong>👀 WATCH LIST</strong>
+                <p>
+                  8 条全过，自动检测未发现可买的整理形态（VCP / 杯柄 / 平台 / 旗形需人工目视确认）。若价位在
+                  pivot ~ pivot+5% 买入区且当日成交量 ≥ 1.5×20MA 量，则可升为 Strong Buy。
+                </p>
+              </div>
+              <div class="demo-view-head"><span>趋势模板 8 条</span><span>8 / 8</span></div>
               <ol class="demo-sepa">
                 {
-                  [
-                    '价格在 150 日与 200 日均线之上',
-                    '150 日均线在 200 日均线之上',
-                    '200 日均线至少上行 1 个月',
-                    '50 日均线在 150/200 之上',
-                    '价格高于 50 日均线',
-                    '距 52 周低点至少 30%',
-                    '距 52 周高点不超过 25%',
-                    'RS 相对强弱不低于 70',
-                  ].map((line) => (
-                    <li><i>✓</i>{line}</li>
+                  sepaChecks.map((check) => (
+                    <li>
+                      <i>✓</i>
+                      <span>
+                        <b>{check.title}</b>
+                        <em>{check.sub}</em>
+                      </span>
+                    </li>
                   ))
                 }
               </ol>
+              <div class="demo-view-head"><span>关键数值</span></div>
+              <ul class="demo-keystats">
+                {
+                  keyStats.map((stat) => (
+                    <li>
+                      <span>{stat.label}</span>
+                      <b data-tone={stat.tone}>{stat.value}</b>
+                    </li>
+                  ))
+                }
+              </ul>
             </div>
           </aside>
         </div>

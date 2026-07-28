@@ -456,3 +456,141 @@
     display: none;
   }
 }
+
+.app-tabbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 32px;
+  padding: 0 8px;
+  background: #0a0b0e;
+  border-bottom: 1px solid #1c1e23;
+  font-size: 11px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.app-tab-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  color: var(--text-3);
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.app-tab-chip i {
+  width: 5px;
+  height: 5px;
+  border: 1px solid currentColor;
+  flex: none;
+}
+
+.app-tab-chip[data-active='true'] {
+  background: #101116;
+  color: var(--text);
+  border-top: 1px solid var(--accent);
+}
+
+.app-tab-chip[data-active='true'] i {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.app-tab-add,
+.app-tab-action {
+  color: var(--text-3);
+  padding: 0 10px;
+}
+
+.app-tab-action {
+  border: 1px solid #24262c;
+  padding: 3px 9px;
+  font-size: 10px;
+}
+
+.demo-sepa-verdict {
+  border: 1px solid rgba(255, 176, 0, 0.34);
+  background: rgba(255, 176, 0, 0.05);
+  padding: 10px 11px 11px;
+}
+
+.demo-sepa-label {
+  display: block;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  color: var(--text-3);
+  margin-bottom: 5px;
+}
+
+.demo-sepa-verdict strong {
+  display: block;
+  font-size: 17px;
+  color: var(--accent);
+  letter-spacing: 0.04em;
+  margin-bottom: 7px;
+}
+
+.demo-sepa-verdict p {
+  font-size: 10px;
+  line-height: 1.7;
+  color: var(--text-2);
+}
+
+.demo-sepa li {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+  padding: 7px 2px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.035);
+}
+
+.demo-sepa li b {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+.demo-sepa li em {
+  display: block;
+  font-style: normal;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--text-3);
+  line-height: 1.5;
+}
+
+.demo-keystats {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 5px;
+}
+
+.demo-keystats li {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-3);
+}
+
+.demo-keystats b {
+  font-weight: 500;
+}
+
+.demo-keystats b[data-tone='up'] {
+  color: var(--up);
+}
+
+.demo-keystats b[data-tone='down'] {
+  color: var(--down);
+}
