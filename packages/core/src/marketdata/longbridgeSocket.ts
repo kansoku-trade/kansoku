@@ -1,4 +1,9 @@
 import type { FlowRow, RawBar } from '@kansoku/shared/types';
+import {
+  reportLongbridgeEndpointFailure,
+  resolveLongbridgeEndpoints,
+  type ResolvedLongbridgeEndpoints,
+} from './longbridgeEndpoints.js';
 import { readLongbridgeToken, type LongbridgeToken } from './longbridgeToken.js';
 import type { RawCapitalDistribution, RawQuote } from './types.js';
 import {
@@ -38,6 +43,8 @@ import {
 } from './longbridgeProtocol.js';
 
 const QUERY_TIMEOUT_MS = 10_000;
+const OTP_TIMEOUT_MS = 8_000;
+const CONNECT_TIMEOUT_MS = 10_000;
 const REQUEST_WINDOW_MS = 1_000;
 const MAX_REQUESTS_PER_WINDOW = 10;
 const MAX_CONCURRENT_REQUESTS = 5;
@@ -63,6 +70,9 @@ export interface LongbridgeSocketDeps {
   loadToken?: () => Promise<LongbridgeToken>;
   getOtp?: (token: LongbridgeToken) => Promise<string>;
   endpoint?: string;
+  resolveEndpoints?: () => Promise<ResolvedLongbridgeEndpoints>;
+  reportEndpointFailure?: () => void;
+  connectTimeoutMs?: number;
   requestLimits?: {
     maxConcurrent?: number;
     maxPerWindow?: number;
@@ -119,18 +129,32 @@ export class LongbridgeProtocolError extends Error {
   }
 }
 
+export class LongbridgeNetworkError extends Error {
+  constructor(message: string, options?: { cause?: unknown }) {
+    super(message, options);
+    this.name = 'LongbridgeNetworkError';
+  }
+}
+
 function defaultCreateSocket(url: string): WebSocketLike {
   return new WebSocket(url) as unknown as WebSocketLike;
 }
 
-async function fetchSocketOtp(token: LongbridgeToken): Promise<string> {
-  const httpBase = process.env.LONGBRIDGE_HTTP_URL ?? 'https://openapi.longbridge.com';
-  const response = await fetch(`${httpBase.replace(/\/$/, '')}/v2/socket/token`, {
-    headers: {
-      'Authorization': `Bearer ${token.accessToken}`,
-      'Content-Type': 'application/json; charset=utf-8',
-    },
-  });
+async function fetchSocketOtp(token: LongbridgeToken, httpBase: string): Promise<string> {
+  let response: Response;
+  try {
+    response = await fetch(`${httpBase.replace(/\/$/, '')}/v2/socket/token`, {
+      headers: {
+        'Authorization': `Bearer ${token.accessToken}`,
+        'Content-Type': 'application/json; charset=utf-8',
+      },
+      signal: AbortSignal.timeout(OTP_TIMEOUT_MS),
+    });
+  } catch (error) {
+    throw new LongbridgeNetworkError(`Longbridge socket OTP request could not reach ${httpBase}`, {
+      cause: error,
+    });
+  }
   if (!response.ok)
     throw new Error(`Longbridge socket OTP request failed: HTTP ${response.status}`);
   const payload = (await response.json()) as {
@@ -195,10 +219,15 @@ export class LongbridgeQuoteSocket {
 
   private async openAndAuthenticate(): Promise<void> {
     const token = await (this.deps.loadToken ?? readLongbridgeToken)();
-    const base =
-      this.deps.endpoint ??
-      process.env.LONGBRIDGE_QUOTE_WS_URL ??
-      'wss://openapi-quote.longbridge.com/v2';
+    let endpoints: Promise<ResolvedLongbridgeEndpoints> | null = null;
+    const resolveEndpoints = () =>
+      (endpoints ??= (this.deps.resolveEndpoints ?? resolveLongbridgeEndpoints)());
+    const requestOtp = async () =>
+      this.deps.getOtp
+        ? this.deps.getOtp(token)
+        : fetchSocketOtp(token, (await resolveEndpoints()).http);
+
+    const base = this.deps.endpoint ?? (await resolveEndpoints()).ws;
     const url = new URL(base);
     url.searchParams.set('version', '1');
     url.searchParams.set('codec', '1');
@@ -211,12 +240,29 @@ export class LongbridgeQuoteSocket {
       this.handleClose(new Error('Longbridge WebSocket closed')),
     );
 
+    const connectTimeoutMs = this.deps.connectTimeoutMs ?? CONNECT_TIMEOUT_MS;
     try {
       await new Promise<void>((resolve, reject) => {
-        const onOpen = () => resolve();
-        const onError = () => reject(new Error('Longbridge WebSocket connection failed'));
-        socket.addEventListener('open', onOpen);
-        socket.addEventListener('error', onError);
+        const timer = setTimeout(() => {
+          try {
+            socket.close();
+          } catch {
+            /* already closed */
+          }
+          reject(
+            new LongbridgeNetworkError(
+              `Longbridge WebSocket did not open within ${connectTimeoutMs}ms`,
+            ),
+          );
+        }, connectTimeoutMs);
+        socket.addEventListener('open', () => {
+          clearTimeout(timer);
+          resolve();
+        });
+        socket.addEventListener('error', () => {
+          clearTimeout(timer);
+          reject(new LongbridgeNetworkError('Longbridge WebSocket connection failed'));
+        });
       });
 
       const metadata = { need_over_night_quote: 'true' };
@@ -231,11 +277,11 @@ export class LongbridgeQuoteSocket {
           );
           reconnect = true;
         } catch {
-          const otp = await (this.deps.getOtp ?? fetchSocketOtp)(token);
+          const otp = await requestOtp();
           sessionBody = await this.request(COMMAND_AUTH, encodeAuthRequest(otp, metadata), 5_000);
         }
       } else {
-        const otp = await (this.deps.getOtp ?? fetchSocketOtp)(token);
+        const otp = await requestOtp();
         sessionBody = await this.request(COMMAND_AUTH, encodeAuthRequest(otp, metadata), 5_000);
       }
       const next = decodeSessionResponse(sessionBody);
@@ -247,6 +293,8 @@ export class LongbridgeQuoteSocket {
       this.reconnectAttempt = 0;
       await this.restoreSubscriptions();
     } catch (error) {
+      if (error instanceof LongbridgeNetworkError)
+        (this.deps.reportEndpointFailure ?? reportLongbridgeEndpointFailure)();
       if (this.socket === socket) this.socket = null;
       try {
         socket.close();

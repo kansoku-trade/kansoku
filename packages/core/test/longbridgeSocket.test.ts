@@ -1,5 +1,9 @@
-import { describe, expect, it, vi } from 'vitest';
-import { LongbridgeQuoteSocket, type WebSocketLike } from '../src/marketdata/longbridgeSocket.js';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import {
+  LongbridgeNetworkError,
+  LongbridgeQuoteSocket,
+  type WebSocketLike,
+} from '../src/marketdata/longbridgeSocket.js';
 
 type Listener = (event: { data?: unknown }) => void;
 
@@ -99,6 +103,28 @@ class FakeSocket implements WebSocketLike {
     this.emit('close');
   }
 }
+
+const loadToken = async () => ({
+  clientId: 'client',
+  accessToken: 'token',
+  refreshToken: null,
+  expiresAt: 4_102_444_800,
+  dcRegion: 'us',
+});
+
+function opening(fake: FakeSocket): () => WebSocketLike {
+  return () => {
+    queueMicrotask(() => {
+      fake.readyState = 1;
+      fake.emit('open');
+    });
+    return fake;
+  };
+}
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 describe('LongbridgeQuoteSocket', () => {
   it('authenticates, restores desired subscriptions, and dispatches quote pushes', async () => {
@@ -324,5 +350,168 @@ describe('LongbridgeQuoteSocket', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it('closes and reports the endpoint when the socket never opens', async () => {
+    const fake = new FakeSocket();
+    const close = vi.spyOn(fake, 'close');
+    const reportEndpointFailure = vi.fn();
+    const socket = new LongbridgeQuoteSocket({
+      createSocket: () => fake,
+      loadToken,
+      getOtp: async () => 'socket-otp',
+      endpoint: 'wss://example.test/v2',
+      reportEndpointFailure,
+      connectTimeoutMs: 20,
+    });
+
+    await expect(socket.connect()).rejects.toThrow(LongbridgeNetworkError);
+    expect(close).toHaveBeenCalled();
+    expect(reportEndpointFailure).toHaveBeenCalledTimes(1);
+  });
+
+  it('reports the endpoint when the socket errors before opening', async () => {
+    const fake = new FakeSocket();
+    const reportEndpointFailure = vi.fn();
+    const socket = new LongbridgeQuoteSocket({
+      createSocket: () => {
+        queueMicrotask(() => fake.emit('error'));
+        return fake;
+      },
+      loadToken,
+      getOtp: async () => 'socket-otp',
+      endpoint: 'wss://example.test/v2',
+      reportEndpointFailure,
+    });
+
+    await expect(socket.connect()).rejects.toThrow('Longbridge WebSocket connection failed');
+    expect(reportEndpointFailure).toHaveBeenCalledTimes(1);
+  });
+
+  it('reports the endpoint when the OTP request cannot reach the host', async () => {
+    const fake = new FakeSocket();
+    const reportEndpointFailure = vi.fn();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        throw new TypeError('fetch failed');
+      }),
+    );
+    const socket = new LongbridgeQuoteSocket({
+      createSocket: opening(fake),
+      loadToken,
+      endpoint: 'wss://example.test/v2',
+      resolveEndpoints: async () => ({
+        http: 'https://http.example.test',
+        ws: 'wss://ws.example.test/v2',
+        region: null,
+      }),
+      reportEndpointFailure,
+    });
+
+    await expect(socket.connect()).rejects.toThrow(LongbridgeNetworkError);
+    expect(reportEndpointFailure).toHaveBeenCalledTimes(1);
+  });
+
+  it('reports the endpoint when an injected OTP loader raises a network failure', async () => {
+    const fake = new FakeSocket();
+    const reportEndpointFailure = vi.fn();
+    const socket = new LongbridgeQuoteSocket({
+      createSocket: opening(fake),
+      loadToken,
+      getOtp: async () => {
+        throw new LongbridgeNetworkError('otp host unreachable');
+      },
+      endpoint: 'wss://example.test/v2',
+      reportEndpointFailure,
+    });
+
+    await expect(socket.connect()).rejects.toThrow('otp host unreachable');
+    expect(reportEndpointFailure).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not report the endpoint when the OTP request answers HTTP 401', async () => {
+    const fake = new FakeSocket();
+    const reportEndpointFailure = vi.fn();
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('x', { status: 401 })));
+    const socket = new LongbridgeQuoteSocket({
+      createSocket: opening(fake),
+      loadToken,
+      endpoint: 'wss://example.test/v2',
+      resolveEndpoints: async () => ({
+        http: 'https://http.example.test',
+        ws: 'wss://ws.example.test/v2',
+        region: null,
+      }),
+      reportEndpointFailure,
+    });
+
+    await expect(socket.connect()).rejects.toThrow('HTTP 401');
+    expect(reportEndpointFailure).not.toHaveBeenCalled();
+  });
+
+  it('does not report the endpoint when authentication fails after the socket opened', async () => {
+    const fake = new FakeSocket();
+    fake.authStatus = 5;
+    const reportEndpointFailure = vi.fn();
+    const socket = new LongbridgeQuoteSocket({
+      createSocket: opening(fake),
+      loadToken,
+      getOtp: async () => 'socket-otp',
+      endpoint: 'wss://example.test/v2',
+      reportEndpointFailure,
+    });
+
+    await expect(socket.connect()).rejects.toThrow('command=2 status=5');
+    expect(reportEndpointFailure).not.toHaveBeenCalled();
+  });
+
+  it('takes both the ws url and the OTP host from a single endpoint resolution', async () => {
+    const fake = new FakeSocket();
+    const createSocket = vi.fn(opening(fake));
+    const otpUrls: string[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) => {
+        otpUrls.push(url);
+        return new Response(JSON.stringify({ code: 0, data: { otp: 'socket-otp' } }));
+      }),
+    );
+    const resolveEndpoints = vi.fn(async () => ({
+      http: 'https://http.example.test',
+      ws: 'wss://resolved.example.test/v2',
+      region: null,
+    }));
+    const socket = new LongbridgeQuoteSocket({ createSocket, loadToken, resolveEndpoints });
+
+    await socket.connect();
+
+    expect(createSocket).toHaveBeenCalledWith(
+      'wss://resolved.example.test/v2?version=1&codec=1&platform=9',
+    );
+    expect(otpUrls).toEqual(['https://http.example.test/v2/socket/token']);
+    expect(resolveEndpoints).toHaveBeenCalledTimes(1);
+    socket.close();
+  });
+
+  it('never resolves endpoints when the ws url and the OTP loader are both injected', async () => {
+    const fake = new FakeSocket();
+    const resolveEndpoints = vi.fn(async () => ({
+      http: 'https://unused.example.test',
+      ws: 'wss://unused.example.test/v2',
+      region: null,
+    }));
+    const socket = new LongbridgeQuoteSocket({
+      createSocket: opening(fake),
+      loadToken,
+      getOtp: async () => 'socket-otp',
+      endpoint: 'wss://example.test/v2',
+      resolveEndpoints,
+    });
+
+    await socket.connect();
+
+    expect(resolveEndpoints).not.toHaveBeenCalled();
+    socket.close();
   });
 });
