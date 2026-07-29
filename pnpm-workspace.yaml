@@ -18,7 +18,9 @@ ignoredOptionalDependencies:
   - tsx
 allowBuilds:
   '@ffmpeg-installer/darwin-arm64': true
+  '@ffmpeg-installer/linux-x64': true
   '@ffprobe-installer/darwin-arm64': true
+  '@ffprobe-installer/linux-x64': true
   '@google/genai': false
   '@revideo/telemetry': false
   better-sqlite3: true
