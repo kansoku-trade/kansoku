@@ -27,6 +27,13 @@ export class SettingsIpc extends IpcService implements WrapEnvelope<SettingsApi>
   }
 
   @IpcMethod()
+  putProviderBaseUrl(input: Parameters<SettingsApi['putProviderBaseUrl']>[0]) {
+    return toEnvelope('settings.putProviderBaseUrl', () =>
+      settingsService.putProviderBaseUrl(input),
+    );
+  }
+
+  @IpcMethod()
   deleteCredential(input: Parameters<SettingsApi['deleteCredential']>[0]) {
     return toEnvelope('settings.deleteCredential', () => settingsService.deleteCredential(input));
   }

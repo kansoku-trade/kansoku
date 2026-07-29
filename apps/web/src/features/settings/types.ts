@@ -23,10 +23,16 @@ export interface CredentialEntry {
 
 export type MasterKeyStatus = 'ready' | 'missing' | 'invalid';
 
+export interface ProviderEndpoint {
+  provider: string;
+  baseUrl: string;
+}
+
 export interface AiSettings {
   roles: AiRoles;
   credentials: CredentialEntry[];
   masterKey: MasterKeyStatus;
+  endpoints: ProviderEndpoint[];
 }
 
 export interface RoleUsage {

@@ -2,6 +2,7 @@ import { getSupportedThinkingLevels } from '@earendil-works/pi-ai';
 import type { AiRole, AiSettingsService, AiUsageRecord, RoleSettingOut } from '@kansoku/pro-api';
 import { SINGLE_KEY_PROVIDERS } from '../ai/runtime/modelsRuntime.js';
 import { LOBEHUB_PROVIDER } from '../ai/lobehub/types.js';
+import { applyBaseUrlOverride } from '../ai/runtime/providerOverrides.js';
 import { listUsage } from '../ai/runtime/usageStore.js';
 import { ClientError } from '../platform/errors.js';
 import { easternDate } from '../marketdata/session.js';
@@ -14,6 +15,23 @@ import {
   ROLES,
   validateRoleSetting,
 } from './settingsValidation.js';
+
+function normalizeProviderBaseUrl(raw: unknown): string | null {
+  if (typeof raw !== 'string') return null;
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  const stripped = trimmed.replace(/\/+$/, '');
+  let url: URL;
+  try {
+    url = new URL(stripped);
+  } catch {
+    throw new ClientError(`invalid baseUrl: ${stripped}`, 'expected a full http(s) URL');
+  }
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    throw new ClientError(`invalid baseUrl: ${stripped}`, 'expected a full http(s) URL');
+  }
+  return stripped;
+}
 
 function usageRole(
   record: AiUsageRecord,
@@ -61,6 +79,7 @@ export const aiSettingsService: AiSettingsService = {
       roles: rolesOut,
       credentials: credentials.listEntries(),
       masterKey: secretBox.status(),
+      endpoints: credentials.listBaseUrls(),
     };
   },
 
@@ -108,14 +127,30 @@ export const aiSettingsService: AiSettingsService = {
     return { provider, masked: entry?.masked ?? null };
   },
 
+  async putProviderBaseUrl(input) {
+    const { credentials, models } = settingsDeps();
+    const provider = input.provider;
+    if (!SINGLE_KEY_PROVIDERS.has(provider)) {
+      throw new ClientError(
+        `unknown provider: ${provider}`,
+        `expected one of ${[...SINGLE_KEY_PROVIDERS].join(', ')}`,
+      );
+    }
+    const normalized = normalizeProviderBaseUrl(input.baseUrl);
+    credentials.setBaseUrl(provider, normalized);
+    applyBaseUrlOverride(models, provider, normalized);
+    return { provider, baseUrl: normalized };
+  },
+
   async deleteCredential(input) {
-    const { credentials } = settingsDeps();
+    const { credentials, models } = settingsDeps();
     try {
       await credentials.delete(input.provider);
     } catch (err) {
       const hint = input.provider === CODEX_PROVIDER ? 'managed by codex CLI login' : undefined;
       throw new ClientError(err instanceof Error ? err.message : String(err), hint);
     }
+    applyBaseUrlOverride(models, input.provider, null);
     return { provider: input.provider, deleted: true };
   },
 
@@ -202,11 +237,14 @@ export const aiSettingsService: AiSettingsService = {
   },
 
   async resetCredentials() {
-    const { db, credentials, secretBox } = settingsDeps();
+    const { db, credentials, secretBox, models } = settingsDeps();
     db.transaction(() => {
       credentials.wipeAll();
     });
     secretBox.resetKey();
+    for (const provider of SINGLE_KEY_PROVIDERS) {
+      applyBaseUrlOverride(models, provider, null);
+    }
     return { reset: true };
   },
 };

@@ -32,6 +32,10 @@ export interface SettingsApi {
     provider: string;
     key?: unknown;
   }): Promise<{ provider: string; masked: string | null }>;
+  putProviderBaseUrl(input: {
+    provider: string;
+    baseUrl?: unknown;
+  }): Promise<{ provider: string; baseUrl: string | null }>;
   deleteCredential(input: { provider: string }): Promise<{ provider: string; deleted: true }>;
   getCatalog(): Promise<{ providers: CatalogProvider[] }>;
   testConnection(input: Record<string, unknown>): Promise<TestConnectionResult>;
@@ -61,6 +65,7 @@ export const settingsRoutes = defineRoutes<SettingsApi>('settings', {
   putRole: { method: 'PUT', path: '/ai/roles/:role' },
   deleteRole: { method: 'DELETE', path: '/ai/roles/:role' },
   putCredential: { method: 'PUT', path: '/ai/credentials/:provider' },
+  putProviderBaseUrl: { method: 'PUT', path: '/ai/credentials/:provider/base-url' },
   deleteCredential: { method: 'DELETE', path: '/ai/credentials/:provider' },
   getCatalog: { method: 'GET', path: '/ai/catalog' },
   testConnection: { method: 'POST', path: '/ai/test' },

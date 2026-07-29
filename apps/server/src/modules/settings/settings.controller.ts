@@ -28,6 +28,15 @@ export class SettingsController {
     return { ok: true, data };
   }
 
+  @Put('/ai/credentials/:provider/base-url')
+  async putProviderBaseUrl(
+    @Param('provider') provider: string,
+    @Body() body: { baseUrl?: unknown } | null,
+  ) {
+    const data = await settingsService.putProviderBaseUrl({ provider, baseUrl: body?.baseUrl });
+    return { ok: true, data };
+  }
+
   @Delete('/ai/credentials/:provider')
   async deleteCredential(@Param('provider') provider: string) {
     const data = await settingsService.deleteCredential({ provider });

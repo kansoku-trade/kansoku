@@ -19,6 +19,9 @@ export const settingsService: SettingsApi = {
   putCredential(input) {
     return aiSettingsService.putCredential(input);
   },
+  putProviderBaseUrl(input) {
+    return aiSettingsService.putProviderBaseUrl(input);
+  },
   deleteCredential(input) {
     return aiSettingsService.deleteCredential(input);
   },

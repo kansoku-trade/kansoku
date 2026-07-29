@@ -62,6 +62,7 @@ const preMemoryRoleSettings: AiSettings = {
   } as AiSettings['roles'],
   credentials: [],
   masterKey: 'missing',
+  endpoints: [],
 };
 
 const catalog: Catalog = { providers: [] };

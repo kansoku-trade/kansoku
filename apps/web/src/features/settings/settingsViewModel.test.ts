@@ -62,6 +62,7 @@ const settings: AiSettings = {
     },
   ],
   masterKey: 'ready',
+  endpoints: [],
 };
 
 const catalog: Catalog = {

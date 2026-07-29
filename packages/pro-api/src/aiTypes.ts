@@ -34,6 +34,7 @@ export interface SettingsAiOut {
   roles: Record<AiRole, RoleSettingOut>;
   credentials: CredentialListEntry[];
   masterKey: MasterKeyStatus;
+  endpoints: Array<{ provider: string; baseUrl: string }>;
 }
 
 export interface CatalogModel {
@@ -211,6 +212,10 @@ export interface AiSettingsService {
     provider: string;
     key?: unknown;
   }): Promise<{ provider: string; masked: string | null }>;
+  putProviderBaseUrl(input: {
+    provider: string;
+    baseUrl?: unknown;
+  }): Promise<{ provider: string; baseUrl: string | null }>;
   deleteCredential(input: { provider: string }): Promise<{ provider: string; deleted: true }>;
   getCatalog(): Promise<{ providers: CatalogProvider[] }>;
   testConnection(input: Record<string, unknown>): Promise<TestConnectionResult>;
