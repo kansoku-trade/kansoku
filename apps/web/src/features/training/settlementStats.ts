@@ -1,8 +1,10 @@
-import type {
-  TrainerClosedTrade,
-  TrainerResult,
-  TrainerTradeExit,
-  TrainerTradeLot,
+import {
+  trainerMfeGivebackR,
+  trainerPlannedRewardRisk,
+  type TrainerClosedTrade,
+  type TrainerResult,
+  type TrainerTradeExit,
+  type TrainerTradeLot,
 } from '@kansoku/pro-api';
 import { FULL_POSITION } from './orderDraft';
 
@@ -37,17 +39,9 @@ export interface SettlementSummary {
   lossCount: number;
 }
 
-// Judged at the first fill, never at the average of the lots: `initialRisk` is the risk unit the
-// engine locked against that same first price, so pairing it with a post-add average would produce
-// a ratio measured with two different rulers.
-export function plannedRewardRisk(trade: TrainerClosedTrade): number | null {
-  if (trade.initialRisk <= 0) return null;
-  return Math.abs(trade.target - tradeEntryFills(trade)[0].price) / trade.initialRisk;
-}
+export const plannedRewardRisk = trainerPlannedRewardRisk;
 
-export function mfeGivebackR(trade: TrainerClosedTrade): number {
-  return Math.max(0, trade.mfeR - trade.netR);
-}
+export const mfeGivebackR = trainerMfeGivebackR;
 
 export function settlementTradeRows(trades: readonly TrainerClosedTrade[]): SettlementTradeRow[] {
   return trades.map((trade) => ({

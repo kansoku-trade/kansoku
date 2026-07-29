@@ -30,6 +30,7 @@ function makeView(base: RawBar[], remainingBars: number): TrainerView {
     remainingBars,
     terminal: false,
     result: null,
+    submitted: false,
   };
 }
 

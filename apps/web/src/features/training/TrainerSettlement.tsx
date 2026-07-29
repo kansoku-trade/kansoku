@@ -216,8 +216,7 @@ export function TrainerSettlement({
             </span>
           )}
           <div className="trainer-ghost-slots">
-            <span>AI 对照 · M4</span>
-            <span>教训沉淀 · M5</span>
+            <span>AI 对照与教训沉淀在「复盘」页签</span>
           </div>
         </div>
       </div>
