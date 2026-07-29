@@ -50,6 +50,11 @@ export function resetLongbridgeEndpointsForTests(): void {
   preferredNextRegion = null;
 }
 
+export function clearLongbridgeEndpointCacheForPreferenceChange(): void {
+  cachedAutoRegion = null;
+  preferredNextRegion = null;
+}
+
 async function probeRegion(region: LongbridgeRegion): Promise<boolean> {
   try {
     // fetch() only rejects on network error/timeout; any HTTP status (incl. 4xx/5xx) resolves.

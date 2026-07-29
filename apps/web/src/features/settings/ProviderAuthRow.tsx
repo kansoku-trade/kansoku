@@ -84,7 +84,12 @@ export function ProviderAuthRow({
           ) : null}
         </div>
       )}
-      <ProviderBaseUrlField provider={provider.id} baseUrl={baseUrl} onChanged={onChanged} />
+      <ProviderBaseUrlField
+        key={baseUrl ?? ''}
+        provider={provider.id}
+        baseUrl={baseUrl}
+        onChanged={onChanged}
+      />
       {error ? (
         <div className="settings-provider-error" role="alert">
           {error}

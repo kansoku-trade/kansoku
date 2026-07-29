@@ -79,9 +79,9 @@ export function LongbridgeSection() {
             options={REGION_OPTIONS}
             onChange={(next) => void handleRegionChange(next)}
           />
+          <div className="settings-provider-meta">自动模式探测可达线路；修改后下次连接生效</div>
         </div>
       )}
-      <div className="settings-provider-meta">自动模式探测可达线路；修改后下次连接生效</div>
       {regionError && (
         <div className="settings-test-result settings-test-result--fail">{regionError}</div>
       )}

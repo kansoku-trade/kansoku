@@ -1,4 +1,5 @@
 import { resolveSubscription } from '../license/subscription.js';
+import { clearLongbridgeEndpointCacheForPreferenceChange } from '../marketdata/longbridgeEndpoints.js';
 import {
   getActiveLongbridgeRegionStore,
   validateLongbridgeRegionPreference,
@@ -59,6 +60,7 @@ export const settingsService: SettingsApi = {
   async putLongbridgeRegion(input) {
     const store = getActiveLongbridgeRegionStore();
     store.set(validateLongbridgeRegionPreference(input.region));
+    clearLongbridgeEndpointCacheForPreferenceChange();
     return { region: store.get() };
   },
 

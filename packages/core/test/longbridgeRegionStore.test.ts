@@ -5,6 +5,11 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { createDb } from '../src/db/index.js';
 import { appMeta } from '../src/db/schema.js';
 import {
+  configureLongbridgeEndpoints,
+  resetLongbridgeEndpointsForTests,
+  resolveLongbridgeEndpoints,
+} from '../src/marketdata/longbridgeEndpoints.js';
+import {
   createLongbridgeRegionStore,
   getActiveLongbridgeRegionStore,
   setActiveLongbridgeRegionStore,
@@ -137,6 +142,35 @@ describe('settingsService.getLongbridgeRegion / putLongbridgeRegion', () => {
         ClientError,
       );
     } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('clears the cached auto-probe winner on preference change, so switching back to auto re-probes', async () => {
+    const { dir, path } = tempDbPath();
+    try {
+      setActiveLongbridgeRegionStore(createLongbridgeRegionStore(createDb(path)));
+
+      const calls: string[] = [];
+      configureLongbridgeEndpoints({
+        fetchImpl: (async (url: string) => {
+          calls.push(url);
+          return new Response(null, { status: 200 });
+        }) as unknown as typeof fetch,
+        env: {},
+      });
+
+      await resolveLongbridgeEndpoints();
+      expect(calls.length).toBeGreaterThan(0);
+
+      await settingsService.putLongbridgeRegion({ region: 'cn' });
+      await settingsService.putLongbridgeRegion({ region: 'auto' });
+
+      calls.length = 0;
+      await resolveLongbridgeEndpoints();
+      expect(calls.length).toBeGreaterThan(0);
+    } finally {
+      resetLongbridgeEndpointsForTests();
       rmSync(dir, { recursive: true, force: true });
     }
   });
