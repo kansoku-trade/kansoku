@@ -5,6 +5,10 @@ import { setProductionHost } from '@kansoku/core/license/dodoEnv';
 import { startLicenseRevalidation } from '@kansoku/core/license/licenseSchedule';
 import { initLicenseManager } from '@kansoku/core/license/licenseState';
 import {
+  createLongbridgeRegionStore,
+  setActiveLongbridgeRegionStore,
+} from '@kansoku/core/marketdata/longbridgeRegionStore';
+import {
   createWatchedMarketsStore,
   setActiveWatchedMarketsStore,
 } from '@kansoku/core/marketdata/watchedMarketsStore';
@@ -45,6 +49,7 @@ export async function initServerHostRuntime(opts?: ServerRuntimeOptions): Promis
   initCredentialProvider(opts?.credentialProvider);
   initAuthUrlOpener(opts?.openAuthUrl);
   setActiveWatchedMarketsStore(createWatchedMarketsStore(getDb()));
+  setActiveLongbridgeRegionStore(createLongbridgeRegionStore(getDb()));
   initAiSettings(getDb(), { secretBox: opts?.secretBox });
 
   const productionHost = opts?.productionHost ?? process.env.NODE_ENV === 'production';
