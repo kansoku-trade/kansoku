@@ -155,6 +155,84 @@ describe('reportLongbridgeEndpointFailure', () => {
     expect(second.region).toBe('cn');
   });
 
+  it('falls back to the other region and caches it when the preferred region is unreachable', async () => {
+    const calls: string[] = [];
+    configureLongbridgeEndpoints({
+      fetchImpl: (async (url: string) => {
+        calls.push(url);
+        if (url === CN_HTTP) await new Promise((resolve) => setTimeout(resolve, 15));
+        return ok();
+      }) as unknown as typeof fetch,
+      env: {},
+      getRegionPreference: () => 'auto',
+    });
+
+    const first = await resolveLongbridgeEndpoints();
+    expect(first.region).toBe('com');
+
+    reportLongbridgeEndpointFailure();
+    calls.length = 0;
+
+    configureLongbridgeEndpoints({
+      fetchImpl: (async (url: string) => {
+        calls.push(url);
+        if (url === CN_HTTP) throw new Error('network error');
+        return ok();
+      }) as unknown as typeof fetch,
+    });
+
+    const second = await resolveLongbridgeEndpoints();
+    expect(calls).toEqual([CN_HTTP, COM_HTTP]);
+    expect(second.region).toBe('com');
+
+    calls.length = 0;
+    const third = await resolveLongbridgeEndpoints();
+    expect(calls).toHaveLength(0);
+    expect(third.region).toBe('com');
+  });
+
+  it('falls back to com without caching when both the preferred and the other region are unreachable', async () => {
+    const calls: string[] = [];
+    configureLongbridgeEndpoints({
+      fetchImpl: (async (url: string) => {
+        calls.push(url);
+        if (url === CN_HTTP) await new Promise((resolve) => setTimeout(resolve, 15));
+        return ok();
+      }) as unknown as typeof fetch,
+      env: {},
+      getRegionPreference: () => 'auto',
+    });
+
+    const first = await resolveLongbridgeEndpoints();
+    expect(first.region).toBe('com');
+
+    reportLongbridgeEndpointFailure();
+    calls.length = 0;
+
+    configureLongbridgeEndpoints({
+      fetchImpl: (async (url: string) => {
+        calls.push(url);
+        throw new Error('network error');
+      }) as unknown as typeof fetch,
+    });
+
+    const second = await resolveLongbridgeEndpoints();
+    expect(calls).toEqual([CN_HTTP, COM_HTTP]);
+    expect(second.region).toBe('com');
+
+    calls.length = 0;
+    configureLongbridgeEndpoints({
+      fetchImpl: (async (url: string) => {
+        calls.push(url);
+        return ok();
+      }) as unknown as typeof fetch,
+    });
+
+    const third = await resolveLongbridgeEndpoints();
+    expect(calls).toHaveLength(2);
+    expect(third.region).toBe('com');
+  });
+
   it('is a no-op under a manual region preference', async () => {
     let preference: LongbridgeRegionPreference = 'com';
     const fetchImpl = vi.fn(async () => ok());

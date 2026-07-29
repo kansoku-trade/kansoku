@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { createDb } from '../src/db/index.js';
+import { appMeta } from '../src/db/schema.js';
 import {
   createLongbridgeRegionStore,
   getActiveLongbridgeRegionStore,
@@ -60,6 +61,19 @@ describe('createLongbridgeRegionStore', () => {
     try {
       const store = createLongbridgeRegionStore(createDb(path));
       expect(() => store.set('us' as never)).toThrow();
+      expect(store.get()).toBe('auto');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('falls back to auto when the stored value is invalid', () => {
+    const { dir, path } = tempDbPath();
+    try {
+      const db = createDb(path);
+      db.insert(appMeta).values({ key: 'longbridge_region_v1', value: 'us' }).run();
+
+      const store = createLongbridgeRegionStore(db);
       expect(store.get()).toBe('auto');
     } finally {
       rmSync(dir, { recursive: true, force: true });

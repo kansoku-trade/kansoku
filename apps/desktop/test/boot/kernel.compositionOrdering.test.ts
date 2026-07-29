@@ -44,6 +44,13 @@ vi.mock('@kansoku/core/marketdata/watchedMarketsStore', () => ({
   setActiveWatchedMarketsStore,
 }));
 
+const createLongbridgeRegionStore = vi.hoisted(() => vi.fn(() => ({})));
+const setActiveLongbridgeRegionStore = vi.hoisted(() => vi.fn());
+vi.mock('@kansoku/core/marketdata/longbridgeRegionStore', () => ({
+  createLongbridgeRegionStore,
+  setActiveLongbridgeRegionStore,
+}));
+
 const initAuthUrlOpener = vi.hoisted(() => vi.fn());
 vi.mock('@kansoku/core/credentials/authUrlOpener', () => ({ initAuthUrlOpener }));
 
