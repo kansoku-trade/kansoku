@@ -7,12 +7,23 @@ import '../../../styles/landing/research.css';
 const stockCount = RESEARCH_DOCS.filter((doc) => doc.kind === 'stock').length;
 const journalCount = RESEARCH_DOCS.length - stockCount;
 const rendered = await Promise.all(RESEARCH_DOCS.map((doc) => marked.parse(doc.markdown)));
+
+const relatedFor = (index: number) => {
+  const doc = RESEARCH_DOCS[index];
+  if (!doc || doc.symbols.length === 0) return [];
+  return RESEARCH_DOCS.filter(
+    (other) =>
+      other.path !== doc.path && other.symbols.some((symbol) => doc.symbols.includes(symbol)),
+  );
+};
+
+const firstRelated = relatedFor(0);
 ---
 
 <div class="app-view app-view--stack" data-app-view="research" data-active="false">
   <header class="research-header">
     <div class="research-title">
-      <span class="research-title-icon"><Icon name="library" size={17} /></span>
+      <span class="research-title-icon"><Icon name="library" size={18} /></span>
       <div>
         <h3>研究库</h3>
         <p>{stockCount} 篇股票档案 · {journalCount} 篇研究日志</p>
@@ -20,21 +31,23 @@ const rendered = await Promise.all(RESEARCH_DOCS.map((doc) => marked.parse(doc.m
     </div>
     <div class="research-controls">
       <div class="research-view-switch" role="group" aria-label="研究库视图" data-research-switch>
-        <button type="button" data-kind="stock" aria-pressed="true">
+        <button type="button" data-kind="stock" class="active" aria-pressed="true">
           <Icon name="book-open" size={13} /> 股票档案
         </button>
         <button type="button" data-kind="journal" aria-pressed="false">
           <Icon name="file-text" size={13} /> 研究日志
         </button>
       </div>
-      <button type="button" class="research-new"><Icon name="plus" size={13} /> 新建</button>
-      <label class="research-search">
-        <Icon name="search" size={13} />
-        <input type="search" placeholder="搜索股票或正文" data-research-search />
-      </label>
-      <button type="button" class="research-refresh" aria-label="刷新研究资料">
-        <Icon name="refresh-cw" size={13} />
-      </button>
+      <button type="button" class="research-new"><Icon name="plus" size={14} /> 新建</button>
+      <div class="research-search-actions">
+        <label class="research-search">
+          <Icon name="search" size={14} />
+          <input type="search" placeholder="搜索股票或正文" data-research-search />
+        </label>
+        <button type="button" class="research-refresh" aria-label="刷新研究资料">
+          <Icon name="refresh-cw" size={14} />
+        </button>
+      </div>
     </div>
   </header>
 
@@ -49,7 +62,7 @@ const rendered = await Promise.all(RESEARCH_DOCS.map((doc) => marked.parse(doc.m
           RESEARCH_DOCS.map((doc, i) => (
             <button
               type="button"
-              class="research-document-row"
+              class:list={['research-document-row', { active: i === 0 }]}
               data-research-row
               data-kind={doc.kind}
               data-index={i}
@@ -62,7 +75,6 @@ const rendered = await Promise.all(RESEARCH_DOCS.map((doc) => marked.parse(doc.m
               <span class="research-document-row-meta">
                 {[doc.typeLabel, doc.symbols.join(' · ')].filter(Boolean).join(' · ')}
               </span>
-              <span class="research-document-row-excerpt">{doc.excerpt}</span>
             </button>
           ))
         }
@@ -80,7 +92,7 @@ const rendered = await Promise.all(RESEARCH_DOCS.map((doc) => marked.parse(doc.m
           >
             <header class="research-reader-head">
               <div class="research-reader-heading">
-                <span class={`badge${doc.kind === 'stock' ? ' badge--accent' : ''}`}>
+                <span class:list={['badge', { 'badge--accent': doc.kind === 'stock' }]}>
                   {doc.typeLabel}
                 </span>
                 <h4>{doc.title}</h4>
@@ -102,27 +114,80 @@ const rendered = await Promise.all(RESEARCH_DOCS.map((doc) => marked.parse(doc.m
     </main>
 
     <aside class="research-context" aria-label="关联研究资料">
-      <div class="research-related-summary">
-        <Icon name="chevron-down" size={13} />
-        <span data-research-related>关联资料 · 1 个标的 · 2 条相关记录</span>
+      <div class="research-assistant">
+        <div class="research-assistant-header">
+          <span class="research-assistant-title">AI 助手</span>
+          <div class="research-assistant-header-actions">
+            <span class="research-assistant-header-btn" aria-hidden="true">
+              <Icon name="refresh-cw" size={14} />
+            </span>
+            <span class="research-assistant-header-btn" aria-hidden="true">
+              <Icon name="history" size={15} />
+            </span>
+          </div>
+        </div>
+
+        <div class="research-related-details">
+          <button
+            type="button"
+            class="research-related-summary"
+            data-research-related-toggle
+            aria-expanded="false"
+          >
+            <Icon name="chevron-right" size={13} />
+            <span data-research-related>
+              关联资料 · {RESEARCH_DOCS[0].symbols.length} 个标的 · {firstRelated.length} 条相关记录
+            </span>
+          </button>
+          <div class="research-related-body" data-research-related-body hidden>
+            <section class="research-context-section">
+              <h5>关联标的</h5>
+              <div class="research-symbol-links" data-research-symbols>
+                {RESEARCH_DOCS[0].symbols.map((symbol) => (
+                  <span class="chip">{symbol}</span>
+                ))}
+              </div>
+            </section>
+            <section class="research-context-section">
+              <h5>相关记录</h5>
+              <div class="research-related-list" data-research-related-list>
+                {
+                  firstRelated.length > 0 ? (
+                    firstRelated.map((doc) => (
+                      <button type="button" data-research-related-path={doc.path}>
+                        <span>{doc.title}</span>
+                        <small>
+                          {[doc.typeLabel, doc.symbols.join(' · ')].filter(Boolean).join(' · ')}
+                        </small>
+                      </button>
+                    ))
+                  ) : (
+                    <p class="research-context-note">暂时没有通过标的建立的关联记录。</p>
+                  )
+                }
+              </div>
+            </section>
+          </div>
+        </div>
+
+        <div class="research-assistant-transcript">
+          <p class="research-assistant-empty">
+            可以询问、核对或要求修改当前文档，或点上方「刷新研究」生成带来源的研究报告
+          </p>
+          <div class="research-assistant-suggestions">
+            <span class="research-suggestion-chip">总结这份记录的核心判断</span>
+            <span class="research-suggestion-chip">找出证据不足或过期的结论</span>
+            <span class="research-suggestion-chip">追加一段后续验证计划</span>
+          </div>
+        </div>
+
+        <div class="research-assistant-composer">
+          <span class="research-assistant-input">询问或修改当前文档…</span>
+          <span class="research-assistant-send" aria-hidden="true">
+            <Icon name="arrow-up" size={14} />
+          </span>
+        </div>
       </div>
-      <section class="research-context-section">
-        <h5>关联标的</h5>
-        <div class="research-symbol-links" data-research-symbols>
-          <span class="chip">NVDA</span>
-        </div>
-      </section>
-      <section class="research-context-section research-assistant">
-        <h5>研究库 AI</h5>
-        <p class="research-assistant-hint">
-          按当前档案增量更新，只补新事实、不覆盖你写过的判断；改动以 diff 形式给你过目再落盘。
-        </p>
-        <div class="research-assistant-actions">
-          <span class="app-btn"><Icon name="refresh-cw" size={12} /> 增量更新</span>
-          <span class="app-btn"><Icon name="git-compare" size={12} /> 查看 diff</span>
-        </div>
-        <span class="research-assistant-tag">PRO</span>
-      </section>
     </aside>
   </div>
 </div>

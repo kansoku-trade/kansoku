@@ -50,10 +50,14 @@ export const settingsService: SettingsApi = {
     return {
       subscribeUrl: subscription.url,
       priceLabel: subscription.priceLabel,
+      listPriceLabel: subscription.listPriceLabel,
+      discountLabel: subscription.discountLabel,
       trialDays: subscription.trialDays,
       yearly: {
         subscribeUrl: subscription.yearly.url,
         priceLabel: subscription.yearly.priceLabel,
+        listPriceLabel: subscription.yearly.listPriceLabel,
+        discountLabel: subscription.yearly.discountLabel,
         trialDays: subscription.yearly.trialDays,
         savingsLabel: subscription.yearly.savingsLabel,
       },

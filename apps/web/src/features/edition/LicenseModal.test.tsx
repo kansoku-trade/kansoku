@@ -92,6 +92,28 @@ describe('LicenseModal', () => {
     expect(screen.queryByText(/前往订阅/)).toBeNull();
   });
 
+  it('frames the trial CTA with list price and limited-time discount when present', async () => {
+    capabilitiesGet.mockResolvedValue({
+      pro: true,
+      licensed: false,
+      license: { state: 'unlicensed' },
+    });
+    subscribeUrlGet.mockResolvedValue({
+      subscribeUrl: 'https://checkout.example/buy',
+      priceLabel: '$9.9 / 月',
+      listPriceLabel: '$20 / 月',
+      discountLabel: '限时 5 折',
+      trialDays: 7,
+    });
+    openLicenseModal('guard');
+
+    renderWithClient(<ModalHost />);
+
+    expect(
+      await screen.findByText(/免费试用 7 天 · 之后 \$9\.9 \/ 月（限时 5 折，原价 \$20 \/ 月），随时取消/),
+    ).toBeTruthy();
+  });
+
   it('renders the yearly plan link with savings when the subscription carries a yearly plan', async () => {
     capabilitiesGet.mockResolvedValue({
       pro: true,

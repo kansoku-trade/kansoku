@@ -1,0 +1,887 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Kansoku Hero 背景方案 Mockup</title>
+    <style>
+      :root {
+        --bg: #0a0a0a;
+        --surface: #111;
+        --text: #e8e8e8;
+        --text-2: #9a9a9a;
+        --text-3: #5c5c5c;
+        --accent: #ffb000;
+        --up: #26a69a;
+        --border: #262626;
+        --mono: ui-monospace, 'SF Mono', Menlo, monospace;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #050505;
+        color: var(--text);
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      .page {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 40px 24px 80px;
+      }
+      .page-head {
+        margin-bottom: 36px;
+      }
+      .page-head h1 {
+        margin: 0 0 10px;
+        font-size: 28px;
+        letter-spacing: -0.02em;
+      }
+      .page-head p {
+        margin: 0;
+        color: var(--text-2);
+        font-size: 14px;
+        line-height: 1.7;
+        max-width: 720px;
+      }
+      .toc {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 22px 0 0;
+      }
+      .toc a {
+        color: var(--text-3);
+        text-decoration: none;
+        font-family: var(--mono);
+        font-size: 11px;
+        letter-spacing: 0.06em;
+        border: 1px solid var(--border);
+        padding: 6px 10px;
+      }
+      .toc a:hover {
+        color: var(--accent);
+        border-color: rgba(255, 176, 0, 0.45);
+      }
+      .gallery {
+        display: grid;
+        gap: 40px;
+      }
+      .card {
+        border: 1px solid var(--border);
+        background: #0c0c0c;
+      }
+      .card-meta {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: baseline;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--border);
+      }
+      .card-meta h2 {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 600;
+      }
+      .card-meta .id {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--accent);
+        letter-spacing: 0.1em;
+      }
+      .card-meta p {
+        margin: 4px 0 0;
+        color: var(--text-3);
+        font-size: 12px;
+        line-height: 1.5;
+      }
+      .frame {
+        position: relative;
+        height: min(58vh, 520px);
+        min-height: 380px;
+        overflow: hidden;
+        background: var(--bg);
+      }
+      .bg {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+      }
+      .hero {
+        position: relative;
+        z-index: 2;
+        display: grid;
+        grid-template-columns: minmax(280px, 42%) 1fr;
+        align-items: center;
+        gap: 28px;
+        height: 100%;
+        width: min(1040px, 100%);
+        margin: 0 auto;
+        padding: 36px 28px;
+      }
+      .copy .eyebrow {
+        margin: 0 0 14px;
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.16em;
+        color: var(--accent);
+      }
+      .copy h3 {
+        margin: 0 0 12px;
+        font-size: clamp(22px, 3vw, 34px);
+        line-height: 1.15;
+        letter-spacing: -0.02em;
+      }
+      .copy .sub {
+        margin: 0 0 18px;
+        color: var(--text-2);
+        font-size: 12.5px;
+        line-height: 1.7;
+        max-width: 360px;
+      }
+      .btns {
+        display: flex;
+        gap: 8px;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        height: 32px;
+        padding: 0 12px;
+        border: 1px solid rgba(255, 176, 0, 0.55);
+        background: rgba(255, 176, 0, 0.12);
+        color: var(--accent);
+        font-size: 12px;
+      }
+      .btn.ghost {
+        border-color: var(--border);
+        background: transparent;
+        color: var(--text-2);
+      }
+      .scene {
+        position: relative;
+        height: 78%;
+        min-height: 240px;
+      }
+      .evidence {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: min(250px, 70%);
+        padding: 12px 14px;
+        background: rgba(9, 9, 9, 0.92);
+        border: 1px solid rgba(255, 176, 0, 0.28);
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.65);
+        font-family: var(--mono);
+        font-size: 11px;
+      }
+      .evidence .sym {
+        color: var(--accent);
+        margin-bottom: 8px;
+      }
+      .evidence .dir {
+        color: var(--up);
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 10px;
+      }
+      .bar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 5px 0;
+        color: var(--text-3);
+      }
+      .bar i {
+        flex: 1;
+        height: 3px;
+        background: #1a1a1a;
+        position: relative;
+      }
+      .bar i::after {
+        content: '';
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: var(--w);
+        background: var(--c, var(--accent));
+      }
+      .stamp {
+        position: absolute;
+        right: -8px;
+        bottom: -8px;
+        border: 1px solid var(--accent);
+        color: var(--accent);
+        font-size: 9px;
+        letter-spacing: 0.12em;
+        padding: 3px 7px;
+        background: #0a0a0a;
+        transform: rotate(-6deg);
+      }
+      .verdict {
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
+        flex-wrap: wrap;
+      }
+      .chip {
+        font-family: var(--mono);
+        font-size: 10px;
+        color: var(--text-3);
+        border: 1px solid var(--border);
+        padding: 4px 8px;
+      }
+      .chip strong {
+        color: var(--accent);
+        font-weight: 500;
+      }
+
+      /* ========== 1 终端底噪 ========== */
+      .bg-terminal {
+        background:
+          repeating-linear-gradient(
+            to bottom,
+            rgba(255, 255, 255, 0.025) 0 1px,
+            transparent 1px 3px
+          ),
+          radial-gradient(ellipse 50% 40% at 72% 45%, rgba(255, 176, 0, 0.05), transparent 70%),
+          #0a0a0a;
+      }
+      .bg-terminal::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(rgba(255, 176, 0, 0.12) 0.5px, transparent 0.5px);
+        background-size: 3px 3px;
+        opacity: 0.25;
+        mask-image: linear-gradient(90deg, transparent 20%, #000 60%);
+      }
+
+      /* ========== 2 证据链路 ========== */
+      .bg-chain {
+        background:
+          radial-gradient(ellipse 45% 40% at 70% 48%, rgba(255, 176, 0, 0.06), transparent 70%),
+          #0a0a0a;
+      }
+      .bg-chain svg {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0.9;
+      }
+
+      /* ========== 3 深度视差 ========== */
+      .bg-depth {
+        background: #070707;
+      }
+      .bg-depth .layer {
+        position: absolute;
+        inset: 0;
+      }
+      .bg-depth .far {
+        background:
+          radial-gradient(ellipse 60% 50% at 75% 40%, rgba(255, 176, 0, 0.04), transparent 65%),
+          radial-gradient(circle at 20% 80%, rgba(255, 176, 0, 0.02), transparent 40%);
+        filter: blur(1px);
+      }
+      .bg-depth .mid {
+        background-image:
+          linear-gradient(rgba(255, 176, 0, 0.05) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 176, 0, 0.05) 1px, transparent 1px);
+        background-size: 48px 48px;
+        background-position: 20% 10%;
+        mask-image: linear-gradient(105deg, transparent 30%, #000 70%);
+        opacity: 0.45;
+        transform: perspective(600px) rotateX(52deg) scale(1.4);
+        transform-origin: 70% 80%;
+      }
+      .bg-depth .near {
+        background: radial-gradient(circle at 78% 42%, rgba(255, 176, 0, 0.08), transparent 28%);
+      }
+      .bg-depth .dust {
+        position: absolute;
+        width: 2px;
+        height: 2px;
+        border-radius: 50%;
+        background: rgba(255, 176, 0, 0.55);
+        box-shadow:
+          70vw 20vh 0 0 rgba(255, 176, 0, 0.35),
+          62vw 55vh 0 0.5px rgba(255, 176, 0, 0.4),
+          80vw 70vh 0 0 rgba(255, 176, 0, 0.3),
+          55vw 35vh 0 0 rgba(255, 176, 0, 0.25),
+          88vw 48vh 0 0 rgba(255, 176, 0, 0.45);
+      }
+
+      /* ========== 4 体积光 ========== */
+      .bg-godray {
+        background:
+          radial-gradient(ellipse 40% 55% at 82% 0%, rgba(255, 176, 0, 0.14), transparent 55%),
+          radial-gradient(ellipse 30% 45% at 70% 10%, rgba(255, 176, 0, 0.07), transparent 50%),
+          #0a0a0a;
+      }
+      .bg-godray .ray {
+        position: absolute;
+        top: -10%;
+        right: 8%;
+        width: 2px;
+        height: 120%;
+        background: linear-gradient(
+          to bottom,
+          rgba(255, 176, 0, 0.35),
+          rgba(255, 176, 0, 0.05) 40%,
+          transparent
+        );
+        transform-origin: top;
+        filter: blur(0.5px);
+      }
+      .bg-godray .ray:nth-child(1) {
+        right: 18%;
+        transform: rotate(8deg);
+        opacity: 0.55;
+      }
+      .bg-godray .ray:nth-child(2) {
+        right: 14%;
+        width: 28px;
+        background: linear-gradient(
+          to bottom,
+          rgba(255, 176, 0, 0.12),
+          rgba(255, 176, 0, 0.02) 50%,
+          transparent
+        );
+        filter: blur(8px);
+        transform: rotate(12deg);
+      }
+      .bg-godray .ray:nth-child(3) {
+        right: 24%;
+        transform: rotate(18deg);
+        opacity: 0.35;
+      }
+      .bg-godray .ray:nth-child(4) {
+        right: 10%;
+        transform: rotate(3deg);
+        opacity: 0.45;
+      }
+
+      /* ========== 5 行情幽灵 ========== */
+      .bg-ghost {
+        background: #0a0a0a;
+      }
+      .bg-ghost svg {
+        position: absolute;
+        right: 0;
+        top: 10%;
+        width: 70%;
+        height: 80%;
+        opacity: 0.22;
+        mask-image: linear-gradient(90deg, transparent, #000 30%);
+      }
+
+      /* ========== 6 噪声流场 ========== */
+      .bg-noise {
+        background: #080808;
+      }
+      .bg-noise canvas {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0.85;
+        mask-image: linear-gradient(100deg, transparent 15%, #000 55%);
+      }
+
+      /* ========== 7 线框环 ========== */
+      .bg-wire {
+        background:
+          radial-gradient(circle at 72% 48%, rgba(255, 176, 0, 0.06), transparent 42%),
+          #0a0a0a;
+      }
+      .bg-wire svg {
+        position: absolute;
+        right: 6%;
+        top: 50%;
+        width: min(48vw, 420px);
+        height: min(48vw, 420px);
+        transform: translateY(-50%);
+        opacity: 0.55;
+      }
+
+      /* ========== 8 纯光域 ========== */
+      .bg-light {
+        background:
+          radial-gradient(ellipse 42% 38% at 76% 42%, rgba(255, 176, 0, 0.1), transparent 68%),
+          radial-gradient(ellipse 28% 24% at 68% 70%, rgba(255, 176, 0, 0.04), transparent 70%),
+          #0a0a0a;
+      }
+      .bg-light::after {
+        content: '';
+        position: absolute;
+        left: 58%;
+        top: 0;
+        width: 1px;
+        height: 100%;
+        background: linear-gradient(
+          to bottom,
+          transparent,
+          rgba(255, 176, 0, 0.18) 35%,
+          rgba(255, 176, 0, 0.05) 65%,
+          transparent
+        );
+        opacity: 0.7;
+      }
+
+      /* ========== 9 交互响应 ========== */
+      .bg-reactive {
+        background:
+          radial-gradient(
+            420px 280px at var(--mx, 72%) var(--my, 48%),
+            rgba(255, 176, 0, 0.14),
+            transparent 60%
+          ),
+          radial-gradient(ellipse 50% 40% at 70% 50%, rgba(255, 176, 0, 0.04), transparent 70%),
+          #0a0a0a;
+        transition: --mx 0.2s linear;
+      }
+      .bg-reactive .hint {
+        position: absolute;
+        right: 28px;
+        bottom: 18px;
+        font-family: var(--mono);
+        font-size: 10px;
+        color: var(--text-3);
+        letter-spacing: 0.08em;
+        z-index: 3;
+      }
+      .bg-reactive .ring {
+        position: absolute;
+        width: 120px;
+        height: 120px;
+        border: 1px solid rgba(255, 176, 0, 0.2);
+        border-radius: 50%;
+        left: calc(var(--mx, 72%) - 60px);
+        top: calc(var(--my, 48%) - 60px);
+        pointer-events: none;
+      }
+
+      /* ========== 0 当前网格（对照） ========== */
+      .bg-current {
+        background:
+          radial-gradient(ellipse 55% 48% at 78% 42%, rgba(255, 176, 0, 0.1), transparent 68%),
+          #0a0a0a;
+      }
+      .bg-current .floor {
+        position: absolute;
+        left: 20%;
+        right: -5%;
+        bottom: -15%;
+        top: 35%;
+        background-image:
+          linear-gradient(rgba(255, 176, 0, 0.12) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 176, 0, 0.1) 1px, transparent 1px);
+        background-size: 56px 40px;
+        transform: perspective(500px) rotateX(58deg);
+        transform-origin: 50% 0;
+        mask-image: linear-gradient(to top, #000 20%, transparent 90%);
+        opacity: 0.55;
+      }
+      .bg-current .beams {
+        position: absolute;
+        inset: 0;
+        background:
+          linear-gradient(105deg, transparent 60%, rgba(255, 176, 0, 0.04) 72%, transparent 78%),
+          linear-gradient(95deg, transparent 68%, rgba(255, 176, 0, 0.05) 74%, transparent 82%);
+      }
+
+      @media (max-width: 800px) {
+        .hero {
+          grid-template-columns: 1fr;
+          padding: 24px 18px;
+        }
+        .scene {
+          height: 220px;
+        }
+        .frame {
+          height: auto;
+          min-height: 520px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header class="page-head">
+        <h1>Hero 背景方案 Mockup</h1>
+        <p>
+          同一套文案区 + 证据卡骨架，只换背景语言。方便横向比较气质、抢戏程度、和「能查账」叙事的贴合度。不是最终实现，是选方向用的静帧。
+        </p>
+        <nav class="toc">
+          <a href="#m0">00 当前网格</a>
+          <a href="#m1">01 终端底噪</a>
+          <a href="#m2">02 证据链路</a>
+          <a href="#m3">03 深度视差</a>
+          <a href="#m4">04 体积光</a>
+          <a href="#m5">05 行情幽灵</a>
+          <a href="#m6">06 噪声流场</a>
+          <a href="#m7">07 线框环</a>
+          <a href="#m8">08 纯光域</a>
+          <a href="#m9">09 交互响应</a>
+        </nav>
+      </header>
+
+      <div class="gallery">
+        <!-- 0 -->
+        <article class="card" id="m0">
+          <div class="card-meta">
+            <div>
+              <div class="id">00 · CONTROL</div>
+              <h2>当前：透视网格 + 暖光</h2>
+              <p>对照基线。科技感强，容易偏通用 AI 落地页。</p>
+            </div>
+            <span class="chip"><strong>对照</strong></span>
+          </div>
+          <div class="frame">
+            <div class="bg bg-current">
+              <div class="floor"></div>
+              <div class="beams"></div>
+            </div>
+            <div class="hero" data-hero></div>
+          </div>
+        </article>
+
+        <!-- 1 -->
+        <article class="card" id="m1">
+          <div class="card-meta">
+            <div>
+              <div class="id">01 · TERMINAL</div>
+              <h2>终端底噪</h2>
+              <p>扫描线 + 点阵 + 极淡暖光。最稳、最像交易终端，几乎不抢戏。</p>
+            </div>
+            <span class="chip"><strong>推荐备选</strong> · 克制</span>
+          </div>
+          <div class="frame">
+            <div class="bg bg-terminal"></div>
+            <div class="hero" data-hero></div>
+          </div>
+        </article>
+
+        <!-- 2 -->
+        <article class="card" id="m2">
+          <div class="card-meta">
+            <div>
+              <div class="id">02 · EVIDENCE CHAIN</div>
+              <h2>证据链路场</h2>
+              <p>稀疏节点与虚线，像取证网络。和「每句话都能查」同构，差异化最强。</p>
+            </div>
+            <span class="chip"><strong>首选推荐</strong> · 叙事</span>
+          </div>
+          <div class="frame">
+            <div class="bg bg-chain">
+              <svg viewBox="0 0 1000 560" preserveAspectRatio="xMidYMid slice">
+                <g stroke="rgba(255,176,0,0.22)" stroke-width="1" fill="none" stroke-dasharray="3 5">
+                  <line x1="620" y1="280" x2="780" y2="120" />
+                  <line x1="620" y1="280" x2="860" y2="220" />
+                  <line x1="620" y1="280" x2="840" y2="380" />
+                  <line x1="620" y1="280" x2="720" y2="450" />
+                  <line x1="620" y1="280" x2="500" y2="400" />
+                  <line x1="620" y1="280" x2="480" y2="180" />
+                  <line x1="780" y1="120" x2="860" y2="220" />
+                  <line x1="840" y1="380" x2="720" y2="450" />
+                </g>
+                <g fill="rgba(255,176,0,0.75)">
+                  <circle cx="620" cy="280" r="4" />
+                  <circle cx="780" cy="120" r="3" />
+                  <circle cx="860" cy="220" r="3" />
+                  <circle cx="840" cy="380" r="3" />
+                  <circle cx="720" cy="450" r="3" />
+                  <circle cx="500" cy="400" r="3" />
+                  <circle cx="480" cy="180" r="3" />
+                </g>
+                <g fill="none" stroke="rgba(255,176,0,0.28)" stroke-width="1">
+                  <circle cx="780" cy="120" r="10" />
+                  <circle cx="860" cy="220" r="12" />
+                  <circle cx="840" cy="380" r="9" />
+                </g>
+                <g
+                  fill="rgba(255,176,0,0.35)"
+                  font-family="ui-monospace,monospace"
+                  font-size="11"
+                >
+                  <text x="792" y="116">kline</text>
+                  <text x="874" y="216">flow</text>
+                  <text x="852" y="376">news</text>
+                </g>
+              </svg>
+            </div>
+            <div class="hero" data-hero></div>
+          </div>
+        </article>
+
+        <!-- 3 -->
+        <article class="card" id="m3">
+          <div class="card-meta">
+            <div>
+              <div class="id">03 · DEPTH PARALLAX</div>
+              <h2>深度视差层</h2>
+              <p>远雾 / 中网格 / 近尘埃三层。高级感来自空间，而不是元素数量。</p>
+            </div>
+            <span class="chip">精致迭代</span>
+          </div>
+          <div class="frame">
+            <div class="bg bg-depth">
+              <div class="layer far"></div>
+              <div class="layer mid"></div>
+              <div class="layer near"></div>
+              <div class="dust"></div>
+            </div>
+            <div class="hero" data-hero></div>
+          </div>
+        </article>
+
+        <!-- 4 -->
+        <article class="card" id="m4">
+          <div class="card-meta">
+            <div>
+              <div class="id">04 · VOLUME LIGHT</div>
+              <h2>体积光 / 光柱</h2>
+              <p>从右上打下的金色 god-ray。仪式感强，剂量过大就俗。</p>
+            </div>
+            <span class="chip">慎用 · 易俗</span>
+          </div>
+          <div class="frame">
+            <div class="bg bg-godray">
+              <div class="ray"></div>
+              <div class="ray"></div>
+              <div class="ray"></div>
+              <div class="ray"></div>
+            </div>
+            <div class="hero" data-hero></div>
+          </div>
+        </article>
+
+        <!-- 5 -->
+        <article class="card" id="m5">
+          <div class="card-meta">
+            <div>
+              <div class="id">05 · GHOST TAPE</div>
+              <h2>行情幽灵</h2>
+              <p>远处半透明 K 线墙。一眼是看盘软件，但绝不能比前景证据卡更清晰。</p>
+            </div>
+            <span class="chip">工具属性</span>
+          </div>
+          <div class="frame">
+            <div class="bg bg-ghost">
+              <svg viewBox="0 0 800 400" preserveAspectRatio="none">
+                <g stroke="rgba(255,176,0,0.35)" fill="none" stroke-width="1">
+                  <path
+                    d="M0 260 L40 240 L80 250 L120 200 L160 210 L200 160 L240 180 L280 140 L320 155 L360 120 L400 130 L440 100 L480 115 L520 90 L560 110 L600 70 L640 95 L680 60 L720 80 L760 50 L800 65"
+                  />
+                </g>
+                <g fill="rgba(38,166,154,0.35)" stroke="rgba(38,166,154,0.5)" stroke-width="1">
+                  <rect x="50" y="220" width="8" height="40" />
+                  <rect x="90" y="200" width="8" height="55" />
+                  <rect x="130" y="180" width="8" height="50" />
+                  <rect x="210" y="150" width="8" height="45" />
+                  <rect x="290" y="130" width="8" height="40" />
+                  <rect x="370" y="110" width="8" height="35" />
+                  <rect x="450" y="95" width="8" height="40" />
+                  <rect x="530" y="80" width="8" height="45" />
+                  <rect x="610" y="65" width="8" height="50" />
+                  <rect x="690" y="55" width="8" height="40" />
+                </g>
+                <g fill="rgba(239,83,80,0.3)" stroke="rgba(239,83,80,0.45)" stroke-width="1">
+                  <rect x="170" y="190" width="8" height="35" />
+                  <rect x="250" y="165" width="8" height="30" />
+                  <rect x="330" y="145" width="8" height="28" />
+                  <rect x="410" y="120" width="8" height="32" />
+                  <rect x="490" y="105" width="8" height="30" />
+                  <rect x="570" y="95" width="8" height="35" />
+                  <rect x="650" y="75" width="8" height="38" />
+                  <rect x="730" y="60" width="8" height="42" />
+                </g>
+              </svg>
+            </div>
+            <div class="hero" data-hero></div>
+          </div>
+        </article>
+
+        <!-- 6 -->
+        <article class="card" id="m6">
+          <div class="card-meta">
+            <div>
+              <div class="id">06 · NOISE FLOW</div>
+              <h2>噪声流场</h2>
+              <p>抽象 FBM 金色流动。当代、品牌感强，但和「可查账」叙事绑定弱。</p>
+            </div>
+            <span class="chip">品牌向</span>
+          </div>
+          <div class="frame">
+            <div class="bg bg-noise">
+              <canvas data-noise></canvas>
+            </div>
+            <div class="hero" data-hero></div>
+          </div>
+        </article>
+
+        <!-- 7 -->
+        <article class="card" id="m7">
+          <div class="card-meta">
+            <div>
+              <div class="id">07 · WIRE RING</div>
+              <h2>线框环 / 雷达</h2>
+              <p>慢转的线框环。有「系统在运转」感，也最容易撞通用 SaaS。</p>
+            </div>
+            <span class="chip">谨慎</span>
+          </div>
+          <div class="frame">
+            <div class="bg bg-wire">
+              <svg viewBox="0 0 200 200">
+                <g
+                  fill="none"
+                  stroke="rgba(255,176,0,0.35)"
+                  stroke-width="0.6"
+                  transform="translate(100 100)"
+                >
+                  <ellipse cx="0" cy="0" rx="78" ry="28" transform="rotate(-18)" />
+                  <ellipse cx="0" cy="0" rx="78" ry="28" transform="rotate(18)" />
+                  <ellipse cx="0" cy="0" rx="78" ry="28" transform="rotate(55)" />
+                  <circle r="52" stroke="rgba(255,176,0,0.2)" />
+                  <circle r="28" stroke="rgba(255,176,0,0.28)" />
+                  <circle r="3" fill="rgba(255,176,0,0.7)" stroke="none" />
+                  <g stroke="rgba(255,176,0,0.25)">
+                    <line x1="-90" y1="0" x2="90" y2="0" />
+                    <line x1="0" y1="-90" x2="0" y2="90" />
+                  </g>
+                </g>
+              </svg>
+            </div>
+            <div class="hero" data-hero></div>
+          </div>
+        </article>
+
+        <!-- 8 -->
+        <article class="card" id="m8">
+          <div class="card-meta">
+            <div>
+              <div class="id">08 · LIGHT FIELD</div>
+              <h2>纯光域</h2>
+              <p>两团径向光 + 一条细高光线。最贵、最静，适合「花了就回退」的档。</p>
+            </div>
+            <span class="chip"><strong>推荐备选</strong> · 极简</span>
+          </div>
+          <div class="frame">
+            <div class="bg bg-light"></div>
+            <div class="hero" data-hero></div>
+          </div>
+        </article>
+
+        <!-- 9 -->
+        <article class="card" id="m9">
+          <div class="card-meta">
+            <div>
+              <div class="id">09 · REACTIVE</div>
+              <h2>交互响应光场</h2>
+              <p>指针附近升温。本身不是独立风格，适合叠在 01 / 02 / 08 之上作第二阶段。</p>
+            </div>
+            <span class="chip">增强层 · 可叠加</span>
+          </div>
+          <div class="frame" data-reactive-frame>
+            <div class="bg bg-reactive">
+              <div class="ring"></div>
+              <div class="hint">MOVE POINTER · 光随指针</div>
+            </div>
+            <div class="hero" data-hero></div>
+          </div>
+        </article>
+      </div>
+    </div>
+
+    <template id="hero-template">
+      <div class="copy">
+        <p class="eyebrow">[ EVERY CLAIM · SOURCED · SCORED ]</p>
+        <h3>它说的每句话，你都能查。</h3>
+        <p class="sub">本地看盘台 + 可追问的 AI。每个结论挂着证据链，归档后不许改口。</p>
+        <div class="btns">
+          <span class="btn">免费下载</span>
+          <span class="btn ghost">先看它怎么干活</span>
+        </div>
+      </div>
+      <div class="scene">
+        <div class="evidence">
+          <div class="sym">NVDA.US</div>
+          <div class="dir">偏多</div>
+          <div class="bar">
+            Bull <i style="--w: 70%; --c: #26a69a"></i> 45%
+          </div>
+          <div class="bar">
+            Base <i style="--w: 55%; --c: #ffb000"></i> 35%
+          </div>
+          <div class="bar">
+            Bear <i style="--w: 30%; --c: #ef5350"></i> 20%
+          </div>
+          <div class="stamp">ARCHIVED</div>
+        </div>
+      </div>
+    </template>
+
+    <script>
+      const tpl = document.getElementById('hero-template');
+      for (const host of document.querySelectorAll('[data-hero]')) {
+        host.append(tpl.content.cloneNode(true));
+      }
+
+      // 06 noise flow
+      for (const canvas of document.querySelectorAll('[data-noise]')) {
+        const ctx = canvas.getContext('2d');
+        if (!ctx) continue;
+        const paint = () => {
+          const dpr = Math.min(devicePixelRatio || 1, 2);
+          const { width, height } = canvas.parentElement.getBoundingClientRect();
+          canvas.width = Math.max(1, width * dpr);
+          canvas.height = Math.max(1, height * dpr);
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          const img = ctx.createImageData(Math.ceil(width), Math.ceil(height));
+          const data = img.data;
+          const t = performance.now() * 0.00015;
+          for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+              const u = x / width;
+              const v = y / height;
+              const n =
+                Math.sin(u * 9 + t) * Math.cos(v * 7 - t * 0.7) +
+                Math.sin((u + v) * 12 + t * 1.3) * 0.5 +
+                Math.sin(u * 20 - v * 15 + t * 0.4) * 0.25;
+              const side = Math.min(1, Math.max(0, (u - 0.2) / 0.5));
+              const a = Math.max(0, n * 0.5 + 0.35) * side * 55;
+              const i = (Math.floor(y) * Math.ceil(width) + Math.floor(x)) * 4;
+              data[i] = 255;
+              data[i + 1] = 176;
+              data[i + 2] = 0;
+              data[i + 3] = a;
+            }
+          }
+          ctx.putImageData(img, 0, 0);
+        };
+        paint();
+        addEventListener('resize', paint);
+      }
+
+      // 09 reactive
+      for (const frame of document.querySelectorAll('[data-reactive-frame]')) {
+        const bg = frame.querySelector('.bg-reactive');
+        frame.addEventListener('pointermove', (e) => {
+          const r = frame.getBoundingClientRect();
+          const x = ((e.clientX - r.left) / r.width) * 100;
+          const y = ((e.clientY - r.top) / r.height) * 100;
+          bg.style.setProperty('--mx', `${x}%`);
+          bg.style.setProperty('--my', `${y}%`);
+        });
+      }
+    </script>
+  </body>
+</html>

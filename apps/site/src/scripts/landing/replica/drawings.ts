@@ -20,6 +20,7 @@ import {
   type DrawingTool,
   type Point,
 } from './drawingShapes';
+import { DEMO_HANDLE_SCALE, DEMO_HANDLE_SCROLL } from './lw';
 import {
   begin,
   cancel,
@@ -448,7 +449,13 @@ export const mountDrawings = ({
     setTool: (next: DrawingTool) => {
       session = setTool(session, next);
       const locked = next !== 'cursor' && next !== 'off';
-      chart.applyOptions({ handleScroll: !locked, handleScale: !locked });
+      // Restore demo defaults (wheel still off) rather than boolean true, which re-enables
+      // mouseWheel and steals the page scroll again.
+      chart.applyOptions(
+        locked
+          ? { handleScroll: false, handleScale: false }
+          : { handleScroll: { ...DEMO_HANDLE_SCROLL }, handleScale: { ...DEMO_HANDLE_SCALE } },
+      );
       container.style.cursor = locked ? 'crosshair' : 'default';
       onToolChange?.(next);
       push();

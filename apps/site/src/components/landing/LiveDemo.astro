@@ -14,7 +14,7 @@ const appTabs = [
   { view: 'research', name: '研究库' },
 ];
 
-const chapterCopy: Record<string, { title: string; body: string }> = {
+const chapterCopy: Record<string, { title: string; body: string; pro?: boolean }> = {
   trace: {
     title: '它查了什么，全在这儿。',
     body: '每次分析都从取证开始。调用了哪些工具、传了什么参数、花了多久、返回了什么，全程留痕，点开就是原始记录。指标在本机实算，不是某个接口甩回来的数字。',
@@ -37,11 +37,13 @@ const chapterCopy: Record<string, { title: string; body: string }> = {
   },
   train: {
     title: '先自己看盘，再看答案。',
-    body: '盲盘训练把一段真实历史盖住——不给代码、不给日期，只有走势。你逐根推进、下单、加减仓，走完才揭盲，按 R（一份风险，等于成交价到止损的距离）结算。这是 Pro 能力；下面这张图可以直接点「步进」往前走，左边的画线工具也能用。',
+    pro: true,
+    body: '盲盘训练把一段真实历史盖住——不给代码、不给日期，只有走势。你逐根推进、下单、加减仓，走完才揭盲，按 R（一份风险，等于成交价到止损的距离）结算。下面这张图可以直接点「步进」往前走，左边的画线工具也能用。',
   },
   research: {
     title: '研究不是聊天记录。',
-    body: '每只票的档案、每天的复盘和教训，都是本地 markdown 文件，你自己就能读能改。浏览和搜索免费版就有；让 AI 增量改稿、按信源刷新是 Pro 能力，它只补新事实、不覆盖你写过的判断。左边的列表可以直接点。',
+    pro: true,
+    body: '每只票的档案、每天的复盘和教训，都是本地 markdown 文件，你自己就能读能改。AI 增量改稿、按信源刷新只补新事实、不覆盖你写过的判断。左边的列表可以直接点。',
   },
 };
 ---
@@ -62,7 +64,10 @@ const chapterCopy: Record<string, { title: string; body: string }> = {
                   {String(i + 1).padStart(2, '0')} / {String(CHAPTERS.length).padStart(2, '0')} ·{' '}
                   {chapter.label}
                 </span>
-                <h2>{chapterCopy[chapter.id].title}</h2>
+                <div class="demo-chapter-title">
+                  <h2>{chapterCopy[chapter.id].title}</h2>
+                  {chapterCopy[chapter.id].pro && <span class="demo-pro-tag">Pro</span>}
+                </div>
               </div>
               <p>{chapterCopy[chapter.id].body}</p>
             </article>

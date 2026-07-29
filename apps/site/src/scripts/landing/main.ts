@@ -1,4 +1,5 @@
 import { mountDemoScene } from './demo/mount';
+import { mountHeroAtmosphere } from './scenes/heroAtmosphere';
 import { mountHeroScene } from './scenes/hero';
 import { mountOutroScene } from './scenes/outro';
 import type { Tier } from './tier';
@@ -36,6 +37,14 @@ const mountLanding = (): void => {
   document.documentElement.setAttribute('data-landing-live', '');
   const tier = readTier();
   const root = document.body;
+
+  void (async () => {
+    try {
+      registerCleanup(await mountHeroAtmosphere(root, tier));
+    } catch (error) {
+      console.error('[landing] hero-atmosphere scene failed to mount', error);
+    }
+  })();
 
   void (async () => {
     try {

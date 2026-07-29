@@ -27,7 +27,11 @@ const barLabels: Record<(typeof barKeys)[number], string> = {
 };
 ---
 
-<section class="hero-evidence">
+<section class="hero-evidence" data-hero-section>
+  <div class="hero-atmosphere" aria-hidden="true" data-hero-atmosphere-host>
+    <canvas class="hero-atmosphere-canvas" data-hero-atmosphere></canvas>
+  </div>
+  <div class="hero-evidence-shell">
   <div class="hero-evidence-copy">
     <p class="hero-eyebrow">[ EVERY CLAIM · SOURCED · TIMESTAMPED · SCORED ]</p>
     <h1 class="hero-title">它说的每句话，你都能查。</h1>
@@ -42,8 +46,7 @@ const barLabels: Record<(typeof barKeys)[number], string> = {
       <a class="btn btn-ghost" href="#demo">先看它怎么干活 ↓</a>
     </div>
     <p class="hero-free">
-      看盘本体和 AI 复评<b>永久免费</b>，不用注册账号；AI 走你自己的 key 或本机 codex
-      登录态，key 不出这台机器。<a class="hero-pro-link" href="/pricing">Pro 加了什么 →</a>
+      看盘本体和 AI 复评<b>永久免费</b>，不用注册账号。<a class="hero-pro-link" href="/pricing">Pro 加了什么 →</a>
     </p>
     <p class="hero-note">
       macOS · apple silicon · 数据源需登录 <a
@@ -115,5 +118,6 @@ const barLabels: Record<(typeof barKeys)[number], string> = {
       <p class="evidence-card-trig" data-card-trig></p>
       <span class="evidence-card-stamp" data-card-stamp>ARCHIVED · 冻结</span>
     </div>
+  </div>
   </div>
 </section>

@@ -25,10 +25,20 @@ const proShorts = features.pro.map((f) => f.short).join('、');
     <div class="outro-copy">
       <h2>免费版就是完整的看盘工具。</h2>
       <p class="outro-sub">
-        Pro 解锁{proShorts} —— <span class="mono outro-amount">{subscription.priceLabel}</span> 或
-        <span class="mono outro-amount">{subscription.yearly.priceLabel}</span>（{
-          subscription.yearly.savingsLabel
-        }） · {subscription.trialDays} 天试用
+        Pro 解锁{proShorts} ——
+        <span class="outro-deal">
+          <span class="outro-badge">{subscription.discountLabel}</span>
+          <s class="mono outro-list">{subscription.listPriceLabel}</s>
+          <span class="mono outro-amount">{subscription.priceLabel}</span>
+        </span>
+        或
+        <span class="outro-deal">
+          <s class="mono outro-list">{subscription.yearly.listPriceLabel}</s>
+          <span class="mono outro-amount">{subscription.yearly.priceLabel}</span>
+        </span>
+        （{subscription.yearly.discountLabel} · {subscription.yearly.savingsLabel}） · {
+          subscription.trialDays
+        } 天试用
       </p>
     </div>
     <div class="outro-cta">
@@ -123,6 +133,31 @@ const proShorts = features.pro.map((f) => f.short).join('、');
     color: var(--text-2);
     font-size: 13px;
     line-height: 1.7;
+  }
+
+  .outro-deal {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .outro-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px 6px;
+    border: 1px solid rgba(255, 176, 0, 0.45);
+    background: rgba(255, 176, 0, 0.1);
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+  }
+
+  .outro-list {
+    color: var(--text-3);
+    text-decoration: line-through;
+    text-decoration-thickness: 1px;
   }
 
   .outro-amount {

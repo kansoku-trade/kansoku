@@ -42,10 +42,14 @@ export interface SettingsApi {
   getSubscribeUrl(): Promise<{
     subscribeUrl: string | null;
     priceLabel: string | null;
+    listPriceLabel: string | null;
+    discountLabel: string | null;
     trialDays: number | null;
     yearly: {
       subscribeUrl: string;
       priceLabel: string | null;
+      listPriceLabel: string | null;
+      discountLabel: string | null;
       trialDays: number | null;
       savingsLabel: string | null;
     } | null;

@@ -42,6 +42,22 @@ const tickMark = (time: Time): string => {
   return `${hh}:${mm}`;
 };
 
+// Landing demo sits inside a scroll-driven page. Wheel zoom/pan would steal the
+// gesture and stall Lenis / native scroll; keep drag and pinch only.
+export const DEMO_HANDLE_SCROLL = {
+  mouseWheel: false,
+  pressedMouseMove: true,
+  horzTouchDrag: true,
+  vertTouchDrag: true,
+} as const;
+
+export const DEMO_HANDLE_SCALE = {
+  mouseWheel: false,
+  pinch: true,
+  axisPressedMouseMove: true,
+  axisDoubleClickReset: true,
+} as const;
+
 export const baseChart = (element: HTMLElement): IChartApi =>
   createChart(element, {
     width: element.clientWidth,
@@ -62,6 +78,8 @@ export const baseChart = (element: HTMLElement): IChartApi =>
       rightOffset: 6,
       tickMarkFormatter: tickMark,
     },
+    handleScroll: { ...DEMO_HANDLE_SCROLL },
+    handleScale: { ...DEMO_HANDLE_SCALE },
   });
 
 export const CONNECTOR_OPTIONS = {

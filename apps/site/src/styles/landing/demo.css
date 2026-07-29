@@ -58,10 +58,32 @@
   margin-bottom: 10px;
 }
 
+.demo-chapter-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
 .demo-chapter h2 {
+  margin: 0;
   font-size: clamp(21px, 2.1vw, 29px);
   line-height: 1.28;
   letter-spacing: -0.01em;
+}
+
+.demo-pro-tag {
+  flex: 0 0 auto;
+  margin-top: 0.35em;
+  padding: 2px 7px;
+  border: 1px solid rgba(255, 176, 0, 0.45);
+  background: rgba(255, 176, 0, 0.1);
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  line-height: 1.2;
 }
 
 .demo-chapter p {

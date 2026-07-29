@@ -8,7 +8,9 @@ const latest = await latestDesktop();
 const version = latest.version;
 
 const monthlyAmount = subscription.priceLabel.split(' / ')[0];
+const monthlyListAmount = subscription.listPriceLabel.split(' / ')[0];
 const yearlyAmount = subscription.yearly.priceLabel.split(' / ')[0];
+const yearlyListAmount = subscription.yearly.listPriceLabel.split(' / ')[0];
 
 const matrix = [
   ...features.matrixFree.map((section) => ({
@@ -39,7 +41,7 @@ const faq = [
 
 <Base
   title="定价 — Kansoku"
-  description={`Kansoku 免费版即完整看盘工具；Pro ${subscription.priceLabel}，${subscription.yearly.priceLabel}（${subscription.yearly.savingsLabel}），${subscription.trialDays} 天免费试用。`}
+  description={`Kansoku 免费版即完整看盘工具；Pro 限时 5 折 ${subscription.priceLabel}（原价 ${subscription.listPriceLabel}），年付 ${subscription.yearly.priceLabel}，${subscription.trialDays} 天免费试用。`}
 >
   <section class="head">
     <div class="eyebrow">two tickets · one desk</div>
@@ -85,16 +87,23 @@ const faq = [
       </div>
       <div class="t-total">
         <span>total</span>
-        <b>{monthlyAmount}<small>/月</small></b>
+        <div class="t-price">
+          <span class="t-badge">{subscription.discountLabel}</span>
+          <div class="t-price-row">
+            <s class="t-list">{monthlyListAmount}</s>
+            <b>{monthlyAmount}<small>/月</small></b>
+          </div>
+        </div>
       </div>
       <div class="t-cta">
         <a class="btn" href={subscription.url} target="_blank" rel="noreferrer"
           >免费试用 {subscription.trialDays} 天</a
         >
         <p class="t-alt">
-          或 <a href={subscription.yearly.url} target="_blank" rel="noreferrer"
-            >{yearlyAmount}/年（{subscription.yearly.savingsLabel}）</a
-          >
+          或 <a href={subscription.yearly.url} target="_blank" rel="noreferrer">
+            <s class="t-list-inline">{yearlyListAmount}</s>
+            {yearlyAmount}/年（{subscription.yearly.discountLabel} · {subscription.yearly.savingsLabel}）
+          </a>
         </p>
       </div>
     </div>
@@ -240,16 +249,55 @@ const faq = [
   .t-total {
     display: flex;
     justify-content: space-between;
-    align-items: baseline;
+    align-items: flex-end;
+    gap: 12px;
     padding: 14px 18px;
     font-size: 13px;
     border-top: 1px dashed var(--border-strong);
   }
 
+  .t-price {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+  }
+
+  .t-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 7px;
+    border: 1px solid rgba(255, 176, 0, 0.45);
+    background: rgba(255, 176, 0, 0.1);
+    color: var(--accent);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .t-price-row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+
+  .t-list,
+  .t-list-inline {
+    color: var(--text-3);
+    font-size: 13px;
+    text-decoration: line-through;
+    text-decoration-thickness: 1px;
+  }
+
+  .t-list-inline {
+    margin-right: 4px;
+    font-size: 11px;
+  }
+
   .t-total b {
     color: var(--accent);
     font-weight: 400;
-    font-size: 20px;
+    font-size: 22px;
   }
 
   .t-total small {

@@ -10,6 +10,41 @@ const FEATURES = [
   { name: '长期记忆', desc: '在本机持续整理偏好、标的与策略背景，并自动用于后续对话' },
 ];
 
+function monthlyCtaLabel(subscribe: {
+  trialDays: number | null;
+  priceLabel: string | null;
+  listPriceLabel: string | null;
+  discountLabel: string | null;
+}): string {
+  const deal = [
+    subscribe.discountLabel,
+    subscribe.listPriceLabel ? `原价 ${subscribe.listPriceLabel}` : null,
+  ]
+    .filter(Boolean)
+    .join('，');
+  if (subscribe.trialDays) {
+    const after = subscribe.priceLabel ? ` · 之后 ${subscribe.priceLabel}` : '';
+    const tag = deal ? `（${deal}）` : '';
+    return `免费试用 ${subscribe.trialDays} 天${after}${tag}，随时取消`;
+  }
+  const price = subscribe.priceLabel ? ` · ${subscribe.priceLabel}` : '';
+  const tag = subscribe.discountLabel ? `（${subscribe.discountLabel}）` : '';
+  return `前往订阅${price}${tag}`;
+}
+
+function yearlyCtaLabel(yearly: {
+  priceLabel: string | null;
+  discountLabel: string | null;
+  savingsLabel: string | null;
+  trialDays: number | null;
+}): string {
+  const price = yearly.priceLabel ? ` ${yearly.priceLabel}` : '';
+  const deal = [yearly.discountLabel, yearly.savingsLabel].filter(Boolean).join(' · ');
+  const tag = deal ? `（${deal}）` : '';
+  const trial = yearly.trialDays ? `，同样先免费试用 ${yearly.trialDays} 天` : '';
+  return `或选年付${price}${tag}${trial}`;
+}
+
 export function Paywall({
   notice,
   onActivated,
@@ -41,9 +76,7 @@ export function Paywall({
           target="_blank"
           rel="noreferrer"
         >
-          {subscribe.trialDays
-            ? `免费试用 ${subscribe.trialDays} 天${subscribe.priceLabel ? ` · 之后 ${subscribe.priceLabel}` : ''}，随时取消`
-            : `前往订阅${subscribe.priceLabel ? ` · ${subscribe.priceLabel}` : ''}`}
+          {monthlyCtaLabel(subscribe)}
         </a>
       ) : null}
       {subscribe?.yearly ? (
@@ -53,9 +86,7 @@ export function Paywall({
           target="_blank"
           rel="noreferrer"
         >
-          或选年付{subscribe.yearly.priceLabel ? ` ${subscribe.yearly.priceLabel}` : ''}
-          {subscribe.yearly.savingsLabel ? `（${subscribe.yearly.savingsLabel}）` : ''}
-          {subscribe.yearly.trialDays ? `，同样先免费试用 ${subscribe.yearly.trialDays} 天` : ''}
+          {yearlyCtaLabel(subscribe.yearly)}
         </a>
       ) : null}
       <div className="license-paywall-hint">
