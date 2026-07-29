@@ -248,3 +248,9 @@ export const symbolCandleCache = sqliteTable('symbol_candle_cache', {
   lastFetchAt: integer('last_fetch_at').notNull(),
   updatedAt: text('updated_at').notNull(),
 });
+
+export const providerEndpoints = sqliteTable('provider_endpoints', {
+  provider: text('provider').primaryKey(),
+  baseUrl: text('base_url').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});

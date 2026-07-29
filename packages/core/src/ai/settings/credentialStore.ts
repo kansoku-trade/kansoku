@@ -4,7 +4,7 @@ import path from 'node:path';
 import type { Credential, CredentialInfo, CredentialStore } from '@earendil-works/pi-ai';
 import { eq, ne } from 'drizzle-orm';
 import type { Db } from '../../db/index.js';
-import { providerCredentials } from '../../db/schema.js';
+import { providerCredentials, providerEndpoints } from '../../db/schema.js';
 import type { SecretBox } from './secretBox.js';
 
 import { LICENSE_PROVIDER_KEY } from '../../license/constants.js';
@@ -23,6 +23,9 @@ export interface CredentialListEntry {
 export interface AppCredentialStore extends CredentialStore {
   setApiKey(provider: string, key: string): void;
   listEntries(): CredentialListEntry[];
+  setBaseUrl(provider: string, baseUrl: string | null): void;
+  getBaseUrl(provider: string): string | null;
+  listBaseUrls(): Array<{ provider: string; baseUrl: string }>;
   wipeAll(): void;
 }
 
@@ -161,6 +164,7 @@ export function createCredentialStore(
 
   function deleteDbCredential(provider: string): void {
     db.delete(providerCredentials).where(eq(providerCredentials.provider, provider)).run();
+    db.delete(providerEndpoints).where(eq(providerEndpoints.provider, provider)).run();
     loggedDecryptErrors.delete(provider);
   }
 
@@ -260,10 +264,39 @@ export function createCredentialStore(
         });
     },
 
+    setBaseUrl(provider: string, baseUrl: string | null): void {
+      if (baseUrl === null) {
+        db.delete(providerEndpoints).where(eq(providerEndpoints.provider, provider)).run();
+        return;
+      }
+      const updatedAt = new Date().toISOString();
+      db.insert(providerEndpoints)
+        .values({ provider, baseUrl, updatedAt })
+        .onConflictDoUpdate({ target: providerEndpoints.provider, set: { baseUrl, updatedAt } })
+        .run();
+    },
+
+    getBaseUrl(provider: string): string | null {
+      const row = db
+        .select()
+        .from(providerEndpoints)
+        .where(eq(providerEndpoints.provider, provider))
+        .get();
+      return row?.baseUrl ?? null;
+    },
+
+    listBaseUrls(): Array<{ provider: string; baseUrl: string }> {
+      return db
+        .select({ provider: providerEndpoints.provider, baseUrl: providerEndpoints.baseUrl })
+        .from(providerEndpoints)
+        .all();
+    },
+
     wipeAll(): void {
       db.delete(providerCredentials)
         .where(ne(providerCredentials.provider, LICENSE_PROVIDER_KEY))
         .run();
+      db.delete(providerEndpoints).run();
       loggedDecryptErrors.clear();
     },
   };

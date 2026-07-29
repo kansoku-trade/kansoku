@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { builtinModels } from "@earendil-works/pi-ai/providers/all";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createDb, type Db } from "../src/db/index.js";
-import { providerCredentials } from "../src/db/schema.js";
+import { providerCredentials, providerEndpoints } from "../src/db/schema.js";
 import { createCredentialStore, type AppCredentialStore } from "../src/ai/settings/credentialStore.js";
 import { createSecretBox, type SecretBox } from "../src/ai/settings/secretBox.js";
 import { createLicenseStore, type LicenseRecord } from "../src/license/licenseStore.js";
@@ -135,6 +135,51 @@ describe("credentialStore", () => {
 
       expect(store.listEntries()).toEqual([]);
       expect(licenseStore.read()).toEqual(licenseRecord);
+    });
+  });
+
+  describe("base url endpoints", () => {
+    it("setBaseUrl then getBaseUrl round-trips; listBaseUrls reflects it", () => {
+      expect(store.getBaseUrl("openai")).toBeNull();
+
+      store.setBaseUrl("openai", "https://proxy.example.com/v1");
+      expect(store.getBaseUrl("openai")).toBe("https://proxy.example.com/v1");
+      expect(store.listBaseUrls()).toEqual([
+        { provider: "openai", baseUrl: "https://proxy.example.com/v1" },
+      ]);
+
+      store.setBaseUrl("openai", "https://proxy2.example.com/v1");
+      expect(store.getBaseUrl("openai")).toBe("https://proxy2.example.com/v1");
+      expect(store.listBaseUrls()).toEqual([
+        { provider: "openai", baseUrl: "https://proxy2.example.com/v1" },
+      ]);
+    });
+
+    it("setBaseUrl(provider, null) deletes the row", () => {
+      store.setBaseUrl("openai", "https://proxy.example.com/v1");
+      store.setBaseUrl("openai", null);
+
+      expect(store.getBaseUrl("openai")).toBeNull();
+      expect(store.listBaseUrls()).toEqual([]);
+    });
+
+    it("delete(provider) also removes its endpoint row", async () => {
+      store.setApiKey("openai", "sk-abc");
+      store.setBaseUrl("openai", "https://proxy.example.com/v1");
+
+      await store.delete("openai");
+
+      expect(store.getBaseUrl("openai")).toBeNull();
+      expect(db.select().from(providerEndpoints).all()).toEqual([]);
+    });
+
+    it("wipeAll() clears the provider_endpoints table entirely", () => {
+      store.setBaseUrl("openai", "https://proxy.example.com/v1");
+      store.setBaseUrl("anthropic", "https://proxy2.example.com/v1");
+
+      store.wipeAll();
+
+      expect(store.listBaseUrls()).toEqual([]);
     });
   });
 

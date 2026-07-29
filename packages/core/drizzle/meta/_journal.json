@@ -84,6 +84,13 @@
       "when": 1785222650212,
       "tag": "0011_training_fill_tasks",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1785343760634,
+      "tag": "0012_provider_endpoints",
+      "breakpoints": true
     }
   ],
   "version": "7"
