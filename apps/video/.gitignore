@@ -1,0 +1,4 @@
+dist/
+output/*.mp4
+output/*.mov
+output/*.webm

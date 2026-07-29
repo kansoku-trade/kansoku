@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "noEmit": false,
+    "outDir": "dist",
+    "skipLibCheck": true
+  },
+  "extends": "@revideo/2d/tsconfig.project.json",
+  "include": ["src"]
+}

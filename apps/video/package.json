@@ -1,0 +1,21 @@
+{
+  "name": "@kansoku/video",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "render": "tsc && node dist/render.js",
+    "start": "revideo editor --projectFile ./src/project.tsx",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@revideo/2d": "0.11.0",
+    "@revideo/core": "0.11.0",
+    "@revideo/renderer": "0.11.0"
+  },
+  "devDependencies": {
+    "@revideo/cli": "0.11.0",
+    "@revideo/ui": "0.11.0",
+    "typescript": "5.5.4",
+    "vite": "^4.5.14"
+  }
+}
