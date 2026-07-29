@@ -70,12 +70,26 @@ jobs:
       - name: detect signing secrets (all 5 → sign + notarize, none → ad-hoc)
         id: signing
         env:
+          IS_PULL_REQUEST: ${{ github.event_name == 'pull_request' }}
           CSC_LINK: ${{ secrets.CSC_LINK }}
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
+          # electron-builder refuses to code-sign on pull_request builds. A
+          # same-repo PR still sees all five secrets, so their presence cannot
+          # be the discriminator — and taking the Developer ID path anyway
+          # produces an entirely unsigned .app, because afterPack.cjs stands
+          # down from its ad-hoc sign the moment CSC_LINK is set and identity
+          # is no longer null. Forcing the ad-hoc path keeps every downstream
+          # step (signing enable, verification, summary) on one consistent
+          # story instead of verifying a signature nothing produced.
+          if [ "$IS_PULL_REQUEST" = "true" ]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "pull request build — ad-hoc signed (electron-builder skips code signing on PRs)"
+            exit 0
+          fi
           missing=""
           for v in CSC_LINK CSC_KEY_PASSWORD APPLE_ID APPLE_APP_SPECIFIC_PASSWORD APPLE_TEAM_ID; do
             if [ -z "${!v}" ]; then
