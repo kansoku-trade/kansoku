@@ -102,6 +102,11 @@ mac:
     - target: zip
       arch: [arm64]
   identity: null
+  # Keep false even when the APPLE_* env vars are present: builder's built-in
+  # notarize waits on notarytool with no timeout (hung a release job until the
+  # 60-minute kill, run 30435930188). CI notarizes + staples explicitly via
+  # .github/scripts/notarize-and-staple.sh after packaging.
+  notarize: false
   extendInfo:
     SUFeedURL: https://github.com/Innei/kansoku/releases/latest/download/appcast.xml
     # CI injects the real EdDSA public key over this placeholder at build time — keep it

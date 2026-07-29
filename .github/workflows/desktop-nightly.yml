@@ -219,6 +219,23 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: pnpm package
 
+      # Same explicit-notarytool flow as desktop-release.yml — builder's own
+      # notarize is pinned off in electron-builder.yml (unbounded wait).
+      - name: notarize + staple the .app (explicit notarytool, bounded wait)
+        if: steps.signing.outputs.enabled == 'true'
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: bash .github/scripts/notarize-and-staple.sh apps/desktop/release/mac-arm64/Kansoku.app
+
+      - name: repackage dmg + zip from the stapled app
+        if: steps.signing.outputs.enabled == 'true'
+        working-directory: apps/desktop
+        run: |
+          rm -f release/*.dmg release/*.zip
+          pnpm exec electron-builder --prepackaged release/mac-arm64 --mac dmg zip --arm64 --publish never
+
       - name: verify signature
         working-directory: apps/desktop
         env:

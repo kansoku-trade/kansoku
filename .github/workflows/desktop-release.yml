@@ -66,11 +66,14 @@ jobs:
 
       # Signing/notarization is opt-in by secrets. All five present → the
       # "enable Developer ID signing" step below drops `identity: null` from
-      # electron-builder.yml, and electron-builder signs with hardened runtime
-      # (its default once an identity resolves) then notarizes + staples via
-      # notarytool. None present → the release stays ad-hoc signed exactly as
-      # before. A partial set is a config error: a Developer-ID-signed but
-      # unnotarized app is still blocked by Gatekeeper, so fail fast instead.
+      # electron-builder.yml and electron-builder signs with hardened runtime
+      # (its default once an identity resolves); notarization + stapling then
+      # run as explicit steps after packaging (builder's built-in notarize is
+      # pinned off in electron-builder.yml — its unbounded notarytool wait
+      # once hung the job to the 60-minute kill). None present → the release
+      # stays ad-hoc signed exactly as before. A partial set is a config
+      # error: a Developer-ID-signed but unnotarized app is still blocked by
+      # Gatekeeper, so fail fast instead.
       - name: detect signing secrets (all 5 → sign + notarize, none → ad-hoc)
         id: signing
         env:
@@ -205,9 +208,10 @@ jobs:
       # `identity: null` hard-disables electron-builder signing (macPackager
       # returns before identity lookup, so CSC_LINK would be silently ignored).
       # Deleting the line restores the default lookup path: electron-builder
-      # imports the CSC_LINK p12 into a temp keychain, signs with hardened
-      # runtime, and notarizes with the APPLE_* env vars on the package step.
-      # afterPack.cjs sees CSC_LINK and skips its ad-hoc re-sign.
+      # imports the CSC_LINK p12 into a temp keychain and signs with hardened
+      # runtime on the package step (notarization happens separately below —
+      # mac.notarize stays false). afterPack.cjs sees CSC_LINK and skips its
+      # ad-hoc re-sign.
       - name: enable Developer ID signing (drop identity:null from electron-builder.yml)
         if: steps.signing.outputs.enabled == 'true'
         working-directory: apps/desktop
@@ -215,7 +219,7 @@ jobs:
           grep -q '^  identity: null$' electron-builder.yml
           sed -i '' '/^  identity: null$/d' electron-builder.yml
 
-      - name: package desktop (dmg + zip; Developer ID + notarization when secrets present, ad-hoc otherwise)
+      - name: package desktop (dmg + zip; Developer ID signing when secrets present, ad-hoc otherwise)
         working-directory: apps/desktop
         # KANSOKU_BUNDLE_KEY / KANSOKU_BUNDLE_KEY_ID only matter when the pro
         # slot got fetched above — stagePro.mjs no-ops on a free build. When
@@ -233,6 +237,25 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: pnpm package
 
+      - name: notarize + staple the .app (explicit notarytool, bounded wait)
+        if: steps.signing.outputs.enabled == 'true'
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: bash .github/scripts/notarize-and-staple.sh apps/desktop/release/mac-arm64/Kansoku.app
+
+      # The dmg/zip from the package step embed the pre-staple app; rebuild
+      # both from the stapled bundle. --prepackaged skips the pack/sign phase
+      # entirely (doPack returns immediately), so this only re-runs dmg/zip
+      # target packaging against the already-notarized app.
+      - name: repackage dmg + zip from the stapled app
+        if: steps.signing.outputs.enabled == 'true'
+        working-directory: apps/desktop
+        run: |
+          rm -f release/*.dmg release/*.zip
+          pnpm exec electron-builder --prepackaged release/mac-arm64 --mac dmg zip --arm64 --publish never
+
       - name: verify signature (dmg + zip both embed the already-signed app)
         working-directory: apps/desktop
         env:
@@ -240,12 +263,12 @@ jobs:
         run: |
           # Ad-hoc path: electron-builder.yml's afterPack hook
           # (scripts/afterPack.cjs) ad-hoc signs the .app once, before either
-          # target is packaged. Developer ID path: electron-builder signs,
-          # notarizes, and staples the .app at the same point in the build,
-          # before dmg/zip packaging. Either way both artifacts embed an
-          # already-valid CodeDirectory — this step only confirms that, not
-          # re-sign or re-zip. generate_appcast refuses any archive whose
-          # .app doesn't pass `codesign --verify --deep --strict`.
+          # target is packaged. Developer ID path: electron-builder signs
+          # during packaging, then the notarize + repackage steps above staple
+          # the .app and rebuild dmg/zip from it. Either way both artifacts
+          # embed an already-valid CodeDirectory — this step only confirms
+          # that, not re-sign or re-zip. generate_appcast refuses any archive
+          # whose .app doesn't pass `codesign --verify --deep --strict`.
           verify_app() {
             codesign --verify --deep --strict "$1"
             if [ "$SIGNING_ENABLED" = "true" ]; then

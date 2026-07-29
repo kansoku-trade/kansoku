@@ -66,8 +66,11 @@ jobs:
 
       # Same all-or-nothing rule as the nightly/release workflows: a partial
       # secret set is a configuration error, not a degraded mode. Fork PRs see
-      # zero secrets and land on the ad-hoc path.
-      - name: detect signing secrets (all 5 → sign + notarize, none → ad-hoc)
+      # zero secrets and land on the ad-hoc path. Branch builds sign with
+      # Developer ID but deliberately skip notarization: every push submitting
+      # to the notary queue once throttled the whole account for hours
+      # (2026-07-29) — only nightly/release submit.
+      - name: detect signing secrets (all 5 → Developer ID sign, none → ad-hoc)
         id: signing
         env:
           IS_PULL_REQUEST: ${{ github.event_name == 'pull_request' }}
@@ -98,7 +101,7 @@ jobs:
           done
           if [ -z "$missing" ]; then
             echo "enabled=true" >> "$GITHUB_OUTPUT"
-            echo "Developer ID signing + notarization enabled"
+            echo "Developer ID signing enabled (branch builds skip notarization)"
           elif [ "$(echo "$missing" | wc -w)" -eq 5 ]; then
             echo "enabled=false" >> "$GITHUB_OUTPUT"
             echo "no signing secrets — ad-hoc signed build (Gatekeeper will require a manual open)"
@@ -206,9 +209,6 @@ jobs:
           KANSOKU_BUNDLE_KEY_ID: ${{ secrets.KANSOKU_BUNDLE_KEY_ID }}
           CSC_LINK: ${{ secrets.CSC_LINK }}
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: pnpm package
 
       - name: verify signature
@@ -216,12 +216,13 @@ jobs:
         env:
           SIGNING_ENABLED: ${{ steps.signing.outputs.enabled }}
         run: |
+          # No stapler/spctl here: both require a notarization ticket, and
+          # branch builds deliberately never submit to the notary queue —
+          # nightly/release keep the full check.
           verify_app() {
             codesign --verify --deep --strict "$1"
             if [ "$SIGNING_ENABLED" = "true" ]; then
               codesign --display --verbose=2 "$1" 2>&1 | grep -q 'Authority=Developer ID Application'
-              xcrun stapler validate "$1"
-              spctl --assess --type execute --verbose=2 "$1"
             fi
           }
 
@@ -264,5 +265,5 @@ jobs:
             echo
             echo "- artifact: \`kansoku-$BRANCH-$SHA\` (dmg + zip, Actions → this run → Artifacts)"
             echo "- pro slot: $([ "$PRO_PRESENT" = "true" ] && echo 'present (encrypted pro.enc staged)' || echo '**absent — free build**')"
-            echo "- signing: $([ "$SIGNING_ENABLED" = "true" ] && echo 'Developer ID + notarized' || echo 'ad-hoc (right-click → Open on first launch)')"
+            echo "- signing: $([ "$SIGNING_ENABLED" = "true" ] && echo 'Developer ID, not notarized (first launch: System Settings → Privacy & Security → Open Anyway)' || echo 'ad-hoc (right-click → Open on first launch)')"
           } >> "$GITHUB_STEP_SUMMARY"
