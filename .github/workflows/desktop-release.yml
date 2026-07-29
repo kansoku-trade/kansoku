@@ -237,12 +237,18 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: pnpm package
 
+      # The NOTARY_SUBMIT_ONLY repo variable degrades this to submit-and-ship
+      # when Apple's queue stalls: no wait, no staple, no repackage, and the
+      # two ticket-dependent assertions below are skipped. Delete the variable
+      # once the queue recovers — while it is set EVERY release goes out
+      # unstapled.
       - name: notarize + staple the .app (explicit notarytool, bounded wait)
         if: steps.signing.outputs.enabled == 'true'
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          NOTARY_SUBMIT_ONLY: ${{ vars.NOTARY_SUBMIT_ONLY }}
         run: bash .github/scripts/notarize-and-staple.sh apps/desktop/release/mac-arm64/Kansoku.app
 
       # The dmg/zip from the package step embed the pre-staple app; rebuild
@@ -250,7 +256,7 @@ jobs:
       # entirely (doPack returns immediately), so this only re-runs dmg/zip
       # target packaging against the already-notarized app.
       - name: repackage dmg + zip from the stapled app
-        if: steps.signing.outputs.enabled == 'true'
+        if: steps.signing.outputs.enabled == 'true' && vars.NOTARY_SUBMIT_ONLY != 'true'
         working-directory: apps/desktop
         run: |
           rm -f release/*.dmg release/*.zip
@@ -260,6 +266,7 @@ jobs:
         working-directory: apps/desktop
         env:
           SIGNING_ENABLED: ${{ steps.signing.outputs.enabled }}
+          NOTARY_SUBMIT_ONLY: ${{ vars.NOTARY_SUBMIT_ONLY }}
         run: |
           # Ad-hoc path: electron-builder.yml's afterPack hook
           # (scripts/afterPack.cjs) ad-hoc signs the .app once, before either
@@ -273,8 +280,12 @@ jobs:
             codesign --verify --deep --strict "$1"
             if [ "$SIGNING_ENABLED" = "true" ]; then
               codesign --display --verbose=2 "$1" 2>&1 | grep -q 'Authority=Developer ID Application'
-              xcrun stapler validate "$1"
-              spctl --assess --type execute --verbose=2 "$1"
+              # both need a notarization ticket, which a submit-only build
+              # does not have until Apple's queue clears
+              if [ "$NOTARY_SUBMIT_ONLY" != "true" ]; then
+                xcrun stapler validate "$1"
+                spctl --assess --type execute --verbose=2 "$1"
+              fi
             fi
           }
 

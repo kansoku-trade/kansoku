@@ -12,6 +12,7 @@ APP_PATH="${1:?usage: notarize-and-staple.sh <path/to/App.app>}"
 : "${APPLE_APP_SPECIFIC_PASSWORD:?APPLE_APP_SPECIFIC_PASSWORD env var is required}"
 : "${APPLE_TEAM_ID:?APPLE_TEAM_ID env var is required}"
 WAIT_TIMEOUT="${NOTARY_WAIT_TIMEOUT:-20m}"
+SUBMIT_ONLY="${NOTARY_SUBMIT_ONLY:-false}"
 
 AUTH=(--apple-id "$APPLE_ID" --password "$APPLE_APP_SPECIFIC_PASSWORD" --team-id "$APPLE_TEAM_ID")
 
@@ -24,6 +25,16 @@ if [ -z "$SUBMISSION_ID" ] || [ "$SUBMISSION_ID" = "null" ]; then
   exit 1
 fi
 echo "notarization submission id: $SUBMISSION_ID"
+
+# Release valve for a stalled Apple queue: the submission is already lodged, so
+# the ticket lands whenever the queue clears, and Gatekeeper's online cdhash
+# lookup then accepts the shipped build without a re-release. Until it clears,
+# the build is Developer ID signed but unstapled — users who download before
+# then must approve it manually.
+if [ "$SUBMIT_ONLY" = "true" ]; then
+  echo "::warning::NOTARY_SUBMIT_ONLY is set — shipping unstapled without waiting for submission $SUBMISSION_ID"
+  exit 0
+fi
 
 # wait exits non-zero on timeout; the info call below is the authority on what
 # actually happened, so the wait itself must not fail the step.
