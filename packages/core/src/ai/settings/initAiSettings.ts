@@ -13,6 +13,7 @@ import { createLobeHubProvider } from '../lobehub/provider.js';
 import { LOBEHUB_PROVIDER, type LobeHubCloudGateway } from '../lobehub/types.js';
 import { initModelsRuntime, SINGLE_KEY_PROVIDERS } from '../runtime/modelsRuntime.js';
 import { parseModelRef } from '../runtime/models.js';
+import { applyBaseUrlOverride } from '../runtime/providerOverrides.js';
 import { createSecretBox, type SecretBox } from './secretBox.js';
 import { type AiTaskRole, createSettingsStore, setActiveSettingsStore } from './settingsStore.js';
 
@@ -244,6 +245,9 @@ export function initAiSettings(
   setActiveSettingsStore(createSettingsStore(db));
   const credentials = createCredentialStore(db, box, { codexAuthPath: opts?.codexAuthPath });
   const models = initModelsRuntime(credentials);
+  for (const { provider, baseUrl } of credentials.listBaseUrls()) {
+    applyBaseUrlOverride(models, provider, baseUrl);
+  }
   const env = opts?.env ?? process.env;
   const lobehub = new WebApiLobeHubCloudGateway({
     baseUrl: env.LOBEHUB_CLOUD_URL || 'https://app.lobehub.com',

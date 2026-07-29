@@ -12,10 +12,16 @@ import {
 } from '../src/ai/settings/initAiSettings.js';
 import { aiConfig } from '../src/ai/runtime/models.js';
 import { getModelsRuntime, setModelsRuntimeForTests } from '../src/ai/runtime/modelsRuntime.js';
+import { resetProviderOverridesForTests } from '../src/ai/runtime/providerOverrides.js';
 import { createSecretBox, type SecretBox } from '../src/ai/settings/secretBox.js';
 import { setActiveSettingsStore } from '../src/ai/settings/settingsStore.js';
 import { createDb, type Db } from '../src/db/index.js';
-import { aiRoleSettings, appMeta, providerCredentials } from '../src/db/schema.js';
+import {
+  aiRoleSettings,
+  appMeta,
+  providerCredentials,
+  providerEndpoints,
+} from '../src/db/schema.js';
 
 const catalog = builtinModels();
 const analystModel = catalog.getModels('anthropic').find((m) => m.id === 'claude-sonnet-4-5');
@@ -228,6 +234,7 @@ describe('initAiSettings', () => {
   afterEach(() => {
     setActiveSettingsStore(null);
     setModelsRuntimeForTests(null);
+    resetProviderOverridesForTests();
     rmSync(dir, { recursive: true, force: true });
   });
 
@@ -242,6 +249,28 @@ describe('initAiSettings', () => {
     expect(aiConfig().analystModel?.id).toBe(analystModel.id);
     expect(aiConfig().analystModel?.thinkingLevel).toBe('off');
     expect(getModelsRuntime()).toBe(models);
+  });
+
+  it('applies stored provider base urls to the models runtime', () => {
+    const secretBox = tempSecretBox(dir);
+    db.insert(providerEndpoints)
+      .values({
+        provider: 'deepseek',
+        baseUrl: 'https://relay.example/v1',
+        updatedAt: new Date().toISOString(),
+      })
+      .run();
+
+    const { models } = initAiSettings(db, {
+      env: {},
+      secretBox,
+      codexAuthPath: join(dir, 'auth.json'),
+    });
+
+    expect(models.getProvider('deepseek')?.baseUrl).toBe('https://relay.example/v1');
+    expect(
+      models.getModels('deepseek').every((m) => m.baseUrl === 'https://relay.example/v1'),
+    ).toBe(true);
   });
 });
 
