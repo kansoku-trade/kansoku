@@ -10,6 +10,8 @@ import {
   setActiveLongbridgeRegionStore,
   validateLongbridgeRegionPreference,
 } from '../src/marketdata/longbridgeRegionStore.js';
+import { ClientError } from '../src/platform/errors.js';
+import { settingsService } from '../src/settings/settings.service.js';
 
 function tempDbPath(): { dir: string; path: string } {
   const dir = mkdtempSync(join(tmpdir(), 'longbridge-region-store-'));
@@ -95,6 +97,45 @@ describe('getActiveLongbridgeRegionStore / setActiveLongbridgeRegionStore', () =
       const store = createLongbridgeRegionStore(createDb(path));
       setActiveLongbridgeRegionStore(store);
       expect(getActiveLongbridgeRegionStore()).toBe(store);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('settingsService.getLongbridgeRegion / putLongbridgeRegion', () => {
+  afterEach(() => setActiveLongbridgeRegionStore(null));
+
+  it('defaults to auto when nothing has been set', async () => {
+    const { dir, path } = tempDbPath();
+    try {
+      setActiveLongbridgeRegionStore(createLongbridgeRegionStore(createDb(path)));
+      await expect(settingsService.getLongbridgeRegion()).resolves.toEqual({ region: 'auto' });
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('round-trips a put value through get', async () => {
+    const { dir, path } = tempDbPath();
+    try {
+      setActiveLongbridgeRegionStore(createLongbridgeRegionStore(createDb(path)));
+      await expect(settingsService.putLongbridgeRegion({ region: 'cn' })).resolves.toEqual({
+        region: 'cn',
+      });
+      await expect(settingsService.getLongbridgeRegion()).resolves.toEqual({ region: 'cn' });
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects an invalid region with ClientError', async () => {
+    const { dir, path } = tempDbPath();
+    try {
+      setActiveLongbridgeRegionStore(createLongbridgeRegionStore(createDb(path)));
+      await expect(settingsService.putLongbridgeRegion({ region: 'us' })).rejects.toBeInstanceOf(
+        ClientError,
+      );
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

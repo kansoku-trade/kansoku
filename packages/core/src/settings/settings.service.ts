@@ -1,5 +1,9 @@
 import { resolveSubscription } from '../license/subscription.js';
 import {
+  getActiveLongbridgeRegionStore,
+  validateLongbridgeRegionPreference,
+} from '../marketdata/longbridgeRegionStore.js';
+import {
   getActiveWatchedMarketsStore,
   validateWatchedMarkets,
 } from '../marketdata/watchedMarketsStore.js';
@@ -46,6 +50,16 @@ export const settingsService: SettingsApi = {
     const store = getActiveWatchedMarketsStore();
     store.set(validateWatchedMarkets(input.markets));
     return { markets: store.get() };
+  },
+
+  async getLongbridgeRegion() {
+    return { region: getActiveLongbridgeRegionStore().get() };
+  },
+
+  async putLongbridgeRegion(input) {
+    const store = getActiveLongbridgeRegionStore();
+    store.set(validateLongbridgeRegionPreference(input.region));
+    return { region: store.get() };
   },
 
   async getSubscribeUrl() {

@@ -6,6 +6,7 @@ import type {
   TestConnectionResult,
   UsageTodayOut,
 } from '@kansoku/pro-api';
+import type { LongbridgeRegionPreference } from '../marketdata/longbridgeEndpoints.js';
 import type { Market } from '../symbols/symbol.utils.js';
 import { defineRoutes } from './defineRoutes.js';
 
@@ -17,6 +18,7 @@ export type {
   TestConnectionResult,
   UsageTodayOut,
 } from '@kansoku/pro-api';
+export type { LongbridgeRegionPreference } from '../marketdata/longbridgeEndpoints.js';
 
 export interface SettingsApi {
   getAi(): Promise<SettingsAiOut>;
@@ -43,6 +45,8 @@ export interface SettingsApi {
   resetCredentials(): Promise<{ reset: true }>;
   getWatchedMarkets(): Promise<{ markets: Market[] }>;
   putWatchedMarkets(input: { markets: unknown }): Promise<{ markets: Market[] }>;
+  getLongbridgeRegion(): Promise<{ region: LongbridgeRegionPreference }>;
+  putLongbridgeRegion(input: { region: string }): Promise<{ region: LongbridgeRegionPreference }>;
   getSubscribeUrl(): Promise<{
     subscribeUrl: string | null;
     priceLabel: string | null;
@@ -73,5 +77,7 @@ export const settingsRoutes = defineRoutes<SettingsApi>('settings', {
   resetCredentials: { method: 'POST', path: '/ai/reset-credentials' },
   getWatchedMarkets: { method: 'GET', path: '/watched-markets' },
   putWatchedMarkets: { method: 'PUT', path: '/watched-markets' },
+  getLongbridgeRegion: { method: 'GET', path: '/longbridge-region' },
+  putLongbridgeRegion: { method: 'PUT', path: '/longbridge-region' },
   getSubscribeUrl: { method: 'GET', path: '/subscribe-url' },
 });

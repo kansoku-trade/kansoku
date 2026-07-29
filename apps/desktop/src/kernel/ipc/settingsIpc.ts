@@ -69,6 +69,18 @@ export class SettingsIpc extends IpcService implements WrapEnvelope<SettingsApi>
   }
 
   @IpcMethod()
+  getLongbridgeRegion() {
+    return toEnvelope('settings.getLongbridgeRegion', () => settingsService.getLongbridgeRegion());
+  }
+
+  @IpcMethod()
+  putLongbridgeRegion(input: Parameters<SettingsApi['putLongbridgeRegion']>[0]) {
+    return toEnvelope('settings.putLongbridgeRegion', () =>
+      settingsService.putLongbridgeRegion(input),
+    );
+  }
+
+  @IpcMethod()
   getSubscribeUrl() {
     return toEnvelope('settings.getSubscribeUrl', () => settingsService.getSubscribeUrl());
   }

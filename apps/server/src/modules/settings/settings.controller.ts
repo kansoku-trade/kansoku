@@ -80,6 +80,18 @@ export class SettingsController {
     return { ok: true, data };
   }
 
+  @Get('/longbridge-region')
+  async getLongbridgeRegion() {
+    const data = await settingsService.getLongbridgeRegion();
+    return { ok: true, data };
+  }
+
+  @Put('/longbridge-region')
+  async putLongbridgeRegion(@Body() body: { region?: unknown } | null) {
+    const data = await settingsService.putLongbridgeRegion({ region: body?.region as string });
+    return { ok: true, data };
+  }
+
   @Get('/subscribe-url')
   async getSubscribeUrl() {
     const data = await settingsService.getSubscribeUrl();

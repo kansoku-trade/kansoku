@@ -8,6 +8,7 @@ export interface SegmentedControlOption<Value extends string> {
 interface SegmentedControlProps<Value extends string> {
   ariaLabel: string;
   className?: string;
+  disabled?: boolean;
   fit?: boolean;
   onChange: (value: Value) => void;
   options: readonly SegmentedControlOption<Value>[];
@@ -18,6 +19,7 @@ interface SegmentedControlProps<Value extends string> {
 export function SegmentedControl<Value extends string>({
   ariaLabel,
   className,
+  disabled,
   fit,
   onChange,
   options,
@@ -35,11 +37,12 @@ export function SegmentedControl<Value extends string>({
     .join(' ');
 
   return (
-    <div className={classes} role="radiogroup" aria-label={ariaLabel}>
+    <div className={classes} role="radiogroup" aria-label={ariaLabel} aria-disabled={disabled || undefined}>
       {options.map((option) => (
         <label className="ui-segmented-control-option" key={option.value}>
           <input
             checked={value === option.value}
+            disabled={disabled}
             name={name}
             onChange={() => onChange(option.value)}
             type="radio"

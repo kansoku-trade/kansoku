@@ -240,6 +240,10 @@
   border-color: var(--focus-border);
   box-shadow: var(--focus-ring);
 }
+.ui-segmented-control-option:has(input:disabled) {
+  cursor: default;
+  opacity: 0.55;
+}
 
 .dot {
   display: inline-block;
