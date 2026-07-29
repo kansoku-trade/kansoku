@@ -44,7 +44,7 @@
 - 契约新增 `putProviderBaseUrl({ provider, baseUrl: string | null })`，`packages/pro-api` 与 `packages/core/src/contract` 同步；key 与地址可独立修改。
 - `getAi()` 返回值加顶层 `endpoints: Array<{ provider, baseUrl }>`（不挂在凭证条目上——地址可以独立于 key 存在）。
 - 校验：非空时必须是 `http(s)` URL；空串视为清除（存 `null`）；provider 必须在 `SINGLE_KEY_PROVIDERS` 内。
-- UI（`ProviderCredentialsSection`）：每家服务商 key 输入框下加可选「自定义 Base URL」输入框，占位符显示官方地址，带自己的保存按钮；已设置时显示当前值。
+- UI（`ProviderCredentialsSection`）：每家服务商 key 输入框下加可选「自定义 Base URL」输入框，占位符提示「默认官方地址，可填中转站地址」，带自己的保存按钮；已设置时显示当前值。
 
 ### 测试
 
