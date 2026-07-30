@@ -167,7 +167,7 @@ class OrderZonePaneView implements IPrimitivePaneView {
     const visible = ts.getVisibleRange();
     // paneSize(), not timeScale().width(): the latter reports 0 when the time axis is hidden, which
     // collapses the zone to nothing on a chart that renders no axes.
-    const right = chart.paneSize().width;
+    const { width: right, height: paneHeight } = chart.paneSize();
 
     const startTime = containingBarTime(times, data.startTime);
     const xStart = ts.timeToCoordinate(startTime as Time);
@@ -193,6 +193,12 @@ class OrderZonePaneView implements IPrimitivePaneView {
     if (yEntry === null || yStop === null) return;
     if (data.target !== null && yTarget === null) return;
 
+    // An off-scale price still answers with a coordinate, so an unclamped block fills to the canvas
+    // edge with its bounding stroke and its centred R label both outside the pane — a risk boundary
+    // asserted where nothing names it. Clamped to the same rectangle TrainerOrderLevels parks its
+    // pill on, so the block stops on the line the pill sits on.
+    const clampY = (y: number) => Math.min(Math.max(y, 0), paneHeight);
+
     const fillAlpha = data.filled ? FILLED_FILL_ALPHA : DRAFT_FILL_ALPHA;
     const strokeAlpha = data.filled ? FILLED_STROKE_ALPHA : DRAFT_STROKE_ALPHA;
     const dashed = !data.filled;
@@ -202,8 +208,8 @@ class OrderZonePaneView implements IPrimitivePaneView {
     this.blocks.push({
       x1,
       x2,
-      yTop: Math.min(yEntry, yStop),
-      yBottom: Math.max(yEntry, yStop),
+      yTop: clampY(Math.min(yEntry, yStop)),
+      yBottom: clampY(Math.max(yEntry, yStop)),
       fill: riskRgba(fillAlpha),
       // The entry price is always one edge of this block; once secured, a stroke here would sit
       // right on top of the entry/stop DOM lines that already mark those boundaries, so it is
@@ -221,8 +227,8 @@ class OrderZonePaneView implements IPrimitivePaneView {
     this.blocks.push({
       x1,
       x2,
-      yTop: Math.min(yEntry, yTarget),
-      yBottom: Math.max(yEntry, yTarget),
+      yTop: clampY(Math.min(yEntry, yTarget)),
+      yBottom: clampY(Math.max(yEntry, yTarget)),
       fill: rewardRgba(fillAlpha),
       stroke: rewardRgba(strokeAlpha),
       dashed,

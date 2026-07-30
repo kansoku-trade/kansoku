@@ -11,16 +11,20 @@ import type {
   LevelDismissConfig,
   LevelKind,
   LevelSubmitConfig,
+  OffScale,
   OrderLevel,
 } from './TrainerOrderLevels';
 import type { PinnedPane } from './usePinnedPriceY';
 
 const KIND_LABEL: Record<LevelKind, string> = { target: '目标', entry: '入场', stop: '止损' };
+const OFF_SCALE_MARK: Record<'above' | 'below', string> = { above: '▴', below: '▾' };
+const OFF_SCALE_HINT = '这个价格已经不在图上，药丸钉在面板边上，拖它可以把线拉回来';
 
 export interface TrainerOrderLevelLabelProps {
   kind: LevelKind;
   level: OrderLevel;
   y: number;
+  offScale: OffScale;
   pane: PinnedPane;
   marginRight: number;
   filled: boolean;
@@ -37,6 +41,7 @@ export function TrainerOrderLevelLabel({
   kind,
   level,
   y,
+  offScale,
   pane,
   marginRight,
   filled,
@@ -64,11 +69,11 @@ export function TrainerOrderLevelLabel({
 
   return (
     <div
-      className={`trainer-level trainer-level--${kind}${filled ? ' trainer-level--filled' : ''}${expanded ? ' trainer-level--active' : ''}`}
+      className={`trainer-level trainer-level--${kind}${filled ? ' trainer-level--filled' : ''}${expanded ? ' trainer-level--active' : ''}${offScale ? ' trainer-level--offscale' : ''}`}
       style={{ top: `${y}px` }}
     >
-      <div className="trainer-level-line" />
-      {onGrab && (
+      {!offScale && <div className="trainer-level-line" />}
+      {onGrab && !offScale && (
         // Bounded to the candle pane rather than the overlay: the strip is invisible and
         // pointer-catching, so past the pane's right edge it would eat the price axis's own
         // drag-to-rescale.
@@ -84,7 +89,8 @@ export function TrainerOrderLevelLabel({
         className={`trainer-level-pill${onGrab ? ' trainer-level-pill--drag' : ''}${expanded ? '' : ' trainer-level-pill--collapsed'}`}
         style={{ marginRight: `${marginRight}px` }}
         role="group"
-        aria-label={`${KIND_LABEL[kind]} ${fmt(level.price)}`}
+        aria-label={`${KIND_LABEL[kind]} ${fmt(level.price)}${offScale ? ' 超出图表范围' : ''}`}
+        title={offScale ? OFF_SCALE_HINT : undefined}
         tabIndex={0}
         onPointerDown={onGrab}
         onPointerEnter={() => setHovered(true)}
@@ -112,6 +118,11 @@ export function TrainerOrderLevelLabel({
             </button>
           ))}
         <span className="trainer-level-price">
+          {offScale && (
+            <span className="trainer-level-offscale" aria-hidden="true">
+              {OFF_SCALE_MARK[offScale]}
+            </span>
+          )}
           {level.pending && (
             <>
               <span className="trainer-level-was">{fmt(level.pending.from)}</span>

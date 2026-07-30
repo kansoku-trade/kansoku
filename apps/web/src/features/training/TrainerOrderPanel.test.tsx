@@ -406,6 +406,14 @@ function levelPill(kind: 'target' | 'entry' | 'stop'): HTMLElement | null {
   return document.querySelector(`.trainer-level--${kind} .trainer-level-pill`);
 }
 
+function levelRow(kind: 'target' | 'entry' | 'stop'): HTMLElement | null {
+  return document.querySelector(`.trainer-level--${kind}`);
+}
+
+function levelLine(kind: 'target' | 'entry' | 'stop'): HTMLElement | null {
+  return document.querySelector(`.trainer-level--${kind} .trainer-level-line`);
+}
+
 afterEach(() => {
   cleanup();
 });
@@ -1513,20 +1521,138 @@ describe('TrainerOrderLevels stay inside the candle pane', () => {
     expect(hitBand('stop')!.style.width).toBe('236px');
   });
 
-  it('drops a level whose price has scaled off the pane rather than drawing it below the pane', () => {
-    const { handle, zonePrimitives } = makeHandle();
+  it('takes the line and the band off a level whose price has scaled off the pane', () => {
+    const { handle } = makeHandle();
     const { bridge } = makeBridge();
     renderPanel(makeView(), bridge, handle);
 
     // y = 280 is past the 274px candle pane — on the real chart that is the MACD chart underneath.
     placeOrder(280, 175);
 
-    // The stop is placed and still drives the plan; it is only its line that has nowhere to go.
-    expect(currentZone(zonePrimitives)?.stop).toBe(20);
-    expect(levelPill('entry')).toBeTruthy();
-    expect(levelPill('target')).toBeTruthy();
-    expect(levelPill('stop')).toBeNull();
+    expect(levelLine('stop')).toBeNull();
     expect(hitBand('stop')).toBeNull();
+    expect(levelLine('target')).toBeTruthy();
+    expect(hitBand('target')).toBeTruthy();
+  });
+
+  // The canvas zone has no equivalent of the row skip, so a dropped row left the risk block filling
+  // open-ended to the pane edge with the stop price named nowhere on the chart.
+  it('keeps the off-scale row and the zone block naming the same stop', () => {
+    const { handle, zonePrimitives } = makeHandle();
+    const { bridge } = makeBridge();
+    renderPanel(makeView(), bridge, handle);
+
+    placeOrder(280, 175);
+
+    expect(currentZone(zonePrimitives)?.stop).toBe(20);
+    expect(levelPill('stop')?.textContent).toContain('20.00');
+    // Parked one half-pill inside the 274px pane edge rather than painted onto the MACD chart.
+    expect(levelRow('stop')?.style.top).toBe('260px');
+    expect(levelRow('stop')?.className).toContain('trainer-level--offscale');
+  });
+
+  it('marks a parked pill as off-scale rather than letting it read as a real price', () => {
+    const { handle } = makeHandle();
+    const { bridge } = makeBridge();
+    renderPanel(makeView(), bridge, handle);
+
+    placeOrder(280, 175);
+
+    expect(levelPill('stop')?.textContent).toContain('▾');
+    expect(levelPill('stop')?.getAttribute('aria-label')).toBe('止损 20.00 超出图表范围');
+    expect(levelPill('target')?.getAttribute('aria-label')).toBe('目标 125.00');
+  });
+
+  // The stop is the only level with somewhere to go here; an off-scale entry is what strands a
+  // drafted, valid order with no way to send it, since the sized submit buttons live nowhere else.
+  it('keeps the entry pill and its sized submit buttons when the entry itself is off-scale', () => {
+    const { handle } = makeHandle({ width: 236, height: 199 });
+    const { bridge, submit } = makeBridge();
+    renderPanel(makeView(), bridge, handle);
+
+    // The entry sits at y=200 and the stop at y=210, both past a 199px pane; the target stays on it.
+    placeOrder(210, 175);
+    hoverEntry();
+
+    expect(levelRow('entry')?.className).toContain('trainer-level--offscale');
+    expect(levelRow('entry')?.style.top).toBe('185px');
+    const full = screen.getByRole('button', { name: '入场做多 全仓' }) as HTMLButtonElement;
+    expect(full.disabled).toBe(false);
+    expect(screen.getByRole('button', { name: '撤销这个计划' })).toBeTruthy();
+
+    fireEvent.click(full);
+    expect(submit).toHaveBeenCalledTimes(1);
+  });
+
+  // The parked pill is still a drag surface, so a level the auto-scale stopped covering can be
+  // pulled back onto it — the recovery path TD-EXIT-01 needs when a stop scrolls out of view.
+  it('lets an off-scale level be dragged back onto the scale by its parked pill', () => {
+    const { handle } = makeHandle();
+    const { bridge } = makeBridge();
+    renderPanel(makeView(), bridge, handle);
+
+    placeOrder(280, 175);
+    expect(levelRow('stop')?.className).toContain('trainer-level--offscale');
+
+    fireEvent.pointerDown(levelPill('stop')!, { clientY: 260 });
+    fireEvent.pointerMove(window, { clientY: 205 });
+    fireEvent.pointerUp(window, { clientY: 205 });
+
+    expect(levelPill('stop')?.textContent).toContain('95.00');
+    expect(levelRow('stop')?.className).not.toContain('trainer-level--offscale');
+    expect(hitBand('stop')).toBeTruthy();
+  });
+
+  // The band unmounts the moment the level leaves the pane, but the drag rides window listeners and
+  // the pill is what the trader is reading — losing it mid-gesture blanks the price under the cursor.
+  it('keeps the price readout live through a drag that carries the level off the pane', () => {
+    const { handle } = makeHandle();
+    const { bridge } = makeBridge();
+    renderPanel(makeView(), bridge, handle);
+
+    placeOrder(210, 175);
+    fireEvent.pointerDown(hitBand('stop')!, { clientY: 210 });
+
+    fireEvent.pointerMove(window, { clientY: 280 });
+    expect(levelPill('stop')?.textContent).toContain('20.00');
+
+    fireEvent.pointerMove(window, { clientY: 290 });
+    expect(levelPill('stop')?.textContent).toContain('10.00');
+
+    fireEvent.pointerUp(window, { clientY: 290 });
+    expect(levelPill('stop')?.textContent).toContain('10.00');
+  });
+
+  // 确认调整 / 撤销 live on the moved level's own pill, so a stop dragged wide and released
+  // off-scale used to strand the amend in state with no surface to resolve it.
+  it('keeps 确认调整 reachable for an amend released off-scale', async () => {
+    const { handle } = makeHandle();
+    const view = makeOpenView('long', 102);
+    const { bridge, amend } = makeAmendBridge(makeOpenView('long', 102));
+    renderPanel(view, bridge, handle);
+
+    dragBand('stop', 201, 280); // 99 -> 20, past the 274px pane
+
+    expect(levelRow('stop')?.className).toContain('trainer-level--offscale');
+    expect(pendingPill()?.textContent).toMatch(/99\.00\s*→\s*▾?20\.00/);
+    await waitFor(() => expect(confirmAmend().disabled).toBe(false));
+
+    fireEvent.click(confirmAmend());
+    await waitFor(() => expect(amend).toHaveBeenCalledTimes(1));
+    expect((amend.mock.calls[0][0] as { stop: number }).stop).toBe(20);
+  });
+
+  it('keeps 撤销 reachable for that same amend', async () => {
+    const { handle } = makeHandle();
+    const view = makeOpenView('long', 102);
+    const { bridge } = makeAmendBridge(makeOpenView('long', 102));
+    renderPanel(view, bridge, handle);
+
+    dragBand('stop', 201, 280);
+    fireEvent.click(screen.getByRole('button', { name: '撤销调整' }));
+
+    expect(levelPill('stop')?.textContent).toContain('99.00');
+    expect(levelRow('stop')?.className).not.toContain('trainer-level--offscale');
   });
 });
 

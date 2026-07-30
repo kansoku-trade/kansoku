@@ -1082,6 +1082,18 @@ a:hover {
   min-width: 70px;
   justify-content: flex-end;
 }
+/* A level scaled off the pane keeps only its pill, parked on the pane edge. The dashed border and
+   the caret are what say the number is not at the height the pill is sitting at — without them a
+   parked pill reads as a level that really is there. */
+.trainer-level--offscale .trainer-level-pill {
+  border-style: dashed;
+  opacity: 0.9;
+}
+.trainer-level-offscale {
+  margin-right: 1px;
+  font-size: var(--fs-xs);
+  opacity: 0.75;
+}
 /* Held for the length of a level drag. The pointer spends nearly all of it off the handle — over
    the chart canvas, which sets its own crosshair, or past the pane entirely — so the cursor has to
    be pinned on every element, not just the one that was grabbed. */

@@ -190,6 +190,45 @@ describe('OrderZonePrimitive', () => {
     expect(rec.fills[0].x).toBe(0);
   });
 
+  // TrainerOrderLevels drops the line and the hit band of an off-scale level and parks its pill on
+  // the pane edge. An unclamped block would fill past that edge onto the MACD chart below with its
+  // bounding stroke and its R label both off-canvas — a risk boundary drawn where nothing names it.
+  describe('a level scaled off the pane', () => {
+    it('clamps the risk block to the pane bottom instead of filling past it', () => {
+      const rec = draw(makePrimitive({ ...longData, stop: -50 }, priceScale));
+      // y(stop=-50)=350, which is 50px below the 300px pane.
+      expect(rec.fills[0].y).toBe(200);
+      expect(rec.fills[0].y + rec.fills[0].h).toBe(300);
+      expect(rec.strokes[0].y + rec.strokes[0].h).toBeLessThanOrEqual(300);
+    });
+
+    it('keeps the clamped block R label inside the pane', () => {
+      const rec = draw(makePrimitive({ ...longData, stop: -50 }, priceScale));
+      expect(rec.texts[0].text).toBe('-1.0R');
+      expect(rec.texts[0].y).toBeGreaterThanOrEqual(0);
+      expect(rec.texts[0].y).toBeLessThanOrEqual(300);
+    });
+
+    it('clamps to the pane top when it is the entry that has scaled off', () => {
+      const rec = draw(makePrimitive({ ...longData, entry: 400 }, priceScale));
+      // y(entry=400)=-100, above the pane; the stop at 80 is still on it.
+      expect(rec.fills[0].y).toBe(0);
+      expect(rec.fills[0].h).toBe(220);
+      expect(rec.texts[0].y).toBeGreaterThanOrEqual(0);
+    });
+
+    it('draws no block at all once both of its edges are off the same side', () => {
+      const rec = draw(
+        makePrimitive(
+          { ...longData, entry: 400, stop: 500, target: null, rewardR: null },
+          priceScale,
+        ),
+      );
+      expect(rec.fills).toHaveLength(0);
+      expect(rec.strokes).toHaveLength(0);
+    });
+  });
+
   it('draws nothing at all when the target price has no coordinate', () => {
     const noTargetCoordinate = (price: number) => (price === 140 ? null : 300 - price);
     const rec = draw(makePrimitive(longData, noTargetCoordinate));

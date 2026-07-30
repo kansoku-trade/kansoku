@@ -12,9 +12,11 @@ import { usePinnedPriceYs } from './usePinnedPriceY';
 export type LevelKind = 'target' | 'entry' | 'stop';
 // The entry is never grabbable: it is the fill price, not a level the trader places.
 export type DraggableKind = Exclude<LevelKind, 'entry'>;
+export type OffScale = 'above' | 'below' | null;
 
 const PILL_MIN_GAP_PX = 26;
 const LANE_STEP_PX = 80;
+const PILL_EDGE_INSET_PX = 14;
 
 const LEVEL_LINE_COLOR: Record<DraggableKind, string> = {
   target: theme.up,
@@ -160,9 +162,20 @@ export function TrainerOrderLevels({
 
   const dragEnabled = Boolean(handle && onDrag) && !dragDisabled;
 
-  // A price can scale off the pane while still answering with a coordinate, which would put the
-  // line — and its grabbable band — over the price axis or down on the MACD chart below.
-  const rows: { kind: LevelKind; level: OrderLevel; y: number; lane: number }[] = [];
+  // A price can scale off the pane while still answering with a coordinate. Only the line and its
+  // grabbable band come off in that case — at the answered y they would land on the price axis or
+  // down on the MACD chart, and at a clamped y they would name a price that is not there. The row
+  // itself survives, parked on the pane edge: its pill is the sole host of the sized submit
+  // buttons, of 撤销这个计划 and of a pending amend's 确认调整/撤销, and it is a drag surface in
+  // its own right, so an off-scale level can still be pulled back onto the scale.
+  const rows: {
+    kind: LevelKind;
+    level: OrderLevel;
+    y: number;
+    offScale: OffScale;
+    lane: number;
+  }[] = [];
+  const inset = pane ? Math.min(PILL_EDGE_INSET_PX, (pane.bottom - pane.top) / 2) : 0;
   for (const [kind, level] of [
     ['target', target],
     ['entry', entry],
@@ -170,8 +183,10 @@ export function TrainerOrderLevels({
   ] as const) {
     const y = ys[kind];
     if (!level || y === null || !pane) continue;
-    if (y < pane.top || y > pane.bottom) continue;
-    rows.push({ kind, level, y, lane: 0 });
+    const offScale: OffScale = y < pane.top ? 'above' : y > pane.bottom ? 'below' : null;
+    const parked =
+      offScale === 'above' ? pane.top + inset : offScale === 'below' ? pane.bottom - inset : y;
+    rows.push({ kind, level, y: parked, offScale, lane: 0 });
   }
   if (rows.length === 0 || !pane) return null;
 
@@ -188,12 +203,13 @@ export function TrainerOrderLevels({
 
   return (
     <TrainerOverlayPortal slot="pinned">
-      {rows.map(({ kind, level, y, lane }) => (
+      {rows.map(({ kind, level, y, offScale, lane }) => (
         <TrainerOrderLevelLabel
           key={kind}
           kind={kind}
           level={level}
           y={y}
+          offScale={offScale}
           pane={pane}
           marginRight={70 + lane * LANE_STEP_PX}
           filled={filled && kind === 'entry'}
