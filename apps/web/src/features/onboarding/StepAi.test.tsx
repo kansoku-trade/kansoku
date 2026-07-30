@@ -72,6 +72,7 @@ describe('StepAi', () => {
 
     renderWithClient(<StepAi onNext={onNext} />);
     await openApiKeyForm();
+    expect(document.querySelectorAll('.onboarding-apikey-row')).toHaveLength(2);
     enterApiKey();
     fireEvent.change(screen.getByLabelText('Base URL（可选）'), {
       target: { value: 'https://gateway.example.com/v1' },

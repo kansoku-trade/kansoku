@@ -213,33 +213,38 @@ export function StepAi({ onNext }: { onNext: () => void }) {
 
       {showApiKey && apiProviders.length > 0 ? (
         <div className="onboarding-apikey">
-          <Select
-            value={effectiveApiProvider}
-            options={apiProviders.map((p) => ({ value: p.id, label: p.name }))}
-            onChange={setApiProvider}
-          />
-          <Input
-            autoComplete="off"
-            type="password"
-            value={apiKey}
-            onChange={(event) => setApiKey(event.target.value)}
-            placeholder="API key"
-          />
-          <Input
-            aria-label="Base URL（可选）"
-            autoComplete="off"
-            type="url"
-            value={apiBaseUrl}
-            onChange={(event) => setApiBaseUrl(event.target.value)}
-            placeholder="默认官方地址，可填中转站地址（可选）"
-          />
-          <Button
-            accent
-            disabled={busy !== null || !effectiveApiProvider || !apiKey}
-            onClick={saveApiKey}
-          >
-            {busy === 'apikey' ? '保存中…' : '保存并使用'}
-          </Button>
+          <div className="onboarding-apikey-row onboarding-apikey-row--endpoint">
+            <Input
+              aria-label="Base URL（可选）"
+              autoComplete="off"
+              type="url"
+              value={apiBaseUrl}
+              onChange={(event) => setApiBaseUrl(event.target.value)}
+              placeholder="默认官方地址，可填中转站地址（可选）"
+            />
+          </div>
+          <div className="onboarding-apikey-row onboarding-apikey-row--credentials">
+            <Select
+              ariaLabel="AI Provider"
+              value={effectiveApiProvider}
+              options={apiProviders.map((p) => ({ value: p.id, label: p.name }))}
+              onChange={setApiProvider}
+            />
+            <Input
+              autoComplete="off"
+              type="password"
+              value={apiKey}
+              onChange={(event) => setApiKey(event.target.value)}
+              placeholder="API key"
+            />
+            <Button
+              accent
+              disabled={busy !== null || !effectiveApiProvider || !apiKey}
+              onClick={saveApiKey}
+            >
+              {busy === 'apikey' ? '保存中…' : '保存并使用'}
+            </Button>
+          </div>
         </div>
       ) : null}
 
