@@ -18,7 +18,7 @@ import type { PinnedPane } from './usePinnedPriceY';
 
 const KIND_LABEL: Record<LevelKind, string> = { target: '目标', entry: '入场', stop: '止损' };
 const OFF_SCALE_MARK: Record<'above' | 'below', string> = { above: '▴', below: '▾' };
-const OFF_SCALE_HINT = '这个价格已经不在图上，药丸钉在面板边上，拖它可以把线拉回来';
+const OFF_SCALE_HINT = '这个价格已经不在图上，价格牌钉在面板边上，拖它可以把线拉回来';
 
 export interface TrainerOrderLevelLabelProps {
   kind: LevelKind;
