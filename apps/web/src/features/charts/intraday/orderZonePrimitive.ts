@@ -29,7 +29,7 @@ interface ZoneBlockPx {
   yTop: number;
   yBottom: number;
   fill: string;
-  stroke: string;
+  stroke: string | null;
   dashed: boolean;
   hatchColor: string | null;
   text: string | null;
@@ -44,10 +44,10 @@ function hexToRgb(hex: string): [number, number, number] {
 const [UR, UG, UB] = hexToRgb(theme.up);
 const [DR, DG, DB] = hexToRgb(theme.down);
 const [GR, GG, GB] = hexToRgb(theme.textSecondary);
-// Same hue as the entry line itself (TrainerOrderLevels' LEVEL_LINE_COLOR.entry / styles.css
-// .trainer-level--entry): a stop trailed past breakeven is anchored to the entry, not a risk or a
-// realised reward, so it borrows that line's colour rather than either block's.
-const [SR, SG, SB] = hexToRgb('#4a8cff');
+// A hue of its own: theme.up/down are already risk/reward and textSecondary is the belowFloor
+// treatment, and the entry line owns #4a8cff — reusing that hex here would visually merge the
+// entry line into this block's own edge, since the entry price is always one of its two edges.
+const [SR, SG, SB] = hexToRgb('#8b5cf6');
 
 const upRgba = (alpha: number) => `rgba(${UR}, ${UG}, ${UB}, ${alpha})`;
 const downRgba = (alpha: number) => `rgba(${DR}, ${DG}, ${DB}, ${alpha})`;
@@ -119,10 +119,12 @@ class OrderZoneRenderer implements IPrimitivePaneRenderer {
         ctx.fillStyle = b.fill;
         ctx.fillRect(b.x1, b.yTop, w, h);
         if (b.hatchColor) drawHatch(ctx, b.x1, b.yTop, w, h, b.hatchColor);
-        ctx.setLineDash(b.dashed ? DASH_PATTERN : []);
-        ctx.strokeStyle = b.stroke;
-        ctx.strokeRect(b.x1 + 0.5, b.yTop + 0.5, w - 1, h - 1);
-        ctx.setLineDash([]);
+        if (b.stroke) {
+          ctx.setLineDash(b.dashed ? DASH_PATTERN : []);
+          ctx.strokeStyle = b.stroke;
+          ctx.strokeRect(b.x1 + 0.5, b.yTop + 0.5, w - 1, h - 1);
+          ctx.setLineDash([]);
+        }
         if (b.text && fitsText(w, h, b.text)) {
           ctx.font = '10px sans-serif';
           ctx.textBaseline = 'middle';
@@ -180,7 +182,10 @@ class OrderZonePaneView implements IPrimitivePaneView {
       yTop: Math.min(yEntry, yStop),
       yBottom: Math.max(yEntry, yStop),
       fill: riskRgba(fillAlpha),
-      stroke: riskRgba(strokeAlpha),
+      // The entry price is always one edge of this block; once secured, a stroke here would sit
+      // right on top of the entry/stop DOM lines that already mark those boundaries, so it is
+      // fill-only rather than adding a third outline colour on the entry line.
+      stroke: secured ? null : riskRgba(strokeAlpha),
       dashed,
       hatchColor: null,
       text: formatRiskLabel(data.riskR),

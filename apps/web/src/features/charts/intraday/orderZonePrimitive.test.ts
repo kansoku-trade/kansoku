@@ -173,22 +173,29 @@ describe('OrderZonePrimitive', () => {
     expect(rec.hatchRects).toBe(0);
   });
 
-  it('renders the risk block as secured, not at-risk, once riskR is positive', () => {
+  // Secured gets its own hue (violet, #8b5cf6) rather than the entry line's #4a8cff, and no stroke
+  // of its own: the entry price is always one edge of this block, and the entry/stop DOM lines
+  // already mark both edges, so a second, competing outline colour right on the entry line would
+  // recreate the exact confusion a shared hue caused. The one stroke left in this recording is the
+  // reward block's, unaffected by riskR.
+  it('renders the risk block as secured once riskR is positive: its own hue, no stroke of its own', () => {
     const rec = draw(makePrimitive({ ...longData, riskR: 0.4 }, priceScale));
-    expect(rec.fills[0].style).toBe('rgba(74, 140, 255, 0.2)');
-    expect(rec.strokes[0].style).toBe('rgba(74, 140, 255, 0.75)');
-    expect(rec.texts[0]).toMatchObject({ style: 'rgba(74, 140, 255, 0.95)', text: '+0.4R' });
+    expect(rec.fills[0].style).toBe('rgba(139, 92, 246, 0.2)');
+    expect(rec.texts[0]).toMatchObject({ style: 'rgba(139, 92, 246, 0.95)', text: '+0.4R' });
+    expect(rec.strokes).toHaveLength(1);
+    expect(rec.strokes[0].style).toBe('rgba(38, 166, 154, 0.75)');
   });
 
   it('treats a riskR of exactly zero as secured rather than at-risk', () => {
     const rec = draw(makePrimitive({ ...longData, riskR: 0 }, priceScale));
-    expect(rec.fills[0].style).toBe('rgba(74, 140, 255, 0.2)');
+    expect(rec.fills[0].style).toBe('rgba(139, 92, 246, 0.2)');
     expect(rec.texts[0]).toMatchObject({ text: '+0.0R' });
   });
 
-  it('keeps the risk block in the risk colour while riskR stays negative', () => {
+  it('keeps the risk block in the risk colour, with its usual stroke, while riskR stays negative', () => {
     const rec = draw(makePrimitive({ ...longData, riskR: -0.5 }, priceScale));
     expect(rec.fills[0].style).toBe('rgba(239, 83, 80, 0.2)');
+    expect(rec.strokes[0].style).toBe('rgba(239, 83, 80, 0.75)');
     expect(rec.texts[0]).toMatchObject({ text: '-0.5R' });
   });
 
