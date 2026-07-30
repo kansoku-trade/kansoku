@@ -1,10 +1,12 @@
 import { useEffect, useRef, type PointerEvent as ReactPointerEvent } from 'react';
 import { X } from 'lucide-react';
 import { fmt } from '@web/lib/format';
+import type { OrderZoneData } from '../charts/intraday/orderZonePrimitive';
 import type { DrawingChartHandle } from '../charts/intraday/useIntradayCharts';
 import { beginCursorLock, endCursorLock } from './cursorLock';
 import { SIZE_PRESETS } from './orderDraft';
 import { TrainerOverlayPortal, useTrainerOverlayFrame } from './trainerOverlay';
+import { useOrderZone } from './useOrderZone';
 import { usePinnedPriceYs } from './usePinnedPriceY';
 
 export type LevelKind = 'target' | 'entry' | 'stop';
@@ -31,6 +33,7 @@ export interface TrainerOrderLevelsProps {
   entry: OrderLevel | null;
   stop: OrderLevel | null;
   filled?: boolean;
+  zone?: OrderZoneData | null;
   onDrag?: (kind: LevelKind, price: number) => void;
   onDragEnd?: () => void;
   onConfirm?: () => void;
@@ -55,6 +58,7 @@ export function TrainerOrderLevels({
   entry,
   stop,
   filled = false,
+  zone,
   onDrag,
   onDragEnd,
   onConfirm,
@@ -68,11 +72,12 @@ export function TrainerOrderLevels({
     entry: entry?.price ?? null,
     stop: stop?.price ?? null,
   });
+  useOrderZone(handle, zone ?? null);
 
   // Leaving the drag half-applied would strand the whole document in a resize cursor, so the
   // teardown is reachable from unmount as well as from the pointer release.
-  const endDrag = useRef<(() => void) | null>(null);
-  useEffect(() => () => endDrag.current?.(), []);
+  const endDragRef = useRef<(() => void) | null>(null);
+  useEffect(() => () => endDragRef.current?.(), []);
 
   // Dragging the pill is the same gesture as dragging the line, so it goes through the same
   // price callback rather than a second path that could round differently.
@@ -94,10 +99,10 @@ export function TrainerOrderLevels({
       window.removeEventListener('pointerup', up);
       window.removeEventListener('pointercancel', up);
       endCursorLock();
-      endDrag.current = null;
+      endDragRef.current = null;
       onDragEnd?.();
     };
-    endDrag.current = up;
+    endDragRef.current = up;
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
     window.addEventListener('pointercancel', up);

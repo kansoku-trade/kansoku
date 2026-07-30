@@ -1,5 +1,6 @@
 import type { TrainerPosition, TrainerView } from '@kansoku/pro-api';
 import { fmt, signed } from '@web/lib/format';
+import type { OrderZoneData } from '../charts/intraday/orderZonePrimitive';
 import type { DrawingChartHandle } from '../charts/intraday/useIntradayCharts';
 import { levelR } from './episodeReturns';
 import {
@@ -13,6 +14,7 @@ import {
   SIZE_PRESETS,
   type AmendDraft,
 } from './orderDraft';
+import { sec } from './replayBands';
 import { TrainerNote } from './TrainerNote';
 import { TrainerOrderLevels } from './TrainerOrderLevels';
 import { TrainerOverlayPortal } from './trainerOverlay';
@@ -64,6 +66,15 @@ export function TrainerPositionLane({
     const r = levelR(view, null, price);
     return r === null ? '—' : `${signed(r, 1)}R`;
   };
+  const zone: OrderZoneData = {
+    startTime: sec(position.entryTime),
+    entry: position.entryPrice,
+    stop: amendDraft.stop,
+    target: amendDraft.target,
+    filled: true,
+    rewardR: levelR(view, null, amendDraft.target),
+    belowFloor: false,
+  };
 
   return (
     <>
@@ -79,6 +90,7 @@ export function TrainerPositionLane({
       <TrainerOrderLevels
         handle={handle}
         filled
+        zone={zone}
         target={{
           price: amendDraft.target,
           text: rAt(amendDraft.target),

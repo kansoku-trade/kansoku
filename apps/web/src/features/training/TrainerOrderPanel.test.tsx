@@ -10,9 +10,11 @@ import type {
   TrainerView,
 } from '@kansoku/pro-api';
 import type { RawBar } from '@kansoku/shared/types';
+import type { OrderZonePrimitive } from '../charts/intraday/orderZonePrimitive';
 import type { DrawingChartHandle } from '../charts/intraday/useIntradayCharts';
 import type { TrainerBridge } from '../desktop/desktopTrainerBridge';
 import { NO_REASON_GIVEN } from './orderDraft';
+import { sec } from './replayBands';
 import { TrainerOrderPanel } from './TrainerOrderPanel';
 import { TrainerOverlayLayer, TrainerOverlayProvider } from './trainerOverlay';
 
@@ -104,15 +106,20 @@ function makeHandle() {
   const container = document.createElement('div');
   container.getBoundingClientRect = () =>
     ({ top: 0, left: 0, right: 300, bottom: 300, width: 300, height: 300, x: 0, y: 0 }) as DOMRect;
+  const zonePrimitives: OrderZonePrimitive[] = [];
   const series = {
-    attachPrimitive: vi.fn(),
+    attachPrimitive: (p: OrderZonePrimitive) => zonePrimitives.push(p),
     detachPrimitive: vi.fn(),
     priceToCoordinate: (price: number) => 300 - price,
     coordinateToPrice: (y: number) => 300 - y,
   };
   const chart = { applyOptions: vi.fn() };
   const handle = { chart, series, container } as unknown as DrawingChartHandle;
-  return { handle, container, series, chart };
+  return { handle, container, series, chart, zonePrimitives };
+}
+
+function currentZone(zonePrimitives: OrderZonePrimitive[]) {
+  return zonePrimitives.at(-1)?.state().data ?? null;
 }
 
 function okResult(view: TrainerView) {
@@ -370,7 +377,7 @@ afterEach(() => {
 describe('TrainerOrderPanel direction choice', () => {
   // The direction call is made before the chart is touched; the drag only locates the stop.
   it('arms the chart on the picked side and never derives a side from the drag', () => {
-    const { handle, container } = makeHandle();
+    const { handle } = makeHandle();
     const { bridge } = makeBridge();
     renderPanel(makeView(), bridge, handle);
 
@@ -1172,7 +1179,7 @@ describe('TrainerOrderPanel TD-EXIT-01 gate (position amend)', () => {
 
 describe('TrainerOrderPanel drag path stays off the wire', () => {
   it('makes no engine call at all across twelve placement frames and the release', async () => {
-    const { handle, container } = makeHandle();
+    const { handle } = makeHandle();
     const { bridge, spies, methods } = makeSpyBridge(makeView());
     renderPanel(makeView(), bridge, handle);
 
@@ -1353,6 +1360,74 @@ describe('TrainerOrderPanel position box lifecycle', () => {
     expect(levelPill('stop')?.textContent).toContain('-1.0R');
     expect(levelPill('target')?.textContent).toContain('+2.5R');
     expect(levelPill('entry')?.textContent).toContain('市价');
+  });
+});
+
+describe('TrainerOrderPanel order zone primitive', () => {
+  it('feeds the primitive the prices the drag puts on the ticket, and keeps it live as they move', () => {
+    const { handle, container, zonePrimitives } = makeHandle();
+    const { bridge } = makeBridge();
+    renderPanel(makeView(), bridge, handle);
+
+    placeOrder(container, 210, 175);
+    expect(currentZone(zonePrimitives)).toMatchObject({
+      entry: 100,
+      stop: 90,
+      target: 125,
+      filled: false,
+      rewardR: 2.5,
+      belowFloor: false,
+    });
+
+    fireEvent.pointerDown(container, { clientY: 210 });
+    fireEvent.pointerMove(window, { clientY: 205 });
+    fireEvent.pointerUp(window, { clientY: 205 });
+
+    expect(currentZone(zonePrimitives)?.stop).toBe(95);
+  });
+
+  it('withholds the zone entirely until a stop exists — the risk leg defines the unit', () => {
+    const { handle, zonePrimitives } = makeHandle();
+    const { bridge } = makeBridge();
+    renderPanel(makeView(), bridge, handle);
+
+    arm();
+
+    expect(currentZone(zonePrimitives)).toBeNull();
+  });
+
+  it('draws the risk block alone, with target null, once only the stop has been pulled', () => {
+    const { handle, zonePrimitives } = makeHandle();
+    const { bridge } = makeBridge();
+    renderPanel(makeView(), bridge, handle);
+
+    arm();
+    pull('SL', 210);
+
+    expect(currentZone(zonePrimitives)).toMatchObject({
+      entry: 100,
+      stop: 90,
+      target: null,
+      filled: false,
+    });
+  });
+
+  it('anchors the open-position zone to the entry bar rather than the replay cursor, and marks it filled', async () => {
+    const { handle, zonePrimitives } = makeHandle();
+    const base = [bar('2026-01-05T14:00:00.000Z', 100), bar('2026-01-05T14:05:00.000Z', 102)];
+    const view = makeView({
+      phase: 'open',
+      position: makePosition('long'),
+      bars: { base, mid: base, top: base },
+    });
+    const { bridge, validateAmend } = makeAmendBridge(view);
+    renderPanel(view, bridge, handle);
+    await waitFor(() => expect(validateAmend).toHaveBeenCalledTimes(1));
+
+    const zone = currentZone(zonePrimitives);
+    expect(zone?.filled).toBe(true);
+    expect(zone?.startTime).toBe(sec('2026-01-05T14:00:00.000Z'));
+    expect(zone?.startTime).not.toBe(sec('2026-01-05T14:05:00.000Z'));
   });
 });
 

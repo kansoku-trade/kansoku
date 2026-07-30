@@ -7,6 +7,7 @@ import type {
   TrainerView,
 } from '@kansoku/pro-api';
 import { signed } from '@web/lib/format';
+import type { OrderZoneData } from '../charts/intraday/orderZonePrimitive';
 import type { DrawingChartHandle } from '../charts/intraday/useIntradayCharts';
 import type { TrainerBridge } from '../desktop/desktopTrainerBridge';
 import {
@@ -21,6 +22,7 @@ import {
 } from './orderDraft';
 import { describeEntryOutcome } from './advanceStep';
 import { levelR } from './episodeReturns';
+import { cursorBarTime } from './replayBands';
 import { TrainerEntryLane } from './TrainerEntryLane';
 import { TrainerOrderLevels } from './TrainerOrderLevels';
 import { TrainerNote } from './TrainerNote';
@@ -310,6 +312,22 @@ export function TrainerOrderPanel({
     return r === null ? '—' : `${signed(r, 1)}R`;
   };
 
+  // No stop means no risk unit, and nothing meaningful to fill — so the whole zone is withheld
+  // rather than drawn with a sentinel stop.
+  const zone: OrderZoneData | null =
+    entry.direction && entry.placement.stop !== null
+      ? {
+          startTime: cursorBarTime(view),
+          entry: entry.entry,
+          stop: entry.placement.stop,
+          target: entry.placement.target,
+          filled: false,
+          rewardR:
+            entry.placement.target === null ? null : levelR(view, basis, entry.placement.target),
+          belowFloor: entry.draft !== null && !meetsRewardRiskFloor(entry.draft),
+        }
+      : null;
+
   return (
     <>
       {errorChip}
@@ -319,6 +337,7 @@ export function TrainerOrderPanel({
         // half-drawn plan looks half-drawn.
         <TrainerOrderLevels
           handle={handle}
+          zone={zone}
           target={
             entry.placement.target === null
               ? null
