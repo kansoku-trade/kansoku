@@ -10,6 +10,10 @@ on:
         description: 'release tag (desktop-vX.Y.Z), must already exist'
         required: true
         type: string
+      pro_ref:
+        description: 'pro commit to build against (defaults to the KANSOKU_PRO_REF variable, then pro default branch)'
+        required: false
+        type: string
 
 concurrency:
   group: desktop-release-${{ inputs.tag || github.ref }}
@@ -138,9 +142,15 @@ jobs:
       # it pulls apps/pro in before install, pnpm picks it up as a workspace
       # member, and `pnpm package` (via scripts/stagePro.mjs) builds and
       # stages pro into the asar.
+      # KANSOKU_PRO_REF pins which pro commit this release is cut from. Left unset the build tracks
+      # pro's default branch, which is how v0.30.0 shipped from a commit two ahead of what the
+      # workspace superproject had recorded — the pin then described a build that never existed.
+      # Set the repo variable to the pinned SHA before tagging (or pass pro_ref on a manual run) and
+      # the artifact matches a combination that was actually verified.
       - name: fetch pro slot (optional — free build until KANSOKU_PRO_REPO_URL is configured)
         env:
           KANSOKU_PRO_REPO_URL: ${{ secrets.KANSOKU_PRO_REPO_URL }}
+          KANSOKU_PRO_REF: ${{ inputs.pro_ref || vars.KANSOKU_PRO_REF }}
         run: scripts/fetch-pro.sh || echo "pro slot not configured, continuing with a free-only release build"
 
       # the root prepare script (skills experimental_install) restores third-party
