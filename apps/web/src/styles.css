@@ -593,6 +593,178 @@ a:hover {
   flex-direction: column;
   overflow: hidden;
 }
+.trainer-boot {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-canvas);
+}
+/* The window has no title bar of its own, so without a drag strip the boot states are both
+   unmovable and printed underneath the traffic lights. */
+.trainer-boot-bar {
+  display: flex;
+  padding: 8px 12px;
+  flex-shrink: 0;
+  -webkit-app-region: drag;
+}
+.trainer-boot-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 24px 40px;
+}
+.trainer-boot-shell {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.trainer-boot-head {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.trainer-boot-name {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: var(--fs-xl);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.trainer-boot-thesis {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--fs-base);
+  line-height: 1.7;
+}
+
+.trainer-boot-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.trainer-boot-step {
+  display: flex;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+}
+.trainer-boot-step-index {
+  flex: none;
+  width: 18px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  line-height: 1.6;
+}
+.trainer-boot-step-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.trainer-boot-step-title {
+  color: var(--text-primary);
+  font-size: var(--fs-md);
+  font-weight: 600;
+}
+.trainer-boot-step-body {
+  color: var(--text-secondary);
+  font-size: var(--fs-base);
+  line-height: 1.6;
+}
+
+.trainer-boot-status {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-start;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+}
+.trainer-boot-status--alone {
+  align-items: center;
+  text-align: center;
+  background: none;
+  border: none;
+}
+.trainer-boot-status-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+.trainer-boot-status-title {
+  color: var(--text-primary);
+  font-size: var(--fs-md);
+  font-weight: 600;
+}
+.trainer-boot-status-count {
+  color: var(--accent);
+  font-size: var(--fs-md);
+}
+.trainer-boot-status-detail {
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  line-height: 1.6;
+}
+
+.trainer-fill-pipeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+}
+.trainer-fill-phase {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+.trainer-fill-phase-bar {
+  height: 2px;
+  background: var(--border-strong);
+}
+.trainer-fill-phase-label {
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.trainer-fill-phase.is-done .trainer-fill-phase-bar {
+  background: var(--accent);
+  opacity: 0.4;
+}
+.trainer-fill-phase.is-active .trainer-fill-phase-bar {
+  background: var(--accent);
+  animation: trainer-fill-pulse 1.4s ease-in-out infinite;
+}
+.trainer-fill-phase.is-active .trainer-fill-phase-label {
+  color: var(--text-primary);
+}
+@keyframes trainer-fill-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .trainer-fill-phase.is-active .trainer-fill-phase-bar {
+    animation: none;
+  }
+}
 .trainer-header {
   display: flex;
   align-items: center;
