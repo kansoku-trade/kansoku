@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createMemoryRouter } from 'react-router';
 import type { DataRouter } from 'react-router';
 import { setActiveRouter, setNavigationInterceptor } from '../../lib/router';
-import { routes } from '../../generated-routes';
+import { getAppRoutes } from '../../lib/router/appRoutes';
 import { __setActiveTitleSink } from '../../lib/useTitle';
 import {
   getDesktopTabsBridge,
@@ -211,7 +211,7 @@ export function useTabsController(): TabsController {
     (tab: TabState): DataRouter => {
       const cached = routersRef.current.get(tab.id);
       if (cached) return cached;
-      const router = createMemoryRouter(routes, { initialEntries: [tab.route] });
+      const router = createMemoryRouter(getAppRoutes(), { initialEntries: [tab.route] });
       let lastRoute = tab.route;
       router.subscribe((state) => {
         const route = state.location.pathname + state.location.search;

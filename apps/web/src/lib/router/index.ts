@@ -2,12 +2,12 @@ import { useSyncExternalStore } from 'react';
 import { createBrowserRouter } from 'react-router';
 import type { DataRouter } from 'react-router';
 import { parseAppDeepLink } from '@kansoku/shared/appDeepLink';
-import { routes } from '../../generated-routes';
+import { getAppRoutes } from './appRoutes';
 
 let browserRouter: DataRouter | null = null;
 
 export function getBrowserRouter(): DataRouter {
-  browserRouter ??= createBrowserRouter(routes);
+  browserRouter ??= createBrowserRouter(getAppRoutes());
   return browserRouter;
 }
 

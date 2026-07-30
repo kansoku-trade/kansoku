@@ -509,6 +509,100 @@ a:hover {
   font-size: var(--fs-md);
 }
 
+.route-error {
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 24px;
+  background: var(--bg-canvas);
+}
+.route-error-panel {
+  width: 100%;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: inset 2px 0 0 var(--down);
+}
+.route-error-title {
+  color: var(--text-primary);
+  font-size: var(--fs-lg);
+  font-weight: 600;
+}
+.route-error-message {
+  font-family: var(--font-mono);
+  font-size: var(--fs-base);
+  line-height: 1.6;
+  color: var(--down);
+  overflow-wrap: anywhere;
+}
+.route-error-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.route-error-stack {
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+}
+.route-error-stack-summary {
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  cursor: pointer;
+  list-style: none;
+}
+.route-error-stack-summary::-webkit-details-marker {
+  display: none;
+}
+.route-error-stack-summary::before {
+  content: '▸ ';
+  color: var(--text-muted);
+}
+.route-error-stack[open] .route-error-stack-summary::before {
+  content: '▾ ';
+}
+.route-error-stack-body {
+  margin: 10px 0 0;
+  padding: 10px;
+  max-height: 220px;
+  overflow: auto;
+  background: var(--bg-canvas);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  line-height: 1.6;
+  color: var(--text-muted);
+  white-space: pre;
+}
+.route-error-reset {
+  align-self: flex-start;
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: var(--fs-sm);
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.route-error-reset:hover:not(:disabled) {
+  color: var(--text-secondary);
+}
+.route-error-reset:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
 .detail-topbar {
   display: flex;
   align-items: center;
