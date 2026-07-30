@@ -10,13 +10,14 @@ import { useOrderZone } from './useOrderZone';
 import { usePinnedPriceYs } from './usePinnedPriceY';
 
 export type LevelKind = 'target' | 'entry' | 'stop';
+// The entry is never grabbable: it is the fill price, not a level the trader places.
+export type DraggableKind = Exclude<LevelKind, 'entry'>;
 
 const PILL_MIN_GAP_PX = 26;
 const LANE_STEP_PX = 80;
 
-const LEVEL_LINE_COLOR: Record<LevelKind, string> = {
+const LEVEL_LINE_COLOR: Record<DraggableKind, string> = {
   target: theme.up,
-  entry: '#4a8cff',
   stop: theme.down,
 };
 
@@ -52,7 +53,11 @@ export interface TrainerOrderLevelsProps {
   stop: OrderLevel | null;
   filled?: boolean;
   zone?: OrderZoneData | null;
-  onDrag?: (kind: LevelKind, price: number) => void;
+  // A drawing tool and the levels both want pointerdown on this pane, so only one of them ever has
+  // it: while a tool is armed the hit bands and the TP/SL pulls come off entirely, rather than
+  // staying on screen as full-width strips that would swallow the stroke being drawn.
+  dragDisabled?: boolean;
+  onDrag?: (kind: DraggableKind, price: number) => void;
   onDragEnd?: () => void;
   onConfirm?: () => void;
   onRevert?: () => void;
@@ -72,6 +77,7 @@ export function TrainerOrderLevels({
   stop,
   filled = false,
   zone,
+  dragDisabled = false,
   onDrag,
   onDragEnd,
   onConfirm,
@@ -80,7 +86,7 @@ export function TrainerOrderLevels({
   dismiss,
 }: TrainerOrderLevelsProps) {
   const frame = useTrainerOverlayFrame();
-  const ys = usePinnedPriceYs(handle, frame, {
+  const { ys, pane } = usePinnedPriceYs(handle, frame, {
     target: target?.price ?? null,
     entry: entry?.price ?? null,
     stop: stop?.price ?? null,
@@ -93,12 +99,12 @@ export function TrainerOrderLevels({
   const endDragRef = useRef<(() => void) | null>(null);
   useEffect(() => () => endDragRef.current?.(), []);
 
-  const [draggingKind, setDraggingKind] = useState<LevelKind | null>(null);
+  const [draggingKind, setDraggingKind] = useState<DraggableKind | null>(null);
 
   // Dragging the pill, the hit band or a pull is the same gesture as dragging the line, so all
   // three go through the same price callback rather than a second path that could round
   // differently.
-  const startDrag = (kind: LevelKind) => (event: ReactPointerEvent<HTMLElement>) => {
+  const startDrag = (kind: DraggableKind) => (event: ReactPointerEvent<HTMLElement>) => {
     if (!handle || !onDrag) return;
     event.preventDefault();
     event.stopPropagation();
@@ -152,6 +158,10 @@ export function TrainerOrderLevels({
     window.addEventListener('pointercancel', up);
   };
 
+  const dragEnabled = Boolean(handle && onDrag) && !dragDisabled;
+
+  // A price can scale off the pane while still answering with a coordinate, which would put the
+  // line — and its grabbable band — over the price axis or down on the MACD chart below.
   const rows: { kind: LevelKind; level: OrderLevel; y: number; lane: number }[] = [];
   for (const [kind, level] of [
     ['target', target],
@@ -159,9 +169,11 @@ export function TrainerOrderLevels({
     ['stop', stop],
   ] as const) {
     const y = ys[kind];
-    if (level && y !== null) rows.push({ kind, level, y, lane: 0 });
+    if (!level || y === null || !pane) continue;
+    if (y < pane.top || y > pane.bottom) continue;
+    rows.push({ kind, level, y, lane: 0 });
   }
-  if (rows.length === 0) return null;
+  if (rows.length === 0 || !pane) return null;
 
   // A tight stop puts all three prices within a few pixels of each other, and three tickets stacked
   // on the same spot bury one another — the entry's own text and its close button end up unreadable
@@ -182,10 +194,12 @@ export function TrainerOrderLevels({
           kind={kind}
           level={level}
           y={y}
+          pane={pane}
           marginRight={70 + lane * LANE_STEP_PX}
           filled={filled && kind === 'entry'}
           dragging={draggingKind === kind}
-          startDrag={startDrag}
+          startDrag={dragEnabled ? startDrag : undefined}
+          onGrab={dragEnabled && level.draggable && kind !== 'entry' ? startDrag(kind) : undefined}
           onConfirm={onConfirm}
           onRevert={onRevert}
           submit={kind === 'entry' ? submit : undefined}

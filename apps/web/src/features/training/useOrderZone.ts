@@ -2,10 +2,7 @@ import { useEffect, useRef } from 'react';
 import { OrderZonePrimitive, type OrderZoneData } from '../charts/intraday/orderZonePrimitive';
 import type { DrawingChartHandle } from '../charts/intraday/useIntradayCharts';
 
-export function useOrderZone(
-  handle: DrawingChartHandle | null,
-  data: OrderZoneData | null,
-): void {
+export function useOrderZone(handle: DrawingChartHandle | null, data: OrderZoneData | null): void {
   const primitiveRef = useRef<OrderZonePrimitive | null>(null);
 
   useEffect(() => {

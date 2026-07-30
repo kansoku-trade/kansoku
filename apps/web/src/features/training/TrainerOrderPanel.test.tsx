@@ -109,7 +109,7 @@ interface FakePriceLine {
 
 // Linear price/pixel map (y = 300 - price) so the drag math is checkable by hand: the base close
 // is $100, so the entry line sits at y=200 and a press at y=210 is a $90 stop.
-function makeHandle() {
+function makeHandle(paneSize = { width: 236, height: 274 }) {
   const container = document.createElement('div');
   container.getBoundingClientRect = () =>
     ({ top: 0, left: 0, right: 300, bottom: 300, width: 300, height: 300, x: 0, y: 0 }) as DOMRect;
@@ -138,7 +138,9 @@ function makeHandle() {
     createPriceLine,
     removePriceLine,
   };
-  const chart = { applyOptions: vi.fn() };
+  // Narrower and shorter than the 300x300 container: the price axis on the right and the time axis
+  // below are outside the pane, and nothing grabbable may reach into them.
+  const chart = { applyOptions: vi.fn(), paneSize: () => paneSize };
   const handle = { chart, series, container } as unknown as DrawingChartHandle;
   return { handle, container, series, chart, zonePrimitives, priceLines };
 }
@@ -194,8 +196,14 @@ function arm(direction: '做多' | '做空' = '做多') {
   fireEvent.click(screen.getByRole('button', { name: direction }));
 }
 
-function dragOnChart(container: HTMLElement, fromY: number, toY: number, frames = 1) {
-  fireEvent.pointerDown(container, { clientY: fromY });
+function hitBand(kind: 'target' | 'stop'): HTMLElement | null {
+  return document.querySelector(`.trainer-level--${kind} .trainer-level-hit`);
+}
+
+// The full-width band is the whole grabbable line and the only surface a real pointer can land on,
+// so every level drag below is driven through it rather than through the canvas.
+function dragBand(kind: 'target' | 'stop', fromY: number, toY: number, frames = 1) {
+  fireEvent.pointerDown(hitBand(kind)!, { clientY: fromY });
   for (let i = 1; i <= frames; i += 1) {
     fireEvent.pointerMove(window, { clientY: fromY + ((toY - fromY) * i) / frames });
   }
@@ -221,12 +229,7 @@ function pull(handle: 'TP' | 'SL', toY: number, frames = 1) {
   fireEvent.pointerUp(window, { clientY: toY });
 }
 
-function placeOrder(
-  _container: HTMLElement,
-  stopY: number,
-  targetY: number,
-  direction: '做多' | '做空' = '做多',
-) {
+function placeOrder(stopY: number, targetY: number, direction: '做多' | '做空' = '做多') {
   arm(direction);
   pull('SL', stopY);
   pull('TP', targetY);
@@ -374,10 +377,10 @@ function draftFor(direction: '做多' | '做空') {
   return button && !button.disabled ? button : null;
 }
 
-// The position box edges are dragged now that the number fields are gone; makeHandle maps
-// y = 300 - price, so a level move is expressible as the two prices it goes between.
-function dragLevel(container: HTMLElement, fromPrice: number, toPrice: number) {
-  dragOnChart(container, 300 - fromPrice, 300 - toPrice);
+// makeHandle maps y = 300 - price, so a level move is expressible as the two prices it goes
+// between.
+function dragLevel(kind: 'target' | 'stop', fromPrice: number, toPrice: number) {
+  dragBand(kind, 300 - fromPrice, 300 - toPrice);
 }
 
 function typeNote(text: string, label = '备注') {
@@ -431,11 +434,11 @@ describe('TrainerOrderPanel direction choice', () => {
   });
 
   it('reads the same drag as a short once 做空 is the picked side', () => {
-    const { handle, container } = makeHandle();
+    const { handle } = makeHandle();
     const { bridge } = makeBridge();
     renderPanel(makeView(), bridge, handle);
 
-    placeOrder(container, 190, 225, '做空');
+    placeOrder(190, 225, '做空');
 
     expect(screen.getByText('止损 110.00')).toBeTruthy();
     expect(screen.getByText('目标 75.00')).toBeTruthy();
@@ -443,10 +446,10 @@ describe('TrainerOrderPanel direction choice', () => {
   });
 
   it('switches side and drops the drawn lines when the other direction is picked', () => {
-    const { handle, container } = makeHandle();
+    const { handle } = makeHandle();
     const { bridge } = makeBridge();
     renderPanel(makeView(), bridge, handle);
-    placeOrder(container, 210, 175);
+    placeOrder(210, 175);
     expect(draftFor('做多')).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: '做空' }));
@@ -461,10 +464,10 @@ describe('TrainerOrderPanel direction choice', () => {
   });
 
   it('drops the whole plan when the picked side is pressed again', () => {
-    const { handle, container } = makeHandle();
+    const { handle } = makeHandle();
     const { bridge } = makeBridge();
     renderPanel(makeView(), bridge, handle);
-    placeOrder(container, 210, 175);
+    placeOrder(210, 175);
 
     fireEvent.click(screen.getByRole('button', { name: '做多' }));
 
@@ -496,11 +499,11 @@ describe('TrainerOrderPanel direction choice', () => {
 
 describe('TrainerOrderPanel placement drag', () => {
   it('takes the press as the stop and the release as the target', () => {
-    const { handle, container } = makeHandle();
+    const { handle } = makeHandle();
     const { bridge } = makeBridge();
     renderPanel(makeView(), bridge, handle);
 
-    placeOrder(container, 210, 175);
+    placeOrder(210, 175);
 
     expect(screen.getByText('止损 90.00')).toBeTruthy();
     expect(screen.getByText('目标 125.00')).toBeTruthy();
@@ -603,24 +606,25 @@ describe('TrainerOrderPanel placement drag', () => {
     expect(levelPill('stop')?.textContent).toContain('100.01');
   });
 
-  it('ignores pointer events on the chart until a side is picked', () => {
-    const { handle, container } = makeHandle();
+  // Nothing on the chart is grabbable before a side is picked: there is no line to grab, so the
+  // pane belongs entirely to panning and to the drawing tools.
+  it('puts no grabbable band on the chart until a side is picked', () => {
+    const { handle } = makeHandle();
     const { bridge } = makeBridge();
     renderPanel(makeView(), bridge, handle);
 
-    dragOnChart(container, 210, 175);
-
+    expect(document.querySelectorAll('.trainer-level-hit')).toHaveLength(0);
     expect(screen.queryByText(/^止损 /)).toBeNull();
   });
 
   // Panning is the trader's, not the order tool's: a drawing tool is the only thing that still
   // claims the canvas, and placing an order no longer touches it at any point.
   it('leaves chart panning alone through a whole placement', () => {
-    const { handle, container, chart } = makeHandle();
+    const { handle, chart } = makeHandle();
     const { bridge } = makeBridge();
     renderPanel(makeView(), bridge, handle);
 
-    placeOrder(container, 210, 175);
+    placeOrder(210, 175);
 
     expect(chart.applyOptions).not.toHaveBeenCalledWith({
       handleScroll: false,
@@ -629,15 +633,13 @@ describe('TrainerOrderPanel placement drag', () => {
   });
 
   it('keeps adjusting the drawn lines by their handles after the drag settles', () => {
-    const { handle, container } = makeHandle();
+    const { handle } = makeHandle();
     const { bridge } = makeBridge();
     renderPanel(makeView(), bridge, handle);
-    placeOrder(container, 210, 175);
+    placeOrder(210, 175);
 
-    // stop 90 sits at y=210 under the linear map; grab that edge and pull it up to 95.
-    fireEvent.pointerDown(container, { clientY: 210 });
-    fireEvent.pointerMove(window, { clientY: 205 });
-    fireEvent.pointerUp(window, { clientY: 205 });
+    // stop 90 sits at y=210 under the linear map; grab that line and pull it up to 95.
+    dragBand('stop', 210, 205);
 
     expect(screen.getByText('止损 95.00')).toBeTruthy();
     expect(screen.getByText('目标 125.00')).toBeTruthy();
@@ -647,14 +649,12 @@ describe('TrainerOrderPanel placement drag', () => {
   // A handle drag is fine-tuning, not a fresh direction call, so the stop may not cross to the
   // other side of entry and silently turn a long into something else.
   it('will not let a handle drag push the stop across the entry line', () => {
-    const { handle, container } = makeHandle();
+    const { handle } = makeHandle();
     const { bridge } = makeBridge();
     renderPanel(makeView(), bridge, handle);
-    placeOrder(container, 210, 175);
+    placeOrder(210, 175);
 
-    fireEvent.pointerDown(container, { clientY: 210 });
-    fireEvent.pointerMove(window, { clientY: 150 });
-    fireEvent.pointerUp(window, { clientY: 150 });
+    dragBand('stop', 210, 150);
 
     expect(screen.getByText('止损 99.99')).toBeTruthy();
     expect(draftFor('做多')).toBeTruthy();
@@ -663,10 +663,10 @@ describe('TrainerOrderPanel placement drag', () => {
   // The plan is re-read against the live price every render: once price runs past the target the
   // drawn lines no longer describe a long, and must stop offering to send one.
   it('withdraws a drawn order the price has since run past', () => {
-    const { handle, container } = makeHandle();
+    const { handle } = makeHandle();
     const { bridge } = makeBridge();
     const { rerender } = renderPanel(makeView(), bridge, handle);
-    placeOrder(container, 210, 175);
+    placeOrder(210, 175);
     expect(draftFor('做多')).toBeTruthy();
 
     const moved = [bar('2026-01-05T14:00:00.000Z', 130), bar('2026-01-05T14:05:00.000Z', 130)];
@@ -687,11 +687,11 @@ describe('TrainerOrderPanel placement drag', () => {
 
 describe('TrainerOrderPanel submit', () => {
   it('sends a market order whose entry_plan matches the three prices on screen', async () => {
-    const { handle, container } = makeHandle();
+    const { handle } = makeHandle();
     const { bridge, submit } = makeBridge();
     renderPanel(makeView(), bridge, handle);
 
-    placeOrder(container, 210, 175);
+    placeOrder(210, 175);
     fireEvent.change(note(), {
       target: { value: '5 分钟突破前高，放量确认' },
     });
@@ -716,11 +716,11 @@ describe('TrainerOrderPanel submit', () => {
   });
 
   it('sends the short the drag drew', async () => {
-    const { handle, container } = makeHandle();
+    const { handle } = makeHandle();
     const { bridge, submit } = makeBridge();
     renderPanel(makeView(), bridge, handle);
 
-    placeOrder(container, 190, 225, '做空');
+    placeOrder(190, 225, '做空');
     fireEvent.change(note(), { target: { value: '跌破颈线，放量' } });
     fireEvent.click(screen.getByRole('button', { name: '入场做空 1/2' }));
 
@@ -738,11 +738,11 @@ describe('TrainerOrderPanel submit', () => {
     ['入场做多 1/2', 0.5],
     ['入场做多 1/4', 0.25],
   ])('the %s button sends size %s', async (name, size) => {
-    const { handle, container } = makeHandle();
+    const { handle } = makeHandle();
     const { bridge, submit } = makeBridge();
     renderPanel(makeView(), bridge, handle);
 
-    placeOrder(container, 210, 175);
+    placeOrder(210, 175);
     fireEvent.change(note(), { target: { value: '突破前高' } });
     fireEvent.click(screen.getByRole('button', { name }));
 
@@ -750,11 +750,11 @@ describe('TrainerOrderPanel submit', () => {
   });
 
   it('sends the entry with no reason typed at all', async () => {
-    const { handle, container } = makeHandle();
+    const { handle } = makeHandle();
     const { bridge, submit } = makeBridge();
     renderPanel(makeView(), bridge, handle);
 
-    placeOrder(container, 210, 175);
+    placeOrder(210, 175);
     const full = screen.getByRole('button', { name: '入场做多 全仓' }) as HTMLButtonElement;
     expect(full.disabled).toBe(false);
     fireEvent.click(full);
@@ -772,7 +772,7 @@ describe('TrainerOrderPanel submit', () => {
   // looking at is the fill's, not the submit's — applying the submit's would leave them staring at
   // a resting order that has in fact already filled.
   it('applies the filled view, not the resting one the submit returned', async () => {
-    const { handle, container } = makeHandle();
+    const { handle } = makeHandle();
     const pendingView = makeView({ phase: 'pending' });
     const filledView = makeOpenView('long', 102);
     const submit = vi.fn(async () => okResult(pendingView));
@@ -794,7 +794,7 @@ describe('TrainerOrderPanel submit', () => {
       { wrapper: Overlay },
     );
 
-    placeOrder(container, 210, 175);
+    placeOrder(210, 175);
     typeNote('突破前高');
     fireEvent.click(screen.getByRole('button', { name: '入场做多 全仓' }));
 
@@ -814,7 +814,7 @@ describe('TrainerOrderPanel submit', () => {
   });
 
   it('says the fill happened even when the same bar also ends the trade', async () => {
-    const { handle, container } = makeHandle();
+    const { handle } = makeHandle();
     const submit = vi.fn(async () => okResult(makeView({ phase: 'pending' })));
     const events: TrainerStepEvent[] = [
       { barOffset: 1, cursor: 2, at: '2026-01-05T14:10:00.000Z', event: 'stop_hit' },
@@ -835,7 +835,7 @@ describe('TrainerOrderPanel submit', () => {
       { wrapper: Overlay },
     );
 
-    placeOrder(container, 210, 175);
+    placeOrder(210, 175);
     fireEvent.click(screen.getByRole('button', { name: '入场做多 全仓' }));
 
     await waitFor(() =>
@@ -873,12 +873,12 @@ describe('TrainerOrderPanel non-flat phase', () => {
 
 describe('TrainerOrderPanel TD-RR-01 gate', () => {
   it('locks every entry button and warns the target just below the 1.5:1 floor', () => {
-    const { handle, container } = makeHandle();
+    const { handle } = makeHandle();
     const { bridge, submit } = makeBridge();
     renderPanel(makeView(), bridge, handle);
 
     // stop 90 (y=210), target 114.99 (y=185.01) → 14.99 / 10 = 1.499
-    placeOrder(container, 210, 185.01);
+    placeOrder(210, 185.01);
 
     for (const name of ['入场做多 全仓', '入场做多 1/2', '入场做多 1/4']) {
       expect((screen.getByRole('button', { name }) as HTMLButtonElement).disabled).toBe(true);
@@ -893,12 +893,12 @@ describe('TrainerOrderPanel TD-RR-01 gate', () => {
   });
 
   it('unlocks exactly at the 1.5:1 floor', () => {
-    const { handle, container } = makeHandle();
+    const { handle } = makeHandle();
     const { bridge } = makeBridge();
     renderPanel(makeView(), bridge, handle);
 
     // stop 90 (y=210), target 115 (y=185) → 15 / 10 = 1.5
-    placeOrder(container, 210, 185);
+    placeOrder(210, 185);
 
     for (const name of ['入场做多 全仓', '入场做多 1/2', '入场做多 1/4']) {
       expect((screen.getByRole('button', { name }) as HTMLButtonElement).disabled).toBe(false);
@@ -923,11 +923,11 @@ describe('TrainerOrderPanel TD-RR-01 gate', () => {
   // The gate is about risk, not paperwork: a plan below the floor stays locked however much the
   // trader writes, and a plan above it is sendable with nothing written at all.
   it('stays keyed to the ratio alone, not to the entry reason', () => {
-    const { handle, container } = makeHandle();
+    const { handle } = makeHandle();
     const { bridge, submit } = makeBridge();
     renderPanel(makeView(), bridge, handle);
 
-    placeOrder(container, 210, 185.01);
+    placeOrder(210, 185.01);
     const full = screen.getByRole('button', { name: '入场做多 全仓' }) as HTMLButtonElement;
     expect(full.disabled).toBe(true);
 
@@ -1074,23 +1074,25 @@ describe('TrainerOrderPanel position sizing', () => {
   });
 });
 
+// Driven through the hit band, which is the only surface a real pointer can land on: a discipline
+// assertion that rides a path no pointer takes proves nothing about the shipped behaviour.
 describe('TrainerOrderPanel TD-EXIT-01 gate (position amend)', () => {
   it('long: unlocks confirm at breakeven and above, and blocks on the engine refusal below it', async () => {
-    const { handle, container } = makeHandle();
+    const { handle } = makeHandle();
     const view = makeOpenView('long', 102); // entry 100 / stop 99 / reference 102 (past 1R)
     const { bridge, amend } = makeAmendBridge(makeOpenView('long', 102), REFUSE_BELOW);
     renderPanel(view, bridge, handle);
     typeNote('止损上移锁利');
 
-    dragLevel(container, 99, 100);
+    dragLevel('stop', 99, 100);
     await waitFor(() => expect(confirmAmend().disabled).toBe(false));
 
-    dragLevel(container, 100, 100.5);
+    dragLevel('stop', 100, 100.5);
     await waitFor(() => expect(confirmAmend().disabled).toBe(false));
 
     // The dragged level is no longer snapped back to the committed stop — the chip shows what the
     // trader asked for, and the engine's own refusal is what stops it reaching the session.
-    dragLevel(container, 100.5, 97);
+    dragLevel('stop', 100.5, 97);
     // From-then-to, in the direction the move actually happens: a ticket reading "97.00 | 99.00 →"
     // points its arrow at nothing.
     expect(pendingPill()?.textContent).toMatch(/99\.00\s*→\s*97\.00/);
@@ -1102,19 +1104,19 @@ describe('TrainerOrderPanel TD-EXIT-01 gate (position amend)', () => {
   });
 
   it('short: unlocks confirm at breakeven and below, and blocks on the engine refusal above it', async () => {
-    const { handle, container } = makeHandle();
+    const { handle } = makeHandle();
     const view = makeOpenView('short', 98); // entry 100 / stop 101 / reference 98 (past 1R)
     const { bridge, amend } = makeAmendBridge(makeOpenView('short', 98), REFUSE_ABOVE);
     renderPanel(view, bridge, handle);
     typeNote('止损下移锁利');
 
-    dragLevel(container, 101, 100);
+    dragLevel('stop', 101, 100);
     await waitFor(() => expect(confirmAmend().disabled).toBe(false));
 
-    dragLevel(container, 100, 99.5);
+    dragLevel('stop', 100, 99.5);
     await waitFor(() => expect(confirmAmend().disabled).toBe(false));
 
-    dragLevel(container, 99.5, 102);
+    dragLevel('stop', 99.5, 102);
     expect(pendingPill()?.textContent).toMatch(/101\.00\s*→\s*102\.00/);
     await waitFor(() => expect(confirmAmend().disabled).toBe(true));
     expect(screen.getByRole('status').textContent).toContain('stays above the 100 entry');
@@ -1124,14 +1126,14 @@ describe('TrainerOrderPanel TD-EXIT-01 gate (position amend)', () => {
   });
 
   it('asks the engine once the drag settles, never while the pointer is moving', async () => {
-    const { handle, container } = makeHandle();
+    const { handle } = makeHandle();
     const view = makeOpenView('long', 102);
     const { bridge, validateAmend } = makeAmendBridge(makeOpenView('long', 102), REFUSE_BELOW);
     renderPanel(view, bridge, handle);
     await waitFor(() => expect(validateAmend).toHaveBeenCalledTimes(1));
 
     // stop 99 sits at y=201 under the linear map; drag it down through twelve frames.
-    fireEvent.pointerDown(container, { clientY: 201 });
+    fireEvent.pointerDown(hitBand('stop')!, { clientY: 201 });
     for (let y = 202; y <= 213; y += 1) fireEvent.pointerMove(window, { clientY: y });
     expect(validateAmend).toHaveBeenCalledTimes(1);
     expect(pendingPill()?.textContent).toMatch(/99\.00\s*→\s*87\.00/);
@@ -1167,14 +1169,14 @@ describe('TrainerOrderPanel TD-EXIT-01 gate (position amend)', () => {
   });
 
   it('keeps confirm locked while an edit is still waiting on its verdict', async () => {
-    const { handle, container } = makeHandle();
+    const { handle } = makeHandle();
     const view = makeOpenView('long', 102);
     const { bridge, validateAmend } = makeAmendBridge(view);
     renderPanel(view, bridge, handle);
     typeNote('止损上移锁利');
     await waitFor(() => expect(validateAmend).toHaveBeenCalledTimes(1));
 
-    dragLevel(container, 99, 100.5);
+    dragLevel('stop', 99, 100.5);
     expect(confirmAmend().disabled).toBe(true);
     expect(screen.getByText('校验中…')).toBeTruthy();
 
@@ -1182,7 +1184,7 @@ describe('TrainerOrderPanel TD-EXIT-01 gate (position amend)', () => {
   });
 
   it('submits the amended stop/target with the entered reason and applies the returned view', async () => {
-    const { handle, container } = makeHandle();
+    const { handle } = makeHandle();
     const view = makeOpenView('long', 102);
     const nextView = makeOpenView('long', 102);
     const { bridge, amend } = makeAmendBridge(nextView);
@@ -1198,7 +1200,7 @@ describe('TrainerOrderPanel TD-EXIT-01 gate (position amend)', () => {
       { wrapper: Overlay },
     );
 
-    dragLevel(container, 99, 100.5);
+    dragLevel('stop', 99, 100.5);
     typeNote('止损上移到 100.5 锁利');
     await waitFor(() => expect(confirmAmend().disabled).toBe(false));
     fireEvent.click(confirmAmend());
@@ -1301,12 +1303,12 @@ describe('TrainerOrderPanel optional reasons', () => {
   });
 
   it('leaves the amend confirm unlocked with no reason typed', async () => {
-    const { handle, container } = makeHandle();
+    const { handle } = makeHandle();
     const view = makeOpenView('long', 102);
     const { bridge, amend } = makeAmendBridge(view);
     renderPanel(view, bridge, handle);
 
-    dragLevel(container, 99, 100.5);
+    dragLevel('stop', 99, 100.5);
     await waitFor(() => expect(confirmAmend().disabled).toBe(false));
     fireEvent.click(confirmAmend());
 
@@ -1338,11 +1340,11 @@ describe('TrainerOrderPanel optional reasons', () => {
   // 'risk_management' / 'thesis_invalidated' describe a judgment. Recording one for a field the
   // trader left blank would put words in their mouth.
   it('never labels an unwritten reason with the category the field was typed under', async () => {
-    const { handle, container } = makeHandle();
+    const { handle } = makeHandle();
     const { bridge, amend } = makeAmendBridge(makeOpenView('long', 102));
     renderPanel(makeOpenView('long', 102), bridge, handle);
 
-    dragLevel(container, 99, 100.5);
+    dragLevel('stop', 99, 100.5);
     await waitFor(() => expect(confirmAmend().disabled).toBe(false));
     fireEvent.click(confirmAmend());
 
@@ -1358,14 +1360,14 @@ describe('TrainerOrderPanel position box lifecycle', () => {
   // The chart outlives this panel: it stays mounted through the switch to the settlement screen, so
   // a level left behind would paint on the settlement chart as a position that was never taken.
   it('leaves no level behind when the panel unmounts', () => {
-    const { handle, container } = makeHandle();
+    const { handle } = makeHandle();
     const { bridge } = makeBridge();
     const { unmount } = renderPanel(makeView(), bridge, handle);
 
     // Nothing is drawn until an order is being placed — an untouched trainer shows a clean chart.
     expect(document.querySelectorAll('.trainer-level')).toHaveLength(0);
 
-    placeOrder(container, 210, 175);
+    placeOrder(210, 175);
     expect(document.querySelectorAll('.trainer-level').length).toBeGreaterThan(0);
 
     unmount();
@@ -1387,12 +1389,12 @@ describe('TrainerOrderPanel position box lifecycle', () => {
   });
 
   it('puts what each level is worth on its own ticket, with the stop at exactly -1R', () => {
-    const { handle, container } = makeHandle();
+    const { handle } = makeHandle();
     const { bridge } = makeBridge();
     renderPanel(makeView(), bridge, handle);
 
     // entry 100, stop 90 (risk 10), target 125 -> +2.5R
-    placeOrder(container, 210, 175);
+    placeOrder(210, 175);
 
     fireEvent.pointerEnter(levelPill('stop')!);
     expect(levelPill('stop')?.textContent).toContain('-1.0R');
@@ -1405,11 +1407,11 @@ describe('TrainerOrderPanel position box lifecycle', () => {
 
 describe('TrainerOrderPanel order zone primitive', () => {
   it('feeds the primitive the prices the drag puts on the ticket, and keeps it live as they move', () => {
-    const { handle, container, zonePrimitives } = makeHandle();
+    const { handle, zonePrimitives } = makeHandle();
     const { bridge } = makeBridge();
     renderPanel(makeView(), bridge, handle);
 
-    placeOrder(container, 210, 175);
+    placeOrder(210, 175);
     expect(currentZone(zonePrimitives)).toMatchObject({
       entry: 100,
       stop: 90,
@@ -1420,9 +1422,7 @@ describe('TrainerOrderPanel order zone primitive', () => {
       belowFloor: false,
     });
 
-    fireEvent.pointerDown(container, { clientY: 210 });
-    fireEvent.pointerMove(window, { clientY: 205 });
-    fireEvent.pointerUp(window, { clientY: 205 });
+    dragBand('stop', 210, 205);
 
     expect(currentZone(zonePrimitives)?.stop).toBe(95);
   });
@@ -1469,6 +1469,64 @@ describe('TrainerOrderPanel order zone primitive', () => {
     expect(zone?.filled).toBe(true);
     expect(zone?.startTime).toBe(sec('2026-01-05T14:00:00.000Z'));
     expect(zone?.startTime).not.toBe(sec('2026-01-05T14:05:00.000Z'));
+  });
+
+  // Every other fixture here aliases bars.mid/top to bars.base, which hides the whole class of bug
+  // where the anchor is a base-period timestamp that no aggregated tier holds as a bar time.
+  it('hands over the base cursor bar time even when the tiers are genuinely distinct', () => {
+    const { handle, zonePrimitives } = makeHandle();
+    const { bridge } = makeBridge();
+    const base = [
+      bar('2026-01-05T14:00:00.000Z', 100),
+      bar('2026-01-05T14:05:00.000Z', 100),
+      bar('2026-01-05T14:10:00.000Z', 100),
+    ];
+    const aggregated = [bar('2026-01-05T14:00:00.000Z', 100)];
+    const view = makeView({
+      bars: { base, mid: aggregated, top: aggregated },
+      cursor: base.length - 1,
+      asOf: base.at(-1)!.time,
+    });
+    renderPanel(view, bridge, handle);
+
+    arm();
+    pull('SL', 210);
+
+    // 14:10 is a 5m bar sitting inside the 15m/1h bucket that opened at 14:00. The panel hands over
+    // the base bar either way; snapping it onto whichever tier is displayed is the primitive's job.
+    expect(currentZone(zonePrimitives)?.startTime).toBe(sec('2026-01-05T14:10:00.000Z'));
+    expect(currentZone(zonePrimitives)?.startTime).not.toBe(sec('2026-01-05T14:00:00.000Z'));
+  });
+});
+
+describe('TrainerOrderLevels stay inside the candle pane', () => {
+  it('stops the hit band at the pane edge instead of spanning the whole overlay', () => {
+    const { handle } = makeHandle();
+    const { bridge } = makeBridge();
+    renderPanel(makeView(), bridge, handle);
+
+    placeOrder(210, 175);
+
+    // The chart element is 300 wide; the ~64px the price axis occupies is not the band's to take,
+    // and drag-to-rescale there belongs to the axis.
+    expect(hitBand('stop')!.style.left).toBe('0px');
+    expect(hitBand('stop')!.style.width).toBe('236px');
+  });
+
+  it('drops a level whose price has scaled off the pane rather than drawing it below the pane', () => {
+    const { handle, zonePrimitives } = makeHandle();
+    const { bridge } = makeBridge();
+    renderPanel(makeView(), bridge, handle);
+
+    // y = 280 is past the 274px candle pane — on the real chart that is the MACD chart underneath.
+    placeOrder(280, 175);
+
+    // The stop is placed and still drives the plan; it is only its line that has nowhere to go.
+    expect(currentZone(zonePrimitives)?.stop).toBe(20);
+    expect(levelPill('entry')).toBeTruthy();
+    expect(levelPill('target')).toBeTruthy();
+    expect(levelPill('stop')).toBeNull();
+    expect(hitBand('stop')).toBeNull();
   });
 });
 
@@ -1522,7 +1580,7 @@ describe('TrainerOrderPanel quick market entry', () => {
   });
 
   it('re-locks the size presets when the auto stop is dragged past the ratio floor', () => {
-    const { handle, container } = makeHandle();
+    const { handle } = makeHandle();
     const { bridge } = makeBridge();
     renderPanel(makeView(), bridge, handle);
 
@@ -1534,7 +1592,7 @@ describe('TrainerOrderPanel quick market entry', () => {
 
     // Dragged to 97.00 (y=203) the risk becomes 3.00 while the auto target still sits 3.03 away,
     // which is 1.01 : 1 — under the floor the auto-filled pair was built to clear.
-    dragOnChart(container, 300 - 98.49, 203);
+    dragBand('stop', 300 - 98.49, 203);
 
     expect(screen.getByText('止损 97.00')).toBeTruthy();
     expect(screen.getByText(/盈亏比/).textContent).toContain('1.01 : 1');
@@ -1559,12 +1617,15 @@ describe('TrainerOrderPanel quick market entry', () => {
 });
 
 describe('TrainerOrderPanel pointer arbitration with the drawing tools', () => {
-  it('detaches the placement drag while a drawing tool owns the chart', () => {
-    const { handle, container } = makeHandle();
+  it('takes the TP/SL pulls off the ticket while a drawing tool owns the chart', () => {
+    const { handle } = makeHandle();
     const { bridge } = makeBridge();
     const { rerender } = renderPanel(makeView(), bridge, handle);
 
     arm();
+    hoverEntry();
+    expect(screen.getByRole('button', { name: '拖出SL' })).toBeTruthy();
+
     rerender(
       <TrainerOrderPanel
         view={makeView()}
@@ -1576,17 +1637,21 @@ describe('TrainerOrderPanel pointer arbitration with the drawing tools', () => {
       />,
     );
 
-    dragOnChart(container, 210, 175);
+    hoverEntry();
+    expect(screen.queryByRole('button', { name: '拖出SL' })).toBeNull();
     expect(screen.queryByText(/^止损 /)).toBeNull();
   });
 
-  it('detaches the stop/target handles while a drawing tool owns the chart', () => {
-    const { handle, container } = makeHandle();
+  // The band is full-pane-width and invisible, so leaving it attached while a tool is armed would
+  // swallow the stroke the trader is trying to draw — and move the level instead.
+  it('takes the stop/target hit bands off the chart while a drawing tool owns it', () => {
+    const { handle } = makeHandle();
     const { bridge } = makeBridge();
     const { rerender } = renderPanel(makeView(), bridge, handle);
 
-    placeOrder(container, 210, 175);
+    placeOrder(210, 175);
     expect(screen.getByText('止损 90.00')).toBeTruthy();
+    expect(hitBand('stop')).toBeTruthy();
 
     rerender(
       <TrainerOrderPanel
@@ -1598,7 +1663,15 @@ describe('TrainerOrderPanel pointer arbitration with the drawing tools', () => {
         drawingActive
       />,
     );
-    dragOnChart(container, 210, 205);
+
+    expect(hitBand('stop')).toBeNull();
+    expect(hitBand('target')).toBeNull();
+
+    // The pill is the other surface that used to start the same drag, so it has to be inert too.
+    const stopPill = levelPill('stop')!;
+    fireEvent.pointerDown(stopPill, { clientY: 210 });
+    fireEvent.pointerMove(window, { clientY: 205 });
+    fireEvent.pointerUp(window, { clientY: 205 });
 
     expect(screen.getByText('止损 90.00')).toBeTruthy();
   });
@@ -1646,11 +1719,11 @@ describe('TrainerOrderPanel pointer arbitration with the drawing tools', () => {
 
 describe('TrainerOrderLevels collapsed label and hit band', () => {
   it('collapses to the grip and the price until the label is pointed at', () => {
-    const { handle, container } = makeHandle();
+    const { handle } = makeHandle();
     const { bridge } = makeBridge();
     renderPanel(makeView(), bridge, handle);
 
-    placeOrder(container, 210, 175);
+    placeOrder(210, 175);
     const entryPill = levelPill('entry')!;
     fireEvent.pointerLeave(entryPill);
 
@@ -1660,11 +1733,11 @@ describe('TrainerOrderLevels collapsed label and hit band', () => {
   });
 
   it('expands on hover, bringing back the size presets and the close button', () => {
-    const { handle, container } = makeHandle();
+    const { handle } = makeHandle();
     const { bridge } = makeBridge();
     renderPanel(makeView(), bridge, handle);
 
-    placeOrder(container, 210, 175);
+    placeOrder(210, 175);
     const entryPill = levelPill('entry')!;
     fireEvent.pointerLeave(entryPill);
     expect(screen.queryByRole('button', { name: '入场做多 全仓' })).toBeNull();
@@ -1675,11 +1748,11 @@ describe('TrainerOrderLevels collapsed label and hit band', () => {
   });
 
   it('expands on keyboard focus, and only collapses once focus leaves the whole label', () => {
-    const { handle, container } = makeHandle();
+    const { handle } = makeHandle();
     const { bridge } = makeBridge();
     renderPanel(makeView(), bridge, handle);
 
-    placeOrder(container, 210, 175);
+    placeOrder(210, 175);
     const entryPill = levelPill('entry')!;
     fireEvent.pointerLeave(entryPill);
     expect(screen.queryByRole('button', { name: '入场做多 全仓' })).toBeNull();
@@ -1698,11 +1771,11 @@ describe('TrainerOrderLevels collapsed label and hit band', () => {
   });
 
   it('expands when the pointer enters the hit band, not only the pill', () => {
-    const { handle, container } = makeHandle();
+    const { handle } = makeHandle();
     const { bridge } = makeBridge();
     renderPanel(makeView(), bridge, handle);
 
-    placeOrder(container, 210, 175);
+    placeOrder(210, 175);
     const stopHit = document.querySelector(
       '.trainer-level--stop .trainer-level-hit',
     ) as HTMLElement;
@@ -1717,11 +1790,11 @@ describe('TrainerOrderLevels collapsed label and hit band', () => {
   });
 
   it('keeps a label expanded through a drag started from the hit band, after the pointer leaves it', () => {
-    const { handle, container } = makeHandle();
+    const { handle } = makeHandle();
     const { bridge } = makeBridge();
     renderPanel(makeView(), bridge, handle);
 
-    placeOrder(container, 210, 175);
+    placeOrder(210, 175);
     const stopHit = document.querySelector(
       '.trainer-level--stop .trainer-level-hit',
     ) as HTMLElement;
@@ -1748,27 +1821,20 @@ describe('TrainerOrderLevels collapsed label and hit band', () => {
   });
 
   it('offsets two levels closer than PILL_MIN_GAP_PX by the 80px lane step', () => {
-    const { handle, container } = makeHandle();
+    const { handle } = makeHandle();
     const { bridge } = makeBridge();
     renderPanel(makeView(), bridge, handle);
 
     // stop 97 (y=203) sits only 3px from entry's y=200, well under the 26px PILL_MIN_GAP_PX floor.
-    placeOrder(container, 203, 150);
+    placeOrder(203, 150);
 
     expect(levelPill('stop')?.style.marginRight).toBe('150px');
     expect(levelPill('entry')?.style.marginRight).toBe('70px');
   });
 });
 
-function hitBand(kind: 'target' | 'stop'): HTMLElement {
-  return document.querySelector(`.trainer-level--${kind} .trainer-level-hit`) as HTMLElement;
-}
-
 // TD-EXIT-01 allows trailing a stop to breakeven or better; nothing in TrainerOrderLevels may
-// clamp a level at the entry line, since an open position's stop must be free to cross it. The
-// hit band is what a real pointer actually lands on (Task 3), so these drive the drag through it
-// directly rather than through dragLevel/dragOnChart, which exercises the separate, non-operative
-// useOrderBoxDrag path instead.
+// clamp a level at the entry line, since an open position's stop must be free to cross it.
 describe('TrainerOrderLevels hit-band drag on an open position (TD-EXIT-01)', () => {
   it('lets a profitable long stop be dragged past its entry through the hit band, unclamped', () => {
     const { handle } = makeHandle();
@@ -1776,9 +1842,7 @@ describe('TrainerOrderLevels hit-band drag on an open position (TD-EXIT-01)', ()
     const { bridge } = makeAmendBridge(view);
     renderPanel(view, bridge, handle);
 
-    fireEvent.pointerDown(hitBand('stop'), { clientY: 199.5 }); // price 100.5, above the 100 entry
-    fireEvent.pointerMove(window, { clientY: 199.5 });
-    fireEvent.pointerUp(window, { clientY: 199.5 });
+    dragBand('stop', 199.5, 199.5); // price 100.5, above the 100 entry
 
     expect(levelPill('stop')?.textContent).toContain('100.50');
   });
@@ -1789,9 +1853,7 @@ describe('TrainerOrderLevels hit-band drag on an open position (TD-EXIT-01)', ()
     const { bridge } = makeAmendBridge(view);
     renderPanel(view, bridge, handle);
 
-    fireEvent.pointerDown(hitBand('stop'), { clientY: 200.5 }); // price 99.5, below the 100 entry
-    fireEvent.pointerMove(window, { clientY: 200.5 });
-    fireEvent.pointerUp(window, { clientY: 200.5 });
+    dragBand('stop', 200.5, 200.5); // price 99.5, below the 100 entry
 
     expect(levelPill('stop')?.textContent).toContain('99.50');
   });

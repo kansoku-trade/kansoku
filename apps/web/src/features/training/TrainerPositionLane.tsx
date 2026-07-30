@@ -26,6 +26,7 @@ export interface TrainerPositionLaneProps {
   amendDraft: AmendDraft;
   verdict: AmendVerdict | null;
   handle: DrawingChartHandle | null;
+  dragDisabled: boolean;
   note: string;
   onNoteChange: (value: string) => void;
   onConfirmAmend: () => void;
@@ -43,6 +44,7 @@ export function TrainerPositionLane({
   amendDraft,
   verdict,
   handle,
+  dragDisabled,
   note,
   onNoteChange,
   onConfirmAmend,
@@ -92,6 +94,7 @@ export function TrainerPositionLane({
         handle={handle}
         filled
         zone={zone}
+        dragDisabled={dragDisabled}
         target={{
           price: amendDraft.target,
           text: rAt(amendDraft.target),

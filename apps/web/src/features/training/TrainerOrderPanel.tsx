@@ -31,7 +31,6 @@ import { TrainerPositionLane } from './TrainerPositionLane';
 import { freshVerdict, useAmendCheck } from './useAmendCheck';
 import { useChartScrollLock } from './useChartScrollLock';
 import { useEntryDraft, type EntryDraftApi } from './useEntryDraft';
-import { useOrderBoxDrag } from './useOrderBoxDrag';
 
 // Why the entry buttons on the ticket are locked, said in the tooltip rather than left to the
 // trader to work out from a greyed-out row.
@@ -104,11 +103,6 @@ export function TrainerOrderPanel({
     setCancelNoteOrderId(null);
   }
 
-  // Only used to tell useOrderBoxDrag where the draggable edges are; the levels themselves are DOM
-  // lines with their own ticket (TrainerOrderLevels).
-  const dragStop = flat ? (entry.placement.stop ?? entry.entry) : (amendDraft?.stop ?? 0);
-  const dragTarget = flat ? (entry.placement.target ?? entry.entry) : (amendDraft?.target ?? 0);
-
   // Every edit stays local; only a settled one is sent to the engine's dry run, so dragging never
   // waits on an IPC round trip.
   const applyAmend = (patch: Partial<AmendDraft>, settle: boolean) => {
@@ -124,35 +118,10 @@ export function TrainerOrderPanel({
     if (settle) setSettledAmend(next);
   };
 
-  // A drawing tool and the order tools both drag on this canvas, so only one of them is ever
-  // attached to it: picking a drawing tool detaches the order drag, and pressing any direction
-  // button calls onTakeChart to put the drawing tool back to 'off'.
-  const orderHandle = drawingActive ? null : handle;
   // Only the drawing tools still take the chart's pan away. Levels are pulled out of the entry
   // ticket and dragged by their own handles, so nothing arms a chart-wide placement gesture and
   // there is no armed state left to hold panning hostage.
   useChartScrollLock(handle, drawingActive);
-
-  const edgeHandle = flat
-    ? entry.draft
-      ? orderHandle
-      : null
-    : position != null && amendDraft != null
-      ? orderHandle
-      : null;
-  useOrderBoxDrag(
-    edgeHandle,
-    { stop: dragStop, target1: dragTarget },
-    {
-      onStopDrag: flat
-        ? (price) => entry.setLevel('stop', price)
-        : (price) => applyAmend({ stop: price }, false),
-      onTargetDrag: flat
-        ? (price) => entry.setLevel('target', price)
-        : (price) => applyAmend({ target: price }, false),
-      onDragEnd: flat ? undefined : () => setSettledAmend(amendDraftRef.current),
-    },
-  );
 
   const checked = useAmendCheck(bridge, sessionId, view.cursor, settledAmend);
   const verdict = freshVerdict(checked, amendDraft, view.cursor);
@@ -245,6 +214,7 @@ export function TrainerOrderPanel({
             onLevelDragEnd={() => setSettledAmend(amendDraftRef.current)}
             verdict={verdict}
             handle={handle}
+            dragDisabled={drawingActive}
             note={positionNote}
             onNoteChange={setPositionNote}
             submitting={submitting}
@@ -339,6 +309,7 @@ export function TrainerOrderPanel({
         <TrainerOrderLevels
           handle={handle}
           zone={zone}
+          dragDisabled={drawingActive}
           target={
             entry.placement.target === null
               ? null

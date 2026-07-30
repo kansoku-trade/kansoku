@@ -9,10 +9,36 @@ export interface PinnedPrices {
 
 export type PinnedYs = { [K in keyof PinnedPrices]: number | null };
 
-const NOTHING: PinnedYs = { target: null, entry: null, stop: null };
+// The candle pane's own rectangle, in the same frame coordinates as the ys: the price axis and the
+// MACD chart below sit outside it, and anything grabbable has to stop at its edges.
+export interface PinnedPane {
+  left: number;
+  width: number;
+  top: number;
+  bottom: number;
+}
+
+export interface PinnedLevels {
+  ys: PinnedYs;
+  pane: PinnedPane | null;
+}
+
+const NOTHING: PinnedLevels = {
+  ys: { target: null, entry: null, stop: null },
+  pane: null,
+};
 
 function sameYs(a: PinnedYs, b: PinnedYs): boolean {
   return a.target === b.target && a.entry === b.entry && a.stop === b.stop;
+}
+
+function samePane(a: PinnedPane | null, b: PinnedPane | null): boolean {
+  if (a === null || b === null) return a === b;
+  return a.left === b.left && a.width === b.width && a.top === b.top && a.bottom === b.bottom;
+}
+
+function same(a: PinnedLevels, b: PinnedLevels): boolean {
+  return sameYs(a.ys, b.ys) && samePane(a.pane, b.pane);
 }
 
 // lightweight-charts emits no event when the price scale rescales — autoscale runs during its own
@@ -23,8 +49,8 @@ export function usePinnedPriceYs(
   handle: DrawingChartHandle | null,
   frame: HTMLElement | null,
   prices: PinnedPrices,
-): PinnedYs {
-  const [ys, setYs] = useState<PinnedYs>(NOTHING);
+): PinnedLevels {
+  const [pinned, setPinned] = useState<PinnedLevels>(NOTHING);
   const { target, entry, stop } = prices;
 
   // Layout effect, not a plain effect: the first measurement lands in the same commit as the pills
@@ -32,25 +58,35 @@ export function usePinnedPriceYs(
   useLayoutEffect(() => {
     const live = target !== null || entry !== null || stop !== null;
     if (!handle || !frame || !live) {
-      setYs((prev) => (sameYs(prev, NOTHING) ? prev : NOTHING));
+      setPinned((prev) => (same(prev, NOTHING) ? prev : NOTHING));
       return;
     }
     let raf = 0;
     const measure = () => {
-      const offset =
-        handle.container.getBoundingClientRect().top - frame.getBoundingClientRect().top;
+      const chartRect = handle.container.getBoundingClientRect();
+      const frameRect = frame.getBoundingClientRect();
+      const offset = chartRect.top - frameRect.top;
+      const size = handle.chart.paneSize();
       const at = (price: number | null) => {
         if (price === null) return null;
         const coordinate = handle.series.priceToCoordinate(price);
         return coordinate === null ? null : coordinate + offset;
       };
-      const next: PinnedYs = { target: at(target), entry: at(entry), stop: at(stop) };
-      setYs((prev) => (sameYs(prev, next) ? prev : next));
+      const next: PinnedLevels = {
+        ys: { target: at(target), entry: at(entry), stop: at(stop) },
+        pane: {
+          left: chartRect.left - frameRect.left,
+          width: size.width,
+          top: offset,
+          bottom: offset + size.height,
+        },
+      };
+      setPinned((prev) => (same(prev, next) ? prev : next));
       raf = requestAnimationFrame(measure);
     };
     measure();
     return () => cancelAnimationFrame(raf);
   }, [handle, frame, target, entry, stop]);
 
-  return ys;
+  return pinned;
 }

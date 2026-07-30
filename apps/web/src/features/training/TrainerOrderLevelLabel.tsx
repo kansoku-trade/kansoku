@@ -7,11 +7,13 @@ import { X } from 'lucide-react';
 import { fmt } from '@web/lib/format';
 import { SIZE_PRESETS } from './orderDraft';
 import type {
+  DraggableKind,
   LevelDismissConfig,
   LevelKind,
   LevelSubmitConfig,
   OrderLevel,
 } from './TrainerOrderLevels';
+import type { PinnedPane } from './usePinnedPriceY';
 
 const KIND_LABEL: Record<LevelKind, string> = { target: '目标', entry: '入场', stop: '止损' };
 
@@ -19,10 +21,12 @@ export interface TrainerOrderLevelLabelProps {
   kind: LevelKind;
   level: OrderLevel;
   y: number;
+  pane: PinnedPane;
   marginRight: number;
   filled: boolean;
   dragging: boolean;
-  startDrag: (kind: LevelKind) => (event: ReactPointerEvent<HTMLElement>) => void;
+  onGrab?: (event: ReactPointerEvent<HTMLElement>) => void;
+  startDrag?: (kind: DraggableKind) => (event: ReactPointerEvent<HTMLElement>) => void;
   onConfirm?: () => void;
   onRevert?: () => void;
   submit?: LevelSubmitConfig;
@@ -33,9 +37,11 @@ export function TrainerOrderLevelLabel({
   kind,
   level,
   y,
+  pane,
   marginRight,
   filled,
   dragging,
+  onGrab,
   startDrag,
   onConfirm,
   onRevert,
@@ -62,33 +68,38 @@ export function TrainerOrderLevelLabel({
       style={{ top: `${y}px` }}
     >
       <div className="trainer-level-line" />
-      {level.draggable && (
+      {onGrab && (
+        // Bounded to the candle pane rather than the overlay: the strip is invisible and
+        // pointer-catching, so past the pane's right edge it would eat the price axis's own
+        // drag-to-rescale.
         <div
           className="trainer-level-hit"
-          onPointerDown={startDrag(kind)}
+          style={{ left: `${pane.left}px`, width: `${pane.width}px` }}
+          onPointerDown={onGrab}
           onPointerEnter={() => setHovered(true)}
           onPointerLeave={() => setHovered(false)}
         />
       )}
       <div
-        className={`trainer-level-pill${level.draggable ? ' trainer-level-pill--drag' : ''}${expanded ? '' : ' trainer-level-pill--collapsed'}`}
+        className={`trainer-level-pill${onGrab ? ' trainer-level-pill--drag' : ''}${expanded ? '' : ' trainer-level-pill--collapsed'}`}
         style={{ marginRight: `${marginRight}px` }}
         role="group"
         aria-label={`${KIND_LABEL[kind]} ${fmt(level.price)}`}
         tabIndex={0}
-        onPointerDown={level.draggable ? startDrag(kind) : undefined}
+        onPointerDown={onGrab}
         onPointerEnter={() => setHovered(true)}
         onPointerLeave={() => setHovered(false)}
         onFocus={() => setFocused(true)}
         onBlur={handleBlur}
       >
-        {level.draggable && (
+        {onGrab && (
           <span className="trainer-level-grip" aria-hidden="true">
             ⇅
           </span>
         )}
         {expanded && level.badge && <span className="trainer-level-badge">{level.badge}</span>}
         {expanded &&
+          startDrag &&
           level.pulls?.map((pull) => (
             <button
               key={pull.field}

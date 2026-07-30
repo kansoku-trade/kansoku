@@ -908,9 +908,12 @@ a:hover {
 .trainer-overlay > *:empty {
   display: none;
 }
+/* Above the pinned levels, which are later siblings: an order line crossing the rail would
+   otherwise lay its invisible grab strip across the drawing-tool buttons. */
 .trainer-overlay-rail {
   top: 50%;
   left: 8px;
+  z-index: 2;
   transform: translateY(-50%);
   display: flex;
   flex-direction: column;
@@ -969,6 +972,7 @@ a:hover {
 .drawing-style-panel.trainer-style-panel {
   top: 50%;
   left: 44px;
+  z-index: 2;
   transform: translateY(-50%);
   pointer-events: auto;
 }
@@ -1044,10 +1048,9 @@ a:hover {
   z-index: 1;
 }
 
+/* left/width come from the measured candle pane, so the strip stops at the price axis. */
 .trainer-level-hit {
   position: absolute;
-  left: 0;
-  right: 0;
   top: -4.5px;
   height: 9px;
   pointer-events: auto;
