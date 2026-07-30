@@ -30,7 +30,7 @@ export function RoleModelsCard({
     <Card className="settings-roles-card">
       <div className="settings-card-heading">
         <SectionTitle>模型分配</SectionTitle>
-        <span>改动即存即生效，进行中的一轮分析仍用旧配置</span>
+        <span>即时生效，进行中的分析沿用旧配置</span>
       </div>
       <PrimaryRow
         initial={initialRoles.primary}

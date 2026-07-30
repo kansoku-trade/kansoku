@@ -4,10 +4,10 @@ import { useLicenseModalTrigger } from './licenseModalStore';
 import { ActivateForm, LicensePanel, useSubscribeInfo } from '../settings/LicensePanel';
 
 const FEATURES = [
-  { name: '个股自动跟踪', desc: '盘中在后台持续跟进关注的标的，异动时自动留言提醒' },
-  { name: '深度研究', desc: '对单只股票跑一次深度分析，生成可沉淀的研究文档' },
-  { name: '研究库 AI', desc: 'AI 刷新研究文档、AI 编辑审阅、与研究资料对话' },
-  { name: '长期记忆', desc: '在本机持续整理偏好、标的与策略背景，并自动用于后续对话' },
+  { name: '个股自动跟踪', desc: '盯盘跟踪，异动自动留言' },
+  { name: '深度研究', desc: '一键深度研究，产出结构化报告' },
+  { name: '研究库 AI', desc: '审阅、刷新、研究资料对谈' },
+  { name: '长期记忆', desc: '偏好与标的下文持久化，跨对话继承' },
 ];
 
 function monthlyCtaLabel(subscribe: {
@@ -91,7 +91,7 @@ export function Paywall({
       ) : null}
       <div className="license-paywall-hint">
         {subscribe?.trialDays ? '试用期内不会扣款；' : ''}
-        订阅完成后，授权码会发送到你的邮箱，回来在下方粘贴激活即可。
+        订阅后授权码发至邮箱，下方粘贴激活
       </div>
       {showActivate ? (
         <ActivateForm notice={notice} showSubscribeLink={false} onActivated={onActivated} />

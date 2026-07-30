@@ -43,8 +43,7 @@ export function TrainingSection() {
         <Switch ariaLabel="自动补货" checked={enabled} onCheckedChange={toggle} />
       </div>
       <div className="settings-conn-note">
-        案例池少于 5 局时补到 15
-        局。只在读取案例池或打完一局后检查，不定时后台运行；连续两次补不到会自动暂停，手动补一次即恢复。
+        池容低于 5 局自动补至 15 局；连续补空两次后暂停挂起，手动补一次恢复
       </div>
     </section>
   );

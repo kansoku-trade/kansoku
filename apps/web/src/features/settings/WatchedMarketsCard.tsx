@@ -61,7 +61,7 @@ function WatchedMarketsCardLoaded({
       <div className="settings-time-preference">
         <div className="settings-preference-copy">
           <div className="settings-preference-description">
-            全市场级扫描（资金流轮动、盘中巡检等）只覆盖这里勾选的市场；单个标的的分析始终跟随该标的自身所在的市场。
+            全市场轮动与盘中巡检仅覆盖已勾选的市场
           </div>
         </div>
       </div>

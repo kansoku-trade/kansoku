@@ -102,8 +102,7 @@ export function ActivateForm({
       ) : null}
       {notice === 'expired' ? (
         <div className="settings-preference-description license-expired-notice">
-          授权已过期：超过 14
-          天未能联网验证。请检查网络连接——恢复联网后会自动重新验证；若订阅已到期，请重新订阅或输入新的授权码。
+          授权过期：超过 14 天未通过服务端验证。网络恢复后自动重验；订阅到期请续订或更换授权码。
         </div>
       ) : null}
       <div className="license-input-row">

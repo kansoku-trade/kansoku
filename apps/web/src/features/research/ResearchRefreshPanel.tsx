@@ -23,14 +23,14 @@ const PHASES: { phase: ResearchRefreshPhase; label: string }[] = [
   { phase: 'preparing', label: '制定计划' },
   { phase: 'documents', label: '核查文档' },
   { phase: 'market', label: '检查市场' },
-  { phase: 'synthesis', label: '综合证据' },
-  { phase: 'proposal', label: '生成提案' },
+  { phase: 'synthesis', label: '研判' },
+  { phase: 'proposal', label: '定稿' },
 ];
 
 const CONFIDENCE_LABEL: Record<ResearchFinding['confidence'], string> = {
-  high: '高置信度',
-  medium: '中等置信度',
-  low: '低置信度',
+  high: '确认',
+  medium: '待验证',
+  low: '存疑',
 };
 
 function TaskProgress({ task }: { task: ResearchRefreshTask }) {
@@ -181,17 +181,17 @@ function ResearchReport({
       <ReportSection title="主要结论" count={report.findings.length}>
         <FindingList findings={report.findings} evidence={evidence} />
       </ReportSection>
-      <ReportSection title="风险与反证" count={report.risks.length}>
+      <ReportSection title="风险项" count={report.risks.length}>
         <FindingList findings={report.risks} evidence={evidence} />
       </ReportSection>
-      <ReportSection title="待验证问题" count={report.openQuestions.length}>
+      <ReportSection title="待定项" count={report.openQuestions.length}>
         <ul className="research-refresh-questions">
           {report.openQuestions.map((question, index) => (
             <li key={`${question}:${index}`}>{question}</li>
           ))}
         </ul>
       </ReportSection>
-      <ReportSection title="证据来源" count={report.evidence.length}>
+      <ReportSection title="数据源" count={report.evidence.length}>
         <EvidenceList evidence={report.evidence} />
       </ReportSection>
     </div>
