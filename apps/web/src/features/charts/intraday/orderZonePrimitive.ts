@@ -73,6 +73,21 @@ function fitsText(width: number, height: number, text: string): boolean {
   );
 }
 
+// `startTime` names a bar on the case's base period, which is a data point only on the base tier:
+// the 15m/1h tiers are their own klines and timeToCoordinate returns null for a time they do not
+// hold, so an unsnapped anchor drops the whole zone two bars out of three. Snapped to the bar that
+// contains it, the way replayBandPrimitive and payloadToIntradayBuilt's snapToBar both do.
+function containingBarTime(times: number[], at: number): number {
+  let lo = 0;
+  let hi = times.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (times[mid] <= at) lo = mid + 1;
+    else hi = mid;
+  }
+  return times[Math.max(0, lo - 1)];
+}
+
 function formatRewardLabel(rewardR: number): string {
   return `+${rewardR.toFixed(1)}R`;
 }
@@ -146,18 +161,21 @@ class OrderZonePaneView implements IPrimitivePaneView {
     const { chart, series, data } = this.source.state();
     this.blocks = [];
     if (!chart || !series || !data) return;
+    const times = series.data().map((point) => Number(point.time));
+    if (times.length === 0) return;
     const ts = chart.timeScale();
     const visible = ts.getVisibleRange();
     // paneSize(), not timeScale().width(): the latter reports 0 when the time axis is hidden, which
     // collapses the zone to nothing on a chart that renders no axes.
     const right = chart.paneSize().width;
 
-    const xStart = ts.timeToCoordinate(data.startTime as Time);
+    const startTime = containingBarTime(times, data.startTime);
+    const xStart = ts.timeToCoordinate(startTime as Time);
     let x1: number;
     if (xStart === null) {
       // timeToCoordinate returns null once the anchor bar scrolls before the visible range; falling
       // back to the left pane edge keeps the zone drawn instead of vanishing mid-drag.
-      if (visible && data.startTime < (visible.from as number)) x1 = 0;
+      if (visible && startTime < (visible.from as number)) x1 = 0;
       else return;
     } else {
       x1 = xStart;
@@ -166,9 +184,14 @@ class OrderZonePaneView implements IPrimitivePaneView {
     const x2 = right;
     if (x2 <= x1) return;
 
+    // Every coordinate resolves before any block is pushed, as positionBoxPrimitive does: a target
+    // whose price falls off the scale would otherwise leave the risk block drawn alone, which reads
+    // as a plan with no target rather than as a plan scrolled out of view.
     const yEntry = series.priceToCoordinate(data.entry);
     const yStop = series.priceToCoordinate(data.stop);
+    const yTarget = data.target === null ? null : series.priceToCoordinate(data.target);
     if (yEntry === null || yStop === null) return;
+    if (data.target !== null && yTarget === null) return;
 
     const fillAlpha = data.filled ? FILLED_FILL_ALPHA : DRAFT_FILL_ALPHA;
     const strokeAlpha = data.filled ? FILLED_STROKE_ALPHA : DRAFT_STROKE_ALPHA;
@@ -192,8 +215,6 @@ class OrderZonePaneView implements IPrimitivePaneView {
       textColor: riskRgba(TEXT_ALPHA),
     });
 
-    if (data.target === null) return;
-    const yTarget = series.priceToCoordinate(data.target);
     if (yTarget === null) return;
 
     const rewardRgba = data.belowFloor ? grayRgba : upRgba;

@@ -55,9 +55,10 @@ function draw(primitive: OrderZonePrimitive): Recording {
 
 function makePrimitive(
   data: OrderZoneData | null,
-  priceScale: (p: number) => number,
+  priceScale: (p: number) => number | null,
   timeToCoordinate: (t: Time) => number | null = (t) => Number(t),
   visibleFrom = 0,
+  times: number[] = [100],
 ) {
   const primitive = new OrderZonePrimitive();
   const chart = {
@@ -71,7 +72,7 @@ function makePrimitive(
       options: () => ({ barSpacing: 6 }),
     }),
   };
-  const series = { priceToCoordinate: priceScale };
+  const series = { priceToCoordinate: priceScale, data: () => times.map((time) => ({ time })) };
   primitive.attached({
     chart,
     series,
@@ -156,6 +157,49 @@ describe('OrderZonePrimitive', () => {
     const rec = draw(makePrimitive(longData, priceScale, () => null, 500));
     expect(rec.fills[0].x).toBe(0);
     expect(rec.fills[1].x).toBe(0);
+  });
+
+  // A 15m grid: the anchor is a base-period timestamp, so two times in three it falls between the
+  // displayed bars and timeToCoordinate answers null for it.
+  const grid = [0, 900, 1800];
+  const onGridOnly = (t: Time) => {
+    const at = grid.indexOf(Number(t));
+    return at < 0 ? null : at * 100;
+  };
+
+  it('anchors to the aggregated bar containing startTime instead of dropping the zone', () => {
+    const rec = draw(
+      makePrimitive({ ...longData, startTime: 1500 }, priceScale, onGridOnly, 0, grid),
+    );
+    expect(rec.fills).toHaveLength(2);
+    expect(rec.fills[0].x).toBe(100);
+    expect(rec.fills[0].w).toBe(400);
+  });
+
+  it('keeps an anchor that is already a bar time exactly where it is', () => {
+    const rec = draw(
+      makePrimitive({ ...longData, startTime: 900 }, priceScale, onGridOnly, 0, grid),
+    );
+    expect(rec.fills[0].x).toBe(100);
+  });
+
+  it('falls back to the first bar for an anchor older than the whole series', () => {
+    const rec = draw(
+      makePrimitive({ ...longData, startTime: -60 }, priceScale, onGridOnly, 0, grid),
+    );
+    expect(rec.fills[0].x).toBe(0);
+  });
+
+  it('draws nothing at all when the target price has no coordinate', () => {
+    const noTargetCoordinate = (price: number) => (price === 140 ? null : 300 - price);
+    const rec = draw(makePrimitive(longData, noTargetCoordinate));
+    expect(rec.fills).toHaveLength(0);
+    expect(rec.strokes).toHaveLength(0);
+  });
+
+  it('produces nothing when the series holds no bars', () => {
+    const rec = draw(makePrimitive(longData, priceScale, (t) => Number(t), 0, []));
+    expect(rec.fills).toHaveLength(0);
   });
 
   it('turns the reward block grey and hatched when belowFloor, leaving the risk block alone', () => {
