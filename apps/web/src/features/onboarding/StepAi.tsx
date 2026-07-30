@@ -46,6 +46,7 @@ export function StepAi({ onNext }: { onNext: () => void }) {
   const [showApiKey, setShowApiKey] = useState(false);
   const [apiProvider, setApiProvider] = useState('');
   const [apiKey, setApiKey] = useState('');
+  const [apiBaseUrl, setApiBaseUrl] = useState('');
 
   if (loading || !catalog) {
     return (
@@ -79,6 +80,10 @@ export function StepAi({ onNext }: { onNext: () => void }) {
   const saveApiKey = () =>
     finish('apikey', async () => {
       await client.settings.putCredential({ provider: effectiveApiProvider, key: apiKey });
+      await client.settings.putProviderBaseUrl({
+        provider: effectiveApiProvider,
+        baseUrl: apiBaseUrl,
+      });
       await connectPrimary(await fetchCatalog(), effectiveApiProvider);
     });
 
@@ -219,6 +224,14 @@ export function StepAi({ onNext }: { onNext: () => void }) {
             value={apiKey}
             onChange={(event) => setApiKey(event.target.value)}
             placeholder="API key"
+          />
+          <Input
+            aria-label="Base URL（可选）"
+            autoComplete="off"
+            type="url"
+            value={apiBaseUrl}
+            onChange={(event) => setApiBaseUrl(event.target.value)}
+            placeholder="默认官方地址，可填中转站地址（可选）"
           />
           <Button
             accent
