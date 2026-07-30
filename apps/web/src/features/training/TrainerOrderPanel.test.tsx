@@ -177,9 +177,17 @@ function dragOnChart(container: HTMLElement, fromY: number, toY: number, frames 
   fireEvent.pointerUp(window, { clientY: toY });
 }
 
+// The TP/SL pulls live inside the entry ticket's expanded state, which a real pointer would already
+// be over on its way to a handle — so the drag helpers below point at the ticket first.
+function hoverEntry() {
+  const pill = document.querySelector('.trainer-level--entry .trainer-level-pill');
+  if (pill) fireEvent.pointerEnter(pill);
+}
+
 // Levels are pulled out of the entry ticket: press the TP or SL handle, drag, drop. The handle is
 // in the overlay rather than on the canvas, so the drag rides window listeners from pointerdown.
 function pull(handle: 'TP' | 'SL', toY: number, frames = 1) {
+  hoverEntry();
   const button = screen.getByRole('button', { name: `拖出${handle}` });
   fireEvent.pointerDown(button);
   for (let i = 1; i <= frames; i += 1) {
@@ -484,6 +492,7 @@ describe('TrainerOrderPanel placement drag', () => {
     const held = () => document.body.classList.contains('trainer-dragging-level');
 
     arm();
+    hoverEntry();
     expect(held()).toBe(false);
 
     fireEvent.pointerDown(screen.getByRole('button', { name: '拖出SL' }));
@@ -501,6 +510,7 @@ describe('TrainerOrderPanel placement drag', () => {
     renderPanel(makeView(), bridge, handle);
 
     arm();
+    hoverEntry();
     fireEvent.pointerDown(screen.getByRole('button', { name: '拖出SL' }));
     fireEvent.pointerCancel(window);
 
@@ -515,6 +525,7 @@ describe('TrainerOrderPanel placement drag', () => {
     const { unmount } = renderPanel(makeView(), bridge, handle);
 
     arm();
+    hoverEntry();
     fireEvent.pointerDown(screen.getByRole('button', { name: '拖出SL' }));
     expect(document.body.classList.contains('trainer-dragging-level')).toBe(true);
 
@@ -528,6 +539,7 @@ describe('TrainerOrderPanel placement drag', () => {
     renderPanel(makeView(), bridge, handle);
 
     arm();
+    hoverEntry();
     fireEvent.pointerDown(screen.getByRole('button', { name: '拖出SL' }));
     fireEvent.pointerMove(window, { clientY: 210 });
     expect(levelPill('stop')?.textContent).toContain('90.00');
@@ -1357,8 +1369,11 @@ describe('TrainerOrderPanel position box lifecycle', () => {
     // entry 100, stop 90 (risk 10), target 125 -> +2.5R
     placeOrder(container, 210, 175);
 
+    fireEvent.pointerEnter(levelPill('stop')!);
     expect(levelPill('stop')?.textContent).toContain('-1.0R');
+    fireEvent.pointerEnter(levelPill('target')!);
     expect(levelPill('target')?.textContent).toContain('+2.5R');
+    hoverEntry();
     expect(levelPill('entry')?.textContent).toContain('市价');
   });
 });
@@ -1453,6 +1468,7 @@ describe('TrainerOrderPanel quick market entry', () => {
     renderPanel(makeView(), bridge, handle);
 
     fireEvent.click(screen.getByRole('button', { name: '市价做多' }));
+    hoverEntry();
     fireEvent.click(screen.getByRole('button', { name: '入场做多 1/2' }));
 
     await waitFor(() => expect(submit).toHaveBeenCalledTimes(1));
@@ -1473,6 +1489,7 @@ describe('TrainerOrderPanel quick market entry', () => {
     renderPanel(makeView(), bridge, handle);
 
     fireEvent.click(screen.getByRole('button', { name: '市价做空' }));
+    hoverEntry();
 
     expect(screen.getByRole('button', { name: '入场做空 1/2' })).toBeTruthy();
     expect(screen.getByText('入场 100.00')).toBeTruthy();
@@ -1484,6 +1501,7 @@ describe('TrainerOrderPanel quick market entry', () => {
     renderPanel(makeView(), bridge, handle);
 
     fireEvent.click(screen.getByRole('button', { name: '市价做多' }));
+    hoverEntry();
     expect(
       (screen.getByRole('button', { name: '入场做多 1/2' }) as HTMLButtonElement).disabled,
     ).toBe(false);
@@ -1597,5 +1615,79 @@ describe('TrainerOrderPanel pointer arbitration with the drawing tools', () => {
     fireEvent.click(screen.getByRole('button', { name: '市价做空' }));
 
     expect(onTakeChart).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('TrainerOrderLevels collapsed label and hit band', () => {
+  it('collapses to the grip and the price until the label is pointed at', () => {
+    const { handle, container } = makeHandle();
+    const { bridge } = makeBridge();
+    renderPanel(makeView(), bridge, handle);
+
+    placeOrder(container, 210, 175);
+    const entryPill = levelPill('entry')!;
+    fireEvent.pointerLeave(entryPill);
+
+    expect(screen.queryByRole('button', { name: '入场做多 全仓' })).toBeNull();
+    expect(screen.queryByRole('button', { name: '撤销这个计划' })).toBeNull();
+    expect(entryPill.textContent).toContain('100.00');
+  });
+
+  it('expands on hover, bringing back the size presets and the close button', () => {
+    const { handle, container } = makeHandle();
+    const { bridge } = makeBridge();
+    renderPanel(makeView(), bridge, handle);
+
+    placeOrder(container, 210, 175);
+    const entryPill = levelPill('entry')!;
+    fireEvent.pointerLeave(entryPill);
+    expect(screen.queryByRole('button', { name: '入场做多 全仓' })).toBeNull();
+
+    fireEvent.pointerEnter(entryPill);
+    expect(screen.getByRole('button', { name: '入场做多 全仓' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: '撤销这个计划' })).toBeTruthy();
+  });
+
+  it('keeps a label expanded through a drag started from the hit band, after the pointer leaves it', () => {
+    const { handle, container } = makeHandle();
+    const { bridge } = makeBridge();
+    renderPanel(makeView(), bridge, handle);
+
+    placeOrder(container, 210, 175);
+    const stopHit = document.querySelector(
+      '.trainer-level--stop .trainer-level-hit',
+    ) as HTMLElement;
+    fireEvent.pointerDown(stopHit, { clientY: 210 });
+    const stopPill = levelPill('stop')!;
+    fireEvent.pointerLeave(stopPill);
+    fireEvent.pointerMove(window, { clientY: 205 });
+
+    expect(stopPill.textContent).toContain('95.00');
+    expect(stopPill.querySelector('.trainer-level-text')).toBeTruthy();
+
+    fireEvent.pointerUp(window, { clientY: 205 });
+  });
+
+  it('gives a hit band to a draggable level and withholds it from a non-draggable one', () => {
+    const { handle } = makeHandle();
+    const view = makeOpenView('long', 102);
+    const { bridge } = makeAmendBridge(view);
+    renderPanel(view, bridge, handle);
+
+    expect(document.querySelector('.trainer-level--stop .trainer-level-hit')).toBeTruthy();
+    expect(document.querySelector('.trainer-level--target .trainer-level-hit')).toBeTruthy();
+    expect(document.querySelector('.trainer-level--entry .trainer-level-hit')).toBeNull();
+  });
+
+  it('offsets two levels closer than PILL_MIN_GAP_PX by the 80px lane step', () => {
+    const { handle, container } = makeHandle();
+    const { bridge } = makeBridge();
+    renderPanel(makeView(), bridge, handle);
+
+    // stop 97 (y=203) sits only 3px from entry's y=200, well under the 26px PILL_MIN_GAP_PX floor.
+    placeOrder(container, 203, 150);
+
+    expect(levelPill('stop')?.style.marginRight).toBe('150px');
+    expect(levelPill('entry')?.style.marginRight).toBe('70px');
   });
 });

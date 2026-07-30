@@ -1,10 +1,8 @@
-import { useEffect, useRef, type PointerEvent as ReactPointerEvent } from 'react';
-import { X } from 'lucide-react';
-import { fmt } from '@web/lib/format';
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import type { OrderZoneData } from '../charts/intraday/orderZonePrimitive';
 import type { DrawingChartHandle } from '../charts/intraday/useIntradayCharts';
 import { beginCursorLock, endCursorLock } from './cursorLock';
-import { SIZE_PRESETS } from './orderDraft';
+import { TrainerOrderLevelLabel } from './TrainerOrderLevelLabel';
 import { TrainerOverlayPortal, useTrainerOverlayFrame } from './trainerOverlay';
 import { useOrderZone } from './useOrderZone';
 import { usePinnedPriceYs } from './usePinnedPriceY';
@@ -12,7 +10,7 @@ import { usePinnedPriceYs } from './usePinnedPriceY';
 export type LevelKind = 'target' | 'entry' | 'stop';
 
 const PILL_MIN_GAP_PX = 26;
-const LANE_STEP_PX = 200;
+const LANE_STEP_PX = 80;
 
 export interface OrderLevel {
   price: number;
@@ -25,6 +23,18 @@ export interface OrderLevel {
   // drag one out and the level it names appears where it is dropped. `set` only changes how it
   // reads — both stay draggable, so a bracket already placed is re-pulled the same way.
   pulls?: { field: 'target' | 'stop'; label: string; set: boolean }[];
+}
+
+export interface LevelSubmitConfig {
+  label: string;
+  disabled: boolean;
+  blockedReason?: string;
+  onSubmit: (size: number) => void;
+}
+
+export interface LevelDismissConfig {
+  label: string;
+  onDismiss: () => void;
 }
 
 export interface TrainerOrderLevelsProps {
@@ -40,13 +50,8 @@ export interface TrainerOrderLevelsProps {
   onRevert?: () => void;
   // Sending the order from the ticket itself: the plan is already under the pointer here, so there
   // is no reason to travel back to the lane to commit it.
-  submit?: {
-    label: string;
-    disabled: boolean;
-    blockedReason?: string;
-    onSubmit: (size: number) => void;
-  };
-  dismiss?: { label: string; onDismiss: () => void };
+  submit?: LevelSubmitConfig;
+  dismiss?: LevelDismissConfig;
 }
 
 // Stop and target have no dismiss: the engine refuses a submission that is missing either, so a
@@ -79,8 +84,11 @@ export function TrainerOrderLevels({
   const endDragRef = useRef<(() => void) | null>(null);
   useEffect(() => () => endDragRef.current?.(), []);
 
-  // Dragging the pill is the same gesture as dragging the line, so it goes through the same
-  // price callback rather than a second path that could round differently.
+  const [draggingKind, setDraggingKind] = useState<LevelKind | null>(null);
+
+  // Dragging the pill, the hit band or a pull is the same gesture as dragging the line, so all
+  // three go through the same price callback rather than a second path that could round
+  // differently.
   const startDrag = (kind: LevelKind) => (event: ReactPointerEvent<HTMLElement>) => {
     if (!handle || !onDrag) return;
     event.preventDefault();
@@ -89,6 +97,7 @@ export function TrainerOrderLevels({
     // price axis, past the edge of the pane — and the cursor would otherwise flip to whatever each
     // of those uses. A document-level lock keeps the grab legible until the release.
     beginCursorLock();
+    setDraggingKind(kind);
     const move = (moved: PointerEvent) => {
       const top = handle.container.getBoundingClientRect().top;
       const price = handle.series.coordinateToPrice(moved.clientY - top);
@@ -100,6 +109,7 @@ export function TrainerOrderLevels({
       window.removeEventListener('pointercancel', up);
       endCursorLock();
       endDragRef.current = null;
+      setDraggingKind(null);
       onDragEnd?.();
     };
     endDragRef.current = up;
@@ -133,100 +143,20 @@ export function TrainerOrderLevels({
   return (
     <TrainerOverlayPortal slot="pinned">
       {rows.map(({ kind, level, y, lane }) => (
-        <div
+        <TrainerOrderLevelLabel
           key={kind}
-          className={`trainer-level trainer-level--${kind}${filled && kind === 'entry' ? ' trainer-level--filled' : ''}`}
-          style={{ top: `${y}px` }}
-        >
-          <div className="trainer-level-line" />
-          <div
-            className={`trainer-level-pill${level.draggable ? ' trainer-level-pill--drag' : ''}`}
-            style={lane > 0 ? { marginRight: `${70 + lane * LANE_STEP_PX}px` } : undefined}
-            onPointerDown={level.draggable ? startDrag(kind) : undefined}
-          >
-            {level.draggable && (
-              <span className="trainer-level-grip" aria-hidden="true">
-                ⇅
-              </span>
-            )}
-            {level.badge && <span className="trainer-level-badge">{level.badge}</span>}
-            {level.pulls?.map((pull) => (
-              <button
-                key={pull.field}
-                className={`trainer-level-pull trainer-level-pull--${pull.field}${pull.set ? ' trainer-level-pull--set' : ''}`}
-                aria-label={`拖出${pull.label}`}
-                title={pull.set ? `拖动改${pull.label}` : `按住往图上拖，放下就是${pull.label}`}
-                onPointerDown={startDrag(pull.field)}
-              >
-                {pull.label}
-              </button>
-            ))}
-            {/* Old price first, then the arrow, then where it is being moved to — the move has to
-                read in the direction it happens. */}
-            <span className="trainer-level-price">
-              {level.pending && (
-                <>
-                  <span className="trainer-level-was">{fmt(level.pending.from)}</span>
-                  <span className="trainer-chip-dim"> → </span>
-                </>
-              )}
-              {fmt(level.price)}
-            </span>
-            <span className="trainer-level-sep" />
-            {level.pending ? (
-              <>
-                {level.pending.note && (
-                  <span
-                    className={level.pending.blocked ? 'trainer-level-blocked' : 'trainer-chip-dim'}
-                    role={level.pending.blocked ? 'status' : undefined}
-                  >
-                    {level.pending.note}
-                  </span>
-                )}
-                <button
-                  className="trainer-level-act trainer-level-act--ok"
-                  disabled={level.pending.blocked}
-                  onClick={onConfirm}
-                >
-                  确认调整
-                </button>
-                <button className="trainer-level-act" aria-label="撤销调整" onClick={onRevert}>
-                  撤销
-                </button>
-              </>
-            ) : (
-              <span className="trainer-level-text">{level.text}</span>
-            )}
-            {kind === 'entry' && submit && (
-              <>
-                <span className="trainer-level-sep" />
-                <span className="trainer-level-submit-label">进场</span>
-                {SIZE_PRESETS.map(({ label, size }) => (
-                  <button
-                    key={label}
-                    className="trainer-level-act trainer-level-act--go"
-                    aria-label={`${submit.label} ${label}`}
-                    disabled={submit.disabled}
-                    title={submit.blockedReason ?? `${submit.label} ${label}`}
-                    onClick={() => submit.onSubmit(size)}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </>
-            )}
-            {kind === 'entry' && dismiss && (
-              <button
-                className="trainer-level-act trainer-level-act--x"
-                aria-label={dismiss.label}
-                title={dismiss.label}
-                onClick={dismiss.onDismiss}
-              >
-                <X size={13} />
-              </button>
-            )}
-          </div>
-        </div>
+          kind={kind}
+          level={level}
+          y={y}
+          marginRight={70 + lane * LANE_STEP_PX}
+          filled={filled && kind === 'entry'}
+          dragging={draggingKind === kind}
+          startDrag={startDrag}
+          onConfirm={onConfirm}
+          onRevert={onRevert}
+          submit={kind === 'entry' ? submit : undefined}
+          dismiss={kind === 'entry' ? dismiss : undefined}
+        />
       ))}
     </TrainerOverlayPortal>
   );

@@ -1003,8 +1003,9 @@ a:hover {
 }
 
 /* Order levels: one line per price with its ticket sitting on it, the way a chart-native order
-   reads. The line spans the pane and is inert — the drag that moves it is bound to the chart canvas
-   (useOrderBoxDrag) and to the pill's own grip, so the line itself never swallows a pointer. */
+   reads. The line itself stays inert (border only); trainer-level-hit is the grabbable band, and it
+   spans the full pane width at every draggable level's height — this intentionally swallows the
+   chart's own pan/zoom drag at those three heights, same as TradingView's own order lines. */
 .trainer-level {
   position: absolute;
   left: 0;
@@ -1037,6 +1038,21 @@ a:hover {
   border-top-style: solid;
   opacity: 1;
 }
+/* Rows always paint in the fixed target/entry/stop DOM order, not lane order, so an earlier row
+   expanding over a later, unrelated one would otherwise render underneath it. */
+.trainer-level--active {
+  z-index: 1;
+}
+
+.trainer-level-hit {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -4.5px;
+  height: 9px;
+  pointer-events: auto;
+  cursor: ns-resize;
+}
 
 .trainer-level-pill {
   position: relative;
@@ -1058,6 +1074,10 @@ a:hover {
 }
 .trainer-level-pill--drag {
   cursor: ns-resize;
+}
+.trainer-level-pill--collapsed {
+  min-width: 70px;
+  justify-content: flex-end;
 }
 /* Held for the length of a level drag. The pointer spends nearly all of it off the handle — over
    the chart canvas, which sets its own crosshair, or past the pane entirely — so the cursor has to
