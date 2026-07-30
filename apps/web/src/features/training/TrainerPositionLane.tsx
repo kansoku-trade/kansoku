@@ -89,6 +89,7 @@ export function TrainerPositionLane({
       </TrainerOverlayPortal>
       <TrainerOrderLevels
         handle={handle}
+        direction={position.direction}
         filled
         zone={zone}
         target={{

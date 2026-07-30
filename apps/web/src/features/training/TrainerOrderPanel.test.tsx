@@ -100,6 +100,13 @@ function makeHeldView(sizes: number[], overrides: Partial<TrainerPosition> = {})
   });
 }
 
+interface FakePriceLine {
+  price: number;
+  color: string;
+  removed: boolean;
+  applyOptions: ReturnType<typeof vi.fn>;
+}
+
 // Linear price/pixel map (y = 300 - price) so the drag math is checkable by hand: the base close
 // is $100, so the entry line sits at y=200 and a press at y=210 is a $90 stop.
 function makeHandle() {
@@ -107,15 +114,33 @@ function makeHandle() {
   container.getBoundingClientRect = () =>
     ({ top: 0, left: 0, right: 300, bottom: 300, width: 300, height: 300, x: 0, y: 0 }) as DOMRect;
   const zonePrimitives: OrderZonePrimitive[] = [];
+  const priceLines: FakePriceLine[] = [];
+  const createPriceLine = vi.fn((options: { price: number; color: string }) => {
+    const line: FakePriceLine = {
+      price: options.price,
+      color: options.color,
+      removed: false,
+      applyOptions: vi.fn((patch: { price?: number }) => {
+        if (patch.price !== undefined) line.price = patch.price;
+      }),
+    };
+    priceLines.push(line);
+    return line;
+  });
+  const removePriceLine = vi.fn((line: FakePriceLine) => {
+    line.removed = true;
+  });
   const series = {
     attachPrimitive: (p: OrderZonePrimitive) => zonePrimitives.push(p),
     detachPrimitive: vi.fn(),
     priceToCoordinate: (price: number) => 300 - price,
     coordinateToPrice: (y: number) => 300 - y,
+    createPriceLine,
+    removePriceLine,
   };
   const chart = { applyOptions: vi.fn() };
   const handle = { chart, series, container } as unknown as DrawingChartHandle;
-  return { handle, container, series, chart, zonePrimitives };
+  return { handle, container, series, chart, zonePrimitives, priceLines };
 }
 
 function currentZone(zonePrimitives: OrderZonePrimitive[]) {
@@ -1731,5 +1756,106 @@ describe('TrainerOrderLevels collapsed label and hit band', () => {
 
     expect(levelPill('stop')?.style.marginRight).toBe('150px');
     expect(levelPill('entry')?.style.marginRight).toBe('70px');
+  });
+});
+
+function hitBand(kind: 'target' | 'stop'): HTMLElement {
+  return document.querySelector(`.trainer-level--${kind} .trainer-level-hit`) as HTMLElement;
+}
+
+describe('TrainerOrderLevels drag clamp at the entry line', () => {
+  it('clamps a long stop dragged above the entry to strictly below it', () => {
+    const { handle, container } = makeHandle();
+    const { bridge } = makeBridge();
+    renderPanel(makeView(), bridge, handle);
+    placeOrder(container, 210, 175);
+
+    fireEvent.pointerDown(hitBand('stop'), { clientY: 210 });
+    fireEvent.pointerMove(window, { clientY: 50 }); // price 250, past the entry on the wrong side
+    fireEvent.pointerUp(window, { clientY: 50 });
+
+    expect(levelPill('stop')?.textContent).toContain('99.99');
+  });
+
+  it('clamps a long target dragged below the entry to strictly above it', () => {
+    const { handle, container } = makeHandle();
+    const { bridge } = makeBridge();
+    renderPanel(makeView(), bridge, handle);
+    placeOrder(container, 210, 175);
+
+    fireEvent.pointerDown(hitBand('target'), { clientY: 175 });
+    fireEvent.pointerMove(window, { clientY: 250 }); // price 50, past the entry on the wrong side
+    fireEvent.pointerUp(window, { clientY: 250 });
+
+    expect(levelPill('target')?.textContent).toContain('100.01');
+  });
+
+  it('mirrors the drag clamp for a short', () => {
+    const { handle, container } = makeHandle();
+    const { bridge } = makeBridge();
+    renderPanel(makeView(), bridge, handle);
+    placeOrder(container, 190, 225, '做空');
+
+    fireEvent.pointerDown(hitBand('stop'), { clientY: 190 });
+    fireEvent.pointerMove(window, { clientY: 250 }); // price 50, below entry — illegal for a short stop
+    fireEvent.pointerUp(window, { clientY: 250 });
+    expect(levelPill('stop')?.textContent).toContain('100.01');
+
+    fireEvent.pointerDown(hitBand('target'), { clientY: 225 });
+    fireEvent.pointerMove(window, { clientY: 50 }); // price 250, above entry — illegal for a short target
+    fireEvent.pointerUp(window, { clientY: 50 });
+    expect(levelPill('target')?.textContent).toContain('99.99');
+  });
+
+  it('passes a drag well clear of the entry through untouched', () => {
+    const { handle, container } = makeHandle();
+    const { bridge } = makeBridge();
+    renderPanel(makeView(), bridge, handle);
+    placeOrder(container, 210, 175);
+
+    fireEvent.pointerDown(hitBand('stop'), { clientY: 210 });
+    fireEvent.pointerMove(window, { clientY: 220 }); // price 80, comfortably clear of the entry
+    fireEvent.pointerUp(window, { clientY: 220 });
+
+    expect(levelPill('stop')?.textContent).toContain('80.00');
+  });
+});
+
+describe('TrainerOrderLevels drag price-axis line', () => {
+  it('shows a price line on the axis while dragging, follows the pointer, and removes it on release', () => {
+    const { handle, priceLines } = makeHandle();
+    const { bridge } = makeBridge();
+    renderPanel(makeView(), bridge, handle);
+
+    arm();
+    hoverEntry();
+    fireEvent.pointerDown(screen.getByRole('button', { name: '拖出SL' }));
+    expect(priceLines).toHaveLength(1);
+    expect(priceLines[0].removed).toBe(false);
+
+    fireEvent.pointerMove(window, { clientY: 210 });
+    expect(priceLines[0].price).toBeCloseTo(90);
+
+    fireEvent.pointerMove(window, { clientY: 205 });
+    expect(priceLines[0].price).toBeCloseTo(95);
+    expect(priceLines).toHaveLength(1);
+
+    fireEvent.pointerUp(window, { clientY: 205 });
+    expect(priceLines[0].removed).toBe(true);
+  });
+
+  it('removes the drag price line when the panel unmounts mid-drag', () => {
+    const { handle, priceLines } = makeHandle();
+    const { bridge } = makeBridge();
+    const { unmount } = renderPanel(makeView(), bridge, handle);
+
+    arm();
+    hoverEntry();
+    fireEvent.pointerDown(screen.getByRole('button', { name: '拖出SL' }));
+    expect(priceLines).toHaveLength(1);
+    expect(priceLines[0].removed).toBe(false);
+
+    unmount();
+    expect(priceLines[0].removed).toBe(true);
   });
 });

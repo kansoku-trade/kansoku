@@ -337,6 +337,7 @@ export function TrainerOrderPanel({
         // half-drawn plan looks half-drawn.
         <TrainerOrderLevels
           handle={handle}
+          direction={entry.direction}
           zone={zone}
           target={
             entry.placement.target === null
