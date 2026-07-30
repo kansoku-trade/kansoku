@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
-import type { TrainerDirection } from '@kansoku/pro-api';
 import { theme } from '@web/lib/theme';
 import { addPriceLine } from '../charts/lw';
 import type { OrderZoneData } from '../charts/intraday/orderZonePrimitive';
@@ -15,34 +14,11 @@ export type LevelKind = 'target' | 'entry' | 'stop';
 const PILL_MIN_GAP_PX = 26;
 const LANE_STEP_PX = 80;
 
-// No instrument tick size is available (cases are anonymised historical data), so the minimum
-// gap the stop/target may sit from the entry is a fraction of the entry price itself rather than
-// a fixed cent amount — it must land strictly off the entry line whatever the price scale.
-const MIN_LEVEL_GAP_RATIO = 0.0001;
-
 const LEVEL_LINE_COLOR: Record<LevelKind, string> = {
   target: theme.up,
   entry: '#4a8cff',
   stop: theme.down,
 };
-
-function clampToEntry(
-  kind: LevelKind,
-  direction: TrainerDirection,
-  entryPrice: number,
-  price: number,
-): number {
-  if (kind === 'entry') return price;
-  const minGap = entryPrice * MIN_LEVEL_GAP_RATIO;
-  if (kind === 'stop') {
-    return direction === 'long'
-      ? Math.min(price, entryPrice - minGap)
-      : Math.max(price, entryPrice + minGap);
-  }
-  return direction === 'long'
-    ? Math.max(price, entryPrice + minGap)
-    : Math.min(price, entryPrice - minGap);
-}
 
 export interface OrderLevel {
   price: number;
@@ -71,7 +47,6 @@ export interface LevelDismissConfig {
 
 export interface TrainerOrderLevelsProps {
   handle: DrawingChartHandle | null;
-  direction: TrainerDirection;
   target: OrderLevel | null;
   entry: OrderLevel | null;
   stop: OrderLevel | null;
@@ -92,7 +67,6 @@ export interface TrainerOrderLevelsProps {
 // "drop this plan" before a fill and "close it out" after.
 export function TrainerOrderLevels({
   handle,
-  direction,
   target,
   entry,
   stop,
@@ -138,8 +112,6 @@ export function TrainerOrderLevels({
       const top = handle.container.getBoundingClientRect().top;
       return handle.series.coordinateToPrice(clientY - top);
     };
-    const clamp = (price: number) =>
-      entry === null ? price : clampToEntry(kind, direction, entry.price, price);
 
     let priceLine: ReturnType<typeof addPriceLine> | null = null;
     const showPriceLine = (price: number) => {
@@ -156,14 +128,13 @@ export function TrainerOrderLevels({
       });
     };
     const initialPrice = priceAt(event.clientY);
-    if (initialPrice !== null) showPriceLine(clamp(initialPrice));
+    if (initialPrice !== null) showPriceLine(initialPrice);
 
     const move = (moved: PointerEvent) => {
       const price = priceAt(moved.clientY);
       if (price === null) return;
-      const clamped = clamp(price);
-      showPriceLine(clamped);
-      onDrag(kind, clamped);
+      showPriceLine(price);
+      onDrag(kind, price);
     };
     const up = () => {
       window.removeEventListener('pointermove', move);

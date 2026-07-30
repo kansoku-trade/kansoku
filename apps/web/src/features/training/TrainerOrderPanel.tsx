@@ -324,6 +324,7 @@ export function TrainerOrderPanel({
           filled: false,
           rewardR:
             entry.placement.target === null ? null : levelR(view, basis, entry.placement.target),
+          riskR: levelR(view, basis, entry.placement.stop) ?? -1,
           belowFloor: entry.draft !== null && !meetsRewardRiskFloor(entry.draft),
         }
       : null;
@@ -337,7 +338,6 @@ export function TrainerOrderPanel({
         // half-drawn plan looks half-drawn.
         <TrainerOrderLevels
           handle={handle}
-          direction={entry.direction}
           zone={zone}
           target={
             entry.placement.target === null

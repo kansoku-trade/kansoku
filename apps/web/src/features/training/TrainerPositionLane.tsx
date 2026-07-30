@@ -73,6 +73,7 @@ export function TrainerPositionLane({
     target: amendDraft.target,
     filled: true,
     rewardR: levelR(view, null, amendDraft.target),
+    riskR: levelR(view, null, amendDraft.stop) ?? -1,
     belowFloor: false,
   };
 
@@ -89,7 +90,6 @@ export function TrainerPositionLane({
       </TrainerOverlayPortal>
       <TrainerOrderLevels
         handle={handle}
-        direction={position.direction}
         filled
         zone={zone}
         target={{

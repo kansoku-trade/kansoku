@@ -17,6 +17,7 @@ export interface OrderZoneData {
   target: number | null;
   filled: boolean;
   rewardR: number | null;
+  riskR: number;
   belowFloor: boolean;
 }
 
@@ -43,10 +44,15 @@ function hexToRgb(hex: string): [number, number, number] {
 const [UR, UG, UB] = hexToRgb(theme.up);
 const [DR, DG, DB] = hexToRgb(theme.down);
 const [GR, GG, GB] = hexToRgb(theme.textSecondary);
+// Same hue as the entry line itself (TrainerOrderLevels' LEVEL_LINE_COLOR.entry / styles.css
+// .trainer-level--entry): a stop trailed past breakeven is anchored to the entry, not a risk or a
+// realised reward, so it borrows that line's colour rather than either block's.
+const [SR, SG, SB] = hexToRgb('#4a8cff');
 
 const upRgba = (alpha: number) => `rgba(${UR}, ${UG}, ${UB}, ${alpha})`;
 const downRgba = (alpha: number) => `rgba(${DR}, ${DG}, ${DB}, ${alpha})`;
 const grayRgba = (alpha: number) => `rgba(${GR}, ${GG}, ${GB}, ${alpha})`;
+const securedRgba = (alpha: number) => `rgba(${SR}, ${SG}, ${SB}, ${alpha})`;
 
 const DRAFT_FILL_ALPHA = 0.1;
 const DRAFT_STROKE_ALPHA = 0.45;
@@ -60,7 +66,6 @@ const TEXT_CHAR_WIDTH_PX = 6;
 const TEXT_SIDE_PADDING_PX = 8;
 const TEXT_MIN_HEIGHT_PX = 14;
 const DASH_PATTERN: [number, number] = [4, 4];
-const RISK_LABEL = '-1R';
 
 function fitsText(width: number, height: number, text: string): boolean {
   return (
@@ -70,6 +75,10 @@ function fitsText(width: number, height: number, text: string): boolean {
 
 function formatRewardLabel(rewardR: number): string {
   return `+${rewardR.toFixed(1)}R`;
+}
+
+function formatRiskLabel(riskR: number): string {
+  return `${riskR >= 0 ? '+' : ''}${riskR.toFixed(1)}R`;
 }
 
 function drawHatch(
@@ -163,17 +172,19 @@ class OrderZonePaneView implements IPrimitivePaneView {
     const strokeAlpha = data.filled ? FILLED_STROKE_ALPHA : DRAFT_STROKE_ALPHA;
     const dashed = !data.filled;
 
+    const secured = data.riskR >= 0;
+    const riskRgba = secured ? securedRgba : downRgba;
     this.blocks.push({
       x1,
       x2,
       yTop: Math.min(yEntry, yStop),
       yBottom: Math.max(yEntry, yStop),
-      fill: downRgba(fillAlpha),
-      stroke: downRgba(strokeAlpha),
+      fill: riskRgba(fillAlpha),
+      stroke: riskRgba(strokeAlpha),
       dashed,
       hatchColor: null,
-      text: RISK_LABEL,
-      textColor: downRgba(TEXT_ALPHA),
+      text: formatRiskLabel(data.riskR),
+      textColor: riskRgba(TEXT_ALPHA),
     });
 
     if (data.target === null) return;

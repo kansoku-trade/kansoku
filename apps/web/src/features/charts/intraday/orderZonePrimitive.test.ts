@@ -92,6 +92,7 @@ describe('OrderZonePrimitive', () => {
     target: 140,
     filled: true,
     rewardR: 2,
+    riskR: -1,
     belowFloor: false,
   };
 
@@ -105,7 +106,7 @@ describe('OrderZonePrimitive', () => {
     expect(rec.fills[1].style).toBe('rgba(38, 166, 154, 0.2)');
     expect(rec.fills[1].y).toBe(160);
     expect(rec.fills[1].h).toBe(40);
-    expect(rec.texts[0]).toMatchObject({ text: '-1R' });
+    expect(rec.texts[0]).toMatchObject({ text: '-1.0R' });
     expect(rec.texts[1]).toMatchObject({ text: '+2.0R' });
   });
 
@@ -117,6 +118,7 @@ describe('OrderZonePrimitive', () => {
       target: 60,
       filled: true,
       rewardR: 2,
+      riskR: -1,
       belowFloor: false,
     };
     const rec = draw(makePrimitive(shortData, priceScale));
@@ -132,14 +134,14 @@ describe('OrderZonePrimitive', () => {
     expect(rec.fills).toHaveLength(1);
     expect(rec.strokes).toHaveLength(1);
     expect(rec.texts).toHaveLength(1);
-    expect(rec.texts[0].text).toBe('-1R');
+    expect(rec.texts[0].text).toBe('-1.0R');
   });
 
   it('skips the reward text but still draws the block when rewardR is null', () => {
     const rec = draw(makePrimitive({ ...longData, rewardR: null }, priceScale));
     expect(rec.fills).toHaveLength(2);
     expect(rec.texts).toHaveLength(1);
-    expect(rec.texts[0].text).toBe('-1R');
+    expect(rec.texts[0].text).toBe('-1.0R');
   });
 
   it('spans from startTime coordinate to the pane width', () => {
@@ -169,6 +171,25 @@ describe('OrderZonePrimitive', () => {
   it('does not hatch the reward block when belowFloor is false', () => {
     const rec = draw(makePrimitive(longData, priceScale));
     expect(rec.hatchRects).toBe(0);
+  });
+
+  it('renders the risk block as secured, not at-risk, once riskR is positive', () => {
+    const rec = draw(makePrimitive({ ...longData, riskR: 0.4 }, priceScale));
+    expect(rec.fills[0].style).toBe('rgba(74, 140, 255, 0.2)');
+    expect(rec.strokes[0].style).toBe('rgba(74, 140, 255, 0.75)');
+    expect(rec.texts[0]).toMatchObject({ style: 'rgba(74, 140, 255, 0.95)', text: '+0.4R' });
+  });
+
+  it('treats a riskR of exactly zero as secured rather than at-risk', () => {
+    const rec = draw(makePrimitive({ ...longData, riskR: 0 }, priceScale));
+    expect(rec.fills[0].style).toBe('rgba(74, 140, 255, 0.2)');
+    expect(rec.texts[0]).toMatchObject({ text: '+0.0R' });
+  });
+
+  it('keeps the risk block in the risk colour while riskR stays negative', () => {
+    const rec = draw(makePrimitive({ ...longData, riskR: -0.5 }, priceScale));
+    expect(rec.fills[0].style).toBe('rgba(239, 83, 80, 0.2)');
+    expect(rec.texts[0]).toMatchObject({ text: '-0.5R' });
   });
 
   it('toggles the stroke between dashed and solid based on filled', () => {

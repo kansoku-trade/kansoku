@@ -1416,6 +1416,7 @@ describe('TrainerOrderPanel order zone primitive', () => {
       target: 125,
       filled: false,
       rewardR: 2.5,
+      riskR: -1,
       belowFloor: false,
     });
 
@@ -1763,61 +1764,36 @@ function hitBand(kind: 'target' | 'stop'): HTMLElement {
   return document.querySelector(`.trainer-level--${kind} .trainer-level-hit`) as HTMLElement;
 }
 
-describe('TrainerOrderLevels drag clamp at the entry line', () => {
-  it('clamps a long stop dragged above the entry to strictly below it', () => {
-    const { handle, container } = makeHandle();
-    const { bridge } = makeBridge();
-    renderPanel(makeView(), bridge, handle);
-    placeOrder(container, 210, 175);
+// TD-EXIT-01 allows trailing a stop to breakeven or better; nothing in TrainerOrderLevels may
+// clamp a level at the entry line, since an open position's stop must be free to cross it. The
+// hit band is what a real pointer actually lands on (Task 3), so these drive the drag through it
+// directly rather than through dragLevel/dragOnChart, which exercises the separate, non-operative
+// useOrderBoxDrag path instead.
+describe('TrainerOrderLevels hit-band drag on an open position (TD-EXIT-01)', () => {
+  it('lets a profitable long stop be dragged past its entry through the hit band, unclamped', () => {
+    const { handle } = makeHandle();
+    const view = makeOpenView('long', 102); // entry 100 / stop 99 / reference 102 (past 1R)
+    const { bridge } = makeAmendBridge(view);
+    renderPanel(view, bridge, handle);
 
-    fireEvent.pointerDown(hitBand('stop'), { clientY: 210 });
-    fireEvent.pointerMove(window, { clientY: 50 }); // price 250, past the entry on the wrong side
-    fireEvent.pointerUp(window, { clientY: 50 });
+    fireEvent.pointerDown(hitBand('stop'), { clientY: 199.5 }); // price 100.5, above the 100 entry
+    fireEvent.pointerMove(window, { clientY: 199.5 });
+    fireEvent.pointerUp(window, { clientY: 199.5 });
 
-    expect(levelPill('stop')?.textContent).toContain('99.99');
+    expect(levelPill('stop')?.textContent).toContain('100.50');
   });
 
-  it('clamps a long target dragged below the entry to strictly above it', () => {
-    const { handle, container } = makeHandle();
-    const { bridge } = makeBridge();
-    renderPanel(makeView(), bridge, handle);
-    placeOrder(container, 210, 175);
+  it('mirrors it for a profitable short', () => {
+    const { handle } = makeHandle();
+    const view = makeOpenView('short', 98); // entry 100 / stop 101 / reference 98 (past 1R)
+    const { bridge } = makeAmendBridge(view);
+    renderPanel(view, bridge, handle);
 
-    fireEvent.pointerDown(hitBand('target'), { clientY: 175 });
-    fireEvent.pointerMove(window, { clientY: 250 }); // price 50, past the entry on the wrong side
-    fireEvent.pointerUp(window, { clientY: 250 });
+    fireEvent.pointerDown(hitBand('stop'), { clientY: 200.5 }); // price 99.5, below the 100 entry
+    fireEvent.pointerMove(window, { clientY: 200.5 });
+    fireEvent.pointerUp(window, { clientY: 200.5 });
 
-    expect(levelPill('target')?.textContent).toContain('100.01');
-  });
-
-  it('mirrors the drag clamp for a short', () => {
-    const { handle, container } = makeHandle();
-    const { bridge } = makeBridge();
-    renderPanel(makeView(), bridge, handle);
-    placeOrder(container, 190, 225, '做空');
-
-    fireEvent.pointerDown(hitBand('stop'), { clientY: 190 });
-    fireEvent.pointerMove(window, { clientY: 250 }); // price 50, below entry — illegal for a short stop
-    fireEvent.pointerUp(window, { clientY: 250 });
-    expect(levelPill('stop')?.textContent).toContain('100.01');
-
-    fireEvent.pointerDown(hitBand('target'), { clientY: 225 });
-    fireEvent.pointerMove(window, { clientY: 50 }); // price 250, above entry — illegal for a short target
-    fireEvent.pointerUp(window, { clientY: 50 });
-    expect(levelPill('target')?.textContent).toContain('99.99');
-  });
-
-  it('passes a drag well clear of the entry through untouched', () => {
-    const { handle, container } = makeHandle();
-    const { bridge } = makeBridge();
-    renderPanel(makeView(), bridge, handle);
-    placeOrder(container, 210, 175);
-
-    fireEvent.pointerDown(hitBand('stop'), { clientY: 210 });
-    fireEvent.pointerMove(window, { clientY: 220 }); // price 80, comfortably clear of the entry
-    fireEvent.pointerUp(window, { clientY: 220 });
-
-    expect(levelPill('stop')?.textContent).toContain('80.00');
+    expect(levelPill('stop')?.textContent).toContain('99.50');
   });
 });
 
