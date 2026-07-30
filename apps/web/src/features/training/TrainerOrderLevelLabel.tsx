@@ -1,4 +1,8 @@
-import { useState, type PointerEvent as ReactPointerEvent } from 'react';
+import {
+  useState,
+  type FocusEvent as ReactFocusEvent,
+  type PointerEvent as ReactPointerEvent,
+} from 'react';
 import { X } from 'lucide-react';
 import { fmt } from '@web/lib/format';
 import { SIZE_PRESETS } from './orderDraft';
@@ -8,6 +12,8 @@ import type {
   LevelSubmitConfig,
   OrderLevel,
 } from './TrainerOrderLevels';
+
+const KIND_LABEL: Record<LevelKind, string> = { target: '目标', entry: '入场', stop: '止损' };
 
 export interface TrainerOrderLevelLabelProps {
   kind: LevelKind;
@@ -37,10 +43,18 @@ export function TrainerOrderLevelLabel({
   dismiss,
 }: TrainerOrderLevelLabelProps) {
   const [hovered, setHovered] = useState(false);
+  const [focused, setFocused] = useState(false);
   // A settled edit needs its confirm/revert reachable independent of the pointer, which by then has
   // usually left the label entirely — collapsing on top of an unresolved amend would hide the only
   // way to act on it.
-  const expanded = hovered || dragging || Boolean(level.pending);
+  const expanded = hovered || focused || dragging || Boolean(level.pending);
+
+  // Focus can land on the pill itself (the Tab stop that reveals its buttons) or move on into one
+  // of those buttons once they exist — only a relatedTarget outside this whole node means focus has
+  // actually left the label and it is safe to collapse.
+  const handleBlur = (event: ReactFocusEvent<HTMLDivElement>) => {
+    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocused(false);
+  };
 
   return (
     <div
@@ -49,14 +63,24 @@ export function TrainerOrderLevelLabel({
     >
       <div className="trainer-level-line" />
       {level.draggable && (
-        <div className="trainer-level-hit" onPointerDown={startDrag(kind)} />
+        <div
+          className="trainer-level-hit"
+          onPointerDown={startDrag(kind)}
+          onPointerEnter={() => setHovered(true)}
+          onPointerLeave={() => setHovered(false)}
+        />
       )}
       <div
         className={`trainer-level-pill${level.draggable ? ' trainer-level-pill--drag' : ''}${expanded ? '' : ' trainer-level-pill--collapsed'}`}
         style={{ marginRight: `${marginRight}px` }}
+        role="group"
+        aria-label={`${KIND_LABEL[kind]} ${fmt(level.price)}`}
+        tabIndex={0}
         onPointerDown={level.draggable ? startDrag(kind) : undefined}
         onPointerEnter={() => setHovered(true)}
         onPointerLeave={() => setHovered(false)}
+        onFocus={() => setFocused(true)}
+        onBlur={handleBlur}
       >
         {level.draggable && (
           <span className="trainer-level-grip" aria-hidden="true">
@@ -92,9 +116,7 @@ export function TrainerOrderLevelLabel({
               <>
                 {level.pending.note && (
                   <span
-                    className={
-                      level.pending.blocked ? 'trainer-level-blocked' : 'trainer-chip-dim'
-                    }
+                    className={level.pending.blocked ? 'trainer-level-blocked' : 'trainer-chip-dim'}
                     role={level.pending.blocked ? 'status' : undefined}
                   >
                     {level.pending.note}

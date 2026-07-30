@@ -1648,6 +1648,48 @@ describe('TrainerOrderLevels collapsed label and hit band', () => {
     expect(screen.getByRole('button', { name: '撤销这个计划' })).toBeTruthy();
   });
 
+  it('expands on keyboard focus, and only collapses once focus leaves the whole label', () => {
+    const { handle, container } = makeHandle();
+    const { bridge } = makeBridge();
+    renderPanel(makeView(), bridge, handle);
+
+    placeOrder(container, 210, 175);
+    const entryPill = levelPill('entry')!;
+    fireEvent.pointerLeave(entryPill);
+    expect(screen.queryByRole('button', { name: '入场做多 全仓' })).toBeNull();
+
+    fireEvent.focus(entryPill);
+    expect(screen.getByRole('button', { name: '入场做多 全仓' })).toBeTruthy();
+    const dismissButton = screen.getByRole('button', { name: '撤销这个计划' });
+
+    // Focus moving from the pill onto one of its own buttons (Tab forward into the region) must
+    // not collapse it — only a relatedTarget outside the whole label means focus actually left.
+    fireEvent.blur(entryPill, { relatedTarget: dismissButton });
+    expect(screen.getByRole('button', { name: '入场做多 全仓' })).toBeTruthy();
+
+    fireEvent.blur(entryPill, { relatedTarget: document.body });
+    expect(screen.queryByRole('button', { name: '入场做多 全仓' })).toBeNull();
+  });
+
+  it('expands when the pointer enters the hit band, not only the pill', () => {
+    const { handle, container } = makeHandle();
+    const { bridge } = makeBridge();
+    renderPanel(makeView(), bridge, handle);
+
+    placeOrder(container, 210, 175);
+    const stopHit = document.querySelector(
+      '.trainer-level--stop .trainer-level-hit',
+    ) as HTMLElement;
+    const stopPill = levelPill('stop')!;
+    expect(stopPill.querySelector('.trainer-level-text')).toBeNull();
+
+    fireEvent.pointerEnter(stopHit);
+    expect(stopPill.querySelector('.trainer-level-text')).toBeTruthy();
+
+    fireEvent.pointerLeave(stopHit);
+    expect(stopPill.querySelector('.trainer-level-text')).toBeNull();
+  });
+
   it('keeps a label expanded through a drag started from the hit band, after the pointer leaves it', () => {
     const { handle, container } = makeHandle();
     const { bridge } = makeBridge();
