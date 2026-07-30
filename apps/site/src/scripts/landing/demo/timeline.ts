@@ -8,10 +8,10 @@ export interface Chapter {
 }
 
 export const CHAPTERS: Chapter[] = [
-  { id: 'trace', label: '取证', seconds: 6, view: 'chart' },
+  { id: 'trace', label: '数据', seconds: 6, view: 'chart' },
   { id: 'verdict', label: '判断', seconds: 5, view: 'chart' },
   { id: 'archive', label: '归档', seconds: 6, view: 'chart' },
-  { id: 'score', label: '记分', seconds: 5, view: 'chart' },
+  { id: 'score', label: '结果', seconds: 5, view: 'chart' },
   { id: 'tools', label: '工具', seconds: 4, view: 'chart' },
   { id: 'train', label: '盲盘训练', seconds: 6, view: 'train' },
   { id: 'research', label: '研究库', seconds: 5, view: 'research' },

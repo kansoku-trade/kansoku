@@ -9,10 +9,8 @@ const { version } = Astro.props;
 
 const lines: { text: string; status: string | null; tone: 'up' | 'accent' | null }[] = [
   { text: `KANSOKU v${version}`, status: null, tone: null },
-  { text: 'LOCAL RUNTIME ......... ', status: 'OK', tone: 'up' },
-  { text: 'BROKER LINK ........... ', status: 'DIRECT', tone: 'up' },
-  { text: 'AUDIT TRAIL ........... ', status: 'ON', tone: 'accent' },
-  { text: 'SCORECARD ............. ', status: 'LOADED', tone: 'accent' },
+  { text: '个人市场研究工作台', status: null, tone: null },
+  { text: 'macOS · Apple Silicon', status: null, tone: null },
   { text: 'READY', status: null, tone: null },
 ];
 ---
@@ -28,7 +26,7 @@ const lines: { text: string; status: string | null; tone: 'up' | 'accent' | null
       ))
     }
   </div>
-  <button type="button" class="boot-skip" data-boot-skip>SKIP →</button>
+  <button type="button" class="boot-skip" data-boot-skip>跳过 →</button>
 </div>
 
 <style>

@@ -16,34 +16,35 @@ const proShorts = features.pro.map((f) => f.short).join('、');
 <section class="outro">
   <div class="outro-scene" data-outro-scene data-mode="plain">
     <canvas class="outro-canvas" data-outro-canvas aria-hidden="true" layoutsubtree>
-      <p class="outro-src" data-outro-src>有出处 · 不改口 · 有战绩</p>
+      <p class="outro-src" data-outro-src>看盘 · 记录 · 复盘</p>
     </canvas>
-    <p class="outro-status">有出处 · 不改口 · 有战绩</p>
+    <p class="outro-status">看盘 · 记录 · 复盘</p>
   </div>
 
   <div class="outro-panel" data-reveal>
     <div class="outro-copy">
-      <h2>免费版就是完整的看盘工具。</h2>
+      <h2>先从免费版开始。</h2>
       <p class="outro-sub">
-        Pro 解锁{proShorts} ——
+        免费版包含多周期图表、画线、SEPA、盘面与复盘，以及基础 AI 功能。
+      </p>
+      <p class="outro-sub outro-pro">
+        Pro 另含{proShorts}，可试用 {subscription.trialDays} 天：
         <span class="outro-deal">
           <span class="outro-badge">{subscription.discountLabel}</span>
           <s class="mono outro-list">{subscription.listPriceLabel}</s>
           <span class="mono outro-amount">{subscription.priceLabel}</span>
         </span>
-        或
+        ；
         <span class="outro-deal">
           <s class="mono outro-list">{subscription.yearly.listPriceLabel}</s>
           <span class="mono outro-amount">{subscription.yearly.priceLabel}</span>
         </span>
-        （{subscription.yearly.discountLabel} · {subscription.yearly.savingsLabel}） · {
-          subscription.trialDays
-        } 天试用
+        （{subscription.yearly.discountLabel}，{subscription.yearly.savingsLabel}）。
       </p>
     </div>
     <div class="outro-cta">
-      <a class="btn" href={downloadUrl}>免费下载 <span class="ver">v{version}</span></a>
-      <a class="btn btn-ghost" href="/pricing">免费版 vs Pro</a>
+      <a class="btn" href={downloadUrl}>下载 macOS 版 <span class="ver">v{version}</span></a>
+      <a class="btn btn-ghost" href="/pricing">比较免费版与 Pro</a>
     </div>
   </div>
 </section>
@@ -133,6 +134,10 @@ const proShorts = features.pro.map((f) => f.short).join('、');
     color: var(--text-2);
     font-size: 13px;
     line-height: 1.7;
+  }
+
+  .outro-pro {
+    margin-top: 4px;
   }
 
   .outro-deal {
