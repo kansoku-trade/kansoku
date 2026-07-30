@@ -128,8 +128,8 @@ describe('LicenseSection', () => {
 
     renderWithClient(<LicenseSection />);
 
-    expect(await screen.findByText(/授权已过期/)).toBeTruthy();
-    expect(screen.getByText(/自动重新验证/)).toBeTruthy();
+    expect(await screen.findByText(/授权过期/)).toBeTruthy();
+    expect(screen.getByText(/自动重验/)).toBeTruthy();
     expect(screen.queryByText(/已失效/)).toBeNull();
     expect(screen.getByPlaceholderText('输入授权码')).toBeTruthy();
   });
