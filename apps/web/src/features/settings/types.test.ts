@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeAiRoles, ROLES, type AiRoles, type RoleSetting } from './types';
+import {
+  normalizeAiRoles,
+  normalizeAiSettings,
+  ROLES,
+  type AiRoles,
+  type PersistedAiSettings,
+  type RoleSetting,
+} from './types';
 
 const configured: RoleSetting = {
   mode: 'custom',
@@ -69,5 +76,19 @@ describe('normalizeAiRoles', () => {
         });
       }
     }
+  });
+});
+
+describe('normalizeAiSettings', () => {
+  const base: PersistedAiSettings = { roles: null, credentials: [], masterKey: 'missing' };
+
+  it('substitutes an empty endpoint list when the persisted snapshot predates the field', () => {
+    expect(normalizeAiSettings(base).endpoints).toEqual([]);
+    expect(normalizeAiSettings({ ...base, endpoints: null }).endpoints).toEqual([]);
+  });
+
+  it('keeps the endpoints a live response carries', () => {
+    const endpoints = [{ provider: 'openai', baseUrl: 'https://example.test/v1' }];
+    expect(normalizeAiSettings({ ...base, endpoints }).endpoints).toEqual(endpoints);
   });
 });

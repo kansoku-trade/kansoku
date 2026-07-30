@@ -79,17 +79,32 @@ function defaultRoleSetting(role: Role | 'primary'): RoleSetting {
   };
 }
 
-// react-query persists settings.getAi responses to localStorage
-// (queryClient.ts) and restores them before the live refetch lands, so a
-// role added after a user's last persisted snapshot (e.g. 'memory' on
-// 2026-07-20) is briefly missing from `roles` on app launch — normalize so
-// every ROLES consumer can always index it.
 export function normalizeAiRoles(roles: Partial<AiRoles> | null | undefined): AiRoles {
   const normalized = {} as AiRoles;
   for (const role of ['primary', ...ROLES] as const) {
     normalized[role] = roles?.[role] ?? defaultRoleSetting(role);
   }
   return normalized;
+}
+
+export type PersistedAiSettings = Omit<AiSettings, 'roles' | 'endpoints'> & {
+  roles?: Partial<AiRoles> | null;
+  endpoints?: ProviderEndpoint[] | null;
+};
+
+// react-query persists settings.getAi responses to localStorage
+// (queryClient.ts) and restores them before the live refetch lands, so
+// anything added after a user's last persisted snapshot — the 'memory' role
+// (2026-07-20), `endpoints` (2026-07-29) — is briefly absent on app launch.
+// Normalize the whole snapshot here so consumers can index it directly; a
+// consumer reading a new field off the raw snapshot crashes the settings page
+// for everyone upgrading from the previous release.
+export function normalizeAiSettings(settings: PersistedAiSettings): AiSettings {
+  return {
+    ...settings,
+    roles: normalizeAiRoles(settings.roles),
+    endpoints: settings.endpoints ?? [],
+  };
 }
 
 export const ROLE_LABEL: Record<Role, string> = {

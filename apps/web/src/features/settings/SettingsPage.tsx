@@ -17,13 +17,14 @@ import { SettingsStatusStrip } from './SettingsStatusStrip';
 import { TimeDisplaySettingsCard } from './TimeDisplaySettingsCard';
 import { WatchedMarketsCard } from './WatchedMarketsCard';
 import { deriveSettingsViewModel } from './settingsViewModel';
-import { normalizeAiRoles } from './types';
+import { normalizeAiSettings } from './types';
 import type {
   AiRoles,
   AiSettings,
   Catalog,
   LobeHubAccount,
   LobeHubCredits,
+  PersistedAiSettings,
   Role,
   RoleSetting,
   UsageToday,
@@ -154,7 +155,7 @@ export function SettingsPage() {
     data: settings,
     error: settingsError,
     reload: reloadSettings,
-  } = useQuery<AiSettings>('settings.getAi', () => client.settings.getAi());
+  } = useQuery<PersistedAiSettings>('settings.getAi', () => client.settings.getAi());
   const {
     data: catalog,
     error: catalogError,
@@ -212,7 +213,7 @@ export function SettingsPage() {
     );
   }
 
-  const normalizedSettings: AiSettings = { ...settings, roles: normalizeAiRoles(settings.roles) };
+  const normalizedSettings = normalizeAiSettings(settings);
 
   return (
     <SettingsPageScrollArea>
