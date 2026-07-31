@@ -112,6 +112,7 @@ body:has(.terminal-chrome) .nav {
 .chrome-brand {
   color: var(--text);
   font-weight: 600;
+  text-decoration: none;
 }
 
 .chrome-version,
@@ -166,8 +167,52 @@ body:has(.terminal-chrome) .nav {
   color: var(--accent);
 }
 
+.chrome-tape {
+  display: none;
+  align-items: center;
+  gap: 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (min-width: 1024px) {
+  .chrome-tape.is-live {
+    display: flex;
+  }
+}
+
+.chrome-tape-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chrome-tape-sym {
+  color: var(--text-3);
+}
+
+.chrome-tape-last {
+  color: var(--text);
+}
+
+.chrome-tape-chg {
+  color: var(--text-2);
+}
+
+.chrome-tape-chg.is-up {
+  color: var(--up);
+}
+
+.chrome-tape-chg.is-down {
+  color: var(--down);
+}
+
+.chrome-tape-delay {
+  color: var(--text-3);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+}
+
 .chrome-body {
   position: relative;
   z-index: 1;
 }
-

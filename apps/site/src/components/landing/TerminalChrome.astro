@@ -2,6 +2,8 @@
 import '../../styles/landing/tokens.css';
 import '../../styles/landing/chrome.css';
 
+import { TAPE_SYMBOLS } from '../../scripts/landing/tape';
+
 interface Props {
   version: string;
 }
@@ -28,6 +30,22 @@ const { version } = Astro.props;
       </span>
     </div>
     <span class="chrome-spacer"></span>
+    <div class="chrome-tape" data-chrome-tape>
+      {
+        TAPE_SYMBOLS.map(({ symbol }) => (
+          <span class="chrome-tape-item" data-tape-symbol={symbol}>
+            <span class="chrome-tape-sym">{symbol}</span>
+            <span class="chrome-tape-last" data-tape-last>
+              --
+            </span>
+            <span class="chrome-tape-chg" data-tape-chg>
+              --
+            </span>
+          </span>
+        ))
+      }
+      <span class="chrome-tape-delay">Delayed 15m</span>
+    </div>
     <nav class="chrome-nav">
       <a href="/pricing">定价</a>
       <a href="/changelog">更新日志</a>
