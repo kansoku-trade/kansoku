@@ -4,7 +4,7 @@ import type { ReplayBand } from '../charts/intraday/replayBandPrimitive';
 
 export type { ReplayBand, ReplayBandKind } from '../charts/intraday/replayBandPrimitive';
 
-const sec = (iso: string) => Math.floor(Date.parse(iso) / 1000);
+export const sec = (iso: string) => Math.floor(Date.parse(iso) / 1000);
 
 function span(bars: readonly RawBar[], from: number, to: number): [number, number] | null {
   const start = bars[from];
@@ -40,6 +40,14 @@ export function replayBands(view: TrainerView, epilogue: readonly RawBar[] | nul
 
 export function unreachedBars(view: TrainerView): number {
   return Math.max(0, view.remainingBars);
+}
+
+// The played bars are the trailing playedCount elements of base (see replayBands above), so their
+// last one — the cursor's bar — is always base's own last element, even when playedCount is 0 and
+// that last element is a given bar rather than a played one.
+export function cursorBarTime(view: TrainerView): number {
+  const bar = view.bars.base.at(-1);
+  return bar ? sec(bar.time) : 0;
 }
 
 // bars.base is [question bars, revealed replay bars] and the revealed run is exactly cursor + 1

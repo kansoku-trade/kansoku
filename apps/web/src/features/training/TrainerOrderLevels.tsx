@@ -1,16 +1,27 @@
-import { useEffect, useRef, type PointerEvent as ReactPointerEvent } from 'react';
-import { X } from 'lucide-react';
-import { fmt } from '@web/lib/format';
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import { theme } from '@web/lib/theme';
+import { addPriceLine } from '../charts/lw';
+import type { OrderZoneData } from '../charts/intraday/orderZonePrimitive';
 import type { DrawingChartHandle } from '../charts/intraday/useIntradayCharts';
 import { beginCursorLock, endCursorLock } from './cursorLock';
-import { SIZE_PRESETS } from './orderDraft';
+import { TrainerOrderLevelLabel } from './TrainerOrderLevelLabel';
 import { TrainerOverlayPortal, useTrainerOverlayFrame } from './trainerOverlay';
+import { useOrderZone } from './useOrderZone';
 import { usePinnedPriceYs } from './usePinnedPriceY';
 
 export type LevelKind = 'target' | 'entry' | 'stop';
+// The entry is never grabbable: it is the fill price, not a level the trader places.
+export type DraggableKind = Exclude<LevelKind, 'entry'>;
+export type OffScale = 'above' | 'below' | null;
 
 const PILL_MIN_GAP_PX = 26;
-const LANE_STEP_PX = 200;
+const LANE_STEP_PX = 80;
+const PILL_EDGE_INSET_PX = 14;
+
+const LEVEL_LINE_COLOR: Record<DraggableKind, string> = {
+  target: theme.up,
+  stop: theme.down,
+};
 
 export interface OrderLevel {
   price: number;
@@ -25,25 +36,37 @@ export interface OrderLevel {
   pulls?: { field: 'target' | 'stop'; label: string; set: boolean }[];
 }
 
+export interface LevelSubmitConfig {
+  label: string;
+  disabled: boolean;
+  blockedReason?: string;
+  onSubmit: (size: number) => void;
+}
+
+export interface LevelDismissConfig {
+  label: string;
+  onDismiss: () => void;
+}
+
 export interface TrainerOrderLevelsProps {
   handle: DrawingChartHandle | null;
   target: OrderLevel | null;
   entry: OrderLevel | null;
   stop: OrderLevel | null;
   filled?: boolean;
-  onDrag?: (kind: LevelKind, price: number) => void;
+  zone?: OrderZoneData | null;
+  // A drawing tool and the levels both want pointerdown on this pane, so only one of them ever has
+  // it: while a tool is armed the hit bands and the TP/SL pulls come off entirely, rather than
+  // staying on screen as full-width strips that would swallow the stroke being drawn.
+  dragDisabled?: boolean;
+  onDrag?: (kind: DraggableKind, price: number) => void;
   onDragEnd?: () => void;
   onConfirm?: () => void;
   onRevert?: () => void;
   // Sending the order from the ticket itself: the plan is already under the pointer here, so there
   // is no reason to travel back to the lane to commit it.
-  submit?: {
-    label: string;
-    disabled: boolean;
-    blockedReason?: string;
-    onSubmit: (size: number) => void;
-  };
-  dismiss?: { label: string; onDismiss: () => void };
+  submit?: LevelSubmitConfig;
+  dismiss?: LevelDismissConfig;
 }
 
 // Stop and target have no dismiss: the engine refuses a submission that is missing either, so a
@@ -55,6 +78,8 @@ export function TrainerOrderLevels({
   entry,
   stop,
   filled = false,
+  zone,
+  dragDisabled = false,
   onDrag,
   onDragEnd,
   onConfirm,
@@ -63,20 +88,25 @@ export function TrainerOrderLevels({
   dismiss,
 }: TrainerOrderLevelsProps) {
   const frame = useTrainerOverlayFrame();
-  const ys = usePinnedPriceYs(handle, frame, {
+  const { ys, pane } = usePinnedPriceYs(handle, frame, {
     target: target?.price ?? null,
     entry: entry?.price ?? null,
     stop: stop?.price ?? null,
   });
+  useOrderZone(handle, zone ?? null);
 
   // Leaving the drag half-applied would strand the whole document in a resize cursor, so the
-  // teardown is reachable from unmount as well as from the pointer release.
-  const endDrag = useRef<(() => void) | null>(null);
-  useEffect(() => () => endDrag.current?.(), []);
+  // teardown is reachable from unmount as well as from the pointer release — the same path also
+  // removes the axis price line, so it cannot outlive the drag if the component unmounts mid-drag.
+  const endDragRef = useRef<(() => void) | null>(null);
+  useEffect(() => () => endDragRef.current?.(), []);
 
-  // Dragging the pill is the same gesture as dragging the line, so it goes through the same
-  // price callback rather than a second path that could round differently.
-  const startDrag = (kind: LevelKind) => (event: ReactPointerEvent<HTMLElement>) => {
+  const [draggingKind, setDraggingKind] = useState<DraggableKind | null>(null);
+
+  // Dragging the pill, the hit band or a pull is the same gesture as dragging the line, so all
+  // three go through the same price callback rather than a second path that could round
+  // differently.
+  const startDrag = (kind: DraggableKind) => (event: ReactPointerEvent<HTMLElement>) => {
     if (!handle || !onDrag) return;
     event.preventDefault();
     event.stopPropagation();
@@ -84,35 +114,81 @@ export function TrainerOrderLevels({
     // price axis, past the edge of the pane — and the cursor would otherwise flip to whatever each
     // of those uses. A document-level lock keeps the grab legible until the release.
     beginCursorLock();
-    const move = (moved: PointerEvent) => {
+    setDraggingKind(kind);
+
+    const priceAt = (clientY: number) => {
       const top = handle.container.getBoundingClientRect().top;
-      const price = handle.series.coordinateToPrice(moved.clientY - top);
-      if (price !== null) onDrag(kind, price);
+      return handle.series.coordinateToPrice(clientY - top);
+    };
+
+    let priceLine: ReturnType<typeof addPriceLine> | null = null;
+    const showPriceLine = (price: number) => {
+      if (priceLine) {
+        priceLine.applyOptions({ price });
+        return;
+      }
+      priceLine = addPriceLine(handle.series, {
+        price,
+        color: LEVEL_LINE_COLOR[kind],
+        lineWidth: 1,
+        lineStyle: 2,
+        axisLabelVisible: true,
+      });
+    };
+    const initialPrice = priceAt(event.clientY);
+    if (initialPrice !== null) showPriceLine(initialPrice);
+
+    const move = (moved: PointerEvent) => {
+      const price = priceAt(moved.clientY);
+      if (price === null) return;
+      showPriceLine(price);
+      onDrag(kind, price);
     };
     const up = () => {
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', up);
       window.removeEventListener('pointercancel', up);
       endCursorLock();
-      endDrag.current = null;
+      if (priceLine) handle.series.removePriceLine(priceLine);
+      endDragRef.current = null;
+      setDraggingKind(null);
       onDragEnd?.();
     };
-    endDrag.current = up;
+    endDragRef.current = up;
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
     window.addEventListener('pointercancel', up);
   };
 
-  const rows: { kind: LevelKind; level: OrderLevel; y: number; lane: number }[] = [];
+  const dragEnabled = Boolean(handle && onDrag) && !dragDisabled;
+
+  // A price can scale off the pane while still answering with a coordinate. Only the line and its
+  // grabbable band come off in that case — at the answered y they would land on the price axis or
+  // down on the MACD chart, and at a clamped y they would name a price that is not there. The row
+  // itself survives, parked on the pane edge: its pill is the sole host of the sized submit
+  // buttons, of 撤销这个计划 and of a pending amend's 确认调整/撤销, and it is a drag surface in
+  // its own right, so an off-scale level can still be pulled back onto the scale.
+  const rows: {
+    kind: LevelKind;
+    level: OrderLevel;
+    y: number;
+    offScale: OffScale;
+    lane: number;
+  }[] = [];
+  const inset = pane ? Math.min(PILL_EDGE_INSET_PX, (pane.bottom - pane.top) / 2) : 0;
   for (const [kind, level] of [
     ['target', target],
     ['entry', entry],
     ['stop', stop],
   ] as const) {
     const y = ys[kind];
-    if (level && y !== null) rows.push({ kind, level, y, lane: 0 });
+    if (!level || y === null || !pane) continue;
+    const offScale: OffScale = y < pane.top ? 'above' : y > pane.bottom ? 'below' : null;
+    const parked =
+      offScale === 'above' ? pane.top + inset : offScale === 'below' ? pane.bottom - inset : y;
+    rows.push({ kind, level, y: parked, offScale, lane: 0 });
   }
-  if (rows.length === 0) return null;
+  if (rows.length === 0 || !pane) return null;
 
   // A tight stop puts all three prices within a few pixels of each other, and three tickets stacked
   // on the same spot bury one another — the entry's own text and its close button end up unreadable
@@ -127,101 +203,24 @@ export function TrainerOrderLevels({
 
   return (
     <TrainerOverlayPortal slot="pinned">
-      {rows.map(({ kind, level, y, lane }) => (
-        <div
+      {rows.map(({ kind, level, y, offScale, lane }) => (
+        <TrainerOrderLevelLabel
           key={kind}
-          className={`trainer-level trainer-level--${kind}${filled && kind === 'entry' ? ' trainer-level--filled' : ''}`}
-          style={{ top: `${y}px` }}
-        >
-          <div className="trainer-level-line" />
-          <div
-            className={`trainer-level-pill${level.draggable ? ' trainer-level-pill--drag' : ''}`}
-            style={lane > 0 ? { marginRight: `${70 + lane * LANE_STEP_PX}px` } : undefined}
-            onPointerDown={level.draggable ? startDrag(kind) : undefined}
-          >
-            {level.draggable && (
-              <span className="trainer-level-grip" aria-hidden="true">
-                ⇅
-              </span>
-            )}
-            {level.badge && <span className="trainer-level-badge">{level.badge}</span>}
-            {level.pulls?.map((pull) => (
-              <button
-                key={pull.field}
-                className={`trainer-level-pull trainer-level-pull--${pull.field}${pull.set ? ' trainer-level-pull--set' : ''}`}
-                aria-label={`拖出${pull.label}`}
-                title={pull.set ? `拖动改${pull.label}` : `按住往图上拖，放下就是${pull.label}`}
-                onPointerDown={startDrag(pull.field)}
-              >
-                {pull.label}
-              </button>
-            ))}
-            {/* Old price first, then the arrow, then where it is being moved to — the move has to
-                read in the direction it happens. */}
-            <span className="trainer-level-price">
-              {level.pending && (
-                <>
-                  <span className="trainer-level-was">{fmt(level.pending.from)}</span>
-                  <span className="trainer-chip-dim"> → </span>
-                </>
-              )}
-              {fmt(level.price)}
-            </span>
-            <span className="trainer-level-sep" />
-            {level.pending ? (
-              <>
-                {level.pending.note && (
-                  <span
-                    className={level.pending.blocked ? 'trainer-level-blocked' : 'trainer-chip-dim'}
-                    role={level.pending.blocked ? 'status' : undefined}
-                  >
-                    {level.pending.note}
-                  </span>
-                )}
-                <button
-                  className="trainer-level-act trainer-level-act--ok"
-                  disabled={level.pending.blocked}
-                  onClick={onConfirm}
-                >
-                  确认调整
-                </button>
-                <button className="trainer-level-act" aria-label="撤销调整" onClick={onRevert}>
-                  撤销
-                </button>
-              </>
-            ) : (
-              <span className="trainer-level-text">{level.text}</span>
-            )}
-            {kind === 'entry' && submit && (
-              <>
-                <span className="trainer-level-sep" />
-                <span className="trainer-level-submit-label">进场</span>
-                {SIZE_PRESETS.map(({ label, size }) => (
-                  <button
-                    key={label}
-                    className="trainer-level-act trainer-level-act--go"
-                    aria-label={`${submit.label} ${label}`}
-                    disabled={submit.disabled}
-                    title={submit.blockedReason ?? `${submit.label} ${label}`}
-                    onClick={() => submit.onSubmit(size)}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </>
-            )}
-            {kind === 'entry' && dismiss && (
-              <button
-                className="trainer-level-act trainer-level-act--x"
-                aria-label={dismiss.label}
-                title={dismiss.label}
-                onClick={dismiss.onDismiss}
-              >
-                <X size={13} />
-              </button>
-            )}
-          </div>
-        </div>
+          kind={kind}
+          level={level}
+          y={y}
+          offScale={offScale}
+          pane={pane}
+          marginRight={70 + lane * LANE_STEP_PX}
+          filled={filled && kind === 'entry'}
+          dragging={draggingKind === kind}
+          startDrag={dragEnabled ? startDrag : undefined}
+          onGrab={dragEnabled && level.draggable && kind !== 'entry' ? startDrag(kind) : undefined}
+          onConfirm={onConfirm}
+          onRevert={onRevert}
+          submit={kind === 'entry' ? submit : undefined}
+          dismiss={kind === 'entry' ? dismiss : undefined}
+        />
       ))}
     </TrainerOverlayPortal>
   );
