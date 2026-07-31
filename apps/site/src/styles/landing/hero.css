@@ -11,10 +11,10 @@
 .hero-evidence-shell {
   position: relative;
   z-index: 1;
-  display: grid;
-  grid-template-columns: minmax(420px, 560px) minmax(0, 1fr);
-  align-items: center;
-  gap: 48px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 40px;
   width: min(1200px, 100%);
   margin: 0 auto;
   padding: 76px 24px 56px;
@@ -68,14 +68,17 @@
   z-index: 1;
 }
 
+.hero-mark,
+.hero-evidence-grid,
 .hero-evidence-copy,
 .hero-evidence-scene {
   position: relative;
   z-index: 1;
 }
 
-.hero-evidence-copy {
-  min-width: 0;
+.hero-mark {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 24px;
 }
 
 .hero-eyebrow {
@@ -84,13 +87,38 @@
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--accent);
-  margin: 0 0 22px;
+  margin: 0 0 18px;
 }
 
 .hero-title {
-  font-size: clamp(34px, 4.2vw, 58px);
-  line-height: 1.12;
-  margin: 0 0 22px;
+  font-family: var(--mono);
+  font-size: clamp(30px, 7vw, 100px);
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  line-height: 1.05;
+  margin: 0 0 18px;
+}
+
+.hero-title b {
+  color: var(--accent);
+  font-weight: inherit;
+}
+
+.hero-lede {
+  font-size: clamp(19px, 2.5vw, 32px);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.hero-evidence-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 46%) minmax(0, 1fr);
+  align-items: center;
+  gap: 48px;
+}
+
+.hero-evidence-copy {
+  min-width: 0;
 }
 
 .hero-sub {
@@ -98,7 +126,6 @@
   font-size: 15px;
   line-height: 1.85;
   margin: 0 0 30px;
-  max-width: 520px;
 }
 
 .hero-sub b {
@@ -117,7 +144,6 @@
   font-size: 12.5px;
   line-height: 1.75;
   color: var(--text-2);
-  max-width: 520px;
   margin: 0 0 10px;
 }
 
@@ -148,7 +174,6 @@
 }
 
 .hero-evidence-scene {
-  position: relative;
   width: 100%;
   aspect-ratio: 4 / 3;
   min-height: 320px;
@@ -232,8 +257,7 @@
 }
 
 .evidence-card-dir {
-  font-family:
-    -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
   font-size: 15px;
   font-weight: 600;
   margin: 0 0 12px;
@@ -322,8 +346,16 @@
 
 @media (max-width: 900px) {
   .hero-evidence-shell {
-    grid-template-columns: 1fr;
     padding: 56px 20px 40px;
+    gap: 32px;
+  }
+
+  .hero-title {
+    letter-spacing: 0.08em;
+  }
+
+  .hero-evidence-grid {
+    grid-template-columns: 1fr;
     gap: 32px;
   }
 

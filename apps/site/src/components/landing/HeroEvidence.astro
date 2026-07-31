@@ -32,90 +32,99 @@ const barLabels: Record<(typeof barKeys)[number], string> = {
     <canvas class="hero-atmosphere-canvas" data-hero-atmosphere></canvas>
   </div>
   <div class="hero-evidence-shell">
-  <div class="hero-evidence-copy">
-    <p class="hero-eyebrow">个人市场研究工作台 · macOS</p>
-    <h1 class="hero-title">看盘时怎么想的，盘后还能找回来。</h1>
-    <p class="hero-sub">
-      看盘、画线、记录判断和跟踪结果，都在同一个工作区完成。
-      行情从你的数据源读取，指标在本机计算，研究记录保存在本地；需要时，再让 AI 参与查询和复评。
-    </p>
-    <div class="hero-cta">
-      <a class="btn" href={downloadUrl}>下载 macOS 版 <span class="ver">v{version}</span></a>
-      <a class="btn btn-ghost" href="#demo">查看实际工作流 ↓</a>
-    </div>
-    <p class="hero-free">
-      多周期看盘、复评和基础对话可免费使用，无需注册 Kansoku 账号。<a class="hero-pro-link" href="/pricing">比较免费版与 Pro →</a>
-    </p>
-    <p class="hero-note">
-      Apple Silicon Mac · 需安装并登录 <a
-        href="https://open.longbridge.com/docs/cli/install"
-        target="_blank"
-        rel="noreferrer">longbridge CLI</a
-      > · 首次启动时右键应用并选择「打开」
-    </p>
-  </div>
+    <header class="hero-mark">
+      <p class="hero-eyebrow">个人市场研究工作台</p>
+      <h1 class="hero-title">KANSOKU <b>観測</b></h1>
+      <p class="hero-lede">在 Mac 上看盘、记录判断、跟踪结果。</p>
+    </header>
 
-  <div class="hero-evidence-scene" data-hero-scene>
-    <svg
-      class="hero-poster"
-      viewBox="0 0 400 300"
-      preserveAspectRatio="xMidYMid meet"
-      aria-hidden="true"
-      data-hero-poster
-    >
-      {
-        nodePositions.map((node) => (
-          <line
-            x1={node.x}
-            y1={node.y}
-            x2="200"
-            y2="150"
+    <div class="hero-evidence-grid">
+      <div class="hero-evidence-copy">
+        <p class="hero-sub">
+          多周期 K 线、画线、SEPA、盘中记录和历史复盘都在同一个工作区。
+          行情走你自己的数据源，指标在本机计算，研究记录以文件形式存在本地；需要时再让 AI 参与查询和复评。
+        </p>
+        <div class="hero-cta">
+          <a class="btn" href={downloadUrl}>下载 macOS 版 <span class="ver">v{version}</span></a>
+          <a class="btn btn-ghost" href="#demo">查看实际工作流 ↓</a>
+        </div>
+        <p class="hero-free">
+          多周期看盘、复评和基础对话可免费使用，无需注册 Kansoku 账号。<a
+            class="hero-pro-link"
+            href="/pricing">比较免费版与 Pro →</a
+          >
+        </p>
+        <p class="hero-note">
+          Apple Silicon Mac · 需安装并登录 <a
+            href="https://open.longbridge.com/docs/cli/install"
+            target="_blank"
+            rel="noreferrer">longbridge CLI</a
+          > · 首次启动时右键应用并选择「打开」
+        </p>
+      </div>
+
+      <div class="hero-evidence-scene" data-hero-scene>
+        <svg
+          class="hero-poster"
+          viewBox="0 0 400 300"
+          preserveAspectRatio="xMidYMid meet"
+          aria-hidden="true"
+          data-hero-poster
+        >
+          {
+            nodePositions.map((node) => (
+              <line
+                x1={node.x}
+                y1={node.y}
+                x2="200"
+                y2="150"
+                stroke="var(--border-strong)"
+                stroke-width="1"
+                stroke-dasharray="2 4"
+              />
+            ))
+          }
+          <rect
+            x="120"
+            y="95"
+            width="160"
+            height="110"
+            fill="none"
             stroke="var(--border-strong)"
             stroke-width="1"
-            stroke-dasharray="2 4"
           />
-        ))
-      }
-      <rect
-        x="120"
-        y="95"
-        width="160"
-        height="110"
-        fill="none"
-        stroke="var(--border-strong)"
-        stroke-width="1"
-      />
-      {
-        nodePositions.map((node) => (
-          <circle cx={node.x} cy={node.y} r="3.5" fill="var(--border-strong)" />
-        ))
-      }
-    </svg>
+          {
+            nodePositions.map((node) => (
+              <circle cx={node.x} cy={node.y} r="3.5" fill="var(--border-strong)" />
+            ))
+          }
+        </svg>
 
-    <canvas class="hero-scene-canvas" data-hero-canvas></canvas>
-    <canvas class="hero-particle-canvas" data-hero-particles></canvas>
+        <canvas class="hero-scene-canvas" data-hero-canvas></canvas>
+        <canvas class="hero-particle-canvas" data-hero-particles></canvas>
 
-    <div class="evidence-card" data-hero-card>
-      <div class="evidence-card-head">
-        <span class="evidence-card-sym" data-card-sym></span>
+        <div class="evidence-card" data-hero-card>
+          <div class="evidence-card-head">
+            <span class="evidence-card-sym" data-card-sym></span>
+          </div>
+          <p class="evidence-card-dir" data-card-dir></p>
+          <div class="evidence-card-bars">
+            {
+              barKeys.map((key) => (
+                <div class="evidence-bar-row">
+                  <span class="evidence-bar-label">{barLabels[key]}</span>
+                  <div class="evidence-bar-track" data-bar-track={key} />
+                  <span class="evidence-bar-value" data-bar-value={key}>
+                    0%
+                  </span>
+                </div>
+              ))
+            }
+          </div>
+          <p class="evidence-card-trig" data-card-trig></p>
+          <span class="evidence-card-stamp" data-card-stamp>ARCHIVED · 冻结</span>
+        </div>
       </div>
-      <p class="evidence-card-dir" data-card-dir></p>
-      <div class="evidence-card-bars">
-        {
-          barKeys.map((key) => (
-            <div class="evidence-bar-row">
-              <span class="evidence-bar-label">{barLabels[key]}</span>
-              <div class="evidence-bar-track" data-bar-track={key} />
-              <span class="evidence-bar-value" data-bar-value={key}>
-                0%
-              </span>
-            </div>
-          ))
-        }
-      </div>
-      <p class="evidence-card-trig" data-card-trig></p>
-      <span class="evidence-card-stamp" data-card-stamp>ARCHIVED · 冻结</span>
     </div>
-  </div>
   </div>
 </section>
