@@ -8748,10 +8748,28 @@ a.zone-item:hover {
   margin-top: 12px;
 }
 .onboarding-apikey {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
   gap: 8px;
   margin-top: 12px;
+}
+.onboarding-apikey-row {
+  display: grid;
+  gap: 8px;
+}
+.onboarding-apikey-row--endpoint {
+  grid-template-columns: minmax(0, 1fr);
+}
+.onboarding-apikey-row--credentials {
+  grid-template-columns: minmax(108px, 0.65fr) minmax(0, 1.35fr) auto;
+}
+.onboarding-apikey .input,
+.onboarding-apikey .ui-select-trigger {
+  width: 100%;
+  min-width: 0;
+}
+.onboarding-apikey-row--credentials .btn {
+  min-width: 112px;
+  justify-content: center;
 }
 .onboarding-skip-link {
   background: none;
