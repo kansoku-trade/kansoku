@@ -34,7 +34,7 @@ const formatClock = (now: Date): string => {
 
 const TAPE_REFRESH_MS = 60_000;
 
-const initTape = (): void => {
+const initTape = (): (() => void) | void => {
   const tape = document.querySelector<HTMLElement>('[data-chrome-tape]');
   if (!tape) return;
 
@@ -65,19 +65,27 @@ const initTape = (): void => {
     }
   };
 
-  void refresh();
-  setInterval(() => void refresh(), TAPE_REFRESH_MS);
-  document.addEventListener('visibilitychange', () => {
+  const onVisibilityChange = () => {
     if (!document.hidden) void refresh();
-  });
+  };
+
+  void refresh();
+  const timer = window.setInterval(() => void refresh(), TAPE_REFRESH_MS);
+  document.addEventListener('visibilitychange', onVisibilityChange);
+
+  return () => {
+    window.clearInterval(timer);
+    document.removeEventListener('visibilitychange', onVisibilityChange);
+  };
 };
 
-export const initTerminalChrome = (): void => {
-  initTape();
+export const initTerminalChrome = (): (() => void) | void => {
+  const stopTape = initTape();
+
   const clock = document.querySelector<HTMLElement>('[data-chrome-clock]');
   const dot = document.querySelector<HTMLElement>('[data-chrome-session-dot]');
   const label = document.querySelector<HTMLElement>('[data-chrome-session-text]');
-  if (!clock || !dot || !label) return;
+  if (!clock || !dot || !label) return stopTape;
 
   const tick = () => {
     const now = new Date();
@@ -88,5 +96,10 @@ export const initTerminalChrome = (): void => {
   };
 
   tick();
-  setInterval(tick, 1000);
+  const clockTimer = window.setInterval(tick, 1000);
+
+  return () => {
+    window.clearInterval(clockTimer);
+    stopTape?.();
+  };
 };

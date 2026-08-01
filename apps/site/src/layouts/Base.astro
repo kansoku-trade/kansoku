@@ -1,4 +1,8 @@
 ---
+import { ClientRouter } from 'astro:transitions';
+
+import { NAV_LINKS } from '../lib/nav';
+
 interface Props {
   title: string;
   description: string;
@@ -14,11 +18,9 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
   <head>
     <script is:inline>
       (function () {
-        try {
-          var tier = 'full';
-          if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-            tier = 'still';
-          } else {
+        function detectTier() {
+          try {
+            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return 'still';
             var coarsePointer = !window.matchMedia('(pointer: fine)').matches;
             var narrow = window.innerWidth < 1024;
             var webgl2 = false;
@@ -27,12 +29,28 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
             } catch (e) {
               webgl2 = false;
             }
-            if (coarsePointer || narrow || !webgl2) tier = 'lite';
+            return coarsePointer || narrow || !webgl2 ? 'lite' : 'full';
+          } catch (e) {
+            return 'still';
           }
-          document.documentElement.setAttribute('data-tier', tier);
-        } catch (e) {
-          document.documentElement.setAttribute('data-tier', 'still');
         }
+
+        var tier = detectTier();
+
+        // The client router wipes every attribute off <html> on swap, so both flags have to be
+        // reapplied before the new frame paints — otherwise the tier CSS drops for one frame.
+        function apply() {
+          var root = document.documentElement;
+          root.setAttribute('data-tier', tier);
+          if (document.querySelector('[data-landing-root]')) {
+            root.setAttribute('data-landing-live', '');
+          } else {
+            root.removeAttribute('data-landing-live');
+          }
+        }
+
+        apply();
+        document.addEventListener('astro:after-swap', apply);
       })();
     </script>
     <meta charset="utf-8" />
@@ -53,22 +71,31 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:image" content={ogImage} />
     <meta name="author" content="Innei" />
+    <ClientRouter />
     <slot name="head" />
   </head>
   <body>
     <header class="nav">
-      <a class="nav-name" href="/">KANSOKU <b>観測</b></a>
+      <a class="nav-name" href="/" transition:name="brand">KANSOKU <b>観測</b></a>
       <nav class="nav-links">
-        <a href="/pricing">定价</a>
-        <a href="/changelog">更新日志</a>
-        <a href="/docs">文档</a>
-        <a href="https://github.com/kansoku-trade/kansoku" target="_blank" rel="noreferrer">GitHub</a>
+        {
+          NAV_LINKS.map((link) => (
+            <a
+              href={link.href}
+              transition:name={`nav-${link.key}`}
+              target={link.external ? '_blank' : undefined}
+              rel={link.external ? 'noreferrer' : undefined}
+            >
+              {link.label}
+            </a>
+          ))
+        }
       </nav>
     </header>
     <main>
       <slot />
     </main>
-    <footer class="footer">
+    <footer class="footer" transition:persist="site-footer">
       <p>
         Kansoku（観測）· 个人市场研究工作台 ·
         <a href="https://github.com/kansoku-trade/kansoku" target="_blank" rel="noreferrer"

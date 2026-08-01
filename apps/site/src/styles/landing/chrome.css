@@ -55,6 +55,8 @@
   mix-blend-mode: overlay;
 }
 
+/* Also load-bearing for view transitions: .nav-name and .chrome-brand share the `brand`
+   transition name, so exactly one of the two headers may ever be rendered on a page. */
 body:has(.terminal-chrome) .nav {
   display: none;
 }

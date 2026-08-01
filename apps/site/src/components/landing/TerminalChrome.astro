@@ -2,6 +2,7 @@
 import '../../styles/landing/tokens.css';
 import '../../styles/landing/chrome.css';
 
+import { NAV_LINKS } from '../../lib/nav';
 import { TAPE_SYMBOLS } from '../../scripts/landing/tape';
 
 interface Props {
@@ -11,7 +12,7 @@ interface Props {
 const { version } = Astro.props;
 ---
 
-<div class="terminal-chrome">
+<div class="terminal-chrome" data-landing-root>
   <div class="chrome-corner chrome-corner-tl" aria-hidden="true"></div>
   <div class="chrome-corner chrome-corner-tr" aria-hidden="true"></div>
   <div class="chrome-corner chrome-corner-bl" aria-hidden="true"></div>
@@ -20,7 +21,7 @@ const { version } = Astro.props;
 
   <header class="chrome-topbar">
     <div class="chrome-topbar-left">
-      <a class="chrome-brand" href="/">KANSOKU <b>観測</b></a>
+      <a class="chrome-brand" href="/" transition:name="brand">KANSOKU <b>観測</b></a>
       <span class="chrome-version">v{version}</span>
       <span class="chrome-et">ET</span>
       <time class="chrome-clock" data-chrome-clock>--:--:--</time>
@@ -47,10 +48,18 @@ const { version } = Astro.props;
       <span class="chrome-tape-delay">Delayed 15m</span>
     </div>
     <nav class="chrome-nav">
-      <a href="/pricing">定价</a>
-      <a href="/changelog">更新日志</a>
-      <a href="/docs">文档</a>
-      <a href="https://github.com/kansoku-trade/kansoku" target="_blank" rel="noreferrer">GitHub</a>
+      {
+        NAV_LINKS.map((link) => (
+          <a
+            href={link.href}
+            transition:name={`nav-${link.key}`}
+            target={link.external ? '_blank' : undefined}
+            rel={link.external ? 'noreferrer' : undefined}
+          >
+            {link.label}
+          </a>
+        ))
+      }
     </nav>
   </header>
 
@@ -61,6 +70,7 @@ const { version } = Astro.props;
 
 <script>
   import { initTerminalChrome } from '../../scripts/landing/chrome';
+  import { onPageLive } from '../../scripts/landing/lifecycle';
 
-  initTerminalChrome();
+  onPageLive(initTerminalChrome);
 </script>

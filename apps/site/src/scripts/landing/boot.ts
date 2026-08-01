@@ -25,7 +25,7 @@ const persistBooted = (): void => {
   } catch {}
 };
 
-export const initBoot = (): void => {
+export const initBoot = (): (() => void) | void => {
   const overlay = document.querySelector<HTMLElement>('[data-boot-overlay]');
 
   const finish = () => {
@@ -50,10 +50,19 @@ export const initBoot = (): void => {
   const lines = Array.from(overlay.querySelectorAll<HTMLElement>('[data-boot-line]'));
   const skipButton = overlay.querySelector<HTMLElement>('[data-boot-skip]');
 
+  const timers = new Set<number>();
+  const later = (run: () => void, delay: number) => {
+    const id = window.setTimeout(() => {
+      timers.delete(id);
+      run();
+    }, delay);
+    timers.add(id);
+  };
+
   const end = () => {
     overlay.classList.remove('is-active');
     overlay.classList.add('is-done');
-    window.setTimeout(finish, timing.fade);
+    later(finish, timing.fade);
   };
 
   let index = 0;
@@ -61,11 +70,11 @@ export const initBoot = (): void => {
     lines[index]?.classList.add('is-visible');
     index += 1;
     if (index < lines.length) {
-      window.setTimeout(showNext, timing.lineInterval);
+      later(showNext, timing.lineInterval);
       return;
     }
     persistBooted();
-    window.setTimeout(end, timing.hold);
+    later(end, timing.hold);
   };
 
   skipButton?.addEventListener('click', () => {
@@ -75,4 +84,9 @@ export const initBoot = (): void => {
 
   overlay.classList.add('is-active');
   showNext();
+
+  return () => {
+    for (const id of timers) window.clearTimeout(id);
+    timers.clear();
+  };
 };

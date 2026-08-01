@@ -1,4 +1,5 @@
 import { mountDemoScene } from './demo/mount';
+import { onPageLive } from './lifecycle';
 import { mountHeroAtmosphere } from './scenes/heroAtmosphere';
 import { mountHeroScene } from './scenes/hero';
 import { mountOutroScene } from './scenes/outro';
@@ -8,69 +9,65 @@ interface Destroyable {
   destroy: () => void;
 }
 
-const cleanups: Array<() => void> = [];
-let disposed = false;
-
-const registerCleanup = (scene: Destroyable | null): void => {
-  if (!scene) return;
-  if (disposed) {
-    scene.destroy();
-    return;
-  }
-  cleanups.push(scene.destroy);
-};
-
-const mountGuarded = <T extends Destroyable>(label: string, mount: () => T | null): void => {
-  try {
-    registerCleanup(mount());
-  } catch (error) {
-    console.error(`[landing] ${label} scene failed to mount`, error);
-  }
-};
-
 const readTier = (): Tier => {
   const value = document.documentElement.dataset.tier;
   return value === 'full' || value === 'lite' ? value : 'still';
 };
 
-const mountLanding = (): void => {
+const mountLanding = (): (() => void) => {
   document.documentElement.setAttribute('data-landing-live', '');
   const tier = readTier();
   const root = document.body;
 
-  void (async () => {
-    try {
-      registerCleanup(await mountHeroAtmosphere(root, tier));
-    } catch (error) {
-      console.error('[landing] hero-atmosphere scene failed to mount', error);
-    }
-  })();
+  const cleanups: Array<() => void> = [];
+  let disposed = false;
 
-  void (async () => {
-    try {
-      const heroRoot = document.querySelector<HTMLElement>('[data-hero-scene]');
-      registerCleanup(heroRoot ? await mountHeroScene(heroRoot, tier) : null);
-    } catch (error) {
-      console.error('[landing] hero scene failed to mount', error);
+  const registerCleanup = (scene: Destroyable | null): void => {
+    if (!scene) return;
+    if (disposed) {
+      scene.destroy();
+      return;
     }
-  })();
+    cleanups.push(scene.destroy);
+  };
 
-  void (async () => {
+  const mountGuarded = (label: string, mount: () => Destroyable | null): void => {
     try {
-      registerCleanup(await mountDemoScene(root, tier));
+      registerCleanup(mount());
     } catch (error) {
-      console.error('[landing] demo scene failed to mount', error);
+      console.error(`[landing] ${label} scene failed to mount`, error);
     }
-  })();
+  };
 
+  const mountAsyncGuarded = (
+    label: string,
+    mount: () => Promise<Destroyable | null>,
+  ): void => {
+    void (async () => {
+      try {
+        registerCleanup(await mount());
+      } catch (error) {
+        console.error(`[landing] ${label} scene failed to mount`, error);
+      }
+    })();
+  };
+
+  mountAsyncGuarded('hero-atmosphere', () => mountHeroAtmosphere(root, tier));
+  mountAsyncGuarded('hero', async () => {
+    const heroRoot = document.querySelector<HTMLElement>('[data-hero-scene]');
+    return heroRoot ? await mountHeroScene(heroRoot, tier) : null;
+  });
+  mountAsyncGuarded('demo', () => mountDemoScene(root, tier));
   mountGuarded('outro', () => mountOutroScene(root, tier));
+
+  return () => {
+    disposed = true;
+    for (const cleanup of cleanups) cleanup();
+    cleanups.length = 0;
+  };
 };
 
-mountLanding();
-
-window.addEventListener('pagehide', (event) => {
-  if (event.persisted) return;
-  disposed = true;
-  for (const cleanup of cleanups) cleanup();
-  cleanups.length = 0;
+onPageLive(() => {
+  if (!document.querySelector('[data-landing-root]')) return;
+  return mountLanding();
 });

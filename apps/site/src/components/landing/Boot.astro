@@ -119,6 +119,7 @@ const lines: { text: string; status: string | null; tone: 'up' | 'accent' | null
 
 <script>
   import { initBoot } from '../../scripts/landing/boot';
+  import { onPageLive } from '../../scripts/landing/lifecycle';
 
-  initBoot();
+  onPageLive(initBoot);
 </script>
