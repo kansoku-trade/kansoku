@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <title>kansoku og banner — 1200×630, screenshot at 2x</title>
+    <style>
+      :root {
+        --bg: #0a0a0a;
+        --surface: #141414;
+        --border: #262626;
+        --border-strong: #3a3a3a;
+        --text: #e8e8e8;
+        --text-2: #9a9a9a;
+        --text-3: #5c5c5c;
+        --accent: #ffb000;
+        --up: #26a69a;
+        --down: #ef5350;
+        --mono: ui-monospace, 'SF Mono', Menlo, monospace;
+        --sans: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', sans-serif;
+      }
+
+      * {
+        margin: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        width: 1200px;
+        height: 630px;
+        position: relative;
+        overflow: hidden;
+        background: var(--bg);
+        font-family: var(--mono);
+        color: var(--text);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .glow {
+        position: absolute;
+        left: 50%;
+        bottom: -120px;
+        width: 1000px;
+        height: 420px;
+        transform: translateX(-50%);
+        background: radial-gradient(ellipse at center, rgba(255, 176, 0, 0.07) 0%, transparent 65%);
+      }
+
+      .tape {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 46px;
+        display: flex;
+        align-items: center;
+        gap: 26px;
+        padding: 0 32px;
+        border-bottom: 1px solid var(--border);
+        font-size: 14.5px;
+        letter-spacing: 0.04em;
+        color: var(--text-2);
+        white-space: nowrap;
+      }
+
+      .tape .lead {
+        color: var(--text-3);
+        letter-spacing: 0.12em;
+      }
+
+      .tape .up {
+        color: var(--up);
+      }
+
+      .tape .down {
+        color: var(--down);
+      }
+
+      .tape .vintage {
+        margin-left: auto;
+        color: var(--text-3);
+        letter-spacing: 0.12em;
+      }
+
+      .center {
+        position: absolute;
+        top: 46px;
+        left: 0;
+        right: 0;
+        height: 314px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+      }
+
+      .eyebrow {
+        font-size: 13px;
+        letter-spacing: 0.24em;
+        color: #8a8a8a;
+        text-transform: uppercase;
+        margin-bottom: 14px;
+      }
+
+      .wordmark {
+        font-size: 34px;
+        letter-spacing: 0.16em;
+        font-weight: 700;
+        margin-bottom: 22px;
+      }
+
+      .wordmark b {
+        color: var(--accent);
+        font-weight: 400;
+      }
+
+      .headline {
+        font-family: var(--sans);
+        font-size: 68px;
+        font-weight: 700;
+        color: #fff;
+        letter-spacing: 0.01em;
+        line-height: 1.15;
+        margin-bottom: 18px;
+      }
+
+      .sub {
+        font-family: var(--sans);
+        font-size: 20px;
+        color: var(--text-2);
+        letter-spacing: 0.02em;
+      }
+
+      .window {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        top: 372px;
+        width: 958px;
+        height: 258px;
+        background: var(--surface);
+        border: 1px solid var(--border-strong);
+        border-bottom: none;
+        border-radius: 10px 10px 0 0;
+        overflow: hidden;
+        box-shadow:
+          0 -8px 40px rgba(0, 0, 0, 0.55),
+          0 0 90px rgba(255, 176, 0, 0.05);
+      }
+
+      .titlebar {
+        height: 30px;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 0 12px;
+        background: #161616;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .titlebar .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+      }
+
+      .titlebar .title {
+        flex: 1;
+        text-align: center;
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        color: #8a8a8a;
+        margin-right: 44px;
+      }
+
+      .window img {
+        display: block;
+        width: 956px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="glow"></div>
+    <div class="tape">
+      <span class="lead">KANSOKU/TAPE</span>
+      <span class="up">NVDA +2.92%</span>
+      <span class="down">MU −5.90%</span>
+      <span class="up">TSLA +0.76%</span>
+      <span class="up">SPY +0.71%</span>
+      <span class="up">QQQ +0.64%</span>
+      <span class="down">AMD −1.90%</span>
+      <span class="vintage">US CLOSE 07-31</span>
+    </div>
+    <div class="center">
+      <p class="eyebrow">Local-first · macOS</p>
+      <p class="wordmark">KANSOKU <b>観測</b></p>
+      <p class="headline">AI 看盘，句句有据</p>
+      <p class="sub">判断归档后不许改口，按命中率记分 — 全在你自己的 Mac 上</p>
+    </div>
+    <div class="window">
+      <div class="titlebar">
+        <span class="dot" style="background: #ff5f57"></span>
+        <span class="dot" style="background: #febc2e"></span>
+        <span class="dot" style="background: #28c840"></span>
+        <span class="title">KANSOKU 観測 — NVDA.US · 短线多周期</span>
+      </div>
+      <img src="./cockpit@2x.png" alt="" />
+    </div>
+  </body>
+</html>

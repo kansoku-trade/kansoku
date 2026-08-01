@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./apps/web/public/brand/kansoku-product-banner.png" alt="Kansoku — 能查账的 AI 看盘搭子" width="100%">
+  <img src="./apps/web/public/brand/kansoku-og-banner.png" alt="Kansoku — AI 看盘，句句有据" width="100%">
 </p>
 
 # Kansoku
