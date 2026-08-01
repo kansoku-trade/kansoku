@@ -26,31 +26,16 @@ const HOT_COLOR: [number, number, number] = [255, 176, 0];
 const BAR_KEYS = ['bull', 'base', 'bear'] as const;
 type BarKey = (typeof BAR_KEYS)[number];
 
-const TRACK_COLORS: Record<BarKey, string> = {
-  bull: '#26a69a',
-  base: '#ffb000',
-  bear: '#ef5350',
-};
-
 interface NodePoint {
   x: number;
   y: number;
   angle: number;
 }
 
-interface BarRect {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
 interface DrawState {
   nodePoints: NodePoint[];
   activations: Float32Array;
-  barProgress: number;
   caseData: HeroCase;
-  barRects: BarRect[];
   cardCenter: { x: number; y: number };
   time: number;
 }
@@ -146,16 +131,13 @@ const resolveCardRefs = (card: HTMLElement): CardRefs | null => {
   };
 };
 
-const measureBarRects = (root: HTMLElement, card: CardRefs, rootRect: DOMRect): BarRect[] =>
-  BAR_KEYS.map((key) => {
-    const trackRect = card.tracks[key].getBoundingClientRect();
-    return {
-      x: trackRect.left - rootRect.left,
-      y: trackRect.top - rootRect.top,
-      width: trackRect.width,
-      height: trackRect.height,
-    };
-  });
+const applyBarProgress = (card: CardRefs, data: HeroCase, progress: number): void => {
+  for (const key of BAR_KEYS) {
+    const percent = data.probabilities[key] * progress;
+    card.tracks[key].style.setProperty('--bar-fill', `${percent}%`);
+    card.values[key].textContent = `${Math.round(percent)}%`;
+  }
+};
 
 const drawBackdropCandles = (
   ctx: CanvasRenderingContext2D,
@@ -251,20 +233,6 @@ const drawNodes = (ctx: CanvasRenderingContext2D, state: DrawState): void => {
   ctx.textAlign = 'left';
 };
 
-const drawBars = (ctx: CanvasRenderingContext2D, state: DrawState): void => {
-  for (let i = 0; i < BAR_KEYS.length; i++) {
-    const rect = state.barRects[i];
-    if (!rect) continue;
-    const key = BAR_KEYS[i];
-    const percent = state.caseData.probabilities[key];
-    const fillWidth = rect.width * (percent / 100) * state.barProgress;
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-    ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
-    ctx.fillStyle = TRACK_COLORS[key];
-    ctx.fillRect(rect.x, rect.y, fillWidth, rect.height);
-  }
-};
-
 const drawScene = (
   ctx: CanvasRenderingContext2D,
   width: number,
@@ -275,7 +243,6 @@ const drawScene = (
   ctx.clearRect(0, 0, width, height);
   drawBackdropCandles(ctx, width, height, backdrop);
   drawNodes(ctx, state);
-  drawBars(ctx, state);
 };
 
 const applyCaseText = (card: CardRefs, data: HeroCase): void => {
@@ -285,7 +252,11 @@ const applyCaseText = (card: CardRefs, data: HeroCase): void => {
   card.trig.textContent = `触发：${data.trigger}`;
 };
 
-const mountLite = (root: HTMLElement, canvas: HTMLCanvasElement, card: CardRefs): HeroScene | null => {
+const mountLite = (
+  root: HTMLElement,
+  canvas: HTMLCanvasElement,
+  card: CardRefs,
+): HeroScene | null => {
   const ctx = canvas.getContext('2d');
   if (!ctx) return null;
 
@@ -304,14 +275,12 @@ const mountLite = (root: HTMLElement, canvas: HTMLCanvasElement, card: CardRefs)
 
     const nodePoints = computeNodePoints(width, height);
     const cardCenter = { x: width / 2, y: height / 2 };
-    const barRects = measureBarRects(root, card, rect);
 
+    applyBarProgress(card, data, 1);
     drawScene(ctx, width, height, backdrop, {
       nodePoints,
       activations,
-      barProgress: 1,
       caseData: data,
-      barRects,
       cardCenter,
       time: 0,
     });
@@ -378,7 +347,6 @@ const mountFull = async (
   let height = 0;
   let nodePoints: NodePoint[] = [];
   let cardCenter = { x: 0, y: 0 };
-  let barRects: BarRect[] = [];
 
   const layout = (): void => {
     const rect = root.getBoundingClientRect();
@@ -389,7 +357,6 @@ const mountFull = async (
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     nodePoints = computeNodePoints(width, height);
     cardCenter = { x: width / 2, y: height / 2 };
-    barRects = measureBarRects(root, card, rect);
     particleRenderer.resize(width, height);
   };
 
@@ -401,9 +368,7 @@ const mountFull = async (
   const applyCase = (): void => {
     const data = heroCases[caseIndex];
     applyCaseText(card, data);
-    card.values.bull.textContent = '0%';
-    card.values.base.textContent = '0%';
-    card.values.bear.textContent = '0%';
+    applyBarProgress(card, data, 0);
     card.stamp.classList.remove('is-visible');
     card.root.classList.remove('is-visible');
     activations.fill(0);
@@ -459,12 +424,9 @@ const mountFull = async (
     }
 
     if (clock >= BARS_AT) barsStarted = true;
-    const barProgress = barsStarted ? easeOutCubic(clamp01((clock - BARS_AT) / BARS_RISE)) : 0;
     if (barsStarted) {
-      const data = heroCases[caseIndex];
-      card.values.bull.textContent = `${Math.round(data.probabilities.bull * barProgress)}%`;
-      card.values.base.textContent = `${Math.round(data.probabilities.base * barProgress)}%`;
-      card.values.bear.textContent = `${Math.round(data.probabilities.bear * barProgress)}%`;
+      const progress = easeOutCubic(clamp01((clock - BARS_AT) / BARS_RISE));
+      applyBarProgress(card, heroCases[caseIndex], progress);
     }
 
     if (clock >= STAMP_AT && !stamped) {
@@ -476,9 +438,7 @@ const mountFull = async (
     drawScene(ctx, width, height, backdrop, {
       nodePoints,
       activations,
-      barProgress,
       caseData: heroCases[caseIndex],
-      barRects,
       cardCenter,
       time: now / 1000,
     });

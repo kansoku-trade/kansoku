@@ -296,9 +296,28 @@
   color: var(--text-3);
 }
 
+/* Drawn as real DOM inside the card, not on the scene canvas: the card sits above the canvas
+   with a 93%-opaque background, so a canvas-drawn bar is all but invisible through it. */
 .evidence-bar-track {
   flex: 1;
   height: 4px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.evidence-bar-track::after {
+  content: '';
+  display: block;
+  height: 100%;
+  width: var(--bar-fill, 0%);
+  background: var(--accent);
+}
+
+.evidence-bar-track[data-bar-track='bull']::after {
+  background: var(--up);
+}
+
+.evidence-bar-track[data-bar-track='bear']::after {
+  background: var(--down);
 }
 
 .evidence-bar-value {
