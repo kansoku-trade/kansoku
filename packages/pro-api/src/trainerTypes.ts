@@ -185,11 +185,6 @@ export interface TrainerView {
   remainingBars: number;
   terminal: boolean;
   result: TrainerResult | null;
-  // Whether the trader has ever committed to a direction, which is what unlocks the AI. Sticky:
-  // cancelling an order does not re-seal it. Carried rather than inferred from `order` / `position`
-  // / `trades`, because an abstention commits a view without producing any of the three, and the
-  // renderer's lock must match the one the runtime enforces.
-  submitted: boolean;
 }
 
 export interface TrainerStepEvent {
@@ -336,7 +331,8 @@ export interface TrainerCoachVerdict {
   /** What the plan actually collected, in R. */
   realizedR: number | null;
   directionCorrect: boolean;
-  agreement: TrainerCoachAgreement;
+  /** Null where the trader had taken no side to compare against — see `humanBefore`. */
+  agreement: TrainerCoachAgreement | null;
   judgedAt: string;
 }
 
@@ -360,7 +356,12 @@ export interface TrainerCoachCall {
   step: number;
   askedAt: string;
   model: string;
-  humanBefore: TrainerCoachStance;
+  /**
+   * Null when they asked before taking any side. The AI is reachable from the first bar, so a
+   * call may legitimately predate any view of their own; the persuaded/held comparison then has
+   * no second term and is skipped rather than filled in with a default.
+   */
+  humanBefore: TrainerCoachStance | null;
   ai: TrainerSubmission;
   verdict: TrainerCoachVerdict | null;
   annotation: TrainerAnnotation | null;

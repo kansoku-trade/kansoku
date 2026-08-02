@@ -134,6 +134,22 @@ describe('TrainerCoachCompare readout', () => {
     expect(screen.getByText(/你当时：做多/)).toBeTruthy();
   });
 
+  it('says the trader had no side yet, and drops the agreement chip with it', () => {
+    render(
+      <TrainerCoachCompare
+        calls={[call({ humanBefore: null, verdict: verdict({ agreement: null }) })]}
+        bridge={bridgeWith(vi.fn())}
+        sessionId="run-1"
+        onAnnotated={vi.fn()}
+        onSeek={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('你当时还没表态')).toBeTruthy();
+    expect(screen.queryByText(/分歧|同向/)).toBeNull();
+    expect(screen.getByText(/到目标 · \+2\.00R/)).toBeTruthy();
+  });
+
   it('keeps an AI that agreed out of the comparison', () => {
     render(
       <TrainerCoachCompare

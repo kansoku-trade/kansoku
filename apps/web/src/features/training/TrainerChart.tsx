@@ -186,22 +186,27 @@ export function TrainerChart({ view, sessionId, bridge, onViewChange }: TrainerC
                   sessionId={sessionId}
                   onViewChange={onViewChange}
                 />
-                <TrainerOrderPanel
-                  key={`order-${view.caseId}`}
-                  view={view}
-                  handle={chartHandle}
-                  bridge={bridge}
-                  sessionId={sessionId}
-                  onViewChange={onViewChange}
-                  drawingActive={drawings.tool !== 'off'}
-                  onTakeChart={() => drawings.setTool('off')}
-                />
-                <TrainerCoachPanel
-                  key={`coach-${view.caseId}`}
-                  view={view}
-                  bridge={bridge}
-                  sessionId={sessionId}
-                />
+                {/* One row, not two. The order panel renders exactly one inline element per
+                    state — every other thing it draws goes through the overlay — so wrapping it
+                    here puts the coach button on the end of whichever lane is showing without
+                    each of those states having to remember to carry it. */}
+                <div className="trainer-lane-row">
+                  <TrainerOrderPanel
+                    key={`order-${view.caseId}`}
+                    view={view}
+                    handle={chartHandle}
+                    bridge={bridge}
+                    sessionId={sessionId}
+                    onViewChange={onViewChange}
+                    drawingActive={drawings.tool !== 'off'}
+                    onTakeChart={() => drawings.setTool('off')}
+                  />
+                  <TrainerCoachPanel
+                    key={`coach-${view.caseId}`}
+                    bridge={bridge}
+                    sessionId={sessionId}
+                  />
+                </div>
               </>
             )}
           </>

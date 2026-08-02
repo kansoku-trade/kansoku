@@ -1226,6 +1226,24 @@ body.trainer-dragging-level * {
   overflow-x: clip;
   overflow-y: visible;
 }
+/* A lane that shares its row with something anchored to the right. The row owns the rule and the
+   height so the lane keeps clipping its own overflow without also clipping its neighbour. */
+.trainer-lane-row {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: stretch;
+  height: 38px;
+  border-top: 1px solid var(--border);
+}
+.trainer-lane-row > .trainer-lane {
+  flex: 1 1 auto;
+  min-width: 0;
+  /* The row already owns the 38px, and it is border-box — so its content box is 37px. A lane
+     keeping its own `height: 38px` overhangs the row by exactly the border, which knocks the
+     button off centre by a pixel. Let the row's stretch size it instead. */
+  height: auto;
+  border-top: none;
+}
 .trainer-lane-group {
   display: flex;
   align-items: center;
@@ -9587,26 +9605,44 @@ a.zone-item:hover {
   border-color: var(--accent);
 }
 
-.trainer-coach-lane {
+.trainer-coach-slot {
   flex: 0 0 auto;
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
-  padding: 8px 16px;
-  background: var(--bg-surface);
-  border-top: 1px solid var(--border);
-}
-.trainer-coach-comment {
-  margin: 0;
-  flex: 1 1 240px;
-  min-width: 0;
-  color: var(--text-secondary);
-  font-size: var(--fs-sm);
-  line-height: 1.6;
+  padding: 0 12px 0 4px;
 }
 .trainer-chip--coach {
   border-left: 2px solid var(--accent);
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  max-width: 320px;
+  font: inherit;
+  font-size: var(--fs-sm);
+  text-align: left;
+  cursor: pointer;
+}
+.trainer-coach-stance {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.trainer-coach-caret {
+  margin-left: auto;
+  color: var(--text-muted);
+}
+.trainer-coach-comment {
+  display: block;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  border-top: 1px solid var(--border);
+  padding-top: 6px;
+}
+.trainer-coach-defer {
+  display: block;
+  margin-top: 6px;
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
 }
 .trainer-coach-split {
   color: var(--accent);
