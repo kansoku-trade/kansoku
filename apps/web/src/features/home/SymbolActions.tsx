@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Check, Lock, RadioTower } from 'lucide-react';
+import { trackFeatureUsed } from '@web/lib/analytics';
 import { errorMessage } from '@web/lib/api';
 import { client } from '@web/lib/client';
 import { Button, Switch } from '@web/ui';
@@ -82,6 +83,7 @@ export function ReassessButton({ symbol }: { symbol: string }) {
     if (state === 'running') return;
     setState('running');
     try {
+      trackFeatureUsed('market_analysis');
       const res = await client.symbols.reassess({ sym: symbol });
       setState(res.started ? 'done' : 'failed');
     } catch (err) {

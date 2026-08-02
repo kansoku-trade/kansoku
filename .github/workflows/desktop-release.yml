@@ -21,6 +21,12 @@ concurrency:
 
 env:
   REPO_SLUG: 'Innei/kansoku'
+  # Baked into the bundle at build time, so it has to be present for *every* web build in the
+  # job — and there are two: the explicit build step, and the one `pnpm package` re-runs through
+  # apps/desktop's prepackage hook. Setting it per-step would let the second build quietly strip
+  # it back out and ship an app that reports nothing. Unset (no repo variable) leaves the whole
+  # analytics module inert, which is what a fork or a local build gets.
+  VITE_ANALYTICS_ENDPOINT: ${{ vars.VITE_ANALYTICS_ENDPOINT }}
 
 jobs:
   release:

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { TrainerErrorCode, TrainerFillPhase, TrainerFillTask, TrainerView } from '@kansoku/pro-api';
+import { trackFeatureUsed } from '@web/lib/analytics';
 import { errorMessage } from '@web/lib/api';
 import { Button } from '@web/ui';
 import { getTrainerBridge } from '../desktop/desktopTrainerBridge';
@@ -174,8 +175,10 @@ export function TrainerLauncher() {
       .open({ basePeriod: BASE_PERIOD })
       .then((result) => {
         if (!active) return;
-        if (result.ok) setSession({ sessionId: result.data.sessionId, view: result.data.view });
-        else setFailure({ code: result.code, message: result.error });
+        if (result.ok) {
+          trackFeatureUsed('training_session', { stage: 'started' });
+          setSession({ sessionId: result.data.sessionId, view: result.data.view });
+        } else setFailure({ code: result.code, message: result.error });
       })
       .catch((error: unknown) => {
         if (active) setFailure({ code: null, message: errorMessage(error) });

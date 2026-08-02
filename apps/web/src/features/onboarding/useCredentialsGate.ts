@@ -1,4 +1,5 @@
 import { useCallback, useEffect } from 'react';
+import { trackFeatureUsed } from '../../lib/analytics';
 import { useQuery } from '../../lib/apiHooks';
 import { client } from '../../lib/client';
 import {
@@ -54,6 +55,7 @@ export function useCredentialsGate(): {
 
   const completeOnboarding = useCallback(async () => {
     if (onboardingBridge) await onboardingBridge.complete();
+    trackFeatureUsed('onboarding', { stage: 'completed' });
     reloadOnboarding();
   }, [onboardingBridge, reloadOnboarding]);
 

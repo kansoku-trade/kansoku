@@ -15,7 +15,9 @@ import type {
   MeasureShape,
   PreviewShape,
 } from './drawingsPrimitive';
+import { trackFeatureUsed } from '@web/lib/analytics';
 import { type DrawingTool, type MultiPointTool } from './drawingsMachine';
+import { drawingVariantOf } from './drawingVariant';
 import { useDrawingsInteraction } from './useDrawingsInteraction';
 
 export function decodeAnnotationsFrame(payload: unknown, ownClientId: string): Annotation[] | null {
@@ -265,7 +267,18 @@ export function useDrawings(
     [pushState, updateScrollLock],
   );
 
-  const setActiveTool = useCallback((t: DrawingTool) => applyTool(t, false), [applyTool]);
+  const setActiveTool = useCallback(
+    (t: DrawingTool) => {
+      // Picking a tool is the intent; whether a shape ends up on the chart is a separate
+      // question this column is not asking. `off` and `cursor` leave drawing rather than enter
+      // it, and `measure` has no variant in the ingest enum, so it counts without one.
+      if (t !== 'off' && t !== 'cursor') {
+        trackFeatureUsed('chart_drawing', { variant: drawingVariantOf(t) });
+      }
+      applyTool(t, false);
+    },
+    [applyTool],
+  );
 
   const clearAll = useCallback(() => {
     setSelected(null);

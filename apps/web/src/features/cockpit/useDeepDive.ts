@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { trackFeatureUsed } from '@web/lib/analytics';
 import { ApiError, errorMessage } from '@web/lib/api';
 import { client } from '@web/lib/client';
 
@@ -69,6 +70,9 @@ export function useDeepDive(symbol: string, onNoteReady: () => void) {
         setRunning(false);
         setRunningSymbol(null);
         setStartedAt(null);
+        // Paired with the `started` above, so the two counts together show how many deep runs
+        // are abandoned or die mid-flight rather than reaching a report.
+        trackFeatureUsed('deep_research', { stage: 'completed' });
         const result = status.lastResult;
         if (
           result &&
@@ -101,6 +105,7 @@ export function useDeepDive(symbol: string, onNoteReady: () => void) {
     setPending(true);
     try {
       await client.symbols.deepDive({ sym: symbol });
+      trackFeatureUsed('deep_research', { stage: 'started' });
       setRunning(true);
       setRunningSymbol(symbol);
       setStartedAt(new Date().toISOString());

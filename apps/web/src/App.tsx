@@ -9,6 +9,7 @@ import { CommandPalette } from './features/palette/CommandPalette';
 import { RestrictedBanner } from './features/edition/RestrictedBanner';
 import { isDesktopRealtime } from './lib/portTransport';
 import { getBrowserRouter, matchPopoutSymbolRoute, navigate, routePathname, useRoute } from './lib/router';
+import { useOnboardingAnalytics, useScreenAnalytics } from './lib/useScreenAnalytics';
 import { ContextMenuHost, ModalHost } from './ui';
 import { RoutedGlobalNotifications } from './features/notifications/GlobalNotifications';
 
@@ -18,6 +19,8 @@ export function App() {
   const gate = useCredentialsGate();
   const route = useRoute();
   const isPopout = matchPopoutSymbolRoute(routePathname(route)) !== null;
+  useScreenAnalytics();
+  useOnboardingAnalytics(gate.status === 'onboarding');
 
   useEffect(() => {
     const bridge = getDesktopDeepLinkBridge();
