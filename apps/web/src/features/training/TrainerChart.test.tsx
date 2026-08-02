@@ -60,7 +60,6 @@ function makeView(): TrainerView {
     remainingBars: 10,
     terminal: false,
     result: null,
-    submitted: false,
   };
 }
 
@@ -128,6 +127,22 @@ describe('TrainerChart', () => {
     );
     expect(screen.getByRole('button', { name: '做多' })).toBeTruthy();
     expect(screen.getByRole('button', { name: '做空' })).toBeTruthy();
+  });
+
+  // The coach button rides on the order lane rather than owning a row, so an answer arriving can
+  // never change the chart's height. Asserting the shared row keeps that from regressing into a
+  // second lane the next time the panel is touched.
+  it('puts the coach button on the same row as the order lane, askable from the open', () => {
+    const bridge = { submit: vi.fn() } as unknown as Parameters<typeof TrainerChart>[0]['bridge'];
+    render(
+      <TrainerChart view={makeView()} bridge={bridge} sessionId="run-1" onViewChange={() => {}} />,
+    );
+
+    const ask = screen.getByRole('button', { name: '问 AI' }) as HTMLButtonElement;
+    expect(ask.disabled).toBe(false);
+    const row = ask.closest('.trainer-lane-row');
+    expect(row).not.toBeNull();
+    expect(row!.querySelector('.trainer-lane')).not.toBeNull();
   });
 
   it('advances by the ladder tier currently selected in the period switch', () => {

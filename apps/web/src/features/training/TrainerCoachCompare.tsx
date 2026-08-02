@@ -99,13 +99,17 @@ export function TrainerCoachCompare({
                 {plan.prices && <span className="num"> {plan.prices}</span>}
               </span>
               <span className="trainer-settle-hint">
-                你当时：{DIRECTION_LABEL[call.humanBefore.direction]}
+                {call.humanBefore
+                  ? `你当时：${DIRECTION_LABEL[call.humanBefore.direction]}`
+                  : '你当时还没表态'}
               </span>
               {verdict && (
                 <>
-                  <span className={`trainer-chip trainer-chip--${verdict.agreement}`}>
-                    {AGREEMENT_LABEL[verdict.agreement]}
-                  </span>
+                  {verdict.agreement && (
+                    <span className={`trainer-chip trainer-chip--${verdict.agreement}`}>
+                      {AGREEMENT_LABEL[verdict.agreement]}
+                    </span>
+                  )}
                   <span
                     className={`trainer-chip trainer-chip--${verdict.directionCorrect ? 'hit' : 'miss'}`}
                   >
