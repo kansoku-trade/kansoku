@@ -265,12 +265,18 @@ jobs:
       # both from the stapled bundle. --prepackaged skips the pack/sign phase
       # entirely (doPack returns immediately), so this only re-runs dmg/zip
       # target packaging against the already-notarized app.
+      #
+      # --prepackaged takes the .app itself, not the directory holding it:
+      # macPackager passes the value straight through as `appPath` to
+      # packageInDistributableFormat. Given the parent directory it archives
+      # that directory instead, and the zip comes out with no .app at its top
+      # level — which the verify step below then fails to find.
       - name: repackage dmg + zip from the stapled app
         if: steps.signing.outputs.enabled == 'true' && vars.NOTARY_SUBMIT_ONLY != 'true'
         working-directory: apps/desktop
         run: |
           rm -f release/*.dmg release/*.zip
-          pnpm exec electron-builder --prepackaged release/mac-arm64 --mac dmg zip --arm64 --publish never
+          pnpm exec electron-builder --prepackaged release/mac-arm64/Kansoku.app --mac dmg zip --arm64 --publish never
 
       - name: verify signature (dmg + zip both embed the already-signed app)
         working-directory: apps/desktop
