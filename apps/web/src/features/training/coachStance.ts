@@ -6,6 +6,15 @@ export const DIRECTION_LABEL: Record<TrainerDirection | 'neutral', string> = {
   neutral: '观望',
 };
 
+/**
+ * The engine's cursor is -1 until the first bar is stepped into, and the AI is reachable from the
+ * open, so a call can legitimately carry a bar index that no bar has. The review timeline runs
+ * B0..Bn, so rendering it raw would point at a candle that does not exist.
+ */
+export function coachBarLabel(cursor: number): string {
+  return cursor < 0 ? '开局' : `B${cursor}`;
+}
+
 export interface CoachPlanLine {
   direction: TrainerDirection | 'neutral';
   prices: string | null;

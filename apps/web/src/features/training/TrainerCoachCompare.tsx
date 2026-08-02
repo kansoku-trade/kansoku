@@ -7,7 +7,7 @@ import type {
 } from '@kansoku/pro-api';
 import { fmt, signed } from '@web/lib/format';
 import type { TrainerBridge } from '../desktop/desktopTrainerBridge';
-import { coachPlanLine, DIRECTION_LABEL } from './coachStance';
+import { coachBarLabel, coachPlanLine, DIRECTION_LABEL } from './coachStance';
 
 const OUTCOME_LABEL: Record<TrainerCoachOutcome, string> = {
   win: '到目标',
@@ -92,7 +92,7 @@ export function TrainerCoachCompare({
           <article className="trainer-coach-card" key={call.id}>
             <header className="trainer-coach-head">
               <button className="trainer-chip trainer-coach-at" onClick={() => onSeek(call.id)}>
-                第 {index + 1} 次 · B{call.cursor}
+                第 {index + 1} 次 · {coachBarLabel(call.cursor)}
               </button>
               <span>
                 AI：<b>{DIRECTION_LABEL[call.ai.direction]}</b>
