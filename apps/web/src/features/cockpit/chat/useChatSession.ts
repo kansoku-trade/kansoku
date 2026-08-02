@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { errorMessage } from '@web/lib/api';
 import { client } from '@web/lib/client';
+import { trackFeatureUsed } from '@web/lib/analytics';
 import { subscribeChannel } from '@web/lib/ws/wsHub';
 import { useSmoothStream } from './useSmoothStream.js';
 
@@ -296,6 +297,9 @@ function useConversationSession(
       const trimmed = text.trim();
       if (!trimmed) return { ok: false, error: '内容不能为空' };
       const optimisticId = `optimistic-${Date.now()}`;
+      // Counted on intent, not on delivery: a message the backend then refuses is still the
+      // trader having reached for the assistant, which is what the feature column measures.
+      trackFeatureUsed('ai_chat', { surface: kind });
       sendPendingRef.current = true;
       setHint(null);
       setBusy(true);
@@ -329,7 +333,7 @@ function useConversationSession(
         return { ok: false, error: message };
       }
     },
-    [adapter, id],
+    [adapter, id, kind],
   );
 
   const abort = useCallback(async (): Promise<void> => {

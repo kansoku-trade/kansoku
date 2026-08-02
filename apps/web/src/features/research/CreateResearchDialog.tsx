@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { ResearchCreateResult, ResearchKind } from '@kansoku/core/contract/index';
+import { trackFeatureUsed } from '@web/lib/analytics';
 import { errorMessage } from '@web/lib/api';
 import { client } from '@web/lib/client';
 import { easternToday } from '@web/lib/easternDate';
@@ -47,6 +48,7 @@ export function CreateResearchDialog({
           ? { kind: 'stock', symbol: trimmedSymbol }
           : { kind: 'journal', title: trimmedTitle, date },
       );
+      trackFeatureUsed('research_create', { variant: kind });
       navigate(researchRoute(viewForKind(result.document.kind), result.document.path));
       onCreated(result);
       close();

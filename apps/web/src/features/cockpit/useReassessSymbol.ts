@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { trackFeatureUsed } from '@web/lib/analytics';
 import { errorMessage } from '@web/lib/api';
 import { client } from '@web/lib/client';
 
@@ -47,6 +48,7 @@ export function useReassessSymbol(symbol: string): {
     setError(null);
 
     try {
+      trackFeatureUsed('market_analysis');
       const data = await client.symbols.reassess({ sym: symbol });
       const superseded = tokenRef.current !== token;
       if (superseded) return { ok: false, error: '请求已取消', aborted: true };
