@@ -134,6 +134,23 @@ describe('TrainerCoachCompare readout', () => {
     expect(screen.getByText(/你当时：做多/)).toBeTruthy();
   });
 
+  // Asking at the open lands on cursor -1, so the raw index would name a bar the timeline
+  // (B0..Bn) does not have.
+  it('labels a question asked at the open as 开局, not as a negative bar', () => {
+    render(
+      <TrainerCoachCompare
+        calls={[call({ cursor: -1, humanBefore: null, verdict: verdict({ agreement: null }) })]}
+        bridge={bridgeWith(vi.fn())}
+        sessionId="run-1"
+        onAnnotated={vi.fn()}
+        onSeek={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: /第 1 次 · 开局/ })).toBeTruthy();
+    expect(screen.queryByText(/B-1/)).toBeNull();
+  });
+
   it('says the trader had no side yet, and drops the agreement chip with it', () => {
     render(
       <TrainerCoachCompare
