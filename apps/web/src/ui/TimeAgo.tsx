@@ -26,7 +26,7 @@ export function TimeAgo({ since, format = 'ago' }: TimeAgoProps) {
   return <>{m > 0 ? `${m}分${s}秒` : `${s}秒`}</>;
 }
 
-export function formatAgo(seconds: number): string {
+function formatAgo(seconds: number): string {
   const minutes = Math.floor(seconds / 60);
   if (minutes < 60) return `${minutes} 分钟前`;
   const hours = Math.floor(minutes / 60);

@@ -7,7 +7,7 @@ export interface PinnedPrices {
   stop: number | null;
 }
 
-export type PinnedYs = { [K in keyof PinnedPrices]: number | null };
+type PinnedYs = { [K in keyof PinnedPrices]: number | null };
 
 // The candle pane's own rectangle, in the same frame coordinates as the ys: the price axis and the
 // MACD chart below sit outside it, and anything grabbable has to stop at its edges.

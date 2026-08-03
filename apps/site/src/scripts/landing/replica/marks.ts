@@ -2,10 +2,10 @@ import type { Candle } from '../kline';
 import type { CandlePattern, Divergence, Structure123 } from './annotations';
 import { theme } from './theme';
 
-export type MarkerPosition = 'aboveBar' | 'belowBar' | 'inBar';
-export type MarkerShape = 'circle' | 'arrowUp' | 'arrowDown';
+type MarkerPosition = 'aboveBar' | 'belowBar' | 'inBar';
+type MarkerShape = 'circle' | 'arrowUp' | 'arrowDown';
 
-export interface Marker {
+interface Marker {
   time: number;
   position: MarkerPosition;
   color: string;
@@ -13,12 +13,12 @@ export interface Marker {
   text: string;
 }
 
-export interface ConnectorPoint {
+interface ConnectorPoint {
   time: number;
   value: number;
 }
 
-export interface Connector {
+interface Connector {
   color: string;
   pane: 'price' | 'macd';
   data: ConnectorPoint[];

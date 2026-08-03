@@ -7,7 +7,7 @@ import { getShellRpc } from '@web/features/desktop/shellRpc';
  * nothing surfaces, because delivery is deliberately silent.
  */
 export type AnalyticsEventName = 'app_opened' | 'screen_viewed' | 'feature_used';
-export type AnalyticsRuntime = 'desktop' | 'web';
+type AnalyticsRuntime = 'desktop' | 'web';
 export type AnalyticsEntry = 'main' | 'trainer';
 
 export type AnalyticsScreen =
@@ -34,16 +34,10 @@ export type AnalyticsFeature =
   | 'chart_drawing'
   | 'training_session';
 
-export type AnalyticsStage = 'started' | 'completed';
-export type AnalyticsSurface = 'chart' | 'research' | 'assistant';
+type AnalyticsStage = 'started' | 'completed';
+type AnalyticsSurface = 'chart' | 'research' | 'assistant';
 export type AnalyticsVariant =
-  | 'stock'
-  | 'journal'
-  | 'hline'
-  | 'trendline'
-  | 'rect'
-  | 'fib'
-  | 'polyline';
+  'stock' | 'journal' | 'hline' | 'trendline' | 'rect' | 'fib' | 'polyline';
 
 interface AnalyticsDimensions {
   entry?: AnalyticsEntry;

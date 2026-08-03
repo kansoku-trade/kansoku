@@ -1,0 +1,62 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "ignoreBinaries": ["longbridge"],
+  "ignoreDependencies": ["electron-sparkle-updater"],
+  "ignore": [
+    "apps/desktop/pro/**",
+    "apps/desktop/native/**",
+    "**/dist/**",
+    "**/dist-*/**",
+    "**/release/**",
+    ".agents/**",
+    ".claude/**",
+    ".superpowers/**",
+    ".worktrees/**",
+    "journal/**",
+    "stocks/**",
+  ],
+  "workspaces": {
+    "apps/pro": {
+      "entry": [
+        "src/entries/*.ts",
+        "src/memory/scheduler.ts",
+        "scripts/*.{mjs,ts,d.mts}",
+        "overlays/**/*.{ts,tsx}",
+      ],
+      "paths": {
+        "@pro/*": ["src/*"],
+        "@web/*": ["../web/src/*"],
+        "@desktop/*": ["../desktop/src/*"],
+        "@server/*": ["../server/src/*"],
+      },
+    },
+    "apps/site": {
+      "entry": [
+        "src/pages/**/*.astro",
+        "src/scripts/landing/main.ts",
+        "src/scripts/landing/replica/lw.ts",
+        "functions/**/*.ts",
+      ],
+      "ignoreDependencies": ["lucide-static"],
+    },
+    "apps/web": {
+      "entry": ["src/train-entry.tsx", "src/generated-routes.ts"],
+    },
+    "apps/video": {
+      "entry": ["src/project.tsx", "src/render.ts"],
+      "ignoreDependencies": ["@revideo/ui", "vite"],
+    },
+    "apps/desktop": {
+      "entry": ["src/main.ts", "scripts/*.{cjs,mjs}", "src/cli/main.ts"],
+    },
+    "packages/bench-report-ui": {
+      "entry": ["src/entries/*.tsx"],
+    },
+    "packages/build-overlay": {
+      "entry": ["eslint/*.d.mts", "scripts/*.d.mts"],
+    },
+    "packages/core": {
+      "ignoreDependencies": ["tsx"],
+    },
+  },
+}

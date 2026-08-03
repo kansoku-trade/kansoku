@@ -25,9 +25,6 @@ export const asTime = (t: number) => t as UTCTimestamp;
 export const toLineData = (pts: LinePoint[]): LineData[] =>
   pts.map((p) => ({ time: asTime(p.time), value: p.value }));
 
-export const toHistData = (pts: ColoredPoint[]): HistogramData[] =>
-  pts.map((p) => ({ time: asTime(p.time), value: p.value, color: p.color }));
-
 const hexToRgba = (hex: string | undefined, alpha: number): string | undefined => {
   if (!hex || !/^#[\da-f]{6}$/i.test(hex)) return hex;
   const n = Number.parseInt(hex.slice(1), 16);

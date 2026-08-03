@@ -69,10 +69,7 @@ function neutralSubmission(question: RunnerQuestion, close: number): Submission 
   };
 }
 
-export function baselineSubmission(
-  strategy: BaselineStrategy,
-  question: RunnerQuestion,
-): Submission {
+function baselineSubmission(strategy: BaselineStrategy, question: RunnerQuestion): Submission {
   const close = cutoffClose(question);
   if (strategy === 'always-neutral') return neutralSubmission(question, close);
   const goLong = strategy === 'buy-hold' || charSum(question.id) % 2 === 0;

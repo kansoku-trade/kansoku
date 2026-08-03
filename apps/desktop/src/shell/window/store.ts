@@ -4,7 +4,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 const DEFAULT_DEBOUNCE_MS = 500;
 const WINDOW_ID_PATTERN = /^win-(\d+)$/;
 
-export interface WindowEntry {
+interface WindowEntry {
   id: string;
   activeTabId: string;
 }

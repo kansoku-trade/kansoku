@@ -81,7 +81,7 @@ export const EVENT_LABELS: Record<string, string> = {
   abstained: '选择观望',
 };
 
-export const PHASE_LABELS: Record<string, string> = {
+const PHASE_LABELS: Record<string, string> = {
   flat: '空仓',
   observing: '观察期',
   awaiting_submission: '等待决策',

@@ -52,7 +52,7 @@ function subscribe(listener: () => void): () => void {
   return () => listeners.delete(listener);
 }
 
-export function getTimeDisplayPreference(): TimeDisplayPreference {
+function getTimeDisplayPreference(): TimeDisplayPreference {
   return preference;
 }
 

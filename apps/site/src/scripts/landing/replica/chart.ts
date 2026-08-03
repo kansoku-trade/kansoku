@@ -23,7 +23,7 @@ export interface ReplicaChart {
   destroy: () => void;
 }
 
-export type ReplicaVariant = 'chart' | 'trainer';
+type ReplicaVariant = 'chart' | 'trainer';
 
 export interface ReplicaChartOptions {
   variant?: ReplicaVariant;

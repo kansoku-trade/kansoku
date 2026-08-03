@@ -7,15 +7,13 @@ import { hitTest, type HitRegion, type Pt } from '@kansoku/shared/drawings';
 export type DrawingTool =
   'off' | 'cursor' | 'measure' | 'trendline' | 'hline' | 'rect' | 'fib' | 'polyline';
 
-export type TwoPointTool = 'measure' | 'trendline' | 'rect' | 'fib';
+type TwoPointTool = 'measure' | 'trendline' | 'rect' | 'fib';
 
 export type MultiPointTool = TwoPointTool | 'polyline';
 
-export const TWO_POINT_TOOLS: TwoPointTool[] = ['measure', 'trendline', 'rect', 'fib'];
-
 export const MAX_POLYLINE_POINTS = 20;
 
-export function isTwoPointTool(tool: DrawingTool): tool is TwoPointTool {
+function isTwoPointTool(tool: DrawingTool): tool is TwoPointTool {
   return tool === 'measure' || tool === 'trendline' || tool === 'rect' || tool === 'fib';
 }
 
@@ -51,7 +49,7 @@ export function pickHit(
   return null;
 }
 
-export function translatePoints(
+function translatePoints(
   points: AnnotationPoint[],
   dTime: number,
   dPrice: number,
@@ -59,7 +57,7 @@ export function translatePoints(
   return points.map((point) => ({ time: point.time + dTime, price: point.price + dPrice }));
 }
 
-export function movePoint(
+function movePoint(
   points: AnnotationPoint[],
   index: number,
   point: AnnotationPoint,

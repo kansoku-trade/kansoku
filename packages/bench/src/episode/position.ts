@@ -4,7 +4,7 @@ import type { EpisodeTradeReason } from '../schema/tradeReason.js';
 export const FULL_POSITION_SIZE = 1;
 export const POSITION_SIZE_EPSILON = 1e-9;
 
-export interface PositionLot extends EpisodeTradeLot {
+interface PositionLot extends EpisodeTradeLot {
   remaining: number;
 }
 
@@ -132,7 +132,7 @@ export function reduceLots(
   };
 }
 
-export function unrealizedR(position: PositionState, price: number): number {
+function unrealizedR(position: PositionState, price: number): number {
   const move = position.lots.reduce((total, lot) => {
     if (lot.remaining <= 0) return total;
     const gain = position.direction === 'long' ? price - lot.price : lot.price - price;

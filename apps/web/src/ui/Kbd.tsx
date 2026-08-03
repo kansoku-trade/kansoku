@@ -1,6 +1,6 @@
 import { ArrowBigUp, Command, CornerDownLeft, type LucideIcon } from 'lucide-react';
 
-export type KbdKey = 'mod' | 'shift' | 'enter' | (string & {});
+type KbdKey = 'mod' | 'shift' | 'enter' | (string & {});
 
 interface KbdProps {
   keys: readonly KbdKey[];

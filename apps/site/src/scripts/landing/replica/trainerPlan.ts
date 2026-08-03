@@ -2,12 +2,11 @@ import type { Candle } from '../kline';
 import { snapshot, toCandles, volumesOf } from './snapshot';
 
 export const TRAINER_DIVIDER = 72;
-export const TRAINER_CLOSED_R = 1.1;
+const TRAINER_CLOSED_R = 1.1;
 export const TRAINER_START_CURSOR = TRAINER_DIVIDER + 28;
 
 export const trainerCandles = (): Candle[] => toCandles(snapshot.trainer.bars);
 export const trainerVolumes = (): number[] => volumesOf(snapshot.trainer.bars);
-export const TRAINER_EPISODE_BARS = snapshot.trainer.bars.length;
 
 export interface TrainerPlan {
   direction: 'long' | 'short';
@@ -64,5 +63,4 @@ export const trainerStatsAt = (
 };
 
 export const signedR = (value: number): string => `${value >= 0 ? '+' : ''}${value.toFixed(1)}R`;
-export const signedPct = (value: number): string =>
-  `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
+export const signedPct = (value: number): string => `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;

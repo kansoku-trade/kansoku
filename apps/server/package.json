@@ -25,7 +25,6 @@
     "drizzle-orm": "^0.45.2",
     "hono": "4.12.30",
     "reflect-metadata": "0.2.2",
-    "tsyringe": "4.10.0",
     "ws": "^8.21.1"
   },
   "devDependencies": {

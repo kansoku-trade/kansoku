@@ -32,9 +32,7 @@ export const mountDemoScene = async (root: ParentNode, tier: Tier): Promise<Demo
     const trainerView = scene.querySelector<HTMLElement>('[data-app-view="train"]');
     const [mainChart, trainerChart] = await Promise.all([
       chartView ? mountReplicaChart(chartView) : Promise.resolve(null),
-      trainerView
-        ? mountReplicaChart(trainerView, { variant: 'trainer' })
-        : Promise.resolve(null),
+      trainerView ? mountReplicaChart(trainerView, { variant: 'trainer' }) : Promise.resolve(null),
     ]);
     chart = mainChart;
     const trainerControls = trainerView ? mountTrainerControls(trainerView, trainerChart) : null;
@@ -119,5 +117,3 @@ export const mountDemoScene = async (root: ParentNode, tier: Tier): Promise<Demo
     destroy: () => teardown.forEach((fn) => fn()),
   };
 };
-
-export { CHAPTERS };

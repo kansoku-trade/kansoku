@@ -29,5 +29,3 @@ export const SHELL_IPC_GROUPS = [
 ] as const;
 
 export const IPC_GROUPS = [...KERNEL_IPC_GROUPS, ...SHELL_IPC_GROUPS] as const;
-
-export type IpcGroup = (typeof IPC_GROUPS)[number];

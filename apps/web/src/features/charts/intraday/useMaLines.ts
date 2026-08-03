@@ -22,7 +22,7 @@ export const MAX_MA_PERIOD = 500;
 
 export const MA_LINES_STORAGE_KEY = 'intraday-ma-lines';
 
-export const MA_PALETTE = [
+const MA_PALETTE = [
   theme.accent,
   theme.textPrimary,
   theme.textSecondary,

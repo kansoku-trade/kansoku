@@ -8,7 +8,7 @@ interface DesktopGlobal {
   rendererCalls?: RendererCallsBridge;
 }
 
-export function getRendererCallsBridge(
+function getRendererCallsBridge(
   win: unknown = typeof window === 'undefined' ? undefined : window,
 ): RendererCallsBridge | null {
   const bridge = (win as { desktop?: DesktopGlobal } | undefined)?.desktop?.rendererCalls;

@@ -78,12 +78,6 @@ importers:
       '@kansoku/shared':
         specifier: workspace:*
         version: link:../../packages/shared
-      '@tsuki-hono/common':
-        specifier: 0.0.5
-        version: 0.0.5(hono@4.12.30)
-      '@tsuki-hono/core':
-        specifier: 0.0.5
-        version: 0.0.5(hono@4.12.30)
       '@types/better-sqlite3':
         specifier: ^7.6.13
         version: 7.6.13
@@ -108,12 +102,6 @@ importers:
       esbuild:
         specifier: ^0.28.0
         version: 0.28.1
-      hono:
-        specifier: 4.12.30
-        version: 4.12.30
-      partial-json:
-        specifier: ^0.1.7
-        version: 0.1.7
       reflect-metadata:
         specifier: 0.2.2
         version: 0.2.2
@@ -265,9 +253,6 @@ importers:
       reflect-metadata:
         specifier: 0.2.2
         version: 0.2.2
-      tsyringe:
-        specifier: 4.10.0
-        version: 4.10.0
       ws:
         specifier: ^8.21.1
         version: 8.21.1
@@ -464,9 +449,6 @@ importers:
       '@kansoku/bench-report-ui':
         specifier: workspace:*
         version: link:../bench-report-ui
-      '@kansoku/core':
-        specifier: workspace:*
-        version: link:../core
       '@kansoku/shared':
         specifier: workspace:*
         version: link:../shared

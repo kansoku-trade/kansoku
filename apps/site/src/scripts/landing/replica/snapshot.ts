@@ -10,7 +10,7 @@ export type Bar = [
   volume: number,
 ];
 
-export interface SepaCheck {
+interface SepaCheck {
   label: string;
   status: 'pass' | 'fail' | 'unknown';
   val: string;

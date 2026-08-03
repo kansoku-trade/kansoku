@@ -5,19 +5,6 @@ import { client } from '@web/lib/client';
 
 export const bareSymbol = (value: string) => value.toUpperCase().replace(/\.US$/, '');
 
-export interface DeepDiveStatus {
-  running: boolean;
-  symbol?: string;
-  startedAt?: string;
-  lastResult?: {
-    symbol: string;
-    ok: boolean;
-    finishedAt: string;
-    error?: string;
-    dirtyWarning?: boolean;
-  };
-}
-
 const STATUS_POLL_MS = 10_000;
 
 export function useDeepDive(symbol: string, onNoteReady: () => void) {

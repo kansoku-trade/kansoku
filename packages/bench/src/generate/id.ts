@@ -1,4 +1,4 @@
-export function symbolWithoutMarket(symbol: string): string {
+function symbolWithoutMarket(symbol: string): string {
   const idx = symbol.lastIndexOf('.');
   return idx === -1 ? symbol : symbol.slice(0, idx);
 }

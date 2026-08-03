@@ -47,7 +47,7 @@ export function redactSecrets(text: string): string {
   return out;
 }
 
-export function formatLogArgs(args: unknown[]): string {
+function formatLogArgs(args: unknown[]): string {
   return args
     .map((arg) => {
       if (typeof arg === 'string') return arg;

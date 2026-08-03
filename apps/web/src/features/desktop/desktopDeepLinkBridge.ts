@@ -1,4 +1,4 @@
-export interface DeepLinkTarget {
+interface DeepLinkTarget {
   path: string;
   search: string;
 }

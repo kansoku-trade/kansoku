@@ -3,7 +3,7 @@ import type { Question } from '../schema/question.js';
 import { atr14, cutoffCloseOf, neutralCorrect, regimeOf } from './neutral.js';
 import { coerceReplayBar, num, replayDirectional } from './replay.js';
 
-export type CellOutcome =
+type CellOutcome =
   | 'win'
   | 'loss'
   | 'timeout_flat'
@@ -14,7 +14,7 @@ export type CellOutcome =
   | 'api_error'
   | 'agent_timeout';
 
-export type CellDirection = 'long' | 'short' | 'neutral' | null;
+type CellDirection = 'long' | 'short' | 'neutral' | null;
 
 export interface CellVerdict {
   model: string;

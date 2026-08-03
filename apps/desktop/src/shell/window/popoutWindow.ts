@@ -10,13 +10,13 @@ import {
   WINDOW_BG,
 } from './mainWindow.js';
 
-export const SYMBOL_PATTERN = /^(?=.*[\da-z])[\d.a-z\-]{1,20}$/i;
+const SYMBOL_PATTERN = /^(?=.*[\da-z])[\d.a-z\-]{1,20}$/i;
 
-export const POPOUT_DEFAULT_WIDTH = 520;
-export const POPOUT_DEFAULT_HEIGHT = 420;
-export const POPOUT_MIN_WIDTH = 360;
-export const POPOUT_MIN_HEIGHT = 300;
-export const POPOUT_CASCADE_OFFSET = 24;
+const POPOUT_DEFAULT_WIDTH = 520;
+const POPOUT_DEFAULT_HEIGHT = 420;
+const POPOUT_MIN_WIDTH = 360;
+const POPOUT_MIN_HEIGHT = 300;
+const POPOUT_CASCADE_OFFSET = 24;
 
 export function isValidPopoutSymbol(symbol: string): boolean {
   return SYMBOL_PATTERN.test(symbol);
@@ -43,10 +43,6 @@ let cascadeIndex = 0;
 
 export function isPopoutWindow(win: BrowserWindow): boolean {
   return popoutWindows.has(win);
-}
-
-export function popoutWindowCount(): number {
-  return popoutWindows.size;
 }
 
 function nextCascadePosition(): { x: number; y: number } {

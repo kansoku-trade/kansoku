@@ -10,10 +10,10 @@ import {
   WINDOW_BG,
 } from './mainWindow.js';
 
-export const TRAINER_DEFAULT_WIDTH = 1280;
-export const TRAINER_DEFAULT_HEIGHT = 860;
-export const TRAINER_MIN_WIDTH = 960;
-export const TRAINER_MIN_HEIGHT = 640;
+const TRAINER_DEFAULT_WIDTH = 1280;
+const TRAINER_DEFAULT_HEIGHT = 860;
+const TRAINER_MIN_WIDTH = 960;
+const TRAINER_MIN_HEIGHT = 640;
 
 export function trainerUrl(): string {
   return IS_DEV ? `${DEV_WEB_URL}/train.html` : new URL('train.html', PROD_APP_URL).toString();

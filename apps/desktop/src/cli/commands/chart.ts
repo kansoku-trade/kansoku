@@ -2,10 +2,6 @@ import { runChartCreate } from './chart/create.js';
 import { runChartGet } from './chart/get.js';
 import { runChartList } from './chart/list.js';
 
-export { runChartCreate } from './chart/create.js';
-export { runChartGet } from './chart/get.js';
-export { runChartList } from './chart/list.js';
-
 export async function runChart(argv: string[]): Promise<void> {
   const sub = argv[0];
   const rest = argv.slice(1);

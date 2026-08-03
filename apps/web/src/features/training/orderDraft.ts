@@ -29,8 +29,8 @@ export interface Placement {
 export const MIN_GAP = 0.01;
 export const MIN_REWARD_RISK = 1.5;
 export const FULL_POSITION = 1;
-export const HALF_POSITION = 0.5;
-export const QUARTER_POSITION = 0.25;
+const HALF_POSITION = 0.5;
+const QUARTER_POSITION = 0.25;
 
 // Every reason the trainer sends crosses a boundary that validates summary with minLength 1
 // (episodeTradeReasonSchema), so an untyped field cannot be sent as an empty string — and a hold

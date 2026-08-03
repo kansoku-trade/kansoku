@@ -4,7 +4,7 @@ import { getLastPointer } from './webHost';
 
 let adapterOverride: ReturnType<typeof resolveContextMenuAdapter> | null = null;
 
-export function __setContextMenuAdapterForTests(
+function __setContextMenuAdapterForTests(
   adapter: ReturnType<typeof resolveContextMenuAdapter> | null,
 ): void {
   adapterOverride = adapter;
@@ -22,8 +22,4 @@ export function showContextMenu(items: ContextMenuItem[], point?: Partial<Contex
     y: point?.y ?? last.y,
   };
   void adapter().show(items, resolved);
-}
-
-export function closeContextMenu(): void {
-  adapter().close();
 }

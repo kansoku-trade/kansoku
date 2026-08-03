@@ -10,7 +10,7 @@ import {
 
 export type ResizablePanelSide = 'start' | 'end';
 
-export function clampPanelSize(size: number, minSize: number, maxSize: number): number {
+function clampPanelSize(size: number, minSize: number, maxSize: number): number {
   return Math.min(maxSize, Math.max(minSize, size));
 }
 

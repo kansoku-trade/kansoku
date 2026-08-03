@@ -21,9 +21,9 @@ export interface CredentialEntry {
   ok: boolean;
 }
 
-export type MasterKeyStatus = 'ready' | 'missing' | 'invalid';
+type MasterKeyStatus = 'ready' | 'missing' | 'invalid';
 
-export interface ProviderEndpoint {
+interface ProviderEndpoint {
   provider: string;
   baseUrl: string;
 }
@@ -45,13 +45,13 @@ export interface UsageToday {
   total: RoleUsage;
 }
 
-export interface CatalogModel {
+interface CatalogModel {
   id: string;
   name: string;
   thinkingLevels: string[];
 }
 
-export interface CatalogAuth {
+interface CatalogAuth {
   kind: 'api_key' | 'oauth';
   status: 'configured' | 'missing' | 'error';
 }
@@ -145,7 +145,7 @@ export interface LobeHubDeviceLogin {
   intervalSeconds: number;
 }
 
-export const THINKING_LABEL: Record<string, string> = {
+const THINKING_LABEL: Record<string, string> = {
   off: '关闭思考',
   minimal: '最简',
   low: '低',

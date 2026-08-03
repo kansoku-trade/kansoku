@@ -9,11 +9,11 @@ import type { SymbolSpec } from './symbols.js';
 import type { FetchCalendar, FetchKlineHistory } from './source.js';
 import { firstIndexOnOrAfter, hasSufficientWeekHistory, planCutoffIndices } from './windowing.js';
 
-export const REQUIRED_BEFORE_DAY = 250;
-export const REQUIRED_BEFORE_WEEK = 104;
-export const HORIZON_BARS = 20;
-export const MIN_CUTOFF_DATE = '2026-01-01';
-export const HISTORY_START = '2022-01-01';
+const REQUIRED_BEFORE_DAY = 250;
+const REQUIRED_BEFORE_WEEK = 104;
+const HORIZON_BARS = 20;
+const MIN_CUTOFF_DATE = '2026-01-01';
+const HISTORY_START = '2022-01-01';
 const CALENDAR_LOOKAHEAD_DAYS = 180;
 
 export interface GenerateOptions {
@@ -31,12 +31,12 @@ export interface GenerateOptions {
   log: (line: string) => void;
 }
 
-export interface GeneratedFile {
+interface GeneratedFile {
   id: string;
   path: string;
 }
 
-export interface SkippedWindow {
+interface SkippedWindow {
   symbol: string;
   cutoffDate: string;
   reasons: string[];

@@ -2,7 +2,7 @@ import { runLongbridgeJson } from '../../../core/src/marketdata/longbridgeCli.js
 import type { EpisodeViewPeriod } from '../episode/periods.js';
 import type { QuoteBar } from './assemble.js';
 
-export type KlinePeriod = 'day' | 'week';
+type KlinePeriod = 'day' | 'week';
 export type EpisodeKlinePeriod = EpisodeViewPeriod;
 
 export type FetchKlineHistory = (

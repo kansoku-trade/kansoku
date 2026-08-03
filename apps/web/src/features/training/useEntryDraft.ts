@@ -10,13 +10,13 @@ import {
 } from './orderDraft';
 import { quickEntryDraft } from './quickEntry';
 
-export type EntryAutoFill = 'none' | 'filled' | 'unavailable';
+type EntryAutoFill = 'none' | 'filled' | 'unavailable';
 
-export type EntryLevelField = 'stop' | 'target';
+type EntryLevelField = 'stop' | 'target';
 
 // Either leg may be unset: the levels are pulled out of the entry ticket one at a time (TP / SL),
 // so a plan spends real time half-drawn.
-export interface PartialPlacement {
+interface PartialPlacement {
   stop: number | null;
   target: number | null;
 }

@@ -12,7 +12,7 @@ function two(value: number): string {
   return String(value).padStart(2, '0');
 }
 
-export function defaultRunId(now: Date = new Date()): string {
+function defaultRunId(now: Date = new Date()): string {
   const stamp =
     `${now.getFullYear()}${two(now.getMonth() + 1)}${two(now.getDate())}` +
     `-${two(now.getHours())}${two(now.getMinutes())}${two(now.getSeconds())}`;

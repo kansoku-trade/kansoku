@@ -1,6 +1,6 @@
 import { getDesktopContextMenuBridge } from './electronBridge';
 import { prepareContextMenuItems } from './serialize';
-import type { ContextMenuAdapter, ContextMenuItem, ContextMenuPoint } from './types';
+import type { ContextMenuAdapter } from './types';
 import { closeWebContextMenu, openWebContextMenu } from './webHost';
 
 export function createWebContextMenuAdapter(): ContextMenuAdapter {
@@ -49,12 +49,4 @@ export function resolveContextMenuAdapter(
   const bridge = getDesktopContextMenuBridge(win);
   if (bridge) return createElectronContextMenuAdapter((request) => bridge.popup(request));
   return createWebContextMenuAdapter();
-}
-
-export function showViaAdapter(
-  adapter: ContextMenuAdapter,
-  items: ContextMenuItem[],
-  point: ContextMenuPoint,
-): void {
-  void adapter.show(items, point);
 }

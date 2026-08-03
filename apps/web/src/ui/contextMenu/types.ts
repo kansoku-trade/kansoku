@@ -90,12 +90,6 @@ export function isContextMenuDivider(item: ContextMenuItem): item is ContextMenu
   return 'type' in item && item.type === 'divider';
 }
 
-export function isContextMenuSubmenu(
-  item: ContextMenuItem,
-): item is ContextMenuCommandItem & { submenu: ContextMenuItem[] } {
-  return !isContextMenuDivider(item) && Array.isArray(item.submenu) && item.submenu.length >= 0;
-}
-
 export function hasContextMenuSubmenu(
   item: ContextMenuItem,
 ): item is ContextMenuCommandItem & { submenu: ContextMenuItem[] } {

@@ -11,7 +11,7 @@ interface RecapSummary {
   avgPct: number | null;
 }
 
-export function summarizeRecap(recap: OverviewRecap | null | undefined): RecapSummary | null {
+function summarizeRecap(recap: OverviewRecap | null | undefined): RecapSummary | null {
   if (!recap) return null;
   const resolved = recap.settlements.filter(
     (s: RecapSettlementRow) => s.outcome != null && s.outcome.status !== 'open',
@@ -19,8 +19,7 @@ export function summarizeRecap(recap: OverviewRecap | null | undefined): RecapSu
   if (!resolved.length) return null;
   const hits = resolved.filter(
     (s: RecapSettlementRow) =>
-      s.outcome != null &&
-      (s.outcome.status === 'hit_target' || s.outcome.status === 'held_range'),
+      s.outcome != null && (s.outcome.status === 'hit_target' || s.outcome.status === 'held_range'),
   ).length;
   const pcts = resolved.map((s) => s.day_pct).filter((p): p is number => p != null);
   const avgPct = pcts.length ? pcts.reduce((a, b) => a + b, 0) / pcts.length : null;

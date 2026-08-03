@@ -8,10 +8,7 @@ import type { TransportEnvelope } from '@kansoku/core/contract/index';
 import { getShellRpc } from '../desktop/shellRpc';
 
 export type {
-  AgentKitLocation,
-  AgentKitSetEnabledResult,
   AgentKitStatus,
-  AgentKitSyncResult,
   PendingConflict,
   PendingUpdate,
 } from '@kansoku/core/contract/agentKit';
@@ -33,7 +30,10 @@ export function getDesktopAgentKitBridge(
       unwrap((await rpc.invoke('agentKit.getStatus')) as TransportEnvelope<AgentKitStatus>),
     setEnabled: async (input) =>
       unwrap(
-        (await rpc.invoke('agentKit.setEnabled', input)) as TransportEnvelope<AgentKitSetEnabledResult>,
+        (await rpc.invoke(
+          'agentKit.setEnabled',
+          input,
+        )) as TransportEnvelope<AgentKitSetEnabledResult>,
       ),
     forceSync: async () =>
       unwrap((await rpc.invoke('agentKit.forceSync')) as TransportEnvelope<AgentKitSyncResult>),

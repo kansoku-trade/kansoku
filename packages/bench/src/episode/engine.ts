@@ -30,7 +30,7 @@ import {
 import { questionBasePeriod } from './questionLadder.js';
 import { buildEpisodeQuestionViewAtCursor } from './view.js';
 
-export type { PositionLot, PositionState } from './position.js';
+export type { PositionState } from './position.js';
 
 export type EpisodePhase = 'flat' | 'pending' | 'open' | 'terminal';
 export type EpisodeEntryMode = 'limit' | 'market';
@@ -81,13 +81,13 @@ export interface EpisodeEngineOptions {
   costBps?: number;
 }
 
-export interface EpisodeNewBars {
+interface EpisodeNewBars {
   base: RawBar[];
   mid: RawBar[];
   top: RawBar[];
 }
 
-export type EpisodeAdvanceCore = {
+type EpisodeAdvanceCore = {
   state: EpisodeState;
   asOf: string;
   bar: RawBar | null;

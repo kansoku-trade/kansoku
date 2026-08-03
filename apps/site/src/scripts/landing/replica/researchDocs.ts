@@ -1,4 +1,4 @@
-export type ResearchKind = 'stock' | 'journal';
+type ResearchKind = 'stock' | 'journal';
 
 export interface ResearchDoc {
   path: string;

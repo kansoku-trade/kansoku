@@ -1,4 +1,4 @@
-export interface EvidenceNode {
+interface EvidenceNode {
   tool: string;
   arg: string;
   value: string;

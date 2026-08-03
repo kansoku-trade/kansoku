@@ -21,7 +21,7 @@ export function isHomeRoute(route: string): boolean {
   return (queryIndex === -1 ? route : route.slice(0, queryIndex)) === HOME_ROUTE;
 }
 
-export function isPinnedTab(snapshot: TabsSnapshot, id: string): boolean {
+function isPinnedTab(snapshot: TabsSnapshot, id: string): boolean {
   return snapshot.tabs.length > 0 && snapshot.tabs[0].id === id;
 }
 

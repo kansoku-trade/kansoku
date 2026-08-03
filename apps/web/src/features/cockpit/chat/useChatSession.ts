@@ -15,7 +15,7 @@ export interface ChatSessionInfo {
   updatedAt: string;
 }
 
-export type ChatRowKind = 'user' | 'assistant' | 'tool' | 'error';
+type ChatRowKind = 'user' | 'assistant' | 'tool' | 'error';
 
 export interface ChatRow {
   id: string;
@@ -108,7 +108,7 @@ export const conversationAdapters: Record<ConversationKind, ConversationAdapter>
   },
 };
 
-export interface ChatSendResult {
+interface ChatSendResult {
   ok: boolean;
   error?: string;
 }

@@ -38,7 +38,7 @@ export interface BuildEpisodeDatasetOptions {
   log?: (line: string) => void;
 }
 
-export interface EpisodeDatasetCaseQuality {
+interface EpisodeDatasetCaseQuality {
   questionId: string;
   sourceSymbol: string;
   sourceCutoff: string;

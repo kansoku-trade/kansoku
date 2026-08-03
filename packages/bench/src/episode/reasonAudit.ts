@@ -8,7 +8,7 @@ import type { Question } from '../schema/question.js';
 // looks ahead to bars it has not seen. Free text cannot be separated into retrospective claims and
 // forward plans by pattern matching, so treat a finding as "worth a human read", and read the
 // unaudited counts as the honest measure: how much of a reason is checkable at all.
-export interface ReasonFinding {
+interface ReasonFinding {
   step: number;
   kind: 'future_bar' | 'impossible_price';
   cited: number;

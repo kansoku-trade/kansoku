@@ -9,7 +9,7 @@ import { INDEX_SYMBOLS } from './HomeTopStrip';
 import { isCardWorthySymbol } from './SymbolGrid';
 import { squarify, type TreemapRect } from './treemap';
 
-export interface PanoramaTile {
+interface PanoramaTile {
   symbol: string;
   pct: number | null;
   turnover: number;

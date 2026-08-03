@@ -1,6 +1,6 @@
 import type { ContextMenuItem, ContextMenuPoint } from './types';
 
-export interface ContextMenuAnchor {
+interface ContextMenuAnchor {
   getBoundingClientRect: () => DOMRect;
 }
 
@@ -68,11 +68,6 @@ function anchorAt(x: number, y: number): ContextMenuAnchor {
 
 export function openWebContextMenu(items: ContextMenuItem[], point: ContextMenuPoint): void {
   state = { open: true, items, anchor: anchorAt(point.x, point.y) };
-  emit();
-}
-
-export function updateWebContextMenuItems(items: ContextMenuItem[]): void {
-  state = { ...state, items };
   emit();
 }
 

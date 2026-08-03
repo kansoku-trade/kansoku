@@ -1,4 +1,4 @@
-export const supportsScrollTimeline = (): boolean => {
+const supportsScrollTimeline = (): boolean => {
   try {
     return CSS.supports('animation-timeline: view()');
   } catch {

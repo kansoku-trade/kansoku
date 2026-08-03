@@ -86,7 +86,7 @@ export function MarkdownLink(props: Record<string, unknown>) {
   );
 }
 
-export const MARKDOWN_COMPONENTS = {
+const MARKDOWN_COMPONENTS = {
   a: MarkdownLink,
   table: ({ children }: { children?: ReactNode }) => (
     <div className="typeset-scroll">

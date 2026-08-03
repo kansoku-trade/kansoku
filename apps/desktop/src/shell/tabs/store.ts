@@ -31,12 +31,12 @@ function makeTab(route: string, id?: string): TabState {
   return { id: id ?? crypto.randomUUID(), route, title: DEFAULT_TITLE, scrollY: 0 };
 }
 
-export function isHomeRoute(route: string): boolean {
+function isHomeRoute(route: string): boolean {
   const queryIndex = route.indexOf('?');
   return (queryIndex === -1 ? route : route.slice(0, queryIndex)) === HOME_ROUTE;
 }
 
-export function isPinnedTab(state: TabsState, id: string): boolean {
+function isPinnedTab(state: TabsState, id: string): boolean {
   return state.tabs.length > 0 && state.tabs[0].id === id;
 }
 

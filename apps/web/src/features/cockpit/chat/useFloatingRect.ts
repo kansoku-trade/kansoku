@@ -15,7 +15,7 @@ export interface FloatRect {
   h: number;
 }
 
-export type ResizeEdge = 'w' | 'n' | 'nw';
+type ResizeEdge = 'w' | 'n' | 'nw';
 
 export function clampRect(rect: FloatRect, vw: number, vh: number): FloatRect {
   const w = Math.min(Math.max(rect.w, MIN_W), Math.max(MIN_W, vw - MARGIN * 2));

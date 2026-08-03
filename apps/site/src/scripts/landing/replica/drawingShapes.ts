@@ -1,4 +1,5 @@
-export type DrawingTool = 'off' | 'cursor' | 'measure' | 'trendline' | 'hline' | 'rect' | 'fib' | 'polyline';
+export type DrawingTool =
+  'off' | 'cursor' | 'measure' | 'trendline' | 'hline' | 'rect' | 'fib' | 'polyline';
 export type AnnotationKind = Exclude<DrawingTool, 'off' | 'cursor' | 'measure'>;
 
 export interface Point {
@@ -12,9 +13,9 @@ export interface Annotation {
   points: Point[];
 }
 
-export const FIB_RATIOS = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1] as const;
+const FIB_RATIOS = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1] as const;
 
-export const TWO_POINT_TOOLS: DrawingTool[] = ['measure', 'trendline', 'rect', 'fib'];
+const TWO_POINT_TOOLS: DrawingTool[] = ['measure', 'trendline', 'rect', 'fib'];
 
 export const isTwoPointTool = (tool: DrawingTool): boolean => TWO_POINT_TOOLS.includes(tool);
 

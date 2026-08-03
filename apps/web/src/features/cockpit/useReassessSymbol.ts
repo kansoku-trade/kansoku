@@ -9,7 +9,7 @@ export const REASON_TEXT: Record<string, string> = {
   'escalation on cooldown': '刚分析过，请稍后再试',
 };
 
-export interface ReassessResponse {
+interface ReassessResponse {
   started: boolean;
   reason?: string;
 }

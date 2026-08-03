@@ -53,7 +53,7 @@ export const CHAN_BUYSELL_TOGGLE_KEYS: IndicatorToggleKey[] = [
   'chanBuySell3',
 ];
 
-export const INDICATOR_TOGGLE_ORDER: IndicatorToggleKey[] = [
+const INDICATOR_TOGGLE_ORDER: IndicatorToggleKey[] = [
   ...BASE_TOGGLE_ORDER,
   ...CHAN_STRUCTURE_TOGGLE_KEYS,
   ...CHAN_BUYSELL_TOGGLE_KEYS,

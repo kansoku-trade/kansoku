@@ -1,6 +1,6 @@
 import { getShellRpc } from './shellRpc';
 
-export type TabsCommand =
+type TabsCommand =
   | 'new-tab'
   | 'close-tab'
   | 'next-tab'

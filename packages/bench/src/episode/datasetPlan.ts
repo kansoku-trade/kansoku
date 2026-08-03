@@ -14,7 +14,7 @@ const episodeBasePeriodSchema = Type.Union([
   Type.Literal('1h'),
 ]);
 
-export const episodeDatasetPlanSchema = Type.Object(
+const episodeDatasetPlanSchema = Type.Object(
   {
     schemaVersion: Type.Literal(1),
     id: Type.String({ pattern: DATASET_ID_PATTERN }),

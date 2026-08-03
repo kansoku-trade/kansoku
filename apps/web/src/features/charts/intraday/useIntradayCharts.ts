@@ -45,7 +45,7 @@ import { ZhongshuPrimitive } from './zhongshuPrimitive';
 import { filterVisibleOverlayItems, selectVisibleMarkers } from './markerSelection';
 import { seriesPalette, theme } from '@web/lib/theme';
 
-export const EMA_COLORS = [
+const EMA_COLORS = [
   theme.accent,
   theme.textPrimary,
   theme.textSecondary,

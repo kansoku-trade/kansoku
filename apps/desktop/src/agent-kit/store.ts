@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import type { AgentKitLocation } from '@kansoku/core/contract/agentKit';
 
-export type AgentKitStoreState = {
+type AgentKitStoreState = {
   enabled: boolean;
   location: AgentKitLocation;
   lastSyncAt?: string;

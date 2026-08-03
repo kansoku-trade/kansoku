@@ -1,4 +1,4 @@
-export interface ArchiveTermSpec {
+interface ArchiveTermSpec {
   strongTerms: string[];
   weakTerm: string;
   bankOrAssetManagerBrand?: boolean;

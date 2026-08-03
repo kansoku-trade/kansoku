@@ -11,7 +11,7 @@ import {
 } from 'node:fs';
 import path from 'node:path';
 
-export const AGENT_KIT_SKILL_LINK_PATHS = ['.claude/skills', '.agent/skill'] as const;
+const AGENT_KIT_SKILL_LINK_PATHS = ['.claude/skills', '.agent/skill'] as const;
 
 function bundledSkillProbe(skillsDir: string): string {
   let entries: string[];

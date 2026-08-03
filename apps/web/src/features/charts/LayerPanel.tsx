@@ -22,7 +22,7 @@ export interface LayerPreset {
   on: string[];
 }
 
-export type LayerRange = 'recent' | 'all';
+type LayerRange = 'recent' | 'all';
 
 export interface LayerPanelProps {
   groups: LayerGroup[];

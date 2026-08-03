@@ -37,7 +37,7 @@ function createPersister(): Persister {
 
 export const persister = createPersister();
 
-export const PERSIST_BUSTER = 'v1';
+const PERSIST_BUSTER = 'v1';
 
 export const persistOptions = {
   persister,

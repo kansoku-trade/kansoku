@@ -10,7 +10,7 @@ const cellMetricsSchema = Type.Object(
   { additionalProperties: false },
 );
 
-export const cellVerdictSchema = Type.Object(
+const cellVerdictSchema = Type.Object(
   {
     model: Type.String(),
     questionId: Type.String(),

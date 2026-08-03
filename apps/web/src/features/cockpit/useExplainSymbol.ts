@@ -3,7 +3,7 @@ import type { ExplainResult } from '@kansoku/shared/types';
 import { errorMessage } from '@web/lib/api';
 import { client } from '@web/lib/client';
 
-export const EXPLAIN_REASON_TEXT: Record<string, string> = {
+const EXPLAIN_REASON_TEXT: Record<string, string> = {
   disabled: 'AI 未配置（服务端缺点评模型），暂时无法解读',
   busy: '解读正在进行中，请稍候',
   failed: '解读失败，请稍后再试',

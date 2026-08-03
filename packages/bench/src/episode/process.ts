@@ -4,7 +4,7 @@ import type { EpisodeReportTraceLine } from './report.js';
 
 export type ChartTimeframe = 'h1' | 'day' | 'week';
 
-export type ProcessKind = 'data' | 'observe' | 'decision' | 'manage' | 'warning' | 'other';
+type ProcessKind = 'data' | 'observe' | 'decision' | 'manage' | 'warning' | 'other';
 
 export interface ProcessEvent {
   sequence: number;
@@ -22,12 +22,12 @@ export interface ProcessEvent {
   isError: boolean;
 }
 
-export function finite(value: unknown): number | null {
+function finite(value: unknown): number | null {
   const parsed = typeof value === 'number' ? value : Number(value);
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-export function nonNegativeInteger(value: unknown): number | null {
+function nonNegativeInteger(value: unknown): number | null {
   const parsed = finite(value);
   return parsed != null && Number.isInteger(parsed) && parsed >= 0 ? parsed : null;
 }
@@ -66,7 +66,7 @@ function summaryBoolean(line: EpisodeReportTraceLine, key: string): boolean | nu
   return match ? match[1] === 'true' : null;
 }
 
-export function traceTimeframe(value: unknown): ChartTimeframe | null {
+function traceTimeframe(value: unknown): ChartTimeframe | null {
   return value === 'h1' || value === 'day' || value === 'week' ? value : null;
 }
 

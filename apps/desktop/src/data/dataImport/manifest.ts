@@ -31,7 +31,7 @@ export function validateImportSource(sourceRoot: string, destRoot: string): Sour
   return { ok: true };
 }
 
-export interface ImportManifestEntry {
+interface ImportManifestEntry {
   relPath: string;
   sourcePath: string;
   destPath: string;
@@ -69,7 +69,7 @@ export interface CopyImportOptions {
   overwrite: boolean;
 }
 
-export interface CopyImportFailure {
+interface CopyImportFailure {
   relPath: string;
   error: string;
 }

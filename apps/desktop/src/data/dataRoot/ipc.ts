@@ -25,5 +25,3 @@ export class DataRootIpc extends IpcService {
     return runResetDataRootFlow(BrowserWindow.getFocusedWindow());
   }
 }
-
-export { getDataRootRestartPending };

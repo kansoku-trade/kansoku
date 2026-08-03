@@ -14,18 +14,12 @@ import type { ChartTimeframe } from './process.js';
 
 export type { ChartTimeframe } from './process.js';
 
-export const CHART_TIMEFRAME_ORDER: ChartTimeframe[] = ['h1', 'day', 'week'];
-export const CHART_TIMEFRAME_KLINE_KEY: Record<ChartTimeframe, '1h' | 'day' | 'week'> = {
+const CHART_TIMEFRAME_ORDER: ChartTimeframe[] = ['h1', 'day', 'week'];
+const CHART_TIMEFRAME_KLINE_KEY: Record<ChartTimeframe, '1h' | 'day' | 'week'> = {
   h1: '1h',
   day: 'day',
   week: 'week',
 };
-export const CHART_TIMEFRAME_LABEL: Record<ChartTimeframe, string> = {
-  h1: '1 小时',
-  day: '日线',
-  week: '周线',
-};
-
 export function availableTimeframesFor(question: Question | null | undefined): ChartTimeframe[] {
   if (!question) return [];
   const kl = question.fixtures.kline as Record<string, unknown[] | undefined>;
@@ -35,7 +29,7 @@ export function availableTimeframesFor(question: Question | null | undefined): C
   });
 }
 
-export interface ChartBar {
+interface ChartBar {
   time: number | string;
   open: number;
   high: number;
@@ -44,7 +38,7 @@ export interface ChartBar {
   volume: number;
 }
 
-export interface ChartMarker {
+interface ChartMarker {
   time: number | string;
   position: 'aboveBar' | 'belowBar';
   color: string;
@@ -52,13 +46,13 @@ export interface ChartMarker {
   text: string;
 }
 
-export interface ChartTradeTimes {
+interface ChartTradeTimes {
   decision: number | string | null;
   entry: number | string | null;
   exit: number | string | null;
 }
 
-export interface ChartTradeRef {
+interface ChartTradeRef {
   tradeId: number;
   entry: number;
   stop: number;

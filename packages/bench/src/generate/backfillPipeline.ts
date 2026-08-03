@@ -16,9 +16,9 @@ import { specForSymbol } from './symbols.js';
 
 export type NewsSourceMode = 'doc' | 'archive' | 'auto';
 
-export const DEFAULT_ARCHIVE_THROTTLE_MS = 1000;
+const DEFAULT_ARCHIVE_THROTTLE_MS = 1000;
 
-export interface NewsBackfillDeps {
+interface NewsBackfillDeps {
   sourceCacheRoot: string;
   fresh: boolean;
   fetchGdelt: FetchGdeltArticles;
@@ -29,18 +29,18 @@ export interface NewsBackfillDeps {
   log: (line: string) => void;
 }
 
-export const GDELT_CIRCUIT_BREAKER_THRESHOLD = 2;
+const GDELT_CIRCUIT_BREAKER_THRESHOLD = 2;
 
-export interface GdeltCircuitBreaker {
+interface GdeltCircuitBreaker {
   consecutiveFailures: number;
   tripped: boolean;
 }
 
-export function newGdeltCircuitBreaker(): GdeltCircuitBreaker {
+function newGdeltCircuitBreaker(): GdeltCircuitBreaker {
   return { consecutiveFailures: 0, tripped: false };
 }
 
-export function recordGdeltOutcome(breaker: GdeltCircuitBreaker, failed: boolean): void {
+function recordGdeltOutcome(breaker: GdeltCircuitBreaker, failed: boolean): void {
   if (!failed) {
     breaker.consecutiveFailures = 0;
     return;
@@ -49,7 +49,7 @@ export function recordGdeltOutcome(breaker: GdeltCircuitBreaker, failed: boolean
   if (breaker.consecutiveFailures >= GDELT_CIRCUIT_BREAKER_THRESHOLD) breaker.tripped = true;
 }
 
-export interface QuestionNewsResult {
+interface QuestionNewsResult {
   news: BenchNewsItem[];
   gdeltCount: number;
   archiveCount: number;
@@ -213,7 +213,7 @@ async function loadArchiveNewsForSymbol(
   return mapArchiveMatches(matches, cutoff);
 }
 
-export interface ComputeNewsOptions {
+interface ComputeNewsOptions {
   symbol: string;
   cutoff: string;
   companyQuery: string | null;
@@ -225,9 +225,7 @@ export interface ComputeNewsOptions {
   scannedWindows?: Set<string>;
 }
 
-export async function computeNewsForQuestion(
-  options: ComputeNewsOptions,
-): Promise<QuestionNewsResult> {
+async function computeNewsForQuestion(options: ComputeNewsOptions): Promise<QuestionNewsResult> {
   const { symbol, cutoff, companyQuery, cik, deps, breaker } = options;
   const newsSource = options.newsSource ?? 'doc';
   const windowRequests = options.windowRequests ?? new Map<string, ArchiveWindowRequest[]>();
@@ -352,7 +350,7 @@ export interface BackfillNewsOptions {
   listQuestionIds: (datasetsRoot: string, version: string, bank: string) => Promise<string[]>;
 }
 
-export interface QuestionBackfillOutcome {
+interface QuestionBackfillOutcome {
   id: string;
   symbol: string;
   gdeltCount: number;
@@ -370,10 +368,7 @@ export interface BackfillNewsResult {
   gdeltCircuitTripped: boolean;
 }
 
-export async function findRunsReferencingVersion(
-  resultsRoot: string,
-  version: string,
-): Promise<string[]> {
+async function findRunsReferencingVersion(resultsRoot: string, version: string): Promise<string[]> {
   const found: string[] = [];
   let entries: string[];
   try {

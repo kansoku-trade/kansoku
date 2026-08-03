@@ -7,11 +7,7 @@ import { aggregate, aggregateReasons, type EpisodeReportSummary } from './metric
 import { buildRows } from './rows.js';
 import { buildEpisodeReportViewData, type EpisodeConfigSummary } from './viewModel.js';
 
-export type {
-  EpisodeReasonCoverage,
-  EpisodeReasonStat,
-  EpisodeReportSummary,
-} from './metrics.js';
+export type { EpisodeReportSummary } from './metrics.js';
 
 export interface EpisodeReportConfigSnapshot {
   runId?: string;
@@ -50,7 +46,7 @@ export interface EpisodeReportInput {
   provenance?: Map<string, EpisodeProvenanceEntry>;
 }
 
-export interface EpisodeReportTraceContext {
+interface EpisodeReportTraceContext {
   virtualAsOf?: string;
   barIndex?: number;
   phase?: string;

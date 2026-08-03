@@ -1,7 +1,4 @@
-import type {
-  LeaderboardScatterDot,
-  LeaderboardScatterView,
-} from '@kansoku/bench-report-ui/types';
+import type { LeaderboardScatterDot, LeaderboardScatterView } from '@kansoku/bench-report-ui/types';
 
 export interface ScatterInputPoint {
   id: string;
@@ -48,11 +45,7 @@ export function niceTicks(min: number, max: number): { lo: number; hi: number; t
   return { lo, hi, ticks };
 }
 
-export function projectPoint(
-  x: number,
-  y: number,
-  geom: ScatterGeometry,
-): { cx: number; cy: number } {
+function projectPoint(x: number, y: number, geom: ScatterGeometry): { cx: number; cy: number } {
   const { width, height, padL, padR, padT, padB, xMin, xMax, yMin, yMax } = geom;
   const innerW = width - padL - padR;
   const innerH = height - padT - padB;
@@ -61,7 +54,7 @@ export function projectPoint(
   return { cx, cy };
 }
 
-export function buildScatterGeometry(
+function buildScatterGeometry(
   points: ScatterInputPoint[],
   baseline: number | null,
 ): ScatterGeometry {
@@ -74,8 +67,14 @@ export function buildScatterGeometry(
   const jVals = points.map((p) => p.judgment);
   if (baseline != null) jVals.push(baseline);
   const eVals = points.map((p) => p.efficiency);
-  const jRange = niceTicks(jVals.length ? Math.min(...jVals) : 0, jVals.length ? Math.max(...jVals) : 1);
-  const eRange = niceTicks(eVals.length ? Math.min(...eVals) : 0, eVals.length ? Math.max(...eVals) : 1);
+  const jRange = niceTicks(
+    jVals.length ? Math.min(...jVals) : 0,
+    jVals.length ? Math.max(...jVals) : 1,
+  );
+  const eRange = niceTicks(
+    eVals.length ? Math.min(...eVals) : 0,
+    eVals.length ? Math.max(...eVals) : 1,
+  );
   const geom: ScatterGeometry = {
     width,
     height,

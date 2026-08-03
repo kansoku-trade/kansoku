@@ -13,11 +13,11 @@ export interface ParsedDatasetPathOptions extends DatasetPaths {
   argv: string[];
 }
 
-export function defaultDatasetsRoot(home: string = homedir()): string {
+function defaultDatasetsRoot(home: string = homedir()): string {
   return join(home, '.cache', 'kansoku', 'bench', 'datasets');
 }
 
-export function defaultSourceCacheRoot(home: string = homedir()): string {
+function defaultSourceCacheRoot(home: string = homedir()): string {
   return join(home, '.cache', 'kansoku', 'bench', 'sources');
 }
 

@@ -72,7 +72,7 @@ export const detect123 = (candles: Candle[]): Structure123 | null => {
   return null;
 };
 
-export type PatternStatus = 'pending' | 'confirmed';
+type PatternStatus = 'pending' | 'confirmed';
 
 export interface CandlePattern {
   index: number;
@@ -102,10 +102,20 @@ const classify = (prev: Candle, candle: Candle): Omit<CandlePattern, 'index' | '
   if (size < range * 0.34 && upperWick(candle) > size * 2 && lowerWick(candle) < size) {
     return { label: '射击之星', bias: 'bearish' };
   }
-  if (!candle.up && prev.up && candle.close < (prev.open + prev.close) / 2 && candle.open > prev.close) {
+  if (
+    !candle.up &&
+    prev.up &&
+    candle.close < (prev.open + prev.close) / 2 &&
+    candle.open > prev.close
+  ) {
     return { label: '乌云盖顶', bias: 'bearish' };
   }
-  if (candle.up && !prev.up && candle.close > (prev.open + prev.close) / 2 && candle.open < prev.close) {
+  if (
+    candle.up &&
+    !prev.up &&
+    candle.close > (prev.open + prev.close) / 2 &&
+    candle.open < prev.close
+  ) {
     return { label: '刺透形态', bias: 'bullish' };
   }
   return null;
@@ -138,7 +148,7 @@ export const detectCandlePatterns = (candles: Candle[], limit = 3): CandlePatter
   return found.reverse();
 };
 
-export interface DivergenceLeg {
+interface DivergenceLeg {
   index: number;
   price: number;
   macd: number;

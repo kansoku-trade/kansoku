@@ -86,7 +86,7 @@ export function goldSubmissionFor(question: Question): Submission {
   };
 }
 
-export function goldAnswerFor(question: Question): AnswerLine {
+function goldAnswerFor(question: Question): AnswerLine {
   return {
     questionId: question.id,
     model: GOLD_MODEL,

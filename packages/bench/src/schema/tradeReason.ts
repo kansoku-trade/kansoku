@@ -1,6 +1,6 @@
 import { type Static, Type } from 'typebox';
 
-export const episodeTradeReasonCategorySchema = Type.Union([
+const episodeTradeReasonCategorySchema = Type.Union([
   Type.Literal('trend_following'),
   Type.Literal('breakout'),
   Type.Literal('pullback'),

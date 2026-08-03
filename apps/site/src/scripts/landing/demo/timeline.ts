@@ -34,7 +34,7 @@ export const chapterStart = (index: number): number => {
   return start;
 };
 
-export const resolve = (time: number): TimelineState => {
+const resolve = (time: number): TimelineState => {
   const clamped = Math.min(TOTAL_SECONDS, Math.max(0, time));
   let acc = 0;
   for (let i = 0; i < CHAPTERS.length; i++) {

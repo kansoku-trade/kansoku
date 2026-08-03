@@ -7,13 +7,13 @@ import { chartTheme } from '../../styles/chartTheme';
 import { computeEma20 } from './ema';
 import { rangesForBar } from './ranges';
 
-export interface TradeSelection {
+interface TradeSelection {
   kind: 'trade';
   tradeId: number;
   trade: EpisodeReportChartTradeRef;
 }
 
-export interface ActionSelection {
+interface ActionSelection {
   kind: 'action';
   step: number;
   times: Record<EpisodeReportChartTimeframe, number | string>;
@@ -21,27 +21,27 @@ export interface ActionSelection {
 
 export type ChartSelection = TradeSelection | ActionSelection | null;
 
-export interface ScenePoint {
+interface ScenePoint {
   time: number | string;
 }
 
-export interface SceneCandle extends ScenePoint {
+interface SceneCandle extends ScenePoint {
   open: number;
   high: number;
   low: number;
   close: number;
 }
 
-export interface SceneVolume extends ScenePoint {
+interface SceneVolume extends ScenePoint {
   value: number;
   color: string;
 }
 
-export interface SceneLine extends ScenePoint {
+interface SceneLine extends ScenePoint {
   value: number;
 }
 
-export interface ScenePriceLine {
+interface ScenePriceLine {
   price: number;
   color: string;
   title: string;
@@ -78,10 +78,6 @@ const DEFAULT_VISIBLE_BARS: Record<EpisodeReportChartTimeframe, number> = {
   day: 120,
   week: 104,
 };
-
-function fmt(value: number): string {
-  return Number.isFinite(value) ? value.toFixed(2) : '—';
-}
 
 function tradePriceLines(trade: EpisodeReportChartTradeRef): ScenePriceLine[] {
   return [
@@ -195,5 +191,3 @@ export function buildChartScene(
     rangeText,
   };
 }
-
-export { fmt as formatPrice };

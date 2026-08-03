@@ -89,7 +89,7 @@ export const episodeTradeActionToolSchema = Type.Object(
   { additionalProperties: false },
 );
 
-export const episodeActionSchema = Type.Union([
+const episodeActionSchema = Type.Union([
   Type.Object({ type: Type.Literal('observe') }, { additionalProperties: false }),
   Type.Object(
     {
@@ -159,7 +159,7 @@ const episodeRecordedActionSchema = Type.Union([
   episodeRecordedTradeActionSchema,
 ]);
 
-export const episodeTerminationReasonSchema = Type.Union([
+const episodeTerminationReasonSchema = Type.Union([
   Type.Literal('abstain'),
   Type.Literal('no_decision'),
   Type.Literal('cancelled'),
@@ -171,14 +171,12 @@ export const episodeTerminationReasonSchema = Type.Union([
   Type.Literal('no_trade'),
 ]);
 
-export type EpisodeTerminationReason = Static<typeof episodeTerminationReasonSchema>;
-
 const executionPointSchema = Type.Object(
   { time: Type.String(), price: Type.Number() },
   { additionalProperties: false },
 );
 
-export const episodeActionRecordSchema = Type.Object(
+const episodeActionRecordSchema = Type.Object(
   {
     step: Type.Integer({ minimum: 1 }),
     tradeId: Type.Optional(Type.Union([Type.Integer({ minimum: 1 }), Type.Null()])),
@@ -198,14 +196,14 @@ const episodeExitReasonSchema = Type.Union([
   Type.Literal('horizon'),
 ]);
 
-export const episodeTradeLotSchema = Type.Object(
+const episodeTradeLotSchema = Type.Object(
   { time: Type.String(), price: Type.Number(), size: positionSizeSchema },
   { additionalProperties: false },
 );
 
 export type EpisodeTradeLot = Static<typeof episodeTradeLotSchema>;
 
-export const episodeTradeExitSchema = Type.Object(
+const episodeTradeExitSchema = Type.Object(
   {
     time: Type.String(),
     price: Type.Number(),
@@ -248,7 +246,7 @@ export const episodeClosedTradeSchema = Type.Object(
 
 export type EpisodeClosedTrade = Static<typeof episodeClosedTradeSchema>;
 
-export const episodeTradeResultSchema = Type.Object(
+const episodeTradeResultSchema = Type.Object(
   {
     terminationReason: episodeTerminationReasonSchema,
     direction: Type.Union([Type.Literal('long'), Type.Literal('short'), Type.Literal('neutral')]),

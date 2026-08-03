@@ -41,7 +41,7 @@ export function requestNotificationPermissionOnce(): void {
   if (Notification.permission === 'default') void Notification.requestPermission();
 }
 
-export function notify(content: NotifyContent): void {
+function notify(content: NotifyContent): void {
   if (typeof Notification === 'undefined') return;
   const n = new Notification(content.title, { body: content.body });
   n.onclick = () => {
@@ -50,7 +50,7 @@ export function notify(content: NotifyContent): void {
   };
 }
 
-export function currentNotifyContext(activeSymbol?: string | null): NotifyContext {
+function currentNotifyContext(activeSymbol?: string | null): NotifyContext {
   return {
     hidden: document.hidden || document.visibilityState !== 'visible',
     permission: typeof Notification === 'undefined' ? 'unsupported' : Notification.permission,

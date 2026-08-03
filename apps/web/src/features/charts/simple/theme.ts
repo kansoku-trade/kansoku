@@ -6,13 +6,6 @@ import {
 } from '@kansoku/shared/time';
 import { theme } from '@web/lib/theme';
 
-export const UP_COLOR = theme.up;
-export const DOWN_COLOR = theme.down;
-export const AXIS_COLOR = theme.textSecondary;
-export const AXIS_LINE_COLOR = theme.borderStrong;
-export const GRID_COLOR = theme.border;
-export const ZERO_LINE_COLOR = theme.textMuted;
-
 export const tooltipContentStyle: CSSProperties = {
   backgroundColor: theme.bgSurface,
   border: `1px solid ${theme.border}`,
@@ -31,10 +24,6 @@ export const tooltipItemStyle: CSSProperties = { color: theme.textPrimary };
 
 export function hhmm(t: number): string {
   return formatMarketClock(new Date(t));
-}
-
-export function fullTime(t: number): string {
-  return formatMarketDateTime(new Date(t));
 }
 
 export function tooltipTime(t: number): string {

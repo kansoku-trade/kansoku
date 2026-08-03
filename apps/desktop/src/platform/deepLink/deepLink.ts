@@ -1,5 +1,5 @@
-export const DEEP_LINK_SCHEME = 'kansoku:';
-export const DEEP_LINK_HOST = 'route';
+const DEEP_LINK_SCHEME = 'kansoku:';
+const DEEP_LINK_HOST = 'route';
 export const DEEP_LINK_NAVIGATE_CHANNEL = 'deep-link:navigate';
 
 export interface DeepLinkTarget {

@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 
-export const TIMELINE_PAGE = 10;
+const TIMELINE_PAGE = 10;
 
 export type TimelineItem = { date: string; day: string; monthLabel: string | null };
 

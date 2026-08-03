@@ -9,8 +9,8 @@ import {
   type OrderDraft,
 } from './orderDraft';
 
-export const SWING_LOOKBACK_BARS = 60;
-export const SWING_PIVOT_STRENGTH = 2;
+const SWING_LOOKBACK_BARS = 60;
+const SWING_PIVOT_STRENGTH = 2;
 export const QUICK_ENTRY_REWARD_RISK = 2;
 
 const PRICE_TICK = 0.01;

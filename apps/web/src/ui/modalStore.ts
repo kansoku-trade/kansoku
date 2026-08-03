@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 
-export type ModalState = 'entering' | 'open' | 'closing';
-export type ModalSlot = ReactNode | ((close: () => void) => ReactNode);
-export type ModalSize = 'sm' | 'md' | 'lg';
+type ModalState = 'entering' | 'open' | 'closing';
+type ModalSlot = ReactNode | ((close: () => void) => ReactNode);
+type ModalSize = 'sm' | 'md' | 'lg';
 
 export interface ModalOptions {
   title: ReactNode;

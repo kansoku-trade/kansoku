@@ -2,7 +2,7 @@ import { useQuery as useReactQuery } from '@tanstack/react-query';
 import { useRef } from 'react';
 import { ApiError, errorMessage } from './api';
 
-export interface QueryFailure {
+interface QueryFailure {
   message: string;
   status?: number;
 }

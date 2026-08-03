@@ -1,11 +1,11 @@
 import { getShellRpc } from '../desktop/shellRpc';
 
-export interface LogsInfo {
+interface LogsInfo {
   path: string;
   dir: string;
 }
 
-export interface LogsTailResult {
+interface LogsTailResult {
   path: string;
   text: string;
 }
@@ -24,7 +24,8 @@ export function getDesktopLogsBridge(
   if (!rpc) return null;
   return {
     getInfo: () => rpc.invoke('logs.getInfo') as Promise<LogsInfo>,
-    tail: (opts?: { maxBytes?: number }) => rpc.invoke('logs.tail', opts) as Promise<LogsTailResult>,
+    tail: (opts?: { maxBytes?: number }) =>
+      rpc.invoke('logs.tail', opts) as Promise<LogsTailResult>,
     reveal: () => rpc.invoke('logs.reveal') as Promise<{ ok: true }>,
     openDir: () => rpc.invoke('logs.openDir') as Promise<{ ok: boolean; error?: string }>,
   };

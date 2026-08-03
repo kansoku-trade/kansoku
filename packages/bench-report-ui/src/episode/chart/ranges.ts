@@ -4,7 +4,7 @@ import type {
   EpisodeReportChartTimeframe,
 } from '../../types';
 
-export function mergeBars(
+function mergeBars(
   base: EpisodeReportChartBar[],
   updates: EpisodeReportChartBar[],
 ): EpisodeReportChartBar[] {

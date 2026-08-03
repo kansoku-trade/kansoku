@@ -10,7 +10,7 @@ import { isViewPeriod, tfLabel, tfShortLabel, type ChartTf } from './timeframes'
 
 export const TF_LABELS: Record<TimeframeKey, string> = { m5: '5分钟', m15: '15分钟', h1: '1小时' };
 
-export { IntradayChartOnly, type IntradayChartOnlyProps } from './IntradayChartOnly';
+export { IntradayChartOnly } from './IntradayChartOnly';
 
 interface IntradayDashboardProps {
   symbol: string;

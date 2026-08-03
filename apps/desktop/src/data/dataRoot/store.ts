@@ -1,6 +1,6 @@
 import { chmod, readFile, writeFile } from 'node:fs/promises';
 
-export interface DataRootPreference {
+interface DataRootPreference {
   path: string | null;
 }
 

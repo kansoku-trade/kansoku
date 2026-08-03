@@ -74,7 +74,7 @@ interface Frame {
 
 const EMPTY_FRAME: Frame = { shapes: [], measure: null, width: 0 };
 
-export interface DrawingsState {
+interface DrawingsState {
   annotations: Annotation[];
   preview: { kind: AnnotationKind; points: Point[] } | null;
   measure: { p1: Point; p2: Point } | null;
@@ -306,7 +306,7 @@ class DrawingsPaneView implements IPrimitivePaneView {
   }
 }
 
-export class DrawingsPrimitive implements ISeriesPrimitive<Time> {
+class DrawingsPrimitive implements ISeriesPrimitive<Time> {
   private chart: IChartApiBase<Time> | null = null;
   private series: ISeriesApi<'Candlestick'> | null = null;
   private requestUpdate?: () => void;

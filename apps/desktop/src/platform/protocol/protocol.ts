@@ -3,7 +3,7 @@ import { extname, join, normalize, sep } from 'node:path';
 import { app, protocol } from 'electron';
 import { resolveRepoRoot } from '../../boot/paths.js';
 
-export const APP_SCHEME = 'app';
+const APP_SCHEME = 'app';
 
 export function resolveWebDistRoot(): string {
   return app.isPackaged

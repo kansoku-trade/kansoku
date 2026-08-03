@@ -2,7 +2,7 @@ import type { RawBar } from '@kansoku/shared/types';
 
 export type Direction = 'long' | 'short';
 
-export type ReplayOutcome = 'win' | 'loss' | 'timeout_flat' | 'no_fill' | 'format_violation';
+type ReplayOutcome = 'win' | 'loss' | 'timeout_flat' | 'no_fill' | 'format_violation';
 
 export interface ReplayBar {
   high: number;

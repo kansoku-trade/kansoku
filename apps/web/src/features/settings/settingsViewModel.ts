@@ -10,9 +10,9 @@ import {
   type UsageToday,
 } from './types';
 
-export type SettingsIssueTone = 'warning' | 'error';
+type SettingsIssueTone = 'warning' | 'error';
 
-export interface SettingsIssue {
+interface SettingsIssue {
   id: string;
   title: string;
   detail: string;

@@ -1,6 +1,6 @@
 import { getShellRpc } from './shellRpc';
 
-export interface WindowsContext {
+interface WindowsContext {
   windowId: string;
   activeTabId: string;
 }

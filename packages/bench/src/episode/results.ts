@@ -12,7 +12,7 @@ export function assertEpisodeAnswer(answer: EpisodeAnswer): EpisodeAnswer {
   );
 }
 
-export async function appendEpisodeAnswer(file: string, answer: EpisodeAnswer): Promise<void> {
+async function appendEpisodeAnswer(file: string, answer: EpisodeAnswer): Promise<void> {
   assertEpisodeAnswer(answer);
   await fs.mkdir(dirname(file), { recursive: true });
   const handle = await fs.open(file, 'a');

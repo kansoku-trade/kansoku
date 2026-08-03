@@ -10,7 +10,7 @@ const REPOSITORY_PATTERN = '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$';
 const RELEASE_NAME_PATTERN = '^[A-Za-z0-9][A-Za-z0-9._-]*$';
 const ASSET_NAME_PATTERN = '^[A-Za-z0-9][A-Za-z0-9._-]*\\.tar\\.zst$';
 
-export const datasetManifestSchema = Type.Object(
+const datasetManifestSchema = Type.Object(
   {
     $schema: Type.Optional(Type.String()),
     schemaVersion: Type.Literal(1),
@@ -58,7 +58,7 @@ export type DatasetManifest = Static<typeof datasetManifestSchema>;
 
 export class DatasetManifestError extends Error {}
 
-export const DEFAULT_MANIFESTS_ROOT = join(
+const DEFAULT_MANIFESTS_ROOT = join(
   dirname(dirname(dirname(fileURLToPath(import.meta.url)))),
   'dataset-manifests',
 );

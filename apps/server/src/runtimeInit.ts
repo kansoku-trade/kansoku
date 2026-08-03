@@ -82,7 +82,7 @@ export async function resolveServerProComposition(): Promise<ServerProCompositio
 // correct for a host with NO encrypted bundle step in between (standalone
 // server). Hosts with a loadPro step (desktop) must call the two phases
 // separately with loadPro sequenced between them — see kernel.ts.
-export async function prepareServerRuntime(
+async function prepareServerRuntime(
   opts?: ServerRuntimeOptions,
 ): Promise<ServerProComposition | null> {
   await initServerHostRuntime(opts);

@@ -8,7 +8,7 @@ import { type DatasetManifest, loadDatasetManifest } from './manifest.js';
 const execFileAsync = promisify(execFile);
 const INSTALL_MARKER = '.kansoku-dataset.json';
 
-export interface DatasetInstallMarker {
+interface DatasetInstallMarker {
   schemaVersion: 1;
   id: string;
   revision: string;
@@ -73,7 +73,7 @@ const DEFAULT_DEPS: SyncDatasetDependencies = {
   now: () => new Date(),
 };
 
-export async function sha256File(file: string): Promise<string> {
+async function sha256File(file: string): Promise<string> {
   const hash = createHash('sha256');
   await new Promise<void>((resolve, reject) => {
     const stream = createReadStream(file);

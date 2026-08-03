@@ -2,7 +2,7 @@ import type { TrainerView } from '@kansoku/pro-api';
 import type { RawBar } from '@kansoku/shared/types';
 import type { ReplayBand } from '../charts/intraday/replayBandPrimitive';
 
-export type { ReplayBand, ReplayBandKind } from '../charts/intraday/replayBandPrimitive';
+export type { ReplayBand } from '../charts/intraday/replayBandPrimitive';
 
 export const sec = (iso: string) => Math.floor(Date.parse(iso) / 1000);
 

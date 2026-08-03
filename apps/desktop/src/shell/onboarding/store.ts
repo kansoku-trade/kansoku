@@ -2,7 +2,7 @@ import { chmod, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { app } from 'electron';
 
-export interface OnboardingState {
+interface OnboardingState {
   completed: boolean;
 }
 

@@ -12,7 +12,7 @@ export interface JudgmentSummary {
   abstainRate: number;
 }
 
-export interface ToolCallStats {
+interface ToolCallStats {
   mean: number;
   p50: number;
   p90: number;

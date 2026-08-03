@@ -30,9 +30,9 @@ import {
   questionRollupsForPeriod,
 } from './questionLadder.js';
 
-export type AuditStatus = 'pass' | 'fail';
+type AuditStatus = 'pass' | 'fail';
 
-export interface EpisodeAuditCheck {
+interface EpisodeAuditCheck {
   id: string;
   label: string;
   status: AuditStatus;

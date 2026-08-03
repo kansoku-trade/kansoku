@@ -34,8 +34,6 @@ export function mergePendingRemote(remote: Annotation[], local: Annotation[]): A
   return [...remote, ...local.filter((a) => !remoteIds.has(a.id))];
 }
 
-export type { DrawingTool } from './drawingsMachine';
-
 export interface DrawingsHandle {
   chart: IChartApi;
   series: ISeriesApi<'Candlestick'>;
