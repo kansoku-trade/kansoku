@@ -37,6 +37,12 @@ function within(root, target) {
   return rel === '' || (!rel.startsWith(`..${path.sep}`) && rel !== '..' && !path.isAbsolute(rel));
 }
 
+function isOverlaySource(filename, options) {
+  if (isProFile(filename)) return true;
+  const overlayRoot = options?.overlayRoot;
+  return Boolean(overlayRoot && within(overlayRoot, filename));
+}
+
 function effectiveDir(filename, options) {
   const dir = path.dirname(filename);
   const { overlayRoot, publicRoot } = options;
@@ -158,8 +164,8 @@ const noExplicitProImport = {
 const noAppsProImport = {
   create(context) {
     const filename = context.filename;
-    if (isProFile(filename)) return {};
     const options = context.options[0] ?? {};
+    if (isOverlaySource(filename, options)) return {};
     const appsProRoot = options.publicRoot ? path.join(options.publicRoot, 'apps', 'pro') : null;
     return createSourceVisitor((sourceNode) => {
       const value = sourceNode.value;
@@ -186,8 +192,8 @@ const noAppsProImport = {
 const noProOnlyResolution = {
   create(context) {
     const filename = context.filename;
-    if (isProFile(filename)) return {};
     const options = context.options[0] ?? {};
+    if (isOverlaySource(filename, options)) return {};
     return createSourceVisitor((sourceNode) => {
       const value = sourceNode.value;
       if (typeof value !== 'string' || !value.startsWith('.')) return;
@@ -197,7 +203,11 @@ const noProOnlyResolution = {
       if (!defaults || defaults.some(cachedExists)) return;
       const pros = proCandidatePaths(absoluteStem, ext);
       if (pros?.some(cachedExists)) {
-        context.report({ data: { source: value }, messageId: 'proOnlyResolution', node: sourceNode });
+        context.report({
+          data: { source: value },
+          messageId: 'proOnlyResolution',
+          node: sourceNode,
+        });
       }
     });
   },
@@ -214,8 +224,11 @@ const noProOnlyResolution = {
 const noSelfDefaultImport = {
   create(context) {
     const filename = context.filename;
-    if (!isProFile(filename)) return {};
-    const ownStem = filename.replace(proFilePattern, '');
+    const options = context.options[0] ?? {};
+    if (!isOverlaySource(filename, options)) return {};
+    const ownStem = isProFile(filename)
+      ? filename.replace(proFilePattern, '')
+      : filename.replace(sourceExtensionPattern, '');
     return createSourceVisitor((sourceNode) => {
       const value = sourceNode.value;
       if (typeof value !== 'string' || !value.startsWith('.')) return;
@@ -239,7 +252,7 @@ const noOverlayRelativeEscape = {
     const filename = context.filename;
     const options = context.options[0] ?? {};
     const { overlayRoot, publicRoot } = options;
-    if (!isProFile(filename) || !overlayRoot || !within(overlayRoot, filename)) return {};
+    if (!overlayRoot || !within(overlayRoot, filename)) return {};
     const appsProRoot = publicRoot ? path.join(publicRoot, 'apps', 'pro') : null;
     return createSourceVisitor((sourceNode) => {
       const value = sourceNode.value;
@@ -265,7 +278,8 @@ const noOverlayRelativeEscape = {
         'Forbid relative imports in .pro overlays that leave the overlay tree; pro sources use "@pro/*", host sources use the host app alias.',
     },
     messages: {
-      useHostAlias: 'Overlay imports a host source via a relative path; use the host app alias (@desktop/@server/@web): {{source}}',
+      useHostAlias:
+        'Overlay imports a host source via a relative path; use the host app alias (@desktop/@server/@web): {{source}}',
       useProAlias: 'Overlay imports pro sources via a relative path; use "@pro/*": {{source}}',
     },
     schema: optionsSchema,
@@ -278,7 +292,7 @@ const overlayManifestConsistency = {
     const filename = context.filename;
     const options = context.options[0] ?? {};
     const { manifestPath, overlayRoot, publicRoot } = options;
-    if (!isProFile(filename) || !overlayRoot || !publicRoot || !within(overlayRoot, filename)) {
+    if (!overlayRoot || !publicRoot || !within(overlayRoot, filename)) {
       return {};
     }
     return {
@@ -325,13 +339,18 @@ const noEscapingImport = {
       if (!value.startsWith('.') || !publicRoot) return;
       const resolved = path.resolve(effectiveDir(filename, options), value);
       if (!within(publicRoot, resolved)) {
-        context.report({ data: { source: value }, messageId: 'escapesPublicRoot', node: sourceNode });
+        context.report({
+          data: { source: value },
+          messageId: 'escapesPublicRoot',
+          node: sourceNode,
+        });
       }
     });
   },
   meta: {
     docs: {
-      description: 'Forbid absolute-path import sources and relative sources that escape publicRoot.',
+      description:
+        'Forbid absolute-path import sources and relative sources that escape publicRoot.',
     },
     messages: {
       absolutePath: 'Absolute-path import sources are forbidden: {{source}}',

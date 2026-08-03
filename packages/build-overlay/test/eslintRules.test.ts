@@ -116,6 +116,11 @@ ruleTester.run('no-apps-pro-import', overlayPlugin.rules['no-apps-pro-import'], 
       filename: '/repo/apps/pro/overlays/edition.pro.ts',
       options: [{ publicRoot: '/repo' }],
     },
+    {
+      code: "import { edition } from '@pro/edition.js';",
+      filename: '/repo/apps/pro/overlays/edition.ts',
+      options: [{ overlayRoot: '/repo/apps/pro/overlays', publicRoot: '/repo' }],
+    },
   ],
 });
 
@@ -131,6 +136,18 @@ ruleTester.run('no-self-default-import', overlayPlugin.rules['no-self-default-im
       errors: [{ messageId: 'selfDefault' }],
       filename: '/repo/pkg/edition.pro.ts',
     },
+    {
+      code: "import { Edition } from './edition.js';",
+      errors: [{ data: { source: './edition.js' }, messageId: 'selfDefault' }],
+      filename: '/repo/apps/pro/overlays/pkg/edition.ts',
+      options: [{ overlayRoot: '/repo/apps/pro/overlays', publicRoot: '/repo' }],
+    },
+    {
+      code: "import { Edition } from './edition';",
+      errors: [{ messageId: 'selfDefault' }],
+      filename: '/repo/apps/pro/overlays/pkg/edition.ts',
+      options: [{ overlayRoot: '/repo/apps/pro/overlays', publicRoot: '/repo' }],
+    },
   ],
   valid: [
     {
@@ -144,6 +161,11 @@ ruleTester.run('no-self-default-import', overlayPlugin.rules['no-self-default-im
     {
       code: "import { Edition } from './edition.js';",
       filename: '/repo/pkg/edition.ts',
+    },
+    {
+      code: "import { BaseEdition } from './edition/base.js';",
+      filename: '/repo/apps/pro/overlays/pkg/edition.ts',
+      options: [{ overlayRoot: '/repo/apps/pro/overlays', publicRoot: '/repo' }],
     },
   ],
 });
@@ -165,7 +187,7 @@ ruleTester.run('no-escaping-import', overlayPlugin.rules['no-escaping-import'], 
     {
       code: "import { x } from '../../../../outside.js';",
       errors: [{ data: { source: '../../../../outside.js' }, messageId: 'escapesPublicRoot' }],
-      filename: '/repo/apps/pro/overlays/packages/build-overlay/legacy/edition.pro.ts',
+      filename: '/repo/apps/pro/overlays/packages/build-overlay/legacy/edition.ts',
       options: [{ overlayRoot: '/repo/apps/pro/overlays', publicRoot: '/repo' }],
     },
   ],
@@ -181,7 +203,7 @@ ruleTester.run('no-escaping-import', overlayPlugin.rules['no-escaping-import'], 
     },
     {
       code: "import { x } from '../../../shared/util.js';",
-      filename: '/repo/apps/pro/overlays/packages/build-overlay/legacy/edition.pro.ts',
+      filename: '/repo/apps/pro/overlays/packages/build-overlay/legacy/edition.ts',
       options: [{ overlayRoot: '/repo/apps/pro/overlays', publicRoot: '/repo' }],
     },
   ],
@@ -227,49 +249,51 @@ describe('no-pro-only-resolution (fs fixtures)', () => {
         filename: join(pkgDir, 'entry5.ts'),
         options: [{ publicRoot: fixture.publicRoot }],
       },
+      {
+        code: "import { onlyPro } from './onlyPro.js';",
+        filename: join(fixture.overlayRoot, 'pkg', 'entry.ts'),
+        options: [{ overlayRoot: fixture.overlayRoot, publicRoot: fixture.publicRoot }],
+      },
     ],
   });
 });
 
 describe('no-overlay-relative-escape (fs fixtures)', () => {
   const fixture = makeFixture();
-  writeFile(join(fixture.overlayRoot, 'apps', 'web', 'src', 'pages', 'Page.pro.tsx'));
+  writeFile(join(fixture.overlayRoot, 'apps', 'web', 'src', 'pages', 'Page.tsx'));
   const options = [{ overlayRoot: fixture.overlayRoot, publicRoot: fixture.publicRoot }];
 
   ruleTester.run('no-overlay-relative-escape', overlayPlugin.rules['no-overlay-relative-escape'], {
     invalid: [
       {
         code: "import { s } from '../../../pro/src/ai/scheduler.js';",
-        errors: [{ data: { source: '../../../pro/src/ai/scheduler.js' }, messageId: 'useProAlias' }],
-        filename: join(fixture.overlayRoot, 'apps', 'desktop', 'src', 'edition', 'pro.pro.ts'),
+        errors: [
+          { data: { source: '../../../pro/src/ai/scheduler.js' }, messageId: 'useProAlias' },
+        ],
+        filename: join(fixture.overlayRoot, 'apps', 'desktop', 'src', 'edition', 'pro.ts'),
         options,
       },
       {
         code: "import { T } from './types.js';",
         errors: [{ data: { source: './types.js' }, messageId: 'useHostAlias' }],
-        filename: join(fixture.overlayRoot, 'apps', 'desktop', 'src', 'edition', 'pro.pro.ts'),
+        filename: join(fixture.overlayRoot, 'apps', 'desktop', 'src', 'edition', 'pro.ts'),
         options,
       },
     ],
     valid: [
       {
         code: "import { P } from '../pages/Page';",
-        filename: join(fixture.overlayRoot, 'apps', 'web', 'src', 'edition', 'pro.pro.ts'),
+        filename: join(fixture.overlayRoot, 'apps', 'web', 'src', 'edition', 'pro.ts'),
         options,
       },
       {
         code: "import { s } from '@pro/ai/scheduler.js';",
-        filename: join(fixture.overlayRoot, 'apps', 'desktop', 'src', 'edition', 'pro.pro.ts'),
+        filename: join(fixture.overlayRoot, 'apps', 'desktop', 'src', 'edition', 'pro.ts'),
         options,
       },
       {
         code: "import { x } from './anything.js';",
         filename: '/repo/pkg/edition.pro.ts',
-        options,
-      },
-      {
-        code: "import { x } from './anything.js';",
-        filename: join(fixture.overlayRoot, 'apps', 'web', 'src', 'edition', 'notPro.ts'),
         options,
       },
     ],
@@ -281,7 +305,7 @@ describe('overlay-manifest-consistency (fs fixtures)', () => {
   writeFile(join(fixture.publicRoot, 'pkg', 'a.ts'));
   writeFile(join(fixture.publicRoot, 'pkg', 'd.ts'));
   writeFile(join(fixture.publicRoot, 'packages', 'build-overlay', 'legacy', 'e.ts'));
-  writeManifest(fixture, ['pkg/b.pro.ts', 'pkg/d.pro.ts']);
+  writeManifest(fixture, ['pkg/b.ts', 'pkg/d.ts']);
 
   const corruptFixture = makeFixture();
   writeFile(join(corruptFixture.publicRoot, 'pkg', 'a.ts'));
@@ -290,64 +314,72 @@ describe('overlay-manifest-consistency (fs fixtures)', () => {
   const missingManifestFixture = makeFixture();
 
   const options = [
-    { manifestPath: fixture.manifestPath, overlayRoot: fixture.overlayRoot, publicRoot: fixture.publicRoot },
+    {
+      manifestPath: fixture.manifestPath,
+      overlayRoot: fixture.overlayRoot,
+      publicRoot: fixture.publicRoot,
+    },
   ];
 
-  ruleTester.run('overlay-manifest-consistency', overlayPlugin.rules['overlay-manifest-consistency'], {
-    invalid: [
-      {
-        code: 'export const c = 1;',
-        errors: [{ data: { relPath: 'pkg/c.pro.ts' }, messageId: 'unregisteredProOnly' }],
-        filename: join(fixture.overlayRoot, 'pkg', 'c.pro.ts'),
-        options,
-      },
-      {
-        code: 'export const d = 1;',
-        errors: [{ data: { relPath: 'pkg/d.pro.ts' }, messageId: 'misregisteredReplacement' }],
-        filename: join(fixture.overlayRoot, 'pkg', 'd.pro.ts'),
-        options,
-      },
-      {
-        code: 'export const missing = 1;',
-        errors: [{ messageId: 'unregisteredProOnly' }],
-        filename: join(missingManifestFixture.overlayRoot, 'pkg', 'missing.pro.ts'),
-        options: [
-          {
-            manifestPath: missingManifestFixture.manifestPath,
-            overlayRoot: missingManifestFixture.overlayRoot,
-            publicRoot: missingManifestFixture.publicRoot,
-          },
-        ],
-      },
-    ],
-    valid: [
-      {
-        code: 'export const a = 1;',
-        filename: join(fixture.overlayRoot, 'pkg', 'a.pro.ts'),
-        options,
-      },
-      {
-        code: 'export const b = 1;',
-        filename: join(fixture.overlayRoot, 'pkg', 'b.pro.ts'),
-        options,
-      },
-      {
-        code: 'export const e = 1;',
-        filename: join(fixture.overlayRoot, 'packages', 'build-overlay', 'legacy', 'e.pro.ts'),
-        options,
-      },
-      {
-        code: 'export const a = 1;',
-        filename: join(corruptFixture.overlayRoot, 'pkg', 'a.pro.ts'),
-        options: [
-          {
-            manifestPath: corruptFixture.manifestPath,
-            overlayRoot: corruptFixture.overlayRoot,
-            publicRoot: corruptFixture.publicRoot,
-          },
-        ],
-      },
-      { code: 'export const notOverlay = 1;', filename: '/repo/pkg/notOverlay.pro.ts', options },
-    ],
-  });
+  ruleTester.run(
+    'overlay-manifest-consistency',
+    overlayPlugin.rules['overlay-manifest-consistency'],
+    {
+      invalid: [
+        {
+          code: 'export const c = 1;',
+          errors: [{ data: { relPath: 'pkg/c.ts' }, messageId: 'unregisteredProOnly' }],
+          filename: join(fixture.overlayRoot, 'pkg', 'c.ts'),
+          options,
+        },
+        {
+          code: 'export const d = 1;',
+          errors: [{ data: { relPath: 'pkg/d.ts' }, messageId: 'misregisteredReplacement' }],
+          filename: join(fixture.overlayRoot, 'pkg', 'd.ts'),
+          options,
+        },
+        {
+          code: 'export const missing = 1;',
+          errors: [{ messageId: 'unregisteredProOnly' }],
+          filename: join(missingManifestFixture.overlayRoot, 'pkg', 'missing.ts'),
+          options: [
+            {
+              manifestPath: missingManifestFixture.manifestPath,
+              overlayRoot: missingManifestFixture.overlayRoot,
+              publicRoot: missingManifestFixture.publicRoot,
+            },
+          ],
+        },
+      ],
+      valid: [
+        {
+          code: 'export const a = 1;',
+          filename: join(fixture.overlayRoot, 'pkg', 'a.ts'),
+          options,
+        },
+        {
+          code: 'export const b = 1;',
+          filename: join(fixture.overlayRoot, 'pkg', 'b.ts'),
+          options,
+        },
+        {
+          code: 'export const e = 1;',
+          filename: join(fixture.overlayRoot, 'packages', 'build-overlay', 'legacy', 'e.ts'),
+          options,
+        },
+        {
+          code: 'export const a = 1;',
+          filename: join(corruptFixture.overlayRoot, 'pkg', 'a.ts'),
+          options: [
+            {
+              manifestPath: corruptFixture.manifestPath,
+              overlayRoot: corruptFixture.overlayRoot,
+              publicRoot: corruptFixture.publicRoot,
+            },
+          ],
+        },
+        { code: 'export const notOverlay = 1;', filename: '/repo/pkg/notOverlay.pro.ts', options },
+      ],
+    },
+  );
 });

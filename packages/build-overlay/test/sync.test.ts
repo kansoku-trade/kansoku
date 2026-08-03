@@ -58,8 +58,9 @@ function writeOverlayFile(fixture: Fixture, relPath: string, content = ''): stri
   return filePath;
 }
 
-function destinationFor(fixture: Fixture, relPath: string): string {
-  return join(fixture.publicRoot, relPath);
+function projectionFor(fixture: Fixture, sourceRelPath: string): string {
+  const destinationRelPath = sourceRelPath.replace(/(\.(?:[cm]?ts|tsx))$/, '.pro$1');
+  return join(fixture.publicRoot, destinationRelPath);
 }
 
 function linkExists(target: string): boolean {
@@ -72,9 +73,8 @@ function linkExists(target: string): boolean {
   }
 }
 
-function writeOssBase(fixture: Fixture, proRelPath: string, content = ''): void {
-  const baseRelPath = proRelPath.replace(/\.pro(\.(?:[cm]?ts|tsx))$/, '$1');
-  const basePath = destinationFor(fixture, baseRelPath);
+function writeOssBase(fixture: Fixture, sourceRelPath: string, content = ''): void {
+  const basePath = join(fixture.publicRoot, sourceRelPath);
   mkdirSync(dirname(basePath), { recursive: true });
   writeFileSync(basePath, content);
 }
@@ -95,15 +95,15 @@ function run(fixture: Fixture, checkOnly = false) {
 }
 
 describe('runOverlaySync', () => {
-  it('creates projections, writes state, and returns a source -> destination audit summary', () => {
+  it('projects an unsuffixed source to a .pro destination, writes state, and returns an audit summary', () => {
     const fixture = makeFixture();
-    const source = writeOverlayFile(fixture, 'foo.pro.ts', 'export const foo = "pro";');
-    writeOssBase(fixture, 'foo.pro.ts');
+    const source = writeOverlayFile(fixture, 'foo.ts', 'export const foo = "pro";');
+    writeOssBase(fixture, 'foo.ts');
 
     const result = run(fixture);
 
     expect(result.errors).toEqual([]);
-    const destination = destinationFor(fixture, 'foo.pro.ts');
+    const destination = projectionFor(fixture, 'foo.ts');
     expect(lstatSync(destination).isSymbolicLink()).toBe(true);
     expect(resolve(dirname(destination), readlinkSync(destination))).toBe(source);
     expect(result.summary).toEqual([
@@ -112,31 +112,44 @@ describe('runOverlaySync', () => {
 
     expect(existsSync(fixture.statePath)).toBe(true);
     const state = JSON.parse(readFileSync(fixture.statePath, 'utf8'));
-    expect(state.links).toEqual([{ destination: 'foo.pro.ts', source: 'foo.pro.ts' }]);
+    expect(state.links).toEqual([{ destination: 'foo.pro.ts', source: 'foo.ts' }]);
   });
 
-  it('ignores non-.pro.* files inside overlays', () => {
+  it('rejects a source that already carries the .pro suffix', () => {
+    const fixture = makeFixture();
+    writeOverlayFile(fixture, 'legacy.pro.ts', 'export const legacy = "pro";');
+
+    const result = run(fixture);
+
+    expect(result.errors).toEqual([
+      'overlay source must not carry the .pro suffix (the projection adds it): legacy.pro.ts',
+    ]);
+    expect(existsSync(projectionFor(fixture, 'legacy.pro.ts'))).toBe(false);
+  });
+
+  it('ignores non-source files and declaration files inside overlays', () => {
     const fixture = makeFixture();
     writeOverlayFile(fixture, 'notes.md', '# not an overlay');
-    writeOverlayFile(fixture, 'helper.ts', 'export const helper = 1;');
+    writeOverlayFile(fixture, 'types.d.ts', 'export type T = 1;');
+    writeOverlayFile(fixture, 'tsconfig.json', '{}');
 
     const result = run(fixture);
 
     expect(result.errors).toEqual([]);
     expect(result.mappings).toEqual([]);
     expect(result.summary).toEqual([]);
-    expect(existsSync(destinationFor(fixture, 'notes.md'))).toBe(false);
-    expect(existsSync(destinationFor(fixture, 'helper.ts'))).toBe(false);
+    expect(existsSync(join(fixture.publicRoot, 'notes.md'))).toBe(false);
+    expect(existsSync(projectionFor(fixture, 'types.d.ts'))).toBe(false);
   });
 
   describe('checkOnly', () => {
     it('performs zero writes and reports no errors when every projection is already valid', () => {
       const fixture = makeFixture();
-      writeOverlayFile(fixture, 'foo.pro.ts', 'export const foo = "pro";');
-      writeOssBase(fixture, 'foo.pro.ts');
+      writeOverlayFile(fixture, 'foo.ts', 'export const foo = "pro";');
+      writeOssBase(fixture, 'foo.ts');
       run(fixture);
       const stateBefore = readFileSync(fixture.statePath, 'utf8');
-      const destination = destinationFor(fixture, 'foo.pro.ts');
+      const destination = projectionFor(fixture, 'foo.ts');
       const linkBefore = readlinkSync(destination);
 
       const result = run(fixture, true);
@@ -148,26 +161,26 @@ describe('runOverlaySync', () => {
 
     it('errors when a projection is missing', () => {
       const fixture = makeFixture();
-      writeOverlayFile(fixture, 'foo.pro.ts', 'export const foo = "pro";');
-      writeOssBase(fixture, 'foo.pro.ts');
+      writeOverlayFile(fixture, 'foo.ts', 'export const foo = "pro";');
+      writeOssBase(fixture, 'foo.ts');
 
       const result = run(fixture, true);
 
       expect(result.errors).toEqual(['missing overlay projection: foo.pro.ts']);
-      expect(existsSync(destinationFor(fixture, 'foo.pro.ts'))).toBe(false);
+      expect(existsSync(projectionFor(fixture, 'foo.ts'))).toBe(false);
     });
   });
 
   describe('wrong-source projection (错链)', () => {
     function makeWrongSourceFixture() {
       const fixture = makeFixture();
-      const source = writeOverlayFile(fixture, 'foo.pro.ts', 'export const foo = "pro";');
-      writeOssBase(fixture, 'foo.pro.ts');
-      // "wrong.ts" (no ".pro." infix) so it sits inside overlayRoot without being
-      // discovered by walk() as a projection mapping of its own.
-      const wrongTarget = join(fixture.overlayRoot, 'wrong.ts');
+      const source = writeOverlayFile(fixture, 'foo.ts', 'export const foo = "pro";');
+      writeOssBase(fixture, 'foo.ts');
+      // ".md" so it sits inside overlayRoot without being discovered by walk()
+      // as a projection mapping of its own.
+      const wrongTarget = join(fixture.overlayRoot, 'wrong.md');
       writeFileSync(wrongTarget, 'export const foo = "wrong";');
-      const destination = destinationFor(fixture, 'foo.pro.ts');
+      const destination = projectionFor(fixture, 'foo.ts');
       mkdirSync(dirname(destination), { recursive: true });
       symlinkSync(wrongTarget, destination);
       return { fixture, source, destination };
@@ -187,27 +200,23 @@ describe('runOverlaySync', () => {
 
       const result = run(fixture, true);
 
-      expect(result.errors).toEqual([
-        'overlay projection points to the wrong source: foo.pro.ts',
-      ]);
+      expect(result.errors).toEqual(['overlay projection points to the wrong source: foo.pro.ts']);
       expect(lstatSync(destination).isSymbolicLink()).toBe(true);
     });
 
     it('refuses to repair a wrong-source link whose current target sits outside the overlay root (unmanaged)', () => {
       const fixture = makeFixture();
-      writeOverlayFile(fixture, 'foo.pro.ts', 'export const foo = "pro";');
-      writeOssBase(fixture, 'foo.pro.ts');
-      const foreignTarget = join(fixture.root, 'foreign.pro.ts');
+      writeOverlayFile(fixture, 'foo.ts', 'export const foo = "pro";');
+      writeOssBase(fixture, 'foo.ts');
+      const foreignTarget = join(fixture.root, 'foreign.ts');
       writeFileSync(foreignTarget, 'export const foo = "foreign";');
-      const destination = destinationFor(fixture, 'foo.pro.ts');
+      const destination = projectionFor(fixture, 'foo.ts');
       mkdirSync(dirname(destination), { recursive: true });
       symlinkSync(foreignTarget, destination);
 
       const result = run(fixture);
 
-      expect(result.errors).toEqual([
-        'refusing to repair unmanaged projection: foo.pro.ts',
-      ]);
+      expect(result.errors).toEqual(['refusing to repair unmanaged projection: foo.pro.ts']);
       expect(resolve(dirname(destination), readlinkSync(destination))).toBe(foreignTarget);
     });
   });
@@ -215,10 +224,10 @@ describe('runOverlaySync', () => {
   describe('stale projection (陈旧链)', () => {
     it('removes the stale link in sync mode', () => {
       const fixture = makeFixture();
-      const source = writeOverlayFile(fixture, 'foo.pro.ts', 'export const foo = "pro";');
-      writeOssBase(fixture, 'foo.pro.ts');
+      const source = writeOverlayFile(fixture, 'foo.ts', 'export const foo = "pro";');
+      writeOssBase(fixture, 'foo.ts');
       run(fixture);
-      const destination = destinationFor(fixture, 'foo.pro.ts');
+      const destination = projectionFor(fixture, 'foo.ts');
       unlinkSync(source);
 
       const result = run(fixture);
@@ -231,10 +240,10 @@ describe('runOverlaySync', () => {
 
     it('errors in check mode without removing the link', () => {
       const fixture = makeFixture();
-      const source = writeOverlayFile(fixture, 'foo.pro.ts', 'export const foo = "pro";');
-      writeOssBase(fixture, 'foo.pro.ts');
+      const source = writeOverlayFile(fixture, 'foo.ts', 'export const foo = "pro";');
+      writeOssBase(fixture, 'foo.ts');
       run(fixture);
-      const destination = destinationFor(fixture, 'foo.pro.ts');
+      const destination = projectionFor(fixture, 'foo.ts');
       unlinkSync(source);
 
       const result = run(fixture, true);
@@ -245,10 +254,10 @@ describe('runOverlaySync', () => {
 
     it('refuses to remove a stale path whose current target sits outside the overlay root (unmanaged)', () => {
       const fixture = makeFixture();
-      const source = writeOverlayFile(fixture, 'foo.pro.ts', 'export const foo = "pro";');
-      writeOssBase(fixture, 'foo.pro.ts');
+      const source = writeOverlayFile(fixture, 'foo.ts', 'export const foo = "pro";');
+      writeOssBase(fixture, 'foo.ts');
       run(fixture);
-      const destination = destinationFor(fixture, 'foo.pro.ts');
+      const destination = projectionFor(fixture, 'foo.ts');
       unlinkSync(source);
       unlinkSync(destination);
       const rogueTarget = join(fixture.root, 'rogue.txt');
@@ -265,9 +274,9 @@ describe('runOverlaySync', () => {
   describe('regular-file collision (普通文件冲突)', () => {
     it('errors in sync mode without touching the file', () => {
       const fixture = makeFixture();
-      writeOverlayFile(fixture, 'foo.pro.ts', 'export const foo = "pro";');
-      writeOssBase(fixture, 'foo.pro.ts');
-      const destination = destinationFor(fixture, 'foo.pro.ts');
+      writeOverlayFile(fixture, 'foo.ts', 'export const foo = "pro";');
+      writeOssBase(fixture, 'foo.ts');
+      const destination = projectionFor(fixture, 'foo.ts');
       writeFileSync(destination, 'existing regular file');
 
       const result = run(fixture);
@@ -279,9 +288,9 @@ describe('runOverlaySync', () => {
 
     it('errors in check mode without touching the file', () => {
       const fixture = makeFixture();
-      writeOverlayFile(fixture, 'foo.pro.ts', 'export const foo = "pro";');
-      writeOssBase(fixture, 'foo.pro.ts');
-      const destination = destinationFor(fixture, 'foo.pro.ts');
+      writeOverlayFile(fixture, 'foo.ts', 'export const foo = "pro";');
+      writeOssBase(fixture, 'foo.ts');
+      const destination = projectionFor(fixture, 'foo.ts');
       writeFileSync(destination, 'existing regular file');
 
       const result = run(fixture, true);
@@ -294,15 +303,15 @@ describe('runOverlaySync', () => {
   describe('out-of-bounds destination (越界路径)', () => {
     it('rejects a destination landing inside apps/pro and skips projecting any mapping in the same run', () => {
       const fixture = makeFixture();
-      writeOverlayFile(fixture, 'apps/pro/evil.pro.ts', 'export const evil = "pro";');
-      writeOverlayFile(fixture, 'safe.pro.ts', 'export const safe = "pro";');
-      writeOssBase(fixture, 'safe.pro.ts');
+      writeOverlayFile(fixture, 'apps/pro/evil.ts', 'export const evil = "pro";');
+      writeOverlayFile(fixture, 'safe.ts', 'export const safe = "pro";');
+      writeOssBase(fixture, 'safe.ts');
 
       const result = run(fixture);
 
-      expect(result.errors).toEqual(['unsafe overlay destination: apps/pro/evil.pro.ts']);
-      expect(existsSync(destinationFor(fixture, 'apps/pro/evil.pro.ts'))).toBe(false);
-      expect(existsSync(destinationFor(fixture, 'safe.pro.ts'))).toBe(false);
+      expect(result.errors).toEqual(['unsafe overlay destination: apps/pro/evil.ts']);
+      expect(existsSync(projectionFor(fixture, 'apps/pro/evil.ts'))).toBe(false);
+      expect(existsSync(projectionFor(fixture, 'safe.ts'))).toBe(false);
     });
 
     it('rejects a state entry whose destination escapes publicRoot without touching anything outside the fixture root', () => {
@@ -312,7 +321,7 @@ describe('runOverlaySync', () => {
       writeFileSync(
         fixture.statePath,
         `${JSON.stringify(
-          { links: [{ destination: '../outside.pro.ts', source: 'outside.pro.ts' }] },
+          { links: [{ destination: '../outside.pro.ts', source: 'outside.ts' }] },
           null,
           2,
         )}\n`,
@@ -328,42 +337,42 @@ describe('runOverlaySync', () => {
   describe('private-only manifest', () => {
     it('fails an unregistered pro-only overlay with no OSS base', () => {
       const fixture = makeFixture();
-      writeOverlayFile(fixture, 'lonely.pro.ts', 'export const lonely = "pro";');
+      writeOverlayFile(fixture, 'lonely.ts', 'export const lonely = "pro";');
 
       const result = run(fixture);
 
       expect(result.errors).toEqual([
-        'overlay has no OSS base and is not registered in apps/pro/overlay.private-only.json: lonely.pro.ts',
+        'overlay has no OSS base and is not registered in apps/pro/overlay.private-only.json: lonely.ts',
       ]);
     });
 
     it('fails a stale manifest entry that no longer has an overlay file', () => {
       const fixture = makeFixture();
-      writeManifest(fixture, ['ghost.pro.ts']);
+      writeManifest(fixture, ['ghost.ts']);
 
       const result = run(fixture);
 
       expect(result.errors).toEqual([
-        'private-only manifest apps/pro/overlay.private-only.json has a stale entry: ghost.pro.ts',
+        'private-only manifest apps/pro/overlay.private-only.json has a stale entry: ghost.ts',
       ]);
     });
 
     it('fails a private-only entry that also has an OSS base', () => {
       const fixture = makeFixture();
-      writeOverlayFile(fixture, 'dual.pro.ts', 'export const dual = "pro";');
-      writeFileSync(destinationFor(fixture, 'dual.ts'), 'export const dual = "oss";');
-      writeManifest(fixture, ['dual.pro.ts']);
+      writeOverlayFile(fixture, 'dual.ts', 'export const dual = "pro";');
+      writeOssBase(fixture, 'dual.ts', 'export const dual = "oss";');
+      writeManifest(fixture, ['dual.ts']);
 
       const result = run(fixture);
 
       expect(result.errors).toEqual([
-        'overlay is registered as private-only in apps/pro/overlay.private-only.json but has an OSS base: dual.pro.ts',
+        'overlay is registered as private-only in apps/pro/overlay.private-only.json but has an OSS base: dual.ts',
       ]);
     });
 
     it('collects an error for a literal null manifest instead of throwing', () => {
       const fixture = makeFixture();
-      writeOverlayFile(fixture, 'lonely.pro.ts', 'export const lonely = "pro";');
+      writeOverlayFile(fixture, 'lonely.ts', 'export const lonely = "pro";');
       mkdirSync(dirname(fixture.manifestPath), { recursive: true });
       writeFileSync(fixture.manifestPath, 'null');
 
@@ -378,8 +387,8 @@ describe('runOverlaySync', () => {
 
     it('succeeds when the manifest file is absent and every overlay has an OSS base', () => {
       const fixture = makeFixture();
-      writeOverlayFile(fixture, 'foo.pro.ts', 'export const foo = "pro";');
-      writeFileSync(destinationFor(fixture, 'foo.ts'), 'export const foo = "oss";');
+      writeOverlayFile(fixture, 'foo.ts', 'export const foo = "pro";');
+      writeOssBase(fixture, 'foo.ts', 'export const foo = "oss";');
 
       const result = run(fixture);
 

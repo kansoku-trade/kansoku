@@ -6,15 +6,15 @@
 
 ## 1. Overlay 命名约定与投影同步
 
-- 公开仓某个文件的默认实现是 `foo.ts`；私有仓要覆盖它时，在 `apps/pro/overlays/<跟公开仓一致的镜像路径>/foo.pro.ts` 放真实文件。例如公开仓的 `apps/desktop/src/edition/pro.ts` 对应私有仓的 `apps/pro/overlays/apps/desktop/src/edition/pro.pro.ts`。
-- `pnpm overlay:sync`（内部调 `packages/build-overlay/scripts/sync.mjs` / `overlaySync.mjs`）会在公开仓里每个 overlay 文件对应的位置建一个同名软链接（`foo.pro.ts`，与默认文件 `foo.ts` 并排），指回私有仓的真实文件。这些软链接由 `.gitignore` 排除，不进公开仓的 git 历史；已建立的链接记在 `.kansoku-overlay-links.json`（同样 gitignore）。`pnpm overlay:check` 只读校验，不写盘。
-- 没有默认兄弟文件的「私有专属」overlay（公开仓没有对应 `foo.ts`）必须登记进 `apps/pro/overlay.private-only.json` 的 `files` 数组，否则同步会报错。反过来，有默认兄弟却被登记成私有专属也会报错——两边必须精确对应。
+- 公开仓某个文件的默认实现是 `foo.ts`；私有仓要覆盖它时，在 `apps/pro/overlays/<跟公开仓一致的镜像路径>/foo.ts` 放真实文件——**不带 `.pro` 后缀**，后缀由投影这一步添加。例如公开仓的 `apps/desktop/src/edition/pro.ts` 对应私有仓的 `apps/pro/overlays/apps/desktop/src/edition/pro.ts`。真实文件若自带 `.pro` 后缀，`overlay:sync` 会直接报错。
+- `pnpm overlay:sync`（内部调 `packages/build-overlay/scripts/sync.mjs` / `overlaySync.mjs`）会在公开仓里每个 overlay 文件对应的位置建一个 **加了 `.pro` 后缀** 的软链接（`foo.pro.ts`，与默认文件 `foo.ts` 并排），指回私有仓的无后缀真实文件。这些软链接由 `.gitignore` 排除，不进公开仓的 git 历史；已建立的链接记在 `.kansoku-overlay-links.json`（同样 gitignore）。`pnpm overlay:check` 只读校验，不写盘。
+- 没有默认兄弟文件的「私有专属」overlay（公开仓没有对应 `foo.ts`）必须登记进 `apps/pro/overlay.private-only.json` 的 `files` 数组（登记镜像相对路径，不带 `.pro` 后缀），否则同步会报错。反过来，有默认兄弟却被登记成私有专属也会报错——两边必须精确对应。
 - 五条 ESLint 规则（`packages/build-overlay/eslint/plugin.mjs`，插件名 `@kansoku/build-overlay-eslint`）把约定钉死：
   - `no-explicit-pro-import`：任何文件都不准显式 `import './foo.pro'` 或 `'*.pro.*'`。
   - `no-apps-pro-import`：默认文件不准 import `apps/pro` 下的任何路径。
   - `no-pro-only-resolution`：默认文件的相对 import 不准「只解析得到 `.pro` 版本、没有默认版本」。
-  - `no-self-default-import`：一个 `.pro.ts` 文件不准 import 它自己对应的默认文件。
-  - `overlay-manifest-consistency`：`.pro.ts` 文件本身是否登记进 `overlay.private-only.json`，要跟它是否存在默认兄弟保持一致（即上一条同步校验的 lint 版）。
+  - `no-self-default-import`：一个 overlay 文件不准 import 它自己对应的默认文件（overlay 的识别按位置——落在 `overlays/` 下即算——或文件名带 `.pro.` 的投影软链）。
+  - `overlay-manifest-consistency`：overlay 文件本身是否登记进 `overlay.private-only.json`，要跟它是否存在默认兄弟保持一致（即上一条同步校验的 lint 版）。
   - 另有 `no-escaping-import`：禁止绝对路径 import，禁止相对 import 逃出 workspace 根。
 
 这套机制因为软链接是普通文件系统对象，`apps/desktop`、`apps/web` 各自的 `tsconfig.json`（`include: ["src", ...]`）会自然把落在 `src/` 下的 `.pro.ts` 软链接一起纳入 typecheck；`pnpm typecheck:desktop` / `pnpm --filter @kansoku/web typecheck` 本身就覆盖了已同步的 overlay 文件。需要注意的是，若在默认文件中交叉引用一个私有专属 overlay（没有默认兄弟文件），host 应用的 `tsconfig.json` 必须配置 `"moduleSuffixes": [".pro", ""]` 才能正确解析该导入——`apps/web/tsconfig.json` 因此需要这一配置。这也带来一个副作用：只要本地投影已同步（`.pro.ts` 软链接存在），web 端 `tsc` 就会把 `./pro` 这类导入解析到 `.pro` 覆盖文件而不是默认文件，所以「纯免费图」的类型契约只在没有投影的检出上才会被真正 typecheck 到（比如 CI）。
@@ -35,7 +35,7 @@ export async function loadProComposition(): Promise<DesktopProComposition | null
 }
 ```
 
-覆盖文件 `pro.pro.ts`（真实实现在 `apps/pro/overlays/.../pro.pro.ts`）直接 `import` pro 侧的注册器（IPC services、realtime channels、AI extension、hooks），返回一份真实组合对象——普通同仓 TypeScript 调用，不经过任何 host 对象或协议层传递。
+覆盖文件 `pro.pro.ts`（真实实现在 `apps/pro/overlays/.../pro.ts`）直接 `import` pro 侧的注册器（IPC services、realtime channels、AI extension、hooks），返回一份真实组合对象——普通同仓 TypeScript 调用，不经过任何 host 对象或协议层传递。
 
 宿主侧只在一个地方接触这个组合点，并且必须是**带 catch 的动态 `import()`**（见 `apps/desktop/src/boot/kernel.ts`）：
 
@@ -97,11 +97,11 @@ Web 渲染进程走自定义 `app://` 协议（`apps/desktop/src/platform/protoc
 
 同一个产物必须在下面四种状态下都表现正确，验证脚本见 `apps/desktop/scripts/verifyFourStates.mjs`（对应 desktop kernel 里新增的 `[boot] proComposition=active|free` 结构化启动日志，和 `KANSOKU_EXIT_AFTER_BOOT=1` 让应用启动自检完就自己退出）：
 
-| 状态 | 构建方式 | 运行时 | 期望 |
-| --- | --- | --- | --- |
-| 已激活 | pro 构建（`KANSOKU_BUNDLE_KEY` + `KANSOKU_BUNDLE_KEY_ID`） | 用打包时同一把 `KANSOKU_BUNDLE_KEY` 启动 | `proComposition=active`，正常退出 |
-| 未激活（锁定） | 同一个 pro 构建产物 | 不传 `KANSOKU_BUNDLE_KEY` | `proComposition=free`，正常退出，不崩 |
-| 错 key | 同一个 pro 构建产物 | 传一把错误的 `KANSOKU_BUNDLE_KEY` | `proComposition=free`，正常退出，不崩（解密失败必须安全降级） |
-| 社区构建 | `KANSOKU_FORCE_FREE=1` | 任意 | `proComposition=free`；**且**打包产物的字节里完全找不到 pro canary 常量（`grep` 打包后的 `.app` 目录，`grep` 退出码应为 1） |
+| 状态           | 构建方式                                                   | 运行时                                   | 期望                                                                                                                        |
+| -------------- | ---------------------------------------------------------- | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| 已激活         | pro 构建（`KANSOKU_BUNDLE_KEY` + `KANSOKU_BUNDLE_KEY_ID`） | 用打包时同一把 `KANSOKU_BUNDLE_KEY` 启动 | `proComposition=active`，正常退出                                                                                           |
+| 未激活（锁定） | 同一个 pro 构建产物                                        | 不传 `KANSOKU_BUNDLE_KEY`                | `proComposition=free`，正常退出，不崩                                                                                       |
+| 错 key         | 同一个 pro 构建产物                                        | 传一把错误的 `KANSOKU_BUNDLE_KEY`        | `proComposition=free`，正常退出，不崩（解密失败必须安全降级）                                                               |
+| 社区构建       | `KANSOKU_FORCE_FREE=1`                                     | 任意                                     | `proComposition=free`；**且**打包产物的字节里完全找不到 pro canary 常量（`grep` 打包后的 `.app` 目录，`grep` 退出码应为 1） |
 
 未激活、错 key、社区三态都必须落到「完整能用的免费版」，绝不能崩溃——这是这套架构最基本的安全底线：**免费模式就是失败兜底模式**。

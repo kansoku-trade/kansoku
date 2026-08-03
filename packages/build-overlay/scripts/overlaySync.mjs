@@ -13,7 +13,9 @@ import path from 'node:path';
 
 const { dirname, isAbsolute, join, relative, resolve, sep } = path;
 
-const overlayPattern = /\.pro\.(?:[cm]?ts|tsx)$/;
+const overlaySourcePattern = /\.(?:[cm]?ts|tsx)$/;
+const declarationPattern = /\.d\.[cm]?ts$/;
+const proSuffixPattern = /\.pro\.(?:[cm]?ts|tsx)$/;
 
 function within(root, target) {
   const rel = relative(root, target);
@@ -34,7 +36,12 @@ function walk(dir, files = []) {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     const entryPath = join(dir, entry.name);
     if (entry.isDirectory()) walk(entryPath, files);
-    else if (entry.isFile() && overlayPattern.test(entry.name)) files.push(entryPath);
+    else if (
+      entry.isFile() &&
+      overlaySourcePattern.test(entry.name) &&
+      !declarationPattern.test(entry.name)
+    )
+      files.push(entryPath);
   }
   return files;
 }
@@ -80,12 +87,19 @@ export function runOverlaySync(options) {
   const mappings = overlayFiles
     .map((source) => {
       const sourceRelative = relative(overlayRoot, source);
-      const destination = resolve(publicRoot, sourceRelative);
+      if (proSuffixPattern.test(source)) {
+        errors.push(
+          `overlay source must not carry the .pro suffix (the projection adds it): ${sourceRelative}`,
+        );
+        return null;
+      }
+      const destinationRelative = sourceRelative.replace(/(\.(?:[cm]?ts|tsx))$/, '.pro$1');
+      const destination = resolve(publicRoot, destinationRelative);
       if (!within(publicRoot, destination) || within(proRoot, destination)) {
         errors.push(`unsafe overlay destination: ${sourceRelative}`);
         return null;
       }
-      const base = destination.replace(/\.pro(\.(?:[cm]?ts|tsx))$/, '$1');
+      const base = resolve(publicRoot, sourceRelative);
       return { destination, hasBase: existsSync(base), source, sourceRelative };
     })
     .filter((mapping) => mapping !== null);
@@ -100,7 +114,9 @@ export function runOverlaySync(options) {
     const relPath = mapping.sourceRelative.split(sep).join('/');
     const isPrivateOnly = privateOnlySet.has(relPath);
     if (!mapping.hasBase && !isPrivateOnly) {
-      errors.push(`overlay has no OSS base and is not registered in ${manifestRelative}: ${relPath}`);
+      errors.push(
+        `overlay has no OSS base and is not registered in ${manifestRelative}: ${relPath}`,
+      );
     }
     if (mapping.hasBase && isPrivateOnly) {
       errors.push(
