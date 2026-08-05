@@ -84,6 +84,9 @@ importers:
       '@types/node':
         specifier: ^26.1.1
         version: 26.1.1
+      '@vibeloft/telemetry-electron':
+        specifier: 0.1.0
+        version: 0.1.0(electron@43.1.1)
       electron:
         specifier: 43.1.1
         version: 43.1.1
@@ -3098,6 +3101,15 @@ packages:
     resolution: {integrity: sha512-V397a7qKqQskExW6TkjGnp5czp7sFd8cGTsnf44jsfyCXNcdJLWAKqJnSaFrW0bemp1W1OLg/cVkfl8qc0FLRw==}
     peerDependencies:
       vite: ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
+
+  '@vibeloft/telemetry-electron@0.1.0':
+    resolution: {integrity: sha512-dxlXa0r3HYzvJKGrzXzoAz6/Up7gV9dGiWmWuJzwKLHos+fHz/yuYe/TODTaY3yX+mBwueC2KpnbIGPF9Wy5gw==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      electron: '>=25'
+    peerDependenciesMeta:
+      electron:
+        optional: true
 
   '@vitejs/plugin-react@6.0.3':
     resolution: {integrity: sha512-vmFvco5/QuC2f9Oj+wTk0+9XeDFkHxSamwZKYc7MxYwKICfvUvlMhqKI0VuICPltGqh1neqBKDvO4kes1ya8vg==}
@@ -10422,6 +10434,10 @@ snapshots:
       - terser
       - tsx
       - yaml
+
+  '@vibeloft/telemetry-electron@0.1.0(electron@43.1.1)':
+    optionalDependencies:
+      electron: 43.1.1
 
   '@vitejs/plugin-react@6.0.3(@rolldown/plugin-babel@0.2.3(@babel/core@8.0.1)(@babel/runtime@7.29.7)(rolldown@1.2.0)(vite@8.1.5(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0)))(babel-plugin-react-compiler@1.0.0)(vite@8.1.5(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))':
     dependencies:

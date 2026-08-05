@@ -11,6 +11,7 @@ import {
   type RendererCallRequest,
   type RendererCallResponse,
 } from './platform/rendererCall/channels.js';
+import { TELEMETRY_CHANNELS } from './platform/telemetry/channels.js';
 import {
   TABS_COMMAND_CHANNEL,
   TABS_SNAPSHOT_CHANNEL,
@@ -106,6 +107,12 @@ if (isPrivilegedOrigin) {
       const listener = (_event: Electron.IpcRendererEvent, status: unknown) => cb(status);
       ipcRenderer.on(UPDATER_CHANNELS.status, listener);
       return () => ipcRenderer.removeListener(UPDATER_CHANNELS.status, listener);
+    },
+  };
+
+  desktopApi.telemetry = {
+    trackScreen: (name: string) => {
+      ipcRenderer.invoke(TELEMETRY_CHANNELS.screen, name).catch(() => {});
     },
   };
 

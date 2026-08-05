@@ -49,6 +49,7 @@ import {
 } from './shell/tabs/store.js';
 import { createTabsService, type TabsService } from './shell/tabs/service.js';
 import { TabsIpc } from './shell/tabs/ipc.js';
+import { initTelemetry } from './platform/telemetry/telemetry.js';
 import { initUpdater } from './shell/updater/updater.js';
 import { UpdaterIpc } from './shell/updater/ipc.js';
 import { isPopoutWindow } from './shell/window/popoutWindow.js';
@@ -263,6 +264,8 @@ app.whenReady().then(async () => {
     new ContextMenuIpc();
     await installDefaultContextMenu();
 
+    const telemetry = await initTelemetry();
+
     const updater = await initUpdater();
     new UpdaterIpc(updater);
 
@@ -304,6 +307,7 @@ app.whenReady().then(async () => {
       try {
         tabsFileStore.flushSync();
         windowManager.flushSync();
+        telemetry?.close();
         setProAssets(null);
         disposeKernel().catch((error: unknown) => {
           console.error('[desktop] kernel dispose failed', error);

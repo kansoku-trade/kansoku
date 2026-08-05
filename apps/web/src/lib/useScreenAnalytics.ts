@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { trackFeatureUsed, trackScreenViewed } from './analytics';
 import { analyticsScreenOf } from './analyticsScreen';
+import { trackDesktopScreen } from './desktopTelemetry';
 import { routePathname, useRoute } from './router';
 
 /**
@@ -18,6 +19,7 @@ export function useScreenAnalytics(): void {
     if (sent.current === screen) return;
     sent.current = screen;
     trackScreenViewed(screen);
+    trackDesktopScreen(screen);
   }, [screen]);
 }
 

@@ -32,6 +32,7 @@
     "@kansoku/shared": "workspace:*",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^26.1.1",
+    "@vibeloft/telemetry-electron": "0.1.0",
     "electron": "43.1.1",
     "electron-builder": "^26.15.3",
     "electron-context-menu": "^4.1.2",
