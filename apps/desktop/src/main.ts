@@ -223,7 +223,7 @@ function installAppMenu({
         void (async () => {
           const activeId = await activeTabIdOf(focused);
           if (!activeId) return;
-          const action = resolveCloseTabAction(tabs.current(), activeId);
+          const action = resolveCloseTabAction(await tabs.snapshot(), activeId);
           if (action.kind === 'close-window') focused.close();
           else if (action.kind === 'close-tab') await tabs.mutate({ op: 'close', id: action.id });
           else if (action.kind === 'delegate') sendTabsCommand('close-tab');

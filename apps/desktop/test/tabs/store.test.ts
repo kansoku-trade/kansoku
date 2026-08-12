@@ -143,9 +143,9 @@ describe('resolveCloseTabAction', () => {
     expect(resolveCloseTabAction(state, targetId)).toEqual({ kind: 'close-tab', id: targetId });
   });
 
-  it('does nothing on the pinned tab while other tabs remain', () => {
+  it('closes the window on the pinned tab even while other tabs remain', () => {
     const state = openTab(homeState(), '/symbol/NVDA.US');
-    expect(resolveCloseTabAction(state, state.tabs[0].id)).toEqual({ kind: 'noop' });
+    expect(resolveCloseTabAction(state, state.tabs[0].id)).toEqual({ kind: 'close-window' });
   });
 
   it('delegates when the active tab id is unknown or empty', () => {

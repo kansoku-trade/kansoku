@@ -131,14 +131,16 @@ export function cycleTabId(state: TabsState, activeTabId: string, delta: 1 | -1)
 export type CloseTabAction =
   | { kind: 'close-window' }
   | { kind: 'close-tab'; id: string }
-  | { kind: 'noop' }
   | { kind: 'delegate' };
 
+// The pinned home tab can never be closed on its own, so Cmd+W there falls
+// through to the window — otherwise the shortcut would be a dead key whenever
+// other tabs are open and no keyboard path to closing the window would remain.
 export function resolveCloseTabAction(state: TabsState, activeTabId: string): CloseTabAction {
   const active = state.tabs.find((tab) => tab.id === activeTabId);
   if (!active) return { kind: 'delegate' };
   if (!isPinnedTab(state, active.id)) return { kind: 'close-tab', id: active.id };
-  return state.tabs.length === 1 ? { kind: 'close-window' } : { kind: 'noop' };
+  return { kind: 'close-window' };
 }
 
 export function applyMutation(state: TabsState, mutation: MutateOp): TabsState {
