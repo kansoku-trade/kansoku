@@ -6,21 +6,24 @@ import {
 } from './systemContext.js';
 
 export abstract class BaseFirstUserContentProvider implements MessageProcessor {
-  abstract readonly name: string;
+  readonly access = { reads: ['all'] as const, writes: 'structure' as const };
+  abstract readonly id: string;
+  readonly phase = 'stable-context' as const;
   protected abstract buildContent(context: MessagePipelineContext): string | null;
 
-  process(context: MessagePipelineContext): MessagePipelineContext {
+  process(context: MessagePipelineContext): void {
     const content = this.buildContent(context);
-    if (!content) return context;
+    if (!content) return;
 
     const messages = [...context.messages];
-    let injectionIndex = context.firstUserInjectionIndex;
+    let injectionIndex = context.metadata.firstUserInjectionIndex;
     if (injectionIndex == null) {
       const firstUserIndex = messages.findIndex(
         (message, index) =>
-          index > (context.afterSystemPromptInjectionIndex ?? -1) && message.role === 'user',
+          index > (context.metadata.afterSystemPromptInjectionIndex ?? -1) &&
+          message.role === 'user',
       );
-      if (firstUserIndex === -1) return context;
+      if (firstUserIndex === -1) return;
       const firstUser = messages[firstUserIndex];
       messages.splice(
         firstUserIndex,
@@ -32,11 +35,8 @@ export abstract class BaseFirstUserContentProvider implements MessageProcessor {
       messages[injectionIndex] = appendSystemContext(messages[injectionIndex], content);
     }
 
-    return {
-      ...context,
-      firstUserInjectionIndex: injectionIndex,
-      messages,
-      metadata: { ...context.metadata, [`${this.name}Injected`]: true },
-    };
+    context.replaceMessages(messages);
+    context.setMetadata('firstUserInjectionIndex', injectionIndex);
+    context.setMetadata(`${this.id}Injected`, true);
   }
 }

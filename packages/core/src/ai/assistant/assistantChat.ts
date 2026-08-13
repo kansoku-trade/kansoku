@@ -10,7 +10,10 @@ import {
   listAssistantMessages,
 } from './assistantChatStore.js';
 import type { ChatEvent } from '../chat/chat.js';
-import { type ConversationPreparedTurn, createConversationEngine } from '../conversation/conversationEngine.js';
+import {
+  type ConversationPreparedTurn,
+  createConversationEngine,
+} from '../conversation/conversationEngine.js';
 import { MessagesEngine } from '../conversation/messages/messageEngine.js';
 import { SkillCatalogProvider, toSkillContexts } from '../conversation/messages/sharedProviders.js';
 import {
@@ -84,7 +87,7 @@ function prepareTurn(
         origin: 'assistant',
         systemPrompt: buildSystemPrompt(disciplineText),
         tools: [...researchTools, ...buildResearchLibraryTools(rootDir)],
-        transformContext: async (messages) => (await messageEngine.process(messages)).messages,
+        transformContext: messageEngine.transformContext,
         onTurnComplete: proTurn.onTurnComplete,
       };
     },

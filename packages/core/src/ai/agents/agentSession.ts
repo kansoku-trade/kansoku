@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import {
   Agent,
   type AgentEvent,
@@ -9,8 +10,34 @@ import { getModelsRuntime } from '../runtime/modelsRuntime.js';
 import type { AiModel } from '../runtime/models.js';
 import { attachAiUsageLogger, type AiUsageLogContext } from '../runtime/usage.js';
 
-export const runtimeStreamFn: StreamFn = (model, context, options) =>
-  getModelsRuntime().streamSimple(model, context, options);
+function isOpenRouterUrl(value: string): boolean {
+  try {
+    return new URL(value).hostname.toLowerCase() === 'openrouter.ai';
+  } catch {
+    return false;
+  }
+}
+
+function withOpenRouterSessionAffinity<Model extends { baseUrl: string; compat?: object }>(
+  model: Model,
+): Model {
+  return {
+    ...model,
+    compat: {
+      ...model.compat,
+      sendSessionAffinityHeaders: true,
+      sessionAffinityFormat: 'openrouter',
+    },
+  } as Model;
+}
+
+export const runtimeStreamFn: StreamFn = (model, context, options) => {
+  const requestModel =
+    options?.sessionId && isOpenRouterUrl(model.baseUrl)
+      ? withOpenRouterSessionAffinity(model)
+      : model;
+  return getModelsRuntime().streamSimple(requestModel, context, options);
+};
 
 export interface AiAgentHandle {
   prompt(text: string): Promise<unknown>;
@@ -25,7 +52,7 @@ export type AiAgentFactory = (config: {
   model: AiModel;
   tools: AgentTool[];
   messages?: AgentMessage[];
-  sessionId?: string;
+  sessionId: string;
   transformContext?: (messages: AgentMessage[], signal?: AbortSignal) => Promise<AgentMessage[]>;
 }) => AiAgentHandle;
 
@@ -74,12 +101,13 @@ export function createAgentSession(config: {
   isDone(): boolean;
 } {
   const factory = config.agentFactory ?? defaultAgentFactory;
+  const sessionId = config.sessionId ?? `${config.layer}:${randomUUID()}`;
   const agent = factory({
     systemPrompt: config.systemPrompt,
     model: config.model,
     tools: config.tools,
     messages: config.messages,
-    sessionId: config.sessionId,
+    sessionId,
     transformContext: config.transformContext,
   });
 

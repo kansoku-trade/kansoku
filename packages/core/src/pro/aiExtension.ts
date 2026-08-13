@@ -19,7 +19,7 @@ export function resetProAiExtensionForTests(): void {
 }
 
 class ProPromptContextProvider extends BaseFirstUserContentProvider {
-  readonly name = 'ProPromptContextProvider';
+  readonly id = 'ProPromptContextProvider';
 
   constructor(private readonly content: string) {
     super();

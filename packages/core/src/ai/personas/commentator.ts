@@ -2,7 +2,11 @@ import type { AgentTool } from '@earendil-works/pi-agent-core';
 import { type Static, Type } from 'typebox';
 import type { CockpitComment } from '@kansoku/shared/types';
 import { easternDate } from '../../marketdata/session.js';
-import { AgentTimeoutError, type AiAgentFactory, createAgentSession } from '../agents/agentSession.js';
+import {
+  AgentTimeoutError,
+  type AiAgentFactory,
+  createAgentSession,
+} from '../agents/agentSession.js';
 import { appendComment as defaultAppendComment } from './comments.js';
 import { buildCommentUpdate, type CommentPack } from '../agents/datapack.js';
 import { commentPackPromptText, commentUpdatePromptText } from '../agents/packText.js';
@@ -79,7 +83,9 @@ const submitSchema = Type.Object({
     Type.Literal('wait_confirm'),
     Type.Literal('no_action'),
   ]),
-  stanceNote: Type.Optional(Type.String({ description: 'One sentence naming the next condition.' })),
+  stanceNote: Type.Optional(
+    Type.String({ description: 'One sentence naming the next condition.' }),
+  ),
   escalate: Type.Boolean(),
 });
 
@@ -193,7 +199,7 @@ export async function runCommentator({
         model: deps.model,
         systemPrompt: SYSTEM_PROMPT,
         tools: [tool],
-        transformContext: async (messages) => (await messageEngine.process(messages)).messages,
+        transformContext: messageEngine.transformContext,
         agentFactory: deps.agentFactory,
       });
       session = {

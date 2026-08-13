@@ -39,7 +39,7 @@ export const safeJson = (value: unknown): string =>
   (JSON.stringify(value) ?? 'null').replaceAll('<', '\\u003c').replaceAll('>', '\\u003e');
 
 export class SkillCatalogProvider extends BaseFirstUserContentProvider {
-  readonly name = 'SkillCatalogProvider';
+  readonly id = 'SkillCatalogProvider';
 
   constructor(private readonly skills: SkillContext[]) {
     super();
@@ -53,15 +53,15 @@ export class SkillCatalogProvider extends BaseFirstUserContentProvider {
     ];
     for (const skill of this.skills) {
       const attrs = [
-        `name=\"${escapeXml(skill.name)}\"`,
-        `status=\"${skill.activated ? 'activated' : 'available'}\"`,
-        skill.location ? `location=\"${escapeXml(skill.location)}\"` : undefined,
+        `name="${escapeXml(skill.name)}"`,
+        `status="${skill.activated ? 'activated' : 'available'}"`,
+        skill.location ? `location="${escapeXml(skill.location)}"` : undefined,
       ]
         .filter(Boolean)
         .join(' ');
       const invoke = skill.activated
         ? 'The skill instructions are loaded below.'
-        : `read_skill(name=\"${escapeXml(skill.name)}\")`;
+        : `read_skill(name="${escapeXml(skill.name)}")`;
       lines.push(
         `  <skill ${attrs}>`,
         `    <description>${escapeXml(skill.description)}</description>`,
@@ -75,7 +75,7 @@ export class SkillCatalogProvider extends BaseFirstUserContentProvider {
 }
 
 export class ActivatedSkillsProvider extends BaseFirstUserContentProvider {
-  readonly name = 'ActivatedSkillsProvider';
+  readonly id = 'ActivatedSkillsProvider';
 
   constructor(
     private readonly skills: SkillContext[],
@@ -93,7 +93,7 @@ export class ActivatedSkillsProvider extends BaseFirstUserContentProvider {
       'The following skills are activated for this run. Follow their instructions directly; do not call read_skill again for them.',
     ];
     for (const skill of activated) {
-      lines.push(`  <skill name=\"${escapeXml(skill.name)}\">`, skill.content!, '  </skill>');
+      lines.push(`  <skill name="${escapeXml(skill.name)}">`, skill.content!, '  </skill>');
     }
     lines.push('</activated_skills>');
     if (this.runtimeAdapter?.trim()) {
@@ -104,7 +104,7 @@ export class ActivatedSkillsProvider extends BaseFirstUserContentProvider {
 }
 
 export class RunMetadataProvider extends BaseFirstUserContentProvider {
-  readonly name = 'RunMetadataProvider';
+  readonly id = 'RunMetadataProvider';
 
   constructor(private readonly context: RunMetadataContext) {
     super();

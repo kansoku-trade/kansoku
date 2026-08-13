@@ -1,5 +1,9 @@
 import type { AgentEvent, AgentMessage, AgentTool } from '@earendil-works/pi-agent-core';
-import { AgentTimeoutError, type AiAgentFactory, createAgentSession } from '../agents/agentSession.js';
+import {
+  AgentTimeoutError,
+  type AiAgentFactory,
+  createAgentSession,
+} from '../agents/agentSession.js';
 import {
   agentToolResultText,
   concatAssistantText,
@@ -232,6 +236,7 @@ export function createConversationEngine<TInput, TReason extends string>(
         systemPrompt: plan.systemPrompt,
         tools: plan.tools,
         messages: historyPayloads,
+        sessionId: session.id,
         transformContext: plan.transformContext,
         agentFactory: turn.agentFactory,
         onEvent: (event) =>

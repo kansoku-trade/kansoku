@@ -9,7 +9,9 @@ import { MessagesEngine } from '../conversation/messages/messageEngine.js';
 const TIMEOUT_MS = 60_000;
 
 const submitSchema = Type.Object({
-  keep: Type.Array(Type.Integer({ minimum: 0 }), { description: 'Indexes i of the events to retain.' }),
+  keep: Type.Array(Type.Integer({ minimum: 0 }), {
+    description: 'Indexes i of the events to retain.',
+  }),
 });
 
 type SubmitParams = Static<typeof submitSchema>;
@@ -40,13 +42,14 @@ export async function filterMacroForSymbol(
     },
   };
 
+  const messageEngine = new MessagesEngine([]);
   const session = createAgentSession({
     layer: 'event-filter',
     symbol,
     model,
     systemPrompt: EVENT_FILTER_PROMPT,
     tools: [tool],
-    transformContext: async (messages) => (await new MessagesEngine([]).process(messages)).messages,
+    transformContext: messageEngine.transformContext,
     agentFactory: deps.agentFactory,
   });
 

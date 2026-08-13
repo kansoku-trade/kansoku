@@ -15,7 +15,9 @@ const MAX_SUGGESTIONS = 3;
 const MAX_LENGTH = 40;
 
 const submitSchema = Type.Object({
-  questions: Type.Array(Type.String(), { description: 'Three follow-up questions, each no more than 20 Chinese characters.' }),
+  questions: Type.Array(Type.String(), {
+    description: 'Three follow-up questions, each no more than 20 Chinese characters.',
+  }),
 });
 
 type SubmitParams = Static<typeof submitSchema>;
@@ -73,13 +75,14 @@ async function generate(chartId: string, deps: ChatSuggestionDeps): Promise<stri
     },
   };
 
+  const messageEngine = new MessagesEngine([]);
   const session = createAgentSession({
     layer: 'chat-suggest',
     symbol,
     model,
     systemPrompt: CHAT_SUGGESTIONS_PROMPT,
     tools: [tool],
-    transformContext: async (messages) => (await new MessagesEngine([]).process(messages)).messages,
+    transformContext: messageEngine.transformContext,
     agentFactory: deps.agentFactory,
   });
 

@@ -7,7 +7,11 @@ import { loadSkillIndex, readSkill } from '../../agents/skills.js';
 import { prepareProAiTurn } from '../../../pro/aiExtension.js';
 import { AgentTimeoutError, createAgentSession } from '../../agents/agentSession.js';
 import { AnalystMessagesEngine } from '../../conversation/messages/analystMessagesEngine.js';
-import { ANALYST_ADAPTER_PROMPT, ANALYST_RETRY_PROMPT, ANALYST_SYSTEM_PROMPT } from '../../runtime/prompts.js';
+import {
+  ANALYST_ADAPTER_PROMPT,
+  ANALYST_RETRY_PROMPT,
+  ANALYST_SYSTEM_PROMPT,
+} from '../../runtime/prompts.js';
 import { DisciplineMissingError, loadAppDiscipline } from '../../runtime/promptPolicy.js';
 import { createDefaultExec } from '../../agents/agentTools/execTool.js';
 import { appendComment as defaultAppendComment } from '../comments.js';
@@ -32,7 +36,12 @@ import {
   usSessionDate,
   type RunState,
 } from './tools.js';
-import type { AnalystDeps, RunAnalystInput, RunningAnalystRunStatus, StartResult } from './types.js';
+import type {
+  AnalystDeps,
+  RunAnalystInput,
+  RunningAnalystRunStatus,
+  StartResult,
+} from './types.js';
 
 const DEFAULT_TIMEOUT_MS = 15 * 60_000;
 
@@ -79,7 +88,7 @@ export async function executeAnalystRun(symbol: string, deps: AnalystDeps): Prom
     return;
   }
 
-  const disciplineText = deps.disciplineText ?? (loadAppDiscipline(repoRoot) ?? '');
+  const disciplineText = deps.disciplineText ?? loadAppDiscipline(repoRoot) ?? '';
   if (!disciplineText) {
     await writeError(new DisciplineMissingError().message);
     return;
@@ -148,13 +157,16 @@ export async function executeAnalystRun(symbol: string, deps: AnalystDeps): Prom
       systemPrompt: buildAnalystSystemPrompt(),
       tools,
       sessionId,
-      transformContext: async (messages) => (await messagesEngine.process(messages)).messages,
+      transformContext: messagesEngine.transformContext,
       agentFactory: deps.agentFactory,
       onEvent: onAgentEvent,
     });
 
     reportProgress('researching', '正在规划分析步骤并读取市场信息');
-    await session.runTurn(`Reassess the short-term multi-period conclusion for ${symbol}.`, timeoutMs);
+    await session.runTurn(
+      `Reassess the short-term multi-period conclusion for ${symbol}.`,
+      timeoutMs,
+    );
 
     // One explicit retry, mirroring chat/commentator: a rejected submit only returns a tool
     // result, so without an outer nudge the model is free to give up and ship nothing.

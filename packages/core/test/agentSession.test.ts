@@ -1,5 +1,6 @@
 import type { AgentEvent, AgentMessage, AgentTool } from '@earendil-works/pi-agent-core';
-import type { MutableModels } from '@earendil-works/pi-ai';
+import { createModels, type MutableModels } from '@earendil-works/pi-ai';
+import { openrouterProvider } from '@earendil-works/pi-ai/providers/openrouter';
 import { Type } from 'typebox';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -33,7 +34,10 @@ describe('runtimeStreamFn', () => {
     setModelsRuntimeForTests({ streamSimple: spy } as unknown as MutableModels);
 
     const fakeContext = { messages: [] } as unknown as Parameters<typeof runtimeStreamFn>[1];
-    const options = { apiKey: undefined } as unknown as Parameters<typeof runtimeStreamFn>[2];
+    const options = {
+      apiKey: undefined,
+      sessionId: 'business-session',
+    } as unknown as Parameters<typeof runtimeStreamFn>[2];
     runtimeStreamFn(fakeModel, fakeContext, options);
 
     expect(spy).toHaveBeenCalledTimes(1);
@@ -42,6 +46,40 @@ describe('runtimeStreamFn', () => {
 
   it('throws when no runtime has been initialized', () => {
     expect(() => runtimeStreamFn(fakeModel, {} as never, undefined)).toThrow(/not initialized/);
+  });
+
+  it('sends the business session ID on OpenRouter requests', async () => {
+    const requestHeaders: Headers[] = [];
+    const models = createModels();
+    models.setProvider(openrouterProvider());
+    setModelsRuntimeForTests(models);
+    const model = models.getModel('openrouter', 'openai/gpt-4o-mini');
+    if (!model) throw new Error('missing OpenRouter test model');
+
+    const stream = await runtimeStreamFn(
+      model,
+      {
+        messages: [{ content: 'probe', role: 'user', timestamp: 1 }],
+        systemPrompt: 'test',
+        tools: [],
+      },
+      {
+        apiKey: 'test-key',
+        fetch: async (_input, init) => {
+          requestHeaders.push(new Headers(init?.headers));
+          return new Response(JSON.stringify({ error: { message: 'expected test stop' } }), {
+            headers: { 'Content-Type': 'application/json' },
+            status: 400,
+          });
+        },
+        sessionId: 'kansoku-session',
+      },
+    );
+
+    await stream.result();
+
+    expect(requestHeaders).toHaveLength(1);
+    expect(requestHeaders[0]?.get('x-session-id')).toBe('kansoku-session');
   });
 });
 
@@ -67,6 +105,9 @@ describe('createAgentSession', () => {
     expect(received?.model).toBe(fakeModel);
     expect(received?.tools).toEqual([fakeTool]);
     expect(received?.messages).toEqual([fakeMessage]);
+    expect(received?.sessionId).toMatch(
+      /^chat:[\da-f]{8}-[\da-f]{4}-4[\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/iu,
+    );
   });
 
   it("forwards events emitted by the handle's subscribe to onEvent", () => {

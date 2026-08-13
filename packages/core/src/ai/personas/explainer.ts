@@ -1,7 +1,11 @@
 import type { AgentTool } from '@earendil-works/pi-agent-core';
 import { type Static, Type } from 'typebox';
 import type { CockpitComment, ExplainResult } from '@kansoku/shared/types';
-import { AgentTimeoutError, type AiAgentFactory, createAgentSession } from '../agents/agentSession.js';
+import {
+  AgentTimeoutError,
+  type AiAgentFactory,
+  createAgentSession,
+} from '../agents/agentSession.js';
 import { appendComment as defaultAppendComment } from './comments.js';
 import { buildCommentPack, type CommentPack } from '../agents/datapack.js';
 import { explainerPackPromptText } from '../agents/packText.js';
@@ -71,7 +75,10 @@ function buildSubmitTool(
   };
 }
 
-export async function explainSymbol(symbol: string, deps: ExplainerDeps = {}): Promise<ExplainResult> {
+export async function explainSymbol(
+  symbol: string,
+  deps: ExplainerDeps = {},
+): Promise<ExplainResult> {
   const model = (deps.resolveModel ?? (() => aiConfig().commentModel))();
   if (!model) return { ok: false, reason: 'disabled' };
 
@@ -112,7 +119,7 @@ export async function explainSymbol(symbol: string, deps: ExplainerDeps = {}): P
       model,
       systemPrompt: SYSTEM_PROMPT,
       tools: [tool],
-      transformContext: async (messages) => (await messageEngine.process(messages)).messages,
+      transformContext: messageEngine.transformContext,
       agentFactory: deps.agentFactory,
     });
 

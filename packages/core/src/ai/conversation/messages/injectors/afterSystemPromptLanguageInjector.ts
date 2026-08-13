@@ -14,9 +14,11 @@ export const CURRENT_INTERFACE_LANGUAGE = 'Simplified Chinese';
  * explicit "after system prompt" injection point for every MessagesEngine.
  */
 export class AfterSystemPromptLanguageInjector implements MessageProcessor {
-  readonly name = 'AfterSystemPromptLanguageInjector';
+  readonly access = { reads: ['all'] as const, writes: 'structure' as const };
+  readonly id = 'AfterSystemPromptLanguageInjector';
+  readonly phase = 'stable-context' as const;
 
-  process(context: MessagePipelineContext): MessagePipelineContext {
+  process(context: MessagePipelineContext): void {
     const timestamp = context.messages[0]?.timestamp ?? 0;
     const content = [
       '<interface_language>',
@@ -27,14 +29,11 @@ export class AfterSystemPromptLanguageInjector implements MessageProcessor {
       '</interface_language>',
     ].join('\n');
 
-    return {
-      ...context,
-      afterSystemPromptInjectionIndex: 0,
-      messages: [
-        createInjectedUserMessage(wrapSystemContext(content), timestamp),
-        ...context.messages,
-      ],
-      metadata: { ...context.metadata, [`${this.name}Injected`]: true },
-    };
+    context.replaceMessages([
+      createInjectedUserMessage(wrapSystemContext(content), timestamp),
+      ...context.messages,
+    ]);
+    context.setMetadata('afterSystemPromptInjectionIndex', 0);
+    context.setMetadata(`${this.id}Injected`, true);
   }
 }

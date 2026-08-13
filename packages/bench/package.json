@@ -5,13 +5,13 @@
   "type": "module",
   "scripts": {
     "cli": "vite-node src/cli.ts",
-    "tui": "vite-node src/tui.ts",
     "test": "vitest run",
+    "tui": "vite-node src/tui.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@clack/prompts": "^1.2.0",
-    "@earendil-works/pi-ai": "^0.80.7",
+    "@earendil-works/pi-ai": "^0.84.1",
     "@kansoku/bench-report-ui": "workspace:*",
     "@kansoku/shared": "workspace:*",
     "typebox": "1.3.6"

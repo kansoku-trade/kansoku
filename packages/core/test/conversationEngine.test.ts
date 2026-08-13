@@ -179,6 +179,27 @@ describe('createConversationEngine lock', () => {
 });
 
 describe('createConversationEngine persistence', () => {
+  it('reuses the persisted conversation ID as the provider session ID', async () => {
+    const engine = makeEngine();
+    const store = memoryStore();
+    const sessionIds: string[] = [];
+    const factory: AiAgentFactory = (config) => {
+      sessionIds.push(config.sessionId);
+      return {
+        prompt: async () => {},
+        abort: () => {},
+        state: { messages: [...(config.messages ?? [])] },
+      };
+    };
+
+    const first = await engine.run('session-affinity', 'first', makeTurn(store, factory));
+    if (first.started) await first.done;
+    const second = await engine.run('session-affinity', 'second', makeTurn(store, factory));
+    if (second.started) await second.done;
+
+    expect(sessionIds).toEqual(['s1', 's1']);
+  });
+
   it('creates the session with a derived title and persists user + assistant increment', async () => {
     const engine = makeEngine();
     const store = memoryStore();

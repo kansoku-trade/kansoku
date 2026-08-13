@@ -6,7 +6,10 @@ import { getSupportedThinkingLevels } from '@earendil-works/pi-ai';
 import { builtinModels } from '@earendil-works/pi-ai/providers/all';
 import { eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { createCredentialStore, type AppCredentialStore } from '@kansoku/core/ai/settings/credentialStore';
+import {
+  createCredentialStore,
+  type AppCredentialStore,
+} from '@kansoku/core/ai/settings/credentialStore';
 import { SINGLE_KEY_PROVIDERS } from '@kansoku/core/ai/runtime/modelsRuntime';
 import { createSecretBox, type SecretBox } from '@kansoku/core/ai/settings/secretBox';
 import { createSettingsStore, type SettingsStore } from '@kansoku/core/ai/settings/settingsStore';
@@ -48,6 +51,8 @@ function stubModels(
     complete: base.complete.bind(base),
     streamSimple: base.streamSimple.bind(base),
     completeSimple,
+    fetchDeferred: base.fetchDeferred.bind(base),
+    cancelDeferred: base.cancelDeferred.bind(base),
     setProvider: base.setProvider.bind(base),
     deleteProvider: base.deleteProvider.bind(base),
     clearProviders: base.clearProviders.bind(base),

@@ -1,67 +1,95 @@
 import type { AgentMessage } from '@earendil-works/pi-agent-core';
+import {
+  type MessagePipelineContext as PublishedMessagePipelineContext,
+  type MessageProcessor as PublishedMessageProcessor,
+  type MessagesEngineResult as PublishedMessagesEngineResult,
+  type SessionMessagesEngine,
+} from '@innei/message-engine';
+import { createPiMessageEngine } from '@innei/message-engine/adapters/pi';
 import { AfterSystemPromptLanguageInjector } from './injectors/afterSystemPromptLanguageInjector.js';
 
 export interface MessagePipelineMetadata {
   [key: string]: unknown;
-}
-
-export interface MessagePipelineContext {
-  readonly initialMessages: readonly AgentMessage[];
-  messages: AgentMessage[];
-  metadata: MessagePipelineMetadata;
   afterSystemPromptInjectionIndex?: number;
   firstUserInjectionIndex?: number;
 }
 
-export interface MessageProcessor {
-  readonly name: string;
-  process(
-    context: MessagePipelineContext,
-  ): Promise<MessagePipelineContext> | MessagePipelineContext;
-}
+type EmptyContext = Record<string, never>;
+export type MessagePipelineContext = PublishedMessagePipelineContext<
+  AgentMessage,
+  EmptyContext,
+  EmptyContext,
+  EmptyContext,
+  MessagePipelineMetadata
+>;
+export type MessageProcessor = PublishedMessageProcessor<
+  AgentMessage,
+  EmptyContext,
+  EmptyContext,
+  EmptyContext,
+  MessagePipelineMetadata
+>;
+type PublishedEngine = SessionMessagesEngine<
+  AgentMessage,
+  EmptyContext,
+  EmptyContext,
+  EmptyContext,
+  MessagePipelineMetadata
+>;
 
-export interface MessagesEngineResult {
-  messages: AgentMessage[];
-  metadata: MessagePipelineMetadata;
-  stats: {
-    processedCount: number;
-    processorDurations: Record<string, number>;
-    totalDuration: number;
-  };
+export type MessagesEngineResult = PublishedMessagesEngineResult<
+  AgentMessage,
+  MessagePipelineMetadata
+>;
+
+let engineSequence = 0;
+
+function createSessionId(): string {
+  engineSequence += 1;
+  return ['kansoku-message-engine', Date.now(), engineSequence].join('-');
 }
 
 /**
  * Builds an ephemeral provider-facing message view from the raw Agent transcript.
- * Processors must never mutate initialMessages: injected context is recomputed for
+ * Processors must never mutate rawMessages: injected context is recomputed for
  * every provider request and is not persisted in Agent.state.messages.
  */
 export class MessagesEngine {
-  constructor(private readonly processors: MessageProcessor[]) {}
+  private readonly engine: PublishedEngine;
+  readonly transformContext: (
+    messages: AgentMessage[],
+    signal?: AbortSignal,
+  ) => Promise<AgentMessage[]>;
+
+  constructor(processors: MessageProcessor[]) {
+    const pipeline = [new AfterSystemPromptLanguageInjector(), ...processors];
+
+    this.engine = createPiMessageEngine<
+      EmptyContext,
+      EmptyContext,
+      EmptyContext,
+      MessagePipelineMetadata
+    >({
+      initial: {},
+      modules: [
+        {
+          id: 'kansoku.context',
+          processors: pipeline,
+        },
+      ],
+      services: {},
+      sessionId: createSessionId(),
+    });
+    this.transformContext = async (messages, signal) =>
+      (
+        await this.engine.process(messages, {
+          ...(signal ? { signal } : {}),
+          step: {},
+        })
+      ).messages;
+  }
 
   async process(messages: readonly AgentMessage[]): Promise<MessagesEngineResult> {
-    const startedAt = Date.now();
-    const processorDurations: Record<string, number> = {};
-    let context: MessagePipelineContext = {
-      initialMessages: messages,
-      messages: [...messages],
-      metadata: {},
-    };
-
-    const processors = [new AfterSystemPromptLanguageInjector(), ...this.processors];
-    for (const processor of processors) {
-      const processorStartedAt = Date.now();
-      context = await processor.process(context);
-      processorDurations[processor.name] = Date.now() - processorStartedAt;
-    }
-
-    return {
-      messages: context.messages,
-      metadata: context.metadata,
-      stats: {
-        processedCount: processors.length,
-        processorDurations,
-        totalDuration: Date.now() - startedAt,
-      },
-    };
+    return this.engine.process(messages, { step: {} });
   }
 }
