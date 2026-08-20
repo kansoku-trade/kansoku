@@ -2,7 +2,7 @@
 name: chart
 description: >
   Render financial charts via the local chart web app (workspace at the repo
-  root — Hono server + React front end, port 5199). Four chart types: intraday capital-flow line
+  root — Hono server + React front end, port 1792). Four chart types: intraday capital-flow line
   (`flow`) and cross-symbol signed-bar comparison (`cohort`) — both Recharts —
   plus SEPA strategy dashboard (`sepa`) and short-term multi-timeframe
   prediction dashboard (`intraday`) — both TradingView Lightweight Charts.
@@ -13,9 +13,9 @@ description: >
   caller only POSTs `{type, symbol, ...}` to `/api/charts` and gets back
   `{id, url, technicals?}`. Charts persist as data JSON under
   `journal/charts/data/`. `url` now points at where the chart actually lives:
-  sepa/intraday land on the symbol page (`http://localhost:5199/symbol/<SYM>?analysis=<id>`),
-  flow/cohort land on the home page for that date (`http://localhost:5199/?date=YYYY-MM-DD`);
-  old `http://localhost:5199/charts/<id>` links still work and redirect there.
+  sepa/intraday land on the symbol page (`http://localhost:1792/symbol/<SYM>?analysis=<id>`),
+  flow/cohort land on the home page for that date (`http://localhost:1792/?date=YYYY-MM-DD`);
+  old `http://localhost:1792/charts/<id>` links still work and redirect there.
   Triggers: 出图、生成图表、画 K 线、画资金流曲线、画对比图、SEPA 仪表盘、
   短线预测、多周期K线、MACD、入场判断可视化、可视化、render chart, plot,
   visualise, sepa dashboard, intraday prediction dashboard.
@@ -65,18 +65,18 @@ set +a
 
 | HTTP 版 | CLI 等价 |
 |---|---|
-| `curl -s http://localhost:5199/api/health` | `"$KANSOKU_CLI" info kit-version` |
+| `curl -s http://localhost:1792/api/health` | `"$KANSOKU_CLI" info kit-version` |
 | `POST /api/charts` body 为 X | `printf '%s' "$X" \| "$KANSOKU_CLI" chart create --type <T> --symbol <S> --json-input -` |
 | `GET /api/charts?type=&symbol=` | `"$KANSOKU_CLI" chart list [--symbol X]` |
 | `GET /api/charts/<id>` | `"$KANSOKU_CLI" chart get <id>` |
 | `PATCH /api/charts/<id>` | *(暂不支持——PATCH 仍走 HTTP；数据目录场景 PATCH 目前只在 intraday-signal 里出现，届时 fallback HTTP)* |
-| 打开 `data.url`（浏览器访问 `http://localhost:5199/...`） | 打开 `data.deepLink`（`kansoku://route/...`，见下） |
+| 打开 `data.url`（浏览器访问 `http://localhost:1792/...`） | 打开 `data.deepLink`（`kansoku://route/...`，见下） |
 
 body/response 完全一致，写入的图表 JSON 落在 `journal/charts/data/<id>.json`
 （跟 HTTP 版本相同）。
 
 数据目录场景通常没有本机 dev server（Kit 用户不会跑 `pnpm start`），
-`data.url` 里的 `http://localhost:5199/...` 打不开。CLI 的 chart create
+`data.url` 里的 `http://localhost:1792/...` 打不开。CLI 的 chart create
 响应现在多带一个 `deepLink` 字段（`url` 照旧保留，向后兼容 dev 场景），
 指向 `kansoku://route/...` 这个自定义协议。想让用户看到图表时，打开这个
 deep link 即可——它会启动 Kansoku.app（若已在运行则直接切到前台）并跳转到
@@ -94,7 +94,7 @@ macOS 用 `open`，Windows 用 `start`，Linux 用 `xdg-open`——三者都认�
 The app must be running before any API call:
 
 ```bash
-curl -s http://localhost:5199/api/health # {"ok":true,...} = up
+curl -s http://localhost:1792/api/health # {"ok":true,...} = up
 ```
 
 CLI 等价：`"$KANSOKU_CLI" info kit-version`
@@ -102,14 +102,14 @@ CLI 等价：`"$KANSOKU_CLI" info kit-version`
 If it is down, start it (long-running process — use run_in_background):
 
 ```bash
-pnpm start # serves API + built web UI on :5199
+pnpm start # serves API + built web UI on :1792
 ```
 
 First-time setup only: `pnpm install && pnpm build`.
 
 ## API
 
-Base URL `http://localhost:5199`. All responses follow the
+Base URL `http://localhost:1792`. All responses follow the
 `{ok, data, meta}` / `{ok:false, error, hint}` contract.
 
 | Endpoint                                                          | Purpose                                                                                       |
@@ -132,7 +132,7 @@ the persisted JSON stays frozen at analysis time.
 
 ### Symbol cockpit (`/symbol/<SYM>`)
 
-Every symbol also gets a stable dashboard URL, `http://localhost:5199/symbol/<SYM>`,
+Every symbol also gets a stable dashboard URL, `http://localhost:1792/symbol/<SYM>`,
 that aggregates live data with the symbol's latest `intraday`/`sepa` analysis — it
 is the caller-facing counterpart of `GET /api/symbols/:sym/*`. The same page also
 serves the frozen per-analysis view: appending `?analysis=<id>` pins it to one
@@ -456,7 +456,7 @@ these rules:
 
 ## 桌面版模式
 
-打包的桌面版（`Kansoku.app`）不监听任何本机端口，全部走 `app://` 内部协议 + IPC，不提供 HTTP 接口。要用这个 skill 的 curl 命令，单独起 server 进程即可：`pnpm start`（或开发模式 `pnpm dev`），API 照常在 `http://localhost:5199`。
+打包的桌面版（`Kansoku.app`）不监听任何本机端口，全部走 `app://` 内部协议 + IPC，不提供 HTTP 接口。要用这个 skill 的 curl 命令，单独起 server 进程即可：`pnpm start`（或开发模式 `pnpm dev`），API 照常在 `http://localhost:1792`。
 
 ## Storage
 

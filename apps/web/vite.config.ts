@@ -5,6 +5,7 @@ import babel from '@rolldown/plugin-babel';
 import { isProModule, proLeakGuard, proOverlayPlugin } from '@kansoku/build-overlay';
 import react, { reactCompilerPreset } from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
+import { LOCAL_APP_PORT } from '@kansoku/shared/localApp';
 import { routeBuilderPlugin } from 'vite-plugin-route-builder';
 
 const KERNEL_PORT = Number(process.env.KERNEL_PORT || 5200);
@@ -64,7 +65,7 @@ export default defineConfig({
     },
   },
   server: {
-    port: 5199,
+    port: LOCAL_APP_PORT,
     proxy: {
       '/api': { target: KERNEL_URL, ws: true },
       '/legacy': { target: KERNEL_URL },

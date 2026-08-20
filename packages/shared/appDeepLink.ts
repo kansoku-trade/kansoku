@@ -1,4 +1,5 @@
 import { symbolAnalysisPath, symbolLivePath, symbolSepaPath } from './chartUrl.js';
+import { LOCAL_APP_PORT } from './localApp.js';
 
 const RELATIVE_APP_ORIGIN = 'https://kansoku.internal';
 const LOCAL_APP_HOSTS = new Set(['localhost', '127.0.0.1']);
@@ -15,7 +16,7 @@ function isKnownAppOrigin(url: URL, relative: boolean): boolean {
   return (
     (url.protocol === 'http:' || url.protocol === 'https:') &&
     LOCAL_APP_HOSTS.has(url.hostname) &&
-    url.port === '5199'
+    url.port === String(LOCAL_APP_PORT)
   );
 }
 

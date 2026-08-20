@@ -57,6 +57,7 @@ class FakeSocket implements WebSocketLike {
 
   replies = new Map<number, number[]>();
   statuses = new Map<number, number>();
+  failRemaining = new Map<number, number>();
   deferredCommands = new Set<number>();
   deferredRequests: Array<{ command: number; requestId: number }> = [];
   authStatus = 0;
@@ -68,6 +69,16 @@ class FakeSocket implements WebSocketLike {
     if (command === 2 && this.authStatus !== 0) {
       queueMicrotask(() =>
         this.emit('message', { data: response(command, requestId, [], this.authStatus) }),
+      );
+      return;
+    }
+    const remaining = this.failRemaining.get(command) ?? 0;
+    if (remaining > 0) {
+      this.failRemaining.set(command, remaining - 1);
+      queueMicrotask(() =>
+        this.emit('message', {
+          data: response(command, requestId, [...num(1, 301_606), ...str(2, 'Request rate limit')], 3),
+        }),
       );
       return;
     }
@@ -261,6 +272,7 @@ describe('LongbridgeQuoteSocket', () => {
       }),
       getOtp: async () => 'socket-otp',
       endpoint: 'wss://example.test/v2',
+      requestLimits: { maxRateLimitRetries: 0 },
     });
 
     await expect(socket.queryCandlesticks('SMH.US', '5m', 2, 'all')).rejects.toMatchObject({
@@ -271,6 +283,59 @@ describe('LongbridgeQuoteSocket', () => {
       rateLimited: true,
     });
     socket.close();
+  });
+
+  it('retries a rate-limited request instead of failing the caller', async () => {
+    vi.useFakeTimers();
+    try {
+      const fake = new FakeSocket();
+      fake.failRemaining.set(19, 1);
+      const socket = new LongbridgeQuoteSocket({
+        createSocket: opening(fake),
+        loadToken,
+        getOtp: async () => 'socket-otp',
+        endpoint: 'wss://example.test/v2',
+      });
+      const pending = socket.queryCandlesticks('SMH.US', '5m', 2, 'all');
+      await vi.advanceTimersByTimeAsync(0);
+      expect(fake.sent.filter((packet) => packet[1] === 19)).toHaveLength(1);
+      await vi.advanceTimersByTimeAsync(1_000);
+      await expect(pending).resolves.toEqual([]);
+      expect(fake.sent.filter((packet) => packet[1] === 19)).toHaveLength(2);
+      socket.close();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('spaces candlestick queries for the same symbol so the second waits out the per-symbol window', async () => {
+    vi.useFakeTimers();
+    try {
+      const fake = new FakeSocket();
+      fake.deferredCommands.add(19);
+      const socket = new LongbridgeQuoteSocket({
+        createSocket: opening(fake),
+        loadToken,
+        getOtp: async () => 'socket-otp',
+        endpoint: 'wss://example.test/v2',
+        requestLimits: { maxConcurrent: 5, maxPerWindow: 10, symbolGapMs: 200 },
+      });
+      await socket.connect();
+      const first = socket.queryCandlesticks('NVDA.US', '5m', 2, 'all');
+      const second = socket.queryCandlesticks('NVDA.US', '15m', 2, 'all');
+      await vi.advanceTimersByTimeAsync(0);
+      expect(fake.sent.filter((packet) => packet[1] === 19)).toHaveLength(1);
+      fake.replyDeferred();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(fake.sent.filter((packet) => packet[1] === 19)).toHaveLength(1);
+      await vi.advanceTimersByTimeAsync(200);
+      expect(fake.sent.filter((packet) => packet[1] === 19)).toHaveLength(2);
+      fake.replyDeferred();
+      await expect(Promise.all([first, second])).resolves.toEqual([[], []]);
+      socket.close();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('queues requests above the concurrent request ceiling', async () => {

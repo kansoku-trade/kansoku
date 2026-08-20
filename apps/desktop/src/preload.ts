@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
+import { LOCAL_APP_ORIGIN } from '@kansoku/shared/localApp';
 import { CREDENTIALS_CHANNELS } from './data/credentials/channels.js';
 import { IPC_GROUPS } from './kernel/ipc/groups.js';
 import {
@@ -27,7 +28,7 @@ import { UPDATER_CHANNELS } from './shell/updater/channels.js';
 // — there is no longer a second, divergent kernel to guard against.
 const isPrivilegedOrigin =
   location.protocol === 'app:' ||
-  (process.env.ELECTRON_DEV === '1' && location.origin === 'http://localhost:5199');
+  (process.env.ELECTRON_DEV === '1' && location.origin === LOCAL_APP_ORIGIN);
 
 const desktopApi: Record<string, unknown> = {
   versions: {

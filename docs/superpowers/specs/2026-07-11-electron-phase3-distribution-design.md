@@ -41,7 +41,7 @@
 
 ## 外部 API 开关
 
-- 设置页「本机 API」开关：开启时在 Electron 内用 `@hono/node-server` 把同一内核实例挂到 `127.0.0.1:5199`（占用则递增），并生成随机 token 显示在设置页（一键复制，支持重置）。
+- 设置页「本机 API」开关：开启时在 Electron 内用 `@hono/node-server` 把同一内核实例挂到 `127.0.0.1:1792`（占用则递增），并生成随机 token 显示在设置页（一键复制，支持重置）。
 - 鉴权：该监听入口全路由校验 `Authorization: Bearer <token>`，`app://` 协议入口不受影响。实现为宿主层 middleware，不进内核业务代码。
 - chart skill 侧：`SKILL.md` 补充「桌面版模式」用法（带 token 的 curl 示例）。
 

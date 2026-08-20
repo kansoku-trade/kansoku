@@ -11,7 +11,7 @@ export function flowEligible(symbol: string): boolean {
 
 const TEMP_TTL_MS = 10 * 60_000;
 const WATCH_TTL_MS = 10 * 60_000;
-const FLOW_CONCURRENCY = 3;
+const FLOW_CONCURRENCY = 1;
 
 const CAPS_TTL_MS = 30 * 60_000;
 
@@ -26,12 +26,29 @@ let flowCache = new Map<string, { at: number; value: number | null }>();
 let tempCache: { at: number; value: MarketTemp | null } | null = null;
 let watchCache: { at: number; symbols: string[] } | null = null;
 let capsCache: { at: number; value: Record<string, number> } | null = null;
+let warming: Promise<void> | null = null;
+let warmQueued: string[] | null = null;
+const extrasListeners = new Set<() => void>();
 
 export function resetHomeExtrasForTests(): void {
   flowCache = new Map();
   tempCache = null;
   watchCache = null;
   capsCache = null;
+  warming = null;
+  warmQueued = null;
+  extrasListeners.clear();
+}
+
+export function onHomeExtrasChange(listener: () => void): () => void {
+  extrasListeners.add(listener);
+  return () => {
+    extrasListeners.delete(listener);
+  };
+}
+
+export function homeExtrasWarm(): Promise<void> {
+  return warming ?? Promise.resolve();
 }
 
 async function getCaps(symbols: string[]): Promise<Record<string, number>> {
@@ -121,18 +138,61 @@ export async function getWatchSymbols(): Promise<string[]> {
   return symbols;
 }
 
+function snapshotExtras(symbols: string[], market: MarketTemp | null): HomeExtras {
+  const flows = Object.fromEntries(symbols.map((s) => [s, flowCache.get(s)?.value ?? null]));
+  const hasFlow = Object.values(flows).some((v) => v != null);
+  return {
+    flows,
+    flows_at: hasFlow ? Date.now() : null,
+    market,
+    caps: capsCache?.value ?? {},
+  };
+}
+
+function flowsNeedRefresh(symbols: string[]): boolean {
+  const now = Date.now();
+  return symbols.some((s) => {
+    const cached = flowCache.get(s);
+    return !cached || now - cached.at >= FLOW_TTL_MS;
+  });
+}
+
+function capsNeedRefresh(symbols: string[]): boolean {
+  if (!symbols.length) return false;
+  if (!getProvider().getMarketCaps) return false;
+  if (!capsCache || Date.now() - capsCache.at >= CAPS_TTL_MS) return true;
+  return symbols.some((s) => !(s in capsCache!.value));
+}
+
+function notifyExtrasChange(): void {
+  for (const listener of extrasListeners) listener();
+}
+
+function startWarm(symbols: string[]): void {
+  if (warming) {
+    warmQueued = [...new Set([...(warmQueued ?? []), ...symbols])];
+    return;
+  }
+  if (!flowsNeedRefresh(symbols) && !capsNeedRefresh(symbols)) return;
+  warming = (async () => {
+    if (symbols.length) await getFlows(symbols).catch(() => {});
+    await getCaps(symbols);
+    notifyExtrasChange();
+  })().finally(() => {
+    warming = null;
+    const next = warmQueued;
+    warmQueued = null;
+    if (next) startWarm(next);
+  });
+}
+
 export async function buildHomeExtras(extraSymbols: string[]): Promise<HomeExtras> {
   const [watch, market] = await Promise.all([
     getWatchSymbols().catch(() => []),
     getMarketTemp().catch(() => null),
   ]);
   const symbols = [...new Set([...watch, ...extraSymbols])].filter(flowEligible);
-  const [flows, caps] = await Promise.all([
-    symbols.length
-      ? getFlows(symbols).catch(() => ({}) as Record<string, number | null>)
-      : Promise.resolve({}),
-    getCaps(symbols),
-  ]);
-  const hasFlow = Object.values(flows).some((v) => v != null);
-  return { flows, flows_at: hasFlow ? Date.now() : null, market, caps };
+  const extras = snapshotExtras(symbols, market);
+  startWarm(symbols);
+  return extras;
 }

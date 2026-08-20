@@ -43,7 +43,7 @@
   - 报告落地形式为 `append_comment` 一句话结论 + `write_journal` 完整报告。
 - 工具集（复用 `deepDiveTools.ts` 的实现与限制）：
   - `read_skill` — 读任意 skill 全文（沿用 `services/skills.ts`）。
-  - `bash` — 跑 `longbridge` CLI、`.claude/skills` 下的 python 脚本、`curl http://localhost:5199`；沿用禁写文件限制（无重定向/tee/rm/mv/cp）。
+  - `bash` — 跑 `longbridge` CLI、`.claude/skills` 下的 python 脚本、`curl http://localhost:1792`；沿用禁写文件限制（无重定向/tee/rm/mv/cp）。
   - `read_file` — 读仓库文件（lessons.md 等）。
   - `read_data_pack` — 保留，作加速器：一次拿齐多周期摘要 / 期权墙 / lessons / event_risk / 大盘 / 持仓，省多次 bash 往返。
   - `append_comment` — 保留。

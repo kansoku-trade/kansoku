@@ -207,11 +207,8 @@ describe('longbridgeProvider (CLI-backed)', () => {
     const provider = createLongbridgeProvider(run as LongbridgeRunner, () => transport);
 
     await expect(provider.getKline('NVDA.US', '5m', 2)).rejects.toBe(rateLimit);
-    await expect(provider.getKline('NVDA.US', '15m', 2)).rejects.toMatchObject({
-      status: 503,
-      message: expect.stringContaining('301606'),
-    });
-    expect(transport.queryCandlesticks).toHaveBeenCalledTimes(1);
+    await expect(provider.getKline('NVDA.US', '15m', 2)).rejects.toBe(rateLimit);
+    expect(transport.queryCandlesticks).toHaveBeenCalledTimes(2);
     expect(run).not.toHaveBeenCalled();
   });
 

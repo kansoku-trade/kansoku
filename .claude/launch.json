@@ -5,7 +5,7 @@
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["start"],
       "cwd": "app",
-      "port": 5199
+      "port": 1792
     }
   ],
   "version": "0.0.1"

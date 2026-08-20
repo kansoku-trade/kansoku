@@ -2,11 +2,12 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { app, BrowserWindow, shell } from 'electron';
 import windowStateKeeper from 'electron-window-state';
+import { LOCAL_APP_ORIGIN } from '@kansoku/shared/localApp';
 import { resolveRepoRoot } from '../../boot/paths.js';
 import { IS_DEV } from '../../boot/env.js';
 import { isAllowedNavigationUrl, isExternalHttpUrl } from './navigationGuard.js';
 
-export const DEV_WEB_URL = 'http://localhost:5199';
+export const DEV_WEB_URL = LOCAL_APP_ORIGIN;
 export const PROD_APP_URL = 'app://-/index.html';
 export const APP_ICON_PNG = join(resolveRepoRoot(), 'apps', 'desktop', 'build', 'icon.png');
 // Match web --bg-canvas so the native surface isn't white before the renderer paints.

@@ -54,7 +54,7 @@ echo "== init-dev: 5/5 完成 =="
 cat << 'EOF'
 
 下一步：
-  pnpm dev        # 起本地开发环境，http://localhost:5199
+  pnpm dev        # 起本地开发环境，http://localhost:1792
   pnpm dev:desktop  # 桌面壳（Electron），不需要单独的 server 进程
 
 .env 说明：

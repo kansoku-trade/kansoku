@@ -1,6 +1,7 @@
 import { dirname, join } from 'node:path';
 import { homedir } from 'node:os';
 import { fileURLToPath } from 'node:url';
+import { LOCAL_APP_PORT } from '@kansoku/shared/localApp';
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -18,7 +19,7 @@ export const CHART_DATA_DIR = join(PROJECT_ROOT, 'journal', 'charts', 'data');
 export const ANNOTATIONS_DIR = join(PROJECT_ROOT, 'journal', 'charts', 'annotations');
 export const LEGACY_CHARTS_DIR = join(PROJECT_ROOT, 'journal', 'charts');
 export const WEB_ROOT = join(APP_ROOT, 'web');
-export const PORT = Number(process.env.PORT || 5199);
+export const PORT = Number(process.env.PORT || LOCAL_APP_PORT);
 export const KERNEL_PORT = Number(process.env.KERNEL_PORT || 5200);
 export const HOST_MODE: 'dev' | 'prod' = process.env.HOST_MODE === 'dev' ? 'dev' : 'prod';
 export const BASE_URL = `http://localhost:${PORT}`;

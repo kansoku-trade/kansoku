@@ -117,7 +117,6 @@ export interface QuoteQueryTransport {
 // 配额打满时若继续回退 CLI，CLI 抢到刚释放的槽又会立刻幽灵化，故障自我延续——
 // 所以识别到配额错误后进入冷却期，冷却期内只走 WS（优雅关闭不烧槽），不再spawn CLI。
 const QUOTA_COOLDOWN_MS = 5 * 60_000;
-const RATE_LIMIT_COOLDOWN_MS = 5_000;
 const CLI_FALLBACK_COOLDOWN_MS = 60_000;
 
 function isQuotaError(message: string): boolean {
@@ -132,7 +131,6 @@ export function createLongbridgeProvider(
 ): MarketDataProvider {
   const securityNameCache = new Map<string, Promise<string | null>>();
   let quotaCooldownUntil = 0;
-  let rateLimitCooldownUntil = 0;
   let cliFallbackCooldownUntil = 0;
   let cliFallbackInFlight = false;
 
@@ -150,13 +148,6 @@ export function createLongbridgeProvider(
     viaCli: () => Promise<T>,
   ): Promise<T> {
     if (!socket) return viaCli();
-    if (Date.now() < rateLimitCooldownUntil) {
-      throw new ClientError(
-        `longbridge ${label} paused: 请求过于频繁（301606）`,
-        '共享行情连接正在短暂退避，请稍后重试；不会启动额外 CLI 连接。',
-        503,
-      );
-    }
     try {
       return await viaSocket();
     } catch (error) {
@@ -169,7 +160,6 @@ export function createLongbridgeProvider(
         throw quotaError(label);
       }
       if (error instanceof LongbridgeResponseError && error.rateLimited) {
-        rateLimitCooldownUntil = Date.now() + RATE_LIMIT_COOLDOWN_MS;
         console.warn(
           `[longbridge] ws ${label} rate limited (${error.code}), skipping CLI fallback`,
         );

@@ -10,14 +10,14 @@
 
 ```bash
 pnpm install # 首次（在仓库根目录）
-pnpm start   # http://localhost:5199
+pnpm start   # http://localhost:1792
 ```
 
 第一次上手也可以直接跑 `scripts/init-dev.sh`：检查 node/pnpm 版本、按 `KANSOKU_PRO_REPO_URL`（没设就用默认地址）尝试拉/更新 `apps/pro`（没权限或拉不到会提示一行「进入免费模式」后继续，不中断）、装依赖、跑一次 typecheck 冒烟，最后打印下一步命令。幂等，改了环境随时重跑。
 
-`pnpm start` 起 node 宿主单进程：kernel 绑在 5199 端口，同时托管 REST API、WS（`/api/ws`）和已构建好的前端静态资源（`apps/web/dist`，没 build 过会提示先跑 `pnpm --filter @kansoku/web build`）。
+`pnpm start` 起 node 宿主单进程：kernel 绑在 1792 端口，同时托管 REST API、WS（`/api/ws`）和已构建好的前端静态资源（`apps/web/dist`，没 build 过会提示先跑 `pnpm --filter @kansoku/web build`）。
 
-开发态是两个进程，`pnpm dev` 用 `concurrently` 并行拉起：web 起 Vite dev server（监听 5199，把 `/api`、`/legacy` 代理到 kernel）负责前端热更新；server 用 `vite-node --watch` 跑 kernel 本体（监听 `KERNEL_PORT`，默认 5200），改 server 代码自动重启，不需要单独的 build 步骤。
+开发态是两个进程，`pnpm dev` 用 `concurrently` 并行拉起：web 起 Vite dev server（监听 1792，把 `/api`、`/legacy` 代理到 kernel）负责前端热更新；server 用 `vite-node --watch` 跑 kernel 本体（监听 `KERNEL_PORT`，默认 5200），改 server 代码自动重启，不需要单独的 build 步骤。
 
 ## 页面路由
 
@@ -89,7 +89,7 @@ pnpm start   # http://localhost:5199
 
 ## 个体仪表盘（Cockpit）
 
-访问 `http://localhost:5199/symbol/NVDA.US` 进入个股追踪面板，六个标签页：
+访问 `http://localhost:1792/symbol/NVDA.US` 进入个股追踪面板，六个标签页：
 
 - **预测（Prediction）**：短线多周期预测面板本体——5 分钟 / 15 分钟 / 1 小时三周期 K 线 + MACD，附带指标摘要、入场计划、三情景推演
 - **环境（Environment）**：多头寸 vs SMH / QQQ 基准的归一化走势对照，持仓快照（成本、盈亏、目标/止损距离），以及日内资金流曲线 + 大/中/小单分布柱状图（实时刷新）

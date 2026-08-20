@@ -99,7 +99,7 @@ export const chartsRoutes = defineRoutes<ChartsApi>('charts', {
 **Desktop**：
 
 - `desktop/src/ipc/` 每模块一个类（`class ChartsIpc extends IpcService`），`@IpcMethod()` 方法一行委托 core + 套信封（约 43 个一行方法，这层就是桌面的 controller）；主进程 `createServices()` 注册。
-- preload 暴露 `createIpcProxy` 所需的 `ipcRenderer` 白名单面；暴露门槛从「仅 `app://`」放宽为「`app://` 或（`ELECTRON_DEV` 且 origin 为 `http://localhost:5199`）」——这是 dev 摆脱 standalone server 的机关。
+- preload 暴露 `createIpcProxy` 所需的 `ipcRenderer` 白名单面；暴露门槛从「仅 `app://`」放宽为「`app://` 或（`ELECTRON_DEV` 且 origin 为 `http://localhost:1792`）」——这是 dev 摆脱 standalone server 的机关。
 - 既有 `credentials:*`、`external-api:*` IPC 是桌面专属能力（非 server 路由镜像），**本次不迁移**到 decorator 体系。
 - `protocolHost` 删除 `/api` 拦截，只服务静态资源。
 

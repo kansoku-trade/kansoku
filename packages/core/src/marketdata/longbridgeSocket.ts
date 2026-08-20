@@ -46,9 +46,11 @@ const QUERY_TIMEOUT_MS = 10_000;
 const OTP_TIMEOUT_MS = 8_000;
 const CONNECT_TIMEOUT_MS = 10_000;
 const REQUEST_WINDOW_MS = 1_000;
-const MAX_REQUESTS_PER_WINDOW = 10;
+const MAX_REQUESTS_PER_WINDOW = 8;
 const MAX_CONCURRENT_REQUESTS = 5;
 const RATE_LIMIT_BACKOFF_MS = 1_000;
+const SYMBOL_GAP_MS = 200;
+const MAX_RATE_LIMIT_RETRIES = 4;
 
 interface SocketEvent {
   data?: unknown;
@@ -78,6 +80,8 @@ export interface LongbridgeSocketDeps {
     maxPerWindow?: number;
     windowMs?: number;
     rateLimitBackoffMs?: number;
+    symbolGapMs?: number;
+    maxRateLimitRetries?: number;
   };
 }
 
@@ -86,6 +90,7 @@ type Pending = {
   resolve: (body: Uint8Array) => void;
   reject: (error: Error) => void;
   timer: ReturnType<typeof setTimeout>;
+  queued: QueuedRequest;
 };
 
 type QueuedRequest = {
@@ -94,6 +99,8 @@ type QueuedRequest = {
   timeoutMs: number;
   resolve: (body: Uint8Array) => void;
   reject: (error: Error) => void;
+  lane?: string;
+  retries: number;
 };
 
 export class LongbridgeResponseError extends Error {
@@ -191,6 +198,7 @@ export class LongbridgeQuoteSocket {
   private recentRequestStarts: number[] = [];
   private requestQueueTimer: ReturnType<typeof setTimeout> | null = null;
   private requestBlockedUntil = 0;
+  private laneReadyAt = new Map<string, number>();
   private quoteListeners = new Set<(quote: ProtocolQuote) => void>();
   private tradeListeners = new Set<(trade: ProtocolTradePush) => void>();
   private desired = new Map<string, Set<number>>();
@@ -305,9 +313,14 @@ export class LongbridgeQuoteSocket {
     }
   }
 
-  private request(command: number, body: Uint8Array, timeoutMs = 30_000): Promise<Uint8Array> {
+  private request(
+    command: number,
+    body: Uint8Array,
+    timeoutMs = 30_000,
+    lane?: string,
+  ): Promise<Uint8Array> {
     return new Promise((resolve, reject) => {
-      this.requestQueue.push({ command, body, timeoutMs, resolve, reject });
+      this.requestQueue.push({ command, body, timeoutMs, resolve, reject, lane, retries: 0 });
       this.drainRequestQueue();
     });
   }
@@ -318,7 +331,14 @@ export class LongbridgeQuoteSocket {
       maxPerWindow: this.deps.requestLimits?.maxPerWindow ?? MAX_REQUESTS_PER_WINDOW,
       windowMs: this.deps.requestLimits?.windowMs ?? REQUEST_WINDOW_MS,
       rateLimitBackoffMs: this.deps.requestLimits?.rateLimitBackoffMs ?? RATE_LIMIT_BACKOFF_MS,
+      symbolGapMs: this.deps.requestLimits?.symbolGapMs ?? SYMBOL_GAP_MS,
+      maxRateLimitRetries: this.deps.requestLimits?.maxRateLimitRetries ?? MAX_RATE_LIMIT_RETRIES,
     };
+  }
+
+  private laneReadyAtMs(lane: string | undefined): number {
+    if (!lane) return 0;
+    return this.laneReadyAt.get(lane) ?? 0;
   }
 
   private drainRequestQueue(): void {
@@ -338,7 +358,10 @@ export class LongbridgeQuoteSocket {
       this.recentRequestStarts.length < limits.maxPerWindow &&
       Date.now() >= this.requestBlockedUntil
     ) {
-      const queued = this.requestQueue.shift()!;
+      const readyAt = Date.now();
+      const idx = this.requestQueue.findIndex((queued) => readyAt >= this.laneReadyAtMs(queued.lane));
+      if (idx < 0) break;
+      const queued = this.requestQueue.splice(idx, 1)[0];
       this.dispatchRequest(queued);
     }
 
@@ -348,7 +371,11 @@ export class LongbridgeQuoteSocket {
         ? this.recentRequestStarts[0] + limits.windowMs - Date.now()
         : 0;
     const blockedDelay = this.requestBlockedUntil - Date.now();
-    const delay = Math.max(1, rateDelay, blockedDelay);
+    const laneDelay = Math.max(
+      0,
+      ...this.requestQueue.map((queued) => this.laneReadyAtMs(queued.lane) - Date.now()),
+    );
+    const delay = Math.max(1, rateDelay, blockedDelay, laneDelay);
     this.requestQueueTimer = setTimeout(() => {
       this.requestQueueTimer = null;
       this.drainRequestQueue();
@@ -365,6 +392,9 @@ export class LongbridgeQuoteSocket {
     const requestId = ++this.requestId;
     this.activeRequests += 1;
     this.recentRequestStarts.push(Date.now());
+    if (queued.lane) {
+      this.laneReadyAt.set(queued.lane, Date.now() + this.requestLimits().symbolGapMs);
+    }
     const settle = () => {
       this.activeRequests = Math.max(0, this.activeRequests - 1);
       this.drainRequestQueue();
@@ -382,7 +412,7 @@ export class LongbridgeQuoteSocket {
         this.pending.delete(requestId);
         reject(new Error(`Longbridge request timed out: ${queued.command}`));
       }, queued.timeoutMs);
-      this.pending.set(requestId, { command: queued.command, resolve, reject, timer });
+      this.pending.set(requestId, { command: queued.command, resolve, reject, timer, queued });
       socket.send(encodeRequest(queued.command, requestId, queued.timeoutMs, queued.body));
     } catch (error) {
       const pending = this.pending.get(requestId);
@@ -410,10 +440,18 @@ export class LongbridgeQuoteSocket {
             detail?.message || null,
           );
           if (error.rateLimited) {
+            const limits = this.requestLimits();
             this.requestBlockedUntil = Math.max(
               this.requestBlockedUntil,
-              Date.now() + this.requestLimits().rateLimitBackoffMs,
+              Date.now() + limits.rateLimitBackoffMs,
             );
+            if (pending.queued.retries < limits.maxRateLimitRetries) {
+              pending.queued.retries += 1;
+              this.activeRequests = Math.max(0, this.activeRequests - 1);
+              this.requestQueue.unshift(pending.queued);
+              this.drainRequestQueue();
+              return;
+            }
           }
           pending.reject(error);
         }
@@ -482,6 +520,7 @@ export class LongbridgeQuoteSocket {
         session === 'all' ? TRADE_SESSIONS_ALL : TRADE_SESSIONS_INTRADAY,
       ),
       QUERY_TIMEOUT_MS,
+      `kline:${symbol}`,
     );
     return this.decodeResponse('candlestick', body, decodeCandlestickResponse);
   }
@@ -502,6 +541,7 @@ export class LongbridgeQuoteSocket {
       COMMAND_QUERY_CAPITAL_FLOW,
       encodeMultiSecurityRequest([symbol]),
       QUERY_TIMEOUT_MS,
+      `flow:${symbol}`,
     );
     return this.decodeResponse('capital flow', body, decodeCapitalFlowResponse);
   }
@@ -512,6 +552,7 @@ export class LongbridgeQuoteSocket {
       COMMAND_QUERY_CAPITAL_DISTRIBUTION,
       encodeMultiSecurityRequest([symbol]),
       QUERY_TIMEOUT_MS,
+      `dist:${symbol}`,
     );
     return this.decodeResponse('capital distribution', body, decodeCapitalDistributionResponse);
   }

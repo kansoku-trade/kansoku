@@ -110,12 +110,12 @@ the day's tape:
 
 ### Step 3 — Preview: read the technicals
 
-Check the chart server is up (`curl -s http://localhost:5199/api/health`; if
+Check the chart server is up (`curl -s http://localhost:1792/api/health`; if
 down: `pnpm start` at the repo root in the background), then POST a preview (no
 `prediction`):
 
 ```bash
-curl -s -X POST http://localhost:5199/api/charts \
+curl -s -X POST http://localhost:1792/api/charts \
   -H 'Content-Type: application/json' \
   -d '{"type":"intraday","symbol":"<SYM>.US","name":"..."}'
 ```
@@ -267,7 +267,7 @@ PATCH the same chart with BOTH `prediction` and `context` filled in, in one
 call (see `chart` skill's `prediction` / `context` schemas for the full shapes):
 
 ```bash
-curl -s -X PATCH http://localhost:5199/api/charts/ \
+curl -s -X PATCH http://localhost:1792/api/charts/ \
   'Content-Type: application/json' \
   -d '{
     "prediction": { "direction": "short", "anchor": {"timeframe":"m15","time":"2026-07-06T14:15:00Z","price":61.10}, "scenarios": [ ... ] },
@@ -296,10 +296,10 @@ Present in this order (mirrors the user's original ask):
 7. 持仓处置（若已持仓：加 / 减 / 持 / 清，对照成本价）
 8. 支撑信号（引用图上自动检测的 MACD 背离/背驰、K 线形态、123 结构，指到具体 K 线；如有 `other` 补充备注一并说明；量能 relvol 佐证）
 9. 图表链接：主链接是 `data.url`（形如
-   `http://localhost:5199/symbol/<SYM>?analysis=<id>`——标的驾驶舱页面钉在本次
+   `http://localhost:1792/symbol/<SYM>?analysis=<id>`——标的驾驶舱页面钉在本次
    分析上，含本次预测/情景/入场/信号，分析完立即打开就是看它；旧的
-   `http://localhost:5199/charts/<id>` 链接依然有效，会自动跳转到这里），辅链接是
-   去掉 `?analysis=` 参数的驾驶舱主页 `http://localhost:5199/symbol/<SYM>`
+   `http://localhost:1792/charts/<id>` 链接依然有效，会自动跳转到这里），辅链接是
+   去掉 `?analysis=` 参数的驾驶舱主页 `http://localhost:1792/symbol/<SYM>`
    （聚合活数据 + 历史分析，永远跟随最新一次分析），附在后面
 10. 免责声明：仅供参考，不构成投资建议
 

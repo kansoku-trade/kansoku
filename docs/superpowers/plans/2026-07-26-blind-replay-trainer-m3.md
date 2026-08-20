@@ -149,7 +149,7 @@ export function createTrainingSession(question: Question, options?: EpisodeEngin
 
 - [ ] **步骤 3：窗口工厂**
 
-照 `popoutWindow.ts` 写 `createTrainerWindow()`，dev 加载 `http://localhost:5199/train.html`，prod 加载 `app://-/train.html`，preload 与 `applyWindowSecurity` 沿用现有的。窗口不带标签栏，独立尺寸，可全屏。
+照 `popoutWindow.ts` 写 `createTrainerWindow()`，dev 加载 `http://localhost:1792/train.html`，prod 加载 `app://-/train.html`，preload 与 `applyWindowSecurity` 沿用现有的。窗口不带标签栏，独立尺寸，可全屏。
 
 - [ ] **步骤 4：`windows.openTrainer` IPC + 命令面板入口**
 

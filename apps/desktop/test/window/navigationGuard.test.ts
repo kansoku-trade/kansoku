@@ -9,28 +9,28 @@ describe('isAllowedNavigationUrl', () => {
 
   it('rejects http(s) urls when no devUrl is configured', () => {
     expect(isAllowedNavigationUrl('https://evil.example.com')).toBe(false);
-    expect(isAllowedNavigationUrl('http://localhost:5199')).toBe(false);
+    expect(isAllowedNavigationUrl('http://localhost:1792')).toBe(false);
   });
 
   it('allows the dev origin only when devUrl is configured', () => {
     expect(
-      isAllowedNavigationUrl('http://localhost:5199/', { devUrl: 'http://localhost:5199' }),
+      isAllowedNavigationUrl('http://localhost:1792/', { devUrl: 'http://localhost:1792' }),
     ).toBe(true);
     expect(
-      isAllowedNavigationUrl('http://localhost:5199/charts/1', { devUrl: 'http://localhost:5199' }),
+      isAllowedNavigationUrl('http://localhost:1792/charts/1', { devUrl: 'http://localhost:1792' }),
     ).toBe(true);
   });
 
   it('rejects a same-scheme different-port origin even with devUrl configured', () => {
     expect(
-      isAllowedNavigationUrl('http://localhost:9999/', { devUrl: 'http://localhost:5199' }),
+      isAllowedNavigationUrl('http://localhost:9999/', { devUrl: 'http://localhost:1792' }),
     ).toBe(false);
   });
 
   it('rejects a hostile origin masquerading via markdown link', () => {
     expect(
       isAllowedNavigationUrl('https://attacker.example.com/phish', {
-        devUrl: 'http://localhost:5199',
+        devUrl: 'http://localhost:1792',
       }),
     ).toBe(false);
   });

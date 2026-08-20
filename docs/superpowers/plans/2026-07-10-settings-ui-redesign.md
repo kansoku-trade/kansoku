@@ -793,7 +793,7 @@ Run:
 pnpm start
 ```
 
-Expected: Fastify/Vite 服务在 http://localhost:5199 可访问。
+Expected: Fastify/Vite 服务在 http://localhost:1792 可访问。
 
 - [ ] **Step 2: 验证完整流程**
 

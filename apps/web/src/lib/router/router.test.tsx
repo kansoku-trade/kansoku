@@ -36,8 +36,8 @@ describe('routePathname', () => {
 
 describe('resolveAnchorRoute', () => {
   it('routes durable localhost chart links inside both web and packaged app runtimes', () => {
-    const href = 'http://localhost:5199/symbol/DRAM.US?analysis=2026-07-09-dram-intraday-3';
-    expect(resolveAnchorRoute(href, href, 'http://localhost:5199')).toBe(
+    const href = 'http://localhost:1792/symbol/DRAM.US?analysis=2026-07-09-dram-intraday-3';
+    expect(resolveAnchorRoute(href, href, 'http://localhost:1792')).toBe(
       '/symbol/DRAM.US?analysis=2026-07-09-dram-intraday-3',
     );
     expect(resolveAnchorRoute(href, href, 'null')).toBe(

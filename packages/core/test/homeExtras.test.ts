@@ -3,7 +3,9 @@ import type { MarketDataProvider } from '../src/marketdata/types.js';
 import {
   buildHomeExtras,
   flowEligible,
+  homeExtrasWarm,
   netInflow,
+  onHomeExtrasChange,
   resetHomeExtrasForTests,
 } from '../src/overview/homeExtras.js';
 
@@ -64,7 +66,32 @@ describe('netInflow', () => {
 });
 
 describe('buildHomeExtras', () => {
+  it('returns the first extras frame without waiting for symbol flows', async () => {
+    let blocked = true;
+    let unlock!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      unlock = resolve;
+    });
+    provider.getFlow = vi.fn(async () => {
+      if (blocked) await gate;
+      return [{ time: 't', inflow: '1' }];
+    });
+    const extras = await Promise.race([
+      buildHomeExtras(['TSM.US']),
+      new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('first extras frame blocked on flows')), 50);
+      }),
+    ]);
+    expect(extras.flows['TSM.US']).toBeNull();
+    expect(extras.market).toMatchObject({ temperature: 57 });
+    blocked = false;
+    unlock();
+    await homeExtrasWarm();
+  });
+
   it('aggregates flows for watch symbols plus extras and market temp', async () => {
+    await buildHomeExtras(['TSM.US']);
+    await homeExtrasWarm();
     const extras = await buildHomeExtras(['TSM.US']);
     expect(Object.keys(extras.flows)).toEqual(
       expect.arrayContaining(['NVDA.US', 'MU.US', 'TSM.US']),
@@ -74,10 +101,22 @@ describe('buildHomeExtras', () => {
     expect(extras.market).toMatchObject({ temperature: 57, valuation: 82 });
   });
 
+  it('notifies listeners after background flows land', async () => {
+    const saw = vi.fn();
+    const stop = onHomeExtrasChange(saw);
+    await buildHomeExtras([]);
+    expect(saw).not.toHaveBeenCalled();
+    await homeExtrasWarm();
+    expect(saw).toHaveBeenCalledTimes(1);
+    stop();
+  });
+
   it('caches flow results within the TTL', async () => {
     await buildHomeExtras([]);
+    await homeExtrasWarm();
     const calls = (provider.getFlow as ReturnType<typeof vi.fn>).mock.calls.length;
     await buildHomeExtras([]);
+    await homeExtrasWarm();
     expect((provider.getFlow as ReturnType<typeof vi.fn>).mock.calls.length).toBe(calls);
   });
 
@@ -89,8 +128,41 @@ describe('buildHomeExtras', () => {
       throw new Error('boom');
     });
     const extras = await buildHomeExtras([]);
-    expect(extras.flows['NVDA.US']).toBeNull();
-    expect(extras.flows_at).toBeNull();
+    await homeExtrasWarm();
+    const filled = await buildHomeExtras([]);
+    expect(filled.flows['NVDA.US']).toBeNull();
+    expect(filled.flows_at).toBeNull();
     expect(extras.market).toBeNull();
+  });
+
+  it('fetches symbol flows one at a time so homepage boot does not burst the quote quota', async () => {
+    let inflight = 0;
+    let peak = 0;
+    provider.getFlow = vi.fn(async () => {
+      inflight += 1;
+      peak = Math.max(peak, inflight);
+      await Promise.resolve();
+      inflight -= 1;
+      return [{ time: 't', inflow: '1' }];
+    });
+    await buildHomeExtras(['TSM.US', 'AAPL.US']);
+    await homeExtrasWarm();
+    expect(peak).toBe(1);
+    expect(provider.getFlow).toHaveBeenCalledTimes(4);
+  });
+
+  it('waits for flows to finish before calling market caps', async () => {
+    const order: string[] = [];
+    provider.getFlow = vi.fn(async () => {
+      order.push('flow');
+      return [{ time: 't', inflow: '1' }];
+    });
+    provider.getMarketCaps = vi.fn(async () => {
+      order.push('caps');
+      return { 'NVDA.US': 1 };
+    });
+    await buildHomeExtras([]);
+    await homeExtrasWarm();
+    expect(order.indexOf('caps')).toBeGreaterThan(order.lastIndexOf('flow'));
   });
 });
