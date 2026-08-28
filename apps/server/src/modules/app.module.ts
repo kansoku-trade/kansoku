@@ -6,6 +6,7 @@ import { CapabilitiesModule } from './capabilities/capabilities.module.js';
 import { ChartsModule } from './charts/charts.module.js';
 import { ChatModule } from './chat/chat.module.js';
 import { CredentialsModule } from './credentials/credentials.module.js';
+import { EventsModule } from './events/events.module.js';
 import { HealthModule } from './health/health.module.js';
 import { LegacyModule } from './legacy/legacy.module.js';
 import { LicenseModule } from './license/license.module.js';
@@ -28,6 +29,7 @@ import { SymbolsModule } from './symbols/symbols.module.js';
     SettingsModule,
     AssistantModule,
     ChatModule,
+    EventsModule,
     ResearchModule,
     LobeHubModule,
     LegacyModule,

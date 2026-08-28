@@ -91,6 +91,13 @@
       "when": 1785343760634,
       "tag": "0012_provider_endpoints",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1787920007641,
+      "tag": "0013_market_events",
+      "breakpoints": true
     }
   ],
   "version": "7"

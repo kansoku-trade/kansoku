@@ -1,0 +1,83 @@
+import { useState } from 'react';
+import type { EventCanvasPhase } from '@kansoku/core/contract/events';
+import type { MarketEvent } from '@kansoku/shared/types';
+import { MarketEventCard } from './MarketEventCard';
+import type { MarketEventFeedState } from './useMarketEventFeed';
+import { useEventCanvasActions } from './EventCanvasHost';
+
+const DEFAULT_VISIBLE = 12;
+
+export interface MarketEventTapeProps {
+  feed: MarketEventFeedState;
+  // The home tape filters to events that already happened; the symbol tape shows
+  // the feed as-is. Both share this renderer so the card behaviour cannot drift.
+  events?: MarketEvent[];
+  emptyText?: string;
+  initialVisible?: number;
+  onGenerateCanvas?: (event: MarketEvent) => void;
+  onOpenCanvas?: (slug: string) => void;
+  canvasPhaseOf?: (eventId: string) => EventCanvasPhase | null;
+}
+
+export function MarketEventTape({
+  feed,
+  events,
+  emptyText = '暂无已发生的事件',
+  initialVisible = DEFAULT_VISIBLE,
+  onGenerateCanvas,
+  onOpenCanvas,
+  canvasPhaseOf,
+}: MarketEventTapeProps) {
+  const hosted = useEventCanvasActions();
+  const generate = onGenerateCanvas ?? hosted?.onEventCanvas;
+  const open = onOpenCanvas ?? hosted?.onOpenCanvas;
+  const phaseOf = canvasPhaseOf ?? hosted?.phaseOf;
+  const [visible, setVisible] = useState(initialVisible);
+  const rows = events ?? feed.events;
+  const shown = rows.slice(0, visible);
+  const hasMore = visible < rows.length || !feed.exhausted;
+
+  const revealMore = () => {
+    const next = visible + Math.max(1, initialVisible);
+    setVisible(next);
+    // Reaching past what is loaded is exactly the moment to fetch an older page.
+    if (next > rows.length && !feed.exhausted && !feed.loadingMore) void feed.loadMore();
+  };
+
+  if (feed.status === 'loading') return <div className="note-block">事件流加载中…</div>;
+  if (feed.status === 'empty') return <div className="note-block">{emptyText}</div>;
+  if (feed.status === 'degraded' && rows.length === 0)
+    return <div className="note-block">事件流已断开，正在重连{feed.error ? `（${feed.error}）` : ''}</div>;
+
+  return (
+    <div className="evt-tape">
+      {feed.status === 'degraded' && (
+        <div className="evt-tape-degraded" role="status">
+          事件流已断开，下面是最后一次同步的内容{feed.error ? `（${feed.error}）` : ''}
+        </div>
+      )}
+      <div className="evt-tape-rows">
+        {shown.map((event) => (
+          <MarketEventCard
+            canvasPhase={phaseOf?.(event.id)}
+            event={event}
+            key={event.id}
+            onGenerateCanvas={generate}
+            onOpenCanvas={open}
+          />
+        ))}
+      </div>
+      {feed.moreError && <div className="evt-tape-more-error">{feed.moreError}</div>}
+      {hasMore && (
+        <button
+          className="evt-tape-more"
+          disabled={feed.loadingMore}
+          onClick={revealMore}
+          type="button"
+        >
+          {feed.loadingMore ? '加载中…' : '显示更多事件'}
+        </button>
+      )}
+    </div>
+  );
+}

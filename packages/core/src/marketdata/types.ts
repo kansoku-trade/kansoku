@@ -100,6 +100,10 @@ export interface MarketDataProvider {
   getQuotes(symbols: string[]): Promise<RawQuote[]>;
   getSecurityName?(symbol: string): Promise<string | null>;
   getNews(symbol: string, limit?: number): Promise<NewsItem[]>;
+  // Same read, opposite failure contract. getNews answers a chart panel, where an
+  // empty list is a fine way to say "nothing to show"; a collector needs to know the
+  // difference between quiet and broken, so this one throws.
+  getNewsStrict?(symbol: string, limit?: number): Promise<NewsItem[]>;
   getFlow?(symbol: string): Promise<FlowRow[]>;
   getCapitalDistribution?(symbol: string): Promise<RawCapitalDistribution>;
   getPositions?(): Promise<RawPosition[]>;

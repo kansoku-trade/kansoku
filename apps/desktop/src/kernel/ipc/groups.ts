@@ -4,6 +4,7 @@ export const KERNEL_IPC_GROUPS = [
   'capabilities',
   'charts',
   'chat',
+  'events',
   'symbols',
   'agentKit',
   'annotations',

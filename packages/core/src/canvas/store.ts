@@ -1,9 +1,14 @@
 import { promises as fs } from 'node:fs';
 import { join } from 'node:path';
-import type { CanvasCheckRecord, CanvasDoc, CanvasMeta } from '../contract/canvas.js';
+import type {
+  CanvasCheckRecord,
+  CanvasDoc,
+  CanvasMeta,
+  CanvasOrigin,
+} from '../contract/canvas.js';
 import { checkCanvasSource } from './check.js';
 
-export type { CanvasCheckRecord, CanvasDoc, CanvasMeta };
+export type { CanvasCheckRecord, CanvasDoc, CanvasMeta, CanvasOrigin };
 
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const META_FILE = '.meta.json';
@@ -11,6 +16,7 @@ const META_FILE = '.meta.json';
 interface MetaEntry {
   title: string;
   check: CanvasCheckRecord | null;
+  origin?: CanvasOrigin | null;
 }
 
 type MetaMap = Record<string, MetaEntry>;
@@ -49,7 +55,13 @@ async function fileMtime(path: string): Promise<string> {
 
 export async function saveCanvas(
   dir: string,
-  input: { slug: string; title: string; source: string; now?: () => Date },
+  input: {
+    slug: string;
+    title: string;
+    source: string;
+    now?: () => Date;
+    origin?: CanvasOrigin | null;
+  },
 ): Promise<{ ok: true; doc: CanvasDoc } | { ok: false; issues: string[] }> {
   if (!isSlug(input.slug)) {
     return { ok: false, issues: ['slug must be kebab-case'] };
@@ -61,7 +73,9 @@ export async function saveCanvas(
   const path = canvasPath(dir, input.slug);
   await fs.writeFile(path, input.source, 'utf8');
   const meta = await readMeta(dir);
-  meta[input.slug] = { title: input.title, check: null };
+  const previous = meta[input.slug];
+  const origin = input.origin !== undefined ? input.origin : (previous?.origin ?? null);
+  meta[input.slug] = { title: input.title, check: null, origin };
   await writeMeta(dir, meta);
   const mtime = await fileMtime(path);
   return {
@@ -72,6 +86,7 @@ export async function saveCanvas(
       source: input.source,
       mtime,
       check: null,
+      origin,
     },
   };
 }
@@ -93,6 +108,7 @@ export async function loadCanvas(dir: string, slug: string): Promise<CanvasDoc |
     source,
     mtime: await fileMtime(path),
     check: entry?.check ?? null,
+    origin: entry?.origin ?? null,
   };
 }
 
@@ -114,6 +130,7 @@ export async function listCanvases(dir: string): Promise<CanvasMeta[]> {
       slug,
       title: meta[slug]?.title ?? slug,
       mtime,
+      origin: meta[slug]?.origin ?? null,
     });
   }
   items.sort((a, b) => (a.mtime < b.mtime ? 1 : a.mtime > b.mtime ? -1 : 0));
@@ -133,6 +150,23 @@ export async function recordCanvasCheck(
   meta[slug] = {
     title,
     check: { ...check, updatedAt: now().toISOString() },
+    origin: meta[slug]?.origin ?? existing.origin ?? null,
+  };
+  await writeMeta(dir, meta);
+}
+
+export async function setCanvasOrigin(
+  dir: string,
+  slug: string,
+  origin: CanvasOrigin,
+): Promise<void> {
+  const existing = await loadCanvas(dir, slug);
+  if (!existing) return;
+  const meta = await readMeta(dir);
+  meta[slug] = {
+    title: meta[slug]?.title ?? existing.title,
+    check: meta[slug]?.check ?? existing.check,
+    origin,
   };
   await writeMeta(dir, meta);
 }

@@ -20,6 +20,7 @@ export async function bootKernel() {
     { getActiveBundleKey },
     { loadPro },
     { disposeMarketData },
+    { stopEventCollector },
   ] = await Promise.all([
     import('../../../server/src/runtimeInit.js'),
     import('../kernel/realtime/bridge.js'),
@@ -28,6 +29,7 @@ export async function bootKernel() {
     import('@kansoku/core/license/licenseState'),
     import('@kansoku/core/pro/loader'),
     import('@kansoku/core/marketdata/registry'),
+    import('@kansoku/core/events/collector'),
   ]);
 
   // Dev keeps the pre-P3 plaintext keyfile so ELECTRON_DEV workflows are
@@ -98,6 +100,9 @@ export async function bootKernel() {
       if (disposed) return;
       disposed = true;
       disposeMarketData();
+      // Started by initServerHostRuntime above; the host that owns the process is
+      // the one that has to put its background polling down.
+      await stopEventCollector();
       await Promise.race([
         Promise.resolve(proComposition?.dispose?.()),
         new Promise<void>((resolve) => setTimeout(resolve, 2_000)),

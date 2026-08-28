@@ -34,6 +34,7 @@ export interface ResearchDocumentMeta {
   symbols: string[];
   mtime: string;
   excerpt: string;
+  origin?: { eventId: string; clusterId: string } | null;
 }
 
 export interface ResearchDocument extends ResearchDocumentMeta {

@@ -187,6 +187,25 @@ describe('research library canvases', () => {
     expect(document.revision).not.toBe(createHash('sha256').update('').digest('hex'));
   });
 
+  it('exposes the event origin so a canvas can be traced back to its market event', async () => {
+    const saved = await saveCanvas(join(root, 'journal', 'canvases'), {
+      slug: 'event-abc123',
+      title: 'MU 8-K',
+      source: CANVAS_SOURCE,
+      origin: { eventId: 'abc123', clusterId: 'cluster-1' },
+    });
+    if (!saved.ok) throw new Error('save failed');
+
+    const service = createResearchService(root);
+    const listed = await service.list({ kind: 'canvas' });
+    expect(listed.find((row) => row.path.includes('event-abc123'))?.origin).toEqual({
+      eventId: 'abc123',
+      clusterId: 'cluster-1',
+    });
+    const document = await service.get({ path: researchCanvasPath('event-abc123') });
+    expect(document.origin).toEqual({ eventId: 'abc123', clusterId: 'cluster-1' });
+  });
+
   it('rejects canvas paths outside journal/canvases or with a bad slug', async () => {
     const service = createResearchService(root);
     await expect(service.get({ path: 'journal/other.canvas.tsx' })).rejects.toMatchObject({

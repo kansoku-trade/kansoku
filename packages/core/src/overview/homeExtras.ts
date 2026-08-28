@@ -123,18 +123,60 @@ async function getMarketTemp(): Promise<MarketTemp | null> {
   return value;
 }
 
-export async function getWatchSymbols(): Promise<string[]> {
-  if (watchCache && Date.now() - watchCache.at < WATCH_TTL_MS) return watchCache.symbols;
+interface WatchRead {
+  symbols: string[];
+  failures: string[];
+  // How many of the two reads the provider actually offers. Zero means "this
+  // provider has no watch list", which is an answer, not a failure.
+  attempted: number;
+}
+
+async function readWatchSymbols(): Promise<WatchRead> {
   const provider = getProvider();
   const set = new Set<string>();
-  const [watchlist, positions] = await Promise.allSettled([
-    provider.getWatchlistSymbols?.() ?? Promise.resolve([]),
-    provider.getPositions?.() ?? Promise.resolve([]),
-  ]);
-  if (watchlist.status === 'fulfilled') for (const s of watchlist.value) set.add(s);
-  if (positions.status === 'fulfilled') for (const p of positions.value) set.add(p.symbol);
-  const symbols = [...set];
+  const failures: string[] = [];
+  let attempted = 0;
+
+  if (provider.getWatchlistSymbols) {
+    attempted += 1;
+    try {
+      for (const symbol of await provider.getWatchlistSymbols()) set.add(symbol);
+    } catch (error) {
+      failures.push(`watchlist — ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+  if (provider.getPositions) {
+    attempted += 1;
+    try {
+      for (const position of await provider.getPositions()) set.add(position.symbol);
+    } catch (error) {
+      failures.push(`positions — ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+  return { attempted, failures, symbols: [...set] };
+}
+
+function cacheWatchSymbols(symbols: string[]): void {
   if (symbols.length) watchCache = { at: Date.now(), symbols };
+}
+
+export async function getWatchSymbols(): Promise<string[]> {
+  if (watchCache && Date.now() - watchCache.at < WATCH_TTL_MS) return watchCache.symbols;
+  const { symbols } = await readWatchSymbols();
+  cacheWatchSymbols(symbols);
+  return symbols;
+}
+
+// Same reads, but "both sources refused" is reported instead of being rounded down to
+// an empty watch list. A collector that took the empty list at face value would go
+// quiet and still claim to be healthy.
+export async function getWatchSymbolsStrict(): Promise<string[]> {
+  if (watchCache && Date.now() - watchCache.at < WATCH_TTL_MS) return watchCache.symbols;
+  const { attempted, failures, symbols } = await readWatchSymbols();
+  if (attempted > 0 && failures.length === attempted) {
+    throw new Error(`watched symbols unavailable: ${failures.join('; ')}`);
+  }
+  cacheWatchSymbols(symbols);
   return symbols;
 }
 

@@ -6,6 +6,7 @@ import { capabilitiesRoutes, type CapabilitiesApi } from './capabilities.js';
 import { chartsRoutes, type ChartsApi } from './charts.js';
 import { chatRoutes, type ChatApi } from './chat.js';
 import { credentialsRoutes, type CredentialsApi } from './credentials.js';
+import { eventsRoutes, type EventsApi } from './events.js';
 import { healthRoutes, type HealthApi } from './health.js';
 import { licenseRoutes, type LicenseApi } from './license.js';
 import { lobehubRoutes, type LobeHubApi } from './lobehub.js';
@@ -21,6 +22,7 @@ export interface AppApi {
   capabilities: CapabilitiesApi;
   charts: ChartsApi;
   chat: ChatApi;
+  events: EventsApi;
   symbols: SymbolsApi;
   agentKit: AgentKitApi;
   annotations: AnnotationsApi;
@@ -47,6 +49,7 @@ export const allRoutes = {
   capabilities: capabilitiesRoutes,
   charts: chartsRoutes,
   chat: chatRoutes,
+  events: eventsRoutes,
   symbols: symbolsRoutes,
   agentKit: agentKitRoutes,
   annotations: annotationsRoutes,
@@ -69,6 +72,7 @@ export * from './charts.js';
 export * from './chat.js';
 export * from './credentials.js';
 export * from './defineRoutes.js';
+export * from './events.js';
 export * from './health.js';
 export * from './license.js';
 export * from './lobehub.js';

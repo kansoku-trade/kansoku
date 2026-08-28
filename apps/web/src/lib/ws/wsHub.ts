@@ -16,7 +16,10 @@ export type ChannelSpec =
   | { kind: 'research-refresh'; path: string }
   | { kind: 'annotations'; symbol: string }
   | { kind: 'analyst-runs' }
-  | { kind: 'training-fill' };
+  | { kind: 'training-fill' }
+  // No symbol means the whole market tape; the server treats an empty string as a
+  // bad request rather than as "unfiltered".
+  | { kind: 'events'; symbol?: string };
 
 interface ChannelSub {
   spec: ChannelSpec;

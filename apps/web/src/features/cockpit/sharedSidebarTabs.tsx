@@ -1,6 +1,7 @@
 import type { CockpitComment, IntradaySidebar, SymbolAnalysisRow } from '@kansoku/shared/types';
 import type { SidebarTab } from '@web/features/charts/SidebarTabs';
 import { NewsTab } from '@web/features/charts/intraday/tabs/NewsTab';
+import { SymbolEventsTab } from '@web/features/events/SymbolEventsTab';
 import { Badge } from '@web/ui';
 import { AiTab } from './AiTab';
 import type { CockpitEnvState } from './useCockpitEnv';
@@ -67,6 +68,11 @@ export function buildSharedSidebarTabs(params: {
       label: '消息',
       hidden: !hasNews,
       content: <NewsTab context={sidebar.context} news={sidebar.news ?? []} sym={sym} />,
+    },
+    {
+      key: 'events',
+      label: '事件',
+      content: <SymbolEventsTab symbol={sym} />,
     },
     {
       key: 'review',

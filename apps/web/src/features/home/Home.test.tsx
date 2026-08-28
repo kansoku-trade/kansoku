@@ -67,7 +67,15 @@ vi.mock('./SymbolGrid', () => ({ SymbolGrid: () => <div>symbol-grid</div> }));
 vi.mock('./WatchBoard', () => ({ WatchBoard: () => <div>watch-strip</div> }));
 vi.mock('./PositionsCard', () => ({ PositionsCard: () => <div>positions-card</div> }));
 vi.mock('./MarketPanorama', () => ({ MarketPanorama: () => <div>market-panorama</div> }));
+vi.mock('../events/EventCanvasHost', () => ({
+  EventCanvasHost: ({ children }: { children: import('react').ReactNode }) => children,
+}));
 vi.mock('./EventCalendar', () => ({ EventCalendar: () => <div>event-calendar</div> }));
+vi.mock('./HomeEventTimeline', () => ({
+  HomeEventTimeline: ({ live }: { live: boolean }) => (
+    <div>home-event-timeline:{String(live)}</div>
+  ),
+}));
 
 const { Home } = await import('./Home');
 
@@ -85,6 +93,7 @@ afterEach(() => {
   cleanup();
   boardData = null;
   window.history.replaceState(null, '', '/');
+  window.dispatchEvent(new PopStateEvent('popstate'));
 });
 
 async function expectPositionsBeforeCalendar() {
@@ -125,5 +134,25 @@ describe('Home session layouts', () => {
     expect(screen.getByText(/收盘定格/)).toBeTruthy();
     await expectPositionsBeforeCalendar();
     expect(screen.queryByText('symbol-grid')).toBeNull();
+  });
+});
+
+describe('Home market event tape', () => {
+  it('puts the occurred timeline under the calendar inside the same event block', async () => {
+    renderHome('regular');
+    const calendar = await screen.findByText('event-calendar');
+    const timeline = screen.getByText('home-event-timeline:true');
+    expect(screen.getByText('已发生')).toBeTruthy();
+    expect(calendar.compareDocumentPosition(timeline) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+  });
+
+  it('does not mount the live tape while reviewing a past day', async () => {
+    window.history.replaceState(null, '', '/?date=2020-01-02');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+    renderHome('post');
+    expect(await screen.findByText('recap-board:true')).toBeTruthy();
+    expect(screen.queryByText(/home-event-timeline/)).toBeNull();
   });
 });

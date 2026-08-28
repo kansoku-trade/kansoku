@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { nextEarnings } from '../src/marketdata/events.js';
+import { nextEarningsStrict } from '../src/marketdata/events.js';
 import type { MarketDataProvider } from '../src/marketdata/types.js';
 import { buildHomeEvents, resetHomeEventsForTests } from '../src/overview/homeEvents.js';
 import { resetHomeExtrasForTests } from '../src/overview/homeExtras.js';
@@ -15,7 +15,7 @@ vi.mock('../src/marketdata/watchedMarketsStore.js', () => ({
 }));
 
 vi.mock('../src/marketdata/events.js', () => ({
-  nextEarnings: vi.fn(async (symbol: string) =>
+  nextEarningsStrict: vi.fn(async (symbol: string) =>
     symbol === 'NVDA.US'
       ? { date: '2026-07-23', title: 'NVDA Q2 财报' }
       : symbol === 'FAR.US'
@@ -76,9 +76,9 @@ describe('buildHomeEvents', () => {
 
   it('caches the result within the TTL', async () => {
     await buildHomeEvents(NOW);
-    const calls = (nextEarnings as ReturnType<typeof vi.fn>).mock.calls.length;
+    const calls = (nextEarningsStrict as ReturnType<typeof vi.fn>).mock.calls.length;
     await buildHomeEvents(NOW);
-    expect((nextEarnings as ReturnType<typeof vi.fn>).mock.calls.length).toBe(calls);
+    expect((nextEarningsStrict as ReturnType<typeof vi.fn>).mock.calls.length).toBe(calls);
   });
 
   it('returns macro items even when earnings sources fail', async () => {

@@ -9,29 +9,62 @@ const MACRO_WINDOW_DAYS = 3;
 const MAX_MACRO_ITEMS = 8;
 const MACRO_MIN_STAR = 3;
 
-const earningsCache = new Map<string, { at: number; val: IntradayEventRisk['next_earnings'] }>();
+interface EarningsEntry {
+  at: number;
+  val: IntradayEventRisk['next_earnings'];
+  // True when the null is "the broker would not answer", not "no report scheduled".
+  // The two are the same to the sidebar and must never be the same to a collector.
+  failed: boolean;
+}
+
+const earningsCache = new Map<string, EarningsEntry>();
 const macroCache = new Map<Market, { at: number; val: MacroEventItem[] }>();
 const relevanceCache = new Map<
   string,
   { at: number; fingerprint: string; val: MacroEventItem[] }
 >();
 
-export async function nextEarnings(
+export function resetEventCachesForTests(): void {
+  earningsCache.clear();
+  macroCache.clear();
+  relevanceCache.clear();
+}
+
+function fresh(entry: EarningsEntry | undefined): entry is EarningsEntry {
+  return entry !== undefined && Date.now() - entry.at < EARNINGS_TTL_MS;
+}
+
+// Shares the cache with nextEarnings but not its failure contract: a caller that has
+// to tell "no report scheduled" from "the broker would not answer" gets the error,
+// and never gets a null the tolerant path parked there after a failure.
+export async function nextEarningsStrict(
   symbol: string,
   now: Date,
 ): Promise<IntradayEventRisk['next_earnings']> {
   const hit = earningsCache.get(symbol);
-  if (hit && Date.now() - hit.at < EARNINGS_TTL_MS) return hit.val;
-  let val: IntradayEventRisk['next_earnings'];
-  try {
-    const today = easternDate(now);
-    const provider = getProvider(marketOf(symbol));
-    val = (await provider.getEarningsCalendar?.(symbol, today)) ?? null;
-  } catch {
-    val = null;
-  }
-  earningsCache.set(symbol, { at: Date.now(), val });
+  if (fresh(hit) && !hit.failed) return hit.val;
+  const today = easternDate(now);
+  const provider = getProvider(marketOf(symbol));
+  const val = (await provider.getEarningsCalendar?.(symbol, today)) ?? null;
+  earningsCache.set(symbol, { at: Date.now(), val, failed: false });
   return val;
+}
+
+export async function nextEarnings(
+  symbol: string,
+  now: Date,
+): Promise<IntradayEventRisk['next_earnings']> {
+  // Reads the failure entries too: a failed lookup is remembered as "none" for the
+  // TTL, the same as before, because the sidebar would otherwise retry on every
+  // render.
+  const hit = earningsCache.get(symbol);
+  if (fresh(hit)) return hit.val;
+  try {
+    return await nextEarningsStrict(symbol, now);
+  } catch {
+    earningsCache.set(symbol, { at: Date.now(), val: null, failed: true });
+    return null;
+  }
 }
 
 async function macroReleases(now: Date, market: Market): Promise<MacroEventItem[]> {

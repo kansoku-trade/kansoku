@@ -61,3 +61,67 @@ describe('background AI notifications', () => {
     ).toEqual({ title: notice.title, body: notice.body });
   });
 });
+
+const criticalEvent: NotifyEnvelope = {
+  type: 'event',
+  live: true,
+  id: 'evt-1',
+  title: 'Micron 提交 8-K',
+  body: '公司披露一份新的供货协议',
+  symbols: ['MU.US'],
+  severity: 'critical',
+};
+
+describe('critical market-event notifications', () => {
+  it('notifies for a live critical event when the app is hidden', () => {
+    expect(
+      decideNotification(criticalEvent, {
+        hidden: true,
+        permission: 'granted',
+        activeSymbol: 'MU.US',
+      }),
+    ).toEqual({ title: 'MU 重大事件', body: 'Micron 提交 8-K' });
+  });
+
+  it('suppresses the same-symbol critical event while that cockpit is visible', () => {
+    expect(
+      decideNotification(criticalEvent, {
+        hidden: false,
+        permission: 'granted',
+        activeSymbol: 'MU.US',
+      }),
+    ).toBeNull();
+  });
+
+  it('notifies a critical event for another name, or from the home page', () => {
+    expect(
+      decideNotification(criticalEvent, {
+        hidden: false,
+        permission: 'granted',
+        activeSymbol: 'NVDA.US',
+      }),
+    ).not.toBeNull();
+    expect(
+      decideNotification(criticalEvent, {
+        hidden: false,
+        permission: 'granted',
+        activeSymbol: null,
+      }),
+    ).not.toBeNull();
+  });
+
+  it('keeps info and notable events silent', () => {
+    expect(
+      decideNotification(
+        { ...criticalEvent, severity: 'notable' },
+        { hidden: true, permission: 'granted', activeSymbol: null },
+      ),
+    ).toBeNull();
+    expect(
+      decideNotification(
+        { ...criticalEvent, severity: 'info' },
+        { hidden: true, permission: 'granted', activeSymbol: null },
+      ),
+    ).toBeNull();
+  });
+});

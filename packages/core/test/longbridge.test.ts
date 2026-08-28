@@ -341,6 +341,19 @@ describe('longbridgeProvider (CLI-backed)', () => {
     await expect(failed.getNews('NVDA.US')).resolves.toEqual([]);
   });
 
+  it('offers a strict news read that reports the failure instead of an empty list', async () => {
+    const rows = [{ id: 7, title: 'one', published_at: '2026-07-06T00:00:00Z', url: 'https://one' }];
+    const ok = createLongbridgeProvider(runner({ 'news NVDA.US --lang zh-CN': rows }));
+    await expect(ok.getNewsStrict!('NVDA.US', 5)).resolves.toEqual([
+      { id: '7', title: 'one', published_at: '2026-07-06T00:00:00Z', url: 'https://one' },
+    ]);
+
+    const failed = createLongbridgeProvider(vi.fn().mockRejectedValue(new Error('offline')));
+    await expect(failed.getNewsStrict!('NVDA.US')).rejects.toThrow(/news/i);
+    // The tolerant call keeps its old contract for the chart and the news panel.
+    await expect(failed.getNews('NVDA.US')).resolves.toEqual([]);
+  });
+
   it('maps capital, positions, portfolio, and deduplicated watchlist commands', async () => {
     const run = runner({
       'capital NVDA.US --flow': [{ time: '10:00', inflow: '12' }],
@@ -471,11 +484,48 @@ describe('longbridgeProvider (CLI-backed)', () => {
       supported: true,
       items: [
         {
+          sourceId: null,
           ts: '2026-07-11T04:00:00.000Z',
           title: 'CPI',
           estimate: '3.1%',
           previous: null,
           actual: null,
+        },
+      ],
+    });
+  });
+
+  it("passes the calendar row's own counter_id through as the macro item's stable id", async () => {
+    const run = runner({
+      'finance-calendar macrodata --market US --star 3 --start 2026-07-10 --end 2026-07-13': {
+        list: [
+          {
+            date: '2026-07-11',
+            infos: [
+              {
+                counter_id: 'usa-cpi-yoy-202606',
+                content: 'CPI (6月) 2.9%',
+                datetime: String(Math.floor(Date.parse('2026-07-11T04:00:00.000Z') / 1000)),
+                star: 3,
+                data_kv: [{ type: 'actual', value: '2.9%' }],
+              },
+            ],
+          },
+        ],
+      },
+    });
+    const provider = createLongbridgeProvider(run);
+    const result = await provider.getMacroCalendar!('US', '2026-07-10', '2026-07-13', 3);
+    expect(result).toEqual({
+      supported: true,
+      items: [
+        {
+          sourceId: 'usa-cpi-yoy-202606',
+          ts: '2026-07-11T04:00:00.000Z',
+          title: 'CPI (6月) 2.9%',
+          estimate: null,
+          previous: null,
+          actual: '2.9%',
         },
       ],
     });

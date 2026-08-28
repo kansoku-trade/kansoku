@@ -1,8 +1,17 @@
-import type { CommentLevel, Notice } from '@kansoku/shared/types';
+import type { CommentLevel, MarketEventSeverity, Notice } from '@kansoku/shared/types';
 
 export type NotifyEnvelope =
   | { type: 'comment'; live: boolean; symbol: string; level: CommentLevel; text: string }
-  | { type: 'notice'; live: boolean; notice: Notice };
+  | { type: 'notice'; live: boolean; notice: Notice }
+  | {
+      type: 'event';
+      live: boolean;
+      id: string;
+      title: string;
+      body: string;
+      symbols: string[];
+      severity: MarketEventSeverity;
+    };
 
 export interface NotifyContext {
   hidden: boolean;
@@ -15,9 +24,27 @@ export interface NotifyContent {
   body: string;
 }
 
+function shortNotifySymbol(symbol: string): string {
+  return symbol.replace(/\.US$/, '');
+}
+
 export function decideNotification(env: NotifyEnvelope, ctx: NotifyContext): NotifyContent | null {
   if (!env.live) return null;
   if (ctx.permission !== 'granted') return null;
+  if (env.type === 'event') {
+    if (env.severity !== 'critical') return null;
+    const activeSymbol = ctx.activeSymbol?.trim().toUpperCase();
+    if (
+      !ctx.hidden &&
+      (ctx.activeSymbol === undefined ||
+        env.symbols.some((symbol) => symbol.trim().toUpperCase() === activeSymbol))
+    )
+      return null;
+    const hint = env.symbols.length
+      ? env.symbols.map(shortNotifySymbol).join(' ')
+      : '市场';
+    return { title: `${hint} 重大事件`, body: env.title };
+  }
   const symbol = env.type === 'comment' ? env.symbol : env.notice.symbol;
   const activeSymbol = ctx.activeSymbol?.trim().toUpperCase();
   if (

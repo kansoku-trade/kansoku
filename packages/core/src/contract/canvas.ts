@@ -1,9 +1,15 @@
 import { defineRoutes } from './defineRoutes.js';
 
+export interface CanvasOrigin {
+  eventId: string;
+  clusterId: string;
+}
+
 export interface CanvasMeta {
   slug: string;
   title: string;
   mtime: string;
+  origin?: CanvasOrigin | null;
 }
 
 export interface CanvasCheckRecord {
@@ -18,6 +24,7 @@ export interface CanvasDoc {
   source: string;
   mtime: string;
   check: CanvasCheckRecord | null;
+  origin?: CanvasOrigin | null;
 }
 
 export interface CanvasApi {

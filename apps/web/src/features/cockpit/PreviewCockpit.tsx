@@ -28,6 +28,7 @@ import { useAnalystRunLastEnded, useAnalystRunStatus } from './analystRunsStore'
 import { CockpitSkeleton } from './CockpitSkeleton';
 import { GenerateAnalysis } from './GenerateAnalysis';
 import { GenerateAnalysisCta } from './GenerateAnalysisCta';
+import { EventCanvasHost } from '@web/features/events/EventCanvasHost';
 import { buildSharedSidebarTabs } from './sharedSidebarTabs';
 import { useAiUnreadBadge } from './useAiUnreadBadge';
 import { useCockpitComments } from './useCockpitComments';
@@ -162,6 +163,7 @@ export function PreviewCockpit({
   ];
 
   return (
+    <EventCanvasHost>
     <IntradayControlsProvider>
       <div className="fullpage">
         <div className="detail-topbar detail-topbar--split">
@@ -206,5 +208,6 @@ export function PreviewCockpit({
         </div>
       </div>
     </IntradayControlsProvider>
+    </EventCanvasHost>
   );
 }

@@ -160,6 +160,9 @@ function ResearchReader({
             <span>
               更新于 <MarketTime value={document.mtime} format="month-day-time" />
             </span>
+            {document.origin?.eventId && (
+              <span>来自市场事件 {document.origin.eventId}</span>
+            )}
           </div>
         </div>
         {cockpitSymbol && (

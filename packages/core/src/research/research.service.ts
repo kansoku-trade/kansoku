@@ -171,6 +171,7 @@ async function readCanvasDocument(rootDir: string, slug: string): Promise<Resear
     symbols: symbolsFromCanvas(doc.title, slug),
     mtime: doc.mtime,
     excerpt: doc.title,
+    origin: doc.origin ?? null,
     markdown: '',
     revision: researchDocumentRevision(doc.source),
   };

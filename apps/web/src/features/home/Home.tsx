@@ -17,7 +17,9 @@ import { useWsChannel } from '../../lib/ws/useWsChannel';
 import { useIntervalFetch } from '../cockpit/useIntervalFetch';
 import { CROSS_SECTION_TYPES } from './CrossSectionCharts';
 import { DateTimeline } from './DateTimeline';
+import { EventCanvasHost } from '../events/EventCanvasHost';
 import { EventCalendar } from './EventCalendar';
+import { HomeEventTimeline } from './HomeEventTimeline';
 import { HomeTopStrip, INDEX_SYMBOLS } from './HomeTopStrip';
 import { MarketPanorama } from './MarketPanorama';
 import { PositionsCard } from './PositionsCard';
@@ -129,6 +131,8 @@ export function Home() {
     <>
       <SectionTitle>事件日历</SectionTitle>
       <EventCalendar events={events ?? null} error={eventsError} after={after} />
+      <SectionTitle>已发生</SectionTitle>
+      <HomeEventTimeline live={isToday} />
     </>
   );
   const positionsSection = (
@@ -143,6 +147,7 @@ export function Home() {
   const recapDate = (recapDates ?? []).find((d) => d < today) ?? null;
 
   return (
+    <EventCanvasHost>
     <ScrollArea
       className={`page home-page${hasSplitBoard ? ' home-page--split' : ''}`}
       viewportClassName="home-page-viewport"
@@ -212,5 +217,6 @@ export function Home() {
         </div>
       )}
     </ScrollArea>
+    </EventCanvasHost>
   );
 }

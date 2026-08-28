@@ -1,6 +1,7 @@
 import type { SecretBox } from '@kansoku/pro-api';
 import { getAiRuntime, initAiSettings } from '@kansoku/core/ai/settings/initAiSettings';
 import { getDb } from '@kansoku/core/db/index';
+import { startEventCollector } from '@kansoku/core/events/collector';
 import { setProductionHost } from '@kansoku/core/license/dodoEnv';
 import { startLicenseRevalidation } from '@kansoku/core/license/licenseSchedule';
 import { initLicenseManager } from '@kansoku/core/license/licenseState';
@@ -59,6 +60,14 @@ export async function initServerHostRuntime(opts?: ServerRuntimeOptions): Promis
   // the resolved one, not the raw (possibly undefined) opts value.
   initLicenseManager(getDb(), getAiRuntime().secretBox);
   startLicenseRevalidation();
+
+  // Market event collection is a background chore shared by both hosts: it starts
+  // here so server and desktop cannot drift on which sources are live, and a
+  // failure to start is logged rather than allowed to take the app down. The
+  // collector itself refuses to run in tests or when EVENT_SOURCES_DISABLED is set.
+  await startEventCollector().catch((error: unknown) => {
+    console.warn('[host] market event collector did not start', error);
+  });
 }
 
 // Resolves the server edition's pro composition, WITHOUT registering it into

@@ -1,3 +1,4 @@
+import { stopEventCollector } from '@kansoku/core/events/collector';
 import { disposeMarketData } from '@kansoku/core/marketdata/registry';
 import { HOST_MODE, KERNEL_PORT, PORT } from '@kansoku/core/platform/env';
 import { startHost } from './host.js';
@@ -12,6 +13,7 @@ await startHost(bindPort, isDevKernel, proComposition?.modules ?? []);
 
 async function cleanup(): Promise<void> {
   disposeMarketData();
+  await stopEventCollector();
   await proComposition?.dispose?.();
 }
 
@@ -21,10 +23,7 @@ async function shutdown(signal: NodeJS.Signals) {
   shuttingDown = true;
   console.log(`[server] received ${signal}, closing market data + disposing pro composition`);
   try {
-    await Promise.race([
-      cleanup(),
-      new Promise<void>((resolve) => setTimeout(resolve, 2_000)),
-    ]);
+    await Promise.race([cleanup(), new Promise<void>((resolve) => setTimeout(resolve, 2_000))]);
   } catch (error) {
     console.error('[server] shutdown cleanup failed', error);
   } finally {
@@ -43,5 +42,11 @@ interface HotContext {
   on(event: string, cb: () => void): void;
 }
 const hot = (import.meta as ImportMeta & { hot?: HotContext }).hot;
-hot?.dispose(() => disposeMarketData());
-hot?.on('vite:beforeFullReload', () => disposeMarketData());
+hot?.dispose(() => {
+  disposeMarketData();
+  void stopEventCollector();
+});
+hot?.on('vite:beforeFullReload', () => {
+  disposeMarketData();
+  void stopEventCollector();
+});

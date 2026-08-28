@@ -81,6 +81,20 @@ function number(value: string | number): number {
   return typeof value === 'number' ? value : Number(value);
 }
 
+async function newsStrict(
+  run: LongbridgeRunner,
+  symbol: string,
+  limit: number,
+): Promise<NewsItem[]> {
+  const rows = await callCli<CliNewsItem[]>('news', run, ['news', symbol, '--lang', 'zh-CN']);
+  return rows.slice(0, limit).map((row) => ({
+    id: String(row.id),
+    title: row.title,
+    published_at: row.published_at,
+    url: row.url,
+  }));
+}
+
 async function callCli<T>(label: string, run: LongbridgeRunner, args: string[]): Promise<T> {
   try {
     return await run<T>(args);
@@ -277,16 +291,16 @@ export function createLongbridgeProvider(
       return request;
     },
 
+    getNewsStrict(symbol: string, limit = 6): Promise<NewsItem[]> {
+      return newsStrict(run, symbol, limit);
+    },
+
     async getNews(symbol: string, limit = 6): Promise<NewsItem[]> {
       try {
-        const rows = await run<CliNewsItem[]>(['news', symbol, '--lang', 'zh-CN']);
-        return rows.slice(0, limit).map((row) => ({
-          id: String(row.id),
-          title: row.title,
-          published_at: row.published_at,
-          url: row.url,
-        }));
+        return await newsStrict(run, symbol, limit);
       } catch {
+        // Unchanged on purpose: the chart sidebar and the news panel treat news as
+        // decoration, and an error card there would be worse than a quiet gap.
         return [];
       }
     },
@@ -385,6 +399,10 @@ export function createLongbridgeProvider(
           const epoch = Number(info.datetime);
           if (!info.content || !Number.isFinite(epoch) || (info.star ?? 0) < minStar) continue;
           items.push({
+            // The provider's own key for this slot, kept verbatim: the title it
+            // renders gains the estimate and then the actual, so nothing downstream
+            // can use it as an identity.
+            sourceId: info.counter_id?.trim() || null,
             ts: new Date(epoch * 1000).toISOString(),
             title: info.content,
             estimate: calendarKv(info, 'estimate'),

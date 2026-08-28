@@ -5,7 +5,15 @@ import type {
   TrainerFillStatus,
   TrainerFillTrigger,
 } from '@kansoku/pro-api';
-import type { RawBar, TimeframeKey } from '@kansoku/shared/types';
+import type {
+  EventSourceHealth,
+  MarketEventClass,
+  MarketEventPayload,
+  MarketEventSeverity,
+  MarketEventTrust,
+  RawBar,
+  TimeframeKey,
+} from '@kansoku/shared/types';
 import type {
   ResearchEditOperation,
   ResearchEditStatus,
@@ -15,7 +23,7 @@ import type {
   ResearchRefreshStatus,
 } from '../contract/research.js';
 import type { Market } from '../symbols/symbol.utils.js';
-import { index, integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { index, integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
 export const comments = sqliteTable(
   'comments',
@@ -252,5 +260,44 @@ export const symbolCandleCache = sqliteTable('symbol_candle_cache', {
 export const providerEndpoints = sqliteTable('provider_endpoints', {
   provider: text('provider').primaryKey(),
   baseUrl: text('base_url').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
+
+export const marketEvents = sqliteTable(
+  'market_events',
+  {
+    id: text('id').primaryKey(),
+    dedupeKey: text('dedupe_key').notNull(),
+    clusterId: text('cluster_id').notNull(),
+    source: text('source').notNull(),
+    class: text('class').$type<MarketEventClass>().notNull(),
+    kind: text('kind').notNull(),
+    symbols: text('symbols', { mode: 'json' }).$type<string[]>().notNull(),
+    occurredAt: text('occurred_at').notNull(),
+    observedAt: text('observed_at').notNull(),
+    trust: text('trust').$type<MarketEventTrust>().notNull(),
+    severity: text('severity').$type<MarketEventSeverity>().notNull(),
+    payload: text('payload', { mode: 'json' }).$type<MarketEventPayload>().notNull(),
+    canvasSlug: text('canvas_slug'),
+  },
+  (t) => [
+    // Hard dedupe lives in the database, not in the ingest path: two collectors
+    // racing on the same poll window must not be able to double-write.
+    uniqueIndex('market_events_source_dedupe').on(t.source, t.dedupeKey),
+    index('market_events_occurred').on(t.occurredAt),
+    index('market_events_cluster').on(t.clusterId),
+  ],
+);
+
+export const eventSourceCursors = sqliteTable('event_source_cursors', {
+  source: text('source').primaryKey(),
+  cursor: text('cursor'),
+  health: text('health').$type<EventSourceHealth>().notNull(),
+  failureStreak: integer('failure_streak').notNull(),
+  lastPolledAt: text('last_polled_at'),
+  lastEventAt: text('last_event_at'),
+  lastError: text('last_error'),
+  disabledReason: text('disabled_reason'),
+  nextAttemptAt: text('next_attempt_at'),
   updatedAt: text('updated_at').notNull(),
 });

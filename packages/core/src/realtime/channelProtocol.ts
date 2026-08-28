@@ -13,6 +13,7 @@ import { subscribeBenchmark } from './benchmark.js';
 import { subscribeBoard } from './board.js';
 import { subscribeChart, subscribePreview } from './charts.js';
 import type { Connection } from './connection.js';
+import { subscribeEvents } from './events.js';
 import { subscribePosition } from './position.js';
 import { subscribeQuotes } from './quotes.js';
 
@@ -27,6 +28,7 @@ const STATIC_KINDS = [
   'board',
   'preview',
   'annotations',
+  'events',
 ] as const;
 
 export interface WsSub {
@@ -92,6 +94,13 @@ export function parseWsMessage(raw: unknown): WsClientMessage | null {
     if (typeof msg.symbol !== 'string' || !msg.symbol) return null;
     return { op: 'sub', key: msg.key, kind: 'annotations', symbol: msg.symbol };
   }
+  if (msg.kind === 'events') {
+    // The symbol is optional here: the home feed wants every event, a symbol page
+    // wants one name. An empty string is a bug at the caller, not "unfiltered".
+    if (msg.symbol === undefined) return { op: 'sub', key: msg.key, kind: 'events' };
+    if (typeof msg.symbol !== 'string' || !msg.symbol) return null;
+    return { op: 'sub', key: msg.key, kind: 'events', symbol: msg.symbol };
+  }
   if (typeof msg.kind === 'string') {
     const channel = findChannel(msg.kind);
     if (channel) {
@@ -147,6 +156,8 @@ async function attachChannel(msg: WsSub, push: (envelope: string) => void): Prom
     return subscribeBenchmark(normalizeSymbol(msg.symbol as string), push);
   if (msg.kind === 'preview') return subscribePreview(msg.symbol as string, push);
   if (msg.kind === 'annotations') return attachAnnotations(msg.symbol as string, push);
+  if (msg.kind === 'events')
+    return subscribeEvents(msg.symbol != null ? normalizeSymbol(msg.symbol) : null, push);
   if (msg.kind === 'board') return subscribeBoard(push);
   const channel = findChannel(msg.kind);
   if (channel) return channel.attach(msg as unknown as Record<string, unknown>, push);

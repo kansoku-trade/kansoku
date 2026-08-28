@@ -57,6 +57,9 @@ vi.mock('./useCockpitComments', () => ({
 vi.mock('./useAiUnreadBadge', () => ({
   useAiUnreadBadge: () => ({ unread: 0, latestAlert: null }),
 }));
+vi.mock('@web/features/events/EventCanvasHost', () => ({
+  EventCanvasHost: ({ children }: { children: ReactNode }) => children,
+}));
 vi.mock('./sharedSidebarTabs', () => ({
   buildSharedSidebarTabs: () => [],
 }));

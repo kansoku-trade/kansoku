@@ -24,6 +24,7 @@ import { PreviewCockpit } from './PreviewCockpit';
 import { ReanalyzeStrip } from './ReanalyzeStrip';
 import { conclusionOutdated } from '../charts/intraday/ConclusionCard';
 import { PredictionTab } from '../charts/intraday/tabs/PredictionTab';
+import { EventCanvasHost } from '@web/features/events/EventCanvasHost';
 import { buildSharedSidebarTabs } from './sharedSidebarTabs';
 import { useAiUnreadBadge } from './useAiUnreadBadge';
 import { useCockpitComments } from './useCockpitComments';
@@ -220,6 +221,7 @@ export function SymbolCockpit({ sym }: { sym: string }) {
   ];
 
   return (
+    <EventCanvasHost>
     <IntradayControlsProvider>
       <div className="fullpage">
         <div className="detail-topbar detail-topbar--split">
@@ -310,5 +312,6 @@ export function SymbolCockpit({ sym }: { sym: string }) {
         </div>
       </div>
     </IntradayControlsProvider>
+    </EventCanvasHost>
   );
 }

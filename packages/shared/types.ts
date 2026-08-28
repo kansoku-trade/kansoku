@@ -622,6 +622,10 @@ export interface MacroEventItem {
   estimate: string | null;
   previous: string | null;
   actual?: string | null;
+  // The provider's own identifier for this calendar slot. The rendered title splices
+  // the estimate and the actual in as they arrive, so it is not an identity; this is
+  // what a downstream consumer dedupes on. Null when the provider gave none.
+  sourceId?: string | null;
 }
 
 export interface IntradayEventRisk {
@@ -869,6 +873,10 @@ export interface HomeEventItem {
   previous: string | null;
   actual: string | null;
   owned: boolean;
+  // Carried through from the upstream calendar. Earnings leave it null because
+  // symbol plus date is already stable; a macro row without one has no identity at
+  // all, since its title changes the moment the print lands.
+  sourceId?: string | null;
 }
 
 export interface HomeEvents {
@@ -984,3 +992,45 @@ export interface Annotation {
   label?: string;
   style?: AnnotationStyle;
 }
+
+export type MarketEventClass =
+  | 'macro'
+  | 'earnings'
+  | 'filing'
+  | 'news'
+  | 'policy'
+  | 'flow'
+  | 'technical';
+
+// Who vouches for the content: an SEC filing and a scraped headline both describe
+// the same world, and the UI must be able to say which one it is.
+export type MarketEventTrust = 'official' | 'verified' | 'unverified';
+
+export type MarketEventSeverity = 'info' | 'notable' | 'critical';
+
+export interface MarketEventPayload {
+  title: string;
+  summary?: string;
+  url?: string;
+  data?: Record<string, unknown>;
+}
+
+export interface MarketEvent {
+  id: string;
+  dedupeKey: string;
+  clusterId: string;
+  source: string;
+  class: MarketEventClass;
+  kind: string;
+  symbols: string[];
+  // occurredAt is the world's clock, observedAt ours. The gap between them is the
+  // collector's lag, so neither one can stand in for the other.
+  occurredAt: string;
+  observedAt: string;
+  trust: MarketEventTrust;
+  severity: MarketEventSeverity;
+  payload: MarketEventPayload;
+  canvasSlug: string | null;
+}
+
+export type EventSourceHealth = 'active' | 'disabled' | 'degraded';
