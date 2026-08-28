@@ -62,8 +62,12 @@ const TRUST_RANK: Record<MarketEventTrust, number> = {
 };
 
 const KLINE_COUNT = 48;
+const DAY_KLINE_COUNT = 40;
 const BAR_WINDOW = 12;
 const PEER_SYMBOL = 'SPY.US';
+const INTRADAY_MAX_AGE_MS = 36 * 60 * 60 * 1000;
+const INTRADAY_SLACK_MS = 2 * 60 * 60 * 1000;
+const DAILY_SLACK_MS = 3 * 24 * 60 * 60 * 1000;
 
 export function sliceAroundTime(
   bars: RawBar[],
@@ -84,6 +88,33 @@ export function sliceAroundTime(
     }
   }
   return bars.slice(Math.max(0, idx - before), Math.min(bars.length, idx + after + 1));
+}
+
+export function eventKlinePlan(
+  occurredAt: string,
+  now: Date,
+): { period: '5m' | 'day'; count: number; slackMs: number } {
+  const age = now.getTime() - Date.parse(occurredAt);
+  if (Number.isFinite(age) && age <= INTRADAY_MAX_AGE_MS) {
+    return { period: '5m', count: KLINE_COUNT, slackMs: INTRADAY_SLACK_MS };
+  }
+  return { period: 'day', count: DAY_KLINE_COUNT, slackMs: DAILY_SLACK_MS };
+}
+
+export function nearestBarDeltaMs(bars: RawBar[], occurredAt: string): number | null {
+  const target = Date.parse(occurredAt);
+  if (!Number.isFinite(target) || bars.length === 0) return null;
+  let best = Number.POSITIVE_INFINITY;
+  for (const bar of bars) {
+    const delta = Math.abs(Date.parse(bar.time) - target);
+    if (delta < best) best = delta;
+  }
+  return Number.isFinite(best) ? best : null;
+}
+
+function barsCoverOccurredAt(bars: RawBar[], occurredAt: string, slackMs: number): boolean {
+  const delta = nearestBarDeltaMs(bars, occurredAt);
+  return delta != null && delta <= slackMs;
 }
 
 function sortCluster(events: MarketEvent[], primaryId: string): MarketEvent[] {
@@ -131,6 +162,7 @@ function summarizeBars(symbol: string, bars: RawBar[], occurredAt: string, obser
     symbol,
     occurredAt,
     observedAt,
+    coverage: 'event-window' as const,
     first: first ? { time: first.time, close: closeOf(first) } : null,
     last: last ? { time: last.time, close: closeOf(last) } : null,
     volumeBefore: before.reduce((sum, bar) => sum + volumeOf(bar), 0),
@@ -171,12 +203,28 @@ export async function buildEventEvidencePack(
   const klineSymbols = symbols.length > 0 ? symbols : [PEER_SYMBOL];
 
   for (const symbol of klineSymbols) {
-    const bars = await settled(deps.fetchKline(symbol, '5m', KLINE_COUNT));
+    const plan = eventKlinePlan(event.occurredAt, new Date(observedAt));
+    const bars = await settled(deps.fetchKline(symbol, plan.period, plan.count));
+    const kind: EventEvidenceKind = symbols.includes(symbol) ? 'price' : 'peer';
     if (!bars || bars.length === 0) continue;
     const windowed = sliceAroundTime(bars, event.occurredAt);
-    if (windowed.length === 0) continue;
+    if (windowed.length === 0 || !barsCoverOccurredAt(windowed, event.occurredAt, plan.slackMs)) {
+      items.push({
+        kind,
+        title: `${symbol} 没有取到事件当日行情`,
+        occurredAt: event.occurredAt,
+        observedAt,
+        symbols: [symbol],
+        data: {
+          symbol,
+          coverage: 'unavailable',
+          period: plan.period,
+          reason: 'nearest bar is outside the event window',
+        },
+      });
+      continue;
+    }
     const summary = summarizeBars(symbol, windowed, event.occurredAt, observedAt);
-    const kind: EventEvidenceKind = symbols.includes(symbol) ? 'price' : 'peer';
     items.push({
       kind,
       title: kind === 'peer' ? `${symbol} 市场反应` : `${symbol} 事件前后价格`,

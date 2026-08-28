@@ -39,6 +39,26 @@ describe('compileCanvasSource', () => {
     expect(tree.props.title).toBe('Demo');
   });
 
+  it('wraps a default-exported element so the host still gets a component', () => {
+    const result = compileCanvasSource(`import { Canvas, Text } from '@kansoku/canvas';
+export default (
+  <Canvas title="Element default"><Text>ok</Text></Canvas>
+);
+`);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const sdk = {
+      Canvas: ({ title, children }: { title: string; children?: unknown }) =>
+        React.createElement('section', { 'data-title': title }, children),
+      Text: ({ children }: { children?: unknown }) => React.createElement('span', null, children),
+    };
+    const Component = instantiateCanvas(result.code, sdk, React);
+    expect(typeof Component).toBe('function');
+    const tree = (Component as () => { type: unknown; props: { title?: string } })();
+    expect(tree.type).toBe(sdk.Canvas);
+    expect(tree.props.title).toBe('Element default');
+  });
+
   it('does not compile a source that fails the static check', () => {
     const result = compileCanvasSource('export function App() { return null; }\n');
     expect(result.ok).toBe(false);

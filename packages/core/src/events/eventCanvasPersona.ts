@@ -19,7 +19,10 @@ const SYSTEM_PROMPT = [
   'You turn a prepared market-event evidence pack into a Kansoku canvas.',
   'The pack already contains the event, cluster siblings, prices, volume, flow, comments, and research.',
   'Do not fetch new data. Do not invent numbers that are not in the pack.',
-  'Arrange the evidence as TSX using only @kansoku/canvas, then call save_canvas.',
+  'If a price or peer item has coverage "unavailable", write that gap in the canvas. Do not present later bars as the event window.',
+  'Use only these @kansoku/canvas names: Canvas, Section, Grid, Row, Stack, Card, H1, H2, H3, Heading, Text, Stat, Metric, Table, Pill, Badge, Link, Callout, Divider.',
+  'Table columns are {key, header}[] and rows are objects, or string[] columns with array rows.',
+  'Arrange the evidence as TSX, then call save_canvas.',
   'You must use the exact slug you are given. The same event always overwrites the same canvas.',
 ].join('\n');
 

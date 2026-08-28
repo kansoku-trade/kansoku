@@ -29,7 +29,11 @@ export function instantiateCanvas(
   react: unknown,
 ): unknown {
   const factory = new Function(INJECTED, 'React', code);
-  return factory(sdk, react);
+  const exported = factory(sdk, react);
+  if (typeof exported === 'function' || exported == null) return exported;
+  return function GeneratedCanvas() {
+    return exported;
+  };
 }
 
 function toFactoryBody(code: string): string {

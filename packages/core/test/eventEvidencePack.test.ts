@@ -183,6 +183,74 @@ describe('buildEventEvidencePack', () => {
     expect(pack.items.some((item) => item.kind === 'price' || item.kind === 'flow')).toBe(false);
   });
 
+  it('uses daily bars when the event is older than the 5m window', async () => {
+    const instance = db();
+    const { event } = await ingestEvent(
+      draft({ occurredAt: '2026-08-19T18:00:00.000Z', observedAt: '2026-08-19T18:00:00.000Z' }),
+      instance,
+    );
+    const fetchKline = vi.fn(async (_symbol: string, period: string) => {
+      if (period === '5m') return [bar('2026-08-27T18:20:00.000Z', 770, 100)];
+      if (period === 'day') {
+        return [
+          bar('2026-08-18T00:00:00.000Z', 640, 10),
+          bar('2026-08-19T00:00:00.000Z', 642, 20),
+          bar('2026-08-20T00:00:00.000Z', 638, 30),
+        ];
+      }
+      throw new Error(`unexpected period ${period}`);
+    });
+
+    const pack = await buildEventEvidencePack(event.id, {
+      db: instance,
+      now: () => new Date('2026-08-28T15:46:00.000Z'),
+      fetchKline,
+      fetchFlow: async () => [],
+      listComments: async () => [],
+      listResearch: async () => [],
+    });
+
+    expect(fetchKline).toHaveBeenCalledWith('MU.US', 'day', expect.any(Number));
+    const price = pack.items.find((item) => item.kind === 'price');
+    expect(price?.data).toMatchObject({
+      coverage: 'event-window',
+      first: { time: '2026-08-18T00:00:00.000Z' },
+      last: { time: '2026-08-20T00:00:00.000Z' },
+    });
+    expect(JSON.stringify(price?.data)).not.toContain('2026-08-27');
+  });
+
+  it('records a missing event-day window instead of handing over later bars', async () => {
+    const instance = db();
+    const { event } = await ingestEvent(
+      draft({
+        source: 'fed-monetary',
+        class: 'policy',
+        symbols: [],
+        occurredAt: '2026-08-19T18:00:00.000Z',
+        payload: { title: 'FOMC minutes', url: 'https://federalreserve.gov/minutes' },
+      }),
+      instance,
+    );
+    const pack = await buildEventEvidencePack(event.id, {
+      db: instance,
+      now: () => new Date('2026-08-28T15:46:00.000Z'),
+      fetchKline: async () => [bar('2026-08-27T18:20:00.000Z', 770.09, 111880)],
+      fetchFlow: async () => [],
+      listComments: async () => [],
+      listResearch: async () => [],
+    });
+
+    const market = pack.items.filter((item) => item.kind === 'peer' || item.kind === 'volume');
+    expect(market).toHaveLength(1);
+    expect(market[0]).toMatchObject({
+      kind: 'peer',
+      title: 'SPY.US 没有取到事件当日行情',
+      data: { coverage: 'unavailable', symbol: 'SPY.US' },
+    });
+    expect(JSON.stringify(market[0].data)).not.toMatch(/770\.09/);
+  });
+
   it('does not take a model or call AI', async () => {
     const instance = db();
     const { event } = await ingestEvent(draft(), instance);
