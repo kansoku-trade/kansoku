@@ -1,7 +1,101 @@
 import { useState } from 'react';
+import * as stylex from '@stylexjs/stylex';
 import { isRouteErrorResponse, useNavigate, useRouteError } from 'react-router';
 import { persister } from '@web/lib/queryClient';
 import { Button } from '@web/ui';
+import { colors, fonts, fontSizes, radii } from '../../theme/tokens.stylex';
+
+const styles = stylex.create({
+  root: {
+    alignItems: 'center',
+    backgroundColor: colors.backgroundCanvas,
+    display: 'flex',
+    height: '100%',
+    justifyContent: 'center',
+    minHeight: 0,
+    overflowY: 'auto',
+    padding: '32px 24px',
+  },
+  panel: {
+    backgroundColor: colors.backgroundSurface,
+    borderColor: colors.border,
+    borderRadius: radii.default,
+    borderStyle: 'solid',
+    borderWidth: '1px',
+    boxShadow: `inset 2px 0 0 ${colors.down}`,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+    maxWidth: '520px',
+    padding: '16px',
+    width: '100%',
+  },
+  title: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.lg,
+    fontWeight: 600,
+  },
+  message: {
+    color: colors.down,
+    fontFamily: fonts.mono,
+    fontSize: fontSizes.base,
+    lineHeight: 1.6,
+    overflowWrap: 'anywhere',
+  },
+  actions: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '8px',
+  },
+  stack: {
+    borderTopColor: colors.border,
+    borderTopStyle: 'solid',
+    borderTopWidth: '1px',
+    paddingTop: '10px',
+  },
+  stackSummary: {
+    color: colors.textSecondary,
+    cursor: 'pointer',
+    fontSize: fontSizes.sm,
+  },
+  stackBody: {
+    backgroundColor: colors.backgroundCanvas,
+    borderColor: colors.border,
+    borderRadius: radii.default,
+    borderStyle: 'solid',
+    borderWidth: '1px',
+    color: colors.textMuted,
+    fontFamily: fonts.mono,
+    fontSize: fontSizes.sm,
+    lineHeight: 1.6,
+    margin: '10px 0 0',
+    maxHeight: '220px',
+    overflow: 'auto',
+    padding: '10px',
+    whiteSpace: 'pre',
+  },
+  reset: {
+    'alignSelf': 'flex-start',
+    'backgroundColor': 'transparent',
+    'borderWidth': 0,
+    'color': colors.textMuted,
+    'cursor': 'pointer',
+    'fontFamily': 'inherit',
+    'fontSize': fontSizes.sm,
+    'padding': 0,
+    'textAlign': 'left',
+    'textDecoration': 'underline',
+    'textUnderlineOffset': '2px',
+    ':hover': {
+      color: colors.textSecondary,
+    },
+    ':disabled': {
+      color: colors.textMuted,
+      cursor: 'default',
+      opacity: 0.5,
+    },
+  },
+});
 
 interface Described {
   title: string;
@@ -55,11 +149,11 @@ export function RouteErrorBoundary() {
   };
 
   return (
-    <div className="route-error">
-      <div className="route-error-panel">
-        <div className="route-error-title">{title}</div>
-        <div className="route-error-message">{message}</div>
-        <div className="route-error-actions">
+    <div {...stylex.props(styles.root)}>
+      <div {...stylex.props(styles.panel)}>
+        <div {...stylex.props(styles.title)}>{title}</div>
+        <div {...stylex.props(styles.message)}>{message}</div>
+        <div {...stylex.props(styles.actions)}>
           <Button accent onClick={() => void navigate('/')}>
             回首页
           </Button>
@@ -69,12 +163,12 @@ export function RouteErrorBoundary() {
           </Button>
         </div>
         {stack && (
-          <details className="route-error-stack">
-            <summary className="route-error-stack-summary">技术细节</summary>
-            <pre className="route-error-stack-body">{stack}</pre>
+          <details {...stylex.props(styles.stack)}>
+            <summary {...stylex.props(styles.stackSummary)}>技术细节</summary>
+            <pre {...stylex.props(styles.stackBody)}>{stack}</pre>
           </details>
         )}
-        <button className="route-error-reset" disabled={clearing} onClick={clearCache}>
+        <button {...stylex.props(styles.reset)} disabled={clearing} onClick={clearCache}>
           还是打不开？清掉本地缓存再重开 —— 只丢掉缓存的行情和列表，你的数据不动
         </button>
       </div>

@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import babel from '@rolldown/plugin-babel';
 import { isProModule, proLeakGuard, proOverlayPlugin } from '@kansoku/build-overlay';
+import stylex from '@stylexjs/unplugin';
 import react, { reactCompilerPreset } from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 import { LOCAL_APP_PORT } from '@kansoku/shared/localApp';
@@ -39,13 +40,12 @@ export interface AssetNameInput {
 
 export function assetFileNamesFor(asset: AssetNameInput): string {
   const isPro = asset.originalFileNames.some(isProModule);
-  return isPro
-    ? `assets/${PRO_CHUNK_DIR}[name]-[hash][extname]`
-    : 'assets/[name]-[hash][extname]';
+  return isPro ? `assets/${PRO_CHUNK_DIR}[name]-[hash][extname]` : 'assets/[name]-[hash][extname]';
 }
 
 export default defineConfig({
   plugins: [
+    stylex.vite({ useCSSLayers: false }),
     routeBuilderPlugin({
       pagePattern: './src/pages/**/*.{tsx,sync.tsx}',
       outputPath: './src/generated-routes.ts',

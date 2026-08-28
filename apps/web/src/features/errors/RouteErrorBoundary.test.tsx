@@ -59,10 +59,8 @@ describe('RouteErrorBoundary', () => {
     renderAt(error);
 
     expect(screen.getByText('这个页面崩了')).toBeTruthy();
-    expect(
-      screen.getByText("Cannot read properties of undefined (reading 'map')"),
-    ).toBeTruthy();
-    const details = document.querySelector('.route-error-stack') as HTMLDetailsElement;
+    expect(screen.getByText("Cannot read properties of undefined (reading 'map')")).toBeTruthy();
+    const details = screen.getByText('技术细节').closest('details') as HTMLDetailsElement;
     expect(details.open).toBe(false);
     expect(details.textContent).toContain('at Fce (router.js:758:125168)');
   });
@@ -79,7 +77,7 @@ describe('RouteErrorBoundary', () => {
     renderThrownFromLoader(new Response('', { status: 404, statusText: 'Not Found' }));
 
     expect(await screen.findByText('这个页面不存在')).toBeTruthy();
-    expect(document.querySelector('.route-error-stack')).toBeNull();
+    expect(screen.queryByText('技术细节')).toBeNull();
   });
 
   it('sends 回首页 through the router rather than reloading the window', async () => {

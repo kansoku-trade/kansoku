@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import type { OverviewBoard, PortfolioSummary } from '@kansoku/shared/types';
+import * as stylex from '@stylexjs/stylex';
 import { useQuery } from '../../lib/apiHooks';
 import { client } from '../../lib/client';
+import { colors, fontSizes, radii } from '../../theme/tokens.stylex';
 import { listRecentSymbols } from '../charts/recentCharts';
 import { Input } from '../../ui';
 import { getOpenTrainerBridge } from '../desktop/desktopWindowsBridge';
@@ -11,6 +13,89 @@ import { buildPaletteCommands, type PaletteCommand } from './commands';
 import { usePalette } from './usePalette';
 
 const optionId = (commandId: string) => `palette-option-${commandId.replaceAll(/[^\w-]/g, '_')}`;
+
+const styles = stylex.create({
+  backdrop: {
+    alignItems: 'flex-start',
+    paddingTop: '15vh',
+  },
+  panel: {
+    backgroundColor: colors.backgroundSurface,
+    borderColor: colors.border,
+    borderRadius: radii.lg,
+    borderStyle: 'solid',
+    borderWidth: '1px',
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden',
+    width: 'min(520px, 100%)',
+  },
+  input: {
+    'borderBottomColor': colors.border,
+    'borderRadius': 0,
+    'borderBottomStyle': 'solid',
+    'borderBottomWidth': '1px',
+    'borderLeftStyle': 'none',
+    'borderLeftWidth': 0,
+    'borderRightStyle': 'none',
+    'borderRightWidth': 0,
+    'borderTopStyle': 'none',
+    'borderTopWidth': 0,
+    'boxShadow': 'none',
+    'fontSize': fontSizes.md,
+    'padding': '12px 14px',
+    ':focus': {
+      borderColor: colors.border,
+      boxShadow: 'none',
+      outline: 'none',
+    },
+    ':focus-visible': {
+      borderColor: colors.border,
+      boxShadow: 'none',
+      outline: 'none',
+    },
+  },
+  list: {
+    maxHeight: '320px',
+    overflowY: 'auto',
+    padding: '6px',
+  },
+  item: {
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+    borderRadius: radii.md,
+    borderBottomStyle: 'none',
+    borderBottomWidth: 0,
+    borderLeftStyle: 'none',
+    borderLeftWidth: 0,
+    borderRightStyle: 'none',
+    borderRightWidth: 0,
+    borderTopStyle: 'none',
+    borderTopWidth: 0,
+    color: colors.textPrimary,
+    cursor: 'pointer',
+    display: 'flex',
+    fontSize: fontSizes.sm,
+    gap: '12px',
+    justifyContent: 'space-between',
+    padding: '8px 10px',
+    textAlign: 'left',
+    width: '100%',
+  },
+  itemActive: {
+    backgroundColor: colors.backgroundHover,
+  },
+  hint: {
+    color: colors.textMuted,
+    fontSize: fontSizes.xs,
+  },
+  empty: {
+    color: colors.textMuted,
+    fontSize: fontSizes.sm,
+    padding: '16px',
+    textAlign: 'center',
+  },
+});
 
 export function CommandPalette({ onOpenRoute }: { onOpenRoute: (route: string) => void }) {
   const { open, close } = usePalette();
@@ -77,9 +162,9 @@ function PalettePanel({
   };
 
   return (
-    <div className="modal-backdrop palette-backdrop" onClick={onClose}>
+    <div className={`modal-backdrop ${stylex.props(styles.backdrop).className}`} onClick={onClose}>
       <div
-        className="palette-panel"
+        {...stylex.props(styles.panel)}
         role="dialog"
         aria-modal="true"
         aria-label="命令面板"
@@ -87,7 +172,7 @@ function PalettePanel({
       >
         <Input
           autoFocus
-          className="palette-input"
+          {...stylex.props(styles.input)}
           placeholder="输入代码或命令，如 MRVL"
           role="combobox"
           aria-expanded={commands.length > 0}
@@ -101,7 +186,12 @@ function PalettePanel({
           }}
           onKeyDown={onKeyDown}
         />
-        <div className="palette-list" id="palette-listbox" role="listbox" aria-label="候选命令">
+        <div
+          {...stylex.props(styles.list)}
+          id="palette-listbox"
+          role="listbox"
+          aria-label="候选命令"
+        >
           {commands.map((cmd, i) => (
             <button
               key={cmd.id}
@@ -109,15 +199,15 @@ function PalettePanel({
               role="option"
               aria-selected={i === active}
               tabIndex={-1}
-              className={`palette-item${i === active ? ' active' : ''}`}
+              {...stylex.props(styles.item, i === active && styles.itemActive)}
               onMouseEnter={() => setIndex(i)}
               onClick={() => run(cmd)}
             >
               <span>{cmd.title}</span>
-              {cmd.hint && <span className="palette-hint">{cmd.hint}</span>}
+              {cmd.hint && <span {...stylex.props(styles.hint)}>{cmd.hint}</span>}
             </button>
           ))}
-          {commands.length === 0 && <div className="palette-empty">没有匹配项</div>}
+          {commands.length === 0 && <div {...stylex.props(styles.empty)}>没有匹配项</div>}
         </div>
       </div>
     </div>
