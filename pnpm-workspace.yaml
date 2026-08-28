@@ -1,4 +1,5 @@
 packages:
+  - packages/canvas-sdk
   - packages/core
   - packages/bench
   - packages/bench-report-ui

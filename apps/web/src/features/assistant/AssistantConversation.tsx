@@ -3,6 +3,8 @@ import { AtSign } from 'lucide-react';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { SyntheticEvent } from 'react';
 import { Kbd, Select } from '@web/ui';
+import { CanvasSplit } from '../canvas/CanvasSplit';
+import { useCanvasWorkspace } from '../canvas/useCanvasWorkspace';
 import { ChatComposer } from '../cockpit/chat/ChatComposer';
 import { ConversationTranscript } from '../cockpit/chat/ConversationTranscript';
 import { useAssistantChatSession } from '../cockpit/chat/useChatSession';
@@ -50,6 +52,7 @@ export function AssistantConversation({
 }) {
   const { session, rows, busy, aborting, streamText, liveTools, hint, send, abort } =
     useAssistantChatSession(sessionId);
+  const canvas = useCanvasWorkspace();
   const [text, setText] = useState('');
   const [mentionState, setMentionState] = useState<MentionState | null>(null);
   const [composerFocused, setComposerFocused] = useState(false);
@@ -198,6 +201,13 @@ export function AssistantConversation({
   };
 
   return (
+    <CanvasSplit
+      openSlug={canvas.openSlug}
+      view={canvas.view}
+      onClose={canvas.close}
+      onViewChange={canvas.setView}
+      storageKey="canvas-assistant-pane"
+    >
     <div className="assistant-conversation">
       <div className="assistant-conversation-head">
         <span className="assistant-conversation-title">{session?.title ?? '新的会话'}</span>
@@ -212,6 +222,8 @@ export function AssistantConversation({
         emptyText="输入问题、判断或交易计划，开始一段研究对话"
         onPickSuggestion={() => {}}
         modelLabels={modelLabels}
+        onOpenCanvas={(slug) => canvas.open(slug, 'canvas')}
+        onViewCanvasSource={(slug) => canvas.open(slug, 'source')}
       />
       <div className="assistant-conversation-dock">
         <div className="assistant-conversation-dock-inner">
@@ -339,5 +351,6 @@ export function AssistantConversation({
         </div>
       </div>
     </div>
+    </CanvasSplit>
   );
 }

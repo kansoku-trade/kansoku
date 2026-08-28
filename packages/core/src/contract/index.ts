@@ -1,6 +1,7 @@
 import { agentKitRoutes, type AgentKitApi } from './agentKit.js';
 import { annotationsRoutes, type AnnotationsApi } from './annotations.js';
 import { assistantRoutes, type AssistantApi } from './assistant.js';
+import { canvasRoutes, type CanvasApi } from './canvas.js';
 import { capabilitiesRoutes, type CapabilitiesApi } from './capabilities.js';
 import { chartsRoutes, type ChartsApi } from './charts.js';
 import { chatRoutes, type ChatApi } from './chat.js';
@@ -16,6 +17,7 @@ import { symbolsRoutes, type SymbolsApi } from './symbols.js';
 
 export interface AppApi {
   assistant: AssistantApi;
+  canvas: CanvasApi;
   capabilities: CapabilitiesApi;
   charts: ChartsApi;
   chat: ChatApi;
@@ -41,6 +43,7 @@ export const IPC_ONLY_ROUTE_GROUPS: readonly string[] = ['agentKit'];
 
 export const allRoutes = {
   assistant: assistantRoutes,
+  canvas: canvasRoutes,
   capabilities: capabilitiesRoutes,
   charts: chartsRoutes,
   chat: chatRoutes,
@@ -60,6 +63,7 @@ export const allRoutes = {
 export * from './agentKit.js';
 export * from './annotations.js';
 export * from './assistant.js';
+export * from './canvas.js';
 export * from './capabilities.js';
 export * from './charts.js';
 export * from './chat.js';

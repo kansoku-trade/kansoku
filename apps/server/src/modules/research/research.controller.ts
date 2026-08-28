@@ -13,8 +13,8 @@ function jsonBody(body: unknown, hint?: string): Record<string, unknown> {
 
 function parseKind(value: string | undefined): ResearchKind | undefined {
   if (value === undefined || value === '') return undefined;
-  if (value === 'stock' || value === 'journal') return value;
-  throw new ClientError('invalid research kind', 'expected stock or journal');
+  if (value === 'stock' || value === 'journal' || value === 'canvas') return value;
+  throw new ClientError('invalid research kind', 'expected stock, journal, or canvas');
 }
 
 function requirePath(path: unknown): string {

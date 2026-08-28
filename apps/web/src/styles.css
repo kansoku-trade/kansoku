@@ -7456,8 +7456,8 @@ a.zone-item:hover {
 }
 .research-view-switch {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  min-width: 190px;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  min-width: 280px;
   height: var(--control-h);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius);
@@ -7701,6 +7701,18 @@ a.zone-item:hover {
   width: min(100%, 920px);
   margin: 0 auto;
   padding: 24px 28px 64px;
+}
+.research-reader-document--canvas {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 16px 0;
+}
+.research-reader-document--canvas .research-reader-body {
+  flex: 1 1 auto;
+  min-height: 0;
 }
 .research-reader-head {
   display: flex;
@@ -9885,4 +9897,182 @@ a.zone-item:hover {
   align-self: center;
   font-size: var(--fs-sm);
   color: var(--text-secondary);
+}
+
+.canvas-split {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.canvas-split-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.canvas-split-pane {
+  height: 100%;
+}
+.canvas-pane {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--bg-canvas);
+  border-left: 1px solid var(--border);
+}
+.canvas-pane-head {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.canvas-pane-titles {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.canvas-pane-title {
+  font-size: var(--fs-sm);
+  color: var(--text-primary);
+}
+.canvas-pane-slug {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+.canvas-pane-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.canvas-pane-actions .research-view-switch {
+  min-width: 0;
+}
+.canvas-pane-body {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.canvas-pane-source {
+  height: 100%;
+  margin: 0;
+  padding: 14px 16px;
+  overflow: auto;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  background: var(--bg-canvas);
+}
+.canvas-pane-error,
+.canvas-pane-loading {
+  padding: 16px;
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+}
+.canvas-card {
+  display: flex;
+  gap: 10px;
+  margin: 8px 0 4px;
+  padding: 10px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.canvas-card-thumb {
+  flex: 0 0 72px;
+  height: 48px;
+  border-radius: 4px;
+  background:
+    linear-gradient(180deg, var(--bg-element), var(--bg-canvas));
+  border: 1px solid var(--border);
+}
+.canvas-card-body {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.canvas-card-title {
+  font-size: var(--fs-sm);
+  color: var(--text-primary);
+}
+.canvas-card-meta {
+  margin-top: 2px;
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}
+.canvas-card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+.canvas-card-actions .link-button {
+  font-size: var(--fs-xs);
+  color: var(--text-secondary);
+}
+.canvas-card-actions .link-button:hover:not(:disabled) {
+  color: var(--text-primary);
+}
+.canvas-card-actions .link-button:disabled {
+  opacity: 0.4;
+}
+.canvas-list-page,
+.canvas-viewer-page {
+  background: var(--bg-canvas);
+  color: var(--text-primary);
+}
+.canvas-list-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 16px 20px 8px;
+}
+.canvas-list-head h1 {
+  margin: 0;
+  font-size: var(--fs-lg);
+  font-weight: 500;
+}
+.canvas-list-back {
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+}
+.canvas-list {
+  list-style: none;
+  margin: 0;
+  padding: 8px 12px 24px;
+}
+.canvas-list-item {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 10px 8px;
+  border-radius: var(--radius);
+  text-align: left;
+}
+.canvas-list-item:hover {
+  background: var(--bg-surface);
+}
+.canvas-list-title {
+  font-size: var(--fs-sm);
+  color: var(--text-primary);
+}
+.canvas-list-meta {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}
+.canvas-list-state,
+.canvas-list-empty {
+  padding: 24px 20px;
+}
+.chat-shell--full .canvas-split--open .chat-panel-head,
+.chat-shell--full .canvas-split--open .chat-panel-body-content {
+  padding-left: 16px;
+  padding-right: 16px;
 }

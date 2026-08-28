@@ -16,6 +16,7 @@ export const APP_ROOT = join(PROJECT_ROOT, 'apps');
 export const JOURNAL_DIR = join(PROJECT_ROOT, 'journal');
 export const STOCKS_DIR = join(PROJECT_ROOT, 'stocks');
 export const CHART_DATA_DIR = join(PROJECT_ROOT, 'journal', 'charts', 'data');
+export const CANVAS_DIR = join(PROJECT_ROOT, 'journal', 'canvases');
 export const ANNOTATIONS_DIR = join(PROJECT_ROOT, 'journal', 'charts', 'annotations');
 export const LEGACY_CHARTS_DIR = join(PROJECT_ROOT, 'journal', 'charts');
 export const WEB_ROOT = join(APP_ROOT, 'web');

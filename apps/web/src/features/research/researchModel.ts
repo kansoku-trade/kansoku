@@ -4,7 +4,7 @@ import type {
   ResearchKind,
 } from '@kansoku/core/contract/index';
 
-export type ResearchView = 'stocks' | 'journal';
+export type ResearchView = 'stocks' | 'journal' | 'canvases';
 
 const TYPE_LABELS: Record<ResearchDocumentType, string> = {
   stock: '股票档案',
@@ -15,18 +15,25 @@ const TYPE_LABELS: Record<ResearchDocumentType, string> = {
   decision: '决策记录',
   archive: '归档',
   journal: '研究日志',
+  canvas: '画布',
 };
 
 export function parseResearchView(value: string | null): ResearchView {
-  return value === 'stocks' ? 'stocks' : 'journal';
+  if (value === 'stocks') return 'stocks';
+  if (value === 'canvases') return 'canvases';
+  return 'journal';
 }
 
 export function kindForView(view: ResearchView): ResearchKind {
-  return view === 'stocks' ? 'stock' : 'journal';
+  if (view === 'stocks') return 'stock';
+  if (view === 'canvases') return 'canvas';
+  return 'journal';
 }
 
 export function viewForKind(kind: ResearchKind): ResearchView {
-  return kind === 'stock' ? 'stocks' : 'journal';
+  if (kind === 'stock') return 'stocks';
+  if (kind === 'canvas') return 'canvases';
+  return 'journal';
 }
 
 export function researchTypeLabel(type: ResearchDocumentType): string {

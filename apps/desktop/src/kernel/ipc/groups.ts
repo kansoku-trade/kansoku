@@ -1,5 +1,6 @@
 export const KERNEL_IPC_GROUPS = [
   'assistant',
+  'canvas',
   'capabilities',
   'charts',
   'chat',

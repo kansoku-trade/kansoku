@@ -10,6 +10,7 @@ describe('buildPaletteCommands', () => {
       'nav:home',
       'nav:research',
       'nav:chat',
+      'nav:canvases',
       'nav:settings',
       'nav:logs',
     ]);
@@ -48,6 +49,11 @@ describe('buildPaletteCommands', () => {
   it('matches static commands by keyword', () => {
     const commands = buildPaletteCommands('settings', []);
     expect(commands.some((c) => c.id === 'nav:settings')).toBe(true);
+  });
+
+  it('opens canvases inside the research library', () => {
+    const command = buildPaletteCommands('画布', []).find((item) => item.id === 'nav:canvases');
+    expect(command?.route).toBe('/research?view=canvases');
   });
 
   it('exposes the research library through journal and stock keywords', () => {

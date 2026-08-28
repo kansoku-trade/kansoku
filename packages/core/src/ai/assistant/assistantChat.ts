@@ -1,4 +1,5 @@
-import { PROJECT_ROOT } from '../../platform/env.js';
+import { CANVAS_DIR, PROJECT_ROOT } from '../../platform/env.js';
+import { buildCanvasTools } from '../../canvas/tools.js';
 import type { Db } from '../../db/index.js';
 import type { ExecFn } from '../agents/agentTools/execTool.js';
 import { buildResearchTools } from '../agents/agentTools/researchTools.js';
@@ -43,6 +44,7 @@ function buildSystemPrompt(disciplineText: string): string {
   const own = [
     "You are Kansoku's repository-level general research assistant. You are not attached to a chart or a research document.",
     'You have read-only bash access for the longbridge CLI and .claude/skills/**/scripts/*.py scripts to inspect market, macro, and file data. You can also read repository files and complete skills, and search and read research-library documents.',
+    'When the user wants a custom chart or panel, fetch the numbers first, embed them, then call save_canvas. Read an existing canvas with read_canvas before editing the same slug.',
     'When a user message contains an @path (for example, @stocks/MU.md), read that file with the file-reading tool before answering.',
     'Cite the file path for conclusions drawn from files, and state the retrieval timestamp when citing live data.',
   ].join('\n');
@@ -86,7 +88,7 @@ function prepareTurn(
         symbol: 'ASSISTANT',
         origin: 'assistant',
         systemPrompt: buildSystemPrompt(disciplineText),
-        tools: [...researchTools, ...buildResearchLibraryTools(rootDir)],
+        tools: [...researchTools, ...buildResearchLibraryTools(rootDir), ...buildCanvasTools(CANVAS_DIR)],
         transformContext: messageEngine.transformContext,
         onTurnComplete: proTurn.onTurnComplete,
       };

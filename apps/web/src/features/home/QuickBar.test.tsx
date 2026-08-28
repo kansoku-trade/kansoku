@@ -32,6 +32,7 @@ describe('QuickBar AI entries', () => {
     expect(research.getAttribute('href')).toBe('/research?view=journal');
     expect(chat.tagName).toBe('A');
     expect(chat.getAttribute('href')).toBe('/chat');
+    expect(screen.queryByLabelText('画布')).toBeNull();
   });
 
   it('hides the global actions when showGlobalActions is false', () => {

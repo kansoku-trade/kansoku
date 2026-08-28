@@ -31,6 +31,18 @@ describe('research navigation', () => {
     const params = new URLSearchParams(route.split('?')[1]);
     expect(params.get('path')).toBe('journal/decisions/2026-07-14-MU.md');
   });
+
+  it('parses the canvases view and keeps unknown values on the journal timeline', () => {
+    expect(parseResearchView('canvases')).toBe('canvases');
+    expect(parseResearchView('unknown')).toBe('journal');
+  });
+
+  it('round-trips a canvas path through the research route', () => {
+    const route = researchRoute('canvases', 'journal/canvases/acceptance-mu-panel.canvas.tsx');
+    const params = new URLSearchParams(route.split('?')[1]);
+    expect(params.get('view')).toBe('canvases');
+    expect(params.get('path')).toBe('journal/canvases/acceptance-mu-panel.canvas.tsx');
+  });
 });
 
 describe('research list presentation', () => {
@@ -73,6 +85,26 @@ describe('research relationships', () => {
     expect(relatedDocuments(selected, [unrelated, nvdaLog, mu]).map((item) => item.path)).toEqual([
       'stocks/MU.md',
       'journal/nvda.md',
+    ]);
+  });
+
+  it('labels a canvas and links it from a matching stock note', () => {
+    expect(researchListSecondary(document({ type: 'canvas', symbols: ['MU'] }))).toBe('画布 · MU');
+    const stock = document({
+      path: 'stocks/MU.md',
+      kind: 'stock',
+      type: 'stock',
+      symbols: ['MU'],
+    });
+    const canvas = document({
+      path: 'journal/canvases/acceptance-mu-panel.canvas.tsx',
+      kind: 'canvas',
+      type: 'canvas',
+      title: 'MU 验收面板',
+      symbols: ['MU'],
+    });
+    expect(relatedDocuments(stock, [canvas]).map((item) => item.path)).toEqual([
+      'journal/canvases/acceptance-mu-panel.canvas.tsx',
     ]);
   });
 });

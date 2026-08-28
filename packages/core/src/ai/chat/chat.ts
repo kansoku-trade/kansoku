@@ -9,7 +9,8 @@ import type {
   NewsItem,
   RawBar,
 } from '@kansoku/shared/types';
-import { PROJECT_ROOT } from '../../platform/env.js';
+import { CANVAS_DIR, PROJECT_ROOT } from '../../platform/env.js';
+import { buildCanvasTools } from '../../canvas/tools.js';
 import { annotationsService } from '../../charts/annotations.service.js';
 import { getProvider } from '../../marketdata/registry.js';
 import { marketOf } from '../../symbols/symbol.utils.js';
@@ -402,7 +403,7 @@ function prepareTurn(
       return {
         symbol,
         systemPrompt,
-        tools: [...tools, ...researchTools],
+        tools: [...tools, ...researchTools, ...buildCanvasTools(CANVAS_DIR)],
         transformContext: messageEngine.transformContext,
         onTurnComplete: proTurn.onTurnComplete,
         gate: verifyCtx

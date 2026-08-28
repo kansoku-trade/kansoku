@@ -37,6 +37,7 @@ function renderRoute(path: string) {
   const router = createMemoryRouter(routes, { initialEntries: [path] });
   setActiveRouter(router);
   render(<RouterProvider router={router} />);
+  return router;
 }
 
 afterEach(() => {
@@ -107,6 +108,21 @@ describe('AI routes render unconditionally', () => {
     renderRoute('/chat');
     expect(await screen.findByTestId('chat-page')).toBeTruthy();
     expect(getLicenseModalStateForTests().open).toBe(false);
+  });
+
+  it('redirects /canvases into the research library shelf', async () => {
+    capabilities = { pro: false, licensed: false };
+    renderRoute('/canvases');
+    expect(await screen.findByTestId('research-page')).toBeTruthy();
+  });
+
+  it('redirects /canvases/:slug into the research library with the canvas path', async () => {
+    capabilities = { pro: false, licensed: false };
+    const router = renderRoute('/canvases/acceptance-mu-panel');
+    expect(await screen.findByTestId('research-page')).toBeTruthy();
+    expect(router.state.location.pathname + router.state.location.search).toBe(
+      '/research?view=canvases&path=journal%2Fcanvases%2Facceptance-mu-panel.canvas.tsx',
+    );
   });
 
   it('renders the real research page when pro but unlicensed', async () => {

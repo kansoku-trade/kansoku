@@ -1,6 +1,7 @@
 import { AgentKitIpc } from '../../agent-kit/ipc.js';
 import { AnnotationsIpc } from './annotationsIpc.js';
 import { AssistantIpc } from './assistantIpc.js';
+import { CanvasIpc } from './canvasIpc.js';
 import { CapabilitiesIpc } from './capabilitiesIpc.js';
 import { ChartsIpc } from './chartsIpc.js';
 import { ChatIpc } from './chatIpc.js';
@@ -16,6 +17,7 @@ import { SymbolsIpc } from './symbolsIpc.js';
 
 export const ipcServiceClasses = [
   AgentKitIpc,
+  CanvasIpc,
   ChartsIpc,
   SymbolsIpc,
   AnnotationsIpc,

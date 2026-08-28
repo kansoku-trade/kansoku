@@ -25,6 +25,12 @@ const STATIC_COMMANDS: PaletteCommand[] = [
     keywords: ['chat', 'ai', 'assistant', '对话', '助手'],
     route: '/chat',
   },
+  {
+    id: 'nav:canvases',
+    title: '打开画布',
+    keywords: ['canvas', 'canvases', '画布', '面板'],
+    route: '/research?view=canvases',
+  },
   { id: 'nav:settings', title: '打开设置', keywords: ['settings', 'config'], route: '/settings' },
   { id: 'nav:logs', title: '查看日志', keywords: ['logs', 'log', '日志', 'debug'], route: '/logs' },
 ];

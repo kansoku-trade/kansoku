@@ -67,6 +67,13 @@ describe('presentToolCall', () => {
       items: [],
       meta: 'stocks/MU.md',
     });
+    expect(
+      presentToolCall('save_canvas', JSON.stringify({ slug: 'mu-panel', title: 'MU 读数' })),
+    ).toEqual({
+      title: '保存画布',
+      items: ['MU 读数'],
+      meta: 'mu-panel',
+    });
   });
 
   it('falls back to the command text when Bash input is not a recognized visualization', () => {

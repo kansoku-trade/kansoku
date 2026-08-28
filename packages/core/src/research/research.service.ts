@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { promises as fs } from 'node:fs';
 import { basename, extname, isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { listCanvases, loadCanvas } from '../canvas/store.js';
 import type {
   ResearchDocument,
   ResearchDocumentMeta,
@@ -8,8 +9,12 @@ import type {
   ResearchKind,
   ResearchApi,
 } from '../contract/research.js';
+import { canvasSlugFromResearchPath, researchCanvasPath } from '../contract/research.js';
 import { PROJECT_ROOT } from '../platform/env.js';
 import { ClientError } from '../platform/errors.js';
+
+const RESEARCH_KINDS: ResearchKind[] = ['stock', 'journal', 'canvas'];
+const KIND_ORDER: Record<ResearchKind, number> = { stock: 0, journal: 1, canvas: 2 };
 
 const DATE_PREFIX_RE = /^(\d{4}-\d{2}-\d{2})(?:-|$)/;
 const HEADING_RE = /^#{1,6}\s+(.+)$/m;
@@ -142,6 +147,35 @@ function symbolsFrom(kind: ResearchKind, path: string, markdown: string): string
   return [...symbols].sort();
 }
 
+function symbolsFromCanvas(title: string, slug: string): string[] {
+  const symbols = new Set<string>();
+  const titleLower = title.toLocaleLowerCase('zh-CN');
+  for (const token of title.split(/\s+/)) addSymbol(symbols, token);
+  for (const token of slug.split('-')) {
+    if (!titleLower.includes(token.toLocaleLowerCase('zh-CN'))) continue;
+    const upper = token.toUpperCase();
+    if (!FILE_TOKEN_STOP_WORDS.has(upper)) addSymbol(symbols, upper);
+  }
+  return [...symbols].sort();
+}
+
+async function readCanvasDocument(rootDir: string, slug: string): Promise<ResearchDocument> {
+  const doc = await loadCanvas(resolve(rootDir, 'journal', 'canvases'), slug);
+  if (!doc) throw new ClientError('research document not found', undefined, 404);
+  return {
+    path: researchCanvasPath(slug),
+    kind: 'canvas',
+    type: 'canvas',
+    title: doc.title,
+    date: null,
+    symbols: symbolsFromCanvas(doc.title, slug),
+    mtime: doc.mtime,
+    excerpt: doc.title,
+    markdown: '',
+    revision: researchDocumentRevision(doc.source),
+  };
+}
+
 export function researchDocumentRevision(markdown: string): string {
   return createHash('sha256').update(markdown).digest('hex');
 }
@@ -172,8 +206,8 @@ async function readDocument(
 }
 
 function compareDocuments(a: ResearchDocumentMeta, b: ResearchDocumentMeta): number {
-  if (a.kind !== b.kind) return a.kind === 'stock' ? -1 : 1;
-  if (a.kind === 'stock' && b.kind === 'stock') return a.title.localeCompare(b.title, 'en');
+  if (a.kind !== b.kind) return KIND_ORDER[a.kind] - KIND_ORDER[b.kind];
+  if (a.kind === 'stock') return a.title.localeCompare(b.title, 'en');
   const dateOrder = (b.date ?? '').localeCompare(a.date ?? '');
   if (dateOrder !== 0) return dateOrder;
   return b.mtime.localeCompare(a.mtime) || a.title.localeCompare(b.title, 'zh-CN');
@@ -184,41 +218,24 @@ function isWithin(root: string, path: string): boolean {
   return rel !== '' && !rel.startsWith(`..${sep}`) && rel !== '..' && !isAbsolute(rel);
 }
 
-export async function resolveResearchDocumentPath(
+async function resolveExistingResearchPath(
   rootDir: string,
   inputPath: string,
+  kind: ResearchKind,
+  allowedRoot: string,
 ): Promise<{ path: string; kind: ResearchKind }> {
-  if (
-    !inputPath ||
-    inputPath.includes('\0') ||
-    isAbsolute(inputPath) ||
-    extname(inputPath).toLowerCase() !== '.md'
-  ) {
+  const path = resolve(rootDir, inputPath);
+  if (!isWithin(allowedRoot, path)) {
     throw new ClientError(
       'invalid research document path',
-      'expected stocks/*.md or journal/**/*.md',
+      'expected stocks/*.md, journal/**/*.md, or journal/canvases/*.canvas.tsx',
     );
   }
-
-  const path = resolve(rootDir, inputPath);
-  const stocksRoot = resolve(rootDir, 'stocks');
-  const journalRoot = resolve(rootDir, 'journal');
-  const kind = isWithin(stocksRoot, path)
-    ? 'stock'
-    : isWithin(journalRoot, path)
-      ? 'journal'
-      : null;
-  if (!kind)
-    throw new ClientError(
-      'invalid research document path',
-      'expected stocks/*.md or journal/**/*.md',
-    );
 
   try {
     const [stat, realPath] = await Promise.all([fs.lstat(path), fs.realpath(path)]);
     if (!stat.isFile() || stat.isSymbolicLink())
       throw new ClientError('research document not found', undefined, 404);
-    const allowedRoot = kind === 'stock' ? stocksRoot : journalRoot;
     const realAllowedRoot = await fs.realpath(allowedRoot);
     if (!isWithin(realAllowedRoot, realPath)) {
       throw new ClientError(
@@ -234,17 +251,67 @@ export async function resolveResearchDocumentPath(
   }
 }
 
+export async function resolveResearchDocumentPath(
+  rootDir: string,
+  inputPath: string,
+): Promise<{ path: string; kind: ResearchKind }> {
+  if (!inputPath || inputPath.includes('\0') || isAbsolute(inputPath)) {
+    throw new ClientError(
+      'invalid research document path',
+      'expected stocks/*.md, journal/**/*.md, or journal/canvases/*.canvas.tsx',
+    );
+  }
+
+  const canvasSlug = canvasSlugFromResearchPath(toPosix(inputPath));
+  if (canvasSlug) {
+    return resolveExistingResearchPath(
+      rootDir,
+      inputPath,
+      'canvas',
+      resolve(rootDir, 'journal', 'canvases'),
+    );
+  }
+
+  if (extname(inputPath).toLowerCase() !== '.md') {
+    throw new ClientError(
+      'invalid research document path',
+      'expected stocks/*.md, journal/**/*.md, or journal/canvases/*.canvas.tsx',
+    );
+  }
+
+  const path = resolve(rootDir, inputPath);
+  const stocksRoot = resolve(rootDir, 'stocks');
+  const journalRoot = resolve(rootDir, 'journal');
+  const kind: ResearchKind | null = isWithin(stocksRoot, path)
+    ? 'stock'
+    : isWithin(journalRoot, path)
+      ? 'journal'
+      : null;
+  if (!kind) {
+    throw new ClientError(
+      'invalid research document path',
+      'expected stocks/*.md, journal/**/*.md, or journal/canvases/*.canvas.tsx',
+    );
+  }
+
+  return resolveExistingResearchPath(rootDir, inputPath, kind, kind === 'stock' ? stocksRoot : journalRoot);
+}
+
 export type ResearchLibraryApi = Pick<ResearchApi, 'list' | 'get'>;
 
 export function createResearchService(rootDir: string): ResearchLibraryApi {
   return {
     async list(input) {
-      if (input.kind !== undefined && input.kind !== 'stock' && input.kind !== 'journal') {
-        throw new ClientError('invalid research kind', 'expected stock or journal');
+      if (input.kind !== undefined && !RESEARCH_KINDS.includes(input.kind)) {
+        throw new ClientError('invalid research kind', 'expected stock, journal, or canvas');
       }
-      const kinds: ResearchKind[] = input.kind ? [input.kind] : ['stock', 'journal'];
+      const kinds: ResearchKind[] = input.kind ? [input.kind] : [...RESEARCH_KINDS];
       const groups = await Promise.all(
         kinds.map(async (kind) => {
+          if (kind === 'canvas') {
+            const items = await listCanvases(resolve(rootDir, 'journal', 'canvases'));
+            return Promise.all(items.map((item) => readCanvasDocument(rootDir, item.slug)));
+          }
           const dir = resolve(rootDir, kind === 'stock' ? 'stocks' : 'journal');
           const files = await listMarkdownFiles(dir);
           return Promise.all(files.map((path) => readDocument(rootDir, path, kind)));
@@ -269,6 +336,16 @@ export function createResearchService(rootDir: string): ResearchLibraryApi {
 
     async get(input) {
       const resolved = await resolveResearchDocumentPath(rootDir, input.path);
+      if (resolved.kind === 'canvas') {
+        const slug = canvasSlugFromResearchPath(toPosix(relative(rootDir, resolved.path)));
+        if (!slug) {
+          throw new ClientError(
+            'invalid research document path',
+            'expected journal/canvases/*.canvas.tsx',
+          );
+        }
+        return readCanvasDocument(rootDir, slug);
+      }
       return readDocument(rootDir, resolved.path, resolved.kind);
     },
   };
@@ -297,6 +374,12 @@ export async function writeResearchDocumentAtomic(input: {
 }): Promise<ResearchDocument> {
   if (!input.markdown.trim()) throw new ClientError('research document cannot be empty');
   const resolved = await resolveResearchDocumentPath(input.rootDir, input.path);
+  if (resolved.kind === 'canvas') {
+    throw new ClientError(
+      'cannot write canvas through research document API',
+      'use save_canvas',
+    );
+  }
   const current = await readDocument(input.rootDir, resolved.path, resolved.kind);
   if (current.revision !== input.expectedRevision) {
     throw new ClientError(

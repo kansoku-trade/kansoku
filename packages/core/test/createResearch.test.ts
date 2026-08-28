@@ -255,6 +255,15 @@ describe('createResearchDocument: malformed input', () => {
     expect(existsSync(join(root, 'stocks'))).toBe(false);
   });
 
+  it('rejects canvas as a create kind', async () => {
+    await expect(
+      createResearchDocument({ kind: 'canvas' } as ResearchCreateInput, {
+        rootDir: root,
+        buildSepaChart: vi.fn(),
+      }),
+    ).rejects.toMatchObject({ status: 400 });
+  });
+
   it('rejects a stock input with a non-string symbol with a ClientError instead of throwing a TypeError', async () => {
     const buildSepaChart = vi.fn();
 

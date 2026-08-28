@@ -16,6 +16,8 @@ interface ChatPanelProps {
   onDragStart?: (e: React.PointerEvent) => void;
   onModeChange: (mode: ChatMode) => void;
   onPickSuggestion: (question: string) => void;
+  onOpenCanvas?: (slug: string) => void;
+  onViewCanvasSource?: (slug: string) => void;
 }
 
 export function ChatPanel({
@@ -30,6 +32,8 @@ export function ChatPanel({
   onDragStart,
   onModeChange,
   onPickSuggestion,
+  onOpenCanvas,
+  onViewCanvasSource,
 }: ChatPanelProps) {
   return (
     <div className="chat-panel">
@@ -63,6 +67,8 @@ export function ChatPanel({
         suggestions={suggestions}
         emptyText="还没有对话，在下方输入你的问题"
         onPickSuggestion={onPickSuggestion}
+        onOpenCanvas={onOpenCanvas}
+        onViewCanvasSource={onViewCanvasSource}
       />
     </div>
   );

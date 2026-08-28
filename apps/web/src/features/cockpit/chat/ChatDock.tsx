@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'motion/react';
+import { CanvasSplit } from '../../canvas/CanvasSplit';
+import { useCanvasWorkspace } from '../../canvas/useCanvasWorkspace';
 import { ChatComposer } from './ChatComposer';
 import { ChatPanel } from './ChatPanel';
 import { useChatSession } from './useChatSession';
@@ -29,6 +31,7 @@ export function ChatDock({ chartId, docCreatedAt }: ChatDockProps) {
     ensureSuggestions,
   } = useChatSession(chartId);
   const [mode, setMode] = useState<ChatMode>('dock');
+  const canvas = useCanvasWorkspace();
   const [text, setText] = useState('');
   const { rect, onDragStart, onResizeStart, dragging } = useFloatingRect();
   const hostRef = useRef<HTMLDivElement>(null);
@@ -106,19 +109,35 @@ export function ChatDock({ chartId, docCreatedAt }: ChatDockProps) {
           <div className="chat-resize chat-resize--nw" onPointerDown={onResizeStart('nw')} />
         </>
       )}
-      <ChatPanel
-        session={session}
-        docCreatedAt={docCreatedAt}
-        rows={rows}
-        busy={busy}
-        streamText={streamText}
-        liveTools={liveTools}
-        suggestions={suggestions}
-        mode={mode}
-        onDragStart={mode === 'float' ? onDragStart : undefined}
-        onModeChange={setMode}
-        onPickSuggestion={(question) => void submit(question)}
-      />
+      <CanvasSplit
+        openSlug={mode === 'full' ? canvas.openSlug : null}
+        view={canvas.view}
+        onClose={canvas.close}
+        onViewChange={canvas.setView}
+        storageKey="canvas-chatdock-pane"
+      >
+        <ChatPanel
+          session={session}
+          docCreatedAt={docCreatedAt}
+          rows={rows}
+          busy={busy}
+          streamText={streamText}
+          liveTools={liveTools}
+          suggestions={suggestions}
+          mode={mode}
+          onDragStart={mode === 'float' ? onDragStart : undefined}
+          onModeChange={setMode}
+          onPickSuggestion={(question) => void submit(question)}
+          onOpenCanvas={(slug) => {
+            canvas.open(slug, 'canvas');
+            setMode('full');
+          }}
+          onViewCanvasSource={(slug) => {
+            canvas.open(slug, 'source');
+            setMode('full');
+          }}
+        />
+      </CanvasSplit>
       {composer}
     </motion.div>
   );

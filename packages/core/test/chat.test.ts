@@ -239,6 +239,9 @@ describe('runChatTurn tools', () => {
       'read_skill',
       'bash',
       'read_file',
+      'save_canvas',
+      'read_canvas',
+      'list_canvases',
     ]);
   });
 

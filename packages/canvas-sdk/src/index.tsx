@@ -1,0 +1,253 @@
+import type { CSSProperties, ReactNode } from 'react';
+import { useMemo, useState } from 'react';
+import { theme } from './theme.js';
+
+export { useMemo, useState };
+export { theme };
+export {
+  AreaChart,
+  BarChart,
+  Callout,
+  Divider,
+  LineChart,
+  PieChart,
+  Pill,
+  Select,
+  Toggle,
+} from './charts.js';
+export { CandleChart } from './CandleChart.js';
+
+type Box = { children?: ReactNode; style?: CSSProperties };
+
+const font =
+  'system-ui, -apple-system, BlinkMacSystemFont, sans-serif';
+
+export function Canvas({
+  title,
+  caption,
+  children,
+}: {
+  title: string;
+  caption?: string;
+} & Box) {
+  return (
+    <div
+      style={{
+        minHeight: '100%',
+        background: theme.bgCanvas,
+        color: theme.textPrimary,
+        fontFamily: font,
+        padding: '18px 20px 28px',
+        boxSizing: 'border-box',
+      }}
+    >
+      <h1
+        style={{
+          margin: 0,
+          fontSize: 15,
+          fontWeight: 500,
+          color: theme.textPrimary,
+        }}
+      >
+        {title}
+      </h1>
+      {caption ? (
+        <p
+          style={{
+            margin: '3px 0 0',
+            fontSize: 10.5,
+            color: theme.textMuted,
+          }}
+        >
+          {caption}
+        </p>
+      ) : null}
+      <div style={{ marginTop: 16 }}>{children}</div>
+    </div>
+  );
+}
+
+export function Section({ title, children }: { title: string } & Box) {
+  return (
+    <section style={{ margin: '20px 0 8px' }}>
+      <div
+        style={{
+          fontSize: 10,
+          color: theme.textMuted,
+          letterSpacing: '0.08em',
+          textTransform: 'uppercase',
+          marginBottom: 8,
+        }}
+      >
+        {title}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+export function Grid({ columns = 2, children }: { columns?: number } & Box) {
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
+        gap: 8,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+export function Row({ children, style }: Box) {
+  return (
+    <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', ...style }}>{children}</div>
+  );
+}
+
+export function Stack({ children, style }: Box) {
+  return <div style={{ display: 'flex', flexDirection: 'column', gap: 12, ...style }}>{children}</div>;
+}
+
+export function Card({ children, style }: Box) {
+  return (
+    <div
+      style={{
+        background: theme.bgSurface,
+        border: `1px solid ${theme.border}`,
+        borderRadius: 6,
+        padding: '9px 11px',
+        ...style,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+export function H1({ children }: Box) {
+  return (
+    <h1 style={{ margin: 0, fontSize: 15, fontWeight: 500, color: theme.textPrimary }}>{children}</h1>
+  );
+}
+
+export function H2({ children }: Box) {
+  return (
+    <h2 style={{ margin: 0, fontSize: 13, fontWeight: 500, color: theme.textPrimary }}>{children}</h2>
+  );
+}
+
+export function H3({ children }: Box) {
+  return (
+    <h3 style={{ margin: 0, fontSize: 12, fontWeight: 500, color: theme.textPrimary }}>{children}</h3>
+  );
+}
+
+export function Text({ children, style }: Box) {
+  return (
+    <p style={{ margin: 0, fontSize: 12, lineHeight: 1.55, color: theme.textPrimary, ...style }}>
+      {children}
+    </p>
+  );
+}
+
+export function Stat({
+  label,
+  value,
+  delta,
+  tone = 'neutral',
+}: {
+  label: string;
+  value: string;
+  delta?: string;
+  tone?: 'up' | 'down' | 'neutral';
+}) {
+  const toneColor =
+    tone === 'up' ? theme.up : tone === 'down' ? theme.down : theme.textPrimary;
+  return (
+    <Card>
+      <div style={{ fontSize: 10, color: theme.textSecondary, marginBottom: 3 }}>{label}</div>
+      <div
+        style={{
+          fontSize: 19,
+          fontWeight: 400,
+          letterSpacing: '-0.01em',
+          fontFamily: theme.fontMono,
+          fontVariantNumeric: 'tabular-nums',
+          color: toneColor,
+        }}
+      >
+        {value}
+      </div>
+      {delta ? (
+        <div
+          style={{
+            fontSize: 10,
+            marginTop: 2,
+            color: toneColor,
+            fontFamily: theme.fontMono,
+            fontVariantNumeric: 'tabular-nums',
+          }}
+        >
+          {delta}
+        </div>
+      ) : null}
+    </Card>
+  );
+}
+
+export function Table({
+  columns,
+  rows,
+}: {
+  columns: { key: string; header: string; align?: 'left' | 'right' }[];
+  rows: Record<string, ReactNode>[];
+}) {
+  return (
+    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
+      <thead>
+        <tr>
+          {columns.map((col) => (
+            <th
+              key={col.key}
+              style={{
+                textAlign: col.align ?? 'left',
+                fontWeight: 400,
+                color: theme.textMuted,
+                fontSize: 9.5,
+                letterSpacing: '0.05em',
+                textTransform: 'uppercase',
+                padding: '0 0 5px',
+                borderBottom: `1px solid ${theme.border}`,
+              }}
+            >
+              {col.header}
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row, index) => (
+          <tr key={index}>
+            {columns.map((col) => (
+              <td
+                key={col.key}
+                style={{
+                  textAlign: col.align ?? 'left',
+                  padding: '5px 0',
+                  borderBottom: '1px solid #1a1a1a',
+                  color: theme.textPrimary,
+                  fontFamily: col.align === 'right' ? theme.fontMono : undefined,
+                  fontVariantNumeric: col.align === 'right' ? 'tabular-nums' : undefined,
+                }}
+              >
+                {row[col.key]}
+              </td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}

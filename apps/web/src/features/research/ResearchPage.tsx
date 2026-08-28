@@ -3,6 +3,7 @@ import {
   BookOpen,
   ChartCandlestick,
   FileText,
+  LayoutDashboard,
   Library,
   Plus,
   RefreshCw,
@@ -13,6 +14,8 @@ import type {
   ResearchDocument,
   ResearchDocumentMeta,
 } from '@kansoku/core/contract/index';
+import { canvasSlugFromResearchPath } from '@kansoku/core/contract/index';
+import { CanvasFrame } from '@web/features/canvas/CanvasFrame';
 import { useQuery } from '@web/lib/apiHooks';
 import { client } from '@web/lib/client';
 import { queryClient } from '@web/lib/queryClient';
@@ -39,7 +42,26 @@ const CREATE_HINT_MS = 4000;
 const VIEW_OPTIONS: { key: ResearchView; label: string }[] = [
   { key: 'stocks', label: '股票档案' },
   { key: 'journal', label: '研究日志' },
+  { key: 'canvases', label: '画布' },
 ];
+
+function viewIcon(view: ResearchView) {
+  if (view === 'stocks') return <BookOpen size={13} />;
+  if (view === 'canvases') return <LayoutDashboard size={13} />;
+  return <FileText size={13} />;
+}
+
+function explorerLabel(view: ResearchView): string {
+  if (view === 'stocks') return '股票档案';
+  if (view === 'canvases') return '画布';
+  return '研究时间线';
+}
+
+function searchPlaceholder(view: ResearchView): string {
+  if (view === 'stocks') return '搜索股票或正文';
+  if (view === 'canvases') return '搜索标题或标的';
+  return '搜索日期、标的或主题';
+}
 
 const EXPLORER_MIN_WIDTH = 240;
 const EXPLORER_MAX_WIDTH = 520;
@@ -124,7 +146,9 @@ function ResearchReader({
 
   const cockpitSymbol = document.kind === 'stock' ? document.symbols[0] : null;
   return (
-    <article className="research-reader-document">
+    <article
+      className={`research-reader-document${document.kind === 'canvas' ? ' research-reader-document--canvas' : ''}`}
+    >
       <header className="research-reader-head">
         <div className="research-reader-heading">
           <Badge tone={document.kind === 'stock' ? 'accent' : undefined}>
@@ -148,10 +172,32 @@ function ResearchReader({
         )}
       </header>
       <div className="research-reader-body">
-        <Markdown>{document.markdown}</Markdown>
+        {document.kind === 'canvas' ? (
+          <ResearchCanvasBody path={document.path} />
+        ) : (
+          <Markdown>{document.markdown}</Markdown>
+        )}
       </div>
     </article>
   );
+}
+
+function ResearchCanvasBody({ path }: { path: string }) {
+  const slug = canvasSlugFromResearchPath(path);
+  const { data, loading, error } = useQuery(
+    slug ? `canvas.get:${slug}` : null,
+    () => (slug ? client.canvas.get({ slug }) : Promise.reject(new Error('Invalid canvas path'))),
+  );
+  if (loading && !data) {
+    return (
+      <div className="research-reader-state">
+        <Spinner /> 正在打开画布…
+      </div>
+    );
+  }
+  if (error) return <ErrorBox className="research-reader-error">{error}</ErrorBox>;
+  if (!data || !slug) return <Empty>画布不存在</Empty>;
+  return <CanvasFrame source={data.source} slug={data.slug} />;
 }
 
 function ResearchContext({
@@ -279,6 +325,7 @@ export function ResearchPage() {
 
   const stockCount = (allDocuments ?? []).filter((item) => item.kind === 'stock').length;
   const journalCount = (allDocuments ?? []).filter((item) => item.kind === 'journal').length;
+  const canvasCount = (allDocuments ?? []).filter((item) => item.kind === 'canvas').length;
   const listLoading = deferredQuery ? searchLoading : allLoading;
   const listError = deferredQuery ? searchError : allError;
 
@@ -292,7 +339,7 @@ export function ResearchPage() {
           <div>
             <h1>研究库</h1>
             <p>
-              {stockCount} 篇股票档案 · {journalCount} 篇研究日志
+              {stockCount} 篇股票档案 · {journalCount} 篇研究日志 · {canvasCount} 份画布
             </p>
           </div>
         </div>
@@ -306,14 +353,16 @@ export function ResearchPage() {
                 aria-pressed={option.key === view}
                 onClick={() => changeView(option.key)}
               >
-                {option.key === 'stocks' ? <BookOpen size={13} /> : <FileText size={13} />}
+                {viewIcon(option.key)}
                 {option.label}
               </button>
             ))}
           </div>
-          <button type="button" className="research-new" onClick={openCreateDialog}>
-            <Plus size={14} /> 新建
-          </button>
+          {view !== 'canvases' ? (
+            <button type="button" className="research-new" onClick={openCreateDialog}>
+              <Plus size={14} /> 新建
+            </button>
+          ) : null}
           <div className="research-search-actions">
             <label className="research-search">
               <Search size={14} aria-hidden="true" />
@@ -321,7 +370,7 @@ export function ResearchPage() {
               <Input
                 type="search"
                 value={query}
-                placeholder={view === 'stocks' ? '搜索股票或正文' : '搜索日期、标的或主题'}
+                placeholder={searchPlaceholder(view)}
                 onChange={(event) => setQuery(event.target.value)}
               />
             </label>
@@ -349,7 +398,7 @@ export function ResearchPage() {
         >
           <aside className="research-explorer">
             <div className="research-explorer-head">
-              <span>{view === 'stocks' ? '股票档案' : '研究时间线'}</span>
+              <span>{explorerLabel(view)}</span>
               <span>{visibleDocuments.length}</span>
             </div>
             <ResearchExplorer
@@ -370,13 +419,15 @@ export function ResearchPage() {
           )}
           <ResearchReader document={document} loading={documentLoading} error={documentError} />
         </main>
-        <ResearchContext
-          selected={selected}
-          document={document?.path === selected?.path ? document : null}
-          allDocuments={allDocuments ?? []}
-          onSelect={selectDocument}
-          onDocumentChanged={refresh}
-        />
+        {selected?.kind === 'canvas' ? null : (
+          <ResearchContext
+            selected={selected}
+            document={document?.path === selected?.path ? document : null}
+            allDocuments={allDocuments ?? []}
+            onSelect={selectDocument}
+            onDocumentChanged={refresh}
+          />
+        )}
       </div>
     </div>
   );

@@ -136,6 +136,25 @@ export function presentToolCall(label: string, input?: string): ToolPresentation
     return { title: '加载分析流程', items: name ? [name] : [] };
   }
 
+  if (key === 'savecanvas') {
+    const slug = stringValue(parsed, 'slug');
+    const title = stringValue(parsed, 'title');
+    return {
+      title: '保存画布',
+      items: title ? [title] : [],
+      meta: slug,
+    };
+  }
+
+  if (key === 'readcanvas') {
+    const slug = stringValue(parsed, 'slug');
+    return { title: '读取画布', items: [], meta: slug };
+  }
+
+  if (key === 'listcanvases') {
+    return { title: '列出画布', items: [] };
+  }
+
   if (key === 'readfile' || key === 'readresearchdocument') {
     const path = stringValue(parsed, 'path');
     return {

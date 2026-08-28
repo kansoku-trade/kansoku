@@ -240,9 +240,12 @@ describe('assistant chat', () => {
     expect([...capturedToolNames].sort()).toEqual(
       [
         'bash',
+        'list_canvases',
+        'read_canvas',
         'read_file',
         'read_research_document',
         'read_skill',
+        'save_canvas',
         'search_research_documents',
       ].sort(),
     );

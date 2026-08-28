@@ -1,5 +1,6 @@
 import type { AgentTool } from '@earendil-works/pi-agent-core';
 import { Type } from 'typebox';
+import { canvasSlugFromResearchPath } from '../../contract/research.js';
 import { createResearchService } from '../../research/research.service.js';
 import { textResult } from './dataTools.js';
 
@@ -24,6 +25,9 @@ export function buildResearchLibraryTools(rootDir: string): AgentTool<any>[] {
     description: 'Read another stocks/*.md or journal/**/*.md document from the research library.',
     parameters: readDocumentSchema,
     execute: async (_id, params) => {
+      if (canvasSlugFromResearchPath(params.path)) {
+        return textResult('This path is a canvas. Use read_canvas with its slug.');
+      }
       const document = await library.get({ path: params.path });
       return textResult(document.markdown);
     },

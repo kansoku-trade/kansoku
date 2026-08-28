@@ -1,8 +1,11 @@
+import { createHash } from 'node:crypto';
 import { mkdtempSync, mkdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { createResearchService } from '../src/research/research.service.js';
+import { saveCanvas } from '../src/canvas/store.js';
+import { researchCanvasPath } from '../src/contract/research.js';
+import { createResearchService, writeResearchDocumentAtomic } from '../src/research/research.service.js';
 
 let root: string;
 
@@ -113,5 +116,113 @@ describe('research document loading', () => {
     await expect(service.get({ path: 'journal/outside.md' })).rejects.toMatchObject({
       status: 404,
     });
+  });
+});
+
+const CANVAS_SOURCE = `import { Canvas, Text } from '@kansoku/canvas';
+export default function App() {
+  return <Canvas title="MU 验收面板"><Text>ok</Text></Canvas>;
+}
+`;
+
+describe('research library canvases', () => {
+  it('lists canvases as a third kind and extracts symbols from title and slug', async () => {
+    write('stocks/MU.md', '# MU\n\n档案。\n');
+    const saved = await saveCanvas(join(root, 'journal', 'canvases'), {
+      slug: 'acceptance-mu-panel',
+      title: 'MU 验收面板',
+      source: CANVAS_SOURCE,
+    });
+    expect(saved.ok).toBe(true);
+
+    const all = await createResearchService(root).list({});
+    const canvas = all.find((row) => row.kind === 'canvas');
+    expect(canvas).toMatchObject({
+      path: 'journal/canvases/acceptance-mu-panel.canvas.tsx',
+      type: 'canvas',
+      title: 'MU 验收面板',
+      date: null,
+      symbols: ['MU'],
+      excerpt: 'MU 验收面板',
+    });
+    expect(canvas).not.toHaveProperty('markdown');
+    expect(all[0].kind).toBe('stock');
+    expect(all.at(-1)?.kind).toBe('canvas');
+
+    const only = await createResearchService(root).list({ kind: 'canvas' });
+    expect(only).toHaveLength(1);
+    expect(only[0].path).toBe(researchCanvasPath('acceptance-mu-panel'));
+  });
+
+  it('searches canvas title and slug without returning source as markdown', async () => {
+    await saveCanvas(join(root, 'journal', 'canvases'), {
+      slug: 'acceptance-mu-panel',
+      title: 'MU 验收面板',
+      source: CANVAS_SOURCE,
+    });
+
+    const rows = await createResearchService(root).list({
+      kind: 'canvas',
+      query: 'acceptance-mu-panel',
+    });
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).not.toHaveProperty('markdown');
+  });
+
+  it('gets a canvas as empty markdown with a source revision', async () => {
+    const saved = await saveCanvas(join(root, 'journal', 'canvases'), {
+      slug: 'acceptance-mu-panel',
+      title: 'MU 验收面板',
+      source: CANVAS_SOURCE,
+    });
+    if (!saved.ok) throw new Error('save failed');
+
+    const document = await createResearchService(root).get({
+      path: researchCanvasPath('acceptance-mu-panel'),
+    });
+    expect(document.markdown).toBe('');
+    expect(document.title).toBe('MU 验收面板');
+    expect(document.kind).toBe('canvas');
+    expect(document.revision).toMatch(/^[\da-f]{64}$/);
+    expect(document.revision).not.toBe(createHash('sha256').update('').digest('hex'));
+  });
+
+  it('rejects canvas paths outside journal/canvases or with a bad slug', async () => {
+    const service = createResearchService(root);
+    await expect(service.get({ path: 'journal/other.canvas.tsx' })).rejects.toMatchObject({
+      status: 400,
+    });
+    await expect(service.get({ path: 'journal/canvases/Not-Kebab.canvas.tsx' })).rejects.toMatchObject(
+      { status: 400 },
+    );
+  });
+
+  it('refuses to write a canvas through the markdown document API', async () => {
+    await saveCanvas(join(root, 'journal', 'canvases'), {
+      slug: 'acceptance-mu-panel',
+      title: 'MU 验收面板',
+      source: CANVAS_SOURCE,
+    });
+    const current = await createResearchService(root).get({
+      path: researchCanvasPath('acceptance-mu-panel'),
+    });
+    await expect(
+      writeResearchDocumentAtomic({
+        rootDir: root,
+        path: researchCanvasPath('acceptance-mu-panel'),
+        markdown: '# no',
+        expectedRevision: current.revision,
+      }),
+    ).rejects.toMatchObject({ status: 400 });
+  });
+
+  it('skips .meta.json when listing canvases', async () => {
+    await saveCanvas(join(root, 'journal', 'canvases'), {
+      slug: 'acceptance-mu-panel',
+      title: 'MU 验收面板',
+      source: CANVAS_SOURCE,
+    });
+    const rows = await createResearchService(root).list({ kind: 'canvas' });
+    expect(rows.every((row) => row.path.endsWith('.canvas.tsx'))).toBe(true);
   });
 });

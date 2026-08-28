@@ -1,6 +1,8 @@
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowDown, Check, ChevronRight } from 'lucide-react';
 import { ScrollArea } from '@web/ui';
+import { CanvasCard } from '../../canvas/CanvasCard';
+import { canvasEntryFromTool, isLastSaveForSlug } from '../../canvas/canvasEntries';
 import { Markdown } from '../markdown';
 import { mergeTimeline, type TranscriptInsert } from './transcriptTimeline.js';
 import { presentToolCall, toolRowKey } from './toolSummary.js';
@@ -94,10 +96,18 @@ function ToolRow({
 
 function ChatRowView({
   row,
+  rowIndex,
+  rows,
   modelLabels,
+  onOpenCanvas,
+  onViewCanvasSource,
 }: {
   row: ChatRow;
+  rowIndex: number;
+  rows: ChatRow[];
   modelLabels?: Readonly<Record<string, string>>;
+  onOpenCanvas?: (slug: string) => void;
+  onViewCanvasSource?: (slug: string) => void;
 }) {
   if (row.kind === 'user') {
     return (
@@ -130,8 +140,24 @@ function ChatRowView({
     );
   }
   if (row.kind === 'tool') {
+    const entry = canvasEntryFromTool(row.label ?? '', row.input, row.output);
+    const showCard =
+      entry &&
+      onOpenCanvas &&
+      onViewCanvasSource &&
+      isLastSaveForSlug(rows, rowIndex, entry.slug);
     return (
-      <ToolRow label={row.label ?? ''} running={false} input={row.input} output={row.output} />
+      <>
+        <ToolRow label={row.label ?? ''} running={false} input={row.input} output={row.output} />
+        {showCard && entry ? (
+          <CanvasCard
+            slug={entry.slug}
+            title={entry.title}
+            onOpen={() => onOpenCanvas(entry.slug)}
+            onSource={() => onViewCanvasSource(entry.slug)}
+          />
+        ) : null}
+      </>
     );
   }
   return <div className="chat-error-row">{row.text}</div>;
@@ -148,6 +174,8 @@ function ConversationTranscriptView({
   onPickSuggestion,
   className,
   modelLabels,
+  onOpenCanvas,
+  onViewCanvasSource,
 }: {
   rows: ChatRow[];
   inserts?: TranscriptInsert[];
@@ -159,6 +187,8 @@ function ConversationTranscriptView({
   onPickSuggestion: (question: string) => void;
   className?: string;
   modelLabels?: Readonly<Record<string, string>>;
+  onOpenCanvas?: (slug: string) => void;
+  onViewCanvasSource?: (slug: string) => void;
 }) {
   const bodyRef = useRef<HTMLDivElement>(null);
   const stickRef = useRef(true);
@@ -211,7 +241,15 @@ function ConversationTranscriptView({
       ) : null}
       {timeline.map((entry) =>
         entry.kind === 'row' ? (
-          <ChatRowView key={entry.row.id} row={entry.row} modelLabels={modelLabels} />
+          <ChatRowView
+            key={entry.row.id}
+            row={entry.row}
+            rowIndex={rows.indexOf(entry.row)}
+            rows={rows}
+            modelLabels={modelLabels}
+            onOpenCanvas={onOpenCanvas}
+            onViewCanvasSource={onViewCanvasSource}
+          />
         ) : (
           <div key={entry.insert.id} className="chat-insert">
             {entry.insert.node}

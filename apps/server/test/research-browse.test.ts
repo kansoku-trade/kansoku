@@ -30,6 +30,12 @@ describe('research browse routes served from open core', () => {
     expect(service.list).not.toHaveBeenCalled();
   });
 
+  it('forwards the canvas view to the research service', async () => {
+    const res = await tsukiRequest('/api/research?kind=canvas');
+    expect(res.status).toBe(200);
+    expect(service.list).toHaveBeenCalledWith({ kind: 'canvas', query: undefined });
+  });
+
   it('loads a document by its repository-relative path', async () => {
     service.get.mockResolvedValue({
       path: 'stocks/MU.md',

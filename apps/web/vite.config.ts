@@ -93,6 +93,7 @@ export default defineConfig({
       input: {
         main: resolve(webRoot, 'index.html'),
         train: resolve(webRoot, 'train.html'),
+        canvasGuest: resolve(webRoot, 'canvas-guest.html'),
       },
       output: {
         chunkFileNames: chunkFileNamesFor,

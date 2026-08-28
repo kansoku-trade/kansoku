@@ -11,6 +11,7 @@ import type {
 
 const list = vi.fn();
 const get = vi.fn();
+const canvasGet = vi.fn();
 const openCreateResearchDialogMock = vi.fn();
 
 vi.mock('@web/lib/client', () => ({
@@ -19,6 +20,9 @@ vi.mock('@web/lib/client', () => ({
       list: (...args: unknown[]) => list(...args),
       get: (...args: unknown[]) => get(...args),
     },
+    canvas: {
+      get: (...args: unknown[]) => canvasGet(...args),
+    },
   },
 }));
 vi.mock('./ResearchAssistant', () => ({
@@ -26,6 +30,9 @@ vi.mock('./ResearchAssistant', () => ({
 }));
 vi.mock('./CreateResearchDialog', () => ({
   openCreateResearchDialog: (...args: unknown[]) => openCreateResearchDialogMock(...args),
+}));
+vi.mock('@web/features/canvas/CanvasFrame', () => ({
+  CanvasFrame: ({ slug }: { slug?: string }) => <div data-testid="canvas-frame">{slug}</div>,
 }));
 
 const { ResearchPage } = await import('./ResearchPage');
@@ -46,6 +53,21 @@ const AVGO_DOC: ResearchDocument = {
   ...AVGO_META,
   markdown: 'AVGO 档案正文',
   revision: 'r1',
+};
+const CANVAS_META: ResearchDocumentMeta = {
+  path: 'journal/canvases/acceptance-mu-panel.canvas.tsx',
+  kind: 'canvas',
+  type: 'canvas',
+  title: 'MU 验收面板',
+  date: null,
+  symbols: ['MU'],
+  mtime: '2026-08-28T00:00:00.000Z',
+  excerpt: 'MU 验收面板',
+};
+const CANVAS_DOC: ResearchDocument = {
+  ...CANVAS_META,
+  markdown: '',
+  revision: 'r-canvas',
 };
 const MRVL_DOC: ResearchDocument = {
   path: 'stocks/MRVL.md',
@@ -89,6 +111,7 @@ afterEach(() => {
   setActiveRouter(null);
   list.mockReset();
   get.mockReset();
+  canvasGet.mockReset();
   openCreateResearchDialogMock.mockReset();
 });
 
@@ -151,5 +174,31 @@ describe('ResearchPage create-flow cache seeding', () => {
     onCreated({ document: AVGO_DOC, sepaChartId: null, existed: true });
 
     expect(await screen.findByText('已存在，已为你打开')).toBeTruthy();
+  });
+});
+
+describe('ResearchPage canvases shelf', () => {
+  it('shows the canvases shelf without create, renders the frame, and hides the assistant column', async () => {
+    const router = memRouter(
+      '/research?view=canvases&path=journal%2Fcanvases%2Facceptance-mu-panel.canvas.tsx',
+    );
+    setActiveRouter(router);
+    list.mockResolvedValue([CANVAS_META]);
+    get.mockResolvedValue(CANVAS_DOC);
+    canvasGet.mockResolvedValue({
+      slug: 'acceptance-mu-panel',
+      title: 'MU 验收面板',
+      source: 'export default function App() { return null }',
+      mtime: CANVAS_META.mtime,
+      check: null,
+    });
+
+    renderResearchPage();
+
+    expect(await screen.findByRole('button', { name: '画布' })).toBeTruthy();
+    expect(screen.queryByText('新建')).toBeNull();
+    expect((await screen.findByTestId('canvas-frame')).textContent).toBe('acceptance-mu-panel');
+    expect(screen.queryByText('AVGO 档案正文')).toBeNull();
+    expect(screen.queryByLabelText('关联研究资料')).toBeNull();
   });
 });

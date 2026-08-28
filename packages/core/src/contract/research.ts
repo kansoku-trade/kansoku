@@ -1,10 +1,29 @@
 import { defineRoutes } from './defineRoutes.js';
 import type { ChatDisplayMessage } from '@kansoku/pro-api';
 
-export type ResearchKind = 'stock' | 'journal';
+export type ResearchKind = 'stock' | 'journal' | 'canvas';
 
 export type ResearchDocumentType =
-  'stock' | 'intraday' | 'recap' | 'flow' | 'lessons' | 'decision' | 'archive' | 'journal';
+  | 'stock'
+  | 'intraday'
+  | 'recap'
+  | 'flow'
+  | 'lessons'
+  | 'decision'
+  | 'archive'
+  | 'journal'
+  | 'canvas';
+
+export const RESEARCH_CANVAS_DIR = 'journal/canvases';
+
+export function researchCanvasPath(slug: string): string {
+  return `${RESEARCH_CANVAS_DIR}/${slug}.canvas.tsx`;
+}
+
+export function canvasSlugFromResearchPath(path: string): string | null {
+  const match = /^journal\/canvases\/([a-z0-9]+(?:-[a-z0-9]+)*)\.canvas\.tsx$/.exec(path);
+  return match?.[1] ?? null;
+}
 
 export interface ResearchDocumentMeta {
   path: string;
