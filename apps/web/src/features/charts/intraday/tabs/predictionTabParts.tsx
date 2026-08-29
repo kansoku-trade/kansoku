@@ -221,6 +221,7 @@ export function PriceZoneCard({
   return (
     <div
       className={`zone-item ${compact ? 'compact' : ''} ${zoneStyle.className ?? ''}`}
+      style={zoneStyle.style}
     >
       <div className={`zone-head ${zoneHeadStyle.className ?? ''}`}>
         <span {...zoneLabelStyle} className={`zone-label ${zoneLabelStyle.className ?? ''}`}>
