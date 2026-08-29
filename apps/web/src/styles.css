@@ -95,19 +95,6 @@ a:hover {
    playback events, validation, errors — and each of those resized the chart mid-session. */
 /* Above the pinned levels, which are later siblings: an order line crossing the rail would
    otherwise lay its invisible grab strip across the drawing-tool buttons. */
-.trainer-chip {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 3px 9px;
-  background: rgb(20 20 20 / 0.88);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius);
-  font-size: var(--fs-sm);
-  font-variant-numeric: tabular-nums;
-  color: var(--text-primary);
-  pointer-events: auto;
-}
 /* Held for the length of a level drag. The pointer spends nearly all of it off the handle — over
    the chart canvas, which sets its own crosshair, or past the pane entirely — so the cursor has to
    be pinned on every element, not just the one that was grabbed. */
