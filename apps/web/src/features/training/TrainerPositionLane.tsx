@@ -1,5 +1,7 @@
+import * as stylex from '@stylexjs/stylex';
 import type { TrainerPosition, TrainerView } from '@kansoku/pro-api';
 import { fmt, signed } from '@web/lib/format';
+import { colors, fontSizes, radii, sizes } from '../../theme/tokens.stylex';
 import type { OrderZoneData } from '../charts/intraday/orderZonePrimitive';
 import type { DrawingChartHandle } from '../charts/intraday/useIntradayCharts';
 import { levelR } from './episodeReturns';
@@ -19,6 +21,102 @@ import { TrainerNote } from './TrainerNote';
 import { TrainerOrderLevels } from './TrainerOrderLevels';
 import { TrainerOverlayPortal } from './trainerOverlay';
 import type { AmendVerdict } from './useAmendCheck';
+
+const styles = stylex.create({
+  chip: {
+    alignItems: 'center',
+    backgroundColor: 'rgb(20 20 20 / 0.88)',
+    borderColor: colors.borderStrong,
+    borderRadius: radii.default,
+    borderStyle: 'solid',
+    borderWidth: '1px',
+    color: colors.textPrimary,
+    display: 'flex',
+    fontSize: fontSizes.sm,
+    fontVariantNumeric: 'tabular-nums',
+    gap: '8px',
+    padding: '3px 9px',
+    pointerEvents: 'auto',
+  },
+  chipLong: {
+    color: colors.up,
+    fontWeight: 600,
+  },
+  chipShort: {
+    color: colors.down,
+    fontWeight: 600,
+  },
+  lane: {
+    alignItems: 'center',
+    borderTopColor: colors.border,
+    borderTopStyle: 'solid',
+    borderTopWidth: '1px',
+    display: 'flex',
+    flex: '0 0 auto',
+    gap: '8px',
+    height: '38px',
+    overflowX: 'clip',
+    overflowY: 'visible',
+    padding: '0 12px',
+    position: 'relative',
+  },
+  group: {
+    alignItems: 'center',
+    display: 'flex',
+    flex: '0 0 auto',
+    gap: '4px',
+  },
+  separator: {
+    backgroundColor: colors.borderStrong,
+    flex: '0 0 auto',
+    height: '16px',
+    width: '1px',
+  },
+  spacer: {
+    marginLeft: 'auto',
+  },
+  label: {
+    color: colors.textSecondary,
+    flex: '0 0 auto',
+    fontSize: fontSizes.sm,
+  },
+  hint: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.sm,
+    minWidth: 0,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  button: {
+    'alignItems': 'center',
+    'backgroundColor': colors.backgroundElement,
+    'borderColor': colors.borderStrong,
+    'borderRadius': radii.default,
+    'borderStyle': 'solid',
+    'borderWidth': '1px',
+    'boxSizing': 'border-box',
+    'color': colors.textPrimary,
+    'cursor': 'pointer',
+    'display': 'inline-flex',
+    'fontSize': fontSizes.base,
+    'gap': '7px',
+    'height': sizes.controlHeight,
+    'padding': '0 14px',
+    ':hover:not([disabled])': {
+      borderColor: colors.accent,
+    },
+  },
+  buttonAccent: {
+    borderColor: colors.accent,
+    color: colors.accent,
+  },
+  buttonDisabled: {
+    borderColor: colors.borderStrong,
+    color: colors.textMuted,
+    cursor: 'default',
+  },
+});
 
 export interface TrainerPositionLaneProps {
   view: TrainerView;
@@ -82,8 +180,10 @@ export function TrainerPositionLane({
   return (
     <>
       <TrainerOverlayPortal slot="stack">
-        <div className="trainer-chip">
-          <b className={long ? 'trainer-chip-long' : 'trainer-chip-short'}>
+        <div className={`trainer-chip ${stylex.props(styles.chip).className}`}>
+          <b
+            className={`${long ? 'trainer-chip-long' : 'trainer-chip-short'} ${stylex.props(long ? styles.chipLong : styles.chipShort).className}`}
+          >
             {long ? '多头' : '空头'}
           </b>
           <span>仓位 {formatPositionSize(held)}</span>
@@ -121,17 +221,18 @@ export function TrainerPositionLane({
         onRevert={onRevertAmend}
         dismiss={{ label: '平仓全部', onDismiss: () => onReduce(null) }}
       />
-      <div className="trainer-lane">
-        <span className="trainer-lane-label">加仓</span>
-        <div className="trainer-lane-group">
+      <div className={`trainer-lane ${stylex.props(styles.lane).className}`}>
+        <span className={`trainer-lane-label ${stylex.props(styles.label).className}`}>加仓</span>
+        <div className={`trainer-lane-group ${stylex.props(styles.group).className}`}>
           {SIZE_PRESETS.map(({ label, size }) => {
             const addSize = size === FULL_POSITION ? headroom : size;
+            const disabled = submitting || addSize <= 0 || !canAddSize(position, addSize);
             return (
               <button
                 key={label}
-                className="btn"
+                className={`btn ${stylex.props(styles.button, disabled && styles.buttonDisabled).className}`}
                 aria-label={`加仓 ${label}`}
-                disabled={submitting || addSize <= 0 || !canAddSize(position, addSize)}
+                disabled={disabled}
                 onClick={() => onAdd(addSize)}
               >
                 {label}
@@ -139,19 +240,20 @@ export function TrainerPositionLane({
             );
           })}
         </div>
-        <div className="trainer-lane-sep" />
-        <span className="trainer-lane-label">平仓</span>
-        <div className="trainer-lane-group">
+        <div className={`trainer-lane-sep ${stylex.props(styles.separator).className}`} />
+        <span className={`trainer-lane-label ${stylex.props(styles.label).className}`}>平仓</span>
+        <div className={`trainer-lane-group ${stylex.props(styles.group).className}`}>
           {SIZE_PRESETS.map(({ label, size }) => {
             // 全仓 sends an unsized reduce — "close whatever is left" — so it stays available on a
             // part-filled holding that a literal 1.0 fraction would exceed.
             const closesEverything = size === FULL_POSITION;
+            const disabled = submitting || (!closesEverything && !canReduceSize(position, size));
             return (
               <button
                 key={label}
-                className={closesEverything ? 'btn btn--accent' : 'btn'}
+                className={`btn${closesEverything ? ' btn--accent' : ''} ${stylex.props(styles.button, closesEverything && styles.buttonAccent, disabled && styles.buttonDisabled).className}`}
                 aria-label={`平仓 ${label}`}
-                disabled={submitting || (!closesEverything && !canReduceSize(position, size))}
+                disabled={disabled}
                 onClick={() => onReduce(closesEverything ? null : size)}
               >
                 {label}
@@ -159,8 +261,10 @@ export function TrainerPositionLane({
             );
           })}
         </div>
-        <span className="trainer-lane-spacer" />
-        <span className="trainer-lane-hint">止损和目标直接在图上拖</span>
+        <span className={`trainer-lane-spacer ${stylex.props(styles.spacer).className}`} />
+        <span className={`trainer-lane-hint ${stylex.props(styles.hint).className}`}>
+          止损和目标直接在图上拖
+        </span>
         <TrainerNote
           label="备注"
           value={note}
