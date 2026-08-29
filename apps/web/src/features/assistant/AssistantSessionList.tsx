@@ -100,6 +100,11 @@ const styles = stylex.create({
       color: colors.textPrimary,
       opacity: 1,
     },
+    ':focus-visible': {
+      backgroundColor: colors.backgroundElement,
+      color: colors.textPrimary,
+      opacity: 1,
+    },
   },
   confirmText: {
     color: colors.textPrimary,
