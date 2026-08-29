@@ -2,9 +2,9 @@ import type { CockpitComment, CommentStance } from '@kansoku/shared/types';
 import * as stylex from '@stylexjs/stylex';
 import { marketOfSymbol } from '@web/lib/market';
 import { Badge, MarketTime } from '@web/ui';
+import { colors, fontSizes } from '../../theme/tokens.stylex';
 import { symbolUrl } from './analysisMode';
 import { Markdown } from './markdown';
-import { colors, fontSizes } from '../../theme/tokens.stylex';
 
 const styles = stylex.create({
   item: {
