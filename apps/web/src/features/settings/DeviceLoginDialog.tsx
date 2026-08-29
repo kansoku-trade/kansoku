@@ -3,7 +3,7 @@ import * as stylex from '@stylexjs/stylex';
 import { errorMessage } from '@web/lib/api';
 import { client } from '@web/lib/client';
 import { Button } from '@web/ui';
-import { colors, fonts, radii } from '../../theme/tokens.stylex';
+import { colors, fontSizes, fonts, radii } from '../../theme/tokens.stylex';
 import type { LobeHubDeviceLogin } from './types';
 
 const styles = stylex.create({
@@ -31,6 +31,19 @@ const styles = stylex.create({
     padding: '14px 18px',
     textAlign: 'center',
     userSelect: 'all',
+  },
+  providerMeta: {
+    color: colors.textMuted,
+    fontFamily: fonts.mono,
+    fontSize: fontSizes.xs,
+    marginTop: '3px',
+    overflowWrap: 'anywhere',
+  },
+  credActions: {
+    display: 'flex',
+    gap: '6px',
+    justifyContent: 'flex-end',
+    marginTop: '12px',
   },
 });
 
@@ -84,8 +97,10 @@ export function DeviceLoginDialog({
         请在 LobeHub Cloud 确认登录，并在需要时输入以下验证码。
       </p>
       <div {...stylex.props(styles.code)}>{login.userCode}</div>
-      <div className="settings-provider-meta">{status}</div>
-      <div className="settings-cred-actions">
+      <div className={`settings-provider-meta ${stylex.props(styles.providerMeta).className}`}>
+        {status}
+      </div>
+      <div className={`settings-cred-actions ${stylex.props(styles.credActions).className}`}>
         <Button onClick={() => void navigator.clipboard.writeText(login.userCode)}>
           复制验证码
         </Button>
