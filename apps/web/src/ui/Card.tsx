@@ -1,11 +1,32 @@
 import type { AnchorHTMLAttributes, HTMLAttributes } from 'react';
+import * as stylex from '@stylexjs/stylex';
+import { colors, radii } from '../theme/tokens.stylex';
+
+const styles = stylex.create({
+  card: {
+    backgroundColor: colors.backgroundSurface,
+    borderColor: colors.border,
+    borderStyle: 'solid',
+    borderWidth: '1px',
+    borderRadius: radii.default,
+    padding: '12px',
+  },
+  link: {
+    'cursor': 'pointer',
+    'textDecoration': 'none',
+    ':hover': {
+      backgroundColor: colors.backgroundHover,
+      borderColor: colors.borderStrong,
+    },
+  },
+});
 
 type CardProps = {
   link?: boolean;
 } & AnchorHTMLAttributes<HTMLAnchorElement>;
 
 export function Card({ link, href, className, children, ...rest }: CardProps) {
-  const cls = `card${link || href ? ' card--link' : ''}${className ? ` ${className}` : ''}`;
+  const cls = `card${link || href ? ' card--link' : ''} ${stylex.props(styles.card, Boolean(link || href) && styles.link).className}${className ? ` ${className}` : ''}`;
 
   if (link || href) {
     return (
