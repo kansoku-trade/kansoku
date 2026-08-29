@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import * as stylex from '@stylexjs/stylex';
 import { ArrowLeft } from 'lucide-react';
 import type { QuoteCell, SymbolAnalysisRow } from '@kansoku/shared/types';
 import {
@@ -34,6 +35,65 @@ import { useAiUnreadBadge } from './useAiUnreadBadge';
 import { useCockpitComments } from './useCockpitComments';
 import { useCockpitEnv } from './useCockpitEnv';
 import { useCockpitReviewState } from './useCockpitReviewState';
+import { colors, fontSizes, sizes } from '../../theme/tokens.stylex';
+
+const styles = stylex.create({
+  fullpage: {
+    display: 'flex',
+    flexDirection: 'column',
+    height: '100vh',
+    overflow: 'hidden',
+  },
+  detailTopbar: {
+    alignItems: 'center',
+    backgroundColor: colors.backgroundSurface,
+    borderBottom: `1px solid ${colors.border}`,
+    display: 'flex',
+    fontSize: fontSizes.md,
+    gap: '12px',
+    padding: '8px 14px',
+  },
+  detailTopbarSplit: {
+    display: 'grid',
+    gap: 0,
+    gridTemplateColumns: `1fr ${sizes.sidebarWidth}`,
+    padding: 0,
+  },
+  topbarChart: {
+    alignItems: 'center',
+    borderRight: `1px solid ${colors.border}`,
+    display: 'flex',
+    gap: '12px',
+    minWidth: 0,
+    padding: '8px 14px',
+  },
+  topbarSide: {
+    alignItems: 'center',
+    display: 'flex',
+    gap: '8px',
+    minWidth: 0,
+    padding: '8px 14px',
+  },
+  topbarMeta: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.base,
+  },
+  topbarChartTail: {
+    alignItems: 'center',
+    display: 'inline-flex',
+    gap: '8px',
+    marginLeft: 'auto',
+  },
+  detailBody: {
+    flex: 1,
+    minHeight: 0,
+  },
+  timeframeLoadError: {
+    color: colors.down,
+    fontSize: fontSizes.sm,
+    whiteSpace: 'nowrap',
+  },
+});
 
 export function PreviewCockpit({
   sym,
@@ -165,13 +225,15 @@ export function PreviewCockpit({
   return (
     <EventCanvasHost>
     <IntradayControlsProvider>
-      <div className="fullpage">
-        <div className="detail-topbar detail-topbar--split">
-          <div className="topbar-chart">
+      <div className={`fullpage ${stylex.props(styles.fullpage).className}`}>
+        <div
+          className={`detail-topbar detail-topbar--split ${stylex.props(styles.detailTopbar, styles.detailTopbarSplit).className}`}
+        >
+          <div className={`topbar-chart ${stylex.props(styles.topbarChart).className}`}>
             <a href="/">
               <ArrowLeft className="icon" size={13} /> 列表
             </a>
-            <span className="meta">{sym}</span>
+            <span className={`meta ${stylex.props(styles.topbarMeta).className}`}>{sym}</span>
             {degraded && <Dot tone="accent" pulse title="数据延迟：行情拉取失败，正在重试" />}
             <IntradayTimeframeSwitch activeTf={activeIntradayTf} onChange={setIntradayTf} />
             <AnalysisTimeline
@@ -182,20 +244,25 @@ export function PreviewCockpit({
               onSelect={onSelectAnalysis}
             />
             {viewTimeframe.error && (
-              <span className="tf-load-error" title={viewTimeframe.error}>
+              <span
+                className={`tf-load-error ${stylex.props(styles.timeframeLoadError).className}`}
+                title={viewTimeframe.error}
+              >
                 该周期加载失败
               </span>
             )}
-            <span className="topbar-chart-tail">
+            <span
+              className={`topbar-chart-tail ${stylex.props(styles.topbarChartTail).className}`}
+            >
               <MaLinesMenu candles={tfDataOf(chartBuilt, activeIntradayTf)?.candles ?? []} />
               <ChartLayerMenu built={chartBuilt} activeTf={activeIntradayTf} />
             </span>
           </div>
-          <div className="topbar-side">
+          <div className={`topbar-side ${stylex.props(styles.topbarSide).className}`}>
             <TopbarQuote quote={liveQuote} />
           </div>
         </div>
-        <div className="detail-body">
+        <div className={`detail-body ${stylex.props(styles.detailBody).className}`}>
           <IntradayDashboard
             symbol={sym}
             built={chartBuilt}
