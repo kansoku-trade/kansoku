@@ -3,6 +3,16 @@ import * as stylex from '@stylexjs/stylex';
 import { colors, fontSizes, sizes } from '../../theme/tokens.stylex';
 
 const styles = stylex.create({
+  fullpage: {
+    display: 'flex',
+    flexDirection: 'column',
+    height: '100vh',
+    overflow: 'hidden',
+  },
+  detailBody: {
+    flex: 1,
+    minHeight: 0,
+  },
   detailTopbar: {
     alignItems: 'center',
     backgroundColor: colors.backgroundSurface,
@@ -73,6 +83,27 @@ const styles = stylex.create({
     height: '100%',
     width: '100%',
   },
+  layout: {
+    display: 'grid',
+    gridTemplateColumns: `1fr ${sizes.sidebarWidth}`,
+    height: '100%',
+    position: 'relative',
+  },
+  chartsCol: {
+    borderRightColor: colors.border,
+    borderRightStyle: 'solid',
+    borderRightWidth: '1px',
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden',
+  },
+  sidebar: {
+    backgroundColor: colors.backgroundSurface,
+    display: 'flex',
+    flexDirection: 'column',
+    fontSize: fontSizes.md,
+    overflow: 'hidden',
+  },
   tabbar: {
     alignItems: 'center',
     borderBottomColor: colors.border,
@@ -125,7 +156,11 @@ function Bone({ style }: { style: stylex.StyleXStyles }) {
 
 export function CockpitSkeleton() {
   return (
-    <div className="fullpage" aria-busy="true" aria-label="加载中">
+    <div
+      className={`fullpage ${stylex.props(styles.fullpage).className}`}
+      aria-busy="true"
+      aria-label="加载中"
+    >
       <div
         className={`detail-topbar detail-topbar--split ${stylex.props(styles.detailTopbar, styles.detailTopbarSplit).className}`}
       >
@@ -153,9 +188,9 @@ export function CockpitSkeleton() {
           <Bone style={styles.quote} />
         </div>
       </div>
-      <div className="detail-body">
-        <div className="layout" aria-hidden="true">
-          <div className="charts-col">
+      <div className={`detail-body ${stylex.props(styles.detailBody).className}`}>
+        <div className={`layout ${stylex.props(styles.layout).className}`} aria-hidden="true">
+          <div className={`charts-col ${stylex.props(styles.chartsCol).className}`}>
             <div className="chart-block" {...stylex.props(styles.mainChart)}>
               <Bone style={styles.chart} />
             </div>
@@ -163,7 +198,7 @@ export function CockpitSkeleton() {
               <Bone style={styles.chart} />
             </div>
           </div>
-          <div className="sidebar">
+          <div className={`sidebar ${stylex.props(styles.sidebar).className}`}>
             <div {...stylex.props(styles.tabbar)}>
               <Bone style={styles.tab} />
               <Bone style={styles.tab} />
