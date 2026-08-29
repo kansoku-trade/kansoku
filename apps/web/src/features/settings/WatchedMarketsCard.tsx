@@ -1,12 +1,55 @@
 import { useState } from 'react';
+import * as stylex from '@stylexjs/stylex';
 import { useQuery } from '@web/lib/apiHooks';
 import { client } from '@web/lib/client';
 import { Card, SectionTitle, Switch } from '@web/ui';
+import { colors, fontSizes } from '../../theme/tokens.stylex';
 import { MARKET_LABEL, type Market } from './types';
 import { toggleMarket } from './watchedMarkets';
 import { useSaveQueue } from './useSaveQueue';
 
 const MARKET_ORDER: Market[] = ['US', 'HK', 'CN'];
+
+const styles = stylex.create({
+  displayCard: {
+    minWidth: 0,
+    overflow: 'hidden',
+    padding: 0,
+  },
+  cardHeading: {
+    alignItems: 'center',
+    borderBottom: `1px solid ${colors.border}`,
+    display: 'flex',
+    gap: '12px',
+    justifyContent: 'space-between',
+    minHeight: '34px',
+    padding: '0 11px',
+  },
+  cardTitle: {
+    margin: 0,
+  },
+  preference: {
+    alignItems: 'center',
+    display: 'flex',
+    gap: '12px',
+    justifyContent: 'space-between',
+    padding: '11px',
+  },
+  preferenceCopy: {
+    minWidth: 0,
+  },
+  preferenceName: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.sm,
+    fontWeight: 500,
+  },
+  preferenceDescription: {
+    color: colors.textMuted,
+    fontSize: fontSizes.xs,
+    marginTop: '3px',
+    overflowWrap: 'anywhere',
+  },
+});
 
 export function WatchedMarketsCard() {
   const { data, error, reload } = useQuery<{ markets: Market[] }>(
@@ -54,21 +97,34 @@ function WatchedMarketsCardLoaded({
   };
 
   return (
-    <Card className="settings-display-card">
-      <div className="settings-card-heading">
-        <SectionTitle>关注市场</SectionTitle>
+    <Card className={`settings-display-card ${stylex.props(styles.displayCard).className}`}>
+      <div className={`settings-card-heading ${stylex.props(styles.cardHeading).className}`}>
+        <SectionTitle className={stylex.props(styles.cardTitle).className}>关注市场</SectionTitle>
       </div>
-      <div className="settings-time-preference">
-        <div className="settings-preference-copy">
-          <div className="settings-preference-description">
+      <div className={`settings-time-preference ${stylex.props(styles.preference).className}`}>
+        <div
+          className={`settings-preference-copy ${stylex.props(styles.preferenceCopy).className}`}
+        >
+          <div
+            className={`settings-preference-description ${stylex.props(styles.preferenceDescription).className}`}
+          >
             全市场轮动与盘中巡检仅覆盖已勾选的市场
           </div>
         </div>
       </div>
       {MARKET_ORDER.map((market) => (
-        <div className="settings-time-preference" key={market}>
-          <div className="settings-preference-copy">
-            <div className="settings-preference-name">{MARKET_LABEL[market]}</div>
+        <div
+          className={`settings-time-preference ${stylex.props(styles.preference).className}`}
+          key={market}
+        >
+          <div
+            className={`settings-preference-copy ${stylex.props(styles.preferenceCopy).className}`}
+          >
+            <div
+              className={`settings-preference-name ${stylex.props(styles.preferenceName).className}`}
+            >
+              {MARKET_LABEL[market]}
+            </div>
           </div>
           <Switch
             ariaLabel={MARKET_LABEL[market]}
@@ -78,16 +134,28 @@ function WatchedMarketsCardLoaded({
         </div>
       ))}
       {blockedHint ? (
-        <div className="settings-time-preference">
-          <div className="settings-preference-copy">
-            <div className="settings-preference-description">至少保留一个市场</div>
+        <div className={`settings-time-preference ${stylex.props(styles.preference).className}`}>
+          <div
+            className={`settings-preference-copy ${stylex.props(styles.preferenceCopy).className}`}
+          >
+            <div
+              className={`settings-preference-description ${stylex.props(styles.preferenceDescription).className}`}
+            >
+              至少保留一个市场
+            </div>
           </div>
         </div>
       ) : null}
       {error ? (
-        <div className="settings-time-preference">
-          <div className="settings-preference-copy">
-            <div className="settings-preference-description">{error}</div>
+        <div className={`settings-time-preference ${stylex.props(styles.preference).className}`}>
+          <div
+            className={`settings-preference-copy ${stylex.props(styles.preferenceCopy).className}`}
+          >
+            <div
+              className={`settings-preference-description ${stylex.props(styles.preferenceDescription).className}`}
+            >
+              {error}
+            </div>
           </div>
         </div>
       ) : null}
