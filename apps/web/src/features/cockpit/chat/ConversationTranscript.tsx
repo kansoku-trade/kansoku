@@ -21,6 +21,10 @@ const chatToolStatusPulse = stylex.keyframes({
 });
 
 const styles = stylex.create({
+  panelBodyContent: {
+    display: 'flex',
+    flexDirection: 'column',
+  },
   row: {
     display: 'flex',
   },
@@ -33,7 +37,7 @@ const styles = stylex.create({
   },
   bubble: {
     maxWidth: '88%',
-    fontSize: '12px',
+    fontSize: fontSizes.base,
     lineHeight: 1.5,
     overflowWrap: 'anywhere',
   },
@@ -546,7 +550,7 @@ function ConversationTranscriptView({
     <ScrollArea
       className={className}
       viewportClassName={`chat-transcript-viewport ${stylex.props(styles.transcriptViewport).className}`}
-      contentClassName="chat-panel-body-content"
+      contentClassName={`chat-panel-body-content ${stylex.props(styles.panelBodyContent).className}`}
       viewportRef={bodyRef}
       onScroll={() => {
         const element = bodyRef.current;
