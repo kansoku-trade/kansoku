@@ -91,7 +91,9 @@ const styles = stylex.create({
     ':last-child': {
       borderBottomWidth: 0,
     },
-    ':hover': {
+  },
+  relatedButtonHover: {
+    ':hover span': {
       color: colors.accent,
     },
   },
@@ -168,7 +170,7 @@ export function RelatedMaterialsCard({
               )}
             </section>
             <section
-              className={`research-context-section ${stylex.props(styles.bodyLastSection).className}`}
+              className={`research-context-section ${stylex.props(styles.sectionSpaced, styles.bodyLastSection).className}`}
             >
               <h3 className={stylex.props(styles.contextHeading).className}>相关记录</h3>
               {related.length > 0 ? (
@@ -179,7 +181,7 @@ export function RelatedMaterialsCard({
                     <button
                       type="button"
                       key={relatedDocument.path}
-                      {...stylex.props(styles.relatedButton)}
+                      {...stylex.props(styles.relatedButton, styles.relatedButtonHover)}
                       onClick={() => onSelect(relatedDocument)}
                     >
                       <span {...stylex.props(styles.relatedTitle)}>{relatedDocument.title}</span>
