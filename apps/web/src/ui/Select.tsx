@@ -57,6 +57,8 @@ const styles = stylex.create({
   },
   item: {
     'alignItems': 'center',
+    'backgroundColor': 'transparent',
+    'border': 'none',
     'borderRadius': radii.default,
     'color': colors.textSecondary,
     'cursor': 'pointer',
@@ -74,6 +76,10 @@ const styles = stylex.create({
     },
     '[data-selected]': {
       color: colors.textPrimary,
+    },
+    ':focus-visible': {
+      outline: 'none',
+      outlineOffset: '2px',
     },
   },
   itemCheck: {
