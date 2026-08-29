@@ -22,7 +22,9 @@ const styles = stylex.create({
   },
   heading: {
     alignItems: 'center',
-    borderBottom: `1px solid ${colors.border}`,
+    borderBottomColor: colors.border,
+    borderBottomStyle: 'solid',
+    borderBottomWidth: '1px',
     display: 'flex',
     gap: '12px',
     justifyContent: 'space-between',

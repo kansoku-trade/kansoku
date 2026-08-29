@@ -28,7 +28,9 @@ const styles = stylex.create({
   testResultFail: { color: colors.down },
   cardHeading: {
     alignItems: 'center',
-    borderBottom: `1px solid ${colors.border}`,
+    borderBottomColor: colors.border,
+    borderBottomStyle: 'solid',
+    borderBottomWidth: '1px',
     display: 'flex',
     gap: '12px',
     justifyContent: 'space-between',
@@ -49,7 +51,9 @@ const styles = stylex.create({
   warningStrip: {
     alignItems: 'center',
     backgroundColor: colors.backgroundElement,
-    border: `1px solid ${colors.down}`,
+    borderColor: colors.down,
+    borderStyle: 'solid',
+    borderWidth: '1px',
     color: colors.down,
     display: 'flex',
     fontSize: fontSizes.sm,
@@ -59,7 +63,9 @@ const styles = stylex.create({
     padding: '8px 9px',
   },
   providerRow: {
-    borderTop: `1px solid ${colors.border}`,
+    borderTopColor: colors.border,
+    borderTopStyle: 'solid',
+    borderTopWidth: '1px',
     padding: '10px 11px',
     ':first-child': {
       borderTopStyle: 'none',
@@ -108,7 +114,9 @@ const styles = stylex.create({
     marginTop: '8px',
   },
   providerError: {
-    borderLeft: `2px solid ${colors.down}`,
+    borderLeftColor: colors.down,
+    borderLeftStyle: 'solid',
+    borderLeftWidth: '2px',
     color: colors.down,
     fontSize: fontSizes.sm,
     marginTop: '7px',
@@ -123,7 +131,9 @@ const styles = stylex.create({
   },
   providerAdd: {
     'alignItems': 'center',
-    'borderTop': `1px solid ${colors.border}`,
+    'borderTopColor': colors.border,
+    'borderTopStyle': 'solid',
+    'borderTopWidth': '1px',
     'display': 'grid',
     'gap': '6px',
     'gridTemplateColumns': 'minmax(94px, 0.8fr) minmax(120px, 1fr) auto',
