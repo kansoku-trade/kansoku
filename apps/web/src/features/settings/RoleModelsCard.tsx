@@ -15,6 +15,7 @@ import {
 
 const styles = stylex.create({
   card: {
+    marginBottom: 0,
     minWidth: 0,
     overflow: 'hidden',
     padding: 0,
