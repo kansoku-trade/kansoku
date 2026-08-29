@@ -184,6 +184,12 @@ const styles = stylex.create({
       gridTemplateColumns: '1fr',
     },
   },
+  overviewGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+    gap: '12px',
+    marginTop: '12px',
+  },
   sectionTitle: {
     color: colors.textSecondary,
     fontSize: fontSizes.base,
@@ -626,7 +632,7 @@ export function AppSkeleton() {
             >
               看盘
             </div>
-            <div className="overview-grid" aria-hidden="true">
+            <div className={classNames('overview-grid', styles.overviewGrid)} aria-hidden="true">
               <SymbolCardBone />
               <SymbolCardBone />
               <SymbolCardBone />
