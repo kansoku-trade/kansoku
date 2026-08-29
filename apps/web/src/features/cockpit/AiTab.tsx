@@ -30,6 +30,15 @@ const styles = stylex.create({
     color: colors.textSecondary,
     fontSize: fontSizes.sm,
   },
+  dateSelect: {
+    marginLeft: 'auto',
+  },
+  note: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.sm,
+    lineHeight: 1.4,
+    marginTop: '6px',
+  },
   tab: {
     minWidth: 0,
     maxWidth: '100%',
@@ -130,7 +139,7 @@ export function AiTab({
             {analysisRevision && <FollowAction symbol={symbol} revision={analysisRevision} />}
             {pastDates.length > 0 && (
               <Select
-                className="ai-date-select"
+                className={`ai-date-select ${stylex.props(styles.dateSelect).className}`}
                 value={selectedDate ?? 'today'}
                 options={[
                   { value: 'today', label: '今天' },
@@ -147,7 +156,9 @@ export function AiTab({
       {!readOnly && !selectedDate && <AliveLine symbol={symbol} revision={analysisRevision} />}
 
       {selectedDate && (
-        <div className="note-block">显示 {selectedDate} 的点评（今天暂无新点评）</div>
+        <div className={`note-block ${stylex.props(styles.note).className}`}>
+          显示 {selectedDate} 的点评（今天暂无新点评）
+        </div>
       )}
 
       {renderFeed()}
@@ -186,10 +197,15 @@ export function AiTab({
   }
 
   function renderFeed() {
-    if (shownError) return <div className="note-block">点评获取失败：{shownError}</div>;
+    if (shownError)
+      return (
+        <div className={`note-block ${stylex.props(styles.note).className}`}>
+          点评获取失败：{shownError}
+        </div>
+      );
     if (rows.length === 0) {
       return (
-        <div className="note-block">
+        <div className={`note-block ${stylex.props(styles.note).className}`}>
           {selectedDate
             ? `${selectedDate} 没有点评`
             : '暂无点评。盘面出现触发事件时，AI 会在这里给出研判；也可以点上面「重新分析」手动跑一次重估'}
