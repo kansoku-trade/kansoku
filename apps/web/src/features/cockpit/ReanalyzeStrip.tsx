@@ -40,6 +40,9 @@ const styles = stylex.create({
   feedContext: {
     margin: '10px 0 0',
   },
+  icon: {
+    verticalAlign: '-2px',
+  },
 });
 
 export function ReanalyzeStrip({ sym }: { sym: string }) {
@@ -61,9 +64,9 @@ export function ReanalyzeStrip({ sym }: { sym: string }) {
         <span {...stylex.props(styles.label)}>AI 重新分析中…</span>
         <span {...stylex.props(styles.activity)}>{status.activity}</span>
         {expanded ? (
-          <ChevronDown className="icon" size={13} />
+          <ChevronDown className={stylex.props(styles.icon).className} size={13} />
         ) : (
-          <ChevronRight className="icon" size={13} />
+          <ChevronRight className={stylex.props(styles.icon).className} size={13} />
         )}
       </SectionTitle>
       {expanded && (

@@ -17,6 +17,9 @@ const styles = stylex.create({
     margin: '0 auto',
     padding: '24px 20px 60px',
   },
+  icon: {
+    verticalAlign: '-2px',
+  },
 });
 
 function Page({ children }: { children: ReactNode }) {
@@ -78,7 +81,7 @@ function LatestSepaView({ sym }: { sym: string }) {
         <Empty>
           <p>这只股票还没有 SEPA 仪表盘</p>
           <a href={symbolAnalysisPath(sym, null)}>
-            <ArrowLeft className="icon" size={13} /> 返回驾驶舱
+            <ArrowLeft className={stylex.props(styles.icon).className} size={13} /> 返回驾驶舱
           </a>
         </Empty>
       </Page>

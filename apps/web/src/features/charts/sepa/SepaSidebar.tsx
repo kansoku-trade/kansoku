@@ -130,6 +130,9 @@ const styles = stylex.create({
     alignItems: 'center',
     fontSize: fontSizes.md,
   },
+  icon: {
+    verticalAlign: '-2px',
+  },
   checkIconUp: {
     color: colors.up,
   },
@@ -293,7 +296,7 @@ export function SepaSidebar({ built }: { built: SepaBuilt }) {
               <div
                 className={`check-icon ${status.tone} ${stylex.props(styles.checkIcon, status.tone === 'up' ? styles.checkIconUp : status.tone === 'down' ? styles.checkIconDown : styles.checkIconUnknown).className}`}
               >
-                <StatusIcon className="icon" size={14} />
+                <StatusIcon className={stylex.props(styles.icon).className} size={14} />
               </div>
               <div>
                 <div className={`check-label ${stylex.props(styles.checkLabel).className}`}>
@@ -423,7 +426,7 @@ export function SepaSidebar({ built }: { built: SepaBuilt }) {
                 {!ep.rr_ok && (
                   <span className={`warn-red ${stylex.props(styles.warnRed).className}`}>
                     {' '}
-                    <TriangleAlert className="icon" size={13} /> &lt;2:1 SEPA 不入场
+                    <TriangleAlert className={stylex.props(styles.icon).className} size={13} /> &lt;2:1 SEPA 不入场
                   </span>
                 )}
               </div>
@@ -471,7 +474,7 @@ export function SepaSidebar({ built }: { built: SepaBuilt }) {
         <NewsSection news={s.news ?? []} />
 
         <div className={`disclaimer ${stylex.props(styles.disclaimer).className}`}>
-          <TriangleAlert className="icon" size={12} />{' '}
+          <TriangleAlert className={stylex.props(styles.icon).className} size={12} />{' '}
           仅供学习参考，不构成投资建议。数据来源：长桥证券。
           <br />
           SEPA 框架基于 Mark Minervini 方法。Verdict 自动检测 trend template + extended
