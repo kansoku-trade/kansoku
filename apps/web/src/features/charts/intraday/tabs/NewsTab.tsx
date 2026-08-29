@@ -1,3 +1,4 @@
+import * as stylex from '@stylexjs/stylex';
 import type {
   ContextNewsItem,
   ContextNewsSource,
@@ -9,6 +10,7 @@ import { Badge, MarketTime, SectionTitle, Spinner } from '@web/ui';
 import { NewsSection } from '@web/features/charts/NewsSection';
 import { useQuery } from '@web/lib/apiHooks';
 import { client } from '@web/lib/client';
+import { colors, fontSizes } from '../../../../theme/tokens.stylex';
 
 const TAG_LABEL: Record<ContextNewsTag, string> = {
   catalyst: '催化',
@@ -25,26 +27,66 @@ const SOURCE_LABEL: Record<ContextNewsSource, string> = {
   gdelt: 'GDELT',
 };
 
+const styles = stylex.create({
+  item: {
+    'backgroundColor': colors.backgroundSurface,
+    'borderLeftColor': colors.borderStrong,
+    'borderLeftStyle': 'solid',
+    'borderLeftWidth': '2px',
+    'display': 'block',
+    'marginBottom': '4px',
+    'padding': '7px 8px',
+    'textDecoration': 'none',
+    ':hover': {
+      borderLeftColor: colors.accent,
+      textDecoration: 'none',
+    },
+  },
+  meta: {
+    alignItems: 'center',
+    color: colors.textMuted,
+    display: 'flex',
+    fontSize: fontSizes.xs,
+    fontVariantNumeric: 'tabular-nums',
+    gap: '6px',
+  },
+  title: {
+    'color': colors.textPrimary,
+    'display': 'block',
+    'fontSize': fontSizes.base,
+    'lineHeight': 1.45,
+    'marginTop': '3px',
+    ':hover': {
+      color: colors.accent,
+    },
+  },
+});
+
 function ContextNewsRow({ item }: { item: ContextNewsItem }) {
   const body = (
     <>
-      <span className="news-meta">
+      <span className={`news-meta ${stylex.props(styles.meta).className}`}>
         <MarketTime value={item.time} format="month-day-time" />
         <Badge tone="accent">{TAG_LABEL[item.tag] ?? item.tag}</Badge>
         <Badge>{SOURCE_LABEL[item.source] ?? item.source}</Badge>
       </span>
-      <span className="news-title">{item.title}</span>
+      <span className={`news-title ${stylex.props(styles.title).className}`}>{item.title}</span>
       {item.note && <div className="zone-meta md">{item.note}</div>}
     </>
   );
   if (item.url) {
     return (
-      <a className="news-item" href={item.url} target="_blank" rel="noreferrer">
+      <a
+        className={`news-item ${stylex.props(styles.item).className}`}
+        href={item.url}
+        target="_blank"
+        rel="noreferrer"
+      >
         {body}
       </a>
     );
   }
-  return <div className="news-item">{body}</div>;
+  return <div className={`news-item ${stylex.props(styles.item).className}`}>{body}</div>;
 }
 
 interface NewsTabProps {
