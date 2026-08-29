@@ -37,6 +37,17 @@ const styles = stylex.create({
     fontSize: fontSizes.sm,
     marginTop: '6px',
   },
+  backLink: {
+    alignItems: 'center',
+    color: {
+      'default': colors.textSecondary,
+      ':hover': colors.textPrimary,
+    },
+    display: 'inline-flex',
+    fontSize: fontSizes.sm,
+    gap: '4px',
+    marginBottom: '8px',
+  },
   card: {
     marginBottom: '14px',
   },
@@ -98,7 +109,7 @@ const styles = stylex.create({
 function AboutBackLink() {
   return (
     <a
-      className="settings-back-link"
+      className={`settings-back-link ${stylex.props(styles.backLink).className}`}
       href="/"
       onClick={(event) => {
         if (
