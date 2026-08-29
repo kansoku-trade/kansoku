@@ -241,45 +241,6 @@ body.trainer-dragging-level * {
   border-color: rgb(239 83 80 / 0.55);
 }
 
-.trainer-order-panel--status {
-  color: var(--text-secondary);
-}
-.trainer-order-error {
-  color: var(--down);
-  font-size: var(--fs-sm);
-}
-
-.trainer-thumb-cover {
-  position: absolute;
-  inset: 0;
-  z-index: 12;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  padding: 8px 10px;
-  background: transparent;
-  border: 0;
-  font: inherit;
-  color: var(--text-secondary);
-  cursor: pointer;
-}
-.trainer-thumb-cover:hover {
-  background: rgb(232 232 232 / 0.03);
-}
-.trainer-thumb-expand {
-  align-self: flex-end;
-  font-size: var(--fs-sm);
-  color: var(--text-primary);
-  background: rgb(10 10 10 / 0.86);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius);
-  padding: 3px 9px;
-}
-
-.trainer-settle-hint {
-  color: var(--text-muted);
-  font-size: var(--fs-sm);
-}
 .fullpage {
   height: 100vh;
   display: flex;
@@ -964,17 +925,6 @@ a.zone-item:hover {
     height: 100%;
   }
 }
-.settings-back-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  color: var(--text-secondary);
-  font-size: var(--fs-sm);
-  margin-bottom: 8px;
-}
-.settings-back-link:hover {
-  color: var(--text-primary);
-}
 .settings-page .card {
   margin-bottom: 0;
 }
@@ -1310,37 +1260,6 @@ a.zone-item:hover {
 .research-assistant-header-btn:active {
   scale: 0.94;
 }
-.research-related-details {
-  padding: 0 10px;
-  border-bottom: 1px solid var(--border);
-}
-.research-related-summary {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  min-height: var(--control-h);
-  padding: 0;
-  color: var(--text-muted);
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  font-size: var(--fs-xs);
-  font-weight: 600;
-  text-align: left;
-}
-.research-related-summary > svg {
-  flex: 0 0 auto;
-  margin-right: 5px;
-  transition-property: transform;
-  transition-duration: 150ms;
-  transition-timing-function: ease-out;
-}
-.research-related-summary[aria-expanded='true'] > svg {
-  transform: rotate(90deg);
-}
-.research-related-body {
-  overflow: hidden;
-}
 .research-assistant-transcript {
   flex: 1 1 auto;
   min-height: 180px;
@@ -1514,33 +1433,6 @@ a.zone-item:hover {
   gap: 6px;
 }
 
-.research-edit-review {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-.research-edit-review-summary {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: center;
-  gap: 7px 10px;
-}
-.research-edit-review-summary p {
-  margin: 0;
-  color: var(--text-primary);
-  font-size: var(--fs-md);
-  text-wrap: pretty;
-}
-.research-edit-review-summary code {
-  grid-column: 1 / -1;
-  padding: 6px 8px;
-  color: var(--text-muted);
-  background: var(--bg-element);
-  border-radius: var(--radius);
-  font-family: var(--font-mono);
-  font-size: var(--fs-xs);
-  overflow-wrap: anywhere;
-}
 .research-edit-status {
   display: inline-flex;
   align-items: center;
@@ -1565,94 +1457,6 @@ a.zone-item:hover {
   color: var(--down);
   background: color-mix(in srgb, var(--down) 10%, transparent);
 }
-.research-edit-operations {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.research-edit-operation {
-  padding: 8px;
-  background: rgba(255, 255, 255, 0.018);
-  border-radius: var(--radius);
-  box-shadow: 0 0 0 1px var(--border);
-  opacity: 0.58;
-  transition-property: opacity, box-shadow;
-  transition-duration: 150ms;
-  transition-timing-function: ease-out;
-}
-.research-edit-operation.selected {
-  opacity: 1;
-  box-shadow: 0 0 0 1px rgba(255, 176, 0, 0.24);
-}
-.research-edit-operation > header label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-height: var(--control-h);
-  cursor: pointer;
-}
-.research-edit-operation > header span:last-child {
-  color: var(--text-secondary);
-  font-size: var(--fs-sm);
-  font-weight: 600;
-}
-.research-edit-pair {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-.research-edit-code {
-  min-width: 0;
-  padding: 8px;
-  border-radius: var(--radius);
-  background: var(--bg-element);
-}
-.research-edit-code > span {
-  display: block;
-  margin-bottom: 5px;
-  color: var(--text-muted);
-  font-size: var(--fs-xs);
-}
-.research-edit-code pre {
-  margin: 0;
-  max-height: 260px;
-  overflow: auto;
-  color: var(--text-secondary);
-  font-family: var(--font-mono);
-  font-size: var(--fs-xs);
-  line-height: 1.55;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-.research-edit-code--removed {
-  background: color-mix(in srgb, var(--down) 7%, var(--bg-element));
-}
-.research-edit-code--added {
-  background: color-mix(in srgb, var(--up) 7%, var(--bg-element));
-}
-.research-edit-review-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
-  padding-top: 2px;
-}
-.research-edit-review-actions .btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition-property: scale, border-color, background-color;
-  transition-duration: 150ms;
-  transition-timing-function: ease-out;
-}
-.research-edit-review-actions .btn:active:not([disabled]) {
-  scale: 0.96;
-}
-.research-edit-undo-confirm {
-  color: var(--down);
-  border-color: var(--down);
-}
-
 @media (max-width: 1100px) {
   .research-page {
     --research-context-width: 320px;
@@ -1726,9 +1530,6 @@ a.zone-item:hover {
     border-left: none;
     border-top: 1px solid var(--border);
   }
-  .research-edit-pair {
-    grid-template-columns: 1fr;
-  }
 }
 .onboarding-explainer a {
   color: var(--accent);
@@ -1749,39 +1550,6 @@ a.zone-item:hover {
   margin-top: 14px;
 }
 
-.onboarding-logo {
-  width: 26px;
-  height: 26px;
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: none;
-}
-.onboarding-logo svg {
-  display: block;
-}
-.onboarding-logo--key {
-  background: var(--bg-element);
-  border: 1px solid var(--border-strong);
-  color: var(--text-secondary);
-}
-.onboarding-logo--lobe {
-  background: var(--bg-element);
-  border: 1px solid var(--border-strong);
-}
-.onboarding-logo--lobe svg {
-  width: 22px;
-  height: 22px;
-}
-.onboarding-logo--brand {
-  border: 1px solid var(--border-strong);
-}
-.onboarding-logo--brand svg {
-  width: 26px;
-  height: 26px;
-}
 .onboarding-install {
   margin-top: 12px;
 }
@@ -1891,39 +1659,6 @@ a.zone-item:hover {
   }
 }
 
-/* Blind-replay trainer — AI sparring, review tab and cross-session statistics (M4 / M5). */
-
-.trainer-tabs {
-  margin-left: auto;
-  display: flex;
-  gap: 4px;
-  -webkit-app-region: no-drag;
-}
-.trainer-tab {
-  padding: 3px 10px;
-  background: transparent;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius);
-  color: var(--text-secondary);
-  font: inherit;
-  font-size: var(--fs-sm);
-  cursor: pointer;
-}
-.trainer-tab--on {
-  color: var(--accent);
-  border-color: var(--accent);
-}
-
-.trainer-band-swatch--fog {
-  background: #202020;
-}
-
-.trainer-label {
-  font-size: var(--fs-sm);
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
 .chat-shell--full .canvas-split--open .chat-panel-head,
 .chat-shell--full .canvas-split--open .chat-panel-body-content {
   padding-left: 16px;
