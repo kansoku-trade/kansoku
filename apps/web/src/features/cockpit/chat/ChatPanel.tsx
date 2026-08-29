@@ -86,6 +86,15 @@ const styles = stylex.create({
     flexDirection: 'column',
     minHeight: 0,
   },
+  bodyViewport: {
+    flex: '1 1 auto',
+    minHeight: 0,
+    height: 'auto',
+  },
+  bodyContent: {
+    padding: '10px 12px',
+    gap: '8px',
+  },
 });
 
 export function ChatPanel({
@@ -135,6 +144,8 @@ export function ChatPanel({
       </div>
       <ConversationTranscript
         className={`chat-panel-body ${stylex.props(styles.body).className}`}
+        viewportClassName={stylex.props(styles.bodyViewport).className}
+        contentClassName={stylex.props(styles.bodyContent).className}
         rows={rows}
         busy={busy}
         streamText={streamText}
