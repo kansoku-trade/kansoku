@@ -44,15 +44,19 @@ const RANGE_ORDER: LayerRange[] = ['recent', 'all'];
 
 const styles = stylex.create({
   panel: {
+    borderColor: colors.border,
+    borderStyle: 'solid',
+  },
+  panelDefault: {
     position: 'absolute',
     top: '8px',
     right: '64px',
     zIndex: 20,
     backgroundColor: 'rgba(10, 10, 10, 0.94)',
-    borderColor: colors.border,
-    borderStyle: 'solid',
     borderWidth: '1px',
     fontSize: fontSizes.xs,
+  },
+  panelOpen: {
     minWidth: '132px',
     maxWidth: '180px',
   },
@@ -76,15 +80,17 @@ const styles = stylex.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: '8px',
-    padding: '3px 8px',
     color: colors.textPrimary,
-    fontSize: fontSizes.xs,
     fontWeight: 500,
     cursor: 'pointer',
     userSelect: 'none',
     ':hover': {
       backgroundColor: colors.backgroundHover,
     },
+  },
+  headerDefault: {
+    padding: '3px 8px',
+    fontSize: fontSizes.xs,
   },
   headerInline: {
     borderColor: colors.border,
@@ -140,18 +146,23 @@ const styles = stylex.create({
   groupLabel: {
     display: 'flex',
     alignItems: 'center',
-    color: colors.textPrimary,
     padding: '1px 0',
     cursor: 'pointer',
     userSelect: 'none',
     lineHeight: 1.25,
     fontSize: fontSizes.sm,
+  },
+  groupLabelOn: {
+    color: colors.textPrimary,
     ':hover': {
       color: colors.textPrimary,
     },
   },
   groupLabelOff: {
     color: colors.textMuted,
+    ':hover': {
+      color: colors.textPrimary,
+    },
   },
   checkbox: {
     margin: '0 5px 0 0',
@@ -286,9 +297,7 @@ export function LayerPanel({
       key={g.title ?? `g${gi}`}
       className={`lp-group ${stylex.props(gi === groups.length - 1 ? styles.groupLast : styles.group).className}`}
     >
-      {g.title ? (
-        <div className={`lp-group-title ${stylex.props(styles.groupTitle).className}`}>{g.title}</div>
-      ) : null}
+      {g.title ? <div className={`lp-group-title ${stylex.props(styles.groupTitle).className}`}>{g.title}</div> : null}
       {g.items.map((it) =>
         it.locked ? (
           <div
@@ -311,7 +320,7 @@ export function LayerPanel({
         ) : (
           <label
             key={it.key}
-            className={`lp-group-label ${stylex.props(styles.groupLabel, !isOn(it.key) && styles.groupLabelOff).className}`}
+            className={`lp-group-label ${stylex.props(styles.groupLabel, isOn(it.key) ? styles.groupLabelOn : styles.groupLabelOff).className}`}
           >
             <Checkbox
               size="sm"
@@ -334,11 +343,11 @@ export function LayerPanel({
 
   return (
     <div
-      className={`layer-panel${collapsed ? ' collapsed' : ''}${inline ? ' layer-panel--inline' : ''} ${stylex.props(styles.panel, collapsed && styles.panelCollapsed, inline && styles.panelInline).className}`}
+      className={`layer-panel${collapsed ? ' collapsed' : ''}${inline ? ' layer-panel--inline' : ''} ${stylex.props(styles.panel, !inline && styles.panelDefault, inline ? styles.panelInline : collapsed ? styles.panelCollapsed : styles.panelOpen).className}`}
       aria-label={title}
     >
       <div
-        className={`lp-header ${stylex.props(styles.header, inline && styles.headerInline).className}`}
+        className={`lp-header ${stylex.props(styles.header, inline ? styles.headerInline : styles.headerDefault).className}`}
         role="button"
         tabIndex={0}
         aria-expanded={!collapsed}
