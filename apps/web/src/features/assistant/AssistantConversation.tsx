@@ -89,6 +89,13 @@ const styles = stylex.create({
   composerWrap: {
     position: 'relative',
   },
+  mentionLayer: {
+    bottom: 'calc(100% + 6px)',
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    zIndex: 8,
+  },
   composer: {
     'backgroundColor': colors.backgroundElement,
     'borderColor': colors.borderStrong,
@@ -437,7 +444,7 @@ export function AssistantConversation({
               className={`assistant-conversation-composer-wrap ${stylex.props(styles.composerWrap).className}`}
             >
               {mentionState ? (
-                <div className="assistant-mention-layer">
+                <div {...stylex.props(styles.mentionLayer)}>
                   <AtMentionPopover
                     candidates={filteredMentions}
                     activeIndex={mentionState.activeIndex}

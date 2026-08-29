@@ -88,6 +88,7 @@ const styles = stylex.create({
     'flex': '0 0 auto',
     'height': '20px',
     'justifyContent': 'center',
+    'opacity': 0,
     'padding': 0,
     'transition': 'opacity 0.12s ease, color 0.12s ease, background-color 0.12s ease',
     'width': '20px',
@@ -96,6 +97,18 @@ const styles = stylex.create({
       color: colors.textPrimary,
       opacity: 1,
     },
+  },
+  confirmText: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.base,
+    lineHeight: 1.5,
+    margin: '0 0 12px',
+    textWrap: 'pretty',
+  },
+  confirmActions: {
+    display: 'flex',
+    gap: '6px',
+    justifyContent: 'flex-end',
   },
 });
 
@@ -114,9 +127,9 @@ function confirmDelete(session: AssistantSessionMeta, onDelete: (id: string) => 
     title: '删除会话',
     size: 'sm',
     body: (close) => (
-      <div className="assistant-confirm">
-        <p>删除「{session.title}」后无法恢复，确定继续吗？</p>
-        <div className="assistant-confirm-actions">
+      <div>
+        <p {...stylex.props(styles.confirmText)}>删除「{session.title}」后无法恢复，确定继续吗？</p>
+        <div {...stylex.props(styles.confirmActions)}>
           <Button onClick={close}>取消</Button>
           <Button
             accent
