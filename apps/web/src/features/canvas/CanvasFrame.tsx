@@ -1,5 +1,17 @@
 import { useEffect, useRef } from 'react';
+import * as stylex from '@stylexjs/stylex';
 import { client } from '@web/lib/client';
+import { colors } from '../../theme/tokens.stylex';
+
+const styles = stylex.create({
+  frame: {
+    backgroundColor: colors.backgroundCanvas,
+    borderStyle: 'none',
+    borderWidth: 0,
+    height: '100%',
+    width: '100%',
+  },
+});
 
 export interface CanvasFrameProps {
   source: string;
@@ -49,11 +61,11 @@ export function CanvasFrame({ source, slug }: CanvasFrameProps) {
 
   return (
     <iframe
+      {...stylex.props(styles.frame)}
       ref={frameRef}
       title="canvas"
       src="/canvas-guest.html"
       sandbox="allow-scripts allow-same-origin"
-      style={{ width: '100%', height: '100%', border: 0, background: '#0a0a0a' }}
     />
   );
 }
