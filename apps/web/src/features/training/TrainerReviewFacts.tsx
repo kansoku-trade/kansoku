@@ -1,5 +1,19 @@
 import type { TrainerReviewFacts as Facts } from '@kansoku/pro-api';
+import * as stylex from '@stylexjs/stylex';
 import { fmt, signed } from '@web/lib/format';
+
+const styles = stylex.create({
+  facts: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px',
+  },
+  figures: {
+    display: 'grid',
+    gap: '8px',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+  },
+});
 
 /**
  * The three numbers a live account cannot produce, because a live account has no parallel world in
@@ -12,9 +26,12 @@ import { fmt, signed } from '@web/lib/format';
 export function TrainerReviewFacts({ facts }: { facts: Facts }) {
   const autopsy = facts.stopAutopsy;
   return (
-    <div className="trainer-review-facts" data-testid="trainer-review-facts">
+    <div
+      className={`trainer-review-facts ${stylex.props(styles.facts).className}`}
+      data-testid="trainer-review-facts"
+    >
       <div className="trainer-label">实盘做不到的三个数</div>
-      <div className="trainer-review-figs">
+      <div className={`trainer-review-figs ${stylex.props(styles.figures).className}`}>
         <figure className="trainer-fig">
           <figcaption>被止损那笔超出多少</figcaption>
           <div className={`num trainer-fig-val${autopsy ? ' down' : ''}`}>
