@@ -1,8 +1,38 @@
 import { useEffect, useState } from 'react';
+import * as stylex from '@stylexjs/stylex';
 import { errorMessage } from '@web/lib/api';
 import { client } from '@web/lib/client';
 import { Button } from '@web/ui';
+import { colors, fonts, radii } from '../../theme/tokens.stylex';
 import type { LobeHubDeviceLogin } from './types';
+
+const styles = stylex.create({
+  root: {
+    display: 'grid',
+    gap: '14px',
+    minWidth: 'min(420px, 80vw)',
+  },
+  description: {
+    color: colors.textSecondary,
+    lineHeight: 1.6,
+    margin: 0,
+  },
+  code: {
+    backgroundColor: colors.backgroundSurface,
+    borderColor: colors.border,
+    borderRadius: radii.lg,
+    borderStyle: 'solid',
+    borderWidth: '1px',
+    color: colors.textPrimary,
+    fontFamily: fonts.mono,
+    fontSize: '24px',
+    fontWeight: 700,
+    letterSpacing: '0.16em',
+    padding: '14px 18px',
+    textAlign: 'center',
+    userSelect: 'all',
+  },
+});
 
 export function DeviceLoginDialog({
   login,
@@ -49,9 +79,11 @@ export function DeviceLoginDialog({
 
   const url = login.verificationUriComplete ?? login.verificationUri;
   return (
-    <div className="settings-device-login">
-      <p>请在 LobeHub Cloud 确认登录，并在需要时输入以下验证码。</p>
-      <div className="settings-device-code">{login.userCode}</div>
+    <div {...stylex.props(styles.root)}>
+      <p {...stylex.props(styles.description)}>
+        请在 LobeHub Cloud 确认登录，并在需要时输入以下验证码。
+      </p>
+      <div {...stylex.props(styles.code)}>{login.userCode}</div>
       <div className="settings-provider-meta">{status}</div>
       <div className="settings-cred-actions">
         <Button onClick={() => void navigator.clipboard.writeText(login.userCode)}>
