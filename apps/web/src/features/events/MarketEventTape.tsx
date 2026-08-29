@@ -2,6 +2,7 @@ import { useState } from 'react';
 import * as stylex from '@stylexjs/stylex';
 import type { EventCanvasPhase } from '@kansoku/core/contract/events';
 import type { MarketEvent } from '@kansoku/shared/types';
+import { NoteBlock } from '@web/ui';
 import { colors, fontSizes } from '../../theme/tokens.stylex';
 import { MarketEventCard } from './MarketEventCard';
 import type { MarketEventFeedState } from './useMarketEventFeed';
@@ -87,14 +88,10 @@ export function MarketEventTape({
     if (next > rows.length && !feed.exhausted && !feed.loadingMore) void feed.loadMore();
   };
 
-  if (feed.status === 'loading') return <div className="note-block">事件流加载中…</div>;
-  if (feed.status === 'empty') return <div className="note-block">{emptyText}</div>;
+  if (feed.status === 'loading') return <NoteBlock>事件流加载中…</NoteBlock>;
+  if (feed.status === 'empty') return <NoteBlock>{emptyText}</NoteBlock>;
   if (feed.status === 'degraded' && rows.length === 0)
-    return (
-      <div className="note-block">
-        事件流已断开，正在重连{feed.error ? `（${feed.error}）` : ''}
-      </div>
-    );
+    return <NoteBlock>事件流已断开，正在重连{feed.error ? `（${feed.error}）` : ''}</NoteBlock>;
 
   return (
     <div {...stylex.props(styles.root)}>

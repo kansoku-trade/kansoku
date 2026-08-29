@@ -1,6 +1,6 @@
 import type { NewsItem } from '@kansoku/shared/types';
 import * as stylex from '@stylexjs/stylex';
-import { Badge, MarketTime, SectionTitle } from '../../ui';
+import { Badge, MarketTime, NoteBlock, SectionTitle } from '../../ui';
 import { colors, fontSizes } from '../../theme/tokens.stylex';
 
 const styles = stylex.create({
@@ -62,7 +62,7 @@ export function NewsSection({ news }: { news: NewsItem[] }) {
           </a>
         );
       })}
-      <div className="note-block">社区帖为用户观点，非权威信源；引用数据前先核对原始来源</div>
+      <NoteBlock>社区帖为用户观点，非权威信源；引用数据前先核对原始来源</NoteBlock>
     </>
   );
 }

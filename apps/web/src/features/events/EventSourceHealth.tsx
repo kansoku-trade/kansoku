@@ -1,7 +1,7 @@
 import type { EventSourceStatus } from '@kansoku/core/contract/events';
 import type { EventSourceHealth as SourceHealthValue } from '@kansoku/shared/types';
 import * as stylex from '@stylexjs/stylex';
-import { MarketTime } from '@web/ui';
+import { MarketTime, NoteBlock } from '@web/ui';
 import { colors, fontSizes } from '../../theme/tokens.stylex';
 import { eventSourceLabel } from './eventLabels';
 
@@ -123,10 +123,10 @@ function SourceRow({ status }: { status: EventSourceStatus }) {
 }
 
 export function EventSourceHealth({ sources, error, loading }: EventSourceHealthProps) {
-  if (error) return <div className="note-block">来源状态获取失败，正在重试</div>;
-  if (loading && !sources) return <div className="note-block">来源状态加载中…</div>;
+  if (error) return <NoteBlock>来源状态获取失败，正在重试</NoteBlock>;
+  if (loading && !sources) return <NoteBlock>来源状态加载中…</NoteBlock>;
   if (!sources) return null;
-  if (sources.length === 0) return <div className="note-block">还没有登记任何事件来源</div>;
+  if (sources.length === 0) return <NoteBlock>还没有登记任何事件来源</NoteBlock>;
 
   const active = sources.filter((s) => s.health === 'active').length;
   const degraded = sources.filter((s) => s.health === 'degraded').length;

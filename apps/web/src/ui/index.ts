@@ -11,6 +11,7 @@ export { SegmentedControl } from './SegmentedControl';
 export type { SegmentedControlOption } from './SegmentedControl';
 export { Dot } from './Dot';
 export { SectionTitle } from './SectionTitle';
+export { NoteBlock } from './NoteBlock';
 export { Num } from './Num';
 export { Spinner } from './Spinner';
 export { Empty } from './Empty';
