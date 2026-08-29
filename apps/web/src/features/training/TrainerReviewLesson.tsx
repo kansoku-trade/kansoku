@@ -1,6 +1,40 @@
 import { useState } from 'react';
+import * as stylex from '@stylexjs/stylex';
 import type { TrainerLesson } from '@kansoku/pro-api';
 import type { TrainerBridge } from '../desktop/desktopTrainerBridge';
+import { colors, radii, sizes } from '../../theme/tokens.stylex';
+
+const styles = stylex.create({
+  root: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px',
+  },
+  row: {
+    display: 'flex',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: '8px',
+  },
+  input: {
+    flex: '1 1 260px',
+    minWidth: 0,
+    height: sizes.controlHeight,
+    boxSizing: 'border-box',
+    padding: '0 10px',
+    backgroundColor: colors.backgroundElement,
+    borderColor: colors.borderStrong,
+    borderStyle: 'solid',
+    borderWidth: '1px',
+    borderRadius: radii.default,
+    color: colors.textPrimary,
+    fontFamily: 'inherit',
+    fontSize: 'inherit',
+    fontStyle: 'inherit',
+    fontWeight: 'inherit',
+    lineHeight: 'inherit',
+  },
+});
 
 export interface TrainerReviewLessonProps {
   lesson: TrainerLesson | null;
@@ -41,11 +75,14 @@ export function TrainerReviewLesson({
   };
 
   return (
-    <div className="trainer-review-lesson" data-testid="trainer-review-lesson">
+    <div
+      className={`trainer-review-lesson ${stylex.props(styles.root).className}`}
+      data-testid="trainer-review-lesson"
+    >
       <div className="trainer-label">教训</div>
-      <div className="trainer-review-lesson-row">
+      <div className={`trainer-review-lesson-row ${stylex.props(styles.row).className}`}>
         <input
-          className="trainer-lesson-input"
+          className={`trainer-lesson-input ${stylex.props(styles.input).className}`}
           value={text}
           placeholder="一句话，写你自己的毛病"
           aria-label="本局教训"
@@ -69,8 +106,8 @@ export function TrainerReviewLesson({
       </div>
       {error && <span className="trainer-order-error">{error}</span>}
       <p className="trainer-settle-hint">
-        默认只存训练区。写的是你自己的操作习惯就值得放行；写的是「这个案例池假突破特别多」就别同步 ——
-        合成盘的特征灌进实盘必读清单是污染。
+        默认只存训练区。写的是你自己的操作习惯就值得放行；写的是「这个案例池假突破特别多」就别同步
+        —— 合成盘的特征灌进实盘必读清单是污染。
       </p>
     </div>
   );
