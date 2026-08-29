@@ -11,11 +11,15 @@ import { colors, fontSizes } from '../../theme/tokens.stylex';
 
 const styles = stylex.create({
   preference: {
-    alignItems: 'center',
-    display: 'flex',
-    gap: '12px',
-    justifyContent: 'space-between',
-    padding: '11px',
+    'alignItems': 'center',
+    'display': 'flex',
+    'gap': '12px',
+    'justifyContent': 'space-between',
+    'padding': '11px',
+    '@media (max-width: 560px)': {
+      alignItems: 'stretch',
+      flexDirection: 'column',
+    },
   },
   preferenceCopy: {
     minWidth: 0,
