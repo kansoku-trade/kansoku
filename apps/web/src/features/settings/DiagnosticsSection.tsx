@@ -25,6 +25,12 @@ const styles = stylex.create({
     marginTop: '3px',
     overflowWrap: 'anywhere',
   },
+  loading: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.sm,
+    lineHeight: 1.4,
+    marginTop: '6px',
+  },
   actions: {
     display: 'flex',
     gap: '6px',
@@ -33,6 +39,9 @@ const styles = stylex.create({
   },
   testResult: {
     fontSize: fontSizes.sm,
+  },
+  testResultFail: {
+    color: colors.down,
   },
 });
 
@@ -87,7 +96,7 @@ export function DiagnosticsSection() {
           {path}
         </div>
       ) : (
-        <div className="note-block">加载中…</div>
+        <div className={`note-block ${stylex.props(styles.loading).className}`}>加载中…</div>
       )}
 
       <div className={`settings-cred-actions ${stylex.props(styles.actions).className}`}>
@@ -101,7 +110,7 @@ export function DiagnosticsSection() {
 
       {error ? (
         <div
-          className={`settings-test-result settings-test-result--fail ${stylex.props(styles.testResult).className}`}
+          className={`settings-test-result settings-test-result--fail ${stylex.props(styles.testResult, styles.testResultFail).className}`}
         >
           {error}
         </div>
