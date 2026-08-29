@@ -1,12 +1,42 @@
 import type { AnchorHTMLAttributes, ButtonHTMLAttributes } from 'react';
+import * as stylex from '@stylexjs/stylex';
+import { colors, fontSizes, radii, sizes } from '../theme/tokens.stylex';
 
 type ChipProps = {
   active?: boolean;
 } & AnchorHTMLAttributes<HTMLAnchorElement> &
   ButtonHTMLAttributes<HTMLButtonElement>;
 
+const styles = stylex.create({
+  root: {
+    'alignItems': 'center',
+    'background': 'transparent',
+    'borderColor': colors.borderStrong,
+    'borderStyle': 'solid',
+    'borderWidth': '1px',
+    'borderRadius': radii.default,
+    'boxSizing': 'border-box',
+    'color': colors.textPrimary,
+    'cursor': 'pointer',
+    'display': 'inline-flex',
+    'fontSize': fontSizes.base,
+    'height': sizes.controlHeight,
+    'padding': '0 10px',
+    'textDecoration': 'none',
+    'userSelect': 'none',
+    ':hover': {
+      borderColor: colors.accent,
+      color: colors.accent,
+    },
+  },
+  active: {
+    borderColor: colors.accent,
+    color: colors.accent,
+  },
+});
+
 export function Chip({ active, href, className, children, ...rest }: ChipProps) {
-  const cls = `chip${active ? ' active' : ''}${className ? ` ${className}` : ''}`;
+  const cls = `chip ${stylex.props(styles.root, active && styles.active).className}${active ? ' active' : ''}${className ? ` ${className}` : ''}`;
 
   if (href) {
     return (
