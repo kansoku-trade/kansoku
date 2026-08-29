@@ -28,6 +28,31 @@ const styles = stylex.create({
     gap: '8px',
     justifyContent: 'space-between',
   },
+  timePreference: {
+    alignItems: 'center',
+    display: 'flex',
+    gap: '12px',
+    justifyContent: 'space-between',
+    padding: '11px',
+    '@media (max-width: 560px)': {
+      alignItems: 'stretch',
+      flexDirection: 'column',
+    },
+  },
+  preferenceCopy: {
+    minWidth: 0,
+  },
+  preferenceName: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.sm,
+    fontWeight: 500,
+  },
+  testResult: {
+    fontSize: fontSizes.sm,
+  },
+  testResultFail: {
+    color: colors.down,
+  },
 });
 
 export function LongbridgeSection() {
@@ -75,7 +100,13 @@ export function LongbridgeSection() {
       </div>
       {data?.cliPath && <div className="settings-provider-meta">{data.cliPath}</div>}
       {data?.lastError && (
-        <div className="settings-test-result settings-test-result--fail">{data.lastError}</div>
+        <div
+          className={`settings-test-result settings-test-result--fail ${
+            stylex.props(styles.testResult, styles.testResultFail).className
+          }`}
+        >
+          {data.lastError}
+        </div>
       )}
       <div className="settings-cred-actions">
         <Button onClick={() => window.open(INSTALL_URL, '_blank', 'noopener,noreferrer')}>
@@ -84,9 +115,19 @@ export function LongbridgeSection() {
         <Button onClick={reload}>重新检测</Button>
       </div>
       {region.data && (
-        <div className="settings-time-preference">
-          <div className="settings-preference-copy">
-            <div className="settings-preference-name">线路</div>
+        <div
+          className={`settings-time-preference ${stylex.props(styles.timePreference).className}`}
+        >
+          <div
+            className={`settings-preference-copy ${stylex.props(styles.preferenceCopy).className}`}
+          >
+            <div
+              className={`settings-preference-name ${
+                stylex.props(styles.preferenceName).className
+              }`}
+            >
+              线路
+            </div>
           </div>
           <SegmentedControl
             ariaLabel="长桥线路"
@@ -100,7 +141,13 @@ export function LongbridgeSection() {
         </div>
       )}
       {regionError && (
-        <div className="settings-test-result settings-test-result--fail">{regionError}</div>
+        <div
+          className={`settings-test-result settings-test-result--fail ${
+            stylex.props(styles.testResult, styles.testResultFail).className
+          }`}
+        >
+          {regionError}
+        </div>
       )}
     </section>
   );
