@@ -28,7 +28,7 @@ const styles = stylex.create({
     gap: '8px',
     minWidth: 0,
   },
-  icon: {
+  bodyIcon: {
     flex: '0 0 auto',
     opacity: 0.75,
   },
@@ -43,7 +43,7 @@ const styles = stylex.create({
     gap: '6px',
   },
   cancel: {
-    'background': 'transparent',
+    'backgroundColor': 'transparent',
     'borderColor': 'transparent',
     'color': colors.textMuted,
     ':hover': {
@@ -148,7 +148,7 @@ export function TrainerCard() {
       <SectionTitle>盲盘训练</SectionTitle>
       <Card className={`trainer-card ${stylex.props(styles.card).className}`}>
         <div className={`trainer-card-body ${stylex.props(styles.body).className}`}>
-          <GraduationCap className={stylex.props(styles.icon).className} size={18} aria-hidden />
+          <GraduationCap {...stylex.props(styles.bodyIcon)} size={18} aria-hidden />
           <span className={`trainer-card-hint ${stylex.props(styles.hint).className}`}>
             {fill.error ?? copy.hint}
           </span>
