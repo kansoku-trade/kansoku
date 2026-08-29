@@ -7,7 +7,7 @@ import type {
 } from '@kansoku/pro-api';
 import { fmt, signed } from '@web/lib/format';
 import * as stylex from '@stylexjs/stylex';
-import { colors, fontSizes, radii, sizes } from '../../theme/tokens.stylex';
+import { colors, fontSizes, fonts, radii, sizes } from '../../theme/tokens.stylex';
 import type { TrainerBridge } from '../desktop/desktopTrainerBridge';
 import { coachBarLabel, coachPlanLine, DIRECTION_LABEL } from './coachStance';
 
@@ -88,6 +88,10 @@ const styles = stylex.create({
     fontSize: fontSizes.sm,
     lineHeight: 1.6,
     margin: 0,
+  },
+  num: {
+    fontFamily: fonts.mono,
+    fontVariantNumeric: 'tabular-nums',
   },
   label: {
     color: colors.textMuted,
@@ -238,7 +242,12 @@ export function TrainerCoachCompare({
               </button>
               <span>
                 AI：<b>{DIRECTION_LABEL[call.ai.direction]}</b>
-                {plan.prices && <span className="num"> {plan.prices}</span>}
+                {plan.prices && (
+                  <span className={`num ${stylex.props(styles.num).className}`}>
+                    {' '}
+                    {plan.prices}
+                  </span>
+                )}
               </span>
               <span className={`trainer-settle-hint ${stylex.props(styles.hint).className}`}>
                 {call.humanBefore
