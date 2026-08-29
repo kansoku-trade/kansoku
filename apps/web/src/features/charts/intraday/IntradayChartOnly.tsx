@@ -2,7 +2,7 @@ import { Component, lazy, Suspense, useMemo, useRef, useState, type ReactNode } 
 import * as stylex from '@stylexjs/stylex';
 import type { IntradayBuilt } from '@kansoku/shared/types';
 import { fmt } from '@web/lib/format';
-import { colors, radii } from '../../../theme/tokens.stylex';
+import { colors, fontSizes, radii } from '../../../theme/tokens.stylex';
 import type { DrawingsHandle } from '../drawings/useDrawings';
 import { namespacedKey, useIntradayControls } from './controlsContext';
 import { isSessionlessTf, tfDataOf, type ChartTf } from './timeframes';
@@ -15,11 +15,26 @@ const MACD_DEFAULT = 190;
 const MACD_HEIGHT_KEY = 'intraday-macd-height';
 
 const styles = stylex.create({
+  chartsCol: {
+    borderRightColor: colors.border,
+    borderRightStyle: 'solid',
+    borderRightWidth: '1px',
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden',
+  },
+  chartBlock: {
+    borderBottomColor: colors.border,
+    borderBottomStyle: 'solid',
+    borderBottomWidth: '1px',
+    position: 'relative',
+  },
   mainChart: {
     flex: '1 1 auto',
     minHeight: 0,
   },
   macdChart: {
+    borderBottomColor: colors.textPrimary,
     borderBottomStyle: 'none',
     borderBottomWidth: 0,
     minHeight: 0,
@@ -54,6 +69,42 @@ const styles = stylex.create({
     '::after': {
       backgroundColor: colors.accent,
     },
+  },
+  chartHost: {
+    height: '100%',
+    width: '100%',
+  },
+  chartLabel: {
+    backgroundColor: 'rgba(10, 10, 10, 0.7)',
+    color: colors.textSecondary,
+    fontSize: fontSizes.sm,
+    left: '12px',
+    letterSpacing: '0.05em',
+    padding: '2px 8px',
+    position: 'absolute',
+    textTransform: 'uppercase',
+    top: '8px',
+    zIndex: 10,
+  },
+  chartLegend: {
+    backgroundColor: 'rgba(10, 10, 10, 0.7)',
+    color: colors.textPrimary,
+    display: 'flex',
+    fontSize: fontSizes.base,
+    fontVariantNumeric: 'tabular-nums',
+    gap: '14px',
+    left: '110px',
+    padding: '2px 8px',
+    position: 'absolute',
+    top: '8px',
+    zIndex: 10,
+  },
+  swatch: {
+    display: 'inline-block',
+    height: '2px',
+    marginRight: '4px',
+    verticalAlign: 'middle',
+    width: '10px',
   },
 });
 
@@ -144,15 +195,20 @@ export function IntradayChartOnly({
   };
 
   return (
-    <div className="charts-col">
-      <div className={`chart-block ${stylex.props(styles.mainChart).className}`}>
-        <div className="chart-label">K 线 + 成交量</div>
-        <div className="chart-legend">
+    <div className={`charts-col ${stylex.props(styles.chartsCol).className}`}>
+      <div className={`chart-block ${stylex.props(styles.chartBlock, styles.mainChart).className}`}>
+        <div className={`chart-label ${stylex.props(styles.chartLabel).className}`}>
+          K 线 + 成交量
+        </div>
+        <div className={`chart-legend ${stylex.props(styles.chartLegend).className}`}>
           {maSeries
             .filter((s) => s.line.visible)
             .map((s) => (
               <span key={s.line.id}>
-                <span className="swatch" style={{ background: s.line.color }} />
+                <span
+                  className={`swatch ${stylex.props(styles.swatch).className}`}
+                  style={{ background: s.line.color }}
+                />
                 EMA{s.line.period}
                 {s.last !== null && ` $${fmt(s.last)}`}
               </span>
@@ -160,11 +216,17 @@ export function IntradayChartOnly({
           {!isSessionlessTf(activeTf) && (
             <>
               <span>
-                <span className="swatch" style={{ background: 'rgba(232,232,232,0.3)' }} />
+                <span
+                  className={`swatch ${stylex.props(styles.swatch).className}`}
+                  style={{ background: 'rgba(232,232,232,0.3)' }}
+                />
                 盘前/盘后
               </span>
               <span>
-                <span className="swatch" style={{ background: 'rgba(70,100,180,0.7)' }} />
+                <span
+                  className={`swatch ${stylex.props(styles.swatch).className}`}
+                  style={{ background: 'rgba(70,100,180,0.7)' }}
+                />
                 夜盘
               </span>
             </>
@@ -177,7 +239,7 @@ export function IntradayChartOnly({
             </Suspense>
           </DrawingsBoundary>
         )}
-        <div ref={mainRef} className="chart-host" />
+        <div ref={mainRef} className={`chart-host ${stylex.props(styles.chartHost).className}`} />
       </div>
       <div
         className={`pane-resizer ${stylex.props(styles.resizer, dragging && styles.resizerDragging).className}`}
@@ -185,11 +247,13 @@ export function IntradayChartOnly({
         onPointerDown={onResizeStart}
       />
       <div
-        className={`chart-block macd ${stylex.props(styles.macdChart).className}`}
+        className={`chart-block macd ${stylex.props(styles.chartBlock, styles.macdChart).className}`}
         style={{ flex: `0 0 ${macdHeight}px` }}
       >
-        <div className="chart-label">MACD (12,26,9)</div>
-        <div ref={macdRef} className="chart-host" />
+        <div className={`chart-label ${stylex.props(styles.chartLabel).className}`}>
+          MACD (12,26,9)
+        </div>
+        <div ref={macdRef} className={`chart-host ${stylex.props(styles.chartHost).className}`} />
       </div>
     </div>
   );
