@@ -15,6 +15,7 @@ import type {
   ResearchDocumentMeta,
 } from '@kansoku/core/contract/index';
 import { canvasSlugFromResearchPath } from '@kansoku/core/contract/index';
+import * as stylex from '@stylexjs/stylex';
 import { CanvasFrame } from '@web/features/canvas/CanvasFrame';
 import { useQuery } from '@web/lib/apiHooks';
 import { client } from '@web/lib/client';
@@ -22,6 +23,7 @@ import { queryClient } from '@web/lib/queryClient';
 import { navigate, useQueryParam } from '@web/lib/router';
 import { Badge, Empty, ErrorBox, Input, MarketTime, ResizablePanel, Spinner } from '@web/ui';
 import { useTitle } from '@web/lib/useTitle';
+import { colors, fonts, fontSizes, radii } from '../../theme/tokens.stylex';
 import { Markdown } from '../cockpit/markdown';
 import { openCreateResearchDialog } from './CreateResearchDialog';
 import { ResearchAssistant } from './ResearchAssistant';
@@ -67,6 +69,460 @@ const EXPLORER_MIN_WIDTH = 240;
 const EXPLORER_MAX_WIDTH = 520;
 const EXPLORER_WIDTH_STORAGE_KEY = 'kansoku.research.explorer-width';
 
+const styles = stylex.create({
+  page: {
+    'backgroundColor': colors.backgroundCanvas,
+    'color': colors.textPrimary,
+    '@media (max-width: 760px)': {
+      height: 'auto',
+      minHeight: '100vh',
+      overflow: 'visible',
+    },
+  },
+  header: {
+    'alignItems': 'center',
+    'borderBottomColor': colors.border,
+    'borderBottomStyle': 'solid',
+    'borderBottomWidth': '1px',
+    'display': 'flex',
+    'flex': '0 0 auto',
+    'gap': '20px',
+    'justifyContent': 'space-between',
+    'minHeight': '76px',
+    'padding': '14px 14px 14px 18px',
+    '@media (max-width: 760px)': {
+      alignItems: 'stretch',
+      flexDirection: 'column',
+      padding: '14px 48px 14px 14px',
+    },
+  },
+  title: {
+    alignItems: 'center',
+    display: 'flex',
+    gap: '10px',
+    minWidth: 0,
+  },
+  titleIcon: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 176, 0, 0.08)',
+    borderColor: 'rgba(255, 176, 0, 0.28)',
+    borderStyle: 'solid',
+    borderWidth: '1px',
+    borderRadius: radii.md,
+    color: colors.accent,
+    display: 'inline-flex',
+    flex: '0 0 auto',
+    height: '30px',
+    justifyContent: 'center',
+    width: '30px',
+  },
+  titleHeading: {
+    margin: 0,
+    minWidth: 0,
+  },
+  titleHeadingTitle: {
+    fontSize: fontSizes.xl,
+    fontWeight: 600,
+    margin: 0,
+  },
+  titleHeadingDescription: {
+    color: colors.textMuted,
+    fontSize: fontSizes.sm,
+    margin: '3px 0 0',
+  },
+  controls: {
+    'alignItems': 'center',
+    'display': 'flex',
+    'gap': '8px',
+    'justifyContent': 'flex-end',
+    'minWidth': 0,
+    '@media (max-width: 760px)': {
+      flexWrap: 'wrap',
+      justifyContent: 'stretch',
+    },
+  },
+  viewSwitch: {
+    'borderColor': colors.borderStrong,
+    'borderRadius': radii.default,
+    'borderStyle': 'solid',
+    'borderWidth': '1px',
+    'display': 'grid',
+    'gridTemplateColumns': 'repeat(auto-fit, minmax(0, 1fr))',
+    'height': '28px',
+    'minWidth': '280px',
+    'overflow': 'hidden',
+    '@media (max-width: 760px)': {
+      flex: '1 1 190px',
+    },
+  },
+  viewButton: {
+    'alignItems': 'center',
+    'backgroundColor': 'transparent',
+    'border': 'none',
+    'color': colors.textMuted,
+    'cursor': 'pointer',
+    'display': 'inline-flex',
+    'fontSize': fontSizes.sm,
+    'gap': '5px',
+    'justifyContent': 'center',
+    'padding': '0 10px',
+    ':hover': {
+      backgroundColor: colors.backgroundElement,
+      color: colors.textPrimary,
+    },
+  },
+  viewButtonDivider: {
+    borderLeftColor: colors.borderStrong,
+    borderLeftStyle: 'solid',
+    borderLeftWidth: '1px',
+  },
+  viewButtonActive: {
+    backgroundColor: 'rgba(255, 176, 0, 0.09)',
+    color: colors.accent,
+  },
+  searchActions: {
+    'alignItems': 'center',
+    'display': 'flex',
+    'flex': '0 0 calc(clamp(320px, 24vw, 420px) - 14px)',
+    'gap': '8px',
+    'minWidth': 0,
+    'paddingLeft': '16px',
+    '@media (max-width: 1100px)': {
+      flex: '0 1 290px',
+      paddingLeft: 0,
+    },
+    '@media (max-width: 760px)': {
+      flex: '2 1 240px',
+    },
+  },
+  search: {
+    alignItems: 'center',
+    display: 'flex',
+    flex: '1 1 auto',
+    minWidth: 0,
+    position: 'relative',
+  },
+  searchIcon: {
+    color: colors.textMuted,
+    left: '9px',
+    pointerEvents: 'none',
+    position: 'absolute',
+    zIndex: 1,
+  },
+  searchInput: {
+    paddingLeft: '30px',
+    width: '100%',
+  },
+  refresh: {
+    'alignItems': 'center',
+    'backgroundColor': 'transparent',
+    'borderColor': colors.border,
+    'borderRadius': radii.default,
+    'borderStyle': 'solid',
+    'borderWidth': '1px',
+    'color': colors.textMuted,
+    'cursor': 'pointer',
+    'display': 'inline-flex',
+    'flex': '0 0 auto',
+    'height': '28px',
+    'justifyContent': 'center',
+    'padding': 0,
+    'width': '28px',
+    ':hover': {
+      backgroundColor: colors.backgroundHover,
+      borderColor: colors.borderStrong,
+      color: colors.textPrimary,
+    },
+  },
+  newButton: {
+    'alignItems': 'center',
+    'backgroundColor': 'transparent',
+    'borderColor': colors.border,
+    'borderRadius': radii.default,
+    'borderStyle': 'solid',
+    'borderWidth': '1px',
+    'color': colors.textMuted,
+    'cursor': 'pointer',
+    'display': 'inline-flex',
+    'flex': '0 0 auto',
+    'fontSize': fontSizes.sm,
+    'gap': '6px',
+    'height': '28px',
+    'padding': '0 10px',
+    ':hover': {
+      backgroundColor: colors.backgroundHover,
+      borderColor: colors.borderStrong,
+      color: colors.textPrimary,
+    },
+  },
+  createHint: {
+    backgroundColor: 'rgba(255, 176, 0, 0.12)',
+    borderRadius: radii.full,
+    color: colors.accent,
+    fontSize: fontSizes.sm,
+    margin: '14px auto 0',
+    padding: '6px 12px',
+    position: 'sticky',
+    top: 0,
+    width: 'fit-content',
+    zIndex: 1,
+  },
+  workspace: {
+    'display': 'flex',
+    'flex': '1 1 auto',
+    'minHeight': 0,
+    '@media (max-width: 760px)': {
+      flexDirection: 'column',
+    },
+  },
+  explorerPanel: {
+    'maxWidth': 'min(520px, 46vw)',
+    '@media (max-width: 760px)': {
+      flex: '0 0 auto',
+      maxWidth: 'none',
+      minWidth: 0,
+      width: '100%',
+    },
+  },
+  explorer: {
+    'backgroundColor': colors.backgroundSurface,
+    'height': '100%',
+    'minHeight': 0,
+    'minWidth': 0,
+    'overflowY': 'auto',
+    '@media (max-width: 760px)': {
+      borderBottomColor: colors.border,
+      borderBottomStyle: 'solid',
+      borderBottomWidth: '1px',
+      borderRightStyle: 'none',
+      maxHeight: '300px',
+    },
+  },
+  explorerHead: {
+    alignItems: 'center',
+    backgroundColor: colors.backgroundSurface,
+    borderBottomColor: colors.border,
+    borderBottomStyle: 'solid',
+    borderBottomWidth: '1px',
+    color: colors.textMuted,
+    display: 'flex',
+    fontSize: fontSizes.xs,
+    justifyContent: 'space-between',
+    letterSpacing: '0.04em',
+    minHeight: '34px',
+    padding: '0 12px',
+    position: 'sticky',
+    top: 0,
+    zIndex: 1,
+  },
+  documentList: {
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  documentRow: {
+    'alignItems': 'stretch',
+    'backgroundColor': 'transparent',
+    'border': 'none',
+    'borderBottomColor': colors.border,
+    'borderBottomStyle': 'solid',
+    'borderBottomWidth': '1px',
+    'color': colors.textPrimary,
+    'cursor': 'pointer',
+    'display': 'flex',
+    'flexDirection': 'column',
+    'gap': '4px',
+    'minWidth': 0,
+    'padding': '9px 12px',
+    'textAlign': 'left',
+    'transition': 'background-color 120ms ease',
+    'width': '100%',
+    ':hover': {
+      backgroundColor: 'rgba(255, 255, 255, 0.025)',
+    },
+    ':focus-visible': {
+      outline: `1px solid ${colors.borderStrong}`,
+      outlineOffset: '-1px',
+    },
+  },
+  documentRowActive: {
+    'backgroundColor': 'rgba(255, 255, 255, 0.055)',
+    ':hover': {
+      backgroundColor: 'rgba(255, 255, 255, 0.065)',
+    },
+  },
+  documentRowHead: {
+    alignItems: 'baseline',
+    display: 'flex',
+    gap: '8px',
+    justifyContent: 'space-between',
+    minWidth: 0,
+  },
+  documentRowTitle: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.md,
+    fontWeight: 600,
+    lineHeight: 1.3,
+    minWidth: 0,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  documentRowTitleActive: {
+    color: colors.textPrimary,
+  },
+  documentRowDate: {
+    color: colors.textMuted,
+    flex: '0 0 auto',
+    fontFamily: fonts.mono,
+    fontSize: fontSizes.xs,
+  },
+  documentRowDateActive: {
+    color: colors.textMuted,
+  },
+  documentRowMeta: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.sm,
+    lineHeight: 1.35,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  documentRowMetaActive: {
+    color: colors.textSecondary,
+  },
+  documentRowExcerpt: {
+    color: colors.textMuted,
+    fontSize: fontSizes.sm,
+    lineHeight: 1.45,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  state: {
+    alignItems: 'center',
+    color: colors.textMuted,
+    display: 'flex',
+    fontSize: fontSizes.sm,
+    gap: '8px',
+    justifyContent: 'center',
+    minHeight: '140px',
+  },
+  error: {
+    margin: '12px',
+  },
+  empty: {
+    paddingInline: '14px',
+  },
+  reader: {
+    'backgroundColor': colors.backgroundCanvas,
+    'flex': '1 1 auto',
+    'minHeight': 0,
+    'minWidth': 0,
+    'overflowY': 'auto',
+    '@media (max-width: 760px)': {
+      overflow: 'visible',
+    },
+  },
+  readerDocument: {
+    'margin': '0 auto',
+    'padding': '24px 28px 64px',
+    'width': 'min(100%, 920px)',
+    '@media (max-width: 760px)': {
+      padding: '20px 16px 48px',
+    },
+  },
+  readerDocumentCanvas: {
+    display: 'flex',
+    flexDirection: 'column',
+    height: '100%',
+    minHeight: 0,
+    padding: '16px 16px 0',
+    width: '100%',
+  },
+  readerHead: {
+    'alignItems': 'flex-start',
+    'borderBottomColor': colors.border,
+    'borderBottomStyle': 'solid',
+    'borderBottomWidth': '1px',
+    'display': 'flex',
+    'gap': '16px',
+    'justifyContent': 'space-between',
+    'marginBottom': '22px',
+    'paddingBottom': '18px',
+    '@media (max-width: 760px)': {
+      flexDirection: 'column',
+    },
+  },
+  readerHeading: {
+    minWidth: 0,
+  },
+  readerHeadingBadge: {
+    marginBottom: '7px',
+  },
+  readerHeadingTitle: {
+    color: colors.textPrimary,
+    fontSize: '24px',
+    fontWeight: 600,
+    margin: 0,
+    overflowWrap: 'anywhere',
+    textWrap: 'balance',
+  },
+  readerMeta: {
+    alignItems: 'center',
+    color: colors.textMuted,
+    display: 'flex',
+    flexWrap: 'wrap',
+    fontSize: fontSizes.sm,
+    gap: '6px 10px',
+    marginTop: '8px',
+  },
+  readerMetaCode: {
+    backgroundColor: colors.backgroundElement,
+    borderRadius: radii.default,
+    color: colors.textSecondary,
+    fontFamily: fonts.mono,
+    fontSize: fontSizes.xs,
+    overflowWrap: 'anywhere',
+    padding: '2px 5px',
+  },
+  cockpitLink: {
+    flex: '0 0 auto',
+    whiteSpace: 'nowrap',
+  },
+  readerBody: {
+    minWidth: 0,
+  },
+  readerBodyCanvas: {
+    flex: '1 1 auto',
+    minHeight: 0,
+  },
+  context: {
+    'backgroundColor': colors.backgroundSurface,
+    'borderLeftColor': colors.border,
+    'borderLeftStyle': 'solid',
+    'borderLeftWidth': '1px',
+    'display': 'flex',
+    'flex': '0 0 clamp(320px, 24vw, 420px)',
+    'flexDirection': 'column',
+    'minHeight': 0,
+    'minWidth': 0,
+    'overflow': 'hidden',
+    'width': 'clamp(320px, 24vw, 420px)',
+    '@media (max-width: 1100px)': {
+      flexBasis: '320px',
+      width: '320px',
+    },
+    '@media (max-width: 760px)': {
+      borderLeftStyle: 'none',
+      borderTopColor: colors.border,
+      borderTopStyle: 'solid',
+      borderTopWidth: '1px',
+      minHeight: '520px',
+      width: '100%',
+    },
+  },
+});
+
 function defaultExplorerWidth(): number {
   const viewportWidth = typeof window === 'undefined' ? 1440 : window.innerWidth;
   return Math.min(EXPLORER_MAX_WIDTH, Math.max(EXPLORER_MIN_WIDTH, viewportWidth * 0.215));
@@ -89,38 +545,51 @@ function ResearchExplorer({
 }) {
   if (loading && documents.length === 0) {
     return (
-      <div className="research-explorer-state">
+      <div {...stylex.props(styles.state)}>
         <Spinner /> 正在读取研究资料…
       </div>
     );
   }
-  if (error) return <ErrorBox className="research-explorer-error">{error}</ErrorBox>;
-  if (documents.length === 0) return <Empty className="research-empty">没有匹配的研究资料</Empty>;
+  if (error) return <ErrorBox className={stylex.props(styles.error).className}>{error}</ErrorBox>;
+  if (documents.length === 0)
+    return <Empty className={stylex.props(styles.empty).className}>没有匹配的研究资料</Empty>;
 
   return (
-    <div className="research-document-list">
-      {documents.map((document) => (
-        <button
-          type="button"
-          key={document.path}
-          className={`research-document-row${document.path === selectedPath ? ' active' : ''}`}
-          aria-pressed={document.path === selectedPath}
-          onClick={() => onSelect(document)}
-        >
-          <span className="research-document-row-head">
-            <span className="research-document-row-title" title={document.title}>
-              {researchListTitle(document)}
+    <div {...stylex.props(styles.documentList)}>
+      {documents.map((document) => {
+        const active = document.path === selectedPath;
+        return (
+          <button
+            type="button"
+            key={document.path}
+            {...stylex.props(styles.documentRow, active && styles.documentRowActive)}
+            aria-pressed={active}
+            onClick={() => onSelect(document)}
+          >
+            <span {...stylex.props(styles.documentRowHead)}>
+              <span
+                {...stylex.props(styles.documentRowTitle, active && styles.documentRowTitleActive)}
+                title={document.title}
+              >
+                {researchListTitle(document)}
+              </span>
+              {document.date && (
+                <span
+                  {...stylex.props(styles.documentRowDate, active && styles.documentRowDateActive)}
+                >
+                  {document.date.slice(5)}
+                </span>
+              )}
             </span>
-            {document.date && (
-              <span className="research-document-row-date">{document.date.slice(5)}</span>
+            <span {...stylex.props(styles.documentRowMeta, active && styles.documentRowMetaActive)}>
+              {researchListSecondary(document)}
+            </span>
+            {showExcerpts && document.excerpt && (
+              <span {...stylex.props(styles.documentRowExcerpt)}>{document.excerpt}</span>
             )}
-          </span>
-          <span className="research-document-row-meta">{researchListSecondary(document)}</span>
-          {showExcerpts && document.excerpt && (
-            <span className="research-document-row-excerpt">{document.excerpt}</span>
-          )}
-        </button>
-      ))}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -136,45 +605,51 @@ function ResearchReader({
 }) {
   if (loading && !document) {
     return (
-      <div className="research-reader-state">
+      <div {...stylex.props(styles.state)}>
         <Spinner /> 正在加载正文…
       </div>
     );
   }
-  if (error) return <ErrorBox className="research-reader-error">{error}</ErrorBox>;
+  if (error) return <ErrorBox className={stylex.props(styles.error).className}>{error}</ErrorBox>;
   if (!document) return <Empty>选择一份研究资料开始阅读</Empty>;
 
   const cockpitSymbol = document.kind === 'stock' ? document.symbols[0] : null;
   return (
     <article
-      className={`research-reader-document${document.kind === 'canvas' ? ' research-reader-document--canvas' : ''}`}
+      {...stylex.props(
+        styles.readerDocument,
+        document.kind === 'canvas' && styles.readerDocumentCanvas,
+      )}
     >
-      <header className="research-reader-head">
-        <div className="research-reader-heading">
-          <Badge tone={document.kind === 'stock' ? 'accent' : undefined}>
+      <header {...stylex.props(styles.readerHead)}>
+        <div {...stylex.props(styles.readerHeading)}>
+          <Badge
+            className={stylex.props(styles.readerHeadingBadge).className}
+            tone={document.kind === 'stock' ? 'accent' : undefined}
+          >
             {researchTypeLabel(document.type)}
           </Badge>
-          <h2>{document.title}</h2>
-          <div className="research-reader-meta">
-            <code>{document.path}</code>
+          <h2 {...stylex.props(styles.readerHeadingTitle)}>{document.title}</h2>
+          <div {...stylex.props(styles.readerMeta)}>
+            <code {...stylex.props(styles.readerMetaCode)}>{document.path}</code>
             <span>
               更新于 <MarketTime value={document.mtime} format="month-day-time" />
             </span>
-            {document.origin?.eventId && (
-              <span>来自市场事件 {document.origin.eventId}</span>
-            )}
+            {document.origin?.eventId && <span>来自市场事件 {document.origin.eventId}</span>}
           </div>
         </div>
         {cockpitSymbol && (
           <a
-            className="btn research-cockpit-link"
+            className={`btn ${stylex.props(styles.cockpitLink).className}`}
             href={`/symbol/${encodeURIComponent(`${cockpitSymbol}.US`)}`}
           >
             <ChartCandlestick size={14} /> 打开驾驶舱
           </a>
         )}
       </header>
-      <div className="research-reader-body">
+      <div
+        className={`research-reader-body ${stylex.props(styles.readerBody, document.kind === 'canvas' && styles.readerBodyCanvas).className}`}
+      >
         {document.kind === 'canvas' ? (
           <ResearchCanvasBody path={document.path} />
         ) : (
@@ -187,18 +662,17 @@ function ResearchReader({
 
 function ResearchCanvasBody({ path }: { path: string }) {
   const slug = canvasSlugFromResearchPath(path);
-  const { data, loading, error } = useQuery(
-    slug ? `canvas.get:${slug}` : null,
-    () => (slug ? client.canvas.get({ slug }) : Promise.reject(new Error('Invalid canvas path'))),
+  const { data, loading, error } = useQuery(slug ? `canvas.get:${slug}` : null, () =>
+    slug ? client.canvas.get({ slug }) : Promise.reject(new Error('Invalid canvas path')),
   );
   if (loading && !data) {
     return (
-      <div className="research-reader-state">
+      <div {...stylex.props(styles.state)}>
         <Spinner /> 正在打开画布…
       </div>
     );
   }
-  if (error) return <ErrorBox className="research-reader-error">{error}</ErrorBox>;
+  if (error) return <ErrorBox className={stylex.props(styles.error).className}>{error}</ErrorBox>;
   if (!data || !slug) return <Empty>画布不存在</Empty>;
   return <CanvasFrame source={data.source} slug={data.slug} />;
 }
@@ -220,7 +694,7 @@ function ResearchContext({
   const related = relatedDocuments(selected, allDocuments).slice(0, 8);
 
   return (
-    <aside className="research-context" aria-label="关联研究资料">
+    <aside {...stylex.props(styles.context)} aria-label="关联研究资料">
       {document ? (
         <ResearchAssistant
           key={document.path}
@@ -231,7 +705,7 @@ function ResearchContext({
           onDocumentChanged={onDocumentChanged}
         />
       ) : (
-        <div className="research-reader-state">
+        <div {...stylex.props(styles.state)}>
           <Spinner /> 正在加载正文…
         </div>
       )}
@@ -333,26 +807,34 @@ export function ResearchPage() {
   const listError = deferredQuery ? searchError : allError;
 
   return (
-    <div className="fullpage research-page">
-      <header className="research-header">
-        <div className="research-title">
-          <span className="research-title-icon">
+    <div className={`fullpage research-page ${stylex.props(styles.page).className}`}>
+      <header {...stylex.props(styles.header)}>
+        <div {...stylex.props(styles.title)}>
+          <span {...stylex.props(styles.titleIcon)}>
             <Library size={18} />
           </span>
-          <div>
-            <h1>研究库</h1>
-            <p>
+          <div {...stylex.props(styles.titleHeading)}>
+            <h1 {...stylex.props(styles.titleHeadingTitle)}>研究库</h1>
+            <p {...stylex.props(styles.titleHeadingDescription)}>
               {stockCount} 篇股票档案 · {journalCount} 篇研究日志 · {canvasCount} 份画布
             </p>
           </div>
         </div>
-        <div className="research-controls">
-          <div className="research-view-switch" role="group" aria-label="研究库视图">
-            {VIEW_OPTIONS.map((option) => (
+        <div {...stylex.props(styles.controls)}>
+          <div
+            className={`research-view-switch ${stylex.props(styles.viewSwitch).className}`}
+            role="group"
+            aria-label="研究库视图"
+          >
+            {VIEW_OPTIONS.map((option, index) => (
               <button
                 type="button"
                 key={option.key}
-                className={option.key === view ? 'active' : ''}
+                {...stylex.props(
+                  styles.viewButton,
+                  index > 0 && styles.viewButtonDivider,
+                  option.key === view && styles.viewButtonActive,
+                )}
                 aria-pressed={option.key === view}
                 onClick={() => changeView(option.key)}
               >
@@ -362,24 +844,25 @@ export function ResearchPage() {
             ))}
           </div>
           {view !== 'canvases' ? (
-            <button type="button" className="research-new" onClick={openCreateDialog}>
+            <button type="button" {...stylex.props(styles.newButton)} onClick={openCreateDialog}>
               <Plus size={14} /> 新建
             </button>
           ) : null}
-          <div className="research-search-actions">
-            <label className="research-search">
-              <Search size={14} aria-hidden="true" />
+          <div {...stylex.props(styles.searchActions)}>
+            <label {...stylex.props(styles.search)}>
+              <Search size={14} aria-hidden="true" {...stylex.props(styles.searchIcon)} />
               <span className="sr-only">搜索研究资料</span>
               <Input
                 type="search"
                 value={query}
+                className={stylex.props(styles.searchInput).className}
                 placeholder={searchPlaceholder(view)}
                 onChange={(event) => setQuery(event.target.value)}
               />
             </label>
             <button
               type="button"
-              className="research-refresh"
+              {...stylex.props(styles.refresh)}
               aria-label="刷新研究资料"
               onClick={refresh}
             >
@@ -389,9 +872,9 @@ export function ResearchPage() {
         </div>
       </header>
 
-      <div className="research-workspace">
+      <div {...stylex.props(styles.workspace)}>
         <ResizablePanel
-          className="research-explorer-panel"
+          className={`research-explorer-panel ${stylex.props(styles.explorerPanel).className}`}
           side="start"
           defaultSize={defaultExplorerWidth()}
           minSize={EXPLORER_MIN_WIDTH}
@@ -399,8 +882,8 @@ export function ResearchPage() {
           storageKey={EXPLORER_WIDTH_STORAGE_KEY}
           handleLabel="调整研究资料栏宽度"
         >
-          <aside className="research-explorer">
-            <div className="research-explorer-head">
+          <aside {...stylex.props(styles.explorer)}>
+            <div {...stylex.props(styles.explorerHead)}>
               <span>{explorerLabel(view)}</span>
               <span>{visibleDocuments.length}</span>
             </div>
@@ -414,9 +897,9 @@ export function ResearchPage() {
             />
           </aside>
         </ResizablePanel>
-        <main className="research-reader">
+        <main {...stylex.props(styles.reader)}>
           {createHint && (
-            <div className="research-create-hint" role="status">
+            <div {...stylex.props(styles.createHint)} role="status">
               {createHint}
             </div>
           )}
