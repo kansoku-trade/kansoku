@@ -2,7 +2,88 @@ import { useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { ChevronRight } from 'lucide-react';
 import type { ResearchDocumentMeta } from '@kansoku/core/contract/index';
+import * as stylex from '@stylexjs/stylex';
+import { colors, fontSizes, sizes } from '../../theme/tokens.stylex';
 import { researchTypeLabel } from './researchModel';
+
+const styles = stylex.create({
+  root: {
+    borderBottomColor: colors.border,
+    borderBottomStyle: 'solid',
+    borderBottomWidth: '1px',
+    padding: '0 10px',
+  },
+  summary: {
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+    borderStyle: 'none',
+    borderWidth: 0,
+    color: colors.textMuted,
+    cursor: 'pointer',
+    display: 'flex',
+    fontSize: fontSizes.xs,
+    fontWeight: 600,
+    minHeight: sizes.controlHeight,
+    padding: 0,
+    textAlign: 'left',
+    width: '100%',
+  },
+  summaryIcon: {
+    flex: '0 0 auto',
+    marginRight: '5px',
+    transitionDuration: '150ms',
+    transitionProperty: 'transform',
+    transitionTimingFunction: 'ease-out',
+  },
+  summaryIconOpen: {
+    transform: 'rotate(90deg)',
+  },
+  body: {
+    overflow: 'hidden',
+  },
+  bodyLastSection: {
+    paddingBottom: '10px',
+  },
+  relatedList: {
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  relatedButton: {
+    backgroundColor: 'transparent',
+    borderBottomColor: colors.border,
+    borderBottomStyle: 'solid',
+    borderBottomWidth: '1px',
+    borderLeftStyle: 'none',
+    borderLeftWidth: 0,
+    borderRightStyle: 'none',
+    borderRightWidth: 0,
+    borderTopStyle: 'none',
+    borderTopWidth: 0,
+    color: colors.textPrimary,
+    cursor: 'pointer',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '3px',
+    minWidth: 0,
+    padding: '9px 0',
+    textAlign: 'left',
+    width: '100%',
+    ':last-child': {
+      borderBottomWidth: 0,
+    },
+    ':hover': {
+      color: colors.accent,
+    },
+  },
+  relatedTitle: {
+    fontSize: fontSizes.base,
+    lineHeight: 1.4,
+  },
+  relatedSecondary: {
+    color: colors.textMuted,
+    fontSize: fontSizes.xs,
+  },
+});
 
 function relatedDocumentSecondary(meta: ResearchDocumentMeta): string {
   if (meta.kind === 'stock') return meta.symbols.join(' · ') || researchTypeLabel(meta.type);
@@ -20,14 +101,17 @@ export function RelatedMaterialsCard({
 }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="research-related-details">
+    <div className={`research-related-details ${stylex.props(styles.root).className}`}>
       <button
         type="button"
-        className="research-related-summary"
+        className={`research-related-summary ${stylex.props(styles.summary).className}`}
         aria-expanded={open}
         onClick={() => setOpen((current) => !current)}
       >
-        <ChevronRight size={13} />
+        <ChevronRight
+          size={13}
+          {...stylex.props(styles.summaryIcon, open && styles.summaryIconOpen)}
+        />
         <span>
           关联资料 · {selected.symbols.length} 个标的 · {related.length} 条相关记录
         </span>
@@ -35,7 +119,7 @@ export function RelatedMaterialsCard({
       <AnimatePresence initial={false}>
         {open ? (
           <motion.div
-            className="research-related-body"
+            className={`research-related-body ${stylex.props(styles.body).className}`}
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
@@ -59,18 +143,27 @@ export function RelatedMaterialsCard({
                 <p>这是一份全局记录，不归属于单一股票。</p>
               )}
             </section>
-            <section className="research-context-section">
+            <section
+              className={`research-context-section ${stylex.props(styles.bodyLastSection).className}`}
+            >
               <h3>相关记录</h3>
               {related.length > 0 ? (
-                <div className="research-related-list">
+                <div
+                  className={`research-related-list ${stylex.props(styles.relatedList).className}`}
+                >
                   {related.map((relatedDocument) => (
                     <button
                       type="button"
                       key={relatedDocument.path}
+                      {...stylex.props(styles.relatedButton)}
                       onClick={() => onSelect(relatedDocument)}
                     >
-                      <span>{relatedDocument.title}</span>
-                      <small>{relatedDocumentSecondary(relatedDocument)}</small>
+                      <span {...stylex.props(styles.relatedTitle)}>
+                        {relatedDocument.title}
+                      </span>
+                      <small {...stylex.props(styles.relatedSecondary)}>
+                        {relatedDocumentSecondary(relatedDocument)}
+                      </small>
                     </button>
                   ))}
                 </div>
