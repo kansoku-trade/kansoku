@@ -10,6 +10,9 @@ import { colors, fontSizes } from '../../../theme/tokens.stylex';
 import { SepaDashboard } from './SepaDashboard';
 
 const styles = stylex.create({
+  icon: {
+    verticalAlign: '-2px',
+  },
   fullpage: {
     display: 'flex',
     flexDirection: 'column',
@@ -81,7 +84,7 @@ export function SepaCockpit({
     >
       <div className={`detail-topbar ${stylex.props(styles.detailTopbar).className}`}>
         <a href="/">
-          <ArrowLeft className="icon" size={13} /> 列表
+          <ArrowLeft className={`icon ${stylex.props(styles.icon).className}`} size={13} /> 列表
         </a>
         <span className={`title ${stylex.props(styles.title).className}`}>{doc.title}</span>
         <span className={`meta ${stylex.props(styles.meta).className}`}>{sym}</span>

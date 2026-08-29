@@ -39,6 +39,9 @@ import { useCockpitReviewState } from './useCockpitReviewState';
 import { colors, fontSizes, sizes } from '../../theme/tokens.stylex';
 
 const styles = stylex.create({
+  icon: {
+    verticalAlign: '-2px',
+  },
   page: {
     maxWidth: '900px',
     margin: '0 auto',
@@ -161,7 +164,8 @@ export function PreviewCockpit({
         <ErrorBox>{error}</ErrorBox>
         <p>
           <a href="/">
-            <ArrowLeft className="icon" size={13} /> 返回列表
+            <ArrowLeft className={`icon ${stylex.props(styles.icon).className}`} size={13} />{' '}
+            返回列表
           </a>
         </p>
       </div>
@@ -247,7 +251,8 @@ export function PreviewCockpit({
           >
             <div className={`topbar-chart ${stylex.props(styles.topbarChart).className}`}>
               <a href="/">
-                <ArrowLeft className="icon" size={13} /> 列表
+                <ArrowLeft className={`icon ${stylex.props(styles.icon).className}`} size={13} />{' '}
+                列表
               </a>
               <span className={`meta ${stylex.props(styles.topbarMeta).className}`}>{sym}</span>
               {degraded && <Dot tone="accent" pulse title="数据延迟：行情拉取失败，正在重试" />}
