@@ -309,13 +309,6 @@ body.trainer-dragging-level * {
   font-size: var(--fs-xs);
 }
 
-.settings-cred-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 6px;
-  margin-top: 12px;
-}
-
 /* Research library */
 .research-assistant {
   display: flex;
