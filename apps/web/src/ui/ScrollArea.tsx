@@ -15,6 +15,11 @@ const styles = stylex.create({
     height: '100%',
     outline: 'none',
     width: '100%',
+    ':focus-visible': {
+      boxShadow: colors.focusRing,
+      outline: colors.focusOutline,
+      outlineOffset: '2px',
+    },
   },
   viewportHorizontal: {
     overflowX: 'auto',
