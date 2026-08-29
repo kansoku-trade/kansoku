@@ -54,6 +54,9 @@ const styles = stylex.create({
     alignItems: 'center',
     gap: '4px',
   },
+  refreshDetails: {
+    marginTop: '8px',
+  },
 });
 
 function stanceStyles(stance: ContextStance) {
@@ -92,19 +95,27 @@ export function ReassessCta({
 }) {
   const toneStyle = tone ? stanceStyles(tone).refresh : undefined;
   return (
-    <div className={`conclusion-refresh ${stylex.props(styles.refresh, toneStyle).className}`}>
-      <div className={`conclusion-refresh-row ${stylex.props(styles.refreshRow).className}`}>
-        <span className={`conclusion-refresh-note ${stylex.props(styles.refreshNote).className}`}>
-          <TriangleAlert className="icon" size={13} /> 这条结论已过时，走势可能早已变化
-        </span>
-        <Button onClick={reassess.start} disabled={reassess.busy}>
-          {reassess.busy && <Spinner />}
-          {reassess.busy ? '重估进行中…' : '重新分析'}
-        </Button>
-        {reassess.hint && <span className="ai-hint">{reassess.hint}</span>}
+    <>
+      <div className={`conclusion-refresh ${stylex.props(styles.refresh, toneStyle).className}`}>
+        <div className={`conclusion-refresh-row ${stylex.props(styles.refreshRow).className}`}>
+          <span className={`conclusion-refresh-note ${stylex.props(styles.refreshNote).className}`}>
+            <TriangleAlert className="icon" size={13} /> 这条结论已过时，走势可能早已变化
+          </span>
+          <Button onClick={reassess.start} disabled={reassess.busy}>
+            {reassess.busy && <Spinner />}
+            {reassess.busy ? '重估进行中…' : '重新分析'}
+          </Button>
+          {reassess.hint && <span className="ai-hint">{reassess.hint}</span>}
+        </div>
       </div>
-      {reassess.details}
-    </div>
+      {reassess.details && (
+        <div
+          className={`conclusion-refresh-details ${stylex.props(styles.refreshDetails).className}`}
+        >
+          {reassess.details}
+        </div>
+      )}
+    </>
   );
 }
 
