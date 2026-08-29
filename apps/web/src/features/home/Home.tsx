@@ -109,7 +109,7 @@ const NOTICE_LABEL: Record<string, string> = { 'chart-not-found': '该图表不�
 
 function SectionTitleWithAge({ label, at }: { label: string; at: number | null }) {
   return (
-    <SectionTitle className="section-title--with-age">
+    <SectionTitle variant="home" className="section-title--with-age">
       {label}
       <DataAgeBadge at={at} />
     </SectionTitle>
@@ -199,9 +199,9 @@ export function Home() {
   );
   const eventSection = (
     <>
-      <SectionTitle>事件日历</SectionTitle>
+      <SectionTitle variant="home">事件日历</SectionTitle>
       <EventCalendar events={events ?? null} error={eventsError} after={after} />
-      <SectionTitle>已发生</SectionTitle>
+      <SectionTitle variant="home">已发生</SectionTitle>
       <HomeEventTimeline live={isToday} />
     </>
   );

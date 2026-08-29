@@ -12,6 +12,9 @@ const styles = stylex.create({
     marginTop: '16px',
     textTransform: 'uppercase',
   },
+  home: {
+    fontSize: fontSizes.base,
+  },
   withAge: {
     alignItems: 'center',
     display: 'flex',
@@ -19,11 +22,16 @@ const styles = stylex.create({
   },
 });
 
-export function SectionTitle({ className, children, ...rest }: HTMLAttributes<HTMLDivElement>) {
+export function SectionTitle({
+  className,
+  children,
+  variant = 'default',
+  ...rest
+}: HTMLAttributes<HTMLDivElement> & { variant?: 'default' | 'home' }) {
   const withAge = className?.split(/\s+/).includes('section-title--with-age');
   return (
     <div
-      className={`section-title ${stylex.props(styles.root, withAge && styles.withAge).className}${className ? ` ${className}` : ''}`}
+      className={`section-title ${stylex.props(styles.root, variant === 'home' && styles.home, withAge && styles.withAge).className}${className ? ` ${className}` : ''}`}
       {...rest}
     >
       {children}
