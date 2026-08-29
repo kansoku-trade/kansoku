@@ -79,11 +79,6 @@ a:hover {
 .icon {
   vertical-align: -2px;
 }
-.popout-body .charts-col {
-  border-right: none;
-  height: 100%;
-}
-
 /* Chart furniture. Every child here is absolutely positioned, so showing or hiding one cannot
    change the chart's height. The controls below the chart used to grow a row per state — status,
    playback events, validation, errors — and each of those resized the chart mid-session. */
