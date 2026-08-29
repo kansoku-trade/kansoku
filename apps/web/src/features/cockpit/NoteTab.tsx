@@ -22,7 +22,7 @@ const styles = stylex.create({
     borderBottomWidth: '1px',
     display: 'flex',
     flexWrap: 'wrap',
-    gap: '12px',
+    gap: '8px 12px',
     justifyContent: 'space-between',
     marginBottom: '10px',
     paddingBottom: '10px',
@@ -98,14 +98,14 @@ export function NoteTab({ symbol }: { symbol: string }) {
   };
 
   return (
-    <div className={`note-tab ${stylex.props(styles.tab).className}`}>
+    <div className={stylex.props(styles.tab).className}>
       {note?.markdown ? (
         <>
-          <div className={`note-tab-header ${stylex.props(styles.header).className}`}>
-            <span className={`note-tab-mtime ${stylex.props(styles.mtime).className}`}>
+          <div className={stylex.props(styles.header).className}>
+            <span className={stylex.props(styles.mtime).className}>
               更新于 {note.mtime ? <MarketTime value={note.mtime} market={market} /> : '—'}
             </span>
-            <div className={`note-tab-actions ${stylex.props(styles.actions).className}`}>
+            <div className={stylex.props(styles.actions).className}>
               <button
                 className={`link-button ${stylex.props(styles.headerAction).className}`}
                 onClick={openFullscreen}
@@ -124,7 +124,7 @@ export function NoteTab({ symbol }: { symbol: string }) {
           <Empty>还没有 {symbol} 的研究笔记</Empty>
           {button && (
             <div
-              className={`note-tab-header note-tab-header--center ${stylex.props(styles.header, styles.headerCenter).className}`}
+              className={stylex.props(styles.header, styles.headerCenter).className}
             >
               {button}
             </div>
