@@ -33,6 +33,12 @@ const styles = stylex.create({
   dateSelect: {
     marginLeft: 'auto',
   },
+  dateSelectAfterFollow: {
+    marginLeft: 'auto',
+  },
+  followControl: {
+    marginLeft: 'auto',
+  },
   note: {
     color: colors.textSecondary,
     fontSize: fontSizes.sm,
@@ -136,10 +142,16 @@ export function AiTab({
               <span className={`ai-hint ${stylex.props(styles.hint).className}`}>{run.hint}</span>
             )}
             <ExplainAction symbol={symbol} />
-            {analysisRevision && <FollowAction symbol={symbol} revision={analysisRevision} />}
+            {analysisRevision && (
+              <FollowAction
+                symbol={symbol}
+                revision={analysisRevision}
+                className={stylex.props(styles.followControl).className}
+              />
+            )}
             {pastDates.length > 0 && (
               <Select
-                className={`ai-date-select ${stylex.props(styles.dateSelect).className}`}
+                className={`ai-date-select ${stylex.props(styles.dateSelect, analysisRevision && styles.dateSelectAfterFollow).className}`}
                 value={selectedDate ?? 'today'}
                 options={[
                   { value: 'today', label: '今天' },

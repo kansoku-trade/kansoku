@@ -34,27 +34,44 @@ const styles = stylex.create({
   },
 });
 
-export function FollowAction({ symbol, revision }: { symbol: string; revision?: string }) {
+export function FollowAction({
+  symbol,
+  revision,
+  className,
+}: {
+  symbol: string;
+  revision?: string;
+  className?: string;
+}) {
   const { state } = useFeature('symbol-follow');
   if (state === 'absent') return null;
-  return <FollowControl symbol={symbol} revision={revision} locked={state === 'locked'} />;
+  return (
+    <FollowControl
+      symbol={symbol}
+      revision={revision}
+      locked={state === 'locked'}
+      className={className}
+    />
+  );
 }
 
 function FollowControl({
   symbol,
   revision,
   locked,
+  className,
 }: {
   symbol: string;
   revision?: string;
   locked: boolean;
+  className?: string;
 }) {
   const { following, busy, statusError, change } = useSymbolFollow({ symbol, revision });
   const { guard } = useFeature('symbol-follow');
 
   return (
     <span
-      className={`follow-control ${stylex.props(styles.control, statusError && styles.error, locked && styles.locked).className}`}
+      className={`follow-control ${className ?? ''} ${stylex.props(styles.control, statusError && styles.error, locked && styles.locked).className}`}
       title={
         locked
           ? following
