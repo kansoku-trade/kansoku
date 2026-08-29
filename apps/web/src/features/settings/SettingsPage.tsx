@@ -4,7 +4,7 @@ import { ArrowLeft } from 'lucide-react';
 import { useQuery } from '@web/lib/apiHooks';
 import { client } from '@web/lib/client';
 import { navigate } from '@web/lib/router';
-import { Button, Card, ErrorBox, ScrollArea, SectionTitle } from '@web/ui';
+import { Button, Card, ErrorBox, NoteBlock, ScrollArea, SectionTitle } from '@web/ui';
 import { useTitle } from '@web/lib/useTitle';
 import { AgentKitSection } from './AgentKitSection';
 import { DataRootSection } from './DataRootSection';
@@ -314,7 +314,7 @@ export function SettingsPage() {
       <SettingsPageScrollArea>
         <SettingsBackLink />
         <h1 {...stylex.props(styles.heading)}>设置</h1>
-        <div className="note-block">加载中…</div>
+        <NoteBlock>加载中…</NoteBlock>
       </SettingsPageScrollArea>
     );
   }
