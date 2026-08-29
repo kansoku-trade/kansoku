@@ -1,5 +1,15 @@
 import { useEffect, useState } from 'react';
+import * as stylex from '@stylexjs/stylex';
 import { Badge } from './Badge';
+
+const styles = stylex.create({
+  root: {
+    marginLeft: '8px',
+  },
+  sectionTitle: {
+    marginLeft: 0,
+  },
+});
 
 export function formatDataAge(ageMs: number): string {
   const seconds = Math.max(0, Math.floor(ageMs / 1000));
@@ -20,6 +30,7 @@ export function DataAgeBadge({
   className?: string;
 }) {
   const [now, setNow] = useState(() => Date.now());
+  const [inSectionTitle, setInSectionTitle] = useState(false);
 
   useEffect(() => {
     if (at == null) return;
@@ -31,7 +42,13 @@ export function DataAgeBadge({
   if (at == null) return null;
 
   return (
-    <Badge tone="muted" className={`data-age-badge${className ? ` ${className}` : ''}`}>
+    <Badge
+      tone="muted"
+      ref={(node) => {
+        setInSectionTitle(node?.closest('.section-title--with-age') != null);
+      }}
+      className={`data-age-badge ${stylex.props(inSectionTitle ? styles.sectionTitle : styles.root).className}${className ? ` ${className}` : ''}`}
+    >
       {formatDataAge(now - at)}
     </Badge>
   );
