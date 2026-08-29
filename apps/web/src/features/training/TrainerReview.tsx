@@ -20,7 +20,7 @@ import { TrainerReviewLesson } from './TrainerReviewLesson';
 import { TrainerReviewTimeline } from './TrainerReviewTimeline';
 import { useTrainerReviewOverlay } from './useTrainerReviewOverlay';
 import { buttonStyles } from '../../ui/Button';
-import { colors, fontSizes, radii } from '../../theme/tokens.stylex';
+import { colors, fontSizes, fonts, radii } from '../../theme/tokens.stylex';
 
 const STORAGE_NAMESPACE = 'trainer-review';
 
@@ -46,11 +46,15 @@ const styles = stylex.create({
   },
   revealSymbol: {
     fontSize: fontSizes.xl,
+    fontFamily: fonts.mono,
     fontWeight: 700,
+    fontVariantNumeric: 'tabular-nums',
   },
   revealDate: {
     color: colors.textSecondary,
     fontSize: fontSizes.md,
+    fontFamily: fonts.mono,
+    fontVariantNumeric: 'tabular-nums',
   },
   chip: {
     alignItems: 'center',

@@ -53,6 +53,10 @@ const styles = stylex.create({
     display: 'flex',
     gap: '8px',
   },
+  prices: {
+    fontFamily: fonts.mono,
+    fontVariantNumeric: 'tabular-nums',
+  },
   caret: {
     color: colors.textMuted,
     marginLeft: 'auto',
@@ -141,7 +145,11 @@ export function TrainerCoachPanel({ bridge, sessionId }: TrainerCoachPanelProps)
             <span className={`trainer-coach-stance ${stylex.props(styles.stance).className}`}>
               <b>AI</b>
               <span>{DIRECTION_LABEL[latest.ai.direction]}</span>
-              {plan?.prices && <span className="num">{plan.prices}</span>}
+              {plan?.prices && (
+                <span className={`num ${stylex.props(styles.prices).className}`}>
+                  {plan.prices}
+                </span>
+              )}
               {coachDisagrees(latest) && (
                 <span className={`trainer-coach-split ${stylex.props(styles.split).className}`}>
                   与你分歧
