@@ -9,6 +9,7 @@ import { useQuery } from '@web/lib/apiHooks';
 import { client } from '@web/lib/client';
 import { Empty, ErrorBox } from '@web/ui';
 import { useIntradayDoc } from '../intraday/useIntradayDoc';
+import { colors } from '../../../theme/tokens.stylex';
 import { SepaCockpit, type SepaDocView } from './SepaCockpit';
 
 const styles = stylex.create({
@@ -19,6 +20,13 @@ const styles = stylex.create({
   },
   icon: {
     verticalAlign: '-2px',
+  },
+  backLink: {
+    'color': colors.textPrimary,
+    'textDecoration': 'none',
+    ':hover': {
+      color: colors.accent,
+    },
   },
 });
 
@@ -48,7 +56,12 @@ function PinnedSepaView({ sym, analysisId }: { sym: string; analysisId: string }
       <Page>
         <ErrorBox>
           <p>这份分析不是 SEPA 仪表盘。</p>
-          <a href={symbolAnalysisPath(sym, analysisId)}>去驾驶舱查看</a>
+          <a
+            className={`back-link ${stylex.props(styles.backLink).className}`}
+            href={symbolAnalysisPath(sym, analysisId)}
+          >
+            去驾驶舱查看
+          </a>
         </ErrorBox>
       </Page>
     );
@@ -80,7 +93,10 @@ function LatestSepaView({ sym }: { sym: string }) {
       <Page>
         <Empty>
           <p>这只股票还没有 SEPA 仪表盘</p>
-          <a href={symbolAnalysisPath(sym, null)}>
+          <a
+            className={`back-link ${stylex.props(styles.backLink).className}`}
+            href={symbolAnalysisPath(sym, null)}
+          >
             <ArrowLeft className={stylex.props(styles.icon).className} size={13} /> 返回驾驶舱
           </a>
         </Empty>

@@ -22,6 +22,13 @@ const styles = stylex.create({
   fullpageDesktop: {
     height: 'calc(100vh - 40px)',
   },
+  backLink: {
+    'color': colors.textPrimary,
+    'textDecoration': 'none',
+    ':hover': {
+      color: colors.accent,
+    },
+  },
   detailTopbar: {
     alignItems: 'center',
     backgroundColor: colors.backgroundSurface,
@@ -83,7 +90,7 @@ export function SepaCockpit({
       className={`fullpage ${stylex.props(styles.fullpage, desktopRealtime && styles.fullpageDesktop).className}`}
     >
       <div className={`detail-topbar ${stylex.props(styles.detailTopbar).className}`}>
-        <a href="/">
+        <a className={`back-link ${stylex.props(styles.backLink).className}`} href="/">
           <ArrowLeft className={`icon ${stylex.props(styles.icon).className}`} size={13} /> 列表
         </a>
         <span className={`title ${stylex.props(styles.title).className}`}>{doc.title}</span>

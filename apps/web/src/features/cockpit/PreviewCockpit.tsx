@@ -56,6 +56,13 @@ const styles = stylex.create({
   fullpageDesktop: {
     height: 'calc(100vh - 40px)',
   },
+  backLink: {
+    'color': colors.textPrimary,
+    'textDecoration': 'none',
+    ':hover': {
+      color: colors.accent,
+    },
+  },
   detailTopbar: {
     alignItems: 'center',
     backgroundColor: colors.backgroundSurface,
@@ -163,7 +170,7 @@ export function PreviewCockpit({
       <div className={`page ${stylex.props(styles.page).className}`}>
         <ErrorBox>{error}</ErrorBox>
         <p>
-          <a href="/">
+          <a className={`back-link ${stylex.props(styles.backLink).className}`} href="/">
             <ArrowLeft className={`icon ${stylex.props(styles.icon).className}`} size={13} />{' '}
             返回列表
           </a>
@@ -250,7 +257,7 @@ export function PreviewCockpit({
             className={`detail-topbar detail-topbar--split ${stylex.props(styles.detailTopbar, styles.detailTopbarSplit).className}`}
           >
             <div className={`topbar-chart ${stylex.props(styles.topbarChart).className}`}>
-              <a href="/">
+              <a className={`back-link ${stylex.props(styles.backLink).className}`} href="/">
                 <ArrowLeft className={`icon ${stylex.props(styles.icon).className}`} size={13} />{' '}
                 列表
               </a>

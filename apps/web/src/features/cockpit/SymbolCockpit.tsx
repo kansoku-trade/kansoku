@@ -60,6 +60,13 @@ const styles = stylex.create({
   fullpageDesktop: {
     height: 'calc(100vh - 40px)',
   },
+  backLink: {
+    'color': colors.textPrimary,
+    'textDecoration': 'none',
+    ':hover': {
+      color: colors.accent,
+    },
+  },
   detailTopbar: {
     alignItems: 'center',
     backgroundColor: colors.backgroundSurface,
@@ -267,7 +274,7 @@ export function SymbolCockpit({ sym }: { sym: string }) {
           <h1 className={stylex.props(styles.pageTitle).className}>{sym}</h1>
           <ErrorBox>{latestError}</ErrorBox>
           <p>
-            <a href="/">
+            <a className={`back-link ${stylex.props(styles.backLink).className}`} href="/">
               <ArrowLeft className={`icon ${stylex.props(styles.icon).className}`} size={13} />{' '}
               返回列表
             </a>
@@ -290,7 +297,7 @@ export function SymbolCockpit({ sym }: { sym: string }) {
       <div className={`page ${stylex.props(styles.page).className}`}>
         <ErrorBox>{error}</ErrorBox>
         <p>
-          <a href="/">
+          <a className={`back-link ${stylex.props(styles.backLink).className}`} href="/">
             <ArrowLeft className={`icon ${stylex.props(styles.icon).className}`} size={13} />{' '}
             返回列表
           </a>
@@ -373,7 +380,7 @@ export function SymbolCockpit({ sym }: { sym: string }) {
             <div
               className={`topbar-chart ${stylex.props(styles.topbarColumn, styles.topbarChart).className}`}
             >
-              <a href="/">
+              <a className={`back-link ${stylex.props(styles.backLink).className}`} href="/">
                 <ArrowLeft className={`icon ${stylex.props(styles.icon).className}`} size={13} />{' '}
                 列表
               </a>
