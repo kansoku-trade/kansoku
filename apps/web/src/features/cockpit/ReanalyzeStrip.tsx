@@ -37,6 +37,9 @@ const styles = stylex.create({
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
   },
+  feedContext: {
+    margin: '10px 0 0',
+  },
 });
 
 export function ReanalyzeStrip({ sym }: { sym: string }) {
@@ -63,7 +66,11 @@ export function ReanalyzeStrip({ sym }: { sym: string }) {
           <ChevronRight className="icon" size={13} />
         )}
       </SectionTitle>
-      {expanded && <AnalystRunFeed sym={sym} />}
+      {expanded && (
+        <div {...stylex.props(styles.feedContext)}>
+          <AnalystRunFeed sym={sym} />
+        </div>
+      )}
     </div>
   );
 }
