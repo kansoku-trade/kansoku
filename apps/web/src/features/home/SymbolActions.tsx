@@ -47,6 +47,18 @@ const styles = stylex.create({
       opacity: 1,
     },
   },
+  visuallyHidden: {
+    borderStyle: 'none',
+    borderWidth: 0,
+    clip: 'rect(0, 0, 0, 0)',
+    height: '1px',
+    margin: '-1px',
+    overflow: 'hidden',
+    padding: 0,
+    position: 'absolute',
+    whiteSpace: 'nowrap',
+    width: '1px',
+  },
   reassess: {
     marginLeft: 'auto',
   },
@@ -109,7 +121,13 @@ export function FollowToggle({
         aria-hidden="true"
         size={compact ? 12 : 11}
       />
-      <span className={compact ? 'sr-only' : undefined}>AI 跟进</span>
+      <span
+        className={
+          compact ? `sr-only ${stylex.props(styles.visuallyHidden).className}` : undefined
+        }
+      >
+        AI 跟进
+      </span>
       {locked && (
         <Lock
           className={`follow-control-lock ${stylex.props(styles.followLockIcon).className}`}
