@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { ResearchDocumentMeta } from '@kansoku/core/contract/index';
+import * as stylex from '@stylexjs/stylex';
 import { errorMessage } from '@web/lib/api';
 import { useQuery } from '@web/lib/apiHooks';
 import { client } from '@web/lib/client';
@@ -18,6 +19,32 @@ import {
 } from './assistantModels';
 import { resolveActiveSessionId } from './assistantPageState.js';
 import { useAssistantSessions } from './useAssistantSessions';
+import { colors } from '../../theme/tokens.stylex';
+
+const styles = stylex.create({
+  page: {
+    backgroundColor: colors.backgroundCanvas,
+    color: colors.textPrimary,
+    display: 'grid',
+    gridTemplateColumns: '260px 1fr',
+    minHeight: 0,
+  },
+  main: {
+    backgroundColor: colors.backgroundCanvas,
+    display: 'flex',
+    flexDirection: 'column',
+    minHeight: 0,
+    minWidth: 0,
+  },
+  empty: {
+    alignItems: 'center',
+    display: 'flex',
+    flex: '1 1 auto',
+    flexDirection: 'column',
+    gap: '12px',
+    justifyContent: 'center',
+  },
+});
 
 function assistantRoute(id: string | null): string {
   return id ? `/chat?session=${encodeURIComponent(id)}` : '/chat';
@@ -91,7 +118,7 @@ export function AssistantChatPage() {
   };
 
   return (
-    <div className="fullpage assistant-page">
+    <div className={`fullpage ${stylex.props(styles.page).className}`}>
       <AssistantSessionList
         sessions={sessions}
         activeId={activeId}
@@ -101,7 +128,7 @@ export function AssistantChatPage() {
         onCreate={() => void handleCreate()}
         onDelete={(id) => void handleDelete(id)}
       />
-      <div className="assistant-main">
+      <div {...stylex.props(styles.main)}>
         {activeId ? (
           <AssistantConversation
             key={activeId}
@@ -120,7 +147,7 @@ export function AssistantChatPage() {
             <Spinner /> 正在读取会话…
           </div>
         ) : (
-          <Empty className="assistant-empty">
+          <Empty className={stylex.props(styles.empty).className}>
             <p>选一个会话，或者新建一个开始对话</p>
             <Button accent onClick={() => void handleCreate()}>
               新建会话
