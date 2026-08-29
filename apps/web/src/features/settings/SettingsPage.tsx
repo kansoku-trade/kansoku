@@ -121,6 +121,9 @@ const styles = stylex.create({
   cardHeadingTitle: {
     margin: 0,
   },
+  icon: {
+    verticalAlign: '-2px',
+  },
   aboutLink: {
     fontSize: fontSizes.xs,
     marginTop: '24px',
@@ -238,7 +241,7 @@ function SettingsBackLink() {
         else navigate('/');
       }}
     >
-      <ArrowLeft className="icon" size={13} /> 返回
+      <ArrowLeft className={`icon ${stylex.props(styles.icon).className}`} size={13} /> 返回
     </a>
   );
 }

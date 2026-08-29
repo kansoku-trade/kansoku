@@ -25,6 +25,9 @@ const styles = stylex.create({
     margin: '8px 0 0',
   },
   icon: {
+    verticalAlign: '-2px',
+  },
+  brandIcon: {
     borderRadius: '16px',
   },
   version: {
@@ -127,7 +130,7 @@ function AboutBackLink() {
         else navigate('/');
       }}
     >
-      <ArrowLeft className="icon" size={13} /> 返回
+      <ArrowLeft className={`icon ${stylex.props(styles.icon).className}`} size={13} /> 返回
     </a>
   );
 }
@@ -141,7 +144,7 @@ export function AboutPage() {
       <AboutBackLink />
       <div {...stylex.props(styles.hero)}>
         <img
-          {...stylex.props(styles.icon)}
+          {...stylex.props(styles.brandIcon)}
           src="/brand/kansoku-icon.svg"
           alt="Kansoku"
           width={72}

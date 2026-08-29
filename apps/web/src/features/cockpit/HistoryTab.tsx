@@ -73,7 +73,7 @@ function OutcomeText({ status }: { status: OutcomeStatus }) {
   const { icon: Icon, tone, label } = OUTCOME_LABEL[status];
   return (
     <span className={tone}>
-      <Icon className="icon" size={13} /> {label}
+      <Icon className={`icon ${stylex.props(styles.icon).className}`} size={13} /> {label}
     </span>
   );
 }

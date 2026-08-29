@@ -61,6 +61,9 @@ const styles = stylex.create({
     color: colors.textSecondary,
     fontSize: fontSizes.sm,
   },
+  icon: {
+    verticalAlign: '-2px',
+  },
 });
 
 export function NoteTab({ symbol }: { symbol: string }) {
@@ -125,7 +128,8 @@ export function NoteTab({ symbol }: { symbol: string }) {
                 className={`link-button ${stylex.props(styles.linkButton).className}`}
                 onClick={openFullscreen}
               >
-                <Maximize2 className="icon" size={13} /> 全屏阅读
+                <Maximize2 className={`icon ${stylex.props(styles.icon).className}`} size={13} />{' '}
+                全屏阅读
               </button>
               {button}
             </div>

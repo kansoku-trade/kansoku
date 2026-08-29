@@ -15,6 +15,7 @@ const styles = stylex.create({
   icon: {
     color: colors.accent,
     flexShrink: 0,
+    verticalAlign: '-2px',
   },
   cta: {
     'backgroundColor': 'transparent',

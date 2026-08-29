@@ -73,6 +73,9 @@ const styles = stylex.create({
     whiteSpace: 'pre-wrap',
     wordBreak: 'break-word',
   },
+  icon: {
+    verticalAlign: '-2px',
+  },
 });
 
 const pageClassName = ['page', stylex.props(styles.page).className].filter(Boolean).join(' ');
@@ -213,7 +216,7 @@ function LogsBackLink() {
         else navigate('/');
       }}
     >
-      <ArrowLeft className="icon" size={13} /> 返回
+      <ArrowLeft className={`icon ${stylex.props(styles.icon).className}`} size={13} /> 返回
     </a>
   );
 }
