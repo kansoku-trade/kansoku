@@ -22,6 +22,71 @@ const MOVER_PCT = 3;
 const MOVER_EARNINGS_DAYS = 4;
 
 const styles = stylex.create({
+  overviewGrid: {
+    display: 'grid',
+    gap: '12px',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+    marginTop: '12px',
+  },
+  symbolCardHead: {
+    alignItems: 'center',
+    display: 'flex',
+    gap: '8px',
+  },
+  symbolCardSymbol: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.lg,
+    fontWeight: 600,
+  },
+  symbolCardQuote: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.md,
+    fontVariantNumeric: 'tabular-nums',
+  },
+  symbolCardLevels: {
+    color: colors.textSecondary,
+    display: 'flex',
+    fontSize: fontSizes.md,
+    fontVariantNumeric: 'tabular-nums',
+    gap: '14px',
+    marginTop: '8px',
+  },
+  symbolCardComment: {
+    WebkitBoxOrient: 'vertical',
+    WebkitLineClamp: 2,
+    color: colors.textSecondary,
+    display: '-webkit-box',
+    fontSize: fontSizes.md,
+    lineHeight: 1.4,
+    marginTop: '8px',
+    overflow: 'hidden',
+  },
+  symbolCardCommentWarn: {
+    color: colors.accent,
+  },
+  symbolCardCommentAlert: {
+    color: colors.down,
+  },
+  watchTail: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '8px',
+    marginTop: '10px',
+  },
+  watchTailCell: {
+    alignItems: 'center',
+    backgroundColor: colors.backgroundSurface,
+    borderColor: colors.border,
+    borderRadius: 0,
+    borderStyle: 'solid',
+    borderWidth: '1px',
+    display: 'inline-flex',
+    fontSize: fontSizes.base,
+    fontVariantNumeric: 'tabular-nums',
+    gap: '7px',
+    padding: '4px 10px',
+    textDecoration: 'none',
+  },
   holdBadge: {
     flexShrink: 0,
   },
@@ -136,13 +201,15 @@ function GridCard({ entry }: { entry: GridEntry }) {
   const comment = row?.latest_comment ?? null;
   return (
     <Card link className="symbol-card" href={`/symbol/${encodeURIComponent(symbol)}`}>
-      <div className="symbol-card-head">
-        <span className="sym">{symbol.replace(/\.US$/, '')}</span>
+      <div className={`symbol-card-head ${stylex.props(styles.symbolCardHead).className}`}>
+        <span className={`sym ${stylex.props(styles.symbolCardSymbol).className}`}>
+          {symbol.replace(/\.US$/, '')}
+        </span>
         {row?.direction && (
           <Badge tone={directionTone(row.direction)}>{DIRECTION_LABEL[row.direction]}</Badge>
         )}
         {last != null && (
-          <span className="quote">
+          <span className={`quote ${stylex.props(styles.symbolCardQuote).className}`}>
             {fmt(last)}
             {pct != null && (
               <>
@@ -169,14 +236,22 @@ function GridCard({ entry }: { entry: GridEntry }) {
           </Badge>
         )}
       </div>
-      <div className="symbol-card-levels">
+      <div className={`symbol-card-levels ${stylex.props(styles.symbolCardLevels).className}`}>
         <span className={flowTone(flow)}>{fmtFlowLabeled(flow)}</span>
         {row && <span>止损 {pctCell(row.stop_distance_pct)}</span>}
         {row && <span>目标1 {pctCell(row.target1_distance_pct)}</span>}
         {row && <ReassessButton symbol={symbol} />}
       </div>
       {comment && (
-        <div className={`symbol-card-comment ${comment.level}`}>
+        <div
+          className={`symbol-card-comment ${comment.level} ${
+            stylex.props(
+              styles.symbolCardComment,
+              comment.level === 'warn' && styles.symbolCardCommentWarn,
+              comment.level === 'alert' && styles.symbolCardCommentAlert,
+            ).className
+          }`}
+        >
           <MarketTime value={comment.ts} format="clock" /> · {comment.text}
         </div>
       )}
@@ -188,7 +263,10 @@ function TailCell({ entry }: { entry: GridEntry }) {
   const pct = entry.quote?.pct ?? null;
   const tone = flowTone(entry.flow);
   return (
-    <a className="watch-tail-cell" href={`/symbol/${encodeURIComponent(entry.symbol)}`}>
+    <a
+      className={`watch-tail-cell ${stylex.props(styles.watchTailCell).className}`}
+      href={`/symbol/${encodeURIComponent(entry.symbol)}`}
+    >
       <span className={`sym ${stylex.props(styles.tailSymbol).className}`}>
         {entry.symbol.replace(/\.US$/, '')}
       </span>
@@ -233,7 +311,7 @@ export function SymbolGrid(props: {
   return (
     <>
       {cards.length > 0 && (
-        <div className="overview-grid">
+        <div className={`overview-grid ${stylex.props(styles.overviewGrid).className}`}>
           {cards.map((entry) => (
             <GridCard key={entry.symbol} entry={entry} />
           ))}
@@ -248,7 +326,7 @@ function MoverTail({ movers, quiet }: { movers: GridEntry[]; quiet: GridEntry[] 
   const [expanded, setExpanded] = useState(false);
   if (!movers.length && !quiet.length) return null;
   return (
-    <div className="watch-tail">
+    <div className={`watch-tail ${stylex.props(styles.watchTail).className}`}>
       {movers.map((entry) => (
         <TailCell key={entry.symbol} entry={entry} />
       ))}
