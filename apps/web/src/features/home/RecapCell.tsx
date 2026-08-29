@@ -1,5 +1,6 @@
 import type { OverviewRecap, RecapSettlementRow } from '@kansoku/shared/types';
 import * as stylex from '@stylexjs/stylex';
+import { useState } from 'react';
 import { signed } from '@web/lib/format';
 import { client } from '@web/lib/client';
 import { openModal } from '@web/ui';
@@ -36,6 +37,9 @@ const styles = stylex.create({
     color: colors.accent,
     fontWeight: 600,
   },
+  labelHovered: {
+    textDecoration: 'underline',
+  },
   stat: {
     color: colors.textSecondary,
   },
@@ -63,6 +67,7 @@ function summarizeRecap(recap: OverviewRecap | null | undefined): RecapSummary |
 }
 
 export function RecapCell({ date }: { date: string }) {
+  const [hovered, setHovered] = useState(false);
   const { data } = useIntervalFetch<OverviewRecap>(
     `overview.recap:${date}`,
     () => client.overview.recap({ date }),
@@ -79,11 +84,17 @@ export function RecapCell({ date }: { date: string }) {
   return (
     <button
       type="button"
-      className={`recap-cell ${stylex.props(styles.root).className}`}
+      {...stylex.props(styles.root)}
       onClick={open}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       title={`${date} 复盘 · 点击查看详情`}
     >
-      <span className={`idx-sym recap-label ${stylex.props(styles.label).className}`}>复盘</span>
+      <span
+        className={`idx-sym ${stylex.props(styles.label, hovered && styles.labelHovered).className}`}
+      >
+        复盘
+      </span>
       {summary ? (
         <span
           className={`num ${stylex.props(styles.stat, tone === 'up' && styles.up, tone === 'down' && styles.down).className}`}
