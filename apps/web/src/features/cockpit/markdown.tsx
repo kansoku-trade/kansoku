@@ -1,5 +1,5 @@
 import { ArrowRight, ChartCandlestick, LayoutDashboard, Library } from 'lucide-react';
-import type { ReactNode } from 'react';
+import type { AnchorHTMLAttributes, ReactNode } from 'react';
 import { type Components, Streamdown } from 'streamdown';
 import * as stylex from '@stylexjs/stylex';
 import { parseAppDeepLink, type AppDeepLink } from '@kansoku/shared/appDeepLink';
@@ -21,6 +21,21 @@ const styles = stylex.create({
     '--typeset-font-body': fonts.ui,
     '--typeset-font-heading': fonts.ui,
     '--typeset-font-mono': fonts.mono,
+    ':is(a)': {
+      color: colors.accent,
+    },
+    ':is(a):hover': {
+      textDecorationColor: colors.accent,
+    },
+    ':is(pre)': {
+      borderColor: colors.border,
+      borderStyle: 'solid',
+      borderWidth: '1px',
+    },
+    ':is(thead th)': {
+      color: colors.textPrimary,
+      fontWeight: 600,
+    },
   },
   chat: {
     'fontSize': fontSizes.base,
@@ -32,6 +47,10 @@ const styles = stylex.create({
     '--typeset-h2': '1.15em',
     '--typeset-h3': '1.05em',
     '--typeset-h4': '1em',
+    ':is(h1)': { fontSize: '1.25em' },
+    ':is(h2)': { fontSize: '1.15em' },
+    ':is(h3)': { fontSize: '1.05em' },
+    ':is(h4)': { fontSize: '1em' },
   },
   report: {
     'fontSize': fontSizes.md,
@@ -43,6 +62,10 @@ const styles = stylex.create({
     '--typeset-h2': '1.35em',
     '--typeset-h3': '1.15em',
     '--typeset-h4': '1em',
+    ':is(h1)': { fontSize: '1.7em' },
+    ':is(h2)': { fontSize: '1.35em' },
+    ':is(h3)': { fontSize: '1.15em' },
+    ':is(h4)': { fontSize: '1em' },
   },
   deepLink: {
     'alignItems': 'center',
@@ -220,9 +243,8 @@ function deepLinkCardMeta(link: AppDeepLink): DeepLinkCardMeta {
   }
 }
 
-export function MarkdownLink(props: Record<string, unknown>) {
-  const href = typeof props.href === 'string' ? props.href : undefined;
-  const children = props.children as ReactNode;
+export function MarkdownLink(props: AnchorHTMLAttributes<HTMLAnchorElement>) {
+  const { href, children } = props;
   const appLink = parseAppDeepLink(href);
   if (!appLink) return <a href={href}>{children}</a>;
 
