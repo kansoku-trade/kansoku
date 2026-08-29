@@ -1,16 +1,69 @@
+import * as stylex from '@stylexjs/stylex';
+import { colors, radii } from '../../theme/tokens.stylex';
+
 // Official brand marks rendered from @lobehub/icons (LobeHub.Color / Codex.Color)
 // to static SVG, injected verbatim so the gradients/filters stay byte-exact.
-// Sizing and the tile treatment come from CSS (.onboarding-logo*), not the markup.
+// Sizing and the tile treatment are kept in typed StyleX rules below.
 
 const LOBEHUB_COLOR_SVG = `<svg viewBox="0 0 320 320" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M294 172.519c0 75.655-59.442 128.5-134 128.5-74.558 0-134-53.845-134-129.5 0-22.5 5-32.141 31.5-35.671 47.5-6.329 72.542-3.829 102.5-3.829 29.959 0 72.556-1.27 102.5 3.829 24.5 4.171 30 8.671 31.5 36.671z" fill="url(#ob-lobe-0)"></path><path d="M159.75 242.51c-28.25 0-35.75 3.5-35.75 3.5s3.5 27 35.75 27 35.75-27 35.75-27-7.5-3.5-35.75-3.5z" fill="#972021"></path><path d="M271.999 148.517c0 6.351-49.92 11.5-111.5 11.5s-111.5-5.149-111.5-11.5c0-6.352 49.92-11.5 111.5-11.5s111.5 5.148 111.5 11.5z" fill="url(#ob-lobe-1)"></path><path d="M135.503 160.013c.633-14.972-.483-22.788-5.5-36.443 0 0 9.5-12.056 27-12.056s30 3.064 30 3.064c-3.028 16.793-3.182 26.921-2.5 45.435h-49z" fill="url(#ob-lobe-2)"></path><path d="M119.191 234.294c14.742-7.076 24.811-21.51 24.811-39.273 0-25.406-20.595-48-46-48s-47 19.594-47 45c0 13.983 6.542 26.812 16.662 35.521 5.893-2.245 12.652-3.521 19.838-3.521 12.705 0 24.077 3.989 31.689 10.273zM200.813 234.294c-14.742-7.076-24.811-21.51-24.811-39.273 0-25.406 20.595-48 46-48s47 19.594 47 45c0 13.983-6.543 26.812-16.662 35.521-5.893-2.245-12.652-3.521-19.838-3.521-12.705 0-24.077 3.989-31.689 10.273z" fill="#fff"></path><path d="M101 221.012c15.464 0 28-12.536 28-28s-12.536-28-28-28-28 12.536-28 28 12.536 28 28 28z" fill="url(#ob-lobe-3)"></path><path d="M219 221.012c-15.464 0-28-12.536-28-28s12.536-28 28-28 28 12.536 28 28-12.536 28-28 28z" fill="url(#ob-lobe-4)"></path><g filter="url(#ob-lobe-5)"><path d="M172.997 19.016c-14.027 0-19.5-11.5-41-11-23.394 0-34 13-45.5 23-1.958 1.702-11.5 7-16 9-19.683 8.748-34.5 21.5-34.5 40.5 0 20.711 17.461 37.5 39 37.5 3.536 0 6.963-.453 10.22-1.301 8.7 10.539 22.179 16.658 37.28 17.301 23.5 1 31-15.25 44.5-8.5 9.259 4.629 13.83 8.5 28.5 8.5 17.108 0 25.057-5.233 30-11 9-10.5 22.879-4 31.5-4 18.778 0 34-14.551 34-32.5 0-17.95-15.222-32.5-34-32.5-5.15 0-14.856 1.27-17-7-3.5-13.5-20.148-29-44-29-9.318 0-17.691 1-23 1z" fill="url(#ob-lobe-6)"></path></g><path d="M82.998 20.517a9.5 9.5 0 11-19 0 9.5 9.5 0 0119 0z" fill="url(#ob-lobe-7)"></path><path d="M71.002 108.021c0 8.836-7.163 16-16 16s-16-7.164-16-16c0-8.837 7.163-16 16-16s16 7.163 16 16z" fill="url(#ob-lobe-8)"></path><path d="M282.002 49.516c0 8.56-6.94 15.5-15.5 15.5-8.56 0-15.5-6.94-15.5-15.5 0-8.56 6.94-15.5 15.5-15.5 8.56 0 15.5 6.94 15.5 15.5z" fill="url(#ob-lobe-9)"></path><path d="M132.232 244.111c5.483-.823 14.191-1.601 27.515-1.601 12.212 0 20.546.654 26.073 1.396-1.542 5.861-12.963 8.104-26.823 8.104-13.698 0-25.013-2.191-26.765-7.899z" fill="#fff"></path><path d="M160.006 290.016c20.099 0 23.305-20.488 23.927-25.61.478-4.146-1.675-6.244-4.02-7.659-2.345-1.414-9.379-2.731-19.907-2.731-10.527 0-17.514 1.317-19.906 2.731-2.393 1.415-4.546 3.513-4.02 7.659.622 5.122 3.828 25.61 23.926 25.61z" fill="url(#ob-lobe-10)"></path><g filter="url(#ob-lobe-11)"><path d="M171.694 129.744c-5.721-3.89-13.954-4.248-19.786-.526-7.724 4.929-16.971 7.798-26.91 7.798-27.062 0-49-21.267-49-47.5 0-26.234 21.938-47.5 49-47.5 13.628 0 25.956 5.392 34.838 14.097 4.948 4.85 13.088 6.24 19.498 3.609a42.502 42.502 0 0116.164-3.166c22.92 0 41.5 18.012 41.5 40.23 0 22.218-18.58 40.23-41.5 40.23-8.856 0-17.065-2.69-23.804-7.272z" fill="url(#ob-lobe-12)"></path></g><path d="M219.002 106.51c0 7.456-6.044 13.5-13.5 13.5s-13.5-6.044-13.5-13.5 6.044-13.5 13.5-13.5 13.5 6.044 13.5 13.5z" fill="url(#ob-lobe-13)"></path><defs><radialGradient cx="0" cy="0" gradientTransform="rotate(-57.041 328.447 55.73) scale(238.957 377.848)" gradientUnits="userSpaceOnUse" id="ob-lobe-0" r="1"><stop stop-color="#FCBD72"></stop><stop offset=".255" stop-color="#FAC371"></stop><stop offset=".465" stop-color="#FFA14C"></stop><stop offset=".64" stop-color="#EB7A34"></stop><stop offset=".845" stop-color="#F0866D"></stop></radialGradient><radialGradient cx="0" cy="0" gradientTransform="rotate(90 26.49 47.007) scale(9.5)" gradientUnits="userSpaceOnUse" id="ob-lobe-7" r="1"><stop offset=".62" stop-color="#58239F"></stop><stop offset=".822" stop-color="#8E3FE9"></stop><stop offset="1" stop-color="#AF6FEC"></stop></radialGradient><radialGradient cx="0" cy="0" gradientTransform="matrix(0 16 -16 0 55.002 108.021)" gradientUnits="userSpaceOnUse" id="ob-lobe-8" r="1"><stop offset=".62" stop-color="#C32F45"></stop><stop offset=".822" stop-color="#F44341"></stop><stop offset="1" stop-color="#FC9D9B"></stop></radialGradient><radialGradient cx="0" cy="0" gradientTransform="matrix(0 15.5 -15.5 0 266.502 49.516)" gradientUnits="userSpaceOnUse" id="ob-lobe-9" r="1"><stop offset=".385" stop-color="#4DA33C"></stop><stop offset=".822" stop-color="#63ED47"></stop><stop offset="1" stop-color="#70D775"></stop></radialGradient><radialGradient cx="0" cy="0" gradientTransform="matrix(0 -44 58.6667 0 160 290)" gradientUnits="userSpaceOnUse" id="ob-lobe-10" r="1"><stop stop-color="#FD9B8B"></stop><stop offset=".5" stop-color="#F24F3A"></stop><stop offset="1" stop-color="#D93318"></stop></radialGradient><radialGradient cx="0" cy="0" gradientTransform="matrix(15.5 -61.50002 82.33886 20.75208 156 110)" gradientUnits="userSpaceOnUse" id="ob-lobe-12" r="1"><stop offset=".26" stop-color="#FFC1A3"></stop><stop offset=".764" stop-color="#FD82AB"></stop><stop offset=".952" stop-color="#DF4FAA"></stop></radialGradient><radialGradient cx="0" cy="0" gradientTransform="rotate(90 49.496 156.006) scale(13.5)" gradientUnits="userSpaceOnUse" id="ob-lobe-13" r="1"><stop offset=".572" stop-color="#4C86D3"></stop><stop offset=".822" stop-color="#72ADE2"></stop><stop offset="1" stop-color="#90BBE3"></stop></radialGradient><linearGradient gradientUnits="userSpaceOnUse" id="ob-lobe-1" x1="48.999" x2="271.999" y1="148.517" y2="148.517"><stop stop-color="#EB791E"></stop><stop offset="1" stop-color="#DB694E"></stop></linearGradient><linearGradient gradientUnits="userSpaceOnUse" id="ob-lobe-2" x1="135.5" x2="187" y1="147.5" y2="147.5"><stop stop-color="#FCC659"></stop><stop offset=".183" stop-color="#FFE366"></stop><stop offset=".404" stop-color="#FECA50"></stop><stop offset=".702" stop-color="#FFE76C"></stop><stop offset="1" stop-color="#FCC553"></stop></linearGradient><linearGradient gradientUnits="userSpaceOnUse" id="ob-lobe-3" x1="73" x2="247" y1="193.012" y2="193.012"><stop stop-color="#2A0B39"></stop><stop offset=".322" stop-color="#42180E"></stop><stop offset=".678" stop-color="#483A00"></stop><stop offset="1" stop-color="#310D1D"></stop></linearGradient><linearGradient gradientUnits="userSpaceOnUse" id="ob-lobe-4" x1="73" x2="247" y1="193.012" y2="193.012"><stop stop-color="#2A0B39"></stop><stop offset=".322" stop-color="#42180E"></stop><stop offset=".678" stop-color="#483A00"></stop><stop offset="1" stop-color="#310D1D"></stop></linearGradient><linearGradient gradientUnits="userSpaceOnUse" id="ob-lobe-6" x1="44.5" x2="291" y1="84" y2="82"><stop stop-color="#342FBD"></stop><stop offset=".188" stop-color="#733CC0"></stop><stop offset=".375" stop-color="#8748C2"></stop><stop offset=".654" stop-color="#7C80DE"></stop><stop offset="1" stop-color="#4A306D"></stop></linearGradient><filter color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse" height="126.061" id="ob-lobe-5" width="255" x="35.997" y="8"><feFlood flood-opacity="0" result="BackgroundImageFix"></feFlood><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"></feBlend><feColorMatrix in="SourceAlpha" result="hardAlpha" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"></feColorMatrix><feOffset></feOffset><feGaussianBlur stdDeviation="12"></feGaussianBlur><feComposite in2="hardAlpha" k2="-1" k3="1" operator="arithmetic"></feComposite><feColorMatrix values="0 0 0 0 1 0 0 0 0 0.764536 0 0 0 0 0.896726 0 0 0 1 0"></feColorMatrix><feBlend in2="shape" result="effect1_innerShadow"></feBlend></filter><filter color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse" height="95" id="ob-lobe-11" width="161" x="75.998" y="42.016"><feFlood flood-opacity="0" result="BackgroundImageFix"></feFlood><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"></feBlend><feColorMatrix in="SourceAlpha" result="hardAlpha" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"></feColorMatrix><feOffset></feOffset><feGaussianBlur stdDeviation="12"></feGaussianBlur><feComposite in2="hardAlpha" k2="-1" k3="1" operator="arithmetic"></feComposite><feColorMatrix values="0 0 0 0 1 0 0 0 0 0.824669 0 0 0 0 0.923101 0 0 0 1 0"></feColorMatrix><feBlend in2="shape" result="effect1_innerShadow"></feBlend></filter></defs></svg>`;
 
 const CODEX_COLOR_SVG = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M19.503 0H4.496A4.496 4.496 0 000 4.496v15.007A4.496 4.496 0 004.496 24h15.007A4.496 4.496 0 0024 19.503V4.496A4.496 4.496 0 0019.503 0z" fill="#fff"></path><path d="M9.064 3.344a4.578 4.578 0 012.285-.312c1 .115 1.891.54 2.673 1.275.01.01.024.017.037.021a.09.09 0 00.043 0 4.55 4.55 0 013.046.275l.047.022.116.057a4.581 4.581 0 012.188 2.399c.209.51.313 1.041.315 1.595a4.24 4.24 0 01-.134 1.223.123.123 0 00.03.115c.594.607.988 1.33 1.183 2.17.289 1.425-.007 2.71-.887 3.854l-.136.166a4.548 4.548 0 01-2.201 1.388.123.123 0 00-.081.076c-.191.551-.383 1.023-.74 1.494-.9 1.187-2.222 1.846-3.711 1.838-1.187-.006-2.239-.44-3.157-1.302a.107.107 0 00-.105-.024c-.388.125-.78.143-1.204.138a4.441 4.441 0 01-1.945-.466 4.544 4.544 0 01-1.61-1.335c-.152-.202-.303-.392-.414-.617a5.81 5.81 0 01-.37-.961 4.582 4.582 0 01-.014-2.298.124.124 0 00.006-.056.085.085 0 00-.027-.048 4.467 4.467 0 01-1.034-1.651 3.896 3.896 0 01-.251-1.192 5.189 5.189 0 01.141-1.6c.337-1.112.982-1.985 1.933-2.618.212-.141.413-.251.601-.33.215-.089.43-.164.646-.227a.098.098 0 00.065-.066 4.51 4.51 0 01.829-1.615 4.535 4.535 0 011.837-1.388zm3.482 10.565a.637.637 0 000 1.272h3.636a.637.637 0 100-1.272h-3.636zM8.462 9.23a.637.637 0 00-1.106.631l1.272 2.224-1.266 2.136a.636.636 0 101.095.649l1.454-2.455a.636.636 0 00.005-.64L8.462 9.23z" fill="url(#ob-codex-0)"></path><defs><linearGradient gradientUnits="userSpaceOnUse" id="ob-codex-0" x1="12" x2="12" y1="3" y2="21"><stop stop-color="#B1A7FF"></stop><stop offset=".5" stop-color="#7A9DFF"></stop><stop offset="1" stop-color="#3941FF"></stop></linearGradient></defs></svg>`;
 
+const styles = stylex.create({
+  logo: {
+    alignItems: 'center',
+    borderRadius: radii.md,
+    display: 'inline-flex',
+    flex: 'none',
+    height: '26px',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    width: '26px',
+  },
+  key: {
+    backgroundColor: colors.backgroundElement,
+    borderColor: colors.borderStrong,
+    borderStyle: 'solid',
+    borderWidth: '1px',
+    color: colors.textSecondary,
+  },
+  keySvg: {
+    display: 'block',
+  },
+  lobe: {
+    backgroundColor: colors.backgroundElement,
+    borderColor: colors.borderStrong,
+    borderStyle: 'solid',
+    borderWidth: '1px',
+  },
+  lobeSvg: {
+    display: 'block',
+    height: '22px',
+    width: '22px',
+  },
+  brand: {
+    borderColor: colors.borderStrong,
+    borderStyle: 'solid',
+    borderWidth: '1px',
+  },
+  brandSvg: {
+    display: 'block',
+    height: '26px',
+    width: '26px',
+  },
+});
+
+function svgWithClass(svg: string, className: string | undefined) {
+  return svg.replace('<svg ', `<svg class="${className ?? ''}" `);
+}
+
 export function LobeHubLogo() {
   return (
     <span
-      className="onboarding-logo onboarding-logo--lobe"
-      dangerouslySetInnerHTML={{ __html: LOBEHUB_COLOR_SVG }}
+      {...stylex.props(styles.logo, styles.lobe)}
+      dangerouslySetInnerHTML={{
+        __html: svgWithClass(LOBEHUB_COLOR_SVG, stylex.props(styles.lobeSvg).className),
+      }}
     />
   );
 }
@@ -18,16 +71,19 @@ export function LobeHubLogo() {
 export function CodexLogo() {
   return (
     <span
-      className="onboarding-logo onboarding-logo--brand"
-      dangerouslySetInnerHTML={{ __html: CODEX_COLOR_SVG }}
+      {...stylex.props(styles.logo, styles.brand)}
+      dangerouslySetInnerHTML={{
+        __html: svgWithClass(CODEX_COLOR_SVG, stylex.props(styles.brandSvg).className),
+      }}
     />
   );
 }
 
 export function KeyLogo() {
   return (
-    <span className="onboarding-logo onboarding-logo--key">
+    <span {...stylex.props(styles.logo, styles.key)}>
       <svg
+        {...stylex.props(styles.keySvg)}
         width="14"
         height="14"
         viewBox="0 0 24 24"
