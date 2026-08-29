@@ -4,7 +4,6 @@
   --bg-canvas: #0a0a0a;
   --bg-surface: #141414;
   --bg-element: #1e1e1e;
-  --bg-hover: #262626;
   --border: #262626;
   --border-strong: #3a3a3a;
   --text-primary: #e8e8e8;
@@ -19,12 +18,9 @@
   --fs-xs: 10px;
   --fs-sm: 11px;
   --fs-base: 12px;
-  --fs-md: 13px;
   --fs-xl: 20px;
   --radius: 2px;
   --radius-md: 6px;
-  --radius-full: 999px;
-  --control-h: 28px;
 }
 
 .num {
