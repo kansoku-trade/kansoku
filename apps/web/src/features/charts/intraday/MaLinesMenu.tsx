@@ -8,6 +8,9 @@ import { useIntradayControls } from './controlsContext';
 import { MAX_MA_LINES, MAX_MA_PERIOD, MIN_MA_PERIOD, useMaSeries, type MaLine } from './useMaLines';
 
 const styles = stylex.create({
+  icon: {
+    verticalAlign: '-2px',
+  },
   trigger: {
     'alignItems': 'center',
     'backgroundColor': 'transparent',
@@ -226,7 +229,7 @@ export function MaLinesMenu({ candles }: { candles: { time: number; close: numbe
         className={`ma-menu-trigger ${stylex.props(styles.trigger).className}`}
       >
         均线 {visibleCount}
-        <ChevronDown className="icon" size={11} />
+        <ChevronDown className={`icon ${stylex.props(styles.icon).className}`} size={11} />
       </Popover.Trigger>
       <Popover.Portal>
         <Popover.Positioner

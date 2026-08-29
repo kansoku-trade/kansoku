@@ -43,6 +43,9 @@ const RANGE_LABELS: Record<LayerRange, string> = { recent: '近期', all: '全�
 const RANGE_ORDER: LayerRange[] = ['recent', 'all'];
 
 const styles = stylex.create({
+  icon: {
+    verticalAlign: '-2px',
+  },
   panel: {
     borderColor: colors.border,
     borderStyle: 'solid',
@@ -362,9 +365,9 @@ export function LayerPanel({
         <span>{headerLabel}</span>
         <span className={`lp-arrow ${stylex.props(styles.arrow).className}`}>
           {collapsed ? (
-            <ChevronRight className="icon" size={12} />
+            <ChevronRight className={`icon ${stylex.props(styles.icon).className}`} size={12} />
           ) : (
-            <ChevronDown className="icon" size={12} />
+            <ChevronDown className={`icon ${stylex.props(styles.icon).className}`} size={12} />
           )}
         </span>
       </div>
@@ -391,9 +394,9 @@ export function LayerPanel({
             >
               <span className={`lp-arrow ${stylex.props(styles.arrow).className}`}>
                 {customOpen ? (
-                  <ChevronDown className="icon" size={11} />
+                  <ChevronDown className={`icon ${stylex.props(styles.icon).className}`} size={11} />
                 ) : (
-                  <ChevronRight className="icon" size={11} />
+                  <ChevronRight className={`icon ${stylex.props(styles.icon).className}`} size={11} />
                 )}
               </span>
               自定义图层

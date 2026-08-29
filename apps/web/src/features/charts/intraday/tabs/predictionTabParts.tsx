@@ -13,6 +13,9 @@ import { Badge, MarketTime } from '@web/ui';
 import { colors, fontSizes } from '../../../../theme/tokens.stylex';
 
 const styles = stylex.create({
+  icon: {
+    verticalAlign: '-2px',
+  },
   targetContext: {
     backgroundColor: colors.backgroundSurface,
     borderColor: colors.border,
@@ -150,9 +153,10 @@ export function Pattern123Item({ pat }: { pat: Pattern123 }) {
         </div>
         <div className={`check-val ${stylex.props(styles.checkValue).className}`}>
           ① <BarTime value={pat.p1.time} /> ${fmt(pat.p1.price)}{' '}
-          <ArrowRight className="icon" size={12} /> ② ${fmt(pat.p2.price)}{' '}
-          <ArrowRight className="icon" size={12} /> ③ <BarTime value={pat.p3.time} /> $
-          {fmt(pat.p3.price)}
+          <ArrowRight className={`icon ${stylex.props(styles.icon).className}`} size={12} /> ② $
+          {fmt(pat.p2.price)}{' '}
+          <ArrowRight className={`icon ${stylex.props(styles.icon).className}`} size={12} /> ③{' '}
+          <BarTime value={pat.p3.time} /> ${fmt(pat.p3.price)}
         </div>
         <div className={`check-val ${stylex.props(styles.checkValue).className}`}>
           {pat.implication}
@@ -184,8 +188,8 @@ export function AutoSignalItem({ kindKey, pair }: { kindKey: string; pair: Diver
         </div>
         <div className={`check-val ${stylex.props(styles.checkValue).className}`}>
           <BarTime value={pair.a.time} /> ${fmt(pair.a.price)}{' '}
-          <ArrowRight className="icon" size={12} /> <BarTime value={pair.b.time} /> $
-          {fmt(pair.b.price)}
+          <ArrowRight className={`icon ${stylex.props(styles.icon).className}`} size={12} />{' '}
+          <BarTime value={pair.b.time} /> ${fmt(pair.b.price)}
         </div>
         <div className={`check-val ${stylex.props(styles.checkValue).className}`}>
           {meta.impact}

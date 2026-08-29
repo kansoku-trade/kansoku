@@ -24,6 +24,9 @@ const SIGNAL_ICON: Record<string, string> = {
 const TF_ORDER: TimeframeKey[] = ['m5', 'm15', 'h1'];
 
 const styles = stylex.create({
+  icon: {
+    verticalAlign: '-2px',
+  },
   verdict: {
     borderStyle: 'solid',
     borderWidth: '1px',
@@ -258,7 +261,11 @@ export function PredictionTab({
             短线方向判断
             {predictionStale ? (
               <span className={`stale-badge ${stylex.props(styles.staleBadge).className}`}>
-                <TriangleAlert className="icon" size={13} /> 盘中已过期
+                <TriangleAlert
+                  className={`icon ${stylex.props(styles.icon).className}`}
+                  size={13}
+                />{' '}
+                盘中已过期
               </span>
             ) : (
               predictionUpdatedAt && (
@@ -309,7 +316,11 @@ export function PredictionTab({
             {Math.abs(totalProb - 100) >= 1 && (
               <span className={`warn-red ${stylex.props(styles.warning).className}`}>
                 {' '}
-                <TriangleAlert className="icon" size={13} /> 概率合计 {fmt(totalProb, 0)}
+                <TriangleAlert
+                  className={`icon ${stylex.props(styles.icon).className}`}
+                  size={13}
+                />{' '}
+                概率合计 {fmt(totalProb, 0)}
                 %，未凑够100
               </span>
             )}
@@ -415,7 +426,11 @@ export function PredictionTab({
               {!ep.rr_ok && (
                 <span className={`warn-red ${stylex.props(styles.warning).className}`}>
                   {' '}
-                  <TriangleAlert className="icon" size={13} /> &lt;2:1
+                  <TriangleAlert
+                    className={`icon ${stylex.props(styles.icon).className}`}
+                    size={13}
+                  />{' '}
+                  &lt;2:1
                 </span>
               )}
             </div>
