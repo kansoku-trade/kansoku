@@ -1,12 +1,64 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router';
+import * as stylex from '@stylexjs/stylex';
 import type { TrainerStatBlock, TrainerStats } from '@kansoku/pro-api';
 import { getTrainerBridge } from '@web/features/desktop/desktopTrainerBridge';
 import { fmt, signed } from '@web/lib/format';
 import { Card, SectionTitle } from '@web/ui';
+import { colors, fontSizes, radii } from '../../theme/tokens.stylex';
 import { TRAINER_CASE_TAG_LABEL } from './caseTagLabels';
 
 const pct = (value: number | null): string => (value === null ? '—' : `${fmt(value * 100, 0)}%`);
+
+const styles = stylex.create({
+  root: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+    padding: '16px',
+  },
+  back: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.sm,
+    marginLeft: '10px',
+  },
+  grid: {
+    display: 'grid',
+    gap: '10px',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+  },
+  keyValue: {
+    color: colors.textSecondary,
+    display: 'flex',
+    fontSize: fontSizes.sm,
+    gap: '10px',
+    justifyContent: 'space-between',
+    padding: '3px 0',
+  },
+  keyValueValue: {
+    color: colors.textPrimary,
+    fontVariantNumeric: 'tabular-nums',
+  },
+  locked: {
+    backgroundImage:
+      'repeating-linear-gradient(135deg, transparent, transparent 5px, rgb(255 255 255 / 0.028) 5px, rgb(255 255 255 / 0.028) 10px)',
+    borderColor: colors.borderStrong,
+    borderRadius: radii.default,
+    borderStyle: 'dashed',
+    borderWidth: '1px',
+    color: colors.textMuted,
+    fontSize: fontSizes.sm,
+    lineHeight: 1.6,
+    padding: '12px 10px',
+    textAlign: 'center',
+  },
+  guardNote: {
+    borderLeftColor: colors.accent,
+    borderLeftStyle: 'solid',
+    borderLeftWidth: '2px',
+    paddingLeft: '10px',
+  },
+});
 
 export function TrainingStatsPage() {
   const bridge = useMemo(() => getTrainerBridge(), []);
@@ -35,10 +87,10 @@ export function TrainingStatsPage() {
     .join(' / ');
 
   return (
-    <div className="training-stats">
+    <div className={`training-stats ${stylex.props(styles.root).className}`}>
       <SectionTitle>
         训练统计
-        <Link className="training-stats-back" to="/">
+        <Link className={`training-stats-back ${stylex.props(styles.back).className}`} to="/">
           ← 回首页
         </Link>
       </SectionTitle>
@@ -62,14 +114,17 @@ export function TrainingStatsPage() {
         </Guard>
       </Card>
 
-      <div className="training-stats-grid">
+      <div className={`training-stats-grid ${stylex.props(styles.grid).className}`}>
         <Card>
           <h4>按结构标签</h4>
           {stats.byTag.length === 0 && <p className="trainer-settle-hint">还没有打完的局。</p>}
           {stats.byTag.map((row) => (
-            <div className="training-stats-kv" key={row.tag ?? 'untagged'}>
+            <div
+              className={`training-stats-kv ${stylex.props(styles.keyValue).className}`}
+              key={row.tag ?? 'untagged'}
+            >
               <span>{row.tag ? TRAINER_CASE_TAG_LABEL[row.tag] : '未标注'}</span>
-              <b>
+              <b className={stylex.props(styles.keyValueValue).className}>
                 {row.locked
                   ? `${row.samples} 局，样本不足`
                   : `${signed(row.netR)}R · ${pct(row.winRate)}`}
@@ -81,13 +136,17 @@ export function TrainingStatsPage() {
         <Card>
           <h4>止损体检</h4>
           <Guard block={stats.stopHealth} unit="被止损的局">
-            <div className="training-stats-kv">
+            <div className={`training-stats-kv ${stylex.props(styles.keyValue).className}`}>
               <span>被止损后仍到过目标</span>
-              <b>{pct(stats.stopHealth.reachedTargetAfterStopRate)}</b>
+              <b className={stylex.props(styles.keyValueValue).className}>
+                {pct(stats.stopHealth.reachedTargetAfterStopRate)}
+              </b>
             </div>
-            <div className="training-stats-kv">
+            <div className={`training-stats-kv ${stylex.props(styles.keyValue).className}`}>
               <span>止损被打的平均超出</span>
-              <b>{fmt(stats.stopHealth.averageOvershootPct ?? 0)}%</b>
+              <b className={stylex.props(styles.keyValueValue).className}>
+                {fmt(stats.stopHealth.averageOvershootPct ?? 0)}%
+              </b>
             </div>
           </Guard>
           <p className="trainer-settle-hint">
@@ -98,16 +157,16 @@ export function TrainingStatsPage() {
         <Card>
           <h4>AI 陪练影响</h4>
           <Guard block={stats.coachInfluence} unit="有分歧的召唤">
-            <div className="training-stats-kv">
+            <div className={`training-stats-kv ${stylex.props(styles.keyValue).className}`}>
               <span>被说服改主意</span>
-              <b>
+              <b className={stylex.props(styles.keyValueValue).className}>
                 {pct(stats.coachInfluence.persuadedWinRate)}（{stats.coachInfluence.persuadedCount}
                 次）
               </b>
             </div>
-            <div className="training-stats-kv">
+            <div className={`training-stats-kv ${stylex.props(styles.keyValue).className}`}>
               <span>坚持自己判断</span>
-              <b>
+              <b className={stylex.props(styles.keyValueValue).className}>
                 {pct(stats.coachInfluence.heldWinRate)}（{stats.coachInfluence.heldCount} 次）
               </b>
             </div>
@@ -120,13 +179,17 @@ export function TrainingStatsPage() {
         <Card>
           <h4>推进方式影响</h4>
           <Guard block={stats.advanceStyle} unit="成交的笔">
-            <div className="training-stats-kv">
+            <div className={`training-stats-kv ${stylex.props(styles.keyValue).className}`}>
               <span>逐根推进期间持仓</span>
-              <b>{pct(stats.advanceStyle.barByBarWinRate)}</b>
+              <b className={stylex.props(styles.keyValueValue).className}>
+                {pct(stats.advanceStyle.barByBarWinRate)}
+              </b>
             </div>
-            <div className="training-stats-kv">
+            <div className={`training-stats-kv ${stylex.props(styles.keyValue).className}`}>
               <span>大周期快进期间持仓</span>
-              <b>{pct(stats.advanceStyle.fastForwardWinRate)}</b>
+              <b className={stylex.props(styles.keyValueValue).className}>
+                {pct(stats.advanceStyle.fastForwardWinRate)}
+              </b>
             </div>
           </Guard>
           <p className="trainer-settle-hint">放弃观察权的代价。</p>
@@ -135,27 +198,33 @@ export function TrainingStatsPage() {
         <Card>
           <h4>AI 成绩单</h4>
           <Guard block={stats.coachScorecard} unit="召唤">
-            <div className="training-stats-kv">
+            <div className={`training-stats-kv ${stylex.props(styles.keyValue).className}`}>
               <span>方向准确率</span>
-              <b>
+              <b className={stylex.props(styles.keyValueValue).className}>
                 {pct(stats.coachScorecard.directionAccuracy)}（{stats.coachScorecard.settled}
                 次有结果）
               </b>
             </div>
-            <div className="training-stats-kv">
+            <div className={`training-stats-kv ${stylex.props(styles.keyValue).className}`}>
               <span>其中理由站得住</span>
-              <b>{pct(stats.coachScorecard.soundReasonRate)}</b>
+              <b className={stylex.props(styles.keyValueValue).className}>
+                {pct(stats.coachScorecard.soundReasonRate)}
+              </b>
             </div>
-            <div className="training-stats-kv">
+            <div className={`training-stats-kv ${stylex.props(styles.keyValue).className}`}>
               <span>结论对但理由错</span>
-              <b>{pct(stats.coachScorecard.rightCallWrongReasonRate)}</b>
+              <b className={stylex.props(styles.keyValueValue).className}>
+                {pct(stats.coachScorecard.rightCallWrongReasonRate)}
+              </b>
             </div>
           </Guard>
           <p className="trainer-settle-hint">靠错逻辑蒙对的，下次必错。</p>
         </Card>
       </div>
 
-      <p className="trainer-settle-hint training-stats-guard-note">
+      <p
+        className={`trainer-settle-hint training-stats-guard-note ${stylex.props(styles.guardNote).className}`}
+      >
         任何一块样本不足 10 就只报个数，不报比率。刷了 3 局赢 3 局显示「胜率 100%」，那个数字唯一的作用是骗你。
       </p>
     </div>
@@ -177,7 +246,10 @@ function Guard({
 }) {
   if (!block.locked) return <>{children}</>;
   return (
-    <div className="training-stats-locked" data-testid="training-stats-locked">
+    <div
+      className={`training-stats-locked ${stylex.props(styles.locked).className}`}
+      data-testid="training-stats-locked"
+    >
       只有 <b>{block.samples}</b> {unit}
       <br />
       样本太少，不出比率
