@@ -33,6 +33,11 @@ const styles = stylex.create({
   primaryRoleName: {
     minWidth: '78px',
   },
+  roleName: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.sm,
+    fontWeight: 500,
+  },
   editor: {
     alignItems: 'center',
     display: 'flex',
@@ -46,6 +51,48 @@ const styles = stylex.create({
   },
   modelSelect: {
     minWidth: '160px',
+  },
+  status: {
+    alignItems: 'center',
+    color: colors.textMuted,
+    display: 'inline-flex',
+    fontSize: fontSizes.xs,
+    gap: '5px',
+    justifyContent: 'flex-end',
+    minWidth: '16px',
+  },
+  statusRollback: {
+    color: colors.down,
+  },
+  saveError: {
+    alignItems: 'center',
+    backgroundColor: colors.backgroundElement,
+    borderLeftColor: colors.down,
+    borderLeftStyle: 'solid',
+    borderLeftWidth: '2px',
+    color: colors.down,
+    display: 'flex',
+    fontSize: fontSizes.sm,
+    gap: '8px',
+    justifyContent: 'space-between',
+    margin: '0 11px 10px',
+    padding: '6px 8px',
+  },
+  roleWarning: {
+    color: colors.accent,
+    fontSize: fontSizes.sm,
+  },
+  testResult: {
+    fontSize: fontSizes.sm,
+  },
+  testResultOk: {
+    color: colors.up,
+  },
+  testResultFail: {
+    color: colors.down,
+  },
+  icon: {
+    verticalAlign: '-2px',
   },
   clear: {
     'backgroundColor': 'transparent',
@@ -187,16 +234,16 @@ export function PrimaryRow({
   return (
     <div {...stylex.props(styles.row)} id="settings-role-primary">
       <div {...stylex.props(styles.head)}>
-        <span className={`settings-role-name ${stylex.props(styles.primaryRoleName).className}`}>
+        <span
+          className={`settings-role-name ${stylex.props(styles.roleName, styles.primaryRoleName).className}`}
+        >
           主模型
         </span>
         {draft.mode !== 'custom' && (
           <Chip onClick={() => push(defaultCustom(catalog))}>设置主模型</Chip>
         )}
         <span
-          className={
-            failure ? 'settings-role-status settings-role-status--rollback' : 'settings-role-status'
-          }
+          className={`settings-role-status${failure ? ' settings-role-status--rollback' : ''} ${stylex.props(styles.status, failure && styles.statusRollback).className}`}
           aria-live="polite"
         >
           {queue.flushing() ? (
@@ -205,11 +252,12 @@ export function PrimaryRow({
             </>
           ) : failure ? (
             <>
-              <TriangleAlert size={12} className="icon" /> 未保存
+              <TriangleAlert size={12} className={`icon ${stylex.props(styles.icon).className}`} />{' '}
+              未保存
             </>
           ) : (
             <>
-              <Check size={12} className="icon" /> 已保存
+              <Check size={12} className={`icon ${stylex.props(styles.icon).className}`} /> 已保存
             </>
           )}
         </span>
@@ -243,10 +291,16 @@ export function PrimaryRow({
           </Button>
           {testState.status === 'busy' && <Spinner />}
           {testState.status === 'ok' && (
-            <span className="settings-test-result settings-test-result--ok">{testState.text}</span>
+            <span
+              className={`settings-test-result settings-test-result--ok ${stylex.props(styles.testResult, styles.testResultOk).className}`}
+            >
+              {testState.text}
+            </span>
           )}
           {testState.status === 'fail' && (
-            <span className="settings-test-result settings-test-result--fail">
+            <span
+              className={`settings-test-result settings-test-result--fail ${stylex.props(styles.testResult, styles.testResultFail).className}`}
+            >
               {testState.text}
             </span>
           )}
@@ -257,16 +311,29 @@ export function PrimaryRow({
       )}
 
       {failure ? (
-        <div className="settings-save-error" role="alert">
+        <div
+          className={`settings-save-error ${stylex.props(styles.saveError).className}`}
+          role="alert"
+        >
           <span>{failure.message}</span>
           <Button onClick={() => push(failure.retrySnapshot)}>重试</Button>
         </div>
       ) : null}
       {draft.mode !== 'custom' && (
-        <div className="settings-role-warning">未设置——所有「跟随主模型」的用途都处于暂停</div>
+        <div className={`settings-role-warning ${stylex.props(styles.roleWarning).className}`}>
+          未设置——所有「跟随主模型」的用途都处于暂停
+        </div>
       )}
-      {computedStale && <div className="settings-role-warning">模型已不在目录，请改选</div>}
-      {keyMissing && <div className="settings-role-warning">该 provider 未配 key</div>}
+      {computedStale && (
+        <div className={`settings-role-warning ${stylex.props(styles.roleWarning).className}`}>
+          模型已不在目录，请改选
+        </div>
+      )}
+      {keyMissing && (
+        <div className={`settings-role-warning ${stylex.props(styles.roleWarning).className}`}>
+          该 provider 未配 key
+        </div>
+      )}
     </div>
   );
 }
