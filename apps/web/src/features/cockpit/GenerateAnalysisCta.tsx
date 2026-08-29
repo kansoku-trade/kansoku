@@ -21,7 +21,6 @@ const styles = stylex.create({
     lineHeight: 1.6,
   },
 });
-
 export function GenerateAnalysisCta({
   sym,
   title,
