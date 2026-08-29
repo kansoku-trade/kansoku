@@ -1,6 +1,103 @@
 import { Plus, X } from 'lucide-react';
+import * as stylex from '@stylexjs/stylex';
 import type { AssistantSessionMeta } from '@kansoku/core/contract/index';
 import { Button, Empty, Spinner, TimeAgo, openModal } from '@web/ui';
+import { colors, fontSizes, radii, sizes } from '../../theme/tokens.stylex';
+
+const styles = stylex.create({
+  sidebar: {
+    backgroundColor: colors.backgroundSurface,
+    borderRight: '1px solid ' + colors.border,
+    display: 'flex',
+    flexDirection: 'column',
+    minHeight: 0,
+  },
+  sidebarHead: {
+    borderBottom: '1px solid ' + colors.border,
+    flex: '0 0 auto',
+    padding: '12px',
+  },
+  newSession: {
+    gap: '6px',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  sidebarScroll: {
+    flex: '1 1 auto',
+    minHeight: 0,
+    overflowY: 'auto',
+    padding: '6px',
+  },
+  sidebarState: {
+    alignItems: 'center',
+    color: colors.textMuted,
+    display: 'flex',
+    fontSize: fontSizes.xs,
+    gap: '6px',
+    margin: '6px 5px',
+  },
+  sidebarEmpty: {
+    margin: '12px 5px',
+  },
+  sessionRow: {
+    'alignItems': 'center',
+    'borderRadius': radii.default,
+    'cursor': 'pointer',
+    'display': 'flex',
+    'gap': '6px',
+    'minHeight': sizes.controlHeight,
+    'padding': '6px 8px',
+    'position': 'relative',
+    'transition': 'background-color 0.12s ease',
+    ':hover': {
+      backgroundColor: colors.backgroundHover,
+    },
+  },
+  sessionRowActive: {
+    backgroundColor: 'rgba(255, 176, 0, 0.1)',
+  },
+  sessionRowMain: {
+    display: 'flex',
+    flex: '1 1 auto',
+    flexDirection: 'column',
+    gap: '2px',
+    minWidth: 0,
+  },
+  sessionTitle: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.sm,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  sessionTitleActive: {
+    color: colors.accent,
+  },
+  sessionTime: {
+    color: colors.textMuted,
+    fontSize: fontSizes.xs,
+  },
+  sessionDelete: {
+    'alignItems': 'center',
+    'backgroundColor': 'transparent',
+    'border': 'none',
+    'borderRadius': radii.default,
+    'color': colors.textMuted,
+    'cursor': 'pointer',
+    'display': 'inline-flex',
+    'flex': '0 0 auto',
+    'height': '20px',
+    'justifyContent': 'center',
+    'padding': 0,
+    'transition': 'opacity 0.12s ease, color 0.12s ease, background-color 0.12s ease',
+    'width': '20px',
+    ':hover': {
+      backgroundColor: colors.backgroundElement,
+      color: colors.textPrimary,
+      opacity: 1,
+    },
+  },
+});
 
 interface AssistantSessionListProps {
   sessions: AssistantSessionMeta[];
@@ -46,37 +143,54 @@ export function AssistantSessionList({
   onDelete,
 }: AssistantSessionListProps) {
   return (
-    <div className="assistant-sidebar">
-      <div className="assistant-sidebar-head">
-        <Button className="assistant-new-session" onClick={onCreate}>
+    <div className={`assistant-sidebar ${stylex.props(styles.sidebar).className}`}>
+      <div className={`assistant-sidebar-head ${stylex.props(styles.sidebarHead).className}`}>
+        <Button
+          className={`assistant-new-session ${stylex.props(styles.newSession).className}`}
+          onClick={onCreate}
+        >
           <Plus size={13} /> 新建会话
         </Button>
       </div>
-      <div className="assistant-sidebar-scroll">
+      <div className={`assistant-sidebar-scroll ${stylex.props(styles.sidebarScroll).className}`}>
         {loading && sessions.length === 0 ? (
-          <div className="assistant-sidebar-state">
+          <div className={`assistant-sidebar-state ${stylex.props(styles.sidebarState).className}`}>
             <Spinner /> 正在读取会话…
           </div>
         ) : error ? (
-          <div className="assistant-sidebar-state">{error}</div>
+          <div className={`assistant-sidebar-state ${stylex.props(styles.sidebarState).className}`}>
+            {error}
+          </div>
         ) : sessions.length === 0 ? (
-          <Empty className="assistant-sidebar-empty">还没有会话</Empty>
+          <Empty
+            className={`assistant-sidebar-empty ${stylex.props(styles.sidebarEmpty).className}`}
+          >
+            还没有会话
+          </Empty>
         ) : (
           sessions.map((session) => (
             <div
               key={session.id}
-              className={`assistant-session-row${session.id === activeId ? ' active' : ''}`}
+              className={`assistant-session-row${session.id === activeId ? ' active' : ''} ${stylex.props(styles.sessionRow, session.id === activeId && styles.sessionRowActive).className}`}
               onClick={() => onSelect(session.id)}
             >
-              <div className="assistant-session-row-main">
-                <span className="assistant-session-title">{session.title}</span>
-                <span className="assistant-session-time">
+              <div
+                className={`assistant-session-row-main ${stylex.props(styles.sessionRowMain).className}`}
+              >
+                <span
+                  className={`assistant-session-title ${stylex.props(styles.sessionTitle, session.id === activeId && styles.sessionTitleActive).className}`}
+                >
+                  {session.title}
+                </span>
+                <span
+                  className={`assistant-session-time ${stylex.props(styles.sessionTime).className}`}
+                >
                   <TimeAgo since={session.updatedAt} />
                 </span>
               </div>
               <button
                 type="button"
-                className="assistant-session-delete"
+                className={`assistant-session-delete ${stylex.props(styles.sessionDelete).className}`}
                 aria-label="删除会话"
                 onClick={(e) => {
                   e.stopPropagation();
