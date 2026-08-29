@@ -122,22 +122,6 @@ body.trainer-dragging-level * {
   transform: translateX(-1px);
 }
 
-.chat-shell .chat-composer {
-  border-top: 1px solid var(--border);
-}
-.chat-shell .chat-composer-field.input {
-  border-radius: var(--radius-md);
-}
-.chat-shell .chat-composer-action {
-  border-radius: var(--radius-md);
-}
-.chat-shell .chat-bubble--user {
-  border-radius: var(--radius-md);
-}
-.chat-shell .chat-suggestion {
-  border-radius: var(--radius-md);
-}
-
 @media (min-width: 1001px) {
   #root:has(> .settings-page),
   .desktop-content:has(> .settings-page) {

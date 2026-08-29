@@ -17,6 +17,8 @@ interface ChatPanelProps {
   mode: ChatMode;
   full?: boolean;
   canvasOpen?: boolean;
+  userBubbleClassName?: string;
+  suggestionClassName?: string;
   onDragStart?: (e: React.PointerEvent) => void;
   onModeChange: (mode: ChatMode) => void;
   onPickSuggestion: (question: string) => void;
@@ -117,6 +119,8 @@ export function ChatPanel({
   mode,
   full = false,
   canvasOpen = false,
+  userBubbleClassName,
+  suggestionClassName,
   onDragStart,
   onModeChange,
   onPickSuggestion,
@@ -159,6 +163,8 @@ export function ChatPanel({
         contentClassName={!full ? stylex.props(styles.bodyContent).className : undefined}
         full={full}
         canvasOpen={canvasOpen}
+        userBubbleClassName={userBubbleClassName}
+        suggestionClassName={suggestionClassName}
         rows={rows}
         busy={busy}
         streamText={streamText}

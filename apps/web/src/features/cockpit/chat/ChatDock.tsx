@@ -49,6 +49,23 @@ const styles = stylex.create({
   shellDragging: {
     userSelect: 'none',
   },
+  shellComposer: {
+    borderTopColor: colors.border,
+    borderTopStyle: 'solid',
+    borderTopWidth: '1px',
+  },
+  shellField: {
+    borderRadius: radii.md,
+  },
+  shellAction: {
+    borderRadius: radii.md,
+  },
+  shellBubble: {
+    borderRadius: radii.md,
+  },
+  shellSuggestion: {
+    borderRadius: radii.md,
+  },
   resize: {
     position: 'absolute',
     zIndex: 1,
@@ -153,6 +170,9 @@ export function ChatDock({ chartId, docCreatedAt }: ChatDockProps) {
       onAbort={() => void abort()}
       hint={hint}
       full={mode === 'full'}
+      className={mode !== 'dock' ? stylex.props(styles.shellComposer).className : undefined}
+      fieldClassName={mode !== 'dock' ? stylex.props(styles.shellField).className : undefined}
+      actionClassName={mode !== 'dock' ? stylex.props(styles.shellAction).className : undefined}
       inputProps={{
         autoFocus: mode !== 'dock',
         onFocus: () => setMode((prev) => (prev === 'dock' ? 'float' : prev)),
@@ -207,6 +227,8 @@ export function ChatDock({ chartId, docCreatedAt }: ChatDockProps) {
           mode={mode}
           full={mode === 'full'}
           canvasOpen={mode === 'full' && Boolean(canvas.openSlug)}
+          userBubbleClassName={stylex.props(styles.shellBubble).className}
+          suggestionClassName={stylex.props(styles.shellSuggestion).className}
           onDragStart={mode === 'float' ? onDragStart : undefined}
           onModeChange={setMode}
           onPickSuggestion={(question) => void submit(question)}

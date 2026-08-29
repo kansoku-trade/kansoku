@@ -449,6 +449,7 @@ function ChatRowView({
   rowIndex,
   rows,
   modelLabels,
+  userBubbleClassName,
   onOpenCanvas,
   onViewCanvasSource,
 }: {
@@ -456,6 +457,7 @@ function ChatRowView({
   rowIndex: number;
   rows: ChatRow[];
   modelLabels?: Readonly<Record<string, string>>;
+  userBubbleClassName?: string;
   onOpenCanvas?: (slug: string) => void;
   onViewCanvasSource?: (slug: string) => void;
 }) {
@@ -465,7 +467,7 @@ function ChatRowView({
         className={`chat-row chat-row--user ${stylex.props(styles.row, styles.rowUser).className}`}
       >
         <div
-          className={`chat-bubble chat-bubble--user ${stylex.props(styles.bubble, styles.userBubble).className}`}
+          className={`chat-bubble chat-bubble--user ${stylex.props(styles.bubble, styles.userBubble).className}${userBubbleClassName ? ` ${userBubbleClassName}` : ''}`}
         >
           {row.text}
         </div>
@@ -540,6 +542,8 @@ function ConversationTranscriptView({
   contentClassName,
   full = false,
   canvasOpen = false,
+  userBubbleClassName,
+  suggestionClassName,
   emptyClassName,
   emptyTextClassName,
   insertClassName,
@@ -560,6 +564,8 @@ function ConversationTranscriptView({
   contentClassName?: string;
   full?: boolean;
   canvasOpen?: boolean;
+  userBubbleClassName?: string;
+  suggestionClassName?: string;
   emptyClassName?: string;
   emptyTextClassName?: string;
   insertClassName?: string;
@@ -612,7 +618,7 @@ function ConversationTranscriptView({
                 <button
                   type="button"
                   key={question}
-                  className={`chat-suggestion ${stylex.props(styles.suggestion).className}`}
+                  className={`chat-suggestion ${stylex.props(styles.suggestion).className}${suggestionClassName ? ` ${suggestionClassName}` : ''}`}
                   onClick={() => onPickSuggestion(question)}
                 >
                   {question}
@@ -630,6 +636,7 @@ function ConversationTranscriptView({
             rowIndex={rows.indexOf(entry.row)}
             rows={rows}
             modelLabels={modelLabels}
+            userBubbleClassName={userBubbleClassName}
             onOpenCanvas={onOpenCanvas}
             onViewCanvasSource={onViewCanvasSource}
           />
