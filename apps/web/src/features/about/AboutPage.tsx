@@ -10,6 +10,8 @@ import { colors, fontSizes } from '../../theme/tokens.stylex';
 const styles = stylex.create({
   root: {
     maxWidth: '720px',
+    margin: '0 auto',
+    padding: '24px 20px 60px',
   },
   hero: {
     alignItems: 'center',
