@@ -118,12 +118,6 @@ body.trainer-dragging-level * {
     flex: 1 1 auto;
   }
 }
-@media (max-width: 1000px) {
-  .home-side-scroll > .scroll-area-scrollbar {
-    display: none;
-  }
-}
-
 .market-temp {
   display: inline-flex;
   align-items: center;
