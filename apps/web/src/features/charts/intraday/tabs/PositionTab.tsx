@@ -17,6 +17,12 @@ const styles = stylex.create({
     fontVariantNumeric: 'tabular-nums',
     textAlign: 'right',
   },
+  valueUp: {
+    color: colors.up,
+  },
+  valueDown: {
+    color: colors.down,
+  },
 });
 
 interface PositionTabProps {
@@ -25,6 +31,7 @@ interface PositionTabProps {
 
 export function PositionTab({ position }: PositionTabProps) {
   if (!position) return null;
+  const tone = upDown(position.unrealized);
 
   return (
     <>
@@ -37,7 +44,9 @@ export function PositionTab({ position }: PositionTabProps) {
         <div className={`k ${stylex.props(styles.key).className}`}>
           浮{position.unrealized >= 0 ? '盈' : '亏'}
         </div>
-        <div className={`v ${upDown(position.unrealized)} ${stylex.props(styles.value).className}`}>
+        <div
+          className={`v ${tone} ${stylex.props(styles.value, tone === 'up' ? styles.valueUp : styles.valueDown).className}`}
+        >
           {signed(position.unrealized)} ({signed(position.unrealizedPct)}%)
         </div>
       </div>

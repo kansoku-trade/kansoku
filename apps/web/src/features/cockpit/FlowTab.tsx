@@ -45,13 +45,22 @@ const styles = stylex.create({
     fontVariantNumeric: 'tabular-nums',
     textAlign: 'right',
   },
+  bucketValueUp: {
+    color: colors.up,
+  },
+  bucketValueDown: {
+    color: colors.down,
+  },
 });
 
 function BucketRow({ label, bucket }: { label: string; bucket: CapitalBucket }) {
+  const tone = upDown(bucket.net);
   return (
     <>
       <div className={`k ${stylex.props(styles.bucketLabel).className}`}>{label}</div>
-      <div className={`v ${upDown(bucket.net)} ${stylex.props(styles.bucketValue).className}`}>
+      <div
+        className={`v ${tone} ${stylex.props(styles.bucketValue, tone === 'up' ? styles.bucketValueUp : styles.bucketValueDown).className}`}
+      >
         {signed(bucket.net, 0)}
       </div>
     </>
