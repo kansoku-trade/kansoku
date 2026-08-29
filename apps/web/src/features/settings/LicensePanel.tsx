@@ -10,6 +10,33 @@ import { Badge, Button, Input, openModal } from '@web/ui';
 import { colors, fontSizes } from '../../theme/tokens.stylex';
 
 const styles = stylex.create({
+  preference: {
+    alignItems: 'center',
+    display: 'flex',
+    gap: '12px',
+    justifyContent: 'space-between',
+    padding: '11px',
+  },
+  preferenceCopy: {
+    minWidth: 0,
+  },
+  preferenceName: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.sm,
+    fontWeight: 500,
+  },
+  preferenceDescription: {
+    marginTop: '3px',
+    color: colors.textMuted,
+    fontSize: fontSizes.xs,
+    overflowWrap: 'anywhere',
+  },
+  testResult: {
+    fontSize: fontSizes.sm,
+  },
+  testResultFail: {
+    color: colors.down,
+  },
   activateRow: {
     flexDirection: 'column',
     alignItems: 'stretch',
@@ -79,7 +106,11 @@ function DeactivateConfirm({ closeModal }: { closeModal: () => void }) {
     <div className="settings-reset-confirm">
       <p>停用后本机将失去 AI 功能授权，可随时用授权码重新激活。确定继续吗？</p>
       {error ? (
-        <div className="settings-test-result settings-test-result--fail">{error}</div>
+        <div
+          className={`settings-test-result settings-test-result--fail ${stylex.props(styles.testResult, styles.testResultFail).className}`}
+        >
+          {error}
+        </div>
       ) : null}
       <div className="settings-cred-actions">
         <Button disabled={busy} onClick={closeModal}>
@@ -169,7 +200,11 @@ export function ActivateForm({
         </Button>
       </div>
       {error ? (
-        <div className="settings-test-result settings-test-result--fail">{error}</div>
+        <div
+          className={`settings-test-result settings-test-result--fail ${stylex.props(styles.testResult, styles.testResultFail).className}`}
+        >
+          {error}
+        </div>
       ) : null}
       {showSubscribeLink && subscribeData?.subscribeUrl ? (
         <button
@@ -201,16 +236,20 @@ function LicensedStatus({
   proUnavailable?: boolean;
 }) {
   return (
-    <div className="settings-time-preference">
-      <div className="settings-preference-copy">
-        <div className="settings-preference-name">
+    <div className={`settings-time-preference ${stylex.props(styles.preference).className}`}>
+      <div className={`settings-preference-copy ${stylex.props(styles.preferenceCopy).className}`}>
+        <div
+          className={`settings-preference-name ${stylex.props(styles.preferenceName).className}`}
+        >
           {state === 'grace' ? (
             <Badge tone="accent">离线宽限中</Badge>
           ) : (
             <Badge tone="up">已授权</Badge>
           )}
         </div>
-        <div className="settings-preference-description">
+        <div
+          className={`settings-preference-description ${stylex.props(styles.preferenceDescription).className}`}
+        >
           {maskedKey ? `授权码 ${maskedKey}` : null}
           {deviceName ? ` · 设备 ${deviceName}` : null}
           {state === 'grace' && graceUntil
