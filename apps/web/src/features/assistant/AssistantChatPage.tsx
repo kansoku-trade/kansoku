@@ -4,6 +4,7 @@ import * as stylex from '@stylexjs/stylex';
 import { errorMessage } from '@web/lib/api';
 import { useQuery } from '@web/lib/apiHooks';
 import { client } from '@web/lib/client';
+import { isDesktopRealtime } from '@web/lib/portTransport';
 import { navigate, useQueryParam } from '@web/lib/router';
 import { Button, Empty, Spinner } from '@web/ui';
 import { useTitle } from '@web/lib/useTitle';
@@ -27,7 +28,12 @@ const styles = stylex.create({
     color: colors.textPrimary,
     display: 'grid',
     gridTemplateColumns: '260px 1fr',
+    height: '100vh',
     minHeight: 0,
+    overflow: 'hidden',
+  },
+  pageDesktop: {
+    height: 'calc(100vh - 40px)',
   },
   main: {
     backgroundColor: colors.backgroundCanvas,
@@ -78,6 +84,7 @@ export function AssistantChatPage() {
     () => (library ?? []).map((doc) => ({ path: doc.path, title: doc.title })),
     [library],
   );
+  const desktopShell = isDesktopRealtime();
 
   useEffect(() => {
     if (loading) return;
@@ -118,7 +125,9 @@ export function AssistantChatPage() {
   };
 
   return (
-    <div className={`fullpage ${stylex.props(styles.page).className}`}>
+    <div
+      className={`fullpage ${stylex.props(styles.page, desktopShell && styles.pageDesktop).className}`}
+    >
       <AssistantSessionList
         sessions={sessions}
         activeId={activeId}
