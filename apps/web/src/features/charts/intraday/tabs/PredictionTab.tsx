@@ -108,6 +108,8 @@ const styles = stylex.create({
     textAlign: 'right',
   },
   gridValueLeft: { textAlign: 'left' },
+  toneUp: { color: colors.up },
+  toneDown: { color: colors.down },
   gridAfterNote: { marginTop: '6px' },
   checkItem: {
     backgroundColor: colors.backgroundSurface,
@@ -373,7 +375,7 @@ export function PredictionTab({
           <SectionTitle>入场计划</SectionTitle>
           {ep.entry_status_note && (
             <div
-              className={`note-block ${stylex.props(styles.note).className}${ep.entry_status === 'invalidated' || ep.entry_status === 'stopped' ? ' down' : ''}`}
+              className={`note-block ${stylex.props(styles.note).className}${ep.entry_status === 'invalidated' || ep.entry_status === 'stopped' ? ` down ${stylex.props(styles.toneDown).className}` : ''}`}
             >
               {ep.entry_status_note}
             </div>
@@ -384,23 +386,31 @@ export function PredictionTab({
             <div className={`k ${stylex.props(styles.gridKey).className}`}>入场</div>
             <div className={`v ${stylex.props(styles.gridValue).className}`}>${fmt(ep.entry)}</div>
             <div className={`k ${stylex.props(styles.gridKey).className}`}>止损</div>
-            <div className={`v down ${stylex.props(styles.gridValue).className}`}>
+            <div
+              className={`v down ${stylex.props(styles.gridValue, styles.toneDown).className}`}
+            >
               ${fmt(ep.stop)}
             </div>
             <div className={`k ${stylex.props(styles.gridKey).className}`}>
               目标1 ({signed(ep.target1_pct, 1)}%)
             </div>
-            <div className={`v up ${stylex.props(styles.gridValue).className}`}>
+            <div
+              className={`v up ${stylex.props(styles.gridValue, styles.toneUp).className}`}
+            >
               ${fmt(ep.target1)}
             </div>
             <div className={`k ${stylex.props(styles.gridKey).className}`}>
               目标2 ({signed(ep.target2_pct, 1)}%)
             </div>
-            <div className={`v up ${stylex.props(styles.gridValue).className}`}>
+            <div
+              className={`v up ${stylex.props(styles.gridValue, styles.toneUp).className}`}
+            >
               ${fmt(ep.target2)}
             </div>
             <div className={`k ${stylex.props(styles.gridKey).className}`}>R/R</div>
-            <div className={`v ${rrTone(ep)} ${stylex.props(styles.gridValue).className}`}>
+            <div
+              className={`v ${rrTone(ep)} ${stylex.props(styles.gridValue, rrTone(ep) === 'up' ? styles.toneUp : rrTone(ep) === 'down' ? styles.toneDown : null).className}`}
+            >
               {fmt(ep.rr)} : 1
               {!ep.rr_ok && (
                 <span className={`warn-red ${stylex.props(styles.warning).className}`}>
