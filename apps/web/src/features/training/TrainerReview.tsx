@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { TrainerCoachCall, TrainerLesson, TrainerReviewPayload } from '@kansoku/pro-api';
+import * as stylex from '@stylexjs/stylex';
 import { IntradayControlsProvider } from '../charts/intraday/controlsContext';
 import { IntradayChartOnly } from '../charts/intraday/IntradayChartOnly';
 import type { DrawingChartHandle } from '../charts/intraday/useIntradayCharts';
@@ -18,8 +19,43 @@ import { TrainerReviewFacts } from './TrainerReviewFacts';
 import { TrainerReviewLesson } from './TrainerReviewLesson';
 import { TrainerReviewTimeline } from './TrainerReviewTimeline';
 import { useTrainerReviewOverlay } from './useTrainerReviewOverlay';
+import { colors } from '../../theme/tokens.stylex';
 
 const STORAGE_NAMESPACE = 'trainer-review';
+
+const styles = stylex.create({
+  root: {
+    display: 'flex',
+    flex: '1 1 auto',
+    flexDirection: 'column',
+    gap: '14px',
+    padding: '14px 16px',
+  },
+  reveal: {
+    alignItems: 'center',
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '10px',
+  },
+  stage: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px',
+  },
+  chart: {
+    borderColor: colors.border,
+    borderStyle: 'solid',
+    borderWidth: '1px',
+    height: '320px',
+  },
+  legendRow: {
+    alignItems: 'center',
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '16px',
+    justifyContent: 'space-between',
+  },
+});
 
 export interface TrainerReviewProps {
   bridge: TrainerBridge;
@@ -98,8 +134,11 @@ function ReviewBody({ payload, bridge, sessionId, onPayloadChange }: ReviewBodyP
   };
 
   return (
-    <div className="trainer-review" data-testid="trainer-review">
-      <section className="trainer-review-reveal">
+    <div
+      className={`trainer-review ${stylex.props(styles.root).className}`}
+      data-testid="trainer-review"
+    >
+      <section className={`trainer-review-reveal ${stylex.props(styles.reveal).className}`}>
         <span className="trainer-reveal-key">真身</span>
         <span className="num trainer-reveal-sym">{payload.provenance.sourceSymbol}</span>
         <span className="num trainer-reveal-date">
@@ -111,9 +150,9 @@ function ReviewBody({ payload, bridge, sessionId, onPayloadChange }: ReviewBodyP
         <OpenRealChartButton symbol={payload.provenance.sourceSymbol} />
       </section>
 
-      <section className="trainer-review-stage">
+      <section className={`trainer-review-stage ${stylex.props(styles.stage).className}`}>
         <IntradayControlsProvider storageNamespace={STORAGE_NAMESPACE}>
-          <div className="trainer-review-chart">
+          <div className={`trainer-review-chart ${stylex.props(styles.chart).className}`}>
             <IntradayChartOnly
               symbol={payload.symbol}
               built={built}
@@ -131,7 +170,7 @@ function ReviewBody({ payload, bridge, sessionId, onPayloadChange }: ReviewBodyP
           events={payload.events}
           onBrush={setBrush}
         />
-        <div className="trainer-review-legend-row">
+        <div className={`trainer-review-legend-row ${stylex.props(styles.legendRow).className}`}>
           <ReviewLegend />
           <label className="trainer-settlement-epilogue-toggle">
             <input
