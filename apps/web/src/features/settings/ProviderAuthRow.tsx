@@ -1,6 +1,68 @@
+import * as stylex from '@stylexjs/stylex';
 import { Button, Dot, Input } from '@web/ui';
+import { colors, fonts, fontSizes } from '../../theme/tokens.stylex';
 import { ProviderBaseUrlField } from './ProviderBaseUrlField';
 import type { CatalogProvider, CredentialEntry } from './types';
+
+const styles = stylex.create({
+  row: {
+    'borderTopColor': colors.border,
+    'borderTopStyle': 'solid',
+    'borderTopWidth': '1px',
+    'padding': '10px 11px',
+    ':first-child': {
+      borderTopStyle: 'none',
+    },
+  },
+  head: {
+    alignItems: 'center',
+    display: 'flex',
+    gap: '8px',
+  },
+  name: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.sm,
+    fontWeight: 500,
+  },
+  state: {
+    alignItems: 'center',
+    display: 'inline-flex',
+    fontSize: fontSizes.xs,
+    gap: '5px',
+    marginLeft: 'auto',
+    whiteSpace: 'nowrap',
+  },
+  stateUp: { color: colors.up },
+  stateAccent: { color: colors.accent },
+  stateMuted: { color: colors.textMuted },
+  meta: {
+    color: colors.textMuted,
+    fontFamily: fonts.mono,
+    fontSize: fontSizes.xs,
+    marginTop: '3px',
+    overflowWrap: 'anywhere',
+  },
+  controls: {
+    alignItems: 'center',
+    display: 'flex',
+    gap: '6px',
+    marginTop: '8px',
+  },
+  editorInput: {
+    flex: 1,
+    minWidth: 0,
+  },
+  error: {
+    borderLeftColor: colors.down,
+    borderLeftStyle: 'solid',
+    borderLeftWidth: '2px',
+    color: colors.down,
+    fontSize: fontSizes.sm,
+    marginTop: '7px',
+    overflowWrap: 'anywhere',
+    paddingLeft: '7px',
+  },
+});
 
 function credentialMeta(credential: CredentialEntry | undefined): string {
   if (!credential) return '尚未保存 API key';
@@ -47,20 +109,36 @@ export function ProviderAuthRow({
   onChanged: () => void;
 }) {
   const state = providerState(credential);
+  const stateStyle =
+    state.tone === 'up'
+      ? styles.stateUp
+      : state.tone === 'accent'
+        ? styles.stateAccent
+        : styles.stateMuted;
 
   return (
-    <div className="settings-provider-row" id={'settings-provider-' + provider.id}>
-      <div className="settings-provider-head">
-        <span className="settings-provider-name">{provider.name}</span>
-        <span className={'settings-provider-state settings-provider-state--' + state.tone}>
+    <div
+      className={`settings-provider-row ${stylex.props(styles.row).className}`}
+      id={'settings-provider-' + provider.id}
+    >
+      <div className={`settings-provider-head ${stylex.props(styles.head).className}`}>
+        <span className={`settings-provider-name ${stylex.props(styles.name).className}`}>
+          {provider.name}
+        </span>
+        <span
+          className={`settings-provider-state settings-provider-state--${state.tone} ${stylex.props(styles.state, stateStyle).className}`}
+        >
           <Dot tone={state.tone === 'muted' ? undefined : state.tone} />
           {state.label}
         </span>
       </div>
-      <div className="settings-provider-meta">{credentialMeta(credential)}</div>
+      <div className={`settings-provider-meta ${stylex.props(styles.meta).className}`}>
+        {credentialMeta(credential)}
+      </div>
       {editing ? (
-        <div className="settings-provider-editor">
+        <div className={`settings-provider-editor ${stylex.props(styles.controls).className}`}>
           <Input
+            className={stylex.props(styles.editorInput).className}
             autoComplete="off"
             type="password"
             value={editKey}
@@ -75,7 +153,7 @@ export function ProviderAuthRow({
           </Button>
         </div>
       ) : (
-        <div className="settings-provider-actions">
+        <div className={`settings-provider-actions ${stylex.props(styles.controls).className}`}>
           <Button onClick={onStartEdit}>{credential ? '更新 key' : '添加 key'}</Button>
           {credential ? (
             <Button disabled={busy} onClick={onDelete}>
@@ -91,7 +169,10 @@ export function ProviderAuthRow({
         onChanged={onChanged}
       />
       {error ? (
-        <div className="settings-provider-error" role="alert">
+        <div
+          className={`settings-provider-error ${stylex.props(styles.error).className}`}
+          role="alert"
+        >
           {error}
         </div>
       ) : null}
