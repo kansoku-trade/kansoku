@@ -41,6 +41,13 @@ const EXIT_REASON_LABEL: Record<TrainerClosedTrade['exitReason'], string> = {
 };
 
 const styles = stylex.create({
+  orderStatus: {
+    color: colors.textSecondary,
+  },
+  orderError: {
+    color: colors.down,
+    fontSize: fontSizes.sm,
+  },
   settleStage: {
     display: 'flex',
     flexDirection: 'column',
@@ -48,6 +55,35 @@ const styles = stylex.create({
     gap: '14px',
     order: 1,
     padding: '14px 16px',
+  },
+  reveal: {
+    alignItems: 'baseline',
+    borderBottomColor: colors.border,
+    borderBottomStyle: 'solid',
+    borderBottomWidth: '1px',
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '14px',
+    paddingBottom: '12px',
+  },
+  revealKey: {
+    color: colors.textMuted,
+    fontSize: fontSizes.sm,
+    letterSpacing: '0.08em',
+    textTransform: 'uppercase',
+  },
+  revealSym: {
+    fontSize: fontSizes.xl,
+    fontWeight: 700,
+  },
+  revealDate: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.md,
+  },
+  revealJump: {
+    borderColor: colors.borderStrong,
+    color: colors.accent,
+    marginLeft: 'auto',
   },
   settleTail: {
     display: 'flex',
@@ -201,6 +237,20 @@ const styles = stylex.create({
     flexWrap: 'wrap',
     gap: '12px',
   },
+  epilogueToggle: {
+    alignItems: 'center',
+    color: colors.textSecondary,
+    display: 'flex',
+    fontSize: fontSizes.sm,
+    gap: '6px',
+  },
+  epilogueInput: {
+    accentColor: colors.accent,
+  },
+  settleHint: {
+    color: colors.textMuted,
+    fontSize: fontSizes.sm,
+  },
   ghostSlots: {
     display: 'flex',
     gap: '8px',
@@ -234,6 +284,57 @@ const styles = stylex.create({
   },
   reviewCollapse: {
     marginLeft: 'auto',
+  },
+  figuresFigure: {
+    backgroundColor: colors.backgroundSurface,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '3px',
+    margin: 0,
+    padding: '12px 15px',
+  },
+  figuresCaption: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.sm,
+  },
+  figuresValue: {
+    fontSize: '26px',
+    fontWeight: 600,
+    letterSpacing: '-0.02em',
+    lineHeight: 1.15,
+  },
+  figuresValueZero: {
+    color: colors.textMuted,
+  },
+  figuresUnit: {
+    color: colors.textMuted,
+    fontSize: fontSizes.lg,
+  },
+  figuresSub: {
+    color: colors.textMuted,
+    fontSize: fontSizes.xs,
+  },
+  bandLegend: {
+    color: colors.textSecondary,
+    display: 'flex',
+    fontSize: fontSizes.xs,
+    gap: '12px',
+  },
+  bandSwatch: {
+    display: 'inline-block',
+    height: '8px',
+    marginRight: '4px',
+    verticalAlign: '-1px',
+    width: '8px',
+  },
+  bandGiven: {
+    backgroundColor: '#161616',
+  },
+  bandPlayed: {
+    backgroundColor: '#14211f',
+  },
+  bandEpilogue: {
+    backgroundColor: '#241a10',
   },
 });
 
@@ -320,18 +421,34 @@ export function TrainerSettlement({
   return (
     <>
       <div className={`trainer-settle-stage ${stylex.props(styles.settleStage).className}`}>
-        <div className="trainer-reveal">
-          <span className="trainer-reveal-key">真身</span>
+        <div className={`trainer-reveal ${stylex.props(styles.reveal).className}`}>
+          <span className={`trainer-reveal-key ${stylex.props(styles.revealKey).className}`}>
+            真身
+          </span>
           {sourceSymbol ? (
             <>
-              <span className="num trainer-reveal-sym">{sourceSymbol}</span>
-              <span className="num trainer-reveal-date">{sourceDate}</span>
+              <span
+                className={`num trainer-reveal-sym ${stylex.props(styles.revealSym).className}`}
+              >
+                {sourceSymbol}
+              </span>
+              <span
+                className={`num trainer-reveal-date ${stylex.props(styles.revealDate).className}`}
+              >
+                {sourceDate}
+              </span>
               <OpenRealChartButton symbol={sourceSymbol} />
             </>
           ) : revealError ? (
-            <span className="trainer-order-error">{revealError}</span>
+            <span className={`trainer-order-error ${stylex.props(styles.orderError).className}`}>
+              {revealError}
+            </span>
           ) : (
-            <span className="trainer-order-panel--status">正在揭晓真身…</span>
+            <span
+              className={`trainer-order-panel--status ${stylex.props(styles.orderStatus).className}`}
+            >
+              正在揭晓真身…
+            </span>
           )}
         </div>
 
@@ -345,7 +462,9 @@ export function TrainerSettlement({
               <TrainerFigures track={track} summary={summary} />
             </>
           ) : (
-            <div className="trainer-order-panel--status">
+            <div
+              className={`trainer-order-panel--status ${stylex.props(styles.orderStatus).className}`}
+            >
               {summary ? TERMINATION_LABEL[summary.terminationReason] : '本局没有成交记录'}
             </div>
           )}
@@ -363,13 +482,19 @@ export function TrainerSettlement({
                 <th className={stylex.props(styles.tradeHeader).className}>方向</th>
                 <th className={stylex.props(styles.tradeHeader).className}>入场</th>
                 <th className={stylex.props(styles.tradeHeader).className}>离场</th>
-                <th className={`r ${stylex.props(styles.tradeHeader, styles.tradeRight).className}`}>
+                <th
+                  className={`r ${stylex.props(styles.tradeHeader, styles.tradeRight).className}`}
+                >
                   计划盈亏比
                 </th>
-                <th className={`r ${stylex.props(styles.tradeHeader, styles.tradeRight).className}`}>
+                <th
+                  className={`r ${stylex.props(styles.tradeHeader, styles.tradeRight).className}`}
+                >
                   实际拿到 R
                 </th>
-                <th className={`r ${stylex.props(styles.tradeHeader, styles.tradeRight).className}`}>
+                <th
+                  className={`r ${stylex.props(styles.tradeHeader, styles.tradeRight).className}`}
+                >
                   最大浮盈回吐
                 </th>
               </tr>
@@ -429,31 +554,37 @@ export function TrainerSettlement({
                     </ul>
                   </td>
                   <td
-                    className={`r num ${stylex.props(
-                      styles.tradeCell,
-                      styles.tradeRight,
-                      rowIndex === rows.length - 1 && styles.tradeLastCell,
-                    ).className}`}
+                    className={`r num ${
+                      stylex.props(
+                        styles.tradeCell,
+                        styles.tradeRight,
+                        rowIndex === rows.length - 1 && styles.tradeLastCell,
+                      ).className
+                    }`}
                   >
                     {row.plannedRewardRisk === null
                       ? '—'
                       : `${formatRewardRisk(row.plannedRewardRisk)} : 1`}
                   </td>
                   <td
-                    className={`r num ${stylex.props(
-                      styles.tradeCell,
-                      styles.tradeRight,
-                      rowIndex === rows.length - 1 && styles.tradeLastCell,
-                    ).className}`}
+                    className={`r num ${
+                      stylex.props(
+                        styles.tradeCell,
+                        styles.tradeRight,
+                        rowIndex === rows.length - 1 && styles.tradeLastCell,
+                      ).className
+                    }`}
                   >
                     {fmt(row.netR)}
                   </td>
                   <td
-                    className={`r num ${stylex.props(
-                      styles.tradeCell,
-                      styles.tradeRight,
-                      rowIndex === rows.length - 1 && styles.tradeLastCell,
-                    ).className}`}
+                    className={`r num ${
+                      stylex.props(
+                        styles.tradeCell,
+                        styles.tradeRight,
+                        rowIndex === rows.length - 1 && styles.tradeLastCell,
+                      ).className
+                    }`}
                   >
                     {fmt(row.mfeGivebackR)}
                   </td>
@@ -470,7 +601,7 @@ export function TrainerSettlement({
             hint
           />
           {missed > 0 && (
-            <span className="trainer-settle-hint">
+            <span className={`trainer-settle-hint ${stylex.props(styles.settleHint).className}`}>
               本局提前结束，案例还剩 {missed} 根没走到，图上没有它们
             </span>
           )}
@@ -497,15 +628,22 @@ function EpilogueToggle({
   hint?: boolean;
 }) {
   return (
-    <label className="trainer-settlement-epilogue-toggle">
+    <label
+      className={`trainer-settlement-epilogue-toggle ${stylex.props(styles.epilogueToggle).className}`}
+    >
       <input
         type="checkbox"
+        className={stylex.props(styles.epilogueInput).className}
         checked={checked}
         disabled={disabled}
         onChange={(e) => onChange(e.target.checked)}
       />
       显示收盘后走势
-      {hint && <span className="trainer-settle-hint">（尾声段，不计入成绩，只用于看结构）</span>}
+      {hint && (
+        <span className={`trainer-settle-hint ${stylex.props(styles.settleHint).className}`}>
+          （尾声段，不计入成绩，只用于看结构）
+        </span>
+      )}
     </label>
   );
 }
@@ -542,7 +680,10 @@ function OpenRealChartButton({ symbol }: { symbol: string }) {
   const bridge = getPopoutBridge();
   if (!bridge) return null;
   return (
-    <button className="btn trainer-reveal-jump" onClick={() => void bridge.openPopout(symbol)}>
+    <button
+      className={`btn trainer-reveal-jump ${stylex.props(styles.revealJump).className}`}
+      onClick={() => void bridge.openPopout(symbol)}
+    >
       在行情页打开真图 →
     </button>
   );
@@ -601,41 +742,59 @@ function TrainerFigures({ track, summary }: TrackProps) {
   const perTrade = single ? track.plannedR : track.plannedR / track.tradeCount;
   return (
     <div className={`trainer-figures ${stylex.props(styles.figures).className}`}>
-      <figure className="trainer-fig">
-        <figcaption>计划盈亏比</figcaption>
-        <div className="num trainer-fig-val">
+      <figure className={`trainer-fig ${stylex.props(styles.figuresFigure).className}`}>
+        <figcaption className={stylex.props(styles.figuresCaption).className}>
+          计划盈亏比
+        </figcaption>
+        <div className={`num trainer-fig-val ${stylex.props(styles.figuresValue).className}`}>
           {formatRewardRisk(perTrade)}
-          <span className="trainer-fig-unit"> : 1</span>
+          <span className={`trainer-fig-unit ${stylex.props(styles.figuresUnit).className}`}>
+            {' '}
+            : 1
+          </span>
         </div>
-        <div className="trainer-fig-sub">
+        <div className={`trainer-fig-sub ${stylex.props(styles.figuresSub).className}`}>
           {single
             ? '按首次成交价计'
             : `${track.tradeCount} 笔平均，合计 ${formatRewardRisk(track.plannedR)}R`}
         </div>
       </figure>
-      <figure className="trainer-fig">
-        <figcaption>实际拿到</figcaption>
+      <figure className={`trainer-fig ${stylex.props(styles.figuresFigure).className}`}>
+        <figcaption className={stylex.props(styles.figuresCaption).className}>实际拿到</figcaption>
         <div
-          className={`num trainer-fig-val${track.gotR === 0 ? ' trainer-fig-val--zero' : ''}${track.gotR < 0 ? ' down' : ''}`}
+          className={`num trainer-fig-val ${
+            stylex.props(styles.figuresValue, track.gotR === 0 && styles.figuresValueZero).className
+          }${track.gotR < 0 ? ' down' : ''}`}
         >
           {fmt(track.gotR)}
-          <span className="trainer-fig-unit"> R</span>
+          <span className={`trainer-fig-unit ${stylex.props(styles.figuresUnit).className}`}>
+            {' '}
+            R
+          </span>
         </div>
-        <div className="trainer-fig-sub">
+        <div className={`trainer-fig-sub ${stylex.props(styles.figuresSub).className}`}>
           {summary
             ? `${TERMINATION_LABEL[summary.terminationReason]} · ${summary.winCount} 胜 ${summary.lossCount} 负`
             : ''}
         </div>
       </figure>
-      <figure className="trainer-fig">
-        <figcaption>最大浮盈回吐</figcaption>
+      <figure className={`trainer-fig ${stylex.props(styles.figuresFigure).className}`}>
+        <figcaption className={stylex.props(styles.figuresCaption).className}>
+          最大浮盈回吐
+        </figcaption>
         <div
-          className={`num trainer-fig-val${track.givebackR === 0 ? ' trainer-fig-val--zero' : ''}`}
+          className={`num trainer-fig-val ${
+            stylex.props(styles.figuresValue, track.givebackR === 0 && styles.figuresValueZero)
+              .className
+          }`}
         >
           {fmt(track.givebackR)}
-          <span className="trainer-fig-unit"> R</span>
+          <span className={`trainer-fig-unit ${stylex.props(styles.figuresUnit).className}`}>
+            {' '}
+            R
+          </span>
         </div>
-        <div className="trainer-fig-sub">
+        <div className={`trainer-fig-sub ${stylex.props(styles.figuresSub).className}`}>
           {track.givebackR === 0 ? '没有浮盈被还回去' : '这些是曾经浮出来又还回去的'}
         </div>
       </figure>
@@ -645,17 +804,29 @@ function TrainerFigures({ track, summary }: TrackProps) {
 
 export function TrainerBandLegend() {
   return (
-    <div className="trainer-band-legend">
+    <div className={`trainer-band-legend ${stylex.props(styles.bandLegend).className}`}>
       <span>
-        <i className="trainer-band-swatch trainer-band-swatch--given" />
+        <i
+          className={`trainer-band-swatch trainer-band-swatch--given ${
+            stylex.props(styles.bandSwatch, styles.bandGiven).className
+          }`}
+        />
         开局给的历史
       </span>
       <span>
-        <i className="trainer-band-swatch trainer-band-swatch--played" />
+        <i
+          className={`trainer-band-swatch trainer-band-swatch--played ${
+            stylex.props(styles.bandSwatch, styles.bandPlayed).className
+          }`}
+        />
         打过的段
       </span>
       <span>
-        <i className="trainer-band-swatch trainer-band-swatch--epilogue" />
+        <i
+          className={`trainer-band-swatch trainer-band-swatch--epilogue ${
+            stylex.props(styles.bandSwatch, styles.bandEpilogue).className
+          }`}
+        />
         尾声段
       </span>
     </div>
