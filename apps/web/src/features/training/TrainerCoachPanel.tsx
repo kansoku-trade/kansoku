@@ -1,8 +1,55 @@
 import { useState } from 'react';
 import type { TrainerCoachCall } from '@kansoku/pro-api';
+import * as stylex from '@stylexjs/stylex';
+import { colors, fontSizes, fonts } from '../../theme/tokens.stylex';
 import type { TrainerBridge } from '../desktop/desktopTrainerBridge';
 import { coachDisagrees, coachPlanLine, DIRECTION_LABEL } from './coachStance';
 import { TrainerOverlayPortal } from './trainerOverlay';
+
+const styles = stylex.create({
+  slot: {
+    alignItems: 'center',
+    display: 'flex',
+    flex: '0 0 auto',
+    padding: '0 12px 0 4px',
+  },
+  coach: {
+    alignItems: 'stretch',
+    borderLeft: `2px solid ${colors.accent}`,
+    cursor: 'pointer',
+    flexDirection: 'column',
+    fontFamily: fonts.ui,
+    fontSize: fontSizes.sm,
+    gap: '6px',
+    maxWidth: '320px',
+    textAlign: 'left',
+  },
+  stance: {
+    alignItems: 'center',
+    display: 'flex',
+    gap: '8px',
+  },
+  caret: {
+    color: colors.textMuted,
+    marginLeft: 'auto',
+  },
+  comment: {
+    borderTop: `1px solid ${colors.border}`,
+    color: colors.textSecondary,
+    display: 'block',
+    lineHeight: 1.6,
+    paddingTop: '6px',
+  },
+  defer: {
+    color: colors.textMuted,
+    display: 'block',
+    fontSize: fontSizes.xs,
+    marginTop: '6px',
+  },
+  split: {
+    color: colors.accent,
+  },
+});
 
 export interface TrainerCoachPanelProps {
   bridge: TrainerBridge;
@@ -54,28 +101,39 @@ export function TrainerCoachPanel({ bridge, sessionId }: TrainerCoachPanelProps)
           // paragraph over the newest candles, which is where the trader is looking.
           <button
             type="button"
-            className={`trainer-chip trainer-chip--coach${open ? ' is-open' : ''}`}
+            className={`trainer-chip trainer-chip--coach ${stylex.props(styles.coach).className}${open ? ' is-open' : ''}`}
             data-testid="trainer-coach-latest"
             aria-expanded={open}
             onClick={() => setOpen((prev) => !prev)}
           >
-            <span className="trainer-coach-stance">
+            <span className={`trainer-coach-stance ${stylex.props(styles.stance).className}`}>
               <b>AI</b>
               <span>{DIRECTION_LABEL[latest.ai.direction]}</span>
               {plan?.prices && <span className="num">{plan.prices}</span>}
-              {coachDisagrees(latest) && <span className="trainer-coach-split">与你分歧</span>}
-              <span className="trainer-coach-caret">{open ? '⌃' : '⌄'}</span>
+              {coachDisagrees(latest) && (
+                <span className={`trainer-coach-split ${stylex.props(styles.split).className}`}>
+                  与你分歧
+                </span>
+              )}
+              <span className={`trainer-coach-caret ${stylex.props(styles.caret).className}`}>
+                {open ? '⌃' : '⌄'}
+              </span>
             </span>
             {open && (
-              <span className="trainer-coach-comment" data-testid="trainer-coach-comment">
+              <span
+                className={`trainer-coach-comment ${stylex.props(styles.comment).className}`}
+                data-testid="trainer-coach-comment"
+              >
                 {latest.ai.comment}
-                <span className="trainer-coach-defer">对错与理由的评判留到收盘后</span>
+                <span className={`trainer-coach-defer ${stylex.props(styles.defer).className}`}>
+                  对错与理由的评判留到收盘后
+                </span>
               </span>
             )}
           </button>
         )}
       </TrainerOverlayPortal>
-      <div className="trainer-coach-slot">
+      <div className={`trainer-coach-slot ${stylex.props(styles.slot).className}`}>
         <button className="btn trainer-coach-ask" disabled={asking} onClick={() => void ask()}>
           {asking ? '问 AI…' : calls.length === 0 ? '问 AI' : `问 AI · ${calls.length}`}
         </button>
