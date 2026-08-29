@@ -1,10 +1,78 @@
+import * as stylex from '@stylexjs/stylex';
 import type { TrainerDirection } from '@kansoku/pro-api';
 import { fmt } from '@web/lib/format';
+import { colors, fontSizes, fonts } from '../../theme/tokens.stylex';
 import { formatRewardRisk, meetsRewardRiskFloor, rewardRiskRatio } from './orderDraft';
 import { TrainerNote } from './TrainerNote';
 import type { EntryDraftApi } from './useEntryDraft';
 
 const DIRECTION_LABEL: Record<TrainerDirection, string> = { long: '做多', short: '做空' };
+
+const styles = stylex.create({
+  lane: {
+    alignItems: 'center',
+    borderTopColor: colors.border,
+    borderTopStyle: 'solid',
+    borderTopWidth: '1px',
+    display: 'flex',
+    flex: '0 0 auto',
+    gap: '8px',
+    height: '38px',
+    overflowX: 'clip',
+    overflowY: 'visible',
+    padding: '0 12px',
+    position: 'relative',
+  },
+  group: {
+    alignItems: 'center',
+    display: 'flex',
+    flex: '0 0 auto',
+    gap: '4px',
+  },
+  separator: {
+    backgroundColor: colors.borderStrong,
+    flex: '0 0 auto',
+    height: '16px',
+    width: '1px',
+  },
+  spacer: {
+    marginLeft: 'auto',
+  },
+  label: {
+    color: colors.textSecondary,
+    flex: '0 0 auto',
+    fontSize: fontSizes.sm,
+  },
+  hint: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.sm,
+    minWidth: 0,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  hintWarn: {
+    color: colors.accent,
+  },
+  num: {
+    flex: '0 0 auto',
+    fontFamily: fonts.mono,
+    fontSize: fontSizes.sm,
+    fontVariantNumeric: 'tabular-nums',
+  },
+  numStop: {
+    color: colors.down,
+  },
+  numTarget: {
+    color: colors.up,
+  },
+  numRewardRisk: {
+    color: colors.accent,
+  },
+  numWarn: {
+    color: colors.accent,
+  },
+});
 
 function sideRule(direction: TrainerDirection, entry: number): string {
   return direction === 'long'
@@ -36,7 +104,7 @@ function entryHint(entry: EntryDraftApi): { text: string; warn: boolean } {
 // state would leave no way back to the opposite direction short of submitting.
 function DirectionButtons({ entry }: { entry: EntryDraftApi }) {
   return (
-    <div className="trainer-lane-group">
+    <div className={`trainer-lane-group ${stylex.props(styles.group).className}`}>
       <button
         className="btn btn--long"
         aria-pressed={entry.direction === 'long'}
@@ -67,12 +135,14 @@ export function TrainerEntryLane({ entry, note, onNoteChange }: TrainerEntryLane
 
   if (!draft) {
     return (
-      <div className="trainer-lane">
-        <span className="trainer-lane-label">方向</span>
+      <div className={`trainer-lane ${stylex.props(styles.lane).className}`}>
+        <span className={`trainer-lane-label ${stylex.props(styles.label).className}`}>方向</span>
         <DirectionButtons entry={entry} />
-        <div className="trainer-lane-sep" />
-        <span className="trainer-lane-label">市价直接进</span>
-        <div className="trainer-lane-group">
+        <div className={`trainer-lane-sep ${stylex.props(styles.separator).className}`} />
+        <span className={`trainer-lane-label ${stylex.props(styles.label).className}`}>
+          市价直接进
+        </span>
+        <div className={`trainer-lane-group ${stylex.props(styles.group).className}`}>
           <button className="btn btn--long" onClick={() => entry.quickEntry('long')}>
             市价做多
           </button>
@@ -80,8 +150,10 @@ export function TrainerEntryLane({ entry, note, onNoteChange }: TrainerEntryLane
             市价做空
           </button>
         </div>
-        <div className="trainer-lane-sep" />
-        <span className={`trainer-lane-hint${hint.warn ? ' trainer-lane-hint--warn' : ''}`}>
+        <div className={`trainer-lane-sep ${stylex.props(styles.separator).className}`} />
+        <span
+          className={`trainer-lane-hint${hint.warn ? ' trainer-lane-hint--warn' : ''} ${stylex.props(styles.hint, hint.warn && styles.hintWarn).className}`}
+        >
           {hint.text}
         </span>
       </div>
@@ -92,26 +164,38 @@ export function TrainerEntryLane({ entry, note, onNoteChange }: TrainerEntryLane
   const rrOk = meetsRewardRiskFloor(draft);
 
   return (
-    <div className="trainer-lane">
+    <div className={`trainer-lane ${stylex.props(styles.lane).className}`}>
       <span className={draft.direction === 'long' ? 'trainer-chip-long' : 'trainer-chip-short'}>
         {DIRECTION_LABEL[draft.direction]}
       </span>
-      <span className="trainer-lane-num">入场 {fmt(draft.entry)}</span>
-      <span className="trainer-lane-num trainer-lane-num--stop">止损 {fmt(draft.stop)}</span>
+      <span className={`trainer-lane-num ${stylex.props(styles.num).className}`}>
+        入场 {fmt(draft.entry)}
+      </span>
       <span
-        className={`trainer-lane-num trainer-lane-num--target${rrOk ? '' : ' trainer-lane-num--warn'}`}
+        className={`trainer-lane-num trainer-lane-num--stop ${stylex.props(styles.num, styles.numStop).className}`}
+      >
+        止损 {fmt(draft.stop)}
+      </span>
+      <span
+        className={`trainer-lane-num trainer-lane-num--target${rrOk ? '' : ' trainer-lane-num--warn'} ${stylex.props(styles.num, styles.numTarget, !rrOk && styles.numWarn).className}`}
       >
         目标 {fmt(draft.target1)}
       </span>
       <span
-        className={`trainer-lane-num trainer-lane-num--rr${rrOk ? '' : ' trainer-lane-num--warn'}`}
+        className={`trainer-lane-num trainer-lane-num--rr${rrOk ? '' : ' trainer-lane-num--warn'} ${stylex.props(styles.num, styles.numRewardRisk, !rrOk && styles.numWarn).className}`}
       >
         盈亏比 {rr === null ? '—' : `${formatRewardRisk(rr)} : 1`}
       </span>
-      <span className="trainer-lane-spacer" />
+      <span className={`trainer-lane-spacer ${stylex.props(styles.spacer).className}`} />
       {/* The entry buttons live on the ticket, next to the plan they commit — one place to send an
           order, not two that have to be kept in step. */}
-      {!rrOk && <span className="trainer-lane-hint trainer-lane-hint--warn">低于 1.5 下限</span>}
+      {!rrOk && (
+        <span
+          className={`trainer-lane-hint trainer-lane-hint--warn ${stylex.props(styles.hint, styles.hintWarn).className}`}
+        >
+          低于 1.5 下限
+        </span>
+      )}
       <TrainerNote label="备注" value={note} onChange={onNoteChange} hint="入场理由，可以留空" />
       <DirectionButtons entry={entry} />
     </div>
