@@ -32,6 +32,9 @@ const styles = stylex.create({
     WebkitAppRegion: 'drag',
     zIndex: 80,
   },
+  trafficSpacer: {
+    flex: '0 0 78px',
+  },
   page: {
     alignItems: 'center',
     backgroundColor: colors.backgroundCanvas,
@@ -225,7 +228,9 @@ export function Onboarding({
   return (
     <>
       <div className={stylex.props(styles.dragBar).className} aria-hidden="true">
-        <div className="desktop-titlebar-traffic-spacer" />
+        <div
+          className={`desktop-titlebar-traffic-spacer ${stylex.props(styles.trafficSpacer).className}`}
+        />
       </div>
       <div className={`page ${stylex.props(styles.page).className}`}>
         <div className={stylex.props(styles.shell).className}>
