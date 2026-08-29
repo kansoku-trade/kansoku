@@ -46,6 +46,25 @@ const styles = stylex.create({
   statsSpaced: {
     marginTop: '8px',
   },
+  overviewStats: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
+  },
+  statsLine: {
+    alignItems: 'baseline',
+    display: 'flex',
+    fontSize: fontSizes.md,
+    gap: '12px',
+  },
+  statsLineKey: {
+    color: colors.textSecondary,
+    minWidth: '88px',
+  },
+  statsLineValue: {
+    color: colors.textPrimary,
+    fontVariantNumeric: 'tabular-nums',
+  },
   ai: {
     marginTop: '8px',
   },
@@ -96,9 +115,9 @@ function BucketLine({ label, bucket }: { label: string; bucket: StatsBucket }) {
   const ranged = (bucket.held_range ?? 0) + (bucket.broke_range ?? 0);
   const resolved = bucket.hit_target + bucket.hit_stop + ranged;
   return (
-    <div className="stats-line">
-      <span className="k">{label}</span>
-      <span className="v">
+    <div {...stylex.props(styles.statsLine)}>
+      <span {...stylex.props(styles.statsLineKey)}>{label}</span>
+      <span {...stylex.props(styles.statsLineValue)}>
         {bucket.total} 次 · 命中率{' '}
         {bucket.win_rate == null ? '—' : `${(bucket.win_rate * 100).toFixed(0)}%`}
         {resolved > 0 &&
@@ -115,7 +134,7 @@ function StatsBlock({ stats }: { stats: PredictionStats | null }) {
   if (!stats) return <div className="note-block">统计加载中…</div>;
   if (stats.total === 0) return <div className="note-block">还没有可统计的预测。</div>;
   return (
-    <div className="overview-stats">
+    <div {...stylex.props(styles.overviewStats)}>
       <BucketLine label="全部预测" bucket={stats.overall} />
       <BucketLine label="做多" bucket={stats.by_direction.long} />
       <BucketLine label="做空" bucket={stats.by_direction.short} />
@@ -177,9 +196,9 @@ function AiActivity({
           ))}
         </div>
       )}
-      <div className={`stats-line ${stylex.props(styles.statsSpaced).className}`}>
-        <span className="k">{costLabel}</span>
-        <span className="v">
+      <div {...stylex.props(styles.statsLine, styles.statsSpaced)}>
+        <span {...stylex.props(styles.statsLineKey)}>{costLabel}</span>
+        <span {...stylex.props(styles.statsLineValue)}>
           {usage.runs === 0
             ? '还没有记录'
             : `$${usage.cost_total.toFixed(4)} · ${usage.runs} 次运行 · ${usage.total_tokens.toLocaleString()} tokens`}
@@ -232,7 +251,9 @@ export function RecapBoard({ date, defaultExpanded }: { date: string; defaultExp
                 预测战绩（全部历史）
               </SectionTitle>
               <StatsBlock stats={stats} />
-              <SectionTitle className={stylex.props(styles.subhead).className}>AI 活动</SectionTitle>
+              <SectionTitle className={stylex.props(styles.subhead).className}>
+                AI 活动
+              </SectionTitle>
               <AiActivity recap={recap} costLabel={costLabel} emptyLabel={emptyAlerts} />
             </>
           )}

@@ -119,10 +119,10 @@
     }
 
     /* Inline semantics. */
-    &:where(strong, b) {
+    &:where(b) {
       font-weight: 600;
     }
-    &:where(:is(h1, h2, h3, h4) :is(strong, b)) {
+    &:where(:is(h1, h2, h3, h4) b) {
       font-weight: 600;
     }
     &:where(del, s) {
@@ -349,13 +349,6 @@
     &:where(th:first-child, td:first-child) {
       padding-inline-start: 0;
     }
-    &:where(th[align='center'], td[align='center']) {
-      text-align: center;
-    }
-    &:where(th[align='right'], td[align='right']) {
-      text-align: end;
-    }
-
     /* Blocks inside list items keep the list's tighter rhythm. */
     &:where(li > blockquote) {
       margin-block-start: 0.5em;
