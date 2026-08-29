@@ -8,11 +8,17 @@ import { IntradaySidebar } from './IntradaySidebar';
 import { useIntradayControls } from './controlsContext';
 import { TimeframeSettingsMenu } from './TimeframeSettingsMenu';
 import { isViewPeriod, tfLabel, tfShortLabel, type ChartTf } from './timeframes';
-import { colors, fontSizes, radii } from '../../../theme/tokens.stylex';
+import { colors, fontSizes, radii, sizes } from '../../../theme/tokens.stylex';
 
 export const TF_LABELS: Record<TimeframeKey, string> = { m5: '5分钟', m15: '15分钟', h1: '1小时' };
 
 const styles = stylex.create({
+  layout: {
+    display: 'grid',
+    gridTemplateColumns: `1fr ${sizes.sidebarWidth}`,
+    height: '100%',
+    position: 'relative',
+  },
   timeframeSwitch: {
     display: 'inline-flex',
     gap: '2px',
@@ -114,7 +120,7 @@ export function IntradayDashboard({
 }: IntradayDashboardProps) {
   const sidebarTf = isViewPeriod(activeTf) ? built.defaultTf : activeTf;
   return (
-    <div className="layout">
+    <div className={`layout ${stylex.props(styles.layout).className}`}>
       <IntradayChartOnly
         symbol={symbol}
         built={built}
