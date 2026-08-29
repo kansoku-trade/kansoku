@@ -5,61 +5,61 @@
       "source": "himself65/finance-skills",
       "sourceType": "github",
       "skillPath": "plugins/market-analysis/skills/company-valuation/SKILL.md",
-      "computedHash": "6304beb019c1fc63e002d06d97df35e95f972c6b4fe9ad5289ec53ffab9e0c7a"
+      "computedHash": "cce639994ee2fb9b19d075a4409332ecc80dc38cd153c750ffa15c3e3a1564ab"
     },
     "earnings-preview": {
       "source": "himself65/finance-skills",
       "sourceType": "github",
       "skillPath": "plugins/market-analysis/skills/earnings-preview/SKILL.md",
-      "computedHash": "a223be567e9a70235b57d5d6464a1b42ff14729b8a002534ac00436164959725"
+      "computedHash": "db08b814e691508b0af73707addf7ffa4f8a8dbf822e0d056902599bb4ca0add"
     },
     "earnings-recap": {
       "source": "himself65/finance-skills",
       "sourceType": "github",
       "skillPath": "plugins/market-analysis/skills/earnings-recap/SKILL.md",
-      "computedHash": "c5817b4ae81c35ec7d489228e580d3c446f896cc86a24c5b0d420e065ed10090"
+      "computedHash": "c63cc23639eedb910c85d40c3fab93cde9365a13f2c1870092d63065abeefe44"
     },
     "estimate-analysis": {
       "source": "himself65/finance-skills",
       "sourceType": "github",
       "skillPath": "plugins/market-analysis/skills/estimate-analysis/SKILL.md",
-      "computedHash": "91e8bbd93d5531e126f2114c0070917876e2a77ecc6b1b01819ffcc27ee3af63"
+      "computedHash": "4e94274097e7aa9d6f236c8bfb124457d654ce2767276b00913d317ff940df45"
     },
     "etf-premium": {
       "source": "himself65/finance-skills",
       "sourceType": "github",
       "skillPath": "plugins/market-analysis/skills/etf-premium/SKILL.md",
-      "computedHash": "3bc1cb17a2d5a30f2bcdbfa28317295f476e041cb35802570243eff1aa416614"
+      "computedHash": "95904b6b794ad09523263a15a1067b6275c29cf3de3bbefa8d54fb34348075c6"
     },
     "generative-ui": {
       "source": "himself65/finance-skills",
       "sourceType": "github",
       "skillPath": "plugins/ui-tools/skills/generative-ui/SKILL.md",
-      "computedHash": "ad9f102ab4a7edf1a70357f549d9c8bc8c7aad18432b52ce88a0d5042cad2baa"
+      "computedHash": "8b3b4e2f41311194be068fbf64afe42b3324933548a693752514b3c68a6d742b"
     },
     "hormuz-strait": {
       "source": "himself65/finance-skills",
       "sourceType": "github",
       "skillPath": "plugins/data-providers/skills/hormuz-strait/SKILL.md",
-      "computedHash": "eec6dd62755534934ae270a97443b191ac227d7b4dfbe953d01e209ac12f02bf"
+      "computedHash": "7bcd25d83a777b2fd85201b90765b0d241010024a3e73c32c4e8f368d13ca1f0"
     },
     "options-payoff": {
       "source": "himself65/finance-skills",
       "sourceType": "github",
       "skillPath": "plugins/market-analysis/skills/options-payoff/SKILL.md",
-      "computedHash": "e166513d1468ef93c701493c5b9bf397b1dbe2b39733aefb39ee9ebea8e1aea3"
+      "computedHash": "8f3ad9e6883bd987ac168810979daf137a17d70a0e1fbe520129356cc9dc03ce"
     },
     "saas-valuation-compression": {
       "source": "himself65/finance-skills",
       "sourceType": "github",
       "skillPath": "plugins/market-analysis/skills/saas-valuation-compression/SKILL.md",
-      "computedHash": "c0489554e2d9d919f80786cd839f949065c191d34de34c5a37eb521259261431"
+      "computedHash": "f08653b500613515c6fbce0eb7203d3a8589063ea0a7a000f498c8338b6ee940"
     },
     "sepa-strategy": {
       "source": "himself65/finance-skills",
       "sourceType": "github",
       "skillPath": "plugins/market-analysis/skills/sepa-strategy/SKILL.md",
-      "computedHash": "494452880043f2cc9dba7a9f1cd6c77d9c08b2ce198c9f69603b356b171273f7"
+      "computedHash": "e762a99d47434b5756ddcfd7d2ac80e0c8b22aad2f8372cc7357ca306716cf40"
     },
     "serenity-skill": {
       "source": "muxuuu/serenity-skill",
@@ -71,43 +71,43 @@
       "source": "himself65/finance-skills",
       "sourceType": "github",
       "skillPath": "plugins/skill-creator/skills/skill-creator/SKILL.md",
-      "computedHash": "567dca94d02cb739cbc62ad36e7013ebf694f384d1ad55393d2d75f5f8876116"
+      "computedHash": "00b4937b189874b9edff1102cdfa2559cd3cb9bfe2e2b50aa1953227853b1f93"
     },
     "startup-analysis": {
       "source": "himself65/finance-skills",
       "sourceType": "github",
       "skillPath": "plugins/startup-tools/skills/startup-analysis/SKILL.md",
-      "computedHash": "1755081b7216cfa7646f7b31158bb43d51e248d9554d1ebd9876aee2fde03446"
+      "computedHash": "2afa2f63faad07865f69f475b70cd7e14a506b2b4c21515e045a44951d6ab9a6"
     },
     "stock-correlation": {
       "source": "himself65/finance-skills",
       "sourceType": "github",
       "skillPath": "plugins/market-analysis/skills/stock-correlation/SKILL.md",
-      "computedHash": "dc0857647afe49cce783e3bef6a1ec593cc7ea9acc7505ff52970059bffa2b9e"
+      "computedHash": "cc94b8c18271fc4ff156e942d13e68d65131649e35a6ac6c80272502a3917b0a"
     },
     "stock-liquidity": {
       "source": "himself65/finance-skills",
       "sourceType": "github",
       "skillPath": "plugins/market-analysis/skills/stock-liquidity/SKILL.md",
-      "computedHash": "5ec869db71f7d79d8a76bbc4d6fa1fb712671fc6aea49c682ed52a012494140c"
+      "computedHash": "1fcce8320542b617e096efc7de00b0b2798fa062ef731ab150fc7e360bdd2859"
     },
     "twitter-reader": {
       "source": "himself65/finance-skills",
       "sourceType": "github",
       "skillPath": "plugins/social-readers/skills/twitter-reader/SKILL.md",
-      "computedHash": "f11fec2ad7b08c63231b6d95d53e726b00c2667bf39157fd7d8e6196df5031a8"
+      "computedHash": "532385a4fdba7c28b466c0b000aa800eb82fa5934066b2ce4d0b0c1692f6f505"
     },
     "yc-reader": {
       "source": "himself65/finance-skills",
       "sourceType": "github",
       "skillPath": "plugins/social-readers/skills/yc-reader/SKILL.md",
-      "computedHash": "9276bfb806529ae5a99a8acd79703a72fc67e807b84ee26756ad7c33359d87e8"
+      "computedHash": "0bcc608a859b94cb9dab1dac0c8eb0e52bf71dd2f88cfd6ba84aa36a3600a550"
     },
     "yfinance-data": {
       "source": "himself65/finance-skills",
       "sourceType": "github",
       "skillPath": "plugins/market-analysis/skills/yfinance-data/SKILL.md",
-      "computedHash": "63f3c8c26d63c2e30d96c58230c940c2024f9d754b0d369d9fdeec5208079193"
+      "computedHash": "68041a9056494f4b857779669484f618abb442b5af33a95ea95ac6ba6fdc945f"
     }
   }
 }
