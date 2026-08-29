@@ -1,4 +1,38 @@
 import { useEffect, useState } from 'react';
+import * as stylex from '@stylexjs/stylex';
+import { colors, fontSizes, fonts, radii } from '../../theme/tokens.stylex';
+
+const styles = stylex.create({
+  root: {
+    backgroundColor: colors.backgroundElement,
+    borderBottomStyle: 'none',
+    borderBottomWidth: 0,
+    borderColor: colors.border,
+    borderLeftStyle: 'none',
+    borderLeftWidth: 0,
+    borderStyle: 'solid',
+    borderTopRightRadius: radii.default,
+    borderWidth: '1px',
+    bottom: 0,
+    color: colors.textMuted,
+    fontFamily: fonts.mono,
+    fontSize: fontSizes.sm,
+    left: 0,
+    maxWidth: '60vw',
+    opacity: 0,
+    overflow: 'hidden',
+    padding: '3px 10px',
+    pointerEvents: 'none',
+    position: 'fixed',
+    textOverflow: 'ellipsis',
+    transition: 'opacity 120ms ease',
+    whiteSpace: 'nowrap',
+    zIndex: 90,
+  },
+  visible: {
+    opacity: 1,
+  },
+});
 
 export function externalLinkHref(href: string | null): string | null {
   if (!href || !/^https?:\/\//i.test(href)) return null;
@@ -36,7 +70,10 @@ export function LinkHoverStatus() {
   }, []);
 
   return (
-    <div className={`link-hover-status${visible ? ' link-hover-status--visible' : ''}`} aria-hidden>
+    <div
+      className={`${visible ? 'link-hover-status--visible ' : ''}${stylex.props(styles.root, visible && styles.visible).className}`}
+      aria-hidden
+    >
       {truncateUrl(url)}
     </div>
   );
