@@ -25,6 +25,9 @@ const styles = stylex.create({
   dockComposer: {
     padding: '6px 6px 6px 12px',
   },
+  fullComposer: {
+    padding: '10px max(12px, calc((100% - 68ch) / 2))',
+  },
   field: {
     flex: '1 1 auto',
     minWidth: 0,
@@ -99,6 +102,7 @@ interface ChatComposerProps {
   busy: boolean;
   aborting: boolean;
   dock?: boolean;
+  full?: boolean;
   disabled?: boolean;
   allowInputWhileBusy?: boolean;
   multiline?: boolean;
@@ -124,6 +128,7 @@ export function ChatComposer({
   busy,
   aborting,
   dock = false,
+  full = false,
   disabled,
   allowInputWhileBusy = false,
   multiline = false,
@@ -164,7 +169,7 @@ export function ChatComposer({
   return (
     <>
       <div
-        className={`chat-composer ${stylex.props(styles.composer, !layoutClassName && styles.composerDefaults, dock && styles.dockComposer).className}${className ? ` ${className}` : ''}${layoutClassName ? ` ${layoutClassName}` : ''}`}
+        className={`chat-composer ${stylex.props(styles.composer, !layoutClassName && styles.composerDefaults, dock && styles.dockComposer, full && styles.fullComposer).className}${className ? ` ${className}` : ''}${layoutClassName ? ` ${layoutClassName}` : ''}`}
       >
         {multiline ? (
           <textarea

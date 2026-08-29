@@ -15,6 +15,8 @@ interface ChatPanelProps {
   liveTools: ChatLiveTool[];
   suggestions: string[];
   mode: ChatMode;
+  full?: boolean;
+  canvasOpen?: boolean;
   onDragStart?: (e: React.PointerEvent) => void;
   onModeChange: (mode: ChatMode) => void;
   onPickSuggestion: (question: string) => void;
@@ -38,6 +40,13 @@ const styles = stylex.create({
     flex: '0 0 auto',
     gap: '8px',
     padding: '8px 12px',
+  },
+  fullHead: {
+    padding: '10px max(12px, calc((100% - 68ch) / 2))',
+  },
+  canvasOpenHead: {
+    paddingLeft: '16px',
+    paddingRight: '16px',
   },
   draggable: {
     'cursor': 'grab',
@@ -106,6 +115,8 @@ export function ChatPanel({
   liveTools,
   suggestions,
   mode,
+  full = false,
+  canvasOpen = false,
   onDragStart,
   onModeChange,
   onPickSuggestion,
@@ -115,7 +126,7 @@ export function ChatPanel({
   return (
     <div className={`chat-panel ${stylex.props(styles.panel).className}`}>
       <div
-        className={`chat-panel-head${onDragStart ? ' draggable' : ''} ${stylex.props(styles.head, onDragStart && styles.draggable).className}`}
+        className={`chat-panel-head${onDragStart ? ' draggable' : ''} ${stylex.props(styles.head, full && styles.fullHead, canvasOpen && styles.canvasOpenHead, onDragStart && styles.draggable).className}`}
         onPointerDown={onDragStart}
       >
         <span className={`chat-panel-title ${stylex.props(styles.title).className}`}>
@@ -145,7 +156,9 @@ export function ChatPanel({
       <ConversationTranscript
         className={`chat-panel-body ${stylex.props(styles.body).className}`}
         viewportClassName={stylex.props(styles.bodyViewport).className}
-        contentClassName={stylex.props(styles.bodyContent).className}
+        contentClassName={!full ? stylex.props(styles.bodyContent).className : undefined}
+        full={full}
+        canvasOpen={canvasOpen}
         rows={rows}
         busy={busy}
         streamText={streamText}

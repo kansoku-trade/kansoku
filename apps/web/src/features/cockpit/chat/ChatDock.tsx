@@ -152,6 +152,7 @@ export function ChatDock({ chartId, docCreatedAt }: ChatDockProps) {
       onSubmit={(value) => void submit(value)}
       onAbort={() => void abort()}
       hint={hint}
+      full={mode === 'full'}
       inputProps={{
         autoFocus: mode !== 'dock',
         onFocus: () => setMode((prev) => (prev === 'dock' ? 'float' : prev)),
@@ -204,6 +205,8 @@ export function ChatDock({ chartId, docCreatedAt }: ChatDockProps) {
           liveTools={liveTools}
           suggestions={suggestions}
           mode={mode}
+          full={mode === 'full'}
+          canvasOpen={mode === 'full' && Boolean(canvas.openSlug)}
           onDragStart={mode === 'float' ? onDragStart : undefined}
           onModeChange={setMode}
           onPickSuggestion={(question) => void submit(question)}

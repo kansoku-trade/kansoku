@@ -25,6 +25,14 @@ const styles = stylex.create({
     display: 'flex',
     flexDirection: 'column',
   },
+  fullContext: {
+    padding: '16px max(12px, calc((100% - 68ch) / 2))',
+    gap: '12px',
+  },
+  canvasOpenContext: {
+    paddingLeft: '16px',
+    paddingRight: '16px',
+  },
   row: {
     display: 'flex',
   },
@@ -530,6 +538,8 @@ function ConversationTranscriptView({
   className,
   viewportClassName,
   contentClassName,
+  full = false,
+  canvasOpen = false,
   emptyClassName,
   emptyTextClassName,
   insertClassName,
@@ -548,6 +558,8 @@ function ConversationTranscriptView({
   className?: string;
   viewportClassName?: string;
   contentClassName?: string;
+  full?: boolean;
+  canvasOpen?: boolean;
   emptyClassName?: string;
   emptyTextClassName?: string;
   insertClassName?: string;
@@ -574,7 +586,7 @@ function ConversationTranscriptView({
     <ScrollArea
       className={className}
       viewportClassName={`chat-transcript-viewport ${stylex.props(styles.transcriptViewport).className}${viewportClassName ? ` ${viewportClassName}` : ''}`}
-      contentClassName={`chat-panel-body-content ${stylex.props(styles.panelBodyContent).className}${contentClassName ? ` ${contentClassName}` : ''}`}
+      contentClassName={`chat-panel-body-content ${stylex.props(styles.panelBodyContent, full && styles.fullContext, canvasOpen && styles.canvasOpenContext).className}${contentClassName ? ` ${contentClassName}` : ''}`}
       viewportRef={bodyRef}
       onScroll={() => {
         const element = bodyRef.current;
