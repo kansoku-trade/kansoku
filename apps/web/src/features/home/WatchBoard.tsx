@@ -70,6 +70,9 @@ const styles = stylex.create({
   symbolCardCommentAlert: {
     color: colors.down,
   },
+  unreadBadge: {
+    marginLeft: '4px',
+  },
 });
 
 function pctCell(value: number | null): string {
@@ -101,7 +104,10 @@ function SymbolCard({ row }: { row: OverviewRow }) {
         <FollowToggle symbol={row.symbol} initialFollowing={row.ai_following} />
         {row.prediction_stale && <Dot tone="accent" title="预测已过期" />}
         {row.alert_count > 0 && (
-          <Badge tone="down" className="unread-badge">
+          <Badge
+            tone="down"
+            className={`unread-badge ${stylex.props(styles.unreadBadge).className}`}
+          >
             {row.alert_count}
           </Badge>
         )}
