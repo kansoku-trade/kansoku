@@ -148,8 +148,10 @@ const styles = stylex.create({
   },
   alertBadge: {
     'alignItems': 'center',
-    'background': 'color-mix(in srgb, currentColor 10%, transparent)',
-    'border': '1px solid color-mix(in srgb, currentColor 20%, transparent)',
+    'backgroundColor': 'color-mix(in srgb, currentColor 10%, transparent)',
+    'borderColor': 'color-mix(in srgb, currentColor 20%, transparent)',
+    'borderStyle': 'solid',
+    'borderWidth': '1px',
     'boxSizing': 'border-box',
     'cursor': 'pointer',
     'display': 'inline-flex',
@@ -163,7 +165,7 @@ const styles = stylex.create({
     'transition': 'background 0.12s ease, border-color 0.12s ease',
     'whiteSpace': 'nowrap',
     ':hover': {
-      background: 'color-mix(in srgb, currentColor 16%, transparent)',
+      backgroundColor: 'color-mix(in srgb, currentColor 16%, transparent)',
       borderColor: 'color-mix(in srgb, currentColor 32%, transparent)',
     },
   },
