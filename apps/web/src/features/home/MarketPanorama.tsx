@@ -235,30 +235,51 @@ const styles = stylex.create({
   tileHeat0: {
     backgroundColor: colors.backgroundElement,
     color: colors.textSecondary,
+    ':hover': {
+      color: colors.textSecondary,
+    },
   },
   tileHeatG1: {
     backgroundColor: '#14532d',
     color: '#a7e3c0',
+    ':hover': {
+      color: '#a7e3c0',
+    },
   },
   tileHeatG2: {
     backgroundColor: '#15803d',
     color: '#d9f5e4',
+    ':hover': {
+      color: '#d9f5e4',
+    },
   },
   tileHeatG3: {
     backgroundColor: '#16a34a',
     color: '#eafff2',
+    ':hover': {
+      color: '#eafff2',
+    },
   },
   tileHeatR1: {
     backgroundColor: '#58151c',
     color: '#f0b1b1',
+    ':hover': {
+      color: '#f0b1b1',
+    },
   },
   tileHeatR2: {
     backgroundColor: '#b91c1c',
     color: '#ffdada',
+    ':hover': {
+      color: '#ffdada',
+    },
   },
   tileHeatR3: {
     backgroundColor: '#dc2626',
     color: '#ffecec',
+    ':hover': {
+      color: '#ffecec',
+    },
   },
   sym: {
     fontSize: fontSizes.sm,
@@ -309,6 +330,9 @@ const styles = stylex.create({
   chipLink: {
     color: colors.textSecondary,
     textDecoration: 'none',
+    ':hover': {
+      color: colors.accent,
+    },
   },
   chipLabel: {
     fontWeight: 600,
