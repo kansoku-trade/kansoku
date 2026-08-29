@@ -1,8 +1,24 @@
+import * as stylex from '@stylexjs/stylex';
 import type { ResearchDocument, ResearchDocumentMeta } from '@kansoku/core/contract/index';
 import { useFeature } from '@web/features/edition/useFeature';
 import { useProComposition } from '@web/features/edition/useProComposition';
 import { LockedAiNotice } from '../cockpit/LockedAiNotice';
 import { RelatedMaterialsCard } from './RelatedMaterialsCard';
+
+const styles = stylex.create({
+  root: {
+    display: 'flex',
+    flex: '1 1 auto',
+    flexDirection: 'column',
+    minHeight: 0,
+  },
+  locked: {
+    justifyContent: 'flex-start',
+  },
+  lockedNotice: {
+    margin: '24px 12px',
+  },
+});
 
 export interface ResearchAssistantProps {
   document: ResearchDocument;
@@ -24,7 +40,7 @@ export function ResearchAssistant({
 
   if (state === 'absent') {
     return (
-      <div className="research-assistant research-assistant--locked">
+      <div {...stylex.props(styles.root, styles.locked)}>
         <RelatedMaterialsCard selected={selected} related={related} onSelect={onSelect} />
       </div>
     );
@@ -32,9 +48,12 @@ export function ResearchAssistant({
 
   if (state === 'locked') {
     return (
-      <div className="research-assistant research-assistant--locked">
+      <div {...stylex.props(styles.root, styles.locked)}>
         <RelatedMaterialsCard selected={selected} related={related} onSelect={onSelect} />
-        <LockedAiNotice message="研究库 AI（刷新文档 / 编辑审阅 / 研究对话）需要有效授权" />
+        <LockedAiNotice
+          className={stylex.props(styles.lockedNotice).className}
+          message="研究库 AI（刷新文档 / 编辑审阅 / 研究对话）需要有效授权"
+        />
       </div>
     );
   }
@@ -42,7 +61,7 @@ export function ResearchAssistant({
   const Panel = composition?.researchAssistantPanel;
   if (status === 'loading' || !Panel) {
     return (
-      <div className="research-assistant research-assistant--locked">
+      <div {...stylex.props(styles.root, styles.locked)}>
         <RelatedMaterialsCard selected={selected} related={related} onSelect={onSelect} />
       </div>
     );
