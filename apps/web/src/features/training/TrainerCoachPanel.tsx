@@ -128,7 +128,7 @@ export function TrainerCoachPanel({ bridge, sessionId }: TrainerCoachPanelProps)
           // paragraph over the newest candles, which is where the trader is looking.
           <button
             type="button"
-            className={`trainer-chip trainer-chip--coach ${stylex.props(styles.coach).className}${open ? ' is-open' : ''}`}
+            className={`trainer-chip trainer-chip--coach ${stylex.props(styles.chip, styles.coach).className}${open ? ' is-open' : ''}`}
             data-testid="trainer-coach-latest"
             aria-expanded={open}
             onClick={() => setOpen((prev) => !prev)}
