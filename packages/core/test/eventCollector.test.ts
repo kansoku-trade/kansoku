@@ -224,15 +224,17 @@ describe('event collector singleton', () => {
     const baseline = countTimeouts();
 
     await startEventCollector({ adapters: [stub()], db: db(), env: {} });
-    expect(countTimeouts()).toBe(baseline);
+    // Other keep-alive timeouts in the worker can fire while we wait. The
+    // collector must not add any; it is allowed for the count to drop.
+    expect(countTimeouts()).toBeLessThanOrEqual(baseline);
 
     // Let the first cycle run and schedule the next one: the reschedule is a fresh
     // timer, and it has to be unref-ed too.
     await new Promise((resolve) => setTimeout(resolve, 20));
-    expect(countTimeouts()).toBe(baseline);
+    expect(countTimeouts()).toBeLessThanOrEqual(baseline);
 
     await stopEventCollector();
-    expect(countTimeouts()).toBe(baseline);
+    expect(countTimeouts()).toBeLessThanOrEqual(baseline);
   });
 
   it('writes down a source that cannot start instead of failing the whole collector', async () => {
