@@ -461,7 +461,7 @@ function TopStripBone() {
       </div>
       <div
         className={classNames(
-          'market-temp app-skeleton-market-temp',
+          'app-skeleton-market-temp',
           styles.marketTemp,
           styles.temp,
         )}
