@@ -1,7 +1,7 @@
 import type { OverviewBoard, OverviewRow } from '@kansoku/shared/types';
 import * as stylex from '@stylexjs/stylex';
 import { fmt, signed } from '@web/lib/format';
-import { Badge, Card, Dot, Empty, ErrorBox, MarketTime, Num } from '@web/ui';
+import { Badge, Card, Dot, Empty, ErrorBox, MarketTime, NoteBlock, Num } from '@web/ui';
 import { directionTone } from '@web/features/charts/intraday/directionLabels';
 import { colors, fontSizes } from '../../theme/tokens.stylex';
 import { FollowToggle, ReassessButton } from './SymbolActions';
@@ -145,7 +145,7 @@ export function WatchBoard({
   compact: boolean;
 }) {
   if (error) return <ErrorBox>{error}</ErrorBox>;
-  if (!board) return <div className="note-block">看盘数据加载中…</div>;
+  if (!board) return <NoteBlock>看盘数据加载中…</NoteBlock>;
   if (board.rows.length === 0) {
     return <Empty>今天还没有 intraday 分析——去 cockpit 或跑一次 intraday-signal</Empty>;
   }

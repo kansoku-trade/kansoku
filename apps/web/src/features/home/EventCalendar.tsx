@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import * as stylex from '@stylexjs/stylex';
 import type { HomeEventItem, HomeEvents } from '@kansoku/shared/types';
-import { MarketTime } from '@web/ui';
+import { MarketTime, NoteBlock } from '@web/ui';
 import { colors, fontSizes, fonts, radii } from '../../theme/tokens.stylex';
 
 const styles = stylex.create({
@@ -495,8 +495,8 @@ export function EventCalendar({ events, error, after }: EventCalendarProps) {
       ? '未来 7 天 · 含今日已发生'
       : '未来 7 天';
 
-  if (error) return <div className="note-block">事件日历获取失败，正在重试</div>;
-  if (!events) return <div className="note-block">事件日历加载中…</div>;
+  if (error) return <NoteBlock>事件日历获取失败，正在重试</NoteBlock>;
+  if (!events) return <NoteBlock>事件日历加载中…</NoteBlock>;
 
   const goto = (delta: number) => setView((v) => shiftMonth(v.year, v.month, delta));
   const resetToday = () => {

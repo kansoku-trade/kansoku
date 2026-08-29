@@ -6,7 +6,7 @@ import { signed } from '@web/lib/format';
 import { symbolAnalysisPath } from '@kansoku/shared/chartUrl';
 import { marketDate } from '@kansoku/shared/time';
 import { client } from '@web/lib/client';
-import { Badge, Card, ErrorBox, MarketTime, Num, SectionTitle } from '@web/ui';
+import { Badge, Card, ErrorBox, MarketTime, NoteBlock, Num, SectionTitle } from '@web/ui';
 import { useIntervalFetch } from '../cockpit/useIntervalFetch';
 import { colors, fontSizes } from '../../theme/tokens.stylex';
 
@@ -131,8 +131,8 @@ function BucketLine({ label, bucket }: { label: string; bucket: StatsBucket }) {
 }
 
 function StatsBlock({ stats }: { stats: PredictionStats | null }) {
-  if (!stats) return <div className="note-block">统计加载中…</div>;
-  if (stats.total === 0) return <div className="note-block">还没有可统计的预测。</div>;
+  if (!stats) return <NoteBlock>统计加载中…</NoteBlock>;
+  if (stats.total === 0) return <NoteBlock>还没有可统计的预测。</NoteBlock>;
   return (
     <div {...stylex.props(styles.overviewStats)}>
       <BucketLine label="全部预测" bucket={stats.overall} />
@@ -146,7 +146,7 @@ function StatsBlock({ stats }: { stats: PredictionStats | null }) {
 }
 
 function SettlementTable({ recap, emptyLabel }: { recap: OverviewRecap; emptyLabel: string }) {
-  if (recap.settlements.length === 0) return <div className="note-block">{emptyLabel}</div>;
+  if (recap.settlements.length === 0) return <NoteBlock>{emptyLabel}</NoteBlock>;
   return (
     <div {...stylex.props(styles.settlements)}>
       {recap.settlements.map((s) => (
@@ -184,7 +184,7 @@ function AiActivity({
   const usage = recap.usage;
   return (
     <div {...stylex.props(styles.ai)}>
-      {recap.alerts.length === 0 && <div className="note-block">{emptyLabel}</div>}
+      {recap.alerts.length === 0 && <NoteBlock>{emptyLabel}</NoteBlock>}
       {recap.alerts.length > 0 && (
         <div {...stylex.props(styles.alerts)}>
           {recap.alerts.map((a, i) => (
@@ -243,7 +243,7 @@ export function RecapBoard({ date, defaultExpanded }: { date: string; defaultExp
       {expanded && (
         <>
           {error && <ErrorBox>{error}</ErrorBox>}
-          {!recap && !error && <div className="note-block">复盘加载中…</div>}
+          {!recap && !error && <NoteBlock>复盘加载中…</NoteBlock>}
           {recap && (
             <>
               <SettlementTable recap={recap} emptyLabel={emptySettlements} />
