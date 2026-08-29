@@ -54,6 +54,26 @@ const styles = stylex.create({
   hintWarn: {
     color: colors.accent,
   },
+  chipLong: {
+    color: colors.up,
+    fontWeight: 600,
+  },
+  chipShort: {
+    color: colors.down,
+    fontWeight: 600,
+  },
+  directionLong: {
+    borderColor: colors.up,
+    color: colors.up,
+  },
+  directionShort: {
+    borderColor: colors.down,
+    color: colors.down,
+  },
+  directionPressed: {
+    borderColor: colors.accent,
+    color: colors.accent,
+  },
   num: {
     flex: '0 0 auto',
     fontFamily: fonts.mono,
@@ -106,14 +126,14 @@ function DirectionButtons({ entry }: { entry: EntryDraftApi }) {
   return (
     <div className={`trainer-lane-group ${stylex.props(styles.group).className}`}>
       <button
-        className="btn btn--long"
+        className={`btn btn--long ${stylex.props(styles.directionLong, entry.direction === 'long' && styles.directionPressed).className}`}
         aria-pressed={entry.direction === 'long'}
         onClick={() => entry.pickDirection('long')}
       >
         做多
       </button>
       <button
-        className="btn btn--short"
+        className={`btn btn--short ${stylex.props(styles.directionShort, entry.direction === 'short' && styles.directionPressed).className}`}
         aria-pressed={entry.direction === 'short'}
         onClick={() => entry.pickDirection('short')}
       >
@@ -143,10 +163,16 @@ export function TrainerEntryLane({ entry, note, onNoteChange }: TrainerEntryLane
           市价直接进
         </span>
         <div className={`trainer-lane-group ${stylex.props(styles.group).className}`}>
-          <button className="btn btn--long" onClick={() => entry.quickEntry('long')}>
+          <button
+            className={`btn btn--long ${stylex.props(styles.directionLong).className}`}
+            onClick={() => entry.quickEntry('long')}
+          >
             市价做多
           </button>
-          <button className="btn btn--short" onClick={() => entry.quickEntry('short')}>
+          <button
+            className={`btn btn--short ${stylex.props(styles.directionShort).className}`}
+            onClick={() => entry.quickEntry('short')}
+          >
             市价做空
           </button>
         </div>
@@ -165,7 +191,9 @@ export function TrainerEntryLane({ entry, note, onNoteChange }: TrainerEntryLane
 
   return (
     <div className={`trainer-lane ${stylex.props(styles.lane).className}`}>
-      <span className={draft.direction === 'long' ? 'trainer-chip-long' : 'trainer-chip-short'}>
+      <span
+        className={`${draft.direction === 'long' ? 'trainer-chip-long' : 'trainer-chip-short'} ${stylex.props(draft.direction === 'long' ? styles.chipLong : styles.chipShort).className}`}
+      >
         {DIRECTION_LABEL[draft.direction]}
       </span>
       <span className={`trainer-lane-num ${stylex.props(styles.num).className}`}>
