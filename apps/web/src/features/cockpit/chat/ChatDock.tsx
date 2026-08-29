@@ -147,6 +147,7 @@ export function ChatDock({ chartId, docCreatedAt }: ChatDockProps) {
       onChange={setText}
       busy={busy}
       aborting={aborting}
+      dock={mode === 'dock'}
       placeholder="就这份分析继续追问…"
       onSubmit={(value) => void submit(value)}
       onAbort={() => void abort()}

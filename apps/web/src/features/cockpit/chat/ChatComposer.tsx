@@ -10,7 +10,7 @@ import type {
   Ref,
 } from 'react';
 import { Button, Input } from '@web/ui';
-import { colors, fontSizes, sizes } from '../../../theme/tokens.stylex';
+import { colors, fontSizes, radii, sizes } from '../../../theme/tokens.stylex';
 
 const styles = stylex.create({
   composer: {
@@ -20,9 +20,31 @@ const styles = stylex.create({
     gap: '8px',
     padding: '8px 12px',
   },
+  dockComposer: {
+    padding: '6px 6px 6px 12px',
+  },
   field: {
     flex: '1 1 auto',
     minWidth: 0,
+  },
+  dockField: {
+    backgroundColor: 'transparent',
+    borderStyle: 'none',
+    borderWidth: 0,
+    ':enabled': {
+      backgroundColor: 'transparent',
+      borderStyle: 'none',
+      borderWidth: 0,
+    },
+    ':disabled': {
+      backgroundColor: 'transparent',
+      borderStyle: 'none',
+      borderWidth: 0,
+    },
+    ':focus-visible': {
+      borderColor: 'transparent',
+      boxShadow: 'none',
+    },
   },
   action: {
     'alignItems': 'center',
@@ -41,6 +63,9 @@ const styles = stylex.create({
     '@media (prefers-reduced-motion: reduce)': {
       transitionDuration: '0.01ms',
     },
+  },
+  dockAction: {
+    borderRadius: radii.full,
   },
   actionIcon: {
     alignItems: 'center',
@@ -71,6 +96,7 @@ interface ChatComposerProps {
   onChange: (value: string) => void;
   busy: boolean;
   aborting: boolean;
+  dock?: boolean;
   disabled?: boolean;
   allowInputWhileBusy?: boolean;
   multiline?: boolean;
@@ -89,6 +115,7 @@ export function ChatComposer({
   onChange,
   busy,
   aborting,
+  dock = false,
   disabled,
   allowInputWhileBusy = false,
   multiline = false,
@@ -122,11 +149,13 @@ export function ChatComposer({
 
   return (
     <>
-      <div className={`chat-composer ${stylex.props(styles.composer).className}`}>
+      <div
+        className={`chat-composer ${stylex.props(styles.composer, dock && styles.dockComposer).className}`}
+      >
         {multiline ? (
           <textarea
             ref={textareaRef}
-            className={`input chat-composer-field chat-composer-field--multiline ${stylex.props(styles.field).className}`}
+            className={`input chat-composer-field chat-composer-field--multiline ${stylex.props(styles.field, dock && styles.dockField).className}`}
             rows={1}
             aria-label={placeholder}
             autoComplete="off"
@@ -143,7 +172,7 @@ export function ChatComposer({
           />
         ) : (
           <Input
-            className={`chat-composer-field ${stylex.props(styles.field).className}`}
+            className={`chat-composer-field ${stylex.props(styles.field, dock && styles.dockField).className}`}
             aria-label={placeholder}
             autoComplete="off"
             name="message"
@@ -160,7 +189,7 @@ export function ChatComposer({
         )}
         <Button
           accent={!busy}
-          className={`chat-composer-action chat-composer-action--${busy ? 'stop' : 'send'} ${stylex.props(styles.action).className}`}
+          className={`chat-composer-action chat-composer-action--${busy ? 'stop' : 'send'} ${stylex.props(styles.action, dock && styles.dockAction).className}`}
           aria-label={busy ? '停止生成' : '发送'}
           disabled={busy ? aborting : !value.trim() || disabled}
           onClick={busy ? onAbort : () => onSubmit(value)}
