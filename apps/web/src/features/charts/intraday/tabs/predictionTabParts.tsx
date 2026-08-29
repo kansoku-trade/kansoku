@@ -38,6 +38,81 @@ const styles = stylex.create({
     fontSize: fontSizes.base,
     fontWeight: 600,
   }),
+  checkItem: {
+    backgroundColor: colors.backgroundSurface,
+    borderLeftColor: colors.accent,
+    borderLeftStyle: 'solid',
+    borderLeftWidth: '2px',
+    display: 'flex',
+    gap: '10px',
+    marginBottom: '4px',
+    padding: '7px 8px',
+  },
+  checkIcon: {
+    alignItems: 'center',
+    display: 'flex',
+    fontSize: fontSizes.md,
+  },
+  autoSignalIcon: {
+    alignItems: 'flex-start',
+    alignSelf: 'flex-start',
+    lineHeight: 1,
+    paddingTop: '1px',
+  },
+  checkLabel: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.base,
+    fontWeight: 500,
+  },
+  checkValue: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.sm,
+    marginTop: '2px',
+  },
+  p123Badge: { marginLeft: '6px' },
+  zoneItem: {
+    backgroundColor: colors.backgroundSurface,
+    borderLeftColor: colors.accent,
+    borderLeftStyle: 'solid',
+    borderLeftWidth: '3px',
+    display: 'block',
+    marginBottom: '6px',
+    padding: '8px 10px',
+  },
+  zoneItemCompact: {
+    marginBottom: '5px',
+    padding: '6px 8px',
+  },
+  zoneHead: {
+    alignItems: 'baseline',
+    display: 'flex',
+    justifyContent: 'space-between',
+  },
+  zoneRange: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.sm,
+    fontVariantNumeric: 'tabular-nums',
+  },
+  zoneMeta: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.xs,
+    lineHeight: 1.45,
+    marginTop: '3px',
+  },
+  zoneMetaMd: { fontSize: fontSizes.sm },
+  zoneSources: {
+    color: colors.textMuted,
+    fontSize: fontSizes.xs,
+    lineHeight: 1.35,
+    marginTop: '4px',
+  },
+  gridKey: { color: colors.textSecondary },
+  gridValue: {
+    color: colors.textPrimary,
+    fontVariantNumeric: 'tabular-nums',
+    textAlign: 'right',
+  },
+  gridValueLeft: { textAlign: 'left' },
 });
 
 const ZONE_KIND_LABEL: Record<string, string> = {
@@ -57,24 +132,33 @@ function BarTime({ value }: { value: number }) {
 export function Pattern123Item({ pat }: { pat: Pattern123 }) {
   const confirmed = pat.status === 'confirmed';
   return (
-    <div className="check-item signal">
-      <div className="check-icon auto-signal-icon">🔢</div>
+    <div className={`check-item signal ${stylex.props(styles.checkItem).className}`}>
+      <div
+        className={`check-icon auto-signal-icon ${stylex.props(styles.checkIcon, styles.autoSignalIcon).className}`}
+      >
+        🔢
+      </div>
       <div>
-        <div className="check-label">
+        <div className={`check-label ${stylex.props(styles.checkLabel).className}`}>
           {pat.label}
-          <Badge tone={confirmed ? 'up' : 'accent'} className="p123-badge">
+          <Badge
+            tone={confirmed ? 'up' : 'accent'}
+            className={`p123-badge ${stylex.props(styles.p123Badge).className}`}
+          >
             {confirmed ? '已确认' : '酝酿中'}
           </Badge>
         </div>
-        <div className="check-val">
+        <div className={`check-val ${stylex.props(styles.checkValue).className}`}>
           ① <BarTime value={pat.p1.time} /> ${fmt(pat.p1.price)}{' '}
           <ArrowRight className="icon" size={12} /> ② ${fmt(pat.p2.price)}{' '}
           <ArrowRight className="icon" size={12} /> ③ <BarTime value={pat.p3.time} /> $
           {fmt(pat.p3.price)}
         </div>
-        <div className="check-val">{pat.implication}</div>
+        <div className={`check-val ${stylex.props(styles.checkValue).className}`}>
+          {pat.implication}
+        </div>
         {confirmed && pat.confirm && (
-          <div className="check-val">
+          <div className={`check-val ${stylex.props(styles.checkValue).className}`}>
             <BarTime value={pat.confirm.time} /> 收盘 ${fmt(pat.confirm.price)} 突破触发线 $
             {fmt(pat.trigger)}
           </div>
@@ -88,16 +172,24 @@ export function AutoSignalItem({ kindKey, pair }: { kindKey: string; pair: Diver
   const meta = AUTO_SIGNAL_META[kindKey];
   if (!meta) return null;
   return (
-    <div className="check-item signal">
-      <div className="check-icon auto-signal-icon">{meta.icon}</div>
+    <div className={`check-item signal ${stylex.props(styles.checkItem).className}`}>
+      <div
+        className={`check-icon auto-signal-icon ${stylex.props(styles.checkIcon, styles.autoSignalIcon).className}`}
+      >
+        {meta.icon}
+      </div>
       <div>
-        <div className="check-label">{meta.title}</div>
-        <div className="check-val">
+        <div className={`check-label ${stylex.props(styles.checkLabel).className}`}>
+          {meta.title}
+        </div>
+        <div className={`check-val ${stylex.props(styles.checkValue).className}`}>
           <BarTime value={pair.a.time} /> ${fmt(pair.a.price)}{' '}
           <ArrowRight className="icon" size={12} /> <BarTime value={pair.b.time} /> $
           {fmt(pair.b.price)}
         </div>
-        <div className="check-val">{meta.impact}</div>
+        <div className={`check-val ${stylex.props(styles.checkValue).className}`}>
+          {meta.impact}
+        </div>
       </div>
     </div>
   );
@@ -112,27 +204,36 @@ export function PriceZoneCard({
 }) {
   const color = zone.color ?? theme.textSecondary;
   const isBand = Math.abs(zone.high - zone.low) >= 0.0001;
-  const zoneBorderStyle = stylex.props(styles.zoneBorder(color));
+  const zoneStyle = stylex.props(
+    styles.zoneItem,
+    compact && styles.zoneItemCompact,
+    styles.zoneBorder(color),
+  );
+  const zoneHeadStyle = stylex.props(styles.zoneHead);
   const zoneLabelStyle = stylex.props(styles.zoneLabel(color));
+  const zoneRangeStyle = stylex.props(styles.zoneRange);
+  const zoneMetaStyle = stylex.props(styles.zoneMeta);
+  const zoneSourcesStyle = stylex.props(styles.zoneSources);
   return (
     <div
-      {...zoneBorderStyle}
-      className={`zone-item ${compact ? 'compact' : ''} ${zoneBorderStyle.className ?? ''}`}
+      className={`zone-item ${compact ? 'compact' : ''} ${zoneStyle.className ?? ''}`}
     >
-      <div className="zone-head">
+      <div className={`zone-head ${zoneHeadStyle.className ?? ''}`}>
         <span {...zoneLabelStyle} className={`zone-label ${zoneLabelStyle.className ?? ''}`}>
           {zone.label}
         </span>
-        <span className="zone-range">
+        <span className={`zone-range ${zoneRangeStyle.className ?? ''}`}>
           {isBand ? `$${fmt(zone.low)} - $${fmt(zone.high)}` : `$${fmt(zone.low)}`}
         </span>
       </div>
-      <div className="zone-meta">
+      <div className={`zone-meta ${zoneMetaStyle.className ?? ''}`}>
         {ZONE_KIND_LABEL[zone.kind] ?? zone.kind}
         {zone.note ? ` · ${zone.note}` : ''}
       </div>
       {zone.sources && zone.sources.length > 0 && (
-        <div className="zone-sources">{zone.sources.join(' / ')}</div>
+        <div className={`zone-sources ${zoneSourcesStyle.className ?? ''}`}>
+          {zone.sources.join(' / ')}
+        </div>
       )}
     </div>
   );
@@ -146,8 +247,18 @@ export function TargetContextCard({ target }: { target: IntradayTargetContext })
         <span>${fmt(target.price)}</span>
       </div>
       {target.zone && <PriceZoneCard zone={target.zone} compact />}
-      {target.note && <div className="zone-meta md">{target.note}</div>}
-      {target.condition && <div className="zone-meta">条件：{target.condition}</div>}
+      {target.note && (
+        <div
+          className={`zone-meta md ${stylex.props(styles.zoneMeta, styles.zoneMetaMd).className}`}
+        >
+          {target.note}
+        </div>
+      )}
+      {target.condition && (
+        <div className={`zone-meta ${stylex.props(styles.zoneMeta).className}`}>
+          条件：{target.condition}
+        </div>
+      )}
     </div>
   );
 }
@@ -155,8 +266,12 @@ export function TargetContextCard({ target }: { target: IntradayTargetContext })
 export function TechRow({ label, value }: { label: string; value: string }) {
   return (
     <>
-      <div className="k">{label} DIF/DEA/HIST</div>
-      <div className="v left">{value}</div>
+      <div className={`k ${stylex.props(styles.gridKey).className}`}>
+        {label} DIF/DEA/HIST
+      </div>
+      <div className={`v left ${stylex.props(styles.gridValue, styles.gridValueLeft).className}`}>
+        {value}
+      </div>
     </>
   );
 }
