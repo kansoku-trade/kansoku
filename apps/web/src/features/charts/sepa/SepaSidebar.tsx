@@ -101,6 +101,12 @@ const styles = stylex.create({
   valueLeft: {
     textAlign: 'left',
   },
+  valueUp: {
+    color: colors.up,
+  },
+  valueDown: {
+    color: colors.down,
+  },
   checkItem: {
     display: 'flex',
     gap: '10px',
@@ -306,13 +312,13 @@ export function SepaSidebar({ built }: { built: SepaBuilt }) {
           <div className={`k ${stylex.props(styles.key).className}`}>
             距 52w 高 ${fmt(kv.high52w)}
           </div>
-          <div className={`v down ${stylex.props(styles.value).className}`}>
+          <div className={`v down ${stylex.props(styles.value, styles.valueDown).className}`}>
             {signed(kv.h52Pct)}%
           </div>
           <div className={`k ${stylex.props(styles.key).className}`}>
             距 52w 低 ${fmt(kv.low52w)}
           </div>
-          <div className={`v up ${stylex.props(styles.value).className}`}>
+          <div className={`v up ${stylex.props(styles.value, styles.valueUp).className}`}>
             {signed(kv.l52Pct, 0)}%
           </div>
           <div className={`k ${stylex.props(styles.key).className}`}>距 MA50</div>
@@ -394,23 +400,25 @@ export function SepaSidebar({ built }: { built: SepaBuilt }) {
                 ${fmt(ep.pivot)} – ${fmt(ep.buy_zone_high)}
               </div>
               <div className={`k ${stylex.props(styles.key).className}`}>止损</div>
-              <div className={`v down ${stylex.props(styles.value).className}`}>
+              <div className={`v down ${stylex.props(styles.value, styles.valueDown).className}`}>
                 ${fmt(ep.stop)} ({signed(ep.stop_pct, 1)}%)
               </div>
               <div className={`k ${stylex.props(styles.key).className}`}>
                 第一目标 (+{fmt(ep.target1_pct, 0)}%)
               </div>
-              <div className={`v up ${stylex.props(styles.value).className}`}>
+              <div className={`v up ${stylex.props(styles.value, styles.valueUp).className}`}>
                 ${fmt(ep.target1)}
               </div>
               <div className={`k ${stylex.props(styles.key).className}`}>
                 第二目标 (+{fmt(ep.target2_pct, 0)}%)
               </div>
-              <div className={`v up ${stylex.props(styles.value).className}`}>
+              <div className={`v up ${stylex.props(styles.value, styles.valueUp).className}`}>
                 ${fmt(ep.target2)}
               </div>
               <div className={`k ${stylex.props(styles.key).className}`}>R/R 比例 (基于 T2)</div>
-              <div className={`v ${rrTone(ep)} ${stylex.props(styles.value).className}`}>
+              <div
+                className={`v ${rrTone(ep)} ${stylex.props(styles.value, rrTone(ep) === 'up' ? styles.valueUp : rrTone(ep) === 'down' ? styles.valueDown : null).className}`}
+              >
                 {fmt(ep.rr)} : 1
                 {!ep.rr_ok && (
                   <span className={`warn-red ${stylex.props(styles.warnRed).className}`}>
@@ -450,7 +458,7 @@ export function SepaSidebar({ built }: { built: SepaBuilt }) {
                 浮{s.position.unrealized >= 0 ? '盈' : '亏'}
               </div>
               <div
-                className={`v ${upDown(s.position.unrealized)} ${stylex.props(styles.value).className}`}
+                className={`v ${upDown(s.position.unrealized)} ${stylex.props(styles.value, s.position.unrealized >= 0 ? styles.valueUp : styles.valueDown).className}`}
               >
                 {signed(s.position.unrealized)} ({signed(s.position.unrealizedPct)}%)
               </div>
