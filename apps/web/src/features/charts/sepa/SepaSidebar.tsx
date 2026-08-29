@@ -1,9 +1,42 @@
-import type { CSSProperties } from 'react';
+import * as stylex from '@stylexjs/stylex';
 import { Check, TriangleAlert, X } from 'lucide-react';
 import type { SepaBuilt } from '@kansoku/shared/types';
 import { fmt, signed, upDown } from '@web/lib/format';
+import { colors, fontSizes } from '../../../theme/tokens.stylex';
 import { NewsSection } from '../NewsSection';
 import { Badge, Num, SectionTitle } from '@web/ui';
+
+const styles = stylex.create({
+  verdict: (color: string) => ({
+    backgroundImage: `linear-gradient(135deg, color-mix(in srgb, ${color} 14%, transparent), color-mix(in srgb, ${color} 4%, transparent))`,
+    borderColor: color,
+    borderStyle: 'solid',
+    borderWidth: '1px',
+  }),
+  verdictText: (color: string) => ({ color }),
+  zone: (color: string) => ({
+    borderLeftColor: color,
+    borderLeftStyle: 'solid',
+    borderLeftWidth: '3px',
+  }),
+  zoneLabel: (color: string) => ({ color }),
+  zoneSourcesInline: {
+    color: colors.textMuted,
+  },
+  ruleBlock: {
+    borderLeftColor: colors.border,
+    borderLeftStyle: 'solid',
+    borderLeftWidth: '2px',
+    color: colors.textMuted,
+    fontSize: fontSizes.xs,
+    lineHeight: 1.5,
+    marginTop: '8px',
+    paddingLeft: '8px',
+  },
+  hypoBadge: {
+    marginLeft: '6px',
+  },
+});
 
 const CHECK_ICON: Record<string, { icon: typeof Check; tone: string }> = {
   pass: { icon: Check, tone: 'up' },
@@ -35,9 +68,17 @@ export function SepaSidebar({ built }: { built: SepaBuilt }) {
           <div className="price-date">{s.asOf} · 长桥证券</div>
         </div>
 
-        <div className="verdict" style={{ '--vc': s.verdict.color } as CSSProperties}>
+        <div
+          className={`verdict ${stylex.props(styles.verdict(s.verdict.color)).className}`}
+          style={stylex.props(styles.verdict(s.verdict.color)).style}
+        >
           <div className="verdict-label">SEPA 结论</div>
-          <div className="verdict-text">{s.verdict.label}</div>
+          <div
+            className={`verdict-text ${stylex.props(styles.verdictText(s.verdict.color)).className}`}
+            style={stylex.props(styles.verdictText(s.verdict.color)).style}
+          >
+            {s.verdict.label}
+          </div>
           <div className="verdict-reason">{s.verdict.reason}</div>
         </div>
 
@@ -105,9 +146,18 @@ export function SepaSidebar({ built }: { built: SepaBuilt }) {
           <>
             <SectionTitle>支撑区</SectionTitle>
             {zones.map((z, i) => (
-              <div key={i} className="zone-item" style={{ '--zc': z.axis_color } as CSSProperties}>
+              <div
+                key={i}
+                className={`zone-item ${stylex.props(styles.zone(z.axis_color)).className}`}
+                style={stylex.props(styles.zone(z.axis_color)).style}
+              >
                 <div className="zone-head">
-                  <span className="zone-label">{z.label}</span>
+                  <span
+                    className={`zone-label ${stylex.props(styles.zoneLabel(z.axis_color)).className}`}
+                    style={stylex.props(styles.zoneLabel(z.axis_color)).style}
+                  >
+                    {z.label}
+                  </span>
                   <span className="zone-range">
                     ${fmt(z.low)} – ${fmt(z.high)} (
                     {signed(((z.high + z.low) / 2 / s.last) * 100 - 100, 1)}%)
@@ -116,7 +166,10 @@ export function SepaSidebar({ built }: { built: SepaBuilt }) {
                 <div className="zone-meta">
                   {z.note}
                   {z.sources.length > 0 && (
-                    <span className="zone-sources-inline"> · {z.sources.join(' / ')}</span>
+                    <span {...stylex.props(styles.zoneSourcesInline)}>
+                      {' · '}
+                      {z.sources.join(' / ')}
+                    </span>
                   )}
                 </div>
               </div>
@@ -128,7 +181,7 @@ export function SepaSidebar({ built }: { built: SepaBuilt }) {
           <>
             <SectionTitle>
               入场计划
-              {ep.hypothetical && <Badge className="hypo-badge">假设性</Badge>}
+              {ep.hypothetical && <Badge {...stylex.props(styles.hypoBadge)}>假设性</Badge>}
             </SectionTitle>
             <div className="grid2">
               <div className="k">买入区间 (pivot+5%)</div>
@@ -155,7 +208,7 @@ export function SepaSidebar({ built }: { built: SepaBuilt }) {
               </div>
             </div>
             {ep.note && <div className="note-block">{ep.note}</div>}
-            <div className="rule-block">
+            <div {...stylex.props(styles.ruleBlock)}>
               <b>三阶段止损（SEPA 规则）</b>
               <br />① 入场后硬止损 −7~8%，绝不下移
               <br />② 涨 +8%：卖一半，止损上移到本钱（不再亏）
