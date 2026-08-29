@@ -7,7 +7,7 @@ import type {
 } from '@kansoku/pro-api';
 import { fmt, signed } from '@web/lib/format';
 import * as stylex from '@stylexjs/stylex';
-import { colors, fontSizes, radii } from '../../theme/tokens.stylex';
+import { colors, fontSizes, radii, sizes } from '../../theme/tokens.stylex';
 import type { TrainerBridge } from '../desktop/desktopTrainerBridge';
 import { coachBarLabel, coachPlanLine, DIRECTION_LABEL } from './coachStance';
 
@@ -72,6 +72,53 @@ const styles = stylex.create({
     lineHeight: 1.6,
     margin: 0,
   },
+  label: {
+    color: colors.textMuted,
+    fontSize: fontSizes.sm,
+    letterSpacing: '0.09em',
+    textTransform: 'uppercase',
+  },
+  hint: {
+    color: colors.textMuted,
+    fontSize: fontSizes.sm,
+  },
+  error: {
+    color: colors.down,
+    fontSize: fontSizes.sm,
+  },
+  button: {
+    'alignItems': 'center',
+    'backgroundColor': colors.backgroundElement,
+    'borderColor': colors.borderStrong,
+    'borderRadius': radii.default,
+    'borderStyle': 'solid',
+    'borderWidth': '1px',
+    'boxSizing': 'border-box',
+    'color': colors.textPrimary,
+    'cursor': 'pointer',
+    'display': 'inline-flex',
+    'fontSize': fontSizes.base,
+    'gap': '7px',
+    'height': sizes.controlHeight,
+    'padding': '0 14px',
+    ':hover:not(:disabled)': {
+      borderColor: colors.accent,
+    },
+    ':focus-visible': {
+      borderColor: colors.focusBorder,
+      boxShadow: colors.focusRing,
+      outline: 'none',
+    },
+  },
+  accent: {
+    borderColor: colors.accent,
+    color: colors.accent,
+  },
+  disabled: {
+    borderColor: colors.borderStrong,
+    color: colors.textMuted,
+    cursor: 'default',
+  },
   annotate: {
     alignItems: 'center',
     borderTop: `1px dashed ${colors.border}`,
@@ -134,8 +181,10 @@ export function TrainerCoachCompare({
         className={`trainer-review-coach ${stylex.props(styles.root).className}`}
         data-testid="trainer-coach-compare"
       >
-        <div className="trainer-label">AI 对照</div>
-        <p className="trainer-settle-hint">本局没有问过 AI。</p>
+        <div className={`trainer-label ${stylex.props(styles.label).className}`}>AI 对照</div>
+        <p className={`trainer-settle-hint ${stylex.props(styles.hint).className}`}>
+          本局没有问过 AI。
+        </p>
       </div>
     );
   }
@@ -145,8 +194,14 @@ export function TrainerCoachCompare({
       className={`trainer-review-coach ${stylex.props(styles.root).className}`}
       data-testid="trainer-coach-compare"
     >
-      <div className="trainer-label">AI 对照 · 本局召唤 {calls.length} 次</div>
-      {error && <span className="trainer-order-error">{error}</span>}
+      <div className={`trainer-label ${stylex.props(styles.label).className}`}>
+        AI 对照 · 本局召唤 {calls.length} 次
+      </div>
+      {error && (
+        <span className={`trainer-order-error ${stylex.props(styles.error).className}`}>
+          {error}
+        </span>
+      )}
       {calls.map((call, index) => {
         const plan = coachPlanLine(call);
         const verdict = call.verdict;
@@ -166,7 +221,7 @@ export function TrainerCoachCompare({
                 AI：<b>{DIRECTION_LABEL[call.ai.direction]}</b>
                 {plan.prices && <span className="num"> {plan.prices}</span>}
               </span>
-              <span className="trainer-settle-hint">
+              <span className={`trainer-settle-hint ${stylex.props(styles.hint).className}`}>
                 {call.humanBefore
                   ? `你当时：${DIRECTION_LABEL[call.humanBefore.direction]}`
                   : '你当时还没表态'}
@@ -198,21 +253,29 @@ export function TrainerCoachCompare({
                 direction was already refuted buys nothing and trains clicking through. */}
             {verdict?.directionCorrect ? (
               <div className={`trainer-coach-annotate ${stylex.props(styles.annotate).className}`}>
-                <span className="trainer-settle-hint">理由站得住吗？</span>
-                {ANNOTATION_ORDER.map((option) => (
-                  <button
-                    key={option}
-                    className={`btn${call.annotation?.verdict === option ? ' btn--accent' : ''}`}
-                    disabled={pending === call.id}
-                    onClick={() => void annotate(call.id, option)}
-                  >
-                    {ANNOTATION_LABEL[option]}
-                  </button>
-                ))}
+                <span className={`trainer-settle-hint ${stylex.props(styles.hint).className}`}>
+                  理由站得住吗？
+                </span>
+                {ANNOTATION_ORDER.map((option) => {
+                  const selected = call.annotation?.verdict === option;
+                  const disabled = pending === call.id;
+                  return (
+                    <button
+                      key={option}
+                      className={`btn${selected ? ' btn--accent' : ''} ${stylex.props(styles.button, selected && styles.accent, disabled && styles.disabled).className}`}
+                      disabled={disabled}
+                      onClick={() => void annotate(call.id, option)}
+                    >
+                      {ANNOTATION_LABEL[option]}
+                    </button>
+                  );
+                })}
               </div>
             ) : (
               verdict && (
-                <p className="trainer-settle-hint">方向没判对，直接归档，不问理由。</p>
+                <p className={`trainer-settle-hint ${stylex.props(styles.hint).className}`}>
+                  方向没判对，直接归档，不问理由。
+                </p>
               )
             )}
           </article>
