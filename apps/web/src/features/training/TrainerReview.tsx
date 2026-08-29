@@ -51,6 +51,14 @@ const styles = stylex.create({
     color: colors.textSecondary,
     fontSize: fontSizes.md,
   },
+  revealJump: {
+    'borderColor': colors.borderStrong,
+    'color': colors.accent,
+    'marginLeft': 'auto',
+    ':hover:not(:disabled)': {
+      borderColor: colors.accent,
+    },
+  },
   stage: {
     display: 'flex',
     flexDirection: 'column',
@@ -68,6 +76,52 @@ const styles = stylex.create({
     flexWrap: 'wrap',
     gap: '16px',
     justifyContent: 'space-between',
+  },
+  bandLegend: {
+    color: colors.textSecondary,
+    display: 'flex',
+    fontSize: fontSizes.xs,
+    gap: '12px',
+  },
+  bandSwatch: {
+    display: 'inline-block',
+    height: '8px',
+    marginRight: '4px',
+    verticalAlign: '-1px',
+    width: '8px',
+  },
+  bandSwatchGiven: {
+    backgroundColor: '#161616',
+  },
+  bandSwatchPlayed: {
+    backgroundColor: '#14211f',
+  },
+  bandSwatchFog: {
+    backgroundColor: '#202020',
+  },
+  bandSwatchEpilogue: {
+    backgroundColor: '#241a10',
+  },
+  epilogueToggle: {
+    alignItems: 'center',
+    color: colors.textSecondary,
+    display: 'flex',
+    fontSize: fontSizes.sm,
+    gap: '6px',
+  },
+  epilogueInput: {
+    accentColor: colors.accent,
+  },
+  settleHint: {
+    color: colors.textMuted,
+    fontSize: fontSizes.sm,
+  },
+  status: {
+    color: colors.textSecondary,
+  },
+  error: {
+    color: colors.down,
+    fontSize: fontSizes.sm,
   },
 });
 
@@ -92,8 +146,16 @@ export function TrainerReview({ bridge, sessionId }: TrainerReviewProps) {
     };
   }, [bridge, sessionId]);
 
-  if (error) return <div className="trainer-order-error">{error}</div>;
-  if (!payload) return <div className="trainer-order-panel--status">正在整理这一局…</div>;
+  if (error)
+    return (
+      <div className={`trainer-order-error ${stylex.props(styles.error).className}`}>{error}</div>
+    );
+  if (!payload)
+    return (
+      <div className={`trainer-order-panel--status ${stylex.props(styles.status).className}`}>
+        正在整理这一局…
+      </div>
+    );
   return (
     <ReviewBody
       key={payload.sessionId}
@@ -190,15 +252,20 @@ function ReviewBody({ payload, bridge, sessionId, onPayloadChange }: ReviewBodyP
         />
         <div className={`trainer-review-legend-row ${stylex.props(styles.legendRow).className}`}>
           <ReviewLegend />
-          <label className="trainer-settlement-epilogue-toggle">
+          <label
+            className={`trainer-settlement-epilogue-toggle ${stylex.props(styles.epilogueToggle).className}`}
+          >
             <input
+              className={stylex.props(styles.epilogueInput).className}
               type="checkbox"
               checked={showEpilogue}
               disabled={brush < max || payload.epilogue.length === 0}
               onChange={(e) => setShowEpilogue(e.target.checked)}
             />
             显示收盘后走势
-            <span className="trainer-settle-hint">（尾声段，不计入成绩，只用于看结构）</span>
+            <span className={`trainer-settle-hint ${stylex.props(styles.settleHint).className}`}>
+              （尾声段，不计入成绩，只用于看结构）
+            </span>
           </label>
         </div>
       </section>
@@ -225,21 +292,29 @@ function ReviewBody({ payload, bridge, sessionId, onPayloadChange }: ReviewBodyP
 
 function ReviewLegend() {
   return (
-    <div className="trainer-band-legend">
+    <div className={`trainer-band-legend ${stylex.props(styles.bandLegend).className}`}>
       <span>
-        <i className="trainer-band-swatch trainer-band-swatch--given" />
+        <i
+          className={`trainer-band-swatch trainer-band-swatch--given ${stylex.props(styles.bandSwatch, styles.bandSwatchGiven).className}`}
+        />
         开局给的历史
       </span>
       <span>
-        <i className="trainer-band-swatch trainer-band-swatch--played" />
+        <i
+          className={`trainer-band-swatch trainer-band-swatch--played ${stylex.props(styles.bandSwatch, styles.bandSwatchPlayed).className}`}
+        />
         你打过的段
       </span>
       <span>
-        <i className="trainer-band-swatch trainer-band-swatch--fog" />
+        <i
+          className={`trainer-band-swatch trainer-band-swatch--fog ${stylex.props(styles.bandSwatch, styles.bandSwatchFog).className}`}
+        />
         被雾遮住的段
       </span>
       <span>
-        <i className="trainer-band-swatch trainer-band-swatch--epilogue" />
+        <i
+          className={`trainer-band-swatch trainer-band-swatch--epilogue ${stylex.props(styles.bandSwatch, styles.bandSwatchEpilogue).className}`}
+        />
         尾声段
       </span>
     </div>
@@ -250,7 +325,10 @@ function OpenRealChartButton({ symbol }: { symbol: string }) {
   const bridge = getPopoutBridge();
   if (!bridge) return null;
   return (
-    <button className="btn trainer-reveal-jump" onClick={() => void bridge.openPopout(symbol)}>
+    <button
+      className={`btn trainer-reveal-jump ${stylex.props(styles.revealJump).className}`}
+      onClick={() => void bridge.openPopout(symbol)}
+    >
       在行情页打开真图 →
     </button>
   );
