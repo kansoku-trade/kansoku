@@ -34,10 +34,10 @@ import { colors, fontSizes } from '../../theme/tokens.stylex';
 
 const styles = stylex.create({
   page: {
-    margin: 0,
-    maxWidth: 'none',
-    padding: 0,
-    width: '100%',
+    'margin': 0,
+    'maxWidth': 'none',
+    'padding': 0,
+    'width': '100%',
     '@media (min-width: 1001px)': {
       height: '100%',
       minHeight: 0,
@@ -45,16 +45,16 @@ const styles = stylex.create({
     },
   },
   viewport: {
-    height: 'auto',
+    'height': 'auto',
     '@media (min-width: 1001px)': {
       height: '100%',
     },
   },
   content: {
-    margin: '0 auto',
-    maxWidth: '1180px',
-    padding: '24px 20px 60px',
-    width: '100%',
+    'margin': '0 auto',
+    'maxWidth': '1180px',
+    'padding': '24px 20px 60px',
+    'width': '100%',
     '@media (max-width: 560px)': {
       paddingInline: '12px',
     },
@@ -88,10 +88,10 @@ const styles = stylex.create({
     justifyContent: 'space-between',
   },
   workspace: {
-    alignItems: 'start',
-    display: 'grid',
-    gap: '12px',
-    gridTemplateColumns: 'minmax(0, 1.15fr) minmax(300px, 1fr)',
+    'alignItems': 'start',
+    'display': 'grid',
+    'gap': '12px',
+    'gridTemplateColumns': 'minmax(0, 1.15fr) minmax(300px, 1fr)',
     '@media (max-width: 900px)': {
       gridTemplateColumns: '1fr',
     },
@@ -102,6 +102,7 @@ const styles = stylex.create({
     minWidth: 0,
   },
   card: {
+    marginBottom: 0,
     minWidth: 0,
     overflow: 'hidden',
     padding: 0,
@@ -116,6 +117,9 @@ const styles = stylex.create({
     justifyContent: 'space-between',
     minHeight: '34px',
     padding: '0 11px',
+  },
+  cardHeadingTitle: {
+    margin: 0,
   },
   aboutLink: {
     fontSize: fontSizes.xs,
@@ -199,7 +203,9 @@ function SettingsWorkspace({
           <WatchedMarketsCard />
           <Card className={`settings-connections-card ${stylex.props(styles.card).className}`}>
             <div className={`settings-card-heading ${stylex.props(styles.cardHeading).className}`}>
-              <SectionTitle>连接</SectionTitle>
+              <SectionTitle className={stylex.props(styles.cardHeadingTitle).className}>
+                连接
+              </SectionTitle>
             </div>
             <LongbridgeSection />
             <DataRootSection />
