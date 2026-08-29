@@ -47,6 +47,13 @@ const styles = stylex.create({
     display: 'inline-flex',
     gap: 6,
   },
+  backLink: {
+    color: {
+      'default': colors.textPrimary,
+      ':hover': colors.accent,
+    },
+    textDecoration: 'none',
+  },
   error: {
     margin: 0,
   },
@@ -200,7 +207,7 @@ export function LogsPage() {
 function LogsBackLink() {
   return (
     <a
-      className="settings-back-link"
+      className={`settings-back-link ${stylex.props(styles.backLink).className}`}
       href="/"
       onClick={(event) => {
         if (

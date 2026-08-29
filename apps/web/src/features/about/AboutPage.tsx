@@ -42,6 +42,13 @@ const styles = stylex.create({
     fontSize: fontSizes.sm,
     marginTop: '6px',
   },
+  githubLink: {
+    color: {
+      'default': colors.textPrimary,
+      ':hover': colors.accent,
+    },
+    textDecoration: 'none',
+  },
   backLink: {
     alignItems: 'center',
     color: {
@@ -154,7 +161,12 @@ export function AboutPage() {
         <div {...stylex.props(styles.version)}>版本 {__APP_VERSION__}</div>
         <div {...stylex.props(styles.copyright)}>© 2026 Innei · AGPL-3.0 + Commons Clause</div>
         <div {...stylex.props(styles.links)}>
-          <a href="https://github.com/Innei/kansoku" target="_blank" rel="noreferrer">
+          <a
+            {...stylex.props(styles.githubLink)}
+            href="https://github.com/Innei/kansoku"
+            target="_blank"
+            rel="noreferrer"
+          >
             GitHub
           </a>
         </div>

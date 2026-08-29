@@ -52,6 +52,13 @@ const styles = stylex.create({
   icon: {
     verticalAlign: '-2px',
   },
+  backLink: {
+    color: {
+      'default': colors.textPrimary,
+      ':hover': colors.accent,
+    },
+    textDecoration: 'none',
+  },
   bone: {
     animationName: 'none',
     backgroundColor: colors.backgroundElement,
@@ -173,12 +180,8 @@ export function CockpitSkeleton() {
         <div
           className={`topbar-chart ${stylex.props(styles.topbarColumn, styles.topbarChart).className}`}
         >
-          <a href="/">
-            <ArrowLeft
-              className={`icon ${stylex.props(styles.icon).className}`}
-              size={13}
-            />{' '}
-            列表
+          <a {...stylex.props(styles.backLink)} href="/">
+            <ArrowLeft className={`icon ${stylex.props(styles.icon).className}`} size={13} /> 列表
           </a>
           <Bone style={styles.meta} />
           <span {...stylex.props(styles.controls)} aria-hidden="true">
