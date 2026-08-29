@@ -13,10 +13,12 @@ const styles = stylex.create({
   },
   link: {
     'cursor': 'pointer',
+    'color': colors.textPrimary,
     'textDecoration': 'none',
     ':hover': {
       backgroundColor: colors.backgroundHover,
       borderColor: colors.borderStrong,
+      color: colors.accent,
     },
   },
 });
