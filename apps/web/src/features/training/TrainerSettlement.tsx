@@ -8,6 +8,7 @@ import type {
 } from '@kansoku/pro-api';
 import type { RawBar } from '@kansoku/shared/types';
 import { fmt } from '@web/lib/format';
+import { Badge } from '@web/ui';
 import { getPopoutBridge } from '../desktop/desktopWindowsBridge';
 import { colors, fontSizes, radii } from '../../theme/tokens.stylex';
 import type { TrainerBridge } from '../desktop/desktopTrainerBridge';
@@ -510,9 +511,7 @@ export function TrainerSettlement({
                       ).className
                     }
                   >
-                    <span className="badge badge--muted">
-                      {row.direction === 'long' ? '多' : '空'}
-                    </span>
+                    <Badge tone="muted">{row.direction === 'long' ? '多' : '空'}</Badge>
                   </td>
                   <td
                     className={
