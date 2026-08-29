@@ -16,6 +16,7 @@ import { DataAgeBadge, ErrorBox, ScrollArea, SectionTitle } from '../../ui';
 import { useTitle } from '../../lib/useTitle';
 import { useWsChannel } from '../../lib/ws/useWsChannel';
 import { useIntervalFetch } from '../cockpit/useIntervalFetch';
+import { colors, fontSizes } from '../../theme/tokens.stylex';
 import { CROSS_SECTION_TYPES } from './CrossSectionCharts';
 import { DateTimeline } from './DateTimeline';
 import { EventCanvasHost } from '../events/EventCanvasHost';
@@ -47,16 +48,22 @@ const styles = stylex.create({
     width: '100%',
   },
   pageSplit: {
-    height: '100%',
-    minHeight: 0,
-    overflow: 'hidden',
-    width: '100%',
+    'width': '100%',
+    '@media (min-width: 1001px)': {
+      height: '100%',
+      minHeight: 0,
+      overflow: 'hidden',
+    },
   },
   pageSplitViewport: {
-    height: '100%',
+    '@media (min-width: 1001px)': {
+      height: '100%',
+    },
   },
   pageSplitContent: {
-    paddingBottom: '20px',
+    '@media (min-width: 1001px)': {
+      paddingBottom: '20px',
+    },
   },
   grid: {
     alignItems: 'start',
@@ -80,6 +87,10 @@ const styles = stylex.create({
       marginRight: 0,
     },
   },
+  sideDesktop: {
+    height: 'calc(100vh - 72px)',
+    top: '56px',
+  },
   sideContent: {
     paddingRight: {
       default: '8px',
@@ -96,6 +107,12 @@ const styles = stylex.create({
     '@media (max-width: 1000px)': {
       height: 'auto',
     },
+  },
+  note: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.md,
+    lineHeight: 1.4,
+    marginTop: '6px',
   },
 });
 
@@ -128,6 +145,7 @@ export function Home() {
   const today = marketDate();
   const date = dateParam ?? today;
   const isToday = date === today;
+  const desktopRealtime = isDesktopRealtime();
 
   const [board, setBoard] = useState<OverviewBoard | null>(null);
   const { degraded: boardDegraded, snapshotAt: boardSnapshotAt } = useWsChannel<OverviewBoard>(
@@ -243,13 +261,15 @@ export function Home() {
         recapDate={recapDate}
       />
       {notice && NOTICE_LABEL[notice] && <ErrorBox>{NOTICE_LABEL[notice]}</ErrorBox>}
-      <QuickBar shortcuts={shortcuts} showGlobalActions={!isDesktopRealtime()} />
+      <QuickBar shortcuts={shortcuts} showGlobalActions={!desktopRealtime} />
       <DateTimeline
         dates={timelineDates}
         selected={date}
         onSelect={(d) => navigate(`/?date=${d}`, { replace: true })}
       />
-      {isToday && !board && !boardError && <div className="note-block">盘面加载中…</div>}
+      {isToday && !board && !boardError && (
+        <div className={`note-block ${stylex.props(styles.note).className}`}>盘面加载中…</div>
+      )}
       {isToday && boardError && !board && <ErrorBox>{boardError}</ErrorBox>}
       {!isToday && <RecapBoard date={date} defaultExpanded />}
       {isToday && board && trading && (
@@ -267,7 +287,9 @@ export function Home() {
             />
             {flowSection}
           </div>
-          <div className={`home-side ${stylex.props(styles.side).className}`}>
+          <div
+            className={`home-side ${stylex.props(styles.side, desktopRealtime && styles.sideDesktop).className}`}
+          >
             <ScrollArea
               className={`home-side-scroll ${stylex.props(styles.sideScroll).className}`}
               viewportClassName={stylex.props(styles.sideScrollViewport).className}
@@ -287,7 +309,9 @@ export function Home() {
             <RecapBoard date={date} defaultExpanded />
             {flowSection}
           </div>
-          <div className={`home-side ${stylex.props(styles.side).className}`}>
+          <div
+            className={`home-side ${stylex.props(styles.side, desktopRealtime && styles.sideDesktop).className}`}
+          >
             <ScrollArea
               className={`home-side-scroll ${stylex.props(styles.sideScroll).className}`}
               viewportClassName={stylex.props(styles.sideScrollViewport).className}

@@ -602,10 +602,6 @@ a.zone-item:hover {
   text-decoration: underline;
 }
 
-.desktop-content .home-side {
-  top: 56px;
-  height: calc(100vh - 72px);
-}
 @media (min-width: 1001px) {
   #root:has(> .home-page--split),
   .desktop-content:has(> .home-page--split) {
@@ -620,19 +616,11 @@ a.zone-item:hover {
   }
 }
 @media (max-width: 1000px) {
-  .desktop-content .home-side {
-    position: static;
-    height: auto;
-    margin-right: 0;
-  }
   .home-side-scroll > .scroll-area-scrollbar {
     display: none;
   }
 }
 
-.home-page .note-block {
-  font-size: var(--fs-md);
-}
 .market-temp {
   display: inline-flex;
   align-items: center;
