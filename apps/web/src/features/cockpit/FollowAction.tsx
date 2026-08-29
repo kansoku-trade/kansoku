@@ -1,7 +1,38 @@
 import { Lock, RadioTower } from 'lucide-react';
+import * as stylex from '@stylexjs/stylex';
 import { Switch } from '@web/ui';
 import { useFeature } from '@web/features/edition/useFeature';
 import { useSymbolFollow } from '@web/features/quotes/useSymbolFollow';
+import { colors, fontSizes } from '../../theme/tokens.stylex';
+
+const styles = stylex.create({
+  control: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 5,
+    color: colors.textSecondary,
+    fontSize: fontSizes.sm,
+    whiteSpace: 'nowrap',
+  },
+  icon: {
+    color: colors.accent,
+  },
+  error: {
+    color: colors.down,
+  },
+  errorIcon: {
+    color: colors.down,
+  },
+  locked: {
+    'opacity': 0.65,
+    ':hover': {
+      opacity: 1,
+    },
+  },
+  lock: {
+    color: colors.accent,
+  },
+});
 
 export function FollowAction({ symbol, revision }: { symbol: string; revision?: string }) {
   const { state } = useFeature('symbol-follow');
@@ -23,7 +54,7 @@ function FollowControl({
 
   return (
     <span
-      className={`follow-control${statusError ? ' follow-control--error' : ''}${locked ? ' follow-control--locked' : ''}`}
+      className={`follow-control ${stylex.props(styles.control, statusError && styles.error, locked && styles.locked).className}`}
       title={
         locked
           ? following
@@ -35,9 +66,11 @@ function FollowControl({
               : 'AI 评论员已停止跟进此标的'))
       }
     >
-      <RadioTower size={13} />
-      <span className="follow-control-label">AI 跟进</span>
-      {locked && <Lock className="follow-control-lock" size={11} />}
+      <RadioTower {...stylex.props(styles.icon, statusError && styles.errorIcon)} size={13} />
+      <span>AI 跟进</span>
+      {locked && (
+        <Lock className={`follow-control-lock ${stylex.props(styles.lock).className}`} size={11} />
+      )}
       <Switch
         ariaLabel="持续跟进 AI 点评"
         checked={following ?? false}
