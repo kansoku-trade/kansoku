@@ -33,12 +33,14 @@ const styles = stylex.create({
     'borderLeftColor': colors.borderStrong,
     'borderLeftStyle': 'solid',
     'borderLeftWidth': '2px',
+    'color': colors.textPrimary,
     'display': 'block',
     'marginBottom': '4px',
     'padding': '7px 8px',
     'textDecoration': 'none',
     ':hover': {
       borderLeftColor: colors.accent,
+      color: colors.accent,
       textDecoration: 'none',
     },
     ':hover .news-title': {

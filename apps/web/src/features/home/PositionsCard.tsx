@@ -46,6 +46,9 @@ const styles = stylex.create({
       ':hover': 'underline',
     },
     textUnderlineOffset: '3px',
+    ':hover': {
+      color: colors.accent,
+    },
   },
   last: {
     color: colors.textPrimary,
