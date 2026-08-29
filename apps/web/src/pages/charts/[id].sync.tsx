@@ -1,11 +1,30 @@
+import type { ReactNode } from 'react';
 import { useEffect } from 'react';
 import { useParams } from 'react-router';
+import * as stylex from '@stylexjs/stylex';
 import type { ChartDoc } from '@kansoku/shared/types';
 import { chartTargetPath } from '@kansoku/shared/chartUrl';
 import { useQuery } from '@web/lib/apiHooks';
 import { client } from '@web/lib/client';
 import { navigate } from '@web/lib/router';
 import { ErrorBox } from '@web/ui';
+
+const styles = stylex.create({
+  page: {
+    maxWidth: '900px',
+    margin: '0 auto',
+    padding: '24px 20px 60px',
+  },
+});
+
+function Page({ children }: { children: ReactNode }) {
+  const pageProps = stylex.props(styles.page);
+  return (
+    <div {...pageProps} className={`page ${pageProps.className}`}>
+      {children}
+    </div>
+  );
+}
 
 function ChartRedirect({ id }: { id: string }) {
   const { data, failure } = useQuery<ChartDoc>(
@@ -24,9 +43,9 @@ function ChartRedirect({ id }: { id: string }) {
 
   if (failure && failure.status !== 404) {
     return (
-      <div className="page">
+      <Page>
         <ErrorBox>{failure.message}</ErrorBox>
-      </div>
+      </Page>
     );
   }
 
