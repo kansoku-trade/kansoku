@@ -19,7 +19,7 @@ import { TrainerReviewFacts } from './TrainerReviewFacts';
 import { TrainerReviewLesson } from './TrainerReviewLesson';
 import { TrainerReviewTimeline } from './TrainerReviewTimeline';
 import { useTrainerReviewOverlay } from './useTrainerReviewOverlay';
-import { colors } from '../../theme/tokens.stylex';
+import { colors, fontSizes } from '../../theme/tokens.stylex';
 
 const STORAGE_NAMESPACE = 'trainer-review';
 
@@ -36,6 +36,20 @@ const styles = stylex.create({
     display: 'flex',
     flexWrap: 'wrap',
     gap: '10px',
+  },
+  revealKey: {
+    color: colors.textMuted,
+    fontSize: fontSizes.sm,
+    letterSpacing: '0.08em',
+    textTransform: 'uppercase',
+  },
+  revealSymbol: {
+    fontSize: fontSizes.xl,
+    fontWeight: 700,
+  },
+  revealDate: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.md,
   },
   stage: {
     display: 'flex',
@@ -139,9 +153,13 @@ function ReviewBody({ payload, bridge, sessionId, onPayloadChange }: ReviewBodyP
       data-testid="trainer-review"
     >
       <section className={`trainer-review-reveal ${stylex.props(styles.reveal).className}`}>
-        <span className="trainer-reveal-key">真身</span>
-        <span className="num trainer-reveal-sym">{payload.provenance.sourceSymbol}</span>
-        <span className="num trainer-reveal-date">
+        <span className={`trainer-reveal-key ${stylex.props(styles.revealKey).className}`}>
+          真身
+        </span>
+        <span className={`num trainer-reveal-sym ${stylex.props(styles.revealSymbol).className}`}>
+          {payload.provenance.sourceSymbol}
+        </span>
+        <span className={`num trainer-reveal-date ${stylex.props(styles.revealDate).className}`}>
           {payload.provenance.sourceCutoff.slice(0, 10)}
         </span>
         <span className="trainer-chip">
