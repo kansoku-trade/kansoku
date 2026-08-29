@@ -11,7 +11,7 @@ import { fmt } from '@web/lib/format';
 import { Badge } from '@web/ui';
 import { getPopoutBridge } from '../desktop/desktopWindowsBridge';
 import { buttonStyles } from '../../ui/Button';
-import { colors, fontSizes, radii } from '../../theme/tokens.stylex';
+import { colors, fonts, fontSizes, radii } from '../../theme/tokens.stylex';
 import type { TrainerBridge } from '../desktop/desktopTrainerBridge';
 import { formatPositionSize, formatRewardRisk } from './orderDraft';
 import { unreachedBars } from './replayBands';
@@ -75,12 +75,16 @@ const styles = stylex.create({
     textTransform: 'uppercase',
   },
   revealSym: {
+    fontFamily: fonts.mono,
     fontSize: fontSizes.xl,
+    fontVariantNumeric: 'tabular-nums',
     fontWeight: 700,
   },
   revealDate: {
     color: colors.textSecondary,
     fontSize: fontSizes.md,
+    fontFamily: fonts.mono,
+    fontVariantNumeric: 'tabular-nums',
   },
   revealJump: {
     borderColor: colors.borderStrong,
@@ -175,6 +179,10 @@ const styles = stylex.create({
     fontSize: fontSizes.xs,
     justifyContent: 'space-between',
   },
+  trackScaleValue: {
+    fontFamily: fonts.mono,
+    fontVariantNumeric: 'tabular-nums',
+  },
   figures: {
     backgroundColor: colors.border,
     borderColor: colors.border,
@@ -211,6 +219,10 @@ const styles = stylex.create({
   tradeRight: {
     textAlign: 'right',
   },
+  tradeNumeric: {
+    fontFamily: fonts.mono,
+    fontVariantNumeric: 'tabular-nums',
+  },
   fillList: {
     display: 'grid',
     gap: '3px',
@@ -224,11 +236,17 @@ const styles = stylex.create({
     gap: '6px',
   },
   fillPrice: {
+    fontFamily: fonts.mono,
+    fontVariantNumeric: 'tabular-nums',
     minWidth: '4.5em',
   },
   fillMuted: {
     color: colors.textMuted,
     fontSize: fontSizes.xs,
+  },
+  fillSize: {
+    fontFamily: fonts.mono,
+    fontVariantNumeric: 'tabular-nums',
   },
   tagStop: {
     color: colors.down,
@@ -282,7 +300,17 @@ const styles = stylex.create({
   },
   reviewSym: {
     color: colors.textPrimary,
+    fontFamily: fonts.mono,
+    fontVariantNumeric: 'tabular-nums',
     fontWeight: 700,
+  },
+  reviewDate: {
+    fontFamily: fonts.mono,
+    fontVariantNumeric: 'tabular-nums',
+  },
+  reviewMetricValue: {
+    fontFamily: fonts.mono,
+    fontVariantNumeric: 'tabular-nums',
   },
   reviewCollapse: {
     marginLeft: 'auto',
@@ -300,13 +328,18 @@ const styles = stylex.create({
     fontSize: fontSizes.sm,
   },
   figuresValue: {
+    fontFamily: fonts.mono,
     fontSize: '26px',
     fontWeight: 600,
+    fontVariantNumeric: 'tabular-nums',
     letterSpacing: '-0.02em',
     lineHeight: 1.15,
   },
   figuresValueZero: {
     color: colors.textMuted,
+  },
+  figuresValueLoss: {
+    color: colors.down,
   },
   figuresUnit: {
     color: colors.textMuted,
@@ -397,14 +430,26 @@ export function TrainerSettlement({
         <span className={`num trainer-review-sym ${stylex.props(styles.reviewSym).className}`}>
           {sourceSymbol ?? view.symbol}
         </span>
-        {sourceDate && <span className="num trainer-review-date">{sourceDate}</span>}
+        {sourceDate && (
+          <span className={`num trainer-review-date ${stylex.props(styles.reviewDate).className}`}>
+            {sourceDate}
+          </span>
+        )}
         {track && (
           <>
             <span>
-              实际拿到 <span className="num">{fmt(track.gotR)}</span> R
+              实际拿到{' '}
+              <span className={`num ${stylex.props(styles.reviewMetricValue).className}`}>
+                {fmt(track.gotR)}
+              </span>{' '}
+              R
             </span>
             <span>
-              计划 <span className="num">{formatRewardRisk(track.plannedR)}</span> R
+              计划{' '}
+              <span className={`num ${stylex.props(styles.reviewMetricValue).className}`}>
+                {formatRewardRisk(track.plannedR)}
+              </span>{' '}
+              R
             </span>
           </>
         )}
@@ -558,6 +603,7 @@ export function TrainerSettlement({
                       stylex.props(
                         styles.tradeCell,
                         styles.tradeRight,
+                        styles.tradeNumeric,
                         rowIndex === rows.length - 1 && styles.tradeLastCell,
                       ).className
                     }`}
@@ -571,6 +617,7 @@ export function TrainerSettlement({
                       stylex.props(
                         styles.tradeCell,
                         styles.tradeRight,
+                        styles.tradeNumeric,
                         rowIndex === rows.length - 1 && styles.tradeLastCell,
                       ).className
                     }`}
@@ -582,6 +629,7 @@ export function TrainerSettlement({
                       stylex.props(
                         styles.tradeCell,
                         styles.tradeRight,
+                        styles.tradeNumeric,
                         rowIndex === rows.length - 1 && styles.tradeLastCell,
                       ).className
                     }`}
@@ -669,7 +717,9 @@ function FillLine({
       >
         {label}
       </span>
-      <span className={`num trainer-fill-size ${stylex.props(styles.fillMuted).className}`}>
+      <span
+        className={`num trainer-fill-size ${stylex.props(styles.fillMuted, styles.fillSize).className}`}
+      >
         {formatPositionSize(size)}
       </span>
     </li>
@@ -719,8 +769,10 @@ function PlanTrack({ track, summary }: TrackProps) {
         </div>
       </div>
       <div className={`trainer-track-scale ${stylex.props(styles.trackScale).className}`}>
-        <span className="num">0R</span>
-        <span className="num">计划上限 {formatRewardRisk(track.plannedR)}R</span>
+        <span className={`num ${stylex.props(styles.trackScaleValue).className}`}>0R</span>
+        <span className={`num ${stylex.props(styles.trackScaleValue).className}`}>
+          计划上限 {formatRewardRisk(track.plannedR)}R
+        </span>
       </div>
     </div>
   );
@@ -763,7 +815,11 @@ function TrainerFigures({ track, summary }: TrackProps) {
         <figcaption className={stylex.props(styles.figuresCaption).className}>实际拿到</figcaption>
         <div
           className={`num trainer-fig-val ${
-            stylex.props(styles.figuresValue, track.gotR === 0 && styles.figuresValueZero).className
+            stylex.props(
+              styles.figuresValue,
+              track.gotR === 0 && styles.figuresValueZero,
+              track.gotR < 0 && styles.figuresValueLoss,
+            ).className
           }${track.gotR < 0 ? ' down' : ''}`}
         >
           {fmt(track.gotR)}
