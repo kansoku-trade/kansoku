@@ -105,6 +105,7 @@ interface ChatComposerProps {
   onSubmit: (value: string) => void;
   onAbort: () => void;
   hint?: string | null;
+  className?: string;
   inputProps?: ChatComposerFieldProps;
   onValueDetail?: (value: string, selectionStart: number | null) => void;
   onKeyDownIntercept?: (event: KeyboardEvent<ChatComposerFieldElement>) => boolean;
@@ -124,6 +125,7 @@ export function ChatComposer({
   onSubmit,
   onAbort,
   hint,
+  className,
   inputProps,
   onValueDetail,
   onKeyDownIntercept,
@@ -150,7 +152,7 @@ export function ChatComposer({
   return (
     <>
       <div
-        className={`chat-composer ${stylex.props(styles.composer, dock && styles.dockComposer).className}`}
+        className={`chat-composer ${stylex.props(styles.composer, dock && styles.dockComposer).className}${className ? ` ${className}` : ''}`}
       >
         {multiline ? (
           <textarea

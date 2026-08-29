@@ -64,6 +64,9 @@ const styles = stylex.create({
   transcriptViewport: {
     overflowAnchor: 'none',
   },
+  insert: {
+    margin: '10px 0',
+  },
   thinking: {
     display: 'inline-flex',
     alignItems: 'center',
@@ -514,6 +517,10 @@ function ConversationTranscriptView({
   emptyText,
   onPickSuggestion,
   className,
+  viewportClassName,
+  contentClassName,
+  emptyClassName,
+  insertClassName,
   modelLabels,
   onOpenCanvas,
   onViewCanvasSource,
@@ -527,6 +534,10 @@ function ConversationTranscriptView({
   emptyText: string;
   onPickSuggestion: (question: string) => void;
   className?: string;
+  viewportClassName?: string;
+  contentClassName?: string;
+  emptyClassName?: string;
+  insertClassName?: string;
   modelLabels?: Readonly<Record<string, string>>;
   onOpenCanvas?: (slug: string) => void;
   onViewCanvasSource?: (slug: string) => void;
@@ -549,8 +560,8 @@ function ConversationTranscriptView({
   return (
     <ScrollArea
       className={className}
-      viewportClassName={`chat-transcript-viewport ${stylex.props(styles.transcriptViewport).className}`}
-      contentClassName={`chat-panel-body-content ${stylex.props(styles.panelBodyContent).className}`}
+      viewportClassName={`chat-transcript-viewport ${stylex.props(styles.transcriptViewport).className}${viewportClassName ? ` ${viewportClassName}` : ''}`}
+      contentClassName={`chat-panel-body-content ${stylex.props(styles.panelBodyContent).className}${contentClassName ? ` ${contentClassName}` : ''}`}
       viewportRef={bodyRef}
       onScroll={() => {
         const element = bodyRef.current;
@@ -562,7 +573,9 @@ function ConversationTranscriptView({
       }}
     >
       {isEmpty && !busy ? (
-        <div className={`chat-empty ${stylex.props(styles.empty).className}`}>
+        <div
+          className={`chat-empty ${stylex.props(styles.empty).className}${emptyClassName ? ` ${emptyClassName}` : ''}`}
+        >
           <div className={`chat-empty-text ${stylex.props(styles.emptyText).className}`}>
             {emptyText}
           </div>
@@ -594,7 +607,10 @@ function ConversationTranscriptView({
             onViewCanvasSource={onViewCanvasSource}
           />
         ) : (
-          <div key={entry.insert.id} className="chat-insert">
+          <div
+            key={entry.insert.id}
+            className={`chat-insert ${stylex.props(styles.insert).className}${insertClassName ? ` ${insertClassName}` : ''}`}
+          >
             {entry.insert.node}
           </div>
         ),
