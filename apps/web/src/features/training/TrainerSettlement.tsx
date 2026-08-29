@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import * as stylex from '@stylexjs/stylex';
 import type {
   TrainerClosedTrade,
   TrainerReveal,
@@ -8,6 +9,7 @@ import type {
 import type { RawBar } from '@kansoku/shared/types';
 import { fmt } from '@web/lib/format';
 import { getPopoutBridge } from '../desktop/desktopWindowsBridge';
+import { colors, fontSizes, radii } from '../../theme/tokens.stylex';
 import type { TrainerBridge } from '../desktop/desktopTrainerBridge';
 import { formatPositionSize, formatRewardRisk } from './orderDraft';
 import { unreachedBars } from './replayBands';
@@ -37,6 +39,203 @@ const EXIT_REASON_LABEL: Record<TrainerClosedTrade['exitReason'], string> = {
   manual: '手动',
   horizon: '到期',
 };
+
+const styles = stylex.create({
+  settleStage: {
+    display: 'flex',
+    flexDirection: 'column',
+    flexShrink: 0,
+    gap: '14px',
+    order: 1,
+    padding: '14px 16px',
+  },
+  settleTail: {
+    display: 'flex',
+    flexDirection: 'column',
+    flexShrink: 0,
+    gap: '10px',
+    order: 3,
+    padding: '12px 16px 14px',
+  },
+  settlementStats: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '14px',
+  },
+  leak: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px',
+  },
+  leakHead: {
+    alignItems: 'baseline',
+    display: 'flex',
+    gap: '10px',
+  },
+  leakHeading: {
+    fontSize: fontSizes.md,
+    fontWeight: 600,
+    margin: 0,
+  },
+  leakDescription: {
+    color: colors.textMuted,
+    fontSize: fontSizes.sm,
+    fontStyle: 'normal',
+  },
+  track: {
+    backgroundColor: colors.backgroundElement,
+    borderColor: colors.border,
+    borderRadius: radii.default,
+    borderStyle: 'solid',
+    borderWidth: '1px',
+    height: '46px',
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  trackPlan: {
+    backgroundImage: `repeating-linear-gradient(115deg, #191919 0 7px, ${colors.backgroundSurface} 7px 14px)`,
+    inset: 0,
+    position: 'absolute',
+  },
+  trackGot: {
+    backgroundColor: colors.up,
+    bottom: 0,
+    left: 0,
+    opacity: 0.85,
+    position: 'absolute',
+    top: 0,
+  },
+  trackGotLoss: {
+    backgroundColor: colors.down,
+  },
+  trackGive: {
+    backgroundColor: colors.down,
+    bottom: 0,
+    opacity: 0.28,
+    position: 'absolute',
+    top: 0,
+  },
+  trackZero: {
+    backgroundColor: colors.accent,
+    bottom: 0,
+    left: 0,
+    position: 'absolute',
+    top: 0,
+    width: '2px',
+  },
+  trackCaption: {
+    color: colors.textSecondary,
+    left: '12px',
+    position: 'absolute',
+    right: '12px',
+    top: '50%',
+    transform: 'translateY(-50%)',
+  },
+  trackScale: {
+    color: colors.textMuted,
+    display: 'flex',
+    fontSize: fontSizes.xs,
+    justifyContent: 'space-between',
+  },
+  figures: {
+    backgroundColor: colors.border,
+    borderColor: colors.border,
+    borderStyle: 'solid',
+    borderWidth: '1px',
+    display: 'grid',
+    gap: '1px',
+    gridTemplateColumns: 'repeat(3, 1fr)',
+  },
+  tradeTable: {
+    borderCollapse: 'collapse',
+    width: '100%',
+  },
+  tradeHeader: {
+    borderBottomColor: colors.border,
+    borderBottomStyle: 'solid',
+    borderBottomWidth: '1px',
+    color: colors.textMuted,
+    fontSize: fontSizes.sm,
+    fontWeight: 500,
+    letterSpacing: '0.05em',
+    padding: '0 10px 7px',
+    textAlign: 'left',
+  },
+  tradeCell: {
+    borderBottomColor: colors.border,
+    borderBottomStyle: 'solid',
+    borderBottomWidth: '1px',
+    padding: '8px 10px',
+  },
+  tradeLastCell: {
+    borderBottomWidth: 0,
+  },
+  tradeRight: {
+    textAlign: 'right',
+  },
+  fillList: {
+    display: 'grid',
+    gap: '3px',
+    listStyle: 'none',
+    margin: 0,
+    padding: 0,
+  },
+  fill: {
+    alignItems: 'baseline',
+    display: 'flex',
+    gap: '6px',
+  },
+  fillPrice: {
+    minWidth: '4.5em',
+  },
+  fillMuted: {
+    color: colors.textMuted,
+    fontSize: fontSizes.xs,
+  },
+  tagStop: {
+    color: colors.down,
+  },
+  settleFoot: {
+    alignItems: 'center',
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '12px',
+  },
+  ghostSlots: {
+    display: 'flex',
+    gap: '8px',
+    marginLeft: 'auto',
+  },
+  ghostSlot: {
+    borderColor: colors.borderStrong,
+    borderRadius: radii.default,
+    borderStyle: 'dashed',
+    borderWidth: '1px',
+    color: colors.textMuted,
+    fontSize: fontSizes.sm,
+    padding: '3px 9px',
+  },
+  reviewBar: {
+    alignItems: 'center',
+    backgroundColor: colors.backgroundSurface,
+    borderTopColor: colors.border,
+    borderTopStyle: 'solid',
+    borderTopWidth: '1px',
+    color: colors.textSecondary,
+    display: 'flex',
+    flexWrap: 'wrap',
+    flexShrink: 0,
+    gap: '16px',
+    padding: '10px 16px',
+  },
+  reviewSym: {
+    color: colors.textPrimary,
+    fontWeight: 700,
+  },
+  reviewCollapse: {
+    marginLeft: 'auto',
+  },
+});
 
 export interface TrainerSettlementProps {
   view: TrainerView;
@@ -91,8 +290,10 @@ export function TrainerSettlement({
 
   if (expanded) {
     return (
-      <div className="trainer-review-bar">
-        <span className="num trainer-review-sym">{sourceSymbol ?? view.symbol}</span>
+      <div className={`trainer-review-bar ${stylex.props(styles.reviewBar).className}`}>
+        <span className={`num trainer-review-sym ${stylex.props(styles.reviewSym).className}`}>
+          {sourceSymbol ?? view.symbol}
+        </span>
         {sourceDate && <span className="num trainer-review-date">{sourceDate}</span>}
         {track && (
           <>
@@ -106,7 +307,10 @@ export function TrainerSettlement({
         )}
         <TrainerBandLegend />
         <EpilogueToggle checked={showEpilogue} disabled={!reveal} onChange={setShowEpilogue} />
-        <button className="btn trainer-review-collapse" onClick={onCollapse}>
+        <button
+          className={`btn trainer-review-collapse ${stylex.props(styles.reviewCollapse).className}`}
+          onClick={onCollapse}
+        >
           收起 ⤡
         </button>
       </div>
@@ -115,7 +319,7 @@ export function TrainerSettlement({
 
   return (
     <>
-      <div className="trainer-settle-stage">
+      <div className={`trainer-settle-stage ${stylex.props(styles.settleStage).className}`}>
         <div className="trainer-reveal">
           <span className="trainer-reveal-key">真身</span>
           {sourceSymbol ? (
@@ -131,7 +335,10 @@ export function TrainerSettlement({
           )}
         </div>
 
-        <div className="trainer-settlement-stats" data-testid="trainer-settlement-stats">
+        <div
+          className={`trainer-settlement-stats ${stylex.props(styles.settlementStats).className}`}
+          data-testid="trainer-settlement-stats"
+        >
           {track ? (
             <>
               <PlanTrack track={track} summary={summary} />
@@ -145,29 +352,52 @@ export function TrainerSettlement({
         </div>
       </div>
 
-      <div className="trainer-settle-tail">
+      <div className={`trainer-settle-tail ${stylex.props(styles.settleTail).className}`}>
         {rows.length > 0 && (
-          <table className="trainer-trade-table" data-testid="trainer-settlement-trades">
+          <table
+            className={`trainer-trade-table ${stylex.props(styles.tradeTable).className}`}
+            data-testid="trainer-settlement-trades"
+          >
             <thead>
               <tr>
-                <th>方向</th>
-                <th>入场</th>
-                <th>离场</th>
-                <th className="r">计划盈亏比</th>
-                <th className="r">实际拿到 R</th>
-                <th className="r">最大浮盈回吐</th>
+                <th className={stylex.props(styles.tradeHeader).className}>方向</th>
+                <th className={stylex.props(styles.tradeHeader).className}>入场</th>
+                <th className={stylex.props(styles.tradeHeader).className}>离场</th>
+                <th className={`r ${stylex.props(styles.tradeHeader, styles.tradeRight).className}`}>
+                  计划盈亏比
+                </th>
+                <th className={`r ${stylex.props(styles.tradeHeader, styles.tradeRight).className}`}>
+                  实际拿到 R
+                </th>
+                <th className={`r ${stylex.props(styles.tradeHeader, styles.tradeRight).className}`}>
+                  最大浮盈回吐
+                </th>
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => (
+              {rows.map((row, rowIndex) => (
                 <tr key={row.tradeId}>
-                  <td>
+                  <td
+                    className={
+                      stylex.props(
+                        styles.tradeCell,
+                        rowIndex === rows.length - 1 && styles.tradeLastCell,
+                      ).className
+                    }
+                  >
                     <span className="badge badge--muted">
                       {row.direction === 'long' ? '多' : '空'}
                     </span>
                   </td>
-                  <td>
-                    <ul className="trainer-fill-list">
+                  <td
+                    className={
+                      stylex.props(
+                        styles.tradeCell,
+                        rowIndex === rows.length - 1 && styles.tradeLastCell,
+                      ).className
+                    }
+                  >
+                    <ul className={`trainer-fill-list ${stylex.props(styles.fillList).className}`}>
                       {row.entries.map((fill, index) => (
                         <FillLine
                           key={index}
@@ -178,8 +408,15 @@ export function TrainerSettlement({
                       ))}
                     </ul>
                   </td>
-                  <td>
-                    <ul className="trainer-fill-list">
+                  <td
+                    className={
+                      stylex.props(
+                        styles.tradeCell,
+                        rowIndex === rows.length - 1 && styles.tradeLastCell,
+                      ).className
+                    }
+                  >
+                    <ul className={`trainer-fill-list ${stylex.props(styles.fillList).className}`}>
                       {row.exits.map((fill, index) => (
                         <FillLine
                           key={index}
@@ -191,19 +428,41 @@ export function TrainerSettlement({
                       ))}
                     </ul>
                   </td>
-                  <td className="r num">
+                  <td
+                    className={`r num ${stylex.props(
+                      styles.tradeCell,
+                      styles.tradeRight,
+                      rowIndex === rows.length - 1 && styles.tradeLastCell,
+                    ).className}`}
+                  >
                     {row.plannedRewardRisk === null
                       ? '—'
                       : `${formatRewardRisk(row.plannedRewardRisk)} : 1`}
                   </td>
-                  <td className="r num">{fmt(row.netR)}</td>
-                  <td className="r num">{fmt(row.mfeGivebackR)}</td>
+                  <td
+                    className={`r num ${stylex.props(
+                      styles.tradeCell,
+                      styles.tradeRight,
+                      rowIndex === rows.length - 1 && styles.tradeLastCell,
+                    ).className}`}
+                  >
+                    {fmt(row.netR)}
+                  </td>
+                  <td
+                    className={`r num ${stylex.props(
+                      styles.tradeCell,
+                      styles.tradeRight,
+                      rowIndex === rows.length - 1 && styles.tradeLastCell,
+                    ).className}`}
+                  >
+                    {fmt(row.mfeGivebackR)}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         )}
-        <div className="trainer-settle-foot">
+        <div className={`trainer-settle-foot ${stylex.props(styles.settleFoot).className}`}>
           <EpilogueToggle
             checked={showEpilogue}
             disabled={!reveal}
@@ -215,8 +474,10 @@ export function TrainerSettlement({
               本局提前结束，案例还剩 {missed} 根没走到，图上没有它们
             </span>
           )}
-          <div className="trainer-ghost-slots">
-            <span>AI 对照与教训沉淀在「复盘」页签</span>
+          <div className={`trainer-ghost-slots ${stylex.props(styles.ghostSlots).className}`}>
+            <span className={stylex.props(styles.ghostSlot).className}>
+              AI 对照与教训沉淀在「复盘」页签
+            </span>
           </div>
         </div>
       </div>
@@ -261,10 +522,18 @@ function FillLine({
   stop?: boolean;
 }) {
   return (
-    <li className="trainer-fill">
-      <span className="num trainer-fill-price">{fmt(price)}</span>
-      <span className={`trainer-fill-tag${stop ? ' trainer-tag--stop' : ''}`}>{label}</span>
-      <span className="num trainer-fill-size">{formatPositionSize(size)}</span>
+    <li className={`trainer-fill ${stylex.props(styles.fill).className}`}>
+      <span className={`num trainer-fill-price ${stylex.props(styles.fillPrice).className}`}>
+        {fmt(price)}
+      </span>
+      <span
+        className={`trainer-fill-tag ${stylex.props(styles.fillMuted, stop && styles.tagStop).className}`}
+      >
+        {label}
+      </span>
+      <span className={`num trainer-fill-size ${stylex.props(styles.fillMuted).className}`}>
+        {formatPositionSize(size)}
+      </span>
     </li>
   );
 }
@@ -288,25 +557,27 @@ function PlanTrack({ track, summary }: TrackProps) {
   const geom = trackGeometry(track);
   const caption = trackCaption(track, summary);
   return (
-    <div className="trainer-leak">
-      <div className="trainer-leak-head">
-        <h2>计划拿到多少，实际拿到多少</h2>
-        <em>这一局的差距就是这条轨</em>
+    <div className={`trainer-leak ${stylex.props(styles.leak).className}`}>
+      <div className={`trainer-leak-head ${stylex.props(styles.leakHead).className}`}>
+        <h2 className={stylex.props(styles.leakHeading).className}>计划拿到多少，实际拿到多少</h2>
+        <em className={stylex.props(styles.leakDescription).className}>这一局的差距就是这条轨</em>
       </div>
-      <div className="trainer-track">
-        <div className="trainer-track-plan" />
+      <div className={`trainer-track ${stylex.props(styles.track).className}`}>
+        <div className={`trainer-track-plan ${stylex.props(styles.trackPlan).className}`} />
         <div
-          className={`trainer-track-got${geom.gotNegative ? ' trainer-track-got--loss' : ''}`}
+          className={`trainer-track-got${geom.gotNegative ? ' trainer-track-got--loss' : ''} ${stylex.props(styles.trackGot, geom.gotNegative && styles.trackGotLoss).className}`}
           style={{ width: `${geom.gotPct}%` }}
         />
         <div
-          className="trainer-track-give"
+          className={`trainer-track-give ${stylex.props(styles.trackGive).className}`}
           style={{ left: `${geom.giveLeftPct}%`, width: `${geom.givePct}%` }}
         />
-        <div className="trainer-track-zero" />
-        <div className="trainer-track-caption">{caption}</div>
+        <div className={`trainer-track-zero ${stylex.props(styles.trackZero).className}`} />
+        <div className={`trainer-track-caption ${stylex.props(styles.trackCaption).className}`}>
+          {caption}
+        </div>
       </div>
-      <div className="trainer-track-scale">
+      <div className={`trainer-track-scale ${stylex.props(styles.trackScale).className}`}>
         <span className="num">0R</span>
         <span className="num">计划上限 {formatRewardRisk(track.plannedR)}R</span>
       </div>
@@ -329,7 +600,7 @@ function TrainerFigures({ track, summary }: TrackProps) {
   const single = track.tradeCount === 1;
   const perTrade = single ? track.plannedR : track.plannedR / track.tradeCount;
   return (
-    <div className="trainer-figures">
+    <div className={`trainer-figures ${stylex.props(styles.figures).className}`}>
       <figure className="trainer-fig">
         <figcaption>计划盈亏比</figcaption>
         <div className="num trainer-fig-val">
