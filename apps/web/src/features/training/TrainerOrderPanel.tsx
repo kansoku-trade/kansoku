@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import * as stylex from '@stylexjs/stylex';
 import type {
   TrainerBasePeriod,
   TrainerEnvelope,
@@ -31,6 +32,79 @@ import { TrainerPositionLane } from './TrainerPositionLane';
 import { freshVerdict, useAmendCheck } from './useAmendCheck';
 import { useChartScrollLock } from './useChartScrollLock';
 import { useEntryDraft, type EntryDraftApi } from './useEntryDraft';
+import { colors, fontSizes, radii } from '../../theme/tokens.stylex';
+
+const styles = stylex.create({
+  chip: {
+    alignItems: 'center',
+    backgroundColor: 'rgb(20 20 20 / 0.88)',
+    borderColor: colors.borderStrong,
+    borderRadius: radii.default,
+    borderStyle: 'solid',
+    borderWidth: '1px',
+    color: colors.textPrimary,
+    display: 'flex',
+    fontSize: fontSizes.sm,
+    fontVariantNumeric: 'tabular-nums',
+    gap: '8px',
+    padding: '3px 9px',
+    pointerEvents: 'auto',
+  },
+  chipToast: {
+    borderLeftColor: colors.accent,
+    borderLeftWidth: '2px',
+    maxWidth: '320px',
+  },
+  chipError: {
+    borderLeftColor: colors.down,
+    borderLeftWidth: '2px',
+    color: colors.down,
+  },
+  chipLong: {
+    color: colors.up,
+    fontWeight: 600,
+  },
+  chipShort: {
+    color: colors.down,
+    fontWeight: 600,
+  },
+  lane: {
+    alignItems: 'center',
+    borderTopColor: colors.border,
+    borderTopStyle: 'solid',
+    borderTopWidth: '1px',
+    display: 'flex',
+    flexBasis: 'auto',
+    flexGrow: 0,
+    flexShrink: 0,
+    gap: '8px',
+    height: '38px',
+    overflowX: 'clip',
+    overflowY: 'visible',
+    padding: '0 12px',
+    position: 'relative',
+  },
+  spacer: {
+    marginLeft: 'auto',
+  },
+  hint: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.sm,
+    minWidth: 0,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  laneNumStop: {
+    color: colors.down,
+  },
+  laneNumTarget: {
+    color: colors.up,
+  },
+  status: {
+    color: colors.textSecondary,
+  },
+});
 
 // Why the entry buttons on the ticket are locked, said in the tooltip rather than left to the
 // trader to work out from a greyed-out row.
@@ -195,9 +269,19 @@ export function TrainerOrderPanel({
   const errorChip = (
     <TrainerOverlayPortal slot="stack">
       {outcome?.cursor === view.cursor && (
-        <div className="trainer-chip trainer-chip--toast">{outcome.text}</div>
+        <div
+          className={`trainer-chip trainer-chip--toast ${stylex.props(styles.chip, styles.chipToast).className}`}
+        >
+          {outcome.text}
+        </div>
       )}
-      {error && <div className="trainer-chip trainer-chip--error">{error}</div>}
+      {error && (
+        <div
+          className={`trainer-chip trainer-chip--error ${stylex.props(styles.chip, styles.chipError).className}`}
+        >
+          {error}
+        </div>
+      )}
     </TrainerOverlayPortal>
   );
 
@@ -269,7 +353,13 @@ export function TrainerOrderPanel({
         </>
       );
     }
-    return <div className="trainer-lane trainer-order-panel--status">本局已结束</div>;
+    return (
+      <div
+        className={`trainer-lane trainer-order-panel--status ${stylex.props(styles.lane, styles.status).className}`}
+      >
+        本局已结束
+      </div>
+    );
   }
 
   // The stop alone defines the risk unit, so a level can be priced before the target exists.
@@ -372,21 +462,31 @@ function TrainerPendingOrderLane({
   return (
     <>
       <TrainerOverlayPortal slot="stack">
-        <div className="trainer-chip">
-          <b className={order.direction === 'long' ? 'trainer-chip-long' : 'trainer-chip-short'}>
+        <div className={`trainer-chip ${stylex.props(styles.chip).className}`}>
+          <b
+            className={`${order.direction === 'long' ? 'trainer-chip-long' : 'trainer-chip-short'} ${stylex.props(order.direction === 'long' ? styles.chipLong : styles.chipShort).className}`}
+          >
             {market ? '未成交' : '挂单中'} · {order.direction === 'long' ? '多头' : '空头'}
           </b>
           <span>@{order.entry}</span>
-          <span className="trainer-lane-num--stop">止损 {order.stop}</span>
-          <span className="trainer-lane-num--target">目标 {order.target}</span>
+          <span
+            className={`trainer-lane-num--stop ${stylex.props(styles.laneNumStop).className}`}
+          >
+            止损 {order.stop}
+          </span>
+          <span
+            className={`trainer-lane-num--target ${stylex.props(styles.laneNumTarget).className}`}
+          >
+            目标 {order.target}
+          </span>
         </div>
       </TrainerOverlayPortal>
-      <div className="trainer-lane">
+      <div className={`trainer-lane ${stylex.props(styles.lane).className}`}>
         <button className="btn" disabled={submitting} onClick={onCancel}>
           撤销挂单
         </button>
-        <span className="trainer-lane-spacer" />
-        <span className="trainer-lane-hint">
+        <span className={`trainer-lane-spacer ${stylex.props(styles.spacer).className}`} />
+        <span className={`trainer-lane-hint ${stylex.props(styles.hint).className}`}>
           {market
             ? `市价单在下一根 ${basePeriod} 的开盘价成交 —— 按「步进」推进一根就会成交`
             : `价格触及 ${order.entry} 才成交`}
