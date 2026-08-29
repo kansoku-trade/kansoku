@@ -3,13 +3,14 @@ import * as stylex from '@stylexjs/stylex';
 import { errorMessage } from '@web/lib/api';
 import { client } from '@web/lib/client';
 import { Badge, Button, Input } from '@web/ui';
+import { colors, fontSizes } from '../../theme/tokens.stylex';
 
 const styles = stylex.create({
   editor: {
-    alignItems: 'center',
-    display: 'flex',
-    gap: 6,
-    marginTop: 8,
+    'alignItems': 'center',
+    'display': 'flex',
+    'gap': 6,
+    'marginTop': 8,
     '@media (max-width: 560px)': {
       alignItems: 'stretch',
       flexDirection: 'column',
@@ -20,11 +21,21 @@ const styles = stylex.create({
     minWidth: 0,
   },
   button: {
-    flex: 'none',
-    whiteSpace: 'nowrap',
+    'flex': 'none',
+    'whiteSpace': 'nowrap',
     '@media (max-width: 560px)': {
       justifyContent: 'center',
     },
+  },
+  error: {
+    borderLeftColor: colors.down,
+    borderLeftStyle: 'solid',
+    borderLeftWidth: '2px',
+    color: colors.down,
+    fontSize: fontSizes.sm,
+    marginTop: 7,
+    overflowWrap: 'anywhere',
+    paddingLeft: 7,
   },
 });
 
@@ -71,7 +82,10 @@ export function ProviderBaseUrlField({
         {baseUrl ? <Badge tone="accent">已自定义</Badge> : null}
       </div>
       {error ? (
-        <div className="settings-provider-error" role="alert">
+        <div
+          className={`settings-provider-error ${stylex.props(styles.error).className}`}
+          role="alert"
+        >
           {error}
         </div>
       ) : null}
