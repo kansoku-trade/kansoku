@@ -2,15 +2,60 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { GraduationCap } from 'lucide-react';
 import type { TrainerFillState } from '@kansoku/pro-api';
+import * as stylex from '@stylexjs/stylex';
 import { getTrainerBridge } from '@web/features/desktop/desktopTrainerBridge';
 import { getOpenTrainerBridge } from '@web/features/desktop/desktopWindowsBridge';
 import { useCapabilities } from '@web/features/edition/capabilitiesStore';
 import { requestTrainerWindow } from '@web/features/training/requestTrainerWindow';
 import { useTrainerFill } from '@web/features/training/useTrainerFill';
 import { Button, Card, SectionTitle } from '@web/ui';
+import { colors, fontSizes } from '../../theme/tokens.stylex';
 
 const BASE_PERIOD = '5m';
 const REFILL_TARGET = 15;
+
+const styles = stylex.create({
+  card: {
+    alignItems: 'center',
+    display: 'flex',
+    gap: '12px',
+    justifyContent: 'space-between',
+    padding: '10px 12px',
+  },
+  body: {
+    alignItems: 'center',
+    display: 'flex',
+    gap: '8px',
+    minWidth: 0,
+  },
+  icon: {
+    flex: '0 0 auto',
+    opacity: 0.75,
+  },
+  hint: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.sm,
+  },
+  actions: {
+    alignItems: 'center',
+    display: 'flex',
+    flex: '0 0 auto',
+    gap: '6px',
+  },
+  cancel: {
+    'background': 'transparent',
+    'borderColor': 'transparent',
+    'color': colors.textMuted,
+    ':hover': {
+      color: colors.textPrimary,
+    },
+  },
+  stats: {
+    alignSelf: 'center',
+    color: colors.textSecondary,
+    fontSize: fontSizes.sm,
+  },
+});
 
 interface CardCopy {
   hint: string;
@@ -101,22 +146,30 @@ export function TrainerCard() {
   return (
     <>
       <SectionTitle>盲盘训练</SectionTitle>
-      <Card className="trainer-card">
-        <div className="trainer-card-body">
-          <GraduationCap size={18} aria-hidden />
-          <span className="trainer-card-hint">{fill.error ?? copy.hint}</span>
+      <Card className={`trainer-card ${stylex.props(styles.card).className}`}>
+        <div className={`trainer-card-body ${stylex.props(styles.body).className}`}>
+          <GraduationCap className={stylex.props(styles.icon).className} size={18} aria-hidden />
+          <span className={`trainer-card-hint ${stylex.props(styles.hint).className}`}>
+            {fill.error ?? copy.hint}
+          </span>
         </div>
-        <div className="trainer-card-actions">
+        <div className={`trainer-card-actions ${stylex.props(styles.actions).className}`}>
           <Button disabled={copy.disabled || fill.pending} onClick={copy.onAction}>
             {copy.action}
           </Button>
           {copy.cancel && (
-            <Button className="trainer-card-cancel" onClick={fill.abortFill}>
+            <Button
+              className={`trainer-card-cancel ${stylex.props(styles.cancel).className}`}
+              onClick={fill.abortFill}
+            >
               取消
             </Button>
           )}
           {licensed && (
-            <Link className="trainer-card-stats" to="/training/stats">
+            <Link
+              className={`trainer-card-stats ${stylex.props(styles.stats).className}`}
+              to="/training/stats"
+            >
               统计 →
             </Link>
           )}
