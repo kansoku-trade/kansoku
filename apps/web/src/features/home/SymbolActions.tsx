@@ -1,11 +1,53 @@
 import { useState } from 'react';
 import { Check, Lock, RadioTower } from 'lucide-react';
+import * as stylex from '@stylexjs/stylex';
 import { trackFeatureUsed } from '@web/lib/analytics';
 import { errorMessage } from '@web/lib/api';
 import { client } from '@web/lib/client';
 import { Button, Switch } from '@web/ui';
 import { useFeature } from '@web/features/edition/useFeature';
 import { useSymbolFollow } from '@web/features/quotes/useSymbolFollow';
+import { colors, fonts, fontSizes } from '../../theme/tokens.stylex';
+
+const styles = stylex.create({
+  follow: {
+    alignItems: 'center',
+    color: colors.textMuted,
+    display: 'inline-flex',
+    fontFamily: fonts.mono,
+    fontSize: fontSizes.xs,
+    gap: '4px',
+    marginLeft: 'auto',
+    whiteSpace: 'nowrap',
+  },
+  followActive: {
+    color: colors.accent,
+  },
+  followCompact: {
+    marginLeft: 0,
+  },
+  followError: {
+    color: colors.down,
+  },
+  followIcon: {
+    color: colors.borderStrong,
+  },
+  followIconActive: {
+    color: colors.accent,
+  },
+  followIconError: {
+    color: colors.down,
+  },
+  followLocked: {
+    opacity: 0.65,
+    ':hover': {
+      opacity: 1,
+    },
+  },
+  reassess: {
+    marginLeft: 'auto',
+  },
+});
 
 export function FollowToggle({
   symbol,
@@ -21,15 +63,6 @@ export function FollowToggle({
   const active = following ?? initialFollowing;
   if (state === 'absent') return null;
   const locked = state === 'locked';
-  const className = [
-    'symbol-card-follow',
-    active && 'symbol-card-follow--active',
-    statusError && 'symbol-card-follow--error',
-    locked && 'symbol-card-follow--locked',
-    compact && 'symbol-card-follow--compact',
-  ]
-    .filter(Boolean)
-    .join(' ');
 
   const onControlClick = (event: React.MouseEvent<HTMLSpanElement>) => {
     event.preventDefault();
@@ -45,7 +78,13 @@ export function FollowToggle({
 
   return (
     <span
-      className={className}
+      {...stylex.props(
+        styles.follow,
+        active && styles.followActive,
+        statusError && styles.followError,
+        locked && styles.followLocked,
+        compact && styles.followCompact,
+      )}
       title={
         locked
           ? active
@@ -55,7 +94,15 @@ export function FollowToggle({
       }
       onClick={onControlClick}
     >
-      <RadioTower aria-hidden="true" size={compact ? 12 : 11} />
+      <RadioTower
+        {...stylex.props(
+          styles.followIcon,
+          active && styles.followIconActive,
+          statusError && styles.followIconError,
+        )}
+        aria-hidden="true"
+        size={compact ? 12 : 11}
+      />
       <span className={compact ? 'sr-only' : undefined}>AI 跟进</span>
       {locked && <Lock className="follow-control-lock" size={compact ? 12 : 11} />}
       <Switch
@@ -113,7 +160,7 @@ export function ReassessButton({ symbol }: { symbol: string }) {
   const btnState = btnStates[state];
   return (
     <Button
-      className="reassess-action"
+      className={stylex.props(styles.reassess).className}
       state={btnState}
       onClick={run}
       disabled={state === 'running'}
