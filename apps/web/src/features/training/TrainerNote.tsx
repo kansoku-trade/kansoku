@@ -1,10 +1,44 @@
 import { useState } from 'react';
 import * as stylex from '@stylexjs/stylex';
-import { colors, radii } from '../../theme/tokens.stylex';
+import { colors, fontSizes, radii, sizes } from '../../theme/tokens.stylex';
 
 const styles = stylex.create({
-  input: {
-    width: '260px',
+  root: {
+    flex: '0 0 auto',
+    position: 'relative',
+  },
+  button: {
+    'alignItems': 'center',
+    'backgroundColor': colors.backgroundElement,
+    'borderColor': colors.borderStrong,
+    'borderRadius': radii.default,
+    'borderStyle': 'solid',
+    'borderWidth': '1px',
+    'boxSizing': 'border-box',
+    'color': colors.textPrimary,
+    'cursor': 'pointer',
+    'display': 'inline-flex',
+    'fontSize': fontSizes.base,
+    'gap': '7px',
+    'height': sizes.controlHeight,
+    'padding': '0 14px',
+    ':hover:not(:disabled)': {
+      borderColor: colors.accent,
+    },
+    '[aria-pressed="true"]': {
+      borderColor: colors.accent,
+      color: colors.accent,
+    },
+    ':disabled': {
+      borderColor: colors.borderStrong,
+      color: colors.textMuted,
+      cursor: 'default',
+    },
+    ':focus-visible': {
+      borderColor: colors.focusBorder,
+      boxShadow: colors.focusRing,
+      outline: 'none',
+    },
   },
   popover: {
     backgroundColor: colors.backgroundSurface,
@@ -19,9 +53,23 @@ const styles = stylex.create({
     right: 0,
     zIndex: 30,
   },
-  root: {
-    flex: '0 0 auto',
-    position: 'relative',
+  input: {
+    'backgroundColor': colors.backgroundElement,
+    'borderColor': colors.borderStrong,
+    'borderRadius': radii.default,
+    'borderStyle': 'solid',
+    'borderWidth': '1px',
+    'boxSizing': 'border-box',
+    'color': colors.textPrimary,
+    'fontSize': fontSizes.base,
+    'height': sizes.controlHeight,
+    'padding': '0 10px',
+    'width': '260px',
+    ':focus-visible': {
+      borderColor: colors.focusBorder,
+      boxShadow: colors.focusRing,
+      outline: 'none',
+    },
   },
 });
 
@@ -39,7 +87,7 @@ export function TrainerNote({ label, value, onChange, hint }: TrainerNoteProps) 
   return (
     <div className={`trainer-note ${stylex.props(styles.root).className}`}>
       <button
-        className="btn"
+        className={`btn ${stylex.props(styles.button).className}`}
         aria-pressed={open}
         aria-label={label}
         title={filled ? value : (hint ?? '可以留空，只是留给日后复盘')}
