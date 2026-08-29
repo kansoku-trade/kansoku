@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react';
+import * as stylex from '@stylexjs/stylex';
 import { ArrowLeft } from 'lucide-react';
 import { useQuery } from '@web/lib/apiHooks';
 import { client } from '@web/lib/client';
@@ -29,6 +30,105 @@ import type {
   RoleSetting,
   UsageToday,
 } from './types';
+import { colors, fontSizes } from '../../theme/tokens.stylex';
+
+const styles = stylex.create({
+  page: {
+    margin: 0,
+    maxWidth: 'none',
+    padding: 0,
+    width: '100%',
+    '@media (min-width: 1001px)': {
+      height: '100%',
+      minHeight: 0,
+      overflow: 'hidden',
+    },
+  },
+  viewport: {
+    height: 'auto',
+    '@media (min-width: 1001px)': {
+      height: '100%',
+    },
+  },
+  content: {
+    margin: '0 auto',
+    maxWidth: '1180px',
+    padding: '24px 20px 60px',
+    width: '100%',
+    '@media (max-width: 560px)': {
+      paddingInline: '12px',
+    },
+  },
+  heading: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.xl,
+    fontWeight: 600,
+    margin: '0 0 4px',
+  },
+  backLink: {
+    alignItems: 'center',
+    color: {
+      'default': colors.textSecondary,
+      ':hover': colors.textPrimary,
+    },
+    display: 'inline-flex',
+    fontSize: fontSizes.sm,
+    gap: '4px',
+    marginBottom: '8px',
+  },
+  subtitle: {
+    color: colors.textMuted,
+    fontSize: fontSizes.sm,
+    marginBottom: '16px',
+  },
+  loadError: {
+    alignItems: 'center',
+    display: 'flex',
+    gap: '12px',
+    justifyContent: 'space-between',
+  },
+  workspace: {
+    alignItems: 'start',
+    display: 'grid',
+    gap: '12px',
+    gridTemplateColumns: 'minmax(0, 1.15fr) minmax(300px, 1fr)',
+    '@media (max-width: 900px)': {
+      gridTemplateColumns: '1fr',
+    },
+  },
+  column: {
+    display: 'grid',
+    gap: '12px',
+    minWidth: 0,
+  },
+  card: {
+    minWidth: 0,
+    overflow: 'hidden',
+    padding: 0,
+  },
+  cardHeading: {
+    alignItems: 'center',
+    borderBottomColor: colors.border,
+    borderBottomStyle: 'solid',
+    borderBottomWidth: '1px',
+    display: 'flex',
+    gap: '12px',
+    justifyContent: 'space-between',
+    minHeight: '34px',
+    padding: '0 11px',
+  },
+  aboutLink: {
+    fontSize: fontSizes.xs,
+    marginTop: '24px',
+    textAlign: 'center',
+  },
+  aboutLinkAnchor: {
+    color: {
+      'default': colors.textMuted,
+      ':hover': colors.textPrimary,
+    },
+  },
+});
 
 function SettingsWorkspace({
   settings,
@@ -71,8 +171,8 @@ function SettingsWorkspace({
         usageError={usageError}
         onRetryUsage={reloadUsage}
       />
-      <div className="settings-workspace">
-        <div className="settings-main-column">
+      <div className={`settings-workspace ${stylex.props(styles.workspace).className}`}>
+        <div className={`settings-main-column ${stylex.props(styles.column).className}`}>
           <RoleModelsCard
             initialRoles={settings.roles}
             roles={roleDrafts}
@@ -81,7 +181,7 @@ function SettingsWorkspace({
             view={view}
             onDraftChange={updateRoleDraft}
           />
-          <Card className="settings-provider-card">
+          <Card className={`settings-provider-card ${stylex.props(styles.card).className}`}>
             <ProviderCredentialsSection
               settings={settings}
               catalog={catalog}
@@ -93,12 +193,12 @@ function SettingsWorkspace({
             />
           </Card>
         </div>
-        <div className="settings-side-column">
+        <div className={`settings-side-column ${stylex.props(styles.column).className}`}>
           <LicenseSection />
           <TimeDisplaySettingsCard />
           <WatchedMarketsCard />
-          <Card className="settings-connections-card">
-            <div className="settings-card-heading">
+          <Card className={`settings-connections-card ${stylex.props(styles.card).className}`}>
+            <div className={`settings-card-heading ${stylex.props(styles.cardHeading).className}`}>
               <SectionTitle>连接</SectionTitle>
             </div>
             <LongbridgeSection />
@@ -116,7 +216,7 @@ function SettingsWorkspace({
 function SettingsBackLink() {
   return (
     <a
-      className="settings-back-link"
+      className={`settings-back-link ${stylex.props(styles.backLink).className}`}
       href="/"
       onClick={(event) => {
         if (
@@ -140,9 +240,9 @@ function SettingsBackLink() {
 function SettingsPageScrollArea({ children }: { children: ReactNode }) {
   return (
     <ScrollArea
-      className="page settings-page"
-      viewportClassName="settings-page-viewport"
-      contentClassName="settings-page-content"
+      className={`page settings-page ${stylex.props(styles.page).className}`}
+      viewportClassName={`settings-page-viewport ${stylex.props(styles.viewport).className}`}
+      contentClassName={`settings-page-content ${stylex.props(styles.content).className}`}
     >
       {children}
     </ScrollArea>
@@ -187,8 +287,8 @@ export function SettingsPage() {
     return (
       <SettingsPageScrollArea>
         <SettingsBackLink />
-        <h1>设置</h1>
-        <ErrorBox className="settings-load-error">
+        <h1 {...stylex.props(styles.heading)}>设置</h1>
+        <ErrorBox className={`settings-load-error ${stylex.props(styles.loadError).className}`}>
           <span>{settingsError ?? catalogError}</span>
           <Button
             onClick={() => {
@@ -207,7 +307,7 @@ export function SettingsPage() {
     return (
       <SettingsPageScrollArea>
         <SettingsBackLink />
-        <h1>设置</h1>
+        <h1 {...stylex.props(styles.heading)}>设置</h1>
         <div className="note-block">加载中…</div>
       </SettingsPageScrollArea>
     );
@@ -218,8 +318,10 @@ export function SettingsPage() {
   return (
     <SettingsPageScrollArea>
       <SettingsBackLink />
-      <h1>设置</h1>
-      <div className="settings-page-subtitle">显示、AI 模型、Provider 与用量</div>
+      <h1 {...stylex.props(styles.heading)}>设置</h1>
+      <div className={`settings-page-subtitle ${stylex.props(styles.subtitle).className}`}>
+        显示、AI 模型、Provider 与用量
+      </div>
       <SettingsWorkspace
         settings={normalizedSettings}
         catalog={catalog}
@@ -231,8 +333,10 @@ export function SettingsPage() {
         lobehubCredits={lobehubCredits}
         lobehubCreditsError={lobehubCreditsError}
       />
-      <div className="settings-about-link">
-        <a href="/about">关于 Kansoku · 版本 {__APP_VERSION__}</a>
+      <div className={`settings-about-link ${stylex.props(styles.aboutLink).className}`}>
+        <a {...stylex.props(styles.aboutLinkAnchor)} href="/about">
+          关于 Kansoku · 版本 {__APP_VERSION__}
+        </a>
       </div>
     </SettingsPageScrollArea>
   );
