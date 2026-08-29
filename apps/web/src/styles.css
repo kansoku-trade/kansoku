@@ -179,10 +179,6 @@ body.trainer-dragging-level * {
   border-radius: var(--radius-md);
 }
 
-.desktop-content .fullpage {
-  height: calc(100vh - 40px);
-}
-
 @media (min-width: 1001px) {
   #root:has(> .settings-page),
   .desktop-content:has(> .settings-page) {
