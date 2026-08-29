@@ -9,7 +9,9 @@ import {
   Trash2,
   TrendingUp,
 } from 'lucide-react';
+import * as stylex from '@stylexjs/stylex';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { colors, radii } from '../../../theme/tokens.stylex';
 import { StylePanel } from './StylePanel';
 import type { DrawingsApi } from './useDrawings';
 import type { DrawingTool } from './drawingsMachine';
@@ -25,6 +27,63 @@ const TOOLS: { tool: DrawingTool; icon: typeof MousePointer2; label: string }[] 
 ];
 
 const CLEAR_ARM_MS = 3000;
+
+const styles = stylex.create({
+  toolbar: {
+    position: 'absolute',
+    top: '40px',
+    left: '8px',
+    zIndex: 10,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '2px',
+    padding: '4px',
+    backgroundColor: 'rgb(10 10 10 / 0.7)',
+    borderColor: colors.border,
+    borderStyle: 'solid',
+    borderWidth: '1px',
+    borderRadius: radii.default,
+  },
+  button: {
+    'width': '26px',
+    'height': '26px',
+    'display': 'flex',
+    'alignItems': 'center',
+    'justifyContent': 'center',
+    'backgroundColor': 'transparent',
+    'borderStyle': 'none',
+    'borderWidth': 0,
+    'borderRadius': radii.default,
+    'color': colors.textSecondary,
+    'cursor': 'pointer',
+    ':hover:not(:disabled)': {
+      color: colors.textPrimary,
+      backgroundColor: colors.backgroundHover,
+    },
+    ':disabled': {
+      color: colors.textMuted,
+      opacity: 0.4,
+      cursor: 'default',
+    },
+  },
+  buttonPressed: {
+    color: colors.accent,
+    backgroundColor: colors.backgroundHover,
+  },
+  clearArmed: {
+    color: colors.down,
+  },
+  separator: {
+    height: '1px',
+    margin: '2px',
+    backgroundColor: colors.border,
+  },
+});
+
+function toolbarButtonClassName(armed: boolean) {
+  const className = stylex.props(styles.button, armed && styles.clearArmed).className;
+  return armed ? `${className} drawing-toolbar-clear-armed` : className;
+}
 
 function useArmedConfirm(ms: number): [boolean, (onConfirm: () => void) => void] {
   const [armed, setArmed] = useState(false);
@@ -59,10 +118,14 @@ export function DrawingToolbar({ api }: { api: DrawingsApi }) {
 
   return (
     <>
-      <div className="drawing-toolbar" aria-label="标注工具">
+      <div
+        className={`drawing-toolbar ${stylex.props(styles.toolbar).className}`}
+        aria-label="标注工具"
+      >
         {TOOLS.map(({ tool, icon: Icon, label }) => (
           <button
             key={tool}
+            {...stylex.props(styles.button, api.activeTool === tool && styles.buttonPressed)}
             aria-pressed={api.activeTool === tool}
             onClick={() => api.setActiveTool(tool)}
             title={label}
@@ -70,9 +133,9 @@ export function DrawingToolbar({ api }: { api: DrawingsApi }) {
             <Icon size={16} />
           </button>
         ))}
-        <div className="drawing-toolbar-sep" />
+        <div className={`drawing-toolbar-sep ${stylex.props(styles.separator).className}`} />
         <button
-          className={armedAll ? 'drawing-toolbar-clear-armed' : undefined}
+          className={toolbarButtonClassName(armedAll)}
           disabled={api.count === 0}
           onClick={() => triggerAll(api.clearAll)}
           title={armedAll ? '再次点击确认清除全部' : '清除全部'}
@@ -81,7 +144,7 @@ export function DrawingToolbar({ api }: { api: DrawingsApi }) {
         </button>
         {api.hasAi && (
           <button
-            className={armedAi ? 'drawing-toolbar-clear-armed' : undefined}
+            className={toolbarButtonClassName(armedAi)}
             onClick={() => triggerAi(api.clearAi)}
             title={armedAi ? '再次点击确认清除 AI 画线' : '清 AI'}
           >
