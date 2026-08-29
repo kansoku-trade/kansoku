@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react';
 import { ArrowRight } from 'lucide-react';
+import * as stylex from '@stylexjs/stylex';
 import {
   AUTO_SIGNAL_META,
   type DivergencePair,
@@ -10,6 +11,27 @@ import {
 import { fmt } from '@web/lib/format';
 import { theme } from '@web/lib/theme';
 import { Badge, MarketTime } from '@web/ui';
+import { colors, fontSizes } from '../../../../theme/tokens.stylex';
+
+const styles = stylex.create({
+  targetContext: {
+    backgroundColor: colors.backgroundSurface,
+    borderColor: colors.border,
+    borderStyle: 'solid',
+    borderWidth: '1px',
+    marginBottom: '6px',
+    padding: '8px',
+  },
+  targetHead: {
+    alignItems: 'baseline',
+    color: colors.textPrimary,
+    display: 'flex',
+    fontSize: fontSizes.base,
+    fontVariantNumeric: 'tabular-nums',
+    fontWeight: 600,
+    justifyContent: 'space-between',
+  },
+});
 
 const ZONE_KIND_LABEL: Record<string, string> = {
   entry: '入场区',
@@ -86,10 +108,12 @@ export function PriceZoneCard({
   return (
     <div
       className={`zone-item ${compact ? 'compact' : ''}`}
-      style={{ '--zc': color } as CSSProperties}
+      style={{ borderLeftColor: color } as CSSProperties}
     >
       <div className="zone-head">
-        <span className="zone-label">{zone.label}</span>
+        <span className="zone-label" style={{ color }}>
+          {zone.label}
+        </span>
         <span className="zone-range">
           {isBand ? `$${fmt(zone.low)} - $${fmt(zone.high)}` : `$${fmt(zone.low)}`}
         </span>
@@ -107,8 +131,8 @@ export function PriceZoneCard({
 
 export function TargetContextCard({ target }: { target: IntradayTargetContext }) {
   return (
-    <div className="target-context">
-      <div className="target-head">
+    <div {...stylex.props(styles.targetContext)}>
+      <div {...stylex.props(styles.targetHead)}>
         <span>{target.label}</span>
         <span>${fmt(target.price)}</span>
       </div>
