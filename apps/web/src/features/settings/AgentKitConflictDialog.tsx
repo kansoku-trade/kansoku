@@ -1,7 +1,24 @@
 import { useState } from 'react';
+import * as stylex from '@stylexjs/stylex';
 import { Button } from '@web/ui';
 import type { PendingConflict } from '@kansoku/core/contract/agentKit';
+import { colors, fontSizes } from '../../theme/tokens.stylex';
 import type { DesktopAgentKitBridge } from './desktopAgentKit';
+
+const styles = stylex.create({
+  testResult: {
+    fontSize: fontSizes.sm,
+  },
+  testResultFail: {
+    color: colors.down,
+  },
+  credActions: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    gap: '6px',
+    marginTop: '12px',
+  },
+});
 
 export function AgentKitConflictDialog({
   conflict,
@@ -35,9 +52,13 @@ export function AgentKitConflictDialog({
     <div className="settings-reset-confirm">
       <p>目标文件 {conflict.dest} 已经存在但不在 Kit 管理列表里，请选择处理方式：</p>
       {error ? (
-        <div className="settings-test-result settings-test-result--fail">{error}</div>
+        <div
+          className={`settings-test-result settings-test-result--fail ${stylex.props(styles.testResult, styles.testResultFail).className}`}
+        >
+          {error}
+        </div>
       ) : null}
-      <div className="settings-cred-actions">
+      <div className={`settings-cred-actions ${stylex.props(styles.credActions).className}`}>
         <Button disabled={busy} onClick={close}>
           稍后再说
         </Button>
