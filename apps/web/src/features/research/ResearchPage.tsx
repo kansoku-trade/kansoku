@@ -232,6 +232,17 @@ const styles = stylex.create({
     paddingLeft: '30px',
     width: '100%',
   },
+  visuallyHidden: {
+    border: 0,
+    clip: 'rect(0, 0, 0, 0)',
+    height: '1px',
+    margin: '-1px',
+    overflow: 'hidden',
+    padding: 0,
+    position: 'absolute',
+    whiteSpace: 'nowrap',
+    width: '1px',
+  },
   refresh: {
     'alignItems': 'center',
     'backgroundColor': 'transparent',
@@ -883,7 +894,9 @@ export function ResearchPage() {
           <div {...stylex.props(styles.searchActions)}>
             <label {...stylex.props(styles.search)}>
               <Search size={14} aria-hidden="true" {...stylex.props(styles.searchIcon)} />
-              <span className="sr-only">搜索研究资料</span>
+              <span className={`sr-only ${stylex.props(styles.visuallyHidden).className}`}>
+                搜索研究资料
+              </span>
               <Input
                 type="search"
                 value={query}
