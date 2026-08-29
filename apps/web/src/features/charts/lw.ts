@@ -1,3 +1,4 @@
+import * as stylex from '@stylexjs/stylex';
 import {
   createChart,
   createSeriesMarkers,
@@ -19,6 +20,30 @@ import {
 import { formatMarketDateTime, formatMarketTick } from '@kansoku/shared/time';
 import type { Candle, ColoredPoint, LinePoint, SeriesMarker } from '@kansoku/shared/types';
 import { theme } from '../../lib/theme';
+import { colors, fontSizes, radii } from '../../theme/tokens.stylex';
+
+const styles = stylex.create({
+  markerTooltip: {
+    backgroundColor: 'rgba(20, 20, 20, 0.97)',
+    borderColor: colors.borderStrong,
+    borderRadius: radii.default,
+    borderStyle: 'solid',
+    borderWidth: '1px',
+    boxShadow: '0 4px 14px rgba(10, 10, 10, 0.5)',
+    color: colors.textPrimary,
+    display: 'none',
+    fontSize: fontSizes.sm,
+    lineHeight: 1.5,
+    maxWidth: '300px',
+    padding: '8px 10px',
+    pointerEvents: 'none',
+    position: 'absolute',
+    whiteSpace: 'pre-line',
+    zIndex: 30,
+  },
+});
+
+export const markerTooltipClassName = stylex.props(styles.markerTooltip).className;
 
 export const asTime = (t: number) => t as UTCTimestamp;
 
@@ -82,7 +107,7 @@ export interface MarkerTooltipHandle {
 
 export function markerTooltip(chart: IChartApi, host: HTMLElement): MarkerTooltipHandle {
   const el = document.createElement('div');
-  el.className = 'marker-tooltip';
+  el.className = markerTooltipClassName;
   host.appendChild(el);
   let byId = new Map<string, string>();
 

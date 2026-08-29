@@ -13,6 +13,7 @@ import type {
 } from 'lightweight-charts';
 import type { IntradayFvgZone } from '@kansoku/shared/types';
 import { theme } from '@web/lib/theme';
+import { markerTooltipClassName } from '../lw';
 
 type DrawTarget = Parameters<IPrimitivePaneRenderer['draw']>[0];
 
@@ -295,7 +296,7 @@ export interface FvgTooltipHandle {
 
 export function fvgTooltip(chart: IChartApi, host: HTMLElement): FvgTooltipHandle {
   const el = document.createElement('div');
-  el.className = 'marker-tooltip fvg-tooltip';
+  el.className = `${markerTooltipClassName} fvg-tooltip`;
   host.appendChild(el);
   let byId = new Map<string, string>();
 
