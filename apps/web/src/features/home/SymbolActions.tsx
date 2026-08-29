@@ -38,6 +38,9 @@ const styles = stylex.create({
   followIconError: {
     color: colors.down,
   },
+  followLockIcon: {
+    color: colors.accent,
+  },
   followLocked: {
     opacity: 0.65,
     ':hover': {
@@ -46,6 +49,9 @@ const styles = stylex.create({
   },
   reassess: {
     marginLeft: 'auto',
+  },
+  reassessIcon: {
+    verticalAlign: '-2px',
   },
 });
 
@@ -104,7 +110,12 @@ export function FollowToggle({
         size={compact ? 12 : 11}
       />
       <span className={compact ? 'sr-only' : undefined}>AI 跟进</span>
-      {locked && <Lock className="follow-control-lock" size={compact ? 12 : 11} />}
+      {locked && (
+        <Lock
+          className={`follow-control-lock ${stylex.props(styles.followLockIcon).className}`}
+          size={compact ? 12 : 11}
+        />
+      )}
       <Switch
         ariaLabel={`持续跟进 ${symbol} 的 AI 点评`}
         checked={active}
@@ -145,7 +156,7 @@ export function ReassessButton({ symbol }: { symbol: string }) {
     running: '分析中…',
     done: (
       <>
-        已触发 <Check className="icon" size={13} />
+        已触发 <Check className={`icon ${stylex.props(styles.reassessIcon).className}`} size={13} />
       </>
     ),
     failed: '未启动',
