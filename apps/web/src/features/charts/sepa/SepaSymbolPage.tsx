@@ -1,4 +1,6 @@
+import type { ReactNode } from 'react';
 import { ArrowLeft } from 'lucide-react';
+import * as stylex from '@stylexjs/stylex';
 import type { ChartMeta } from '@kansoku/shared/types';
 import { symbolAnalysisPath } from '@kansoku/shared/chartUrl';
 import { CockpitSkeleton } from '@web/features/cockpit/CockpitSkeleton';
@@ -9,26 +11,43 @@ import { Empty, ErrorBox } from '@web/ui';
 import { useIntradayDoc } from '../intraday/useIntradayDoc';
 import { SepaCockpit, type SepaDocView } from './SepaCockpit';
 
+const styles = stylex.create({
+  page: {
+    maxWidth: '900px',
+    margin: '0 auto',
+    padding: '24px 20px 60px',
+  },
+});
+
+function Page({ children }: { children: ReactNode }) {
+  const pageProps = stylex.props(styles.page);
+  return (
+    <div {...pageProps} className={`page ${pageProps.className}`}>
+      {children}
+    </div>
+  );
+}
+
 function PinnedSepaView({ sym, analysisId }: { sym: string; analysisId: string }) {
   const liveQuote = useLiveQuote(sym);
   const { doc, error, reload } = useIntradayDoc(analysisId);
 
   if (error) {
     return (
-      <div className="page">
+      <Page>
         <ErrorBox>{error}</ErrorBox>
-      </div>
+      </Page>
     );
   }
   if (!doc) return <CockpitSkeleton />;
   if (doc.built.kind !== 'sepa') {
     return (
-      <div className="page">
+      <Page>
         <ErrorBox>
           <p>这份分析不是 SEPA 仪表盘。</p>
           <a href={symbolAnalysisPath(sym, analysisId)}>去驾驶舱查看</a>
         </ErrorBox>
-      </div>
+      </Page>
     );
   }
   const sepaDoc: SepaDocView = { ...doc, built: doc.built };
@@ -47,29 +66,29 @@ function LatestSepaView({ sym }: { sym: string }) {
 
   if (listError) {
     return (
-      <div className="page">
+      <Page>
         <ErrorBox>{listError}</ErrorBox>
-      </div>
+      </Page>
     );
   }
   if (!charts) return <CockpitSkeleton />;
   if (charts.length === 0) {
     return (
-      <div className="page">
+      <Page>
         <Empty>
           <p>这只股票还没有 SEPA 仪表盘</p>
           <a href={symbolAnalysisPath(sym, null)}>
             <ArrowLeft className="icon" size={13} /> 返回驾驶舱
           </a>
         </Empty>
-      </div>
+      </Page>
     );
   }
   if (docError) {
     return (
-      <div className="page">
+      <Page>
         <ErrorBox>{docError}</ErrorBox>
-      </div>
+      </Page>
     );
   }
   if (!doc || doc.built.kind !== 'sepa') return <CockpitSkeleton />;
@@ -77,13 +96,7 @@ function LatestSepaView({ sym }: { sym: string }) {
   return <SepaCockpit sym={sym} doc={sepaDoc} reload={reload} liveQuote={liveQuote} />;
 }
 
-export function SepaSymbolPage({
-  sym,
-  analysisId,
-}: {
-  sym: string;
-  analysisId: string | null;
-}) {
+export function SepaSymbolPage({ sym, analysisId }: { sym: string; analysisId: string | null }) {
   if (analysisId) return <PinnedSepaView sym={sym} analysisId={analysisId} />;
   return <LatestSepaView sym={sym} />;
 }
