@@ -5,29 +5,69 @@ import type { ContextStance, IntradayContext } from '@kansoku/shared/types';
 import * as stylex from '@stylexjs/stylex';
 import { DIRECTION_LABEL } from './directionLabels';
 import { Button, MarketTime, Spinner, TimeAgo } from '@web/ui';
-import { colors, fontSizes } from '../../../theme/tokens.stylex';
+import { colors, fontSizes, radii } from '../../../theme/tokens.stylex';
 
 const styles = stylex.create({
   card: {
     marginBottom: '14px',
+    padding: '12px',
     borderStyle: 'solid',
     borderWidth: '1px',
   },
   longCard: {
+    backgroundImage: `linear-gradient(135deg, color-mix(in srgb, ${colors.up} 14%, transparent), color-mix(in srgb, ${colors.up} 4%, transparent))`,
     borderColor: colors.up,
-    backgroundImage: 'linear-gradient(135deg, rgb(38 166 154 / 0.14), rgb(38 166 154 / 0.04))',
   },
   shortCard: {
+    backgroundImage: `linear-gradient(135deg, color-mix(in srgb, ${colors.down} 14%, transparent), color-mix(in srgb, ${colors.down} 4%, transparent))`,
     borderColor: colors.down,
-    backgroundImage: 'linear-gradient(135deg, rgb(239 83 80 / 0.14), rgb(239 83 80 / 0.04))',
   },
   neutralCard: {
+    backgroundImage: `linear-gradient(135deg, color-mix(in srgb, ${colors.textSecondary} 14%, transparent), color-mix(in srgb, ${colors.textSecondary} 4%, transparent))`,
     borderColor: colors.textSecondary,
-    backgroundImage: 'linear-gradient(135deg, rgb(154 154 154 / 0.14), rgb(154 154 154 / 0.04))',
   },
   longText: { color: colors.up },
   shortText: { color: colors.down },
   neutralText: { color: colors.textSecondary },
+  verdictLabel: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.sm,
+    letterSpacing: '0.08em',
+    textTransform: 'uppercase',
+  },
+  predictionAge: {
+    color: colors.textMuted,
+    fontSize: fontSizes.xs,
+    fontVariantNumeric: 'tabular-nums',
+    letterSpacing: 'normal',
+    marginLeft: '6px',
+    textTransform: 'none',
+  },
+  staleBadge: {
+    backgroundColor: 'rgba(255, 176, 0, 0.15)',
+    borderColor: 'rgba(255, 176, 0, 0.4)',
+    borderRadius: radii.default,
+    borderStyle: 'solid',
+    borderWidth: '1px',
+    color: colors.accent,
+    fontSize: fontSizes.xs,
+    fontWeight: 600,
+    letterSpacing: 'normal',
+    marginLeft: '6px',
+    padding: '1px 6px',
+    textTransform: 'none',
+  },
+  verdictText: {
+    fontSize: fontSizes.xl,
+    fontWeight: 600,
+    marginTop: '4px',
+  },
+  verdictReason: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.base,
+    lineHeight: 1.5,
+    marginTop: '6px',
+  },
   action: {
     color: colors.textPrimary,
     fontWeight: 500,
@@ -38,9 +78,11 @@ const styles = stylex.create({
     borderTopStyle: 'dashed',
     borderTopWidth: '1px',
   },
-  longRefresh: { borderTopColor: 'rgb(38 166 154 / 0.4)' },
-  shortRefresh: { borderTopColor: 'rgb(239 83 80 / 0.4)' },
-  neutralRefresh: { borderTopColor: 'rgb(154 154 154 / 0.4)' },
+  longRefresh: { borderTopColor: `color-mix(in srgb, ${colors.up} 40%, transparent)` },
+  shortRefresh: { borderTopColor: `color-mix(in srgb, ${colors.down} 40%, transparent)` },
+  neutralRefresh: {
+    borderTopColor: `color-mix(in srgb, ${colors.textSecondary} 40%, transparent)`,
+  },
   refreshRow: {
     display: 'flex',
     alignItems: 'center',
@@ -133,24 +175,28 @@ export function ConclusionCard({ context, predictionStale, reassess }: Conclusio
 
   return (
     <div className={`verdict conclusion-card ${stylex.props(styles.card, tone.card).className}`}>
-      <div className="verdict-label">
+      <div className={`verdict-label ${stylex.props(styles.verdictLabel).className}`}>
         综合结论
         {predictionStale ? (
-          <span className="stale-badge">
+          <span className={`stale-badge ${stylex.props(styles.staleBadge).className}`}>
             <TriangleAlert className="icon" size={13} /> 盘中已过期
           </span>
         ) : (
-          <span className="prediction-age">
+          <span className={`prediction-age ${stylex.props(styles.predictionAge).className}`}>
             更新于 <MarketTime value={context.generated_at} format="clock" includeZone />（
             <TimeAgo since={context.generated_at} />）
           </span>
         )}
       </div>
-      <div className={`verdict-text ${stylex.props(tone.text).className}`}>
+      <div className={`verdict-text ${stylex.props(styles.verdictText, tone.text).className}`}>
         {DIRECTION_LABEL[stance] ?? '🤔 观望'}
       </div>
-      <div className="verdict-reason">{summary}</div>
-      <div className={`verdict-reason conclusion-action ${stylex.props(styles.action).className}`}>
+      <div className={`verdict-reason ${stylex.props(styles.verdictReason).className}`}>
+        {summary}
+      </div>
+      <div
+        className={`verdict-reason conclusion-action ${stylex.props(styles.verdictReason, styles.action).className}`}
+      >
         {action}
       </div>
       {outdated && reassess && <ReassessCta reassess={reassess} tone={stance} />}
