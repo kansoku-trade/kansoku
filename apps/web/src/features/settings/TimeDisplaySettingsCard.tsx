@@ -14,6 +14,11 @@ const OPTIONS = [
 ] satisfies readonly SegmentedControlOption<TimeDisplayPreference>[];
 
 const styles = stylex.create({
+  card: {
+    minWidth: 0,
+    overflow: 'hidden',
+    padding: 0,
+  },
   timeMode: {
     'width': '168px',
     'height': sizes.controlHeight,
@@ -28,7 +33,7 @@ export function TimeDisplaySettingsCard() {
   const timeZone = localTimeZone();
 
   return (
-    <Card className="settings-display-card">
+    <Card className={`settings-display-card ${stylex.props(styles.card).className}`}>
       <div className="settings-card-heading">
         <SectionTitle>显示</SectionTitle>
       </div>
