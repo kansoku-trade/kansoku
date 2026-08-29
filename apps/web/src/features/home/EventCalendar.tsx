@@ -1,6 +1,254 @@
 import { useMemo, useState } from 'react';
+import * as stylex from '@stylexjs/stylex';
 import type { HomeEventItem, HomeEvents } from '@kansoku/shared/types';
 import { MarketTime } from '@web/ui';
+import { colors, fontSizes, fonts, radii } from '../../theme/tokens.stylex';
+
+const styles = stylex.create({
+  root: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
+  },
+  nav: {
+    alignItems: 'center',
+    display: 'flex',
+    gap: '6px',
+    justifyContent: 'space-between',
+    paddingBottom: '2px',
+  },
+  navButton: {
+    'alignItems': 'center',
+    'backgroundColor': colors.backgroundSurface,
+    'borderColor': colors.border,
+    'borderRadius': radii.default,
+    'borderStyle': 'solid',
+    'borderWidth': '1px',
+    'color': colors.textMuted,
+    'cursor': 'pointer',
+    'display': 'inline-flex',
+    'fontFamily': fonts.ui,
+    'fontSize': fontSizes.base,
+    'height': '22px',
+    'justifyContent': 'center',
+    'lineHeight': 1,
+    'padding': 0,
+    'width': '22px',
+    ':hover': {
+      backgroundColor: colors.backgroundHover,
+      color: colors.textPrimary,
+    },
+  },
+  navTitle: {
+    'backgroundColor': 'transparent',
+    'borderWidth': 0,
+    'borderRadius': radii.default,
+    'color': colors.textPrimary,
+    'cursor': 'pointer',
+    'fontFamily': fonts.ui,
+    'fontSize': fontSizes.md,
+    'fontVariantNumeric': 'tabular-nums',
+    'fontWeight': 600,
+    'letterSpacing': '0.02em',
+    'padding': '2px 6px',
+    ':hover': {
+      color: colors.accent,
+    },
+  },
+  weekdays: {
+    alignItems: 'center',
+    color: colors.textMuted,
+    display: 'grid',
+    fontSize: fontSizes.xs,
+    gap: '1px',
+    gridTemplateColumns: 'repeat(7, 1fr)',
+    paddingBottom: '2px',
+    textAlign: 'center',
+  },
+  grid: {
+    display: 'grid',
+    gap: '1px',
+    gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
+  },
+  day: {
+    'aspectRatio': '1 / 1',
+    'backgroundColor': colors.backgroundSurface,
+    'borderColor': 'transparent',
+    'borderRadius': radii.default,
+    'borderStyle': 'solid',
+    'borderWidth': '1px',
+    'color': colors.textPrimary,
+    'cursor': 'pointer',
+    'display': 'flex',
+    'flexDirection': 'column',
+    'fontFamily': fonts.ui,
+    'fontSize': fontSizes.sm,
+    'justifyContent': 'space-between',
+    'minHeight': '30px',
+    'padding': '3px 4px 2px',
+    'position': 'relative',
+    'textAlign': 'left',
+    ':hover:not(:disabled)': {
+      backgroundColor: colors.backgroundHover,
+      borderColor: colors.border,
+    },
+    ':disabled': {
+      backgroundColor: 'transparent',
+      cursor: 'default',
+    },
+  },
+  dayOther: {
+    backgroundColor: 'transparent',
+    color: colors.textMuted,
+  },
+  daySelected: {
+    backgroundColor: colors.backgroundElement,
+    borderColor: colors.accent,
+  },
+  dayNum: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.sm,
+    fontVariantNumeric: 'tabular-nums',
+    lineHeight: 1,
+  },
+  dayNumOther: {
+    color: colors.textMuted,
+  },
+  dayNumToday: {
+    alignSelf: 'flex-start',
+    backgroundColor: colors.accent,
+    color: '#0a0a0a',
+    fontWeight: 700,
+    padding: '1px 3px',
+  },
+  dayNumSelected: {
+    color: colors.textPrimary,
+  },
+  dots: {
+    alignItems: 'center',
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '2px',
+  },
+  dot: {
+    borderRadius: 0,
+    display: 'inline-block',
+    height: '4px',
+    width: '4px',
+  },
+  dotEarnings: {
+    backgroundColor: '#f59e0b',
+  },
+  dotMacro: {
+    backgroundColor: '#818cf8',
+  },
+  dotOwned: {
+    outlineColor: colors.accent,
+    outlineStyle: 'solid',
+    outlineWidth: '1px',
+    outlineOffset: 0,
+  },
+  dayMore: {
+    color: colors.textMuted,
+    fontSize: '9px',
+    fontVariantNumeric: 'tabular-nums',
+    lineHeight: 1,
+    marginLeft: '1px',
+  },
+  emptyNote: {
+    color: colors.textMuted,
+    fontSize: fontSizes.xs,
+    padding: '4px 2px 0',
+  },
+  strip: {
+    borderTopColor: colors.border,
+    borderTopStyle: 'solid',
+    borderTopWidth: '1px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '4px',
+    marginTop: '4px',
+    paddingTop: '8px',
+  },
+  stripHead: {
+    alignItems: 'baseline',
+    color: colors.textMuted,
+    display: 'flex',
+    fontSize: fontSizes.sm,
+    fontVariantNumeric: 'tabular-nums',
+    fontWeight: 600,
+    justifyContent: 'space-between',
+  },
+  stripClear: {
+    'backgroundColor': 'transparent',
+    'borderWidth': 0,
+    'color': colors.accent,
+    'cursor': 'pointer',
+    'font': 'inherit',
+    'fontWeight': 500,
+    'padding': 0,
+    ':hover': {
+      textDecoration: 'underline',
+    },
+  },
+  stripDay: {
+    color: colors.textMuted,
+    fontSize: fontSizes.xs,
+    fontVariantNumeric: 'tabular-nums',
+    letterSpacing: '0.02em',
+    padding: '4px 0 2px',
+  },
+  stripGroup: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '3px',
+  },
+  stripEmpty: {
+    color: colors.textMuted,
+    fontSize: fontSizes.sm,
+    padding: '4px 0',
+  },
+  eventItem: {
+    backgroundColor: colors.backgroundSurface,
+    borderLeftColor: colors.borderStrong,
+    borderLeftStyle: 'solid',
+    borderLeftWidth: '3px',
+    borderRadius: '0 6px 6px 0',
+    display: 'flex',
+    fontSize: fontSizes.base,
+    gap: '8px',
+    padding: '6px 8px',
+  },
+  eventMacro: {
+    borderLeftColor: '#818cf8',
+  },
+  eventEarnings: {
+    borderLeftColor: '#f59e0b',
+  },
+  eventDone: {
+    opacity: 0.65,
+  },
+  eventTime: {
+    color: colors.textMuted,
+    flexShrink: 0,
+    fontVariantNumeric: 'tabular-nums',
+    width: '52px',
+  },
+  eventBody: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '2px',
+    minWidth: 0,
+  },
+  eventTitle: {
+    color: colors.textPrimary,
+    fontWeight: 600,
+  },
+  eventDetail: {
+    color: colors.textMuted,
+    fontSize: fontSizes.sm,
+  },
+});
 
 interface EventCalendarProps {
   events: HomeEvents | null | undefined;
@@ -124,15 +372,17 @@ function DayDots({ list }: { list: DotDescriptor[] }) {
   const shown = list.slice(0, 3);
   const extra = list.length - shown.length;
   return (
-    <span className="cal-day-dots">
+    <span className={`cal-day-dots ${stylex.props(styles.dots).className}`}>
       {shown.map((dot, i) => (
         <span
           // eslint-disable-next-line @eslint-react/no-array-index-key
           key={`${dot.kind}-${dot.owned}-${i}`}
-          className={`cal-dot cal-dot--${dot.kind}${dot.owned ? ' cal-dot--owned' : ''}`}
+          className={`cal-dot cal-dot--${dot.kind}${dot.owned ? ' cal-dot--owned' : ''} ${stylex.props(styles.dot, dot.kind === 'earnings' ? styles.dotEarnings : styles.dotMacro, dot.owned && styles.dotOwned).className}`}
         />
       ))}
-      {extra > 0 && <span className="cal-day-more">+{extra}</span>}
+      {extra > 0 && (
+        <span className={`cal-day-more ${stylex.props(styles.dayMore).className}`}>+{extra}</span>
+      )}
     </span>
   );
 }
@@ -141,18 +391,24 @@ function StripItem({ item }: { item: HomeEventItem }) {
   const done = item.kind === 'macro' && item.actual != null;
   const detail = eventDetail(item);
   return (
-    <div className={`event-item event-${item.kind}${done ? ' event-done' : ''}`}>
-      <span className="event-time">
+    <div
+      className={`event-item event-${item.kind}${done ? ' event-done' : ''} ${stylex.props(styles.eventItem, item.kind === 'macro' ? styles.eventMacro : styles.eventEarnings, done && styles.eventDone).className}`}
+    >
+      <span className={`event-time ${stylex.props(styles.eventTime).className}`}>
         {item.ts ? <MarketTime value={item.ts} format="clock" /> : item.date.slice(5)}
       </span>
-      <span className="event-body">
-        <span className="event-title">
+      <span className={`event-body ${stylex.props(styles.eventBody).className}`}>
+        <span className={`event-title ${stylex.props(styles.eventTitle).className}`}>
           {item.symbol ? `${item.symbol.replace(/\.US$/, '')} · ` : ''}
           {item.title}
           {item.kind === 'earnings' && item.owned && ' ⚠'}
           {done && ' ✓'}
         </span>
-        {detail && <span className="event-detail">{detail}</span>}
+        {detail && (
+          <span className={`event-detail ${stylex.props(styles.eventDetail).className}`}>
+            {detail}
+          </span>
+        )}
       </span>
     </div>
   );
@@ -180,21 +436,34 @@ function EventStrip({
   }, [items]);
 
   return (
-    <div className="event-strip">
-      <div className="event-strip-head">
+    <div className={`event-strip ${stylex.props(styles.strip).className}`}>
+      <div className={`event-strip-head ${stylex.props(styles.stripHead).className}`}>
         <span>{label}</span>
         {selected && (
-          <button type="button" className="event-strip-clear" onClick={onClear}>
+          <button
+            type="button"
+            className={`event-strip-clear ${stylex.props(styles.stripClear).className}`}
+            onClick={onClear}
+          >
             未来 7 天
           </button>
         )}
       </div>
       {items.length === 0 ? (
-        <div className="event-strip-empty">此段无事件</div>
+        <div className={`event-strip-empty ${stylex.props(styles.stripEmpty).className}`}>
+          此段无事件
+        </div>
       ) : (
         grouped.map(([date, group]) => (
-          <div className="event-strip-group" key={date}>
-            {!selected && <div className="event-strip-day">{dayLabel(date)}</div>}
+          <div
+            className={`event-strip-group ${stylex.props(styles.stripGroup).className}`}
+            key={date}
+          >
+            {!selected && (
+              <div className={`event-strip-day ${stylex.props(styles.stripDay).className}`}>
+                {dayLabel(date)}
+              </div>
+            )}
             {group.map((it) => (
               <StripItem key={eventKey(it)} item={it} />
             ))}
@@ -206,11 +475,9 @@ function EventStrip({
 }
 
 export function EventCalendar({ events, error, after }: EventCalendarProps) {
-  const todayIso = events?.date ?? isoDate(
-    new Date().getFullYear(),
-    new Date().getMonth() + 1,
-    new Date().getDate(),
-  );
+  const todayIso =
+    events?.date ??
+    isoDate(new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate());
   const initial = parseIso(todayIso);
   const [view, setView] = useState({ year: initial.y, month: initial.m });
   const [selected, setSelected] = useState<string | null>(null);
@@ -238,34 +505,38 @@ export function EventCalendar({ events, error, after }: EventCalendarProps) {
   };
 
   return (
-    <div className="event-calendar">
-      <div className="cal-nav">
+    <div className={`event-calendar ${stylex.props(styles.root).className}`}>
+      <div className={`cal-nav ${stylex.props(styles.nav).className}`}>
         <button
           type="button"
-          className="cal-nav-btn"
+          className={`cal-nav-btn ${stylex.props(styles.navButton).className}`}
           aria-label="上月"
           onClick={() => goto(-1)}
         >
           ‹
         </button>
-        <button type="button" className="cal-nav-title" onClick={resetToday}>
+        <button
+          type="button"
+          className={`cal-nav-title ${stylex.props(styles.navTitle).className}`}
+          onClick={resetToday}
+        >
           {view.year} · {view.month} 月
         </button>
         <button
           type="button"
-          className="cal-nav-btn"
+          className={`cal-nav-btn ${stylex.props(styles.navButton).className}`}
           aria-label="下月"
           onClick={() => goto(1)}
         >
           ›
         </button>
       </div>
-      <div className="cal-weekdays">
+      <div className={`cal-weekdays ${stylex.props(styles.weekdays).className}`}>
         {WEEKDAYS.map((w) => (
           <span key={w}>{w}</span>
         ))}
       </div>
-      <div className="cal-grid">
+      <div className={`cal-grid ${stylex.props(styles.grid).className}`}>
         {days.map((d) => {
           const list = dots.get(d.iso) ?? [];
           const isToday = d.iso === todayIso;
@@ -279,20 +550,26 @@ export function EventCalendar({ events, error, after }: EventCalendarProps) {
             <button
               type="button"
               key={`${d.iso}-${d.day}`}
-              className={classes.join(' ')}
+              className={`${classes.join(' ')} ${stylex.props(styles.day, !d.inMonth && styles.dayOther, isSelected && styles.daySelected).className}`}
               onClick={() => setSelected(isSelected ? null : d.iso)}
               disabled={disabled}
               aria-pressed={isSelected}
               aria-label={`${d.iso}${list.length ? ` · ${list.length} 项事件` : ''}`}
             >
-              <span className="cal-day-num">{d.day}</span>
+              <span
+                className={`cal-day-num ${stylex.props(styles.dayNum, !d.inMonth && styles.dayNumOther, isToday && styles.dayNumToday, isSelected && styles.dayNumSelected).className}`}
+              >
+                {d.day}
+              </span>
               {list.length > 0 && <DayDots list={list} />}
             </button>
           );
         })}
       </div>
       {!inMonthHasEvents && (
-        <div className="cal-empty-note">此月无预告事件（事件预告仅覆盖近期）</div>
+        <div className={`cal-empty-note ${stylex.props(styles.emptyNote).className}`}>
+          此月无预告事件（事件预告仅覆盖近期）
+        </div>
       )}
       <EventStrip
         label={stripLabel}
