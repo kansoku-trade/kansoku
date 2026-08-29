@@ -1,3 +1,4 @@
+import * as stylex from '@stylexjs/stylex';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { Send, Square } from 'lucide-react';
 import type {
@@ -9,6 +10,50 @@ import type {
   Ref,
 } from 'react';
 import { Button, Input } from '@web/ui';
+import { colors, fontSizes, sizes } from '../../../theme/tokens.stylex';
+
+const styles = stylex.create({
+  composer: {
+    alignItems: 'center',
+    display: 'flex',
+    flex: '0 0 auto',
+    gap: '8px',
+    padding: '8px 12px',
+  },
+  field: {
+    flex: '1 1 auto',
+    minWidth: 0,
+  },
+  action: {
+    'alignItems': 'center',
+    'display': 'inline-flex',
+    'flex': '0 0 auto',
+    'height': sizes.controlHeight,
+    'justifyContent': 'center',
+    'padding': 0,
+    'transitionDuration': '150ms',
+    'transitionProperty': 'scale, border-color, background-color',
+    'transitionTimingFunction': 'ease-out',
+    'width': sizes.controlHeight,
+    ':active:not([disabled])': {
+      scale: 0.96,
+    },
+    '@media (prefers-reduced-motion: reduce)': {
+      transitionDuration: '0.01ms',
+    },
+  },
+  actionIcon: {
+    alignItems: 'center',
+    display: 'inline-flex',
+    justifyContent: 'center',
+  },
+  hint: {
+    color: colors.textSecondary,
+    flex: '0 0 auto',
+    fontSize: fontSizes.sm,
+    padding: '0 12px 8px',
+  },
+});
 
 type ChatComposerFieldElement = HTMLInputElement | HTMLTextAreaElement;
 
@@ -77,11 +122,11 @@ export function ChatComposer({
 
   return (
     <>
-      <div className="chat-composer">
+      <div className={`chat-composer ${stylex.props(styles.composer).className}`}>
         {multiline ? (
           <textarea
             ref={textareaRef}
-            className="input chat-composer-field chat-composer-field--multiline"
+            className={`input chat-composer-field chat-composer-field--multiline ${stylex.props(styles.field).className}`}
             rows={1}
             aria-label={placeholder}
             autoComplete="off"
@@ -98,7 +143,7 @@ export function ChatComposer({
           />
         ) : (
           <Input
-            className="chat-composer-field"
+            className={`chat-composer-field ${stylex.props(styles.field).className}`}
             aria-label={placeholder}
             autoComplete="off"
             name="message"
@@ -115,13 +160,15 @@ export function ChatComposer({
         )}
         <Button
           accent={!busy}
-          className={`chat-composer-action chat-composer-action--${busy ? 'stop' : 'send'}`}
+          className={`chat-composer-action chat-composer-action--${busy ? 'stop' : 'send'} ${stylex.props(styles.action).className}`}
           aria-label={busy ? '停止生成' : '发送'}
           disabled={busy ? aborting : !value.trim() || disabled}
           onClick={busy ? onAbort : () => onSubmit(value)}
         >
           {prefersReducedMotion ? (
-            <span className="chat-composer-action-icon">
+            <span
+              className={`chat-composer-action-icon ${stylex.props(styles.actionIcon).className}`}
+            >
               {busy ? (
                 <Square size={12} aria-hidden="true" />
               ) : (
@@ -132,7 +179,7 @@ export function ChatComposer({
             <AnimatePresence initial={false} mode="popLayout">
               <motion.span
                 key={busy ? 'stop' : 'send'}
-                className="chat-composer-action-icon"
+                className={`chat-composer-action-icon ${stylex.props(styles.actionIcon).className}`}
                 initial={{ opacity: 0, scale: 0.25, filter: 'blur(4px)' }}
                 animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
                 exit={{ opacity: 0, scale: 0.25, filter: 'blur(4px)' }}
@@ -149,7 +196,7 @@ export function ChatComposer({
         </Button>
       </div>
       {hint && (
-        <div className="chat-hint" role="alert">
+        <div className={`chat-hint ${stylex.props(styles.hint).className}`} role="alert">
           {hint}
         </div>
       )}
