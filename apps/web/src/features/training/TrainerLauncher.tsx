@@ -141,7 +141,9 @@ const styles = stylex.create({
   },
   bootStatusCount: {
     color: colors.accent,
+    fontFamily: fonts.mono,
     fontSize: fontSizes.md,
+    fontVariantNumeric: 'tabular-nums',
   },
   bootStatusDetail: {
     color: colors.textSecondary,
@@ -385,7 +387,7 @@ function PoolStatus({
             正在攒案例
           </span>
           <span
-            className={`trainer-boot-status-count num ${stylex.props(styles.bootStatusCount).className}`}
+            className={`trainer-boot-status-count ${stylex.props(styles.bootStatusCount).className}`}
           >
             {task.admitted}/{task.requested}
           </span>
