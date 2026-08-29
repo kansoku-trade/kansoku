@@ -59,6 +59,12 @@ const styles = stylex.create({
   icon: {
     verticalAlign: '-2px',
   },
+  outcomeUp: {
+    color: colors.up,
+  },
+  outcomeDown: {
+    color: colors.down,
+  },
 });
 
 const OUTCOME_LABEL: Record<OutcomeStatus, { icon: typeof Check; tone: string; label: string }> = {
@@ -71,8 +77,12 @@ const OUTCOME_LABEL: Record<OutcomeStatus, { icon: typeof Check; tone: string; l
 
 function OutcomeText({ status }: { status: OutcomeStatus }) {
   const { icon: Icon, tone, label } = OUTCOME_LABEL[status];
+  const toneStyleClassName = stylex.props(
+    tone === 'up' && styles.outcomeUp,
+    tone === 'down' && styles.outcomeDown,
+  ).className;
   return (
-    <span className={tone}>
+    <span className={`${tone}${toneStyleClassName ? ` ${toneStyleClassName}` : ''}`}>
       <Icon className={`icon ${stylex.props(styles.icon).className}`} size={13} /> {label}
     </span>
   );
