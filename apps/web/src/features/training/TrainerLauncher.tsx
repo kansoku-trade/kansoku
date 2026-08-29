@@ -32,6 +32,9 @@ const styles = stylex.create({
     flexShrink: 0,
     padding: '8px 12px',
   },
+  trafficSpacer: {
+    flex: '0 0 66px',
+  },
   bootScroll: {
     alignItems: 'center',
     display: 'flex',
@@ -226,7 +229,11 @@ function TrainerBoot({ children }: { children: ReactNode }) {
   return (
     <div className={`trainer-boot ${stylex.props(styles.boot).className}`}>
       <div className={`trainer-boot-bar ${stylex.props(styles.bootBar).className}`}>
-        {isDesktop && <div className="popout-traffic-spacer" />}
+        {isDesktop && (
+          <div
+            className={`popout-traffic-spacer ${stylex.props(styles.trafficSpacer).className}`}
+          />
+        )}
       </div>
       <div className={`trainer-boot-scroll ${stylex.props(styles.bootScroll).className}`}>
         <div className={`trainer-boot-shell ${stylex.props(styles.bootShell).className}`}>

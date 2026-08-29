@@ -54,6 +54,15 @@ const styles = stylex.create({
     userSelect: 'none',
     WebkitAppRegion: 'drag',
   },
+  headerContext: {
+    ':not(#\\#) .chart-timeframe-switch': {
+      marginLeft: 'auto',
+      WebkitAppRegion: 'no-drag',
+    },
+  },
+  trafficSpacer: {
+    flex: '0 0 66px',
+  },
   stickyHeader: {
     order: 0,
     position: 'sticky',
@@ -73,6 +82,13 @@ const styles = stylex.create({
     flex: 1,
     minHeight: 0,
     position: 'relative',
+  },
+  bodyContext: {
+    ':not(#\\#) .charts-col': {
+      borderRightStyle: 'none',
+      borderRightWidth: 0,
+      height: '100%',
+    },
   },
   settledBody: {
     borderColor: colors.border,
@@ -211,9 +227,13 @@ export function TrainerChart({ view, sessionId, bridge, onViewChange }: TrainerC
       >
         <IntradayControlsProvider storageNamespace={STORAGE_NAMESPACE}>
           <div
-            className={`trainer-header ${stylex.props(styles.header, settling && styles.stickyHeader).className}`}
+            className={`trainer-header ${stylex.props(styles.header, styles.headerContext, settling && styles.stickyHeader).className}`}
           >
-            {isDesktop && <div className="popout-traffic-spacer" />}
+            {isDesktop && (
+              <div
+                className={`popout-traffic-spacer ${stylex.props(styles.trafficSpacer).className}`}
+              />
+            )}
             <span className={`trainer-title ${stylex.props(styles.title).className}`}>
               盲盘训练
             </span>
@@ -250,7 +270,7 @@ export function TrainerChart({ view, sessionId, bridge, onViewChange }: TrainerC
             )}
           </div>
           <div
-            className={`trainer-body ${stylex.props(styles.body, settling && !reviewing && styles.settledBody).className}`}
+            className={`trainer-body ${stylex.props(styles.body, styles.bodyContext, settling && !reviewing && styles.settledBody).className}`}
             hidden={reviewing}
           >
             {settling && !expanded ? (
