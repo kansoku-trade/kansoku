@@ -262,7 +262,7 @@ describe('buildEventEvidencePack', () => {
       listComments: async () => [],
       listResearch: async () => [],
     });
-    expect(pack.items.every((item) => item.kind !== 'generated')).toBe(true);
+    expect(pack.items.some((item) => (item.kind as string) === 'generated')).toBe(false);
   });
 
   it('rejects an unknown event', async () => {

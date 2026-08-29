@@ -257,7 +257,7 @@ describe('createResearchDocument: malformed input', () => {
 
   it('rejects canvas as a create kind', async () => {
     await expect(
-      createResearchDocument({ kind: 'canvas' } as ResearchCreateInput, {
+      createResearchDocument({ kind: 'canvas' } as unknown as ResearchCreateInput, {
         rootDir: root,
         buildSepaChart: vi.fn(),
       }),
