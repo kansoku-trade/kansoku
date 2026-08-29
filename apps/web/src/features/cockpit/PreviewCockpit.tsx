@@ -23,6 +23,7 @@ import type { SidebarTab } from '@web/features/charts/SidebarTabs';
 import { TopbarQuote } from '@web/features/quotes/QuoteBar';
 import { Dot, Empty, ErrorBox } from '@web/ui';
 import { useTitle } from '@web/lib/useTitle';
+import { isDesktopRealtime } from '@web/lib/portTransport';
 import { AnalystRunFeed } from './AnalystRunFeed';
 import { AnalysisTimeline } from './AnalysisTimeline';
 import { useAnalystRunLastEnded, useAnalystRunStatus } from './analystRunsStore';
@@ -48,6 +49,9 @@ const styles = stylex.create({
     flexDirection: 'column',
     height: '100vh',
     overflow: 'hidden',
+  },
+  fullpageDesktop: {
+    height: 'calc(100vh - 40px)',
   },
   detailTopbar: {
     alignItems: 'center',
@@ -118,6 +122,7 @@ export function PreviewCockpit({
   liveQuote: QuoteCell | null;
 }) {
   const symLabel = sym.toUpperCase().replace(/\.US$/, '');
+  const desktopShell = isDesktopRealtime();
   const {
     built,
     error,
@@ -234,7 +239,9 @@ export function PreviewCockpit({
   return (
     <EventCanvasHost>
       <IntradayControlsProvider>
-        <div className={`fullpage ${stylex.props(styles.fullpage).className}`}>
+        <div
+          className={`fullpage ${stylex.props(styles.fullpage, desktopShell && styles.fullpageDesktop).className}`}
+        >
           <div
             className={`detail-topbar detail-topbar--split ${stylex.props(styles.detailTopbar, styles.detailTopbarSplit).className}`}
           >

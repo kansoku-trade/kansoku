@@ -15,6 +15,7 @@ import { marketOfSymbol } from '../../lib/market';
 import { recordRecentSymbol } from '../charts/recentCharts';
 import { Dot, ErrorBox, MarketTime, Tooltip } from '../../ui';
 import { useTitle } from '../../lib/useTitle';
+import { isDesktopRealtime } from '../../lib/portTransport';
 import { useLiveQuote } from '../quotes/useLiveQuote';
 import { AnalysisRunDetails } from './AnalysisRunDetails';
 import { CockpitSkeleton } from './CockpitSkeleton';
@@ -55,6 +56,9 @@ const styles = stylex.create({
     flexDirection: 'column',
     height: '100vh',
     overflow: 'hidden',
+  },
+  fullpageDesktop: {
+    height: 'calc(100vh - 40px)',
   },
   detailTopbar: {
     alignItems: 'center',
@@ -169,6 +173,7 @@ const styles = stylex.create({
 
 export function SymbolCockpit({ sym }: { sym: string }) {
   const symLabel = sym.toUpperCase().replace(/\.US$/, '');
+  const desktopShell = isDesktopRealtime();
   const market = marketOfSymbol(sym);
   const liveQuote = useLiveQuote(sym);
   const {
@@ -359,7 +364,9 @@ export function SymbolCockpit({ sym }: { sym: string }) {
   return (
     <EventCanvasHost>
       <IntradayControlsProvider>
-        <div className={`fullpage ${stylex.props(styles.fullpage).className}`}>
+        <div
+          className={`fullpage ${stylex.props(styles.fullpage, desktopShell && styles.fullpageDesktop).className}`}
+        >
           <div
             className={`detail-topbar detail-topbar--split ${stylex.props(styles.detailTopbar, styles.detailTopbarSplit).className}`}
           >
