@@ -19,7 +19,7 @@ import { TrainerReviewFacts } from './TrainerReviewFacts';
 import { TrainerReviewLesson } from './TrainerReviewLesson';
 import { TrainerReviewTimeline } from './TrainerReviewTimeline';
 import { useTrainerReviewOverlay } from './useTrainerReviewOverlay';
-import { colors, fontSizes } from '../../theme/tokens.stylex';
+import { colors, fontSizes, radii } from '../../theme/tokens.stylex';
 
 const STORAGE_NAMESPACE = 'trainer-review';
 
@@ -50,6 +50,18 @@ const styles = stylex.create({
   revealDate: {
     color: colors.textSecondary,
     fontSize: fontSizes.md,
+  },
+  chip: {
+    alignItems: 'center',
+    backgroundColor: 'rgb(20 20 20 / 0.88)',
+    border: `1px solid ${colors.borderStrong}`,
+    borderRadius: radii.default,
+    display: 'flex',
+    fontSize: fontSizes.sm,
+    fontVariantNumeric: 'tabular-nums',
+    gap: '8px',
+    padding: '3px 9px',
+    pointerEvents: 'auto',
   },
   revealJump: {
     'borderColor': colors.borderStrong,
@@ -224,7 +236,7 @@ function ReviewBody({ payload, bridge, sessionId, onPayloadChange }: ReviewBodyP
         <span className={`num trainer-reveal-date ${stylex.props(styles.revealDate).className}`}>
           {payload.provenance.sourceCutoff.slice(0, 10)}
         </span>
-        <span className="trainer-chip">
+        <span className={`trainer-chip ${stylex.props(styles.chip).className}`}>
           标签：{payload.tag ? TRAINER_CASE_TAG_LABEL[payload.tag] : '未标注'}
         </span>
         <OpenRealChartButton symbol={payload.provenance.sourceSymbol} />
