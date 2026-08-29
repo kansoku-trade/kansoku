@@ -39,6 +39,15 @@ const styles = stylex.create({
     color: colors.textPrimary,
     fontWeight: 600,
   },
+  trafficSpacer: {
+    flex: '0 0 66px',
+  },
+  chartTail: {
+    alignItems: 'center',
+    display: 'inline-flex',
+    gap: '8px',
+    marginLeft: 'auto',
+  },
   body: {
     flex: 1,
     minHeight: 0,
@@ -60,13 +69,17 @@ export function PopoutChartWindow({ sym }: { sym: string }) {
     <IntradayControlsProvider>
       <div className={`popout-shell ${stylex.props(styles.shell).className}`}>
         <div className={`popout-header ${stylex.props(styles.header).className}`}>
-          {isDesktop && <div className="popout-traffic-spacer" />}
+          {isDesktop && (
+            <div
+              className={`popout-traffic-spacer ${stylex.props(styles.trafficSpacer).className}`}
+            />
+          )}
           <span className={`popout-symbol ${stylex.props(styles.symbol).className}`}>
             {symLabel}
           </span>
           {degraded && <Dot tone="accent" pulse title="数据延迟：行情拉取失败，正在重试" />}
           {activeTf && <IntradayTimeframeSwitch activeTf={activeTf} onChange={setIntradayTf} />}
-          <span className="topbar-chart-tail">
+          <span className={`topbar-chart-tail ${stylex.props(styles.chartTail).className}`}>
             {chartBuilt && activeTf && (
               <>
                 <MaLinesMenu candles={tfDataOf(chartBuilt, activeTf)?.candles ?? []} />
