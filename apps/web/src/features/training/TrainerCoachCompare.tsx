@@ -6,6 +6,8 @@ import type {
   TrainerCoachOutcome,
 } from '@kansoku/pro-api';
 import { fmt, signed } from '@web/lib/format';
+import * as stylex from '@stylexjs/stylex';
+import { colors, fontSizes, radii } from '../../theme/tokens.stylex';
 import type { TrainerBridge } from '../desktop/desktopTrainerBridge';
 import { coachBarLabel, coachPlanLine, DIRECTION_LABEL } from './coachStance';
 
@@ -37,6 +39,60 @@ const ANNOTATION_ORDER: TrainerAnnotationVerdict[] = [
   'unfounded',
   'skipped',
 ];
+
+const styles = stylex.create({
+  root: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px',
+  },
+  card: {
+    backgroundColor: colors.backgroundSurface,
+    border: `1px solid ${colors.border}`,
+    borderRadius: radii.default,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '7px',
+    padding: '10px 12px',
+  },
+  head: {
+    alignItems: 'center',
+    display: 'flex',
+    flexWrap: 'wrap',
+    fontSize: fontSizes.sm,
+    gap: '10px',
+  },
+  at: {
+    cursor: 'pointer',
+    font: 'inherit',
+  },
+  body: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.sm,
+    lineHeight: 1.6,
+    margin: 0,
+  },
+  annotate: {
+    alignItems: 'center',
+    borderTop: `1px dashed ${colors.border}`,
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '6px',
+    paddingTop: '8px',
+  },
+  persuaded: {
+    borderColor: colors.accent,
+    color: colors.accent,
+  },
+  hit: {
+    borderColor: colors.up,
+    color: colors.up,
+  },
+  miss: {
+    borderColor: colors.down,
+    color: colors.down,
+  },
+});
 
 export interface TrainerCoachCompareProps {
   calls: readonly TrainerCoachCall[];
@@ -74,7 +130,10 @@ export function TrainerCoachCompare({
 
   if (calls.length === 0) {
     return (
-      <div className="trainer-review-coach" data-testid="trainer-coach-compare">
+      <div
+        className={`trainer-review-coach ${stylex.props(styles.root).className}`}
+        data-testid="trainer-coach-compare"
+      >
         <div className="trainer-label">AI 对照</div>
         <p className="trainer-settle-hint">本局没有问过 AI。</p>
       </div>
@@ -82,16 +141,25 @@ export function TrainerCoachCompare({
   }
 
   return (
-    <div className="trainer-review-coach" data-testid="trainer-coach-compare">
+    <div
+      className={`trainer-review-coach ${stylex.props(styles.root).className}`}
+      data-testid="trainer-coach-compare"
+    >
       <div className="trainer-label">AI 对照 · 本局召唤 {calls.length} 次</div>
       {error && <span className="trainer-order-error">{error}</span>}
       {calls.map((call, index) => {
         const plan = coachPlanLine(call);
         const verdict = call.verdict;
         return (
-          <article className="trainer-coach-card" key={call.id}>
-            <header className="trainer-coach-head">
-              <button className="trainer-chip trainer-coach-at" onClick={() => onSeek(call.id)}>
+          <article
+            className={`trainer-coach-card ${stylex.props(styles.card).className}`}
+            key={call.id}
+          >
+            <header className={`trainer-coach-head ${stylex.props(styles.head).className}`}>
+              <button
+                className={`trainer-chip trainer-coach-at ${stylex.props(styles.at).className}`}
+                onClick={() => onSeek(call.id)}
+              >
                 第 {index + 1} 次 · {coachBarLabel(call.cursor)}
               </button>
               <span>
@@ -106,12 +174,14 @@ export function TrainerCoachCompare({
               {verdict && (
                 <>
                   {verdict.agreement && (
-                    <span className={`trainer-chip trainer-chip--${verdict.agreement}`}>
+                    <span
+                      className={`trainer-chip trainer-chip--${verdict.agreement}${verdict.agreement === 'persuaded' ? ` ${stylex.props(styles.persuaded).className}` : ''}`}
+                    >
                       {AGREEMENT_LABEL[verdict.agreement]}
                     </span>
                   )}
                   <span
-                    className={`trainer-chip trainer-chip--${verdict.directionCorrect ? 'hit' : 'miss'}`}
+                    className={`trainer-chip trainer-chip--${verdict.directionCorrect ? 'hit' : 'miss'} ${stylex.props(verdict.directionCorrect ? styles.hit : styles.miss).className}`}
                   >
                     {OUTCOME_LABEL[verdict.outcome]}
                     {verdict.realizedR !== null && ` · ${signed(verdict.realizedR)}R`}
@@ -121,11 +191,13 @@ export function TrainerCoachCompare({
                 </>
               )}
             </header>
-            <p className="trainer-coach-body">{call.ai.comment}</p>
+            <p className={`trainer-coach-body ${stylex.props(styles.body).className}`}>
+              {call.ai.comment}
+            </p>
             {/* Only calls the market confirmed get an annotation row. Asking about a call whose
                 direction was already refuted buys nothing and trains clicking through. */}
             {verdict?.directionCorrect ? (
-              <div className="trainer-coach-annotate">
+              <div className={`trainer-coach-annotate ${stylex.props(styles.annotate).className}`}>
                 <span className="trainer-settle-hint">理由站得住吗？</span>
                 {ANNOTATION_ORDER.map((option) => (
                   <button
