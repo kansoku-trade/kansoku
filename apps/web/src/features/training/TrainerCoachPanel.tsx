@@ -36,7 +36,9 @@ const styles = stylex.create({
   },
   coach: {
     alignItems: 'stretch',
-    borderLeft: `2px solid ${colors.accent}`,
+    borderLeftColor: colors.accent,
+    borderLeftStyle: 'solid',
+    borderLeftWidth: '2px',
     cursor: 'pointer',
     flexDirection: 'column',
     fontFamily: fonts.ui,
@@ -55,7 +57,9 @@ const styles = stylex.create({
     marginLeft: 'auto',
   },
   comment: {
-    borderTop: `1px solid ${colors.border}`,
+    borderTopColor: colors.border,
+    borderTopStyle: 'solid',
+    borderTopWidth: '1px',
     color: colors.textSecondary,
     display: 'block',
     lineHeight: 1.6,

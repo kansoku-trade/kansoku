@@ -19,7 +19,9 @@ const styles = stylex.create({
   rail: {
     alignItems: 'center',
     backgroundColor: 'rgb(20 20 20 / 0.86)',
-    border: `1px solid ${colors.border}`,
+    borderColor: colors.border,
+    borderStyle: 'solid',
+    borderWidth: '1px',
     borderRadius: radii.default,
     display: 'flex',
     flexDirection: 'column',

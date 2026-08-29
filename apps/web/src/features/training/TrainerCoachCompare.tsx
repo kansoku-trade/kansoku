@@ -48,7 +48,9 @@ const styles = stylex.create({
   },
   card: {
     backgroundColor: colors.backgroundSurface,
-    border: `1px solid ${colors.border}`,
+    borderColor: colors.border,
+    borderStyle: 'solid',
+    borderWidth: '1px',
     borderRadius: radii.default,
     display: 'flex',
     flexDirection: 'column',
@@ -136,7 +138,9 @@ const styles = stylex.create({
   },
   annotate: {
     alignItems: 'center',
-    borderTop: `1px dashed ${colors.border}`,
+    borderTopColor: colors.border,
+    borderTopStyle: 'dashed',
+    borderTopWidth: '1px',
     display: 'flex',
     flexWrap: 'wrap',
     gap: '6px',
