@@ -170,7 +170,7 @@ export function RelatedMaterialsCard({
               )}
             </section>
             <section
-              className={`research-context-section ${stylex.props(styles.sectionSpaced, styles.bodyLastSection).className}`}
+              className={`research-context-section ${stylex.props(styles.bodyLastSection).className}`}
             >
               <h3 className={stylex.props(styles.contextHeading).className}>相关记录</h3>
               {related.length > 0 ? (
