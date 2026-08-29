@@ -143,6 +143,9 @@ const styles = stylex.create({
     color: colors.textMuted,
     fontFamily: fonts.mono,
   },
+  dim: {
+    color: colors.textSecondary,
+  },
   blocked: {
     color: colors.down,
     maxWidth: '220px',
@@ -313,7 +316,7 @@ export function TrainerOrderLevelLabel({
               <span className={`trainer-level-was ${stylex.props(styles.was).className}`}>
                 {fmt(level.pending.from)}
               </span>
-              <span className="trainer-chip-dim"> → </span>
+              <span className={`trainer-chip-dim ${stylex.props(styles.dim).className}`}> → </span>
             </>
           )}
           {fmt(level.price)}
@@ -328,7 +331,7 @@ export function TrainerOrderLevelLabel({
                     className={
                       level.pending.blocked
                         ? `trainer-level-blocked ${stylex.props(styles.blocked).className}`
-                        : 'trainer-chip-dim'
+                        : `trainer-chip-dim ${stylex.props(styles.dim).className}`
                     }
                     role={level.pending.blocked ? 'status' : undefined}
                   >
