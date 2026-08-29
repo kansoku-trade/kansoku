@@ -152,32 +152,6 @@ body.trainer-dragging-level * {
   transform: translateX(-1px);
 }
 
-.typeset :is(h1) {
-  font-size: var(--typeset-h1);
-}
-.typeset :is(h2) {
-  font-size: var(--typeset-h2);
-}
-.typeset :is(h3) {
-  font-size: var(--typeset-h3);
-}
-.typeset :is(h4) {
-  font-size: var(--typeset-h4);
-}
-.typeset :is(a) {
-  color: var(--accent);
-}
-.typeset :is(a):hover {
-  text-decoration-color: var(--accent);
-}
-.typeset :is(pre) {
-  border: 1px solid var(--border);
-}
-.typeset :is(thead th) {
-  color: var(--text-primary);
-  font-weight: 600;
-}
-
 .chat-shell--full .chat-panel-head {
   padding: 10px max(12px, calc((100% - 68ch) / 2));
 }
