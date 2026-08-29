@@ -41,6 +41,12 @@ const styles = stylex.create({
   testResultFail: {
     color: colors.down,
   },
+  credActions: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    gap: '6px',
+    marginTop: '12px',
+  },
   activateRow: {
     flexDirection: 'column',
     alignItems: 'stretch',
@@ -116,7 +122,7 @@ function DeactivateConfirm({ closeModal }: { closeModal: () => void }) {
           {error}
         </div>
       ) : null}
-      <div className="settings-cred-actions">
+      <div className={`settings-cred-actions ${stylex.props(styles.credActions).className}`}>
         <Button disabled={busy} onClick={closeModal}>
           取消
         </Button>
