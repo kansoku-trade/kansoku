@@ -99,6 +99,10 @@ const styles = stylex.create({
   refreshDetails: {
     marginTop: '8px',
   },
+  hint: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.sm,
+  },
 });
 
 function stanceStyles(stance: ContextStance) {
@@ -147,7 +151,11 @@ export function ReassessCta({
             {reassess.busy && <Spinner />}
             {reassess.busy ? '重估进行中…' : '重新分析'}
           </Button>
-          {reassess.hint && <span className="ai-hint">{reassess.hint}</span>}
+          {reassess.hint && (
+            <span className={`ai-hint ${stylex.props(styles.hint).className}`}>
+              {reassess.hint}
+            </span>
+          )}
         </div>
       </div>
       {reassess.details && (
