@@ -27,7 +27,7 @@ import { TrainerBandLegend, TrainerSettlement } from './TrainerSettlement';
 import { TrainerThumbnail } from './TrainerThumbnail';
 import { useTrainerDrawings } from './useTrainerDrawings';
 import { useTrainerReviewOverlay } from './useTrainerReviewOverlay';
-import { colors, fontSizes } from '../../theme/tokens.stylex';
+import { colors, fontSizes, radii } from '../../theme/tokens.stylex';
 
 const STORAGE_NAMESPACE = 'trainer';
 
@@ -90,6 +90,55 @@ const styles = stylex.create({
     display: 'flex',
     flex: '0 0 auto',
     height: '38px',
+  },
+  tabs: {
+    WebkitAppRegion: 'no-drag',
+    display: 'flex',
+    gap: '4px',
+    marginLeft: 'auto',
+  },
+  tab: {
+    backgroundColor: 'transparent',
+    borderColor: colors.borderStrong,
+    borderRadius: radii.default,
+    borderStyle: 'solid',
+    borderWidth: '1px',
+    color: colors.textSecondary,
+    cursor: 'pointer',
+    font: 'inherit',
+    fontSize: fontSizes.sm,
+    padding: '3px 10px',
+  },
+  tabOn: {
+    borderColor: colors.accent,
+    color: colors.accent,
+  },
+  thumbCover: {
+    'alignItems': 'flex-start',
+    'backgroundColor': 'transparent',
+    'borderStyle': 'none',
+    'borderWidth': 0,
+    'color': colors.textSecondary,
+    'cursor': 'pointer',
+    'display': 'flex',
+    'font': 'inherit',
+    'inset': 0,
+    'position': 'absolute',
+    'zIndex': 12,
+    ':hover': {
+      backgroundColor: 'rgb(232 232 232 / 0.03)',
+    },
+  },
+  thumbExpand: {
+    alignSelf: 'flex-end',
+    backgroundColor: 'rgb(10 10 10 / 0.86)',
+    borderColor: colors.borderStrong,
+    borderRadius: radii.default,
+    borderStyle: 'solid',
+    borderWidth: '1px',
+    color: colors.textPrimary,
+    fontSize: fontSizes.sm,
+    padding: '3px 9px',
   },
 });
 
@@ -178,15 +227,15 @@ export function TrainerChart({ view, sessionId, bridge, onViewChange }: TrainerC
                 : `剩余 ${remaining.approximate ? '约 ' : ''}${remaining.count} 根`}
             </span>
             {settling ? (
-              <div className="trainer-tabs">
+              <div className={`trainer-tabs ${stylex.props(styles.tabs).className}`}>
                 <button
-                  className={`trainer-tab${tab === 'settlement' ? ' trainer-tab--on' : ''}`}
+                  className={`trainer-tab${tab === 'settlement' ? ' trainer-tab--on' : ''} ${stylex.props(styles.tab, tab === 'settlement' && styles.tabOn).className}`}
                   onClick={() => setTab('settlement')}
                 >
                   本局结算
                 </button>
                 <button
-                  className={`trainer-tab${tab === 'review' ? ' trainer-tab--on' : ''}`}
+                  className={`trainer-tab${tab === 'review' ? ' trainer-tab--on' : ''} ${stylex.props(styles.tab, tab === 'review' && styles.tabOn).className}`}
                   onClick={() => setTab('review')}
                 >
                   复盘
@@ -211,9 +260,16 @@ export function TrainerChart({ view, sessionId, bridge, onViewChange }: TrainerC
                   activeTf={activeTf}
                   onChartHandle={setChartHandle}
                 />
-                <button className="trainer-thumb-cover" onClick={() => setExpanded(true)}>
+                <button
+                  className={`trainer-thumb-cover ${stylex.props(styles.thumbCover).className}`}
+                  onClick={() => setExpanded(true)}
+                >
                   <TrainerBandLegend />
-                  <span className="trainer-thumb-expand">展开复盘 ⤢</span>
+                  <span
+                    className={`trainer-thumb-expand ${stylex.props(styles.thumbExpand).className}`}
+                  >
+                    展开复盘 ⤢
+                  </span>
                 </button>
               </>
             ) : (
