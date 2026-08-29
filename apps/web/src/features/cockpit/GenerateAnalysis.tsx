@@ -20,7 +20,6 @@ const styles = stylex.create({
     fontSize: fontSizes.sm,
   },
 });
-
 export function GenerateAnalysis({ sym }: { sym: string }) {
   const run = useAnalystRun(sym);
 
