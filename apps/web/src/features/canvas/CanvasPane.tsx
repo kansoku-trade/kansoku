@@ -4,7 +4,7 @@ import * as stylex from '@stylexjs/stylex';
 import { errorMessage } from '@web/lib/api';
 import { client } from '@web/lib/client';
 import { Button, Spinner } from '@web/ui';
-import { colors, fonts, fontSizes } from '../../theme/tokens.stylex';
+import { colors, fonts, fontSizes, radii } from '../../theme/tokens.stylex';
 import { CanvasFrame } from './CanvasFrame';
 
 export type CanvasPaneView = 'canvas' | 'source';
@@ -51,8 +51,41 @@ const styles = stylex.create({
     display: 'flex',
     gap: '6px',
   },
-  switch: {
+  viewSwitch: {
+    borderColor: colors.borderStrong,
+    borderRadius: radii.default,
+    borderStyle: 'solid',
+    borderWidth: '1px',
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(0, 1fr))',
+    height: '28px',
     minWidth: 0,
+    overflow: 'hidden',
+  },
+  viewButton: {
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+    border: 'none',
+    color: colors.textMuted,
+    cursor: 'pointer',
+    display: 'inline-flex',
+    fontSize: fontSizes.sm,
+    gap: '5px',
+    justifyContent: 'center',
+    padding: '0 10px',
+    ':hover': {
+      backgroundColor: colors.backgroundElement,
+      color: colors.textPrimary,
+    },
+  },
+  viewButtonDivider: {
+    borderLeftColor: colors.borderStrong,
+    borderLeftStyle: 'solid',
+    borderLeftWidth: '1px',
+  },
+  viewButtonActive: {
+    backgroundColor: 'rgba(255, 176, 0, 0.09)',
+    color: colors.accent,
   },
   body: {
     flex: '1 1 auto',
@@ -117,13 +150,16 @@ export function CanvasPane({
         </div>
         <div className={`canvas-pane-actions ${stylex.props(styles.actions).className}`}>
           <div
-            className={`research-view-switch ${stylex.props(styles.switch).className}`}
+            className={`research-view-switch ${stylex.props(styles.viewSwitch).className}`}
             role="group"
             aria-label="画布视图"
           >
             <button
               type="button"
-              className={view === 'canvas' ? 'active' : ''}
+              className={`${view === 'canvas' ? 'active ' : ''}${stylex.props(
+                styles.viewButton,
+                view === 'canvas' && styles.viewButtonActive,
+              ).className}`}
               aria-pressed={view === 'canvas'}
               onClick={() => onViewChange('canvas')}
             >
@@ -131,7 +167,11 @@ export function CanvasPane({
             </button>
             <button
               type="button"
-              className={view === 'source' ? 'active' : ''}
+              className={`${view === 'source' ? 'active ' : ''}${stylex.props(
+                styles.viewButton,
+                styles.viewButtonDivider,
+                view === 'source' && styles.viewButtonActive,
+              ).className}`}
               aria-pressed={view === 'source'}
               onClick={() => onViewChange('source')}
             >
