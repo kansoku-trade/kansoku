@@ -90,19 +90,7 @@ a:hover {
 .icon {
   vertical-align: -2px;
 }
-.popout-traffic-spacer {
-  flex: 0 0 66px;
-}
 .popout-body .charts-col {
-  border-right: none;
-  height: 100%;
-}
-
-.trainer-header .chart-timeframe-switch {
-  margin-left: auto;
-  -webkit-app-region: no-drag;
-}
-.trainer-body .charts-col {
   border-right: none;
   height: 100%;
 }
@@ -133,18 +121,10 @@ body.trainer-dragging-level * {
   cursor: ns-resize !important;
   user-select: none !important;
 }
-.fullpage {
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-.v.up,
-.zone-meta .up {
+.v.up {
   color: var(--up);
 }
-.v.down,
-.zone-meta .down {
+.v.down {
   color: var(--down);
 }
 
@@ -153,10 +133,6 @@ body.trainer-dragging-level * {
   color: var(--text-secondary);
   margin-top: 6px;
   line-height: 1.4;
-}
-.ai-hint {
-  font-size: var(--fs-sm);
-  color: var(--text-secondary);
 }
 .ai-date-select {
   margin-left: auto;
@@ -236,17 +212,6 @@ body.trainer-dragging-level * {
   font-weight: 600;
 }
 
-.chat-panel-body > .scroll-area-viewport {
-  flex: 1 1 auto;
-  min-height: 0;
-  height: auto;
-}
-.chat-panel-body-content {
-  padding: 10px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
 .chat-shell--full .chat-panel-head {
   padding: 10px max(12px, calc((100% - 68ch) / 2));
 }
@@ -406,21 +371,6 @@ body.trainer-dragging-level * {
 }
 
 /* Research library */
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-.research-reader-body .typeset-report {
-  --typeset-size: var(--fs-md);
-  --typeset-leading: 1.8;
-}
 .research-assistant {
   display: flex;
   flex: 1 1 auto;
