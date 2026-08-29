@@ -61,6 +61,9 @@ const styles = stylex.create({
   providerRow: {
     borderTop: `1px solid ${colors.border}`,
     padding: '10px 11px',
+    ':first-child': {
+      borderTopStyle: 'none',
+    },
   },
   providerHead: {
     alignItems: 'center',
@@ -130,6 +133,13 @@ const styles = stylex.create({
   providerAddError: {
     'gridColumn': '1 / -1',
     '@media (max-width: 560px)': { gridColumn: 'auto' },
+  },
+  providerAddSelect: {
+    justifyContent: 'space-between',
+  },
+  providerAddInput: {
+    minWidth: 0,
+    width: '100%',
   },
 });
 
@@ -541,6 +551,7 @@ export function ProviderCredentialsSection({
         {availableToAdd.length > 0 ? (
           <div className={`settings-provider-add ${stylex.props(styles.providerAdd).className}`}>
             <Select
+              className={stylex.props(styles.providerAddSelect).className}
               value={effectiveAddProvider}
               options={availableToAdd.map((provider) => ({
                 value: provider.id,
@@ -549,6 +560,7 @@ export function ProviderCredentialsSection({
               onChange={setAddProvider}
             />
             <Input
+              className={stylex.props(styles.providerAddInput).className}
               autoComplete="off"
               type="password"
               value={addKey}
