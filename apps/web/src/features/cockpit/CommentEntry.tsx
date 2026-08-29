@@ -12,23 +12,25 @@ const styles = stylex.create({
     borderBottomStyle: 'solid',
     borderBottomWidth: '1px',
     display: 'flex',
-    gap: '10px',
+    flexDirection: 'column',
+    gap: '6px',
     minWidth: 0,
     padding: '9px 2px',
     width: '100%',
   },
+  metaRow: {
+    alignItems: 'center',
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '8px',
+    minWidth: 0,
+  },
   time: {
     color: colors.textSecondary,
-    flexBasis: '38px',
-    flexGrow: 0,
-    flexShrink: 0,
     fontSize: fontSizes.sm,
     fontVariantNumeric: 'tabular-nums',
-    paddingTop: '2px',
   },
   body: {
-    flexGrow: 1,
-    flexShrink: 1,
     maxWidth: '100%',
     minWidth: 0,
   },
@@ -44,10 +46,6 @@ const styles = stylex.create({
   },
   dimText: {
     color: colors.textMuted,
-  },
-  levelBadge: {
-    marginRight: '6px',
-    verticalAlign: '1px',
   },
   meta: {
     color: colors.textMuted,
@@ -79,13 +77,6 @@ const styles = stylex.create({
   read: {
     color: colors.textSecondary,
   },
-  stanceBadge: {
-    marginRight: '6px',
-    verticalAlign: '1px',
-  },
-  explainerCard: {
-    marginTop: '4px',
-  },
 });
 
 const LEVEL_LABEL: Record<string, string> = {
@@ -115,36 +106,55 @@ const STANCE_TONE: Record<CommentStance, 'up' | 'accent' | 'muted'> = {
 
 function LevelBadge({ level }: { level: string }) {
   return (
-    <Badge
-      tone={LEVEL_TONE[level]}
-      className={`level-badge ${stylex.props(styles.levelBadge).className}`}
-    >
+    <Badge tone={LEVEL_TONE[level]} className="level-badge">
       {LEVEL_LABEL[level] ?? level}
     </Badge>
   );
 }
 
-function StanceLine({
-  stance,
-  note,
-  dim = false,
-}: {
-  stance: CommentStance;
-  note?: string;
-  dim?: boolean;
-}) {
+function StanceBadge({ stance }: { stance: CommentStance }) {
+  return (
+    <Badge tone={STANCE_TONE[stance]} className="stance-badge">
+      {STANCE_LABEL[stance]}
+    </Badge>
+  );
+}
+
+function StanceNote({ note, dim = false }: { note?: string; dim?: boolean }) {
+  if (!note) return null;
   return (
     <p
       className={`ai-stance ${stylex.props(styles.paragraph, styles.subLine, !dim && styles.textPrimary, dim && styles.dimText).className}`}
     >
-      <Badge
-        tone={STANCE_TONE[stance]}
-        className={`stance-badge ${stylex.props(styles.stanceBadge).className}`}
-      >
-        {STANCE_LABEL[stance]}
-      </Badge>
       {note}
     </p>
+  );
+}
+
+function MetaRow({
+  dim = false,
+  level,
+  market,
+  stance,
+  ts,
+}: {
+  dim?: boolean;
+  level?: string;
+  market: ReturnType<typeof marketOfSymbol>;
+  stance?: CommentStance;
+  ts: string;
+}) {
+  return (
+    <div className={`ai-meta-row ${stylex.props(styles.metaRow).className}`}>
+      <MarketTime
+        className={`t ${stylex.props(styles.time, dim && styles.dimText).className}`}
+        value={ts}
+        format="clock"
+        market={market}
+      />
+      {level && <LevelBadge level={level} />}
+      {stance && <StanceBadge stance={stance} />}
+    </div>
   );
 }
 
@@ -187,15 +197,10 @@ export function CommentEntry({ symbol, comment }: { symbol: string; comment: Coc
   if (comment.source === 'explainer') {
     return (
       <div className={`ai-item ai-item--explainer ${stylex.props(styles.item).className}`}>
-        <MarketTime
-          className={`t ${stylex.props(styles.time).className}`}
-          value={comment.ts}
-          format="clock"
-          market={market}
-        />
+        <MetaRow ts={comment.ts} market={market} stance={comment.stance} />
         <div className={`body ${stylex.props(styles.body).className}`}>
-          {comment.stance && <StanceLine stance={comment.stance} note={comment.stanceNote} />}
-          <div className={`ai-explainer-card ${stylex.props(styles.explainerCard).className}`}>
+          <StanceNote note={comment.stanceNote} />
+          <div className="ai-explainer-card">
             <Markdown variant="report">{comment.text}</Markdown>
           </div>
           <CommentMeta symbol={symbol} comment={comment} />
@@ -207,17 +212,17 @@ export function CommentEntry({ symbol, comment }: { symbol: string; comment: Coc
   if (comment.read != null && comment.stance != null) {
     return (
       <div className={`ai-item${dim ? ' dim' : ''} ${stylex.props(styles.item).className}`}>
-        <MarketTime
-          className={`t ${stylex.props(styles.time, dim && styles.dimText).className}`}
-          value={comment.ts}
-          format="clock"
+        <MetaRow
+          ts={comment.ts}
           market={market}
+          dim={dim}
+          level={comment.level}
+          stance={comment.stance}
         />
         <div className={`body ${stylex.props(styles.body).className}`}>
           <p
             className={`ai-fact ${stylex.props(styles.paragraph, styles.fact, !dim && styles.textPrimary, dim && styles.dimText).className}`}
           >
-            <LevelBadge level={comment.level} />
             {comment.text}
           </p>
           <p
@@ -225,7 +230,7 @@ export function CommentEntry({ symbol, comment }: { symbol: string; comment: Coc
           >
             {comment.read}
           </p>
-          <StanceLine stance={comment.stance} note={comment.stanceNote} dim={dim} />
+          <StanceNote note={comment.stanceNote} dim={dim} />
           <CommentMeta symbol={symbol} comment={comment} />
         </div>
       </div>
@@ -234,12 +239,7 @@ export function CommentEntry({ symbol, comment }: { symbol: string; comment: Coc
 
   return (
     <div className={`ai-item${dim ? ' dim' : ''} ${stylex.props(styles.item).className}`}>
-      <MarketTime
-        className={`t ${stylex.props(styles.time, dim && styles.dimText).className}`}
-        value={comment.ts}
-        format="clock"
-        market={market}
-      />
+      <MetaRow ts={comment.ts} market={market} dim={dim} level={comment.level} />
       <div className={`body ${stylex.props(styles.body).className}`}>
         <p
           className={
@@ -247,7 +247,6 @@ export function CommentEntry({ symbol, comment }: { symbol: string; comment: Coc
               .className
           }
         >
-          <LevelBadge level={comment.level} />
           {comment.text}
         </p>
         <CommentMeta symbol={symbol} comment={comment} />

@@ -57,7 +57,7 @@ const styles = stylex.create({
     overflowX: 'hidden',
   },
   fold: {
-    'padding': '7px 2px 7px 48px',
+    'padding': '7px 2px',
     'fontSize': fontSizes.sm,
     'color': colors.textMuted,
     'borderBottomColor': colors.border,

@@ -72,6 +72,69 @@ describe('CommentEntry structured rendering', () => {
   });
 });
 
+describe('CommentEntry stacked meta row', () => {
+  function expectStacked(container: HTMLElement) {
+    const item = container.querySelector('.ai-item');
+    expect(item).toBeTruthy();
+    const meta = item!.querySelector(':scope > .ai-meta-row');
+    const body = item!.querySelector(':scope > .body');
+    expect(meta).toBeTruthy();
+    expect(body).toBeTruthy();
+    expect(item!.firstElementChild).toBe(meta);
+    expect(meta!.nextElementSibling).toBe(body);
+    expect(meta!.querySelector('.t')).toBeTruthy();
+  }
+
+  it('puts time and level above the body for a legacy comment', () => {
+    const { container } = render(<CommentEntry symbol="MU.US" comment={base} />);
+    expectStacked(container);
+    const meta = container.querySelector('.ai-meta-row')!;
+    const body = container.querySelector('.body')!;
+    expect(meta.querySelector('.level-badge')?.textContent).toBe('warn');
+    expect(body.querySelector('.level-badge')).toBeNull();
+  });
+
+  it('puts time, level, and stance above fact/read for a structured comment', () => {
+    const comment: CockpitComment = {
+      ...base,
+      read: '跌破前一天低点且量能放大，真实破位而非洗盘',
+      stance: 'wait_confirm',
+      stanceNote: '等下一根 5 分钟收盘确认',
+    };
+    const { container } = render(<CommentEntry symbol="MU.US" comment={comment} />);
+    expectStacked(container);
+    const meta = container.querySelector('.ai-meta-row')!;
+    const body = container.querySelector('.body')!;
+    expect(meta.querySelector('.level-badge')?.textContent).toBe('warn');
+    expect(meta.querySelector('.stance-badge')?.textContent).toBe('等确认');
+    expect(body.querySelector('.level-badge')).toBeNull();
+    expect(body.querySelector('.stance-badge')).toBeNull();
+    expect(body.querySelector('.ai-fact')?.textContent).toContain(base.text);
+    expect(body.querySelector('.ai-stance')?.textContent).toBe('等下一根 5 分钟收盘确认');
+  });
+
+  it('puts time and stance above markdown for an explainer comment', async () => {
+    const comment: CockpitComment = {
+      ts: '2026-07-24T15:00:00.000Z',
+      symbol: 'MU.US',
+      level: 'info',
+      source: 'explainer',
+      trigger: 'manual: 解读请求',
+      stance: 'no_action',
+      text: '## 图上有什么\n价格线、5 分钟 MACD、当天计划位。',
+    };
+    const { container } = render(<CommentEntry symbol="MU.US" comment={comment} />);
+    expectStacked(container);
+    const meta = container.querySelector('.ai-meta-row')!;
+    const body = container.querySelector('.body')!;
+    expect(meta.querySelector('.stance-badge')?.textContent).toBe('不构成动作');
+    expect(meta.querySelector('.level-badge')).toBeNull();
+    expect(body.querySelector('.stance-badge')).toBeNull();
+    expect(body.querySelector('.ai-explainer-card')).toBeTruthy();
+    expect(await screen.findByText('图上有什么')).toBeTruthy();
+  });
+});
+
 describe('CommentEntry explainer rendering', () => {
   it('renders an explainer-source comment as a multi-paragraph prose card with a stance badge', async () => {
     const comment: CockpitComment = {
