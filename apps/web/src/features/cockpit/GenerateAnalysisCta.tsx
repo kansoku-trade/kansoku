@@ -34,7 +34,7 @@ export function GenerateAnalysisCta({
     <div className={`preview-cta ${stylex.props(styles.root).className}`}>
       <h3 className={`preview-cta-title ${stylex.props(styles.title).className}`}>{title}</h3>
       <p className={`preview-cta-desc ${stylex.props(styles.description).className}`}>{desc}</p>
-      <GenerateAnalysis sym={sym} />
+      <GenerateAnalysis sym={sym} variant="preview" />
     </div>
   );
 }
