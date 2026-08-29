@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { ChevronRight } from 'lucide-react';
 import type { ResearchDocumentMeta } from '@kansoku/core/contract/index';
 import * as stylex from '@stylexjs/stylex';
+import { Chip } from '@web/ui';
 import { colors, fontSizes, sizes } from '../../theme/tokens.stylex';
 import { researchTypeLabel } from './researchModel';
 
@@ -154,13 +155,13 @@ export function RelatedMaterialsCard({
                   className={`research-symbol-links ${stylex.props(styles.symbolLinks).className}`}
                 >
                   {selected.symbols.map((symbol) => (
-                    <a
+                    <Chip
                       key={symbol}
                       className="chip"
                       href={`/symbol/${encodeURIComponent(`${symbol}.US`)}`}
                     >
                       {symbol}
-                    </a>
+                    </Chip>
                   ))}
                 </div>
               ) : (
