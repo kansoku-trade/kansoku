@@ -1,12 +1,33 @@
 import { useState } from 'react';
 import type { TrainerCoachCall } from '@kansoku/pro-api';
 import * as stylex from '@stylexjs/stylex';
-import { colors, fontSizes, fonts } from '../../theme/tokens.stylex';
+import { colors, fontSizes, fonts, radii } from '../../theme/tokens.stylex';
 import type { TrainerBridge } from '../desktop/desktopTrainerBridge';
 import { coachDisagrees, coachPlanLine, DIRECTION_LABEL } from './coachStance';
 import { TrainerOverlayPortal } from './trainerOverlay';
 
 const styles = stylex.create({
+  chip: {
+    alignItems: 'center',
+    backgroundColor: 'rgb(20 20 20 / 0.88)',
+    borderColor: colors.borderStrong,
+    borderRadius: radii.default,
+    borderStyle: 'solid',
+    borderWidth: '1px',
+    color: colors.textPrimary,
+    display: 'flex',
+    fontSize: fontSizes.sm,
+    fontVariantNumeric: 'tabular-nums',
+    gap: '8px',
+    padding: '3px 9px',
+    pointerEvents: 'auto',
+  },
+  chipError: {
+    borderLeftColor: colors.down,
+    borderLeftStyle: 'solid',
+    borderLeftWidth: '2px',
+    color: colors.down,
+  },
   slot: {
     alignItems: 'center',
     display: 'flex',
@@ -94,7 +115,13 @@ export function TrainerCoachPanel({ bridge, sessionId }: TrainerCoachPanelProps)
   return (
     <>
       <TrainerOverlayPortal slot="stack">
-        {error && <div className="trainer-chip trainer-chip--error">{error}</div>}
+        {error && (
+          <div
+            className={`trainer-chip trainer-chip--error ${stylex.props(styles.chip, styles.chipError).className}`}
+          >
+            {error}
+          </div>
+        )}
         {latest && (
           // Collapsed by default: the side and the three prices are what gets read at a glance,
           // the reasoning is what gets read on purpose. Expanding by default would drop a
