@@ -129,16 +129,6 @@ body.trainer-dragging-level * {
   margin-top: 6px;
   line-height: 1.4;
 }
-.ai-date-select {
-  margin-left: auto;
-}
-.ai-run-control .follow-control {
-  margin-left: auto;
-}
-.ai-run-control .follow-control + .ai-date-select {
-  margin-left: 0;
-}
-
 @media (min-width: 1001px) {
   #root:has(> .home-page--split),
   .desktop-content:has(> .home-page--split) {
