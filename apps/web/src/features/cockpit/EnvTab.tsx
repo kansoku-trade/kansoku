@@ -10,6 +10,7 @@ import {
   YAxis,
 } from 'recharts';
 import type { BenchmarkSeries, CockpitPosition, RelativeVolume } from '@kansoku/shared/types';
+import * as stylex from '@stylexjs/stylex';
 import {
   hhmm,
   tooltipContentStyle,
@@ -19,6 +20,40 @@ import {
 import { fmt, signed, upDown } from '@web/lib/format';
 import { seriesPalette, theme } from '@web/lib/theme';
 import { Num, SectionTitle } from '@web/ui';
+import { colors, fontSizes } from '../../theme/tokens.stylex';
+
+const styles = stylex.create({
+  grid: {
+    display: 'grid',
+    fontSize: fontSizes.base,
+    gap: '6px 10px',
+    gridTemplateColumns: 'auto 1fr',
+  },
+  key: {
+    color: colors.textSecondary,
+  },
+  value: {
+    color: colors.textPrimary,
+    fontVariantNumeric: 'tabular-nums',
+    textAlign: 'right',
+  },
+  valueUp: {
+    color: colors.up,
+  },
+  valueDown: {
+    color: colors.down,
+  },
+  note: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.sm,
+    lineHeight: 1.4,
+    marginTop: '6px',
+  },
+});
+
+const valueClassName = (tone?: string) =>
+  stylex.props(styles.value, tone === 'up' && styles.valueUp, tone === 'down' && styles.valueDown)
+    .className;
 
 const BENCHMARK_COLORS = [seriesPalette[0], seriesPalette[2], seriesPalette[3]];
 
@@ -111,55 +146,66 @@ export function EnvTab({
   benchmarkError,
   relvol,
 }: EnvTabProps) {
+  const relvolStatus = relvol ? relvolTone(relvol.ratio) : '';
+  const positionStatus = position ? upDown(position.unrealized) : '';
+
   return (
     <>
       {relvol && (
         <>
           <SectionTitle>量能对比（对齐前 {relvol.days_used} 日同时段）</SectionTitle>
-          <div className="grid2">
-            <div className="k">今天 vs 均值</div>
-            <div className={`v ${relvolTone(relvol.ratio)}`}>×{relvol.ratio.toFixed(2)}</div>
-            <div className="k">今日累计</div>
-            <div className="v">{Math.round(relvol.today_cum).toLocaleString()}</div>
-            <div className="k">同时段均值</div>
-            <div className="v">{Math.round(relvol.baseline_avg).toLocaleString()}</div>
+          <div className={`grid2 ${stylex.props(styles.grid).className}`}>
+            <div className={`k ${stylex.props(styles.key).className}`}>今天 vs 均值</div>
+            <div className={`v ${relvolStatus} ${valueClassName(relvolStatus)}`}>
+              ×{relvol.ratio.toFixed(2)}
+            </div>
+            <div className={`k ${stylex.props(styles.key).className}`}>今日累计</div>
+            <div className={`v ${valueClassName()}`}>
+              {Math.round(relvol.today_cum).toLocaleString()}
+            </div>
+            <div className={`k ${stylex.props(styles.key).className}`}>同时段均值</div>
+            <div className={`v ${valueClassName()}`}>
+              {Math.round(relvol.baseline_avg).toLocaleString()}
+            </div>
           </div>
         </>
       )}
       {position && (
         <>
           <SectionTitle>持仓</SectionTitle>
-          <div className="grid2">
-            <div className="k">持仓</div>
-            <div className="v">{position.shares} sh</div>
-            <div className="k">成本</div>
-            <div className="v">${fmt(position.cost)}</div>
-            <div className="k">现价</div>
-            <div className="v">${fmt(position.last)}</div>
-            <div className="k">浮{position.unrealized >= 0 ? '盈' : '亏'}</div>
-            <div className={`v ${upDown(position.unrealized)}`}>
+          <div className={`grid2 ${stylex.props(styles.grid).className}`}>
+            <div className={`k ${stylex.props(styles.key).className}`}>持仓</div>
+            <div className={`v ${valueClassName()}`}>{position.shares} sh</div>
+            <div className={`k ${stylex.props(styles.key).className}`}>成本</div>
+            <div className={`v ${valueClassName()}`}>${fmt(position.cost)}</div>
+            <div className={`k ${stylex.props(styles.key).className}`}>现价</div>
+            <div className={`v ${valueClassName()}`}>${fmt(position.last)}</div>
+            <div className={`k ${stylex.props(styles.key).className}`}>
+              浮{position.unrealized >= 0 ? '盈' : '亏'}
+            </div>
+            <div className={`v ${positionStatus} ${valueClassName(positionStatus)}`}>
               {signed(position.unrealized, 0)} ({signed(position.unrealizedPct)}%)
             </div>
             {position.distances?.stop_pct != null && (
               <>
-                <div className="k">离止损</div>
-                <div className="v">
+                <div className={`k ${stylex.props(styles.key).className}`}>离止损</div>
+                <div className={`v ${valueClassName()}`}>
                   <Num value={position.distances.stop_pct} diff suffix="%" />
                 </div>
               </>
             )}
             {position.distances?.target1_pct != null && (
               <>
-                <div className="k">离目标1</div>
-                <div className="v">
+                <div className={`k ${stylex.props(styles.key).className}`}>离目标1</div>
+                <div className={`v ${valueClassName()}`}>
                   <Num value={position.distances.target1_pct} diff suffix="%" />
                 </div>
               </>
             )}
             {position.distances?.target2_pct != null && (
               <>
-                <div className="k">离目标2</div>
-                <div className="v">
+                <div className={`k ${stylex.props(styles.key).className}`}>离目标2</div>
+                <div className={`v ${valueClassName()}`}>
                   <Num value={position.distances.target2_pct} diff suffix="%" />
                 </div>
               </>
@@ -168,7 +214,9 @@ export function EnvTab({
         </>
       )}
       {positionError && !position && (
-        <div className="note-block">持仓数据获取失败：{positionError}</div>
+        <div className={`note-block ${stylex.props(styles.note).className}`}>
+          持仓数据获取失败：{positionError}
+        </div>
       )}
 
       {!(benchmark && benchmark.length === 0) && (
@@ -185,7 +233,11 @@ export function EnvTab({
   function renderBenchmark() {
     if (benchmark && benchmark.length > 0) return <BenchmarkChart series={benchmark} />;
     if (benchmarkError)
-      return <div className="note-block">环境对照数据获取失败：{benchmarkError}</div>;
-    return <div className="note-block">加载中…</div>;
+      return (
+        <div className={`note-block ${stylex.props(styles.note).className}`}>
+          环境对照数据获取失败：{benchmarkError}
+        </div>
+      );
+    return <div className={`note-block ${stylex.props(styles.note).className}`}>加载中…</div>;
   }
 }
