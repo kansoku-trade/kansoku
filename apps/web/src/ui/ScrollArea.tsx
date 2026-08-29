@@ -57,7 +57,9 @@ const styles = stylex.create({
   thumb: {
     'backgroundColor': colors.borderStrong,
     'borderRadius': radii.full,
+    'height': 'var(--scroll-area-thumb-height)',
     'transition': 'width 0.16s ease, height 0.16s ease, background-color 0.16s ease',
+    'width': 'var(--scroll-area-thumb-width)',
     '@media (prefers-reduced-motion: reduce)': {
       transition: 'none',
     },

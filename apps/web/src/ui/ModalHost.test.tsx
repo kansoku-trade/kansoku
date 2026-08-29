@@ -15,7 +15,9 @@ describe('ModalHost', () => {
     render(<ModalHost />);
 
     const panel = screen.getByRole('dialog');
-    expect(panel.className).toBe('modal-panel');
+    expect(panel.classList.contains('modal-panel')).toBe(true);
+    expect(panel.classList.contains('modal-panel--sm')).toBe(false);
+    expect(panel.classList.contains('modal-panel--md')).toBe(false);
   });
 
   it('applies the sm modifier class', () => {

@@ -1,10 +1,11 @@
 import type { HTMLAttributes } from 'react';
 import * as stylex from '@stylexjs/stylex';
-import { colors } from '../theme/tokens.stylex';
+import { colors, fontSizes } from '../theme/tokens.stylex';
 
 const styles = stylex.create({
   root: {
     color: colors.textSecondary,
+    fontSize: fontSizes.sm,
     fontWeight: 500,
     letterSpacing: '0.08em',
     marginBottom: '8px',

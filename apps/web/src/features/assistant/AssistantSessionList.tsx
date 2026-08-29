@@ -52,6 +52,9 @@ const styles = stylex.create({
     ':hover': {
       backgroundColor: colors.backgroundHover,
     },
+    ':hover .assistant-session-delete': {
+      opacity: 0.6,
+    },
   },
   sessionRowActive: {
     backgroundColor: 'rgba(255, 176, 0, 0.1)',

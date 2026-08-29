@@ -125,18 +125,6 @@
     &:where(:is(h1, h2, h3, h4) :is(strong, b)) {
       font-weight: 600;
     }
-    &:where(mark) {
-      background-color: color-mix(in oklab, oklch(0.86 0.17 95) 40%, transparent);
-      color: inherit;
-      padding: 0.05em 0.15em;
-      border-radius: 0.2em;
-    }
-    &:where(abbr[title]) {
-      text-decoration-line: underline;
-      text-decoration-style: dotted;
-      text-underline-offset: 0.2em;
-      cursor: help;
-    }
     &:where(del, s) {
       color: var(--typeset-muted);
       text-decoration-line: line-through;
@@ -170,18 +158,6 @@
     }
     &:where(ul ul ul) {
       list-style-type: square;
-    }
-    &:where(ol[type='a' i]) {
-      list-style-type: lower-alpha;
-    }
-    &:where(ol[type='i' i]) {
-      list-style-type: lower-roman;
-    }
-    &:where(ol[type='A' s]) {
-      list-style-type: upper-alpha;
-    }
-    &:where(ol[type='I' s]) {
-      list-style-type: upper-roman;
     }
     &:where(ul, ol) {
       margin-block-start: var(--typeset-flow);
@@ -316,39 +292,13 @@
       color: var(--typeset-muted);
     }
 
-    /* Math. */
-    &:where(math[display='block']) {
-      margin-block-start: var(--typeset-flow);
-      margin-block-end: 0;
-      overflow-x: auto;
-      overflow-y: hidden;
-      padding-block: 0.25em;
-    }
-
     /* Media. */
-    &:where(img, video) {
+    &:where(img) {
       border-radius: var(--radius, 0.5em);
       max-width: 100%;
       height: auto;
       margin-block-start: var(--typeset-flow);
       margin-block-end: 0;
-    }
-    &:where(p img) {
-      margin-block-start: 0;
-    }
-    &:where(figure) {
-      margin-block-start: var(--typeset-flow);
-      margin-block-end: 0;
-      margin-inline: 0;
-    }
-    &:where(figcaption, caption) {
-      color: var(--typeset-muted);
-      font-size: 0.875em;
-      text-align: center;
-      margin-block-start: calc(0.75em / 0.875);
-    }
-    &:where(caption) {
-      caption-side: bottom;
     }
 
     /* Tables. Separators sit on cells, not tr:last-child: append-safe.
@@ -407,15 +357,12 @@
     }
 
     /* Blocks inside list items keep the list's tighter rhythm. */
-    &:where(li > blockquote, li > table, li > figure) {
+    &:where(li > blockquote) {
       margin-block-start: 0.5em;
-    }
-    &:where(li > pre) {
-      margin-block-start: calc(0.5em / 0.875);
     }
 
     @media print {
-      &:where(pre, table, blockquote, figure) {
+      &:where(pre, table, blockquote) {
         break-inside: avoid;
       }
       &:where(h1, h2, h3, h4) {
@@ -447,9 +394,7 @@
       blockquote > :first-child,
       td > :first-child,
       th > :first-child,
-      dd > :first-child,
-      figure > :first-child,
-      figure > picture > img
+      dd > :first-child
     ):not(:where(.not-typeset, [data-not-typeset], .not-typeset *, [data-not-typeset] *)) {
     margin-block-start: 0;
   }

@@ -41,7 +41,7 @@ const styles = stylex.create({
     backgroundColor: colors.backgroundElement,
     color: colors.textPrimary,
     padding: '6px 10px',
-    borderRadius: radii.md,
+    borderRadius: radii.default,
   },
   assistantBubble: {
     maxWidth: '100%',

@@ -28,6 +28,11 @@ const styles = stylex.create({
       borderColor: colors.accent,
       color: colors.accent,
     },
+    ':focus-visible': {
+      borderColor: colors.focusBorder,
+      boxShadow: colors.focusRing,
+      outline: 'none',
+    },
   },
   active: {
     borderColor: colors.accent,

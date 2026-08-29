@@ -17,7 +17,14 @@ const optionId = (commandId: string) => `palette-option-${commandId.replaceAll(/
 const styles = stylex.create({
   backdrop: {
     alignItems: 'flex-start',
+    backgroundColor: colors.backgroundBackdrop,
+    display: 'flex',
+    inset: 0,
+    justifyContent: 'center',
+    padding: '32px',
     paddingTop: '15vh',
+    position: 'fixed',
+    zIndex: 100,
   },
   panel: {
     backgroundColor: colors.backgroundSurface,

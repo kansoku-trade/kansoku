@@ -14,7 +14,7 @@ import { colors, fontSizes, radii } from '../theme/tokens.stylex';
 const styles = stylex.create({
   backdrop: {
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    backgroundColor: colors.backgroundBackdrop,
     display: 'flex',
     inset: 0,
     justifyContent: 'center',

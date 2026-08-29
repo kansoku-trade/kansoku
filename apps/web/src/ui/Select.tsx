@@ -50,6 +50,8 @@ const styles = stylex.create({
     border: `1px solid ${colors.border}`,
     borderRadius: radii.default,
     boxShadow: '0 6px 20px rgb(0 0 0 / 0.35)',
+    maxHeight: 'min(320px, var(--available-height))',
+    minWidth: 'var(--anchor-width)',
     overflowY: 'auto',
     padding: '3px',
   },

@@ -6,6 +6,7 @@ export const colors = stylex.defineVars({
   backgroundSurface: '#141414',
   backgroundElement: '#1e1e1e',
   backgroundHover: '#262626',
+  backgroundBackdrop: 'rgba(0, 0, 0, 0.6)',
   backgroundSunken: 'rgba(0, 0, 0, 0.2)',
   border: '#262626',
   borderStrong: '#3a3a3a',
