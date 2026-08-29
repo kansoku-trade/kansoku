@@ -28,7 +28,11 @@ const styles = stylex.create({
     alignItems: 'center',
   },
   recentLink: {
-    color: colors.textSecondary,
+    'color': colors.textSecondary,
+    'textDecoration': 'none',
+    ':hover': {
+      color: colors.accent,
+    },
   },
   actions: {
     marginLeft: 'auto',
@@ -49,6 +53,7 @@ const styles = stylex.create({
     'font': 'inherit',
     'cursor': 'pointer',
     'borderRadius': radii.default,
+    'textDecoration': 'none',
     ':hover': {
       color: colors.textPrimary,
       backgroundColor: colors.backgroundHover,

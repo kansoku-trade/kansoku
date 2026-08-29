@@ -51,9 +51,13 @@ const styles = stylex.create({
     },
   },
   stats: {
-    alignSelf: 'center',
-    color: colors.textSecondary,
-    fontSize: fontSizes.sm,
+    'alignSelf': 'center',
+    'color': colors.textSecondary,
+    'fontSize': fontSizes.sm,
+    'textDecoration': 'none',
+    ':hover': {
+      color: colors.accent,
+    },
   },
 });
 

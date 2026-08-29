@@ -25,9 +25,13 @@ const styles = stylex.create({
     padding: '16px',
   },
   back: {
-    color: colors.textSecondary,
-    fontSize: fontSizes.sm,
-    marginLeft: '10px',
+    'color': colors.textSecondary,
+    'fontSize': fontSizes.sm,
+    'marginLeft': '10px',
+    'textDecoration': 'none',
+    ':hover': {
+      color: colors.accent,
+    },
   },
   grid: {
     display: 'grid',
