@@ -16,9 +16,7 @@ describe('MarkdownLink', () => {
     const link = screen.getByRole('link');
     expect(link.getAttribute('href')).toBe('/symbol/sepa/TSM.US?analysis=2026-07-20-tsm-sepa');
     expect(link.className).toContain('app-deep-link--sepa');
-    expect(link.getAttribute('aria-label')).toBe(
-      '打开 SEPA 仪表盘：TSM.US，2026-07-20-tsm-sepa',
-    );
+    expect(link.getAttribute('aria-label')).toBe('打开 SEPA 仪表盘：TSM.US，2026-07-20-tsm-sepa');
   });
 
   it('renders the living-dashboard SEPA link with a fallback detail', () => {
@@ -38,13 +36,13 @@ describe('MarkdownLink', () => {
   });
 
   it('still renders the legacy pinned-analysis card unchanged', () => {
-    render(<MarkdownLink href="/symbol/MU.US?analysis=2026-07-09-mu-intraday-1">analysis</MarkdownLink>);
+    render(
+      <MarkdownLink href="/symbol/MU.US?analysis=2026-07-09-mu-intraday-1">analysis</MarkdownLink>,
+    );
 
     const link = screen.getByRole('link');
     expect(link.className).toContain('app-deep-link--analysis');
-    expect(link.getAttribute('aria-label')).toBe(
-      '打开这份分析：MU.US，2026-07-09-mu-intraday-1',
-    );
+    expect(link.getAttribute('aria-label')).toBe('打开这份分析：MU.US，2026-07-09-mu-intraday-1');
   });
 
   it('falls back to a plain anchor for a non-app href', () => {
@@ -65,7 +63,6 @@ describe('MarkdownLink', () => {
         className="custom-link"
         data-source="markdown"
         href="https://example.com"
-        node={document.createElement('a')}
         onClick={onClick}
         rel="noreferrer"
         target="_blank"

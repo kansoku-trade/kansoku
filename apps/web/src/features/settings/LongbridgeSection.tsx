@@ -6,6 +6,7 @@ import { client } from '@web/lib/client';
 import { Badge, Button, SegmentedControl, type SegmentedControlOption } from '@web/ui';
 import { colors, fonts, fontSizes } from '../../theme/tokens.stylex';
 import { getDesktopCredentialsBridge, type CredentialsGetResult } from './desktopCredentials';
+import { SettingsConnectionSection } from './SettingsConnectionSection';
 
 const INSTALL_URL = 'https://open.longbridge.com/docs/cli/install';
 
@@ -29,11 +30,11 @@ const styles = stylex.create({
     justifyContent: 'space-between',
   },
   timePreference: {
-    alignItems: 'center',
-    display: 'flex',
-    gap: '12px',
-    justifyContent: 'space-between',
-    padding: '11px',
+    'alignItems': 'center',
+    'display': 'flex',
+    'gap': '12px',
+    'justifyContent': 'space-between',
+    'padding': '11px',
     '@media (max-width: 560px)': {
       alignItems: 'stretch',
       flexDirection: 'column',
@@ -106,7 +107,7 @@ export function LongbridgeSection() {
   };
 
   return (
-    <section className={`settings-conn-section ${stylex.props(styles.section).className}`}>
+    <SettingsConnectionSection className={stylex.props(styles.section).className}>
       <div {...stylex.props(styles.title)}>
         <span>Longbridge CLI</span>
         <Badge tone={ready ? 'up' : 'down'}>{label}</Badge>
@@ -154,9 +155,7 @@ export function LongbridgeSection() {
             options={REGION_OPTIONS}
             onChange={(next) => void handleRegionChange(next)}
           />
-          <div
-            className={`settings-provider-meta ${stylex.props(styles.providerMeta).className}`}
-          >
+          <div className={`settings-provider-meta ${stylex.props(styles.providerMeta).className}`}>
             自动模式探测可达线路；修改后下次连接生效
           </div>
         </div>
@@ -170,6 +169,6 @@ export function LongbridgeSection() {
           {regionError}
         </div>
       )}
-    </section>
+    </SettingsConnectionSection>
   );
 }

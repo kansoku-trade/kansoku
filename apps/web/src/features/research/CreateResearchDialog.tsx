@@ -75,7 +75,7 @@ export function CreateResearchDialog({
           ? { kind: 'stock', symbol: trimmedSymbol }
           : { kind: 'journal', title: trimmedTitle, date },
       );
-      trackFeatureUsed('research_create', { variant: kind });
+      trackFeatureUsed('research_create', { variant: kind === 'stock' ? 'stock' : 'journal' });
       navigate(researchRoute(viewForKind(result.document.kind), result.document.path));
       onCreated(result);
       close();

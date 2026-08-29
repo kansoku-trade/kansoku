@@ -1,4 +1,3 @@
-import type { CSSProperties } from 'react';
 import * as stylex from '@stylexjs/stylex';
 import { Check, CircleX, Clock, NotebookText } from 'lucide-react';
 import type { OutcomeStatus, SymbolAnalysisRow } from '@kansoku/shared/types';
@@ -6,8 +5,7 @@ import { marketDate } from '@kansoku/shared/time';
 import { fmt, signed } from '@web/lib/format';
 import { marketOfSymbol } from '@web/lib/market';
 import { symbolUrl } from './analysisMode';
-import { DIRECTION_COLOR, DIRECTION_LABEL } from '@web/features/charts/intraday/directionLabels';
-import { theme } from '@web/lib/theme';
+import { DIRECTION_LABEL } from '@web/features/charts/intraday/directionLabels';
 import { Badge, MarketTime, SectionTitle } from '@web/ui';
 import { colors, fontSizes } from '../../theme/tokens.stylex';
 
@@ -23,6 +21,15 @@ const styles = stylex.create({
       textDecoration: 'none',
       backgroundColor: colors.backgroundHover,
     },
+  },
+  itemLong: {
+    borderLeftColor: colors.up,
+  },
+  itemShort: {
+    borderLeftColor: colors.down,
+  },
+  itemNeutral: {
+    borderLeftColor: colors.textSecondary,
   },
   head: {
     display: 'flex',
@@ -82,7 +89,7 @@ function OutcomeText({ status }: { status: OutcomeStatus }) {
     tone === 'down' && styles.outcomeDown,
   ).className;
   return (
-    <span className={`${tone}${toneStyleClassName ? ` ${toneStyleClassName}` : ''}`}>
+    <span className={toneStyleClassName}>
       <Icon className={`icon ${stylex.props(styles.icon).className}`} size={13} /> {label}
     </span>
   );
@@ -112,10 +119,16 @@ export function HistoryTab({
       {rows.map((row) => (
         <a
           key={row.id}
-          className={`zone-item ${stylex.props(styles.item).className}`}
-          style={
-            { '--zc': DIRECTION_COLOR[row.direction ?? ''] ?? theme.textSecondary } as CSSProperties
-          }
+          className={`zone-item ${
+            stylex.props(
+              styles.item,
+              row.direction === 'long'
+                ? styles.itemLong
+                : row.direction === 'short'
+                  ? styles.itemShort
+                  : styles.itemNeutral,
+            ).className
+          }`}
           href={symbolUrl(symbol, row.id)}
         >
           <div className={`zone-head ${stylex.props(styles.head).className}`}>

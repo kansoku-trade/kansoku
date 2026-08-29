@@ -7,6 +7,7 @@ import {
   isDataRootResetDisabled,
   type DataRootBridgeStatus,
 } from './desktopDataRoot';
+import { SettingsConnectionSection } from './SettingsConnectionSection';
 
 const styles = stylex.create({
   section: {
@@ -117,8 +118,8 @@ export function DataRootSection() {
   };
 
   return (
-    <section
-      className={`settings-conn-section settings-conn-longbridge ${stylex.props(styles.section).className}`}
+    <SettingsConnectionSection
+      className={`settings-conn-longbridge ${stylex.props(styles.section).className}`}
     >
       <div className={`settings-conn-title ${stylex.props(styles.title).className}`}>
         <span>数据目录</span>
@@ -183,6 +184,6 @@ export function DataRootSection() {
           恢复默认
         </Button>
       </div>
-    </section>
+    </SettingsConnectionSection>
   );
 }

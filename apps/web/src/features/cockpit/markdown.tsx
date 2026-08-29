@@ -1,6 +1,12 @@
 import { ArrowRight, ChartCandlestick, LayoutDashboard, Library } from 'lucide-react';
-import { cloneElement, isValidElement } from 'react';
-import type { AnchorHTMLAttributes, HTMLAttributes, ReactElement, ReactNode } from 'react';
+import { cloneElement, createElement, isValidElement } from 'react';
+import type {
+  AnchorHTMLAttributes,
+  HTMLAttributes,
+  InputHTMLAttributes,
+  ReactElement,
+  ReactNode,
+} from 'react';
 import { type Components, type ExtraProps, Streamdown } from 'streamdown';
 import * as stylex from '@stylexjs/stylex';
 import { parseAppDeepLink, type AppDeepLink } from '@kansoku/shared/appDeepLink';
@@ -11,62 +17,298 @@ import { colors, fonts, fontSizes, radii } from '../../theme/tokens.stylex';
 
 const styles = stylex.create({
   typeset: {
-    'color': colors.textPrimary,
-    'overflowWrap': 'anywhere',
-    'wordBreak': 'break-word',
-    '--color-foreground': colors.textPrimary,
-    '--color-muted-foreground': colors.textSecondary,
-    '--color-muted': colors.backgroundElement,
-    '--color-border': colors.border,
-    '--color-ring': colors.focusBorder,
-    '--typeset-font-body': fonts.ui,
-    '--typeset-font-heading': fonts.ui,
-    '--typeset-font-mono': fonts.mono,
+    color: colors.textPrimary,
+    fontFamily: fonts.ui,
+    maxWidth: '100%',
+    minWidth: 0,
+    overflowWrap: 'anywhere',
+    wordBreak: 'break-word',
   },
   chat: {
-    'fontSize': fontSizes.base,
+    'fontSize': `calc(${fontSizes.base} * 1.125)`,
     'lineHeight': 1.6,
-    '--typeset-size': fontSizes.base,
-    '--typeset-leading': '1.6',
-    '--typeset-flow': '0.8em',
-    '--typeset-h1': '1.25em',
-    '--typeset-h2': '1.15em',
-    '--typeset-h3': '1.05em',
-    '--typeset-h4': '1em',
+    '@media (min-width: 48rem), print': {
+      fontSize: fontSizes.base,
+    },
   },
   report: {
-    'fontSize': fontSizes.md,
+    'fontSize': `calc(${fontSizes.md} * 1.125)`,
     'lineHeight': 1.75,
-    '--typeset-size': fontSizes.md,
-    '--typeset-leading': '1.75',
-    '--typeset-flow': '1.15em',
-    '--typeset-h1': '1.7em',
-    '--typeset-h2': '1.35em',
-    '--typeset-h3': '1.15em',
-    '--typeset-h4': '1em',
+    '@media (min-width: 48rem), print': {
+      fontSize: fontSizes.md,
+    },
   },
   link: {
     'color': colors.accent,
+    'fontWeight': 500,
+    'textDecorationColor': `color-mix(in srgb, ${colors.accent} 30%, transparent)`,
+    'textDecorationLine': 'underline',
     ':hover': {
       textDecorationColor: colors.accent,
     },
+    ':focus-visible': {
+      borderRadius: radii.default,
+      outline: `2px solid ${colors.focusBorder}`,
+      outlineOffset: '2px',
+    },
   },
-  chatHeading1: { fontSize: '1.25em' },
-  chatHeading2: { fontSize: '1.15em' },
-  chatHeading3: { fontSize: '1.05em' },
-  chatHeading4: { fontSize: '1em' },
-  reportHeading1: { fontSize: '1.7em' },
-  reportHeading2: { fontSize: '1.35em' },
-  reportHeading3: { fontSize: '1.15em' },
-  reportHeading4: { fontSize: '1em' },
-  codeBlock: {
+  heading: {
+    'breakAfter': 'auto',
+    'color': colors.textPrimary,
+    'fontFamily': fonts.ui,
+    'fontWeight': 600,
+    'marginBlockEnd': 0,
+    '@media print': {
+      breakAfter: 'avoid',
+    },
+    ':first-child': {
+      marginBlockStart: 0,
+    },
+  },
+  chatHeading1: { fontSize: '1.25em', lineHeight: 1.3, marginBlockStart: '0.8em' },
+  chatHeading2: { fontSize: '1.15em', lineHeight: 1.4, marginBlockStart: '1.12em' },
+  chatHeading3: { fontSize: '1.05em', lineHeight: 1.45, marginBlockStart: '0.8em' },
+  chatHeading4: { fontSize: '1em', lineHeight: 1.5, marginBlockStart: '0.8em' },
+  chatHeading5: {
+    color: colors.textSecondary,
+    fontSize: '0.875em',
+    fontWeight: 500,
+    lineHeight: 1.5,
+    marginBlockStart: '0.914285em',
+  },
+  chatHeading6: {
+    color: colors.textSecondary,
+    fontSize: '0.8125em',
+    fontWeight: 500,
+    letterSpacing: '0.08em',
+    lineHeight: 1.5,
+    marginBlockStart: '0.984615em',
+    textTransform: 'uppercase',
+  },
+  reportHeading1: { fontSize: '1.7em', lineHeight: 1.3, marginBlockStart: '1.15em' },
+  reportHeading2: { fontSize: '1.35em', lineHeight: 1.4, marginBlockStart: '1.61em' },
+  reportHeading3: { fontSize: '1.15em', lineHeight: 1.45, marginBlockStart: '1.15em' },
+  reportHeading4: { fontSize: '1em', lineHeight: 1.5, marginBlockStart: '1.15em' },
+  reportHeading5: {
+    color: colors.textSecondary,
+    fontSize: '0.875em',
+    fontWeight: 500,
+    lineHeight: 1.5,
+    marginBlockStart: '1.314285em',
+  },
+  reportHeading6: {
+    color: colors.textSecondary,
+    fontSize: '0.8125em',
+    fontWeight: 500,
+    letterSpacing: '0.08em',
+    lineHeight: 1.5,
+    marginBlockStart: '1.415385em',
+    textTransform: 'uppercase',
+  },
+  flowChat: {
+    'marginBlockEnd': 0,
+    'marginBlockStart': '0.8em',
+    ':first-child': { marginBlockStart: 0 },
+  },
+  flowReport: {
+    'marginBlockEnd': 0,
+    'marginBlockStart': '1.15em',
+    ':first-child': { marginBlockStart: 0 },
+  },
+  strong: {
+    fontWeight: 600,
+  },
+  deleted: {
+    color: colors.textSecondary,
+    textDecorationLine: 'line-through',
+  },
+  superscript: {
+    fontSize: '0.75em',
+    lineHeight: 0,
+    position: 'relative',
+    top: '-0.5em',
+    verticalAlign: 'baseline',
+  },
+  subscript: {
+    bottom: '-0.25em',
+    fontSize: '0.75em',
+    lineHeight: 0,
+    position: 'relative',
+    verticalAlign: 'baseline',
+  },
+  unorderedList: {
+    listStyleType: {
+      default: 'disc',
+      [stylex.when.ancestor(':not(:empty)')]: 'circle',
+    },
+    paddingInlineStart: '1.5em',
+  },
+  orderedList: {
+    listStyleType: 'decimal',
+    paddingInlineStart: '1.5em',
+  },
+  taskList: {
+    listStyleType: 'none',
+    paddingInlineStart: '0.25em',
+  },
+  listItem: {
+    'marginBlockStart': '0.5em',
+    'paddingInlineStart': '0.4em',
+    ':first-child': { marginBlockStart: 0 },
+    '::marker': { color: colors.textSecondary },
+  },
+  taskCheckbox: {
+    accentColor: colors.accent,
+    marginInlineEnd: '0.5em',
+    verticalAlign: '-0.1em',
+  },
+  summary: {
+    'cursor': 'pointer',
+    'fontWeight': 500,
+    '::marker': { color: colors.textSecondary },
+  },
+  keyboard: {
+    borderBlockEndWidth: '2px',
     borderColor: colors.border,
+    borderRadius: '1.2px',
     borderStyle: 'solid',
     borderWidth: '1px',
+    fontFamily: 'inherit',
+    fontSize: '0.85em',
+    fontWeight: 500,
+    padding: '0.0625em 0.35em',
+  },
+  definitionTerm: {
+    fontWeight: 500,
+    marginBlockStart: '1em',
+  },
+  definitionDescription: {
+    color: colors.textSecondary,
+    marginBlockStart: '0.25em',
+    marginInlineStart: 0,
+    paddingInlineStart: '1em',
+  },
+  inlineCode: {
+    'backgroundColor': colors.backgroundElement,
+    'borderRadius': '1.2px',
+    'fontFamily': fonts.mono,
+    'fontSize': '0.85em',
+    'padding': '0.125em 0.3em',
+    '@media (forced-colors: active)': {
+      borderColor: 'CanvasText',
+      borderStyle: 'solid',
+      borderWidth: '1px',
+    },
+  },
+  codeBlock: {
+    'borderColor': colors.border,
+    'borderStyle': 'solid',
+    'borderWidth': '1px',
+    ':is(pre)': {
+      'backgroundColor': colors.backgroundElement,
+      'borderRadius': radii.default,
+      'direction': 'ltr',
+      'fontFamily': fonts.mono,
+      'fontSize': '0.875em',
+      'lineHeight': 1.5,
+      'marginBlockEnd': 0,
+      'overflowX': 'auto',
+      'padding': '0.75em 1em',
+      'tabSize': 2,
+      '@media print': {
+        breakInside: 'avoid',
+      },
+    },
+  },
+  codeBlockChat: {
+    ':is(pre)': {
+      marginBlockStart: '0.914285em',
+    },
+  },
+  codeBlockReport: {
+    ':is(pre)': {
+      marginBlockStart: '1.314285em',
+    },
+  },
+  blockquote: {
+    'borderInlineStartColor': colors.border,
+    'borderInlineStartStyle': 'solid',
+    'borderInlineStartWidth': '2px',
+    'marginInline': 0,
+    'paddingInlineStart': '1em',
+    '@media print': {
+      breakInside: 'avoid',
+    },
+  },
+  rule: {
+    'borderBlockEndWidth': 0,
+    'borderBlockStartColor': colors.border,
+    'borderBlockStartStyle': 'solid',
+    'borderBlockStartWidth': '1px',
+    'borderInlineWidth': 0,
+    'marginBlockEnd': 0,
+    ':first-child': { marginBlockStart: 0 },
+  },
+  ruleChat: {
+    marginBlockStart: '1.92em',
+  },
+  ruleReport: {
+    marginBlockStart: '2.76em',
+  },
+  footnotes: {
+    borderBlockStartColor: colors.border,
+    borderBlockStartStyle: 'solid',
+    borderBlockStartWidth: '1px',
+    color: colors.textSecondary,
+    fontSize: '0.875em',
+    paddingBlockStart: '1em',
+  },
+  image: {
+    borderRadius: radii.default,
+    height: 'auto',
+    maxWidth: '100%',
+  },
+  tableScroll: {
+    maxWidth: '100%',
+    overflowX: 'auto',
+    width: '100%',
+  },
+  table: {
+    'borderBlockEndColor': colors.border,
+    'borderBlockEndStyle': 'solid',
+    'borderBlockEndWidth': '1px',
+    'borderCollapse': 'separate',
+    'borderSpacing': 0,
+    'fontSize': '1em',
+    'fontVariantNumeric': 'tabular-nums',
+    'lineHeight': 1.5,
+    'marginBlockStart': 0,
+    'maxWidth': 'none',
+    'width': 'max-content',
+    '@media print': {
+      breakInside: 'avoid',
+    },
   },
   tableHead: {
-    color: colors.textPrimary,
-    fontWeight: 600,
+    'color': colors.textPrimary,
+    'fontWeight': 500,
+    'padding': '0.65em 1em',
+    'textAlign': 'start',
+    'whiteSpace': 'nowrap',
+    ':first-child': {
+      paddingInlineStart: 0,
+    },
+  },
+  tableCell: {
+    'borderBlockStartColor': colors.border,
+    'borderBlockStartStyle': 'solid',
+    'borderBlockStartWidth': '1px',
+    'padding': '0.75em 1em',
+    'textAlign': 'start',
+    'verticalAlign': 'top',
+    ':first-child': {
+      paddingInlineStart: 0,
+    },
   },
   deepLink: {
     'alignItems': 'center',
@@ -245,7 +487,7 @@ function deepLinkCardMeta(link: AppDeepLink): DeepLinkCardMeta {
 }
 
 export function MarkdownLink(props: AnchorHTMLAttributes<HTMLAnchorElement> & ExtraProps) {
-  const { href, children, className, node, ...anchorProps } = props;
+  const { href, children, className, node: _node, ...anchorProps } = props;
   const appLink = parseAppDeepLink(href);
   if (!appLink)
     return (
@@ -299,14 +541,44 @@ export function MarkdownLink(props: AnchorHTMLAttributes<HTMLAnchorElement> & Ex
   );
 }
 
-function MarkdownPre({ children }: { children?: ReactNode }) {
+type SemanticProps = HTMLAttributes<HTMLElement> & ExtraProps;
+
+function styledElement(tag: keyof HTMLElementTagNameMap, ...styleValues: stylex.StyleXStyles[]) {
+  return ({ node: _node, className, ...props }: SemanticProps) =>
+    createElement(tag, {
+      ...props,
+      className: [className, stylex.props(...styleValues).className].filter(Boolean).join(' '),
+    });
+}
+
+function MarkdownInput({
+  className,
+  node: _node,
+  type,
+  ...props
+}: InputHTMLAttributes<HTMLInputElement> & ExtraProps) {
+  return (
+    <input
+      {...props}
+      className={[className, type === 'checkbox' && stylex.props(styles.taskCheckbox).className]
+        .filter(Boolean)
+        .join(' ')}
+      type={type}
+    />
+  );
+}
+
+function MarkdownPre({ children, variant }: { children?: ReactNode; variant: MarkdownVariant }) {
   if (!isValidElement(children)) return children;
 
   return cloneElement(children as ReactElement<Record<string, unknown>>, {
     'data-block': 'true',
     'className': [
       (children.props as { className?: string }).className,
-      stylex.props(styles.codeBlock).className,
+      stylex.props(
+        styles.codeBlock,
+        variant === 'chat' ? styles.codeBlockChat : styles.codeBlockReport,
+      ).className,
     ]
       .filter(Boolean)
       .join(' '),
@@ -314,6 +586,7 @@ function MarkdownPre({ children }: { children?: ReactNode }) {
 }
 
 function markdownComponents(variant: MarkdownVariant): Components {
+  const flowStyle = variant === 'chat' ? styles.flowChat : styles.flowReport;
   const headingStyles =
     variant === 'chat'
       ? [styles.chatHeading1, styles.chatHeading2, styles.chatHeading3, styles.chatHeading4]
@@ -323,21 +596,76 @@ function markdownComponents(variant: MarkdownVariant): Components {
           styles.reportHeading3,
           styles.reportHeading4,
         ];
-  const headingStyle = (level: 1 | 2 | 3 | 4) => stylex.props(headingStyles[level - 1]);
+  const headingStyle = (level: 1 | 2 | 3 | 4) =>
+    stylex.props(styles.heading, headingStyles[level - 1]);
+  const heading5 = variant === 'chat' ? styles.chatHeading5 : styles.reportHeading5;
+  const heading6 = variant === 'chat' ? styles.chatHeading6 : styles.reportHeading6;
 
   return {
     a: MarkdownLink,
+    p: styledElement('p', flowStyle),
+    strong: styledElement('strong', styles.strong),
+    b: styledElement('b', styles.strong),
+    del: styledElement('del', styles.deleted),
+    s: styledElement('s', styles.deleted),
+    sup: styledElement('sup', styles.superscript),
+    sub: styledElement('sub', styles.subscript),
+    ul: ({ children, className, node: _node, ...props }: SemanticProps) => (
+      <ul
+        {...props}
+        className={[
+          className,
+          stylex.props(
+            styles.unorderedList,
+            flowStyle,
+            className?.includes('contains-task-list') && styles.taskList,
+            stylex.defaultMarker(),
+          ).className,
+        ]
+          .filter(Boolean)
+          .join(' ')}
+      >
+        {children}
+      </ul>
+    ),
+    ol: styledElement('ol', styles.orderedList, flowStyle),
+    li: styledElement('li', styles.listItem),
+    input: MarkdownInput,
+    details: styledElement('details', flowStyle),
+    summary: styledElement('summary', styles.summary),
+    kbd: styledElement('kbd', styles.keyboard),
+    dl: styledElement('dl', flowStyle),
+    dt: styledElement('dt', styles.definitionTerm),
+    dd: styledElement('dd', styles.definitionDescription),
+    inlineCode: styledElement('code', styles.inlineCode),
+    blockquote: styledElement('blockquote', styles.blockquote, flowStyle),
+    hr: styledElement('hr', styles.rule, variant === 'chat' ? styles.ruleChat : styles.ruleReport),
+    img: styledElement('img', styles.image, flowStyle),
+    section: ({ children, className, node: _node, ...props }: SemanticProps) => (
+      <section
+        {...props}
+        className={[
+          className,
+          stylex.props(
+            flowStyle,
+            (className?.includes('footnotes') || 'data-footnotes' in props) && styles.footnotes,
+          ).className,
+        ]
+          .filter(Boolean)
+          .join(' ')}
+      >
+        {children}
+      </section>
+    ),
     h1: ({
       children,
       className,
-      node,
+      node: _node,
       ...props
     }: HTMLAttributes<HTMLHeadingElement> & ExtraProps) => (
       <h1
         {...props}
-        className={['mt-6 mb-2 font-semibold text-3xl', className, headingStyle(1).className]
-          .filter(Boolean)
-          .join(' ')}
+        className={[className, headingStyle(1).className].filter(Boolean).join(' ')}
         data-streamdown="heading-1"
       >
         {children}
@@ -346,14 +674,12 @@ function markdownComponents(variant: MarkdownVariant): Components {
     h2: ({
       children,
       className,
-      node,
+      node: _node,
       ...props
     }: HTMLAttributes<HTMLHeadingElement> & ExtraProps) => (
       <h2
         {...props}
-        className={['mt-6 mb-2 font-semibold text-2xl', className, headingStyle(2).className]
-          .filter(Boolean)
-          .join(' ')}
+        className={[className, headingStyle(2).className].filter(Boolean).join(' ')}
         data-streamdown="heading-2"
       >
         {children}
@@ -362,14 +688,12 @@ function markdownComponents(variant: MarkdownVariant): Components {
     h3: ({
       children,
       className,
-      node,
+      node: _node,
       ...props
     }: HTMLAttributes<HTMLHeadingElement> & ExtraProps) => (
       <h3
         {...props}
-        className={['mt-6 mb-2 font-semibold text-xl', className, headingStyle(3).className]
-          .filter(Boolean)
-          .join(' ')}
+        className={[className, headingStyle(3).className].filter(Boolean).join(' ')}
         data-streamdown="heading-3"
       >
         {children}
@@ -378,29 +702,31 @@ function markdownComponents(variant: MarkdownVariant): Components {
     h4: ({
       children,
       className,
-      node,
+      node: _node,
       ...props
     }: HTMLAttributes<HTMLHeadingElement> & ExtraProps) => (
       <h4
         {...props}
-        className={['mt-6 mb-2 font-semibold text-lg', className, headingStyle(4).className]
-          .filter(Boolean)
-          .join(' ')}
+        className={[className, headingStyle(4).className].filter(Boolean).join(' ')}
         data-streamdown="heading-4"
       >
         {children}
       </h4>
     ),
-    pre: MarkdownPre,
+    h5: styledElement('h5', styles.heading, heading5),
+    h6: styledElement('h6', styles.heading, heading6),
+    pre: ({ children }: { children?: ReactNode }) => (
+      <MarkdownPre variant={variant}>{children}</MarkdownPre>
+    ),
     table: ({ children }: { children?: ReactNode }) => (
-      <div className="typeset-scroll">
-        <table>{children}</table>
+      <div className={`typeset-scroll ${stylex.props(styles.tableScroll, flowStyle).className}`}>
+        <table {...stylex.props(styles.table)}>{children}</table>
       </div>
     ),
     th: ({
       children,
       className,
-      node,
+      node: _node,
       ...props
     }: HTMLAttributes<HTMLTableCellElement> & ExtraProps) => (
       <th
@@ -416,6 +742,19 @@ function markdownComponents(variant: MarkdownVariant): Components {
       >
         {children}
       </th>
+    ),
+    td: ({
+      children,
+      className,
+      node: _node,
+      ...props
+    }: HTMLAttributes<HTMLTableCellElement> & ExtraProps) => (
+      <td
+        {...props}
+        className={[className, stylex.props(styles.tableCell).className].filter(Boolean).join(' ')}
+      >
+        {children}
+      </td>
     ),
   } as Components;
 }

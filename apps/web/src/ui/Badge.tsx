@@ -1,8 +1,9 @@
-import type { HTMLAttributes } from 'react';
+import type { HTMLAttributes, Ref } from 'react';
 import * as stylex from '@stylexjs/stylex';
 import { colors, fontSizes, fonts, radii } from '../theme/tokens.stylex';
 
 type BadgeProps = {
+  ref?: Ref<HTMLSpanElement>;
   tone?: 'up' | 'down' | 'accent' | 'solid' | 'muted';
 } & HTMLAttributes<HTMLSpanElement>;
 
@@ -43,21 +44,23 @@ const styles = stylex.create({
 });
 
 function toneClassName(tone: BadgeProps['tone']): string {
-  return stylex.props(
-    styles.base,
-    tone === 'up' && styles.up,
-    tone === 'down' && styles.down,
-    tone === 'accent' && styles.accent,
-    tone === 'solid' && styles.solid,
-    tone === 'muted' && styles.muted,
-  ).className;
+  return (
+    stylex.props(
+      styles.base,
+      tone === 'up' && styles.up,
+      tone === 'down' && styles.down,
+      tone === 'accent' && styles.accent,
+      tone === 'solid' && styles.solid,
+      tone === 'muted' && styles.muted,
+    ).className ?? ''
+  );
 }
 
-export function Badge({ tone, className, children, ...rest }: BadgeProps) {
+export function Badge({ tone, className, children, ref, ...rest }: BadgeProps) {
   const cls = `badge${className ? ` ${className}` : ''} ${toneClassName(tone)}`;
 
   return (
-    <span className={cls} {...rest}>
+    <span ref={ref} className={cls} {...rest}>
       {children}
     </span>
   );

@@ -392,30 +392,24 @@ export function PredictionTab({
             </div>
           )}
           <div
-            className={`grid2 ${stylex.props(styles.grid, ep.entry_status_note && styles.gridAfterNote).className}`}
+            className={`grid2 ${stylex.props(styles.grid, Boolean(ep.entry_status_note) && styles.gridAfterNote).className}`}
           >
             <div className={`k ${stylex.props(styles.gridKey).className}`}>入场</div>
             <div className={`v ${stylex.props(styles.gridValue).className}`}>${fmt(ep.entry)}</div>
             <div className={`k ${stylex.props(styles.gridKey).className}`}>止损</div>
-            <div
-              className={`v ${stylex.props(styles.gridValue, styles.toneDown).className}`}
-            >
+            <div className={`v ${stylex.props(styles.gridValue, styles.toneDown).className}`}>
               ${fmt(ep.stop)}
             </div>
             <div className={`k ${stylex.props(styles.gridKey).className}`}>
               目标1 ({signed(ep.target1_pct, 1)}%)
             </div>
-            <div
-              className={`v ${stylex.props(styles.gridValue, styles.toneUp).className}`}
-            >
+            <div className={`v ${stylex.props(styles.gridValue, styles.toneUp).className}`}>
               ${fmt(ep.target1)}
             </div>
             <div className={`k ${stylex.props(styles.gridKey).className}`}>
               目标2 ({signed(ep.target2_pct, 1)}%)
             </div>
-            <div
-              className={`v ${stylex.props(styles.gridValue, styles.toneUp).className}`}
-            >
+            <div className={`v ${stylex.props(styles.gridValue, styles.toneUp).className}`}>
               ${fmt(ep.target2)}
             </div>
             <div className={`k ${stylex.props(styles.gridKey).className}`}>R/R</div>

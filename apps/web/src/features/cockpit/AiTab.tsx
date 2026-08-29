@@ -151,7 +151,7 @@ export function AiTab({
             )}
             {pastDates.length > 0 && (
               <Select
-                className={`ai-date-select ${stylex.props(styles.dateSelect, analysisRevision && styles.dateSelectAfterFollow).className}`}
+                className={`ai-date-select ${stylex.props(styles.dateSelect, Boolean(analysisRevision) && styles.dateSelectAfterFollow).className}`}
                 value={selectedDate ?? 'today'}
                 options={[
                   { value: 'today', label: '今天' },

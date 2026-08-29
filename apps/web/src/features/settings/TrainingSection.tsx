@@ -4,6 +4,7 @@ import { getTrainerBridge } from '@web/features/desktop/desktopTrainerBridge';
 import { useCapabilities } from '@web/features/edition/capabilitiesStore';
 import { Switch } from '@web/ui';
 import { colors, fontSizes } from '../../theme/tokens.stylex';
+import { SettingsConnectionSection } from './SettingsConnectionSection';
 
 const styles = stylex.create({
   section: {
@@ -60,7 +61,7 @@ export function TrainingSection() {
   };
 
   return (
-    <section className={`settings-conn-section ${stylex.props(styles.section).className}`}>
+    <SettingsConnectionSection className={stylex.props(styles.section).className}>
       <div {...stylex.props(styles.title)}>
         <span>盲盘训练 · 自动补货</span>
         <Switch ariaLabel="自动补货" checked={enabled} onCheckedChange={toggle} />
@@ -68,6 +69,6 @@ export function TrainingSection() {
       <div {...stylex.props(styles.note)}>
         池容低于 5 局自动补至 15 局；连续补空两次后暂停挂起，手动补一次恢复
       </div>
-    </section>
+    </SettingsConnectionSection>
   );
 }

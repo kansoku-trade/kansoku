@@ -3,6 +3,7 @@ import * as stylex from '@stylexjs/stylex';
 import { ArrowLeft } from 'lucide-react';
 import { useQuery } from '@web/lib/apiHooks';
 import { client } from '@web/lib/client';
+import { isDesktopRealtime } from '@web/lib/portTransport';
 import { navigate } from '@web/lib/router';
 import { Button, Card, ErrorBox, NoteBlock, ScrollArea, SectionTitle } from '@web/ui';
 import { useTitle } from '@web/lib/useTitle';
@@ -39,9 +40,14 @@ const styles = stylex.create({
     'padding': 0,
     'width': '100%',
     '@media (min-width: 1001px)': {
-      height: '100%',
+      height: '100vh',
       minHeight: 0,
       overflow: 'hidden',
+    },
+  },
+  pageDesktop: {
+    '@media (min-width: 1001px)': {
+      height: 'calc(100vh - 40px)',
     },
   },
   viewport: {
@@ -247,9 +253,10 @@ function SettingsBackLink() {
 }
 
 function SettingsPageScrollArea({ children }: { children: ReactNode }) {
+  const pageStyle = stylex.props(styles.page, isDesktopRealtime() && styles.pageDesktop);
   return (
     <ScrollArea
-      className={`page settings-page ${stylex.props(styles.page).className}`}
+      className={`page settings-page ${pageStyle.className}`}
       viewportClassName={`settings-page-viewport ${stylex.props(styles.viewport).className}`}
       contentClassName={`settings-page-content ${stylex.props(styles.content).className}`}
     >

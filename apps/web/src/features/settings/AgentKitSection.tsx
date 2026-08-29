@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import * as stylex from '@stylexjs/stylex';
-import { Button, openModal, Switch } from '@web/ui';
+import { Button, NoteBlock, openModal, Switch } from '@web/ui';
+import { colors, fonts, fontSizes } from '../../theme/tokens.stylex';
+import { SettingsConnectionSection } from './SettingsConnectionSection';
 import { AgentKitConflictDialog } from './AgentKitConflictDialog';
 import { AgentKitUpdateDialog } from './AgentKitUpdateDialog';
 import {
@@ -11,6 +13,53 @@ import {
 } from './desktopAgentKit';
 
 const styles = stylex.create({
+  section: {
+    padding: '10px 11px',
+  },
+  title: {
+    alignItems: 'center',
+    color: colors.textPrimary,
+    display: 'flex',
+    fontSize: fontSizes.sm,
+    fontWeight: 600,
+    gap: '8px',
+    justifyContent: 'space-between',
+  },
+  summary: {
+    color: colors.textMuted,
+    fontFamily: fonts.mono,
+    fontSize: fontSizes.xs,
+    fontVariantNumeric: 'tabular-nums',
+    fontWeight: 400,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  providerMeta: {
+    color: colors.textMuted,
+    fontFamily: fonts.mono,
+    fontSize: fontSizes.xs,
+    marginTop: '3px',
+    overflowWrap: 'anywhere',
+  },
+  warning: {
+    alignItems: 'center',
+    backgroundColor: colors.backgroundElement,
+    borderColor: colors.down,
+    borderStyle: 'solid',
+    borderWidth: '1px',
+    color: colors.down,
+    display: 'flex',
+    fontSize: fontSizes.sm,
+    gap: '10px',
+    justifyContent: 'space-between',
+    margin: '10px',
+    padding: '8px 9px',
+  },
+  result: {
+    color: colors.down,
+    fontSize: fontSizes.sm,
+  },
   pendingRow: {
     alignItems: 'center',
     display: 'flex',
@@ -111,8 +160,10 @@ export function AgentKitSection() {
   const canSync = Boolean(status?.enabled && status?.resolvedPath);
 
   return (
-    <section className="settings-conn-section settings-conn-longbridge">
-      <div className="settings-conn-title">
+    <SettingsConnectionSection
+      className={`settings-conn-longbridge ${stylex.props(styles.section).className}`}
+    >
+      <div className={`settings-conn-title ${stylex.props(styles.title).className}`}>
         <span>Agent Kit</span>
         <Switch
           ariaLabel="启用 Agent Kit"
@@ -122,27 +173,27 @@ export function AgentKitSection() {
         />
       </div>
 
-      <div className="settings-conn-summary">
+      <div className={`settings-conn-summary ${stylex.props(styles.summary).className}`}>
         为外部 Claude Code / Codex 提供内置 skills 软链接 + kansoku-cli 入口
       </div>
 
       {status ? (
-        <div className="settings-provider-meta">
+        <div className={`settings-provider-meta ${stylex.props(styles.providerMeta).className}`}>
           位置：{locationLabel(status)}
           {status.resolvedPath === null ? '（未生效）' : null}
         </div>
       ) : (
-        <div className="note-block">加载中…</div>
+        <NoteBlock>加载中…</NoteBlock>
       )}
 
       {status?.followBlocked ? (
-        <div className="settings-warning-strip">
+        <div className={`settings-warning-strip ${stylex.props(styles.warning).className}`}>
           数据目录是 App 默认位置（Application Support），跟随不可用——请选择自定义目录或先切换数据目录。
         </div>
       ) : null}
 
       {status ? (
-        <div className="settings-provider-meta">
+        <div className={`settings-provider-meta ${stylex.props(styles.providerMeta).className}`}>
           版本 {status.kitVersion ?? '—'} · 上次同步 {status.lastSyncAt ?? '—'}
         </div>
       ) : null}
@@ -162,7 +213,11 @@ export function AgentKitSection() {
       ))}
 
       {error ? (
-        <div className="settings-test-result settings-test-result--fail">{error}</div>
+        <div
+          className={`settings-test-result settings-test-result--fail ${stylex.props(styles.result).className}`}
+        >
+          {error}
+        </div>
       ) : null}
 
       <div {...stylex.props(styles.actionsBar)}>
@@ -183,6 +238,6 @@ export function AgentKitSection() {
           清理
         </Button>
       </div>
-    </section>
+    </SettingsConnectionSection>
   );
 }

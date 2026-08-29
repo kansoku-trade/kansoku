@@ -50,9 +50,14 @@ const styles = stylex.create({
   pageSplit: {
     'width': '100%',
     '@media (min-width: 1001px)': {
-      height: '100%',
+      height: '100vh',
       minHeight: 0,
       overflow: 'hidden',
+    },
+  },
+  pageSplitDesktop: {
+    '@media (min-width: 1001px)': {
+      height: 'calc(100vh - 40px)',
     },
   },
   pageSplitViewport: {
@@ -70,18 +75,18 @@ const styles = stylex.create({
     display: 'grid',
     gap: '24px',
     gridTemplateColumns: {
-      default: '2fr 1fr',
+      'default': '2fr 1fr',
       '@media (max-width: 1000px)': '1fr',
     },
   },
   side: {
-    height: 'calc(100vh - 32px)',
-    marginRight: '-8px',
-    position: {
-      default: 'sticky',
+    'height': 'calc(100vh - 32px)',
+    'marginRight': '-8px',
+    'position': {
+      'default': 'sticky',
       '@media (max-width: 1000px)': 'static',
     },
-    top: '16px',
+    'top': '16px',
     '@media (max-width: 1000px)': {
       height: 'auto',
       marginRight: 0,
@@ -93,13 +98,13 @@ const styles = stylex.create({
   },
   sideContent: {
     paddingRight: {
-      default: '8px',
+      'default': '8px',
       '@media (max-width: 1000px)': 0,
     },
   },
   sideScroll: {
     height: {
-      default: '100%',
+      'default': '100%',
       '@media (max-width: 1000px)': 'auto',
     },
   },
@@ -238,103 +243,104 @@ export function Home() {
   const hasSplitBoard = isToday && board !== null;
 
   const recapDate = (recapDates ?? []).find((d) => d < today) ?? null;
-  const pageStyle = stylex.props(styles.page, hasSplitBoard && styles.pageSplit);
+  const pageStyle = stylex.props(
+    styles.page,
+    hasSplitBoard && styles.pageSplit,
+    hasSplitBoard && desktopRealtime && styles.pageSplitDesktop,
+  );
   const viewportStyle = stylex.props(
     styles.pageViewport,
     hasSplitBoard && styles.pageSplitViewport,
   );
-  const contentStyle = stylex.props(
-    styles.pageContent,
-    hasSplitBoard && styles.pageSplitContent,
-  );
+  const contentStyle = stylex.props(styles.pageContent, hasSplitBoard && styles.pageSplitContent);
 
   return (
     <EventCanvasHost>
-    <ScrollArea
-      className={`page home-page${hasSplitBoard ? ' home-page--split' : ''} ${pageStyle.className}`}
-      viewportClassName={`home-page-viewport ${viewportStyle.className}`}
-      contentClassName={`home-page-content ${contentStyle.className}`}
-    >
-      <HomeTopStrip
-        sessionLabel={session ? (SESSION_LABEL[session] ?? session) : null}
-        date={isToday ? (board?.date ?? date) : date}
-        isToday={isToday}
-        quotes={quoteSnap?.quotes ?? []}
-        market={board?.market}
-        degraded={quotesDegraded}
-        snapshotAt={quotesSnapshotAt}
-        recapDate={recapDate}
-      />
-      {notice && NOTICE_LABEL[notice] && <ErrorBox>{NOTICE_LABEL[notice]}</ErrorBox>}
-      <QuickBar shortcuts={shortcuts} showGlobalActions={!desktopRealtime} />
-      <DateTimeline
-        dates={timelineDates}
-        selected={date}
-        onSelect={(d) => navigate(`/?date=${d}`, { replace: true })}
-      />
-      {isToday && !board && !boardError && (
-        <div className={`note-block ${stylex.props(styles.note).className}`}>盘面加载中…</div>
-      )}
-      {isToday && boardError && !board && <ErrorBox>{boardError}</ErrorBox>}
-      {!isToday && <RecapBoard date={date} defaultExpanded />}
-      {isToday && board && trading && (
-        <div className={`home-grid ${stylex.props(styles.grid).className}`}>
-          <div className="home-main">
-            <SectionTitleWithAge
-              label={session === 'pre' ? '隔夜行情 · 自选 + 持仓' : '看盘 · 自选 + 持仓'}
-              at={boardSnapshotAt}
-            />
-            <SymbolGrid
-              quotes={quoteSnap?.quotes ?? []}
-              board={board}
-              portfolio={portfolio ?? null}
-              events={events ?? null}
-            />
-            {flowSection}
-          </div>
-          <div
-            className={`home-side ${stylex.props(styles.side, desktopRealtime && styles.sideDesktop).className}`}
-          >
-            <ScrollArea
-              className={`home-side-scroll ${stylex.props(styles.sideScroll).className}`}
-              viewportClassName={stylex.props(styles.sideScrollViewport).className}
-              scrollbarClassName={stylex.props(styles.sideScrollBar).className}
-              contentClassName={`home-side-content ${stylex.props(styles.sideContent).className}`}
+      <ScrollArea
+        className={`page home-page${hasSplitBoard ? ' home-page--split' : ''} ${pageStyle.className}`}
+        viewportClassName={`home-page-viewport ${viewportStyle.className}`}
+        contentClassName={`home-page-content ${contentStyle.className}`}
+      >
+        <HomeTopStrip
+          sessionLabel={session ? (SESSION_LABEL[session] ?? session) : null}
+          date={isToday ? (board?.date ?? date) : date}
+          isToday={isToday}
+          quotes={quoteSnap?.quotes ?? []}
+          market={board?.market}
+          degraded={quotesDegraded}
+          snapshotAt={quotesSnapshotAt}
+          recapDate={recapDate}
+        />
+        {notice && NOTICE_LABEL[notice] && <ErrorBox>{NOTICE_LABEL[notice]}</ErrorBox>}
+        <QuickBar shortcuts={shortcuts} showGlobalActions={!desktopRealtime} />
+        <DateTimeline
+          dates={timelineDates}
+          selected={date}
+          onSelect={(d) => navigate(`/?date=${d}`, { replace: true })}
+        />
+        {isToday && !board && !boardError && (
+          <div className={`note-block ${stylex.props(styles.note).className}`}>盘面加载中…</div>
+        )}
+        {isToday && boardError && !board && <ErrorBox>{boardError}</ErrorBox>}
+        {!isToday && <RecapBoard date={date} defaultExpanded />}
+        {isToday && board && trading && (
+          <div className={`home-grid ${stylex.props(styles.grid).className}`}>
+            <div className="home-main">
+              <SectionTitleWithAge
+                label={session === 'pre' ? '隔夜行情 · 自选 + 持仓' : '看盘 · 自选 + 持仓'}
+                at={boardSnapshotAt}
+              />
+              <SymbolGrid
+                quotes={quoteSnap?.quotes ?? []}
+                board={board}
+                portfolio={portfolio ?? null}
+                events={events ?? null}
+              />
+              {flowSection}
+            </div>
+            <div
+              className={`home-side ${stylex.props(styles.side, desktopRealtime && styles.sideDesktop).className}`}
             >
-              {hasPositions && positionsSection}
-              {eventSection}
-              {!hasPositions && positionsSection}
-              <TrainerCard />
-            </ScrollArea>
+              <ScrollArea
+                className={`home-side-scroll ${stylex.props(styles.sideScroll).className}`}
+                viewportClassName={stylex.props(styles.sideScrollViewport).className}
+                scrollbarClassName={stylex.props(styles.sideScrollBar).className}
+                contentClassName={`home-side-content ${stylex.props(styles.sideContent).className}`}
+              >
+                {hasPositions && positionsSection}
+                {eventSection}
+                {!hasPositions && positionsSection}
+                <TrainerCard />
+              </ScrollArea>
+            </div>
           </div>
-        </div>
-      )}
-      {isToday && board && after && (
-        <div className={`home-grid ${stylex.props(styles.grid).className}`}>
-          <div className="home-main">
-            <RecapBoard date={date} defaultExpanded />
-            {flowSection}
-          </div>
-          <div
-            className={`home-side ${stylex.props(styles.side, desktopRealtime && styles.sideDesktop).className}`}
-          >
-            <ScrollArea
-              className={`home-side-scroll ${stylex.props(styles.sideScroll).className}`}
-              viewportClassName={stylex.props(styles.sideScrollViewport).className}
-              scrollbarClassName={stylex.props(styles.sideScrollBar).className}
-              contentClassName={`home-side-content ${stylex.props(styles.sideContent).className}`}
+        )}
+        {isToday && board && after && (
+          <div className={`home-grid ${stylex.props(styles.grid).className}`}>
+            <div className="home-main">
+              <RecapBoard date={date} defaultExpanded />
+              {flowSection}
+            </div>
+            <div
+              className={`home-side ${stylex.props(styles.side, desktopRealtime && styles.sideDesktop).className}`}
             >
-              {hasPositions && positionsSection}
-              {eventSection}
-              <SectionTitleWithAge label="收盘定格" at={boardSnapshotAt} />
-              <WatchBoard board={board} error={boardError} compact />
-              {!hasPositions && positionsSection}
-              <TrainerCard />
-            </ScrollArea>
+              <ScrollArea
+                className={`home-side-scroll ${stylex.props(styles.sideScroll).className}`}
+                viewportClassName={stylex.props(styles.sideScrollViewport).className}
+                scrollbarClassName={stylex.props(styles.sideScrollBar).className}
+                contentClassName={`home-side-content ${stylex.props(styles.sideContent).className}`}
+              >
+                {hasPositions && positionsSection}
+                {eventSection}
+                <SectionTitleWithAge label="收盘定格" at={boardSnapshotAt} />
+                <WatchBoard board={board} error={boardError} compact />
+                {!hasPositions && positionsSection}
+                <TrainerCard />
+              </ScrollArea>
+            </div>
           </div>
-        </div>
-      )}
-    </ScrollArea>
+        )}
+      </ScrollArea>
     </EventCanvasHost>
   );
 }

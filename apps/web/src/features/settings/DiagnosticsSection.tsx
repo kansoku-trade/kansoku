@@ -4,6 +4,7 @@ import { navigate } from '@web/lib/router';
 import { Button } from '@web/ui';
 import { getDesktopLogsBridge } from '../logs/desktopLogs';
 import { colors, fonts, fontSizes } from '../../theme/tokens.stylex';
+import { SettingsConnectionSection } from './SettingsConnectionSection';
 
 const styles = stylex.create({
   section: {
@@ -81,8 +82,8 @@ export function DiagnosticsSection() {
   };
 
   return (
-    <section
-      className={`settings-conn-section settings-conn-longbridge ${stylex.props(styles.section).className}`}
+    <SettingsConnectionSection
+      className={`settings-conn-longbridge ${stylex.props(styles.section).className}`}
     >
       <div className={`settings-conn-title ${stylex.props(styles.title).className}`}>
         <span>诊断 / 日志</span>
@@ -115,6 +116,6 @@ export function DiagnosticsSection() {
           {error}
         </div>
       ) : null}
-    </section>
+    </SettingsConnectionSection>
   );
 }

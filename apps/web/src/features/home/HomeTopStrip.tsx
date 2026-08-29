@@ -2,7 +2,7 @@ import type { MarketTemp, QuoteCell } from '@kansoku/shared/types';
 import * as stylex from '@stylexjs/stylex';
 import { signed, upDown } from '@web/lib/format';
 import { Badge, DataAgeBadge, Dot } from '@web/ui';
-import { colors, fontSizes } from '../../theme/tokens.stylex';
+import { colors, fonts, fontSizes } from '../../theme/tokens.stylex';
 import { RecapCell } from './RecapCell';
 
 export const INDEX_SYMBOLS = ['SPY.US', 'QQQ.US', '.DJI.US', '.VIX.US'];
@@ -22,7 +22,9 @@ const styles = stylex.create({
   root: {
     'alignItems': 'center',
     'backgroundColor': colors.backgroundSurface,
-    'border': `1px solid ${colors.border}`,
+    'borderColor': colors.border,
+    'borderStyle': 'solid',
+    'borderWidth': '1px',
     'display': 'grid',
     'fontVariantNumeric': 'tabular-nums',
     'gap': '20px',
@@ -49,7 +51,9 @@ const styles = stylex.create({
   },
   date: {
     color: colors.textMuted,
+    fontFamily: fonts.mono,
     fontSize: fontSizes.sm,
+    fontVariantNumeric: 'tabular-nums',
   },
   cluster: {
     alignItems: 'center',
@@ -64,7 +68,10 @@ const styles = stylex.create({
   },
   indexCell: {
     alignItems: 'center',
-    color: colors.textSecondary,
+    color: {
+      'default': colors.textSecondary,
+      ':hover': colors.accent,
+    },
     display: 'inline-flex',
     gap: '6px',
     textDecoration: 'none',
@@ -77,6 +84,38 @@ const styles = stylex.create({
     color: colors.textMuted,
     fontSize: fontSizes.base,
   },
+  number: {
+    fontFamily: fonts.mono,
+    fontVariantNumeric: 'tabular-nums',
+  },
+  up: {
+    color: colors.up,
+  },
+  down: {
+    color: colors.down,
+  },
+  marketTemp: {
+    alignItems: 'center',
+    color: colors.textMuted,
+    display: 'inline-flex',
+    fontSize: fontSizes.sm,
+    gap: '8px',
+  },
+  tempGauge: {
+    backgroundImage: 'linear-gradient(90deg, #60a5fa, #4ade80 55%, #fbbf24 75%, #f87171)',
+    borderRadius: 0,
+    height: '7px',
+    position: 'relative',
+    width: '64px',
+  },
+  tempGaugeMarker: {
+    backgroundColor: colors.textPrimary,
+    height: '13px',
+    position: 'absolute',
+    top: '-3px',
+    transform: 'translateX(-1px)',
+    width: '2px',
+  },
 });
 
 function IndexCell({ q }: { q: QuoteCell }) {
@@ -86,7 +125,11 @@ function IndexCell({ q }: { q: QuoteCell }) {
       <span className={`idx-sym ${stylex.props(styles.indexSymbol).className}`}>
         {q.symbol.replace(/\.US$/, '')}
       </span>
-      <span className={`num ${tone}`}>{q.pct == null ? '—' : `${signed(q.pct)}%`}</span>
+      <span
+        className={`num ${tone} ${stylex.props(styles.number, tone === 'up' && styles.up, tone === 'down' && styles.down).className}`}
+      >
+        {q.pct == null ? '—' : `${signed(q.pct)}%`}
+      </span>
       {q.session !== '日盘' && <Badge className="qc-session">{q.session}</Badge>}
     </a>
   );
@@ -131,12 +174,15 @@ export function HomeTopStrip({
       </div>
       {market && (
         <span
-          className="market-temp"
+          className={`market-temp ${stylex.props(styles.marketTemp).className}`}
           title={`市场温度 ${market.temperature}/100${market.description ? ` · ${market.description}` : ''}`}
         >
           <span className="temp-label">温度 {market.temperature}</span>
-          <span className="temp-gauge">
-            <i style={{ left: `${Math.min(100, Math.max(0, market.temperature))}%` }} />
+          <span className={`temp-gauge ${stylex.props(styles.tempGauge).className}`}>
+            <i
+              {...stylex.props(styles.tempGaugeMarker)}
+              style={{ left: `${Math.min(100, Math.max(0, market.temperature))}%` }}
+            />
           </span>
           {market.valuation != null && market.sentiment != null && (
             <span className="temp-sub">

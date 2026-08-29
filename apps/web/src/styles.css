@@ -1,39 +1,3 @@
-@import './typeset.css';
-
-:root {
-  --bg-canvas: #0a0a0a;
-  --bg-surface: #141414;
-  --bg-element: #1e1e1e;
-  --border: #262626;
-  --border-strong: #3a3a3a;
-  --text-primary: #e8e8e8;
-  --text-secondary: #9a9a9a;
-  --text-muted: #5c5c5c;
-  --accent: #ffb000;
-  --focus-outline: 1px solid rgb(232 232 232 / 0.35);
-  --up: #26a69a;
-  --down: #ef5350;
-  --font-ui: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', sans-serif;
-  --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
-  --fs-xs: 10px;
-  --fs-sm: 11px;
-  --fs-base: 12px;
-  --fs-xl: 20px;
-  --radius: 2px;
-  --radius-md: 6px;
-}
-
-.num {
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
-}
-.up {
-  color: var(--up);
-}
-.down {
-  color: var(--down);
-}
-
 * {
   box-sizing: border-box;
 }
@@ -46,6 +10,7 @@ textarea {
   font: inherit;
   margin: 0;
 }
+
 button {
   appearance: none;
   background: transparent;
@@ -55,135 +20,25 @@ button {
 
 body {
   margin: 0;
-  font-family: var(--font-ui);
-  background: var(--bg-canvas);
-  color: var(--text-primary);
+  background: #0a0a0a;
+  color: #e8e8e8;
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', sans-serif;
 }
 
 a {
-  color: var(--text-primary);
+  color: #e8e8e8;
   text-decoration: none;
-}
-a:hover {
-  color: var(--accent);
 }
 
 :focus-visible {
-  outline: var(--focus-outline);
+  outline: 1px solid rgb(232 232 232 / 0.35);
   outline-offset: 2px;
 }
-/* Held for the length of a level drag. The pointer spends nearly all of it off the handle — over
-   the chart canvas, which sets its own crosshair, or past the pane entirely — so the cursor has to
-   be pinned on every element, not just the one that was grabbed. */
+
+/* Held for the length of a level drag. The pointer spends nearly all of it off the handle, so the
+   cursor must be pinned on every element until the gesture ends. */
 body.trainer-dragging-level,
 body.trainer-dragging-level * {
   cursor: ns-resize !important;
   user-select: none !important;
-}
-.note-block {
-  font-size: var(--fs-sm);
-  color: var(--text-secondary);
-  margin-top: 6px;
-  line-height: 1.4;
-}
-@media (min-width: 1001px) {
-  #root:has(> .home-page--split),
-  .desktop-content:has(> .home-page--split) {
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    overflow: hidden;
-  }
-  #root > .home-page--split,
-  .desktop-content > .home-page--split {
-    flex: 1 1 auto;
-  }
-}
-.market-temp {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: var(--fs-sm);
-  color: var(--text-muted);
-}
-.temp-gauge {
-  position: relative;
-  width: 64px;
-  height: 7px;
-  border-radius: 0;
-  background: linear-gradient(90deg, #60a5fa, #4ade80 55%, #fbbf24 75%, #f87171);
-}
-.temp-gauge i {
-  position: absolute;
-  top: -3px;
-  width: 2px;
-  height: 13px;
-  background: var(--text-primary);
-  transform: translateX(-1px);
-}
-
-@media (min-width: 1001px) {
-  #root:has(> .settings-page),
-  .desktop-content:has(> .settings-page) {
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    overflow: hidden;
-  }
-  #root > .settings-page,
-  .desktop-content > .settings-page {
-    flex: 1 1 auto;
-  }
-}
-
-.settings-test-result {
-  font-size: var(--fs-sm);
-}
-.settings-test-result--fail {
-  color: var(--down);
-}
-
-.settings-warning-strip {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin: 10px;
-  padding: 8px 9px;
-  border: 1px solid var(--down);
-  background: var(--bg-element);
-  color: var(--down);
-  font-size: var(--fs-sm);
-}
-.settings-conn-section + .settings-conn-section {
-  border-top: 1px solid var(--border);
-}
-.settings-conn-longbridge {
-  padding: 10px 11px;
-}
-.settings-conn-title {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  color: var(--text-primary);
-  font-size: var(--fs-sm);
-  font-weight: 600;
-}
-.settings-conn-summary {
-  color: var(--text-muted);
-  font-family: var(--font-mono);
-  font-size: var(--fs-xs);
-  font-variant-numeric: tabular-nums;
-  font-weight: 400;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.settings-provider-meta {
-  overflow-wrap: anywhere;
-  margin-top: 3px;
-  color: var(--text-muted);
-  font-family: var(--font-mono);
-  font-size: var(--fs-xs);
 }

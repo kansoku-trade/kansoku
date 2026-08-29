@@ -124,7 +124,7 @@ export function ChatDock({ chartId, docCreatedAt }: ChatDockProps) {
   const [layoutEl, setLayoutEl] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
-    setLayoutEl(hostRef.current?.closest('.layout') ?? null);
+    setLayoutEl(hostRef.current?.closest<HTMLElement>('.layout') ?? null);
   }, []);
 
   useEffect(() => {

@@ -42,7 +42,7 @@ const styles = stylex.create({
     color: colors.accent,
   },
   followLocked: {
-    opacity: 0.65,
+    'opacity': 0.65,
     ':hover': {
       opacity: 1,
     },
@@ -99,7 +99,7 @@ export function FollowToggle({
       {...stylex.props(
         styles.follow,
         active && styles.followActive,
-        statusError && styles.followError,
+        Boolean(statusError) && styles.followError,
         locked && styles.followLocked,
         compact && styles.followCompact,
       )}
@@ -116,15 +116,13 @@ export function FollowToggle({
         {...stylex.props(
           styles.followIcon,
           active && styles.followIconActive,
-          statusError && styles.followIconError,
+          Boolean(statusError) && styles.followIconError,
         )}
         aria-hidden="true"
         size={compact ? 12 : 11}
       />
       <span
-        className={
-          compact ? `sr-only ${stylex.props(styles.visuallyHidden).className}` : undefined
-        }
+        className={compact ? `sr-only ${stylex.props(styles.visuallyHidden).className}` : undefined}
       >
         AI 跟进
       </span>

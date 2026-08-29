@@ -107,7 +107,7 @@ export interface MarkerTooltipHandle {
 
 export function markerTooltip(chart: IChartApi, host: HTMLElement): MarkerTooltipHandle {
   const el = document.createElement('div');
-  el.className = markerTooltipClassName;
+  el.className = markerTooltipClassName ?? '';
   host.appendChild(el);
   let byId = new Map<string, string>();
 

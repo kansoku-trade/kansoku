@@ -71,7 +71,7 @@ function FollowControl({
 
   return (
     <span
-      className={`follow-control ${className ?? ''} ${stylex.props(styles.control, statusError && styles.error, locked && styles.locked).className}`}
+      className={`follow-control ${className ?? ''} ${stylex.props(styles.control, Boolean(statusError) && styles.error, locked && styles.locked).className}`}
       title={
         locked
           ? following
@@ -83,7 +83,10 @@ function FollowControl({
               : 'AI 评论员已停止跟进此标的'))
       }
     >
-      <RadioTower {...stylex.props(styles.icon, statusError && styles.errorIcon)} size={13} />
+      <RadioTower
+        {...stylex.props(styles.icon, Boolean(statusError) && styles.errorIcon)}
+        size={13}
+      />
       <span>AI 跟进</span>
       {locked && (
         <Lock className={`follow-control-lock ${stylex.props(styles.lock).className}`} size={11} />
