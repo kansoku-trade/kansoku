@@ -25,6 +25,51 @@ const styles = stylex.create({
     color: colors.textPrimary,
     fontWeight: 600,
   },
+  overviewGrid: {
+    display: 'grid',
+    gap: '12px',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+    marginTop: '12px',
+  },
+  symbolCardHead: {
+    alignItems: 'center',
+    display: 'flex',
+    gap: '8px',
+  },
+  symbolCardSymbol: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.lg,
+    fontWeight: 600,
+  },
+  symbolCardQuote: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.md,
+    fontVariantNumeric: 'tabular-nums',
+  },
+  symbolCardLevels: {
+    color: colors.textSecondary,
+    display: 'flex',
+    fontSize: fontSizes.md,
+    fontVariantNumeric: 'tabular-nums',
+    gap: '14px',
+    marginTop: '8px',
+  },
+  symbolCardComment: {
+    WebkitBoxOrient: 'vertical',
+    WebkitLineClamp: 2,
+    color: colors.textSecondary,
+    display: '-webkit-box',
+    fontSize: fontSizes.md,
+    lineHeight: 1.4,
+    marginTop: '8px',
+    overflow: 'hidden',
+  },
+  symbolCardCommentWarn: {
+    color: colors.accent,
+  },
+  symbolCardCommentAlert: {
+    color: colors.down,
+  },
 });
 
 function pctCell(value: number | null): string {
@@ -35,13 +80,15 @@ function SymbolCard({ row }: { row: OverviewRow }) {
   const comment = row.latest_comment;
   return (
     <Card link className="symbol-card" href={`/symbol/${encodeURIComponent(row.symbol)}`}>
-      <div className="symbol-card-head">
-        <span className="sym">{row.symbol}</span>
+      <div className={`symbol-card-head ${stylex.props(styles.symbolCardHead).className}`}>
+        <span className={`sym ${stylex.props(styles.symbolCardSymbol).className}`}>
+          {row.symbol}
+        </span>
         {row.direction && (
           <Badge tone={directionTone(row.direction)}>{DIRECTION_LABEL[row.direction]}</Badge>
         )}
         {row.last != null && (
-          <span className="quote">
+          <span className={`quote ${stylex.props(styles.symbolCardQuote).className}`}>
             {fmt(row.last)}
             {row.pct != null && (
               <>
@@ -59,14 +106,22 @@ function SymbolCard({ row }: { row: OverviewRow }) {
           </Badge>
         )}
       </div>
-      <div className="symbol-card-levels">
+      <div className={`symbol-card-levels ${stylex.props(styles.symbolCardLevels).className}`}>
         <span>止损 {pctCell(row.stop_distance_pct)}</span>
         <span>目标1 {pctCell(row.target1_distance_pct)}</span>
         {row.entry != null && <span>入场 {fmt(row.entry)}</span>}
         <ReassessButton symbol={row.symbol} />
       </div>
       {comment && (
-        <div className={`symbol-card-comment ${comment.level}`}>
+        <div
+          className={`symbol-card-comment ${comment.level} ${
+            stylex.props(
+              styles.symbolCardComment,
+              comment.level === 'warn' && styles.symbolCardCommentWarn,
+              comment.level === 'alert' && styles.symbolCardCommentAlert,
+            ).className
+          }`}
+        >
           <MarketTime value={comment.ts} format="clock" /> · {comment.text}
         </div>
       )}
@@ -112,7 +167,7 @@ export function WatchBoard({
     );
   }
   return (
-    <div className="overview-grid">
+    <div className={`overview-grid ${stylex.props(styles.overviewGrid).className}`}>
       {board.rows.map((row) => (
         <SymbolCard key={row.symbol} row={row} />
       ))}
