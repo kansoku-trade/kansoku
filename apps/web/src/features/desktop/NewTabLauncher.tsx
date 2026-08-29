@@ -109,6 +109,10 @@ const styles = stylex.create({
     'outline': 'none',
     'padding': 0,
     'textTransform': 'uppercase',
+    ':focus-visible': {
+      boxShadow: colors.focusRing,
+      outline: 'none',
+    },
     '::placeholder': {
       color: colors.textMuted,
       textTransform: 'none',
