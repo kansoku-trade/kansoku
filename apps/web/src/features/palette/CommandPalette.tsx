@@ -51,15 +51,16 @@ const styles = stylex.create({
     'boxShadow': 'none',
     'fontSize': fontSizes.md,
     'padding': '12px 14px',
-    ':focus': {
+    ':focus:not(:focus-visible)': {
       borderColor: colors.border,
       boxShadow: 'none',
       outline: 'none',
     },
     ':focus-visible': {
-      borderColor: colors.border,
-      boxShadow: 'none',
-      outline: 'none',
+      borderColor: colors.focusBorder,
+      boxShadow: colors.focusRing,
+      outline: colors.focusOutline,
+      outlineOffset: '2px',
     },
   },
   list: {
