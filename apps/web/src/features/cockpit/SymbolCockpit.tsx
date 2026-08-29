@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ArrowLeft, Bell, ChevronsRight, TriangleAlert } from 'lucide-react';
+import * as stylex from '@stylexjs/stylex';
 import { IntradayDashboard, IntradayTimeframeSwitch } from '../charts/intraday/IntradayDashboard';
 import { ChartLayerMenu } from '../charts/intraday/ChartLayerMenu';
 import { MaLinesMenu } from '../charts/intraday/MaLinesMenu';
@@ -32,6 +33,115 @@ import { useCockpitEnv } from './useCockpitEnv';
 import { useAnalystRun } from './useAnalystRun';
 import { useCockpitReviewState } from './useCockpitReviewState';
 import { useLatestAnalysis } from './useLatestAnalysis';
+import { colors, fontSizes, radii, sizes } from '../../theme/tokens.stylex';
+
+const styles = stylex.create({
+  fullpage: {
+    display: 'flex',
+    flexDirection: 'column',
+    height: '100vh',
+    overflow: 'hidden',
+  },
+  detailTopbar: {
+    alignItems: 'center',
+    backgroundColor: colors.backgroundSurface,
+    borderBottom: `1px solid ${colors.border}`,
+    display: 'flex',
+    gap: '12px',
+    padding: '8px 14px',
+    fontSize: fontSizes.md,
+  },
+  detailTopbarSplit: {
+    display: 'grid',
+    gap: 0,
+    gridTemplateColumns: `1fr ${sizes.sidebarWidth}`,
+    padding: 0,
+  },
+  topbarColumn: {
+    alignItems: 'center',
+    display: 'flex',
+    gap: '12px',
+    minWidth: 0,
+    padding: '8px 14px',
+  },
+  topbarChart: {
+    borderRight: `1px solid ${colors.border}`,
+  },
+  topbarSide: {
+    gap: '8px',
+  },
+  topbarChartTail: {
+    alignItems: 'center',
+    display: 'inline-flex',
+    gap: '8px',
+    marginLeft: 'auto',
+  },
+  detailBody: {
+    flex: 1,
+    minHeight: 0,
+  },
+  loadForwardButton: {
+    'alignItems': 'center',
+    'backgroundColor': 'transparent',
+    'border': `1px solid ${colors.border}`,
+    'borderRadius': radii.default,
+    'boxSizing': 'border-box',
+    'color': colors.textSecondary,
+    'cursor': 'pointer',
+    'display': 'inline-flex',
+    'fontSize': fontSizes.sm,
+    'gap': '5px',
+    'height': '24px',
+    'padding': '0 9px',
+    ':hover:not(:disabled)': {
+      backgroundColor: colors.backgroundHover,
+      borderColor: colors.borderStrong,
+      color: colors.textPrimary,
+    },
+    ':disabled': {
+      color: colors.textMuted,
+      cursor: 'default',
+    },
+  },
+  loadForwardIcon: {
+    opacity: 0.55,
+  },
+  timeframeError: {
+    color: colors.down,
+    fontSize: fontSizes.sm,
+    whiteSpace: 'nowrap',
+  },
+  alertBadge: {
+    'alignItems': 'center',
+    'background': 'color-mix(in srgb, currentColor 10%, transparent)',
+    'border': '1px solid color-mix(in srgb, currentColor 20%, transparent)',
+    'boxSizing': 'border-box',
+    'cursor': 'pointer',
+    'display': 'inline-flex',
+    'fontWeight': 500,
+    'gap': '6px',
+    'height': '26px',
+    'letterSpacing': 'normal',
+    'maxWidth': '320px',
+    'padding': '0 9px 0 7px',
+    'textTransform': 'none',
+    'transition': 'background 0.12s ease, border-color 0.12s ease',
+    'whiteSpace': 'nowrap',
+    ':hover': {
+      background: 'color-mix(in srgb, currentColor 16%, transparent)',
+      borderColor: 'color-mix(in srgb, currentColor 32%, transparent)',
+    },
+  },
+  alertBadgeText: {
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+  },
+  alertBadgeIcon: {
+    gap: '4px',
+    maxWidth: 'none',
+    padding: '0 7px',
+  },
+});
 
 export function SymbolCockpit({ sym }: { sym: string }) {
   const symLabel = sym.toUpperCase().replace(/\.US$/, '');
@@ -222,96 +332,117 @@ export function SymbolCockpit({ sym }: { sym: string }) {
 
   return (
     <EventCanvasHost>
-    <IntradayControlsProvider>
-      <div className="fullpage">
-        <div className="detail-topbar detail-topbar--split">
-          <div className="topbar-chart">
-            <a href="/">
-              <ArrowLeft className="icon" size={13} /> 列表
-            </a>
-            <span className="meta">{sym}</span>
-            {degraded && <Dot tone="accent" pulse title="数据延迟：行情拉取失败，正在重试" />}
-            <IntradayTimeframeSwitch activeTf={activeIntradayTf} onChange={setIntradayTf} />
-            <AnalysisTimeline
-              rows={analysesRows}
-              activeId={latestId}
-              mode={mode}
-              onLive={goToLive}
-              onSelect={goToAnalysis}
-            />
-            {canLoadForward && (
-              <button
-                className="load-forward-btn"
-                disabled={forwardBusy}
-                onClick={loadForward}
-                title="历史图表默认冻结在分析时的走势，点击加载分析日之后的 K 线到最新"
-              >
-                <ChevronsRight size={14} className="load-forward-icon" />
-                <span>{forwardBusy ? '加载中…' : '加载后续 K 线'}</span>
-              </button>
-            )}
-            {viewTimeframe.error && (
-              <span className="tf-load-error" title={viewTimeframe.error}>
-                该周期加载失败
-              </span>
-            )}
-            <span className="topbar-chart-tail">
-              <MaLinesMenu candles={tfDataOf(chartBuilt, activeIntradayTf)?.candles ?? []} />
-              <ChartLayerMenu built={chartBuilt} activeTf={activeIntradayTf} />
-            </span>
-          </div>
-          <div className="topbar-side">
-            {hasNewer && (
-              <button className="badge badge--accent alert-badge" onClick={jumpToLatest}>
-                <Dot tone="accent" pulse />
-                <span className="alert-badge-text">有新分析</span>
-              </button>
-            )}
-            {latestAlert && (
-              <Tooltip
-                content={
-                  <>
-                    AI {latestAlert.level === 'alert' ? '警报' : '提醒'}{' '}
-                    <MarketTime value={latestAlert.ts} format="clock" market={market} /> ·{' '}
-                    {latestAlert.trigger ?? latestAlert.text}
-                  </>
-                }
-              >
+      <IntradayControlsProvider>
+        <div className={`fullpage ${stylex.props(styles.fullpage).className}`}>
+          <div
+            className={`detail-topbar detail-topbar--split ${stylex.props(styles.detailTopbar, styles.detailTopbarSplit).className}`}
+          >
+            <div
+              className={`topbar-chart ${stylex.props(styles.topbarColumn, styles.topbarChart).className}`}
+            >
+              <a href="/">
+                <ArrowLeft className="icon" size={13} /> 列表
+              </a>
+              <span className="meta">{sym}</span>
+              {degraded && <Dot tone="accent" pulse title="数据延迟：行情拉取失败，正在重试" />}
+              <IntradayTimeframeSwitch activeTf={activeIntradayTf} onChange={setIntradayTf} />
+              <AnalysisTimeline
+                rows={analysesRows}
+                activeId={latestId}
+                mode={mode}
+                onLive={goToLive}
+                onSelect={goToAnalysis}
+              />
+              {canLoadForward && (
                 <button
-                  className={`badge badge--${latestAlert.level === 'alert' ? 'down' : 'accent'} alert-badge alert-badge--icon`}
-                  onClick={() => setActiveTab('ai')}
-                  aria-label={`AI ${latestAlert.level === 'alert' ? '警报' : '提醒'}：${latestAlert.text}`}
+                  className={`load-forward-btn ${stylex.props(styles.loadForwardButton).className}`}
+                  disabled={forwardBusy}
+                  onClick={loadForward}
+                  title="历史图表默认冻结在分析时的走势，点击加载分析日之后的 K 线到最新"
                 >
-                  <Dot tone={latestAlert.level === 'alert' ? 'down' : 'accent'} pulse />
-                  {latestAlert.level === 'alert' ? (
-                    <TriangleAlert className="icon" size={13} />
-                  ) : (
-                    <Bell className="icon" size={13} />
-                  )}
+                  <ChevronsRight
+                    size={14}
+                    className={`load-forward-icon ${stylex.props(styles.loadForwardIcon).className}`}
+                  />
+                  <span>{forwardBusy ? '加载中…' : '加载后续 K 线'}</span>
                 </button>
-              </Tooltip>
-            )}
-            {doc.symbol && <TopbarQuote quote={liveQuote} />}
+              )}
+              {viewTimeframe.error && (
+                <span
+                  className={`tf-load-error ${stylex.props(styles.timeframeError).className}`}
+                  title={viewTimeframe.error}
+                >
+                  该周期加载失败
+                </span>
+              )}
+              <span
+                className={`topbar-chart-tail ${stylex.props(styles.topbarChartTail).className}`}
+              >
+                <MaLinesMenu candles={tfDataOf(chartBuilt, activeIntradayTf)?.candles ?? []} />
+                <ChartLayerMenu built={chartBuilt} activeTf={activeIntradayTf} />
+              </span>
+            </div>
+            <div
+              className={`topbar-side ${stylex.props(styles.topbarColumn, styles.topbarSide).className}`}
+            >
+              {hasNewer && (
+                <button
+                  className={`badge badge--accent alert-badge ${stylex.props(styles.alertBadge).className}`}
+                  onClick={jumpToLatest}
+                >
+                  <Dot tone="accent" pulse />
+                  <span
+                    className={`alert-badge-text ${stylex.props(styles.alertBadgeText).className}`}
+                  >
+                    有新分析
+                  </span>
+                </button>
+              )}
+              {latestAlert && (
+                <Tooltip
+                  content={
+                    <>
+                      AI {latestAlert.level === 'alert' ? '警报' : '提醒'}{' '}
+                      <MarketTime value={latestAlert.ts} format="clock" market={market} /> ·{' '}
+                      {latestAlert.trigger ?? latestAlert.text}
+                    </>
+                  }
+                >
+                  <button
+                    className={`badge badge--${latestAlert.level === 'alert' ? 'down' : 'accent'} alert-badge alert-badge--icon ${stylex.props(styles.alertBadge, styles.alertBadgeIcon).className}`}
+                    onClick={() => setActiveTab('ai')}
+                    aria-label={`AI ${latestAlert.level === 'alert' ? '警报' : '提醒'}：${latestAlert.text}`}
+                  >
+                    <Dot tone={latestAlert.level === 'alert' ? 'down' : 'accent'} pulse />
+                    {latestAlert.level === 'alert' ? (
+                      <TriangleAlert className="icon" size={13} />
+                    ) : (
+                      <Bell className="icon" size={13} />
+                    )}
+                  </button>
+                </Tooltip>
+              )}
+              {doc.symbol && <TopbarQuote quote={liveQuote} />}
+            </div>
+          </div>
+          <div className={`detail-body ${stylex.props(styles.detailBody).className}`}>
+            <IntradayDashboard
+              symbol={sym}
+              built={chartBuilt}
+              activeTf={activeIntradayTf}
+              predictionUpdatedAt={doc.prediction_updated_at}
+              predictionStale={doc.prediction_stale}
+              conclusionReassess={conclusionReassess}
+              onLoadHistory={loadHistory}
+              sidebarTabs={sidebarTabs}
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+              dock={<ChatDock chartId={doc.id} docCreatedAt={doc.created_at} />}
+              liveQuote={live ? liveQuote : null}
+            />
           </div>
         </div>
-        <div className="detail-body">
-          <IntradayDashboard
-            symbol={sym}
-            built={chartBuilt}
-            activeTf={activeIntradayTf}
-            predictionUpdatedAt={doc.prediction_updated_at}
-            predictionStale={doc.prediction_stale}
-            conclusionReassess={conclusionReassess}
-            onLoadHistory={loadHistory}
-            sidebarTabs={sidebarTabs}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-            dock={<ChatDock chartId={doc.id} docCreatedAt={doc.created_at} />}
-            liveQuote={live ? liveQuote : null}
-          />
-        </div>
-      </div>
-    </IntradayControlsProvider>
+      </IntradayControlsProvider>
     </EventCanvasHost>
   );
 }
