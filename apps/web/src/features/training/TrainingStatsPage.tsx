@@ -5,7 +5,7 @@ import type { TrainerStatBlock, TrainerStats } from '@kansoku/pro-api';
 import { getTrainerBridge } from '@web/features/desktop/desktopTrainerBridge';
 import { fmt, signed } from '@web/lib/format';
 import { Card, SectionTitle } from '@web/ui';
-import { colors, fontSizes, radii } from '../../theme/tokens.stylex';
+import { colors, fonts, fontSizes, radii } from '../../theme/tokens.stylex';
 import { TRAINER_CASE_TAG_LABEL } from './caseTagLabels';
 
 const pct = (value: number | null): string => (value === null ? '—' : `${fmt(value * 100, 0)}%`);
@@ -72,8 +72,10 @@ const styles = stylex.create({
     fontSize: fontSizes.sm,
   },
   figureValue: {
+    fontFamily: fonts.mono,
     fontSize: '26px',
     fontWeight: 600,
+    fontVariantNumeric: 'tabular-nums',
     letterSpacing: '-0.02em',
     lineHeight: 1.15,
   },
