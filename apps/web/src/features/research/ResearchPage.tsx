@@ -71,19 +71,27 @@ const EXPLORER_MAX_WIDTH = 520;
 const EXPLORER_WIDTH_STORAGE_KEY = 'kansoku.research.explorer-width';
 
 const styles = stylex.create({
-  page: {
-    'backgroundColor': colors.backgroundCanvas,
-    'color': colors.textPrimary,
+  fullpage: {
+    display: 'flex',
+    flexDirection: 'column',
+    height: '100vh',
+    overflow: 'hidden',
     '@media (max-width: 760px)': {
       height: 'auto',
       minHeight: '100vh',
       overflow: 'visible',
     },
   },
-  pageDesktop: {
+  fullpageDesktop: {
+    height: 'calc(100vh - 40px)',
     '@media (max-width: 760px)': {
+      height: 'auto',
       minHeight: 'calc(100vh - 40px)',
     },
+  },
+  page: {
+    'backgroundColor': colors.backgroundCanvas,
+    'color': colors.textPrimary,
   },
   header: {
     'alignItems': 'center',
@@ -830,7 +838,7 @@ export function ResearchPage() {
 
   return (
     <div
-      className={`fullpage research-page ${stylex.props(styles.page, desktopShell && styles.pageDesktop).className}`}
+      className={`fullpage research-page ${stylex.props(styles.fullpage, styles.page, desktopShell && styles.fullpageDesktop).className}`}
     >
       <header {...stylex.props(styles.header, desktopShell && styles.headerDesktop)}>
         <div {...stylex.props(styles.title)}>
