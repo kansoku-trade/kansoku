@@ -92,13 +92,6 @@ body.trainer-dragging-level * {
   cursor: ns-resize !important;
   user-select: none !important;
 }
-.v.up {
-  color: var(--up);
-}
-.v.down {
-  color: var(--down);
-}
-
 .note-block {
   font-size: var(--fs-sm);
   color: var(--text-secondary);
