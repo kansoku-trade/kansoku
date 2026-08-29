@@ -1,8 +1,43 @@
 import { ArrowLeft } from 'lucide-react';
 import * as stylex from '@stylexjs/stylex';
-import { colors } from '../../theme/tokens.stylex';
+import { colors, fontSizes, sizes } from '../../theme/tokens.stylex';
 
 const styles = stylex.create({
+  detailTopbar: {
+    alignItems: 'center',
+    backgroundColor: colors.backgroundSurface,
+    borderBottomColor: colors.border,
+    borderBottomStyle: 'solid',
+    borderBottomWidth: '1px',
+    display: 'flex',
+    fontSize: fontSizes.md,
+    gap: '12px',
+    padding: '8px 14px',
+  },
+  detailTopbarSplit: {
+    display: 'grid',
+    gap: 0,
+    gridTemplateColumns: `1fr ${sizes.sidebarWidth}`,
+    padding: 0,
+  },
+  topbarColumn: {
+    alignItems: 'center',
+    display: 'flex',
+    gap: '12px',
+    minWidth: 0,
+    padding: '8px 14px',
+  },
+  topbarChart: {
+    borderRightColor: colors.border,
+    borderRightStyle: 'solid',
+    borderRightWidth: '1px',
+  },
+  topbarSide: {
+    gap: '8px',
+  },
+  icon: {
+    verticalAlign: '-2px',
+  },
   bone: {
     animationName: 'none',
     backgroundColor: colors.backgroundElement,
@@ -91,10 +126,18 @@ function Bone({ style }: { style: stylex.StyleXStyles }) {
 export function CockpitSkeleton() {
   return (
     <div className="fullpage" aria-busy="true" aria-label="加载中">
-      <div className="detail-topbar detail-topbar--split">
-        <div className="topbar-chart">
+      <div
+        className={`detail-topbar detail-topbar--split ${stylex.props(styles.detailTopbar, styles.detailTopbarSplit).className}`}
+      >
+        <div
+          className={`topbar-chart ${stylex.props(styles.topbarColumn, styles.topbarChart).className}`}
+        >
           <a href="/">
-            <ArrowLeft className="icon" size={13} /> 列表
+            <ArrowLeft
+              className={`icon ${stylex.props(styles.icon).className}`}
+              size={13}
+            />{' '}
+            列表
           </a>
           <Bone style={styles.meta} />
           <span {...stylex.props(styles.controls)} aria-hidden="true">
@@ -103,7 +146,10 @@ export function CockpitSkeleton() {
             <Bone style={styles.timeframe} />
           </span>
         </div>
-        <div className="topbar-side" aria-hidden="true">
+        <div
+          className={`topbar-side ${stylex.props(styles.topbarColumn, styles.topbarSide).className}`}
+          aria-hidden="true"
+        >
           <Bone style={styles.quote} />
         </div>
       </div>
