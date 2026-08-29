@@ -1,12 +1,81 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'motion/react';
+import * as stylex from '@stylexjs/stylex';
+import { colors, radii } from '../../../theme/tokens.stylex';
 import { CanvasSplit } from '../../canvas/CanvasSplit';
 import { useCanvasWorkspace } from '../../canvas/useCanvasWorkspace';
 import { ChatComposer } from './ChatComposer';
 import { ChatPanel } from './ChatPanel';
 import { useChatSession } from './useChatSession';
 import { useFloatingRect } from './useFloatingRect';
+
+const styles = stylex.create({
+  dock: {
+    'display': 'flex',
+    'flex': '0 0 auto',
+    'flexDirection': 'column',
+    'borderTopColor': colors.border,
+    'borderTopStyle': 'solid',
+    'borderTopWidth': '1px',
+    'backgroundColor': colors.backgroundSurface,
+    ':empty': {
+      display: 'none',
+    },
+  },
+  shell: {
+    zIndex: 20,
+    display: 'flex',
+    flexDirection: 'column',
+    minHeight: 0,
+    backgroundColor: colors.backgroundSurface,
+    borderColor: colors.borderStrong,
+    borderStyle: 'solid',
+    borderWidth: '1px',
+    borderRadius: radii.lg,
+  },
+  shellFloat: {
+    position: 'fixed',
+    boxShadow: '0 12px 40px rgb(0 0 0 / 0.6)',
+  },
+  shellFull: {
+    position: 'absolute',
+    inset: 0,
+    borderStyle: 'none',
+    borderWidth: 0,
+    borderRadius: 0,
+    backgroundColor: colors.backgroundCanvas,
+  },
+  shellDragging: {
+    userSelect: 'none',
+  },
+  resize: {
+    position: 'absolute',
+    zIndex: 1,
+  },
+  resizeW: {
+    left: '-3px',
+    top: 0,
+    bottom: 0,
+    width: '7px',
+    cursor: 'ew-resize',
+  },
+  resizeN: {
+    left: 0,
+    right: 0,
+    top: '-3px',
+    height: '7px',
+    cursor: 'ns-resize',
+  },
+  resizeNW: {
+    left: '-3px',
+    top: '-3px',
+    width: '12px',
+    height: '12px',
+    cursor: 'nwse-resize',
+    zIndex: 2,
+  },
+});
 
 export type ChatMode = 'dock' | 'float' | 'full';
 
@@ -91,7 +160,7 @@ export function ChatDock({ chartId, docCreatedAt }: ChatDockProps) {
 
   const shell = (
     <motion.div
-      className={`chat-shell chat-shell--${mode}${dragging ? ' dragging' : ''}`}
+      className={`chat-shell chat-shell--${mode}${dragging ? ' dragging' : ''} ${stylex.props(styles.shell, mode === 'float' && styles.shellFloat, mode === 'full' && styles.shellFull, dragging && styles.shellDragging).className}`}
       style={
         mode === 'float' ? { left: rect.x, top: rect.y, width: rect.w, height: rect.h } : undefined
       }
@@ -104,9 +173,18 @@ export function ChatDock({ chartId, docCreatedAt }: ChatDockProps) {
     >
       {mode === 'float' && (
         <>
-          <div className="chat-resize chat-resize--w" onPointerDown={onResizeStart('w')} />
-          <div className="chat-resize chat-resize--n" onPointerDown={onResizeStart('n')} />
-          <div className="chat-resize chat-resize--nw" onPointerDown={onResizeStart('nw')} />
+          <div
+            className={`chat-resize chat-resize--w ${stylex.props(styles.resize, styles.resizeW).className}`}
+            onPointerDown={onResizeStart('w')}
+          />
+          <div
+            className={`chat-resize chat-resize--n ${stylex.props(styles.resize, styles.resizeN).className}`}
+            onPointerDown={onResizeStart('n')}
+          />
+          <div
+            className={`chat-resize chat-resize--nw ${stylex.props(styles.resize, styles.resizeNW).className}`}
+            onPointerDown={onResizeStart('nw')}
+          />
         </>
       )}
       <CanvasSplit
@@ -143,7 +221,7 @@ export function ChatDock({ chartId, docCreatedAt }: ChatDockProps) {
   );
 
   return (
-    <div className="chat-dock" ref={hostRef}>
+    <div className={`chat-dock ${stylex.props(styles.dock).className}`} ref={hostRef}>
       {mode === 'dock' && composer}
       {layoutEl &&
         createPortal(<AnimatePresence>{mode !== 'dock' && shell}</AnimatePresence>, layoutEl)}
