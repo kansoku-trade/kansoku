@@ -61,6 +61,13 @@ const styles = stylex.create({
     fontSize: '9px',
     fontVariantNumeric: 'tabular-nums',
   },
+  messageMetaSeparator: {
+    '::before': {
+      content: '"·"',
+      marginRight: '5px',
+      color: colors.borderStrong,
+    },
+  },
   transcriptViewport: {
     overflowAnchor: 'none',
   },
@@ -476,8 +483,12 @@ function ChatRowView({
           {meta && modelLabels ? (
             <div className={`chat-message-meta ${stylex.props(styles.messageMeta).className}`}>
               <span>{modelLabel}</span>
-              <span>{tokenFormatter.format(meta.totalTokens)} tokens</span>
-              <span>{costFormatter.format(meta.costTotal)}</span>
+              <span className={stylex.props(styles.messageMetaSeparator).className}>
+                {tokenFormatter.format(meta.totalTokens)} tokens
+              </span>
+              <span className={stylex.props(styles.messageMetaSeparator).className}>
+                {costFormatter.format(meta.costTotal)}
+              </span>
             </div>
           ) : null}
         </div>
