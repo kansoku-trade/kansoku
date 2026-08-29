@@ -52,27 +52,30 @@ const styles = stylex.create({
     gap: '6px',
   },
   viewSwitch: {
-    borderColor: colors.borderStrong,
-    borderRadius: radii.default,
-    borderStyle: 'solid',
-    borderWidth: '1px',
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(0, 1fr))',
-    height: '28px',
-    minWidth: 0,
-    overflow: 'hidden',
+    'borderColor': colors.borderStrong,
+    'borderRadius': radii.default,
+    'borderStyle': 'solid',
+    'borderWidth': '1px',
+    'display': 'grid',
+    'gridTemplateColumns': 'repeat(auto-fit, minmax(0, 1fr))',
+    'height': '28px',
+    'minWidth': 0,
+    'overflow': 'hidden',
+    '@media (max-width: 760px)': {
+      flex: '1 1 190px',
+    },
   },
   viewButton: {
-    alignItems: 'center',
-    backgroundColor: 'transparent',
-    border: 'none',
-    color: colors.textMuted,
-    cursor: 'pointer',
-    display: 'inline-flex',
-    fontSize: fontSizes.sm,
-    gap: '5px',
-    justifyContent: 'center',
-    padding: '0 10px',
+    'alignItems': 'center',
+    'backgroundColor': 'transparent',
+    'border': 'none',
+    'color': colors.textMuted,
+    'cursor': 'pointer',
+    'display': 'inline-flex',
+    'fontSize': fontSizes.sm,
+    'gap': '5px',
+    'justifyContent': 'center',
+    'padding': '0 10px',
     ':hover': {
       backgroundColor: colors.backgroundElement,
       color: colors.textPrimary,
@@ -156,10 +159,10 @@ export function CanvasPane({
           >
             <button
               type="button"
-              className={`${view === 'canvas' ? 'active ' : ''}${stylex.props(
-                styles.viewButton,
-                view === 'canvas' && styles.viewButtonActive,
-              ).className}`}
+              className={`${view === 'canvas' ? 'active ' : ''}${
+                stylex.props(styles.viewButton, view === 'canvas' && styles.viewButtonActive)
+                  .className
+              }`}
               aria-pressed={view === 'canvas'}
               onClick={() => onViewChange('canvas')}
             >
@@ -167,11 +170,13 @@ export function CanvasPane({
             </button>
             <button
               type="button"
-              className={`${view === 'source' ? 'active ' : ''}${stylex.props(
-                styles.viewButton,
-                styles.viewButtonDivider,
-                view === 'source' && styles.viewButtonActive,
-              ).className}`}
+              className={`${view === 'source' ? 'active ' : ''}${
+                stylex.props(
+                  styles.viewButton,
+                  styles.viewButtonDivider,
+                  view === 'source' && styles.viewButtonActive,
+                ).className
+              }`}
               aria-pressed={view === 'source'}
               onClick={() => onViewChange('source')}
             >
