@@ -19,6 +19,7 @@ import { TrainerReviewFacts } from './TrainerReviewFacts';
 import { TrainerReviewLesson } from './TrainerReviewLesson';
 import { TrainerReviewTimeline } from './TrainerReviewTimeline';
 import { useTrainerReviewOverlay } from './useTrainerReviewOverlay';
+import { buttonStyles } from '../../ui/Button';
 import { colors, fontSizes, radii } from '../../theme/tokens.stylex';
 
 const STORAGE_NAMESPACE = 'trainer-review';
@@ -340,7 +341,7 @@ function OpenRealChartButton({ symbol }: { symbol: string }) {
   if (!bridge) return null;
   return (
     <button
-      className={`btn trainer-reveal-jump ${stylex.props(styles.revealJump).className}`}
+      className={`btn trainer-reveal-jump ${stylex.props(buttonStyles.base, styles.revealJump).className}`}
       onClick={() => void bridge.openPopout(symbol)}
     >
       在行情页打开真图 →

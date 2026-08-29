@@ -7,22 +7,22 @@ type ButtonProps = {
   state?: 'busy' | 'done' | 'failed';
 } & ButtonHTMLAttributes<HTMLButtonElement>;
 
-const styles = stylex.create({
+export const buttonStyles = stylex.create({
   base: {
-    alignItems: 'center',
-    backgroundColor: colors.backgroundElement,
-    borderColor: colors.borderStrong,
-    borderRadius: radii.default,
-    borderStyle: 'solid',
-    borderWidth: '1px',
-    boxSizing: 'border-box',
-    color: colors.textPrimary,
-    cursor: 'pointer',
-    display: 'inline-flex',
-    fontSize: fontSizes.base,
-    gap: '7px',
-    height: sizes.controlHeight,
-    padding: '0 14px',
+    'alignItems': 'center',
+    'backgroundColor': colors.backgroundElement,
+    'borderColor': colors.borderStrong,
+    'borderRadius': radii.default,
+    'borderStyle': 'solid',
+    'borderWidth': '1px',
+    'boxSizing': 'border-box',
+    'color': colors.textPrimary,
+    'cursor': 'pointer',
+    'display': 'inline-flex',
+    'fontSize': fontSizes.base,
+    'gap': '7px',
+    'height': sizes.controlHeight,
+    'padding': '0 14px',
     ':hover:not(:disabled)': {
       borderColor: colors.accent,
     },
@@ -54,29 +54,16 @@ const styles = stylex.create({
   },
 });
 
-export function Button({
-  accent,
-  state,
-  disabled,
-  className,
-  children,
-  ...rest
-}: ButtonProps) {
+export function Button({ accent, state, disabled, className, children, ...rest }: ButtonProps) {
   const styleClassName = stylex.props(
-    styles.base,
-    accent && styles.accent,
-    state === 'busy' && styles.busy,
-    state === 'done' && styles.done,
-    state === 'failed' && styles.failed,
-    disabled && styles.disabled,
+    buttonStyles.base,
+    accent && buttonStyles.accent,
+    state === 'busy' && buttonStyles.busy,
+    state === 'done' && buttonStyles.done,
+    state === 'failed' && buttonStyles.failed,
+    disabled && buttonStyles.disabled,
   ).className;
-  const cls = [
-    'btn',
-    accent && 'btn--accent',
-    state && `btn--${state}`,
-    className,
-    styleClassName,
-  ]
+  const cls = ['btn', accent && 'btn--accent', state && `btn--${state}`, className, styleClassName]
     .filter(Boolean)
     .join(' ');
 

@@ -7,6 +7,7 @@ import type {
   TrainerViewPeriod,
 } from '@kansoku/pro-api';
 import { signed } from '@web/lib/format';
+import { buttonStyles } from '../../ui/Button';
 import { colors, fontSizes, fonts, radii } from '../../theme/tokens.stylex';
 import type { TrainerBridge } from '../desktop/desktopTrainerBridge';
 import {
@@ -259,11 +260,22 @@ export function TrainerAdvanceControls({
         )}
       </TrainerOverlayPortal>
       <div className={`trainer-lane ${stylex.props(styles.lane).className}`}>
-        <button className="btn" disabled={disabled} onClick={handleStep}>
+        <button
+          className={`btn ${stylex.props(buttonStyles.base, disabled && buttonStyles.disabled).className}`}
+          disabled={disabled}
+          onClick={handleStep}
+        >
           步进 · {period}
         </button>
         <button
-          className={['btn', stylex.props(playing && styles.pressed).className]
+          className={[
+            'btn',
+            stylex.props(
+              buttonStyles.base,
+              playing && styles.pressed,
+              !playing && disabled && buttonStyles.disabled,
+            ).className,
+          ]
             .filter(Boolean)
             .join(' ')}
           aria-pressed={playing}
@@ -277,7 +289,10 @@ export function TrainerAdvanceControls({
           {PLAYBACK_SPEEDS.map((s) => (
             <button
               key={s}
-              className={['btn', stylex.props(speed === s && styles.pressed).className]
+              className={[
+                'btn',
+                stylex.props(buttonStyles.base, speed === s && styles.pressed).className,
+              ]
                 .filter(Boolean)
                 .join(' ')}
               aria-pressed={speed === s}

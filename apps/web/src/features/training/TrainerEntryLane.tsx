@@ -1,6 +1,7 @@
 import * as stylex from '@stylexjs/stylex';
 import type { TrainerDirection } from '@kansoku/pro-api';
 import { fmt } from '@web/lib/format';
+import { buttonStyles } from '../../ui/Button';
 import { colors, fontSizes, fonts } from '../../theme/tokens.stylex';
 import { formatRewardRisk, meetsRewardRiskFloor, rewardRiskRatio } from './orderDraft';
 import { TrainerNote } from './TrainerNote';
@@ -126,14 +127,14 @@ function DirectionButtons({ entry }: { entry: EntryDraftApi }) {
   return (
     <div className={`trainer-lane-group ${stylex.props(styles.group).className}`}>
       <button
-        className={`btn btn--long ${stylex.props(styles.directionLong, entry.direction === 'long' && styles.directionPressed).className}`}
+        className={`btn btn--long ${stylex.props(buttonStyles.base, styles.directionLong, entry.direction === 'long' && styles.directionPressed).className}`}
         aria-pressed={entry.direction === 'long'}
         onClick={() => entry.pickDirection('long')}
       >
         做多
       </button>
       <button
-        className={`btn btn--short ${stylex.props(styles.directionShort, entry.direction === 'short' && styles.directionPressed).className}`}
+        className={`btn btn--short ${stylex.props(buttonStyles.base, styles.directionShort, entry.direction === 'short' && styles.directionPressed).className}`}
         aria-pressed={entry.direction === 'short'}
         onClick={() => entry.pickDirection('short')}
       >
@@ -164,13 +165,13 @@ export function TrainerEntryLane({ entry, note, onNoteChange }: TrainerEntryLane
         </span>
         <div className={`trainer-lane-group ${stylex.props(styles.group).className}`}>
           <button
-            className={`btn btn--long ${stylex.props(styles.directionLong).className}`}
+            className={`btn btn--long ${stylex.props(buttonStyles.base, styles.directionLong).className}`}
             onClick={() => entry.quickEntry('long')}
           >
             市价做多
           </button>
           <button
-            className={`btn btn--short ${stylex.props(styles.directionShort).className}`}
+            className={`btn btn--short ${stylex.props(buttonStyles.base, styles.directionShort).className}`}
             onClick={() => entry.quickEntry('short')}
           >
             市价做空

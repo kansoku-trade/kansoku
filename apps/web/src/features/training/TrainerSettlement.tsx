@@ -10,6 +10,7 @@ import type { RawBar } from '@kansoku/shared/types';
 import { fmt } from '@web/lib/format';
 import { Badge } from '@web/ui';
 import { getPopoutBridge } from '../desktop/desktopWindowsBridge';
+import { buttonStyles } from '../../ui/Button';
 import { colors, fontSizes, radii } from '../../theme/tokens.stylex';
 import type { TrainerBridge } from '../desktop/desktopTrainerBridge';
 import { formatPositionSize, formatRewardRisk } from './orderDraft';
@@ -410,7 +411,7 @@ export function TrainerSettlement({
         <TrainerBandLegend />
         <EpilogueToggle checked={showEpilogue} disabled={!reveal} onChange={setShowEpilogue} />
         <button
-          className={`btn trainer-review-collapse ${stylex.props(styles.reviewCollapse).className}`}
+          className={`btn trainer-review-collapse ${stylex.props(buttonStyles.base, styles.reviewCollapse).className}`}
           onClick={onCollapse}
         >
           收起 ⤡
@@ -680,7 +681,7 @@ function OpenRealChartButton({ symbol }: { symbol: string }) {
   if (!bridge) return null;
   return (
     <button
-      className={`btn trainer-reveal-jump ${stylex.props(styles.revealJump).className}`}
+      className={`btn trainer-reveal-jump ${stylex.props(buttonStyles.base, styles.revealJump).className}`}
       onClick={() => void bridge.openPopout(symbol)}
     >
       在行情页打开真图 →
