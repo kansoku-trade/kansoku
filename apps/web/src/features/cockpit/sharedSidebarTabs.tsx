@@ -1,3 +1,4 @@
+import * as stylex from '@stylexjs/stylex';
 import type { CockpitComment, IntradaySidebar, SymbolAnalysisRow } from '@kansoku/shared/types';
 import type { SidebarTab } from '@web/features/charts/SidebarTabs';
 import { NewsTab } from '@web/features/charts/intraday/tabs/NewsTab';
@@ -8,6 +9,12 @@ import type { CockpitEnvState } from './useCockpitEnv';
 import { EnvTab } from './EnvTab';
 import { FlowTab } from './FlowTab';
 import { ReviewTab, type ReviewSection } from './ReviewTab';
+
+const styles = stylex.create({
+  unreadBadge: {
+    marginLeft: '4px',
+  },
+});
 
 export function buildSharedSidebarTabs(params: {
   sym: string;
@@ -97,7 +104,10 @@ export function buildSharedSidebarTabs(params: {
         <>
           AI 点评
           {unread > 0 && (
-            <Badge tone="down" className="unread-badge">
+            <Badge
+              tone="down"
+              className={`unread-badge ${stylex.props(styles.unreadBadge).className}`}
+            >
               {unread}
             </Badge>
           )}
