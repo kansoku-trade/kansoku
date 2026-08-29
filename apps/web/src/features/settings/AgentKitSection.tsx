@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { CSSProperties } from 'react';
+import * as stylex from '@stylexjs/stylex';
 import { Button, openModal, Switch } from '@web/ui';
 import { AgentKitConflictDialog } from './AgentKitConflictDialog';
 import { AgentKitUpdateDialog } from './AgentKitUpdateDialog';
@@ -10,21 +10,25 @@ import {
   type PendingUpdate,
 } from './desktopAgentKit';
 
-const pendingRowStyle: CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  gap: 8,
-  marginTop: 6,
-};
-
-const actionsBar: CSSProperties = {
-  display: 'flex',
-  gap: 6,
-  marginTop: 10,
-  flexWrap: 'wrap',
-  justifyContent: 'flex-end',
-};
+const styles = stylex.create({
+  pendingRow: {
+    alignItems: 'center',
+    display: 'flex',
+    gap: '8px',
+    justifyContent: 'space-between',
+    marginTop: '6px',
+  },
+  actionsBar: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '6px',
+    justifyContent: 'flex-end',
+    marginTop: '10px',
+  },
+  spacer: {
+    flex: 1,
+  },
+});
 
 function locationLabel(status: AgentKitStatus): string {
   if (status.location.kind === 'custom') return status.location.path;
@@ -144,14 +148,14 @@ export function AgentKitSection() {
       ) : null}
 
       {status?.pendingConflicts?.map((conflict) => (
-        <div key={conflict.dest} style={pendingRowStyle}>
+        <div key={conflict.dest} {...stylex.props(styles.pendingRow)}>
           <span>⚠ 冲突 · {conflict.dest}</span>
           <Button onClick={() => openConflict(conflict)}>处理</Button>
         </div>
       ))}
 
       {status?.pendingUpdates?.map((update) => (
-        <div key={update.dest} style={pendingRowStyle}>
+        <div key={update.dest} {...stylex.props(styles.pendingRow)}>
           <span>ℹ 更新 · {update.dest}</span>
           <Button onClick={() => openUpdate(update)}>查看</Button>
         </div>
@@ -161,7 +165,7 @@ export function AgentKitSection() {
         <div className="settings-test-result settings-test-result--fail">{error}</div>
       ) : null}
 
-      <div style={actionsBar}>
+      <div {...stylex.props(styles.actionsBar)}>
         <Button
           disabled={busy || status?.location.kind === 'follow-data-root' || status?.followBlocked}
           onClick={follow}
@@ -171,7 +175,7 @@ export function AgentKitSection() {
         <Button disabled={busy} onClick={pick}>
           选择目录…
         </Button>
-        <span style={{ flex: 1 }} />
+        <span {...stylex.props(styles.spacer)} />
         <Button disabled={busy || !canSync} onClick={forceSync}>
           重刷
         </Button>
