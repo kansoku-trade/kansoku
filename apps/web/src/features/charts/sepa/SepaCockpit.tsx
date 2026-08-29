@@ -4,6 +4,7 @@ import type { QuoteCell, SepaBuilt } from '@kansoku/shared/types';
 import { useSepaRefresh } from '@web/features/cockpit/useSepaRefresh';
 import { TopbarQuote } from '@web/features/quotes/QuoteBar';
 import { Button, Spinner } from '@web/ui';
+import { isDesktopRealtime } from '../../../lib/portTransport';
 import type { ChartDocView } from '../intraday/useIntradayDoc';
 import { colors, fontSizes } from '../../../theme/tokens.stylex';
 import { SepaDashboard } from './SepaDashboard';
@@ -14,6 +15,9 @@ const styles = stylex.create({
     flexDirection: 'column',
     height: '100vh',
     overflow: 'hidden',
+  },
+  fullpageDesktop: {
+    height: 'calc(100vh - 40px)',
   },
   detailTopbar: {
     alignItems: 'center',
@@ -69,9 +73,12 @@ export function SepaCockpit({
   const sepaRefresh = useSepaRefresh(doc, reload);
   const isResearchSepa = doc.input.origin === 'research';
   const sepaDataDate = doc.built.sidebar.asOf.slice(0, 10);
+  const desktopRealtime = isDesktopRealtime();
 
   return (
-    <div className={`fullpage ${stylex.props(styles.fullpage).className}`}>
+    <div
+      className={`fullpage ${stylex.props(styles.fullpage, desktopRealtime && styles.fullpageDesktop).className}`}
+    >
       <div className={`detail-topbar ${stylex.props(styles.detailTopbar).className}`}>
         <a href="/">
           <ArrowLeft className="icon" size={13} /> 列表
