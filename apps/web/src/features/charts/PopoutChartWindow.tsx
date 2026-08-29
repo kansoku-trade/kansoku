@@ -1,3 +1,4 @@
+import * as stylex from '@stylexjs/stylex';
 import { IntradayChartOnly, IntradayTimeframeSwitch } from './intraday/IntradayDashboard';
 import { ChartLayerMenu } from './intraday/ChartLayerMenu';
 import { MaLinesMenu } from './intraday/MaLinesMenu';
@@ -11,6 +12,38 @@ import { TopbarQuote } from '../quotes/QuoteBar';
 import { Dot, Empty, ErrorBox } from '../../ui';
 import { useLiveQuote } from '../quotes/useLiveQuote';
 import { useTitle } from '../../lib/useTitle';
+import { colors, fontSizes } from '../../theme/tokens.stylex';
+
+const styles = stylex.create({
+  shell: {
+    display: 'flex',
+    flexDirection: 'column',
+    height: '100vh',
+    overflow: 'hidden',
+  },
+  header: {
+    alignItems: 'center',
+    backgroundColor: colors.backgroundSurface,
+    borderBottomColor: colors.border,
+    borderBottomStyle: 'solid',
+    borderBottomWidth: '1px',
+    display: 'flex',
+    flexShrink: 0,
+    gap: '10px',
+    padding: '8px 12px',
+    fontSize: fontSizes.md,
+    userSelect: 'none',
+    WebkitAppRegion: 'drag',
+  },
+  symbol: {
+    color: colors.textPrimary,
+    fontWeight: 600,
+  },
+  body: {
+    flex: 1,
+    minHeight: 0,
+  },
+});
 
 export function PopoutChartWindow({ sym }: { sym: string }) {
   const symLabel = sym.toUpperCase().replace(/\.US$/, '');
@@ -25,10 +58,12 @@ export function PopoutChartWindow({ sym }: { sym: string }) {
 
   return (
     <IntradayControlsProvider>
-      <div className="popout-shell">
-        <div className="popout-header">
+      <div className={`popout-shell ${stylex.props(styles.shell).className}`}>
+        <div className={`popout-header ${stylex.props(styles.header).className}`}>
           {isDesktop && <div className="popout-traffic-spacer" />}
-          <span className="popout-symbol">{symLabel}</span>
+          <span className={`popout-symbol ${stylex.props(styles.symbol).className}`}>
+            {symLabel}
+          </span>
           {degraded && <Dot tone="accent" pulse title="数据延迟：行情拉取失败，正在重试" />}
           {activeTf && <IntradayTimeframeSwitch activeTf={activeTf} onChange={setIntradayTf} />}
           <span className="topbar-chart-tail">
@@ -41,7 +76,7 @@ export function PopoutChartWindow({ sym }: { sym: string }) {
             <TopbarQuote quote={liveQuote} />
           </span>
         </div>
-        <div className="popout-body">
+        <div className={`popout-body ${stylex.props(styles.body).className}`}>
           {error ? (
             <ErrorBox>{error}</ErrorBox>
           ) : !chartBuilt || !activeTf ? (
