@@ -57,13 +57,13 @@ const styles = stylex.create({
     'backgroundColor': 'transparent',
     'border': 'none',
     'color': colors.textSecondary,
-    'cursor': 'pointer',
+    'cursor': 'default',
     'fontSize': fontSizes.xs,
     'opacity': 0.4,
     'padding': 0,
     ':hover': {
       color: colors.textSecondary,
-      textDecoration: 'underline',
+      textDecoration: 'none',
     },
   },
 });

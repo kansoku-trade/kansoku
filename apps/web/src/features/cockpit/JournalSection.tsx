@@ -45,7 +45,7 @@ const styles = stylex.create({
     'gap': '10px',
     'padding': '5px 8px',
     'textAlign': 'left',
-    ':hover': {
+    ':not(:disabled):hover': {
       backgroundColor: colors.backgroundSurface,
     },
   },
