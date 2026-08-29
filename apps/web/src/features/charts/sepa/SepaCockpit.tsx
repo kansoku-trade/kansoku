@@ -34,6 +34,10 @@ const styles = stylex.create({
     color: colors.textSecondary,
     fontSize: fontSizes.base,
   },
+  aiHint: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.sm,
+  },
   topbarActions: {
     alignItems: 'center',
     display: 'inline-flex',
@@ -76,12 +80,14 @@ export function SepaCockpit({
         <span className={`meta ${stylex.props(styles.meta).className}`}>{sym}</span>
         {isResearchSepa &&
           (sepaRefresh.refreshing ? (
-            <span className="ai-hint">
+            <span className={`ai-hint ${stylex.props(styles.aiHint).className}`}>
               <Spinner /> 正在更新到最新数据…
             </span>
           ) : (
             sepaRefresh.error && (
-              <span className="ai-hint">更新失败，展示的是 {sepaDataDate} 的数据</span>
+              <span className={`ai-hint ${stylex.props(styles.aiHint).className}`}>
+                更新失败，展示的是 {sepaDataDate} 的数据
+              </span>
             )
           ))}
         <span className={`topbar-actions ${stylex.props(styles.topbarActions).className}`}>
