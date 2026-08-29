@@ -78,6 +78,12 @@ const styles = stylex.create({
     margin: '0 11px 10px',
     padding: '6px 8px',
   },
+  actions: {
+    display: 'flex',
+    gap: '6px',
+    justifyContent: 'flex-end',
+    marginTop: '12px',
+  },
   roleWarning: {
     color: colors.accent,
     fontSize: fontSizes.sm,
@@ -177,7 +183,7 @@ export function PrimaryRow({
       body: (closeModal) => (
         <div className="settings-reset-confirm">
           <p>清除后，所有「跟随主模型」的用途将变为未配置，直到重新设置主模型。确定继续吗？</p>
-          <div className="settings-cred-actions">
+          <div className={`settings-cred-actions ${stylex.props(styles.actions).className}`}>
             <Button onClick={closeModal}>取消</Button>
             <Button
               accent
