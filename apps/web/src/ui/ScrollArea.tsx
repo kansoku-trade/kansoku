@@ -97,6 +97,7 @@ export function ScrollArea({
   className,
   viewportClassName,
   contentClassName,
+  scrollbarClassName,
   orientation = 'vertical',
   viewportRef,
   onScroll,
@@ -105,6 +106,7 @@ export function ScrollArea({
   className?: string;
   viewportClassName?: string;
   contentClassName?: string;
+  scrollbarClassName?: string;
   orientation?: Orientation;
   viewportRef?: Ref<HTMLDivElement>;
   onScroll?: (event: UIEvent<HTMLDivElement>) => void;
@@ -134,7 +136,7 @@ export function ScrollArea({
       </BaseScrollArea.Viewport>
       <BaseScrollArea.Scrollbar
         orientation={orientation}
-        className={`scroll-area-scrollbar ${stylex.props(styles.scrollbar, scrollbarOrientationStyle).className}`}
+        className={`scroll-area-scrollbar ${stylex.props(styles.scrollbar, scrollbarOrientationStyle).className}${scrollbarClassName ? ` ${scrollbarClassName}` : ''}`}
       >
         <BaseScrollArea.Thumb
           className={`scroll-area-thumb ${stylex.props(styles.thumb, thumbOrientationStyle).className}`}

@@ -32,6 +32,17 @@ const statusPulse = stylex.keyframes({
   '50%': { opacity: 0.45, transform: 'scale(0.8)' },
 });
 
+const tabstripFade = stylex.keyframes({
+  // @ts-expect-error StyleX emits the registered runtime scroll geometry custom property.
+  '0%': { '--tabstrip-fade-start': '0px', '--tabstrip-fade-end': '14px' },
+  // @ts-expect-error StyleX emits the registered runtime scroll geometry custom property.
+  '6%': { '--tabstrip-fade-start': '14px', '--tabstrip-fade-end': '14px' },
+  // @ts-expect-error StyleX emits the registered runtime scroll geometry custom property.
+  '94%': { '--tabstrip-fade-start': '14px', '--tabstrip-fade-end': '14px' },
+  // @ts-expect-error StyleX emits the registered runtime scroll geometry custom property.
+  '100%': { '--tabstrip-fade-start': '14px', '--tabstrip-fade-end': '0px' },
+});
+
 const styles = stylex.create({
   titlebar: {
     alignItems: 'stretch',
@@ -51,7 +62,17 @@ const styles = stylex.create({
   },
   trafficSpacer: { flex: '0 0 78px' },
   tabstrip: { flex: 1, height: '100%' },
-  viewport: { WebkitAppRegion: 'drag', scrollbarWidth: 'none' },
+  viewport: {
+    'WebkitAppRegion': 'drag',
+    'scrollbarWidth': 'none',
+    '::-webkit-scrollbar': { display: 'none' },
+    'animationName': tabstripFade,
+    'animationTimeline': 'scroll(self inline)',
+    'animationTimingFunction': 'linear',
+    'maskImage':
+      'linear-gradient(to right, transparent 0, black var(--tabstrip-fade-start), black calc(100% - var(--tabstrip-fade-end)), transparent 100%)',
+  },
+  scrollbar: { display: 'none' },
   content: {
     alignItems: 'center',
     display: 'flex',
@@ -510,6 +531,7 @@ export function DesktopTitlebar({ controller }: { controller: TabsController }) 
         className={classNames('desktop-tabstrip', styles.tabstrip)}
         viewportClassName={classNames('desktop-tabstrip-viewport', styles.viewport)}
         contentClassName={classNames('desktop-tabstrip-content', styles.content)}
+        scrollbarClassName={stylex.props(styles.scrollbar).className}
         orientation="horizontal"
       >
         {snapshot.tabs.map((tab, index) => (
