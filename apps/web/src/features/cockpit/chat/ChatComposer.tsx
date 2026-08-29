@@ -28,9 +28,9 @@ const styles = stylex.create({
     minWidth: 0,
   },
   dockField: {
-    backgroundColor: 'transparent',
-    borderStyle: 'none',
-    borderWidth: 0,
+    'backgroundColor': 'transparent',
+    'borderStyle': 'none',
+    'borderWidth': 0,
     ':enabled': {
       backgroundColor: 'transparent',
       borderStyle: 'none',
@@ -106,6 +106,10 @@ interface ChatComposerProps {
   onAbort: () => void;
   hint?: string | null;
   className?: string;
+  fieldClassName?: string;
+  hintClassName?: string;
+  actionClassName?: string;
+  actionIconClassName?: string;
   inputProps?: ChatComposerFieldProps;
   onValueDetail?: (value: string, selectionStart: number | null) => void;
   onKeyDownIntercept?: (event: KeyboardEvent<ChatComposerFieldElement>) => boolean;
@@ -126,6 +130,10 @@ export function ChatComposer({
   onAbort,
   hint,
   className,
+  fieldClassName,
+  hintClassName,
+  actionClassName,
+  actionIconClassName,
   inputProps,
   onValueDetail,
   onKeyDownIntercept,
@@ -157,7 +165,7 @@ export function ChatComposer({
         {multiline ? (
           <textarea
             ref={textareaRef}
-            className={`input chat-composer-field chat-composer-field--multiline ${stylex.props(styles.field, dock && styles.dockField).className}`}
+            className={`input chat-composer-field chat-composer-field--multiline ${stylex.props(styles.field, dock && styles.dockField).className}${fieldClassName ? ` ${fieldClassName}` : ''}`}
             rows={1}
             aria-label={placeholder}
             autoComplete="off"
@@ -174,7 +182,7 @@ export function ChatComposer({
           />
         ) : (
           <Input
-            className={`chat-composer-field ${stylex.props(styles.field, dock && styles.dockField).className}`}
+            className={`chat-composer-field ${stylex.props(styles.field, dock && styles.dockField).className}${fieldClassName ? ` ${fieldClassName}` : ''}`}
             aria-label={placeholder}
             autoComplete="off"
             name="message"
@@ -191,14 +199,14 @@ export function ChatComposer({
         )}
         <Button
           accent={!busy}
-          className={`chat-composer-action chat-composer-action--${busy ? 'stop' : 'send'} ${stylex.props(styles.action, dock && styles.dockAction).className}`}
+          className={`chat-composer-action chat-composer-action--${busy ? 'stop' : 'send'} ${stylex.props(styles.action, dock && styles.dockAction).className}${actionClassName ? ` ${actionClassName}` : ''}`}
           aria-label={busy ? '停止生成' : '发送'}
           disabled={busy ? aborting : !value.trim() || disabled}
           onClick={busy ? onAbort : () => onSubmit(value)}
         >
           {prefersReducedMotion ? (
             <span
-              className={`chat-composer-action-icon ${stylex.props(styles.actionIcon).className}`}
+              className={`chat-composer-action-icon ${stylex.props(styles.actionIcon).className}${actionIconClassName ? ` ${actionIconClassName}` : ''}`}
             >
               {busy ? (
                 <Square size={12} aria-hidden="true" />
@@ -210,7 +218,7 @@ export function ChatComposer({
             <AnimatePresence initial={false} mode="popLayout">
               <motion.span
                 key={busy ? 'stop' : 'send'}
-                className={`chat-composer-action-icon ${stylex.props(styles.actionIcon).className}`}
+                className={`chat-composer-action-icon ${stylex.props(styles.actionIcon).className}${actionIconClassName ? ` ${actionIconClassName}` : ''}`}
                 initial={{ opacity: 0, scale: 0.25, filter: 'blur(4px)' }}
                 animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
                 exit={{ opacity: 0, scale: 0.25, filter: 'blur(4px)' }}
@@ -227,7 +235,10 @@ export function ChatComposer({
         </Button>
       </div>
       {hint && (
-        <div className={`chat-hint ${stylex.props(styles.hint).className}`} role="alert">
+        <div
+          className={`chat-hint ${stylex.props(styles.hint).className}${hintClassName ? ` ${hintClassName}` : ''}`}
+          role="alert"
+        >
           {hint}
         </div>
       )}

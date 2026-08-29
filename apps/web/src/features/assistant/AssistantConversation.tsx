@@ -115,6 +115,90 @@ const styles = stylex.create({
       transitionDuration: '0.01ms',
     },
   },
+  transcriptContent: {
+    'gap': '12px',
+    'minHeight': '100%',
+    'padding': '16px max(12px, calc((100% - 68ch) / 2))',
+    '@media (max-width: 720px)': {
+      paddingLeft: '8px',
+      paddingRight: '8px',
+    },
+  },
+  transcriptEmpty: {
+    flex: '1 1 auto',
+    justifyContent: 'center',
+  },
+  composerLayout: {
+    alignItems: 'center',
+    gap: '6px',
+    padding: 0,
+  },
+  composerLayoutExpanded: {
+    alignItems: 'flex-end',
+  },
+  composerField: {
+    'backgroundColor': 'transparent',
+    'borderRadius': 0,
+    'borderStyle': 'none',
+    'borderWidth': 0,
+    'caretColor': colors.accent,
+    'color': colors.textPrimary,
+    'fieldSizing': 'content',
+    'fontSize': fontSizes.base,
+    'height': 'auto',
+    'lineHeight': 1.5,
+    'maxHeight': '132px',
+    'minHeight': '34px',
+    'overflowY': 'auto',
+    'padding': '7px 8px 5px',
+    'resize': 'none',
+    'textWrap': 'pretty',
+    '::placeholder': {
+      color: colors.textMuted,
+    },
+    ':focus': {
+      borderStyle: 'none',
+      borderWidth: 0,
+      boxShadow: 'none',
+      outline: 'none',
+    },
+    ':focus-visible': {
+      borderStyle: 'none',
+      borderWidth: 0,
+      boxShadow: 'none',
+      outline: 'none',
+    },
+  },
+  composerFieldExpanded: {
+    minHeight: '60px',
+  },
+  composerHint: {
+    color: colors.down,
+    padding: '4px 8px 2px',
+    textWrap: 'pretty',
+  },
+  composerAction: {
+    'borderRadius': radii.default,
+    'height': sizes.controlHeight,
+    'position': 'relative',
+    'width': sizes.controlHeight,
+    '::after': {
+      content: "''",
+      height: '40px',
+      left: '50%',
+      position: 'absolute',
+      top: '50%',
+      transform: 'translate(-50%, -50%)',
+      width: '40px',
+    },
+  },
+  composerStopAction: {
+    borderColor: colors.down,
+    color: colors.down,
+  },
+  composerSendIcon: {
+    marginLeft: '1px',
+  },
   composerExpanded: {
     borderColor: colors.focusBorder,
     boxShadow: colors.focusRing,
@@ -424,6 +508,8 @@ export function AssistantConversation({
         </div>
         <ConversationTranscript
           className={`assistant-conversation-body ${stylex.props(styles.body).className}`}
+          contentClassName={stylex.props(styles.transcriptContent).className}
+          emptyClassName={stylex.props(styles.transcriptEmpty).className}
           rows={rows}
           busy={busy}
           streamText={streamText}
@@ -478,6 +564,25 @@ export function AssistantConversation({
                   onSubmit={submit}
                   onAbort={() => void abort()}
                   hint={hint}
+                  className={
+                    stylex.props(
+                      styles.composerLayout,
+                      composerExpanded && styles.composerLayoutExpanded,
+                    ).className
+                  }
+                  fieldClassName={
+                    stylex.props(
+                      styles.composerField,
+                      composerExpanded && styles.composerFieldExpanded,
+                    ).className
+                  }
+                  hintClassName={stylex.props(styles.composerHint).className}
+                  actionClassName={
+                    stylex.props(styles.composerAction, busy && styles.composerStopAction).className
+                  }
+                  actionIconClassName={
+                    !busy ? stylex.props(styles.composerSendIcon).className : undefined
+                  }
                   onValueDetail={(value, selectionStart) => syncCursor(value, selectionStart)}
                   inputProps={{
                     onKeyUp: syncCursorFromEvent,
