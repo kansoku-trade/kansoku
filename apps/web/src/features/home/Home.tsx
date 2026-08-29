@@ -108,6 +108,11 @@ const styles = stylex.create({
       height: 'auto',
     },
   },
+  sideScrollBar: {
+    '@media (max-width: 1000px)': {
+      display: 'none',
+    },
+  },
   note: {
     color: colors.textSecondary,
     fontSize: fontSizes.md,
@@ -293,6 +298,7 @@ export function Home() {
             <ScrollArea
               className={`home-side-scroll ${stylex.props(styles.sideScroll).className}`}
               viewportClassName={stylex.props(styles.sideScrollViewport).className}
+              scrollbarClassName={stylex.props(styles.sideScrollBar).className}
               contentClassName={`home-side-content ${stylex.props(styles.sideContent).className}`}
             >
               {hasPositions && positionsSection}
@@ -315,6 +321,7 @@ export function Home() {
             <ScrollArea
               className={`home-side-scroll ${stylex.props(styles.sideScroll).className}`}
               viewportClassName={stylex.props(styles.sideScrollViewport).className}
+              scrollbarClassName={stylex.props(styles.sideScrollBar).className}
               contentClassName={`home-side-content ${stylex.props(styles.sideContent).className}`}
             >
               {hasPositions && positionsSection}
