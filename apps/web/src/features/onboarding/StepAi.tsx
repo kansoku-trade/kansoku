@@ -14,6 +14,22 @@ const CODEX_INSTALL_COMMAND = 'npm install -g @openai/codex';
 const CODEX_INSTALL_URL = 'https://github.com/openai/codex';
 
 const styles = stylex.create({
+  card: {
+    maxWidth: '480px',
+    width: '100%',
+  },
+  title: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.xl,
+    fontWeight: 600,
+    marginBottom: '10px',
+  },
+  explainer: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.base,
+    lineHeight: 1.6,
+    marginBottom: '14px',
+  },
   aiList: {
     borderColor: colors.border,
     borderRadius: radii.default,
@@ -22,13 +38,13 @@ const styles = stylex.create({
     overflow: 'hidden',
   },
   providerRow: {
-    alignItems: 'center',
-    borderBottomColor: colors.border,
-    borderBottomStyle: 'solid',
-    borderBottomWidth: '1px',
-    display: 'flex',
-    gap: '12px',
-    padding: '12px 14px',
+    'alignItems': 'center',
+    'borderBottomColor': colors.border,
+    'borderBottomStyle': 'solid',
+    'borderBottomWidth': '1px',
+    'display': 'flex',
+    'gap': '12px',
+    'padding': '12px 14px',
     ':last-child': {
       borderBottomStyle: 'none',
     },
@@ -63,6 +79,27 @@ const styles = stylex.create({
     fontWeight: 600,
     padding: '1px 7px',
   },
+  install: {
+    marginTop: '12px',
+  },
+  cliCommand: {
+    backgroundColor: colors.backgroundElement,
+    borderColor: colors.border,
+    borderRadius: radii.default,
+    borderStyle: 'solid',
+    borderWidth: '1px',
+    color: colors.textPrimary,
+    fontSize: fontSizes.sm,
+    margin: '0 0 14px',
+    overflowX: 'auto',
+    padding: '12px 14px',
+  },
+  credentialActions: {
+    display: 'flex',
+    gap: '6px',
+    justifyContent: 'flex-end',
+    marginTop: '12px',
+  },
   apiKey: {
     display: 'grid',
     gap: '8px',
@@ -85,6 +122,33 @@ const styles = stylex.create({
   apiSubmit: {
     justifyContent: 'center',
     minWidth: '112px',
+  },
+  testResult: {
+    fontSize: fontSizes.sm,
+  },
+  testResultFail: {
+    color: colors.down,
+  },
+  skipRow: {
+    display: 'flex',
+    justifyContent: 'center',
+    marginTop: '14px',
+  },
+  skipLink: {
+    'backgroundColor': 'transparent',
+    'borderStyle': 'none',
+    'borderWidth': 0,
+    'color': colors.textMuted,
+    'cursor': 'pointer',
+    'fontSize': fontSizes.sm,
+    'padding': 0,
+    ':hover:not([disabled])': {
+      color: colors.textPrimary,
+    },
+  },
+  skipLinkDisabled: {
+    cursor: 'default',
+    opacity: 0.5,
   },
 });
 
@@ -127,9 +191,11 @@ export function StepAi({ onNext }: { onNext: () => void }) {
 
   if (loading || !catalog) {
     return (
-      <Card className="onboarding-card">
-        <h1>配置 AI</h1>
-        <p className="onboarding-explainer">正在检测本机 AI 环境…</p>
+      <Card className={`onboarding-card ${stylex.props(styles.card).className}`}>
+        <h1 className={stylex.props(styles.title).className}>配置 AI</h1>
+        <p className={`onboarding-explainer ${stylex.props(styles.explainer).className}`}>
+          正在检测本机 AI 环境…
+        </p>
       </Card>
     );
   }
@@ -240,9 +306,9 @@ export function StepAi({ onNext }: { onNext: () => void }) {
   const rows = codexReady ? [codexRow, lobehubRow, apiKeyRow] : [lobehubRow, codexRow, apiKeyRow];
 
   return (
-    <Card className="onboarding-card">
-      <h1>配置 AI</h1>
-      <p className="onboarding-explainer">
+    <Card className={`onboarding-card ${stylex.props(styles.card).className}`}>
+      <h1 className={stylex.props(styles.title).className}>配置 AI</h1>
+      <p className={`onboarding-explainer ${stylex.props(styles.explainer).className}`}>
         AI 用于盘中快评、升级分析、深度研究和追问。可以先跳过，之后随时在设置里配置。
       </p>
 
@@ -250,10 +316,7 @@ export function StepAi({ onNext }: { onNext: () => void }) {
         {rows.map((row) => (
           <div
             key={row.key}
-            {...stylex.props(
-              styles.providerRow,
-              row.recommended && styles.providerRowRecommended,
-            )}
+            {...stylex.props(styles.providerRow, row.recommended && styles.providerRowRecommended)}
           >
             {row.logo}
             <div {...stylex.props(styles.providerMain)}>
@@ -275,12 +338,16 @@ export function StepAi({ onNext }: { onNext: () => void }) {
       </div>
 
       {showInstall ? (
-        <div className="onboarding-install">
-          <p className="onboarding-explainer">装好 codex 并登录后，回到这里会自动检测到。</p>
-          <pre className="onboarding-cli-command">
+        <div className={`onboarding-install ${stylex.props(styles.install).className}`}>
+          <p className={`onboarding-explainer ${stylex.props(styles.explainer).className}`}>
+            装好 codex 并登录后，回到这里会自动检测到。
+          </p>
+          <pre className={`onboarding-cli-command ${stylex.props(styles.cliCommand).className}`}>
             <code>{CODEX_INSTALL_COMMAND}</code>
           </pre>
-          <div className="settings-cred-actions">
+          <div
+            className={`settings-cred-actions ${stylex.props(styles.credentialActions).className}`}
+          >
             <Button onClick={() => void navigator.clipboard.writeText(CODEX_INSTALL_COMMAND)}>
               复制命令
             </Button>
@@ -337,11 +404,19 @@ export function StepAi({ onNext }: { onNext: () => void }) {
       ) : null}
 
       {error ? (
-        <div className="settings-test-result settings-test-result--fail">{error}</div>
+        <div
+          className={`settings-test-result settings-test-result--fail ${stylex.props(styles.testResult, styles.testResultFail).className}`}
+        >
+          {error}
+        </div>
       ) : null}
 
-      <div className="onboarding-skip-row">
-        <button className="onboarding-skip-link" disabled={busy !== null} onClick={skip}>
+      <div className={`onboarding-skip-row ${stylex.props(styles.skipRow).className}`}>
+        <button
+          className={`onboarding-skip-link ${stylex.props(styles.skipLink, busy !== null && styles.skipLinkDisabled).className}`}
+          disabled={busy !== null}
+          onClick={skip}
+        >
           跳过，稍后在设置里配置
         </button>
       </div>
