@@ -1,7 +1,18 @@
+import * as stylex from '@stylexjs/stylex';
 import { Button, Card } from '../../ui';
 import type { CredentialsGetResult } from '../settings/desktopCredentials';
+import { colors, fontSizes } from '../../theme/tokens.stylex';
 
 const INSTALL_URL = 'https://open.longbridge.com/docs/cli/install';
+
+const styles = stylex.create({
+  welcome: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.base,
+    lineHeight: 1.6,
+    marginBottom: '14px',
+  },
+});
 
 export function StepLongbridge({
   status,
@@ -30,7 +41,7 @@ export function StepLongbridge({
 
   return (
     <Card className="onboarding-card">
-      <p className="onboarding-welcome">
+      <p {...stylex.props(styles.welcome)}>
         欢迎使用 Kansoku —— 先连上行情数据，再配一下 AI，就能开始了。
       </p>
       <h1>{title}</h1>
