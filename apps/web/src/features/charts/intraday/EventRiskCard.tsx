@@ -98,6 +98,9 @@ const styles = stylex.create({
     fontWeight: 600,
     minWidth: 0,
   },
+  icon: {
+    verticalAlign: '-2px',
+  },
 });
 
 function macroEventDateKey(
@@ -164,7 +167,8 @@ export function EventRiskCard({ eventRisk }: EventRiskCardProps) {
   return (
     <div className={`event-card ${stylex.props(styles.card).className}`}>
       <div className={`event-card-label ${stylex.props(styles.label).className}`}>
-        <CalendarClock className="icon" size={13} /> 事件风险
+        <CalendarClock className={`icon ${stylex.props(styles.icon).className}`} size={13} />{' '}
+        事件风险
       </div>
       <div className={`event-card-list ${stylex.props(styles.list).className}`}>
         {groups.map((group, groupIndex) => (

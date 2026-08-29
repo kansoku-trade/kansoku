@@ -103,6 +103,9 @@ const styles = stylex.create({
     color: colors.textSecondary,
     fontSize: fontSizes.sm,
   },
+  icon: {
+    verticalAlign: '-2px',
+  },
 });
 
 function stanceStyles(stance: ContextStance) {
@@ -145,7 +148,8 @@ export function ReassessCta({
       <div className={`conclusion-refresh ${stylex.props(styles.refresh, toneStyle).className}`}>
         <div className={`conclusion-refresh-row ${stylex.props(styles.refreshRow).className}`}>
           <span className={`conclusion-refresh-note ${stylex.props(styles.refreshNote).className}`}>
-            <TriangleAlert className="icon" size={13} /> 这条结论已过时，走势可能早已变化
+            <TriangleAlert className={`icon ${stylex.props(styles.icon).className}`} size={13} />{' '}
+            这条结论已过时，走势可能早已变化
           </span>
           <Button onClick={reassess.start} disabled={reassess.busy}>
             {reassess.busy && <Spinner />}
@@ -187,7 +191,8 @@ export function ConclusionCard({ context, predictionStale, reassess }: Conclusio
         综合结论
         {predictionStale ? (
           <span className={`stale-badge ${stylex.props(styles.staleBadge).className}`}>
-            <TriangleAlert className="icon" size={13} /> 盘中已过期
+            <TriangleAlert className={`icon ${stylex.props(styles.icon).className}`} size={13} />{' '}
+            盘中已过期
           </span>
         ) : (
           <span className={`prediction-age ${stylex.props(styles.predictionAge).className}`}>

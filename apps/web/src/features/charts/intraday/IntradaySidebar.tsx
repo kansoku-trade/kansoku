@@ -66,6 +66,9 @@ const styles = stylex.create({
     marginTop: 16,
     paddingTop: 10,
   },
+  icon: {
+    verticalAlign: '-2px',
+  },
 });
 
 interface IntradaySidebarProps {
@@ -171,7 +174,7 @@ export function IntradaySidebar({
         <SidebarTabs active={active} onChange={setActive} tabs={tabs} />
 
         <div className={`disclaimer ${stylex.props(styles.disclaimer).className}`}>
-          <TriangleAlert className="icon" size={12} />{' '}
+          <TriangleAlert className={`icon ${stylex.props(styles.icon).className}`} size={12} />{' '}
           仅供学习参考，不构成投资建议。数据来源：长桥证券。
           <br />
           方向判断、情景推演和入场计划为 AI 分析结论；Pin Bar、MACD 背离标注及 MACD
