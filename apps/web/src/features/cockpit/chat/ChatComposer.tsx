@@ -17,6 +17,8 @@ const styles = stylex.create({
     alignItems: 'center',
     display: 'flex',
     flex: '0 0 auto',
+  },
+  composerDefaults: {
     gap: '8px',
     padding: '8px 12px',
   },
@@ -106,6 +108,7 @@ interface ChatComposerProps {
   onAbort: () => void;
   hint?: string | null;
   className?: string;
+  layoutClassName?: string;
   fieldClassName?: string;
   hintClassName?: string;
   actionClassName?: string;
@@ -130,6 +133,7 @@ export function ChatComposer({
   onAbort,
   hint,
   className,
+  layoutClassName,
   fieldClassName,
   hintClassName,
   actionClassName,
@@ -160,7 +164,7 @@ export function ChatComposer({
   return (
     <>
       <div
-        className={`chat-composer ${stylex.props(styles.composer, dock && styles.dockComposer).className}${className ? ` ${className}` : ''}`}
+        className={`chat-composer ${stylex.props(styles.composer, !layoutClassName && styles.composerDefaults, dock && styles.dockComposer).className}${className ? ` ${className}` : ''}${layoutClassName ? ` ${layoutClassName}` : ''}`}
       >
         {multiline ? (
           <textarea

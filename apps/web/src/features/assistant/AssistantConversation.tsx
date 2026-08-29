@@ -128,6 +128,11 @@ const styles = stylex.create({
     flex: '1 1 auto',
     justifyContent: 'center',
   },
+  transcriptEmptyText: {
+    maxWidth: '360px',
+    textAlign: 'center',
+    textWrap: 'pretty',
+  },
   composerLayout: {
     alignItems: 'center',
     gap: '6px',
@@ -510,6 +515,7 @@ export function AssistantConversation({
           className={`assistant-conversation-body ${stylex.props(styles.body).className}`}
           contentClassName={stylex.props(styles.transcriptContent).className}
           emptyClassName={stylex.props(styles.transcriptEmpty).className}
+          emptyTextClassName={stylex.props(styles.transcriptEmptyText).className}
           rows={rows}
           busy={busy}
           streamText={streamText}
@@ -564,7 +570,7 @@ export function AssistantConversation({
                   onSubmit={submit}
                   onAbort={() => void abort()}
                   hint={hint}
-                  className={
+                  layoutClassName={
                     stylex.props(
                       styles.composerLayout,
                       composerExpanded && styles.composerLayoutExpanded,

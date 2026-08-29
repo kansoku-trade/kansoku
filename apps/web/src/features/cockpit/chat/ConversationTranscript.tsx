@@ -520,6 +520,7 @@ function ConversationTranscriptView({
   viewportClassName,
   contentClassName,
   emptyClassName,
+  emptyTextClassName,
   insertClassName,
   modelLabels,
   onOpenCanvas,
@@ -537,6 +538,7 @@ function ConversationTranscriptView({
   viewportClassName?: string;
   contentClassName?: string;
   emptyClassName?: string;
+  emptyTextClassName?: string;
   insertClassName?: string;
   modelLabels?: Readonly<Record<string, string>>;
   onOpenCanvas?: (slug: string) => void;
@@ -576,7 +578,9 @@ function ConversationTranscriptView({
         <div
           className={`chat-empty ${stylex.props(styles.empty).className}${emptyClassName ? ` ${emptyClassName}` : ''}`}
         >
-          <div className={`chat-empty-text ${stylex.props(styles.emptyText).className}`}>
+          <div
+            className={`chat-empty-text ${stylex.props(styles.emptyText).className}${emptyTextClassName ? ` ${emptyTextClassName}` : ''}`}
+          >
             {emptyText}
           </div>
           {suggestions.length > 0 ? (
