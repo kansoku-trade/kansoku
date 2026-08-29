@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Check, TriangleAlert } from 'lucide-react';
+import * as stylex from '@stylexjs/stylex';
 import { errorMessage } from '@web/lib/api';
 import { client } from '@web/lib/client';
 import { Button, Select, Spinner } from '@web/ui';
+import { colors, fonts, fontSizes } from '../../theme/tokens.stylex';
 import { RoleModeControl } from './RoleModeControl';
 import {
   defaultCustom,
@@ -24,6 +26,126 @@ import {
   type RoleSetting,
 } from './types';
 import { useSaveQueue } from './useSaveQueue';
+
+const styles = stylex.create({
+  row: {
+    'borderBottomColor': colors.border,
+    'borderBottomStyle': 'solid',
+    'borderBottomWidth': '1px',
+    ':last-child': {
+      borderBottomStyle: 'none',
+    },
+  },
+  summary: {
+    alignItems: 'center',
+    display: 'grid',
+    gap: {
+      'default': '14px',
+      '@media (max-width: 560px)': '9px',
+    },
+    gridTemplateColumns: {
+      'default': 'minmax(0, 1fr) auto',
+      '@media (max-width: 560px)': '1fr',
+    },
+    minHeight: '67px',
+    padding: '10px 11px',
+  },
+  copy: {
+    minWidth: 0,
+  },
+  heading: {
+    alignItems: 'baseline',
+    display: 'flex',
+    gap: '10px',
+  },
+  usage: {
+    color: colors.textMuted,
+    fontFamily: fonts.mono,
+    fontSize: fontSizes.xs,
+    fontVariantNumeric: 'tabular-nums',
+    whiteSpace: 'nowrap',
+  },
+  disabledName: {
+    color: colors.textSecondary,
+  },
+  effective: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.sm,
+    marginTop: '4px',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  effectiveMuted: {
+    color: colors.textMuted,
+  },
+  effectiveWarning: {
+    color: colors.accent,
+  },
+  effectiveError: {
+    color: colors.down,
+  },
+  actions: {
+    alignItems: 'center',
+    display: 'flex',
+    gap: '9px',
+    justifyContent: {
+      '@media (max-width: 560px)': 'space-between',
+    },
+  },
+  editor: {
+    borderLeftColor: colors.borderStrong,
+    borderLeftStyle: 'solid',
+    borderLeftWidth: '2px',
+    margin: '0 11px 11px',
+    padding: '1px 0 1px 12px',
+  },
+  editorControls: {
+    alignItems: 'center',
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '6px',
+  },
+  select: {
+    justifyContent: 'space-between',
+    minWidth: '112px',
+  },
+  selectModel: {
+    minWidth: '160px',
+  },
+  editorStatus: {
+    alignItems: 'center',
+    color: colors.textMuted,
+    display: 'flex',
+    fontSize: fontSizes.xs,
+    gap: '8px',
+    marginTop: '6px',
+    minHeight: '16px',
+  },
+  edit: {
+    'appearance': 'none',
+    'backgroundColor': 'transparent',
+    'borderStyle': 'none',
+    'borderWidth': 0,
+    'color': colors.textMuted,
+    'cursor': 'pointer',
+    'fontSize': fontSizes.xs,
+    'marginLeft': '8px',
+    'padding': 0,
+    ':hover': {
+      color: colors.textPrimary,
+    },
+    ':disabled': {
+      color: colors.textMuted,
+      cursor: 'default',
+      opacity: 0.5,
+    },
+  },
+  editDone: {
+    fontSize: fontSizes.sm,
+    marginLeft: '2px',
+  },
+});
 
 export function RoleRow({
   role,
@@ -125,6 +247,10 @@ export function RoleRow({
     Boolean(draft.modelId) &&
     Boolean(draft.thinkingLevel);
 
+  const roleNameClassName = stylex.props(
+    draft.mode === 'disabled' && styles.disabledName,
+  ).className;
+
   const runTest = async () => {
     if (!draft.provider || !draft.modelId || !draft.thinkingLevel) return;
     setTestState({ status: 'busy' });
@@ -142,26 +268,30 @@ export function RoleRow({
   };
 
   return (
-    <div
-      className={'settings-assignment-row settings-assignment-row--' + draft.mode}
-      id={'settings-role-' + role}
-    >
-      <div className="settings-role-summary">
-        <div className="settings-role-copy">
-          <div className="settings-role-heading">
-            <span className="settings-role-name">{ROLE_LABEL[role]}</span>
-            <span className="settings-role-usage">{view.usageLabel}</span>
+    <div {...stylex.props(styles.row)} id={'settings-role-' + role}>
+      <div {...stylex.props(styles.summary)}>
+        <div {...stylex.props(styles.copy)}>
+          <div {...stylex.props(styles.heading)}>
+            <span className={`settings-role-name ${roleNameClassName}`}>{ROLE_LABEL[role]}</span>
+            <span {...stylex.props(styles.usage)}>{view.usageLabel}</span>
           </div>
-          <div className={'settings-role-effective settings-role-effective--' + view.tone}>
+          <div
+            {...stylex.props(
+              styles.effective,
+              view.tone === 'muted' && styles.effectiveMuted,
+              view.tone === 'warning' && styles.effectiveWarning,
+              view.tone === 'error' && styles.effectiveError,
+            )}
+          >
             {view.effectiveLabel}
             {draft.mode === 'custom' && !editing ? (
-              <button className="settings-role-edit" type="button" onClick={() => setEditing(true)}>
+              <button {...stylex.props(styles.edit)} type="button" onClick={() => setEditing(true)}>
                 修改
               </button>
             ) : null}
           </div>
         </div>
-        <div className="settings-role-actions">
+        <div {...stylex.props(styles.actions)}>
           <RoleModeControl role={role} value={draft.mode} onChange={setMode} />
           <span
             className={
@@ -185,9 +315,10 @@ export function RoleRow({
       </div>
 
       {draft.mode === 'custom' && editing && (
-        <div className="settings-role-editor">
-          <div className="settings-role-editor-controls">
+        <div {...stylex.props(styles.editor)}>
+          <div {...stylex.props(styles.editorControls)}>
             <Select
+              className={stylex.props(styles.select).className}
               value={draft.provider ?? ''}
               options={selectableProviders(catalog, draft.provider).map((p) => ({
                 value: p.id,
@@ -196,6 +327,7 @@ export function RoleRow({
               onChange={setProvider}
             />
             <Select
+              className={`${stylex.props(styles.select).className} ${stylex.props(styles.selectModel).className}`}
               value={draft.modelId ?? ''}
               options={models.map((m) => ({ value: m.id, label: m.name }))}
               onChange={setModelId}
@@ -209,7 +341,7 @@ export function RoleRow({
               测试模型
             </Button>
             <button
-              className="settings-role-edit settings-role-edit--done"
+              {...stylex.props(styles.edit, styles.editDone)}
               type="button"
               disabled={!complete}
               onClick={() => setEditing(false)}
@@ -217,7 +349,7 @@ export function RoleRow({
               完成
             </button>
           </div>
-          <div className="settings-role-editor-status" aria-live="polite">
+          <div {...stylex.props(styles.editorStatus)} aria-live="polite">
             {testState.status === 'busy' ? <Spinner aria-label="测试中" /> : null}
             {testState.status === 'ok' ? (
               <span className="settings-test-result settings-test-result--ok">

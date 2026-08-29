@@ -1,10 +1,31 @@
 import type { OverviewBoard, OverviewRow } from '@kansoku/shared/types';
+import * as stylex from '@stylexjs/stylex';
 import { fmt, signed } from '@web/lib/format';
 import { Badge, Card, Dot, Empty, ErrorBox, MarketTime, Num } from '@web/ui';
 import { directionTone } from '@web/features/charts/intraday/directionLabels';
+import { colors, fontSizes } from '../../theme/tokens.stylex';
 import { FollowToggle, ReassessButton } from './SymbolActions';
 
 const DIRECTION_LABEL: Record<string, string> = { long: '做多', short: '做空', neutral: '观望' };
+
+const styles = stylex.create({
+  watchStrip: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '8px',
+  },
+  watchStripCell: {
+    alignItems: 'center',
+    display: 'flex',
+    fontSize: fontSizes.md,
+    fontVariantNumeric: 'tabular-nums',
+    gap: '7px',
+  },
+  watchStripSymbol: {
+    color: colors.textPrimary,
+    fontWeight: 600,
+  },
+});
 
 function pctCell(value: number | null): string {
   return value == null ? '—' : `${signed(value)}%`;
@@ -69,15 +90,17 @@ export function WatchBoard({
   }
   if (compact) {
     return (
-      <div className="watch-strip">
+      <div {...stylex.props(styles.watchStrip)}>
         {board.rows.map((row) => (
           <Card
             link
-            className="watch-strip-cell"
+            {...stylex.props(styles.watchStripCell)}
             key={row.symbol}
             href={`/symbol/${encodeURIComponent(row.symbol)}`}
           >
-            <span className="sym">{row.symbol.replace(/\.US$/, '')}</span>
+            <span {...stylex.props(styles.watchStripSymbol)}>
+              {row.symbol.replace(/\.US$/, '')}
+            </span>
             {row.direction && (
               <Badge tone={directionTone(row.direction)}>{DIRECTION_LABEL[row.direction]}</Badge>
             )}

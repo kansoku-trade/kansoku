@@ -1,4 +1,6 @@
 import { Card, SectionTitle } from '@web/ui';
+import * as stylex from '@stylexjs/stylex';
+import { colors, fonts, fontSizes } from '../../theme/tokens.stylex';
 import { PrimaryRow } from './PrimaryRow';
 import { RoleRow } from './RoleRow';
 import type { SettingsViewModel } from './settingsViewModel';
@@ -10,6 +12,35 @@ import {
   type Role,
   type RoleSetting,
 } from './types';
+
+const styles = stylex.create({
+  card: {
+    minWidth: 0,
+    overflow: 'hidden',
+    padding: 0,
+  },
+  heading: {
+    alignItems: 'center',
+    borderBottom: `1px solid ${colors.border}`,
+    display: 'flex',
+    gap: '12px',
+    justifyContent: 'space-between',
+    minHeight: '34px',
+    padding: '0 11px',
+  },
+  title: {
+    margin: 0,
+  },
+  hint: {
+    color: colors.textMuted,
+    fontFamily: fonts.mono,
+    fontSize: fontSizes.xs,
+    fontVariantNumeric: 'tabular-nums',
+  },
+  roleList: {
+    minWidth: 0,
+  },
+});
 
 export function RoleModelsCard({
   initialRoles,
@@ -27,10 +58,10 @@ export function RoleModelsCard({
   onDraftChange: (role: Role | 'primary', next: RoleSetting) => void;
 }) {
   return (
-    <Card className="settings-roles-card">
-      <div className="settings-card-heading">
-        <SectionTitle>模型分配</SectionTitle>
-        <span>即时生效，进行中的分析沿用旧配置</span>
+    <Card {...stylex.props(styles.card)}>
+      <div {...stylex.props(styles.heading)}>
+        <SectionTitle className={stylex.props(styles.title).className}>模型分配</SectionTitle>
+        <span {...stylex.props(styles.hint)}>即时生效，进行中的分析沿用旧配置</span>
       </div>
       <PrimaryRow
         initial={initialRoles.primary}
@@ -39,7 +70,7 @@ export function RoleModelsCard({
         credentials={credentials}
         onDraftChange={(next) => onDraftChange('primary', next)}
       />
-      <div className="settings-role-list">
+      <div {...stylex.props(styles.roleList)}>
         {ROLES.map((role) => (
           <RoleRow
             key={role}

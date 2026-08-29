@@ -1,11 +1,54 @@
 import { useState } from 'react';
+import * as stylex from '@stylexjs/stylex';
 import type { EventCanvasPhase } from '@kansoku/core/contract/events';
 import type { MarketEvent } from '@kansoku/shared/types';
+import { colors, fontSizes } from '../../theme/tokens.stylex';
 import { MarketEventCard } from './MarketEventCard';
 import type { MarketEventFeedState } from './useMarketEventFeed';
 import { useEventCanvasActions } from './EventCanvasHost';
 
 const DEFAULT_VISIBLE = 12;
+
+const styles = stylex.create({
+  root: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
+  },
+  degraded: {
+    color: colors.down,
+    fontSize: fontSizes.xs,
+    letterSpacing: '0.02em',
+  },
+  rows: {
+    backgroundColor: colors.border,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1px',
+  },
+  more: {
+    'alignSelf': 'flex-start',
+    'backgroundColor': 'transparent',
+    'borderWidth': 0,
+    'color': colors.accent,
+    'cursor': 'pointer',
+    'fontFamily': 'inherit',
+    'fontSize': fontSizes.sm,
+    'padding': '2px 0',
+    ':hover:not(:disabled)': {
+      textDecoration: 'underline',
+    },
+    ':disabled': {
+      color: colors.textMuted,
+      cursor: 'default',
+    },
+  },
+  moreError: {
+    color: colors.down,
+    fontSize: fontSizes.xs,
+    letterSpacing: '0.02em',
+  },
+});
 
 export interface MarketEventTapeProps {
   feed: MarketEventFeedState;
@@ -47,16 +90,20 @@ export function MarketEventTape({
   if (feed.status === 'loading') return <div className="note-block">事件流加载中…</div>;
   if (feed.status === 'empty') return <div className="note-block">{emptyText}</div>;
   if (feed.status === 'degraded' && rows.length === 0)
-    return <div className="note-block">事件流已断开，正在重连{feed.error ? `（${feed.error}）` : ''}</div>;
+    return (
+      <div className="note-block">
+        事件流已断开，正在重连{feed.error ? `（${feed.error}）` : ''}
+      </div>
+    );
 
   return (
-    <div className="evt-tape">
+    <div {...stylex.props(styles.root)}>
       {feed.status === 'degraded' && (
-        <div className="evt-tape-degraded" role="status">
+        <div {...stylex.props(styles.degraded)} role="status">
           事件流已断开，下面是最后一次同步的内容{feed.error ? `（${feed.error}）` : ''}
         </div>
       )}
-      <div className="evt-tape-rows">
+      <div {...stylex.props(styles.rows)}>
         {shown.map((event) => (
           <MarketEventCard
             canvasPhase={phaseOf?.(event.id)}
@@ -67,10 +114,10 @@ export function MarketEventTape({
           />
         ))}
       </div>
-      {feed.moreError && <div className="evt-tape-more-error">{feed.moreError}</div>}
+      {feed.moreError && <div {...stylex.props(styles.moreError)}>{feed.moreError}</div>}
       {hasMore && (
         <button
-          className="evt-tape-more"
+          {...stylex.props(styles.more)}
           disabled={feed.loadingMore}
           onClick={revealMore}
           type="button"

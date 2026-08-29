@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import * as stylex from '@stylexjs/stylex';
 import { Check, TriangleAlert } from 'lucide-react';
 import { errorMessage } from '@web/lib/api';
 import { client } from '@web/lib/client';
 import { Button, Chip, openModal, Select, Spinner } from '@web/ui';
+import { colors, fontSizes } from '../../theme/tokens.stylex';
 import {
   defaultCustom,
   defaultThinkingLevel,
@@ -14,6 +16,50 @@ import {
 } from './roleShared';
 import { thinkingLabel, type Catalog, type CredentialEntry, type RoleSetting } from './types';
 import { useSaveQueue } from './useSaveQueue';
+
+const styles = stylex.create({
+  row: {
+    borderBottomColor: colors.border,
+    borderBottomStyle: 'solid',
+    borderBottomWidth: '1px',
+    padding: '11px',
+  },
+  head: {
+    alignItems: 'center',
+    display: 'flex',
+    gap: '8px',
+    minHeight: '28px',
+  },
+  primaryRoleName: {
+    minWidth: '78px',
+  },
+  editor: {
+    alignItems: 'center',
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '6px',
+    marginTop: '8px',
+  },
+  select: {
+    justifyContent: 'space-between',
+    minWidth: '112px',
+  },
+  modelSelect: {
+    minWidth: '160px',
+  },
+  clear: {
+    'backgroundColor': 'transparent',
+    'borderStyle': 'none',
+    'borderWidth': 0,
+    'color': colors.textMuted,
+    'cursor': 'pointer',
+    'fontSize': fontSizes.sm,
+    'padding': '0 4px',
+    ':hover': {
+      color: colors.down,
+    },
+  },
+});
 
 export function PrimaryRow({
   initial,
@@ -139,9 +185,11 @@ export function PrimaryRow({
   };
 
   return (
-    <div className="settings-primary-row" id="settings-role-primary">
-      <div className="settings-primary-head">
-        <span className="settings-role-name">主模型</span>
+    <div {...stylex.props(styles.row)} id="settings-role-primary">
+      <div {...stylex.props(styles.head)}>
+        <span className={`settings-role-name ${stylex.props(styles.primaryRoleName).className}`}>
+          主模型
+        </span>
         {draft.mode !== 'custom' && (
           <Chip onClick={() => push(defaultCustom(catalog))}>设置主模型</Chip>
         )}
@@ -168,8 +216,9 @@ export function PrimaryRow({
       </div>
 
       {draft.mode === 'custom' && (
-        <div className="settings-primary-editor">
+        <div {...stylex.props(styles.editor)}>
           <Select
+            className={stylex.props(styles.select).className}
             value={draft.provider ?? ''}
             options={selectableProviders(catalog, draft.provider).map((p) => ({
               value: p.id,
@@ -178,11 +227,13 @@ export function PrimaryRow({
             onChange={setProvider}
           />
           <Select
+            className={stylex.props(styles.select, styles.modelSelect).className}
             value={draft.modelId ?? ''}
             options={models.map((m) => ({ value: m.id, label: m.name }))}
             onChange={setModelId}
           />
           <Select
+            className={stylex.props(styles.select).className}
             value={draft.thinkingLevel ?? 'off'}
             options={thinkingLevels.map((t) => ({ value: t, label: thinkingLabel(t) }))}
             onChange={setThinkingLevel}
@@ -199,7 +250,7 @@ export function PrimaryRow({
               {testState.text}
             </span>
           )}
-          <button type="button" className="settings-primary-clear" onClick={clear}>
+          <button type="button" {...stylex.props(styles.clear)} onClick={clear}>
             清除
           </button>
         </div>

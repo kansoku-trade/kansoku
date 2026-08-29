@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import * as stylex from '@stylexjs/stylex';
 import { errorMessage } from '@web/lib/api';
 import { useQuery } from '@web/lib/apiHooks';
 import { refreshCapabilities, useCapabilities } from '@web/features/edition/capabilitiesStore';
@@ -6,6 +7,49 @@ import { client } from '@web/lib/client';
 import { openLicenseModal } from '@web/features/edition/licenseModalStore';
 import { getDesktopAppControlBridge } from './desktopAppControl';
 import { Badge, Button, Input, openModal } from '@web/ui';
+import { colors, fontSizes } from '../../theme/tokens.stylex';
+
+const styles = stylex.create({
+  activateRow: {
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    gap: '8px',
+  },
+  inputRow: {
+    display: 'flex',
+    gap: '8px',
+  },
+  input: {
+    minWidth: 0,
+    flex: 1,
+  },
+  invalidNotice: {
+    color: colors.down,
+  },
+  expiredNotice: {
+    color: colors.accent,
+  },
+  restartNotice: {
+    color: colors.accent,
+  },
+  subscribeLink: {
+    'alignSelf': 'flex-start',
+    'padding': 0,
+    'backgroundColor': 'transparent',
+    'borderStyle': 'none',
+    'borderWidth': 0,
+    'cursor': 'pointer',
+    'color': colors.accent,
+    'fontSize': fontSizes.sm,
+    ':hover': {
+      textDecoration: 'underline',
+    },
+  },
+  deactivateButton: {
+    flex: '0 0 auto',
+    whiteSpace: 'nowrap',
+  },
+});
 
 function activateErrorMessage(raw: string): string {
   if (/responded (401|404)/.test(raw)) return '授权码无效，请检查后重新输入';
@@ -94,19 +138,24 @@ export function ActivateForm({
   };
 
   return (
-    <div className="settings-time-preference license-activate-row">
+    <div className={`settings-time-preference ${stylex.props(styles.activateRow).className}`}>
       {notice === 'invalid' ? (
-        <div className="settings-preference-description license-invalid-notice">
+        <div
+          className={`settings-preference-description ${stylex.props(styles.invalidNotice).className}`}
+        >
           此授权码已失效（可能是退订或更换了套餐），请重新输入有效的授权码。
         </div>
       ) : null}
       {notice === 'expired' ? (
-        <div className="settings-preference-description license-expired-notice">
+        <div
+          className={`settings-preference-description ${stylex.props(styles.expiredNotice).className}`}
+        >
           授权过期：超过 14 天未通过服务端验证。网络恢复后自动重验；订阅到期请续订或更换授权码。
         </div>
       ) : null}
-      <div className="license-input-row">
+      <div className={stylex.props(styles.inputRow).className}>
         <Input
+          className={stylex.props(styles.input).className}
           placeholder="输入授权码"
           value={key}
           onChange={(e) => setKey(e.target.value)}
@@ -125,7 +174,7 @@ export function ActivateForm({
       {showSubscribeLink && subscribeData?.subscribeUrl ? (
         <button
           type="button"
-          className="license-subscribe-link"
+          className={stylex.props(styles.subscribeLink).className}
           onClick={() => openLicenseModal('guard')}
         >
           还没有授权码？
@@ -152,7 +201,7 @@ function LicensedStatus({
   proUnavailable?: boolean;
 }) {
   return (
-    <div className="settings-time-preference license-status-row">
+    <div className="settings-time-preference">
       <div className="settings-preference-copy">
         <div className="settings-preference-name">
           {state === 'grace' ? (
@@ -169,7 +218,9 @@ function LicensedStatus({
             : null}
         </div>
         {restartRequired ? (
-          <div className="settings-preference-description license-restart-notice">
+          <div
+            className={`settings-preference-description ${stylex.props(styles.restartNotice).className}`}
+          >
             {getDesktopAppControlBridge() ? (
               <>
                 AI 付费功能需要重启应用后才会生效。
@@ -183,13 +234,15 @@ function LicensedStatus({
           </div>
         ) : null}
         {proUnavailable ? (
-          <div className="settings-preference-description license-restart-notice">
+          <div
+            className={`settings-preference-description ${stylex.props(styles.restartNotice).className}`}
+          >
             当前构建不包含付费模块，无法启用 AI 付费功能。
           </div>
         ) : null}
       </div>
       <Button
-        className="license-deactivate-button"
+        className={stylex.props(styles.deactivateButton).className}
         onClick={() =>
           openModal({
             title: '停用本机',

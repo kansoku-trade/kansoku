@@ -1,7 +1,9 @@
 import { useId } from 'react';
+import * as stylex from '@stylexjs/stylex';
 import type { EventCanvasPhase } from '@kansoku/core/contract/events';
 import type { MarketEvent } from '@kansoku/shared/types';
 import { MarketTime } from '@web/ui';
+import { colors, fontSizes } from '../../theme/tokens.stylex';
 import {
   EVENT_CLASS_LABEL,
   EVENT_SEVERITY_LABEL,
@@ -60,6 +62,131 @@ const CANVAS_ARIA: Record<EventCanvasAction, (title: string) => string> = {
   retry: (title) => `重试生成事件画布：${title}`,
 };
 
+const styles = stylex.create({
+  row: {
+    backgroundColor: colors.backgroundSurface,
+    borderLeftColor: colors.borderStrong,
+    borderLeftStyle: 'solid',
+    borderLeftWidth: '2px',
+    display: 'grid',
+    gap: '8px',
+    gridTemplateColumns: '72px minmax(0, 1fr)',
+    padding: '7px 8px 8px',
+  },
+  rowCritical: {
+    borderLeftColor: colors.down,
+  },
+  rowNotable: {
+    borderLeftColor: colors.accent,
+  },
+  gutter: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '4px',
+    minWidth: 0,
+  },
+  time: {
+    color: colors.textMuted,
+    fontSize: fontSizes.xs,
+    lineHeight: 1.3,
+  },
+  severity: {
+    color: colors.textMuted,
+    fontSize: '9px',
+    letterSpacing: '0.08em',
+    textTransform: 'uppercase',
+  },
+  severityCritical: {
+    color: colors.down,
+  },
+  severityNotable: {
+    color: colors.accent,
+  },
+  body: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '3px',
+    minWidth: 0,
+  },
+  meta: {
+    alignItems: 'baseline',
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '4px 6px',
+  },
+  tag: {
+    color: colors.textMuted,
+    fontSize: '9px',
+    letterSpacing: '0.06em',
+    textTransform: 'uppercase',
+  },
+  trustOfficial: {
+    color: colors.ok,
+  },
+  trustVerified: {
+    color: colors.textSecondary,
+  },
+  observed: {
+    color: colors.textMuted,
+    fontSize: fontSizes.xs,
+  },
+  title: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.base,
+    fontWeight: 600,
+    lineHeight: 1.35,
+    margin: 0,
+  },
+  summary: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.sm,
+    lineHeight: 1.4,
+    margin: 0,
+  },
+  foot: {
+    alignItems: 'center',
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '6px 10px',
+    justifyContent: 'space-between',
+  },
+  symbols: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '6px',
+  },
+  symbol: {
+    'color': colors.textSecondary,
+    'fontSize': fontSizes.xs,
+    'textDecoration': 'none',
+    ':hover': {
+      color: colors.accent,
+    },
+  },
+  actions: {
+    display: 'flex',
+    gap: '8px',
+  },
+  action: {
+    'backgroundColor': 'transparent',
+    'borderStyle': 'none',
+    'borderWidth': 0,
+    'color': colors.accent,
+    'cursor': 'pointer',
+    'fontFamily': 'inherit',
+    'fontSize': fontSizes.xs,
+    'padding': 0,
+    'textDecoration': 'none',
+    ':hover:not(:disabled)': {
+      textDecoration: 'underline',
+    },
+    ':disabled': {
+      color: colors.textMuted,
+      cursor: 'default',
+    },
+  },
+});
+
 export interface MarketEventCardProps {
   event: MarketEvent;
   canvasPhase?: EventCanvasPhase | null;
@@ -80,38 +207,49 @@ export function MarketEventCard({
   const { payload } = event;
   const delay = formatObservedDelay(event.occurredAt, event.observedAt);
   const action = eventCanvasAction(event, canvasPhase);
+  const rowProps = stylex.props(
+    styles.row,
+    event.severity === 'critical' && styles.rowCritical,
+    event.severity === 'notable' && styles.rowNotable,
+  );
+  const severityProps = stylex.props(
+    styles.severity,
+    event.severity === 'critical' && styles.severityCritical,
+    event.severity === 'notable' && styles.severityNotable,
+  );
+  const trustProps = stylex.props(
+    styles.tag,
+    event.trust === 'official' && styles.trustOfficial,
+    event.trust === 'verified' && styles.trustVerified,
+  );
 
   return (
-    <article className={`evt-row evt-row--${event.severity}`} aria-labelledby={titleId}>
-      <div className="evt-row-gutter">
-        <span className="evt-row-time num">
+    <article {...rowProps} aria-labelledby={titleId}>
+      <div {...stylex.props(styles.gutter)}>
+        <span className={`num ${stylex.props(styles.time).className}`}>
           <MarketTime value={event.occurredAt} format="month-day-time" zone="market" />
         </span>
-        <span className={`evt-sev evt-sev--${event.severity}`}>
-          {EVENT_SEVERITY_LABEL[event.severity]}
-        </span>
+        <span {...severityProps}>{EVENT_SEVERITY_LABEL[event.severity]}</span>
       </div>
-      <div className="evt-row-body">
-        <div className="evt-row-meta">
-          <span className="evt-tag evt-tag--source">{eventSourceLabel(event.source)}</span>
-          <span className={`evt-tag evt-trust evt-trust--${event.trust}`}>
-            {EVENT_TRUST_LABEL[event.trust]}
-          </span>
-          <span className="evt-tag evt-tag--class">{EVENT_CLASS_LABEL[event.class]}</span>
-          <span className="evt-row-observed num">
+      <div {...stylex.props(styles.body)}>
+        <div {...stylex.props(styles.meta)}>
+          <span {...stylex.props(styles.tag)}>{eventSourceLabel(event.source)}</span>
+          <span {...trustProps}>{EVENT_TRUST_LABEL[event.trust]}</span>
+          <span {...stylex.props(styles.tag)}>{EVENT_CLASS_LABEL[event.class]}</span>
+          <span className={`num ${stylex.props(styles.observed).className}`}>
             观察 <MarketTime value={event.observedAt} format="clock" zone="market" />
             {delay ? ` · 慢 ${delay}` : ' · 即时'}
           </span>
         </div>
-        <h4 className="evt-row-title" id={titleId}>
+        <h4 {...stylex.props(styles.title)} id={titleId}>
           {payload.title}
         </h4>
-        {payload.summary && <p className="evt-row-summary">{payload.summary}</p>}
-        <div className="evt-row-foot">
-          <span className="evt-row-syms">
+        {payload.summary && <p {...stylex.props(styles.summary)}>{payload.summary}</p>}
+        <div {...stylex.props(styles.foot)}>
+          <span {...stylex.props(styles.symbols)}>
             {event.symbols.map((symbol) => (
               <a
-                className="evt-row-sym num"
+                className={`num ${stylex.props(styles.symbol).className}`}
                 key={symbol}
                 href={`/symbol/${encodeURIComponent(symbol)}`}
               >
@@ -119,11 +257,11 @@ export function MarketEventCard({
               </a>
             ))}
           </span>
-          <span className="evt-row-actions">
+          <span {...stylex.props(styles.actions)}>
             {payload.url && (
               <a
                 aria-label={`打开原文：${payload.title}`}
-                className="evt-row-action"
+                {...stylex.props(styles.action)}
                 href={payload.url}
                 rel="noreferrer noopener"
                 target="_blank"
@@ -133,7 +271,7 @@ export function MarketEventCard({
             )}
             <button
               aria-label={CANVAS_ARIA[action](payload.title)}
-              className="evt-row-action evt-row-action--canvas"
+              className={`evt-row-action--canvas ${stylex.props(styles.action).className}`}
               disabled={
                 action === 'running' ||
                 (action === 'open' ? !onOpenCanvas && !onGenerateCanvas : !onGenerateCanvas)
