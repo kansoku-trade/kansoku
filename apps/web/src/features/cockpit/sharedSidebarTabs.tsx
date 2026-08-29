@@ -106,7 +106,7 @@ export function buildSharedSidebarTabs(params: {
           {unread > 0 && (
             <Badge
               tone="down"
-              className={`unread-badge ${stylex.props(styles.unreadBadge).className}`}
+              className={stylex.props(styles.unreadBadge).className}
             >
               {unread}
             </Badge>
