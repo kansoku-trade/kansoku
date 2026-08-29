@@ -60,6 +60,12 @@ const styles = stylex.create({
     lineHeight: 1.45,
     marginTop: '3px',
   },
+  zoneMeta: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.sm,
+    lineHeight: 1.45,
+    marginTop: '3px',
+  },
 });
 
 function ContextNewsRow({ item }: { item: ContextNewsItem }) {
@@ -71,7 +77,9 @@ function ContextNewsRow({ item }: { item: ContextNewsItem }) {
         <Badge>{SOURCE_LABEL[item.source] ?? item.source}</Badge>
       </span>
       <span className={`news-title ${stylex.props(styles.title).className}`}>{item.title}</span>
-      {item.note && <div className="zone-meta md">{item.note}</div>}
+      {item.note && (
+        <div className={`zone-meta md ${stylex.props(styles.zoneMeta).className}`}>{item.note}</div>
+      )}
     </>
   );
   if (item.url) {
