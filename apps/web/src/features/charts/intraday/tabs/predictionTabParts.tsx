@@ -1,4 +1,3 @@
-import type { CSSProperties } from 'react';
 import { ArrowRight } from 'lucide-react';
 import * as stylex from '@stylexjs/stylex';
 import {
@@ -31,6 +30,14 @@ const styles = stylex.create({
     fontWeight: 600,
     justifyContent: 'space-between',
   },
+  zoneBorder: (color: string) => ({
+    borderLeftColor: color,
+  }),
+  zoneLabel: (color: string) => ({
+    color,
+    fontSize: fontSizes.base,
+    fontWeight: 600,
+  }),
 });
 
 const ZONE_KIND_LABEL: Record<string, string> = {
@@ -105,13 +112,15 @@ export function PriceZoneCard({
 }) {
   const color = zone.color ?? theme.textSecondary;
   const isBand = Math.abs(zone.high - zone.low) >= 0.0001;
+  const zoneBorderStyle = stylex.props(styles.zoneBorder(color));
+  const zoneLabelStyle = stylex.props(styles.zoneLabel(color));
   return (
     <div
-      className={`zone-item ${compact ? 'compact' : ''}`}
-      style={{ borderLeftColor: color } as CSSProperties}
+      {...zoneBorderStyle}
+      className={`zone-item ${compact ? 'compact' : ''} ${zoneBorderStyle.className ?? ''}`}
     >
       <div className="zone-head">
-        <span className="zone-label" style={{ color }}>
+        <span {...zoneLabelStyle} className={`zone-label ${zoneLabelStyle.className ?? ''}`}>
           {zone.label}
         </span>
         <span className="zone-range">
