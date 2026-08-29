@@ -1,7 +1,39 @@
+import * as stylex from '@stylexjs/stylex';
 import type { SymbolAnalysisRow } from '@kansoku/shared/types';
+import { colors, fontSizes } from '../../theme/tokens.stylex';
 import { HistoryTab } from './HistoryTab';
 import { JournalSection, type JournalEntryMeta } from './JournalSection';
 import { NoteTab } from './NoteTab';
+
+const styles = stylex.create({
+  switch: {
+    borderBottomColor: colors.border,
+    borderBottomStyle: 'solid',
+    borderBottomWidth: '1px',
+    display: 'flex',
+    gap: '2px',
+    marginBottom: '10px',
+  },
+  switchItem: {
+    'backgroundColor': 'transparent',
+    'borderBottomColor': 'transparent',
+    'borderBottomStyle': 'solid',
+    'borderBottomWidth': '2px',
+    'borderStyle': 'none',
+    'borderWidth': 0,
+    'color': colors.textSecondary,
+    'cursor': 'pointer',
+    'fontSize': fontSizes.sm,
+    'padding': '4px 10px',
+    ':hover': {
+      color: colors.textPrimary,
+    },
+  },
+  switchItemActive: {
+    borderBottomColor: colors.accent,
+    color: colors.textPrimary,
+  },
+});
 
 export type ReviewSection = 'history' | 'journal' | 'note';
 
@@ -40,11 +72,11 @@ export function ReviewTab({
 
   return (
     <div className="review-tab">
-      <div className="review-switch">
+      <div {...stylex.props(styles.switch)}>
         {SECTIONS.map((s) => (
           <button
             key={s.key}
-            className={`review-switch-item${section === s.key ? ' active' : ''}`}
+            className={`${section === s.key ? 'active ' : ''}${stylex.props(styles.switchItem, section === s.key && styles.switchItemActive).className}`}
             onClick={() => onSectionChange(s.key)}
           >
             {s.label}
