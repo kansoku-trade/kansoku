@@ -7,6 +7,8 @@ import {
   type PointerEvent,
   type ReactNode,
 } from 'react';
+import * as stylex from '@stylexjs/stylex';
+import { colors } from '../theme/tokens.stylex';
 
 export type ResizablePanelSide = 'start' | 'end';
 
@@ -87,6 +89,54 @@ interface DragState {
   startPosition: number;
   startSize: number;
 }
+
+const styles = stylex.create({
+  panel: {
+    display: 'flex',
+    flex: '0 0 auto',
+    minHeight: 0,
+  },
+  content: {
+    flex: '1 1 auto',
+    minWidth: 0,
+    minHeight: 0,
+    overflow: 'hidden',
+  },
+  handle: {
+    position: 'relative',
+    zIndex: 2,
+    flex: '0 0 8px',
+    width: '8px',
+    minWidth: '8px',
+    cursor: 'col-resize',
+    touchAction: 'none',
+    outline: 'none',
+    '::after': {
+      content: '""',
+      position: 'absolute',
+      top: 0,
+      bottom: 0,
+      left: '3px',
+      width: '1px',
+      backgroundColor: colors.border,
+      transition: 'background-color 120ms ease, box-shadow 120ms ease',
+    },
+    ':hover::after': {
+      backgroundColor: colors.accent,
+      boxShadow: '0 0 0 1px rgba(255, 176, 0, 0.16)',
+    },
+    ':focus-visible::after': {
+      backgroundColor: colors.accent,
+      boxShadow: '0 0 0 1px rgba(255, 176, 0, 0.16)',
+    },
+  },
+  handleDragging: {
+    '::after': {
+      backgroundColor: colors.accent,
+      boxShadow: '0 0 0 1px rgba(255, 176, 0, 0.16)',
+    },
+  },
+});
 
 export function ResizablePanel({
   children,
@@ -190,7 +240,7 @@ export function ResizablePanel({
   const resetSize = () => updateSize(initialSizeRef.current, true);
   const handle = (
     <div
-      className={`resize-panel-handle${dragging ? ' dragging' : ''}`}
+      className={`resize-panel-handle${dragging ? ' dragging' : ''} ${stylex.props(styles.handle, dragging && styles.handleDragging).className}`}
       role="separator"
       aria-label={handleLabel}
       aria-orientation="vertical"
@@ -211,11 +261,11 @@ export function ResizablePanel({
 
   return (
     <div
-      className={`resize-panel resize-panel--${side}${dragging ? ' resize-panel--dragging' : ''}${className ? ` ${className}` : ''}`}
+      className={`resize-panel resize-panel--${side}${dragging ? ' resize-panel--dragging' : ''}${className ? ` ${className}` : ''} ${stylex.props(styles.panel).className}`}
       style={style}
     >
       {side === 'end' ? handle : null}
-      <div className={`resize-panel-content${contentClassName ? ` ${contentClassName}` : ''}`}>
+      <div className={`resize-panel-content${contentClassName ? ` ${contentClassName}` : ''} ${stylex.props(styles.content).className}`}>
         {children}
       </div>
       {side === 'start' ? handle : null}
