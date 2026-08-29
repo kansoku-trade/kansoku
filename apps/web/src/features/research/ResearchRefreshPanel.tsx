@@ -328,6 +328,10 @@ const styles = stylex.create({
     color: colors.accent,
     display: 'inline-flex',
     gap: '3px',
+    textDecoration: 'none',
+    ':hover': {
+      color: colors.accent,
+    },
   },
   terminal: {
     color: colors.textMuted,
