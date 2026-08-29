@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import * as stylex from '@stylexjs/stylex';
 import type {
   TrainerReason,
   TrainerStepEvent,
@@ -6,6 +7,7 @@ import type {
   TrainerViewPeriod,
 } from '@kansoku/pro-api';
 import { signed } from '@web/lib/format';
+import { colors, fontSizes, fonts, radii } from '../../theme/tokens.stylex';
 import type { TrainerBridge } from '../desktop/desktopTrainerBridge';
 import {
   describeStepEvents,
@@ -30,11 +32,108 @@ interface StepOutcome {
   paused: boolean;
 }
 
+const styles = stylex.create({
+  chip: {
+    alignItems: 'center',
+    backgroundColor: 'rgb(20 20 20 / 0.88)',
+    borderColor: colors.borderStrong,
+    borderRadius: radii.default,
+    borderStyle: 'solid',
+    borderWidth: '1px',
+    color: colors.textPrimary,
+    display: 'flex',
+    fontSize: fontSizes.sm,
+    fontVariantNumeric: 'tabular-nums',
+    gap: '8px',
+    padding: '3px 9px',
+    pointerEvents: 'auto',
+  },
+  chipToast: {
+    borderLeftColor: colors.accent,
+    borderLeftStyle: 'solid',
+    borderLeftWidth: '2px',
+    maxWidth: '320px',
+  },
+  chipError: {
+    borderLeftColor: colors.down,
+    borderLeftStyle: 'solid',
+    borderLeftWidth: '2px',
+    color: colors.down,
+  },
+  lane: {
+    alignItems: 'center',
+    borderTopColor: colors.border,
+    borderTopStyle: 'solid',
+    borderTopWidth: '1px',
+    display: 'flex',
+    flex: '0 0 auto',
+    gap: '8px',
+    height: '38px',
+    overflowX: 'clip',
+    overflowY: 'visible',
+    padding: '0 12px',
+    position: 'relative',
+  },
+  group: {
+    alignItems: 'center',
+    display: 'flex',
+    flex: '0 0 auto',
+    gap: '4px',
+  },
+  separator: {
+    backgroundColor: colors.borderStrong,
+    flex: '0 0 auto',
+    height: '16px',
+    width: '1px',
+  },
+  spacer: {
+    marginLeft: 'auto',
+  },
+  label: {
+    color: colors.textSecondary,
+    flex: '0 0 auto',
+    fontSize: fontSizes.sm,
+  },
+  hint: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.sm,
+    minWidth: 0,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  num: {
+    flex: '0 0 auto',
+    fontFamily: fonts.mono,
+    fontSize: fontSizes.sm,
+    fontVariantNumeric: 'tabular-nums',
+  },
+  numStop: {
+    color: colors.down,
+  },
+  numTarget: {
+    color: colors.up,
+  },
+  dim: {
+    color: colors.textSecondary,
+  },
+  pressed: {
+    borderColor: colors.accent,
+    color: colors.accent,
+  },
+});
+
 // Zero is neither a win nor a loss, so it stays neutral rather than borrowing the green.
 function swing(r: number): string {
   if (r > 0) return 'trainer-lane-num--target';
   if (r < 0) return 'trainer-lane-num--stop';
   return 'trainer-chip-dim';
+}
+
+function swingStyle(r: number) {
+  if (r > 0) return styles.numTarget;
+  if (r < 0) return styles.numStop;
+  return styles.dim;
 }
 
 export function TrainerAdvanceControls({
@@ -144,48 +243,89 @@ export function TrainerAdvanceControls({
   return (
     <>
       <TrainerOverlayPortal slot="stack">
-        {narrative && <div className="trainer-chip trainer-chip--toast">{narrative}</div>}
-        {error && <div className="trainer-chip trainer-chip--error">{error}</div>}
+        {narrative && (
+          <div
+            className={`trainer-chip trainer-chip--toast ${stylex.props(styles.chip, styles.chipToast).className}`}
+          >
+            {narrative}
+          </div>
+        )}
+        {error && (
+          <div
+            className={`trainer-chip trainer-chip--error ${stylex.props(styles.chip, styles.chipError).className}`}
+          >
+            {error}
+          </div>
+        )}
       </TrainerOverlayPortal>
-      <div className="trainer-lane">
+      <div className={`trainer-lane ${stylex.props(styles.lane).className}`}>
         <button className="btn" disabled={disabled} onClick={handleStep}>
           步进 · {period}
         </button>
         <button
-          className="btn"
+          className={['btn', stylex.props(playing && styles.pressed).className]
+            .filter(Boolean)
+            .join(' ')}
           aria-pressed={playing}
           disabled={playing ? false : disabled}
           onClick={togglePlay}
         >
           {playing ? '暂停' : '播放'}
         </button>
-        <div className="trainer-lane-sep" />
-        <div className="trainer-lane-group">
+        <div className={`trainer-lane-sep ${stylex.props(styles.separator).className}`} />
+        <div className={`trainer-lane-group ${stylex.props(styles.group).className}`}>
           {PLAYBACK_SPEEDS.map((s) => (
-            <button key={s} className="btn" aria-pressed={speed === s} onClick={() => setSpeed(s)}>
+            <button
+              key={s}
+              className={['btn', stylex.props(speed === s && styles.pressed).className]
+                .filter(Boolean)
+                .join(' ')}
+              aria-pressed={speed === s}
+              onClick={() => setSpeed(s)}
+            >
               {s}x
             </button>
           ))}
         </div>
-        <span className="trainer-lane-spacer" />
+        <span className={`trainer-lane-spacer ${stylex.props(styles.spacer).className}`} />
         {returns.tradeR !== null && (
           <span
-            className="trainer-lane-num"
+            className={`trainer-lane-num ${stylex.props(styles.num).className}`}
             title="本笔：已落袋加上还没平的部分，按 R 计。R 是一份风险，等于首次成交价到初始止损的距离"
           >
-            <span className="trainer-lane-label">本笔</span>{' '}
-            <b className={swing(returns.tradeR)}>{signed(returns.tradeR)}R</b>
+            <span className={`trainer-lane-label ${stylex.props(styles.label).className}`}>
+              本笔
+            </span>{' '}
+            <b
+              className={`${swing(returns.tradeR)} ${stylex.props(swingStyle(returns.tradeR)).className}`}
+            >
+              {signed(returns.tradeR)}R
+            </b>
             {returns.tradePct !== null && (
-              <span className="trainer-chip-dim"> {signed(returns.tradePct, 2)}%</span>
+              <span className={`trainer-chip-dim ${stylex.props(styles.dim).className}`}>
+                {' '}
+                {signed(returns.tradePct, 2)}%
+              </span>
             )}
           </span>
         )}
-        <span className="trainer-lane-num" title="本局：已平仓的每一笔加上现在这笔的浮动盈亏">
-          <span className="trainer-lane-label">本局</span>{' '}
-          <b className={swing(returns.sessionR)}>{signed(returns.sessionR)}R</b>
+        <span
+          className={`trainer-lane-num ${stylex.props(styles.num).className}`}
+          title="本局：已平仓的每一笔加上现在这笔的浮动盈亏"
+        >
+          <span className={`trainer-lane-label ${stylex.props(styles.label).className}`}>本局</span>{' '}
+          <b
+            className={`${swing(returns.sessionR)} ${stylex.props(swingStyle(returns.sessionR)).className}`}
+          >
+            {signed(returns.sessionR)}R
+          </b>
         </span>
-        <div className="trainer-lane-sep" />
-        {reasonReused && <span className="trainer-lane-hint">沿用上一次理由</span>}
+        <div className={`trainer-lane-sep ${stylex.props(styles.separator).className}`} />
+        {reasonReused && (
+          <span className={`trainer-lane-hint ${stylex.props(styles.hint).className}`}>
+            沿用上一次理由
+          </span>
+        )}
         {needsReason && (
           <TrainerNote
             label="持有备注"
