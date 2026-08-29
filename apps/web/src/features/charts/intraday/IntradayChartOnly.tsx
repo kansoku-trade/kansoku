@@ -1,6 +1,8 @@
 import { Component, lazy, Suspense, useMemo, useRef, useState, type ReactNode } from 'react';
+import * as stylex from '@stylexjs/stylex';
 import type { IntradayBuilt } from '@kansoku/shared/types';
 import { fmt } from '@web/lib/format';
+import { colors, radii } from '../../../theme/tokens.stylex';
 import type { DrawingsHandle } from '../drawings/useDrawings';
 import { namespacedKey, useIntradayControls } from './controlsContext';
 import { isSessionlessTf, tfDataOf, type ChartTf } from './timeframes';
@@ -11,6 +13,49 @@ const MACD_MIN = 100;
 const MACD_MAX = 340;
 const MACD_DEFAULT = 190;
 const MACD_HEIGHT_KEY = 'intraday-macd-height';
+
+const styles = stylex.create({
+  mainChart: {
+    flex: '1 1 auto',
+    minHeight: 0,
+  },
+  macdChart: {
+    borderBottomStyle: 'none',
+    borderBottomWidth: 0,
+    minHeight: 0,
+  },
+  resizer: {
+    backgroundColor: colors.backgroundSurface,
+    cursor: 'row-resize',
+    flex: '0 0 6px',
+    position: 'relative',
+    touchAction: 'none',
+    zIndex: 11,
+    '::after': {
+      backgroundColor: colors.borderStrong,
+      borderRadius: radii.default,
+      content: '""',
+      height: '2px',
+      left: '50%',
+      marginLeft: '-18px',
+      position: 'absolute',
+      top: '2px',
+      width: '36px',
+    },
+    ':hover': {
+      backgroundColor: colors.backgroundHover,
+    },
+    ':hover::after': {
+      backgroundColor: colors.accent,
+    },
+  },
+  resizerDragging: {
+    backgroundColor: colors.backgroundHover,
+    '::after': {
+      backgroundColor: colors.accent,
+    },
+  },
+});
 
 const clampMacdHeight = (h: number) => Math.min(MACD_MAX, Math.max(MACD_MIN, h));
 
@@ -100,7 +145,7 @@ export function IntradayChartOnly({
 
   return (
     <div className="charts-col">
-      <div className="chart-block intraday-main">
+      <div className={`chart-block ${stylex.props(styles.mainChart).className}`}>
         <div className="chart-label">K 线 + 成交量</div>
         <div className="chart-legend">
           {maSeries
@@ -135,11 +180,14 @@ export function IntradayChartOnly({
         <div ref={mainRef} className="chart-host" />
       </div>
       <div
-        className={`pane-resizer${dragging ? ' dragging' : ''}`}
+        className={`pane-resizer ${stylex.props(styles.resizer, dragging && styles.resizerDragging).className}`}
         title="拖动调整 MACD 高度"
         onPointerDown={onResizeStart}
       />
-      <div className="chart-block macd" style={{ flex: `0 0 ${macdHeight}px` }}>
+      <div
+        className={`chart-block macd ${stylex.props(styles.macdChart).className}`}
+        style={{ flex: `0 0 ${macdHeight}px` }}
+      >
         <div className="chart-label">MACD (12,26,9)</div>
         <div ref={macdRef} className="chart-host" />
       </div>
