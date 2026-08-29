@@ -13,7 +13,9 @@ const styles = stylex.create({
   },
   bar: {
     backgroundColor: colors.backgroundSurface,
-    borderBottom: `1px solid ${colors.border}`,
+    borderBottomColor: colors.border,
+    borderBottomStyle: 'solid',
+    borderBottomWidth: '1px',
     display: 'flex',
     flexWrap: 'nowrap',
     gap: '4px',

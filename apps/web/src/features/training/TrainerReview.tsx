@@ -54,8 +54,10 @@ const styles = stylex.create({
   chip: {
     alignItems: 'center',
     backgroundColor: 'rgb(20 20 20 / 0.88)',
-    border: `1px solid ${colors.borderStrong}`,
+    borderColor: colors.borderStrong,
     borderRadius: radii.default,
+    borderStyle: 'solid',
+    borderWidth: '1px',
     display: 'flex',
     fontSize: fontSizes.sm,
     fontVariantNumeric: 'tabular-nums',

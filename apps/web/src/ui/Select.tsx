@@ -7,8 +7,10 @@ const styles = stylex.create({
   trigger: {
     'alignItems': 'center',
     'backgroundColor': colors.backgroundElement,
-    'border': `1px solid ${colors.borderStrong}`,
+    'borderColor': colors.borderStrong,
     'borderRadius': radii.default,
+    'borderStyle': 'solid',
+    'borderWidth': '1px',
     'boxSizing': 'border-box',
     'color': colors.textSecondary,
     'cursor': 'pointer',
@@ -47,8 +49,10 @@ const styles = stylex.create({
   },
   popup: {
     backgroundColor: colors.backgroundSurface,
-    border: `1px solid ${colors.border}`,
+    borderColor: colors.border,
     borderRadius: radii.default,
+    borderStyle: 'solid',
+    borderWidth: '1px',
     boxShadow: '0 6px 20px rgb(0 0 0 / 0.35)',
     maxHeight: 'min(320px, var(--available-height))',
     minWidth: 'var(--anchor-width)',

@@ -5,8 +5,10 @@ import { colors, fontSizes, radii, sizes } from '../theme/tokens.stylex';
 const styles = stylex.create({
   input: {
     backgroundColor: colors.backgroundElement,
-    border: `1px solid ${colors.borderStrong}`,
+    borderColor: colors.borderStrong,
     borderRadius: radii.default,
+    borderStyle: 'solid',
+    borderWidth: '1px',
     boxSizing: 'border-box',
     color: colors.textPrimary,
     fontSize: fontSizes.base,
