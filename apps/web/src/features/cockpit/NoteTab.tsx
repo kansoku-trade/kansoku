@@ -46,6 +46,10 @@ const styles = stylex.create({
     fontSize: fontSizes.sm,
     whiteSpace: 'nowrap',
   },
+  aiHint: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.sm,
+  },
 });
 
 export function NoteTab({ symbol }: { symbol: string }) {
@@ -115,8 +119,12 @@ export function NoteTab({ symbol }: { symbol: string }) {
               {button}
             </div>
           </div>
-          {deepDive.inlineMessage && <span className="ai-hint">{deepDive.inlineMessage}</span>}
-          {deepDive.successNote && <span className="ai-hint">{deepDive.successNote}</span>}
+          {deepDive.inlineMessage && (
+            <span className={stylex.props(styles.aiHint).className}>{deepDive.inlineMessage}</span>
+          )}
+          {deepDive.successNote && (
+            <span className={stylex.props(styles.aiHint).className}>{deepDive.successNote}</span>
+          )}
           <Markdown>{note.markdown}</Markdown>
         </>
       ) : (
@@ -129,8 +137,12 @@ export function NoteTab({ symbol }: { symbol: string }) {
               {button}
             </div>
           )}
-          {deepDive.inlineMessage && <span className="ai-hint">{deepDive.inlineMessage}</span>}
-          {deepDive.successNote && <span className="ai-hint">{deepDive.successNote}</span>}
+          {deepDive.inlineMessage && (
+            <span className={stylex.props(styles.aiHint).className}>{deepDive.inlineMessage}</span>
+          )}
+          {deepDive.successNote && (
+            <span className={stylex.props(styles.aiHint).className}>{deepDive.successNote}</span>
+          )}
         </>
       )}
     </div>
