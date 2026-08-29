@@ -1,5 +1,6 @@
 import * as stylex from '@stylexjs/stylex';
 import type { SymbolAnalysisRow } from '@kansoku/shared/types';
+import { NoteBlock } from '@web/ui';
 import { colors, fontSizes } from '../../theme/tokens.stylex';
 import { HistoryTab } from './HistoryTab';
 import { JournalSection, type JournalEntryMeta } from './JournalSection';
@@ -32,6 +33,9 @@ const styles = stylex.create({
   switchItemActive: {
     borderBottomColor: colors.accent,
     color: colors.textPrimary,
+  },
+  emptyNote: {
+    marginBottom: '16px',
   },
 });
 
@@ -85,7 +89,7 @@ export function ReviewTab({
       </div>
       {section === 'history' &&
         (rows.length === 0 ? (
-          <p className="note-block">还没有历史分析</p>
+          <NoteBlock className={stylex.props(styles.emptyNote).className}>还没有历史分析</NoteBlock>
         ) : (
           <HistoryTab
             symbol={symbol}

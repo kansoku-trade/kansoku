@@ -19,7 +19,7 @@ import {
 } from '@web/features/charts/simple/theme';
 import { client } from '@web/lib/client';
 import { signed, upDown } from '@web/lib/format';
-import { SectionTitle } from '@web/ui';
+import { NoteBlock, SectionTitle } from '@web/ui';
 import * as stylex from '@stylexjs/stylex';
 import { colors, fontSizes } from '../../theme/tokens.stylex';
 import { useIntervalFetch } from './useIntervalFetch';
@@ -108,8 +108,8 @@ export function FlowTab({ symbol }: { symbol: string }) {
     60_000,
   );
 
-  if (error) return <div className="note-block">资金流数据获取失败：{error}</div>;
-  if (!flow) return <div className="note-block">加载中…</div>;
+  if (error) return <NoteBlock>资金流数据获取失败：{error}</NoteBlock>;
+  if (!flow) return <NoteBlock>加载中…</NoteBlock>;
 
   return (
     <>
@@ -125,7 +125,7 @@ export function FlowTab({ symbol }: { symbol: string }) {
           </div>
         </>
       ) : (
-        <div className="note-block">分布暂不可用</div>
+        <NoteBlock>分布暂不可用</NoteBlock>
       )}
     </>
   );
