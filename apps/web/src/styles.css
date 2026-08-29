@@ -529,27 +529,6 @@ a.zone-item:hover {
   color: var(--down);
 }
 
-.conclusion-refresh .ai-run-status {
-  margin-top: 8px;
-}
-
-.marker-tooltip {
-  display: none;
-  position: absolute;
-  z-index: 30;
-  max-width: 300px;
-  background: rgba(20, 20, 20, 0.97);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius);
-  padding: 8px 10px;
-  font-size: var(--fs-sm);
-  line-height: 1.5;
-  color: var(--text-primary);
-  white-space: pre-line;
-  pointer-events: none;
-  box-shadow: 0 4px 14px rgba(10, 10, 10, 0.5);
-}
-
 .disclaimer {
   margin-top: 16px;
   padding-top: 10px;
@@ -651,9 +630,6 @@ a.zone-item:hover {
   }
 }
 
-.home-page .section-title {
-  font-size: var(--fs-base);
-}
 .home-page .note-block {
   font-size: var(--fs-md);
 }
@@ -835,10 +811,6 @@ a.zone-item:hover {
   border-radius: var(--radius-md);
 }
 
-.scroll-area-scrollbar[data-hovering],
-.scroll-area-scrollbar[data-scrolling] {
-  opacity: 1;
-}
 .desktop-titlebar-traffic-spacer {
   flex: 0 0 78px;
 }
@@ -1456,80 +1428,6 @@ a.zone-item:hover {
 .research-edit-status--stale {
   color: var(--down);
   background: color-mix(in srgb, var(--down) 10%, transparent);
-}
-@media (max-width: 1100px) {
-  .research-page {
-    --research-context-width: 320px;
-  }
-  .research-search-actions {
-    flex: 0 1 290px;
-    padding-left: 0;
-  }
-}
-
-@media (max-width: 760px) {
-  .research-page {
-    height: auto;
-    min-height: 100vh;
-    overflow: visible;
-  }
-  .desktop-content .research-page {
-    min-height: calc(100vh - 40px);
-  }
-  .research-header {
-    align-items: stretch;
-    flex-direction: column;
-    padding: 14px 48px 14px 14px;
-  }
-  .desktop-content .research-header {
-    padding-right: 14px;
-  }
-  .research-controls {
-    justify-content: stretch;
-    flex-wrap: wrap;
-  }
-  .research-search-actions {
-    flex: 2 1 240px;
-  }
-  .research-workspace {
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-  }
-  .research-explorer-panel {
-    width: 100% !important;
-    min-width: 0 !important;
-    max-width: none;
-    flex: 0 0 auto;
-  }
-  .research-explorer-panel .resize-panel-handle {
-    display: none;
-  }
-  .research-explorer-panel .resize-panel-content {
-    width: 100%;
-  }
-  .research-explorer {
-    max-height: 300px;
-    border-right: none;
-    border-bottom: 1px solid var(--border);
-  }
-  .research-reader {
-    overflow: visible;
-  }
-  .research-reader-document {
-    padding: 20px 16px 48px;
-  }
-  .research-reader-head {
-    flex-direction: column;
-  }
-  .research-context {
-    display: flex;
-    width: 100%;
-    min-height: 520px;
-    overflow: hidden;
-    border-left: none;
-    border-top: 1px solid var(--border);
-  }
 }
 .onboarding-explainer a {
   color: var(--accent);
