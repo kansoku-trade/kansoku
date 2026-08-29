@@ -526,8 +526,13 @@ const styles = stylex.create({
     padding: '2px 5px',
   },
   cockpitLink: {
+    color: colors.textPrimary,
     flex: '0 0 auto',
+    textDecoration: 'none',
     whiteSpace: 'nowrap',
+    ':hover': {
+      color: colors.accent,
+    },
   },
   readerBody: {
     minWidth: 0,
