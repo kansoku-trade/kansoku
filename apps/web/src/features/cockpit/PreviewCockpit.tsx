@@ -52,7 +52,9 @@ const styles = stylex.create({
   detailTopbar: {
     alignItems: 'center',
     backgroundColor: colors.backgroundSurface,
-    borderBottom: `1px solid ${colors.border}`,
+    borderBottomColor: colors.border,
+    borderBottomStyle: 'solid',
+    borderBottomWidth: '1px',
     display: 'flex',
     fontSize: fontSizes.md,
     gap: '12px',
@@ -66,7 +68,9 @@ const styles = stylex.create({
   },
   topbarChart: {
     alignItems: 'center',
-    borderRight: `1px solid ${colors.border}`,
+    borderRightColor: colors.border,
+    borderRightStyle: 'solid',
+    borderRightWidth: '1px',
     display: 'flex',
     gap: '12px',
     minWidth: 0,

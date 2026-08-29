@@ -59,7 +59,9 @@ const styles = stylex.create({
   detailTopbar: {
     alignItems: 'center',
     backgroundColor: colors.backgroundSurface,
-    borderBottom: `1px solid ${colors.border}`,
+    borderBottomColor: colors.border,
+    borderBottomStyle: 'solid',
+    borderBottomWidth: '1px',
     display: 'flex',
     gap: '12px',
     padding: '8px 14px',
@@ -79,7 +81,9 @@ const styles = stylex.create({
     padding: '8px 14px',
   },
   topbarChart: {
-    borderRight: `1px solid ${colors.border}`,
+    borderRightColor: colors.border,
+    borderRightStyle: 'solid',
+    borderRightWidth: '1px',
   },
   topbarSide: {
     gap: '8px',
@@ -101,7 +105,9 @@ const styles = stylex.create({
   loadForwardButton: {
     'alignItems': 'center',
     'backgroundColor': 'transparent',
-    'border': `1px solid ${colors.border}`,
+    'borderColor': colors.border,
+    'borderStyle': 'solid',
+    'borderWidth': '1px',
     'borderRadius': radii.default,
     'boxSizing': 'border-box',
     'color': colors.textSecondary,
@@ -257,10 +263,7 @@ export function SymbolCockpit({ sym }: { sym: string }) {
           <ErrorBox>{latestError}</ErrorBox>
           <p>
             <a href="/">
-              <ArrowLeft
-                className={`icon ${stylex.props(styles.icon).className}`}
-                size={13}
-              />{' '}
+              <ArrowLeft className={`icon ${stylex.props(styles.icon).className}`} size={13} />{' '}
               返回列表
             </a>
           </p>
@@ -283,10 +286,7 @@ export function SymbolCockpit({ sym }: { sym: string }) {
         <ErrorBox>{error}</ErrorBox>
         <p>
           <a href="/">
-            <ArrowLeft
-              className={`icon ${stylex.props(styles.icon).className}`}
-              size={13}
-            />{' '}
+            <ArrowLeft className={`icon ${stylex.props(styles.icon).className}`} size={13} />{' '}
             返回列表
           </a>
         </p>
@@ -367,15 +367,10 @@ export function SymbolCockpit({ sym }: { sym: string }) {
               className={`topbar-chart ${stylex.props(styles.topbarColumn, styles.topbarChart).className}`}
             >
               <a href="/">
-                <ArrowLeft
-                  className={`icon ${stylex.props(styles.icon).className}`}
-                  size={13}
-                />{' '}
+                <ArrowLeft className={`icon ${stylex.props(styles.icon).className}`} size={13} />{' '}
                 列表
               </a>
-              <span className={`meta ${stylex.props(styles.topbarMeta).className}`}>
-                {sym}
-              </span>
+              <span className={`meta ${stylex.props(styles.topbarMeta).className}`}>{sym}</span>
               {degraded && <Dot tone="accent" pulse title="数据延迟：行情拉取失败，正在重试" />}
               <IntradayTimeframeSwitch activeTf={activeIntradayTf} onChange={setIntradayTf} />
               <AnalysisTimeline
@@ -452,10 +447,7 @@ export function SymbolCockpit({ sym }: { sym: string }) {
                         size={13}
                       />
                     ) : (
-                      <Bell
-                        className={`icon ${stylex.props(styles.icon).className}`}
-                        size={13}
-                      />
+                      <Bell className={`icon ${stylex.props(styles.icon).className}`} size={13} />
                     )}
                   </button>
                 </Tooltip>
