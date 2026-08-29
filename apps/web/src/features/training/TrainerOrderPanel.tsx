@@ -32,7 +32,7 @@ import { TrainerPositionLane } from './TrainerPositionLane';
 import { freshVerdict, useAmendCheck } from './useAmendCheck';
 import { useChartScrollLock } from './useChartScrollLock';
 import { useEntryDraft, type EntryDraftApi } from './useEntryDraft';
-import { colors, fontSizes, radii } from '../../theme/tokens.stylex';
+import { colors, fontSizes, radii, sizes } from '../../theme/tokens.stylex';
 
 const styles = stylex.create({
   chip: {
@@ -67,6 +67,35 @@ const styles = stylex.create({
   chipShort: {
     color: colors.down,
     fontWeight: 600,
+  },
+  button: {
+    'alignItems': 'center',
+    'backgroundColor': colors.backgroundElement,
+    'borderColor': colors.borderStrong,
+    'borderRadius': radii.default,
+    'borderStyle': 'solid',
+    'borderWidth': '1px',
+    'boxSizing': 'border-box',
+    'color': colors.textPrimary,
+    'cursor': 'pointer',
+    'display': 'inline-flex',
+    'fontSize': fontSizes.base,
+    'gap': '7px',
+    'height': sizes.controlHeight,
+    'padding': '0 14px',
+    ':hover:not(:disabled)': {
+      borderColor: colors.accent,
+    },
+    ':focus-visible': {
+      borderColor: colors.focusBorder,
+      boxShadow: colors.focusRing,
+      outline: 'none',
+    },
+  },
+  buttonDisabled: {
+    borderColor: colors.borderStrong,
+    color: colors.textMuted,
+    cursor: 'default',
   },
   lane: {
     alignItems: 'center',
@@ -469,9 +498,7 @@ function TrainerPendingOrderLane({
             {market ? '未成交' : '挂单中'} · {order.direction === 'long' ? '多头' : '空头'}
           </b>
           <span>@{order.entry}</span>
-          <span
-            className={`trainer-lane-num--stop ${stylex.props(styles.laneNumStop).className}`}
-          >
+          <span className={`trainer-lane-num--stop ${stylex.props(styles.laneNumStop).className}`}>
             止损 {order.stop}
           </span>
           <span
@@ -482,7 +509,11 @@ function TrainerPendingOrderLane({
         </div>
       </TrainerOverlayPortal>
       <div className={`trainer-lane ${stylex.props(styles.lane).className}`}>
-        <button className="btn" disabled={submitting} onClick={onCancel}>
+        <button
+          className={`btn ${stylex.props(styles.button, submitting && styles.buttonDisabled).className}`}
+          disabled={submitting}
+          onClick={onCancel}
+        >
           撤销挂单
         </button>
         <span className={`trainer-lane-spacer ${stylex.props(styles.spacer).className}`} />
