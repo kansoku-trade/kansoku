@@ -9,7 +9,8 @@ const styles = stylex.create({
   root: {
     color: colors.textMuted,
     fontSize: fontSizes.xs,
-    margin: '6px 0',
+    marginTop: '6px',
+    marginBottom: '6px',
   },
 });
 
