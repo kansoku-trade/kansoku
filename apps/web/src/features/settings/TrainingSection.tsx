@@ -1,7 +1,30 @@
 import { useEffect, useState } from 'react';
+import * as stylex from '@stylexjs/stylex';
 import { getTrainerBridge } from '@web/features/desktop/desktopTrainerBridge';
 import { useCapabilities } from '@web/features/edition/capabilitiesStore';
 import { Switch } from '@web/ui';
+import { colors, fontSizes } from '../../theme/tokens.stylex';
+
+const styles = stylex.create({
+  section: {
+    padding: '10px 11px',
+  },
+  title: {
+    alignItems: 'center',
+    color: colors.textPrimary,
+    display: 'flex',
+    fontSize: fontSizes.sm,
+    fontWeight: 600,
+    gap: '8px',
+    justifyContent: 'space-between',
+  },
+  note: {
+    color: colors.textMuted,
+    fontSize: fontSizes.xs,
+    lineHeight: 1.6,
+    marginTop: '4px',
+  },
+});
 
 export function TrainingSection() {
   const { pro, licensed } = useCapabilities();
@@ -37,12 +60,14 @@ export function TrainingSection() {
   };
 
   return (
-    <section className="settings-conn-section settings-conn-longbridge">
-      <div className="settings-conn-title">
+    <section
+      className={`settings-conn-section settings-conn-longbridge ${stylex.props(styles.section).className}`}
+    >
+      <div className={`settings-conn-title ${stylex.props(styles.title).className}`}>
         <span>盲盘训练 · 自动补货</span>
         <Switch ariaLabel="自动补货" checked={enabled} onCheckedChange={toggle} />
       </div>
-      <div className="settings-conn-note">
+      <div className={`settings-conn-note ${stylex.props(styles.note).className}`}>
         池容低于 5 局自动补至 15 局；连续补空两次后暂停挂起，手动补一次恢复
       </div>
     </section>
