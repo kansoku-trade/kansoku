@@ -63,11 +63,11 @@ const styles = stylex.create({
     fontWeight: 600,
   },
   directionLong: {
-    borderColor: colors.up,
+    borderColor: `color-mix(in srgb, ${colors.up} 55%, transparent)`,
     color: colors.up,
   },
   directionShort: {
-    borderColor: colors.down,
+    borderColor: `color-mix(in srgb, ${colors.down} 55%, transparent)`,
     color: colors.down,
   },
   directionPressed: {
