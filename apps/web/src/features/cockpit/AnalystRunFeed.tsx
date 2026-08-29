@@ -39,6 +39,11 @@ const BIAS_TONE: Record<string, 'up' | 'down' | 'muted'> = {
 
 const ACTIVITY_LIMIT = 8;
 
+const shimmer = stylex.keyframes({
+  from: { backgroundPosition: '100% 0' },
+  to: { backgroundPosition: '-100% 0' },
+});
+
 const styles = stylex.create({
   root: {
     display: 'flex',
@@ -97,8 +102,20 @@ const styles = stylex.create({
     marginTop: '6px',
   },
   skeletonBone: {
-    height: '13px',
-    width: '100%',
+    'animationDuration': '1.5s',
+    'animationIterationCount': 'infinite',
+    'animationName': shimmer,
+    'animationTimingFunction': 'ease-in-out',
+    'backgroundImage': `linear-gradient(90deg, ${colors.backgroundElement} 0%, ${colors.backgroundHover} 45%, ${colors.backgroundElement} 90%)`,
+    'backgroundSize': '200% 100%',
+    'borderRadius': radii.default,
+    'height': '13px',
+    'width': '100%',
+    '@media (prefers-reduced-motion: reduce)': {
+      animationName: 'none',
+      backgroundColor: colors.backgroundElement,
+      backgroundImage: 'none',
+    },
   },
   skeletonBoneR1: { width: '80%' },
   skeletonBoneR2: { width: '55%' },
