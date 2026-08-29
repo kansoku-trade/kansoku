@@ -115,6 +115,9 @@ const styles = stylex.create({
     fontSize: fontSizes.base,
     padding: '4px 12px',
   },
+  unreadBadge: {
+    marginLeft: '4px',
+  },
 });
 
 export function isCardWorthySymbol(symbol: string): boolean {
@@ -231,7 +234,10 @@ function GridCard({ entry }: { entry: GridEntry }) {
         {row && <FollowToggle symbol={symbol} initialFollowing={row.ai_following} />}
         {row?.prediction_stale && <Dot tone="accent" title="预测已过期" />}
         {row && row.alert_count > 0 && (
-          <Badge tone="down" className="unread-badge">
+          <Badge
+            tone="down"
+            className={`unread-badge ${stylex.props(styles.unreadBadge).className}`}
+          >
             {row.alert_count}
           </Badge>
         )}
