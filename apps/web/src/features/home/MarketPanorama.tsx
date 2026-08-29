@@ -5,7 +5,7 @@ import { industryOf, UNCLASSIFIED_INDUSTRY } from '@kansoku/shared/industryMap';
 import { signed } from '@web/lib/format';
 import { usePollingQuery } from '@web/lib/apiHooks';
 import { client } from '@web/lib/client';
-import { Tooltip } from '@web/ui';
+import { NoteBlock, Tooltip } from '@web/ui';
 import { colors, fontSizes, fonts } from '../../theme/tokens.stylex';
 import { INDEX_SYMBOLS } from './HomeTopStrip';
 import { isCardWorthySymbol } from './SymbolGrid';
@@ -464,7 +464,7 @@ function WatchPanorama({
   caps: Record<string, number>;
 }) {
   const groups = buildPanoramaGroups(quotes, portfolio, caps);
-  if (!groups.length) return <div className="note-block">行情就绪后展示全景图</div>;
+  if (!groups.length) return <NoteBlock>行情就绪后展示全景图</NoteBlock>;
   const { main, tools } = splitPanorama(groups);
   const line = panoramaReadLine(groups);
   const rows = pairRows(main);
@@ -552,9 +552,9 @@ function IndustryPanoramaView() {
     () => client.overview.industries(),
     10 * 60_000,
   );
-  if (error) return <div className="note-block">行业数据获取失败，正在重试</div>;
-  if (!data) return <div className="note-block">行业数据加载中…</div>;
-  if (!data.items.length) return <div className="note-block">暂无行业数据</div>;
+  if (error) return <NoteBlock>行业数据获取失败，正在重试</NoteBlock>;
+  if (!data) return <NoteBlock>行业数据加载中…</NoteBlock>;
+  if (!data.items.length) return <NoteBlock>暂无行业数据</NoteBlock>;
   return (
     <div
       className={`pano-industry-wrap ${stylex.props(styles.industryWrap).className}`}

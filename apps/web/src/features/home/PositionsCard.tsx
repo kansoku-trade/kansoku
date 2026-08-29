@@ -1,7 +1,7 @@
 import type { PortfolioSummary } from '@kansoku/shared/types';
 import * as stylex from '@stylexjs/stylex';
 import { fmt, money, signed, upDown } from '@web/lib/format';
-import { Card, Dot, ErrorBox } from '@web/ui';
+import { Card, Dot, ErrorBox, NoteBlock } from '@web/ui';
 import { colors, fontSizes } from '../../theme/tokens.stylex';
 
 const styles = stylex.create({
@@ -80,7 +80,7 @@ export function PositionsCard({
   watching: Set<string>;
 }) {
   if (error) return <ErrorBox>持仓拉取失败：{error}</ErrorBox>;
-  if (!portfolio) return <div className="note-block">持仓加载中…</div>;
+  if (!portfolio) return <NoteBlock>持仓加载中…</NoteBlock>;
 
   return (
     <Card className={`positions-card ${stylex.props(styles.card).className}`}>
