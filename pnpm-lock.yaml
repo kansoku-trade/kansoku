@@ -156,6 +156,9 @@ importers:
       '@kansoku/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@stylexjs/stylex':
+        specifier: 0.19.0
+        version: 0.19.0
       '@tsuki-hono/common':
         specifier: 0.0.5
         version: 0.0.5(hono@4.12.30)

@@ -45,7 +45,7 @@ export function assetFileNamesFor(asset: AssetNameInput): string {
 
 export default defineConfig({
   plugins: [
-    stylex.vite({ useCSSLayers: false }),
+    stylex.vite({ aliases: { '@web/*': [`${webRoot}/src/*`] }, useCSSLayers: false }),
     routeBuilderPlugin({
       pagePattern: './src/pages/**/*.{tsx,sync.tsx}',
       outputPath: './src/generated-routes.ts',
