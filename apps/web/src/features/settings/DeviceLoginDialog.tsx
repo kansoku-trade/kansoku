@@ -18,7 +18,7 @@ const styles = stylex.create({
     margin: 0,
   },
   code: {
-    backgroundColor: colors.backgroundSurface,
+    backgroundColor: colors.backgroundDeep,
     borderColor: colors.border,
     borderRadius: radii.lg,
     borderStyle: 'solid',
