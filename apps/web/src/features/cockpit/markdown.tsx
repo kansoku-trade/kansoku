@@ -1,6 +1,7 @@
 import { ArrowRight, ChartCandlestick, LayoutDashboard, Library } from 'lucide-react';
-import type { AnchorHTMLAttributes, ReactNode } from 'react';
-import { type Components, Streamdown } from 'streamdown';
+import { cloneElement, isValidElement } from 'react';
+import type { AnchorHTMLAttributes, HTMLAttributes, ReactElement, ReactNode } from 'react';
+import { type Components, type ExtraProps, Streamdown } from 'streamdown';
 import * as stylex from '@stylexjs/stylex';
 import { parseAppDeepLink, type AppDeepLink } from '@kansoku/shared/appDeepLink';
 import { navigate } from '@web/lib/router';
@@ -21,21 +22,6 @@ const styles = stylex.create({
     '--typeset-font-body': fonts.ui,
     '--typeset-font-heading': fonts.ui,
     '--typeset-font-mono': fonts.mono,
-    ':is(a)': {
-      color: colors.accent,
-    },
-    ':is(a):hover': {
-      textDecorationColor: colors.accent,
-    },
-    ':is(pre)': {
-      borderColor: colors.border,
-      borderStyle: 'solid',
-      borderWidth: '1px',
-    },
-    ':is(thead th)': {
-      color: colors.textPrimary,
-      fontWeight: 600,
-    },
   },
   chat: {
     'fontSize': fontSizes.base,
@@ -47,10 +33,6 @@ const styles = stylex.create({
     '--typeset-h2': '1.15em',
     '--typeset-h3': '1.05em',
     '--typeset-h4': '1em',
-    ':is(h1)': { fontSize: '1.25em' },
-    ':is(h2)': { fontSize: '1.15em' },
-    ':is(h3)': { fontSize: '1.05em' },
-    ':is(h4)': { fontSize: '1em' },
   },
   report: {
     'fontSize': fontSizes.md,
@@ -62,10 +44,29 @@ const styles = stylex.create({
     '--typeset-h2': '1.35em',
     '--typeset-h3': '1.15em',
     '--typeset-h4': '1em',
-    ':is(h1)': { fontSize: '1.7em' },
-    ':is(h2)': { fontSize: '1.35em' },
-    ':is(h3)': { fontSize: '1.15em' },
-    ':is(h4)': { fontSize: '1em' },
+  },
+  link: {
+    'color': colors.accent,
+    ':hover': {
+      textDecorationColor: colors.accent,
+    },
+  },
+  chatHeading1: { fontSize: '1.25em' },
+  chatHeading2: { fontSize: '1.15em' },
+  chatHeading3: { fontSize: '1.05em' },
+  chatHeading4: { fontSize: '1em' },
+  reportHeading1: { fontSize: '1.7em' },
+  reportHeading2: { fontSize: '1.35em' },
+  reportHeading3: { fontSize: '1.15em' },
+  reportHeading4: { fontSize: '1em' },
+  codeBlock: {
+    borderColor: colors.border,
+    borderStyle: 'solid',
+    borderWidth: '1px',
+  },
+  tableHead: {
+    color: colors.textPrimary,
+    fontWeight: 600,
   },
   deepLink: {
     'alignItems': 'center',
@@ -243,10 +244,15 @@ function deepLinkCardMeta(link: AppDeepLink): DeepLinkCardMeta {
   }
 }
 
-export function MarkdownLink(props: AnchorHTMLAttributes<HTMLAnchorElement>) {
-  const { href, children } = props;
+export function MarkdownLink(props: AnchorHTMLAttributes<HTMLAnchorElement> & ExtraProps) {
+  const { href, children, className, node } = props;
   const appLink = parseAppDeepLink(href);
-  if (!appLink) return <a href={href}>{children}</a>;
+  if (!appLink)
+    return (
+      <a className={node ? stylex.props(styles.link).className : className} href={href}>
+        {children}
+      </a>
+    );
 
   const meta = deepLinkCardMeta(appLink);
   return (
@@ -280,14 +286,126 @@ export function MarkdownLink(props: AnchorHTMLAttributes<HTMLAnchorElement>) {
   );
 }
 
-const MARKDOWN_COMPONENTS = {
-  a: MarkdownLink,
-  table: ({ children }: { children?: ReactNode }) => (
-    <div className="typeset-scroll">
-      <table>{children}</table>
-    </div>
-  ),
-} as Components;
+function MarkdownPre({ children }: { children?: ReactNode }) {
+  if (!isValidElement(children)) return children;
+
+  return cloneElement(children as ReactElement<Record<string, unknown>>, {
+    'data-block': 'true',
+    'className': [
+      (children.props as { className?: string }).className,
+      stylex.props(styles.codeBlock).className,
+    ]
+      .filter(Boolean)
+      .join(' '),
+  });
+}
+
+function markdownComponents(variant: MarkdownVariant): Components {
+  const headingStyles =
+    variant === 'chat'
+      ? [styles.chatHeading1, styles.chatHeading2, styles.chatHeading3, styles.chatHeading4]
+      : [
+          styles.reportHeading1,
+          styles.reportHeading2,
+          styles.reportHeading3,
+          styles.reportHeading4,
+        ];
+  const headingStyle = (level: 1 | 2 | 3 | 4) => stylex.props(headingStyles[level - 1]);
+
+  return {
+    a: MarkdownLink,
+    h1: ({
+      children,
+      className,
+      node,
+      ...props
+    }: HTMLAttributes<HTMLHeadingElement> & ExtraProps) => (
+      <h1
+        {...props}
+        className={['mt-6 mb-2 font-semibold text-3xl', className, headingStyle(1).className]
+          .filter(Boolean)
+          .join(' ')}
+        data-streamdown="heading-1"
+      >
+        {children}
+      </h1>
+    ),
+    h2: ({
+      children,
+      className,
+      node,
+      ...props
+    }: HTMLAttributes<HTMLHeadingElement> & ExtraProps) => (
+      <h2
+        {...props}
+        className={['mt-6 mb-2 font-semibold text-2xl', className, headingStyle(2).className]
+          .filter(Boolean)
+          .join(' ')}
+        data-streamdown="heading-2"
+      >
+        {children}
+      </h2>
+    ),
+    h3: ({
+      children,
+      className,
+      node,
+      ...props
+    }: HTMLAttributes<HTMLHeadingElement> & ExtraProps) => (
+      <h3
+        {...props}
+        className={['mt-6 mb-2 font-semibold text-xl', className, headingStyle(3).className]
+          .filter(Boolean)
+          .join(' ')}
+        data-streamdown="heading-3"
+      >
+        {children}
+      </h3>
+    ),
+    h4: ({
+      children,
+      className,
+      node,
+      ...props
+    }: HTMLAttributes<HTMLHeadingElement> & ExtraProps) => (
+      <h4
+        {...props}
+        className={['mt-6 mb-2 font-semibold text-lg', className, headingStyle(4).className]
+          .filter(Boolean)
+          .join(' ')}
+        data-streamdown="heading-4"
+      >
+        {children}
+      </h4>
+    ),
+    pre: MarkdownPre,
+    table: ({ children }: { children?: ReactNode }) => (
+      <div className="typeset-scroll">
+        <table>{children}</table>
+      </div>
+    ),
+    th: ({
+      children,
+      className,
+      node,
+      ...props
+    }: HTMLAttributes<HTMLTableCellElement> & ExtraProps) => (
+      <th
+        {...props}
+        className={[
+          'whitespace-nowrap px-4 py-2 text-left font-semibold text-sm',
+          className,
+          stylex.props(styles.tableHead).className,
+        ]
+          .filter(Boolean)
+          .join(' ')}
+        data-streamdown="table-header-cell"
+      >
+        {children}
+      </th>
+    ),
+  } as Components;
+}
 
 export function Markdown({
   children,
@@ -307,7 +425,7 @@ export function Markdown({
         isAnimating={streaming}
         controls={false}
         linkSafety={{ enabled: false }}
-        components={MARKDOWN_COMPONENTS}
+        components={markdownComponents(variant)}
       >
         {children}
       </Streamdown>
