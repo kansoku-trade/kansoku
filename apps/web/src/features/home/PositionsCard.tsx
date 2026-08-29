@@ -91,7 +91,7 @@ export function PositionsCard({
         <span>
           今日{' '}
           <b
-            className={`${upDown(portfolio.today_pl)} ${
+            className={`${
               stylex.props(
                 styles.summaryValue,
                 upDown(portfolio.today_pl) === 'up' ? styles.up : styles.down,
@@ -104,7 +104,7 @@ export function PositionsCard({
         <span>
           总盈亏{' '}
           <b
-            className={`${upDown(portfolio.total_pl)} ${
+            className={`${
               stylex.props(
                 styles.summaryValue,
                 upDown(portfolio.total_pl) === 'up' ? styles.up : styles.down,
@@ -142,7 +142,7 @@ export function PositionsCard({
             </span>
             <span className={`last ${stylex.props(styles.last).className}`}>{fmt(p.last)}</span>
             <span
-              className={`pct ${upDown(p.pnl_pct)} ${
+              className={`pct ${
                 stylex.props(styles.pct, upDown(p.pnl_pct) === 'up' ? styles.up : styles.down)
                   .className
               }`}

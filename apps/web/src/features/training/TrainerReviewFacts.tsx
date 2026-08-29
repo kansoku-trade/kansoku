@@ -77,7 +77,7 @@ export function TrainerReviewFacts({ facts }: { facts: Facts }) {
             被止损那笔超出多少
           </figcaption>
           <div
-            className={`num trainer-fig-val${autopsy ? ' down' : ''} ${stylex.props(styles.figureValue, autopsy && styles.figureValueDown).className}`}
+            className={`num trainer-fig-val ${stylex.props(styles.figureValue, autopsy && styles.figureValueDown).className}`}
           >
             {autopsy ? `-${fmt(autopsy.overshoot)}` : '—'}
           </div>

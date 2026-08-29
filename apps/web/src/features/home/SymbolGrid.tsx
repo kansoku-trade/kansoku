@@ -259,7 +259,7 @@ function GridCard({ entry }: { entry: GridEntry }) {
       </div>
       <div className={`symbol-card-levels ${stylex.props(styles.symbolCardLevels).className}`}>
         <span
-          className={`${flowToneValue}${flowStyle ? ` ${stylex.props(flowStyle).className}` : ''}`}
+          className={flowStyle ? stylex.props(flowStyle).className : undefined}
         >
           {fmtFlowLabeled(flow)}
         </span>
@@ -298,7 +298,7 @@ function TailCell({ entry }: { entry: GridEntry }) {
       {pct != null && <Num value={pct} diff suffix="%" />}
       {entry.flow != null && (
         <span
-          className={`num tail-flow ${tone} ${
+          className={`num tail-flow ${
             stylex.props(
               styles.tailFlow,
               tone === 'up' && styles.tailFlowUp,

@@ -165,7 +165,7 @@ export function EnvTab({
           <SectionTitle>量能对比（对齐前 {relvol.days_used} 日同时段）</SectionTitle>
           <div className={`grid2 ${stylex.props(styles.grid).className}`}>
             <div className={`k ${stylex.props(styles.key).className}`}>今天 vs 均值</div>
-            <div className={`v ${relvolStatus} ${valueClassName(relvolStatus)}`}>
+            <div className={`v ${valueClassName(relvolStatus)}`}>
               ×{relvol.ratio.toFixed(2)}
             </div>
             <div className={`k ${stylex.props(styles.key).className}`}>今日累计</div>
@@ -192,7 +192,7 @@ export function EnvTab({
             <div className={`k ${stylex.props(styles.key).className}`}>
               浮{position.unrealized >= 0 ? '盈' : '亏'}
             </div>
-            <div className={`v ${positionStatus} ${valueClassName(positionStatus)}`}>
+            <div className={`v ${valueClassName(positionStatus)}`}>
               {signed(position.unrealized, 0)} ({signed(position.unrealizedPct)}%)
             </div>
             {position.distances?.stop_pct != null && (
