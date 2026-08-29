@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import * as stylex from '@stylexjs/stylex';
 import type { TrainerView } from '@kansoku/pro-api';
 import type { RawBar } from '@kansoku/shared/types';
 import { IntradayControlsProvider } from '../charts/intraday/controlsContext';
@@ -26,8 +27,71 @@ import { TrainerBandLegend, TrainerSettlement } from './TrainerSettlement';
 import { TrainerThumbnail } from './TrainerThumbnail';
 import { useTrainerDrawings } from './useTrainerDrawings';
 import { useTrainerReviewOverlay } from './useTrainerReviewOverlay';
+import { colors, fontSizes } from '../../theme/tokens.stylex';
 
 const STORAGE_NAMESPACE = 'trainer';
+
+const styles = stylex.create({
+  shell: {
+    display: 'flex',
+    flexDirection: 'column',
+    height: '100vh',
+    overflow: 'hidden',
+  },
+  scrollableShell: {
+    overflowY: 'auto',
+  },
+  header: {
+    alignItems: 'center',
+    backgroundColor: colors.backgroundSurface,
+    borderBottomColor: colors.border,
+    borderBottomStyle: 'solid',
+    borderBottomWidth: '1px',
+    display: 'flex',
+    flexShrink: 0,
+    gap: '10px',
+    padding: '8px 12px',
+    userSelect: 'none',
+    WebkitAppRegion: 'drag',
+  },
+  stickyHeader: {
+    order: 0,
+    position: 'sticky',
+    top: 0,
+    zIndex: 20,
+  },
+  title: {
+    color: colors.textPrimary,
+    fontWeight: 600,
+  },
+  meta: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.sm,
+    fontVariantNumeric: 'tabular-nums',
+  },
+  body: {
+    flex: 1,
+    minHeight: 0,
+    position: 'relative',
+  },
+  settledBody: {
+    borderColor: colors.border,
+    borderStyle: 'solid',
+    borderWidth: '1px',
+    flex: '0 0 118px',
+    margin: '0 16px',
+    order: 2,
+  },
+  laneRow: {
+    alignItems: 'stretch',
+    borderTopColor: colors.border,
+    borderTopStyle: 'solid',
+    borderTopWidth: '1px',
+    display: 'flex',
+    flex: '0 0 auto',
+    height: '38px',
+  },
+});
 
 type TrainerTab = 'settlement' | 'review';
 
@@ -93,15 +157,21 @@ export function TrainerChart({ view, sessionId, bridge, onViewChange }: TrainerC
 
   return (
     <TrainerOverlayProvider>
-      <div className={`trainer-shell${shellMode}`}>
+      <div
+        className={`trainer-shell${shellMode} ${stylex.props(styles.shell, settling && styles.scrollableShell).className}`}
+      >
         <IntradayControlsProvider storageNamespace={STORAGE_NAMESPACE}>
-          <div className="trainer-header">
+          <div
+            className={`trainer-header ${stylex.props(styles.header, settling && styles.stickyHeader).className}`}
+          >
             {isDesktop && <div className="popout-traffic-spacer" />}
-            <span className="trainer-title">盲盘训练</span>
+            <span className={`trainer-title ${stylex.props(styles.title).className}`}>
+              盲盘训练
+            </span>
             {/* Both halves describe the tier actually on screen. Naming the base period while
                 quoting a base-bar count made the header read as 5m no matter what was displayed,
                 and the count silently meant something else on every other tier. */}
-            <span className="trainer-meta">
+            <span className={`trainer-meta ${stylex.props(styles.meta).className}`}>
               {view.symbol} · {tfLabel(activeTf)} ·{' '}
               {view.terminal
                 ? '已收盘'
@@ -130,7 +200,10 @@ export function TrainerChart({ view, sessionId, bridge, onViewChange }: TrainerC
               />
             )}
           </div>
-          <div className="trainer-body" hidden={reviewing}>
+          <div
+            className={`trainer-body ${stylex.props(styles.body, settling && !reviewing && styles.settledBody).className}`}
+            hidden={reviewing}
+          >
             {settling && !expanded ? (
               <>
                 <TrainerThumbnail
@@ -190,7 +263,7 @@ export function TrainerChart({ view, sessionId, bridge, onViewChange }: TrainerC
                     state — every other thing it draws goes through the overlay — so wrapping it
                     here puts the coach button on the end of whichever lane is showing without
                     each of those states having to remember to carry it. */}
-                <div className="trainer-lane-row">
+                <div className={`trainer-lane-row ${stylex.props(styles.laneRow).className}`}>
                   <TrainerOrderPanel
                     key={`order-${view.caseId}`}
                     view={view}
