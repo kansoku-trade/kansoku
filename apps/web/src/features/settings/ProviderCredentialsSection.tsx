@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import * as stylex from '@stylexjs/stylex';
 import { errorMessage } from '@web/lib/api';
 import { money } from '@web/lib/format';
 import { client } from '@web/lib/client';
 import { Button, Dot, Input, openModal, SectionTitle, Select } from '@web/ui';
+import { colors, fonts, fontSizes } from '../../theme/tokens.stylex';
 import { DeviceLoginDialog } from './DeviceLoginDialog';
 import { ProviderAuthRow } from './ProviderAuthRow';
 import {
@@ -20,6 +22,116 @@ const CODEX_STATUS_LABEL: Record<string, string> = {
   missing: '未登录，终端运行 codex 登录',
   error: '登录态异常',
 };
+
+const styles = stylex.create({
+  testResult: { fontSize: fontSizes.sm },
+  testResultFail: { color: colors.down },
+  cardHeading: {
+    alignItems: 'center',
+    borderBottom: `1px solid ${colors.border}`,
+    display: 'flex',
+    gap: '12px',
+    justifyContent: 'space-between',
+    minHeight: '34px',
+    padding: '0 11px',
+  },
+  cardTitle: { margin: 0 },
+  connSummary: {
+    color: colors.textMuted,
+    fontFamily: fonts.mono,
+    fontSize: fontSizes.xs,
+    fontVariantNumeric: 'tabular-nums',
+    fontWeight: 400,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  warningStrip: {
+    alignItems: 'center',
+    backgroundColor: colors.backgroundElement,
+    border: `1px solid ${colors.down}`,
+    color: colors.down,
+    display: 'flex',
+    fontSize: fontSizes.sm,
+    gap: '10px',
+    justifyContent: 'space-between',
+    margin: '10px',
+    padding: '8px 9px',
+  },
+  providerRow: {
+    borderTop: `1px solid ${colors.border}`,
+    padding: '10px 11px',
+  },
+  providerHead: {
+    alignItems: 'center',
+    display: 'flex',
+    gap: '8px',
+  },
+  providerName: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.sm,
+    fontWeight: 500,
+  },
+  providerState: {
+    alignItems: 'center',
+    display: 'inline-flex',
+    gap: '5px',
+    marginLeft: 'auto',
+    fontSize: fontSizes.xs,
+    whiteSpace: 'nowrap',
+  },
+  providerStateUp: { color: colors.up },
+  providerStateAccent: { color: colors.accent },
+  providerStateDown: { color: colors.down },
+  providerMeta: {
+    color: colors.textMuted,
+    fontFamily: fonts.mono,
+    fontSize: fontSizes.xs,
+    marginTop: '3px',
+    overflowWrap: 'anywhere',
+  },
+  lobehubCredits: {
+    color: colors.textSecondary,
+    display: 'flex',
+    flexWrap: 'wrap',
+    fontFamily: fonts.mono,
+    fontSize: '11px',
+    gap: '6px 14px',
+  },
+  providerActions: {
+    alignItems: 'center',
+    display: 'flex',
+    gap: '6px',
+    marginTop: '8px',
+  },
+  providerError: {
+    borderLeft: `2px solid ${colors.down}`,
+    color: colors.down,
+    fontSize: fontSizes.sm,
+    marginTop: '7px',
+    overflowWrap: 'anywhere',
+    paddingLeft: '7px',
+  },
+  credActions: {
+    display: 'flex',
+    gap: '6px',
+    justifyContent: 'flex-end',
+    marginTop: '12px',
+  },
+  providerAdd: {
+    'alignItems': 'center',
+    'borderTop': `1px solid ${colors.border}`,
+    'display': 'grid',
+    'gap': '6px',
+    'gridTemplateColumns': 'minmax(94px, 0.8fr) minmax(120px, 1fr) auto',
+    'padding': '10px 11px',
+    '@media (max-width: 560px)': { gridTemplateColumns: '1fr' },
+  },
+  providerAddError: {
+    'gridColumn': '1 / -1',
+    '@media (max-width: 560px)': { gridColumn: 'auto' },
+  },
+});
 
 function ResetCredentialsDialog({
   closeModal,
@@ -49,9 +161,13 @@ function ResetCredentialsDialog({
     <div className="settings-reset-confirm">
       <p>会清空全部已存 key，需重新填写。确定继续吗？</p>
       {error ? (
-        <div className="settings-test-result settings-test-result--fail">{error}</div>
+        <div
+          className={`settings-test-result settings-test-result--fail ${stylex.props(styles.testResult, styles.testResultFail).className}`}
+        >
+          {error}
+        </div>
       ) : null}
-      <div className="settings-cred-actions">
+      <div className={`settings-cred-actions ${stylex.props(styles.credActions).className}`}>
         <Button disabled={busy} onClick={closeModal}>
           取消
         </Button>
@@ -72,15 +188,33 @@ function CodexAuthRow({ provider }: { provider: CatalogProvider }) {
         : 'accent';
 
   return (
-    <div className="settings-provider-row" id={'settings-provider-' + provider.id}>
-      <div className="settings-provider-head">
-        <span className="settings-provider-name">{provider.name}</span>
-        <span className={'settings-provider-state settings-provider-state--' + tone}>
+    <div
+      className={`settings-provider-row ${stylex.props(styles.providerRow).className}`}
+      id={'settings-provider-' + provider.id}
+    >
+      <div className={`settings-provider-head ${stylex.props(styles.providerHead).className}`}>
+        <span className={`settings-provider-name ${stylex.props(styles.providerName).className}`}>
+          {provider.name}
+        </span>
+        <span
+          className={`settings-provider-state settings-provider-state--${tone} ${
+            stylex.props(
+              styles.providerState,
+              tone === 'up'
+                ? styles.providerStateUp
+                : tone === 'down'
+                  ? styles.providerStateDown
+                  : styles.providerStateAccent,
+            ).className
+          }`}
+        >
           <Dot tone={tone} />
           {CODEX_STATUS_LABEL[provider.auth.status]}
         </span>
       </div>
-      <div className="settings-provider-meta">使用本机 Codex 登录态，不在此页面保存 key</div>
+      <div className={`settings-provider-meta ${stylex.props(styles.providerMeta).className}`}>
+        使用本机 Codex 登录态，不在此页面保存 key
+      </div>
     </div>
   );
 }
@@ -151,21 +285,37 @@ function LobeHubAuthRow({
   };
 
   return (
-    <div className="settings-provider-row" id={'settings-provider-' + provider.id}>
-      <div className="settings-provider-head">
-        <span className="settings-provider-name">{provider.name}</span>
-        <span className={'settings-provider-state settings-provider-state--' + tone}>
+    <div
+      className={`settings-provider-row ${stylex.props(styles.providerRow).className}`}
+      id={'settings-provider-' + provider.id}
+    >
+      <div className={`settings-provider-head ${stylex.props(styles.providerHead).className}`}>
+        <span className={`settings-provider-name ${stylex.props(styles.providerName).className}`}>
+          {provider.name}
+        </span>
+        <span
+          className={`settings-provider-state settings-provider-state--${tone} ${
+            stylex.props(
+              styles.providerState,
+              tone === 'up'
+                ? styles.providerStateUp
+                : tone === 'down'
+                  ? styles.providerStateDown
+                  : styles.providerStateAccent,
+            ).className
+          }`}
+        >
           <Dot tone={tone} />
           {label}
         </span>
       </div>
       {status === 'connected' ? (
         <>
-          <div className="settings-provider-meta">
+          <div className={`settings-provider-meta ${stylex.props(styles.providerMeta).className}`}>
             {account?.email ?? account?.name ?? account?.userId ?? 'LobeHub Cloud 个人账户'}
             {credits?.plan ? ` · ${credits.plan}` : ''}
           </div>
-          <div className="settings-lobehub-credits">
+          <div className={stylex.props(styles.lobehubCredits).className}>
             <span>可用额度 {credits ? formatUsd(credits.availableUsd) : '读取中…'}</span>
             <span>
               本月使用 {credits ? formatUsd(credits.currentMonthUsd) : (creditsError ?? '读取中…')}
@@ -174,13 +324,15 @@ function LobeHubAuthRow({
           </div>
         </>
       ) : (
-        <div className="settings-provider-meta">
+        <div className={`settings-provider-meta ${stylex.props(styles.providerMeta).className}`}>
           {status === 'unavailable'
             ? 'Cloud 开发者 Client 完成后配置 LOBEHUB_OAUTH_CLIENT_ID 即可启用'
             : '使用 Device Flow 登录个人 LobeHub Cloud 账户'}
         </div>
       )}
-      <div className="settings-provider-actions">
+      <div
+        className={`settings-provider-actions ${stylex.props(styles.providerActions).className}`}
+      >
         {status === 'connected' ? (
           <Button disabled={busy} onClick={logout}>
             {busy ? '退出中…' : '退出登录'}
@@ -192,7 +344,10 @@ function LobeHubAuthRow({
         )}
       </div>
       {error ? (
-        <div className="settings-provider-error" role="alert">
+        <div
+          className={`settings-provider-error ${stylex.props(styles.providerError).className}`}
+          role="alert"
+        >
           {error}
         </div>
       ) : null}
@@ -337,14 +492,16 @@ export function ProviderCredentialsSection({
 
   return (
     <section id="settings-provider-panel">
-      <div className="settings-card-heading">
-        <SectionTitle>Provider 与凭据</SectionTitle>
-        <span className="settings-conn-summary">
+      <div className={`settings-card-heading ${stylex.props(styles.cardHeading).className}`}>
+        <SectionTitle className={stylex.props(styles.cardTitle).className}>
+          Provider 与凭据
+        </SectionTitle>
+        <span className={`settings-conn-summary ${stylex.props(styles.connSummary).className}`}>
           {apiKeyCount + ' 个 key · ' + codexSummary + ' · ' + lobehubSummary}
         </span>
       </div>
       {settings.masterKey === 'invalid' ? (
-        <div className="settings-warning-strip">
+        <div className={`settings-warning-strip ${stylex.props(styles.warningStrip).className}`}>
           <span>主密钥异常，已存的凭据无法解密</span>
           <Button onClick={handleReset}>重置全部凭据</Button>
         </div>
@@ -382,7 +539,7 @@ export function ProviderCredentialsSection({
           ),
         )}
         {availableToAdd.length > 0 ? (
-          <div className="settings-provider-add">
+          <div className={`settings-provider-add ${stylex.props(styles.providerAdd).className}`}>
             <Select
               value={effectiveAddProvider}
               options={availableToAdd.map((provider) => ({
@@ -405,7 +562,10 @@ export function ProviderCredentialsSection({
               {addBusy ? '保存中…' : '添加 Provider'}
             </Button>
             {addError ? (
-              <div className="settings-provider-error" role="alert">
+              <div
+                className={`settings-provider-error ${stylex.props(styles.providerError, styles.providerAddError).className}`}
+                role="alert"
+              >
                 {addError}
               </div>
             ) : null}
