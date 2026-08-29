@@ -207,11 +207,6 @@ body.trainer-dragging-level * {
 .chat-shell .chat-bubble--user {
   border-radius: var(--radius-md);
 }
-.chat-message-meta > span + span::before {
-  content: '·';
-  margin-right: 5px;
-  color: var(--border-strong);
-}
 .chat-shell .chat-suggestion {
   border-radius: var(--radius-md);
 }
