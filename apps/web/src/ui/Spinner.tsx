@@ -28,7 +28,7 @@ const styles = stylex.create({
 export function Spinner({ className, ...rest }: HTMLAttributes<HTMLSpanElement>) {
   return (
     <span
-      className={`spinner${className ? ` ${className}` : ''} ${stylex.props(styles.root).className}`}
+      className={[stylex.props(styles.root).className, className].filter(Boolean).join(' ')}
       {...rest}
     />
   );

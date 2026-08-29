@@ -54,8 +54,6 @@ export function Dot({ tone, pulse, className, ...rest }: DotProps) {
     pulse && styles.pulse,
   ).className;
   const hookClassName = [
-    'dot',
-    tone && `dot--${tone}`,
     pulse && 'dot--pulse',
     className,
   ]
