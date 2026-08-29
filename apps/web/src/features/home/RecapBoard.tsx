@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import * as stylex from '@stylexjs/stylex';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import type { OverviewRecap, PredictionStats, StatsBucket } from '@kansoku/shared/types';
 import { signed } from '@web/lib/format';
@@ -7,6 +8,74 @@ import { marketDate } from '@kansoku/shared/time';
 import { client } from '@web/lib/client';
 import { Badge, Card, ErrorBox, MarketTime, Num, SectionTitle } from '@web/ui';
 import { useIntervalFetch } from '../cockpit/useIntervalFetch';
+import { colors, fontSizes } from '../../theme/tokens.stylex';
+
+const styles = stylex.create({
+  board: {
+    marginTop: '4px',
+  },
+  toggle: {
+    cursor: 'pointer',
+    userSelect: 'none',
+  },
+  subhead: {
+    marginTop: '16px',
+  },
+  settlements: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
+    marginTop: '8px',
+  },
+  row: {
+    alignItems: 'center',
+    display: 'grid',
+    fontSize: fontSizes.md,
+    fontVariantNumeric: 'tabular-nums',
+    gap: '10px',
+    gridTemplateColumns: '60px 48px 1fr auto',
+  },
+  rowSymbol: {
+    color: colors.textPrimary,
+    fontWeight: 600,
+  },
+  rowDirection: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.md,
+  },
+  statsSpaced: {
+    marginTop: '8px',
+  },
+  ai: {
+    marginTop: '8px',
+  },
+  alerts: {
+    alignItems: 'baseline',
+    columnGap: '12px',
+    display: 'grid',
+    gridTemplateColumns: 'max-content max-content minmax(0, 1fr)',
+    rowGap: '10px',
+  },
+  alert: {
+    color: colors.textSecondary,
+    display: 'contents',
+    fontSize: fontSizes.md,
+  },
+  alertTime: {
+    color: colors.textMuted,
+    fontSize: fontSizes.sm,
+    fontVariantNumeric: 'tabular-nums',
+  },
+  alertSymbol: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.sm,
+    fontWeight: 600,
+  },
+  alertText: {
+    lineHeight: 1.6,
+    textWrap: 'pretty',
+  },
+});
 
 const DIRECTION_LABEL: Record<string, string> = { long: '做多', short: '做空', neutral: '观望' };
 const OUTCOME_LABEL: Record<string, string> = {
@@ -60,16 +129,18 @@ function StatsBlock({ stats }: { stats: PredictionStats | null }) {
 function SettlementTable({ recap, emptyLabel }: { recap: OverviewRecap; emptyLabel: string }) {
   if (recap.settlements.length === 0) return <div className="note-block">{emptyLabel}</div>;
   return (
-    <div className="recap-settlements">
+    <div {...stylex.props(styles.settlements)}>
       {recap.settlements.map((s) => (
         <Card
           link
           key={s.symbol}
-          className="recap-row"
+          {...stylex.props(styles.row)}
           href={symbolAnalysisPath(s.symbol, s.chart_id)}
         >
-          <span className="sym">{s.symbol.replace(/\.US$/, '')}</span>
-          <span className="dir">{s.direction ? DIRECTION_LABEL[s.direction] : '—'}</span>
+          <span {...stylex.props(styles.rowSymbol)}>{s.symbol.replace(/\.US$/, '')}</span>
+          <span {...stylex.props(styles.rowDirection)}>
+            {s.direction ? DIRECTION_LABEL[s.direction] : '—'}
+          </span>
           {s.day_pct != null ? <Num value={s.day_pct} diff suffix="%" /> : <span>—</span>}
           {s.outcome ? (
             <Badge tone={OUTCOME_TONE[s.outcome.status]}>{OUTCOME_LABEL[s.outcome.status]}</Badge>
@@ -93,20 +164,20 @@ function AiActivity({
 }) {
   const usage = recap.usage;
   return (
-    <div className="recap-ai">
+    <div {...stylex.props(styles.ai)}>
       {recap.alerts.length === 0 && <div className="note-block">{emptyLabel}</div>}
       {recap.alerts.length > 0 && (
-        <div className="recap-alerts">
+        <div {...stylex.props(styles.alerts)}>
           {recap.alerts.map((a, i) => (
-            <div key={i} className="recap-alert">
-              <MarketTime className="ts" value={a.ts} format="clock" />
-              <span className="sym">{a.symbol.replace(/\.US$/, '')}</span>
-              <span className="text">{a.text}</span>
+            <div key={i} {...stylex.props(styles.alert)}>
+              <MarketTime {...stylex.props(styles.alertTime)} value={a.ts} format="clock" />
+              <span {...stylex.props(styles.alertSymbol)}>{a.symbol.replace(/\.US$/, '')}</span>
+              <span {...stylex.props(styles.alertText)}>{a.text}</span>
             </div>
           ))}
         </div>
       )}
-      <div className="stats-line stats-line--spaced">
+      <div className={`stats-line ${stylex.props(styles.statsSpaced).className}`}>
         <span className="k">{costLabel}</span>
         <span className="v">
           {usage.runs === 0
@@ -138,8 +209,11 @@ export function RecapBoard({ date, defaultExpanded }: { date: string; defaultExp
   const emptyAlerts = isToday ? '今天没有 alert 级提醒。' : '当天没有 alert 级提醒。';
 
   return (
-    <div className="recap-board">
-      <SectionTitle className="recap-toggle" onClick={() => setExpanded(!expanded)}>
+    <div {...stylex.props(styles.board)}>
+      <SectionTitle
+        className={stylex.props(styles.toggle).className}
+        onClick={() => setExpanded(!expanded)}
+      >
         {title}{' '}
         {expanded ? (
           <ChevronDown className="icon" size={13} />
@@ -154,9 +228,11 @@ export function RecapBoard({ date, defaultExpanded }: { date: string; defaultExp
           {recap && (
             <>
               <SettlementTable recap={recap} emptyLabel={emptySettlements} />
-              <SectionTitle className="recap-subhead">预测战绩（全部历史）</SectionTitle>
+              <SectionTitle className={stylex.props(styles.subhead).className}>
+                预测战绩（全部历史）
+              </SectionTitle>
               <StatsBlock stats={stats} />
-              <SectionTitle className="recap-subhead">AI 活动</SectionTitle>
+              <SectionTitle className={stylex.props(styles.subhead).className}>AI 活动</SectionTitle>
               <AiActivity recap={recap} costLabel={costLabel} emptyLabel={emptyAlerts} />
             </>
           )}
