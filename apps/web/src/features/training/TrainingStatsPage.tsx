@@ -11,6 +11,13 @@ import { TRAINER_CASE_TAG_LABEL } from './caseTagLabels';
 const pct = (value: number | null): string => (value === null ? '—' : `${fmt(value * 100, 0)}%`);
 
 const styles = stylex.create({
+  orderStatus: {
+    color: colors.textSecondary,
+  },
+  orderError: {
+    color: colors.down,
+    fontSize: fontSizes.sm,
+  },
   root: {
     display: 'flex',
     flexDirection: 'column',
@@ -38,6 +45,37 @@ const styles = stylex.create({
   keyValueValue: {
     color: colors.textPrimary,
     fontVariantNumeric: 'tabular-nums',
+  },
+  settleHint: {
+    color: colors.textMuted,
+    fontSize: fontSizes.sm,
+  },
+  figures: {
+    display: 'grid',
+    gap: '8px',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+  },
+  figure: {
+    backgroundColor: colors.backgroundSurface,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '3px',
+    margin: 0,
+    padding: '12px 15px',
+  },
+  figureCaption: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.sm,
+  },
+  figureValue: {
+    fontSize: '26px',
+    fontWeight: 600,
+    letterSpacing: '-0.02em',
+    lineHeight: 1.15,
+  },
+  figureSub: {
+    color: colors.textMuted,
+    fontSize: fontSizes.xs,
   },
   locked: {
     backgroundImage:
@@ -78,9 +116,24 @@ export function TrainingStatsPage() {
     };
   }, [bridge]);
 
-  if (!bridge) return <div className="trainer-order-error">训练统计只在桌面端可用</div>;
-  if (error) return <div className="trainer-order-error">{error}</div>;
-  if (!stats) return <div className="trainer-order-panel--status">正在统计…</div>;
+  if (!bridge)
+    return (
+      <div className={`trainer-order-error ${stylex.props(styles.orderError).className}`}>
+        训练统计只在桌面端可用
+      </div>
+    );
+  if (error)
+    return (
+      <div className={`trainer-order-error ${stylex.props(styles.orderError).className}`}>
+        {error}
+      </div>
+    );
+  if (!stats)
+    return (
+      <div className={`trainer-order-panel--status ${stylex.props(styles.orderStatus).className}`}>
+        正在统计…
+      </div>
+    );
 
   const periods = Object.entries(stats.sessionsByBasePeriod)
     .map(([period, count]) => `${period} ${count}`)
@@ -94,14 +147,14 @@ export function TrainingStatsPage() {
           ← 回首页
         </Link>
       </SectionTitle>
-      <p className="trainer-settle-hint">
+      <p className={`trainer-settle-hint ${stylex.props(styles.settleHint).className}`}>
         共 {stats.completedSessions} 局打完{periods && ` · ${periods}`}
         {stats.unfinishedSessions > 0 && ` · 另有 ${stats.unfinishedSessions} 局开了没打完，不计入`}
       </p>
 
       <Card className="training-stats-overview">
         <Guard block={stats.overview} unit="完成的局">
-          <div className="trainer-review-figs">
+          <div className={`trainer-review-figs ${stylex.props(styles.figures).className}`}>
             <Figure label="累计净 R" value={signed(stats.overview.netR)} />
             <Figure label="胜率" value={pct(stats.overview.winRate)} />
             <Figure
@@ -117,7 +170,11 @@ export function TrainingStatsPage() {
       <div className={`training-stats-grid ${stylex.props(styles.grid).className}`}>
         <Card>
           <h4>按结构标签</h4>
-          {stats.byTag.length === 0 && <p className="trainer-settle-hint">还没有打完的局。</p>}
+          {stats.byTag.length === 0 && (
+            <p className={`trainer-settle-hint ${stylex.props(styles.settleHint).className}`}>
+              还没有打完的局。
+            </p>
+          )}
           {stats.byTag.map((row) => (
             <div
               className={`training-stats-kv ${stylex.props(styles.keyValue).className}`}
@@ -149,7 +206,7 @@ export function TrainingStatsPage() {
               </b>
             </div>
           </Guard>
-          <p className="trainer-settle-hint">
+          <p className={`trainer-settle-hint ${stylex.props(styles.settleHint).className}`}>
             实盘被止损后没有平行世界，看不到这个数。
           </p>
         </Card>
@@ -171,7 +228,7 @@ export function TrainingStatsPage() {
               </b>
             </div>
           </Guard>
-          <p className="trainer-settle-hint">
+          <p className={`trainer-settle-hint ${stylex.props(styles.settleHint).className}`}>
             只统计有分歧的召唤，同向的不计 —— 否则「AI 附和我」会被灌水成「AI 说服我」。
           </p>
         </Card>
@@ -192,7 +249,9 @@ export function TrainingStatsPage() {
               </b>
             </div>
           </Guard>
-          <p className="trainer-settle-hint">放弃观察权的代价。</p>
+          <p className={`trainer-settle-hint ${stylex.props(styles.settleHint).className}`}>
+            放弃观察权的代价。
+          </p>
         </Card>
 
         <Card>
@@ -218,14 +277,17 @@ export function TrainingStatsPage() {
               </b>
             </div>
           </Guard>
-          <p className="trainer-settle-hint">靠错逻辑蒙对的，下次必错。</p>
+          <p className={`trainer-settle-hint ${stylex.props(styles.settleHint).className}`}>
+            靠错逻辑蒙对的，下次必错。
+          </p>
         </Card>
       </div>
 
       <p
-        className={`trainer-settle-hint training-stats-guard-note ${stylex.props(styles.guardNote).className}`}
+        className={`trainer-settle-hint training-stats-guard-note ${stylex.props(styles.settleHint, styles.guardNote).className}`}
       >
-        任何一块样本不足 10 就只报个数，不报比率。刷了 3 局赢 3 局显示「胜率 100%」，那个数字唯一的作用是骗你。
+        任何一块样本不足 10 就只报个数，不报比率。刷了 3 局赢 3 局显示「胜率
+        100%」，那个数字唯一的作用是骗你。
       </p>
     </div>
   );
@@ -259,10 +321,14 @@ function Guard({
 
 function Figure({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
-    <figure className="trainer-fig">
-      <figcaption>{label}</figcaption>
-      <div className="num trainer-fig-val">{value}</div>
-      {hint && <div className="trainer-fig-sub">{hint}</div>}
+    <figure className={`trainer-fig ${stylex.props(styles.figure).className}`}>
+      <figcaption className={stylex.props(styles.figureCaption).className}>{label}</figcaption>
+      <div className={`num trainer-fig-val ${stylex.props(styles.figureValue).className}`}>
+        {value}
+      </div>
+      {hint && (
+        <div className={`trainer-fig-sub ${stylex.props(styles.figureSub).className}`}>{hint}</div>
+      )}
     </figure>
   );
 }
