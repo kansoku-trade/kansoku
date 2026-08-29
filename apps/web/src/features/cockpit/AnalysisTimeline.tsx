@@ -1,11 +1,21 @@
+import * as stylex from '@stylexjs/stylex';
 import type { SymbolAnalysisRow } from '@kansoku/shared/types';
 import { formatMarketMonthDayTime } from '@kansoku/shared/time';
 import { DIRECTION_LABEL } from '@web/features/charts/intraday/directionLabels';
+import { fontSizes } from '../../theme/tokens.stylex';
 import { Select } from '@web/ui';
 import type { AnalysisViewMode } from './analysisMode';
 
 const LIVE_VALUE = '__live_view__';
 const LATEST_VALUE = '__latest_analysis__';
+
+const styles = stylex.create({
+  trigger: {
+    height: '26px',
+    paddingInline: '7px',
+    fontSize: fontSizes.sm,
+  },
+});
 
 export function AnalysisTimeline({
   rows,
@@ -31,7 +41,7 @@ export function AnalysisTimeline({
   ];
   return (
     <Select
-      className="analysis-timeline-trigger"
+      className={stylex.props(styles.trigger).className}
       value={
         mode === 'live' ? LIVE_VALUE : mode === 'latest' ? LATEST_VALUE : (activeId ?? LATEST_VALUE)
       }
