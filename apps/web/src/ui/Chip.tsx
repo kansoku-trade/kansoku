@@ -10,7 +10,7 @@ type ChipProps = {
 const styles = stylex.create({
   root: {
     'alignItems': 'center',
-    'background': 'transparent',
+    'backgroundColor': 'transparent',
     'borderColor': colors.borderStrong,
     'borderStyle': 'solid',
     'borderWidth': '1px',
