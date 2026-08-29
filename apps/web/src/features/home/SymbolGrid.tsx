@@ -6,9 +6,11 @@ import type {
   PortfolioSummary,
   QuoteCell,
 } from '@kansoku/shared/types';
+import * as stylex from '@stylexjs/stylex';
 import { fmt, signed } from '@web/lib/format';
 import { Badge, Card, Dot, Empty, MarketTime, Num } from '@web/ui';
 import { directionTone } from '@web/features/charts/intraday/directionLabels';
+import { colors, fontSizes } from '../../theme/tokens.stylex';
 import { fmtFlow, fmtFlowLabeled, flowTone } from './flowFormat';
 import { INDEX_SYMBOLS } from './HomeTopStrip';
 import { FollowToggle, ReassessButton } from './SymbolActions';
@@ -18,6 +20,37 @@ const EARNINGS_BADGE_DAYS = 7;
 const OPTION_SYMBOL_RE = /\d{6}[CP]\d+/;
 const MOVER_PCT = 3;
 const MOVER_EARNINGS_DAYS = 4;
+
+const styles = stylex.create({
+  holdBadge: {
+    flexShrink: 0,
+  },
+  tailSymbol: {
+    color: colors.textPrimary,
+    fontWeight: 600,
+  },
+  tailFlow: {
+    color: colors.textMuted,
+    fontSize: fontSizes.sm,
+  },
+  tailFlowUp: {
+    color: colors.up,
+  },
+  tailFlowDown: {
+    color: colors.down,
+  },
+  tailFold: {
+    backgroundColor: 'transparent',
+    borderColor: colors.borderStrong,
+    borderRadius: 0,
+    borderStyle: 'dashed',
+    borderWidth: '1px',
+    color: colors.textMuted,
+    cursor: 'pointer',
+    fontSize: fontSizes.base,
+    padding: '4px 12px',
+  },
+});
 
 export function isCardWorthySymbol(symbol: string): boolean {
   return !symbol.startsWith('.') && !OPTION_SYMBOL_RE.test(symbol);
@@ -78,9 +111,9 @@ export function buildGridEntries({
       }
     }
   }
-  const symbols = [
-    ...new Set([...quoteBySymbol.keys(), ...rowBySymbol.keys(), ...owned]),
-  ].filter((s) => !indexSet.has(s) && isCardWorthySymbol(s));
+  const symbols = [...new Set([...quoteBySymbol.keys(), ...rowBySymbol.keys(), ...owned])].filter(
+    (s) => !indexSet.has(s) && isCardWorthySymbol(s),
+  );
   const flows = board?.flows ?? {};
   const entries = symbols.map((symbol) => ({
     symbol,
@@ -120,7 +153,9 @@ function GridCard({ entry }: { entry: GridEntry }) {
           </span>
         )}
         {quote && quote.session !== '日盘' && <Badge className="qc-session">{quote.session}</Badge>}
-        {owned && <Badge className="hold-badge">持仓</Badge>}
+        {owned && (
+          <Badge className={`hold-badge ${stylex.props(styles.holdBadge).className}`}>持仓</Badge>
+        )}
         {earningsDate && (
           <Badge tone="accent" className="earnings-badge">
             财报 {earningsDate.slice(5)}
@@ -151,12 +186,25 @@ function GridCard({ entry }: { entry: GridEntry }) {
 
 function TailCell({ entry }: { entry: GridEntry }) {
   const pct = entry.quote?.pct ?? null;
+  const tone = flowTone(entry.flow);
   return (
     <a className="watch-tail-cell" href={`/symbol/${encodeURIComponent(entry.symbol)}`}>
-      <span className="sym">{entry.symbol.replace(/\.US$/, '')}</span>
+      <span className={`sym ${stylex.props(styles.tailSymbol).className}`}>
+        {entry.symbol.replace(/\.US$/, '')}
+      </span>
       {pct != null && <Num value={pct} diff suffix="%" />}
       {entry.flow != null && (
-        <span className={`num tail-flow ${flowTone(entry.flow)}`}>{fmtFlow(entry.flow)}</span>
+        <span
+          className={`num tail-flow ${tone} ${
+            stylex.props(
+              styles.tailFlow,
+              tone === 'up' && styles.tailFlowUp,
+              tone === 'down' && styles.tailFlowDown,
+            ).className
+          }`}
+        >
+          {fmtFlow(entry.flow)}
+        </span>
       )}
       {entry.earningsDate && (
         <Badge tone="accent" className="earnings-badge">
@@ -207,14 +255,13 @@ function MoverTail({ movers, quiet }: { movers: GridEntry[]; quiet: GridEntry[] 
       {quiet.length > 0 && (
         <button
           type="button"
-          className="watch-tail-fold"
+          className={`watch-tail-fold ${stylex.props(styles.tailFold).className}`}
           onClick={() => setExpanded((v) => !v)}
         >
           {expanded ? '收起 ▴' : `+ ${quiet.length} 只平静 ▾`}
         </button>
       )}
-      {expanded &&
-        quiet.map((entry) => <TailCell key={entry.symbol} entry={entry} />)}
+      {expanded && quiet.map((entry) => <TailCell key={entry.symbol} entry={entry} />)}
     </div>
   );
 }
