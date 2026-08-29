@@ -1,4 +1,5 @@
 import { type ReactNode, useState } from 'react';
+import * as stylex from '@stylexjs/stylex';
 import { errorMessage } from '../../lib/api';
 import { useQuery } from '../../lib/apiHooks';
 import { client } from '../../lib/client';
@@ -6,10 +7,86 @@ import { DeviceLoginDialog } from '../settings/DeviceLoginDialog';
 import { defaultThinkingLevel, firstModelId, saveRole } from '../settings/roleShared';
 import { CODEX_PROVIDER, type Catalog, LOBEHUB_PROVIDER } from '../settings/types';
 import { Button, Card, Input, openModal, Select } from '../../ui';
+import { colors, fontSizes, radii } from '../../theme/tokens.stylex';
 import { CodexLogo, KeyLogo, LobeHubLogo } from './brandLogos';
 
 const CODEX_INSTALL_COMMAND = 'npm install -g @openai/codex';
 const CODEX_INSTALL_URL = 'https://github.com/openai/codex';
+
+const styles = stylex.create({
+  aiList: {
+    borderColor: colors.border,
+    borderRadius: radii.default,
+    borderStyle: 'solid',
+    borderWidth: '1px',
+    overflow: 'hidden',
+  },
+  providerRow: {
+    alignItems: 'center',
+    borderBottomColor: colors.border,
+    borderBottomStyle: 'solid',
+    borderBottomWidth: '1px',
+    display: 'flex',
+    gap: '12px',
+    padding: '12px 14px',
+    ':last-child': {
+      borderBottomStyle: 'none',
+    },
+  },
+  providerRowRecommended: {
+    backgroundColor: 'rgb(250 204 21 / 0.05)',
+    boxShadow: `inset 2px 0 0 ${colors.accent}`,
+  },
+  providerMain: {
+    flex: '1 1 auto',
+    minWidth: 0,
+  },
+  providerName: {
+    alignItems: 'center',
+    display: 'flex',
+    fontSize: fontSizes.md,
+    fontWeight: 500,
+    gap: '8px',
+  },
+  providerSub: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.sm,
+    marginTop: '2px',
+  },
+  recommendedTag: {
+    borderColor: colors.accent,
+    borderRadius: radii.full,
+    borderStyle: 'solid',
+    borderWidth: '1px',
+    color: colors.accent,
+    fontSize: fontSizes.xs,
+    fontWeight: 600,
+    padding: '1px 7px',
+  },
+  apiKey: {
+    display: 'grid',
+    gap: '8px',
+    marginTop: '12px',
+  },
+  apiKeyRow: {
+    display: 'grid',
+    gap: '8px',
+  },
+  apiKeyEndpoint: {
+    gridTemplateColumns: 'minmax(0, 1fr)',
+  },
+  apiKeyCredentials: {
+    gridTemplateColumns: 'minmax(108px, 0.65fr) minmax(0, 1.35fr) auto',
+  },
+  apiField: {
+    minWidth: 0,
+    width: '100%',
+  },
+  apiSubmit: {
+    justifyContent: 'center',
+    minWidth: '112px',
+  },
+});
 
 function fetchCatalog(): Promise<Catalog> {
   return client.settings.getCatalog() as Promise<Catalog>;
@@ -169,19 +246,22 @@ export function StepAi({ onNext }: { onNext: () => void }) {
         AI 用于盘中快评、升级分析、深度研究和追问。可以先跳过，之后随时在设置里配置。
       </p>
 
-      <div className="onboarding-ai-list">
+      <div {...stylex.props(styles.aiList)}>
         {rows.map((row) => (
           <div
             key={row.key}
-            className={'onboarding-prow' + (row.recommended ? ' onboarding-prow--rec' : '')}
+            {...stylex.props(
+              styles.providerRow,
+              row.recommended && styles.providerRowRecommended,
+            )}
           >
             {row.logo}
-            <div className="onboarding-prow-main">
-              <div className="onboarding-prow-name">
+            <div {...stylex.props(styles.providerMain)}>
+              <div {...stylex.props(styles.providerName)}>
                 {row.name}
-                {row.tag ? <span className="onboarding-rec-tag">{row.tag}</span> : null}
+                {row.tag ? <span {...stylex.props(styles.recommendedTag)}>{row.tag}</span> : null}
               </div>
-              <div className="onboarding-prow-sub">{row.sub}</div>
+              <div {...stylex.props(styles.providerSub)}>{row.sub}</div>
             </div>
             <Button
               accent={row.action.accent}
@@ -212,26 +292,33 @@ export function StepAi({ onNext }: { onNext: () => void }) {
       ) : null}
 
       {showApiKey && apiProviders.length > 0 ? (
-        <div className="onboarding-apikey">
-          <div className="onboarding-apikey-row onboarding-apikey-row--endpoint">
+        <div {...stylex.props(styles.apiKey)}>
+          <div
+            className={`onboarding-apikey-row ${stylex.props(styles.apiKeyRow, styles.apiKeyEndpoint).className}`}
+          >
             <Input
               aria-label="Base URL（可选）"
               autoComplete="off"
+              className={stylex.props(styles.apiField).className}
               type="url"
               value={apiBaseUrl}
               onChange={(event) => setApiBaseUrl(event.target.value)}
               placeholder="默认官方地址，可填中转站地址（可选）"
             />
           </div>
-          <div className="onboarding-apikey-row onboarding-apikey-row--credentials">
+          <div
+            className={`onboarding-apikey-row ${stylex.props(styles.apiKeyRow, styles.apiKeyCredentials).className}`}
+          >
             <Select
               ariaLabel="AI Provider"
+              className={stylex.props(styles.apiField).className}
               value={effectiveApiProvider}
               options={apiProviders.map((p) => ({ value: p.id, label: p.name }))}
               onChange={setApiProvider}
             />
             <Input
               autoComplete="off"
+              className={stylex.props(styles.apiField).className}
               type="password"
               value={apiKey}
               onChange={(event) => setApiKey(event.target.value)}
@@ -239,6 +326,7 @@ export function StepAi({ onNext }: { onNext: () => void }) {
             />
             <Button
               accent
+              className={stylex.props(styles.apiSubmit).className}
               disabled={busy !== null || !effectiveApiProvider || !apiKey}
               onClick={saveApiKey}
             >
