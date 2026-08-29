@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import type { LongbridgeRegionPreference } from '@kansoku/core/contract/settings';
+import * as stylex from '@stylexjs/stylex';
 import { useQuery } from '@web/lib/apiHooks';
 import { client } from '@web/lib/client';
 import { Badge, Button, SegmentedControl, type SegmentedControlOption } from '@web/ui';
+import { colors, fontSizes } from '../../theme/tokens.stylex';
 import { getDesktopCredentialsBridge, type CredentialsGetResult } from './desktopCredentials';
 
 const INSTALL_URL = 'https://open.longbridge.com/docs/cli/install';
@@ -12,6 +14,21 @@ const REGION_OPTIONS = [
   { value: 'com', label: '国际站 .com' },
   { value: 'cn', label: '境内站 .cn' },
 ] satisfies readonly SegmentedControlOption<LongbridgeRegionPreference>[];
+
+const styles = stylex.create({
+  section: {
+    padding: '10px 11px',
+  },
+  title: {
+    alignItems: 'center',
+    color: colors.textPrimary,
+    display: 'flex',
+    fontSize: fontSizes.sm,
+    fontWeight: 600,
+    gap: '8px',
+    justifyContent: 'space-between',
+  },
+});
 
 export function LongbridgeSection() {
   const bridge = getDesktopCredentialsBridge();
@@ -51,8 +68,8 @@ export function LongbridgeSection() {
   };
 
   return (
-    <section className="settings-conn-section settings-conn-longbridge">
-      <div className="settings-conn-title">
+    <section className={`settings-conn-section ${stylex.props(styles.section).className}`}>
+      <div {...stylex.props(styles.title)}>
         <span>Longbridge CLI</span>
         <Badge tone={ready ? 'up' : 'down'}>{label}</Badge>
       </div>
