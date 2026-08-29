@@ -16,7 +16,9 @@ const styles = stylex.create({
     paddingTop: '40px',
   },
   page: {
+    margin: '0 auto',
     'maxWidth': '1400px',
+    'padding': '24px 20px 60px',
     'paddingBottom': '20px',
     '@media (max-width: 1000px)': {
       paddingBottom: '60px',
