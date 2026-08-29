@@ -16,7 +16,9 @@ const styles = stylex.create({
     position: 'relative',
   },
   chartsCol: {
-    borderRight: `1px solid ${colors.border}`,
+    borderRightColor: colors.border,
+    borderRightStyle: 'solid',
+    borderRightWidth: '1px',
     display: 'flex',
     flexDirection: 'column',
     overflow: 'hidden',

@@ -30,7 +30,9 @@ const styles = stylex.create({
   },
   popup: {
     backgroundColor: 'rgb(10 10 10 / 0.96)',
-    border: `1px solid ${colors.border}`,
+    borderColor: colors.border,
+    borderStyle: 'solid',
+    borderWidth: '1px',
     borderRadius: radii.default,
     boxShadow: '0 6px 20px rgb(0 0 0 / 0.6)',
     color: colors.textPrimary,
@@ -62,7 +64,9 @@ const styles = stylex.create({
     marginLeft: 'auto',
   },
   foot: {
-    borderTop: `1px solid ${colors.border}`,
+    borderTopColor: colors.border,
+    borderTopStyle: 'solid',
+    borderTopWidth: '1px',
     color: colors.textMuted,
     lineHeight: 1.5,
     marginTop: '4px',
