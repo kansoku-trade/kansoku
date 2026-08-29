@@ -116,6 +116,16 @@ export function panoramaReadLine(groups: PanoramaGroup[]): string | null {
 }
 
 const styles = stylex.create({
+  number: {
+    fontFamily: fonts.mono,
+    fontVariantNumeric: 'tabular-nums',
+  },
+  positive: {
+    color: colors.up,
+  },
+  negative: {
+    color: colors.down,
+  },
   tabs: {
     display: 'flex',
     gap: '6px',
@@ -336,7 +346,14 @@ function ToolChips({ tools }: { tools: PanoramaGroup[] }) {
           {sortByPct(g.tiles).map((t) => (
             <a
               key={t.symbol}
-              className={`num ${t.pct != null && t.pct > 0.2 ? 'up' : t.pct != null && t.pct < -0.2 ? 'down' : ''} ${stylex.props(styles.chipLink).className}`}
+              className={
+                stylex.props(
+                  styles.number,
+                  styles.chipLink,
+                  t.pct != null && t.pct > 0.2 && styles.positive,
+                  t.pct != null && t.pct < -0.2 && styles.negative,
+                ).className
+              }
               href={`/symbol/${encodeURIComponent(t.symbol)}`}
             >
               {t.symbol.replace(/\.US$/, '')} {t.pct == null ? '—' : `${signed(t.pct)}%`}
@@ -406,7 +423,12 @@ function SectorPanel({ group }: { group: PanoramaGroup }) {
           {group.industry}
         </span>
         {group.weightedPct != null && (
-          <span className={`num ${group.weightedPct >= 0 ? 'up' : 'down'}`}>
+          <span
+            {...stylex.props(
+              styles.number,
+              group.weightedPct >= 0 ? styles.positive : styles.negative,
+            )}
+          >
             {signed(group.weightedPct)}%
           </span>
         )}
@@ -442,7 +464,7 @@ function SectorPanel({ group }: { group: PanoramaGroup }) {
                 {label}
               </span>
               {!dense && (
-                <span className={`pano-pct num ${stylex.props(styles.pct).className}`}>
+                <span className={`pano-pct ${stylex.props(styles.number, styles.pct).className}`}>
                   {pctLabel}
                 </span>
               )}
@@ -529,7 +551,7 @@ function IndustryTreemap({ items }: { items: IndustryPanorama['items'] }) {
               {row.name}
             </span>
             {!dense && (
-              <span className={`pano-pct num ${stylex.props(styles.pct).className}`}>
+              <span className={`pano-pct ${stylex.props(styles.number, styles.pct).className}`}>
                 {row.chg == null ? '—' : `${signed(row.chg)}%`}
               </span>
             )}
