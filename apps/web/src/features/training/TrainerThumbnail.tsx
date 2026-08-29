@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import * as stylex from '@stylexjs/stylex';
 import {
   CandlestickSeries,
   createChart,
@@ -12,6 +13,13 @@ import { theme } from '@web/lib/theme';
 import { attachMarkers, observeSize, toCandleData, toMarkers } from '../charts/lw';
 import { tfDataOf, type ChartTf } from '../charts/intraday/timeframes';
 import type { DrawingChartHandle } from '../charts/intraday/useIntradayCharts';
+
+const styles = stylex.create({
+  host: {
+    height: '100%',
+    width: '100%',
+  },
+});
 
 // The full chart reserves the bottom 30% of its price scale for the volume histogram, and those
 // margins are fractions of pane height — at 108px that leaves ~55px of usable band, too little for
@@ -90,5 +98,5 @@ export function TrainerThumbnail({ built, activeTf, onChartHandle }: TrainerThum
     current.chart.timeScale().fitContent();
   }, [built, activeTf]);
 
-  return <div ref={hostRef} className="trainer-thumb-host" />;
+  return <div ref={hostRef} {...stylex.props(styles.host)} />;
 }
