@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import * as stylex from '@stylexjs/stylex';
 import type { IndustryPanorama, PortfolioSummary, QuoteCell } from '@kansoku/shared/types';
 import { industryOf, UNCLASSIFIED_INDUSTRY } from '@kansoku/shared/industryMap';
 import { signed } from '@web/lib/format';
 import { usePollingQuery } from '@web/lib/apiHooks';
 import { client } from '@web/lib/client';
 import { Tooltip } from '@web/ui';
+import { colors, fontSizes, fonts } from '../../theme/tokens.stylex';
 import { INDEX_SYMBOLS } from './HomeTopStrip';
 import { isCardWorthySymbol } from './SymbolGrid';
 import { squarify, type TreemapRect } from './treemap';
@@ -113,6 +115,211 @@ export function panoramaReadLine(groups: PanoramaGroup[]): string | null {
   return `${top.industry}最强(${signed(top.weightedPct!)}%)、${bottom.industry}最弱(${signed(bottom.weightedPct!)}%)`;
 }
 
+const styles = stylex.create({
+  tabs: {
+    display: 'flex',
+    gap: '6px',
+    marginBottom: '8px',
+  },
+  tab: {
+    backgroundColor: colors.backgroundSurface,
+    borderColor: colors.border,
+    borderRadius: 0,
+    borderStyle: 'solid',
+    borderWidth: '1px',
+    color: colors.textMuted,
+    cursor: 'pointer',
+    fontFamily: fonts.ui,
+    fontSize: fontSizes.sm,
+    padding: '3px 12px',
+  },
+  tabActive: {
+    backgroundColor: colors.backgroundElement,
+    borderColor: colors.borderStrong,
+    color: colors.textPrimary,
+  },
+  rows: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
+  },
+  row: {
+    'display': 'grid',
+    'gap': '6px',
+    'gridTemplateColumns': '1fr 1fr',
+    '@media (max-width: 640px)': {
+      gridTemplateColumns: '1fr',
+    },
+  },
+  sector: {
+    aspectRatio: '1 / 1',
+    backgroundColor: colors.backgroundSurface,
+    borderColor: colors.border,
+    borderRadius: 0,
+    borderStyle: 'solid',
+    borderWidth: '1px',
+    display: 'flex',
+    flexDirection: 'column',
+    minWidth: 0,
+    overflow: 'hidden',
+  },
+  sectorHead: {
+    alignItems: 'baseline',
+    backgroundColor: colors.backgroundElement,
+    borderBottomColor: colors.border,
+    borderBottomStyle: 'solid',
+    borderBottomWidth: '1px',
+    display: 'flex',
+    fontSize: fontSizes.sm,
+    justifyContent: 'space-between',
+    padding: '3px 8px',
+  },
+  sectorName: {
+    color: colors.textSecondary,
+    fontWeight: 600,
+  },
+  sectorBody: {
+    flex: 1,
+    minHeight: 0,
+    position: 'relative',
+  },
+  industryWrap: {
+    backgroundColor: colors.backgroundSurface,
+    borderColor: colors.border,
+    borderStyle: 'solid',
+    borderWidth: '1px',
+    position: 'relative',
+  },
+  treemap: {
+    position: 'relative',
+  },
+  industryTreemap: {
+    inset: 0,
+    position: 'absolute',
+  },
+  tile: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1px',
+    justifyContent: 'center',
+    outlineColor: colors.border,
+    outlineOffset: '-1px',
+    outlineStyle: 'solid',
+    outlineWidth: '1px',
+    overflow: 'hidden',
+    padding: '3px 6px',
+    position: 'absolute',
+    textDecoration: 'none',
+    transition: 'background-color 150ms ease',
+    fontVariantNumeric: 'tabular-nums',
+  },
+  tileDense: {
+    justifyContent: 'flex-start',
+    padding: '2px 4px',
+  },
+  tileOwned: {
+    outlineColor: colors.accent,
+    outlineOffset: '-1.5px',
+    outlineWidth: '1.5px',
+  },
+  tileHeat0: {
+    backgroundColor: colors.backgroundElement,
+    color: colors.textSecondary,
+  },
+  tileHeatG1: {
+    backgroundColor: '#14532d',
+    color: '#a7e3c0',
+  },
+  tileHeatG2: {
+    backgroundColor: '#15803d',
+    color: '#d9f5e4',
+  },
+  tileHeatG3: {
+    backgroundColor: '#16a34a',
+    color: '#eafff2',
+  },
+  tileHeatR1: {
+    backgroundColor: '#58151c',
+    color: '#f0b1b1',
+  },
+  tileHeatR2: {
+    backgroundColor: '#b91c1c',
+    color: '#ffdada',
+  },
+  tileHeatR3: {
+    backgroundColor: '#dc2626',
+    color: '#ffecec',
+  },
+  sym: {
+    fontSize: fontSizes.sm,
+    fontWeight: 700,
+    lineHeight: 1.2,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  symDense: {
+    fontSize: fontSizes.xs,
+    lineHeight: 1.15,
+  },
+  pct: {
+    fontSize: fontSizes.xs,
+    opacity: 0.9,
+  },
+  tileSub: {
+    color: 'currentColor',
+    fontSize: fontSizes.xs,
+    lineHeight: 1.1,
+    marginTop: '1px',
+    opacity: 0.72,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  chips: {
+    alignItems: 'center',
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '4px',
+    marginTop: '6px',
+  },
+  chip: {
+    alignItems: 'center',
+    borderColor: colors.border,
+    borderStyle: 'solid',
+    borderWidth: '1px',
+    color: colors.textMuted,
+    display: 'inline-flex',
+    fontFamily: fonts.ui,
+    fontSize: fontSizes.sm,
+    fontVariantNumeric: 'tabular-nums',
+    gap: '8px',
+    padding: '3px 9px',
+  },
+  chipLink: {
+    color: colors.textSecondary,
+    textDecoration: 'none',
+  },
+  chipLabel: {
+    fontWeight: 600,
+  },
+  sectorRead: {
+    color: colors.textMuted,
+    fontSize: fontSizes.sm,
+    marginTop: '6px',
+  },
+});
+
+function heatStyle(pct: number | null): stylex.StyleXStyles {
+  if (pct == null || (pct > -0.2 && pct <= 0.2)) return styles.tileHeat0;
+  if (pct >= 4) return styles.tileHeatG3;
+  if (pct >= 1.5) return styles.tileHeatG2;
+  if (pct > 0.2) return styles.tileHeatG1;
+  if (pct <= -4) return styles.tileHeatR3;
+  if (pct <= -1.5) return styles.tileHeatR2;
+  return styles.tileHeatR1;
+}
+
 function sortByPct(tiles: PanoramaTile[]): PanoramaTile[] {
   return [...tiles].sort((a, b) => (b.pct ?? -Infinity) - (a.pct ?? -Infinity));
 }
@@ -120,14 +327,16 @@ function sortByPct(tiles: PanoramaTile[]): PanoramaTile[] {
 function ToolChips({ tools }: { tools: PanoramaGroup[] }) {
   if (!tools.length) return null;
   return (
-    <div className="pano-chips">
+    <div className={`pano-chips ${stylex.props(styles.chips).className}`}>
       {tools.map((g) => (
-        <span className="pano-chip" key={g.industry}>
-          <span className="pano-chip-label">{g.industry}</span>
+        <span className={`pano-chip ${stylex.props(styles.chip).className}`} key={g.industry}>
+          <span className={`pano-chip-label ${stylex.props(styles.chipLabel).className}`}>
+            {g.industry}
+          </span>
           {sortByPct(g.tiles).map((t) => (
             <a
               key={t.symbol}
-              className={`num ${t.pct != null && t.pct > 0.2 ? 'up' : t.pct != null && t.pct < -0.2 ? 'down' : ''}`}
+              className={`num ${t.pct != null && t.pct > 0.2 ? 'up' : t.pct != null && t.pct < -0.2 ? 'down' : ''} ${stylex.props(styles.chipLink).className}`}
               href={`/symbol/${encodeURIComponent(t.symbol)}`}
             >
               {t.symbol.replace(/\.US$/, '')} {t.pct == null ? '—' : `${signed(t.pct)}%`}
@@ -191,16 +400,18 @@ function SectorPanel({ group }: { group: PanoramaGroup }) {
   const { w, h } = size;
   const rectMap = useMemo(() => tileRects(group.tiles, { w, h }), [group.tiles, w, h]);
   return (
-    <div className="pano-sector">
-      <div className="pano-sector-head">
-        <span className="pano-sector-name">{group.industry}</span>
+    <div className={`pano-sector ${stylex.props(styles.sector).className}`}>
+      <div className={`pano-sector-head ${stylex.props(styles.sectorHead).className}`}>
+        <span className={`pano-sector-name ${stylex.props(styles.sectorName).className}`}>
+          {group.industry}
+        </span>
         {group.weightedPct != null && (
           <span className={`num ${group.weightedPct >= 0 ? 'up' : 'down'}`}>
             {signed(group.weightedPct)}%
           </span>
         )}
       </div>
-      <div className="pano-sector-body" ref={ref}>
+      <div className={`pano-sector-body ${stylex.props(styles.sectorBody).className}`} ref={ref}>
         {group.tiles.map((t) => {
           const info = rectMap.get(t.symbol);
           if (!info || info.rect.w < 4 || info.rect.h < 4) return null;
@@ -214,7 +425,7 @@ function SectorPanel({ group }: { group: PanoramaGroup }) {
               renderTrigger={
                 <a
                   aria-label={`${t.symbol} ${pctLabel}`}
-                  className={`pano-tile ${heatClass(t.pct)}${t.owned ? ' pano-tile--owned' : ''}${dense ? ' pano-tile--dense' : ''}`}
+                  className={`pano-tile ${heatClass(t.pct)}${t.owned ? ' pano-tile--owned' : ''}${dense ? ' pano-tile--dense' : ''} ${stylex.props(styles.tile, heatStyle(t.pct), t.owned && styles.tileOwned, dense && styles.tileDense).className}`}
                   href={`/symbol/${encodeURIComponent(t.symbol)}`}
                   style={{
                     left: `${rect.x}px`,
@@ -225,8 +436,16 @@ function SectorPanel({ group }: { group: PanoramaGroup }) {
                 />
               }
             >
-              <span className="pano-sym">{label}</span>
-              {!dense && <span className="pano-pct num">{pctLabel}</span>}
+              <span
+                className={`pano-sym ${stylex.props(styles.sym, dense && styles.symDense).className}`}
+              >
+                {label}
+              </span>
+              {!dense && (
+                <span className={`pano-pct num ${stylex.props(styles.pct).className}`}>
+                  {pctLabel}
+                </span>
+              )}
             </Tooltip>
           );
         })}
@@ -251,9 +470,12 @@ function WatchPanorama({
   const rows = pairRows(main);
   return (
     <>
-      <div className="pano-rows">
+      <div className={`pano-rows ${stylex.props(styles.rows).className}`}>
         {rows.map((pair, idx) => (
-          <div className="pano-row" key={pair.map((g) => g.industry).join('|') || `row-${idx}`}>
+          <div
+            className={`pano-row ${stylex.props(styles.row).className}`}
+            key={pair.map((g) => g.industry).join('|') || `row-${idx}`}
+          >
             {pair.map((g) => (
               <SectorPanel key={g.industry} group={g} />
             ))}
@@ -261,7 +483,9 @@ function WatchPanorama({
         ))}
       </div>
       <ToolChips tools={tools} />
-      {line && <div className="sector-read">↳ {line}</div>}
+      {line && (
+        <div className={`sector-read ${stylex.props(styles.sectorRead).className}`}>↳ {line}</div>
+      )}
     </>
   );
 }
@@ -279,7 +503,10 @@ function IndustryTreemap({ items }: { items: IndustryPanorama['items'] }) {
   }, [items, w, h]);
   const byKey = new Map(rects.map((r) => [r.key, r]));
   return (
-    <div className="pano-treemap" ref={ref}>
+    <div
+      className={`pano-treemap ${stylex.props(styles.treemap, styles.industryTreemap).className}`}
+      ref={ref}
+    >
       {items.map((row) => {
         const rect = byKey.get(row.name);
         if (!rect || rect.w < 4 || rect.h < 4) return null;
@@ -287,7 +514,7 @@ function IndustryTreemap({ items }: { items: IndustryPanorama['items'] }) {
         return (
           <div
             key={row.name}
-            className={`pano-tile ${heatClass(row.chg)}${dense ? ' pano-tile--dense' : ''}`}
+            className={`pano-tile ${heatClass(row.chg)}${dense ? ' pano-tile--dense' : ''} ${stylex.props(styles.tile, heatStyle(row.chg), dense && styles.tileDense).className}`}
             style={{
               left: `${rect.x}px`,
               top: `${rect.y}px`,
@@ -296,12 +523,18 @@ function IndustryTreemap({ items }: { items: IndustryPanorama['items'] }) {
             }}
             title={`${row.name}${row.chg == null ? '' : ` ${signed(row.chg)}%`}${row.leading_ticker ? ` · 领涨 ${row.leading_ticker}${row.leading_chg != null ? ` ${signed(row.leading_chg)}%` : ''}` : ''}`}
           >
-            <span className="pano-sym">{row.name}</span>
+            <span
+              className={`pano-sym ${stylex.props(styles.sym, dense && styles.symDense).className}`}
+            >
+              {row.name}
+            </span>
             {!dense && (
-              <span className="pano-pct num">{row.chg == null ? '—' : `${signed(row.chg)}%`}</span>
+              <span className={`pano-pct num ${stylex.props(styles.pct).className}`}>
+                {row.chg == null ? '—' : `${signed(row.chg)}%`}
+              </span>
             )}
             {!dense && row.leading_ticker && (
-              <span className="pano-tile-sub">
+              <span className={`pano-tile-sub ${stylex.props(styles.tileSub).className}`}>
                 {row.leading_ticker}
                 {row.leading_chg != null ? ` ${signed(row.leading_chg)}%` : ''}
               </span>
@@ -323,7 +556,10 @@ function IndustryPanoramaView() {
   if (!data) return <div className="note-block">行业数据加载中…</div>;
   if (!data.items.length) return <div className="note-block">暂无行业数据</div>;
   return (
-    <div className="pano-industry-wrap" style={{ height: '320px' }}>
+    <div
+      className={`pano-industry-wrap ${stylex.props(styles.industryWrap).className}`}
+      style={{ height: '320px' }}
+    >
       <IndustryTreemap items={data.items} />
     </div>
   );
@@ -341,17 +577,17 @@ export function MarketPanorama({
   const [tab, setTab] = useState<'watch' | 'market'>('watch');
   return (
     <div className="market-panorama">
-      <div className="pano-tabs">
+      <div className={`pano-tabs ${stylex.props(styles.tabs).className}`}>
         <button
           type="button"
-          className={tab === 'watch' ? 'pano-tab pano-tab--active' : 'pano-tab'}
+          className={`pano-tab${tab === 'watch' ? ' pano-tab--active' : ''} ${stylex.props(styles.tab, tab === 'watch' && styles.tabActive).className}`}
           onClick={() => setTab('watch')}
         >
           自选 + 持仓
         </button>
         <button
           type="button"
-          className={tab === 'market' ? 'pano-tab pano-tab--active' : 'pano-tab'}
+          className={`pano-tab${tab === 'market' ? ' pano-tab--active' : ''} ${stylex.props(styles.tab, tab === 'market' && styles.tabActive).className}`}
           onClick={() => setTab('market')}
         >
           全市场
