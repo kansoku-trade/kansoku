@@ -25,6 +25,11 @@ const styles = stylex.create({
     top: '-16px',
     zIndex: 5,
   },
+  barScrollbar: {
+    '::-webkit-scrollbar': {
+      display: 'none',
+    },
+  },
   tab: {
     'backgroundColor': 'transparent',
     'border': 0,
@@ -65,7 +70,10 @@ export function SidebarTabs({ tabs, active, onChange }: SidebarTabsProps) {
 
   return (
     <div className={`sidebar-tabs ${stylex.props(styles.root).className}`}>
-      <div className={`sidebar-tab-bar ${stylex.props(styles.bar).className}`} role="tablist">
+      <div
+        className={`sidebar-tab-bar ${stylex.props(styles.bar, styles.barScrollbar).className}`}
+        role="tablist"
+      >
         {visible.map((t) => (
           <button
             key={t.key}
