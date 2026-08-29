@@ -45,7 +45,7 @@ export function PositionTab({ position }: PositionTabProps) {
           浮{position.unrealized >= 0 ? '盈' : '亏'}
         </div>
         <div
-          className={`v ${tone} ${stylex.props(styles.value, tone === 'up' ? styles.valueUp : styles.valueDown).className}`}
+          className={`v ${stylex.props(styles.value, tone === 'up' ? styles.valueUp : styles.valueDown).className}`}
         >
           {signed(position.unrealized)} ({signed(position.unrealizedPct)}%)
         </div>

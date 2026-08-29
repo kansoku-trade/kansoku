@@ -1,7 +1,7 @@
 import * as stylex from '@stylexjs/stylex';
 import { Check, TriangleAlert, X } from 'lucide-react';
 import type { SepaBuilt } from '@kansoku/shared/types';
-import { fmt, signed, upDown } from '@web/lib/format';
+import { fmt, signed } from '@web/lib/format';
 import { colors, fontSizes } from '../../../theme/tokens.stylex';
 import { NewsSection } from '../NewsSection';
 import { Badge, Num, SectionTitle } from '@web/ui';
@@ -245,7 +245,7 @@ export function SepaSidebar({ built }: { built: SepaBuilt }) {
           <div className={`price ${stylex.props(styles.price).className}`}>
             ${fmt(s.last)}
             <span
-              className={`price-change ${upDown(s.chgPct)} ${stylex.props(styles.priceChange, s.chgPct >= 0 ? styles.priceUp : styles.priceDown).className}`}
+              className={`price-change ${stylex.props(styles.priceChange, s.chgPct >= 0 ? styles.priceUp : styles.priceDown).className}`}
             >
               {signed(s.chgPct)}%
             </span>
@@ -294,7 +294,7 @@ export function SepaSidebar({ built }: { built: SepaBuilt }) {
               className={`check-item ${c.status} ${stylex.props(styles.checkItem, c.status === 'pass' ? styles.checkPass : c.status === 'fail' ? styles.checkFail : styles.checkUnknown).className}`}
             >
               <div
-                className={`check-icon ${status.tone} ${stylex.props(styles.checkIcon, status.tone === 'up' ? styles.checkIconUp : status.tone === 'down' ? styles.checkIconDown : styles.checkIconUnknown).className}`}
+                className={`check-icon ${stylex.props(styles.checkIcon, status.tone === 'up' ? styles.checkIconUp : status.tone === 'down' ? styles.checkIconDown : styles.checkIconUnknown).className}`}
               >
                 <StatusIcon className={stylex.props(styles.icon).className} size={14} />
               </div>
@@ -315,13 +315,13 @@ export function SepaSidebar({ built }: { built: SepaBuilt }) {
           <div className={`k ${stylex.props(styles.key).className}`}>
             距 52w 高 ${fmt(kv.high52w)}
           </div>
-          <div className={`v down ${stylex.props(styles.value, styles.valueDown).className}`}>
+          <div className={`v ${stylex.props(styles.value, styles.valueDown).className}`}>
             {signed(kv.h52Pct)}%
           </div>
           <div className={`k ${stylex.props(styles.key).className}`}>
             距 52w 低 ${fmt(kv.low52w)}
           </div>
-          <div className={`v up ${stylex.props(styles.value, styles.valueUp).className}`}>
+          <div className={`v ${stylex.props(styles.value, styles.valueUp).className}`}>
             {signed(kv.l52Pct, 0)}%
           </div>
           <div className={`k ${stylex.props(styles.key).className}`}>距 MA50</div>
@@ -403,24 +403,24 @@ export function SepaSidebar({ built }: { built: SepaBuilt }) {
                 ${fmt(ep.pivot)} – ${fmt(ep.buy_zone_high)}
               </div>
               <div className={`k ${stylex.props(styles.key).className}`}>止损</div>
-              <div className={`v down ${stylex.props(styles.value, styles.valueDown).className}`}>
+              <div className={`v ${stylex.props(styles.value, styles.valueDown).className}`}>
                 ${fmt(ep.stop)} ({signed(ep.stop_pct, 1)}%)
               </div>
               <div className={`k ${stylex.props(styles.key).className}`}>
                 第一目标 (+{fmt(ep.target1_pct, 0)}%)
               </div>
-              <div className={`v up ${stylex.props(styles.value, styles.valueUp).className}`}>
+              <div className={`v ${stylex.props(styles.value, styles.valueUp).className}`}>
                 ${fmt(ep.target1)}
               </div>
               <div className={`k ${stylex.props(styles.key).className}`}>
                 第二目标 (+{fmt(ep.target2_pct, 0)}%)
               </div>
-              <div className={`v up ${stylex.props(styles.value, styles.valueUp).className}`}>
+              <div className={`v ${stylex.props(styles.value, styles.valueUp).className}`}>
                 ${fmt(ep.target2)}
               </div>
               <div className={`k ${stylex.props(styles.key).className}`}>R/R 比例 (基于 T2)</div>
               <div
-                className={`v ${rrTone(ep)} ${stylex.props(styles.value, rrTone(ep) === 'up' ? styles.valueUp : rrTone(ep) === 'down' ? styles.valueDown : null).className}`}
+                className={`v ${stylex.props(styles.value, rrTone(ep) === 'up' ? styles.valueUp : rrTone(ep) === 'down' ? styles.valueDown : null).className}`}
               >
                 {fmt(ep.rr)} : 1
                 {!ep.rr_ok && (
@@ -461,7 +461,7 @@ export function SepaSidebar({ built }: { built: SepaBuilt }) {
                 浮{s.position.unrealized >= 0 ? '盈' : '亏'}
               </div>
               <div
-                className={`v ${upDown(s.position.unrealized)} ${stylex.props(styles.value, s.position.unrealized >= 0 ? styles.valueUp : styles.valueDown).className}`}
+                className={`v ${stylex.props(styles.value, s.position.unrealized >= 0 ? styles.valueUp : styles.valueDown).className}`}
               >
                 {signed(s.position.unrealized)} ({signed(s.position.unrealizedPct)}%)
               </div>

@@ -59,7 +59,7 @@ function BucketRow({ label, bucket }: { label: string; bucket: CapitalBucket }) 
     <>
       <div className={`k ${stylex.props(styles.bucketLabel).className}`}>{label}</div>
       <div
-        className={`v ${tone} ${stylex.props(styles.bucketValue, tone === 'up' ? styles.bucketValueUp : styles.bucketValueDown).className}`}
+        className={`v ${stylex.props(styles.bucketValue, tone === 'up' ? styles.bucketValueUp : styles.bucketValueDown).className}`}
       >
         {signed(bucket.net, 0)}
       </div>

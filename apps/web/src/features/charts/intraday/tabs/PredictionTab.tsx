@@ -386,7 +386,7 @@ export function PredictionTab({
           <SectionTitle>入场计划</SectionTitle>
           {ep.entry_status_note && (
             <div
-              className={`note-block ${stylex.props(styles.note).className}${ep.entry_status === 'invalidated' || ep.entry_status === 'stopped' ? ` down ${stylex.props(styles.toneDown).className}` : ''}`}
+              className={`note-block ${stylex.props(styles.note).className}${ep.entry_status === 'invalidated' || ep.entry_status === 'stopped' ? ` ${stylex.props(styles.toneDown).className}` : ''}`}
             >
               {ep.entry_status_note}
             </div>
@@ -398,7 +398,7 @@ export function PredictionTab({
             <div className={`v ${stylex.props(styles.gridValue).className}`}>${fmt(ep.entry)}</div>
             <div className={`k ${stylex.props(styles.gridKey).className}`}>止损</div>
             <div
-              className={`v down ${stylex.props(styles.gridValue, styles.toneDown).className}`}
+              className={`v ${stylex.props(styles.gridValue, styles.toneDown).className}`}
             >
               ${fmt(ep.stop)}
             </div>
@@ -406,7 +406,7 @@ export function PredictionTab({
               目标1 ({signed(ep.target1_pct, 1)}%)
             </div>
             <div
-              className={`v up ${stylex.props(styles.gridValue, styles.toneUp).className}`}
+              className={`v ${stylex.props(styles.gridValue, styles.toneUp).className}`}
             >
               ${fmt(ep.target1)}
             </div>
@@ -414,13 +414,13 @@ export function PredictionTab({
               目标2 ({signed(ep.target2_pct, 1)}%)
             </div>
             <div
-              className={`v up ${stylex.props(styles.gridValue, styles.toneUp).className}`}
+              className={`v ${stylex.props(styles.gridValue, styles.toneUp).className}`}
             >
               ${fmt(ep.target2)}
             </div>
             <div className={`k ${stylex.props(styles.gridKey).className}`}>R/R</div>
             <div
-              className={`v ${rrTone(ep)} ${stylex.props(styles.gridValue, rrTone(ep) === 'up' ? styles.toneUp : rrTone(ep) === 'down' ? styles.toneDown : null).className}`}
+              className={`v ${stylex.props(styles.gridValue, rrTone(ep) === 'up' ? styles.toneUp : rrTone(ep) === 'down' ? styles.toneDown : null).className}`}
             >
               {fmt(ep.rr)} : 1
               {!ep.rr_ok && (
