@@ -47,7 +47,7 @@ export function DataAgeBadge({
       ref={(node) => {
         setInSectionTitle(node?.closest('.section-title--with-age') != null);
       }}
-      className={`data-age-badge ${stylex.props(inSectionTitle ? styles.sectionTitle : styles.root).className}${className ? ` ${className}` : ''}`}
+      className={`${stylex.props(inSectionTitle ? styles.sectionTitle : styles.root).className}${className ? ` ${className}` : ''}`}
     >
       {formatDataAge(now - at)}
     </Badge>

@@ -54,7 +54,7 @@ function toneClassName(tone: BadgeProps['tone']): string {
 }
 
 export function Badge({ tone, className, children, ...rest }: BadgeProps) {
-  const cls = `badge${tone ? ` badge--${tone}` : ''}${className ? ` ${className}` : ''} ${toneClassName(tone)}`;
+  const cls = `badge${className ? ` ${className}` : ''} ${toneClassName(tone)}`;
 
   return (
     <span className={cls} {...rest}>

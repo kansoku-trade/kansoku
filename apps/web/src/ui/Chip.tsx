@@ -41,7 +41,7 @@ const styles = stylex.create({
 });
 
 export function Chip({ active, href, className, children, ...rest }: ChipProps) {
-  const cls = `chip ${stylex.props(styles.root, active && styles.active).className}${active ? ' active' : ''}${className ? ` ${className}` : ''}`;
+  const cls = `${stylex.props(styles.root, active && styles.active).className}${className ? ` ${className}` : ''}`;
 
   if (href) {
     return (
