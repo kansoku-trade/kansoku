@@ -38,6 +38,11 @@ import { useCockpitReviewState } from './useCockpitReviewState';
 import { colors, fontSizes, sizes } from '../../theme/tokens.stylex';
 
 const styles = stylex.create({
+  page: {
+    maxWidth: '900px',
+    margin: '0 auto',
+    padding: '24px 20px 60px',
+  },
   fullpage: {
     display: 'flex',
     flexDirection: 'column',
@@ -143,7 +148,7 @@ export function PreviewCockpit({
 
   if (error) {
     return (
-      <div className="page">
+      <div className={`page ${stylex.props(styles.page).className}`}>
         <ErrorBox>{error}</ErrorBox>
         <p>
           <a href="/">
@@ -224,57 +229,57 @@ export function PreviewCockpit({
 
   return (
     <EventCanvasHost>
-    <IntradayControlsProvider>
-      <div className={`fullpage ${stylex.props(styles.fullpage).className}`}>
-        <div
-          className={`detail-topbar detail-topbar--split ${stylex.props(styles.detailTopbar, styles.detailTopbarSplit).className}`}
-        >
-          <div className={`topbar-chart ${stylex.props(styles.topbarChart).className}`}>
-            <a href="/">
-              <ArrowLeft className="icon" size={13} /> 列表
-            </a>
-            <span className={`meta ${stylex.props(styles.topbarMeta).className}`}>{sym}</span>
-            {degraded && <Dot tone="accent" pulse title="数据延迟：行情拉取失败，正在重试" />}
-            <IntradayTimeframeSwitch activeTf={activeIntradayTf} onChange={setIntradayTf} />
-            <AnalysisTimeline
-              rows={analysesRows}
-              activeId={null}
-              mode="live"
-              onLive={onLive}
-              onSelect={onSelectAnalysis}
-            />
-            {viewTimeframe.error && (
+      <IntradayControlsProvider>
+        <div className={`fullpage ${stylex.props(styles.fullpage).className}`}>
+          <div
+            className={`detail-topbar detail-topbar--split ${stylex.props(styles.detailTopbar, styles.detailTopbarSplit).className}`}
+          >
+            <div className={`topbar-chart ${stylex.props(styles.topbarChart).className}`}>
+              <a href="/">
+                <ArrowLeft className="icon" size={13} /> 列表
+              </a>
+              <span className={`meta ${stylex.props(styles.topbarMeta).className}`}>{sym}</span>
+              {degraded && <Dot tone="accent" pulse title="数据延迟：行情拉取失败，正在重试" />}
+              <IntradayTimeframeSwitch activeTf={activeIntradayTf} onChange={setIntradayTf} />
+              <AnalysisTimeline
+                rows={analysesRows}
+                activeId={null}
+                mode="live"
+                onLive={onLive}
+                onSelect={onSelectAnalysis}
+              />
+              {viewTimeframe.error && (
+                <span
+                  className={`tf-load-error ${stylex.props(styles.timeframeLoadError).className}`}
+                  title={viewTimeframe.error}
+                >
+                  该周期加载失败
+                </span>
+              )}
               <span
-                className={`tf-load-error ${stylex.props(styles.timeframeLoadError).className}`}
-                title={viewTimeframe.error}
+                className={`topbar-chart-tail ${stylex.props(styles.topbarChartTail).className}`}
               >
-                该周期加载失败
+                <MaLinesMenu candles={tfDataOf(chartBuilt, activeIntradayTf)?.candles ?? []} />
+                <ChartLayerMenu built={chartBuilt} activeTf={activeIntradayTf} />
               </span>
-            )}
-            <span
-              className={`topbar-chart-tail ${stylex.props(styles.topbarChartTail).className}`}
-            >
-              <MaLinesMenu candles={tfDataOf(chartBuilt, activeIntradayTf)?.candles ?? []} />
-              <ChartLayerMenu built={chartBuilt} activeTf={activeIntradayTf} />
-            </span>
+            </div>
+            <div className={`topbar-side ${stylex.props(styles.topbarSide).className}`}>
+              <TopbarQuote quote={liveQuote} />
+            </div>
           </div>
-          <div className={`topbar-side ${stylex.props(styles.topbarSide).className}`}>
-            <TopbarQuote quote={liveQuote} />
+          <div className={`detail-body ${stylex.props(styles.detailBody).className}`}>
+            <IntradayDashboard
+              symbol={sym}
+              built={chartBuilt}
+              activeTf={activeIntradayTf}
+              sidebarTabs={sidebarTabs}
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+              liveQuote={liveQuote}
+            />
           </div>
         </div>
-        <div className={`detail-body ${stylex.props(styles.detailBody).className}`}>
-          <IntradayDashboard
-            symbol={sym}
-            built={chartBuilt}
-            activeTf={activeIntradayTf}
-            sidebarTabs={sidebarTabs}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-            liveQuote={liveQuote}
-          />
-        </div>
-      </div>
-    </IntradayControlsProvider>
+      </IntradayControlsProvider>
     </EventCanvasHost>
   );
 }
