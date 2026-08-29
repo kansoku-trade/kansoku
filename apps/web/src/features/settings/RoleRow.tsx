@@ -102,6 +102,9 @@ const styles = stylex.create({
   statusRollback: {
     color: colors.down,
   },
+  icon: {
+    verticalAlign: '-2px',
+  },
   actions: {
     alignItems: 'center',
     display: 'flex',
@@ -351,10 +354,18 @@ export function RoleRow({
               <Spinner aria-label="保存中" />
             ) : failure ? (
               <>
-                <TriangleAlert size={12} className="icon" /> 未保存
+                <TriangleAlert
+                  size={12}
+                  className={`icon ${stylex.props(styles.icon).className}`}
+                />{' '}
+                未保存
               </>
             ) : (
-              <Check size={12} className="icon" aria-label="已保存" />
+              <Check
+                size={12}
+                className={`icon ${stylex.props(styles.icon).className}`}
+                aria-label="已保存"
+              />
             )}
           </span>
         </div>
