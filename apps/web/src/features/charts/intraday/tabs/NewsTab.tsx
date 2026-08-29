@@ -41,6 +41,9 @@ const styles = stylex.create({
       borderLeftColor: colors.accent,
       textDecoration: 'none',
     },
+    ':hover .news-title': {
+      color: colors.accent,
+    },
   },
   meta: {
     alignItems: 'center',
@@ -51,14 +54,11 @@ const styles = stylex.create({
     gap: '6px',
   },
   title: {
-    'color': colors.textPrimary,
-    'display': 'block',
-    'fontSize': fontSizes.base,
-    'lineHeight': 1.45,
-    'marginTop': '3px',
-    ':hover': {
-      color: colors.accent,
-    },
+    color: colors.textPrimary,
+    display: 'block',
+    fontSize: fontSizes.base,
+    lineHeight: 1.45,
+    marginTop: '3px',
   },
 });
 
