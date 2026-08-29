@@ -1,6 +1,6 @@
 import type { TrainerReviewEvent, TrainerReviewEventKind } from '@kansoku/pro-api';
 import * as stylex from '@stylexjs/stylex';
-import { colors, fontSizes } from '../../theme/tokens.stylex';
+import { colors, fonts, fontSizes } from '../../theme/tokens.stylex';
 
 const EVENT_MARK: Record<TrainerReviewEventKind, string> = {
   entry: '▲',
@@ -69,6 +69,14 @@ const styles = stylex.create({
     gap: '10px',
     justifyContent: 'space-between',
   },
+  hint: {
+    color: colors.textMuted,
+    fontSize: fontSizes.sm,
+  },
+  number: {
+    fontFamily: fonts.mono,
+    fontVariantNumeric: 'tabular-nums',
+  },
 });
 
 export interface TrainerReviewTimelineProps {
@@ -125,9 +133,11 @@ export function TrainerReviewTimeline({
         onChange={(e) => onBrush(Number(e.target.value))}
       />
       <div {...stylex.props(styles.scale)}>
-        <span className="num">B0</span>
-        <span className="trainer-settle-hint">拖时间轴，图还原成当时所见</span>
-        <span className="num">B{brush}</span>
+        <span className={`num ${stylex.props(styles.number).className}`}>B0</span>
+        <span className={`trainer-settle-hint ${stylex.props(styles.hint).className}`}>
+          拖时间轴，图还原成当时所见
+        </span>
+        <span className={`num ${stylex.props(styles.number).className}`}>B{brush}</span>
       </div>
     </div>
   );
