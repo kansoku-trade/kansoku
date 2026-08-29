@@ -1,7 +1,9 @@
 import type { OverviewRecap, RecapSettlementRow } from '@kansoku/shared/types';
+import * as stylex from '@stylexjs/stylex';
 import { signed } from '@web/lib/format';
 import { client } from '@web/lib/client';
 import { openModal } from '@web/ui';
+import { colors } from '../../theme/tokens.stylex';
 import { useIntervalFetch } from '../cockpit/useIntervalFetch';
 import { RecapBoard } from './RecapBoard';
 
@@ -10,6 +12,40 @@ interface RecapSummary {
   resolved: number;
   avgPct: number | null;
 }
+
+const styles = stylex.create({
+  root: {
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+    borderLeftColor: colors.border,
+    borderLeftWidth: '1px',
+    borderStyle: 'solid',
+    borderWidth: 0,
+    color: colors.textSecondary,
+    cursor: 'pointer',
+    display: 'inline-flex',
+    font: 'inherit',
+    fontVariantNumeric: 'tabular-nums',
+    gap: '6px',
+    padding: '0 0 0 14px',
+    ':hover': {
+      color: colors.textPrimary,
+    },
+  },
+  label: {
+    color: colors.accent,
+    fontWeight: 600,
+  },
+  stat: {
+    color: colors.textSecondary,
+  },
+  up: {
+    color: colors.up,
+  },
+  down: {
+    color: colors.down,
+  },
+});
 
 function summarizeRecap(recap: OverviewRecap | null | undefined): RecapSummary | null {
   if (!recap) return null;
@@ -43,13 +79,15 @@ export function RecapCell({ date }: { date: string }) {
   return (
     <button
       type="button"
-      className="recap-cell"
+      className={`recap-cell ${stylex.props(styles.root).className}`}
       onClick={open}
       title={`${date} 复盘 · 点击查看详情`}
     >
-      <span className="idx-sym recap-label">复盘</span>
+      <span className={`idx-sym recap-label ${stylex.props(styles.label).className}`}>复盘</span>
       {summary ? (
-        <span className={`num recap-stat ${tone}`}>
+        <span
+          className={`num ${stylex.props(styles.stat, tone === 'up' && styles.up, tone === 'down' && styles.down).className}`}
+        >
           {summary.hits}/{summary.resolved}
           {summary.avgPct != null && (
             <>
@@ -59,7 +97,7 @@ export function RecapCell({ date }: { date: string }) {
           )}
         </span>
       ) : (
-        <span className="num recap-stat">—</span>
+        <span className={`num ${stylex.props(styles.stat).className}`}>—</span>
       )}
     </button>
   );
