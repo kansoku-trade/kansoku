@@ -62,6 +62,21 @@ const styles = stylex.create({
     fontSize: fontSizes.sm,
     gap: '10px',
   },
+  chip: {
+    alignItems: 'center',
+    backgroundColor: 'rgb(20 20 20 / 0.88)',
+    borderColor: colors.borderStrong,
+    borderRadius: radii.default,
+    borderStyle: 'solid',
+    borderWidth: '1px',
+    color: colors.textPrimary,
+    display: 'flex',
+    fontSize: fontSizes.sm,
+    fontVariantNumeric: 'tabular-nums',
+    gap: '8px',
+    padding: '3px 9px',
+    pointerEvents: 'auto',
+  },
   at: {
     cursor: 'pointer',
     font: 'inherit',
@@ -212,7 +227,7 @@ export function TrainerCoachCompare({
           >
             <header className={`trainer-coach-head ${stylex.props(styles.head).className}`}>
               <button
-                className={`trainer-chip trainer-coach-at ${stylex.props(styles.at).className}`}
+                className={`trainer-chip trainer-coach-at ${stylex.props(styles.chip, styles.at).className}`}
                 onClick={() => onSeek(call.id)}
               >
                 第 {index + 1} 次 · {coachBarLabel(call.cursor)}
@@ -230,13 +245,13 @@ export function TrainerCoachCompare({
                 <>
                   {verdict.agreement && (
                     <span
-                      className={`trainer-chip trainer-chip--${verdict.agreement}${verdict.agreement === 'persuaded' ? ` ${stylex.props(styles.persuaded).className}` : ''}`}
+                      className={`trainer-chip trainer-chip--${verdict.agreement} ${stylex.props(styles.chip, verdict.agreement === 'persuaded' && styles.persuaded).className}`}
                     >
                       {AGREEMENT_LABEL[verdict.agreement]}
                     </span>
                   )}
                   <span
-                    className={`trainer-chip trainer-chip--${verdict.directionCorrect ? 'hit' : 'miss'} ${stylex.props(verdict.directionCorrect ? styles.hit : styles.miss).className}`}
+                    className={`trainer-chip trainer-chip--${verdict.directionCorrect ? 'hit' : 'miss'} ${stylex.props(styles.chip, verdict.directionCorrect ? styles.hit : styles.miss).className}`}
                   >
                     {OUTCOME_LABEL[verdict.outcome]}
                     {verdict.realizedR !== null && ` · ${signed(verdict.realizedR)}R`}
