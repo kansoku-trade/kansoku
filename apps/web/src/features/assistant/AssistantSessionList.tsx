@@ -7,13 +7,17 @@ import { colors, fontSizes, radii, sizes } from '../../theme/tokens.stylex';
 const styles = stylex.create({
   sidebar: {
     backgroundColor: colors.backgroundSurface,
-    borderRight: '1px solid ' + colors.border,
+    borderRightColor: colors.border,
+    borderRightStyle: 'solid',
+    borderRightWidth: '1px',
     display: 'flex',
     flexDirection: 'column',
     minHeight: 0,
   },
   sidebarHead: {
-    borderBottom: '1px solid ' + colors.border,
+    borderBottomColor: colors.border,
+    borderBottomStyle: 'solid',
+    borderBottomWidth: '1px',
     flex: '0 0 auto',
     padding: '12px',
   },
@@ -83,7 +87,8 @@ const styles = stylex.create({
   sessionDelete: {
     'alignItems': 'center',
     'backgroundColor': 'transparent',
-    'border': 'none',
+    'borderStyle': 'none',
+    'borderWidth': 0,
     'borderRadius': radii.default,
     'color': colors.textMuted,
     'cursor': 'pointer',
@@ -92,7 +97,7 @@ const styles = stylex.create({
     'height': '20px',
     'justifyContent': 'center',
     'opacity': 0,
-    'padding': 0,
+    'padding': '1px 6px',
     'transition': 'opacity 0.12s ease, color 0.12s ease, background-color 0.12s ease',
     'width': '20px',
     ':hover': {
