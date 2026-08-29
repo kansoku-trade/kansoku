@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import * as stylex from '@stylexjs/stylex';
 import type { CockpitComment } from '@kansoku/shared/types';
 import { marketDate } from '@kansoku/shared/time';
 import { useQuery } from '@web/lib/apiHooks';
@@ -12,6 +13,36 @@ import { CommentEntry } from './CommentEntry';
 import { ExplainAction } from './ExplainAction';
 import { FollowAction } from './FollowAction';
 import { useAnalystRun } from './useAnalystRun';
+import { colors, fontSizes } from '../../theme/tokens.stylex';
+
+const styles = stylex.create({
+  tab: {
+    minWidth: 0,
+    maxWidth: '100%',
+  },
+  feed: {
+    minWidth: 0,
+    maxWidth: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    overflowX: 'hidden',
+  },
+  fold: {
+    padding: '7px 2px 7px 48px',
+    fontSize: fontSizes.sm,
+    color: colors.textMuted,
+    borderBottomColor: colors.border,
+    borderBottomStyle: 'solid',
+    borderBottomWidth: '1px',
+    cursor: 'pointer',
+    ':hover': {
+      color: colors.textSecondary,
+    },
+  },
+  foldOpen: {
+    color: colors.textSecondary,
+  },
+});
 
 export function AiTab({
   symbol,
@@ -70,7 +101,7 @@ export function AiTab({
   };
 
   return (
-    <div className="ai-tab">
+    <div {...stylex.props(styles.tab)}>
       {!readOnly && (
         <div className="ai-run-control">
           <div className="ai-reassess">
@@ -119,7 +150,7 @@ export function AiTab({
     }
     if (!expanded.has(row.id)) {
       return (
-        <div key={row.id} className="ai-fold" onClick={() => toggleFold(row.id)}>
+        <div key={row.id} {...stylex.props(styles.fold)} onClick={() => toggleFold(row.id)}>
           <MarketTime value={row.from} format="clock" market={market} /> –{' '}
           <MarketTime value={row.to} format="clock" market={market} /> 无事 ×{row.count}（点击展开）
         </div>
@@ -127,7 +158,7 @@ export function AiTab({
     }
     return (
       <div key={row.id}>
-        <div className="ai-fold open" onClick={() => toggleFold(row.id)}>
+        <div {...stylex.props(styles.fold, styles.foldOpen)} onClick={() => toggleFold(row.id)}>
           <MarketTime value={row.from} format="clock" market={market} /> –{' '}
           <MarketTime value={row.to} format="clock" market={market} /> 无事 ×{row.count}（收起）
         </div>
@@ -149,6 +180,6 @@ export function AiTab({
         </div>
       );
     }
-    return <div className="ai-feed">{rows.map(renderRow)}</div>;
+    return <div {...stylex.props(styles.feed)}>{rows.map(renderRow)}</div>;
   }
 }
