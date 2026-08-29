@@ -134,17 +134,6 @@ body.trainer-dragging-level * {
   transform: translateX(-1px);
 }
 
-.chat-shell--full .chat-panel-head {
-  padding: 10px max(12px, calc((100% - 68ch) / 2));
-}
-.chat-shell--full .chat-panel-body-content {
-  padding: 16px max(12px, calc((100% - 68ch) / 2));
-  gap: 12px;
-}
-.chat-shell--full .chat-composer {
-  padding: 10px max(12px, calc((100% - 68ch) / 2));
-}
-
 .chat-shell .chat-composer {
   border-top: 1px solid var(--border);
 }
@@ -230,9 +219,4 @@ body.trainer-dragging-level * {
 /* Research library */
 .chat-insert {
   margin: 10px 0;
-}
-.chat-shell--full .canvas-split--open .chat-panel-head,
-.chat-shell--full .canvas-split--open .chat-panel-body-content {
-  padding-left: 16px;
-  padding-right: 16px;
 }
