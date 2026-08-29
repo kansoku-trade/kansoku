@@ -1,5 +1,6 @@
 import { ArrowLeft } from 'lucide-react';
 import * as stylex from '@stylexjs/stylex';
+import { isDesktopRealtime } from '@web/lib/portTransport';
 import { colors, fontSizes, sizes } from '../../theme/tokens.stylex';
 
 const styles = stylex.create({
@@ -8,6 +9,9 @@ const styles = stylex.create({
     flexDirection: 'column',
     height: '100vh',
     overflow: 'hidden',
+  },
+  fullpageDesktop: {
+    height: 'calc(100vh - 40px)',
   },
   detailBody: {
     flex: 1,
@@ -155,9 +159,11 @@ function Bone({ style }: { style: stylex.StyleXStyles }) {
 }
 
 export function CockpitSkeleton() {
+  const desktopShell = isDesktopRealtime();
+
   return (
     <div
-      className={`fullpage ${stylex.props(styles.fullpage).className}`}
+      className={`fullpage ${stylex.props(styles.fullpage, desktopShell && styles.fullpageDesktop).className}`}
       aria-busy="true"
       aria-label="加载中"
     >
