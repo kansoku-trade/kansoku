@@ -1,7 +1,7 @@
 import * as stylex from '@stylexjs/stylex';
 import type { TrainerDirection } from '@kansoku/pro-api';
 import { fmt } from '@web/lib/format';
-import { buttonStyles } from '../../ui/Button';
+import { Button } from '../../ui/Button';
 import { colors, fontSizes, fonts } from '../../theme/tokens.stylex';
 import { formatRewardRisk, meetsRewardRiskFloor, rewardRiskRatio } from './orderDraft';
 import { TrainerNote } from './TrainerNote';
@@ -64,16 +64,24 @@ const styles = stylex.create({
     fontWeight: 600,
   },
   directionLong: {
-    borderColor: `color-mix(in srgb, ${colors.up} 55%, transparent)`,
-    color: colors.up,
+    ':not(:disabled):is([aria-pressed="false"])': {
+      borderColor: `color-mix(in srgb, ${colors.up} 55%, transparent)`,
+      color: colors.up,
+    },
+    ':not(:disabled):is([aria-pressed="true"])': {
+      borderColor: colors.accent,
+      color: colors.accent,
+    },
   },
   directionShort: {
-    borderColor: `color-mix(in srgb, ${colors.down} 55%, transparent)`,
-    color: colors.down,
-  },
-  directionPressed: {
-    borderColor: colors.accent,
-    color: colors.accent,
+    ':not(:disabled):is([aria-pressed="false"])': {
+      borderColor: `color-mix(in srgb, ${colors.down} 55%, transparent)`,
+      color: colors.down,
+    },
+    ':not(:disabled):is([aria-pressed="true"])': {
+      borderColor: colors.accent,
+      color: colors.accent,
+    },
   },
   num: {
     flex: '0 0 auto',
@@ -126,20 +134,20 @@ function entryHint(entry: EntryDraftApi): { text: string; warn: boolean } {
 function DirectionButtons({ entry }: { entry: EntryDraftApi }) {
   return (
     <div className={`trainer-lane-group ${stylex.props(styles.group).className}`}>
-      <button
-        className={`btn btn--long ${stylex.props(buttonStyles.base, styles.directionLong, entry.direction === 'long' && styles.directionPressed).className}`}
+      <Button
+        className={`btn--long ${stylex.props(styles.directionLong).className}`}
         aria-pressed={entry.direction === 'long'}
         onClick={() => entry.pickDirection('long')}
       >
         做多
-      </button>
-      <button
-        className={`btn btn--short ${stylex.props(buttonStyles.base, styles.directionShort, entry.direction === 'short' && styles.directionPressed).className}`}
+      </Button>
+      <Button
+        className={`btn--short ${stylex.props(styles.directionShort).className}`}
         aria-pressed={entry.direction === 'short'}
         onClick={() => entry.pickDirection('short')}
       >
         做空
-      </button>
+      </Button>
     </div>
   );
 }
@@ -164,18 +172,20 @@ export function TrainerEntryLane({ entry, note, onNoteChange }: TrainerEntryLane
           市价直接进
         </span>
         <div className={`trainer-lane-group ${stylex.props(styles.group).className}`}>
-          <button
-            className={`btn btn--long ${stylex.props(buttonStyles.base, styles.directionLong).className}`}
+          <Button
+            className={`btn--long ${stylex.props(styles.directionLong).className}`}
+            aria-pressed={false}
             onClick={() => entry.quickEntry('long')}
           >
             市价做多
-          </button>
-          <button
-            className={`btn btn--short ${stylex.props(buttonStyles.base, styles.directionShort).className}`}
+          </Button>
+          <Button
+            className={`btn--short ${stylex.props(styles.directionShort).className}`}
+            aria-pressed={false}
             onClick={() => entry.quickEntry('short')}
           >
             市价做空
-          </button>
+          </Button>
         </div>
         <div className={`trainer-lane-sep ${stylex.props(styles.separator).className}`} />
         <span

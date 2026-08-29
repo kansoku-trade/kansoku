@@ -7,7 +7,7 @@ import type {
   TrainerViewPeriod,
 } from '@kansoku/pro-api';
 import { signed } from '@web/lib/format';
-import { buttonStyles } from '../../ui/Button';
+import { Button } from '../../ui/Button';
 import { colors, fontSizes, fonts, radii } from '../../theme/tokens.stylex';
 import type { TrainerBridge } from '../desktop/desktopTrainerBridge';
 import {
@@ -117,10 +117,6 @@ const styles = stylex.create({
   },
   dim: {
     color: colors.textSecondary,
-  },
-  pressed: {
-    borderColor: colors.accent,
-    color: colors.accent,
   },
 });
 
@@ -260,46 +256,28 @@ export function TrainerAdvanceControls({
         )}
       </TrainerOverlayPortal>
       <div className={`trainer-lane ${stylex.props(styles.lane).className}`}>
-        <button
-          className={`btn ${stylex.props(buttonStyles.base, disabled && buttonStyles.disabled).className}`}
-          disabled={disabled}
-          onClick={handleStep}
-        >
+        <Button disabled={disabled} onClick={handleStep}>
           步进 · {period}
-        </button>
-        <button
-          className={[
-            'btn',
-            stylex.props(
-              buttonStyles.base,
-              playing && styles.pressed,
-              !playing && disabled && buttonStyles.disabled,
-            ).className,
-          ]
-            .filter(Boolean)
-            .join(' ')}
+        </Button>
+        <Button
+          accent={playing}
           aria-pressed={playing}
           disabled={playing ? false : disabled}
           onClick={togglePlay}
         >
           {playing ? '暂停' : '播放'}
-        </button>
+        </Button>
         <div className={`trainer-lane-sep ${stylex.props(styles.separator).className}`} />
         <div className={`trainer-lane-group ${stylex.props(styles.group).className}`}>
           {PLAYBACK_SPEEDS.map((s) => (
-            <button
+            <Button
               key={s}
-              className={[
-                'btn',
-                stylex.props(buttonStyles.base, speed === s && styles.pressed).className,
-              ]
-                .filter(Boolean)
-                .join(' ')}
+              accent={speed === s}
               aria-pressed={speed === s}
               onClick={() => setSpeed(s)}
             >
               {s}x
-            </button>
+            </Button>
           ))}
         </div>
         <span className={`trainer-lane-spacer ${stylex.props(styles.spacer).className}`} />

@@ -7,7 +7,7 @@ type ButtonProps = {
   state?: 'busy' | 'done' | 'failed';
 } & ButtonHTMLAttributes<HTMLButtonElement>;
 
-export const buttonStyles = stylex.create({
+const styles = stylex.create({
   base: {
     'alignItems': 'center',
     'backgroundColor': colors.backgroundElement,
@@ -23,6 +23,26 @@ export const buttonStyles = stylex.create({
     'gap': '7px',
     'height': sizes.controlHeight,
     'padding': '0 14px',
+    ':not(:disabled):is([data-accent="true"])': {
+      borderColor: colors.accent,
+      color: colors.accent,
+    },
+    ':not(:disabled):is([data-state="busy"])': {
+      color: colors.textSecondary,
+      cursor: 'wait',
+    },
+    ':not(:disabled):is([data-state="done"])': {
+      borderColor: colors.up,
+      color: colors.up,
+    },
+    ':not(:disabled):is([data-state="failed"])': {
+      color: colors.accent,
+    },
+    ':disabled': {
+      borderColor: colors.borderStrong,
+      color: colors.textMuted,
+      cursor: 'default',
+    },
     ':hover:not(:disabled)': {
       borderColor: colors.accent,
     },
@@ -32,43 +52,22 @@ export const buttonStyles = stylex.create({
       outline: 'none',
     },
   },
-  accent: {
-    borderColor: colors.accent,
-    color: colors.accent,
-  },
-  busy: {
-    color: colors.textSecondary,
-    cursor: 'wait',
-  },
-  done: {
-    borderColor: colors.up,
-    color: colors.up,
-  },
-  failed: {
-    color: colors.accent,
-  },
-  disabled: {
-    borderColor: colors.borderStrong,
-    color: colors.textMuted,
-    cursor: 'default',
-  },
 });
 
 export function Button({ accent, state, disabled, className, children, ...rest }: ButtonProps) {
-  const styleClassName = stylex.props(
-    buttonStyles.base,
-    accent && buttonStyles.accent,
-    state === 'busy' && buttonStyles.busy,
-    state === 'done' && buttonStyles.done,
-    state === 'failed' && buttonStyles.failed,
-    disabled && buttonStyles.disabled,
-  ).className;
+  const styleClassName = stylex.props(styles.base).className;
   const cls = ['btn', accent && 'btn--accent', state && `btn--${state}`, className, styleClassName]
     .filter(Boolean)
     .join(' ');
 
   return (
-    <button className={cls} disabled={disabled} {...rest}>
+    <button
+      className={cls}
+      data-accent={accent ? 'true' : undefined}
+      data-state={state}
+      disabled={disabled}
+      {...rest}
+    >
       {children}
     </button>
   );

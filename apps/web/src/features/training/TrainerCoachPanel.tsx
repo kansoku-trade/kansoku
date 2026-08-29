@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { TrainerCoachCall } from '@kansoku/pro-api';
 import * as stylex from '@stylexjs/stylex';
-import { buttonStyles } from '../../ui/Button';
+import { Button } from '../../ui/Button';
 import { colors, fontSizes, fonts, radii } from '../../theme/tokens.stylex';
 import type { TrainerBridge } from '../desktop/desktopTrainerBridge';
 import { coachDisagrees, coachPlanLine, DIRECTION_LABEL } from './coachStance';
@@ -174,13 +174,9 @@ export function TrainerCoachPanel({ bridge, sessionId }: TrainerCoachPanelProps)
         )}
       </TrainerOverlayPortal>
       <div className={`trainer-coach-slot ${stylex.props(styles.slot).className}`}>
-        <button
-          className={`btn trainer-coach-ask ${stylex.props(buttonStyles.base, asking && buttonStyles.disabled).className}`}
-          disabled={asking}
-          onClick={() => void ask()}
-        >
+        <Button className="trainer-coach-ask" disabled={asking} onClick={() => void ask()}>
           {asking ? '问 AI…' : calls.length === 0 ? '问 AI' : `问 AI · ${calls.length}`}
-        </button>
+        </Button>
       </div>
     </>
   );
