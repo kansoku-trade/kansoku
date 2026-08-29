@@ -16,6 +16,20 @@ import { useAnalystRun } from './useAnalystRun';
 import { colors, fontSizes } from '../../theme/tokens.stylex';
 
 const styles = stylex.create({
+  runControl: {
+    marginBottom: '12px',
+  },
+  reassess: {
+    alignItems: 'center',
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '10px',
+    marginBottom: 0,
+  },
+  hint: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.sm,
+  },
   tab: {
     minWidth: 0,
     maxWidth: '100%',
@@ -28,13 +42,13 @@ const styles = stylex.create({
     overflowX: 'hidden',
   },
   fold: {
-    padding: '7px 2px 7px 48px',
-    fontSize: fontSizes.sm,
-    color: colors.textMuted,
-    borderBottomColor: colors.border,
-    borderBottomStyle: 'solid',
-    borderBottomWidth: '1px',
-    cursor: 'pointer',
+    'padding': '7px 2px 7px 48px',
+    'fontSize': fontSizes.sm,
+    'color': colors.textMuted,
+    'borderBottomColor': colors.border,
+    'borderBottomStyle': 'solid',
+    'borderBottomWidth': '1px',
+    'cursor': 'pointer',
     ':hover': {
       color: colors.textSecondary,
     },
@@ -103,13 +117,15 @@ export function AiTab({
   return (
     <div {...stylex.props(styles.tab)}>
       {!readOnly && (
-        <div className="ai-run-control">
-          <div className="ai-reassess">
+        <div className={`ai-run-control ${stylex.props(styles.runControl).className}`}>
+          <div className={`ai-reassess ${stylex.props(styles.reassess).className}`}>
             <Button onClick={run.start} disabled={run.pending || run.running}>
               {run.running && <Spinner />}
               {run.running ? '重估进行中…' : '重新分析'}
             </Button>
-            {run.hint && <span className="ai-hint">{run.hint}</span>}
+            {run.hint && (
+              <span className={`ai-hint ${stylex.props(styles.hint).className}`}>{run.hint}</span>
+            )}
             <ExplainAction symbol={symbol} />
             {analysisRevision && <FollowAction symbol={symbol} revision={analysisRevision} />}
             {pastDates.length > 0 && (
