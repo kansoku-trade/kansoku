@@ -245,11 +245,17 @@ function deepLinkCardMeta(link: AppDeepLink): DeepLinkCardMeta {
 }
 
 export function MarkdownLink(props: AnchorHTMLAttributes<HTMLAnchorElement> & ExtraProps) {
-  const { href, children, className, node } = props;
+  const { href, children, className, node, ...anchorProps } = props;
   const appLink = parseAppDeepLink(href);
   if (!appLink)
     return (
-      <a className={node ? stylex.props(styles.link).className : className} href={href}>
+      <a
+        {...anchorProps}
+        className={[className, stylex.props(styles.link).className].filter(Boolean).join(' ')}
+        href={href}
+        rel={anchorProps.rel ?? 'noreferrer'}
+        target={anchorProps.target ?? '_blank'}
+      >
         {children}
       </a>
     );
@@ -257,7 +263,14 @@ export function MarkdownLink(props: AnchorHTMLAttributes<HTMLAnchorElement> & Ex
   const meta = deepLinkCardMeta(appLink);
   return (
     <a
-      className={`app-deep-link app-deep-link--${meta.variant} ${stylex.props(styles.deepLink).className}`}
+      {...anchorProps}
+      className={[
+        `app-deep-link app-deep-link--${meta.variant}`,
+        className,
+        stylex.props(styles.deepLink).className,
+      ]
+        .filter(Boolean)
+        .join(' ')}
       href={appLink.route}
       aria-label={`${meta.title}：${meta.subject}，${meta.detail}`}
       title={href}

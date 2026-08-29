@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MarkdownLink } from './markdown';
 
 afterEach(() => {
@@ -52,6 +52,70 @@ describe('MarkdownLink', () => {
 
     const link = screen.getByRole('link');
     expect(link.getAttribute('href')).toBe('https://example.com');
-    expect(link.className).toBe('');
+    expect(link.className).not.toBe('');
+    expect(link.getAttribute('rel')).toBe('noreferrer');
+    expect(link.getAttribute('target')).toBe('_blank');
+  });
+
+  it('preserves external anchor attrs, className, and click handlers', () => {
+    const onClick = vi.fn();
+    render(
+      <MarkdownLink
+        aria-label="external resource"
+        className="custom-link"
+        data-source="markdown"
+        href="https://example.com"
+        node={document.createElement('a')}
+        onClick={onClick}
+        rel="noreferrer"
+        target="_blank"
+        title="External resource"
+      >
+        external
+      </MarkdownLink>,
+    );
+
+    const link = screen.getByRole('link', { name: 'external resource' });
+    expect(link.className).toContain('custom-link');
+    expect(link.getAttribute('href')).toBe('https://example.com');
+    expect(link.getAttribute('rel')).toBe('noreferrer');
+    expect(link.getAttribute('target')).toBe('_blank');
+    expect(link.getAttribute('title')).toBe('External resource');
+    expect(link.getAttribute('data-source')).toBe('markdown');
+
+    fireEvent.click(link);
+    expect(onClick).toHaveBeenCalledTimes(1);
+  });
+
+  it('preserves app-link attrs and handlers while keeping generated link semantics', () => {
+    const onClick = vi.fn();
+    render(
+      <MarkdownLink
+        aria-label="caller label"
+        className="custom-app-link"
+        data-source="markdown"
+        href="/symbol/MU.US"
+        onClick={onClick}
+        rel="noreferrer"
+        target="_self"
+        title="caller title"
+      >
+        cockpit
+      </MarkdownLink>,
+    );
+
+    const link = screen.getByRole('link', {
+      name: '打开股票驾驶舱：MU.US，最新分析与实时行情',
+    });
+    expect(link.className).toContain('custom-app-link');
+    expect(link.getAttribute('href')).toBe('/symbol/MU.US');
+    expect(link.getAttribute('aria-label')).toBe('打开股票驾驶舱：MU.US，最新分析与实时行情');
+    expect(link.getAttribute('title')).toBe('/symbol/MU.US');
+    expect(link.getAttribute('rel')).toBe('noreferrer');
+    expect(link.getAttribute('target')).toBe('_self');
+    expect(link.getAttribute('data-source')).toBe('markdown');
+
+    fireEvent.click(link);
+    expect(onClick).toHaveBeenCalledTimes(1);
   });
 });
