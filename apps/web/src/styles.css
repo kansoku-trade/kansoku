@@ -215,8 +215,3 @@ body.trainer-dragging-level * {
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
 }
-
-/* Research library */
-.chat-insert {
-  margin: 10px 0;
-}
