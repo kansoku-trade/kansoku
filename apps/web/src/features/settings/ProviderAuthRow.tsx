@@ -47,6 +47,15 @@ const styles = stylex.create({
     display: 'flex',
     gap: '6px',
     marginTop: '8px',
+    '@media (max-width: 560px)': {
+      alignItems: 'stretch',
+      flexDirection: 'column',
+    },
+  },
+  editorButton: {
+    '@media (max-width: 560px)': {
+      justifyContent: 'center',
+    },
   },
   editorInput: {
     flex: 1,
@@ -145,10 +154,18 @@ export function ProviderAuthRow({
             onChange={(event) => onEditKey(event.target.value)}
             placeholder="API key"
           />
-          <Button disabled={busy || !editKey} onClick={onSave}>
+          <Button
+            className={stylex.props(styles.editorButton).className}
+            disabled={busy || !editKey}
+            onClick={onSave}
+          >
             {busy ? '保存中…' : '保存'}
           </Button>
-          <Button disabled={busy} onClick={onCancel}>
+          <Button
+            className={stylex.props(styles.editorButton).className}
+            disabled={busy}
+            onClick={onCancel}
+          >
             取消
           </Button>
         </div>
