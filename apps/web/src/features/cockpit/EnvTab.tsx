@@ -18,7 +18,6 @@ import {
   tooltipTime,
 } from '@web/features/charts/simple/theme';
 import { fmt, signed, upDown } from '@web/lib/format';
-import { seriesPalette, theme } from '@web/lib/theme';
 import { Num, SectionTitle } from '@web/ui';
 import { colors, fontSizes } from '../../theme/tokens.stylex';
 
@@ -49,13 +48,23 @@ const styles = stylex.create({
     lineHeight: 1.4,
     marginTop: '6px',
   },
+  benchmarkChart: {
+    height: '180px',
+    width: '100%',
+  },
+  benchmarkTitle: {
+    marginTop: '0px !important',
+  },
+  benchmarkTitleWithPosition: {
+    marginTop: '16px',
+  },
 });
 
 const valueClassName = (tone?: string) =>
   stylex.props(styles.value, tone === 'up' && styles.valueUp, tone === 'down' && styles.valueDown)
     .className;
 
-const BENCHMARK_COLORS = [seriesPalette[0], seriesPalette[2], seriesPalette[3]];
+const BENCHMARK_COLORS = [colors.accent, colors.up, colors.down];
 
 function mergeBenchmark(series: BenchmarkSeries[]): Record<string, number>[] {
   const byTime = new Map<number, Record<string, number>>();
@@ -74,23 +83,23 @@ function mergeBenchmark(series: BenchmarkSeries[]): Record<string, number>[] {
 function BenchmarkChart({ series }: { series: BenchmarkSeries[] }) {
   const data = mergeBenchmark(series);
   return (
-    <div style={{ width: '100%', height: 180 }}>
+    <div {...stylex.props(styles.benchmarkChart)}>
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 4, right: 16, bottom: 0, left: 0 }}>
-          <CartesianGrid stroke={theme.border} vertical={false} />
+          <CartesianGrid stroke={colors.border} vertical={false} />
           <XAxis
             dataKey="t"
             type="number"
             scale="time"
             domain={['dataMin', 'dataMax']}
             tickFormatter={hhmm}
-            tick={{ fill: theme.textSecondary, fontSize: 10 }}
+            tick={{ fill: colors.textSecondary, fontSize: 10 }}
             tickLine={false}
-            axisLine={{ stroke: theme.borderStrong }}
+            axisLine={{ stroke: colors.borderStrong }}
             minTickGap={40}
           />
           <YAxis
-            tick={{ fill: theme.textSecondary, fontSize: 10 }}
+            tick={{ fill: colors.textSecondary, fontSize: 10 }}
             tickLine={false}
             axisLine={false}
             width={46}
@@ -99,7 +108,7 @@ function BenchmarkChart({ series }: { series: BenchmarkSeries[] }) {
           <Legend
             verticalAlign="top"
             height={20}
-            wrapperStyle={{ fontSize: 11, color: theme.textSecondary }}
+            wrapperStyle={{ fontSize: 11, color: colors.textSecondary }}
           />
           <Tooltip
             contentStyle={tooltipContentStyle}
@@ -107,7 +116,7 @@ function BenchmarkChart({ series }: { series: BenchmarkSeries[] }) {
             labelFormatter={(t) => tooltipTime(Number(t))}
             formatter={(value) => `${Number(value).toFixed(2)}%`}
           />
-          <ReferenceLine y={0} stroke={theme.borderStrong} />
+          <ReferenceLine y={0} stroke={colors.borderStrong} />
           {series.map((s, i) => (
             <Line
               key={s.symbol}
@@ -221,7 +230,12 @@ export function EnvTab({
 
       {!(benchmark && benchmark.length === 0) && (
         <>
-          <SectionTitle style={{ marginTop: position ? 16 : 0 }}>
+          <SectionTitle
+            className={
+              stylex.props(position ? styles.benchmarkTitleWithPosition : styles.benchmarkTitle)
+                .className
+            }
+          >
             环境对照（相对首点百分比）
           </SectionTitle>
           {renderBenchmark()}
