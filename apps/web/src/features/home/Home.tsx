@@ -6,6 +6,7 @@ import type {
   PortfolioSummary,
   QuoteSnapshot,
 } from '@kansoku/shared/types';
+import * as stylex from '@stylexjs/stylex';
 import { marketDate } from '@kansoku/shared/time';
 import { usePollingQuery, useQuery } from '../../lib/apiHooks';
 import { client } from '../../lib/client';
@@ -28,6 +29,75 @@ import { RecapBoard } from './RecapBoard';
 import { SymbolGrid } from './SymbolGrid';
 import { TrainerCard } from './TrainerCard';
 import { WatchBoard } from './WatchBoard';
+
+const styles = stylex.create({
+  page: {
+    margin: 0,
+    maxWidth: 'none',
+    padding: 0,
+    width: '100%',
+  },
+  pageViewport: {
+    height: 'auto',
+  },
+  pageContent: {
+    margin: '0 auto',
+    maxWidth: '1400px',
+    padding: '24px 20px 60px',
+    width: '100%',
+  },
+  pageSplit: {
+    height: '100%',
+    minHeight: 0,
+    overflow: 'hidden',
+    width: '100%',
+  },
+  pageSplitViewport: {
+    height: '100%',
+  },
+  pageSplitContent: {
+    paddingBottom: '20px',
+  },
+  grid: {
+    alignItems: 'start',
+    display: 'grid',
+    gap: '24px',
+    gridTemplateColumns: {
+      default: '2fr 1fr',
+      '@media (max-width: 1000px)': '1fr',
+    },
+  },
+  side: {
+    height: 'calc(100vh - 32px)',
+    marginRight: '-8px',
+    position: {
+      default: 'sticky',
+      '@media (max-width: 1000px)': 'static',
+    },
+    top: '16px',
+    '@media (max-width: 1000px)': {
+      height: 'auto',
+      marginRight: 0,
+    },
+  },
+  sideContent: {
+    paddingRight: {
+      default: '8px',
+      '@media (max-width: 1000px)': 0,
+    },
+  },
+  sideScroll: {
+    height: {
+      default: '100%',
+      '@media (max-width: 1000px)': 'auto',
+    },
+  },
+  sideScrollViewport: {
+    '@media (max-width: 1000px)': {
+      height: 'auto',
+    },
+  },
+});
 
 const SESSION_LABEL: Record<string, string> = {
   pre: '盘前',
@@ -145,13 +215,22 @@ export function Home() {
   const hasSplitBoard = isToday && board !== null;
 
   const recapDate = (recapDates ?? []).find((d) => d < today) ?? null;
+  const pageStyle = stylex.props(styles.page, hasSplitBoard && styles.pageSplit);
+  const viewportStyle = stylex.props(
+    styles.pageViewport,
+    hasSplitBoard && styles.pageSplitViewport,
+  );
+  const contentStyle = stylex.props(
+    styles.pageContent,
+    hasSplitBoard && styles.pageSplitContent,
+  );
 
   return (
     <EventCanvasHost>
     <ScrollArea
-      className={`page home-page${hasSplitBoard ? ' home-page--split' : ''}`}
-      viewportClassName="home-page-viewport"
-      contentClassName="home-page-content"
+      className={`page home-page${hasSplitBoard ? ' home-page--split' : ''} ${pageStyle.className}`}
+      viewportClassName={`home-page-viewport ${viewportStyle.className}`}
+      contentClassName={`home-page-content ${contentStyle.className}`}
     >
       <HomeTopStrip
         sessionLabel={session ? (SESSION_LABEL[session] ?? session) : null}
@@ -174,7 +253,7 @@ export function Home() {
       {isToday && boardError && !board && <ErrorBox>{boardError}</ErrorBox>}
       {!isToday && <RecapBoard date={date} defaultExpanded />}
       {isToday && board && trading && (
-        <div className="home-grid">
+        <div className={`home-grid ${stylex.props(styles.grid).className}`}>
           <div className="home-main">
             <SectionTitleWithAge
               label={session === 'pre' ? '隔夜行情 · 自选 + 持仓' : '看盘 · 自选 + 持仓'}
@@ -188,8 +267,12 @@ export function Home() {
             />
             {flowSection}
           </div>
-          <div className="home-side">
-            <ScrollArea className="home-side-scroll" contentClassName="home-side-content">
+          <div className={`home-side ${stylex.props(styles.side).className}`}>
+            <ScrollArea
+              className={`home-side-scroll ${stylex.props(styles.sideScroll).className}`}
+              viewportClassName={stylex.props(styles.sideScrollViewport).className}
+              contentClassName={`home-side-content ${stylex.props(styles.sideContent).className}`}
+            >
               {hasPositions && positionsSection}
               {eventSection}
               {!hasPositions && positionsSection}
@@ -199,13 +282,17 @@ export function Home() {
         </div>
       )}
       {isToday && board && after && (
-        <div className="home-grid">
+        <div className={`home-grid ${stylex.props(styles.grid).className}`}>
           <div className="home-main">
             <RecapBoard date={date} defaultExpanded />
             {flowSection}
           </div>
-          <div className="home-side">
-            <ScrollArea className="home-side-scroll" contentClassName="home-side-content">
+          <div className={`home-side ${stylex.props(styles.side).className}`}>
+            <ScrollArea
+              className={`home-side-scroll ${stylex.props(styles.sideScroll).className}`}
+              viewportClassName={stylex.props(styles.sideScrollViewport).className}
+              contentClassName={`home-side-content ${stylex.props(styles.sideContent).className}`}
+            >
               {hasPositions && positionsSection}
               {eventSection}
               <SectionTitleWithAge label="收盘定格" at={boardSnapshotAt} />
