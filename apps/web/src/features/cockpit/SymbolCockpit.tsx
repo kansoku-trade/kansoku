@@ -36,6 +36,20 @@ import { useLatestAnalysis } from './useLatestAnalysis';
 import { colors, fontSizes, radii, sizes } from '../../theme/tokens.stylex';
 
 const styles = stylex.create({
+  page: {
+    maxWidth: '900px',
+    margin: '0 auto',
+    padding: '24px 20px 60px',
+  },
+  pageTitle: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.xl,
+    fontWeight: 600,
+    margin: '0 0 4px',
+  },
+  icon: {
+    verticalAlign: '-2px',
+  },
   fullpage: {
     display: 'flex',
     flexDirection: 'column',
@@ -69,6 +83,10 @@ const styles = stylex.create({
   },
   topbarSide: {
     gap: '8px',
+  },
+  topbarMeta: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.base,
   },
   topbarChartTail: {
     alignItems: 'center',
@@ -234,12 +252,16 @@ export function SymbolCockpit({ sym }: { sym: string }) {
   if (latestChecked && !latestId) {
     if (latestError)
       return (
-        <div className="page">
-          <h1>{sym}</h1>
+        <div className={`page ${stylex.props(styles.page).className}`}>
+          <h1 className={stylex.props(styles.pageTitle).className}>{sym}</h1>
           <ErrorBox>{latestError}</ErrorBox>
           <p>
             <a href="/">
-              <ArrowLeft className="icon" size={13} /> 返回列表
+              <ArrowLeft
+                className={`icon ${stylex.props(styles.icon).className}`}
+                size={13}
+              />{' '}
+              返回列表
             </a>
           </p>
         </div>
@@ -257,11 +279,15 @@ export function SymbolCockpit({ sym }: { sym: string }) {
 
   if (error) {
     return (
-      <div className="page">
+      <div className={`page ${stylex.props(styles.page).className}`}>
         <ErrorBox>{error}</ErrorBox>
         <p>
           <a href="/">
-            <ArrowLeft className="icon" size={13} /> 返回列表
+            <ArrowLeft
+              className={`icon ${stylex.props(styles.icon).className}`}
+              size={13}
+            />{' '}
+            返回列表
           </a>
         </p>
       </div>
@@ -277,7 +303,7 @@ export function SymbolCockpit({ sym }: { sym: string }) {
 
   if (doc.built.kind !== 'intraday')
     return (
-      <div className="page">
+      <div className={`page ${stylex.props(styles.page).className}`}>
         <ErrorBox>该图表格式已不再支持，请重新生成（旧格式重建失败）</ErrorBox>
       </div>
     );
@@ -341,9 +367,15 @@ export function SymbolCockpit({ sym }: { sym: string }) {
               className={`topbar-chart ${stylex.props(styles.topbarColumn, styles.topbarChart).className}`}
             >
               <a href="/">
-                <ArrowLeft className="icon" size={13} /> 列表
+                <ArrowLeft
+                  className={`icon ${stylex.props(styles.icon).className}`}
+                  size={13}
+                />{' '}
+                列表
               </a>
-              <span className="meta">{sym}</span>
+              <span className={`meta ${stylex.props(styles.topbarMeta).className}`}>
+                {sym}
+              </span>
               {degraded && <Dot tone="accent" pulse title="数据延迟：行情拉取失败，正在重试" />}
               <IntradayTimeframeSwitch activeTf={activeIntradayTf} onChange={setIntradayTf} />
               <AnalysisTimeline
@@ -415,9 +447,15 @@ export function SymbolCockpit({ sym }: { sym: string }) {
                   >
                     <Dot tone={latestAlert.level === 'alert' ? 'down' : 'accent'} pulse />
                     {latestAlert.level === 'alert' ? (
-                      <TriangleAlert className="icon" size={13} />
+                      <TriangleAlert
+                        className={`icon ${stylex.props(styles.icon).className}`}
+                        size={13}
+                      />
                     ) : (
-                      <Bell className="icon" size={13} />
+                      <Bell
+                        className={`icon ${stylex.props(styles.icon).className}`}
+                        size={13}
+                      />
                     )}
                   </button>
                 </Tooltip>
