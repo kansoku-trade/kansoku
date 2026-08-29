@@ -10,7 +10,7 @@ import * as stylex from '@stylexjs/stylex';
 import { fmt, signed } from '@web/lib/format';
 import { Badge, Card, Dot, Empty, MarketTime, Num } from '@web/ui';
 import { directionTone } from '@web/features/charts/intraday/directionLabels';
-import { colors, fontSizes } from '../../theme/tokens.stylex';
+import { colors, fonts, fontSizes } from '../../theme/tokens.stylex';
 import { fmtFlow, fmtFlowLabeled, flowTone } from './flowFormat';
 import { INDEX_SYMBOLS } from './HomeTopStrip';
 import { FollowToggle, ReassessButton } from './SymbolActions';
@@ -67,6 +67,12 @@ const styles = stylex.create({
   symbolCardCommentAlert: {
     color: colors.down,
   },
+  symbolCardFlowUp: {
+    color: colors.up,
+  },
+  symbolCardFlowDown: {
+    color: colors.down,
+  },
   watchTail: {
     display: 'flex',
     flexWrap: 'wrap',
@@ -96,7 +102,9 @@ const styles = stylex.create({
   },
   tailFlow: {
     color: colors.textMuted,
+    fontFamily: fonts.mono,
     fontSize: fontSizes.sm,
+    fontVariantNumeric: 'tabular-nums',
   },
   tailFlowUp: {
     color: colors.up,
@@ -199,6 +207,13 @@ export function buildGridEntries({
 
 function GridCard({ entry }: { entry: GridEntry }) {
   const { symbol, quote, row, flow, owned, earningsDate } = entry;
+  const flowToneValue = flowTone(flow);
+  const flowStyle =
+    flowToneValue === 'up'
+      ? styles.symbolCardFlowUp
+      : flowToneValue === 'down'
+        ? styles.symbolCardFlowDown
+        : undefined;
   const last = quote?.last ?? row?.last ?? null;
   const pct = quote?.pct ?? row?.pct ?? null;
   const comment = row?.latest_comment ?? null;
@@ -243,7 +258,11 @@ function GridCard({ entry }: { entry: GridEntry }) {
         )}
       </div>
       <div className={`symbol-card-levels ${stylex.props(styles.symbolCardLevels).className}`}>
-        <span className={flowTone(flow)}>{fmtFlowLabeled(flow)}</span>
+        <span
+          className={`${flowToneValue}${flowStyle ? ` ${stylex.props(flowStyle).className}` : ''}`}
+        >
+          {fmtFlowLabeled(flow)}
+        </span>
         {row && <span>止损 {pctCell(row.stop_distance_pct)}</span>}
         {row && <span>目标1 {pctCell(row.target1_distance_pct)}</span>}
         {row && <ReassessButton symbol={symbol} />}
