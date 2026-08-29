@@ -21,6 +21,7 @@ import { useQuery } from '@web/lib/apiHooks';
 import { client } from '@web/lib/client';
 import { queryClient } from '@web/lib/queryClient';
 import { navigate, useQueryParam } from '@web/lib/router';
+import { isDesktopRealtime } from '@web/lib/portTransport';
 import { Badge, Empty, ErrorBox, Input, MarketTime, ResizablePanel, Spinner } from '@web/ui';
 import { useTitle } from '@web/lib/useTitle';
 import { colors, fonts, fontSizes, radii } from '../../theme/tokens.stylex';
@@ -79,6 +80,11 @@ const styles = stylex.create({
       overflow: 'visible',
     },
   },
+  pageDesktop: {
+    '@media (max-width: 760px)': {
+      minHeight: 'calc(100vh - 40px)',
+    },
+  },
   header: {
     'alignItems': 'center',
     'borderBottomColor': colors.border,
@@ -94,6 +100,11 @@ const styles = stylex.create({
       alignItems: 'stretch',
       flexDirection: 'column',
       padding: '14px 48px 14px 14px',
+    },
+  },
+  headerDesktop: {
+    '@media (max-width: 760px)': {
+      paddingRight: '14px',
     },
   },
   title: {
@@ -279,9 +290,19 @@ const styles = stylex.create({
     'maxWidth': 'min(520px, 46vw)',
     '@media (max-width: 760px)': {
       flex: '0 0 auto',
-      maxWidth: 'none',
-      minWidth: 0,
+      maxWidth: 'none !important',
+      minWidth: '0 !important',
+      width: '100% !important',
+    },
+  },
+  explorerPanelContent: {
+    '@media (max-width: 760px)': {
       width: '100%',
+    },
+  },
+  explorerPanelHandle: {
+    '@media (max-width: 760px)': {
+      display: 'none',
     },
   },
   explorer: {
@@ -805,10 +826,13 @@ export function ResearchPage() {
   const canvasCount = (allDocuments ?? []).filter((item) => item.kind === 'canvas').length;
   const listLoading = deferredQuery ? searchLoading : allLoading;
   const listError = deferredQuery ? searchError : allError;
+  const desktopShell = isDesktopRealtime();
 
   return (
-    <div className={`fullpage research-page ${stylex.props(styles.page).className}`}>
-      <header {...stylex.props(styles.header)}>
+    <div
+      className={`fullpage research-page ${stylex.props(styles.page, desktopShell && styles.pageDesktop).className}`}
+    >
+      <header {...stylex.props(styles.header, desktopShell && styles.headerDesktop)}>
         <div {...stylex.props(styles.title)}>
           <span {...stylex.props(styles.titleIcon)}>
             <Library size={18} />
@@ -875,6 +899,8 @@ export function ResearchPage() {
       <div {...stylex.props(styles.workspace)}>
         <ResizablePanel
           className={`research-explorer-panel ${stylex.props(styles.explorerPanel).className}`}
+          contentClassName={stylex.props(styles.explorerPanelContent).className}
+          handleClassName={stylex.props(styles.explorerPanelHandle).className}
           side="start"
           defaultSize={defaultExplorerWidth()}
           minSize={EXPLORER_MIN_WIDTH}

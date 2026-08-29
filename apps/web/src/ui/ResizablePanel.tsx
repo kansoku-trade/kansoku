@@ -142,6 +142,7 @@ export function ResizablePanel({
   children,
   className,
   contentClassName,
+  handleClassName,
   side = 'start',
   defaultSize,
   minSize = 220,
@@ -153,6 +154,7 @@ export function ResizablePanel({
   children: ReactNode;
   className?: string;
   contentClassName?: string;
+  handleClassName?: string;
   side?: ResizablePanelSide;
   defaultSize: number;
   minSize?: number;
@@ -240,7 +242,7 @@ export function ResizablePanel({
   const resetSize = () => updateSize(initialSizeRef.current, true);
   const handle = (
     <div
-      className={`resize-panel-handle${dragging ? ' dragging' : ''} ${stylex.props(styles.handle, dragging && styles.handleDragging).className}`}
+      className={`resize-panel-handle${dragging ? ' dragging' : ''}${handleClassName ? ` ${handleClassName}` : ''} ${stylex.props(styles.handle, dragging && styles.handleDragging).className}`}
       role="separator"
       aria-label={handleLabel}
       aria-orientation="vertical"
