@@ -1,8 +1,12 @@
 import type { SettingsViewModel } from './settingsViewModel';
 import * as stylex from '@stylexjs/stylex';
-import { colors, fontSizes } from '../../theme/tokens.stylex';
+import { colors, fonts, fontSizes } from '../../theme/tokens.stylex';
 
 const styles = stylex.create({
+  numeric: {
+    fontFamily: fonts.mono,
+    fontVariantNumeric: 'tabular-nums',
+  },
   root: {
     'alignItems': 'baseline',
     'color': colors.textSecondary,
@@ -48,8 +52,6 @@ export function SettingsStatusStrip({
   usageError: string | null;
   onRetryUsage: () => void;
 }) {
-  const usageClassName = stylex.props(styles.usage).className;
-
   return (
     <div {...stylex.props(styles.root)} aria-label="设置状态总览">
       <span
@@ -66,7 +68,7 @@ export function SettingsStatusStrip({
       </span>
       <span {...stylex.props(styles.separator)}>·</span>
       <span>{summary.enabledLabel}</span>
-      <span className={`num ${usageClassName}`}>
+      <span className={`num ${stylex.props(styles.numeric, styles.usage).className}`}>
         {usageError ? (
           <>
             今日用量读取失败

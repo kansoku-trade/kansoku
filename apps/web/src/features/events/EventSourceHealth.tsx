@@ -2,7 +2,7 @@ import type { EventSourceStatus } from '@kansoku/core/contract/events';
 import type { EventSourceHealth as SourceHealthValue } from '@kansoku/shared/types';
 import * as stylex from '@stylexjs/stylex';
 import { MarketTime, NoteBlock } from '@web/ui';
-import { colors, fontSizes } from '../../theme/tokens.stylex';
+import { colors, fonts, fontSizes } from '../../theme/tokens.stylex';
 import { eventSourceLabel } from './eventLabels';
 
 const HEALTH_LABEL: Record<SourceHealthValue, string> = {
@@ -12,6 +12,10 @@ const HEALTH_LABEL: Record<SourceHealthValue, string> = {
 };
 
 const styles = stylex.create({
+  numeric: {
+    fontFamily: fonts.mono,
+    fontVariantNumeric: 'tabular-nums',
+  },
   panel: {
     borderTopColor: colors.border,
     borderTopStyle: 'dashed',
@@ -75,9 +79,12 @@ export interface EventSourceHealthProps {
 }
 
 function Stamp({ label, at, none }: { label: string; at: string | null; none: string }) {
-  if (at === null) return <span className="num">{`${label} ${none}`}</span>;
+  if (at === null)
+    return (
+      <span className={`num ${stylex.props(styles.numeric).className}`}>{`${label} ${none}`}</span>
+    );
   return (
-    <span className="num">
+    <span className={`num ${stylex.props(styles.numeric).className}`}>
       {label} <MarketTime value={at} format="month-day-time" zone="market" />
     </span>
   );
@@ -108,7 +115,9 @@ function SourceRow({ status }: { status: EventSourceStatus }) {
         <span {...stylex.props(styles.detail, styles.error)}>{status.lastError}</span>
       )}
       {status.health === 'degraded' && (
-        <span className={`num ${stylex.props(styles.detail, styles.error).className}`}>
+        <span
+          className={`num ${stylex.props(styles.numeric, styles.detail, styles.error).className}`}
+        >
           连续失败 {status.failureStreak} 次
           {status.nextAttemptAt && (
             <>
@@ -134,7 +143,7 @@ export function EventSourceHealth({ sources, error, loading }: EventSourceHealth
 
   return (
     <section aria-label="事件来源状态" {...stylex.props(styles.panel)} role="group">
-      <div className={`num ${stylex.props(styles.summary).className}`}>
+      <div className={`num ${stylex.props(styles.numeric, styles.summary).className}`}>
         {active} 运行 · {degraded} 异常 · {disabled} 关闭
       </div>
       <ul {...stylex.props(styles.list)}>
