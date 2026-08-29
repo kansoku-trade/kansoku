@@ -36,6 +36,12 @@ const styles = stylex.create({
     ':hover': {
       opacity: 1,
     },
+    '[data-hovering]': {
+      opacity: 1,
+    },
+    '[data-scrolling]': {
+      opacity: 1,
+    },
     '@media (prefers-reduced-motion: reduce)': {
       transition: 'none',
     },
