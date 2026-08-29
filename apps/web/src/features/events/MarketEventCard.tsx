@@ -3,7 +3,7 @@ import * as stylex from '@stylexjs/stylex';
 import type { EventCanvasPhase } from '@kansoku/core/contract/events';
 import type { MarketEvent } from '@kansoku/shared/types';
 import { MarketTime } from '@web/ui';
-import { colors, fontSizes } from '../../theme/tokens.stylex';
+import { colors, fonts, fontSizes } from '../../theme/tokens.stylex';
 import {
   EVENT_CLASS_LABEL,
   EVENT_SEVERITY_LABEL,
@@ -87,7 +87,9 @@ const styles = stylex.create({
   },
   time: {
     color: colors.textMuted,
+    fontFamily: fonts.mono,
     fontSize: fontSizes.xs,
+    fontVariantNumeric: 'tabular-nums',
     lineHeight: 1.3,
   },
   severity: {
@@ -128,7 +130,9 @@ const styles = stylex.create({
   },
   observed: {
     color: colors.textMuted,
+    fontFamily: fonts.mono,
     fontSize: fontSizes.xs,
+    fontVariantNumeric: 'tabular-nums',
   },
   title: {
     color: colors.textPrimary,
@@ -157,7 +161,9 @@ const styles = stylex.create({
   },
   symbol: {
     'color': colors.textSecondary,
+    'fontFamily': fonts.mono,
     'fontSize': fontSizes.xs,
+    'fontVariantNumeric': 'tabular-nums',
     'textDecoration': 'none',
     ':hover': {
       color: colors.accent,

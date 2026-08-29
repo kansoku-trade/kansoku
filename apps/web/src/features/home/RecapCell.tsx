@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { signed } from '@web/lib/format';
 import { client } from '@web/lib/client';
 import { openModal } from '@web/ui';
-import { colors } from '../../theme/tokens.stylex';
+import { colors, fonts } from '../../theme/tokens.stylex';
 import { useIntervalFetch } from '../cockpit/useIntervalFetch';
 import { RecapBoard } from './RecapBoard';
 
@@ -16,19 +16,19 @@ interface RecapSummary {
 
 const styles = stylex.create({
   root: {
-    alignItems: 'center',
-    backgroundColor: 'transparent',
-    borderLeftColor: colors.border,
-    borderLeftWidth: '1px',
-    borderStyle: 'solid',
-    borderWidth: 0,
-    color: colors.textSecondary,
-    cursor: 'pointer',
-    display: 'inline-flex',
-    font: 'inherit',
-    fontVariantNumeric: 'tabular-nums',
-    gap: '6px',
-    padding: '0 0 0 14px',
+    'alignItems': 'center',
+    'backgroundColor': 'transparent',
+    'borderLeftColor': colors.border,
+    'borderLeftWidth': '1px',
+    'borderStyle': 'solid',
+    'borderWidth': 0,
+    'color': colors.textSecondary,
+    'cursor': 'pointer',
+    'display': 'inline-flex',
+    'font': 'inherit',
+    'fontVariantNumeric': 'tabular-nums',
+    'gap': '6px',
+    'padding': '0 0 0 14px',
     ':hover': {
       color: colors.textPrimary,
     },
@@ -42,6 +42,8 @@ const styles = stylex.create({
   },
   stat: {
     color: colors.textSecondary,
+    fontFamily: fonts.mono,
+    fontVariantNumeric: 'tabular-nums',
   },
   up: {
     color: colors.up,
