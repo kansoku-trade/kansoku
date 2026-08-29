@@ -94,6 +94,9 @@ const styles = stylex.create({
     lineHeight: 1.6,
     textWrap: 'pretty',
   },
+  icon: {
+    verticalAlign: '-2px',
+  },
 });
 
 const DIRECTION_LABEL: Record<string, string> = { long: '做多', short: '做空', neutral: '观望' };
@@ -235,9 +238,9 @@ export function RecapBoard({ date, defaultExpanded }: { date: string; defaultExp
       >
         {title}{' '}
         {expanded ? (
-          <ChevronDown className="icon" size={13} />
+          <ChevronDown className={`icon ${stylex.props(styles.icon).className}`} size={13} />
         ) : (
-          <ChevronRight className="icon" size={13} />
+          <ChevronRight className={`icon ${stylex.props(styles.icon).className}`} size={13} />
         )}
       </SectionTitle>
       {expanded && (
