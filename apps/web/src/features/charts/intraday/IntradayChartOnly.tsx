@@ -23,6 +23,11 @@ const styles = stylex.create({
     flexDirection: 'column',
     overflow: 'hidden',
   },
+  popoutChartsCol: {
+    borderRightStyle: 'none',
+    borderRightWidth: 0,
+    height: '100%',
+  },
   chartBlock: {
     borderBottomColor: colors.border,
     borderBottomStyle: 'solid',
@@ -134,6 +139,7 @@ export interface IntradayChartOnlyProps {
   drawings?: boolean;
   storageNamespace?: string;
   onChartHandle?: (handle: DrawingChartHandle | null) => void;
+  popout?: boolean;
 }
 
 export function IntradayChartOnly({
@@ -144,6 +150,7 @@ export function IntradayChartOnly({
   drawings = true,
   storageNamespace,
   onChartHandle,
+  popout = false,
 }: IntradayChartOnlyProps) {
   const macdHeightKey = namespacedKey(MACD_HEIGHT_KEY, storageNamespace);
   const [macdHeight, setMacdHeight] = useState(() => {
@@ -195,7 +202,9 @@ export function IntradayChartOnly({
   };
 
   return (
-    <div className={`charts-col ${stylex.props(styles.chartsCol).className}`}>
+    <div
+      className={`charts-col ${stylex.props(styles.chartsCol, popout && styles.popoutChartsCol).className}`}
+    >
       <div className={`chart-block ${stylex.props(styles.chartBlock, styles.mainChart).className}`}>
         <div className={`chart-label ${stylex.props(styles.chartLabel).className}`}>
           K 线 + 成交量

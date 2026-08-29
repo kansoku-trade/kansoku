@@ -95,7 +95,7 @@ export function PopoutChartWindow({ sym }: { sym: string }) {
           ) : !chartBuilt || !activeTf ? (
             <Empty>加载中…</Empty>
           ) : (
-            <IntradayChartOnly symbol={sym} built={chartBuilt} activeTf={activeTf} />
+            <IntradayChartOnly symbol={sym} built={chartBuilt} activeTf={activeTf} popout />
           )}
         </div>
       </div>
