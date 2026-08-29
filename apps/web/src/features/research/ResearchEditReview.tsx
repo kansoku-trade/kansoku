@@ -149,6 +149,13 @@ const styles = stylex.create({
       transform: 'scale(0.96)',
     },
   },
+  error: {
+    color: colors.down,
+    fontSize: fontSizes.xs,
+    lineHeight: 1.45,
+    padding: '8px 10px',
+    textWrap: 'pretty',
+  },
   undoConfirm: {
     borderColor: colors.down,
     color: colors.down,
@@ -335,7 +342,10 @@ function ResearchEditReview({
         ))}
       </div>
       {error ? (
-        <div className="research-assistant-error" role="alert">
+        <div
+          className={`research-assistant-error ${stylex.props(styles.error).className}`}
+          role="alert"
+        >
           {error}
         </div>
       ) : null}
