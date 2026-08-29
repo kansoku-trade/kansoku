@@ -14,6 +14,16 @@ const styles = stylex.create({
   section: {
     marginTop: '18px',
   },
+  control: {
+    marginBottom: '12px',
+  },
+  reassess: {
+    alignItems: 'center',
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '10px',
+    marginBottom: '0',
+  },
   list: {
     display: 'flex',
     flexDirection: 'column',
@@ -129,8 +139,8 @@ export function JournalSection({
 
   return (
     <div className={`journal-section ${stylex.props(styles.section).className}`}>
-      <div className="ai-run-control">
-        <div className="ai-reassess">
+      <div className={`ai-run-control ${stylex.props(styles.control).className}`}>
+        <div className={`ai-reassess ${stylex.props(styles.reassess).className}`}>
           <Button onClick={run.start} disabled={run.pending || run.running}>
             {run.running && <Spinner />}
             {run.running ? '分析进行中…' : '跑一次分析'}
