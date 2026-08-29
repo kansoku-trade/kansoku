@@ -1,5 +1,48 @@
 import { createContext, use, useCallback, useMemo, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import * as stylex from '@stylexjs/stylex';
+import { colors, radii } from '../../theme/tokens.stylex';
+
+const styles = stylex.create({
+  layer: {
+    inset: 0,
+    pointerEvents: 'none',
+    position: 'absolute',
+    zIndex: 12,
+  },
+  slot: {
+    ':empty': {
+      display: 'none',
+    },
+    'position': 'absolute',
+  },
+  rail: {
+    alignItems: 'center',
+    backgroundColor: 'rgb(20 20 20 / 0.86)',
+    border: `1px solid ${colors.border}`,
+    borderRadius: radii.default,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '2px',
+    left: '8px',
+    padding: '3px',
+    pointerEvents: 'auto',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    zIndex: 2,
+  },
+  stack: {
+    alignItems: 'flex-end',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '4px',
+    right: '64px',
+    top: '8px',
+  },
+  pinned: {
+    inset: 0,
+  },
+});
 
 export type TrainerOverlaySlot = 'rail' | 'stack' | 'pinned';
 
@@ -46,10 +89,19 @@ export function TrainerOverlayLayer() {
   }, [register]);
   if (!refs) return null;
   return (
-    <div className="trainer-overlay" ref={refs.frame}>
-      <div className="trainer-overlay-rail" ref={refs.rail} />
-      <div className="trainer-overlay-stack" ref={refs.stack} />
-      <div className="trainer-overlay-pinned" ref={refs.pinned} />
+    <div className={`trainer-overlay ${stylex.props(styles.layer).className}`} ref={refs.frame}>
+      <div
+        className={`trainer-overlay-rail ${stylex.props(styles.slot, styles.rail).className}`}
+        ref={refs.rail}
+      />
+      <div
+        className={`trainer-overlay-stack ${stylex.props(styles.slot, styles.stack).className}`}
+        ref={refs.stack}
+      />
+      <div
+        className={`trainer-overlay-pinned ${stylex.props(styles.slot, styles.pinned).className}`}
+        ref={refs.pinned}
+      />
     </div>
   );
 }
