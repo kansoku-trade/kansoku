@@ -244,55 +244,6 @@ body.trainer-dragging-level * {
   border-radius: var(--radius-md);
 }
 
-.desktop-tabstrip > .scroll-area-scrollbar {
-  display: none;
-}
-@property --tabstrip-fade-start {
-  syntax: '<length>';
-  inherits: false;
-  initial-value: 0px;
-}
-@property --tabstrip-fade-end {
-  syntax: '<length>';
-  inherits: false;
-  initial-value: 0px;
-}
-/* mask 边缘随滚动位置淡入淡出：scroll timeline 驱动，贴边一侧不遮内容 */
-@keyframes tabstrip-fade-start {
-  0% {
-    --tabstrip-fade-start: 0px;
-  }
-  6%,
-  100% {
-    --tabstrip-fade-start: 14px;
-  }
-}
-@keyframes tabstrip-fade-end {
-  0%,
-  94% {
-    --tabstrip-fade-end: 14px;
-  }
-  100% {
-    --tabstrip-fade-end: 0px;
-  }
-}
-.desktop-tabstrip-viewport {
-  -webkit-app-region: drag;
-  scrollbar-width: none;
-  mask-image: linear-gradient(
-    to right,
-    transparent 0,
-    black var(--tabstrip-fade-start),
-    black calc(100% - var(--tabstrip-fade-end)),
-    transparent 100%
-  );
-  animation-name: tabstrip-fade-start, tabstrip-fade-end;
-  animation-timing-function: linear;
-  animation-timeline: scroll(self inline);
-}
-.desktop-tabstrip-viewport::-webkit-scrollbar {
-  display: none;
-}
 .desktop-content .fullpage {
   height: calc(100vh - 40px);
 }
