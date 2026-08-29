@@ -48,6 +48,18 @@ const styles = stylex.create({
     justifyContent: 'center',
     marginTop: '14px',
   },
+  credentialActions: {
+    display: 'flex',
+    gap: '6px',
+    justifyContent: 'flex-end',
+    marginTop: '12px',
+  },
+  testResult: {
+    fontSize: fontSizes.sm,
+  },
+  testResultFail: {
+    color: colors.down,
+  },
   skipLink: {
     'backgroundColor': 'transparent',
     'border': 'none',
@@ -111,7 +123,9 @@ export function StepTwitter({ onComplete }: { onComplete: () => Promise<void> })
           <pre className={`onboarding-cli-command ${stylex.props(styles.cliCommand).className}`}>
             <code>{OPENCLI_INSTALL_COMMAND}</code>
           </pre>
-          <div className="settings-cred-actions">
+          <div
+            className={`settings-cred-actions ${stylex.props(styles.credentialActions).className}`}
+          >
             <Button onClick={() => void navigator.clipboard.writeText(OPENCLI_INSTALL_COMMAND)}>
               复制命令
             </Button>
@@ -131,7 +145,9 @@ export function StepTwitter({ onComplete }: { onComplete: () => Promise<void> })
             <li>在 Chrome 打开 chrome://extensions 并开启开发者模式</li>
             <li>点击「加载已解压的扩展程序」，选择解压后的目录</li>
           </ol>
-          <div className="settings-cred-actions">
+          <div
+            className={`settings-cred-actions ${stylex.props(styles.credentialActions).className}`}
+          >
             <Button
               onClick={() => window.open(OPENCLI_RELEASES_URL, '_blank', 'noopener,noreferrer')}
             >
@@ -154,13 +170,29 @@ export function StepTwitter({ onComplete }: { onComplete: () => Promise<void> })
       ) : null}
 
       {data.state !== 'ready' && data.lastError ? (
-        <div className="settings-test-result settings-test-result--fail">{data.lastError}</div>
+        <div
+          className={`settings-test-result settings-test-result--fail ${stylex.props(
+            styles.testResult,
+            styles.testResultFail,
+          ).className}`}
+        >
+          {data.lastError}
+        </div>
       ) : null}
       {error ? (
-        <div className="settings-test-result settings-test-result--fail">{error}</div>
+        <div
+          className={`settings-test-result settings-test-result--fail ${stylex.props(
+            styles.testResult,
+            styles.testResultFail,
+          ).className}`}
+        >
+          {error}
+        </div>
       ) : null}
 
-      <div className="settings-cred-actions">
+      <div
+        className={`settings-cred-actions ${stylex.props(styles.credentialActions).className}`}
+      >
         {data.state === 'ready' ? (
           <Button accent disabled={busy} onClick={finish}>
             完成
