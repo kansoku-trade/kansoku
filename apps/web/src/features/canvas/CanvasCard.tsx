@@ -42,18 +42,28 @@ const styles = stylex.create({
     marginTop: '8px',
   },
   action: {
+    'backgroundColor': 'transparent',
+    'border': 'none',
     'color': colors.textSecondary,
+    'cursor': 'pointer',
     'fontSize': fontSizes.xs,
+    'padding': 0,
     ':hover': {
       color: colors.textPrimary,
+      textDecoration: 'underline',
     },
   },
   disabledAction: {
+    'backgroundColor': 'transparent',
+    'border': 'none',
     'color': colors.textSecondary,
+    'cursor': 'pointer',
     'fontSize': fontSizes.xs,
     'opacity': 0.4,
+    'padding': 0,
     ':hover': {
       color: colors.textSecondary,
+      textDecoration: 'underline',
     },
   },
 });

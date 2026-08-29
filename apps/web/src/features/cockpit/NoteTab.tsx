@@ -35,6 +35,17 @@ const styles = stylex.create({
     flexShrink: 0,
     whiteSpace: 'nowrap',
   },
+  linkButton: {
+    'backgroundColor': 'transparent',
+    'border': 'none',
+    'color': colors.accent,
+    'cursor': 'pointer',
+    'fontSize': 'inherit',
+    'padding': 0,
+    ':hover': {
+      textDecoration: 'underline',
+    },
+  },
   actions: {
     alignItems: 'center',
     display: 'flex',
@@ -111,7 +122,7 @@ export function NoteTab({ symbol }: { symbol: string }) {
             </span>
             <div className={stylex.props(styles.actions).className}>
               <button
-                className={`link-button ${stylex.props(styles.headerAction).className}`}
+                className={`link-button ${stylex.props(styles.linkButton).className}`}
                 onClick={openFullscreen}
               >
                 <Maximize2 className="icon" size={13} /> 全屏阅读
@@ -131,9 +142,7 @@ export function NoteTab({ symbol }: { symbol: string }) {
         <>
           <Empty>还没有 {symbol} 的研究笔记</Empty>
           {button && (
-            <div
-              className={stylex.props(styles.header, styles.headerCenter).className}
-            >
+            <div className={stylex.props(styles.header, styles.headerCenter).className}>
               {button}
             </div>
           )}
