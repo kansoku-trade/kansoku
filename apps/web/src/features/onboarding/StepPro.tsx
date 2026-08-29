@@ -15,6 +15,12 @@ const styles = stylex.create({
     justifyContent: 'center',
     marginTop: '14px',
   },
+  testResult: {
+    fontSize: fontSizes.sm,
+  },
+  testResultFail: {
+    color: colors.down,
+  },
   skipLink: {
     'backgroundColor': 'transparent',
     'borderStyle': 'none',
@@ -52,7 +58,11 @@ export function StepPro({ onComplete }: { onComplete: () => Promise<void> }) {
     <Card {...stylex.props(styles.card)}>
       <Paywall onActivated={() => void finish()} />
       {error ? (
-        <div className="settings-test-result settings-test-result--fail">{error}</div>
+        <div
+          className={`settings-test-result settings-test-result--fail ${stylex.props(styles.testResult, styles.testResultFail).className}`}
+        >
+          {error}
+        </div>
       ) : null}
       <div {...stylex.props(styles.skipRow)}>
         <button {...stylex.props(styles.skipLink)} disabled={busy} onClick={() => void finish()}>
