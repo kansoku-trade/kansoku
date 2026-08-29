@@ -4,7 +4,7 @@ import * as stylex from '@stylexjs/stylex';
 import { useQuery } from '@web/lib/apiHooks';
 import { client } from '@web/lib/client';
 import { Badge, Button, SegmentedControl, type SegmentedControlOption } from '@web/ui';
-import { colors, fontSizes } from '../../theme/tokens.stylex';
+import { colors, fonts, fontSizes } from '../../theme/tokens.stylex';
 import { getDesktopCredentialsBridge, type CredentialsGetResult } from './desktopCredentials';
 
 const INSTALL_URL = 'https://open.longbridge.com/docs/cli/install';
@@ -53,6 +53,19 @@ const styles = stylex.create({
   testResultFail: {
     color: colors.down,
   },
+  providerMeta: {
+    color: colors.textMuted,
+    fontFamily: fonts.mono,
+    fontSize: fontSizes.xs,
+    marginTop: '3px',
+    overflowWrap: 'anywhere',
+  },
+  credActions: {
+    display: 'flex',
+    gap: '6px',
+    justifyContent: 'flex-end',
+    marginTop: '12px',
+  },
 });
 
 export function LongbridgeSection() {
@@ -98,7 +111,11 @@ export function LongbridgeSection() {
         <span>Longbridge CLI</span>
         <Badge tone={ready ? 'up' : 'down'}>{label}</Badge>
       </div>
-      {data?.cliPath && <div className="settings-provider-meta">{data.cliPath}</div>}
+      {data?.cliPath && (
+        <div className={`settings-provider-meta ${stylex.props(styles.providerMeta).className}`}>
+          {data.cliPath}
+        </div>
+      )}
       {data?.lastError && (
         <div
           className={`settings-test-result settings-test-result--fail ${
@@ -108,7 +125,7 @@ export function LongbridgeSection() {
           {data.lastError}
         </div>
       )}
-      <div className="settings-cred-actions">
+      <div className={`settings-cred-actions ${stylex.props(styles.credActions).className}`}>
         <Button onClick={() => window.open(INSTALL_URL, '_blank', 'noopener,noreferrer')}>
           安装说明
         </Button>
@@ -137,7 +154,11 @@ export function LongbridgeSection() {
             options={REGION_OPTIONS}
             onChange={(next) => void handleRegionChange(next)}
           />
-          <div className="settings-provider-meta">自动模式探测可达线路；修改后下次连接生效</div>
+          <div
+            className={`settings-provider-meta ${stylex.props(styles.providerMeta).className}`}
+          >
+            自动模式探测可达线路；修改后下次连接生效
+          </div>
         </div>
       )}
       {regionError && (
