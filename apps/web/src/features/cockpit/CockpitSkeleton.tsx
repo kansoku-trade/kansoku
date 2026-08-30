@@ -126,8 +126,12 @@ const styles = stylex.create({
   },
   sidebarScroll: {
     display: 'flex',
+    flex: '1 1 auto',
     flexDirection: 'column',
     gap: '12px',
+    minHeight: 0,
+    overflowY: 'auto',
+    padding: 16,
   },
   line: {
     height: '12px',
