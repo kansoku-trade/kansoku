@@ -1,4 +1,5 @@
 import type { AgentTool } from '@earendil-works/pi-agent-core';
+import { canvasComponentNames } from '@kansoku/canvas/names';
 import { buildCanvasTools } from '../canvas/tools.js';
 import { createAgentSession } from '../ai/agents/agentSession.js';
 import { aiConfig } from '../ai/runtime/models.js';
@@ -20,7 +21,7 @@ const SYSTEM_PROMPT = [
   'The pack already contains the event, cluster siblings, prices, volume, flow, comments, and research.',
   'Do not fetch new data. Do not invent numbers that are not in the pack.',
   'If a price or peer item has coverage "unavailable", write that gap in the canvas. Do not present later bars as the event window.',
-  'Use only these @kansoku/canvas names: Canvas, Section, Grid, Row, Stack, Card, H1, H2, H3, Heading, Text, Stat, Metric, Table, Pill, Badge, Link, Callout, Divider.',
+  `Use only these @kansoku/canvas names: ${canvasComponentNames(['layout', 'text', 'data', 'analysis']).join(', ')}.`,
   'Table columns are {key, header}[] and rows are objects, or string[] columns with array rows.',
   'Arrange the evidence as TSX, then call save_canvas.',
   'You must use the exact slug you are given. The same event always overwrites the same canvas.',

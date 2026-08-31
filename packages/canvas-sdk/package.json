@@ -7,6 +7,10 @@
     ".": {
       "types": "./src/index.tsx",
       "default": "./src/index.tsx"
+    },
+    "./names": {
+      "types": "./src/names.ts",
+      "default": "./src/names.ts"
     }
   },
   "peerDependencies": {

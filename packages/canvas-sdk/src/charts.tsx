@@ -1,4 +1,4 @@
-import { useMemo, useState, type CSSProperties, type ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import {
   Area,
   Bar,
@@ -20,6 +20,10 @@ import { seriesPalette, theme } from './theme.js';
 
 type Point = { x: string | number; y: number; [key: string]: string | number };
 type Series = { key: string; label?: string; color?: string };
+
+function normalizeSeries(series?: (string | Series)[]): Series[] {
+  return (series ?? []).map((item) => (typeof item === 'string' ? { key: item } : item));
+}
 
 const tooltipStyle: CSSProperties = {
   backgroundColor: theme.bgSurface,
@@ -77,9 +81,10 @@ export function LineChart({
   data: Point[];
   xUnit?: string;
   yUnit?: string;
-  series?: Series[];
+  series?: (string | Series)[];
 }) {
-  const lines = series?.length ? series : [{ key: 'y', label: yUnit ?? 'y' }];
+  const normalized = normalizeSeries(series);
+  const lines = normalized.length > 0 ? normalized : [{ key: 'y', label: yUnit ?? 'y' }];
   return (
     <ChartFrame title={title}>
       <ResponsiveContainer width="100%" height="100%">
@@ -198,128 +203,32 @@ export function PieChart({
   );
 }
 
-export function Callout({
-  tone = 'neutral',
-  children,
+export function Sparkline({
+  data,
+  width = 56,
+  height = 16,
+  tone,
 }: {
-  tone?: 'neutral' | 'up' | 'down' | 'warn';
-  children: ReactNode;
-}) {
-  const accent =
-    tone === 'up' ? theme.up : tone === 'down' ? theme.down : tone === 'warn' ? theme.accent : theme.borderStrong;
-  return (
-    <div
-      style={{
-        borderLeft: `3px solid ${accent}`,
-        background: theme.bgSurface,
-        padding: '8px 11px',
-        margin: '8px 0',
-        fontSize: 12,
-        lineHeight: 1.55,
-        color: theme.textPrimary,
-      }}
-    >
-      {children}
-    </div>
-  );
-}
-
-export function Pill({
-  children,
-  tone = 'neutral',
-}: {
-  children: ReactNode;
+  data: number[];
+  width?: number;
+  height?: number;
   tone?: 'up' | 'down' | 'neutral';
 }) {
-  const color = tone === 'up' ? theme.up : tone === 'down' ? theme.down : theme.textSecondary;
+  if (data.length < 2) return null;
+  const low = Math.min(...data);
+  const high = Math.max(...data);
+  const span = high - low || 1;
+  const step = width / (data.length - 1);
+  const points = data
+    .map((value, index) => `${(index * step).toFixed(1)},${(height - ((value - low) / span) * height).toFixed(1)}`)
+    .join(' ');
+  const drift = data.at(-1)! - data[0];
+  const resolved = tone ?? (drift > 0 ? 'up' : drift < 0 ? 'down' : 'neutral');
+  const stroke =
+    resolved === 'up' ? theme.up : resolved === 'down' ? theme.down : theme.textSecondary;
   return (
-    <span
-      style={{
-        display: 'inline-block',
-        fontSize: 10,
-        lineHeight: '16px',
-        padding: '0 6px',
-        borderRadius: 999,
-        border: `1px solid ${theme.border}`,
-        color,
-        background: theme.bgElement,
-      }}
-    >
-      {children}
-    </span>
+    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={{ display: 'block' }}>
+      <polyline points={points} fill="none" stroke={stroke} strokeWidth={1.2} />
+    </svg>
   );
-}
-
-export function Divider() {
-  return <hr style={{ border: 0, borderTop: `1px solid ${theme.border}`, margin: '14px 0' }} />;
-}
-
-export function Toggle({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: boolean;
-  onChange: (next: boolean) => void;
-}) {
-  return (
-    <label
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 6,
-        fontSize: 12,
-        color: theme.textPrimary,
-        cursor: 'pointer',
-      }}
-    >
-      <input type="checkbox" checked={value} onChange={(event) => onChange(event.target.checked)} />
-      {label}
-    </label>
-  );
-}
-
-export function Select({
-  label,
-  value,
-  options,
-  onChange,
-}: {
-  label?: string;
-  value: string;
-  options: { value: string; label: string }[];
-  onChange: (next: string) => void;
-}) {
-  return (
-    <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: theme.textPrimary }}>
-      {label ? <span style={{ color: theme.textSecondary }}>{label}</span> : null}
-      <select
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        style={{
-          background: theme.bgElement,
-          color: theme.textPrimary,
-          border: `1px solid ${theme.border}`,
-          borderRadius: 4,
-          padding: '3px 6px',
-        }}
-      >
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    </label>
-  );
-}
-
-export function useToggle(initial = false): [boolean, (next?: boolean) => void] {
-  const [value, setValue] = useState(initial);
-  const toggle = useMemo(
-    () => (next?: boolean) => setValue((current) => (next === undefined ? !current : next)),
-    [],
-  );
-  return [value, toggle];
 }

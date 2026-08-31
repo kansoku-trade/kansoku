@@ -584,6 +584,9 @@ importers:
       '@innei/message-engine':
         specifier: 0.2.0
         version: 0.2.0(@earendil-works/pi-agent-core@0.84.1(ws@8.21.1)(zod@4.4.3))
+      '@kansoku/canvas':
+        specifier: workspace:*
+        version: link:../canvas-sdk
       '@kansoku/pro-api':
         specifier: workspace:*
         version: link:../pro-api
