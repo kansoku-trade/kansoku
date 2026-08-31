@@ -177,7 +177,7 @@ const CANVAS_SOURCE = `import { Canvas, Section, Text } from '@kansoku/canvas';
 
 export default function App() {
   return (
-    <Canvas title="事件画布">
+    <Canvas title="事件画布" caption="Longbridge · demo">
       <Section title="证据">
         <Text>原消息</Text>
       </Section>
@@ -193,7 +193,8 @@ describe('POST /api/events/:id/canvas', () => {
       createEventCanvasRuntime({
         canvasDir: ctx.dir,
         runner: async ({ slug, title, canvasDir }) => {
-          await saveCanvas(canvasDir, { slug, title, source: CANVAS_SOURCE });
+          const saved = await saveCanvas(canvasDir, { slug, title, source: CANVAS_SOURCE });
+          expect(saved.ok).toBe(true);
         },
         fetchKline: async () => [],
         fetchFlow: async () => [],
