@@ -21,6 +21,7 @@ apps/desktop/native/
 .agents/
 /.claude/skills/*
 !/.claude/skills/_shared/
+!/.claude/skills/canvas/
 !/.claude/skills/capital-rotation/
 !/.claude/skills/chart/
 !/.claude/skills/fred/
