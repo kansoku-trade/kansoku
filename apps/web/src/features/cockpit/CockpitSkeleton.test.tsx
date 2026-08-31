@@ -19,7 +19,7 @@ describe('CockpitSkeleton', () => {
     const scroll = sidebar?.lastElementChild as HTMLElement | undefined;
     expect(scroll).toBeTruthy();
 
-    const paddingClass = stylex.props(probe.sidebarPadding).className;
+    const paddingClass = stylex.props(probe.sidebarPadding).className ?? '';
     expect(paddingClass).toBeTruthy();
     const applied = new Set(scroll!.className.split(/\s+/).filter(Boolean));
     for (const cls of paddingClass.split(/\s+/).filter(Boolean)) {
