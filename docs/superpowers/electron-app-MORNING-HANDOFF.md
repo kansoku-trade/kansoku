@@ -32,7 +32,6 @@ git stash pop # 会在 SettingsPage.tsx + styles.css 上报冲突
 
 - **[需设计] 换钥后旧长桥会话不断开**（三期终审提出）：`longbridgeStream.resetClients()` 只置空引用，旧 `QuoteContext` 的 socket/订阅还在推；且换钥与 `connectPromise` 在飞时有竞态，可能把旧凭证的 ctx 装回去。SDK 没有 `close()`，需要 generation counter + 把旧 handler 换成 no-op。这个要动脑子，没连夜做。
 - **`electron .` 直启崩溃**（pre-existing，非本次引入）：裸 `electron .`（不走 `pnpm dev`）内核启动报 `Can't find meta/_journal.json`（drizzle migrations 路径解析）；`pnpm dev` 和打包版都没事（那两条路径设了 `TRADE_MIGRATIONS_DIR`）。想支持裸直启就修这个。
-- **pnpm store 跨 worktree ABI 雷**：`electron-rebuild` 在一个 worktree 重编 better-sqlite3 会污染共享 store 里的二进制，别的 worktree 跑 Node 版 vitest 会崩。`server` 的 `pretest` 已加自愈守卫覆盖测试场景；`dev` 直跑仍暴露。
 - 其余小项（终审 accept/follow-up 的）都在 `.superpowers/sdd/progress.md` 里按任务记着。
 
 ## 过程教训（值得记进 memory）

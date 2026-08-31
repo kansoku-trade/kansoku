@@ -1,7 +1,7 @@
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import Database from 'better-sqlite3';
+import { DatabaseSync } from 'node:sqlite';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { MarketEvent } from '@kansoku/shared/types';
 import { createDb, type Db } from '../src/db/index.js';
@@ -19,6 +19,7 @@ import {
   saveSourceState,
   setEventCanvasSlug,
 } from '../src/events/store.js';
+import { executeMigration, seedLegacyLedger } from './migrationHelpers.js';
 
 const open: Db[] = [];
 const dirs: string[] = [];
@@ -83,26 +84,23 @@ describe('market_events migration', () => {
       canvasSlug: null,
     };
     await instance.insert(marketEvents).values(row);
-    await expect(instance.insert(marketEvents).values({ ...row, id: 'b' })).rejects.toThrow(
-      /unique/i,
-    );
+    await expect(instance.insert(marketEvents).values({ ...row, id: 'b' })).rejects.toMatchObject({
+      cause: { message: expect.stringMatching(/unique/i) },
+    });
   });
 
-  // The drizzle journal `when` of an entry must clear whatever a long-lived database
-  // already recorded, or the entry is silently skipped and the table never appears.
-  // 1784794600000 is the largest value a database migrated before the 0009/0010
-  // renumbering can hold (see packages/core/drizzle/README.md).
-  it('applies on a database whose migration ledger was written before the renumbering', () => {
+  // Some databases recorded 0009/0010 after their timestamps were renumbered.
+  // The RC migrator must still match those rows through their SQL hashes.
+  it('applies on a database whose migration ledger used the renumbered timestamps', () => {
     const dbPath = tempDbPath();
-    const seed = new Database(dbPath);
-    seed.exec(`
-      CREATE TABLE __drizzle_migrations (
-        id SERIAL PRIMARY KEY,
-        hash text NOT NULL,
-        created_at numeric
-      );
-      INSERT INTO __drizzle_migrations (hash, created_at) VALUES ('legacy', 1784794600000);
-    `);
+    const seed = new DatabaseSync(dbPath);
+    const migrations = seedLegacyLedger(seed, '0010_symbol_candle_cache', {
+      createdAt: {
+        '0009_reconcile_judgment_comments': 1784038000000,
+        '0010_symbol_candle_cache': 1784039000000,
+      },
+    });
+    for (const migration of migrations) executeMigration(seed, migration);
     seed.close();
 
     const instance = createDb(dbPath);

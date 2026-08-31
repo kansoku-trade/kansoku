@@ -18,8 +18,7 @@ vi.mock('../src/platform/env.js', async () => {
   return { ...actual, CHART_DATA_DIR: ctx.dir };
 });
 
-// The chart index db is orthogonal to the options_levels serve boundary; stub it
-// so the test never loads the native better-sqlite3 binding (ABI-pinned).
+// The chart index db is orthogonal to the options_levels serve boundary; stub it.
 vi.mock('../src/db/index.js', () => {
   const insertChain = { values: () => ({ onConflictDoUpdate: () => Promise.resolve() }) };
   const db = {

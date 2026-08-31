@@ -12,25 +12,21 @@
     "dev": "node scripts/dev.mjs",
     "generate-icon": "bash scripts/generate-icon.sh",
     "prepackage": "pnpm --filter @kansoku/web build && (test -f ../web/dist/index.html || (echo 'web/dist/index.html missing after build' && exit 1))",
-    "package": "pnpm build && node scripts/stageSkills.mjs && node scripts/stageAgentKit.mjs && node scripts/buildCli.mjs && node scripts/stagePro.mjs && pnpm rebuild-native && pnpm build:native && electron-builder --mac dmg zip --arm64",
-    "rebuild-native": "electron-rebuild -v 43.1.0 --force -w better-sqlite3",
+    "package": "pnpm build && node scripts/stageSkills.mjs && node scripts/stageAgentKit.mjs && node scripts/buildCli.mjs && node scripts/stagePro.mjs && pnpm build:native && electron-builder --mac dmg zip --arm64",
     "prestart": "node scripts/ensureDevNative.mjs",
     "start": "electron .",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "better-sqlite3": "^12.11.1",
     "electron-sparkle-updater": "^0.1.0"
   },
   "devDependencies": {
     "@electron/asar": "^3.4.1",
-    "@electron/rebuild": "^4.2.0",
     "@kansoku/build-overlay": "workspace:*",
     "@kansoku/core": "workspace:*",
     "@kansoku/pro-api": "workspace:*",
     "@kansoku/shared": "workspace:*",
-    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^26.1.1",
     "@vibeloft/telemetry-electron": "0.1.0",
     "electron": "43.1.1",

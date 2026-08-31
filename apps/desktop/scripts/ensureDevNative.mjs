@@ -2,11 +2,8 @@ import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ensureElectronAbi } from '../../../scripts/native-abi.mjs';
 
 const desktopRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
-
-ensureElectronAbi(desktopRoot, 'ensureDevNative');
 
 const bridgeRoot = join(desktopRoot, 'node_modules', 'electron-sparkle-updater', 'native');
 const bridgeReady =

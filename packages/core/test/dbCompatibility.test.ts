@@ -1,11 +1,12 @@
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import Database from 'better-sqlite3';
+import { DatabaseSync } from 'node:sqlite';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { CockpitComment } from '@kansoku/shared/types';
 import { appendComment, listComments } from '../src/ai/personas/comments.js';
 import { createDb } from '../src/db/index.js';
+import { seedLegacyLedger } from './migrationHelpers.js';
 
 const dirs: string[] = [];
 
@@ -29,15 +30,7 @@ const COMMENTS_BASE_SCHEMA = `
   CREATE INDEX comments_symbol_date ON comments (symbol, eastern_date);
 `;
 
-const MIGRATIONS_SCHEMA = `
-  CREATE TABLE __drizzle_migrations (
-    id SERIAL PRIMARY KEY,
-    hash text NOT NULL,
-    created_at numeric
-  );
-`;
-
-function insertLegacyComment(client: Database.Database): void {
+function insertLegacyComment(client: DatabaseSync): void {
   client
     .prepare(
       `INSERT INTO comments
@@ -49,7 +42,7 @@ function insertLegacyComment(client: Database.Database): void {
 }
 
 function seedLocalWatchlistCollision(path: string): void {
-  const client = new Database(path);
+  const client = new DatabaseSync(path);
   client.exec(`
     ${COMMENTS_BASE_SCHEMA}
     CREATE TABLE local_watchlist_settings (
@@ -57,30 +50,31 @@ function seedLocalWatchlistCollision(path: string): void {
       symbols text NOT NULL,
       updated_at text NOT NULL
     );
-    ${MIGRATIONS_SCHEMA}
-    INSERT INTO __drizzle_migrations (hash, created_at)
-    VALUES ('4fc54e357d28fb12d31cd744ad3cd7b73703f8a047463afc947b1c1aa6be9544', 1784037000000);
   `);
+  seedLegacyLedger(client, '0008_judgment_comments', {
+    hash: {
+      '0008_judgment_comments':
+        '4fc54e357d28fb12d31cd744ad3cd7b73703f8a047463afc947b1c1aa6be9544',
+    },
+  });
   insertLegacyComment(client);
   client.close();
 }
 
 function seedHealthyJudgmentMigration(path: string): void {
-  const client = new Database(path);
+  const client = new DatabaseSync(path);
   client.exec(`
     ${COMMENTS_BASE_SCHEMA}
     ALTER TABLE comments ADD read text;
     ALTER TABLE comments ADD stance text;
     ALTER TABLE comments ADD stance_note text;
-    ${MIGRATIONS_SCHEMA}
-    INSERT INTO __drizzle_migrations (hash, created_at)
-    VALUES ('c1ea4988b8c5ff468abeab31adf2b7c2bc4e8f624aa139cbbad0f27c96433cac', 1784037000000);
     INSERT INTO comments
       (id, ts, eastern_date, symbol, level, text, source, read, stance, stance_note)
     VALUES
       ('1', '2026-07-23T15:00:00.000Z', '2026-07-23', 'MU.US', 'warn', '结构破位',
        'commentator', '放量确认', 'act_per_plan', '按计划控制风险');
   `);
+  seedLegacyLedger(client, '0008_judgment_comments');
   client.close();
 }
 

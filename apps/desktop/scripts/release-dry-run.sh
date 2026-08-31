@@ -94,7 +94,6 @@ const pkg = JSON.parse(fs.readFileSync(p, 'utf8'));
 pkg.version = '$OLD_VERSION';
 fs.writeFileSync(p, JSON.stringify(pkg, null, 2) + '\n');
 "
-rm -rf "$DESKTOP_DIR/node_modules/better-sqlite3/build" "$HOME/Library/Caches/electron-rebuild"
 (cd "$DESKTOP_DIR" && pnpm package)
 OLD_ZIP_PATH="$(ls "$DESKTOP_DIR"/release/*.zip)"
 verify_zip "$OLD_ZIP_PATH"
@@ -110,7 +109,6 @@ const pkg = JSON.parse(fs.readFileSync(p, 'utf8'));
 pkg.version = '$NODE_VERSION';
 fs.writeFileSync(p, JSON.stringify(pkg, null, 2) + '\n');
 "
-rm -rf "$DESKTOP_DIR/node_modules/better-sqlite3/build" "$HOME/Library/Caches/electron-rebuild"
 (cd "$DESKTOP_DIR" && pnpm package)
 NEW_ZIP_PATH="$(ls "$DESKTOP_DIR"/release/*.zip)"
 NEW_DMG_PATH="$(ls "$DESKTOP_DIR"/release/*.dmg)"

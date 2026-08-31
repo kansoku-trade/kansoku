@@ -1,11 +1,10 @@
 import { mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
+import { DatabaseSync } from 'node:sqlite';
 import { fileURLToPath } from 'node:url';
-import Database from 'better-sqlite3';
-import { drizzle } from 'drizzle-orm/better-sqlite3';
-import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
+import { drizzle } from 'drizzle-orm/node-sqlite';
+import { migrate } from 'drizzle-orm/node-sqlite/migrator';
 import { CHART_DATA_DIR, PROJECT_ROOT } from '../platform/env.js';
-import * as schema from './schema.js';
 
 // PROJECT_ROOT already honors TRADE_PROJECT_ROOT (see env.ts) for the same
 // bundling-relocation reason. A packaged desktop app points TRADE_PROJECT_ROOT
@@ -23,13 +22,13 @@ function resolveMigrationsDir(): string {
   );
 }
 
-export type Db = ReturnType<typeof drizzle<typeof schema>>;
+export type Db = ReturnType<typeof drizzle>;
 
 export function createDb(path: string): Db {
   if (path !== ':memory:') mkdirSync(dirname(path), { recursive: true });
-  const client = new Database(path);
-  client.pragma('journal_mode = WAL');
-  const db = drizzle({ client, schema });
+  const client = new DatabaseSync(path);
+  client.exec('PRAGMA journal_mode = WAL');
+  const db = drizzle({ client });
   migrate(db, { migrationsFolder: resolveMigrationsDir() });
   return db;
 }

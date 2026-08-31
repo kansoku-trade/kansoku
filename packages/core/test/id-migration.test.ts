@@ -1,39 +1,19 @@
-import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import Database from 'better-sqlite3';
+import { DatabaseSync } from 'node:sqlite';
 import type { AgentMessage } from '@earendil-works/pi-agent-core';
 import { describe, expect, it } from 'vitest';
 import { createDb } from '../src/db/index.js';
 import { chatMessages, chatSessions } from '../src/db/schema.js';
 import { snowflakeToDate } from '../src/db/snowflake.js';
-
-const DRIZZLE_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'drizzle');
-
-interface JournalEntry {
-  tag: string;
-}
-
-function journalEntries(): JournalEntry[] {
-  return JSON.parse(readFileSync(join(DRIZZLE_DIR, 'meta', '_journal.json'), 'utf-8')).entries;
-}
-
-function execMigration(db: Database.Database, tag: string): void {
-  const sql = readFileSync(join(DRIZZLE_DIR, `${tag}.sql`), 'utf-8').replaceAll(
-    '--> statement-breakpoint',
-    '',
-  );
-  db.exec(sql);
-}
+import { executeMigration, migrationFixtures } from './migrationHelpers.js';
 
 const SNOWFLAKE_MIGRATION_TAG = '0001_deep_sheva_callister';
 
-function seedPriorSchema(): { db: Database.Database; migrationTag: string } {
-  const entries = journalEntries();
-  const target = entries.findIndex((entry) => entry.tag === SNOWFLAKE_MIGRATION_TAG);
-  if (target === -1) throw new Error(`migration ${SNOWFLAKE_MIGRATION_TAG} missing from journal`);
-  const db = new Database(':memory:');
-  for (const entry of entries.slice(0, target)) execMigration(db, entry.tag);
+function seedPriorSchema(): { db: DatabaseSync; migrationTag: string } {
+  const migrations = migrationFixtures();
+  const target = migrations.findIndex((migration) => migration.tag === SNOWFLAKE_MIGRATION_TAG);
+  if (target === -1) throw new Error(`migration ${SNOWFLAKE_MIGRATION_TAG} missing`);
+  const db = new DatabaseSync(':memory:');
+  for (const migration of migrations.slice(0, target)) executeMigration(db, migration);
   return { db, migrationTag: SNOWFLAKE_MIGRATION_TAG };
 }
 
@@ -66,7 +46,10 @@ describe('comments/ai_usage snowflake id migration', () => {
       insertUsage.run(row.id, row.ts);
     }
 
-    execMigration(db, migrationTag);
+    executeMigration(
+      db,
+      migrationFixtures().find((migration) => migration.tag === migrationTag)!,
+    );
 
     const expectedOrder = ['C', 'A', 'B', 'D'];
 
@@ -105,7 +88,12 @@ describe('comments/ai_usage snowflake id migration', () => {
     insertComment.run(1, '2026-07-02T15:00:00.000Z');
     insertComment.run(4097, '2026-07-02T15:00:00.900Z');
 
-    expect(() => execMigration(db, migrationTag)).toThrow(/UNIQUE constraint failed/);
+    expect(() =>
+      executeMigration(
+        db,
+        migrationFixtures().find((migration) => migration.tag === migrationTag)!,
+      ),
+    ).toThrow(/UNIQUE constraint failed/);
   });
 });
 

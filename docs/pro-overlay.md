@@ -60,11 +60,11 @@ chunk 缺失、解密失败、key 错误——全部会在这一个 `catch` 里�
   1. `__pro__` 之外的任何 chunk 都不准包含 pro 模块（否则明文泄漏）；
   2. `__pro__` 之外的任何 chunk 都不准**静态** import `__pro__` 内的 chunk（打包后明文会被删掉，静态边会让免费产物直接崩）。组合点的动态 `import()` 是唯一合法的跨边界引用。
 
-node 侧构建还给 `ssr.noExternal: true`（只有 `electron`、`better-sqlite3`、`electron-sparkle-updater` 保持 external），保证宿主和 pro chunk 共享同一份依赖实例——tsuki 装饰器元数据、数据库单例等都天然共享，不会因为两份模块实例而失效。
+node 侧构建还给 `ssr.noExternal: true`（只有 `electron`、`electron-sparkle-updater` 保持 external），保证宿主和 pro chunk 共享同一份依赖实例——tsuki 装饰器元数据、数据库单例等都天然共享，不会因为两份模块实例而失效。
 
 ## 4. `stagePro` / `packEnc` / 解密
 
-打包命令 `pnpm package`（`apps/desktop/package.json`）依次跑 `pnpm build → stageSkills → stagePro → rebuild-native → build:native → electron-builder`。
+打包命令 `pnpm package`（`apps/desktop/package.json`）依次跑 `pnpm build → stageSkills → stageAgentKit → stagePro → build:native → electron-builder`。
 
 - **`stagePro.mjs`**：
   - 若 `KANSOKU_FORCE_FREE=1` 或 `apps/pro/package.json` 不存在（社区构建），要求两个 `__pro__` 目录都不存在（陈旧构建的话直接报错退出），否则直接放行、不产出 `pro.enc`。

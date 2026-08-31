@@ -47,10 +47,10 @@ export default defineConfig({
     // Single-graph invariant: everything JS is bundled so main and the pro
     // chunk share one module instance of every dep (tsuki decorator metadata
     // keys on module-local Symbols — two copies would split the registry).
-    // Only host-provided electron and the two native packages stay external,
-    // which is also exactly the set electron-builder ships in node_modules.
+    // Only host-provided electron and the Sparkle native package stay external,
+    // which is also exactly what electron-builder ships in node_modules.
     noExternal: true,
-    external: ['better-sqlite3', 'electron-sparkle-updater'],
+    external: ['electron-sparkle-updater'],
   },
   build: {
     ssr: true,
@@ -61,7 +61,7 @@ export default defineConfig({
     sourcemap: false,
     rollupOptions: {
       input: { main: fileURLToPath(new URL('./src/main.ts', import.meta.url)) },
-      external: [/^electron($|\/)/, /^better-sqlite3($|\/)/, /^electron-sparkle-updater($|\/)/],
+      external: [/^electron($|\/)/, /^electron-sparkle-updater($|\/)/],
       output: {
         format: 'es',
         entryFileNames: '[name].mjs',

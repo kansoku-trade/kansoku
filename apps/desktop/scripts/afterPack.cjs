@@ -1,6 +1,6 @@
 'use strict';
 
-const { existsSync, readdirSync, readFileSync, statSync } = require('node:fs');
+const { existsSync, readdirSync, readFileSync } = require('node:fs');
 const { join, relative } = require('node:path');
 const { listPackage } = require('@electron/asar');
 
@@ -68,44 +68,7 @@ function verifyNoPlaintextPro(context) {
   }
 }
 
-const EXPECTED_BETTER_SQLITE3_FILES = ['build/Release/better_sqlite3.node'];
-
-function listFiles(root, directory = root) {
-  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
-    const path = join(directory, entry.name);
-    return entry.isDirectory() ? listFiles(root, path) : [relative(root, path)];
-  });
-}
-
-function verifyBetterSqlite3Payload(context) {
-  const resourcesDir = join(
-    context.appOutDir,
-    `${context.packager.appInfo.productFilename}.app`,
-    'Contents',
-    'Resources',
-  );
-  const unpackedModuleDir = join(
-    resourcesDir,
-    'app.asar.unpacked',
-    'node_modules',
-    'better-sqlite3',
-  );
-  const files = listFiles(unpackedModuleDir).sort();
-
-  if (files.join('\n') !== EXPECTED_BETTER_SQLITE3_FILES.join('\n')) {
-    throw new Error(
-      `Unexpected better-sqlite3 unpacked payload:\n${files.map((file) => `- ${file}`).join('\n')}`,
-    );
-  }
-
-  const nativeBinary = join(unpackedModuleDir, EXPECTED_BETTER_SQLITE3_FILES[0]);
-  if (statSync(nativeBinary).size === 0) {
-    throw new Error('Packaged better_sqlite3.node is empty');
-  }
-}
-
 module.exports = async function afterPack(context) {
-  verifyBetterSqlite3Payload(context);
   verifyNoPlaintextPro(context);
   // CSC_LINK present + `identity: null` dropped from electron-builder.yml
   // (the CI signing step does both together) means electron-builder will

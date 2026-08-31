@@ -9,10 +9,10 @@ await build({
   entry: [join(desktopDir, 'src/cli/main.ts')],
   outDir: join(desktopDir, 'dist-agent-kit'),
   platform: 'node',
-  target: 'node20',
+  target: 'node24',
   format: 'esm',
   external: (id) => {
-    if (id === 'better-sqlite3' || id === 'electron') return true;
+    if (id === 'electron') return true;
     if (/\/research\//.test(id)) return true;
     if (/\/ai\//.test(id) && !/\/ai\/personas\/follows/.test(id)) return true;
     if (/\/settings\/(aiSettings|settings\.(deps|test)|settingsStore|settingsValidation)/.test(id)) return true;

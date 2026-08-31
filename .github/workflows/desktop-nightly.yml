@@ -106,9 +106,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '24'
-          # Only the content-addressable store is cached, never node_modules — a
-          # cached node_modules can carry a stale @electron/rebuild forge-meta
-          # entry claiming better-sqlite3 is already built for Electron's ABI.
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
 
@@ -182,10 +179,6 @@ jobs:
           '
         env:
           NIGHTLY_VERSION: ${{ steps.version.outputs.version }}
-
-      - name: clear native-module rebuild cache (pnpm package forces the real rebuild)
-        working-directory: apps/desktop
-        run: rm -rf node_modules/better-sqlite3/build "$HOME/Library/Caches/electron-rebuild"
 
       - name: inject SUPublicEDKey into electron-builder.yml
         env:

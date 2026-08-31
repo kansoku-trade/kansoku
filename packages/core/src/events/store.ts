@@ -25,7 +25,7 @@ export interface ListEventsOptions {
   limit?: number;
 }
 
-// better-sqlite3 runs statements synchronously, so a transaction callback is the
+// node:sqlite runs statements synchronously, so a transaction callback is the
 // only place where "look, then insert" cannot be interleaved by another ingest.
 type EventTx = Parameters<Parameters<Db['transaction']>[0]>[0];
 
