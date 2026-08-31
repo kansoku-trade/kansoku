@@ -1,4 +1,6 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { rmSync } from 'node:fs';
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
+import { getDb } from '../src/db/index.js';
 import {
   setLicenseManagerForTests,
   type LicenseManager,
@@ -11,6 +13,18 @@ import {
   resetProHooksForTests,
 } from '../src/pro/hooks.js';
 import { symbolsService } from '../src/symbols/symbols.service.js';
+
+const ctx = vi.hoisted(() => {
+  const base = process.env.TMPDIR ?? '/tmp/';
+  const sep = base.endsWith('/') ? '' : '/';
+  return { dir: `${base}${sep}symbols-pro-hooks-${process.pid}-${Date.now()}` };
+});
+
+vi.mock('../src/platform/env.js', async () => {
+  const actual =
+    await vi.importActual<typeof import('../src/platform/env.js')>('../src/platform/env.js');
+  return { ...actual, CHART_DATA_DIR: ctx.dir };
+});
 
 function fakeLicenseManager(): LicenseManager {
   return {
@@ -27,6 +41,11 @@ afterEach(() => {
   setProPresent(false);
   setEncBundlePresent(false);
   setLicenseManagerForTests(null);
+});
+
+afterAll(() => {
+  getDb().$client.close();
+  rmSync(ctx.dir, { recursive: true, force: true });
 });
 
 describe('symbolsService routes through the registered pro hooks', () => {
