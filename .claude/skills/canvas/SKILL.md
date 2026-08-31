@@ -69,10 +69,12 @@ specific measure (`08-28 相对各自开盘价（都从 0 起）`, not `走势�
 
 **Components.** The table below is the complete allow-list; referencing an export that does
 not exist — or inventing a prop — is the most common failure, and an unknown prop is
-silently dropped rather than erroring. Exact prop shapes are declared in
-`.claude/skills/canvas/sdk/*.d.ts`, next to this file: `layout` / `text` / `data` /
-`analysis` / `control` / `charts` / `CandleChart` / `theme`. **read_file them instead of
-guessing.**
+silently dropped rather than erroring. Exact prop shapes are declared next to this file in
+`.claude/skills/canvas/sdk/`. **read_file them instead of guessing**, starting with
+`core.d.ts` — it holds everything the mandatory parts of the skeleton use (layout, text,
+`Stat`, `Table`, `Compare`, `Coverage`, `Source`). Read the rest only when you reach for
+them: `charts.d.ts`, `CandleChart.d.ts`, `analysis.d.ts` (`Scenarios` / `RRPlan` /
+`Timeline`), `control.d.ts`, `theme.d.ts`.
 
 | Group | Components |
 | --- | --- |
@@ -184,4 +186,4 @@ Compile and runtime errors are written into the canvas's check record; the next
 `read_canvas` returns them with the source. That record is the authoritative diagnostic.
 
 A blank canvas almost always referenced an export that does not exist. A prop that has no
-effect was invented — check it against `.claude/skills/canvas/sdk/*.d.ts`.
+effect was invented — check it against the declarations in `.claude/skills/canvas/sdk/`.

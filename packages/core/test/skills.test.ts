@@ -141,6 +141,13 @@ describe('readSkill', () => {
 describe('canvas skill sdk declarations', () => {
   const sdkDir = join(process.cwd(), '..', '..', '.claude', 'skills', 'canvas', 'sdk');
 
+  it('keeps the always-needed components in one file so a canvas costs one read', () => {
+    const core = readFileSync(join(sdkDir, 'core.d.ts'), 'utf8');
+    for (const name of [...CANVAS_COMPONENT_NAMES.layout, ...CANVAS_COMPONENT_NAMES.text, ...CANVAS_COMPONENT_NAMES.data]) {
+      expect(core).toContain(`declare function ${name}(`);
+    }
+  });
+
   it('declares every component the canvas skill allows', () => {
     const declared = readdirSync(sdkDir)
       .filter((f) => f.endsWith('.d.ts'))

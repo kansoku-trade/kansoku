@@ -29,6 +29,6 @@
     "typescript": "^7.0.2"
   },
   "scripts": {
-    "types:skill": "tsgo -p tsconfig.json"
+    "types:skill": "node scripts/buildSkillTypes.mjs"
   }
 }
