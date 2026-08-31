@@ -43,6 +43,32 @@ describe('SegmentedControl', () => {
     expect(container.querySelector('.ui-segmented-control--fit')).toBeTruthy();
   });
 
+  it('marks the variant and drops the bordered-only fit prop for open variants', () => {
+    for (const variant of ['solid', 'underline', 'plain'] as const) {
+      const { container, unmount } = render(
+        <SegmentedControl
+          ariaLabel="周期"
+          variant={variant}
+          value="week"
+          onChange={vi.fn()}
+          options={OPTIONS}
+        />,
+      );
+      const root = container.querySelector('.ui-segmented-control');
+      expect(root?.classList.contains(`ui-segmented-control--${variant}`)).toBe(true);
+      expect(root?.classList.contains('ui-segmented-control--fit')).toBe(variant !== 'solid');
+      unmount();
+    }
+  });
+
+  it('defaults to the bordered variant', () => {
+    const { container } = render(
+      <SegmentedControl ariaLabel="周期" value="week" onChange={vi.fn()} options={OPTIONS} />,
+    );
+
+    expect(container.querySelector('.ui-segmented-control--solid')).toBeTruthy();
+  });
+
   it('keeps caller className alongside the modifier classes', () => {
     const { container } = render(
       <SegmentedControl

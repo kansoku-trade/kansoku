@@ -55,7 +55,7 @@ export function Scenarios({ items }: { items: Scenario[] }) {
                 height: 3,
                 margin: '6px 0 7px',
                 background: theme.bgElement,
-                borderRadius: 2,
+                borderRadius: theme.radius,
               }}
             >
               <div
@@ -63,7 +63,7 @@ export function Scenarios({ items }: { items: Scenario[] }) {
                   height: '100%',
                   width: `${Math.max(0, Math.min(100, item.probability))}%`,
                   background: color,
-                  borderRadius: 2,
+                  borderRadius: theme.radius,
                 }}
               />
             </div>

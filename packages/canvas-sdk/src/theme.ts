@@ -2,6 +2,7 @@ export const theme = {
   bgCanvas: '#0a0a0a',
   bgSurface: '#141414',
   bgElement: '#1e1e1e',
+  bgHover: '#262626',
   border: '#262626',
   gridLine: '#1d1d1d',
   borderStrong: '#3a3a3a',
@@ -12,6 +13,7 @@ export const theme = {
   up: '#26a69a',
   down: '#ef5350',
   fontMono: "ui-monospace, 'SF Mono', Menlo, monospace",
+  radius: 2,
 } as const;
 
 export const seriesPalette = [

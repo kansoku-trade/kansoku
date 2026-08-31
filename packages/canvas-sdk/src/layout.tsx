@@ -11,6 +11,11 @@ const font = 'system-ui, -apple-system, BlinkMacSystemFont, sans-serif';
 const RESPONSIVE_CSS = `
 .kc-grid { display: grid; gap: 8px; grid-template-columns: repeat(var(--kc-cols), minmax(0, 1fr)); }
 @media (max-width: 620px) { .kc-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); } }
+.kc-select-trigger:hover, .kc-select-trigger[data-popup-open] { background: ${theme.bgHover}; color: ${theme.textPrimary}; }
+.kc-select-trigger:focus-visible { border-color: #7a7a7a; box-shadow: 0 0 0 2px rgb(232 232 232 / 0.12); outline: none; }
+.kc-select-item[data-highlighted] { background: ${theme.bgHover}; color: ${theme.textPrimary}; }
+.kc-select-item[data-selected] { color: ${theme.textPrimary}; }
+.kc-select-item:focus-visible { outline: none; }
 `;
 
 export function Canvas({
@@ -24,11 +29,9 @@ export function Canvas({
   return (
     <div
       style={{
-        minHeight: '100%',
         background: theme.bgCanvas,
         color: theme.textPrimary,
         fontFamily: font,
-        padding: '18px 20px 28px',
         boxSizing: 'border-box',
       }}
     >
@@ -130,7 +133,7 @@ export function Card({ children, style }: Box) {
       style={{
         background: theme.bgSurface,
         border: `1px solid ${theme.border}`,
-        borderRadius: 6,
+        borderRadius: theme.radius,
         padding: '9px 11px',
         ...style,
       }}

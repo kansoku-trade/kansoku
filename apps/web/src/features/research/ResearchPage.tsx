@@ -1,14 +1,5 @@
 import { useDeferredValue, useEffect, useState } from 'react';
-import {
-  BookOpen,
-  ChartCandlestick,
-  FileText,
-  LayoutDashboard,
-  Library,
-  Plus,
-  RefreshCw,
-  Search,
-} from 'lucide-react';
+import { ChartCandlestick, ChevronLeft, Library, Plus, RefreshCw, Search } from 'lucide-react';
 import type {
   ResearchCreateResult,
   ResearchDocument,
@@ -22,7 +13,17 @@ import { client } from '@web/lib/client';
 import { queryClient } from '@web/lib/queryClient';
 import { navigate, useQueryParam } from '@web/lib/router';
 import { isDesktopRealtime } from '@web/lib/portTransport';
-import { Badge, Empty, ErrorBox, Input, MarketTime, ResizablePanel, Spinner } from '@web/ui';
+import {
+  Badge,
+  Empty,
+  ErrorBox,
+  Input,
+  MarketTime,
+  ResizablePanel,
+  SegmentedControl,
+  type SegmentedControlOption,
+  Spinner,
+} from '@web/ui';
 import { useTitle } from '@web/lib/useTitle';
 import { colors, fonts, fontSizes, radii } from '../../theme/tokens.stylex';
 import { Markdown } from '../cockpit/markdown';
@@ -42,16 +43,22 @@ import {
 
 const CREATE_HINT_MS = 4000;
 
-const VIEW_OPTIONS: { key: ResearchView; label: string }[] = [
-  { key: 'stocks', label: '股票档案' },
-  { key: 'journal', label: '研究日志' },
-  { key: 'canvases', label: '画布' },
+const VIEW_LABELS: { value: ResearchView; text: string }[] = [
+  { value: 'stocks', text: '股票档案' },
+  { value: 'journal', text: '研究日志' },
+  { value: 'canvases', text: '画布' },
 ];
 
-function viewIcon(view: ResearchView) {
-  if (view === 'stocks') return <BookOpen size={13} />;
-  if (view === 'canvases') return <LayoutDashboard size={13} />;
-  return <FileText size={13} />;
+function viewOptions(counts: Record<ResearchView, number>): SegmentedControlOption<ResearchView>[] {
+  return VIEW_LABELS.map((option) => ({
+    value: option.value,
+    label: (
+      <>
+        {option.text}
+        <span className={stylex.props(styles.viewCount).className}>{counts[option.value]}</span>
+      </>
+    ),
+  }));
 }
 
 function explorerLabel(view: ResearchView): string {
@@ -100,14 +107,15 @@ const styles = stylex.create({
     'borderBottomWidth': '1px',
     'display': 'flex',
     'flex': '0 0 auto',
-    'gap': '20px',
-    'justifyContent': 'space-between',
-    'minHeight': '76px',
-    'padding': '14px 14px 14px 18px',
+    'gap': '24px',
+    'minHeight': '46px',
+    'padding': '0 12px 0 12px',
     '@media (max-width: 760px)': {
       alignItems: 'stretch',
       flexDirection: 'column',
-      padding: '14px 48px 14px 14px',
+      gap: '10px',
+      minHeight: 0,
+      padding: '10px 48px 10px 12px',
     },
   },
   headerDesktop: {
@@ -115,11 +123,21 @@ const styles = stylex.create({
       paddingRight: '14px',
     },
   },
-  title: {
-    alignItems: 'center',
-    display: 'flex',
-    gap: '10px',
-    minWidth: 0,
+  home: {
+    'alignItems': 'center',
+    'color': colors.textSecondary,
+    'display': 'flex',
+    'flex': '0 0 auto',
+    'gap': '7px',
+    'minWidth': 0,
+    'textDecoration': 'none',
+    ':hover': {
+      color: colors.textPrimary,
+    },
+  },
+  homeChevron: {
+    color: colors.textMuted,
+    flex: '0 0 auto',
   },
   titleIcon: {
     alignItems: 'center',
@@ -127,31 +145,25 @@ const styles = stylex.create({
     borderColor: 'rgba(255, 176, 0, 0.28)',
     borderStyle: 'solid',
     borderWidth: '1px',
-    borderRadius: radii.md,
+    borderRadius: radii.default,
     color: colors.accent,
     display: 'inline-flex',
     flex: '0 0 auto',
-    height: '30px',
+    height: '22px',
     justifyContent: 'center',
-    width: '30px',
-  },
-  titleHeading: {
-    margin: 0,
-    minWidth: 0,
+    width: '22px',
   },
   titleHeadingTitle: {
-    fontSize: fontSizes.xl,
+    color: 'inherit',
+    fontSize: fontSizes.base,
     fontWeight: 600,
     margin: 0,
-  },
-  titleHeadingDescription: {
-    color: colors.textMuted,
-    fontSize: fontSizes.sm,
-    margin: '3px 0 0',
+    whiteSpace: 'nowrap',
   },
   controls: {
     'alignItems': 'center',
     'display': 'flex',
+    'flex': '1 1 auto',
     'gap': '8px',
     'justifyContent': 'flex-end',
     'minWidth': 0,
@@ -161,43 +173,20 @@ const styles = stylex.create({
     },
   },
   viewSwitch: {
-    'borderColor': colors.borderStrong,
-    'borderRadius': radii.default,
-    'borderStyle': 'solid',
-    'borderWidth': '1px',
-    'display': 'grid',
-    'gridTemplateColumns': 'repeat(auto-fit, minmax(0, 1fr))',
+    'flex': '0 0 auto',
     'height': '28px',
-    'minWidth': '280px',
-    'overflow': 'hidden',
     '@media (max-width: 760px)': {
-      flex: '1 1 190px',
+      justifyContent: 'flex-start',
     },
   },
-  viewButton: {
-    'alignItems': 'center',
-    'backgroundColor': 'transparent',
-    'border': 'none',
-    'color': colors.textMuted,
-    'cursor': 'pointer',
-    'display': 'inline-flex',
-    'fontSize': fontSizes.sm,
-    'gap': '5px',
-    'justifyContent': 'center',
-    'padding': '0 10px',
-    ':hover': {
-      backgroundColor: colors.backgroundElement,
-      color: colors.textPrimary,
-    },
-  },
-  viewButtonDivider: {
-    borderLeftColor: colors.borderStrong,
-    borderLeftStyle: 'solid',
-    borderLeftWidth: '1px',
-  },
-  viewButtonActive: {
-    backgroundColor: 'rgba(255, 176, 0, 0.09)',
-    color: colors.accent,
+  viewCount: {
+    backgroundColor: colors.backgroundElement,
+    borderRadius: radii.default,
+    color: colors.textMuted,
+    fontFamily: fonts.mono,
+    fontSize: fontSizes.xs,
+    lineHeight: '15px',
+    padding: '0 5px',
   },
   searchActions: {
     'alignItems': 'center',
@@ -267,22 +256,24 @@ const styles = stylex.create({
   newButton: {
     'alignItems': 'center',
     'backgroundColor': 'transparent',
-    'borderColor': colors.border,
+    'borderColor': 'rgba(255, 176, 0, 0.4)',
     'borderRadius': radii.default,
     'borderStyle': 'solid',
     'borderWidth': '1px',
-    'color': colors.textMuted,
+    'color': colors.accent,
     'cursor': 'pointer',
     'display': 'inline-flex',
     'flex': '0 0 auto',
-    'fontSize': fontSizes.sm,
-    'gap': '6px',
-    'height': '28px',
-    'padding': '0 10px',
+    'fontSize': fontSizes.xs,
+    'gap': '5px',
+    'height': '22px',
+    'letterSpacing': 0,
+    'padding': '0 8px',
+    'textTransform': 'none',
     ':hover': {
-      backgroundColor: colors.backgroundHover,
-      borderColor: colors.borderStrong,
-      color: colors.textPrimary,
+      backgroundColor: 'rgba(255, 176, 0, 0.1)',
+      borderColor: colors.accent,
+      color: colors.accent,
     },
   },
   createHint: {
@@ -496,6 +487,33 @@ const styles = stylex.create({
   readerHeading: {
     minWidth: 0,
   },
+  readerHeadCompact: {
+    alignItems: 'center',
+    marginBottom: '10px',
+    paddingBottom: '7px',
+  },
+  readerTitleRow: {
+    display: 'contents',
+  },
+  readerTitleRowCompact: {
+    alignItems: 'center',
+    display: 'flex',
+    gap: '8px',
+    minWidth: 0,
+  },
+  readerHeadingBadgeCompact: {
+    flex: '0 0 auto',
+    marginBottom: 0,
+  },
+  readerHeadingTitleCompact: {
+    fontSize: fontSizes.base,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  readerMetaCompact: {
+    marginTop: '2px',
+  },
   readerHeadingBadge: {
     marginBottom: '7px',
   },
@@ -659,6 +677,7 @@ function ResearchReader({
   if (!document) return <Empty>选择一份研究资料开始阅读</Empty>;
 
   const cockpitSymbol = document.kind === 'stock' ? document.symbols[0] : null;
+  const compactHead = document.kind === 'canvas';
   return (
     <article
       {...stylex.props(
@@ -666,16 +685,34 @@ function ResearchReader({
         document.kind === 'canvas' && styles.readerDocumentCanvas,
       )}
     >
-      <header {...stylex.props(styles.readerHead)}>
+      <header {...stylex.props(styles.readerHead, compactHead && styles.readerHeadCompact)}>
         <div {...stylex.props(styles.readerHeading)}>
-          <Badge
-            className={stylex.props(styles.readerHeadingBadge).className}
-            tone={document.kind === 'stock' ? 'accent' : undefined}
+          <div
+            {...stylex.props(
+              compactHead ? styles.readerTitleRowCompact : styles.readerTitleRow,
+            )}
           >
-            {researchTypeLabel(document.type)}
-          </Badge>
-          <h2 {...stylex.props(styles.readerHeadingTitle)}>{document.title}</h2>
-          <div {...stylex.props(styles.readerMeta)}>
+            <Badge
+              className={
+                stylex.props(
+                  styles.readerHeadingBadge,
+                  compactHead && styles.readerHeadingBadgeCompact,
+                ).className
+              }
+              tone={document.kind === 'stock' ? 'accent' : undefined}
+            >
+              {researchTypeLabel(document.type)}
+            </Badge>
+            <h2
+              {...stylex.props(
+                styles.readerHeadingTitle,
+                compactHead && styles.readerHeadingTitleCompact,
+              )}
+            >
+              {document.title}
+            </h2>
+          </div>
+          <div {...stylex.props(styles.readerMeta, compactHead && styles.readerMetaCompact)}>
             <code {...stylex.props(styles.readerMetaCode)}>{document.path}</code>
             <span>
               更新于 <MarketTime value={document.mtime} format="month-day-time" />
@@ -857,45 +894,23 @@ export function ResearchPage() {
       className={`fullpage research-page ${stylex.props(styles.fullpage, styles.page, desktopShell && styles.fullpageDesktop).className}`}
     >
       <header {...stylex.props(styles.header, desktopShell && styles.headerDesktop)}>
-        <div {...stylex.props(styles.title)}>
+        <a href="/" {...stylex.props(styles.home)} aria-label="回首页">
+          <ChevronLeft size={13} {...stylex.props(styles.homeChevron)} />
           <span {...stylex.props(styles.titleIcon)}>
-            <Library size={18} />
+            <Library size={13} />
           </span>
-          <div {...stylex.props(styles.titleHeading)}>
-            <h1 {...stylex.props(styles.titleHeadingTitle)}>研究库</h1>
-            <p {...stylex.props(styles.titleHeadingDescription)}>
-              {stockCount} 篇股票档案 · {journalCount} 篇研究日志 · {canvasCount} 份画布
-            </p>
-          </div>
-        </div>
+          <h1 {...stylex.props(styles.titleHeadingTitle)}>研究库</h1>
+        </a>
+        <SegmentedControl
+          ariaLabel="研究库视图"
+          className={`research-view-switch ${stylex.props(styles.viewSwitch).className}`}
+          onChange={changeView}
+          options={viewOptions({ stocks: stockCount, journal: journalCount, canvases: canvasCount })}
+          size="lg"
+          value={view}
+          variant="plain"
+        />
         <div {...stylex.props(styles.controls)}>
-          <div
-            className={`research-view-switch ${stylex.props(styles.viewSwitch).className}`}
-            role="group"
-            aria-label="研究库视图"
-          >
-            {VIEW_OPTIONS.map((option, index) => (
-              <button
-                type="button"
-                key={option.key}
-                {...stylex.props(
-                  styles.viewButton,
-                  index > 0 && styles.viewButtonDivider,
-                  option.key === view && styles.viewButtonActive,
-                )}
-                aria-pressed={option.key === view}
-                onClick={() => changeView(option.key)}
-              >
-                {viewIcon(option.key)}
-                {option.label}
-              </button>
-            ))}
-          </div>
-          {view !== 'canvases' ? (
-            <button type="button" {...stylex.props(styles.newButton)} onClick={openCreateDialog}>
-              <Plus size={14} /> 新建
-            </button>
-          ) : null}
           <div {...stylex.props(styles.searchActions)}>
             <label {...stylex.props(styles.search)}>
               <Search size={14} aria-hidden="true" {...stylex.props(styles.searchIcon)} />
@@ -937,7 +952,13 @@ export function ResearchPage() {
           <aside {...stylex.props(styles.explorer)}>
             <div {...stylex.props(styles.explorerHead)}>
               <span>{explorerLabel(view)}</span>
-              <span>{visibleDocuments.length}</span>
+              {view === 'canvases' ? (
+                <span>{visibleDocuments.length}</span>
+              ) : (
+                <button type="button" {...stylex.props(styles.newButton)} onClick={openCreateDialog}>
+                  <Plus size={12} /> 新建
+                </button>
+              )}
             </div>
             <ResearchExplorer
               documents={visibleDocuments}

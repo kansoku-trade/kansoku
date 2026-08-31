@@ -17,7 +17,7 @@ const styles = stylex.create({
   thumb: {
     backgroundImage: `linear-gradient(180deg, ${colors.backgroundElement}, ${colors.backgroundCanvas})`,
     borderColor: colors.border,
-    borderRadius: '4px',
+    borderRadius: radii.default,
     borderStyle: 'solid',
     borderWidth: '1px',
     flex: '0 0 72px',
@@ -73,13 +73,11 @@ export function CanvasCard({
   title,
   mtime,
   onOpen,
-  onSource,
 }: {
   slug: string;
   title: string;
   mtime?: string;
   onOpen: () => void;
-  onSource: () => void;
 }) {
   return (
     <div className={`canvas-card ${stylex.props(styles.card).className}`}>
@@ -113,13 +111,6 @@ export function CanvasCard({
             title="本版暂不支持新窗口"
           >
             新窗口
-          </button>
-          <button
-            type="button"
-            className={`link-button ${stylex.props(styles.action).className}`}
-            onClick={onSource}
-          >
-            源码
           </button>
         </div>
       </div>

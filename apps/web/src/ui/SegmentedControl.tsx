@@ -4,13 +4,21 @@ import { colors, fontSizes, radii } from '../theme/tokens.stylex';
 
 const styles = stylex.create({
   root: {
+    display: 'grid',
+    gridAutoColumns: '1fr',
+    gridAutoFlow: 'column',
+  },
+  rootSolid: {
     borderColor: colors.borderStrong,
     borderRadius: radii.default,
     borderStyle: 'solid',
     borderWidth: '1px',
-    display: 'grid',
-    gridAutoColumns: '1fr',
-    gridAutoFlow: 'column',
+  },
+  rootOpen: {
+    columnGap: '20px',
+  },
+  rootPlain: {
+    columnGap: '18px',
   },
   fit: {
     gridAutoColumns: 'auto',
@@ -30,6 +38,32 @@ const styles = stylex.create({
     borderLeftStyle: 'solid',
     borderLeftWidth: '1px',
   },
+  labelUnderline: {
+    'borderBottomColor': 'transparent',
+    'borderBottomStyle': 'solid',
+    'borderBottomWidth': '2px',
+    'fontSize': fontSizes.base,
+    'padding': '2px 0',
+    ':hover': {
+      color: colors.textSecondary,
+    },
+  },
+  labelPlain: {
+    'fontSize': fontSizes.base,
+    'padding': 0,
+    ':hover': {
+      color: colors.textSecondary,
+    },
+  },
+  selectedUnderline: {
+    backgroundColor: 'transparent',
+    borderBottomColor: colors.accent,
+    color: colors.textPrimary,
+  },
+  selectedPlain: {
+    backgroundColor: 'transparent',
+    color: colors.textPrimary,
+  },
   optionDisabled: {
     cursor: 'default',
     opacity: 0.55,
@@ -46,6 +80,7 @@ const styles = stylex.create({
     color: colors.textMuted,
     display: 'flex',
     fontSize: fontSizes.xs,
+    gap: '5px',
     height: '100%',
     justifyContent: 'center',
     padding: '4px 10px',
@@ -54,12 +89,17 @@ const styles = stylex.create({
   compactLabel: {
     padding: '2px 8px',
   },
+  largeLabel: {
+    fontSize: fontSizes.lg,
+  },
   selected: {
     backgroundColor: colors.backgroundHover,
     color: colors.textPrimary,
     fontWeight: 600,
   },
 });
+
+export type SegmentedControlVariant = 'solid' | 'underline' | 'plain';
 
 export interface SegmentedControlOption<Value extends string> {
   label: ReactNode;
@@ -73,8 +113,9 @@ interface SegmentedControlProps<Value extends string> {
   fit?: boolean;
   onChange: (value: Value) => void;
   options: readonly SegmentedControlOption<Value>[];
-  size?: 'sm';
+  size?: 'sm' | 'lg';
   value: Value;
+  variant?: SegmentedControlVariant;
 }
 
 export function SegmentedControl<Value extends string>({
@@ -86,13 +127,22 @@ export function SegmentedControl<Value extends string>({
   options,
   size,
   value,
+  variant = 'solid',
 }: SegmentedControlProps<Value>) {
   const name = useId();
+  const solid = variant === 'solid';
   const classes = [
     'ui-segmented-control',
-    size === 'sm' && 'ui-segmented-control--sm',
-    fit && 'ui-segmented-control--fit',
-    stylex.props(styles.root, fit && styles.fit).className,
+    `ui-segmented-control--${variant}`,
+    size && `ui-segmented-control--${size}`,
+    (fit || !solid) && 'ui-segmented-control--fit',
+    stylex.props(
+      styles.root,
+      solid && styles.rootSolid,
+      variant === 'underline' && styles.rootOpen,
+      variant === 'plain' && styles.rootPlain,
+      (fit || !solid) && styles.fit,
+    ).className,
     className,
   ]
     .filter(Boolean)
@@ -110,7 +160,7 @@ export function SegmentedControl<Value extends string>({
           className={
             stylex.props(
               styles.option,
-              index > 0 && styles.optionAdjacent,
+              solid && index > 0 && styles.optionAdjacent,
               disabled && styles.optionDisabled,
             ).className
           }
@@ -129,8 +179,13 @@ export function SegmentedControl<Value extends string>({
             className={
               stylex.props(
                 styles.label,
+                variant === 'underline' && styles.labelUnderline,
+                variant === 'plain' && styles.labelPlain,
                 size === 'sm' && styles.compactLabel,
+                size === 'lg' && styles.largeLabel,
                 value === option.value && styles.selected,
+                value === option.value && variant === 'underline' && styles.selectedUnderline,
+                value === option.value && variant === 'plain' && styles.selectedPlain,
               ).className
             }
           >

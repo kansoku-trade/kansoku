@@ -195,7 +195,7 @@ describe('ResearchPage canvases shelf', () => {
 
     renderResearchPage();
 
-    expect(await screen.findByRole('button', { name: '画布' })).toBeTruthy();
+    expect(await screen.findByRole('radio', { name: /^画布/ })).toBeTruthy();
     expect(screen.queryByText('新建')).toBeNull();
     expect((await screen.findByTestId('canvas-frame')).textContent).toBe('acceptance-mu-panel');
     expect(screen.queryByText('AVGO 档案正文')).toBeNull();

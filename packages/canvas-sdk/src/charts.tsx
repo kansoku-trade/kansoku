@@ -28,7 +28,7 @@ function normalizeSeries(series?: (string | Series)[]): Series[] {
 const tooltipStyle: CSSProperties = {
   backgroundColor: theme.bgSurface,
   border: `1px solid ${theme.border}`,
-  borderRadius: 4,
+  borderRadius: theme.radius,
   color: theme.textPrimary,
   fontSize: 12,
 };

@@ -1,14 +1,21 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as stylex from '@stylexjs/stylex';
 import { client } from '@web/lib/client';
+import { ScrollArea } from '@web/ui';
 import { colors } from '../../theme/tokens.stylex';
 
 const styles = stylex.create({
-  frame: {
+  root: {
     backgroundColor: colors.backgroundCanvas,
+    height: '100%',
+  },
+  pad: {
+    padding: '18px 20px 28px',
+  },
+  frame: {
     borderStyle: 'none',
     borderWidth: 0,
-    height: '100%',
+    display: 'block',
     width: '100%',
   },
 });
@@ -21,12 +28,16 @@ export interface CanvasFrameProps {
 type GuestMessage =
   | { type: 'ready' }
   | { type: 'ok' }
+  | { type: 'height'; height: number }
   | { type: 'runtime-error'; issues?: string[]; stage?: 'compile' | 'runtime' };
+
+const INITIAL_HEIGHT = 320;
 
 export function CanvasFrame({ source, slug }: CanvasFrameProps) {
   const frameRef = useRef<HTMLIFrameElement>(null);
   const sourceRef = useRef(source);
   sourceRef.current = source;
+  const [height, setHeight] = useState(INITIAL_HEIGHT);
 
   useEffect(() => {
     const frame = frameRef.current;
@@ -42,6 +53,10 @@ export function CanvasFrame({ source, slug }: CanvasFrameProps) {
       if (!data || typeof data !== 'object') return;
       if (data.type === 'ready') {
         postSource();
+        return;
+      }
+      if (data.type === 'height') {
+        if (data.height > 0) setHeight(data.height);
         return;
       }
       if (data.type !== 'ok' && data.type !== 'runtime-error') return;
@@ -60,12 +75,18 @@ export function CanvasFrame({ source, slug }: CanvasFrameProps) {
   }, [slug, source]);
 
   return (
-    <iframe
-      {...stylex.props(styles.frame)}
-      ref={frameRef}
-      title="canvas"
-      src="/canvas-guest.html"
-      sandbox="allow-scripts allow-same-origin"
-    />
+    <ScrollArea className={stylex.props(styles.root).className}>
+      <div {...stylex.props(styles.pad)}>
+        <iframe
+          {...stylex.props(styles.frame)}
+          style={{ height }}
+          ref={frameRef}
+          title="canvas"
+          scrolling="no"
+          src="/canvas-guest.html"
+          sandbox="allow-scripts allow-same-origin"
+        />
+      </div>
+    </ScrollArea>
   );
 }

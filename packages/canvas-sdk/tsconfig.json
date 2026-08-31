@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "skipLibCheck": true,
+    "lib": [
+      "ES2022",
+      "DOM"
+    ],
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "outDir": "../../.claude/skills/canvas/sdk",
+    "rootDir": "src"
+  },
+  "include": [
+    "src"
+  ]
+}

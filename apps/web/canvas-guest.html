@@ -10,10 +10,14 @@
       body,
       #root {
         margin: 0;
-        height: 100%;
         background: #0a0a0a;
         color: #e8e8e8;
         color-scheme: dark;
+      }
+      /* 宿主把 iframe 高度设成内容高度，滚动由宿主的 ScrollArea 接管；
+         这里留着滚动条会出现两条，且内层那条压在内容上。 */
+      html {
+        overflow: hidden;
       }
     </style>
   </head>

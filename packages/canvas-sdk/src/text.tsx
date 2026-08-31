@@ -97,7 +97,7 @@ export function Pill({
         fontSize: 10,
         lineHeight: '16px',
         padding: '0 6px',
-        borderRadius: 999,
+        borderRadius: theme.radius,
         border: `1px solid ${theme.border}`,
         color,
         background: theme.bgElement,

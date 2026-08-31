@@ -26,9 +26,23 @@ class GuestBoundary extends Component<
   }
 }
 
-function report(message: { type: 'ok' } | { type: 'runtime-error'; issues: string[]; stage: 'compile' | 'runtime' }) {
+function report(
+  message: { type: 'ok' } | { type: 'runtime-error'; issues: string[]; stage: 'compile' | 'runtime' },
+) {
   parent.postMessage(message, '*');
 }
+
+const host = document.getElementById('root')!;
+let lastHeight = 0;
+
+function reportHeight(): void {
+  const height = Math.ceil(host.getBoundingClientRect().height);
+  if (height === lastHeight) return;
+  lastHeight = height;
+  parent.postMessage({ type: 'height', height }, '*');
+}
+
+new ResizeObserver(reportHeight).observe(host);
 
 function renderIssues(issues: string[]): void {
   root.render(
