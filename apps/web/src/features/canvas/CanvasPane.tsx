@@ -4,17 +4,12 @@ import * as stylex from '@stylexjs/stylex';
 import { errorMessage } from '@web/lib/api';
 import { client } from '@web/lib/client';
 import { Button, Spinner } from '@web/ui';
-import { colors, fonts, fontSizes, radii } from '../../theme/tokens.stylex';
+import { colors, fonts, fontSizes, sizes } from '../../theme/tokens.stylex';
 import { CanvasFrame } from './CanvasFrame';
-
-export type CanvasPaneView = 'canvas' | 'source';
 
 const styles = stylex.create({
   pane: {
     backgroundColor: colors.backgroundCanvas,
-    borderLeftColor: colors.border,
-    borderLeftStyle: 'solid',
-    borderLeftWidth: '1px',
     display: 'flex',
     flexDirection: 'column',
     height: '100%',
@@ -28,81 +23,40 @@ const styles = stylex.create({
     display: 'flex',
     flex: '0 0 auto',
     gap: '12px',
+    height: sizes.paneHeaderHeight,
     justifyContent: 'space-between',
-    padding: '10px 12px',
+    overflow: 'hidden',
+    padding: '0 12px',
   },
   titles: {
     display: 'flex',
-    flexDirection: 'column',
-    gap: '2px',
+    flex: '1 1 auto',
+    gap: '8px',
     minWidth: 0,
+    overflow: 'hidden',
   },
   title: {
     color: colors.textPrimary,
+    flex: '1 1 auto',
     fontSize: fontSizes.sm,
+    minWidth: 0,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
   },
   slug: {
     color: colors.textMuted,
+    flex: '0 1 auto',
     fontFamily: fonts.mono,
     fontSize: fontSizes.xs,
-  },
-  actions: {
-    alignItems: 'center',
-    display: 'flex',
-    gap: '6px',
-  },
-  viewSwitch: {
-    'borderColor': colors.borderStrong,
-    'borderRadius': radii.default,
-    'borderStyle': 'solid',
-    'borderWidth': '1px',
-    'display': 'grid',
-    'gridTemplateColumns': 'repeat(auto-fit, minmax(0, 1fr))',
-    'height': '28px',
-    'minWidth': 0,
-    'overflow': 'hidden',
-    '@media (max-width: 760px)': {
-      flex: '1 1 190px',
-    },
-  },
-  viewButton: {
-    'alignItems': 'center',
-    'backgroundColor': 'transparent',
-    'border': 'none',
-    'color': colors.textMuted,
-    'cursor': 'pointer',
-    'display': 'inline-flex',
-    'fontSize': fontSizes.sm,
-    'gap': '5px',
-    'justifyContent': 'center',
-    'padding': '0 10px',
-    ':hover': {
-      backgroundColor: colors.backgroundElement,
-      color: colors.textPrimary,
-    },
-  },
-  viewButtonDivider: {
-    borderLeftColor: colors.borderStrong,
-    borderLeftStyle: 'solid',
-    borderLeftWidth: '1px',
-  },
-  viewButtonActive: {
-    backgroundColor: 'rgba(255, 176, 0, 0.09)',
-    color: colors.accent,
+    minWidth: 0,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
   },
   body: {
     flex: '1 1 auto',
     minHeight: 0,
-  },
-  source: {
-    backgroundColor: colors.backgroundCanvas,
-    color: colors.textPrimary,
-    fontSize: fontSizes.sm,
-    height: '100%',
-    lineHeight: 1.5,
-    margin: 0,
-    overflow: 'auto',
-    padding: '14px 16px',
   },
   status: {
     color: colors.textSecondary,
@@ -111,17 +65,7 @@ const styles = stylex.create({
   },
 });
 
-export function CanvasPane({
-  slug,
-  view,
-  onClose,
-  onViewChange,
-}: {
-  slug: string;
-  view: CanvasPaneView;
-  onClose: () => void;
-  onViewChange: (view: CanvasPaneView) => void;
-}) {
+export function CanvasPane({ slug, onClose }: { slug: string; onClose: () => void }) {
   const [doc, setDoc] = useState<CanvasDoc | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -151,40 +95,7 @@ export function CanvasPane({
           </span>
           <span className={`canvas-pane-slug ${stylex.props(styles.slug).className}`}>{slug}</span>
         </div>
-        <div className={`canvas-pane-actions ${stylex.props(styles.actions).className}`}>
-          <div
-            className={`research-view-switch ${stylex.props(styles.viewSwitch).className}`}
-            role="group"
-            aria-label="画布视图"
-          >
-            <button
-              type="button"
-              className={`${view === 'canvas' ? 'active ' : ''}${
-                stylex.props(styles.viewButton, view === 'canvas' && styles.viewButtonActive)
-                  .className
-              }`}
-              aria-pressed={view === 'canvas'}
-              onClick={() => onViewChange('canvas')}
-            >
-              画面
-            </button>
-            <button
-              type="button"
-              className={`${view === 'source' ? 'active ' : ''}${
-                stylex.props(
-                  styles.viewButton,
-                  styles.viewButtonDivider,
-                  view === 'source' && styles.viewButtonActive,
-                ).className
-              }`}
-              aria-pressed={view === 'source'}
-              onClick={() => onViewChange('source')}
-            >
-              源码
-            </button>
-          </div>
-          <Button onClick={onClose}>关闭</Button>
-        </div>
+        <Button onClick={onClose}>关闭</Button>
       </div>
       <div className={`canvas-pane-body ${stylex.props(styles.body).className}`}>
         {error ? (
@@ -195,10 +106,6 @@ export function CanvasPane({
           <div className={`canvas-pane-loading ${stylex.props(styles.status).className}`}>
             <Spinner /> 正在打开画布…
           </div>
-        ) : view === 'source' ? (
-          <pre className={`canvas-pane-source ${stylex.props(styles.source).className}`}>
-            {doc.source}
-          </pre>
         ) : (
           <CanvasFrame source={doc.source} slug={doc.slug} />
         )}

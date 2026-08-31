@@ -15,11 +15,15 @@ const styles = stylex.create({
     minHeight: 0,
   },
   sidebarHead: {
+    alignItems: 'center',
     borderBottomColor: colors.border,
     borderBottomStyle: 'solid',
     borderBottomWidth: '1px',
+    display: 'flex',
     flex: '0 0 auto',
-    padding: '12px',
+    height: sizes.paneHeaderHeight,
+    overflow: 'hidden',
+    padding: '0 12px',
   },
   newSession: {
     gap: '6px',

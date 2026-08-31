@@ -451,7 +451,6 @@ function ChatRowView({
   modelLabels,
   userBubbleClassName,
   onOpenCanvas,
-  onViewCanvasSource,
 }: {
   row: ChatRow;
   rowIndex: number;
@@ -459,7 +458,6 @@ function ChatRowView({
   modelLabels?: Readonly<Record<string, string>>;
   userBubbleClassName?: string;
   onOpenCanvas?: (slug: string) => void;
-  onViewCanvasSource?: (slug: string) => void;
 }) {
   if (row.kind === 'user') {
     return (
@@ -507,8 +505,7 @@ function ChatRowView({
   }
   if (row.kind === 'tool') {
     const entry = canvasEntryFromTool(row.label ?? '', row.input, row.output);
-    const showCard =
-      entry && onOpenCanvas && onViewCanvasSource && isLastSaveForSlug(rows, rowIndex, entry.slug);
+    const showCard = entry && onOpenCanvas && isLastSaveForSlug(rows, rowIndex, entry.slug);
     return (
       <>
         <ToolRow label={row.label ?? ''} running={false} input={row.input} output={row.output} />
@@ -517,7 +514,6 @@ function ChatRowView({
             slug={entry.slug}
             title={entry.title}
             onOpen={() => onOpenCanvas(entry.slug)}
-            onSource={() => onViewCanvasSource(entry.slug)}
           />
         ) : null}
       </>
@@ -549,7 +545,6 @@ function ConversationTranscriptView({
   insertClassName,
   modelLabels,
   onOpenCanvas,
-  onViewCanvasSource,
 }: {
   rows: ChatRow[];
   inserts?: TranscriptInsert[];
@@ -571,7 +566,6 @@ function ConversationTranscriptView({
   insertClassName?: string;
   modelLabels?: Readonly<Record<string, string>>;
   onOpenCanvas?: (slug: string) => void;
-  onViewCanvasSource?: (slug: string) => void;
 }) {
   const bodyRef = useRef<HTMLDivElement>(null);
   const stickRef = useRef(true);
@@ -638,7 +632,6 @@ function ConversationTranscriptView({
             modelLabels={modelLabels}
             userBubbleClassName={userBubbleClassName}
             onOpenCanvas={onOpenCanvas}
-            onViewCanvasSource={onViewCanvasSource}
           />
         ) : (
           <div

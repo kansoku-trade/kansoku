@@ -24,18 +24,13 @@ const { CanvasPane } = await import('./CanvasPane');
 afterEach(() => cleanup());
 
 describe('CanvasPane chrome', () => {
-  it('uses the research segmented control and the shared Button', async () => {
-    render(
-      <CanvasPane
-        slug="acceptance-mu-panel"
-        view="canvas"
-        onClose={() => {}}
-        onViewChange={() => {}}
-      />,
-    );
+  it('shows the canvas with a close button and no source switch', async () => {
+    render(<CanvasPane slug="acceptance-mu-panel" onClose={() => {}} />);
     await waitFor(() => expect(screen.getByText('MU 验收面板')).toBeTruthy());
-    const switchRoot = screen.getByRole('group', { name: '画布视图' });
-    expect(switchRoot.className).toContain('research-view-switch');
     expect(screen.getByRole('button', { name: '关闭' }).className).toContain('btn');
+    expect(screen.getByTestId('canvas-frame')).toBeTruthy();
+    expect(screen.queryByRole('group', { name: '画布视图' })).toBeNull();
+    expect(screen.queryByRole('button', { name: '源码' })).toBeNull();
+    expect(screen.queryByRole('button', { name: '画面' })).toBeNull();
   });
 });

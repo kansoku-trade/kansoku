@@ -22,12 +22,7 @@ export function EventCanvasHost({ children }: { children: ReactNode }) {
   const generate = useGenerateEventCanvas({ onOpen: canvas.open });
   return (
     <EventCanvasActionsContext.Provider value={generate}>
-      <CanvasSplit
-        openSlug={canvas.openSlug}
-        view={canvas.view}
-        onClose={canvas.close}
-        onViewChange={canvas.setView}
-      >
+      <CanvasSplit openSlug={canvas.openSlug} onClose={canvas.close}>
         {children}
       </CanvasSplit>
     </EventCanvasActionsContext.Provider>

@@ -46,5 +46,6 @@ export const radii = stylex.defineConsts({
 
 export const sizes = stylex.defineConsts({
   controlHeight: '28px',
+  paneHeaderHeight: '44px',
   sidebarWidth: '340px',
 });

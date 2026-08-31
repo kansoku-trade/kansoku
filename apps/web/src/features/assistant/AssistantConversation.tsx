@@ -47,7 +47,8 @@ const styles = stylex.create({
     'flexGrow': 0,
     'flexShrink': 0,
     'flexBasis': 'auto',
-    'minHeight': '44px',
+    'height': sizes.paneHeaderHeight,
+    'overflow': 'hidden',
     'padding': '0 max(12px, calc((100% - 68ch) / 2))',
     '@media (max-width: 720px)': {
       paddingLeft: '8px',
@@ -500,9 +501,7 @@ export function AssistantConversation({
   return (
     <CanvasSplit
       openSlug={canvas.openSlug}
-      view={canvas.view}
       onClose={canvas.close}
-      onViewChange={canvas.setView}
       storageKey="canvas-assistant-pane"
     >
       <div className={`assistant-conversation ${stylex.props(styles.conversation).className}`}>
@@ -524,8 +523,7 @@ export function AssistantConversation({
           emptyText="输入问题、判断或交易计划，开始一段研究对话"
           onPickSuggestion={() => {}}
           modelLabels={modelLabels}
-          onOpenCanvas={(slug) => canvas.open(slug, 'canvas')}
-          onViewCanvasSource={(slug) => canvas.open(slug, 'source')}
+          onOpenCanvas={(slug) => canvas.open(slug)}
         />
         <div className={`assistant-conversation-dock ${stylex.props(styles.dock).className}`}>
           <div

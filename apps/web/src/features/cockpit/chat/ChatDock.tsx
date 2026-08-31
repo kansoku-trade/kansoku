@@ -211,9 +211,7 @@ export function ChatDock({ chartId, docCreatedAt }: ChatDockProps) {
       )}
       <CanvasSplit
         openSlug={mode === 'full' ? canvas.openSlug : null}
-        view={canvas.view}
         onClose={canvas.close}
-        onViewChange={canvas.setView}
         storageKey="canvas-chatdock-pane"
       >
         <ChatPanel
@@ -233,11 +231,7 @@ export function ChatDock({ chartId, docCreatedAt }: ChatDockProps) {
           onModeChange={setMode}
           onPickSuggestion={(question) => void submit(question)}
           onOpenCanvas={(slug) => {
-            canvas.open(slug, 'canvas');
-            setMode('full');
-          }}
-          onViewCanvasSource={(slug) => {
-            canvas.open(slug, 'source');
+            canvas.open(slug);
             setMode('full');
           }}
         />
