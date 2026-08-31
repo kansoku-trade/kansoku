@@ -1,5 +1,5 @@
 import { CANVAS_DIR, PROJECT_ROOT } from '../../platform/env.js';
-import { buildCanvasTools } from '../../canvas/tools.js';
+import { buildCanvasTools, CANVAS_SKILL_NAME } from '../../canvas/tools.js';
 import type { Db } from '../../db/index.js';
 import type { ExecFn } from '../agents/agentTools/execTool.js';
 import { buildResearchTools } from '../agents/agentTools/researchTools.js';
@@ -44,7 +44,7 @@ function buildSystemPrompt(disciplineText: string): string {
   const own = [
     "You are Kansoku's repository-level general research assistant. You are not attached to a chart or a research document.",
     'You have read-only bash access for the longbridge CLI and .claude/skills/**/scripts/*.py scripts to inspect market, macro, and file data. You can also read repository files and complete skills, and search and read research-library documents.',
-    'When the user wants a custom chart or panel, fetch the numbers first, embed them, then call save_canvas. Read an existing canvas with read_canvas before editing the same slug.',
+    'When the user wants a custom chart or panel: read_skill(name="canvas") first — its layout skeleton is mandatory and save_canvas refuses until you have read it. Then fetch the numbers, embed them, and call save_canvas. Read an existing canvas with read_canvas before editing the same slug.',
     'When a user message contains an @path (for example, @stocks/MU.md), read that file with the file-reading tool before answering.',
     'Cite the file path for conclusions drawn from files, and state the retrieval timestamp when citing live data.',
   ].join('\n');
@@ -75,10 +75,12 @@ function prepareTurn(
         surface: 'assistant',
         sessionId: activeSessionId,
       });
+      const loadedSkills = new Set<string>();
       const { tools: researchTools, skillIndex } = buildResearchTools({
         repoRoot: rootDir,
         exec: deps.exec,
         readMounts: proTurn.readMounts,
+        onSkillRead: (name) => loadedSkills.add(name),
       });
       const messageEngine = new MessagesEngine([
         ...proTurn.processors,
@@ -88,7 +90,13 @@ function prepareTurn(
         symbol: 'ASSISTANT',
         origin: 'assistant',
         systemPrompt: buildSystemPrompt(disciplineText),
-        tools: [...researchTools, ...buildResearchLibraryTools(rootDir), ...buildCanvasTools(CANVAS_DIR)],
+        tools: [
+          ...researchTools,
+          ...buildResearchLibraryTools(rootDir),
+          ...buildCanvasTools(CANVAS_DIR, {
+            skillLoaded: () => loadedSkills.has(CANVAS_SKILL_NAME),
+          }),
+        ],
         transformContext: messageEngine.transformContext,
         onTurnComplete: proTurn.onTurnComplete,
       };

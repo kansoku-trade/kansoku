@@ -1,9 +1,23 @@
 import type { AgentTool } from '@earendil-works/pi-agent-core';
 import { canvasComponentNames } from '@kansoku/canvas/names';
-import { buildCanvasTools } from '../canvas/tools.js';
+import { buildCanvasTools, CANVAS_SKILL_NAME } from '../canvas/tools.js';
+import { buildReadFileTool } from '../ai/agents/agentTools/fileTools.js';
 import { createAgentSession } from '../ai/agents/agentSession.js';
+import { loadSkillIndex, readSkill } from '../ai/agents/skills.js';
+import { PROJECT_ROOT, skillSearchDirs } from '../platform/env.js';
 import { aiConfig } from '../ai/runtime/models.js';
+
 import type { EventEvidencePack } from './evidencePack.js';
+
+// This persona has no read_skill tool and writes a canvas on every run, so there is nothing
+// to save by loading the guide on demand — inject it the way the analyst persona does.
+function canvasSkillText(): string | null {
+  try {
+    return readSkill(loadSkillIndex(skillSearchDirs(PROJECT_ROOT)), CANVAS_SKILL_NAME);
+  } catch {
+    return null;
+  }
+}
 
 function bindCanvasSlug(tools: AgentTool[], slug: string): AgentTool[] {
   return tools.map((tool) => {
@@ -23,6 +37,7 @@ const SYSTEM_PROMPT = [
   'If a price or peer item has coverage "unavailable", write that gap in the canvas. Do not present later bars as the event window.',
   `Use only these @kansoku/canvas names: ${canvasComponentNames(['layout', 'text', 'data', 'analysis']).join(', ')}.`,
   'Table columns are {key, header}[] and rows are objects, or string[] columns with array rows.',
+  'The canvas skill below is authoritative for layout. For exact prop shapes, read_file the declarations under .claude/skills/canvas/sdk/ rather than guessing — an invented prop is silently dropped.',
   'Arrange the evidence as TSX, then call save_canvas.',
   'You must use the exact slug you are given. The same event always overwrites the same canvas.',
 ].join('\n');
@@ -37,13 +52,27 @@ export async function runEventCanvasPersona(input: {
   if (!model) {
     throw new Error('no model configured for event canvas');
   }
+  const skillText = canvasSkillText();
   const session = createAgentSession({
     layer: 'assistant',
     symbol: input.pack.event.symbols[0] ?? 'MACRO',
     origin: `event-canvas:${input.pack.event.id}`,
     model,
-    systemPrompt: SYSTEM_PROMPT,
-    tools: bindCanvasSlug(buildCanvasTools(input.canvasDir), input.slug),
+    systemPrompt: skillText
+      ? [
+          SYSTEM_PROMPT,
+          '',
+          '<activated_skill name="canvas">',
+          skillText,
+          '</activated_skill>',
+        ].join('\n')
+      : SYSTEM_PROMPT,
+    // The skill points at the SDK source for exact prop shapes. Without a reader this
+    // persona invented props (`Callout title`, `Source url`) that silently dropped.
+    tools: [
+      ...bindCanvasSlug(buildCanvasTools(input.canvasDir), input.slug),
+      buildReadFileTool(PROJECT_ROOT),
+    ],
   });
   await session.runTurn(
     [

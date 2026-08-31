@@ -48,3 +48,83 @@ export function checkCanvasSource(source: string): string[] {
 
   return issues;
 }
+
+const CHART_TAGS = ['LineChart', 'BarChart', 'AreaChart', 'PieChart', 'CandleChart'] as const;
+const MAX_GRID_COLUMNS = 4;
+const MAX_CHARTS = 6;
+
+/**
+ * Reads the attribute region of a JSX opening tag. A regex cannot do this: props like
+ * `markers={[{ time: 1, price: 2 }]}` contain `>` and `}` inside nested braces and strings.
+ */
+function openingTags(source: string, tag: string): string[] {
+  const found: string[] = [];
+  const opener = new RegExp(`<${tag}(?=[\\s/>])`, 'g');
+  for (const match of source.matchAll(opener)) {
+    let depth = 0;
+    let quote: string | null = null;
+    let i = match.index + match[0].length;
+    for (; i < source.length; i++) {
+      const ch = source[i];
+      if (quote) {
+        if (ch === quote && source[i - 1] !== '\\') quote = null;
+        continue;
+      }
+      if (ch === '"' || ch === "'" || ch === '`') quote = ch;
+      else if (ch === '{' || ch === '[' || ch === '(') depth++;
+      else if (ch === '}' || ch === ']' || ch === ')') depth--;
+      else if (ch === '>' && depth === 0) break;
+    }
+    found.push(source.slice(match.index + match[0].length, i));
+  }
+  return found;
+}
+
+function hasProp(attrs: string, name: string): boolean {
+  return new RegExp(`\\b${name}\\s*=`).test(attrs);
+}
+
+/**
+ * Layout rules from the canvas skill, enforced at save time only. Deliberately NOT part of
+ * `checkCanvasSource`: that one also gates `compileCanvasSource`, so tightening it there
+ * would stop already-saved canvases from rendering.
+ */
+export function reviewCanvasStructure(source: string): string[] {
+  const issues: string[] = [];
+
+  const roots = openingTags(source, 'Canvas');
+  if (roots.length === 0) {
+    issues.push('Canvas must be the root component');
+  }
+  for (const attrs of roots) {
+    if (!hasProp(attrs, 'title')) issues.push('Canvas needs a title');
+    if (!hasProp(attrs, 'caption')) {
+      issues.push('Canvas needs a caption: source · data basis · cutoff time');
+    }
+  }
+
+  let charts = 0;
+  for (const tag of CHART_TAGS) {
+    const tags = openingTags(source, tag);
+    charts += tags.length;
+    for (const attrs of tags) {
+      if (!hasProp(attrs, 'title')) issues.push(`${tag} needs a title`);
+    }
+  }
+  if (charts > MAX_CHARTS) {
+    issues.push(`at most ${MAX_CHARTS} charts per canvas, found ${charts} — split it in two`);
+  }
+
+  for (const attrs of openingTags(source, 'Grid')) {
+    const columns = attrs.match(/\bcolumns\s*=\s*\{\s*(\d+)\s*\}/);
+    if (columns && Number(columns[1]) > MAX_GRID_COLUMNS) {
+      issues.push(`Grid columns must be <= ${MAX_GRID_COLUMNS}, found ${columns[1]}`);
+    }
+  }
+
+  if (!/<(?:Callout|Text)(?=[\s/>])/.test(source)) {
+    issues.push('no Callout or Text: a canvas states a conclusion, it is not a pile of numbers');
+  }
+
+  return issues;
+}

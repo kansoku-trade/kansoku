@@ -2,7 +2,8 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CANVAS_COMPONENT_NAMES, CANVAS_NON_COMPONENT_EXPORTS } from '@kansoku/canvas/names';
-import { checkCanvasSource } from '@kansoku/core/canvas/check';
+import { checkCanvasSource, reviewCanvasStructure } from '@kansoku/core/canvas/check';
+import skeleton from './skeleton.canvas.tsx?raw';
 import source from './kitchenSink.canvas.tsx?raw';
 
 vi.mock('lightweight-charts', () => ({
@@ -27,6 +28,7 @@ afterEach(() => {
 describe('canvas kitchen sink demo', () => {
   it('is a source the canvas checker accepts', () => {
     expect(checkCanvasSource(source)).toEqual([]);
+    expect(reviewCanvasStructure(source)).toEqual([]);
   });
 
   it('compiles and renders through the real canvas pipeline', () => {
@@ -39,6 +41,17 @@ describe('canvas kitchen sink demo', () => {
   it('exercises every component the SDK exports', () => {
     const missing = names.filter((name) => !new RegExp(`<${name}[\\s/>]`).test(source));
     expect(missing).toEqual([]);
+  });
+});
+
+describe('canvas skeleton', () => {
+  it('is the shape the skill tells models to copy: valid, structural, and renderable', () => {
+    expect(checkCanvasSource(skeleton)).toEqual([]);
+    expect(reviewCanvasStructure(skeleton)).toEqual([]);
+    const result = loadCanvasComponent(skeleton);
+    if (!result.ok) throw new Error(result.issues.join('\n'));
+    render(<result.Component />);
+    expect(screen.getByText('MU vs 板块强弱')).toBeTruthy();
   });
 });
 

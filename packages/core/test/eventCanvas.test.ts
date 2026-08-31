@@ -32,7 +32,7 @@ const SOURCE = `import { Canvas, Section, Text } from '@kansoku/canvas';
 
 export default function App() {
   return (
-    <Canvas title="事件画布">
+    <Canvas title="事件画布" caption="Longbridge · demo">
       <Section title="证据">
         <Text>原消息与盘面</Text>
       </Section>

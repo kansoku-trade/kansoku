@@ -121,7 +121,7 @@ describe('research document loading', () => {
 
 const CANVAS_SOURCE = `import { Canvas, Text } from '@kansoku/canvas';
 export default function App() {
-  return <Canvas title="MU 验收面板"><Text>ok</Text></Canvas>;
+  return <Canvas title="MU 验收面板" caption="Longbridge · demo"><Text>ok</Text></Canvas>;
 }
 `;
 

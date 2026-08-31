@@ -1,90 +1,187 @@
 ---
 name: canvas
-description: >
-  现场拼一份自定义画布（图表/面板），写成 journal/canvases/<slug>.canvas.tsx。
-  只从 @kansoku/canvas 取组件，数据先用工具取回再内嵌进 TSX。适合「这一问才需要」的
-  对比、多图并排、结论+数字，而不是四种固定图表。Triggers: 画布、自定义面板、
-  拼一张图、canvas、save_canvas、自定义图表、并排对比。
+description: >-
+  A canvas is a live React panel the user opens beside the chat, saved as
+  journal/canvases/<slug>.canvas.tsx. You MUST use a canvas whenever you produce a
+  standalone analytical artifact — multi-symbol comparisons, capital-flow or price reads
+  across several names, event before/after studies, scenario-and-plan write-ups, session
+  or weekly post-mortems, multi-period chart layouts, coverage-and-gap reports, or any
+  answer that is carried by numbers laid out visually. If you catch yourself about to
+  write a markdown table of market data, stop and build a canvas instead. You MUST also
+  read this skill whenever you create, edit, or debug any .canvas.tsx file, and before
+  every save_canvas call — save_canvas refuses until you have. Do not use a canvas for a
+  single quote or one-line answer, or for the four fixed chart types (flow / cohort /
+  sepa / intraday), which belong to the `chart` skill. Triggers: 画布、自定义面板、
+  拼一张图、并排对比、自定义图表、多标的对照, canvas, save_canvas, custom panel,
+  side-by-side comparison.
 ---
 
-# canvas
+A canvas is one `.canvas.tsx` file the app compiles so the user can open it beside the chat.
 
-给用户一份**能继续改的具名画布**，不是聊天气泡里的表格。四种固定图（flow / cohort / sepa / intraday）走 `chart` skill；这里是「按这一个问题现场拼」。
+> Rule text is English so it survives every runtime. **Canvas content is output — it follows
+> TD-LANG-01: 中文白话.**
 
-> 回复语言跟用户：简体 / 繁體 / English。
+## Workflow
 
-## 什么时候用
+### 1. Decide whether to use a canvas
 
-- 用户要看「多周期 + 对比 + 一段结论」这种现成类型盖不住的东西。
-- 已经取到数，需要一张可重开、可改的面板。
-- 同一份再改：先 `read_canvas`，再 `save_canvas` 覆盖同一个 slug。
+The trigger is whether the numbers **are** the deliverable. If they are a step toward
+something else, skip the canvas.
 
-别用：只要一个数字或一行 sparkline；只要标准驾驶舱（走 `chart`）。
+**Use one when:** several symbols are compared across the same metrics; a read spans
+multiple periods or charts; an event is studied before and after; a directional call comes
+with scenarios or an entry/stop/target plan; a session or week is reviewed; any structured
+table longer than a handful of rows.
 
-## 流程
+**Do NOT when:** the answer is one quote or one sentence; the user wants one of the four
+fixed chart types (`chart` skill); the user wants a journal entry or stock note (markdown
+under `journal/` and `stocks/`); the data was an intermediate step; you do not have the
+numbers yet.
 
-1. 先取数：`fetch_kline` / `read_data_pack` / bash `longbridge` / 研究库文件。
-2. 把数字**写进 TSX**。画布不能 `fetch`、不能拉活行情。
-3. 改已有画布必须先 `read_canvas`。
-4. `save_canvas({ slug, title, source })`。slug 只能是 kebab-case：`mu-15m-compare`。
+### 2. Fetch first, then embed
 
-保存失败会返回 `rejected:` 加逐条原因，改完再交。编译/运行时错误会写回检查记录，下次 `read_canvas` 能看到。
+`fetch_kline` / `read_data_pack` / bash `longbridge` / research files. Write the numbers into
+the TSX. A canvas cannot `fetch` and cannot pull live quotes — it is frozen at analysis time.
 
-## 源码规矩
+Indicators are computed server-side and passed in; `CandleChart` draws, it does not compute
+(`ema` needs `{ label, points }`, not periods). Attribute every number's vintage in the
+caption (TD-DATA-02). What you could not fetch goes in `Coverage`, never into a guess
+(TD-DATA-01).
 
-必须有且只有一个 `export default`。只能：
+### 3. Write the canvas
 
-```tsx
-import { Canvas, Text } from '@kansoku/canvas';
-```
+- One file, saved via `save_canvas({ slug, title, source })`. Slug is kebab-case. No helper
+  files.
+- Exactly one `export default`, the top-level component.
+- Import **only** from `@kansoku/canvas`. No relative paths, no `react`, no `node:`, no npm.
+- Banned in source: `fetch(`, `XMLHttpRequest`, `import(`, `require(`, `setTimeout` /
+  `setInterval`, `document.`, `window.`. 64 KB limit.
+- Revising: `read_canvas` first, then save over the same slug. One question, one slug.
 
-禁止：相对路径、`react`、`node:`、`fetch(`、`XMLHttpRequest`、`import(`、`require(`、`setTimeout` / `setInterval`、`document.`、`window.`。体积上限 64 KB。
+**Never render empty states.** No data means omit the element — no placeholder text, no
+「暂无数据」, no zeroed rows, no empty chart frame. `Coverage` is the sole exception; naming
+gaps is its job. If the whole canvas would be empty, say what is missing instead.
 
-数据内嵌。指标（MACD / EMA）服务端算好再写进去，`CandleChart` 只画不算。`ema={[9,21,55]}` 这种只有周期、没有点的写法不会画出均线，要传 `{ label, points }`。
+**Label every plot.** Charts get screenshotted alone. Each needs a `title` naming the
+specific measure (`08-28 相对各自开盘价（都从 0 起）`, not `走势图`), units via `xUnit` /
+`yUnit`, series names when multi-series, and any transformation stated (归一化 / 累计 /
+相对开盘). A missing title renders as `Untitled` — never ship that.
 
-## 组件
+**Components.** The table below is the complete allow-list; referencing an export that does
+not exist — or inventing a prop — is the most common failure, and an unknown prop is
+silently dropped rather than erroring. Exact prop shapes are declared in
+`.claude/skills/canvas/sdk/*.d.ts`, next to this file: `layout` / `text` / `data` /
+`analysis` / `control` / `charts` / `CandleChart` / `theme`. **read_file them instead of
+guessing.**
 
-布局：`Canvas`（必须作根，`title` 必填，`caption` 写来源·周期·截止时间）、`Section`、`Grid`、`Row`、`Stack`、`Card`、`Divider`。
+| Group | Components |
+| --- | --- |
+| Layout | `Canvas` (root), `Section`, `Grid`, `Row`, `Stack`, `Card`, `Divider` |
+| Text | `H1` `H2` `H3`, `Heading`, `Text`, `Link`, `Callout`, `Pill`, `Badge`, `Source` |
+| Numbers | `Stat`, `Metric`, `Table`, `Compare`, `Coverage` |
+| Conclusions | `Scenarios`, `RRPlan`, `Timeline` |
+| Controls | `Toggle`, `Select` |
+| Charts | `LineChart`, `BarChart` (`signed`), `AreaChart`, `PieChart`, `Sparkline`, `CandleChart` |
 
-文字：`H1` `H2` `H3`、`Heading`、`Text`、`Link`、`Callout`、`Pill`、`Badge`。
+Four of them validate themselves against the discipline rules: `Scenarios` flags
+probabilities that miss 100 (TD-SCENARIO-01), `RRPlan` reddens reward-to-risk under 1.5
+(TD-RR-01), `Coverage` carries TD-DATA-01, `Source` carries TD-DATA-02.
 
-数字：`Stat`、`Metric`、`Table`。
+Interactivity is `useState` / `useMemo` plus `Toggle` / `Select`. There is no `useEffect`.
 
-对照（多标的横排，别用 Table 手搓）：`Compare` —— `metrics={[{key,label,align,signed,suffix}]}` + `rows={[{symbol,label?,values,trend?,note?}]}`，`sortBy` 指定按哪列降序。`trend` 给一串数就在行内画 `Sparkline`。
+## Design guidance
 
-覆盖度：`Coverage` —— `items={[{label, status: 'ok'|'partial'|'missing', note}]}`。取不到的数据必须列进来（TD-DATA-01）。
+Flat, dense, square. No gradients, no emojis, no shadows, no corner radius beyond 2px. A
+canvas that looks like a generic dashboard is a failed canvas.
 
-出处：`Source` —— `{ from, at, note }`，行内标数据来源和时间戳（TD-DATA-02）。
+### Structure — five parts, fixed order
 
-结论（对应纪律，别用 Table 手搓）：
-- `Scenarios` —— Bull/Base/Bear，`items` 每项 `{ label, probability, trigger, note? }`。概率合计不是 100 会被标红（TD-SCENARIO-01）。
-- `RRPlan` —— `{ entry, stop, targets }`，盈亏比自动算，低于 1.5 标红（TD-RR-01）。`targets` 可以是数组，会显示 T1/T2。
-- `Timeline` —— `items={[{at, label, price?, detail?, tone?, current?}]}`，事件轴。
+Skip a part with no content. **Never reorder. Never push the conclusion to the bottom.**
 
-交互：`Toggle`、`Select`。
+| Part | Components | Rule |
+| --- | --- | --- |
+| 1 Conclusion | `Callout` | One paragraph answering the question asked. Answer first. |
+| 2 Key numbers | `Grid` + `Stat` | ≤ 4. The ones part 1 depends on. |
+| 3 Evidence | `Compare` / `Table` / charts | Everything traces back to part 1. |
+| 4 Forward view | `Scenarios` / `RRPlan` | Only with a real directional call. |
+| 5 Boundaries | `Coverage` + `Source` | What is missing, and when the data is from. |
 
-分析图（Recharts）：`LineChart`、`BarChart`（`signed` 正负分色）、`AreaChart`、`PieChart`，外加行内迷你走势 `Sparkline`（`data={number[]}`，无轴无标题）。多序列写 `series={['mu','tsm']}` 即可，要改颜色或显示名再写成 `{key,label,color}`。每张图都要有 `title`，轴写单位（`xUnit` / `yUnit`）。缺 title 会显示 Untitled，不要交这种。
+Parts 1 and 5 are mandatory. All data and no conclusion is not acceptable.
 
-交易图：`CandleChart`。一根图一个标的一个周期。多周期就并排多个。`bars` 是 OHLCV；`volume` / `macd` / `ema.points` / `priceLines` / `zones` / `markers` 都是算好再传入。
+### Hierarchy and color
 
-交互只限 SDK 给的 `useState` / `useMemo` 和 `Toggle` / `Select`。没有 `useEffect`。
+The conclusion and the number driving it get space; detail stays compact. Squint test: blur
+your eyes — can you tell what this canvas concluded?
 
-## 最小例子
+`tone` encodes **price direction only** (`up` / `down` / `neutral`), never good-versus-bad —
+「亏损收窄」is good news with a down direction, and `up` makes it read backwards.
+Directionless numbers (成交额, 市值, 天数) take no `tone`. `Callout tone="warn"` means "hold
+off", at most one per canvas.
 
-```tsx
-import { Canvas, Callout, Stat, Text } from '@kansoku/canvas';
+### Hard limits
 
-export default function App() {
-  return (
-    <Canvas title="MU 15m 读数" caption="Longbridge · 2026-08-28 15:00">
-      <Stat label="最新价" value="61.20" delta="+1.4%" tone="up" />
-      <Callout tone="warn">反弹到位再动，别追。</Callout>
-      <Text>盈亏比不够，先等回踩。</Text>
-    </Canvas>
-  );
-}
-```
+`Grid columns` ≤ 4 · `Stat` ≤ 4 per screen · charts ≤ 6 per canvas · `Text` paragraph ≤ 3
+lines · no `Section` for fewer than 2 elements.
 
-全部组件铺满的示例：`apps/web/src/features/canvas/demo/kitchenSink.canvas.tsx`，应用里在 `/canvases/demo` 打开。
+### Say X → use Y
 
-保存后告诉用户画布 slug，让他们在旁边打开。同一问里改同一份，不要新开 slug。
+**Nothing on the left may be hand-rolled with `Table`.**
+
+| To show | Use | Not |
+| --- | --- | --- |
+| Symbols across the same metrics | `Compare` | `Table` / a row of `Pill` |
+| Cases with probabilities and triggers | `Scenarios` | `Table` / several `Callout` |
+| Entry / stop / target and reward-to-risk | `RRPlan` | `Table` / three `Stat` |
+| Events in time order | `Timeline` | `Table` / a run of `Text` |
+| Which data exists and which does not | `Coverage` | `Table` |
+| A tiny inline trend | `Sparkline` | `LineChart` |
+| One number with its change | `Stat` | a number inside `Text` |
+| Genuine multi-row detail | `Table` | — |
+
+### Slop patterns — forbidden
+
+**Two or more of these means redesign.**
+
+- **All data, no conclusion** — the most common failure.
+- **Hand-rolled tables** — anything from the mapping table rebuilt as `Table`.
+- **Intent attribution** — 「主力在出货」「有人故意砸盘」. Unfalsifiable (TD-INTENT-01);
+  cite price, volume, structure.
+- **Narrating noise** — giving a ±2% day a cause (TD-NOISE-01).
+- **Unlabeled numbers** — no unit, no time basis.
+- **Emojis** as icons, status markers, or bullets.
+- **Rainbow coloring** — most elements are neutral; color is scarce and means something.
+- **Wall of identical cards** — mix open sections with cards.
+- **Giant text** — nothing above `H1`, never `H1` stacked on `H1`.
+
+### Self-check before saving
+
+1. Conclusion visible on the first screen?
+2. Every number carries a unit and a time basis?
+3. Nothing from the mapping table hand-rolled with `Table`?
+4. `Coverage` or `Source` states the data boundary?
+5. Slop list scanned?
+6. Squint test: does one thing stand out?
+
+## Skeleton
+
+The five-part shape as a real, typechecked file:
+`apps/web/src/features/canvas/demo/skeleton.canvas.tsx`. Read it and adapt it — do not
+invent another structure. Every component at once:
+`apps/web/src/features/canvas/demo/kitchenSink.canvas.tsx`, viewable at `/canvases/demo`.
+
+## Handing it over
+
+Tell the user the slug so they can open it beside the chat. First canvas of the
+conversation: one sentence on what a canvas is. Canvas they did not ask for: one sentence on
+why it beat plain text. Later ones: just the slug.
+
+## Troubleshooting
+
+`rejected:` lists one line per reason — fix those, do not work around them. `save_canvas`
+refuses outright until this skill has been read this turn.
+
+Compile and runtime errors are written into the canvas's check record; the next
+`read_canvas` returns them with the source. That record is the authoritative diagnostic.
+
+A blank canvas almost always referenced an export that does not exist. A prop that has no
+effect was invented — check it against `.claude/skills/canvas/sdk/*.d.ts`.

@@ -10,7 +10,7 @@ import type {
   RawBar,
 } from '@kansoku/shared/types';
 import { CANVAS_DIR, PROJECT_ROOT } from '../../platform/env.js';
-import { buildCanvasTools } from '../../canvas/tools.js';
+import { buildCanvasTools, CANVAS_SKILL_NAME } from '../../canvas/tools.js';
 import { annotationsService } from '../../charts/annotations.service.js';
 import { getProvider } from '../../marketdata/registry.js';
 import { marketOf } from '../../symbols/symbol.utils.js';
@@ -390,10 +390,12 @@ function prepareTurn(
         symbol,
         market: marketOf(symbol),
       });
+      const loadedSkills = new Set<string>();
       const { tools: researchTools, skillIndex } = buildResearchTools({
         repoRoot,
         exec: deps.exec,
         readMounts: proTurn.readMounts,
+        onSkillRead: (name) => loadedSkills.add(name),
       });
       const messageEngine = new MessagesEngine([
         ...proTurn.processors,
@@ -403,7 +405,13 @@ function prepareTurn(
       return {
         symbol,
         systemPrompt,
-        tools: [...tools, ...researchTools, ...buildCanvasTools(CANVAS_DIR)],
+        tools: [
+          ...tools,
+          ...researchTools,
+          ...buildCanvasTools(CANVAS_DIR, {
+            skillLoaded: () => loadedSkills.has(CANVAS_SKILL_NAME),
+          }),
+        ],
         transformContext: messageEngine.transformContext,
         onTurnComplete: proTurn.onTurnComplete,
         gate: verifyCtx

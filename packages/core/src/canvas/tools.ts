@@ -15,14 +15,32 @@ const readSchema = Type.Object({
 
 const listSchema = Type.Object({});
 
-export function buildCanvasTools(dir: string, now?: () => Date): AgentTool[] {
+export const CANVAS_SKILL_NAME = 'canvas';
+
+export interface CanvasToolsOptions {
+  now?: () => Date;
+  /**
+   * Returns whether the canvas skill has been read this turn. When supplied and false,
+   * save_canvas refuses — a weak model that skipped the layout guide would otherwise ship
+   * a canvas with no conclusion and hand-rolled tables, and prose alone does not stop it.
+   */
+  skillLoaded?: () => boolean;
+}
+
+export function buildCanvasTools(dir: string, opts: CanvasToolsOptions = {}): AgentTool[] {
+  const { now, skillLoaded } = opts;
   const save: AgentTool<typeof saveSchema> = {
     name: 'save_canvas',
     label: 'Save Canvas',
     description:
-      'Create or overwrite a named canvas file. slug is kebab-case. source is the full TSX. Same slug updates the same canvas.',
+      'Create or overwrite a named canvas file. Read the canvas skill first (read_skill name="canvas") — it carries the required layout skeleton. slug is kebab-case. source is the full TSX. Same slug updates the same canvas.',
     parameters: saveSchema,
     execute: async (_id, params) => {
+      if (skillLoaded && !skillLoaded()) {
+        return textResult(
+          `rejected: read_skill(name="${CANVAS_SKILL_NAME}") first, then rewrite the source to follow its layout skeleton.`,
+        );
+      }
       const result = await saveCanvas(dir, { ...params, now });
       if (!result.ok) {
         return textResult(`rejected:\n${result.issues.join('\n')}`);

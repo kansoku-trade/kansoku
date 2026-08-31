@@ -9,7 +9,9 @@ function parseFrontmatterField(frontmatter: string, field: string): string {
   if (startIdx === -1) return '';
 
   const firstLine = lines[startIdx].slice(field.length + 1).trim();
-  if (firstLine === '>' || firstLine === '|') {
+  // YAML block scalars carry an optional chomping indicator: `>`, `>-`, `|+`, and so on.
+  // Missing the suffixed forms used to leave the description as the literal ">-".
+  if (/^[>|][-+]?$/.test(firstLine)) {
     const parts: string[] = [];
     for (let i = startIdx + 1; i < lines.length; i++) {
       const line = lines[i];

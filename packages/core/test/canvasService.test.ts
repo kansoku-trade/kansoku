@@ -7,7 +7,7 @@ import { ClientError } from '../src/platform/errors.js';
 
 const source = `import { Canvas, Text } from '@kansoku/canvas';
 export default function App() {
-  return <Canvas title="Demo"><Text>ok</Text></Canvas>;
+  return <Canvas title="Demo" caption="Longbridge · demo"><Text>ok</Text></Canvas>;
 }
 `;
 

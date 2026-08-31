@@ -8,7 +8,7 @@ import { researchCanvasPath } from '../src/contract/research.js';
 
 const source = `import { Canvas, Text } from '@kansoku/canvas';
 export default function App() {
-  return <Canvas title="MU 验收面板"><Text>secret-source</Text></Canvas>;
+  return <Canvas title="MU 验收面板" caption="Longbridge · demo"><Text>secret-source</Text></Canvas>;
 }
 `;
 

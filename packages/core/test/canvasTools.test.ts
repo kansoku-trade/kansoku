@@ -6,7 +6,7 @@ import { buildCanvasTools } from '../src/canvas/tools.js';
 
 const source = `import { Canvas, Text } from '@kansoku/canvas';
 export default function App() {
-  return <Canvas title="Demo"><Text>ok</Text></Canvas>;
+  return <Canvas title="Demo" caption="Longbridge · demo"><Text>ok</Text></Canvas>;
 }
 `;
 
@@ -66,5 +66,31 @@ describe('buildCanvasTools', () => {
     const listed = await byName.list_canvases.execute('c2', {});
     const items = JSON.parse(textOf(listed)) as { slug: string; title: string }[];
     expect(items).toEqual([expect.objectContaining({ slug: 'alpha', title: 'Alpha' })]);
+  });
+});
+
+describe('canvas skill gate', () => {
+  it('refuses to save until the canvas skill has been read', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'canvas-gate-'));
+    let read = false;
+    const byName = Object.fromEntries(
+      buildCanvasTools(dir, { skillLoaded: () => read }).map((tool) => [tool.name, tool]),
+    );
+
+    const refused = await byName.save_canvas.execute('1', { slug: 'gated', title: 'Gated', source });
+    expect(textOf(refused)).toContain('read_skill(name="canvas")');
+    expect(textOf(await byName.read_canvas.execute('2', { slug: 'gated' }))).toContain('not found');
+
+    read = true;
+    expect(textOf(await byName.save_canvas.execute('3', { slug: 'gated', title: 'Gated', source }))).toContain(
+      'saved slug=gated',
+    );
+  });
+
+  it('saves without a gate when no skillLoaded check is supplied', async () => {
+    const { byName } = tools();
+    expect(textOf(await byName.save_canvas.execute('1', { slug: 'free', title: 'Free', source }))).toContain(
+      'saved slug=free',
+    );
   });
 });

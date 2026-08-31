@@ -1,6 +1,7 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { CANVAS_COMPONENT_NAMES } from '@kansoku/canvas/names';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { loadSkillIndex, readSkill } from '../src/ai/agents/skills.js';
 
@@ -107,6 +108,20 @@ describe('loadSkillIndex', () => {
     expect(found).toBeDefined();
     expect(found?.description.length).toBeGreaterThan(0);
   });
+
+  it('reads folded descriptions with a chomping indicator', () => {
+    for (const [name, marker] of [
+      ['folded', '>'],
+      ['folded-strip', '>-'],
+      ['literal-keep', '|+'],
+    ]) {
+      writeSkill(name, `---\nname: ${name}\ndescription: ${marker}\n  first line\n  second line\n---\n\n# ${name}\n`);
+    }
+    const index = loadSkillIndex([root]);
+    for (const name of ['folded', 'folded-strip', 'literal-keep']) {
+      expect(index.find((s) => s.name === name)?.description).toBe('first line second line');
+    }
+  });
 });
 
 describe('readSkill', () => {
@@ -120,5 +135,20 @@ describe('readSkill', () => {
   it('returns null when the name is not in the index', () => {
     const index = loadSkillIndex([root]);
     expect(readSkill(index, 'missing')).toBeNull();
+  });
+});
+
+describe('canvas skill sdk declarations', () => {
+  const sdkDir = join(process.cwd(), '..', '..', '.claude', 'skills', 'canvas', 'sdk');
+
+  it('declares every component the canvas skill allows', () => {
+    const declared = readdirSync(sdkDir)
+      .filter((f) => f.endsWith('.d.ts'))
+      .map((f) => readFileSync(join(sdkDir, f), 'utf8'))
+      .join('\n');
+    const missing = Object.values(CANVAS_COMPONENT_NAMES)
+      .flat()
+      .filter((name) => !new RegExp(`declare function ${name}\\b`).test(declared));
+    expect(missing).toEqual([]);
   });
 });

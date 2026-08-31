@@ -6,7 +6,7 @@ import type {
   CanvasMeta,
   CanvasOrigin,
 } from '../contract/canvas.js';
-import { checkCanvasSource } from './check.js';
+import { checkCanvasSource, reviewCanvasStructure } from './check.js';
 
 export type { CanvasCheckRecord, CanvasDoc, CanvasMeta, CanvasOrigin };
 
@@ -66,7 +66,7 @@ export async function saveCanvas(
   if (!isSlug(input.slug)) {
     return { ok: false, issues: ['slug must be kebab-case'] };
   }
-  const issues = checkCanvasSource(input.source);
+  const issues = [...checkCanvasSource(input.source), ...reviewCanvasStructure(input.source)];
   if (issues.length) return { ok: false, issues };
 
   await fs.mkdir(dir, { recursive: true });
