@@ -9,19 +9,20 @@ import type { RouteObject } from "react-router"
 import * as SyncComponent0 from "./pages/[...fallback].sync"
 import * as SyncComponent1 from "./pages/about.sync"
 import * as SyncComponent2 from "./pages/canvases/[slug].sync"
-import * as SyncComponent3 from "./pages/canvases/index.sync"
-import * as SyncComponent4 from "./pages/charts/[id].sync"
-import * as SyncComponent5 from "./pages/charts/index.sync"
-import * as SyncComponent6 from "./pages/chat.sync"
-import * as SyncComponent7 from "./pages/logs.sync"
-import * as SyncComponent8 from "./pages/overview.sync"
-import * as SyncComponent9 from "./pages/popout/symbol/[sym].sync"
-import * as SyncComponent10 from "./pages/research/index.sync"
-import * as SyncComponent11 from "./pages/settings.sync"
-import * as SyncComponent12 from "./pages/symbol/[sym].sync"
-import * as SyncComponent13 from "./pages/symbol/sepa/[sym].sync"
-import * as SyncComponent14 from "./pages/training/stats.sync"
-import * as SyncComponent15 from "./pages/index.sync"
+import * as SyncComponent3 from "./pages/canvases/demo.sync"
+import * as SyncComponent4 from "./pages/canvases/index.sync"
+import * as SyncComponent5 from "./pages/charts/[id].sync"
+import * as SyncComponent6 from "./pages/charts/index.sync"
+import * as SyncComponent7 from "./pages/chat.sync"
+import * as SyncComponent8 from "./pages/logs.sync"
+import * as SyncComponent9 from "./pages/overview.sync"
+import * as SyncComponent10 from "./pages/popout/symbol/[sym].sync"
+import * as SyncComponent11 from "./pages/research/index.sync"
+import * as SyncComponent12 from "./pages/settings.sync"
+import * as SyncComponent13 from "./pages/symbol/[sym].sync"
+import * as SyncComponent14 from "./pages/symbol/sepa/[sym].sync"
+import * as SyncComponent15 from "./pages/training/stats.sync"
+import * as SyncComponent16 from "./pages/index.sync"
 
 // Generated route configuration
 export const routes: RouteObject[] = [
@@ -47,10 +48,16 @@ export const routes: RouteObject[] = [
         "handle": SyncComponent2.handle
       },
       {
-        "path": "",
+        "path": "demo",
         "Component": SyncComponent3.Component,
         "loader": SyncComponent3.loader,
         "handle": SyncComponent3.handle
+      },
+      {
+        "path": "",
+        "Component": SyncComponent4.Component,
+        "loader": SyncComponent4.loader,
+        "handle": SyncComponent4.handle
       }
     ]
   },
@@ -59,35 +66,35 @@ export const routes: RouteObject[] = [
     "children": [
       {
         "path": ":id",
-        "Component": SyncComponent4.Component,
-        "loader": SyncComponent4.loader,
-        "handle": SyncComponent4.handle
-      },
-      {
-        "path": "",
         "Component": SyncComponent5.Component,
         "loader": SyncComponent5.loader,
         "handle": SyncComponent5.handle
+      },
+      {
+        "path": "",
+        "Component": SyncComponent6.Component,
+        "loader": SyncComponent6.loader,
+        "handle": SyncComponent6.handle
       }
     ]
   },
   {
     "path": "chat",
-    "Component": SyncComponent6.Component,
-    "loader": SyncComponent6.loader,
-    "handle": SyncComponent6.handle
-  },
-  {
-    "path": "logs",
     "Component": SyncComponent7.Component,
     "loader": SyncComponent7.loader,
     "handle": SyncComponent7.handle
   },
   {
-    "path": "overview",
+    "path": "logs",
     "Component": SyncComponent8.Component,
     "loader": SyncComponent8.loader,
     "handle": SyncComponent8.handle
+  },
+  {
+    "path": "overview",
+    "Component": SyncComponent9.Component,
+    "loader": SyncComponent9.loader,
+    "handle": SyncComponent9.handle
   },
   {
     "path": "popout",
@@ -97,9 +104,9 @@ export const routes: RouteObject[] = [
         "children": [
           {
             "path": ":sym",
-            "Component": SyncComponent9.Component,
-            "loader": SyncComponent9.loader,
-            "handle": SyncComponent9.handle
+            "Component": SyncComponent10.Component,
+            "loader": SyncComponent10.loader,
+            "handle": SyncComponent10.handle
           }
         ]
       }
@@ -110,35 +117,35 @@ export const routes: RouteObject[] = [
     "children": [
       {
         "path": "",
-        "Component": SyncComponent10.Component,
-        "loader": SyncComponent10.loader,
-        "handle": SyncComponent10.handle
+        "Component": SyncComponent11.Component,
+        "loader": SyncComponent11.loader,
+        "handle": SyncComponent11.handle
       }
     ]
   },
   {
     "path": "settings",
-    "Component": SyncComponent11.Component,
-    "loader": SyncComponent11.loader,
-    "handle": SyncComponent11.handle
+    "Component": SyncComponent12.Component,
+    "loader": SyncComponent12.loader,
+    "handle": SyncComponent12.handle
   },
   {
     "path": "symbol",
     "children": [
       {
         "path": ":sym",
-        "Component": SyncComponent12.Component,
-        "loader": SyncComponent12.loader,
-        "handle": SyncComponent12.handle
+        "Component": SyncComponent13.Component,
+        "loader": SyncComponent13.loader,
+        "handle": SyncComponent13.handle
       },
       {
         "path": "sepa",
         "children": [
           {
             "path": ":sym",
-            "Component": SyncComponent13.Component,
-            "loader": SyncComponent13.loader,
-            "handle": SyncComponent13.handle
+            "Component": SyncComponent14.Component,
+            "loader": SyncComponent14.loader,
+            "handle": SyncComponent14.handle
           }
         ]
       }
@@ -149,17 +156,17 @@ export const routes: RouteObject[] = [
     "children": [
       {
         "path": "stats",
-        "Component": SyncComponent14.Component,
-        "loader": SyncComponent14.loader,
-        "handle": SyncComponent14.handle
+        "Component": SyncComponent15.Component,
+        "loader": SyncComponent15.loader,
+        "handle": SyncComponent15.handle
       }
     ]
   },
   {
     "path": "",
-    "Component": SyncComponent15.Component,
-    "loader": SyncComponent15.loader,
-    "handle": SyncComponent15.handle
+    "Component": SyncComponent16.Component,
+    "loader": SyncComponent16.loader,
+    "handle": SyncComponent16.handle
   }
 ]
 
