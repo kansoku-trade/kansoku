@@ -109,6 +109,7 @@ export function ChatDock({ chartId, docCreatedAt }: ChatDockProps) {
     aborting,
     streamText,
     liveTools,
+    liveBeats,
     hint,
     loaded,
     suggestions,
@@ -221,6 +222,7 @@ export function ChatDock({ chartId, docCreatedAt }: ChatDockProps) {
           busy={busy}
           streamText={streamText}
           liveTools={liveTools}
+          liveBeats={liveBeats}
           suggestions={suggestions}
           mode={mode}
           full={mode === 'full'}

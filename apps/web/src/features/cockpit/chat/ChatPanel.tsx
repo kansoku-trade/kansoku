@@ -3,7 +3,7 @@ import { ChevronDown, Maximize2, Minimize2 } from 'lucide-react';
 import { MarketTime } from '@web/ui';
 import { ConversationTranscript } from './ConversationTranscript';
 import type { ChatMode } from './ChatDock';
-import type { ChatLiveTool, ChatRow, ChatSessionInfo } from './useChatSession';
+import type { ChatLiveBeat, ChatLiveTool, ChatRow, ChatSessionInfo } from './useChatSession';
 import { colors, fontSizes } from '../../../theme/tokens.stylex';
 
 interface ChatPanelProps {
@@ -13,6 +13,7 @@ interface ChatPanelProps {
   busy: boolean;
   streamText: string;
   liveTools: ChatLiveTool[];
+  liveBeats?: ChatLiveBeat[];
   suggestions: string[];
   mode: ChatMode;
   full?: boolean;
@@ -114,6 +115,7 @@ export function ChatPanel({
   busy,
   streamText,
   liveTools,
+  liveBeats,
   suggestions,
   mode,
   full = false,
@@ -167,6 +169,7 @@ export function ChatPanel({
         busy={busy}
         streamText={streamText}
         liveTools={liveTools}
+        liveBeats={liveBeats}
         suggestions={suggestions}
         emptyText="还没有对话，在下方输入你的问题"
         onPickSuggestion={onPickSuggestion}

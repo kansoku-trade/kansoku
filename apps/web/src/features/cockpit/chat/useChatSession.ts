@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { errorMessage } from '@web/lib/api';
 import { client } from '@web/lib/client';
 import { trackFeatureUsed } from '@web/lib/analytics';
 import { subscribeChannel } from '@web/lib/ws/wsHub';
+import { applyLiveBeat } from './liveBeats.js';
 import { useSmoothStream } from './useSmoothStream.js';
 
 export interface ChatSessionInfo {
@@ -40,6 +41,10 @@ export interface ChatLiveTool {
   input?: string;
   output?: string;
 }
+
+export type ChatLiveBeat =
+  | { kind: 'text'; text: string }
+  | { kind: 'tool'; tool: ChatLiveTool };
 
 export interface ChatUsage {
   totalTokens: number;
@@ -120,6 +125,7 @@ export interface ChatSessionState {
   aborting: boolean;
   streamText: string;
   liveTools: ChatLiveTool[];
+  liveBeats: ChatLiveBeat[];
   hint: string | null;
   loaded: boolean;
   suggestions: string[];
@@ -146,7 +152,14 @@ function useConversationSession(
     finish: streamFinish,
     reset: streamReset,
   } = useSmoothStream();
-  const [liveTools, setLiveTools] = useState<ChatLiveTool[]>([]);
+  const [liveBeats, setLiveBeats] = useState<ChatLiveBeat[]>([]);
+  const liveTools = useMemo(
+    () =>
+      liveBeats
+        .filter((beat): beat is { kind: 'tool'; tool: ChatLiveTool } => beat.kind === 'tool')
+        .map((beat) => beat.tool),
+    [liveBeats],
+  );
   const [hint, setHint] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -208,7 +221,7 @@ function useConversationSession(
     setBusy(false);
     setAborting(false);
     streamReset();
-    setLiveTools([]);
+    setLiveBeats([]);
     setHint(null);
     setLoaded(false);
     setSuggestions([]);
@@ -226,10 +239,12 @@ function useConversationSession(
         if (env.type !== 'init' && env.type !== 'event') return;
         if (env.type === 'init') {
           setBusy(env.busy);
-          if (env.busy) streamFlush(env.partial);
-          else {
+          if (env.busy) {
+            streamFlush(env.partial);
+            setLiveBeats(env.partial ? [{ kind: 'text', text: env.partial }] : []);
+          } else {
             streamReset();
-            setLiveTools([]);
+            setLiveBeats([]);
           }
           return;
         }
@@ -237,30 +252,17 @@ function useConversationSession(
         if (evt.event === 'delta') {
           setBusy(true);
           streamPush(evt.text);
+          setLiveBeats((prev) => applyLiveBeat(prev, evt, `tool-${toolSeqRef.current}`));
           return;
         }
         if (evt.event === 'tool') {
           if (evt.status === 'start') {
-            setLiveTools((prev) => [
-              ...prev,
-              {
-                id: `tool-${toolSeqRef.current++}`,
-                label: evt.label,
-                status: 'start',
-                input: evt.input,
-              },
-            ]);
+            streamReset();
+            const toolId = `tool-${toolSeqRef.current++}`;
+            setLiveBeats((prev) => applyLiveBeat(prev, evt, toolId));
             return;
           }
-          setLiveTools((prev) => {
-            const idx = prev
-              .map((t) => t.label === evt.label && t.status === 'start')
-              .lastIndexOf(true);
-            if (idx === -1) return prev;
-            return prev.map((t, i) =>
-              i === idx ? { ...t, status: 'end', output: evt.output } : t,
-            );
-          });
+          setLiveBeats((prev) => applyLiveBeat(prev, evt, `tool-${toolSeqRef.current}`));
           return;
         }
         if (evt.event === 'aborted') {
@@ -268,7 +270,7 @@ function useConversationSession(
           setBusy(false);
           setAborting(false);
           reload(undefined, () => {
-            setLiveTools([]);
+            setLiveBeats([]);
             streamReset();
           });
           return;
@@ -278,7 +280,7 @@ function useConversationSession(
           setAborting(false);
           reload(markError, () => {
             setBusy(false);
-            setLiveTools([]);
+            setLiveBeats([]);
             streamReset();
           });
         });
@@ -303,6 +305,7 @@ function useConversationSession(
       sendPendingRef.current = true;
       setHint(null);
       setBusy(true);
+      setLiveBeats([]);
       setSuggestions([]);
       setRows((prev) => [
         ...prev,
@@ -368,6 +371,7 @@ function useConversationSession(
     aborting,
     streamText,
     liveTools,
+    liveBeats,
     hint,
     loaded,
     suggestions,

@@ -348,7 +348,7 @@ export function AssistantConversation({
   modelLabels: Readonly<Record<string, string>>;
   onModelChange: (value: string) => void;
 }) {
-  const { session, rows, busy, aborting, streamText, liveTools, hint, send, abort } =
+  const { session, rows, busy, aborting, streamText, liveTools, liveBeats, hint, send, abort } =
     useAssistantChatSession(sessionId);
   const canvas = useCanvasWorkspace();
   const [text, setText] = useState('');
@@ -519,6 +519,7 @@ export function AssistantConversation({
           busy={busy}
           streamText={streamText}
           liveTools={liveTools}
+          liveBeats={liveBeats}
           suggestions={[]}
           emptyText="输入问题、判断或交易计划，开始一段研究对话"
           onPickSuggestion={() => {}}
