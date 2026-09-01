@@ -74,6 +74,16 @@ describe('presentToolCall', () => {
       items: ['MU 读数'],
       meta: 'mu-panel',
     });
+    expect(
+      presentToolCall(
+        'Edit File',
+        JSON.stringify({ path: 'journal/canvases/mu-panel.canvas.tsx' }),
+      ),
+    ).toEqual({
+      title: '修改画布文件',
+      items: [],
+      meta: 'journal/canvases/mu-panel.canvas.tsx',
+    });
   });
 
   it('falls back to the command text when Bash input is not a recognized visualization', () => {

@@ -95,7 +95,15 @@ const styles = stylex.create({
   },
 });
 
-export function CanvasPane({ slug, onClose }: { slug: string; onClose: () => void }) {
+export function CanvasPane({
+  slug,
+  onClose,
+  reloadKey,
+}: {
+  slug: string;
+  onClose: () => void;
+  reloadKey?: string;
+}) {
   const [doc, setDoc] = useState<CanvasDoc | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -114,7 +122,7 @@ export function CanvasPane({ slug, onClose }: { slug: string; onClose: () => voi
     return () => {
       cancelled = true;
     };
-  }, [slug]);
+  }, [slug, reloadKey]);
 
   return (
     <div className={`canvas-pane ${stylex.props(styles.pane).className}`}>

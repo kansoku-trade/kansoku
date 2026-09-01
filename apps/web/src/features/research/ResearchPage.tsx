@@ -1,6 +1,15 @@
 import { useDeferredValue, useEffect, useState } from 'react';
-import { ChartCandlestick, ChevronLeft, Library, Plus, RefreshCw, Search } from 'lucide-react';
+import {
+  ChartCandlestick,
+  ChevronLeft,
+  Library,
+  MessageSquareText,
+  Plus,
+  RefreshCw,
+  Search,
+} from 'lucide-react';
 import type {
+  AssistantSessionMeta,
   ResearchCreateResult,
   ResearchDocument,
   ResearchDocumentMeta,
@@ -11,6 +20,7 @@ import * as stylex from '@stylexjs/stylex';
 import { CanvasFrame } from '@web/features/canvas/CanvasFrame';
 import { useCapabilities } from '@web/features/edition/capabilitiesStore';
 import { openLicenseModal } from '@web/features/edition/licenseModalStore';
+import { errorMessage } from '@web/lib/api';
 import { useQuery } from '@web/lib/apiHooks';
 import { client } from '@web/lib/client';
 import { queryClient } from '@web/lib/queryClient';
@@ -18,6 +28,7 @@ import { navigate, useQueryParam } from '@web/lib/router';
 import { isDesktopRealtime } from '@web/lib/portTransport';
 import {
   Badge,
+  Button,
   Empty,
   ErrorBox,
   Input,
@@ -708,10 +719,14 @@ function ResearchReader({
   document,
   loading,
   error,
+  continuingCanvas,
+  onContinueCanvas,
 }: {
   document: ResearchDocument | null;
   loading: boolean;
   error: string | null;
+  continuingCanvas: boolean;
+  onContinueCanvas: (document: ResearchDocument) => void;
 }) {
   if (loading && !document) {
     return (
@@ -774,6 +789,17 @@ function ResearchReader({
           >
             <ChartCandlestick size={14} /> 打开驾驶舱
           </a>
+        )}
+        {document.kind === 'canvas' && (
+          <Button
+            accent
+            size="sm"
+            disabled={continuingCanvas}
+            onClick={() => onContinueCanvas(document)}
+          >
+            <MessageSquareText size={13} />
+            {continuingCanvas ? '正在打开…' : '在 AI 对话中继续'}
+          </Button>
         )}
       </header>
       <div
@@ -848,6 +874,7 @@ export function ResearchPage() {
   const selectedPath = useQueryParam('path');
   const [query, setQuery] = useState('');
   const [createHint, setCreateHint] = useState<string | null>(null);
+  const [continuingCanvasPath, setContinuingCanvasPath] = useState<string | null>(null);
   const deferredQuery = useDeferredValue(query.trim());
   const kind = kindForView(view);
 
@@ -928,6 +955,24 @@ export function ResearchPage() {
     if (result.existed) setCreateHint('已存在，已为你打开');
   };
   const openCreateDialog = () => openCreateResearchDialog(kind, handleResearchCreated);
+  const continueCanvasInChat = async (canvas: ResearchDocument) => {
+    if (continuingCanvasPath) return;
+    setContinuingCanvasPath(canvas.path);
+    try {
+      const { session } = await client.assistant.createSession({ title: `画布：${canvas.title}` });
+      queryClient.setQueryData<AssistantSessionMeta[]>(['assistant.sessions'], (current) => [
+        session,
+        ...(current ?? []).filter((item) => item.id !== session.id),
+      ]);
+      navigate(
+        `/chat?${new URLSearchParams({ session: session.id, canvas: canvas.path }).toString()}`,
+        { newTab: true },
+      );
+    } catch (error) {
+      setCreateHint(errorMessage(error));
+      setContinuingCanvasPath(null);
+    }
+  };
 
   const stockCount = (allDocuments ?? []).filter((item) => item.kind === 'stock').length;
   const journalCount = (allDocuments ?? []).filter((item) => item.kind === 'journal').length;
@@ -1023,7 +1068,13 @@ export function ResearchPage() {
               {createHint}
             </div>
           )}
-          <ResearchReader document={document} loading={documentLoading} error={documentError} />
+          <ResearchReader
+            document={document}
+            loading={documentLoading}
+            error={documentError}
+            continuingCanvas={continuingCanvasPath === document?.path}
+            onContinueCanvas={(canvas) => void continueCanvasInChat(canvas)}
+          />
         </main>
         {selected?.kind === 'canvas' ? null : (
           <ResearchContext

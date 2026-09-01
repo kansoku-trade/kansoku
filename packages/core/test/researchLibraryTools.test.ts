@@ -38,7 +38,7 @@ describe('research library tools vs canvases', () => {
       path: researchCanvasPath('acceptance-mu-panel'),
     });
     const text = textOf(read);
-    expect(text).toMatch(/read_canvas/);
+    expect(text).toMatch(/read_file/);
     expect(text).not.toContain('secret-source');
     expect(text).not.toContain('export default');
   });

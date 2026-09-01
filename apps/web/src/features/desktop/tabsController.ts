@@ -351,7 +351,11 @@ export function useTabsController(): TabsController {
   const [newTabLauncherOpen, setNewTabLauncherOpen] = useState(false);
 
   useEffect(() => {
-    setNavigationInterceptor((route) => {
+    setNavigationInterceptor((route, options) => {
+      if (options.newTab) {
+        openTab(route);
+        return true;
+      }
       const { tabs, activeTabId } = snapshotRef.current;
       const pinned = tabs[0];
       if (!pinned || pinned.id !== activeTabId || isHomeRoute(route)) return false;

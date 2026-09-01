@@ -10,7 +10,11 @@ import type {
   RawBar,
 } from '@kansoku/shared/types';
 import { CANVAS_DIR, PROJECT_ROOT } from '../../platform/env.js';
-import { buildCanvasTools, CANVAS_SKILL_NAME } from '../../canvas/tools.js';
+import {
+  buildCanvasEditFileTool,
+  buildCanvasTools,
+  CANVAS_SKILL_NAME,
+} from '../../canvas/tools.js';
 import { annotationsService } from '../../charts/annotations.service.js';
 import { getProvider } from '../../marketdata/registry.js';
 import { marketOf } from '../../symbols/symbol.utils.js';
@@ -407,6 +411,9 @@ function prepareTurn(
           ...tools,
           ...researchTools,
           ...buildCanvasTools(CANVAS_DIR, {
+            skillLoaded: () => loadedSkills.has(CANVAS_SKILL_NAME),
+          }),
+          buildCanvasEditFileTool(repoRoot, CANVAS_DIR, {
             skillLoaded: () => loadedSkills.has(CANVAS_SKILL_NAME),
           }),
         ],

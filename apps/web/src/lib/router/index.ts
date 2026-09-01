@@ -53,7 +53,12 @@ export function useRoute(): string {
   return useSyncExternalStore(subscribe, currentRoute, currentRoute);
 }
 
-type NavigationInterceptor = (route: string) => boolean;
+interface NavigationOptions {
+  replace?: boolean;
+  newTab?: boolean;
+}
+
+type NavigationInterceptor = (route: string, options: NavigationOptions) => boolean;
 
 let navigationInterceptor: NavigationInterceptor | null = null;
 
@@ -61,11 +66,11 @@ export function setNavigationInterceptor(interceptor: NavigationInterceptor | nu
   navigationInterceptor = interceptor;
 }
 
-export function navigate(route: string, options: { replace?: boolean } = {}): void {
+export function navigate(route: string, options: NavigationOptions = {}): void {
   const router = resolveActive();
   const { pathname, search } = router.state.location;
   if (route === pathname + search) return;
-  if (navigationInterceptor?.(route)) return;
+  if (navigationInterceptor?.(route, options)) return;
   void router.navigate(route, { replace: options.replace });
 }
 

@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import * as stylex from '@stylexjs/stylex';
 import { colors, radii } from '../../../theme/tokens.stylex';
 import { CanvasSplit } from '../../canvas/CanvasSplit';
+import { latestCanvasChangeToken } from '../../canvas/canvasEntries';
 import { useCanvasWorkspace } from '../../canvas/useCanvasWorkspace';
 import { ChatComposer } from './ChatComposer';
 import { ChatPanel } from './ChatPanel';
@@ -113,6 +114,7 @@ export function ChatDock({ chartId, docCreatedAt }: ChatDockProps) {
   } = useChatSession(chartId);
   const [mode, setMode] = useState<ChatMode>('dock');
   const canvas = useCanvasWorkspace();
+  const canvasReloadKey = latestCanvasChangeToken(rows, liveTools);
   const [text, setText] = useState('');
   const { rect, onDragStart, onResizeStart, dragging } = useFloatingRect();
   const hostRef = useRef<HTMLDivElement>(null);
@@ -208,6 +210,7 @@ export function ChatDock({ chartId, docCreatedAt }: ChatDockProps) {
       <CanvasSplit
         openSlug={mode === 'full' ? canvas.openSlug : null}
         onClose={canvas.close}
+        reloadKey={canvasReloadKey}
         storageKey="canvas-chatdock-pane"
       >
         <ChatPanel

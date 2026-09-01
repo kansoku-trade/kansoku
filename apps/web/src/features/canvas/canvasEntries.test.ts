@@ -1,8 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { ChatRow } from '../cockpit/chat/useChatSession';
-import { collectCanvasEntries, isLastSaveForSlug } from './canvasEntries';
+import { collectCanvasEntries, isLastSaveForSlug, latestCanvasChangeToken } from './canvasEntries';
 
-function tool(id: string, slug: string, title: string, output = `saved slug=${slug} title=${title}`): ChatRow {
+function tool(
+  id: string,
+  slug: string,
+  title: string,
+  output = `saved slug=${slug} title=${title}`,
+): ChatRow {
   return {
     id,
     ts: '2026-08-28T00:00:00.000Z',
@@ -29,5 +34,23 @@ describe('collectCanvasEntries', () => {
     expect(
       collectCanvasEntries([tool('1', 'bad', 'x', 'rejected: slug must be kebab-case')]),
     ).toEqual([]);
+  });
+
+  it('treats a successful edit_file call as an update to the same canvas', () => {
+    const edited: ChatRow = {
+      id: 'edit-1',
+      ts: '2026-08-28T00:00:00.000Z',
+      kind: 'tool',
+      label: 'Edit File',
+      input: JSON.stringify({
+        path: 'journal/canvases/mu-panel.canvas.tsx',
+        old_text: '初稿',
+        new_text: '终稿',
+      }),
+      output: 'edited path=journal/canvases/mu-panel.canvas.tsx slug=mu-panel title=MU 面板',
+    };
+
+    expect(collectCanvasEntries([edited])).toEqual([{ slug: 'mu-panel', title: 'MU 面板' }]);
+    expect(latestCanvasChangeToken([edited])).toBe('edit-1');
   });
 });

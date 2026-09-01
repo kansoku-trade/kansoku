@@ -26,7 +26,7 @@ export function buildResearchLibraryTools(rootDir: string): AgentTool<any>[] {
     parameters: readDocumentSchema,
     execute: async (_id, params) => {
       if (canvasSlugFromResearchPath(params.path)) {
-        return textResult('This path is a canvas. Use read_canvas with its slug.');
+        return textResult('This path is a canvas. Use read_file with its journal/canvases path.');
       }
       const document = await library.get({ path: params.path });
       return textResult(document.markdown);

@@ -13,6 +13,7 @@ const list = vi.fn();
 const get = vi.fn();
 const canvasGet = vi.fn();
 const capabilitiesGet = vi.fn();
+const assistantCreate = vi.fn();
 const openCreateResearchDialogMock = vi.fn();
 
 vi.mock('@web/lib/client', () => ({
@@ -26,6 +27,9 @@ vi.mock('@web/lib/client', () => ({
     },
     capabilities: {
       get: (...args: unknown[]) => capabilitiesGet(...args),
+    },
+    assistant: {
+      createSession: (...args: unknown[]) => assistantCreate(...args),
     },
   },
 }));
@@ -116,6 +120,14 @@ function captureOnCreated(): (result: ResearchCreateResult) => void {
 beforeEach(() => {
   queryClient.clear();
   capabilitiesGet.mockResolvedValue({ pro: true, licensed: false });
+  assistantCreate.mockResolvedValue({
+    session: {
+      id: 'chat-canvas-1',
+      title: '画布：MU 验收面板',
+      createdAt: '2026-09-01T00:00:00.000Z',
+      updatedAt: '2026-09-01T00:00:00.000Z',
+    },
+  });
 });
 
 afterEach(() => {
@@ -127,6 +139,7 @@ afterEach(() => {
   get.mockReset();
   canvasGet.mockReset();
   capabilitiesGet.mockReset();
+  assistantCreate.mockReset();
   openCreateResearchDialogMock.mockReset();
 });
 
@@ -233,5 +246,33 @@ describe('ResearchPage canvases shelf', () => {
     expect(await screen.findByText('免费 3/3')).toBeTruthy();
     fireEvent.click(screen.getByText('升级解锁'));
     expect(getLicenseModalStateForTests()).toEqual({ open: true, trigger: 'guard' });
+  });
+
+  it('opens a new AI conversation linked to the selected canvas file', async () => {
+    const router = memRouter(
+      '/research?view=canvases&path=journal%2Fcanvases%2Facceptance-mu-panel.canvas.tsx',
+    );
+    setActiveRouter(router);
+    list.mockResolvedValue([CANVAS_META]);
+    get.mockResolvedValue(CANVAS_DOC);
+    canvasGet.mockResolvedValue({
+      slug: 'acceptance-mu-panel',
+      title: 'MU 验收面板',
+      source: 'export default function App() { return null }',
+      mtime: CANVAS_META.mtime,
+      check: null,
+    });
+
+    renderResearchPage();
+    fireEvent.click(await screen.findByRole('button', { name: '在 AI 对话中继续' }));
+
+    await waitFor(() =>
+      expect(assistantCreate).toHaveBeenCalledWith({ title: '画布：MU 验收面板' }),
+    );
+    await waitFor(() =>
+      expect(router.state.location.pathname + router.state.location.search).toBe(
+        '/chat?session=chat-canvas-1&canvas=journal%2Fcanvases%2Facceptance-mu-panel.canvas.tsx',
+      ),
+    );
   });
 });

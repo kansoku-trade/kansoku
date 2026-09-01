@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { ResearchDocumentMeta } from '@kansoku/core/contract/index';
+import { canvasSlugFromResearchPath } from '@kansoku/core/contract/index';
 import * as stylex from '@stylexjs/stylex';
 import { errorMessage } from '@web/lib/api';
 import { useQuery } from '@web/lib/apiHooks';
@@ -18,6 +19,7 @@ import {
   resolveAssistantModelValue,
   roleSettingForAssistantModel,
 } from './assistantModels';
+import type { MentionCandidate } from './atMention.js';
 import { resolveActiveSessionId } from './assistantPageState.js';
 import { useAssistantSessions } from './useAssistantSessions';
 import { colors, radii } from '../../theme/tokens.stylex';
@@ -52,14 +54,19 @@ const styles = stylex.create({
   },
 });
 
-function assistantRoute(id: string | null): string {
-  return id ? `/chat?session=${encodeURIComponent(id)}` : '/chat';
+function assistantRoute(id: string | null, canvasPath?: string | null): string {
+  const params = new URLSearchParams();
+  if (id) params.set('session', id);
+  if (canvasPath) params.set('canvas', canvasPath);
+  const search = params.toString();
+  return search ? `/chat?${search}` : '/chat';
 }
 
 export function AssistantChatPage() {
   useTitle('AI 对话');
   const { sessions, loading, error, refresh, create, rename, remove } = useAssistantSessions();
   const requestedId = useQueryParam('session');
+  const requestedCanvasPath = useQueryParam('canvas');
   const activeId = resolveActiveSessionId(requestedId, sessions);
 
   const aiSettingsQuery = useQuery<AiSettings>('settings.getAi', () => client.settings.getAi());
@@ -84,12 +91,25 @@ export function AssistantChatPage() {
     () => (library ?? []).map((doc) => ({ path: doc.path, title: doc.title })),
     [library],
   );
+  const linkedCanvas = useMemo<MentionCandidate | null>(() => {
+    if (!requestedCanvasPath) return null;
+    const slug = canvasSlugFromResearchPath(requestedCanvasPath);
+    if (!slug) return null;
+    return (
+      mentionCandidates.find((candidate) => candidate.path === requestedCanvasPath) ?? {
+        path: requestedCanvasPath,
+        title: slug,
+      }
+    );
+  }, [mentionCandidates, requestedCanvasPath]);
   const desktopShell = isDesktopRealtime();
 
   useEffect(() => {
     if (loading) return;
-    if (activeId !== requestedId) navigate(assistantRoute(activeId), { replace: true });
-  }, [activeId, requestedId, loading]);
+    if (activeId !== requestedId) {
+      navigate(assistantRoute(activeId, linkedCanvas?.path), { replace: true });
+    }
+  }, [activeId, requestedId, linkedCanvas, loading]);
 
   useEffect(() => {
     if (!modelSaving && pendingModelValue && pendingModelValue === configuredModelValue) {
@@ -146,6 +166,7 @@ export function AssistantChatPage() {
             sessionTitle={sessions.find((session) => session.id === activeId)?.title}
             refreshSessions={refresh}
             mentionCandidates={mentionCandidates}
+            linkedCanvas={linkedCanvas}
             modelChoices={modelChoices}
             selectedModelValue={selectedModelValue}
             modelSaving={modelSaving}

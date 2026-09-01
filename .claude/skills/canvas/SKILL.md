@@ -56,7 +56,9 @@ caption (TD-DATA-02). What you could not fetch goes in `Coverage`, never into a 
 - Import **only** from `@kansoku/canvas`. No relative paths, no `react`, no `node:`, no npm.
 - Banned in source: `fetch(`, `XMLHttpRequest`, `import(`, `require(`, `setTimeout` /
   `setInterval`, `document.`, `window.`. 64 KB limit.
-- Revising: `read_canvas` first, then save over the same slug. One question, one slug.
+- Revising: `read_file` the existing `journal/canvases/<slug>.canvas.tsx`, then use
+  `edit_file` for exact replacements. Keep the same path. Use `save_canvas` only when creating a
+  canvas or replacing the whole source. One question, one slug.
 - Free builds may keep at most 3 canvases. Overwriting an existing slug is always allowed;
   a fourth new slug is rejected until the user upgrades to Pro.
 
@@ -184,8 +186,8 @@ why it beat plain text. Later ones: just the slug.
 `rejected:` lists one line per reason — fix those, do not work around them. `save_canvas`
 refuses outright until this skill has been read this turn.
 
-Compile and runtime errors are written into the canvas's check record; the next
-`read_canvas` returns them with the source. That record is the authoritative diagnostic.
+Compile and runtime errors are written into the canvas's check record; `read_canvas` remains
+available when that diagnostic record is needed.
 
 A blank canvas almost always referenced an export that does not exist. A prop that has no
 effect was invented — check it against the declarations in `.claude/skills/canvas/sdk/`.

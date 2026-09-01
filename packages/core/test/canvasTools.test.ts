@@ -2,7 +2,7 @@ import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { buildCanvasTools } from '../src/canvas/tools.js';
+import { buildCanvasEditFileTool, buildCanvasTools } from '../src/canvas/tools.js';
 
 const source = `import { Canvas, Text } from '@kansoku/canvas';
 export default function App() {
@@ -92,5 +92,74 @@ describe('canvas skill gate', () => {
     expect(textOf(await byName.save_canvas.execute('1', { slug: 'free', title: 'Free', source }))).toContain(
       'saved slug=free',
     );
+  });
+});
+
+describe('canvas edit_file', () => {
+  it('edits one exact fragment and keeps the canvas valid', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'canvas-edit-'));
+    const dir = join(root, 'journal', 'canvases');
+    const { byName } = tools(dir);
+    await byName.save_canvas.execute('save', { slug: 'mu-demo', title: 'MU demo', source });
+    const edit = buildCanvasEditFileTool(root, dir);
+
+    const result = await edit.execute('edit', {
+      path: 'journal/canvases/mu-demo.canvas.tsx',
+      old_text: '<Text>ok</Text>',
+      new_text: '<Text>updated</Text>',
+    });
+
+    expect(textOf(result)).toContain('edited path=journal/canvases/mu-demo.canvas.tsx');
+    const read = await byName.read_canvas.execute('read', { slug: 'mu-demo' });
+    expect(textOf(read)).toContain('<Text>updated</Text>');
+  });
+
+  it('rejects paths outside the canvas directory and ambiguous replacements', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'canvas-edit-'));
+    const dir = join(root, 'journal', 'canvases');
+    const { byName } = tools(dir);
+    await byName.save_canvas.execute('save', {
+      slug: 'mu-demo',
+      title: 'MU demo',
+      source: source.replace('<Text>ok</Text>', '<><Text>ok</Text><Text>ok</Text></>'),
+    });
+    const edit = buildCanvasEditFileTool(root, dir);
+
+    expect(
+      textOf(
+        await edit.execute('outside', {
+          path: 'stocks/MU.md',
+          old_text: 'a',
+          new_text: 'b',
+        }),
+      ),
+    ).toContain('path must be a journal/canvases');
+    expect(
+      textOf(
+        await edit.execute('ambiguous', {
+          path: 'journal/canvases/mu-demo.canvas.tsx',
+          old_text: '<Text>ok</Text>',
+          new_text: '<Text>updated</Text>',
+        }),
+      ),
+    ).toContain('old_text is not unique');
+  });
+
+  it('validates the resulting source before writing', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'canvas-edit-'));
+    const dir = join(root, 'journal', 'canvases');
+    const { byName } = tools(dir);
+    await byName.save_canvas.execute('save', { slug: 'mu-demo', title: 'MU demo', source });
+    const edit = buildCanvasEditFileTool(root, dir);
+
+    const result = await edit.execute('edit', {
+      path: 'journal/canvases/mu-demo.canvas.tsx',
+      old_text: '<Text>ok</Text>',
+      new_text: '<Text>{fetch("/bad")}</Text>',
+    });
+
+    expect(textOf(result)).toContain('edit failed:');
+    const read = await byName.read_canvas.execute('read', { slug: 'mu-demo' });
+    expect(textOf(read)).toContain('<Text>ok</Text>');
   });
 });

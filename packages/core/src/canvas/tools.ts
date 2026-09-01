@@ -1,6 +1,13 @@
 import type { AgentTool } from '@earendil-works/pi-agent-core';
+import { promises as fs } from 'node:fs';
+import { relative, sep } from 'node:path';
 import { Type } from 'typebox';
 import { textResult } from '../ai/agents/dataTools.js';
+import {
+  isSymlinkSafe,
+  resolveRepoRelative,
+  slashPath,
+} from '../ai/agents/agentTools/fsMounts.js';
 import { isLicensed } from '../license/licenseGate.js';
 import { ClientError } from '../platform/errors.js';
 import { assertCanvasQuota } from './quotaEnforce.js';
@@ -18,6 +25,15 @@ const readSchema = Type.Object({
 
 const listSchema = Type.Object({});
 
+const editFileSchema = Type.Object({
+  path: Type.String({ minLength: 1, maxLength: 2_000 }),
+  old_text: Type.String({ minLength: 1, maxLength: 100_000 }),
+  new_text: Type.String({ maxLength: 100_000 }),
+  replace_all: Type.Optional(Type.Boolean()),
+});
+
+const CANVAS_FILE_RE = /^([a-z0-9]+(?:-[a-z0-9]+)*)\.canvas\.tsx$/;
+
 export const CANVAS_SKILL_NAME = 'canvas';
 
 export interface CanvasToolsOptions {
@@ -29,6 +45,82 @@ export interface CanvasToolsOptions {
    */
   skillLoaded?: () => boolean;
   licensed?: () => boolean;
+}
+
+function canvasEditTarget(
+  repoRoot: string,
+  dir: string,
+  rawPath: string,
+): { path: string; slug: string; target: string } | null {
+  if (rawPath.includes('\0')) return null;
+  const target = resolveRepoRelative(repoRoot, rawPath);
+  if (!target) return null;
+  const file = relative(dir, target);
+  if (!file || file === '..' || file.startsWith(`..${sep}`) || file.includes(sep)) return null;
+  const slug = CANVAS_FILE_RE.exec(file)?.[1];
+  if (!slug) return null;
+  return { path: slashPath(relative(repoRoot, target)), slug, target };
+}
+
+export function buildCanvasEditFileTool(
+  repoRoot: string,
+  dir: string,
+  opts: Pick<CanvasToolsOptions, 'now' | 'skillLoaded'> = {},
+): AgentTool<typeof editFileSchema> {
+  return {
+    name: 'edit_file',
+    label: 'Edit File',
+    description:
+      'Replace an exact text fragment in an existing journal/canvases/*.canvas.tsx file. Read the file and the canvas skill first. The updated source is validated before it is written.',
+    parameters: editFileSchema,
+    execute: async (_id, params) => {
+      if (opts.skillLoaded && !opts.skillLoaded()) {
+        return textResult(`edit failed: read_skill(name="${CANVAS_SKILL_NAME}") first`);
+      }
+      const resolved = canvasEditTarget(repoRoot, dir, params.path);
+      if (!resolved) {
+        return textResult(
+          `edit failed: path must be a journal/canvases/*.canvas.tsx file: ${params.path}`,
+        );
+      }
+      try {
+        const stat = await fs.lstat(resolved.target);
+        if (!stat.isFile() || stat.isSymbolicLink()) {
+          return textResult(`edit failed: not a regular canvas file: ${params.path}`);
+        }
+        if (!(await isSymlinkSafe({ name: 'canvases', root: dir }, resolved.target))) {
+          return textResult(
+            `edit failed: path resolves outside the canvas directory: ${params.path}`,
+          );
+        }
+        const existing = await loadCanvas(dir, resolved.slug);
+        if (!existing) return textResult(`edit failed: canvas not found: ${resolved.slug}`);
+        const occurrences = existing.source.split(params.old_text).length - 1;
+        if (occurrences === 0) return textResult('edit failed: old_text was not found');
+        if (occurrences > 1 && !params.replace_all) {
+          return textResult(
+            'edit failed: old_text is not unique; set replace_all or provide more context',
+          );
+        }
+        const source = params.replace_all
+          ? existing.source.replaceAll(params.old_text, params.new_text)
+          : existing.source.replace(params.old_text, params.new_text);
+        const result = await saveCanvas(dir, {
+          slug: resolved.slug,
+          title: existing.title,
+          source,
+          origin: existing.origin,
+          now: opts.now,
+        });
+        if (!result.ok) return textResult(`edit failed:\n${result.issues.join('\n')}`);
+        return textResult(
+          `edited path=${resolved.path} slug=${result.doc.slug} title=${result.doc.title}`,
+        );
+      } catch (error) {
+        return textResult(`edit failed: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    },
+  };
 }
 
 export function buildCanvasTools(dir: string, opts: CanvasToolsOptions = {}): AgentTool[] {

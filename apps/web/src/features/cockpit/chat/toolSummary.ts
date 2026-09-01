@@ -151,6 +151,11 @@ export function presentToolCall(label: string, input?: string): ToolPresentation
     return { title: '读取画布', items: [], meta: slug };
   }
 
+  if (key === 'editfile') {
+    const path = stringValue(parsed, 'path');
+    return { title: '修改画布文件', items: [], meta: path ? truncate(path) : undefined };
+  }
+
   if (key === 'listcanvases') {
     return { title: '列出画布', items: [] };
   }

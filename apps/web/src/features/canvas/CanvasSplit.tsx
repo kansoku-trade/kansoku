@@ -34,11 +34,13 @@ const styles = stylex.create({
 export function CanvasSplit({
   openSlug,
   onClose,
+  reloadKey,
   children,
   storageKey = 'canvas-pane-width',
 }: {
   openSlug: string | null;
   onClose: () => void;
+  reloadKey?: string;
   children: ReactNode;
   storageKey?: string;
 }) {
@@ -59,7 +61,7 @@ export function CanvasSplit({
           handleLabel="调整画布宽度"
           className={stylex.props(styles.pane).className}
         >
-          <CanvasPane slug={openSlug} onClose={onClose} />
+          <CanvasPane slug={openSlug} onClose={onClose} reloadKey={reloadKey} />
         </ResizablePanel>
       ) : null}
     </div>

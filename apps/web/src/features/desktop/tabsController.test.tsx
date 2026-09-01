@@ -339,6 +339,25 @@ describe('useTabsController with shared bridge', () => {
     expect(getController().snapshot.activeTabId).toBe('b');
   });
 
+  it('opens an explicitly requested route in a new tab from a non-pinned tab', async () => {
+    bridge.seed([makeTab('/', 'a'), makeTab('/research', 'b')]);
+    const getController = renderController();
+    await waitFor(() => expect(getController().snapshot.tabs).toHaveLength(2));
+    act(() => getController().activateTab('b'));
+    await waitFor(() => expect(getController().snapshot.activeTabId).toBe('b'));
+
+    act(() => navigate('/chat?session=canvas', { newTab: true }));
+
+    await waitFor(() => {
+      expect(
+        bridge.mutateCalls.some(
+          (op) => op.op === 'open' && op.route === '/chat?session=canvas',
+        ),
+      ).toBe(true);
+    });
+    expect(getController().snapshot.tabs.find((tab) => tab.id === 'b')?.route).toBe('/research');
+  });
+
   it('restores the sessionStorage active tab on the first snapshot when it still exists', async () => {
     sessionStorage.setItem('desktop-active-tab-v1', 'b');
     bridge.seed([makeTab('/', 'a'), makeTab('/settings', 'b')]);

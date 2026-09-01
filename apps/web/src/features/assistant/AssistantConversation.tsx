@@ -2,9 +2,12 @@ import { gsap } from 'gsap';
 import { AtSign } from 'lucide-react';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { SyntheticEvent } from 'react';
+import { canvasSlugFromResearchPath, researchCanvasPath } from '@kansoku/core/contract/index';
 import * as stylex from '@stylexjs/stylex';
+import { navigate } from '@web/lib/router';
 import { Select } from '@web/ui';
 import { CanvasSplit } from '../canvas/CanvasSplit';
+import { latestCanvasChangeToken } from '../canvas/canvasEntries';
 import { useCanvasWorkspace } from '../canvas/useCanvasWorkspace';
 import { ChatComposer } from '../cockpit/chat/ChatComposer';
 import { ConversationTranscript } from '../cockpit/chat/ConversationTranscript';
@@ -340,6 +343,7 @@ export function AssistantConversation({
   sessionTitle,
   refreshSessions,
   mentionCandidates,
+  linkedCanvas,
   modelChoices,
   selectedModelValue,
   modelSaving,
@@ -351,6 +355,7 @@ export function AssistantConversation({
   sessionTitle?: string;
   refreshSessions: () => void;
   mentionCandidates: MentionCandidate[];
+  linkedCanvas: MentionCandidate | null;
   modelChoices: AssistantModelChoice[];
   selectedModelValue: string;
   modelSaving: boolean;
@@ -360,7 +365,9 @@ export function AssistantConversation({
 }) {
   const { session, rows, busy, aborting, streamText, liveTools, liveBeats, hint, send, abort } =
     useAssistantChatSession(sessionId);
-  const canvas = useCanvasWorkspace();
+  const linkedCanvasSlug = linkedCanvas ? canvasSlugFromResearchPath(linkedCanvas.path) : null;
+  const canvas = useCanvasWorkspace(linkedCanvasSlug);
+  const canvasReloadKey = latestCanvasChangeToken(rows, liveTools);
   const [text, setText] = useState('');
   const [mentionState, setMentionState] = useState<MentionState | null>(null);
   const [composerFocused, setComposerFocused] = useState(false);
@@ -384,7 +391,10 @@ export function AssistantConversation({
   const doSend = async (value: string) => {
     const trimmed = value.trim();
     if (!trimmed) return { ok: false, error: '内容不能为空' };
-    return send(trimmed);
+    const linkedMention = linkedCanvas ? `@${linkedCanvas.path}` : null;
+    const message =
+      linkedMention && !trimmed.includes(linkedMention) ? `${linkedMention}\n${trimmed}` : trimmed;
+    return send(message);
   };
 
   const queue = useMessageQueue({ busy, onSend: doSend });
@@ -392,10 +402,13 @@ export function AssistantConversation({
   const filteredMentions = mentionState
     ? filterMentionCandidates(mentionCandidates, mentionState.trigger.query)
     : [];
-  const mentionedCandidates = useMemo(
-    () => findMentionedCandidates(text, mentionCandidates),
-    [mentionCandidates, text],
-  );
+  const mentionedCandidates = useMemo(() => {
+    const mentioned = findMentionedCandidates(text, mentionCandidates);
+    if (!linkedCanvas || mentioned.some((candidate) => candidate.path === linkedCanvas.path)) {
+      return mentioned;
+    }
+    return [linkedCanvas, ...mentioned];
+  }, [linkedCanvas, mentionCandidates, text]);
   const composerExpanded = shouldExpandComposer({
     busy,
     focusedWithin: composerFocused,
@@ -482,6 +495,13 @@ export function AssistantConversation({
     setText(result.text);
     cursorRef.current = result.cursor;
     setMentionState(null);
+    const slug = canvasSlugFromResearchPath(candidate.path);
+    if (slug) {
+      navigate(
+        `/chat?${new URLSearchParams({ session: sessionId, canvas: candidate.path }).toString()}`,
+        { replace: true },
+      );
+    }
     requestAnimationFrame(() => {
       textareaRef.current?.focus();
       textareaRef.current?.setSelectionRange(result.cursor, result.cursor);
@@ -506,6 +526,12 @@ export function AssistantConversation({
     const next = removeMention(text, path);
     setText(next);
     setMentionState(null);
+    if (path === linkedCanvas?.path) {
+      canvas.close();
+      navigate(`/chat?${new URLSearchParams({ session: sessionId }).toString()}`, {
+        replace: true,
+      });
+    }
     cursorRef.current = next.length;
     requestAnimationFrame(() => {
       textareaRef.current?.focus();
@@ -517,6 +543,7 @@ export function AssistantConversation({
     <CanvasSplit
       openSlug={canvas.openSlug}
       onClose={canvas.close}
+      reloadKey={canvasReloadKey}
       storageKey="canvas-assistant-pane"
     >
       <div className={`assistant-conversation ${stylex.props(styles.conversation).className}`}>
@@ -539,7 +566,13 @@ export function AssistantConversation({
           emptyText="输入问题、判断或交易计划，开始一段研究对话"
           onPickSuggestion={() => {}}
           modelLabels={modelLabels}
-          onOpenCanvas={(slug) => canvas.open(slug)}
+          onOpenCanvas={(slug) => {
+            canvas.open(slug);
+            navigate(
+              `/chat?${new URLSearchParams({ session: sessionId, canvas: researchCanvasPath(slug) }).toString()}`,
+              { replace: true },
+            );
+          }}
           userBubbleClassName={stylex.props(styles.userBubble).className}
         />
         <div className={`assistant-conversation-dock ${stylex.props(styles.dock).className}`}>
