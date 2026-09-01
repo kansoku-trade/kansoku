@@ -12,6 +12,7 @@ import type {
 const list = vi.fn();
 const get = vi.fn();
 const canvasGet = vi.fn();
+const capabilitiesGet = vi.fn();
 const openCreateResearchDialogMock = vi.fn();
 
 vi.mock('@web/lib/client', () => ({
@@ -22,6 +23,9 @@ vi.mock('@web/lib/client', () => ({
     },
     canvas: {
       get: (...args: unknown[]) => canvasGet(...args),
+    },
+    capabilities: {
+      get: (...args: unknown[]) => capabilitiesGet(...args),
     },
   },
 }));
@@ -38,6 +42,13 @@ vi.mock('@web/features/canvas/CanvasFrame', () => ({
 const { ResearchPage } = await import('./ResearchPage');
 const { queryClient } = await import('@web/lib/queryClient');
 const { navigate, setActiveRouter } = await import('@web/lib/router');
+const { resetCapabilitiesStoreForTests } = await import(
+  '@web/features/edition/capabilitiesStore'
+);
+const {
+  getLicenseModalStateForTests,
+  resetLicenseModalStoreForTests,
+} = await import('@web/features/edition/licenseModalStore');
 
 const AVGO_META: ResearchDocumentMeta = {
   path: 'stocks/AVGO.md',
@@ -104,14 +115,18 @@ function captureOnCreated(): (result: ResearchCreateResult) => void {
 
 beforeEach(() => {
   queryClient.clear();
+  capabilitiesGet.mockResolvedValue({ pro: true, licensed: false });
 });
 
 afterEach(() => {
   cleanup();
   setActiveRouter(null);
+  resetCapabilitiesStoreForTests();
+  resetLicenseModalStoreForTests();
   list.mockReset();
   get.mockReset();
   canvasGet.mockReset();
+  capabilitiesGet.mockReset();
   openCreateResearchDialogMock.mockReset();
 });
 
@@ -197,8 +212,26 @@ describe('ResearchPage canvases shelf', () => {
 
     expect(await screen.findByRole('radio', { name: /^画布/ })).toBeTruthy();
     expect(screen.queryByText('新建')).toBeNull();
+    expect(await screen.findByText('免费 1/3')).toBeTruthy();
     expect((await screen.findByTestId('canvas-frame')).textContent).toBe('acceptance-mu-panel');
     expect(screen.queryByText('AVGO 档案正文')).toBeNull();
     expect(screen.queryByLabelText('关联研究资料')).toBeNull();
+  });
+
+  it('offers the upgrade paywall when the free canvas quota is full', async () => {
+    const extras: ResearchDocumentMeta[] = [
+      { ...CANVAS_META, path: 'journal/canvases/two.canvas.tsx', title: 'Two' },
+      { ...CANVAS_META, path: 'journal/canvases/three.canvas.tsx', title: 'Three' },
+    ];
+    const router = memRouter('/research?view=canvases');
+    setActiveRouter(router);
+    list.mockResolvedValue([CANVAS_META, ...extras]);
+    get.mockResolvedValue(CANVAS_DOC);
+
+    renderResearchPage();
+
+    expect(await screen.findByText('免费 3/3')).toBeTruthy();
+    fireEvent.click(screen.getByText('升级解锁'));
+    expect(getLicenseModalStateForTests()).toEqual({ open: true, trigger: 'guard' });
   });
 });

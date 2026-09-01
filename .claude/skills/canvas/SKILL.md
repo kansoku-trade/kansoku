@@ -57,6 +57,8 @@ caption (TD-DATA-02). What you could not fetch goes in `Coverage`, never into a 
 - Banned in source: `fetch(`, `XMLHttpRequest`, `import(`, `require(`, `setTimeout` /
   `setInterval`, `document.`, `window.`. 64 KB limit.
 - Revising: `read_canvas` first, then save over the same slug. One question, one slug.
+- Free builds may keep at most 3 canvases. Overwriting an existing slug is always allowed;
+  a fourth new slug is rejected until the user upgrades to Pro.
 
 **Never render empty states.** No data means omit the element — no placeholder text, no
 「暂无数据」, no zeroed rows, no empty chart frame. `Coverage` is the sole exception; naming

@@ -1,5 +1,7 @@
+import { assertCanvasQuota } from '../canvas/quotaEnforce.js';
 import { loadCanvas, setCanvasOrigin } from '../canvas/store.js';
 import type { Db } from '../db/index.js';
+import { isLicensed } from '../license/licenseGate.js';
 import { CANVAS_DIR } from '../platform/env.js';
 import { ClientError } from '../platform/errors.js';
 import { publishEventCanvasProgress, type EventCanvasPhase } from './canvasProgress.js';
@@ -32,6 +34,7 @@ export type EventCanvasRunner = (input: {
 export interface EventCanvasRuntimeDeps extends EventEvidencePackDeps {
   canvasDir: string;
   runner: EventCanvasRunner;
+  licensed?: () => boolean;
 }
 
 export interface EventCanvasRuntime {
@@ -74,6 +77,7 @@ export function createEventCanvasRuntime(deps: EventCanvasRuntimeDeps): EventCan
       const event = await getEvent(id, deps.db);
       if (!event) throw new ClientError(`event not found: ${id}`, undefined, 404);
       const slug = eventCanvasSlug(event.id);
+      await assertCanvasQuota(deps.canvasDir, slug, (deps.licensed ?? isLicensed)());
 
       let settle!: { resolve: () => void; reject: (error: unknown) => void };
       const done = new Promise<void>((resolve, reject) => {

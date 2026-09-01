@@ -10,6 +10,8 @@ const FEATURES = [
   { name: '深度研究', desc: '一键深度研究，产出结构化报告' },
   { name: '研究库 AI', desc: '审阅、刷新、研究资料对谈' },
   { name: '长期记忆', desc: '偏好与标的下文持久化，跨对话继承' },
+  { name: '盲盘训练', desc: '盖住代码与日期的历史对练，按 R 结算' },
+  { name: '画布', desc: '免费最多 3 张，Pro 不限数量' },
 ];
 
 const styles = stylex.create({

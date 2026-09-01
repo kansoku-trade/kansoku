@@ -1,4 +1,4 @@
-export type AppView = 'chart' | 'train' | 'research';
+export type AppView = 'chart' | 'train' | 'research' | 'canvas';
 
 export interface Chapter {
   id: string;
@@ -15,6 +15,7 @@ export const CHAPTERS: Chapter[] = [
   { id: 'tools', label: '工具', seconds: 4, view: 'chart' },
   { id: 'train', label: '盲盘训练', seconds: 6, view: 'train' },
   { id: 'research', label: '研究库', seconds: 5, view: 'research' },
+  { id: 'canvas', label: '画布', seconds: 5, view: 'canvas' },
 ];
 
 export const chapterIndexOfView = (view: AppView): number =>

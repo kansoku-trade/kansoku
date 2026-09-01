@@ -139,7 +139,7 @@ describe('LicenseModal', () => {
     expect(yearly.closest('a')?.getAttribute('href')).toBe('https://checkout.example/buy-annual');
   });
 
-  it('advertises exactly the three paid features, not the now-free ones', async () => {
+  it('advertises the paid features including the canvas quota, not the now-free ones', async () => {
     capabilitiesGet.mockResolvedValue({
       pro: true,
       licensed: false,
@@ -153,6 +153,9 @@ describe('LicenseModal', () => {
     expect(await screen.findByText('个股自动跟踪')).toBeTruthy();
     expect(screen.getByText('深度研究')).toBeTruthy();
     expect(screen.getByText('研究库 AI')).toBeTruthy();
+    expect(screen.getByText('盲盘训练')).toBeTruthy();
+    expect(screen.getByText('画布')).toBeTruthy();
+    expect(screen.getByText('免费最多 3 张，Pro 不限数量')).toBeTruthy();
     expect(screen.queryByText('AI 盘面复盘')).toBeNull();
     expect(screen.queryByText('图表对话')).toBeNull();
     expect(screen.queryByText('定时盯盘')).toBeNull();

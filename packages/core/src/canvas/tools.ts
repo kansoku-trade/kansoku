@@ -1,6 +1,9 @@
 import type { AgentTool } from '@earendil-works/pi-agent-core';
 import { Type } from 'typebox';
 import { textResult } from '../ai/agents/dataTools.js';
+import { isLicensed } from '../license/licenseGate.js';
+import { ClientError } from '../platform/errors.js';
+import { assertCanvasQuota } from './quotaEnforce.js';
 import { listCanvases, loadCanvas, saveCanvas } from './store.js';
 
 const saveSchema = Type.Object({
@@ -25,21 +28,30 @@ export interface CanvasToolsOptions {
    * a canvas with no conclusion and hand-rolled tables, and prose alone does not stop it.
    */
   skillLoaded?: () => boolean;
+  licensed?: () => boolean;
 }
 
 export function buildCanvasTools(dir: string, opts: CanvasToolsOptions = {}): AgentTool[] {
-  const { now, skillLoaded } = opts;
+  const { now, skillLoaded, licensed = isLicensed } = opts;
   const save: AgentTool<typeof saveSchema> = {
     name: 'save_canvas',
     label: 'Save Canvas',
     description:
-      'Create or overwrite a named canvas file. Read the canvas skill first (read_skill name="canvas") — it carries the required layout skeleton. slug is kebab-case. source is the full TSX. Same slug updates the same canvas.',
+      'Create or overwrite a named canvas file. Read the canvas skill first (read_skill name="canvas") — it carries the required layout skeleton. slug is kebab-case. source is the full TSX. Same slug updates the same canvas. Free builds may keep at most 3 canvases; overwriting an existing slug is always allowed.',
     parameters: saveSchema,
     execute: async (_id, params) => {
       if (skillLoaded && !skillLoaded()) {
         return textResult(
           `rejected: read_skill(name="${CANVAS_SKILL_NAME}") first, then rewrite the source to follow its layout skeleton.`,
         );
+      }
+      try {
+        await assertCanvasQuota(dir, params.slug, licensed());
+      } catch (error) {
+        if (error instanceof ClientError && error.code === 'LICENSE_REQUIRED') {
+          return textResult(`rejected: ${error.message}`);
+        }
+        throw error;
       }
       const result = await saveCanvas(dir, { ...params, now });
       if (!result.ok) {

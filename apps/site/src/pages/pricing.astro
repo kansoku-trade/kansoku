@@ -15,11 +15,14 @@ const yearlyListAmount = subscription.yearly.listPriceLabel.split(' / ')[0];
 const matrix = [
   ...features.matrixFree.map((section) => ({
     group: section.group,
-    rows: section.items.map((cap) => ({ cap, free: true })),
+    rows: section.items.map((cap) => ({ cap, free: true as const })),
   })),
+  ...features.matrixCompare,
   {
     group: 'Pro 能力',
-    rows: features.pro.map((f) => ({ cap: f.matrix, free: false })),
+    rows: features.pro
+      .filter((f): f is typeof f & { matrix: string } => Boolean(f.matrix))
+      .map((f) => ({ cap: f.matrix, free: false as const })),
   },
 ];
 
@@ -123,13 +126,20 @@ const faq = [
                 <tr class="group">
                   <td colspan="3">{section.group}</td>
                 </tr>
-                {section.rows.map((row) => (
-                  <tr>
-                    <td class="cap">{row.cap}</td>
-                    <td class={row.free ? 'mark yes' : 'mark no'}>{row.free ? '✓' : '—'}</td>
-                    <td class="mark yes pro-col">✓</td>
-                  </tr>
-                ))}
+                {section.rows.map((row) => {
+                  const freeLabel = typeof row.free === 'string' ? row.free : row.free ? '✓' : '—';
+                  const proLabel = 'pro' in row && typeof row.pro === 'string' ? row.pro : '✓';
+                  const freeMark = typeof row.free === 'string' ? 'mark text' : row.free ? 'mark yes' : 'mark no';
+                  const proMark =
+                    'pro' in row && typeof row.pro === 'string' ? 'mark text pro-col' : 'mark yes pro-col';
+                  return (
+                    <tr>
+                      <td class="cap">{row.cap}</td>
+                      <td class={freeMark}>{freeLabel}</td>
+                      <td class={proMark}>{proLabel}</td>
+                    </tr>
+                  );
+                })}
               </>
             ))
           }
@@ -401,6 +411,12 @@ const faq = [
 
   .no {
     color: var(--text-3);
+  }
+
+  td.mark.text {
+    color: var(--text-2);
+    font-size: 12px;
+    white-space: nowrap;
   }
 
   .pro-col {

@@ -1,0 +1,216 @@
+---
+import Icon from '../../Icon.astro';
+import { barShare, DEMO_CANVASES, maxAbs, signedText } from '../../../scripts/landing/replica/canvasDocs';
+import '../../../styles/landing/canvas.css';
+
+const FREE_CANVAS_LIMIT = 3;
+---
+
+<div class="app-view app-view--stack" data-app-view="canvas" data-active="false">
+  <header class="demo-canvas-header">
+    <div class="demo-canvas-title">
+      <span class="demo-canvas-title-icon"><Icon name="layout-dashboard" size={16} /></span>
+      <div>
+        <h3>画布</h3>
+        <p>AI 拼出来的分析板 · 免费 {DEMO_CANVASES.length}/{FREE_CANVAS_LIMIT}</p>
+      </div>
+    </div>
+  </header>
+
+  <div class="demo-canvas-workspace">
+    <aside class="demo-canvas-explorer">
+      <div class="demo-canvas-explorer-head">
+        <span>画布</span>
+        <span>{DEMO_CANVASES.length}</span>
+      </div>
+      <div class="demo-canvas-list">
+        {
+          DEMO_CANVASES.map((canvas, i) => (
+            <button
+              type="button"
+              class:list={['demo-canvas-row', { active: i === 0 }]}
+              data-canvas-row
+              data-index={i}
+              aria-pressed={i === 0 ? 'true' : 'false'}
+            >
+              <span class="demo-canvas-row-title">{canvas.title}</span>
+              <span class="demo-canvas-row-slug">{canvas.slug}</span>
+            </button>
+          ))
+        }
+      </div>
+    </aside>
+
+    <main class="demo-canvas-reader">
+      {
+        DEMO_CANVASES.map((canvas, i) => {
+          const peak = maxAbs((canvas.flow ?? []).map((point) => point.y));
+          return (
+            <article
+              class="demo-canvas-panel"
+              data-canvas-panel
+              data-index={i}
+              data-active={i === 0 ? 'true' : 'false'}
+            >
+              <h4>{canvas.title}</h4>
+              <p class="demo-canvas-caption">{canvas.caption}</p>
+
+              <div class="demo-canvas-callout">{canvas.conclusion}</div>
+
+              <div class="demo-canvas-stats" data-cols={canvas.stats.length}>
+                {canvas.stats.map((stat) => (
+                  <div class="demo-canvas-stat">
+                    <span class="demo-canvas-stat-label">{stat.label}</span>
+                    <span class:list={['demo-canvas-stat-value', stat.tone && `is-${stat.tone}`]}>
+                      {stat.value}
+                    </span>
+                    {stat.delta && (
+                      <span class:list={['demo-canvas-stat-delta', stat.tone && `is-${stat.tone}`]}>
+                        {stat.delta}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <section class="demo-canvas-section">
+                <div class="demo-canvas-section-title">对照</div>
+                <table class="demo-canvas-table">
+                  <thead>
+                    <tr>
+                      <th>标的</th>
+                      {canvas.compareMetrics.map((metric) => (
+                        <th class="is-num">{metric.label}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {canvas.compare.map((row) => (
+                      <tr>
+                        <td>
+                          <code>{row.symbol}</code>
+                          <span>{row.label}</span>
+                        </td>
+                        {canvas.compareMetrics.map((metric) => {
+                          const value = row.values[metric.key];
+                          const tone = value < 0 ? 'is-down' : value > 0 ? 'is-up' : undefined;
+                          return (
+                            <td class:list={['is-num', tone]}>
+                              {signedText(value, metric.suffix ?? '')}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </section>
+
+              {canvas.flow && (
+                <section class="demo-canvas-section">
+                  <div class="demo-canvas-section-title">分时资金</div>
+                  <div class="demo-canvas-bars">
+                    {canvas.flow.map((point) => {
+                      const share = barShare(point.y, peak);
+                      const tone = point.y < 0 ? 'is-down' : point.y > 0 ? 'is-up' : undefined;
+                      return (
+                        <div class="demo-canvas-bar">
+                          <span class="demo-canvas-bar-x">{point.x}</span>
+                          <span class="demo-canvas-bar-track">
+                            <span
+                              class:list={['demo-canvas-bar-fill', tone]}
+                              style={`width: ${share * 50}%`}
+                            />
+                          </span>
+                          <span class:list={['demo-canvas-bar-y', tone]}>
+                            {signedText(point.y)}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+              )}
+
+              {(canvas.scenarios || canvas.timeline) && (
+                <div class="demo-canvas-split">
+                  {canvas.scenarios && (
+                    <section class="demo-canvas-section">
+                      <div class="demo-canvas-section-title">下一步</div>
+                      <div class="demo-canvas-scenarios">
+                        {canvas.scenarios.map((item) => (
+                          <div class="demo-canvas-scenario">
+                            <div class="demo-canvas-scenario-head">
+                              <span class:list={[item.tone && `is-${item.tone}`]}>{item.label}</span>
+                              <span
+                                class:list={['demo-canvas-scenario-pct', item.tone && `is-${item.tone}`]}
+                              >
+                                {item.probability}%
+                              </span>
+                            </div>
+                            <div class="demo-canvas-scenario-track">
+                              <span
+                                class:list={[item.tone && `is-${item.tone}`]}
+                                style={`width: ${item.probability}%`}
+                              />
+                            </div>
+                            <p>触发：{item.trigger}</p>
+                            {item.note && <p class="demo-canvas-scenario-note">{item.note}</p>}
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+                  )}
+                  {canvas.timeline && (
+                    <section class="demo-canvas-section">
+                      <div class="demo-canvas-section-title">当日</div>
+                      <ol class="demo-canvas-timeline">
+                        {canvas.timeline.map((item) => (
+                          <li class:list={[item.current && 'is-current']}>
+                            <span class="demo-canvas-timeline-at">{item.at}</span>
+                            <span class="demo-canvas-timeline-rail">
+                              <span class:list={['demo-canvas-timeline-dot', item.tone && `is-${item.tone}`]} />
+                            </span>
+                            <div>
+                              <div class="demo-canvas-timeline-line">
+                                <span>{item.label}</span>
+                                {item.price !== undefined && (
+                                  <span class:list={['demo-canvas-timeline-price', item.tone && `is-${item.tone}`]}>
+                                    {item.price}
+                                  </span>
+                                )}
+                              </div>
+                              {item.detail && <p>{item.detail}</p>}
+                            </div>
+                          </li>
+                        ))}
+                      </ol>
+                    </section>
+                  )}
+                </div>
+              )}
+
+              <section class="demo-canvas-section">
+                <div class="demo-canvas-section-title">数据边界</div>
+                <ul class="demo-canvas-coverage">
+                  {canvas.coverage.map((item) => (
+                    <li>
+                      <span class:list={['demo-canvas-mark', `is-${item.status}`]}>
+                        {item.status === 'ok' ? '有' : '无'}
+                      </span>
+                      <span>{item.label}</span>
+                      {item.note && <small>{item.note}</small>}
+                    </li>
+                  ))}
+                </ul>
+                <p class="demo-canvas-source">
+                  {canvas.source.from} · {canvas.source.at}
+                </p>
+              </section>
+            </article>
+          );
+        })
+      }
+    </main>
+  </div>
+</div>

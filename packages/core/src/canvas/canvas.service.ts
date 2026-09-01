@@ -1,9 +1,15 @@
 import { CANVAS_DIR } from '../platform/env.js';
+import { isLicensed } from '../license/licenseGate.js';
 import { ClientError } from '../platform/errors.js';
 import type { CanvasApi } from '../contract/canvas.js';
+import { assertCanvasQuota } from './quotaEnforce.js';
 import { listCanvases, loadCanvas, recordCanvasCheck, saveCanvas } from './store.js';
 
-export function createCanvasService(dir: string): CanvasApi {
+export function createCanvasService(
+  dir: string,
+  opts: { licensed?: () => boolean } = {},
+): CanvasApi {
+  const licensed = opts.licensed ?? isLicensed;
   return {
     async list() {
       return listCanvases(dir);
@@ -16,6 +22,7 @@ export function createCanvasService(dir: string): CanvasApi {
     },
 
     async save(input) {
+      await assertCanvasQuota(dir, input.slug, licensed());
       const result = await saveCanvas(dir, input);
       if (!result.ok) throw new ClientError(result.issues.join('; '), undefined, 400);
       return result.doc;

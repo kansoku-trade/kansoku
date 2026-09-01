@@ -6,8 +6,11 @@ import type {
   ResearchDocumentMeta,
 } from '@kansoku/core/contract/index';
 import { canvasSlugFromResearchPath } from '@kansoku/core/contract/index';
+import { FREE_CANVAS_LIMIT } from '@kansoku/core/canvas/quota';
 import * as stylex from '@stylexjs/stylex';
 import { CanvasFrame } from '@web/features/canvas/CanvasFrame';
+import { useCapabilities } from '@web/features/edition/capabilitiesStore';
+import { openLicenseModal } from '@web/features/edition/licenseModalStore';
 import { useQuery } from '@web/lib/apiHooks';
 import { client } from '@web/lib/client';
 import { queryClient } from '@web/lib/queryClient';
@@ -71,6 +74,26 @@ function searchPlaceholder(view: ResearchView): string {
   if (view === 'stocks') return '搜索股票或正文';
   if (view === 'canvases') return '搜索标题或标的';
   return '搜索日期、标的或主题';
+}
+
+function CanvasQuotaHint({ count }: { count: number }) {
+  const { pro, licensed } = useCapabilities();
+  if (licensed) return <span>{count}</span>;
+  const atLimit = count >= FREE_CANVAS_LIMIT;
+  return (
+    <span className={stylex.props(styles.quota).className}>
+      免费 {Math.min(count, FREE_CANVAS_LIMIT)}/{FREE_CANVAS_LIMIT}
+      {atLimit && pro !== false ? (
+        <button
+          type="button"
+          className={stylex.props(styles.quotaUpgrade).className}
+          onClick={() => openLicenseModal('guard')}
+        >
+          升级解锁
+        </button>
+      ) : null}
+    </span>
+  );
 }
 
 const EXPLORER_MIN_WIDTH = 240;
@@ -251,6 +274,30 @@ const styles = stylex.create({
       backgroundColor: colors.backgroundHover,
       borderColor: colors.borderStrong,
       color: colors.textPrimary,
+    },
+  },
+  quota: {
+    alignItems: 'center',
+    display: 'inline-flex',
+    gap: '8px',
+  },
+  quotaUpgrade: {
+    'alignItems': 'center',
+    'backgroundColor': 'transparent',
+    'borderColor': 'rgba(255, 176, 0, 0.4)',
+    'borderRadius': radii.default,
+    'borderStyle': 'solid',
+    'borderWidth': '1px',
+    'color': colors.accent,
+    'cursor': 'pointer',
+    'display': 'inline-flex',
+    'fontSize': fontSizes.xs,
+    'height': '22px',
+    'letterSpacing': 0,
+    'padding': '0 8px',
+    ':hover': {
+      backgroundColor: 'rgba(255, 176, 0, 0.1)',
+      borderColor: colors.accent,
     },
   },
   newButton: {
@@ -953,7 +1000,7 @@ export function ResearchPage() {
             <div {...stylex.props(styles.explorerHead)}>
               <span>{explorerLabel(view)}</span>
               {view === 'canvases' ? (
-                <span>{visibleDocuments.length}</span>
+                <CanvasQuotaHint count={canvasCount} />
               ) : (
                 <button type="button" {...stylex.props(styles.newButton)} onClick={openCreateDialog}>
                   <Plus size={12} /> 新建

@@ -2,6 +2,7 @@ import { mountReplicaChart, type ReplicaChart } from '../replica/chart';
 import type { DrawingTool } from '../replica/drawingShapes';
 import type { Tier } from '../tier';
 import { applyState, collectRefs } from './director';
+import { mountCanvasControls } from './canvasControls';
 import { mountResearchControls } from './researchControls';
 import {
   CHAPTERS,
@@ -53,6 +54,8 @@ export const mountDemoScene = async (root: ParentNode, tier: Tier): Promise<Demo
 
   const research = mountResearchControls(scene);
   if (research) teardown.push(research.destroy);
+  const canvas = mountCanvasControls(scene);
+  if (canvas) teardown.push(canvas.destroy);
 
   const unsubscribe = timeline.subscribe((state) => applyState(refs, state));
   teardown.push(unsubscribe);

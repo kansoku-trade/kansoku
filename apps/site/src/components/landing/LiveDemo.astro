@@ -1,4 +1,5 @@
 ---
+import CanvasView from './demo/CanvasView.astro';
 import ChartView from './demo/ChartView.astro';
 import ResearchView from './demo/ResearchView.astro';
 import TrainerView from './demo/TrainerView.astro';
@@ -12,6 +13,7 @@ const appTabs = [
   { view: 'chart', name: 'NVDA.US 短线多周期' },
   { view: 'train', name: '盲盘训练' },
   { view: 'research', name: '研究库' },
+  { view: 'canvas', name: '画布 · MU 对照' },
 ];
 
 const chapterCopy: Record<string, { title: string; body: string; pro?: boolean }> = {
@@ -44,6 +46,10 @@ const chapterCopy: Record<string, { title: string; body: string; pro?: boolean }
     title: '研究资料留在文件里。',
     pro: true,
     body: '股票档案、每日复盘和教训保存在本地 Markdown 文件中，可以直接阅读、修改和迁移。需要时，再让 AI 补充资料或整理改动。',
+  },
+  canvas: {
+    title: '数字本身就是交付物。',
+    body: '对话里拼出一张分析板：结论、关键数字、对照和数据边界摊在同一屏。免费最多 3 张，覆盖已有的那张不受限；Pro 不限数量。右侧演示可以点开另外一张。',
   },
 };
 ---
@@ -101,6 +107,7 @@ const chapterCopy: Record<string, { title: string; body: string; pro?: boolean }
           <ChartView />
           <TrainerView />
           <ResearchView />
+          <CanvasView />
         </div>
       </div>
     </div>

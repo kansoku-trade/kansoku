@@ -214,6 +214,33 @@ describe('generateEventCanvas', () => {
     expect(phases.at(-1)).toBe('done');
   });
 
+  it('refuses a new event canvas when the free quota is full', async () => {
+    const instance = db();
+    const dir = canvasDir();
+    const { event } = await ingestEvent(draft(), instance);
+    let called = 0;
+    for (const slug of ['one', 'two', 'three']) {
+      await saveCanvas(dir, { slug, title: slug, source: SOURCE });
+    }
+    const runtime = createEventCanvasRuntime({
+      db: instance,
+      canvasDir: dir,
+      licensed: () => false,
+      runner: async () => {
+        called += 1;
+      },
+      fetchKline: async () => [],
+      fetchFlow: async () => [],
+      listComments: async () => [],
+      listResearch: async () => [],
+    });
+    await expect(runtime.generate({ id: event.id })).rejects.toMatchObject({
+      status: 403,
+      code: 'LICENSE_REQUIRED',
+    });
+    expect(called).toBe(0);
+  });
+
   it('rejects an unknown event without calling the persona', async () => {
     let called = 0;
     const runtime = createEventCanvasRuntime({
