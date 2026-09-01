@@ -27,7 +27,8 @@ describe('CanvasPane chrome', () => {
   it('shows the canvas with a close button and no source switch', async () => {
     render(<CanvasPane slug="acceptance-mu-panel" onClose={() => {}} />);
     await waitFor(() => expect(screen.getByText('MU 验收面板')).toBeTruthy());
-    expect(screen.getByRole('button', { name: '关闭' }).className).toContain('btn');
+    expect(screen.getByRole('button', { name: '关闭' }).textContent).not.toContain('关闭');
+    expect(screen.getByText('acceptance-mu-panel')).toBeTruthy();
     expect(screen.getByTestId('canvas-frame')).toBeTruthy();
     expect(screen.queryByRole('group', { name: '画布视图' })).toBeNull();
     expect(screen.queryByRole('button', { name: '源码' })).toBeNull();

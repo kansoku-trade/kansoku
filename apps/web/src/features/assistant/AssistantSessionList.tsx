@@ -1,5 +1,5 @@
-import { useState, type FormEvent } from 'react';
-import { Plus, X } from 'lucide-react';
+import { useMemo, useState, type FormEvent } from 'react';
+import { Plus, Search, X } from 'lucide-react';
 import * as stylex from '@stylexjs/stylex';
 import type { AssistantSessionMeta } from '@kansoku/core/contract/index';
 import {
@@ -35,10 +35,70 @@ const styles = stylex.create({
     overflow: 'hidden',
     padding: '0 12px',
   },
-  newSession: {
+  toolbar: {
+    alignItems: 'center',
+    display: 'flex',
+    flex: '1 1 auto',
     gap: '6px',
-    justifyContent: 'center',
+    minWidth: 0,
+  },
+  search: {
+    alignItems: 'center',
+    display: 'flex',
+    flex: '1 1 auto',
+    minWidth: 0,
+    position: 'relative',
+  },
+  searchIcon: {
+    color: colors.textMuted,
+    left: '8px',
+    pointerEvents: 'none',
+    position: 'absolute',
+    zIndex: 1,
+  },
+  searchInput: {
+    paddingLeft: '28px',
     width: '100%',
+  },
+  visuallyHidden: {
+    border: 0,
+    clip: 'rect(0, 0, 0, 0)',
+    height: '1px',
+    margin: '-1px',
+    overflow: 'hidden',
+    padding: 0,
+    position: 'absolute',
+    whiteSpace: 'nowrap',
+    width: '1px',
+  },
+  newSession: {
+    'alignItems': 'center',
+    'backgroundColor': colors.backgroundElement,
+    'borderColor': colors.borderStrong,
+    'borderRadius': radii.default,
+    'borderStyle': 'solid',
+    'borderWidth': '1px',
+    'boxSizing': 'border-box',
+    'color': colors.textPrimary,
+    'cursor': 'pointer',
+    'display': 'inline-flex',
+    'flex': '0 0 auto',
+    'height': sizes.controlHeight,
+    'justifyContent': 'center',
+    'padding': 0,
+    'transition': 'border-color 0.12s ease, color 0.12s ease, transform 0.12s ease',
+    'width': sizes.controlHeight,
+    ':hover': {
+      borderColor: colors.accent,
+    },
+    ':active': {
+      transform: 'scale(0.96)',
+    },
+    ':focus-visible': {
+      borderColor: colors.focusBorder,
+      boxShadow: colors.focusRing,
+      outline: 'none',
+    },
   },
   sidebarScroll: {
     flex: '1 1 auto',
@@ -154,6 +214,15 @@ interface AssistantSessionListProps {
   onDelete: (id: string) => void;
 }
 
+export function filterSessions(
+  sessions: AssistantSessionMeta[],
+  query: string,
+): AssistantSessionMeta[] {
+  const needle = query.trim().toLowerCase();
+  if (!needle) return sessions;
+  return sessions.filter((session) => session.title.toLowerCase().includes(needle));
+}
+
 export function buildSessionMenuItems(handlers: {
   onRename: () => void;
   onDelete: () => void;
@@ -250,15 +319,35 @@ export function AssistantSessionList({
   onRename,
   onDelete,
 }: AssistantSessionListProps) {
+  const [query, setQuery] = useState('');
+  const visible = useMemo(() => filterSessions(sessions, query), [query, sessions]);
+
   return (
     <div className={`assistant-sidebar ${stylex.props(styles.sidebar).className}`}>
       <div className={`assistant-sidebar-head ${stylex.props(styles.sidebarHead).className}`}>
-        <Button
-          className={`assistant-new-session ${stylex.props(styles.newSession).className}`}
-          onClick={onCreate}
-        >
-          <Plus size={13} /> 新建会话
-        </Button>
+        <div className={`assistant-sidebar-toolbar ${stylex.props(styles.toolbar).className}`}>
+          <label className={`assistant-session-search ${stylex.props(styles.search).className}`}>
+            <Search size={13} aria-hidden="true" {...stylex.props(styles.searchIcon)} />
+            <span className={`sr-only ${stylex.props(styles.visuallyHidden).className}`}>
+              搜索会话
+            </span>
+            <Input
+              type="search"
+              value={query}
+              className={stylex.props(styles.searchInput).className}
+              placeholder="搜索会话"
+              onChange={(event) => setQuery(event.target.value)}
+            />
+          </label>
+          <button
+            type="button"
+            className={`assistant-new-session ${stylex.props(styles.newSession).className}`}
+            onClick={onCreate}
+            aria-label="新建会话"
+          >
+            <Plus size={14} />
+          </button>
+        </div>
       </div>
       <div className={`assistant-sidebar-scroll ${stylex.props(styles.sidebarScroll).className}`}>
         {loading && sessions.length === 0 ? (
@@ -275,8 +364,14 @@ export function AssistantSessionList({
           >
             还没有会话
           </Empty>
+        ) : visible.length === 0 ? (
+          <Empty
+            className={`assistant-sidebar-empty ${stylex.props(styles.sidebarEmpty).className}`}
+          >
+            没有匹配的会话
+          </Empty>
         ) : (
-          sessions.map((session) => (
+          visible.map((session) => (
             <div
               key={session.id}
               className={`assistant-session-row${session.id === activeId ? ' active' : ''} ${stylex.props(styles.sessionRow, session.id === activeId && styles.sessionRowActive).className}`}
