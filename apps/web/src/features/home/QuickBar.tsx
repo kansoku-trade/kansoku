@@ -21,7 +21,7 @@ const styles = stylex.create({
     width: '170px',
   },
   recent: {
-    fontSize: fontSizes.md,
+    fontSize: fontSizes.base,
     color: colors.textMuted,
     display: 'flex',
     gap: '8px',

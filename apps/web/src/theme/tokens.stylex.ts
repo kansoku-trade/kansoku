@@ -31,6 +31,7 @@ export const fonts = stylex.defineConsts({
 export const fontSizes = stylex.defineConsts({
   xs: '10px',
   sm: '11px',
+  caption: '12px',
   control: '13px',
   base: '14px',
   md: '15px',

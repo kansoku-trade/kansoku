@@ -46,7 +46,7 @@ const styles = stylex.create({
     'color': colors.textPrimary,
     'cursor': 'pointer',
     'fontFamily': fonts.ui,
-    'fontSize': fontSizes.md,
+    'fontSize': fontSizes.base,
     'fontVariantNumeric': 'tabular-nums',
     'fontWeight': 600,
     'letterSpacing': '0.02em',

@@ -30,7 +30,7 @@ const styles = stylex.create({
   row: {
     alignItems: 'center',
     display: 'grid',
-    fontSize: fontSizes.md,
+    fontSize: fontSizes.base,
     fontVariantNumeric: 'tabular-nums',
     gap: '10px',
     gridTemplateColumns: '60px 48px 1fr auto',
@@ -41,7 +41,7 @@ const styles = stylex.create({
   },
   rowDirection: {
     color: colors.textSecondary,
-    fontSize: fontSizes.md,
+    fontSize: fontSizes.base,
   },
   statsSpaced: {
     marginTop: '8px',
@@ -54,7 +54,7 @@ const styles = stylex.create({
   statsLine: {
     alignItems: 'baseline',
     display: 'flex',
-    fontSize: fontSizes.md,
+    fontSize: fontSizes.base,
     gap: '12px',
   },
   statsLineKey: {
@@ -78,7 +78,7 @@ const styles = stylex.create({
   alert: {
     color: colors.textSecondary,
     display: 'contents',
-    fontSize: fontSizes.md,
+    fontSize: fontSizes.base,
   },
   alertTime: {
     color: colors.textMuted,

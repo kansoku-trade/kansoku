@@ -120,7 +120,7 @@ const styles = stylex.create({
   },
   note: {
     color: colors.textSecondary,
-    fontSize: fontSizes.md,
+    fontSize: fontSizes.base,
     lineHeight: 1.4,
     marginTop: '6px',
   },

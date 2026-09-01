@@ -188,6 +188,7 @@ export function ReassessButton({ symbol }: { symbol: string }) {
   return (
     <Button
       className={stylex.props(styles.reassess).className}
+      size="sm"
       state={btnState}
       onClick={run}
       disabled={state === 'running'}

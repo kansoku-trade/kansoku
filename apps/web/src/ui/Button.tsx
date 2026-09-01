@@ -4,6 +4,7 @@ import { colors, fontSizes, radii, sizes } from '../theme/tokens.stylex';
 
 type ButtonProps = {
   accent?: boolean;
+  size?: 'sm';
   state?: 'busy' | 'done' | 'failed';
 } & ButtonHTMLAttributes<HTMLButtonElement>;
 
@@ -52,10 +53,24 @@ const styles = stylex.create({
       outline: 'none',
     },
   },
+  sm: {
+    fontSize: fontSizes.caption,
+    gap: '5px',
+    height: '24px',
+    padding: '0 10px',
+  },
 });
 
-export function Button({ accent, state, disabled, className, children, ...rest }: ButtonProps) {
-  const styleClassName = stylex.props(styles.base).className;
+export function Button({
+  accent,
+  size,
+  state,
+  disabled,
+  className,
+  children,
+  ...rest
+}: ButtonProps) {
+  const styleClassName = stylex.props(styles.base, size === 'sm' && styles.sm).className;
   const cls = ['btn', accent && 'btn--accent', state && `btn--${state}`, className, styleClassName]
     .filter(Boolean)
     .join(' ');

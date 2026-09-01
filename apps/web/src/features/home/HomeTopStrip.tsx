@@ -44,7 +44,7 @@ const styles = stylex.create({
   },
   heading: {
     color: colors.textPrimary,
-    fontSize: fontSizes.lg,
+    fontSize: fontSizes.base,
     fontWeight: 700,
     letterSpacing: '0.01em',
     margin: 0,
