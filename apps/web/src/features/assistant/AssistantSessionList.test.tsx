@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest';
-import { isContextMenuDivider } from '../../ui/contextMenu/types';
+import { isContextMenuDivider, type ContextMenuCommandItem } from '../../ui/contextMenu/types';
 import { buildSessionMenuItems } from './AssistantSessionList';
 
 describe('buildSessionMenuItems', () => {
@@ -9,7 +9,7 @@ describe('buildSessionMenuItems', () => {
     const onDelete = vi.fn();
     const items = buildSessionMenuItems({ onRename, onDelete });
 
-    const commands = items.filter((item) => !isContextMenuDivider(item));
+    const commands = items.filter((item): item is ContextMenuCommandItem => !isContextMenuDivider(item));
     expect(commands.map((item) => item.label)).toEqual(['重命名', '删除']);
 
     const rename = commands[0];
