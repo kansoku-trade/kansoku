@@ -4,13 +4,16 @@ import { colors, fontSizes } from '../theme/tokens.stylex';
 
 const styles = stylex.create({
   root: {
-    color: colors.textSecondary,
-    fontSize: fontSizes.sm,
-    fontWeight: 500,
-    letterSpacing: '0.08em',
-    marginBottom: '8px',
-    marginTop: '16px',
-    textTransform: 'uppercase',
+    'color': colors.textMuted,
+    'fontSize': fontSizes.sm,
+    'fontWeight': 600,
+    'letterSpacing': '0.04em',
+    'marginBottom': '6px',
+    'marginTop': '18px',
+    'textTransform': 'uppercase',
+    ':first-child': {
+      marginTop: 0,
+    },
   },
   home: {
     fontSize: fontSizes.base,

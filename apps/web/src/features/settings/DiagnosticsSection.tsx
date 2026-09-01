@@ -14,7 +14,7 @@ const styles = stylex.create({
     alignItems: 'center',
     color: colors.textPrimary,
     display: 'flex',
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.base,
     fontWeight: 600,
     gap: '8px',
     justifyContent: 'space-between',
@@ -22,13 +22,13 @@ const styles = stylex.create({
   providerMeta: {
     color: colors.textMuted,
     fontFamily: fonts.mono,
-    fontSize: fontSizes.xs,
+    fontSize: fontSizes.sm,
     marginTop: '3px',
     overflowWrap: 'anywhere',
   },
   loading: {
     color: colors.textSecondary,
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.control,
     lineHeight: 1.4,
     marginTop: '6px',
   },
@@ -39,7 +39,7 @@ const styles = stylex.create({
     marginTop: '12px',
   },
   testResult: {
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.control,
   },
   testResultFail: {
     color: colors.down,

@@ -32,7 +32,7 @@ const styles = stylex.create({
     borderLeftStyle: 'solid',
     borderLeftWidth: '2px',
     color: colors.down,
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.control,
     marginTop: 7,
     overflowWrap: 'anywhere',
     paddingLeft: 7,

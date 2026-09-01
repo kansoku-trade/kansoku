@@ -437,7 +437,7 @@ const styles = stylex.create({
   },
   documentRowTitle: {
     color: colors.textPrimary,
-    fontSize: fontSizes.md,
+    fontSize: fontSizes.base,
     fontWeight: 600,
     lineHeight: 1.3,
     minWidth: 0,

@@ -28,14 +28,14 @@ const styles = stylex.create({
     alignItems: 'center',
     display: 'flex',
     gap: '8px',
-    minHeight: '28px',
+    minHeight: '30px',
   },
   primaryRoleName: {
     minWidth: '78px',
   },
   roleName: {
     color: colors.textPrimary,
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.base,
     fontWeight: 500,
   },
   editor: {
@@ -56,7 +56,7 @@ const styles = stylex.create({
     alignItems: 'center',
     color: colors.textMuted,
     display: 'inline-flex',
-    fontSize: fontSizes.xs,
+    fontSize: fontSizes.sm,
     gap: '5px',
     justifyContent: 'flex-end',
     minWidth: '16px',
@@ -72,7 +72,7 @@ const styles = stylex.create({
     borderLeftWidth: '2px',
     color: colors.down,
     display: 'flex',
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.control,
     gap: '8px',
     justifyContent: 'space-between',
     margin: '0 11px 10px',
@@ -86,10 +86,10 @@ const styles = stylex.create({
   },
   roleWarning: {
     color: colors.accent,
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.control,
   },
   testResult: {
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.control,
   },
   testResultOk: {
     color: colors.up,
@@ -106,7 +106,7 @@ const styles = stylex.create({
     'borderWidth': 0,
     'color': colors.textMuted,
     'cursor': 'pointer',
-    'fontSize': fontSizes.sm,
+    'fontSize': fontSizes.control,
     'padding': '0 4px',
     ':hover': {
       color: colors.down,

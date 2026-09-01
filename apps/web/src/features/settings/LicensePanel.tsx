@@ -26,17 +26,17 @@ const styles = stylex.create({
   },
   preferenceName: {
     color: colors.textPrimary,
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.base,
     fontWeight: 500,
   },
   preferenceDescription: {
     marginTop: '3px',
     color: colors.textMuted,
-    fontSize: fontSizes.xs,
+    fontSize: fontSizes.sm,
     overflowWrap: 'anywhere',
   },
   testResult: {
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.control,
   },
   testResultFail: {
     color: colors.down,
@@ -77,7 +77,7 @@ const styles = stylex.create({
     'borderWidth': 0,
     'cursor': 'pointer',
     'color': colors.accent,
-    'fontSize': fontSizes.sm,
+    'fontSize': fontSizes.control,
     ':hover': {
       textDecoration: 'underline',
     },

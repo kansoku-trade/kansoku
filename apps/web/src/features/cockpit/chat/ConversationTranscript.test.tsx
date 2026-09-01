@@ -4,7 +4,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ConversationTranscript } from './ConversationTranscript';
 import type { ChatRow } from './useChatSession';
 
-afterEach(() => cleanup());
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
 
 const ts = (clock: string) => `2026-08-31T${clock}.000Z`;
 
@@ -70,6 +73,92 @@ describe('ConversationTranscript chrome', () => {
     });
     expect(screen.getByRole('button', { name: '依据是什么？' })).toBeTruthy();
     expect(document.querySelector('.chat-suggestion')).toBeTruthy();
+  });
+
+  it('pins a sent user message, then gives the stream the reserved space', () => {
+    const history = [
+      row({ id: 'u1', ts: ts('10:00:00'), kind: 'user', text: '上一问' }),
+      row({ id: 'a1', ts: ts('10:00:05'), kind: 'assistant', text: '上一答' }),
+    ];
+    const view = renderTranscript(history);
+    const viewport = document.querySelector<HTMLElement>('.chat-transcript-viewport');
+    const content = document.querySelector<HTMLElement>('.chat-panel-body-content');
+    if (!viewport || !content) throw new Error('missing transcript elements');
+
+    let contentHeight = 500;
+    let scrollTop = 300;
+    content.style.paddingTop = '16px';
+    Object.defineProperties(viewport, {
+      clientHeight: { configurable: true, get: () => 400 },
+      scrollHeight: {
+        configurable: true,
+        get: () => {
+          const spacer = document.querySelector<HTMLElement>('.chat-stream-space');
+          return contentHeight + Number.parseFloat(spacer?.style.height || '0');
+        },
+      },
+      scrollTop: {
+        configurable: true,
+        get: () => scrollTop,
+        set: (value: number) => {
+          scrollTop = Math.max(0, Math.min(value, viewport.scrollHeight - viewport.clientHeight));
+        },
+      },
+    });
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: HTMLElement,
+    ) {
+      const height = this.classList.contains('chat-stream-space')
+        ? Number.parseFloat(this.style.height || '0')
+        : this === viewport
+          ? 400
+          : 30;
+      const top =
+        this.classList.contains('chat-row--user') && this.textContent === '新的问题'
+          ? 396 - scrollTop
+          : 0;
+      return {
+        bottom: top + height,
+        height,
+        left: 0,
+        right: 0,
+        top,
+        width: 0,
+        x: 0,
+        y: top,
+        toJSON: () => ({}),
+      };
+    });
+
+    const liveRows = [
+      ...history,
+      row({ id: 'u2', ts: ts('10:01:00'), kind: 'user', text: '新的问题' }),
+    ];
+    const liveTranscript = (text: string) => (
+      <ConversationTranscript
+        rows={liveRows}
+        busy
+        streamText={text}
+        liveTools={[]}
+        suggestions={[]}
+        emptyText="还没有对话"
+        onPickSuggestion={() => {}}
+      />
+    );
+
+    view.rerender(liveTranscript(''));
+    expect(document.querySelector<HTMLElement>('.chat-stream-space')?.style.height).toBe('280px');
+    expect(scrollTop).toBe(380);
+
+    contentHeight = 620;
+    view.rerender(liveTranscript('回答开始增长'));
+    expect(document.querySelector<HTMLElement>('.chat-stream-space')?.style.height).toBe('160px');
+    expect(scrollTop).toBe(380);
+
+    contentHeight = 900;
+    view.rerender(liveTranscript('回答超过一屏'));
+    expect(document.querySelector<HTMLElement>('.chat-stream-space')?.style.height).toBe('0px');
+    expect(scrollTop).toBe(500);
   });
 });
 

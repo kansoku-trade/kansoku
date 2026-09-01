@@ -20,7 +20,7 @@ const styles = stylex.create({
     alignItems: 'center',
     color: colors.textPrimary,
     display: 'flex',
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.base,
     fontWeight: 600,
     gap: '8px',
     justifyContent: 'space-between',
@@ -28,7 +28,7 @@ const styles = stylex.create({
   summary: {
     color: colors.textMuted,
     fontFamily: fonts.mono,
-    fontSize: fontSizes.xs,
+    fontSize: fontSizes.sm,
     fontVariantNumeric: 'tabular-nums',
     fontWeight: 400,
     overflow: 'hidden',
@@ -38,7 +38,7 @@ const styles = stylex.create({
   providerMeta: {
     color: colors.textMuted,
     fontFamily: fonts.mono,
-    fontSize: fontSizes.xs,
+    fontSize: fontSizes.sm,
     marginTop: '3px',
     overflowWrap: 'anywhere',
   },
@@ -50,7 +50,7 @@ const styles = stylex.create({
     borderWidth: '1px',
     color: colors.down,
     display: 'flex',
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.control,
     gap: '10px',
     justifyContent: 'space-between',
     margin: '10px',
@@ -58,7 +58,7 @@ const styles = stylex.create({
   },
   result: {
     color: colors.down,
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.control,
   },
   pendingRow: {
     alignItems: 'center',

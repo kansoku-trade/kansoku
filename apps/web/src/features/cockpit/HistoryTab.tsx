@@ -42,12 +42,12 @@ const styles = stylex.create({
     color: colors.textPrimary,
   },
   range: {
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.control,
     color: colors.textPrimary,
     fontVariantNumeric: 'tabular-nums',
   },
   meta: {
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.control,
     color: colors.textSecondary,
     marginTop: '3px',
     lineHeight: 1.45,

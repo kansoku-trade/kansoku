@@ -149,7 +149,7 @@ const styles = stylex.create({
   },
   sessionTitle: {
     color: colors.textPrimary,
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.base,
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
@@ -159,7 +159,7 @@ const styles = stylex.create({
   },
   sessionTime: {
     color: colors.textMuted,
-    fontSize: fontSizes.xs,
+    fontSize: fontSizes.sm,
   },
   sessionDelete: {
     'alignItems': 'center',

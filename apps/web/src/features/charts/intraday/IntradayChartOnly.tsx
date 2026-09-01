@@ -95,7 +95,7 @@ const styles = stylex.create({
     backgroundColor: 'rgba(10, 10, 10, 0.7)',
     color: colors.textPrimary,
     display: 'flex',
-    fontSize: fontSizes.base,
+    fontSize: fontSizes.sm,
     fontVariantNumeric: 'tabular-nums',
     gap: '14px',
     left: '110px',

@@ -28,7 +28,7 @@ const styles = stylex.create({
   },
   hint: {
     color: colors.textSecondary,
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.control,
   },
   toolbarEnd: {
     alignItems: 'center',
@@ -39,7 +39,7 @@ const styles = stylex.create({
   },
   note: {
     color: colors.textSecondary,
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.control,
     lineHeight: 1.4,
     marginTop: '6px',
   },
@@ -56,7 +56,7 @@ const styles = stylex.create({
   },
   fold: {
     'padding': '7px 2px',
-    'fontSize': fontSizes.sm,
+    'fontSize': fontSizes.control,
     'color': colors.textMuted,
     'borderBottomColor': colors.border,
     'borderBottomStyle': 'solid',

@@ -69,7 +69,7 @@ const styles = stylex.create({
   day: {
     color: colors.textMuted,
     display: 'block',
-    fontSize: fontSizes.xs,
+    fontSize: fontSizes.sm,
     fontVariantNumeric: 'tabular-nums',
     fontWeight: 600,
     letterSpacing: '0.04em',
@@ -84,7 +84,7 @@ const styles = stylex.create({
     alignItems: 'baseline',
     columnGap: '8px',
     display: 'grid',
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.control,
     gridTemplateColumns: '42px minmax(0, 1fr)',
     lineHeight: 1.55,
   },

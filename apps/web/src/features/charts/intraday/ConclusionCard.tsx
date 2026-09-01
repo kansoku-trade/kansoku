@@ -37,7 +37,7 @@ const styles = stylex.create({
   },
   predictionAge: {
     color: colors.textMuted,
-    fontSize: fontSizes.xs,
+    fontSize: fontSizes.sm,
     fontVariantNumeric: 'tabular-nums',
     letterSpacing: 'normal',
     marginLeft: '6px',
@@ -50,7 +50,7 @@ const styles = stylex.create({
     borderStyle: 'solid',
     borderWidth: '1px',
     color: colors.accent,
-    fontSize: fontSizes.xs,
+    fontSize: fontSizes.sm,
     fontWeight: 600,
     letterSpacing: 'normal',
     marginLeft: '6px',

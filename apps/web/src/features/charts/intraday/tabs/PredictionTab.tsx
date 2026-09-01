@@ -53,7 +53,7 @@ const styles = stylex.create({
   },
   predictionAge: {
     color: colors.textMuted,
-    fontSize: fontSizes.xs,
+    fontSize: fontSizes.sm,
     fontVariantNumeric: 'tabular-nums',
     letterSpacing: 'normal',
     marginLeft: '6px',
@@ -66,7 +66,7 @@ const styles = stylex.create({
     borderStyle: 'solid',
     borderWidth: '1px',
     color: colors.accent,
-    fontSize: fontSizes.xs,
+    fontSize: fontSizes.sm,
     fontWeight: 600,
     letterSpacing: 'normal',
     marginLeft: '6px',
@@ -89,7 +89,7 @@ const styles = stylex.create({
   },
   sectionSubtitle: {
     color: colors.textMuted,
-    fontSize: fontSizes.xs,
+    fontSize: fontSizes.sm,
     letterSpacing: '0.06em',
     marginBottom: '6px',
     marginTop: '10px',
@@ -136,12 +136,12 @@ const styles = stylex.create({
   },
   checkValue: {
     color: colors.textSecondary,
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.control,
     marginTop: '2px',
   },
   note: {
     color: colors.textSecondary,
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.control,
     lineHeight: 1.4,
     marginTop: '6px',
   },
@@ -176,7 +176,7 @@ const styles = stylex.create({
   zoneLabelPlain: { color: colors.textPrimary },
   zoneRange: {
     color: colors.textPrimary,
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.control,
     fontVariantNumeric: 'tabular-nums',
   },
   zoneRangeAccent: {
@@ -186,11 +186,11 @@ const styles = stylex.create({
   },
   zoneMeta: {
     color: colors.textSecondary,
-    fontSize: fontSizes.xs,
+    fontSize: fontSizes.control,
     lineHeight: 1.45,
     marginTop: '3px',
   },
-  zoneMetaMd: { fontSize: fontSizes.sm },
+  zoneMetaMd: { fontSize: fontSizes.control },
   zoneMetaAfter: { marginBottom: '6px' },
 });
 

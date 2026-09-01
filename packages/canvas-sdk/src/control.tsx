@@ -17,7 +17,7 @@ export function Toggle({
         display: 'inline-flex',
         alignItems: 'center',
         gap: 6,
-        fontSize: 12,
+        fontSize: 13,
         color: theme.textPrimary,
         cursor: 'pointer',
       }}
@@ -37,7 +37,7 @@ const triggerStyle: CSSProperties = {
   color: theme.textSecondary,
   cursor: 'pointer',
   display: 'inline-flex',
-  fontSize: 12,
+  fontSize: 13,
   fontVariantNumeric: 'tabular-nums',
   gap: 5,
   height: 26,
@@ -64,7 +64,7 @@ const itemStyle: CSSProperties = {
   color: theme.textSecondary,
   cursor: 'pointer',
   display: 'flex',
-  fontSize: 12,
+  fontSize: 13,
   fontVariantNumeric: 'tabular-nums',
   gap: 10,
   justifyContent: 'space-between',
@@ -101,7 +101,7 @@ export function Select({
   onChange: (next: string) => void;
 }) {
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
       {label ? <span style={{ color: theme.textSecondary }}>{label}</span> : null}
       <BaseSelect.Root
         items={options}

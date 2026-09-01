@@ -16,7 +16,7 @@ const styles = stylex.create({
     'color': colors.textSecondary,
     'cursor': 'pointer',
     'display': 'inline-flex',
-    'fontSize': fontSizes.base,
+    'fontSize': fontSizes.control,
     'fontVariantNumeric': 'tabular-nums',
     'gap': '5px',
     'height': sizes.controlHeight,
@@ -40,6 +40,10 @@ const styles = stylex.create({
       cursor: 'default',
       opacity: 0.7,
     },
+  },
+  triggerSm: {
+    height: '26px',
+    padding: '0 8px',
   },
   icon: {
     color: colors.textSecondary,
@@ -108,6 +112,7 @@ export function Select({
   ariaLabel,
   placeholder,
   onOpenChange,
+  size,
 }: {
   value: string;
   options: SelectOption[];
@@ -118,6 +123,7 @@ export function Select({
   ariaLabel?: string;
   placeholder?: string;
   onOpenChange?: (open: boolean) => void;
+  size?: 'sm';
 }) {
   return (
     <BaseSelect.Root
@@ -129,7 +135,7 @@ export function Select({
     >
       <BaseSelect.Trigger
         aria-label={ariaLabel}
-        className={`ui-select-trigger ${stylex.props(styles.trigger).className}${className ? ` ${className}` : ''}`}
+        className={`ui-select-trigger ${stylex.props(styles.trigger, size === 'sm' && styles.triggerSm).className}${className ? ` ${className}` : ''}`}
         style={style}
       >
         <BaseSelect.Value placeholder={placeholder} />

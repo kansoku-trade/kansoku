@@ -31,10 +31,11 @@ export const fonts = stylex.defineConsts({
 export const fontSizes = stylex.defineConsts({
   xs: '10px',
   sm: '11px',
-  base: '12px',
-  md: '13px',
-  lg: '15px',
-  xl: '20px',
+  control: '13px',
+  base: '14px',
+  md: '15px',
+  lg: '16px',
+  xl: '22px',
 });
 
 export const radii = stylex.defineConsts({
@@ -47,7 +48,7 @@ export const radii = stylex.defineConsts({
 });
 
 export const sizes = stylex.defineConsts({
-  controlHeight: '28px',
+  controlHeight: '30px',
   paneHeaderHeight: '44px',
   sidebarWidth: '340px',
 });

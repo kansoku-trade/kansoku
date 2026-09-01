@@ -18,7 +18,7 @@ const styles = stylex.create({
   },
   degraded: {
     color: colors.down,
-    fontSize: fontSizes.xs,
+    fontSize: fontSizes.sm,
     letterSpacing: '0.02em',
   },
   rows: {
@@ -34,7 +34,7 @@ const styles = stylex.create({
     'color': colors.accent,
     'cursor': 'pointer',
     'fontFamily': 'inherit',
-    'fontSize': fontSizes.sm,
+    'fontSize': fontSizes.control,
     'padding': '2px 0',
     ':hover:not(:disabled)': {
       textDecoration: 'underline',
@@ -46,7 +46,7 @@ const styles = stylex.create({
   },
   moreError: {
     color: colors.down,
-    fontSize: fontSizes.xs,
+    fontSize: fontSizes.sm,
     letterSpacing: '0.02em',
   },
 });

@@ -24,7 +24,7 @@ const styles = stylex.create({
     'borderWidth': 0,
     'color': colors.textSecondary,
     'cursor': 'pointer',
-    'fontSize': fontSizes.sm,
+    'fontSize': fontSizes.control,
     'padding': '4px 10px',
     ':hover': {
       color: colors.textPrimary,

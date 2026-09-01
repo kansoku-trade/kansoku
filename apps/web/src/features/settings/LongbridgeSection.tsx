@@ -24,7 +24,7 @@ const styles = stylex.create({
     alignItems: 'center',
     color: colors.textPrimary,
     display: 'flex',
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.base,
     fontWeight: 600,
     gap: '8px',
     justifyContent: 'space-between',
@@ -33,8 +33,8 @@ const styles = stylex.create({
     'alignItems': 'center',
     'display': 'flex',
     'gap': '12px',
-    'justifyContent': 'space-between',
-    'padding': '11px',
+    'justifyContent': 'flex-start',
+    'padding': '11px 0 0',
     '@media (max-width: 560px)': {
       alignItems: 'stretch',
       flexDirection: 'column',
@@ -45,11 +45,11 @@ const styles = stylex.create({
   },
   preferenceName: {
     color: colors.textPrimary,
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.base,
     fontWeight: 500,
   },
   testResult: {
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.control,
   },
   testResultFail: {
     color: colors.down,
@@ -57,7 +57,7 @@ const styles = stylex.create({
   providerMeta: {
     color: colors.textMuted,
     fontFamily: fonts.mono,
-    fontSize: fontSizes.xs,
+    fontSize: fontSizes.sm,
     marginTop: '3px',
     overflowWrap: 'anywhere',
   },

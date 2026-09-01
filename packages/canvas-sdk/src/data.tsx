@@ -18,10 +18,10 @@ export function Stat({
     tone === 'up' ? theme.up : tone === 'down' ? theme.down : theme.textPrimary;
   return (
     <Card>
-      <div style={{ fontSize: 10, color: theme.textSecondary, marginBottom: 3 }}>{label}</div>
+      <div style={{ fontSize: 11, color: theme.textSecondary, marginBottom: 3 }}>{label}</div>
       <div
         style={{
-          fontSize: 19,
+          fontSize: 20,
           fontWeight: 400,
           letterSpacing: '-0.01em',
           fontFamily: theme.fontMono,
@@ -34,7 +34,7 @@ export function Stat({
       {delta ? (
         <div
           style={{
-            fontSize: 10,
+            fontSize: 11,
             marginTop: 2,
             color: toneColor,
             fontFamily: theme.fontMono,
@@ -69,7 +69,7 @@ function headCell(align: 'left' | 'right', first = false): CSSProperties {
     textAlign: align,
     fontWeight: 400,
     color: theme.textMuted,
-    fontSize: 9.5,
+    fontSize: 10,
     letterSpacing: '0.05em',
     textTransform: 'uppercase',
     padding: first ? '0 0 5px' : '0 0 5px 10px',
@@ -114,7 +114,7 @@ export function Table({
   const cols = normalizeColumns(columns);
   const data = normalizeRows(cols, rows);
   return (
-    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
+    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
       <thead>
         <tr>
           {cols.map((col, index) => (
@@ -186,7 +186,7 @@ export function Compare({
   const hasNote = ordered.some((row) => row.note != null);
 
   return (
-    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
+    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
       <thead>
         <tr>
           <th style={headCell('left', true)}>标的</th>
@@ -258,18 +258,18 @@ export function Coverage({
             <span
               style={{
                 flex: '0 0 34px',
-                fontSize: 10,
+                fontSize: 11,
                 color: tone.color,
                 fontFamily: theme.fontMono,
               }}
             >
               {tone.mark}
             </span>
-            <span style={{ fontSize: 11.5, color: theme.textPrimary, flex: '0 0 auto' }}>
+            <span style={{ fontSize: 12, color: theme.textPrimary, flex: '0 0 auto' }}>
               {item.label}
             </span>
             {item.note ? (
-              <span style={{ fontSize: 11, color: theme.textMuted }}>{item.note}</span>
+              <span style={{ fontSize: 12, color: theme.textMuted }}>{item.note}</span>
             ) : null}
           </div>
         );

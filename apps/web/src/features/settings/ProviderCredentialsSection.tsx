@@ -24,7 +24,7 @@ const CODEX_STATUS_LABEL: Record<string, string> = {
 };
 
 const styles = stylex.create({
-  testResult: { fontSize: fontSizes.sm },
+  testResult: { fontSize: fontSizes.control },
   testResultFail: { color: colors.down },
   cardHeading: {
     alignItems: 'center',
@@ -41,7 +41,7 @@ const styles = stylex.create({
   connSummary: {
     color: colors.textMuted,
     fontFamily: fonts.mono,
-    fontSize: fontSizes.xs,
+    fontSize: fontSizes.sm,
     fontVariantNumeric: 'tabular-nums',
     fontWeight: 400,
     overflow: 'hidden',
@@ -56,7 +56,7 @@ const styles = stylex.create({
     borderWidth: '1px',
     color: colors.down,
     display: 'flex',
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.control,
     gap: '10px',
     justifyContent: 'space-between',
     margin: '10px',
@@ -78,7 +78,7 @@ const styles = stylex.create({
   },
   providerName: {
     color: colors.textPrimary,
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.base,
     fontWeight: 500,
   },
   providerState: {
@@ -86,7 +86,7 @@ const styles = stylex.create({
     display: 'inline-flex',
     gap: '5px',
     marginLeft: 'auto',
-    fontSize: fontSizes.xs,
+    fontSize: fontSizes.sm,
     whiteSpace: 'nowrap',
   },
   providerStateUp: { color: colors.up },
@@ -95,7 +95,7 @@ const styles = stylex.create({
   providerMeta: {
     color: colors.textMuted,
     fontFamily: fonts.mono,
-    fontSize: fontSizes.xs,
+    fontSize: fontSizes.sm,
     marginTop: '3px',
     overflowWrap: 'anywhere',
   },
@@ -118,7 +118,7 @@ const styles = stylex.create({
     borderLeftStyle: 'solid',
     borderLeftWidth: '2px',
     color: colors.down,
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.control,
     marginTop: '7px',
     overflowWrap: 'anywhere',
     paddingLeft: '7px',

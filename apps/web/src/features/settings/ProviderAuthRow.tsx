@@ -21,13 +21,13 @@ const styles = stylex.create({
   },
   name: {
     color: colors.textPrimary,
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.base,
     fontWeight: 500,
   },
   state: {
     alignItems: 'center',
     display: 'inline-flex',
-    fontSize: fontSizes.xs,
+    fontSize: fontSizes.sm,
     gap: '5px',
     marginLeft: 'auto',
     whiteSpace: 'nowrap',
@@ -38,7 +38,7 @@ const styles = stylex.create({
   meta: {
     color: colors.textMuted,
     fontFamily: fonts.mono,
-    fontSize: fontSizes.xs,
+    fontSize: fontSizes.sm,
     marginTop: '3px',
     overflowWrap: 'anywhere',
   },
@@ -66,7 +66,7 @@ const styles = stylex.create({
     borderLeftStyle: 'solid',
     borderLeftWidth: '2px',
     color: colors.down,
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.control,
     marginTop: '7px',
     overflowWrap: 'anywhere',
     paddingLeft: '7px',

@@ -42,14 +42,14 @@ const styles = stylex.create({
     'borderBottomColor': 'transparent',
     'borderBottomStyle': 'solid',
     'borderBottomWidth': '2px',
-    'fontSize': fontSizes.base,
+    'fontSize': fontSizes.control,
     'padding': '2px 0',
     ':hover': {
       color: colors.textSecondary,
     },
   },
   labelPlain: {
-    'fontSize': fontSizes.base,
+    'fontSize': fontSizes.control,
     'padding': 0,
     ':hover': {
       color: colors.textSecondary,
@@ -79,15 +79,17 @@ const styles = stylex.create({
     alignItems: 'center',
     color: colors.textMuted,
     display: 'flex',
-    fontSize: fontSizes.xs,
+    fontSize: fontSizes.control,
     gap: '5px',
     height: '100%',
     justifyContent: 'center',
-    padding: '4px 10px',
+    minHeight: '30px',
+    padding: '0 12px',
     whiteSpace: 'nowrap',
   },
   compactLabel: {
-    padding: '2px 8px',
+    minHeight: '26px',
+    padding: '0 10px',
   },
   largeLabel: {
     fontSize: fontSizes.lg,

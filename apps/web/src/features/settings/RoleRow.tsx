@@ -61,13 +61,13 @@ const styles = stylex.create({
   usage: {
     color: colors.textMuted,
     fontFamily: fonts.mono,
-    fontSize: fontSizes.xs,
+    fontSize: fontSizes.sm,
     fontVariantNumeric: 'tabular-nums',
     whiteSpace: 'nowrap',
   },
   roleName: {
     color: colors.textPrimary,
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.base,
     fontWeight: 500,
   },
   disabledName: {
@@ -75,7 +75,7 @@ const styles = stylex.create({
   },
   effective: {
     color: colors.textSecondary,
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.control,
     marginTop: '4px',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
@@ -94,7 +94,7 @@ const styles = stylex.create({
     alignItems: 'center',
     color: colors.textMuted,
     display: 'inline-flex',
-    fontSize: fontSizes.xs,
+    fontSize: fontSizes.sm,
     gap: '5px',
     justifyContent: 'flex-end',
     minWidth: '16px',
@@ -150,7 +150,7 @@ const styles = stylex.create({
     borderLeftWidth: '2px',
     color: colors.down,
     display: 'flex',
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.control,
     gap: '8px',
     justifyContent: 'space-between',
     margin: '0 11px 10px',
@@ -158,10 +158,10 @@ const styles = stylex.create({
   },
   roleWarning: {
     color: colors.accent,
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.control,
   },
   testResult: {
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.control,
   },
   testResultOk: {
     color: colors.up,
@@ -176,7 +176,7 @@ const styles = stylex.create({
     'borderWidth': 0,
     'color': colors.textMuted,
     'cursor': 'pointer',
-    'fontSize': fontSizes.xs,
+    'fontSize': fontSizes.sm,
     'marginLeft': '8px',
     'padding': 0,
     ':hover': {
@@ -189,7 +189,7 @@ const styles = stylex.create({
     },
   },
   editDone: {
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.control,
     marginLeft: '2px',
   },
 });

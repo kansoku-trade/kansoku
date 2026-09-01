@@ -78,13 +78,13 @@ const styles = stylex.create({
       ':hover': colors.textPrimary,
     },
     display: 'inline-flex',
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.control,
     gap: '4px',
     marginBottom: '8px',
   },
   subtitle: {
     color: colors.textMuted,
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.base,
     marginBottom: '16px',
   },
   loadError: {
@@ -131,7 +131,7 @@ const styles = stylex.create({
     verticalAlign: '-2px',
   },
   aboutLink: {
-    fontSize: fontSizes.xs,
+    fontSize: fontSizes.sm,
     marginTop: '24px',
     textAlign: 'center',
   },

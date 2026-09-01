@@ -37,7 +37,7 @@ const styles = stylex.create({
   hint: {
     color: colors.textMuted,
     fontFamily: fonts.mono,
-    fontSize: fontSizes.xs,
+    fontSize: fontSizes.sm,
     fontVariantNumeric: 'tabular-nums',
   },
   roleList: {

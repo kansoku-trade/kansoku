@@ -7,7 +7,7 @@ import type { DesktopAgentKitBridge } from './desktopAgentKit';
 
 const styles = stylex.create({
   testResult: {
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.control,
   },
   testResultFail: {
     color: colors.down,

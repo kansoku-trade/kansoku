@@ -49,7 +49,7 @@ const styles = stylex.create({
     'color': colors.textSecondary,
     'cursor': 'pointer',
     'flex': '0 0 auto',
-    'fontSize': fontSizes.base,
+    'fontSize': fontSizes.control,
     'marginBottom': '-1px',
     'padding': '6px 10px',
     'whiteSpace': 'nowrap',

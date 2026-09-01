@@ -4,19 +4,19 @@ import { theme } from './theme.js';
 
 export function H1({ children }: Box) {
   return (
-    <h1 style={{ margin: 0, fontSize: 15, fontWeight: 500, color: theme.textPrimary }}>{children}</h1>
+    <h1 style={{ margin: 0, fontSize: 15, fontWeight: 600, color: theme.textPrimary }}>{children}</h1>
   );
 }
 
 export function H2({ children }: Box) {
   return (
-    <h2 style={{ margin: 0, fontSize: 13, fontWeight: 500, color: theme.textPrimary }}>{children}</h2>
+    <h2 style={{ margin: 0, fontSize: 14, fontWeight: 600, color: theme.textPrimary }}>{children}</h2>
   );
 }
 
 export function H3({ children }: Box) {
   return (
-    <h3 style={{ margin: 0, fontSize: 12, fontWeight: 500, color: theme.textPrimary }}>{children}</h3>
+    <h3 style={{ margin: 0, fontSize: 13, fontWeight: 500, color: theme.textPrimary }}>{children}</h3>
   );
 }
 
@@ -31,7 +31,7 @@ export function Text({ children, style, muted }: Box & { muted?: boolean }) {
     <p
       style={{
         margin: 0,
-        fontSize: 12,
+        fontSize: 13,
         lineHeight: 1.55,
         color: muted ? theme.textMuted : theme.textPrimary,
         ...style,
@@ -44,7 +44,7 @@ export function Text({ children, style, muted }: Box & { muted?: boolean }) {
 
 export function Link({ href, children }: { href?: string; children?: ReactNode }) {
   return (
-    <a href={href} style={{ color: theme.accent, fontSize: 12, textDecoration: 'underline' }}>
+    <a href={href} style={{ color: theme.accent, fontSize: 13, textDecoration: 'underline' }}>
       {children}
     </a>
   );
@@ -72,7 +72,7 @@ export function Callout({
         background: theme.bgSurface,
         padding: '8px 11px',
         margin: '8px 0',
-        fontSize: 12,
+        fontSize: 13,
         lineHeight: 1.55,
         color: theme.textPrimary,
       }}
@@ -94,7 +94,7 @@ export function Pill({
     <span
       style={{
         display: 'inline-block',
-        fontSize: 10,
+        fontSize: 11,
         lineHeight: '16px',
         padding: '0 6px',
         borderRadius: theme.radius,
@@ -123,7 +123,7 @@ export function Source({
   note?: ReactNode;
 }) {
   return (
-    <span style={{ fontSize: 10, color: theme.textMuted, fontFamily: theme.fontMono }}>
+    <span style={{ fontSize: 11, color: theme.textMuted, fontFamily: theme.fontMono }}>
       {from}
       {at ? ` · ${at}` : ''}
       {note ? <> · {note}</> : null}

@@ -3,7 +3,7 @@ import { theme } from './theme.js';
 
 export type Box = { children?: ReactNode; style?: CSSProperties };
 
-const font = 'system-ui, -apple-system, BlinkMacSystemFont, sans-serif';
+const font = theme.fontUi;
 
 // The canvas renders inside its own iframe, so a plain media query measures the pane
 // width the user actually dragged to — no container queries needed. Without this a
@@ -39,7 +39,7 @@ export function Canvas({
         style={{
           margin: 0,
           fontSize: 15,
-          fontWeight: 500,
+          fontWeight: 600,
           color: theme.textPrimary,
         }}
       >
@@ -49,7 +49,7 @@ export function Canvas({
         <p
           style={{
             margin: '3px 0 0',
-            fontSize: 10.5,
+            fontSize: 11,
             color: theme.textMuted,
           }}
         >
@@ -67,7 +67,7 @@ export function Section({ title, children }: { title: string } & Box) {
     <section style={{ margin: '20px 0 8px' }}>
       <div
         style={{
-          fontSize: 10,
+          fontSize: 11,
           color: theme.textMuted,
           letterSpacing: '0.08em',
           textTransform: 'uppercase',

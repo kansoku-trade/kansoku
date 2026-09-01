@@ -54,13 +54,13 @@ const styles = stylex.create({
   },
   activity: {
     color: colors.textSecondary,
-    fontSize: fontSizes.base,
+    fontSize: fontSizes.control,
     lineHeight: 1.45,
     marginTop: '6px',
   },
   meta: {
     color: colors.textMuted,
-    fontSize: fontSizes.xs,
+    fontSize: fontSizes.sm,
     marginTop: '4px',
   },
 });

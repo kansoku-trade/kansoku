@@ -69,7 +69,7 @@ const styles = stylex.create({
   },
   checkValue: {
     color: colors.textSecondary,
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.control,
     marginTop: '2px',
   },
   p123Badge: { marginLeft: '6px' },
@@ -93,19 +93,19 @@ const styles = stylex.create({
   },
   zoneRange: {
     color: colors.textPrimary,
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.control,
     fontVariantNumeric: 'tabular-nums',
   },
   zoneMeta: {
     color: colors.textSecondary,
-    fontSize: fontSizes.xs,
+    fontSize: fontSizes.control,
     lineHeight: 1.45,
     marginTop: '3px',
   },
-  zoneMetaMd: { fontSize: fontSizes.sm },
+  zoneMetaMd: { fontSize: fontSizes.control },
   zoneSources: {
     color: colors.textMuted,
-    fontSize: fontSizes.xs,
+    fontSize: fontSizes.sm,
     lineHeight: 1.35,
     marginTop: '4px',
   },

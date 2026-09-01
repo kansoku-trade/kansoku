@@ -126,7 +126,7 @@ const styles = stylex.create({
     'display': 'inline-flex',
     'fontSize': fontSizes.sm,
     'gap': '5px',
-    'height': '24px',
+    'height': '26px',
     'padding': '0 9px',
     ':hover:not(:disabled)': {
       backgroundColor: colors.backgroundHover,

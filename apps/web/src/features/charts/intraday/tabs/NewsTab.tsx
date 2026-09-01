@@ -51,7 +51,7 @@ const styles = stylex.create({
     alignItems: 'center',
     color: colors.textMuted,
     display: 'flex',
-    fontSize: fontSizes.xs,
+    fontSize: fontSizes.sm,
     fontVariantNumeric: 'tabular-nums',
     gap: '6px',
   },
@@ -64,7 +64,7 @@ const styles = stylex.create({
   },
   zoneMeta: {
     color: colors.textSecondary,
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.control,
     lineHeight: 1.45,
     marginTop: '3px',
   },

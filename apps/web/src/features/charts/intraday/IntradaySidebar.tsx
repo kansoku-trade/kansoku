@@ -19,7 +19,7 @@ const styles = stylex.create({
     backgroundColor: colors.backgroundSurface,
     display: 'flex',
     flexDirection: 'column',
-    fontSize: fontSizes.md,
+    fontSize: fontSizes.control,
     overflow: 'hidden',
   },
   sidebarScroll: {

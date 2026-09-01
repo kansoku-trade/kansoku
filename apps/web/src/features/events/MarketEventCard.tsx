@@ -88,13 +88,13 @@ const styles = stylex.create({
   time: {
     color: colors.textMuted,
     fontFamily: fonts.mono,
-    fontSize: fontSizes.xs,
+    fontSize: fontSizes.sm,
     fontVariantNumeric: 'tabular-nums',
     lineHeight: 1.3,
   },
   severity: {
     color: colors.textMuted,
-    fontSize: '9px',
+    fontSize: fontSizes.xs,
     letterSpacing: '0.08em',
     textTransform: 'uppercase',
   },
@@ -118,7 +118,7 @@ const styles = stylex.create({
   },
   tag: {
     color: colors.textMuted,
-    fontSize: '9px',
+    fontSize: fontSizes.xs,
     letterSpacing: '0.06em',
     textTransform: 'uppercase',
   },
@@ -131,7 +131,7 @@ const styles = stylex.create({
   observed: {
     color: colors.textMuted,
     fontFamily: fonts.mono,
-    fontSize: fontSizes.xs,
+    fontSize: fontSizes.sm,
     fontVariantNumeric: 'tabular-nums',
   },
   title: {
@@ -143,7 +143,7 @@ const styles = stylex.create({
   },
   summary: {
     color: colors.textSecondary,
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.control,
     lineHeight: 1.4,
     margin: 0,
   },
@@ -162,7 +162,7 @@ const styles = stylex.create({
   symbol: {
     'color': colors.textSecondary,
     'fontFamily': fonts.mono,
-    'fontSize': fontSizes.xs,
+    'fontSize': fontSizes.sm,
     'fontVariantNumeric': 'tabular-nums',
     'textDecoration': 'none',
     ':hover': {
@@ -180,7 +180,7 @@ const styles = stylex.create({
     'color': colors.accent,
     'cursor': 'pointer',
     'fontFamily': 'inherit',
-    'fontSize': fontSizes.xs,
+    'fontSize': fontSizes.sm,
     'padding': 0,
     'textDecoration': 'none',
     ':hover:not(:disabled)': {

@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ArrowDown } from 'lucide-react';
 import * as stylex from '@stylexjs/stylex';
 import { ScrollArea } from '@web/ui';
@@ -24,6 +24,10 @@ const styles = stylex.create({
   },
   transcriptViewport: {
     overflowAnchor: 'none',
+  },
+  streamSpace: {
+    flexShrink: 0,
+    pointerEvents: 'none',
   },
   scrollBottom: {
     'position': 'sticky',
@@ -55,7 +59,7 @@ const styles = stylex.create({
     gap: '10px',
   },
   emptyText: {
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.base,
     color: colors.textMuted,
   },
   suggestions: {
@@ -149,21 +153,81 @@ function ConversationTranscriptView({
   onOpenCanvas?: (slug: string) => void;
 }) {
   const bodyRef = useRef<HTMLDivElement>(null);
+  const streamSpaceRef = useRef<HTMLDivElement>(null);
   const stickRef = useRef(true);
+  const anchoredUserIdRef = useRef<string | null>(null);
   const [stuck, setStuck] = useState(true);
   const blocks = useMemo(
     () => presentTranscript({ rows, inserts, liveBeats, liveTools, streamText, busy }),
     [rows, inserts, liveBeats, liveTools, streamText, busy],
   );
+  const activeUserId = useMemo(
+    () => (busy ? rows.findLast((row) => row.kind === 'user')?.id : undefined),
+    [busy, rows],
+  );
+
+  const syncActiveTurn = useCallback(() => {
+    const viewport = bodyRef.current;
+    const spacer = streamSpaceRef.current;
+    if (!viewport || !spacer || !activeUserId) return;
+
+    const userRows = viewport.getElementsByClassName('chat-row--user');
+    const userRow = userRows.item(userRows.length - 1);
+    const content = spacer.parentElement;
+    if (!(userRow instanceof HTMLElement) || !content) return;
+
+    const paddingTop = Number.parseFloat(getComputedStyle(content).paddingTop) || 0;
+    const targetScrollTop = Math.max(
+      0,
+      viewport.scrollTop +
+        userRow.getBoundingClientRect().top -
+        viewport.getBoundingClientRect().top -
+        paddingTop,
+    );
+    const currentSpacerHeight = spacer.getBoundingClientRect().height;
+    const nextSpacerHeight = Math.max(
+      0,
+      Math.ceil(
+        targetScrollTop + viewport.clientHeight - (viewport.scrollHeight - currentSpacerHeight),
+      ),
+    );
+    const nextHeight = `${nextSpacerHeight}px`;
+    if (spacer.style.height !== nextHeight) spacer.style.height = nextHeight;
+
+    if (anchoredUserIdRef.current !== activeUserId) {
+      anchoredUserIdRef.current = activeUserId;
+      stickRef.current = true;
+    }
+    if (stickRef.current) viewport.scrollTop = viewport.scrollHeight;
+  }, [activeUserId]);
+
+  useLayoutEffect(() => {
+    if (activeUserId) {
+      syncActiveTurn();
+      return;
+    }
+    const viewport = bodyRef.current;
+    if (viewport && stickRef.current) viewport.scrollTop = viewport.scrollHeight;
+  }, [activeUserId, blocks, syncActiveTurn]);
 
   useEffect(() => {
-    const element = bodyRef.current;
-    if (!element || !stickRef.current) return;
-    element.scrollTop = element.scrollHeight;
-  }, [blocks]);
+    const viewport = bodyRef.current;
+    const spacer = streamSpaceRef.current;
+    const Observer = globalThis.ResizeObserver;
+    if (!activeUserId || !viewport || !spacer || !Observer) return;
+
+    const observer = new Observer(syncActiveTurn);
+    observer.observe(viewport);
+    if (spacer.parentElement) observer.observe(spacer.parentElement);
+    return () => observer.disconnect();
+  }, [activeUserId, syncActiveTurn]);
 
   const isEmpty =
-    rows.length === 0 && inserts.length === 0 && liveTools.length === 0 && !streamText && !liveBeats?.length;
+    rows.length === 0 &&
+    inserts.length === 0 &&
+    liveTools.length === 0 &&
+    !streamText &&
+    !liveBeats?.length;
 
   return (
     <ScrollArea
@@ -216,6 +280,13 @@ function ConversationTranscriptView({
           onOpenCanvas={onOpenCanvas}
         />
       ))}
+      {activeUserId ? (
+        <div
+          ref={streamSpaceRef}
+          className={`chat-stream-space ${stylex.props(styles.streamSpace).className}`}
+          aria-hidden="true"
+        />
+      ) : null}
       {!stuck && busy ? (
         <button
           type="button"

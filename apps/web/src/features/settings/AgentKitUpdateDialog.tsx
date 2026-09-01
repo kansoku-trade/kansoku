@@ -9,12 +9,12 @@ const styles = stylex.create({
   providerMeta: {
     color: colors.textMuted,
     fontFamily: fonts.mono,
-    fontSize: fontSizes.xs,
+    fontSize: fontSizes.sm,
     marginTop: '3px',
     overflowWrap: 'anywhere',
   },
   result: {
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.control,
   },
   fail: {
     color: colors.down,

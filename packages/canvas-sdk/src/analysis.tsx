@@ -38,10 +38,10 @@ export function Scenarios({ items }: { items: Scenario[] }) {
         return (
           <Card key={item.label}>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-              <span style={{ fontSize: 12, fontWeight: 500, color }}>{item.label}</span>
+              <span style={{ fontSize: 13, fontWeight: 500, color }}>{item.label}</span>
               <span
                 style={{
-                  fontSize: 12,
+                  fontSize: 13,
                   color,
                   fontFamily: theme.fontMono,
                   fontVariantNumeric: 'tabular-nums',
@@ -67,11 +67,11 @@ export function Scenarios({ items }: { items: Scenario[] }) {
                 }}
               />
             </div>
-            <div style={{ fontSize: 11, color: theme.textSecondary, lineHeight: 1.5 }}>
+            <div style={{ fontSize: 12, color: theme.textSecondary, lineHeight: 1.5 }}>
               触发：{item.trigger}
             </div>
             {item.note ? (
-              <div style={{ fontSize: 11, color: theme.textPrimary, lineHeight: 1.55, marginTop: 4 }}>
+              <div style={{ fontSize: 12, color: theme.textPrimary, lineHeight: 1.55, marginTop: 4 }}>
                 {item.note}
               </div>
             ) : null}
@@ -79,7 +79,7 @@ export function Scenarios({ items }: { items: Scenario[] }) {
         );
       })}
       {Math.round(total) === 100 ? null : (
-        <div style={{ fontSize: 10.5, color: theme.down, fontFamily: theme.fontMono }}>
+        <div style={{ fontSize: 11, color: theme.down, fontFamily: theme.fontMono }}>
           概率合计 {num(total)}%，不是 100%
         </div>
       )}
@@ -141,10 +141,10 @@ export function RRPlan({ entry, stop, targets, minRr = 1.5, unit, note }: RRPlan
               whiteSpace: 'nowrap',
             }}
           >
-            <div style={{ fontSize: 9.5, color: theme.textMuted }}>{mark.label}</div>
+            <div style={{ fontSize: 10, color: theme.textMuted }}>{mark.label}</div>
             <div
               style={{
-                fontSize: 11,
+                fontSize: 12,
                 color: mark.color,
                 fontFamily: theme.fontMono,
                 fontVariantNumeric: 'tabular-nums',
@@ -157,7 +157,7 @@ export function RRPlan({ entry, stop, targets, minRr = 1.5, unit, note }: RRPlan
         ))}
       </div>
       <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 10.5, color: theme.textSecondary }}>
+        <span style={{ fontSize: 11, color: theme.textSecondary }}>
           风险 {num(risk)}
           {unit ? ` ${unit}` : ''}
         </span>
@@ -165,7 +165,7 @@ export function RRPlan({ entry, stop, targets, minRr = 1.5, unit, note }: RRPlan
           <span
             key={row.label}
             style={{
-              fontSize: 10.5,
+              fontSize: 11,
               fontFamily: theme.fontMono,
               fontVariantNumeric: 'tabular-nums',
               color: row.rr !== null && row.rr < minRr ? theme.down : theme.up,
@@ -176,12 +176,12 @@ export function RRPlan({ entry, stop, targets, minRr = 1.5, unit, note }: RRPlan
         ))}
       </div>
       {rows.some((row) => row.rr !== null && row.rr < minRr) ? (
-        <div style={{ fontSize: 10.5, color: theme.down, marginTop: 5 }}>
+        <div style={{ fontSize: 11, color: theme.down, marginTop: 5 }}>
           低于下限 {ratio(minRr)}:1，不该进场
         </div>
       ) : null}
       {note ? (
-        <div style={{ fontSize: 11, color: theme.textPrimary, lineHeight: 1.55, marginTop: 6 }}>
+        <div style={{ fontSize: 12, color: theme.textPrimary, lineHeight: 1.55, marginTop: 6 }}>
           {note}
         </div>
       ) : null}
@@ -209,7 +209,7 @@ export function Timeline({ items }: { items: TimelineItem[] }) {
             <div
               style={{
                 flex: '0 0 68px',
-                fontSize: 10,
+                fontSize: 11,
                 color: theme.textMuted,
                 fontFamily: theme.fontMono,
                 paddingTop: 2,
@@ -233,11 +233,11 @@ export function Timeline({ items }: { items: TimelineItem[] }) {
             </div>
             <div style={{ flex: '1 1 auto', paddingBottom: last ? 0 : 12 }}>
               <div style={{ display: 'flex', gap: 8, alignItems: 'baseline' }}>
-                <span style={{ fontSize: 12, color: theme.textPrimary }}>{item.label}</span>
+                <span style={{ fontSize: 13, color: theme.textPrimary }}>{item.label}</span>
                 {item.price === undefined ? null : (
                   <span
                     style={{
-                      fontSize: 11,
+                      fontSize: 12,
                       color,
                       fontFamily: theme.fontMono,
                       fontVariantNumeric: 'tabular-nums',
@@ -248,7 +248,7 @@ export function Timeline({ items }: { items: TimelineItem[] }) {
                 )}
               </div>
               {item.detail ? (
-                <div style={{ fontSize: 11, color: theme.textSecondary, lineHeight: 1.5, marginTop: 2 }}>
+                <div style={{ fontSize: 12, color: theme.textSecondary, lineHeight: 1.5, marginTop: 2 }}>
                   {item.detail}
                 </div>
               ) : null}

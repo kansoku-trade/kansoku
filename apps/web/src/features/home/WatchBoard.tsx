@@ -59,7 +59,7 @@ const styles = stylex.create({
     WebkitLineClamp: 2,
     color: colors.textSecondary,
     display: '-webkit-box',
-    fontSize: fontSizes.md,
+    fontSize: fontSizes.control,
     lineHeight: 1.4,
     marginTop: '8px',
     overflow: 'hidden',

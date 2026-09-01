@@ -19,7 +19,7 @@ const styles = stylex.create({
     'color': colors.textPrimary,
     'cursor': 'pointer',
     'display': 'inline-flex',
-    'fontSize': fontSizes.base,
+    'fontSize': fontSizes.control,
     'gap': '7px',
     'height': sizes.controlHeight,
     'padding': '0 14px',

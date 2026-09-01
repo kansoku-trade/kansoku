@@ -41,7 +41,7 @@ const styles = stylex.create({
     'color': colors.textPrimary,
     'cursor': 'pointer',
     'display': 'flex',
-    'fontSize': fontSizes.sm,
+    'fontSize': fontSizes.control,
     'gap': '10px',
     'padding': '5px 8px',
     'textAlign': 'left',
@@ -61,15 +61,15 @@ const styles = stylex.create({
   },
   entryName: {
     color: colors.textSecondary,
-    fontSize: fontSizes.xs,
+    fontSize: fontSizes.sm,
   },
   hint: {
     color: colors.textSecondary,
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.control,
   },
   note: {
     color: colors.textSecondary,
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.control,
     lineHeight: 1.4,
     marginTop: '6px',
   },

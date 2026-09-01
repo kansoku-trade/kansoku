@@ -25,11 +25,8 @@ const styles = stylex.create({
     wordBreak: 'break-word',
   },
   chat: {
-    'fontSize': `calc(${fontSizes.base} * 1.125)`,
-    'lineHeight': 1.6,
-    '@media (min-width: 48rem), print': {
-      fontSize: fontSizes.base,
-    },
+    fontSize: fontSizes.md,
+    lineHeight: 1.6,
   },
   report: {
     'fontSize': `calc(${fontSizes.md} * 1.125)`,

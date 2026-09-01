@@ -24,9 +24,10 @@ import { colors, fontSizes } from '../../theme/tokens.stylex';
 const styles = stylex.create({
   grid: {
     display: 'grid',
-    fontSize: fontSizes.base,
+    fontSize: fontSizes.control,
     gap: '6px 10px',
     gridTemplateColumns: 'auto 1fr',
+    paddingLeft: '10px',
   },
   key: {
     color: colors.textSecondary,
@@ -44,19 +45,13 @@ const styles = stylex.create({
   },
   note: {
     color: colors.textSecondary,
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.control,
     lineHeight: 1.4,
     marginTop: '6px',
   },
   benchmarkChart: {
     height: '180px',
     width: '100%',
-  },
-  benchmarkTitle: {
-    marginTop: '0px !important',
-  },
-  benchmarkTitleWithPosition: {
-    marginTop: '16px',
   },
 });
 
@@ -93,13 +88,13 @@ function BenchmarkChart({ series }: { series: BenchmarkSeries[] }) {
             scale="time"
             domain={['dataMin', 'dataMax']}
             tickFormatter={hhmm}
-            tick={{ fill: colors.textSecondary, fontSize: 10 }}
+            tick={{ fill: colors.textSecondary, fontSize: 11 }}
             tickLine={false}
             axisLine={{ stroke: colors.borderStrong }}
             minTickGap={40}
           />
           <YAxis
-            tick={{ fill: colors.textSecondary, fontSize: 10 }}
+            tick={{ fill: colors.textSecondary, fontSize: 11 }}
             tickLine={false}
             axisLine={false}
             width={46}
@@ -108,7 +103,7 @@ function BenchmarkChart({ series }: { series: BenchmarkSeries[] }) {
           <Legend
             verticalAlign="top"
             height={20}
-            wrapperStyle={{ fontSize: 11, color: colors.textSecondary }}
+            wrapperStyle={{ fontSize: 12, color: colors.textSecondary }}
           />
           <Tooltip
             contentStyle={tooltipContentStyle}
@@ -230,14 +225,7 @@ export function EnvTab({
 
       {!(benchmark && benchmark.length === 0) && (
         <>
-          <SectionTitle
-            className={
-              stylex.props(position ? styles.benchmarkTitleWithPosition : styles.benchmarkTitle)
-                .className
-            }
-          >
-            环境对照（相对首点百分比）
-          </SectionTitle>
+          <SectionTitle>环境对照（相对首点百分比）</SectionTitle>
           {renderBenchmark()}
         </>
       )}

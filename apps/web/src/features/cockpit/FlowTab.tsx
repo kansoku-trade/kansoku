@@ -35,7 +35,7 @@ const styles = stylex.create({
     display: 'grid',
     gap: '6px 10px',
     gridTemplateColumns: 'auto 1fr',
-    fontSize: fontSizes.base,
+    fontSize: fontSizes.control,
   },
   bucketLabel: {
     color: colors.textSecondary,
@@ -79,13 +79,13 @@ function FlowMiniChart({ flow }: { flow: CockpitFlow }) {
           <XAxis
             dataKey="t"
             tickFormatter={hhmm}
-            tick={{ fill: colors.textSecondary, fontSize: 10 }}
+            tick={{ fill: colors.textSecondary, fontSize: 11 }}
             tickLine={false}
             axisLine={{ stroke: colors.borderStrong }}
             minTickGap={40}
           />
           <YAxis
-            tick={{ fill: colors.textSecondary, fontSize: 10 }}
+            tick={{ fill: colors.textSecondary, fontSize: 11 }}
             tickLine={false}
             axisLine={false}
             width={50}

@@ -192,7 +192,7 @@ export function CandleChart({
 
   return (
     <div style={{ margin: '8px 0 16px' }}>
-      <div style={{ fontSize: 12, fontWeight: 500, color: theme.textPrimary, marginBottom: 8 }}>
+      <div style={{ fontSize: 13, fontWeight: 500, color: theme.textPrimary, marginBottom: 8 }}>
         {title?.trim() ? title : 'Untitled'}
       </div>
       <div ref={hostRef} style={{ width: '100%', height: 280, background: theme.bgSurface }} />

@@ -11,7 +11,7 @@ const styles = stylex.create({
     borderWidth: '1px',
     boxSizing: 'border-box',
     color: colors.textPrimary,
-    fontSize: fontSizes.base,
+    fontSize: fontSizes.control,
     height: sizes.controlHeight,
     padding: '0 10px',
     ':focus-visible': {

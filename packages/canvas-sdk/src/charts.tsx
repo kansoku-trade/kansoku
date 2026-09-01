@@ -30,7 +30,7 @@ const tooltipStyle: CSSProperties = {
   border: `1px solid ${theme.border}`,
   borderRadius: theme.radius,
   color: theme.textPrimary,
-  fontSize: 12,
+  fontSize: 13,
 };
 
 function ChartFrame({
@@ -46,7 +46,7 @@ function ChartFrame({
     <div style={{ margin: '8px 0 16px' }}>
       <div
         style={{
-          fontSize: 12,
+          fontSize: 13,
           fontWeight: 500,
           color: theme.textPrimary,
           marginBottom: 8,
@@ -61,11 +61,11 @@ function ChartFrame({
 
 function axisProps(unit?: string) {
   return {
-    tick: { fill: theme.textSecondary, fontSize: 10 },
+    tick: { fill: theme.textSecondary, fontSize: 11 },
     tickLine: false as const,
     axisLine: { stroke: theme.borderStrong },
     label: unit
-      ? { value: unit, position: 'insideTopRight' as const, fill: theme.textMuted, fontSize: 10 }
+      ? { value: unit, position: 'insideTopRight' as const, fill: theme.textMuted, fontSize: 11 }
       : undefined,
   };
 }
