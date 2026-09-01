@@ -194,7 +194,7 @@ jobs:
         # `vitest run` script, which then reads it as a positional file filter
         # instead of a flag separator, and --reporter/--outputFile are silently
         # swallowed as filter globs instead of applied.
-        run: pnpm test --reporter=json --outputFile=test-results.json || true
+        run: pnpm test --reporter=default --reporter=json --outputFile=test-results.json || true
 
       - name: gate — server suite has no NEW failures
         run: node .github/scripts/assert-known-test-failures.mjs apps/server/test-results.json

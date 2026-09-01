@@ -9,6 +9,17 @@ import { setAiRuntimeForTests } from '@kansoku/core/ai/settings/initAiSettings';
 import { setModelsRuntimeForTests } from '@kansoku/core/ai/runtime/modelsRuntime';
 import { setLicenseManagerForTests } from '@kansoku/core/license/licenseState';
 
+const ctx = vi.hoisted(() => {
+  const base = process.env.TMPDIR ?? '/tmp/';
+  const sep = base.endsWith('/') ? '' : '/';
+  return { dir: `${base}${sep}kansoku-host-pro-${Date.now()}-${Math.random().toString(36).slice(2)}` };
+});
+
+vi.mock('@kansoku/core/platform/env', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  CHART_DATA_DIR: ctx.dir,
+}));
+
 // Regression coverage for defect 1: a Tsuki module owned by the pro
 // composition — not a core route gated through registerProHooks — must
 // actually be mounted into the Nest-style app the standalone server serves.

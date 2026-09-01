@@ -3,7 +3,17 @@ import type { Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import WebSocket from 'ws';
-import { CHART_DATA_DIR, PORT, WEB_DIST } from '@kansoku/core/platform/env';
+
+const ctx = vi.hoisted(() => {
+  const base = process.env.TMPDIR ?? '/tmp/';
+  const sep = base.endsWith('/') ? '' : '/';
+  return { dir: `${base}${sep}kansoku-host-smoke-${Date.now()}-${Math.random().toString(36).slice(2)}` };
+});
+
+vi.mock('@kansoku/core/platform/env', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  CHART_DATA_DIR: ctx.dir,
+}));
 
 vi.mock('@kansoku/core/ai/personas/comments', () => ({
   onComment: vi.fn(() => () => {}),
@@ -26,6 +36,7 @@ vi.mock('@kansoku/core/realtime/charts', () => ({ subscribeChart: vi.fn(() => ()
 vi.mock('@kansoku/core/realtime/position', () => ({ subscribePosition: vi.fn(() => () => {}) }));
 vi.mock('@kansoku/core/realtime/quotes', () => ({ subscribeQuotes: vi.fn(() => () => {}) }));
 
+const { CHART_DATA_DIR, PORT, WEB_DIST } = await import('@kansoku/core/platform/env');
 const { startHost } = await import('../src/host.js');
 
 describe('host smoke', () => {
@@ -54,12 +65,19 @@ describe('host smoke', () => {
     });
   });
 
+  it('does not read the repo journal chart dir', () => {
+    expect(CHART_DATA_DIR).toBe(ctx.dir);
+  });
+
   it('GET /api/charts returns the list envelope', async () => {
     const res = await fetch(`${baseUrl}/api/charts`);
-    expect(res.status).toBe(200);
-    const body = (await res.json()) as { ok: boolean; data: unknown[] };
-    expect(body.ok).toBe(true);
-    expect(Array.isArray(body.data)).toBe(true);
+    const body = (await res.json()) as { ok?: boolean; data?: unknown; error?: string };
+    expect({ status: res.status, ok: body.ok, dataIsArray: Array.isArray(body.data), error: body.error }).toEqual({
+      status: 200,
+      ok: true,
+      dataIsArray: true,
+      error: undefined,
+    });
   });
 
   it("GET /api/nope hits the kernel's unmatched-route fallback", async () => {
