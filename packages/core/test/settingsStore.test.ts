@@ -26,7 +26,15 @@ describe('createSettingsStore defaults', () => {
     try {
       const db = createDb(path);
       const store = createSettingsStore(db);
-      for (const role of ['comment', 'analyst', 'deepDive', 'chat', 'memory', 'casePick'] as const) {
+      for (const role of [
+        'comment',
+        'analyst',
+        'deepDive',
+        'chat',
+        'memory',
+        'casePick',
+        'title',
+      ] as const) {
         expect(store.getRole(role)).toEqual({
           mode: 'inherit',
           provider: null,
@@ -40,14 +48,14 @@ describe('createSettingsStore defaults', () => {
         modelId: null,
         thinkingLevel: null,
       });
-      expect(warn).toHaveBeenCalledTimes(7);
+      expect(warn).toHaveBeenCalledTimes(8);
     } finally {
       warn.mockRestore();
       rmSync(dir, { recursive: true, force: true });
     }
   });
 
-  it('listRoles returns primary plus all six task roles', () => {
+  it('listRoles returns primary plus all task roles', () => {
     const { dir, path } = tempDbPath();
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     try {
@@ -62,6 +70,7 @@ describe('createSettingsStore defaults', () => {
         'deepDive',
         'memory',
         'primary',
+        'title',
       ]);
     } finally {
       vi.restoreAllMocks();
@@ -357,6 +366,7 @@ describe('aiConfig integration with settingsStore', () => {
     expect(config.commentModel).toBe(config.chatModel);
     expect(config.analystModel).toBe(config.chatModel);
     expect(config.memoryModel).toBe(config.chatModel);
+    expect(config.titleModel).toBe(config.chatModel);
   });
 
   it('inherit roles resolve to null when primary is unset, and chat no longer follows analyst', () => {

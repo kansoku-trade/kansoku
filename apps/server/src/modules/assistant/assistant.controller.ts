@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post } from '@tsuki-hono/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post } from '@tsuki-hono/common';
 import { ClientError } from '@kansoku/core/platform/errors';
 import { assistantChatService } from '@kansoku/core/ai/assistant/assistantChat.service';
 import { jsonResponse } from '../../httpResponse.js';
@@ -30,6 +30,14 @@ export class AssistantController {
   @Post('/sessions')
   async createSession(@Body() body: { title?: unknown } | null) {
     return assistantChatService.createSession({ title: requireTitle(body) });
+  }
+
+  @Patch('/sessions/:id')
+  async updateSession(@Param('id') id: string, @Body() body: { title?: unknown } | null) {
+    if (typeof body?.title !== 'string') {
+      throw new ClientError('`title` must be a string', '{"title":"..."}');
+    }
+    return assistantChatService.updateSession({ id, title: body.title });
   }
 
   @Delete('/sessions/:id')

@@ -9,6 +9,7 @@ import {
   createConversationStore,
 } from '../conversation/conversationStore.js';
 import { isUsage } from '../runtime/usage.js';
+import { DEFAULT_ASSISTANT_TITLE, shouldAssignGeneratedTitle } from './sessionTitle.js';
 
 export type AssistantSession = ConversationSessionBase;
 export type AssistantMessageRow = ConversationMessageRow;
@@ -35,6 +36,34 @@ export function createAssistantSession(
 ): Promise<AssistantSession> {
   return store.createSession(input, db);
 }
+
+export async function updateAssistantSessionTitle(
+  id: string,
+  title: string,
+  db: Db = getDb(),
+): Promise<AssistantSession | null> {
+  const session = await getAssistantSession(id, db);
+  if (!session) return null;
+  const now = new Date().toISOString();
+  db.update(assistantSessions)
+    .set({ title, updatedAt: now })
+    .where(eq(assistantSessions.id, id))
+    .run();
+  return { ...session, title, updatedAt: now };
+}
+
+export async function assignGeneratedAssistantTitle(
+  id: string,
+  title: string,
+  db: Db = getDb(),
+): Promise<AssistantSession | null> {
+  const session = await getAssistantSession(id, db);
+  if (!session) return null;
+  if (!shouldAssignGeneratedTitle(session.title)) return session;
+  return updateAssistantSessionTitle(id, title, db);
+}
+
+export { DEFAULT_ASSISTANT_TITLE };
 
 export function listAssistantMessages(sessionId: string, db?: Db): Promise<AssistantMessageRow[]> {
   return store.listMessages(sessionId, db);

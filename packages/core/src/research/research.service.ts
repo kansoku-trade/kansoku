@@ -12,8 +12,12 @@ import type {
 import { canvasSlugFromResearchPath, researchCanvasPath } from '../contract/research.js';
 import { PROJECT_ROOT } from '../platform/env.js';
 import { ClientError } from '../platform/errors.js';
+import { z } from 'zod';
 
-const RESEARCH_KINDS: ResearchKind[] = ['stock', 'journal', 'canvas'];
+const RESEARCH_KINDS: [ResearchKind, ...ResearchKind[]] = ['stock', 'journal', 'canvas'];
+const researchKindSchema = z.enum(RESEARCH_KINDS);
+export const researchPathSchema = z.string().min(1);
+const researchMarkdownSchema = z.string().trim().min(1);
 const KIND_ORDER: Record<ResearchKind, number> = { stock: 0, journal: 1, canvas: 2 };
 
 const DATE_PREFIX_RE = /^(\d{4}-\d{2}-\d{2})(?:-|$)/;
@@ -303,7 +307,7 @@ export type ResearchLibraryApi = Pick<ResearchApi, 'list' | 'get'>;
 export function createResearchService(rootDir: string): ResearchLibraryApi {
   return {
     async list(input) {
-      if (input.kind !== undefined && !RESEARCH_KINDS.includes(input.kind)) {
+      if (input.kind !== undefined && !researchKindSchema.safeParse(input.kind).success) {
         throw new ClientError('invalid research kind', 'expected stock, journal, or canvas');
       }
       const kinds: ResearchKind[] = input.kind ? [input.kind] : [...RESEARCH_KINDS];
@@ -373,7 +377,9 @@ export async function writeResearchDocumentAtomic(input: {
   markdown: string;
   expectedRevision: string;
 }): Promise<ResearchDocument> {
-  if (!input.markdown.trim()) throw new ClientError('research document cannot be empty');
+  if (!researchMarkdownSchema.safeParse(input.markdown).success) {
+    throw new ClientError('research document cannot be empty');
+  }
   const resolved = await resolveResearchDocumentPath(input.rootDir, input.path);
   if (resolved.kind === 'canvas') {
     throw new ClientError(

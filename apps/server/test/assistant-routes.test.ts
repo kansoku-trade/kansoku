@@ -165,6 +165,27 @@ describe('assistant routes', () => {
     expect(tooLong.status).toBe(400);
   });
 
+  it('renames a session', async () => {
+    const session = await createSession();
+    const res = await tsukiRequest(`/api/assistant/sessions/${session.id}`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ title: 'MU 盘前' }),
+    });
+    expect(res.status).toBe(200);
+    expect((await res.json()).session.title).toBe('MU 盘前');
+  });
+
+  it('rejects a blank rename with 400', async () => {
+    const session = await createSession();
+    const res = await tsukiRequest(`/api/assistant/sessions/${session.id}`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ title: '   ' }),
+    });
+    expect(res.status).toBe(400);
+  });
+
   it('404s when deleting an unknown session id', async () => {
     const res = await tsukiRequest('/api/assistant/sessions/does-not-exist', { method: 'DELETE' });
     expect(res.status).toBe(404);

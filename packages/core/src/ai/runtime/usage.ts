@@ -33,6 +33,7 @@ export interface AiUsageLogContext {
     | 'research-refresh'
     | 'memory'
     | 'assistant'
+    | 'session-title'
     | 'case-pick';
   symbol: string;
   model: { provider?: string; id?: string };

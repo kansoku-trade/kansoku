@@ -1,7 +1,17 @@
+import { useState, type FormEvent } from 'react';
 import { Plus, X } from 'lucide-react';
 import * as stylex from '@stylexjs/stylex';
 import type { AssistantSessionMeta } from '@kansoku/core/contract/index';
-import { Button, Empty, Spinner, TimeAgo, openModal } from '@web/ui';
+import {
+  Button,
+  Empty,
+  Input,
+  Spinner,
+  TimeAgo,
+  openModal,
+  showContextMenu,
+  type ContextMenuItem,
+} from '@web/ui';
 import { colors, fontSizes, radii, sizes } from '../../theme/tokens.stylex';
 
 const styles = stylex.create({
@@ -127,6 +137,10 @@ const styles = stylex.create({
     gap: '6px',
     justifyContent: 'flex-end',
   },
+  renameField: {
+    marginBottom: '12px',
+    width: '100%',
+  },
 });
 
 interface AssistantSessionListProps {
@@ -136,7 +150,70 @@ interface AssistantSessionListProps {
   error: string | null;
   onSelect: (id: string) => void;
   onCreate: () => void;
+  onRename: (id: string, title: string) => void;
   onDelete: (id: string) => void;
+}
+
+export function buildSessionMenuItems(handlers: {
+  onRename: () => void;
+  onDelete: () => void;
+}): ContextMenuItem[] {
+  return [
+    { key: 'rename', label: '重命名', onClick: handlers.onRename },
+    { type: 'divider' },
+    { key: 'delete', label: '删除', danger: true, onClick: handlers.onDelete },
+  ];
+}
+
+function RenameForm({
+  session,
+  onRename,
+  close,
+}: {
+  session: AssistantSessionMeta;
+  onRename: (id: string, title: string) => void;
+  close: () => void;
+}) {
+  const [title, setTitle] = useState(session.title);
+
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    const next = title.trim();
+    if (!next) return;
+    onRename(session.id, next);
+    close();
+  };
+
+  return (
+    <form onSubmit={submit}>
+      <Input
+        className={stylex.props(styles.renameField).className}
+        value={title}
+        maxLength={40}
+        autoFocus
+        onChange={(event) => setTitle(event.target.value)}
+      />
+      <div {...stylex.props(styles.confirmActions)}>
+        <Button type="button" onClick={close}>
+          取消
+        </Button>
+        <Button accent type="submit">
+          保存
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+function confirmRename(
+  session: AssistantSessionMeta,
+  onRename: (id: string, title: string) => void,
+): void {
+  openModal({
+    title: '重命名会话',
+    size: 'sm',
+    body: (close) => <RenameForm session={session} onRename={onRename} close={close} />,
+  });
 }
 
 function confirmDelete(session: AssistantSessionMeta, onDelete: (id: string) => void): void {
@@ -170,6 +247,7 @@ export function AssistantSessionList({
   error,
   onSelect,
   onCreate,
+  onRename,
   onDelete,
 }: AssistantSessionListProps) {
   return (
@@ -203,6 +281,17 @@ export function AssistantSessionList({
               key={session.id}
               className={`assistant-session-row${session.id === activeId ? ' active' : ''} ${stylex.props(styles.sessionRow, session.id === activeId && styles.sessionRowActive).className}`}
               onClick={() => onSelect(session.id)}
+              onContextMenu={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                showContextMenu(
+                  buildSessionMenuItems({
+                    onRename: () => confirmRename(session, onRename),
+                    onDelete: () => confirmDelete(session, onDelete),
+                  }),
+                  { x: event.clientX, y: event.clientY },
+                );
+              }}
             >
               <div
                 className={`assistant-session-row-main ${stylex.props(styles.sessionRowMain).className}`}

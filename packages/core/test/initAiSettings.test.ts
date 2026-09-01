@@ -9,6 +9,7 @@ import {
   runEnvImport,
   runMemoryModelMigration,
   runPrimaryModelMigration,
+  runTitleModelMigration,
 } from '../src/ai/settings/initAiSettings.js';
 import { aiConfig } from '../src/ai/runtime/models.js';
 import { getModelsRuntime, setModelsRuntimeForTests } from '../src/ai/runtime/modelsRuntime.js';
@@ -500,6 +501,64 @@ describe('runMemoryModelMigration', () => {
         .from(aiRoleSettings)
         .all()
         .filter((row) => row.role === 'memory'),
+    ).toHaveLength(1);
+  });
+});
+
+describe('runTitleModelMigration', () => {
+  let dir: string;
+  let db: Db;
+
+  beforeEach(() => {
+    const t = tempDb();
+    dir = t.dir;
+    db = t.db;
+  });
+
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('inserts an inherit title role when missing', () => {
+    runTitleModelMigration(db);
+    expect(db.select().from(aiRoleSettings).where(eq(aiRoleSettings.role, 'title')).get()).toMatchObject({
+      mode: 'inherit',
+      provider: null,
+      modelId: null,
+      thinkingLevel: null,
+    });
+    expect(db.select().from(appMeta).where(eq(appMeta.key, 'title_model_v1')).get()?.value).toBe(
+      'completed',
+    );
+  });
+
+  it('preserves an existing title role and becomes idempotent', () => {
+    db.insert(aiRoleSettings)
+      .values({
+        role: 'title',
+        mode: 'custom',
+        provider: 'openai',
+        modelId: 'gpt-4o-mini',
+        thinkingLevel: 'off',
+        updatedAt: new Date().toISOString(),
+      })
+      .run();
+
+    runTitleModelMigration(db);
+    runTitleModelMigration(db);
+
+    expect(db.select().from(aiRoleSettings).where(eq(aiRoleSettings.role, 'title')).get()).toMatchObject({
+      mode: 'custom',
+      provider: 'openai',
+      modelId: 'gpt-4o-mini',
+      thinkingLevel: 'off',
+    });
+    expect(
+      db
+        .select()
+        .from(aiRoleSettings)
+        .all()
+        .filter((row) => row.role === 'title'),
     ).toHaveLength(1);
   });
 });

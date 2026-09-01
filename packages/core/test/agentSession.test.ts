@@ -155,6 +155,155 @@ describe('createAgentSession', () => {
     expect(session.isDone()).toBe(true);
   });
 
+  it('retries a network error with increasing delays and settles', async () => {
+    vi.useFakeTimers();
+    try {
+      let continues = 0;
+      const agentFactory: AiAgentFactory = () => ({
+        prompt: async () => {
+          throw new Error('network down');
+        },
+        continue: async () => {
+          continues += 1;
+          if (continues < 2) throw new Error('network down');
+        },
+        abort: () => {},
+      });
+      const session = createAgentSession({
+        layer: 'chat',
+        symbol: 'MU.US',
+        model: fakeModel,
+        systemPrompt: 'system prompt',
+        tools: [],
+        agentFactory,
+      });
+
+      const turn = session.runTurn('hi');
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(continues).toBe(1);
+      await vi.advanceTimersByTimeAsync(1999);
+      expect(continues).toBe(1);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(continues).toBe(2);
+      await turn;
+      expect(session.isDone()).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('gives up after five network retries and throws the last error', async () => {
+    vi.useFakeTimers();
+    try {
+      let continues = 0;
+      const agentFactory: AiAgentFactory = () => ({
+        prompt: async () => {
+          throw new Error('network down');
+        },
+        continue: async () => {
+          continues += 1;
+          throw new Error(`network down ${continues}`);
+        },
+        abort: () => {},
+      });
+      const session = createAgentSession({
+        layer: 'chat',
+        symbol: 'MU.US',
+        model: fakeModel,
+        systemPrompt: 'system prompt',
+        tools: [],
+        agentFactory,
+      });
+
+      const turn = session.runTurn('hi');
+      const rejected = expect(turn).rejects.toThrow('network down 5');
+      await vi.advanceTimersByTimeAsync(1000 + 2000 + 4000 + 8000 + 16_000);
+      await rejected;
+      expect(continues).toBe(5);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('does not retry a non-network error', async () => {
+    let continues = 0;
+    const agentFactory: AiAgentFactory = () => ({
+      prompt: async () => {
+        throw new Error('invalid api key');
+      },
+      continue: async () => {
+        continues += 1;
+      },
+      abort: () => {},
+    });
+    const session = createAgentSession({
+      layer: 'chat',
+      symbol: 'MU.US',
+      model: fakeModel,
+      systemPrompt: 'system prompt',
+      tools: [],
+      agentFactory,
+    });
+
+    await expect(session.runTurn('hi')).rejects.toThrow('invalid api key');
+    expect(continues).toBe(0);
+  });
+
+  it('does not continue after an abort', async () => {
+    let continues = 0;
+    const agentFactory: AiAgentFactory = () => ({
+      prompt: async () => {
+        throw new Error('aborted');
+      },
+      continue: async () => {
+        continues += 1;
+      },
+      abort: () => {},
+    });
+    const session = createAgentSession({
+      layer: 'chat',
+      symbol: 'MU.US',
+      model: fakeModel,
+      systemPrompt: 'system prompt',
+      tools: [],
+      agentFactory,
+    });
+
+    await expect(session.runTurn('hi')).rejects.toThrow('aborted');
+    expect(continues).toBe(0);
+  });
+
+  it('does not time out when timeoutMs is omitted', async () => {
+    vi.useFakeTimers();
+    try {
+      let resolvePrompt: (() => void) | undefined;
+      const agentFactory: AiAgentFactory = () => ({
+        prompt: () =>
+          new Promise<void>((resolve) => {
+            resolvePrompt = resolve;
+          }),
+        abort: () => {},
+      });
+      const session = createAgentSession({
+        layer: 'chat',
+        symbol: 'MU.US',
+        model: fakeModel,
+        systemPrompt: 'system prompt',
+        tools: [],
+        agentFactory,
+      });
+
+      const turn = session.runTurn('hi');
+      await vi.advanceTimersByTimeAsync(180_000);
+      expect(session.isDone()).toBe(false);
+      resolvePrompt?.();
+      await turn;
+      expect(session.isDone()).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('rejects with AgentTimeoutError, aborts the agent, and sets isDone on timeout', async () => {
     let aborted = false;
     const agentFactory: AiAgentFactory = () => ({

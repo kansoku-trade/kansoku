@@ -113,7 +113,6 @@ function makeTurn(
     model: fakeModel,
     store: store.adapter,
     agentFactory: factory,
-    timeoutMs: 500,
     now: () => 0,
     buildTurn: async () => ({ symbol: 'MU.US', systemPrompt: 'sp', tools: [], ...plan }),
     ...overrides,
@@ -304,30 +303,6 @@ describe('createConversationEngine persistence', () => {
       stopReason: 'aborted',
       timestamp: 0,
     });
-  });
-
-  it('emits a timeout error naming the configured timeout', async () => {
-    const engine = makeEngine();
-    const store = memoryStore();
-    const events: ConversationEvent[] = [];
-    const unsub = engine.onEvent('k5', (e) => events.push(e));
-
-    const hangFactory: AiAgentFactory = (config) => ({
-      prompt: () => new Promise<void>(() => {}),
-      abort: () => {},
-      state: { messages: [...(config.messages ?? [])] },
-    });
-
-    const result = await engine.run(
-      'k5',
-      '问',
-      makeTurn(store, hangFactory, {}, { timeoutMs: 10 }),
-    );
-    expect(result.started).toBe(true);
-    if (result.started) await result.done;
-    unsub();
-
-    expect(events).toEqual([{ event: 'error', message: '回答超时（10ms）' }]);
   });
 });
 

@@ -5,6 +5,8 @@ import { LOBEHUB_PROVIDER } from '../ai/lobehub/types.js';
 import { applyBaseUrlOverride } from '../ai/runtime/providerOverrides.js';
 import { listUsage } from '../ai/runtime/usageStore.js';
 import { ClientError } from '../platform/errors.js';
+import { parseClientInput } from '../platform/zodInput.js';
+import { z } from 'zod';
 import { easternDate } from '../marketdata/session.js';
 import { settingsDeps } from './settings.deps.js';
 import { runTestConnection } from './settings.testConnection.js';
@@ -16,9 +18,8 @@ import {
   validateRoleSetting,
 } from './settingsValidation.js';
 
-function normalizeProviderBaseUrl(raw: unknown): string | null {
-  if (typeof raw !== 'string') return null;
-  const trimmed = raw.trim();
+const credentialKeySchema = z.string().min(1);
+const httpUrlSchema = z.string().trim().transform((trimmed) => {
   if (!trimmed) return null;
   const stripped = trimmed.replace(/\/+$/, '');
   let url: URL;
@@ -31,11 +32,16 @@ function normalizeProviderBaseUrl(raw: unknown): string | null {
     throw new ClientError(`invalid baseUrl: ${stripped}`, 'expected a full http(s) URL');
   }
   return stripped;
+});
+
+function normalizeProviderBaseUrl(raw: unknown): string | null {
+  if (typeof raw !== 'string') return null;
+  return parseClientInput(httpUrlSchema, raw);
 }
 
 function usageRole(
   record: AiUsageRecord,
-): 'comment' | 'analyst' | 'deepDive' | 'chat' | 'memory' | 'casePick' | null {
+): 'comment' | 'analyst' | 'deepDive' | 'chat' | 'memory' | 'casePick' | 'title' | null {
   switch (record.layer) {
     case 'commentator':
     case 'event-filter':
@@ -57,6 +63,9 @@ function usageRole(
     }
     case 'case-pick': {
       return 'casePick';
+    }
+    case 'session-title': {
+      return 'title';
     }
     default: {
       return null;
@@ -118,10 +127,9 @@ export const aiSettingsService: AiSettingsService = {
         `expected one of ${[...SINGLE_KEY_PROVIDERS].join(', ')}`,
       );
     }
-    const key = input.key;
-    if (typeof key !== 'string' || !key) {
-      throw new ClientError('"key" must be a non-empty string');
-    }
+    const keyResult = credentialKeySchema.safeParse(input.key);
+    if (!keyResult.success) throw new ClientError('"key" must be a non-empty string');
+    const key = keyResult.data;
     credentials.setApiKey(provider, key);
     const entry = credentials.listEntries().find((e) => e.provider === provider);
     return { provider, masked: entry?.masked ?? null };
@@ -223,6 +231,7 @@ export const aiSettingsService: AiSettingsService = {
       chat: { calls: 0, cost: 0 },
       memory: { calls: 0, cost: 0 },
       casePick: { calls: 0, cost: 0 },
+      title: { calls: 0, cost: 0 },
     };
     const total = { calls: 0, cost: 0 };
     for (const record of records) {

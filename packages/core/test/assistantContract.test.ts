@@ -64,6 +64,28 @@ describe('assistantChatService session lifecycle', () => {
     expect(session.title).toBe('自定义标题');
   });
 
+  it('renames a session', async () => {
+    setAssistantChatDepsForTests({ model, db });
+    const { session } = await assistantChatService.createSession({});
+    const renamed = await assistantChatService.updateSession({ id: session.id, title: 'MU 盘前' });
+    expect(renamed.session.title).toBe('MU 盘前');
+  });
+
+  it('rejects a blank rename', async () => {
+    setAssistantChatDepsForTests({ model, db });
+    const { session } = await assistantChatService.createSession({});
+    await expect(
+      assistantChatService.updateSession({ id: session.id, title: '   ' }),
+    ).rejects.toMatchObject({ name: 'ClientError', status: 400 });
+  });
+
+  it('rejects renaming an unknown session', async () => {
+    setAssistantChatDepsForTests({ model, db });
+    await expect(
+      assistantChatService.updateSession({ id: 'missing', title: 'MU 盘前' }),
+    ).rejects.toMatchObject({ name: 'ClientError', status: 404 });
+  });
+
   it('deletes a session and its messages', async () => {
     setAssistantChatDepsForTests({ model, db });
     const { session } = await assistantChatService.createSession({});

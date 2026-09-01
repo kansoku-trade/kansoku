@@ -9,6 +9,7 @@ export interface AssistantSessionsState {
   error: string | null;
   refresh: () => void;
   create: (title?: string) => Promise<AssistantSessionMeta>;
+  rename: (id: string, title: string) => Promise<AssistantSessionMeta>;
   remove: (id: string) => Promise<void>;
 }
 
@@ -53,6 +54,15 @@ export function useAssistantSessions(): AssistantSessionsState {
     [refresh],
   );
 
+  const rename = useCallback(
+    async (id: string, title: string): Promise<AssistantSessionMeta> => {
+      const { session } = await client.assistant.updateSession({ id, title });
+      refresh();
+      return session;
+    },
+    [refresh],
+  );
+
   const remove = useCallback(
     async (id: string): Promise<void> => {
       await client.assistant.deleteSession({ id });
@@ -67,6 +77,7 @@ export function useAssistantSessions(): AssistantSessionsState {
     error,
     refresh,
     create,
+    rename,
     remove,
   };
 }

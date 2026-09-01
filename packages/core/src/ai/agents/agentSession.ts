@@ -41,6 +41,7 @@ export const runtimeStreamFn: StreamFn = (model, context, options) => {
 
 export interface AiAgentHandle {
   prompt(text: string): Promise<unknown>;
+  continue?(): Promise<unknown>;
   abort(): void;
   setTools?(tools: AgentTool[]): void;
   subscribe?(listener: (event: AgentEvent) => void): () => void;
@@ -58,6 +59,71 @@ export type AiAgentFactory = (config: {
 
 export class AgentTimeoutError extends Error {}
 
+const NETWORK_RETRIES = 5;
+const NETWORK_BACKOFF_MS = 1000;
+const NETWORK_ERROR =
+  /network|econnreset|etimedout|enotfound|econnrefused|eai_again|socket|fetch failed|undici|429|502|503|504|rate.?limit|too many requests|cloud_unavailable|流式响应中断|上游断|暂时不可用|过于频繁/i;
+
+function errorText(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
+
+function isAbortError(err: unknown): boolean {
+  return /abort/i.test(errorText(err));
+}
+
+function isRetryableNetworkError(err: unknown): boolean {
+  if (isAbortError(err)) return false;
+  if (err && typeof err === 'object' && 'code' in err) {
+    const code = (err as { code?: unknown }).code;
+    if (code === 'network_error' || code === 'rate_limited' || code === 'cloud_unavailable') {
+      return true;
+    }
+    if (typeof code === 'string' && /^(ECONN|ETIMEDOUT|ENOTFOUND|EAI_AGAIN|UND_ERR)/i.test(code)) {
+      return true;
+    }
+  }
+  return NETWORK_ERROR.test(errorText(err));
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function retryNetwork(agent: AiAgentHandle, first: unknown): Promise<void> {
+  let last = first;
+  for (let attempt = 0; attempt < NETWORK_RETRIES; attempt++) {
+    await sleep(NETWORK_BACKOFF_MS * 2 ** attempt);
+    try {
+      await agent.continue!();
+      if (!agent.state?.errorMessage) return;
+      last = new Error(agent.state.errorMessage);
+      if (!isRetryableNetworkError(last)) throw last;
+    } catch (err) {
+      if (isAbortError(err) || !isRetryableNetworkError(err)) throw err;
+      last = err;
+    }
+  }
+  throw last instanceof Error ? last : new Error(String(last));
+}
+
+async function runUntilSettled(agent: AiAgentHandle, prompt: string): Promise<void> {
+  try {
+    await agent.prompt(prompt);
+  } catch (err) {
+    if (!agent.continue || !isRetryableNetworkError(err)) throw err;
+    await retryNetwork(agent, err);
+    return;
+  }
+  if (
+    agent.continue &&
+    agent.state?.errorMessage &&
+    isRetryableNetworkError(new Error(agent.state.errorMessage))
+  ) {
+    await retryNetwork(agent, new Error(agent.state.errorMessage));
+  }
+}
+
 const defaultAgentFactory: AiAgentFactory = (config) => {
   const agent = new Agent({
     streamFn: runtimeStreamFn,
@@ -73,6 +139,7 @@ const defaultAgentFactory: AiAgentFactory = (config) => {
   });
   return {
     prompt: (text: string) => agent.prompt(text),
+    continue: () => agent.continue(),
     abort: () => agent.abort(),
     setTools: (tools) => {
       agent.state.tools = tools;
@@ -97,7 +164,7 @@ export function createAgentSession(config: {
   persistUsage?: boolean;
 }): {
   agent: AiAgentHandle;
-  runTurn(prompt: string, timeoutMs: number): Promise<void>;
+  runTurn(prompt: string, timeoutMs?: number): Promise<void>;
   isDone(): boolean;
 } {
   const factory = config.agentFactory ?? defaultAgentFactory;
@@ -124,13 +191,18 @@ export function createAgentSession(config: {
   let done = false;
   let inFlight = false;
 
-  async function runTurn(prompt: string, timeoutMs: number): Promise<void> {
+  async function runTurn(prompt: string, timeoutMs?: number): Promise<void> {
     if (inFlight) {
       throw new Error('agent session turn already in flight');
     }
     inFlight = true;
     done = false;
     try {
+      if (timeoutMs == null || timeoutMs <= 0) {
+        await runUntilSettled(agent, prompt);
+        done = true;
+        return;
+      }
       await new Promise<void>((resolve, reject) => {
         const timer = setTimeout(() => {
           if (done) return;

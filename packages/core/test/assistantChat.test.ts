@@ -12,6 +12,7 @@ import {
 } from '../src/ai/assistant/assistantChat.js';
 import {
   createAssistantSession,
+  getAssistantSession,
   listAssistantMessages,
   sumAssistantSessionUsage,
 } from '../src/ai/assistant/assistantChatStore.js';
@@ -202,7 +203,11 @@ describe('assistant chat', () => {
     if (result.started) await result.done;
     unsub();
 
-    expect(events).toEqual([{ event: 'delta', text: '半截回答' }, { event: 'aborted' }]);
+    expect(events.filter((event) => event.event !== 'title')).toEqual([
+      { event: 'delta', text: '半截回答' },
+      { event: 'aborted' },
+    ]);
+    expect(events.some((event) => event.event === 'title' && event.title === '讲讲')).toBe(true);
     const messages = await listAssistantMessages(session.id, db);
     expect(messages.map((row) => row.role)).toEqual(['user', 'assistant']);
     expect(messages[1].payload).toMatchObject({
@@ -325,9 +330,9 @@ describe('assistant chat', () => {
     expect(result.started).toBe(true);
     if (result.started) await result.done;
     unsub();
-    expect(events).toHaveLength(1);
-    expect(events[0]).toMatchObject({ event: 'error' });
-    expect((events[0] as { message: string }).message).toContain('SKILL.md is unavailable');
+    const errors = events.filter((event) => event.event === 'error');
+    expect(errors).toHaveLength(1);
+    expect((errors[0] as { message: string }).message).toContain('SKILL.md is unavailable');
     rmSync(emptyRoot, { recursive: true, force: true });
   });
 
@@ -409,5 +414,65 @@ describe('assistant chat', () => {
 
     const total = await sumAssistantSessionUsage(session.id, db);
     expect(total).toEqual({ totalTokens: 0, costTotal: 0, calls: 0 });
+  });
+
+  it('assigns a generated title after the first turn of a new conversation', async () => {
+    const session = await createAssistantSession({ title: '新对话' }, db);
+    const events: ChatEvent[] = [];
+    const unsub = onAssistantChatEvent(session.id, (event) => events.push(event));
+    const factory: AiAgentFactory = (config) => {
+      const state = { messages: [...(config.messages ?? [])] };
+      return {
+        prompt: async (text) => {
+          state.messages.push({ role: 'user', content: text, timestamp: Date.now() });
+          state.messages.push(assistant('好。'));
+        },
+        abort: () => undefined,
+        state,
+      };
+    };
+
+    const result = await runAssistantChatTurn(session.id, '帮我看 MU 盘前', {
+      model,
+      rootDir: root,
+      db,
+      agentFactory: factory,
+      disciplineText: '# trading-discipline\n测试纪律。',
+      generateTitle: async () => 'MU 盘前',
+    });
+    expect(result.started).toBe(true);
+    if (result.started) await result.done;
+    unsub();
+
+    expect((await getAssistantSession(session.id, db))?.title).toBe('MU 盘前');
+    expect(events.some((event) => event.event === 'title' && event.title === 'MU 盘前')).toBe(true);
+  });
+
+  it('does not overwrite a custom title', async () => {
+    const session = await createAssistantSession({ title: '已经起过名' }, db);
+    const factory: AiAgentFactory = (config) => {
+      const state = { messages: [...(config.messages ?? [])] };
+      return {
+        prompt: async (text) => {
+          state.messages.push({ role: 'user', content: text, timestamp: Date.now() });
+          state.messages.push(assistant('好。'));
+        },
+        abort: () => undefined,
+        state,
+      };
+    };
+
+    const result = await runAssistantChatTurn(session.id, '再聊一句', {
+      model,
+      rootDir: root,
+      db,
+      agentFactory: factory,
+      disciplineText: '# trading-discipline\n测试纪律。',
+      generateTitle: async () => '不该写上去',
+    });
+    expect(result.started).toBe(true);
+    if (result.started) await result.done;
+
+    expect((await getAssistantSession(session.id, db))?.title).toBe('已经起过名');
   });
 });

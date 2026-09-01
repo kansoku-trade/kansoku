@@ -17,6 +17,11 @@ export class AssistantIpc extends IpcService implements WrapEnvelope<AssistantAp
   }
 
   @IpcMethod()
+  updateSession(input: Parameters<AssistantApi['updateSession']>[0]) {
+    return toEnvelope('assistant.updateSession', () => assistantChatService.updateSession(input));
+  }
+
+  @IpcMethod()
   deleteSession(input: Parameters<AssistantApi['deleteSession']>[0]) {
     return toEnvelope('assistant.deleteSession', () => assistantChatService.deleteSession(input));
   }

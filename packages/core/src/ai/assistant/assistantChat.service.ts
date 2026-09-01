@@ -11,14 +11,19 @@ import {
   listAssistantMessages,
   listAssistantSessions,
   sumAssistantSessionUsage,
+  updateAssistantSessionTitle,
 } from './assistantChatStore.js';
+import {
+  assistantMessageSchema,
+  assistantOptionalTitleSchema,
+  assistantTitleSchema,
+  parseClientInput,
+} from './assistantInput.js';
+import { DEFAULT_ASSISTANT_TITLE } from './sessionTitle.js';
 import { toDisplayMessages } from '../chat/chat.js';
 import { aiConfig } from '../runtime/models.js';
 import type { AssistantApi } from '../../contract/assistant.js';
 import { ClientError } from '../../platform/errors.js';
-
-const MAX_TEXT_LENGTH = 4_000;
-const DEFAULT_TITLE = '新对话';
 
 let testDeps: AssistantChatDeps | null = null;
 
@@ -27,7 +32,9 @@ export function setAssistantChatDepsForTests(deps: AssistantChatDeps | null): vo
 }
 
 function buildDeps(): AssistantChatDeps {
-  return testDeps ?? { model: aiConfig().chatModel };
+  if (testDeps) return testDeps;
+  const config = aiConfig();
+  return { model: config.chatModel, titleModel: config.titleModel };
 }
 
 async function requireSession(id: string, db: AssistantChatDeps['db']) {
@@ -43,8 +50,17 @@ export const assistantChatService: AssistantApi = {
   },
 
   async createSession(input) {
-    const title = input.title?.trim() || DEFAULT_TITLE;
+    const rawTitle = parseClientInput(assistantOptionalTitleSchema, input.title);
+    const title = rawTitle?.trim() || DEFAULT_ASSISTANT_TITLE;
     const session = await createAssistantSession({ title }, testDeps?.db);
+    return { session };
+  },
+
+  async updateSession(input) {
+    const title = parseClientInput(assistantTitleSchema, input.title, '{"title":"..."}');
+    await requireSession(input.id, testDeps?.db);
+    const session = await updateAssistantSessionTitle(input.id, title, testDeps?.db);
+    if (!session) throw new ClientError('assistant session not found', undefined, 404);
     return { session };
   },
 
@@ -64,13 +80,8 @@ export const assistantChatService: AssistantApi = {
   },
 
   async postMessage(input) {
-    if (!input.text.trim() || input.text.length > MAX_TEXT_LENGTH) {
-      throw new ClientError(
-        '`text` must be a non-empty string of at most 4000 characters',
-        '{"text":"..."}',
-      );
-    }
-    const result = await runAssistantChatTurn(input.id, input.text, buildDeps());
+    const text = parseClientInput(assistantMessageSchema, input.text, '{"text":"..."}');
+    const result = await runAssistantChatTurn(input.id, text, buildDeps());
     if (result.started) {
       result.done.catch((error) => console.error('assistant chat: turn failed', error));
       return { status: 202, body: { accepted: true } };

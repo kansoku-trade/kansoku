@@ -31,6 +31,7 @@ export type AssistantPostMessageResult =
 export interface AssistantApi {
   listSessions(): Promise<{ sessions: AssistantSessionMeta[] }>;
   createSession(input: { title?: string }): Promise<{ session: AssistantSessionMeta }>;
+  updateSession(input: { id: string; title: string }): Promise<{ session: AssistantSessionMeta }>;
   deleteSession(input: { id: string }): Promise<{ ok: true }>;
   getChat(input: { id: string }): Promise<AssistantChatState>;
   postMessage(input: { id: string; text: string }): Promise<AssistantPostMessageResult>;
@@ -40,6 +41,7 @@ export interface AssistantApi {
 export const assistantRoutes = defineRoutes<AssistantApi>('assistant', {
   listSessions: { method: 'GET', path: '/sessions' },
   createSession: { method: 'POST', path: '/sessions' },
+  updateSession: { method: 'PATCH', path: '/sessions/:id' },
   deleteSession: { method: 'DELETE', path: '/sessions/:id' },
   getChat: { method: 'GET', path: '/sessions/:id/chat', raw: 'body' },
   postMessage: { method: 'POST', path: '/sessions/:id/chat/messages', raw: 'statusBody' },

@@ -184,33 +184,6 @@ describe('runChatTurn gating', () => {
     expect(third.started).toBe(true);
     if (third.started) await third.done;
   });
-
-  it('emits a timeout error event and releases the lock', async () => {
-    const chartId = 'gate-3';
-    const events: ChatEvent[] = [];
-    const unsub = onChatEvent(chartId, (e) => events.push(e));
-
-    const hangFactory: AiAgentFactory = (config) => ({
-      prompt: () => new Promise<void>(() => {}),
-      abort: () => {},
-      state: { messages: [...(config.messages ?? [])] },
-    });
-
-    const result = await runChatTurn(
-      chartId,
-      'hi',
-      baseDeps({ agentFactory: hangFactory, timeoutMs: 10 }),
-    );
-    expect(result.started).toBe(true);
-    if (result.started) await result.done;
-    unsub();
-
-    expect(events).toEqual([{ event: 'error', message: '回答超时（10ms）' }]);
-
-    const again = await runChatTurn(chartId, 'hi2', baseDeps({ agentFactory: noopFactory() }));
-    expect(again.started).toBe(true);
-    if (again.started) await again.done;
-  });
 });
 
 describe('runChatTurn tools', () => {
@@ -484,55 +457,6 @@ describe('runChatTurn error surfacing', () => {
 
     const rows = await expectSessionRows(chartId);
     expect(rows.map((r) => r.role)).toEqual(['user', 'assistant']);
-  });
-
-  it('on timeout, persists a synthesized assistant row built from the streamed partial buffer alongside the timeout error', async () => {
-    const chartId = 'timeout-partial-1';
-    const events: ChatEvent[] = [];
-    const unsub = onChatEvent(chartId, (e) => events.push(e));
-
-    const factory: AiAgentFactory = (config) => {
-      let listener: ((event: AgentEvent) => void) | undefined;
-      return {
-        prompt: () => {
-          listener?.(messageStartEvent());
-          listener?.(messageUpdateEvent('部分回答'));
-          return new Promise<void>(() => {});
-        },
-        abort: () => {},
-        subscribe: (l) => {
-          listener = l;
-          return () => {
-            listener = undefined;
-          };
-        },
-        state: { messages: [...(config.messages ?? [])] },
-      };
-    };
-
-    const result = await runChatTurn(
-      chartId,
-      '问',
-      baseDeps({ agentFactory: factory, timeoutMs: 10 }),
-    );
-    expect(result.started).toBe(true);
-    if (result.started) await result.done;
-    unsub();
-
-    expect(events).toEqual([
-      { event: 'delta', text: '部分回答' },
-      { event: 'error', message: '回答超时（10ms）' },
-    ]);
-
-    const rows = await expectSessionRows(chartId);
-    expect(rows.map((r) => r.role)).toEqual(['user', 'assistant']);
-    expect((rows[0].payload as { content: string }).content).toBe('问');
-    const synthesized = rows[1].payload as {
-      role: 'assistant';
-      content: { type: string; text?: string }[];
-    };
-    expect(synthesized.role).toBe('assistant');
-    expect(synthesized.content).toEqual([{ type: 'text', text: '部分回答' }]);
   });
 });
 

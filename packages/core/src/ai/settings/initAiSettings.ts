@@ -38,7 +38,7 @@ export function setAiRuntimeForTests(next: AiRuntime | null): void {
 
 // Background roles are configured in the settings UI only; they get no env var,
 // so they never anchor the primary role either.
-type EnvAiTaskRole = Exclude<AiTaskRole, 'memory' | 'casePick'>;
+type EnvAiTaskRole = Exclude<AiTaskRole, 'memory' | 'casePick' | 'title'>;
 
 const ROLE_ENV_VARS: Record<EnvAiTaskRole, string> = {
   comment: 'AI_COMMENT_MODEL',
@@ -54,6 +54,7 @@ const ENV_IMPORT_MARKER_VALUE = 'completed';
 const PRIMARY_MARKER_KEY = 'primary_model_v1';
 const PRIMARY_ANCHOR_ORDER: EnvAiTaskRole[] = ['analyst', 'comment', 'deepDive', 'chat'];
 const MEMORY_MODEL_MARKER_KEY = 'memory_model_v1';
+const TITLE_MODEL_MARKER_KEY = 'title_model_v1';
 
 const catalog = builtinModels();
 
@@ -229,6 +230,40 @@ export function runMemoryModelMigration(db: Db): void {
   });
 }
 
+/**
+ * Session-title generation gets its own cheap-model role. Existing installs
+ * start as inherit so titles still generate; pick a small model in Settings.
+ */
+export function runTitleModelMigration(db: Db): void {
+  const marker = db.select().from(appMeta).where(eq(appMeta.key, TITLE_MODEL_MARKER_KEY)).get();
+  if (marker?.value === ENV_IMPORT_MARKER_VALUE) return;
+
+  db.transaction((tx) => {
+    const rows = tx.select().from(aiRoleSettings).all();
+    const existing = rows.find((row) => row.role === 'title');
+    if (!existing) {
+      tx.insert(aiRoleSettings)
+        .values({
+          role: 'title',
+          mode: 'inherit',
+          provider: null,
+          modelId: null,
+          thinkingLevel: null,
+          updatedAt: new Date().toISOString(),
+        })
+        .run();
+    }
+
+    tx.insert(appMeta)
+      .values({ key: TITLE_MODEL_MARKER_KEY, value: ENV_IMPORT_MARKER_VALUE })
+      .onConflictDoUpdate({
+        target: appMeta.key,
+        set: { value: ENV_IMPORT_MARKER_VALUE },
+      })
+      .run();
+  });
+}
+
 export function initAiSettings(
   db: Db,
   opts?: {
@@ -242,6 +277,7 @@ export function initAiSettings(
   runEnvImport(db, box, opts?.env ?? process.env);
   runPrimaryModelMigration(db);
   runMemoryModelMigration(db);
+  runTitleModelMigration(db);
   setActiveSettingsStore(createSettingsStore(db));
   const credentials = createCredentialStore(db, box, { codexAuthPath: opts?.codexAuthPath });
   const models = initModelsRuntime(credentials);

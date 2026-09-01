@@ -101,7 +101,6 @@ export interface ChatDeps {
   writeAnnotations?: (symbol: string, annotations: Annotation[]) => Promise<void>;
   genId?: () => string;
   agentFactory?: AiAgentFactory;
-  timeoutMs?: number;
   now?: () => number;
   repoRoot?: string;
   disciplineText?: string;
@@ -331,7 +330,6 @@ function prepareTurn(
   return {
     model,
     agentFactory: deps.agentFactory,
-    timeoutMs: deps.timeoutMs,
     now: deps.now,
     store: {
       getSession: () => getSessionByChartId(chartId),

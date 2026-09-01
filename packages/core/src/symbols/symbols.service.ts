@@ -12,6 +12,7 @@ import { setSymbolFollowing, symbolFollowState } from '../ai/personas/follows.js
 import { symbolsRoutes, type SymbolsApi } from '../contract/symbols.js';
 import { JOURNAL_DIR, STOCKS_DIR } from '../platform/env.js';
 import { ClientError } from '../platform/errors.js';
+import { parseDateYmd, parseJournalName } from '../platform/zodInput.js';
 import { normalizeQuote } from '../realtime/quotes.js';
 import { buildBenchmark } from '../cockpit/benchmark.js';
 import { entryPlanFromDoc, latestIntradayDoc } from '../cockpit/entryPlan.js';
@@ -35,9 +36,7 @@ import { marketOf, noteFileName, normalizeSymbol } from './symbol.utils.js';
 const NEWS_TTL_MS = 5 * 60_000;
 const newsCache = new Map<string, { at: number; items: NewsItem[] }>();
 
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const JOURNAL_FILE_RE = /^(\d{4}-\d{2}-\d{2})-([\w-]+)\.md$/;
-const JOURNAL_NAME_RE = /^\d{4}-\d{2}-\d{2}-[\w-]+\.md$/;
 const BENCHMARK_SYMBOLS = ['SMH.US', 'QQQ.US'];
 
 export const symbolsService: SymbolsApi = withFeatureGates(symbolsRoutes, {
@@ -141,10 +140,7 @@ export const symbolsService: SymbolsApi = withFeatureGates(symbolsRoutes, {
 
   async comments(input) {
     const sym = normalizeSymbol(input.sym);
-    const date = input.date ?? easternDate();
-    if (!DATE_RE.test(date)) {
-      throw new ClientError(`invalid date: ${date}`, 'expected YYYY-MM-DD');
-    }
+    const date = parseDateYmd(input.date ?? easternDate());
     return listComments(sym, date);
   },
 
@@ -189,9 +185,7 @@ export const symbolsService: SymbolsApi = withFeatureGates(symbolsRoutes, {
   },
 
   async journalEntry(input) {
-    if (!JOURNAL_NAME_RE.test(input.name)) {
-      throw new ClientError(`invalid journal name: ${input.name}`, 'expected YYYY-MM-DD-<slug>.md');
-    }
+    parseJournalName(input.name);
     const path = join(JOURNAL_DIR, input.name);
     try {
       const [markdown, stat] = await Promise.all([fs.readFile(path, 'utf8'), fs.stat(path)]);

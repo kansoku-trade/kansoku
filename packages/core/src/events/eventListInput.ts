@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import type { MarketEventClass } from '@kansoku/shared/types';
 import { ClientError } from '../platform/errors.js';
 import { normalizeSymbol } from '../symbols/symbol.utils.js';
@@ -7,7 +8,7 @@ export const DEFAULT_EVENT_LIST_LIMIT = 200;
 // caller (a canvas backfill) asks for a few hundred.
 export const MAX_EVENT_LIST_LIMIT = 500;
 
-const EVENT_CLASSES: MarketEventClass[] = [
+const EVENT_CLASSES: [MarketEventClass, ...MarketEventClass[]] = [
   'macro',
   'earnings',
   'filing',
@@ -41,12 +42,15 @@ export interface NormalizedEventListInput {
   limit: number;
 }
 
+const stringSchema = z.string();
+const classSchema = z.enum(EVENT_CLASSES);
+const limitSchema = z.number().int().positive().max(MAX_EVENT_LIST_LIMIT);
+
 function optionalText(value: unknown, field: string): string | undefined {
   if (value === undefined || value === null) return undefined;
-  if (typeof value !== 'string') {
-    throw new ClientError(`invalid ${field}`, 'expected a string');
-  }
-  const text = value.trim();
+  const result = stringSchema.safeParse(value);
+  if (!result.success) throw new ClientError(`invalid ${field}`, 'expected a string');
+  const text = result.data.trim();
   return text === '' ? undefined : text;
 }
 
@@ -62,23 +66,25 @@ function parseInstant(value: unknown, field: string): string | undefined {
 
 function parseLimit(value: unknown): number {
   if (value === undefined || value === null || value === '') return DEFAULT_EVENT_LIST_LIMIT;
-  const limit = typeof value === 'number' ? value : Number(optionalText(value, 'limit'));
-  if (!Number.isInteger(limit) || limit <= 0 || limit > MAX_EVENT_LIST_LIMIT) {
+  const raw = typeof value === 'number' ? value : Number(optionalText(value, 'limit'));
+  const result = limitSchema.safeParse(raw);
+  if (!result.success) {
     throw new ClientError(
       'invalid limit',
       `expected an integer between 1 and ${MAX_EVENT_LIST_LIMIT}`,
     );
   }
-  return limit;
+  return result.data;
 }
 
 function parseClass(value: unknown): MarketEventClass | undefined {
   const text = optionalText(value, 'class');
   if (text === undefined) return undefined;
-  if (!(EVENT_CLASSES as string[]).includes(text)) {
+  const result = classSchema.safeParse(text);
+  if (!result.success) {
     throw new ClientError('invalid event class', `expected one of ${EVENT_CLASSES.join(', ')}`);
   }
-  return text as MarketEventClass;
+  return result.data;
 }
 
 // One gate for both transports: the HTTP controller and the desktop IPC service

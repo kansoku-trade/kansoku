@@ -2,6 +2,8 @@ import type { ChartDoc, IntradayPrediction, RawBar, TimeframeKey } from '@kansok
 import { chartUrl } from '../platform/chartUrl.js';
 import type { ChartsApi } from '../contract/charts.js';
 import { ClientError } from '../platform/errors.js';
+import { parseClientInput } from '../platform/zodInput.js';
+import { z } from 'zod';
 import { mergeFreshBars } from '../realtime/candleMerge.js';
 import { ALL_TYPES, buildChart, mergeForPatch, rebuild, refreshBody } from './build.js';
 import { clampViewCount } from '../analysis/history.js';
@@ -12,6 +14,15 @@ import { createChart, deleteChart, listCharts, loadChart, saveChart } from './st
 import { buildViewTimeframe } from './viewTimeframe.js';
 import { localizeChartDocName } from '../symbols/securityName.js';
 import { featureStateSync } from '../pro/features.js';
+
+const viewCountSchema = z.union([z.string(), z.number()]).transform((value, ctx) => {
+  const count = clampViewCount(String(value));
+  if (count === null) {
+    ctx.addIssue({ code: 'custom', message: '`count` must be a positive integer' });
+    return z.NEVER;
+  }
+  return count;
+});
 
 function assertPredictionValid(prediction: unknown): void {
   if (prediction == null) return;
@@ -96,9 +107,7 @@ export const chartsService: ChartsApi = {
         400,
       );
     }
-    const count = clampViewCount(input.count === undefined ? undefined : String(input.count));
-    if (count === null)
-      throw new ClientError('`count` must be a positive integer', 'e.g. ?count=300', 400);
+    const count = parseClientInput(viewCountSchema, input.count, 'e.g. ?count=300');
     const body = refreshBody(doc.type, doc.input);
     if (!body) throw new ClientError('chart has no symbol to refetch', undefined, 400);
     const result = await buildChart({ ...body, count, title: doc.title });

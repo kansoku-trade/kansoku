@@ -329,6 +329,7 @@ interface MentionState {
 
 export function AssistantConversation({
   sessionId,
+  sessionTitle,
   refreshSessions,
   mentionCandidates,
   modelChoices,
@@ -339,6 +340,7 @@ export function AssistantConversation({
   onModelChange,
 }: {
   sessionId: string;
+  sessionTitle?: string;
   refreshSessions: () => void;
   mentionCandidates: MentionCandidate[];
   modelChoices: AssistantModelChoice[];
@@ -365,6 +367,10 @@ export function AssistantConversation({
     if (wasBusyRef.current && !busy) refreshSessions();
     wasBusyRef.current = busy;
   }, [busy, refreshSessions]);
+
+  useEffect(() => {
+    if (session?.title) refreshSessions();
+  }, [session?.title, refreshSessions]);
 
   const doSend = async (value: string) => {
     const trimmed = value.trim();
@@ -507,7 +513,7 @@ export function AssistantConversation({
       <div className={`assistant-conversation ${stylex.props(styles.conversation).className}`}>
         <div className={`assistant-conversation-head ${stylex.props(styles.head).className}`}>
           <span className={`assistant-conversation-title ${stylex.props(styles.title).className}`}>
-            {session?.title ?? '新的会话'}
+            {sessionTitle ?? session?.title ?? '新的会话'}
           </span>
         </div>
         <ConversationTranscript

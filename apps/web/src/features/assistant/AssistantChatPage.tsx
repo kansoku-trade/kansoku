@@ -58,7 +58,7 @@ function assistantRoute(id: string | null): string {
 
 export function AssistantChatPage() {
   useTitle('AI 对话');
-  const { sessions, loading, error, refresh, create, remove } = useAssistantSessions();
+  const { sessions, loading, error, refresh, create, rename, remove } = useAssistantSessions();
   const requestedId = useQueryParam('session');
   const activeId = resolveActiveSessionId(requestedId, sessions);
 
@@ -135,6 +135,7 @@ export function AssistantChatPage() {
         error={error}
         onSelect={(id) => navigate(assistantRoute(id))}
         onCreate={() => void handleCreate()}
+        onRename={(id, title) => void rename(id, title)}
         onDelete={(id) => void handleDelete(id)}
       />
       <div {...stylex.props(styles.main)}>
@@ -142,6 +143,7 @@ export function AssistantChatPage() {
           <AssistantConversation
             key={activeId}
             sessionId={activeId}
+            sessionTitle={sessions.find((session) => session.id === activeId)?.title}
             refreshSessions={refresh}
             mentionCandidates={mentionCandidates}
             modelChoices={modelChoices}

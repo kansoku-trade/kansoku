@@ -19,7 +19,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "electron-sparkle-updater": "^0.1.0"
+    "electron-sparkle-updater": "^0.1.0",
+    "zod": "^4.5.4"
   },
   "devDependencies": {
     "@electron/asar": "^3.4.1",
@@ -39,6 +40,7 @@
     "tsdown": "^0.22.13",
     "typescript": "^7.0.2",
     "vite": "^8.1.5",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.10",
+    "zod-compiler": "^2.0.0"
   }
 }

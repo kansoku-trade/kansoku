@@ -1,25 +1,29 @@
 import { eq } from 'drizzle-orm';
 import type { Db } from '../db/index.js';
 import { appMeta } from '../db/schema.js';
+import { z } from 'zod';
 import { ClientError } from '../platform/errors.js';
 import type { LongbridgeRegionPreference } from './longbridgeEndpoints.js';
 
 const REGION_PREFERENCE_KEY = 'longbridge_region_v1';
-const VALID_PREFERENCES: LongbridgeRegionPreference[] = ['auto', 'com', 'cn'];
+const VALID_PREFERENCES: [LongbridgeRegionPreference, ...LongbridgeRegionPreference[]] = [
+  'auto',
+  'com',
+  'cn',
+];
+const regionSchema = z.enum(VALID_PREFERENCES);
 
 export const DEFAULT_LONGBRIDGE_REGION_PREFERENCE: LongbridgeRegionPreference = 'auto';
 
 export function validateLongbridgeRegionPreference(input: unknown): LongbridgeRegionPreference {
-  if (
-    typeof input !== 'string' ||
-    !VALID_PREFERENCES.includes(input as LongbridgeRegionPreference)
-  ) {
+  const result = regionSchema.safeParse(input);
+  if (!result.success) {
     throw new ClientError(
       `invalid longbridge region preference: ${String(input)}`,
       `expected one of ${VALID_PREFERENCES.join(', ')}`,
     );
   }
-  return input as LongbridgeRegionPreference;
+  return result.data;
 }
 
 function parsePreference(raw: string | undefined): LongbridgeRegionPreference {

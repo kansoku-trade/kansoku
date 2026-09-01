@@ -2,11 +2,13 @@ import type { AgentMessage } from '@earendil-works/pi-agent-core';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   appendAssistantMessages,
+  assignGeneratedAssistantTitle,
   createAssistantSession,
   deleteAssistantSession,
   getAssistantSession,
   listAssistantMessages,
   listAssistantSessions,
+  updateAssistantSessionTitle,
 } from '../src/ai/assistant/assistantChatStore.js';
 import { createDb, type Db } from '../src/db/index.js';
 
@@ -83,6 +85,22 @@ describe('assistant chat store', () => {
 
     const sessions = await listAssistantSessions(db);
     expect(sessions.map((s) => s.id)).toEqual([first.id, second.id]);
+  });
+
+  it('updates a session title', async () => {
+    const session = await createAssistantSession({ title: '新对话' }, db);
+    const updated = await updateAssistantSessionTitle(session.id, 'MU 盘前', db);
+    expect(updated?.title).toBe('MU 盘前');
+    expect((await getAssistantSession(session.id, db))?.title).toBe('MU 盘前');
+  });
+
+  it('assigns a generated title only while the placeholder remains', async () => {
+    const session = await createAssistantSession({ title: '新对话' }, db);
+    const assigned = await assignGeneratedAssistantTitle(session.id, 'MU 盘前', db);
+    expect(assigned?.title).toBe('MU 盘前');
+
+    const skipped = await assignGeneratedAssistantTitle(session.id, '别的标题', db);
+    expect(skipped?.title).toBe('MU 盘前');
   });
 
   it('deletes a session and its messages without touching other sessions', async () => {

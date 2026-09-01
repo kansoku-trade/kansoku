@@ -11,9 +11,8 @@ import { buildChatSuggestions, type ChatSuggestionDeps } from './chatSuggestions
 import { aiConfig } from '../runtime/models.js';
 import type { ChatApi } from '../../contract/chat.js';
 import { ClientError } from '../../platform/errors.js';
+import { clientMessageSchema, parseClientInput } from '../../platform/zodInput.js';
 import { loadChart } from '../../charts/store.js';
-
-const MAX_TEXT_LENGTH = 4000;
 
 function isIntradayChart(doc: ChartDoc): boolean {
   return doc.built.kind === 'intraday' && !!doc.symbol;
@@ -51,14 +50,8 @@ export const chatService: ChatApi = {
   },
 
   async postMessage(input) {
-    if (!input.text.trim() || input.text.length > MAX_TEXT_LENGTH) {
-      throw new ClientError(
-        '`text` must be a non-empty string of at most 4000 characters',
-        'e.g. {"text": "..."}',
-      );
-    }
-
-    const result = await runChatTurn(input.id, input.text, buildDeps());
+    const text = parseClientInput(clientMessageSchema, input.text, 'e.g. {"text": "..."}');
+    const result = await runChatTurn(input.id, text, buildDeps());
     if (result.started) {
       result.done.catch((err) => console.error('chat: turn failed', err));
       return { status: 202, body: { accepted: true } };

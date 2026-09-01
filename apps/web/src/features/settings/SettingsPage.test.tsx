@@ -76,6 +76,7 @@ const preEndpointsSettings: PersistedAiSettings = {
     chat: disabled,
     memory: disabled,
     casePick: disabled,
+    title: disabled,
   },
   credentials: [],
   masterKey: 'missing',
@@ -98,6 +99,7 @@ function mockSettingsPageQueries(settings: PersistedAiSettings) {
       deepDive: { calls: 0, cost: 0 },
       chat: { calls: 0, cost: 0 },
       memory: { calls: 0, cost: 0 },
+      title: { calls: 0, cost: 0 },
     },
     total: { calls: 0, cost: 0 },
   });

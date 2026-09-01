@@ -1,7 +1,7 @@
 import type { Market } from '@kansoku/shared/time';
 
 export type RoleMode = 'custom' | 'disabled' | 'inherit';
-export type Role = 'comment' | 'analyst' | 'deepDive' | 'chat' | 'memory' | 'casePick';
+export type Role = 'comment' | 'analyst' | 'deepDive' | 'chat' | 'memory' | 'casePick' | 'title';
 
 export interface RoleSetting {
   mode: RoleMode;
@@ -67,7 +67,15 @@ export interface Catalog {
   providers: CatalogProvider[];
 }
 
-export const ROLES: Role[] = ['comment', 'analyst', 'deepDive', 'chat', 'memory', 'casePick'];
+export const ROLES: Role[] = [
+  'comment',
+  'analyst',
+  'deepDive',
+  'chat',
+  'memory',
+  'casePick',
+  'title',
+];
 
 function defaultRoleSetting(role: Role | 'primary'): RoleSetting {
   return {
@@ -95,7 +103,7 @@ export type PersistedAiSettings = Omit<AiSettings, 'roles' | 'endpoints'> & {
 // react-query persists settings.getAi responses to localStorage
 // (queryClient.ts) and restores them before the live refetch lands, so
 // anything added after a user's last persisted snapshot — the 'memory' role
-// (2026-07-20), `endpoints` (2026-07-29) — is briefly absent on app launch.
+// (2026-07-20), `endpoints` (2026-07-29), the 'title' role — is briefly absent on app launch.
 // Normalize the whole snapshot here so consumers can index it directly; a
 // consumer reading a new field off the raw snapshot crashes the settings page
 // for everyone upgrading from the previous release.
@@ -114,6 +122,7 @@ export const ROLE_LABEL: Record<Role, string> = {
   chat: '追问',
   memory: '记忆整理',
   casePick: '案例精选',
+  title: '会话标题',
 };
 
 export const CODEX_PROVIDER = 'openai-codex';

@@ -29,6 +29,7 @@
     "@types/ws": "^8.18.1",
     "typescript": "^7.0.2",
     "vite-node": "^6.0.0",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.10",
+    "zod-compiler": "^2.0.0"
   }
 }

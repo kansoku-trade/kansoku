@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 import { isProModule, proLeakGuard, proOverlayPlugin } from '@kansoku/build-overlay';
+import zodCompiler from 'zod-compiler/vite';
 
 const desktopDir = fileURLToPath(new URL('.', import.meta.url));
 const overlayRoot = fileURLToPath(new URL('../pro/overlays', import.meta.url));
@@ -71,6 +72,7 @@ export default defineConfig({
     },
   },
   plugins: [
+    zodCompiler(),
     ...(proPresent ? [proOverlayPlugin({ overlayRoot })] : []),
     proLeakGuard({ proDir: PRO_CHUNK_DIR, overlayRoot: proPresent ? overlayRoot : undefined }),
   ],

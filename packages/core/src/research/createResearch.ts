@@ -7,12 +7,15 @@ import { chartsService } from '../charts/charts.service.js';
 import { loadChart } from '../charts/store.js';
 import { PROJECT_ROOT } from '../platform/env.js';
 import { ClientError } from '../platform/errors.js';
+import { parseDateYmd } from '../platform/zodInput.js';
 import { noteFileName } from '../symbols/symbol.utils.js';
+import { z } from 'zod';
 import { createResearchService, writeMarkdownFileAtomic } from './research.service.js';
 import { journalSkeleton, stockSkeleton } from './templates.js';
 
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const UNSAFE_PATH_CHARS_RE = /[\\/:*?"<>|\p{Cc}]/gu;
+const createKindSchema = z.enum(['stock', 'journal']);
+const requiredStringSchema = z.string();
 const MAX_SLUG_LENGTH = 60;
 
 export interface CreateResearchDeps {
@@ -46,7 +49,7 @@ async function createStockDocument(
   symbol: string,
   deps: CreateResearchDeps,
 ): Promise<ResearchCreateResult> {
-  if (typeof symbol !== 'string') {
+  if (!requiredStringSchema.safeParse(symbol).success) {
     throw new ClientError('research stock symbol is required', 'expected a string "symbol" field');
   }
   const fileSymbol = noteFileName(symbol);
@@ -76,16 +79,13 @@ async function createJournalDocument(
   input: { title: string; date?: string },
   deps: CreateResearchDeps,
 ): Promise<ResearchCreateResult> {
-  if (typeof input.title !== 'string') {
+  if (!requiredStringSchema.safeParse(input.title).success) {
     throw new ClientError(
       'research journal title is required',
       'expected a string "title" field',
     );
   }
-  const date = input.date ?? localToday();
-  if (!DATE_RE.test(date)) {
-    throw new ClientError(`invalid date: ${date}`, 'expected YYYY-MM-DD');
-  }
+  const date = parseDateYmd(input.date ?? localToday());
   const slug = journalSlug(input.title);
   if (!slug) {
     throw new ClientError(
@@ -112,11 +112,7 @@ export async function createResearchDocument(
   input: ResearchCreateInput,
   deps: CreateResearchDeps,
 ): Promise<ResearchCreateResult> {
-  if (
-    input === null ||
-    typeof input !== 'object' ||
-    (input.kind !== 'stock' && input.kind !== 'journal')
-  ) {
+  if (input === null || typeof input !== 'object' || !createKindSchema.safeParse(input.kind).success) {
     throw new ClientError('invalid research kind', 'expected kind "stock" or "journal"');
   }
   if (input.kind === 'stock') return createStockDocument(input.symbol, deps);

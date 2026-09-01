@@ -22,6 +22,7 @@ export type AiConfig = {
   chatModel: AiModel | null;
   memoryModel: AiModel | null;
   casePickModel: AiModel | null;
+  titleModel: AiModel | null;
 };
 
 type ModelLookup = (provider: string, id: string) => AiModel | undefined;
@@ -95,5 +96,6 @@ export function aiConfig(): AiConfig {
     chatModel: resolve('chat'),
     memoryModel: resolve('memory'),
     casePickModel: resolve('casePick'),
+    titleModel: resolve('title'),
   };
 }

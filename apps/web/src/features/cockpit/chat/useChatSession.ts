@@ -63,6 +63,7 @@ interface ChatEnvelope {
 type ChatWsEvent =
   | { event: 'delta'; text: string }
   | { event: 'tool'; label: string; status: 'start' | 'end'; input?: string; output?: string }
+  | { event: 'title'; title: string }
   | { event: 'done' }
   | { event: 'aborted' }
   | { event: 'error'; message: string };
@@ -263,6 +264,10 @@ function useConversationSession(
             return;
           }
           setLiveBeats((prev) => applyLiveBeat(prev, evt, `tool-${toolSeqRef.current}`));
+          return;
+        }
+        if (evt.event === 'title') {
+          setSession((prev) => (prev ? { ...prev, title: evt.title } : prev));
           return;
         }
         if (evt.event === 'aborted') {

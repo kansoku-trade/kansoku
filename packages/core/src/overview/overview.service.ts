@@ -8,7 +8,7 @@ import { chartUrl } from '../platform/chartUrl.js';
 import { listAllCommentDates, listComments } from '../ai/personas/comments.js';
 import { listUsage, listUsageDates, summarizeUsage } from '../ai/runtime/usageStore.js';
 import type { OverviewApi } from '../contract/overview.js';
-import { ClientError } from '../platform/errors.js';
+import { parseDateYmd } from '../platform/zodInput.js';
 import { normalizeQuote } from '../realtime/quotes.js';
 import { buildOverviewBoard, latestPerSymbol } from '../cockpit/board.js';
 import {
@@ -25,7 +25,6 @@ import { easternDate } from '../marketdata/session.js';
 import { listCharts, loadChart } from '../charts/store.js';
 import { marketOf } from '../symbols/symbol.utils.js';
 
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const OUTCOME_BARS = 300;
 const DAILY_BARS = 30;
 const RECAP_TTL_MS = 60_000;
@@ -158,9 +157,7 @@ async function buildRecap(date: string): Promise<OverviewRecap> {
 }
 
 function assertDate(date: string): void {
-  if (!DATE_RE.test(date)) {
-    throw new ClientError(`invalid date: ${date}`, 'expected YYYY-MM-DD');
-  }
+  parseDateYmd(date);
 }
 
 export const overviewService: OverviewApi = {

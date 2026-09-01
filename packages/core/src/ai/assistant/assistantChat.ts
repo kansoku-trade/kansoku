@@ -6,10 +6,18 @@ import { buildResearchTools } from '../agents/agentTools/researchTools.js';
 import type { AiAgentFactory } from '../agents/agentSession.js';
 import {
   appendAssistantMessages,
+  assignGeneratedAssistantTitle,
   type AssistantSession,
   getAssistantSession,
   listAssistantMessages,
 } from './assistantChatStore.js';
+import {
+  generateSessionTitle,
+  sanitizeGeneratedTitle,
+  shouldAssignGeneratedTitle,
+} from './sessionTitle.js';
+import { titleFromText } from '../conversation/conversationStore.js';
+import { aiConfig } from '../runtime/models.js';
 import type { ChatEvent } from '../chat/chat.js';
 import {
   type ConversationPreparedTurn,
@@ -28,10 +36,12 @@ import { prepareProAiTurn } from '../../pro/aiExtension.js';
 
 export interface AssistantChatDeps {
   model: AiModel | null;
+  titleModel?: AiModel | null;
+  generateTitle?: (text: string) => Promise<string>;
   rootDir?: string;
   db?: Db;
   agentFactory?: AiAgentFactory;
-  timeoutMs?: number;
+  titleAgentFactory?: AiAgentFactory;
   disciplineText?: string;
   exec?: ExecFn;
 }
@@ -44,7 +54,7 @@ function buildSystemPrompt(disciplineText: string): string {
   const own = [
     "You are Kansoku's repository-level general research assistant. You are not attached to a chart or a research document.",
     'You have read-only bash access for the longbridge CLI and .claude/skills/**/scripts/*.py scripts to inspect market, macro, and file data. You can also read repository files and complete skills, and search and read research-library documents.',
-    'When the user wants a custom chart or panel: read_skill(name="canvas") first — its layout skeleton is mandatory and save_canvas refuses until you have read it. Then fetch the numbers, embed them, and call save_canvas. Read an existing canvas with read_canvas before editing the same slug.',
+    'When the user wants a custom chart or panel: read_skill(name="canvas") first — its layout skeleton is mandatory and save_canvas refuses until you have read it. Then fetch the numbers, embed them, and call save_canvas. Read an existing canvas with read_canvas before editing the same slug. Free builds may keep at most 3 canvases; overwrite an existing slug, or tell the user to upgrade to Pro for more.',
     'When a user message contains an @path (for example, @stocks/MU.md), read that file with the file-reading tool before answering.',
     'Cite the file path for conclusions drawn from files, and state the retrieval timestamp when citing live data.',
   ].join('\n');
@@ -61,7 +71,6 @@ function prepareTurn(
   return {
     model,
     agentFactory: deps.agentFactory,
-    timeoutMs: deps.timeoutMs,
     store: {
       getSession: () => getAssistantSession(sessionId, deps.db),
       createSession: () => Promise.resolve(session),
@@ -133,10 +142,52 @@ export function abortAssistantChatTurn(sessionId: string): boolean {
   return engine.abort(sessionId);
 }
 
-export function runAssistantChatTurn(
+function resolveTitleModel(deps: AssistantChatDeps): AiModel | null {
+  if (deps.titleModel !== undefined) return deps.titleModel;
+  try {
+    return aiConfig().titleModel;
+  } catch {
+    return null;
+  }
+}
+
+async function assignSessionTitle(
+  sessionId: string,
+  text: string,
+  deps: AssistantChatDeps,
+): Promise<void> {
+  const session = await getAssistantSession(sessionId, deps.db);
+  if (!session || !shouldAssignGeneratedTitle(session.title)) return;
+
+  const fallback = titleFromText(text);
+  let title = fallback;
+  try {
+    title = deps.generateTitle
+      ? sanitizeGeneratedTitle(await deps.generateTitle(text), fallback)
+      : await generateSessionTitle(text, {
+          model: resolveTitleModel(deps),
+          agentFactory: deps.titleAgentFactory,
+        });
+  } catch (error) {
+    console.warn('assistant chat: title generation failed', error);
+    title = fallback;
+  }
+
+  const updated = await assignGeneratedAssistantTitle(sessionId, title, deps.db);
+  if (updated?.title === title) {
+    engine.emit(sessionId, { event: 'title', title });
+  }
+}
+
+export async function runAssistantChatTurn(
   sessionId: string,
   text: string,
   deps: AssistantChatDeps,
 ): Promise<AssistantChatStartResult> {
-  return engine.run(sessionId, text, deps);
+  const result = await engine.run(sessionId, text, deps);
+  if (!result.started) return result;
+  const titled = assignSessionTitle(sessionId, text, deps).catch((error) => {
+    console.warn('assistant chat: title generation failed', error);
+  });
+  return { started: true, done: Promise.all([result.done, titled]).then(() => undefined) };
 }

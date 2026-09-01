@@ -1,23 +1,36 @@
 import type { Api, Model, ModelThinkingLevel, MutableModels } from '@earendil-works/pi-ai';
 import { getSupportedThinkingLevels } from '@earendil-works/pi-ai';
+import { z } from 'zod';
 import { ClientError } from '../platform/errors.js';
 import { SINGLE_KEY_PROVIDERS } from '../ai/runtime/modelsRuntime.js';
 import { LOBEHUB_PROVIDER } from '../ai/lobehub/types.js';
 import type { AiRole, RoleMode, RoleSetting } from '../ai/settings/settingsStore.js';
 
 export const CODEX_PROVIDER = 'openai-codex';
-export const ROLES: AiRole[] = ['primary', 'comment', 'analyst', 'deepDive', 'chat', 'memory'];
-const MODES: RoleMode[] = ['custom', 'disabled', 'inherit'];
+export const ROLES: AiRole[] = [
+  'primary',
+  'comment',
+  'analyst',
+  'deepDive',
+  'chat',
+  'memory',
+  'title',
+];
+const MODES: [RoleMode, ...RoleMode[]] = ['custom', 'disabled', 'inherit'];
+const roleSchema = z.enum(ROLES as [AiRole, ...AiRole[]]);
+const modeSchema = z.enum(MODES);
+const nonEmptyStringSchema = z.string().min(1);
 
 export function allowedProviders(): string[] {
   return [...SINGLE_KEY_PROVIDERS, CODEX_PROVIDER, LOBEHUB_PROVIDER];
 }
 
 export function parseRole(raw: string): AiRole {
-  if (!ROLES.includes(raw as AiRole)) {
+  const result = roleSchema.safeParse(raw);
+  if (!result.success) {
     throw new ClientError(`unknown role: ${raw}`, `expected one of ${ROLES.join(', ')}`);
   }
-  return raw as AiRole;
+  return result.data;
 }
 
 interface CustomRefBody {
@@ -43,10 +56,11 @@ export function validateCustomRef(body: CustomRefBody, models: MutableModels): V
     );
   }
 
-  const modelId = body.modelId;
-  if (typeof modelId !== 'string' || !modelId) {
+  const modelIdResult = nonEmptyStringSchema.safeParse(body.modelId);
+  if (!modelIdResult.success) {
     throw new ClientError('"modelId" is required for mode "custom"');
   }
+  const modelId = modelIdResult.data;
 
   const model = models.getModel(provider, modelId);
   if (!model) {
@@ -80,10 +94,11 @@ export function validateRoleSetting(
   body: RoleSettingBody,
   models: MutableModels,
 ): RoleSetting {
-  const mode = body.mode;
-  if (typeof mode !== 'string' || !MODES.includes(mode as RoleMode)) {
-    throw new ClientError(`unknown mode: ${String(mode)}`, `expected one of ${MODES.join(', ')}`);
+  const modeResult = modeSchema.safeParse(body.mode);
+  if (!modeResult.success) {
+    throw new ClientError(`unknown mode: ${String(body.mode)}`, `expected one of ${MODES.join(', ')}`);
   }
+  const mode = modeResult.data;
   if (mode === 'inherit' && role === 'primary') {
     throw new ClientError(
       'mode "inherit" is not allowed for role "primary"',

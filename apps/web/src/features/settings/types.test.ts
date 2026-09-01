@@ -26,6 +26,7 @@ describe('normalizeAiRoles', () => {
       chat: configured,
       memory: configured,
       casePick: configured,
+      title: configured,
     };
 
     expect(normalizeAiRoles(roles)).toEqual(roles);

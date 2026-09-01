@@ -1,9 +1,5 @@
 import type { AgentEvent, AgentMessage, AgentTool } from '@earendil-works/pi-agent-core';
-import {
-  AgentTimeoutError,
-  type AiAgentFactory,
-  createAgentSession,
-} from '../agents/agentSession.js';
+import { type AiAgentFactory, createAgentSession } from '../agents/agentSession.js';
 import {
   agentToolResultText,
   concatAssistantText,
@@ -18,11 +14,10 @@ import type { AiModel } from '../runtime/models.js';
 import { createRunLock } from '../agents/runLock.js';
 import type { AiUsageLogContext } from '../runtime/usage.js';
 
-const DEFAULT_TIMEOUT_MS = 180_000;
-
 export type ConversationEvent =
   | { event: 'delta'; text: string }
   | { event: 'tool'; label: string; status: 'start' | 'end'; input?: string; output?: string }
+  | { event: 'title'; title: string }
   | { event: 'done' }
   | { event: 'aborted' }
   | { event: 'error'; message: string };
@@ -57,7 +52,6 @@ export interface ConversationPreparedTurn {
   store: ConversationTurnStore;
   buildTurn(sessionId: string): Promise<ConversationTurnPlan>;
   agentFactory?: AiAgentFactory;
-  timeoutMs?: number;
   now?: () => number;
 }
 
@@ -70,7 +64,6 @@ export type ConversationStartResult<TReason extends string> =
 export interface ConversationEngineConfig<TInput, TReason extends string> {
   layer: AiUsageLogContext['layer'];
   logLabels: { persistFailure: string; preTurnFailure: string };
-  defaultTimeoutMs?: number;
   prepare(key: string, text: string, input: TInput): Promise<ConversationPrepareResult<TReason>>;
 }
 
@@ -78,6 +71,7 @@ export interface ConversationEngine<TInput, TReason extends string> {
   onEvent(key: string, listener: (event: ConversationEvent) => void): () => void;
   turnState(key: string): { busy: boolean; partial: string };
   abort(key: string): boolean;
+  emit(key: string, event: ConversationEvent): void;
   run(key: string, text: string, input: TInput): Promise<ConversationStartResult<TReason>>;
 }
 
@@ -207,7 +201,6 @@ export function createConversationEngine<TInput, TReason extends string>(
     turn: ConversationPreparedTurn,
     state: TurnState,
   ): Promise<void> {
-    const timeoutMs = turn.timeoutMs ?? config.defaultTimeoutMs ?? DEFAULT_TIMEOUT_MS;
     try {
       const nowFn = turn.now ?? Date.now;
 
@@ -260,10 +253,7 @@ export function createConversationEngine<TInput, TReason extends string>(
       };
 
       try {
-        await agentSession.runTurn(
-          plan.gate ? `${text}\n\n${plan.gate.instruction}` : text,
-          timeoutMs,
-        );
+        await agentSession.runTurn(plan.gate ? `${text}\n\n${plan.gate.instruction}` : text);
 
         // One explicit retry: a rejected submit only returns a tool result, so without an outer
         // nudge the model is free to give up and ship nothing.
@@ -273,7 +263,7 @@ export function createConversationEngine<TInput, TReason extends string>(
           !state.aborted &&
           !agentSession.agent.state?.errorMessage
         ) {
-          await agentSession.runTurn(plan.gate.retryInstruction, timeoutMs);
+          await agentSession.runTurn(plan.gate.retryInstruction);
         }
 
         translatorCtx.settled = true;
@@ -339,12 +329,7 @@ export function createConversationEngine<TInput, TReason extends string>(
           turn.model,
           nowFn(),
         );
-        const message =
-          err instanceof AgentTimeoutError
-            ? `回答超时（${timeoutMs}ms）`
-            : err instanceof Error
-              ? err.message
-              : String(err);
+        const message = err instanceof Error ? err.message : String(err);
         broadcast(key, { event: 'error', message });
       }
     } catch (err) {
@@ -384,5 +369,5 @@ export function createConversationEngine<TInput, TReason extends string>(
     return { started: true, done };
   }
 
-  return { onEvent, turnState, abort, run };
+  return { onEvent, turnState, abort, run, emit: broadcast };
 }
