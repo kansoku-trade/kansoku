@@ -99,4 +99,26 @@ describe('AiTab header wiring', () => {
     expect(screen.getByText('显示 2000-01-01 的点评（今天暂无新点评）')).toBeTruthy();
     expect(screen.queryByTestId('alive-line')).toBeNull();
   });
+
+  it('clusters follow and the date picker so they wrap as one unit', () => {
+    queryImpl = (key) => {
+      if (key?.startsWith('symbols.commentDates')) {
+        return { data: ['2000-01-01'], error: null, loading: false };
+      }
+      return { data: null, error: null, loading: false };
+    };
+
+    const { container } = render(
+      <AiTab symbol="MU.US" comments={liveComments} error={null} loaded analysisRevision="rev1" />,
+    );
+
+    const follow = screen.getByTestId('follow-action');
+    const date = container.querySelector('.ai-date-select');
+    const cluster = container.querySelector('.ai-toolbar-end');
+    expect(date).toBeTruthy();
+    expect(cluster).toBeTruthy();
+    expect(cluster?.contains(follow)).toBe(true);
+    expect(cluster?.contains(date)).toBe(true);
+    expect(cluster?.querySelector('.btn')).toBeNull();
+  });
 });

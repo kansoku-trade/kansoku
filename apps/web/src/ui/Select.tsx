@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import { Select as BaseSelect } from '@base-ui/react/select';
 import { Check, ChevronDown } from 'lucide-react';
 import * as stylex from '@stylexjs/stylex';
@@ -102,6 +103,7 @@ export function Select({
   options,
   onChange,
   className,
+  style,
   disabled = false,
   ariaLabel,
   placeholder,
@@ -111,6 +113,7 @@ export function Select({
   options: SelectOption[];
   onChange: (value: string) => void;
   className?: string;
+  style?: CSSProperties;
   disabled?: boolean;
   ariaLabel?: string;
   placeholder?: string;
@@ -127,6 +130,7 @@ export function Select({
       <BaseSelect.Trigger
         aria-label={ariaLabel}
         className={`ui-select-trigger ${stylex.props(styles.trigger).className}${className ? ` ${className}` : ''}`}
+        style={style}
       >
         <BaseSelect.Value placeholder={placeholder} />
         <BaseSelect.Icon className={`ui-select-icon ${stylex.props(styles.icon).className}`}>

@@ -4,7 +4,7 @@ import { MarketTime } from '@web/ui';
 import { ConversationTranscript } from './ConversationTranscript';
 import type { ChatMode } from './ChatDock';
 import type { ChatLiveBeat, ChatLiveTool, ChatRow, ChatSessionInfo } from './useChatSession';
-import { colors, fontSizes, radii } from '../../../theme/tokens.stylex';
+import { colors, fontSizes } from '../../../theme/tokens.stylex';
 
 interface ChatPanelProps {
   session: ChatSessionInfo | null;
@@ -18,8 +18,6 @@ interface ChatPanelProps {
   mode: ChatMode;
   full?: boolean;
   canvasOpen?: boolean;
-  userBubbleClassName?: string;
-  suggestionClassName?: string;
   onDragStart?: (e: React.PointerEvent) => void;
   onModeChange: (mode: ChatMode) => void;
   onPickSuggestion: (question: string) => void;
@@ -80,20 +78,14 @@ const styles = stylex.create({
     marginLeft: 'auto',
   },
   actionButton: {
-    'alignItems': 'center',
     'backgroundColor': 'transparent',
-    'borderRadius': radii.full,
     'borderStyle': 'none',
     'borderWidth': 0,
     'color': colors.textSecondary,
     'cursor': 'pointer',
     'display': 'flex',
-    'height': '24px',
-    'justifyContent': 'center',
-    'padding': 0,
-    'width': '24px',
+    'padding': '2px',
     ':hover': {
-      backgroundColor: colors.backgroundHover,
       color: colors.textPrimary,
     },
   },
@@ -126,8 +118,6 @@ export function ChatPanel({
   mode,
   full = false,
   canvasOpen = false,
-  userBubbleClassName,
-  suggestionClassName,
   onDragStart,
   onModeChange,
   onPickSuggestion,
@@ -167,10 +157,9 @@ export function ChatPanel({
         className={`chat-panel-body ${stylex.props(styles.body).className}`}
         viewportClassName={stylex.props(styles.bodyViewport).className}
         contentClassName={!full ? stylex.props(styles.bodyContent).className : undefined}
+        variant="panel"
         full={full}
         canvasOpen={canvasOpen}
-        userBubbleClassName={userBubbleClassName}
-        suggestionClassName={suggestionClassName}
         rows={rows}
         busy={busy}
         streamText={streamText}

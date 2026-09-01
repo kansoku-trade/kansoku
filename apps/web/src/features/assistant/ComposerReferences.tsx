@@ -9,7 +9,8 @@ const styles = stylex.create({
     display: 'flex',
     flexWrap: 'wrap',
     gap: '4px 12px',
-    padding: '2px 2px 4px',
+    gridArea: 'refs',
+    padding: '2px 40px 4px 2px',
   },
   reference: {
     alignItems: 'center',

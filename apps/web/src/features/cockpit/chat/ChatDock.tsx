@@ -55,16 +55,10 @@ const styles = stylex.create({
     borderTopWidth: '1px',
   },
   shellField: {
-    borderRadius: radii.composer,
+    borderRadius: radii.md,
   },
   shellAction: {
-    borderRadius: radii.full,
-  },
-  shellBubble: {
-    borderRadius: radii.userBubble,
-  },
-  shellSuggestion: {
-    borderRadius: radii.full,
+    borderRadius: radii.md,
   },
   resize: {
     position: 'absolute',
@@ -161,6 +155,7 @@ export function ChatDock({ chartId, docCreatedAt }: ChatDockProps) {
 
   const composer = (
     <ChatComposer
+      variant="panel"
       value={text}
       onChange={setText}
       busy={busy}
@@ -227,8 +222,6 @@ export function ChatDock({ chartId, docCreatedAt }: ChatDockProps) {
           mode={mode}
           full={mode === 'full'}
           canvasOpen={mode === 'full' && Boolean(canvas.openSlug)}
-          userBubbleClassName={stylex.props(styles.shellBubble).className}
-          suggestionClassName={stylex.props(styles.shellSuggestion).className}
           onDragStart={mode === 'float' ? onDragStart : undefined}
           onModeChange={setMode}
           onPickSuggestion={(question) => void submit(question)}

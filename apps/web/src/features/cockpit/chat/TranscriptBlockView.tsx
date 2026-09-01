@@ -5,6 +5,7 @@ import { Markdown } from '../markdown';
 import { blockKey, type TranscriptBlock } from './presentTranscript.js';
 import { ToolGroupRow, ToolRow } from './ToolCallViews.js';
 import { WorkedFold } from './WorkedFold.js';
+import type { ChatChromeVariant } from './ChatComposer';
 
 const chatThinkingPulse = stylex.keyframes({
   '0%, 100%': { opacity: 0.25 },
@@ -32,7 +33,6 @@ const styles = stylex.create({
     backgroundColor: colors.backgroundElement,
     color: colors.textPrimary,
     padding: '6px 10px',
-    borderRadius: radii.userBubble,
   },
   assistantBubble: {
     maxWidth: '100%',
@@ -91,8 +91,26 @@ const styles = stylex.create({
     borderLeftColor: colors.down,
     borderLeftStyle: 'solid',
     borderLeftWidth: '2px',
+  },
+});
+
+const userBubbleChrome = stylex.create({
+  assistant: {
+    borderRadius: radii.userBubble,
+  },
+  panel: {
+    borderRadius: radii.default,
+  },
+});
+
+const errorRowChrome = stylex.create({
+  assistant: {
     borderRadius: radii.lg,
     padding: '6px 10px',
+  },
+  panel: {
+    borderRadius: radii.default,
+    padding: '6px 8px',
   },
 });
 
@@ -106,12 +124,14 @@ const costFormatter = new Intl.NumberFormat('en-US', {
 
 export function TranscriptBlockView({
   block,
+  variant = 'assistant',
   modelLabels,
   userBubbleClassName,
   insertClassName,
   onOpenCanvas,
 }: {
   block: TranscriptBlock;
+  variant?: ChatChromeVariant;
   modelLabels?: Readonly<Record<string, string>>;
   userBubbleClassName?: string;
   insertClassName?: string;
@@ -121,7 +141,7 @@ export function TranscriptBlockView({
     return (
       <div className={`chat-row chat-row--user ${stylex.props(styles.row, styles.rowUser).className}`}>
         <div
-          className={`chat-bubble chat-bubble--user ${stylex.props(styles.bubble, styles.userBubble).className}${userBubbleClassName ? ` ${userBubbleClassName}` : ''}`}
+          className={`chat-bubble chat-bubble--user ${stylex.props(styles.bubble, styles.userBubble, userBubbleChrome[variant]).className}${userBubbleClassName ? ` ${userBubbleClassName}` : ''}`}
         >
           {block.row.text}
         </div>
@@ -171,6 +191,7 @@ export function TranscriptBlockView({
           <TranscriptBlockView
             key={blockKey(child, index)}
             block={child}
+            variant={variant}
             modelLabels={modelLabels}
             userBubbleClassName={userBubbleClassName}
             insertClassName={insertClassName}
@@ -206,5 +227,11 @@ export function TranscriptBlockView({
       </div>
     );
   }
-  return <div className={`chat-error-row ${stylex.props(styles.errorRow).className}`}>{block.row.text}</div>;
+  return (
+    <div
+      className={`chat-error-row ${stylex.props(styles.errorRow, errorRowChrome[variant]).className}`}
+    >
+      {block.row.text}
+    </div>
+  );
 }

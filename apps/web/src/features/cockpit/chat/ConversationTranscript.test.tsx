@@ -62,6 +62,15 @@ describe('ConversationTranscript chrome', () => {
     });
     expect(document.querySelector('.chat-bubble--user')?.className).toContain('bubble-round');
   });
+
+  it('renders panel suggestions without the assistant chrome class', () => {
+    renderTranscript([], {
+      variant: 'panel',
+      suggestions: ['依据是什么？'],
+    });
+    expect(screen.getByRole('button', { name: '依据是什么？' })).toBeTruthy();
+    expect(document.querySelector('.chat-suggestion')).toBeTruthy();
+  });
 });
 
 describe('ConversationTranscript folding', () => {

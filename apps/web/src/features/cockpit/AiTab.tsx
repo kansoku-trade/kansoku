@@ -30,13 +30,11 @@ const styles = stylex.create({
     color: colors.textSecondary,
     fontSize: fontSizes.sm,
   },
-  dateSelect: {
-    marginLeft: 'auto',
-  },
-  dateSelectAfterFollow: {
-    marginLeft: 'auto',
-  },
-  followControl: {
+  toolbarEnd: {
+    alignItems: 'center',
+    display: 'inline-flex',
+    flexWrap: 'nowrap',
+    gap: '10px',
     marginLeft: 'auto',
   },
   note: {
@@ -142,23 +140,21 @@ export function AiTab({
               <span className={`ai-hint ${stylex.props(styles.hint).className}`}>{run.hint}</span>
             )}
             <ExplainAction symbol={symbol} />
-            {analysisRevision && (
-              <FollowAction
-                symbol={symbol}
-                revision={analysisRevision}
-                className={stylex.props(styles.followControl).className}
-              />
-            )}
-            {pastDates.length > 0 && (
-              <Select
-                className={`ai-date-select ${stylex.props(styles.dateSelect, Boolean(analysisRevision) && styles.dateSelectAfterFollow).className}`}
-                value={selectedDate ?? 'today'}
-                options={[
-                  { value: 'today', label: '今天' },
-                  ...pastDates.map((d) => ({ value: d, label: d })),
-                ]}
-                onChange={(v) => setSelectedDate(v === 'today' ? null : v)}
-              />
+            {(analysisRevision || pastDates.length > 0) && (
+              <div className={`ai-toolbar-end ${stylex.props(styles.toolbarEnd).className}`}>
+                {analysisRevision && <FollowAction symbol={symbol} revision={analysisRevision} />}
+                {pastDates.length > 0 && (
+                  <Select
+                    className="ai-date-select"
+                    value={selectedDate ?? 'today'}
+                    options={[
+                      { value: 'today', label: '今天' },
+                      ...pastDates.map((d) => ({ value: d, label: d })),
+                    ]}
+                    onChange={(v) => setSelectedDate(v === 'today' ? null : v)}
+                  />
+                )}
+              </div>
             )}
           </div>
           {run.status && <AnalysisRunDetails status={run.status} />}

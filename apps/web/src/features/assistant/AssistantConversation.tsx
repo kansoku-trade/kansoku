@@ -3,7 +3,7 @@ import { AtSign } from 'lucide-react';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { SyntheticEvent } from 'react';
 import * as stylex from '@stylexjs/stylex';
-import { Kbd, Select } from '@web/ui';
+import { Select } from '@web/ui';
 import { CanvasSplit } from '../canvas/CanvasSplit';
 import { useCanvasWorkspace } from '../canvas/useCanvasWorkspace';
 import { ChatComposer } from '../cockpit/chat/ChatComposer';
@@ -104,8 +104,12 @@ const styles = stylex.create({
     'borderStyle': 'solid',
     'borderWidth': '1px',
     'overflow': 'hidden',
-    'padding': '6px 8px',
+    'padding': '8px',
     'position': 'relative',
+    'display': 'grid',
+    'gridTemplateColumns': 'minmax(0, 1fr)',
+    'gridTemplateAreas': '"refs" "field" "meta"',
+    'alignItems': 'center',
     'transitionDuration': '120ms',
     'transitionProperty': 'border-color, box-shadow',
     'transitionTimingFunction': 'ease',
@@ -136,12 +140,7 @@ const styles = stylex.create({
     textWrap: 'pretty',
   },
   composerLayout: {
-    alignItems: 'center',
-    gap: '6px',
     padding: 0,
-  },
-  composerLayoutExpanded: {
-    alignItems: 'flex-end',
   },
   composerField: {
     'backgroundColor': 'transparent',
@@ -155,9 +154,10 @@ const styles = stylex.create({
     'height': 'auto',
     'lineHeight': 1.5,
     'maxHeight': '132px',
-    'minHeight': '34px',
+    'minHeight': sizes.controlHeight,
+    'gridArea': 'field',
     'overflowY': 'auto',
-    'padding': '7px 8px 5px',
+    'padding': '4px 40px 4px 8px',
     'resize': 'none',
     'textWrap': 'pretty',
     '::placeholder': {
@@ -189,6 +189,7 @@ const styles = stylex.create({
   },
   composerAction: {
     'borderRadius': radii.full,
+    'flexShrink': 0,
     'height': sizes.controlHeight,
     'position': 'relative',
     'width': sizes.controlHeight,
@@ -228,7 +229,8 @@ const styles = stylex.create({
     'minWidth': 0,
     'opacity': 0,
     'overflow': 'hidden',
-    'padding': '0 4px',
+    'gridArea': 'meta',
+    'padding': '0 8px 0 4px',
     'pointerEvents': 'none',
     'transform': 'translateY(4px)',
     'transitionDuration': '140ms',
@@ -239,15 +241,10 @@ const styles = stylex.create({
     },
   },
   composerMetaExpanded: {
-    borderTopColor: colors.border,
-    borderTopStyle: 'solid',
-    borderTopWidth: '1px',
     height: 'auto',
-    marginTop: '4px',
     minHeight: sizes.controlHeight,
     opacity: 1,
     overflow: 'visible',
-    paddingTop: '4px',
     pointerEvents: 'auto',
     transform: 'translateY(0)',
   },
@@ -288,27 +285,40 @@ const styles = stylex.create({
     'backgroundColor': 'transparent',
     'borderColor': 'transparent',
     'borderRadius': radii.full,
+    'borderStyle': 'none',
+    'borderWidth': 0,
+    'boxShadow': 'none',
     'color': colors.textMuted,
+    'alignItems': 'center',
     'fontSize': fontSizes.xs,
-    'justifyContent': 'space-between',
-    'width': 'min(190px, 32vw)',
+    'height': sizes.controlHeight,
+    'justifyContent': 'flex-end',
+    'lineHeight': sizes.controlHeight,
+    'maxWidth': 'min(220px, 42vw)',
+    'padding': 0,
+    'width': 'auto',
     ':hover:not([disabled])': {
-      borderColor: colors.border,
+      backgroundColor: 'transparent',
       color: colors.textSecondary,
-    },
-    '@media (max-width: 720px)': {
-      width: 'min(150px, 38vw)',
     },
   },
   modelSelectOpen: {
-    borderColor: colors.border,
+    backgroundColor: 'transparent',
     color: colors.textSecondary,
   },
-  status: {
+  composerEnd: {
     alignItems: 'center',
+    bottom: '8px',
     display: 'flex',
-    gap: '10px',
-    minWidth: 0,
+    gap: '6px',
+    height: sizes.controlHeight,
+    pointerEvents: 'auto',
+    position: 'absolute',
+    right: '8px',
+    zIndex: 1,
+  },
+  composerActionSlot: {
+    display: 'contents',
   },
   modelError: {
     color: colors.down,
@@ -317,14 +327,6 @@ const styles = stylex.create({
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
-  },
-  shortcut: {
-    'color': colors.textMuted,
-    'fontSize': '9px',
-    'whiteSpace': 'nowrap',
-    '@media (max-width: 920px)': {
-      display: 'none',
-    },
   },
 });
 
@@ -368,6 +370,7 @@ export function AssistantConversation({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const composerRef = useRef<HTMLDivElement>(null);
   const composerTargetHeightRef = useRef<number | null>(null);
+  const [actionSlot, setActionSlot] = useState<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (wasBusyRef.current && !busy) refreshSessions();
@@ -582,12 +585,7 @@ export function AssistantConversation({
                   onSubmit={submit}
                   onAbort={() => void abort()}
                   hint={hint}
-                  layoutClassName={
-                    stylex.props(
-                      styles.composerLayout,
-                      composerExpanded && styles.composerLayoutExpanded,
-                    ).className
-                  }
+                  layoutClassName={stylex.props(styles.composerLayout).className}
                   fieldClassName={
                     stylex.props(
                       styles.composerField,
@@ -595,6 +593,7 @@ export function AssistantConversation({
                     ).className
                   }
                   hintClassName={stylex.props(styles.composerHint).className}
+                  actionSlot={actionSlot}
                   actionClassName={
                     stylex.props(styles.composerAction, busy && styles.composerStopAction).className
                   }
@@ -647,6 +646,36 @@ export function AssistantConversation({
                     return false;
                   }}
                 />
+                <div className={stylex.props(styles.composerEnd).className}>
+                  {composerExpanded ? (
+                    <Select
+                      value={selectedModelValue}
+                      options={modelChoices}
+                      onChange={onModelChange}
+                      className={`assistant-model-select ${stylex.props(styles.modelSelect, modelPickerOpen && styles.modelSelectOpen).className}`}
+                      style={{
+                        alignItems: 'center',
+                        backgroundColor: 'transparent',
+                        borderColor: 'transparent',
+                        borderStyle: 'none',
+                        borderWidth: 0,
+                        boxShadow: 'none',
+                        display: 'inline-flex',
+                        height: 28,
+                        lineHeight: '28px',
+                        padding: 0,
+                      }}
+                      disabled={modelSaving || modelChoices.length === 0}
+                      ariaLabel="选择对话模型"
+                      placeholder={modelChoices.length === 0 ? '未配置模型' : '选择模型'}
+                      onOpenChange={setModelPickerOpen}
+                    />
+                  ) : null}
+                  <div
+                    ref={setActionSlot}
+                    className={stylex.props(styles.composerActionSlot).className}
+                  />
+                </div>
                 <div
                   className="assistant-conversation-composer-meta"
                   {...stylex.props(
@@ -659,16 +688,6 @@ export function AssistantConversation({
                   <div
                     className={`assistant-composer-tools ${stylex.props(styles.tools).className}`}
                   >
-                    <Select
-                      value={selectedModelValue}
-                      options={modelChoices}
-                      onChange={onModelChange}
-                      className={`assistant-model-select ${stylex.props(styles.modelSelect, modelPickerOpen && styles.modelSelectOpen).className}`}
-                      disabled={modelSaving || modelChoices.length === 0}
-                      ariaLabel="选择对话模型"
-                      placeholder={modelChoices.length === 0 ? '未配置模型' : '选择模型'}
-                      onOpenChange={setModelPickerOpen}
-                    />
                     <button
                       type="button"
                       className={`assistant-composer-context-action ${stylex.props(styles.contextAction).className}`}
@@ -678,23 +697,14 @@ export function AssistantConversation({
                       <AtSign size={13} aria-hidden="true" /> 引用资料
                     </button>
                   </div>
-                  <div
-                    className={`assistant-composer-status ${stylex.props(styles.status).className}`}
-                  >
-                    {modelError ? (
-                      <span
-                        className={`assistant-model-error ${stylex.props(styles.modelError).className}`}
-                        role="alert"
-                      >
-                        {modelError}
-                      </span>
-                    ) : null}
+                  {modelError ? (
                     <span
-                      className={`assistant-composer-shortcut ${stylex.props(styles.shortcut).className}`}
+                      className={`assistant-model-error ${stylex.props(styles.modelError).className}`}
+                      role="alert"
                     >
-                      <Kbd keys={['enter']} /> 发送 · <Kbd keys={['shift', 'enter']} /> 换行
+                      {modelError}
                     </span>
-                  </div>
+                  ) : null}
                 </div>
               </div>
             </div>
