@@ -32,7 +32,7 @@ const styles = stylex.create({
   },
   summaryPath: {
     backgroundColor: colors.backgroundElement,
-    borderRadius: radii.default,
+    borderRadius: radii.lg,
     color: colors.textMuted,
     fontFamily: fonts.mono,
     fontSize: fontSizes.xs,
@@ -70,7 +70,7 @@ const styles = stylex.create({
   },
   operation: {
     backgroundColor: 'rgba(255, 255, 255, 0.018)',
-    borderRadius: radii.default,
+    borderRadius: radii.lg,
     boxShadow: `0 0 0 1px ${colors.border}`,
     opacity: 0.58,
     padding: '8px',
@@ -104,7 +104,7 @@ const styles = stylex.create({
   },
   code: {
     backgroundColor: colors.backgroundElement,
-    borderRadius: radii.default,
+    borderRadius: radii.lg,
     minWidth: 0,
     padding: '8px',
   },

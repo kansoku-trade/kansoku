@@ -40,7 +40,7 @@ const styles = stylex.create({
     'borderColor': colors.border,
     'borderStyle': 'solid',
     'borderWidth': '1px',
-    'borderRadius': radii.md,
+    'borderRadius': radii.full,
     'cursor': 'pointer',
     ':hover': {
       borderColor: colors.borderStrong,
@@ -71,7 +71,7 @@ const styles = stylex.create({
     'borderColor': colors.borderStrong,
     'borderStyle': 'dashed',
     'borderWidth': '1px',
-    'borderRadius': radii.default,
+    'borderRadius': radii.full,
     'padding': '4px 9px',
     'cursor': 'pointer',
     ':hover': {

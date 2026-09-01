@@ -41,6 +41,8 @@ export const radii = stylex.defineConsts({
   default: '2px',
   md: '6px',
   lg: '10px',
+  composer: '24px',
+  userBubble: '16px 16px 4px 16px',
   full: '999px',
 });
 

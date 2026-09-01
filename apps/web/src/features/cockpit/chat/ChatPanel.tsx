@@ -4,7 +4,7 @@ import { MarketTime } from '@web/ui';
 import { ConversationTranscript } from './ConversationTranscript';
 import type { ChatMode } from './ChatDock';
 import type { ChatLiveBeat, ChatLiveTool, ChatRow, ChatSessionInfo } from './useChatSession';
-import { colors, fontSizes } from '../../../theme/tokens.stylex';
+import { colors, fontSizes, radii } from '../../../theme/tokens.stylex';
 
 interface ChatPanelProps {
   session: ChatSessionInfo | null;
@@ -80,14 +80,20 @@ const styles = stylex.create({
     marginLeft: 'auto',
   },
   actionButton: {
+    'alignItems': 'center',
     'backgroundColor': 'transparent',
+    'borderRadius': radii.full,
     'borderStyle': 'none',
     'borderWidth': 0,
     'color': colors.textSecondary,
     'cursor': 'pointer',
     'display': 'flex',
-    'padding': '2px',
+    'height': '24px',
+    'justifyContent': 'center',
+    'padding': 0,
+    'width': '24px',
     ':hover': {
+      backgroundColor: colors.backgroundHover,
       color: colors.textPrimary,
     },
   },

@@ -38,7 +38,7 @@ const CONFIDENCE_LABEL: Record<ResearchFinding['confidence'], string> = {
 const styles = stylex.create({
   card: {
     backgroundColor: `color-mix(in srgb, ${colors.backgroundElement} 72%, ${colors.backgroundSurface})`,
-    borderRadius: radii.default,
+    borderRadius: radii.lg,
     boxShadow: '0 0 0 1px rgb(255 255 255 / 0.075), 0 8px 24px rgb(0 0 0 / 0.12)',
     overflow: 'hidden',
   },
@@ -213,7 +213,7 @@ const styles = stylex.create({
   },
   citation: {
     backgroundColor: colors.backgroundSurface,
-    borderRadius: `calc(${radii.default} - 1px)`,
+    borderRadius: radii.md,
     color: colors.textMuted,
     fontFamily: fonts.mono,
     fontSize: '9px',
@@ -316,7 +316,7 @@ const styles = stylex.create({
   },
   evidenceCode: {
     backgroundColor: colors.backgroundSurface,
-    borderRadius: `calc(${radii.default} - 1px)`,
+    borderRadius: radii.md,
     color: colors.textMuted,
     fontFamily: fonts.mono,
     fontSize: '9px',

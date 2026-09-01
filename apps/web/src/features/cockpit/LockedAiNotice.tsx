@@ -20,7 +20,7 @@ const styles = stylex.create({
   cta: {
     'backgroundColor': 'transparent',
     'borderColor': colors.accent,
-    'borderRadius': radii.default,
+    'borderRadius': radii.full,
     'borderStyle': 'solid',
     'borderWidth': '1px',
     'color': colors.accent,

@@ -11,7 +11,7 @@ const styles = stylex.create({
     borderColor: colors.border,
     borderStyle: 'solid',
     borderWidth: '1px',
-    borderRadius: radii.default,
+    borderRadius: radii.lg,
     backgroundColor: colors.backgroundElement,
   },
   head: {
@@ -35,7 +35,7 @@ const styles = stylex.create({
     minWidth: '18px',
     height: '18px',
     padding: '0 5px',
-    borderRadius: radii.default,
+    borderRadius: radii.full,
     backgroundColor: colors.backgroundHover,
     color: colors.textSecondary,
     fontVariantNumeric: 'tabular-nums',
@@ -80,7 +80,7 @@ const styles = stylex.create({
     'justifyContent': 'center',
     'width': sizes.controlHeight,
     'height': sizes.controlHeight,
-    'borderRadius': radii.default,
+    'borderRadius': radii.full,
     'borderStyle': 'none',
     'backgroundColor': 'transparent',
     'color': {

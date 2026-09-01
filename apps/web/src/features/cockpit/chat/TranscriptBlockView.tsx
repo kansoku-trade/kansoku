@@ -32,7 +32,7 @@ const styles = stylex.create({
     backgroundColor: colors.backgroundElement,
     color: colors.textPrimary,
     padding: '6px 10px',
-    borderRadius: radii.default,
+    borderRadius: radii.userBubble,
   },
   assistantBubble: {
     maxWidth: '100%',
@@ -91,7 +91,8 @@ const styles = stylex.create({
     borderLeftColor: colors.down,
     borderLeftStyle: 'solid',
     borderLeftWidth: '2px',
-    padding: '6px 8px',
+    borderRadius: radii.lg,
+    padding: '6px 10px',
   },
 });
 

@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { ChevronRight } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
 import * as stylex from '@stylexjs/stylex';
 import { colors, fontSizes, radii } from '../../../theme/tokens.stylex';
 import { formatWorkedDuration } from './presentTranscript.js';
@@ -20,7 +21,7 @@ const styles = stylex.create({
     'borderColor': colors.border,
     'borderStyle': 'solid',
     'borderWidth': '1px',
-    'borderRadius': radii.default,
+    'borderRadius': radii.full,
     'color': colors.textSecondary,
     'cursor': 'pointer',
     'fontSize': fontSizes.base,
@@ -53,12 +54,15 @@ const styles = stylex.create({
     flexDirection: 'column',
     gap: '10px',
     margin: '0 0 2px 8px',
+    overflow: 'hidden',
     padding: '8px 0 4px 14px',
     borderLeftColor: colors.border,
     borderLeftStyle: 'solid',
     borderLeftWidth: '1px',
   },
 });
+
+const foldTransition = { duration: 0.2, ease: [0.2, 0.9, 0.3, 1] } as const;
 
 export function WorkedFold({
   durationMs,
@@ -88,7 +92,19 @@ export function WorkedFold({
         </button>
         <span className={stylex.props(styles.line).className} aria-hidden="true" />
       </div>
-      {open ? <div className={`chat-worked-fold ${stylex.props(styles.fold).className}`}>{children}</div> : null}
+      <AnimatePresence initial={false}>
+        {open ? (
+          <motion.div
+            className={`chat-worked-fold ${stylex.props(styles.fold).className}`}
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={foldTransition}
+          >
+            {children}
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </div>
   );
 }

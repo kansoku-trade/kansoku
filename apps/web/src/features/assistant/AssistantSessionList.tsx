@@ -57,6 +57,7 @@ const styles = stylex.create({
     zIndex: 1,
   },
   searchInput: {
+    borderRadius: radii.lg,
     paddingLeft: '28px',
     width: '100%',
   },
@@ -75,7 +76,7 @@ const styles = stylex.create({
     'alignItems': 'center',
     'backgroundColor': colors.backgroundElement,
     'borderColor': colors.borderStrong,
-    'borderRadius': radii.default,
+    'borderRadius': radii.full,
     'borderStyle': 'solid',
     'borderWidth': '1px',
     'boxSizing': 'border-box',
@@ -119,7 +120,7 @@ const styles = stylex.create({
   },
   sessionRow: {
     'alignItems': 'center',
-    'borderRadius': radii.default,
+    'borderRadius': radii.lg,
     'cursor': 'pointer',
     'display': 'flex',
     'gap': '6px',
@@ -163,7 +164,7 @@ const styles = stylex.create({
     'backgroundColor': 'transparent',
     'borderStyle': 'none',
     'borderWidth': 0,
-    'borderRadius': radii.default,
+    'borderRadius': radii.full,
     'color': colors.textMuted,
     'cursor': 'pointer',
     'display': 'inline-flex',
@@ -335,6 +336,7 @@ export function AssistantSessionList({
               type="search"
               value={query}
               className={stylex.props(styles.searchInput).className}
+              style={{ borderRadius: 10 }}
               placeholder="搜索会话"
               onChange={(event) => setQuery(event.target.value)}
             />

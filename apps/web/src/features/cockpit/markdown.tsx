@@ -52,6 +52,11 @@ const styles = stylex.create({
       outlineOffset: '2px',
     },
   },
+  linkChat: {
+    ':focus-visible': {
+      borderRadius: radii.md,
+    },
+  },
   heading: {
     'breakAfter': 'auto',
     'color': colors.textPrimary,
@@ -178,6 +183,9 @@ const styles = stylex.create({
     fontWeight: 500,
     padding: '0.0625em 0.35em',
   },
+  keyboardChat: {
+    borderRadius: radii.md,
+  },
   definitionTerm: {
     fontWeight: 500,
     marginBlockStart: '1em',
@@ -199,6 +207,9 @@ const styles = stylex.create({
       borderStyle: 'solid',
       borderWidth: '1px',
     },
+  },
+  inlineCodeChat: {
+    borderRadius: radii.md,
   },
   codeBlock: {
     'borderColor': colors.border,
@@ -222,6 +233,7 @@ const styles = stylex.create({
   },
   codeBlockChat: {
     ':is(pre)': {
+      borderRadius: radii.lg,
       marginBlockStart: '0.914285em',
     },
   },
@@ -267,6 +279,9 @@ const styles = stylex.create({
     borderRadius: radii.default,
     height: 'auto',
     maxWidth: '100%',
+  },
+  imageChat: {
+    borderRadius: radii.lg,
   },
   tableScroll: {
     maxWidth: '100%',
@@ -353,6 +368,9 @@ const styles = stylex.create({
       transform: 'translateX(2px)',
     },
   },
+  deepLinkChat: {
+    borderRadius: radii.lg,
+  },
   deepLinkIcon: {
     alignItems: 'center',
     backgroundColor: `color-mix(in srgb, ${colors.accent} 7%, transparent)`,
@@ -367,6 +385,9 @@ const styles = stylex.create({
     height: '20px',
     justifyContent: 'center',
     width: '20px',
+  },
+  deepLinkIconChat: {
+    borderRadius: radii.md,
   },
   deepLinkContent: {
     alignItems: 'baseline',
@@ -486,14 +507,21 @@ function deepLinkCardMeta(link: AppDeepLink): DeepLinkCardMeta {
   }
 }
 
-export function MarkdownLink(props: AnchorHTMLAttributes<HTMLAnchorElement> & ExtraProps) {
-  const { href, children, className, node: _node, ...anchorProps } = props;
+export function MarkdownLink(
+  props: AnchorHTMLAttributes<HTMLAnchorElement> & ExtraProps & { variant?: MarkdownVariant },
+) {
+  const { href, children, className, node: _node, variant = 'report', ...anchorProps } = props;
   const appLink = parseAppDeepLink(href);
   if (!appLink)
     return (
       <a
         {...anchorProps}
-        className={[className, stylex.props(styles.link).className].filter(Boolean).join(' ')}
+        className={[
+          className,
+          stylex.props(styles.link, variant === 'chat' && styles.linkChat).className,
+        ]
+          .filter(Boolean)
+          .join(' ')}
         href={href}
         rel={anchorProps.rel ?? 'noreferrer'}
         target={anchorProps.target ?? '_blank'}
@@ -509,7 +537,7 @@ export function MarkdownLink(props: AnchorHTMLAttributes<HTMLAnchorElement> & Ex
       className={[
         `app-deep-link app-deep-link--${meta.variant}`,
         className,
-        stylex.props(styles.deepLink).className,
+        stylex.props(styles.deepLink, variant === 'chat' && styles.deepLinkChat).className,
       ]
         .filter(Boolean)
         .join(' ')}
@@ -518,7 +546,7 @@ export function MarkdownLink(props: AnchorHTMLAttributes<HTMLAnchorElement> & Ex
       title={href}
     >
       <span
-        className={`app-deep-link-icon ${stylex.props(styles.deepLinkIcon).className}`}
+        className={`app-deep-link-icon ${stylex.props(styles.deepLinkIcon, variant === 'chat' && styles.deepLinkIconChat).className}`}
         aria-hidden="true"
       >
         {meta.icon}
@@ -543,7 +571,10 @@ export function MarkdownLink(props: AnchorHTMLAttributes<HTMLAnchorElement> & Ex
 
 type SemanticProps = HTMLAttributes<HTMLElement> & ExtraProps;
 
-function styledElement(tag: keyof HTMLElementTagNameMap, ...styleValues: stylex.StyleXStyles[]) {
+function styledElement(
+  tag: keyof HTMLElementTagNameMap,
+  ...styleValues: Array<stylex.StyleXStyles | false | null | undefined>
+) {
   return ({ node: _node, className, ...props }: SemanticProps) =>
     createElement(tag, {
       ...props,
@@ -602,7 +633,7 @@ function markdownComponents(variant: MarkdownVariant): Components {
   const heading6 = variant === 'chat' ? styles.chatHeading6 : styles.reportHeading6;
 
   return {
-    a: MarkdownLink,
+    a: (props) => <MarkdownLink {...props} variant={variant} />,
     p: styledElement('p', flowStyle),
     strong: styledElement('strong', styles.strong),
     b: styledElement('b', styles.strong),
@@ -633,14 +664,23 @@ function markdownComponents(variant: MarkdownVariant): Components {
     input: MarkdownInput,
     details: styledElement('details', flowStyle),
     summary: styledElement('summary', styles.summary),
-    kbd: styledElement('kbd', styles.keyboard),
+    kbd: styledElement('kbd', styles.keyboard, variant === 'chat' && styles.keyboardChat),
     dl: styledElement('dl', flowStyle),
     dt: styledElement('dt', styles.definitionTerm),
     dd: styledElement('dd', styles.definitionDescription),
-    inlineCode: styledElement('code', styles.inlineCode),
+    inlineCode: styledElement(
+      'code',
+      styles.inlineCode,
+      variant === 'chat' && styles.inlineCodeChat,
+    ),
     blockquote: styledElement('blockquote', styles.blockquote, flowStyle),
     hr: styledElement('hr', styles.rule, variant === 'chat' ? styles.ruleChat : styles.ruleReport),
-    img: styledElement('img', styles.image, flowStyle),
+    img: styledElement(
+      'img',
+      styles.image,
+      variant === 'chat' && styles.imageChat,
+      flowStyle,
+    ),
     section: ({ children, className, node: _node, ...props }: SemanticProps) => (
       <section
         {...props}

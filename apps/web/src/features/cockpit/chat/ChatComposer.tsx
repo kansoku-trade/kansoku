@@ -1,6 +1,6 @@
 import * as stylex from '@stylexjs/stylex';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { Send, Square } from 'lucide-react';
+import { ArrowUp, Square } from 'lucide-react';
 import type {
   FocusEventHandler,
   KeyboardEvent,
@@ -12,6 +12,8 @@ import type {
 import { Button, Input } from '@web/ui';
 import { colors, fontSizes, radii, sizes } from '../../../theme/tokens.stylex';
 
+const sendFill = '#3d7eff';
+
 const styles = stylex.create({
   composer: {
     alignItems: 'center',
@@ -19,23 +21,35 @@ const styles = stylex.create({
     flex: '0 0 auto',
   },
   composerDefaults: {
-    gap: '8px',
-    padding: '8px 12px',
+    'backgroundColor': colors.backgroundElement,
+    'borderColor': colors.borderStrong,
+    'borderRadius': radii.composer,
+    'borderStyle': 'solid',
+    'borderWidth': '1px',
+    'gap': '8px',
+    'overflow': 'hidden',
+    'padding': '6px 8px 6px 12px',
+    'transitionDuration': '120ms',
+    'transitionProperty': 'border-color, box-shadow',
+    'transitionTimingFunction': 'ease',
+    ':focus-within': {
+      borderColor: colors.focusBorder,
+      boxShadow: colors.focusRing,
+    },
   },
   dockComposer: {
-    padding: '6px 6px 6px 12px',
+    margin: '8px 10px 10px',
+    padding: '6px 8px 6px 12px',
   },
   fullComposer: {
     padding: '10px max(12px, calc((100% - 68ch) / 2))',
   },
   field: {
-    flex: '1 1 auto',
-    minWidth: 0,
-  },
-  dockField: {
     'backgroundColor': 'transparent',
     'borderStyle': 'none',
     'borderWidth': 0,
+    'flex': '1 1 auto',
+    'minWidth': 0,
     ':enabled': {
       backgroundColor: 'transparent',
       borderStyle: 'none',
@@ -51,23 +65,42 @@ const styles = stylex.create({
       boxShadow: 'none',
     },
   },
+  dockField: {
+    backgroundColor: 'transparent',
+    borderStyle: 'none',
+    borderWidth: 0,
+  },
   action: {
     'alignItems': 'center',
+    'backgroundColor': sendFill,
+    'borderColor': 'transparent',
+    'borderRadius': radii.full,
+    'borderStyle': 'none',
+    'borderWidth': 0,
+    'color': colors.textBright,
     'display': 'inline-flex',
     'flex': '0 0 auto',
     'height': sizes.controlHeight,
     'justifyContent': 'center',
     'padding': 0,
     'transitionDuration': '150ms',
-    'transitionProperty': 'scale, border-color, background-color',
+    'transitionProperty': 'scale, background-color, color',
     'transitionTimingFunction': 'ease-out',
     'width': sizes.controlHeight,
+    ':disabled': {
+      backgroundColor: colors.backgroundHover,
+      color: colors.textMuted,
+    },
     ':active:not([disabled])': {
       scale: 0.96,
     },
     '@media (prefers-reduced-motion: reduce)': {
       transitionDuration: '0.01ms',
     },
+  },
+  actionStop: {
+    backgroundColor: colors.down,
+    color: colors.textBright,
   },
   dockAction: {
     borderRadius: radii.full,
@@ -149,6 +182,7 @@ export function ChatComposer({
 }: ChatComposerProps) {
   const prefersReducedMotion = useReducedMotion();
   const fieldDisabled = (busy && !allowInputWhileBusy) || disabled;
+  const actionDisabled = busy ? aborting : !value.trim() || disabled;
   const handleKeyDown = (event: KeyboardEvent<ChatComposerFieldElement>) => {
     if (onKeyDownIntercept?.(event)) return;
     if (event.key !== 'Enter' || event.nativeEvent.isComposing || (multiline && event.shiftKey))
@@ -192,6 +226,13 @@ export function ChatComposer({
         ) : (
           <Input
             className={`chat-composer-field ${stylex.props(styles.field, dock && styles.dockField).className}${fieldClassName ? ` ${fieldClassName}` : ''}`}
+            style={{
+              backgroundColor: 'transparent',
+              borderRadius: 0,
+              borderStyle: 'none',
+              borderWidth: 0,
+              boxShadow: 'none',
+            }}
             aria-label={placeholder}
             autoComplete="off"
             name="message"
@@ -207,10 +248,16 @@ export function ChatComposer({
           />
         )}
         <Button
-          accent={!busy}
-          className={`chat-composer-action chat-composer-action--${busy ? 'stop' : 'send'} ${stylex.props(styles.action, dock && styles.dockAction).className}${actionClassName ? ` ${actionClassName}` : ''}`}
+          className={`chat-composer-action chat-composer-action--${busy ? 'stop' : 'send'} ${stylex.props(styles.action, busy && styles.actionStop, dock && styles.dockAction).className}${actionClassName ? ` ${actionClassName}` : ''}`}
+          style={{
+            backgroundColor: busy ? colors.down : actionDisabled ? colors.backgroundHover : sendFill,
+            borderColor: 'transparent',
+            borderRadius: 999,
+            borderStyle: 'none',
+            color: busy || !actionDisabled ? colors.textBright : colors.textMuted,
+          }}
           aria-label={busy ? '停止生成' : '发送'}
-          disabled={busy ? aborting : !value.trim() || disabled}
+          disabled={actionDisabled}
           onClick={busy ? onAbort : () => onSubmit(value)}
         >
           {prefersReducedMotion ? (
@@ -218,9 +265,9 @@ export function ChatComposer({
               className={`chat-composer-action-icon ${stylex.props(styles.actionIcon).className}${actionIconClassName ? ` ${actionIconClassName}` : ''}`}
             >
               {busy ? (
-                <Square size={12} aria-hidden="true" />
+                <Square size={12} fill="currentColor" aria-hidden="true" />
               ) : (
-                <Send size={14} aria-hidden="true" />
+                <ArrowUp size={16} strokeWidth={2.25} aria-hidden="true" />
               )}
             </span>
           ) : (
@@ -234,9 +281,9 @@ export function ChatComposer({
                 transition={{ type: 'spring', duration: 0.3, bounce: 0 }}
               >
                 {busy ? (
-                  <Square size={12} aria-hidden="true" />
+                  <Square size={12} fill="currentColor" aria-hidden="true" />
                 ) : (
-                  <Send size={14} aria-hidden="true" />
+                  <ArrowUp size={16} strokeWidth={2.25} aria-hidden="true" />
                 )}
               </motion.span>
             </AnimatePresence>

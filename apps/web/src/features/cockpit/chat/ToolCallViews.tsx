@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Check, ChevronRight } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
 import * as stylex from '@stylexjs/stylex';
 import { colors, fonts, fontSizes, radii } from '../../../theme/tokens.stylex';
 import { presentToolCall } from './toolSummary.js';
@@ -18,13 +19,15 @@ const styles = stylex.create({
     display: 'flex',
     flexDirection: 'column',
     gap: 0,
-    padding: '2px 0 8px',
-    borderBottomColor: colors.border,
-    borderBottomStyle: 'solid',
-    borderBottomWidth: '1px',
+    padding: '4px 8px',
+    backgroundColor: colors.backgroundSurface,
+    borderColor: colors.border,
+    borderStyle: 'solid',
+    borderWidth: '1px',
+    borderRadius: radii.lg,
   },
   toolRunning: {
-    borderBottomColor: 'rgb(94 78 38)',
+    borderColor: 'rgb(94 78 38)',
   },
   toolHead: {
     'display': 'grid',
@@ -36,7 +39,7 @@ const styles = stylex.create({
     'backgroundColor': 'transparent',
     'borderStyle': 'none',
     'borderWidth': 0,
-    'borderRadius': radii.md,
+    'borderRadius': radii.lg,
     'color': colors.textSecondary,
     'cursor': 'pointer',
     'textAlign': 'left',
@@ -109,7 +112,7 @@ const styles = stylex.create({
     minHeight: '20px',
     padding: '2px 7px',
     backgroundColor: colors.backgroundElement,
-    borderRadius: radii.md,
+    borderRadius: radii.full,
     color: colors.textSecondary,
     fontFamily: fonts.mono,
     fontSize: fontSizes.sm,
@@ -159,17 +162,20 @@ const styles = stylex.create({
     backgroundColor: colors.backgroundElement,
     borderStyle: 'none',
     borderWidth: 0,
-    borderRadius: radii.md,
+    borderRadius: radii.lg,
     fontFamily: fonts.mono,
     fontSize: fontSizes.sm,
     color: colors.textSecondary,
     whiteSpace: 'pre-wrap',
     overflowWrap: 'anywhere',
   },
+  fold: {
+    overflow: 'hidden',
+  },
   nested: {
-    marginLeft: '27px',
-    borderBottomWidth: 0,
-    paddingBottom: 0,
+    marginLeft: '8px',
+    marginTop: '6px',
+    backgroundColor: colors.backgroundCanvas,
   },
   groupLine: {
     display: 'flex',
@@ -178,6 +184,8 @@ const styles = stylex.create({
     minWidth: 0,
   },
 });
+
+const foldTransition = { duration: 0.2, ease: [0.2, 0.9, 0.3, 1] } as const;
 
 function StatusMark({ running }: { running: boolean }) {
   return (
@@ -254,26 +262,34 @@ export function ToolRow({
           />
         ) : null}
       </button>
-      {open && hasDetail ? (
-        <div className={`chat-tool-detail ${stylex.props(styles.toolDetail).className}`}>
-          {tool.input ? (
-            <div>
-              <div className={`chat-tool-detail-label ${stylex.props(styles.toolDetailLabel).className}`}>
-                原始请求
+      <AnimatePresence initial={false}>
+        {open && hasDetail ? (
+          <motion.div
+            className={`chat-tool-detail ${stylex.props(styles.fold, styles.toolDetail).className}`}
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={foldTransition}
+          >
+            {tool.input ? (
+              <div>
+                <div className={`chat-tool-detail-label ${stylex.props(styles.toolDetailLabel).className}`}>
+                  原始请求
+                </div>
+                <pre className={stylex.props(styles.toolDetailPre).className}>{tool.input}</pre>
               </div>
-              <pre className={stylex.props(styles.toolDetailPre).className}>{tool.input}</pre>
-            </div>
-          ) : null}
-          {tool.output ? (
-            <div>
-              <div className={`chat-tool-detail-label ${stylex.props(styles.toolDetailLabel).className}`}>
-                原始响应
+            ) : null}
+            {tool.output ? (
+              <div>
+                <div className={`chat-tool-detail-label ${stylex.props(styles.toolDetailLabel).className}`}>
+                  原始响应
+                </div>
+                <pre className={stylex.props(styles.toolDetailPre).className}>{tool.output}</pre>
               </div>
-              <pre className={stylex.props(styles.toolDetailPre).className}>{tool.output}</pre>
-            </div>
-          ) : null}
-        </div>
-      ) : null}
+            ) : null}
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </div>
   );
 }
@@ -324,13 +340,22 @@ export function ToolGroupRow({
           className={`chat-tool-caret${open ? ' open' : ''} ${stylex.props(styles.toolCaret, open && styles.toolCaretOpen).className}`}
         />
       </button>
-      {shown.length > 0 ? (
-        <div id={id}>
-          {shown.map((tool) => (
-            <ToolRow key={tool.id} tool={tool} nested />
-          ))}
-        </div>
-      ) : null}
+      <AnimatePresence initial={false}>
+        {shown.length > 0 ? (
+          <motion.div
+            id={id}
+            className={stylex.props(styles.fold).className}
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={foldTransition}
+          >
+            {shown.map((tool) => (
+              <ToolRow key={tool.id} tool={tool} nested />
+            ))}
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </div>
   );
 }

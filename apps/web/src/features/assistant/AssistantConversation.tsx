@@ -100,10 +100,11 @@ const styles = stylex.create({
   composer: {
     'backgroundColor': colors.backgroundElement,
     'borderColor': colors.borderStrong,
-    'borderRadius': radii.default,
+    'borderRadius': radii.composer,
     'borderStyle': 'solid',
     'borderWidth': '1px',
-    'padding': '4px',
+    'overflow': 'hidden',
+    'padding': '6px 8px',
     'position': 'relative',
     'transitionDuration': '120ms',
     'transitionProperty': 'border-color, box-shadow',
@@ -183,8 +184,11 @@ const styles = stylex.create({
     padding: '4px 8px 2px',
     textWrap: 'pretty',
   },
+  userBubble: {
+    borderRadius: radii.userBubble,
+  },
   composerAction: {
-    'borderRadius': radii.default,
+    'borderRadius': radii.full,
     'height': sizes.controlHeight,
     'position': 'relative',
     'width': sizes.controlHeight,
@@ -199,8 +203,9 @@ const styles = stylex.create({
     },
   },
   composerStopAction: {
-    borderColor: colors.down,
-    color: colors.down,
+    backgroundColor: colors.down,
+    borderColor: 'transparent',
+    color: colors.textBright,
   },
   composerSendIcon: {
     marginLeft: '1px',
@@ -251,7 +256,7 @@ const styles = stylex.create({
     'backgroundColor': 'transparent',
     'borderStyle': 'none',
     'borderWidth': 0,
-    'borderRadius': radii.default,
+    'borderRadius': radii.full,
     'color': colors.textMuted,
     'cursor': 'pointer',
     'display': 'inline-flex',
@@ -282,6 +287,7 @@ const styles = stylex.create({
   modelSelect: {
     'backgroundColor': 'transparent',
     'borderColor': 'transparent',
+    'borderRadius': radii.full,
     'color': colors.textMuted,
     'fontSize': fontSizes.xs,
     'justifyContent': 'space-between',
@@ -531,6 +537,7 @@ export function AssistantConversation({
           onPickSuggestion={() => {}}
           modelLabels={modelLabels}
           onOpenCanvas={(slug) => canvas.open(slug)}
+          userBubbleClassName={stylex.props(styles.userBubble).className}
         />
         <div className={`assistant-conversation-dock ${stylex.props(styles.dock).className}`}>
           <div

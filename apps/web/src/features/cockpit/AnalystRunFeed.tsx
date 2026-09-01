@@ -108,7 +108,7 @@ const styles = stylex.create({
     'animationTimingFunction': 'ease-in-out',
     'backgroundImage': `linear-gradient(90deg, ${colors.backgroundElement} 0%, ${colors.backgroundHover} 45%, ${colors.backgroundElement} 90%)`,
     'backgroundSize': '200% 100%',
-    'borderRadius': radii.default,
+    'borderRadius': radii.lg,
     'height': '13px',
     'width': '100%',
     '@media (prefers-reduced-motion: reduce)': {

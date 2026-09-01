@@ -55,6 +55,15 @@ function renderTranscript(rows: ChatRow[], extra?: Record<string, unknown>) {
   );
 }
 
+describe('ConversationTranscript chrome', () => {
+  it('applies a custom user bubble class', () => {
+    renderTranscript([row({ id: 'u1', ts: ts('10:00:00'), kind: 'user', text: '拉三只' })], {
+      userBubbleClassName: 'bubble-round',
+    });
+    expect(document.querySelector('.chat-bubble--user')?.className).toContain('bubble-round');
+  });
+});
+
 describe('ConversationTranscript folding', () => {
   it('hides the process behind 跑了 and leaves the last text', () => {
     renderTranscript(completedRows, { onOpenCanvas: vi.fn() });

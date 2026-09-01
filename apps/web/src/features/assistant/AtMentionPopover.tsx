@@ -6,7 +6,7 @@ const styles = stylex.create({
   popover: {
     backgroundColor: colors.backgroundSurface,
     borderColor: colors.borderStrong,
-    borderRadius: radii.default,
+    borderRadius: radii.lg,
     borderStyle: 'solid',
     borderWidth: '1px',
     boxShadow: '0 4px 16px rgb(0 0 0 / 0.45)',
@@ -23,7 +23,7 @@ const styles = stylex.create({
     'borderColor': 'transparent',
     'borderStyle': 'none',
     'borderWidth': 0,
-    'borderRadius': radii.default,
+    'borderRadius': radii.lg,
     'cursor': 'pointer',
     'display': 'flex',
     'gap': '8px',

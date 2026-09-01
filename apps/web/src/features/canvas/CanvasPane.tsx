@@ -60,7 +60,7 @@ const styles = stylex.create({
   close: {
     'alignItems': 'center',
     'backgroundColor': 'transparent',
-    'borderRadius': radii.default,
+    'borderRadius': radii.full,
     'borderStyle': 'none',
     'borderWidth': 0,
     'color': colors.textSecondary,

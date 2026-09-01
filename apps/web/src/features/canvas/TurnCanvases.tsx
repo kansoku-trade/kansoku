@@ -6,7 +6,7 @@ const styles = stylex.create({
   card: {
     backgroundColor: colors.backgroundSurface,
     borderColor: colors.border,
-    borderRadius: radii.default,
+    borderRadius: radii.lg,
     borderStyle: 'solid',
     borderWidth: '1px',
     marginTop: '2px',
@@ -24,7 +24,7 @@ const styles = stylex.create({
   thumb: {
     backgroundImage: `linear-gradient(180deg, ${colors.backgroundElement}, ${colors.backgroundCanvas})`,
     borderColor: colors.border,
-    borderRadius: radii.default,
+    borderRadius: radii.lg,
     borderStyle: 'solid',
     borderWidth: '1px',
     flexGrow: 0,

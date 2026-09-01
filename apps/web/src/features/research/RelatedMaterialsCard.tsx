@@ -158,6 +158,7 @@ export function RelatedMaterialsCard({
                     <Chip
                       key={symbol}
                       className="chip"
+                      style={{ borderRadius: 999 }}
                       href={`/symbol/${encodeURIComponent(`${symbol}.US`)}`}
                     >
                       {symbol}

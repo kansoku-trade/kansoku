@@ -10,7 +10,7 @@ const styles = stylex.create({
   root: {
     backgroundColor: colors.backgroundSurface,
     borderColor: colors.border,
-    borderRadius: radii.default,
+    borderRadius: radii.lg,
     borderStyle: 'solid',
     borderWidth: '1px',
     marginBottom: '12px',

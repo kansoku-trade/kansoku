@@ -20,7 +20,7 @@ import {
 } from './assistantModels';
 import { resolveActiveSessionId } from './assistantPageState.js';
 import { useAssistantSessions } from './useAssistantSessions';
-import { colors } from '../../theme/tokens.stylex';
+import { colors, radii } from '../../theme/tokens.stylex';
 
 const styles = stylex.create({
   page: {
@@ -160,7 +160,7 @@ export function AssistantChatPage() {
         ) : (
           <Empty className={stylex.props(styles.empty).className}>
             <p>选一个会话，或者新建一个开始对话</p>
-            <Button accent onClick={() => void handleCreate()}>
+            <Button accent style={{ borderRadius: radii.full }} onClick={() => void handleCreate()}>
               新建会话
             </Button>
           </Empty>

@@ -55,16 +55,16 @@ const styles = stylex.create({
     borderTopWidth: '1px',
   },
   shellField: {
-    borderRadius: radii.md,
+    borderRadius: radii.composer,
   },
   shellAction: {
-    borderRadius: radii.md,
+    borderRadius: radii.full,
   },
   shellBubble: {
-    borderRadius: radii.md,
+    borderRadius: radii.userBubble,
   },
   shellSuggestion: {
-    borderRadius: radii.md,
+    borderRadius: radii.full,
   },
   resize: {
     position: 'absolute',
