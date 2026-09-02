@@ -26,9 +26,10 @@ function resubscribe(): void {
   });
 }
 
-export function setActiveRouter(router: DataRouter | null): void {
+export function setActiveRouter(router: DataRouter | null, notify = true): void {
   activeRouter = router;
   if (listeners.size > 0) resubscribe();
+  if (!notify) return;
   for (const cb of [...listeners]) cb();
 }
 

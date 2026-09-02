@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createMemoryRouter } from 'react-router';
 import type { DataRouter } from 'react-router';
 import { setActiveRouter, setNavigationInterceptor } from '../../lib/router';
@@ -233,8 +233,12 @@ export function useTabsController(): TabsController {
   const lastActiveRouterRef = useRef<DataRouter | null>(null);
   if (lastActiveRouterRef.current !== activeRouter) {
     lastActiveRouterRef.current = activeRouter;
-    setActiveRouter(activeRouter);
+    // Children read the new router during this same render; notifying subscribers
+    // here would setState in other components mid-render, so that waits for the effect.
+    setActiveRouter(activeRouter, false);
   }
+
+  useLayoutEffect(() => setActiveRouter(activeRouter), [activeRouter]);
 
   useEffect(() => {
     const liveIds = new Set(snapshot.tabs.map((tab) => tab.id));

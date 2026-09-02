@@ -20,7 +20,7 @@ export type TranscriptBlock =
   | { type: 'tool'; tool: PresentedTool }
   | { type: 'tool-group'; id: string; tools: PresentedTool[]; running: boolean; titles: string[] }
   | { type: 'worked'; id: string; durationMs: number; blocks: TranscriptBlock[] }
-  | { type: 'canvases'; entries: CanvasEntry[] }
+  | { type: 'canvases'; id: string; entries: CanvasEntry[] }
   | { type: 'reasoning'; text: string; streaming?: boolean }
   | { type: 'runtime'; startedAt: string }
   | { type: 'thinking' };
@@ -49,7 +49,7 @@ export function blockKey(block: TranscriptBlock, index: number): string {
       return block.id;
     }
     case 'canvases': {
-      return `canvases:${block.entries.map((entry) => entry.slug).join(',')}`;
+      return block.id;
     }
     case 'reasoning': {
       return `reasoning:${index}`;
@@ -204,9 +204,13 @@ function sequenceFromEntries(entries: TimelineEntry[]): TranscriptBlock[] {
   return groupSequence(entries.flatMap(entryToBlocks));
 }
 
-function canvasesFromRows(rows: ChatRow[], liveTools: ChatLiveTool[] = []): TranscriptBlock[] {
+function canvasesFromRows(
+  turnId: string,
+  rows: ChatRow[],
+  liveTools: ChatLiveTool[] = [],
+): TranscriptBlock[] {
   const entries = collectCanvasEntries(rows, liveTools);
-  return entries.length > 0 ? [{ type: 'canvases', entries }] : [];
+  return entries.length > 0 ? [{ type: 'canvases', id: `canvases:${turnId}`, entries }] : [];
 }
 
 function toolRowsFromEntries(entries: TimelineEntry[]): ChatRow[] {
@@ -228,7 +232,7 @@ function presentCompletedTurn(entries: TimelineEntry[]): TranscriptBlock[] {
       break;
     }
   }
-  const canvases = canvasesFromRows(toolRowsFromEntries(body));
+  const canvases = canvasesFromRows(userRow?.id ?? 'prefix', toolRowsFromEntries(body));
   const errorBlocks = errors.flatMap(entryToBlocks);
 
   if (!hasTools) {
@@ -329,7 +333,7 @@ function presentLiveTurn(
     liveBeats && liveBeats.length > 0
       ? liveBeats.filter((beat): beat is { kind: 'tool'; tool: ChatLiveTool } => beat.kind === 'tool').map((beat) => beat.tool)
       : liveTools;
-  const canvases = canvasesFromRows(toolRowsFromEntries(rest), liveToolList);
+  const canvases = canvasesFromRows(userRow?.id ?? 'live', toolRowsFromEntries(rest), liveToolList);
   const errors = rest.filter(isErrorEntry).flatMap(entryToBlocks);
   const blocks: TranscriptBlock[] = [
     ...(userRow ? [{ type: 'user' as const, row: userRow }] : []),

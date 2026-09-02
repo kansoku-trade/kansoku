@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { ChatRow } from './useChatSession';
 import {
+  blockKey,
   formatRuntime,
   formatWorkedDuration,
   presentTranscript,
@@ -203,6 +204,19 @@ describe('presentTranscript', () => {
       'worked:9000:group:2:done:加载分析流程,保存画布',
       'canvases:mu-panel',
     ]);
+  });
+
+  it('keys canvases per turn so re-editing the same slug does not collide', () => {
+    const blocks = presentTranscript({
+      rows: [
+        user('u1', '10:00:00', '画一张'),
+        saveCanvas('t1', '10:00:05', 'mu-panel', 'MU 读数'),
+        user('u2', '10:01:00', '改一下'),
+        saveCanvas('t2', '10:01:05', 'mu-panel', 'MU 读数'),
+      ],
+    });
+    const keys = blocks.map((block, index) => blockKey(block, index));
+    expect(new Set(keys).size).toBe(keys.length);
   });
 
   it('does not emit a worked bar when there are no tools', () => {
