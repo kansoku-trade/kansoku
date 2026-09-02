@@ -73,6 +73,21 @@ ${valid}`);
     expect(issues).toEqual([]);
   });
 
+  it('rejects a named import of a data file', () => {
+    const issues = checkCanvasSource(`import { bars } from './bars.json';\n${valid}`);
+    expect(issues).toContain("data imports must be default imports: import bars from './bars.json'");
+  });
+
+  it('rejects a namespace import of a data file', () => {
+    const issues = checkCanvasSource(`import * as bars from './bars.json';\n${valid}`);
+    expect(issues).toContain("data imports must be default imports: import bars from './bars.json'");
+  });
+
+  it('rejects a side-effect import of a data file', () => {
+    const issues = checkCanvasSource(`import './bars.json';\n${valid}`);
+    expect(issues).toContain("data imports must be default imports: import bars from './bars.json'");
+  });
+
   it('rejects a relative json import that escapes the canvas directory', () => {
     const issues = checkCanvasSource(`import bars from '../bars.json';\n${valid}`);
     expect(issues.some((issue) => /relative/i.test(issue))).toBe(true);
