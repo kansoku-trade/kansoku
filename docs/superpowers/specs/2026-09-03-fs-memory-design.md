@@ -15,7 +15,7 @@
 
 ## 决定
 
-- 载体是 markdown 文件，不是数据库。模型用 grep / read_file / apply_patch 直接操作，不做检索层，不做 embedding。
+- 载体是 markdown 文件，不是数据库。模型用 bash（cat / grep / ls）读，用 memory_apply_patch / memory_write_file 写，不做检索层，不做 embedding。
 - 不用小模型。没有后台抽取，没有后台整理。
 - 写入不做专用 memory tool。给 `memory/` 目录挂写 mount，复用现有文件工具。
 - 写权限只开 `chart-chat` 和 `research-chat`。`assistant` / `analyst` / `deep-dive` / `research-refresh` 只读。
@@ -55,11 +55,11 @@ memory/
 | `MEMORY.md`         | `stable-prefix`（第一条 user 前） | session | 会话第一次编译读一次，之后不再读文件     |
 | `symbols/<当前>.md` | `pinned-user`                     | turn    | 钉在切到该标的那条 user 消息上，之后不动 |
 | `markets/<当前>.md` | `pinned-user`                     | turn    | 同上                                     |
-| 其余文件            | 模型 grep / read_file             | —       | 需要时                                   |
+| 其余文件            | 模型 bash（cat / grep / ls）      | —       | 需要时                                   |
 
 两个 provider：
 
-- `MemoryIndexProvider extends BaseFirstUserContentProvider`，session scope。读 `MEMORY.md`，超 4 000 字符截断，尾部加一行 `（已截断，完整内容 read_file memory/MEMORY.md）`。
+- `MemoryIndexProvider extends BaseFirstUserContentProvider`，session scope。读 `MEMORY.md`，超 4 000 字符截断，尾部加一行 `（已截断，完整内容用 bash 读 memory/MEMORY.md）`。
 - `MemoryScopeProvider extends BasePinnedUserProvider`，`cacheScope: 'turn'`。从 step 里拿当前 `symbol` / `market`，读对应文件，各限 4 000 字符，同样截断加指针。文件不存在返回 null，不注入。
 
 包装格式沿用 `<persistent_memory>` 标签，保留那两句"个性化上下文、不是当前事实、当前请求优先"。这是注入内容当数据不当指令的边界，不能丢。
@@ -106,7 +106,6 @@ memory/
 interface ProAiMemory {
   indexContext(): Promise<string | undefined>;
   scopeContext(scope: { symbol?: string; market?: string }): Promise<string | undefined>;
-  readMount(): ProAiReadMount;
   writeMount(): ProAiWriteMount | undefined;
 }
 ```

@@ -1,20 +1,16 @@
 import { promises as fs } from 'node:fs';
 import { relative, resolve, sep } from 'node:path';
 
-export const FS_SCAN_MAX_FILES = 5_000;
-export const FS_RESULT_DEFAULT_LIMIT = 100;
-export const FS_RESULT_MAX_LIMIT = 500;
-
-export interface FsReadMount {
+export interface FsMount {
   name: string;
   root: string;
   include?: string[];
   exclude?: string[];
 }
 
-export type FsWriteMount = FsReadMount;
+export type FsWriteMount = FsMount;
 
-export interface ResolvedFsMount extends FsReadMount {
+export interface ResolvedFsMount extends FsMount {
   root: string;
 }
 
@@ -98,22 +94,14 @@ export function mountRelativePath(mount: ResolvedFsMount, absolutePath: string):
   return rel;
 }
 
-export function isExcludedMountPath(mount: ResolvedFsMount, absolutePath: string): boolean {
-  const rel = mountRelativePath(mount, absolutePath);
-  return rel == null || (rel !== '' && matchesAnyGlob(rel, mount.exclude));
-}
-
 export function isAllowedMountFile(mount: ResolvedFsMount, absolutePath: string): boolean {
   const rel = mountRelativePath(mount, absolutePath);
   if (rel == null || matchesAnyGlob(rel, mount.exclude)) return false;
   return !mount.include?.length || matchesAnyGlob(rel, mount.include);
 }
 
-export function buildMounts(
-  repoRoot: string,
-  extra: readonly FsReadMount[],
-): Map<string, ResolvedFsMount> {
-  const mounts = new Map<string, ResolvedFsMount>([
+export function buildMounts(repoRoot: string): Map<string, ResolvedFsMount> {
+  return new Map<string, ResolvedFsMount>([
     [
       'project',
       {
@@ -123,11 +111,6 @@ export function buildMounts(
       },
     ],
   ]);
-  for (const mount of extra) {
-    if (!/^[a-z][a-z0-9_-]{0,31}$/.test(mount.name) || mounts.has(mount.name)) continue;
-    mounts.set(mount.name, { ...mount, root: resolve(mount.root) });
-  }
-  return mounts;
 }
 
 export function resolveMountedPath(
@@ -152,35 +135,4 @@ export async function isSymlinkSafe(mount: ResolvedFsMount, path: string): Promi
   } catch {
     return false;
   }
-}
-
-export async function collectFiles(
-  mount: ResolvedFsMount,
-  startPath: string,
-  maxFiles = FS_SCAN_MAX_FILES,
-): Promise<string[]> {
-  const out: string[] = [];
-  const stat = await fs.lstat(startPath);
-  if (stat.isSymbolicLink()) return out;
-  if (stat.isFile()) {
-    if (isAllowedMountFile(mount, startPath)) out.push(startPath);
-    return out;
-  }
-  if (!stat.isDirectory()) return out;
-
-  const pending = [startPath];
-  while (pending.length > 0 && out.length < maxFiles) {
-    const dir = pending.pop()!;
-    const entries = await fs.readdir(dir, { withFileTypes: true });
-    entries.sort((a, b) => a.name.localeCompare(b.name));
-    for (const entry of entries) {
-      const path = resolve(dir, entry.name);
-      if (isExcludedMountPath(mount, path)) continue;
-      if (entry.isSymbolicLink()) continue;
-      if (entry.isDirectory()) pending.push(path);
-      else if (entry.isFile() && isAllowedMountFile(mount, path)) out.push(path);
-      if (out.length >= maxFiles) break;
-    }
-  }
-  return out.sort((a, b) => a.localeCompare(b));
 }

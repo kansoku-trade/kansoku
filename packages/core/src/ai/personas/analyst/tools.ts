@@ -16,7 +16,6 @@ import { validatePrediction } from '../../../analysis/predictionRules.js';
 import type { SkillMeta } from '../../agents/skills.js';
 import { createChart } from '../../../charts/store.js';
 import type { ExecFn } from '../../agents/agentTools/execTool.js';
-import type { FsReadMount } from '../../agents/agentTools/fsMounts.js';
 import { buildResearchTools } from '../../agents/agentTools/researchTools.js';
 import { buildDataPackTool, buildKlineTool, buildNewsTool, textResult } from '../../agents/dataTools.js';
 import type { ReassessPack } from '../../agents/datapack.js';
@@ -231,7 +230,6 @@ export function buildTools(
     exec: ExecFn;
     now: () => number;
     skillIndex: SkillMeta[];
-    readMounts: FsReadMount[];
   },
   state: RunState,
   isDone: () => boolean,
@@ -298,7 +296,6 @@ export function buildTools(
     },
     skillIndex: deps.skillIndex,
     onSkillRead: (name) => state.loadedSkillIds.add(name),
-    readMounts: deps.readMounts,
   }).tools;
 
   return [

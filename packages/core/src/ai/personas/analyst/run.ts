@@ -4,7 +4,7 @@ import { JOURNAL_DIR, PROJECT_ROOT, skillSearchDirs } from '../../../platform/en
 import { getProvider } from '../../../marketdata/registry.js';
 import { marketOf } from '../../../symbols/symbol.utils.js';
 import { loadSkillIndex, readSkill } from '../../agents/skills.js';
-import { memoryProcessors, memoryReadMounts } from '../../conversation/messages/memoryProviders.js';
+import { memoryProcessors } from '../../conversation/messages/memoryProviders.js';
 import { AgentTimeoutError, createAgentSession } from '../../agents/agentSession.js';
 import { AnalystMessagesEngine } from '../../conversation/messages/analystMessagesEngine.js';
 import {
@@ -117,7 +117,6 @@ export async function executeAnalystRun(symbol: string, deps: AnalystDeps): Prom
         exec: deps.exec ?? createDefaultExec(repoRoot),
         now,
         skillIndex,
-        readMounts: memoryReadMounts(),
       },
       state,
       () => session?.isDone() ?? false,

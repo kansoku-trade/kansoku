@@ -1,10 +1,7 @@
 import type { AgentMessage } from '@earendil-works/pi-agent-core';
 import type { ProAiMemory } from '@kansoku/pro-api';
 import { afterEach, describe, expect, it } from 'vitest';
-import {
-  memoryProcessors,
-  memoryReadMounts,
-} from '../src/ai/conversation/messages/memoryProviders.js';
+import { memoryProcessors } from '../src/ai/conversation/messages/memoryProviders.js';
 import { MessagesEngine } from '../src/ai/conversation/messages/messageEngine.js';
 import { registerProAiMemory, resetProAiMemoryForTests } from '../src/pro/aiMemory.js';
 
@@ -50,7 +47,6 @@ function fakeMemory(): ProAiMemory & { calls: { index: number; scope: string[] }
       calls.scope.push(`${scope.symbol ?? ''}|${scope.market ?? ''}`);
       return `<persistent_memory>symbol=${scope.symbol}</persistent_memory>`;
     },
-    readMount: () => ({ name: 'memory', root: '/tmp/memory', include: ['**/*.md'] }),
     writeMount: () => undefined,
   };
 }
@@ -60,7 +56,6 @@ afterEach(() => resetProAiMemoryForTests());
 describe('memory providers', () => {
   it('contributes nothing when no Pro memory is registered', () => {
     expect(memoryProcessors()).toEqual([]);
-    expect(memoryReadMounts()).toEqual([]);
   });
 
   it('injects the index once per session and pins scope memory to the message where the symbol appeared', async () => {
@@ -95,9 +90,6 @@ describe('memory providers', () => {
 
     expect(memory.calls.index).toBe(1);
     expect(memory.calls.scope).toEqual(['MU.US|US', 'NVDA.US|US']);
-    expect(memoryReadMounts()).toEqual([
-      { name: 'memory', root: '/tmp/memory', include: ['**/*.md'] },
-    ]);
   });
 
   it('fails open when the Pro memory cannot be read', async () => {
@@ -108,13 +100,11 @@ describe('memory providers', () => {
       scopeContext: async () => {
         throw new Error('disk gone');
       },
-      readMount: () => undefined,
       writeMount: () => undefined,
     });
     const engine = new MessagesEngine(memoryProcessors(), 'memory-broken');
     engine.setStep({ symbol: 'MU.US' });
     const result = await engine.process([user('问', 1)]);
     expect(result.messages.map(textOfMessage).join('\n')).not.toContain('persistent_memory');
-    expect(memoryReadMounts()).toEqual([]);
   });
 });

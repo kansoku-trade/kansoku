@@ -92,7 +92,6 @@ const serverLoadProComposition = vi.hoisted(() =>
     aiMemory: {
       indexContext: vi.fn(),
       scopeContext: vi.fn(),
-      readMount: vi.fn(),
       writeMount: vi.fn(),
       tag: 'server',
     },

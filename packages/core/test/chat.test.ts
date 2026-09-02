@@ -189,7 +189,7 @@ describe('runChatTurn gating', () => {
 });
 
 describe('runChatTurn tools', () => {
-  it('wires the five data/draw tools plus the research trio, no submit_prediction or append_comment', async () => {
+  it('wires the five data/draw tools plus read_skill and bash, no submit_prediction or append_comment', async () => {
     const chartId = 'tools-1';
     let capturedTools: AgentTool[] | undefined;
     const factory: AiAgentFactory = (config) => {
@@ -213,7 +213,6 @@ describe('runChatTurn tools', () => {
       'draw_annotations',
       'read_skill',
       'bash',
-      'read_file',
       'save_canvas',
       'read_canvas',
       'list_canvases',

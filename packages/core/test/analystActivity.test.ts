@@ -79,8 +79,6 @@ describe('describeToolCall', () => {
     expect(describeToolCall('bash', { command: 'longbridge quote SPY.US' })).toBe(
       '正在检索资料：longbridge quote SPY.US',
     );
-    expect(describeToolCall('read_file', { path: 'stocks/MU.md' })).toBe('正在检索资料：stocks/MU.md');
-    expect(describeToolCall('grep', { pattern: 'TD-TREND-01' })).toBe('正在检索资料：TD-TREND-01');
     expect(describeToolCall('read_skill', { name: 'intraday-signal' })).toBe('正在检索资料：intraday-signal');
 
     const longCommand = 'x'.repeat(60);
@@ -90,8 +88,6 @@ describe('describeToolCall', () => {
   });
 
   it('falls back to a bare research message when no arg is summarizable', () => {
-    expect(describeToolCall('list_files', {})).toBe('正在检索资料');
-    expect(describeToolCall('grep', { pattern: '' })).toBe('正在检索资料');
     expect(describeToolCall('bash', { command: '   ' })).toBe('正在检索资料');
   });
 

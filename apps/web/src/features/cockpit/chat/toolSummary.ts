@@ -178,10 +178,10 @@ export function presentToolCall(label: string, input?: string): ToolPresentation
     };
   }
 
-  if (key === 'grep' || key === 'searchresearchlibrary' || key === 'searchresearchdocuments') {
+  if (key === 'searchresearchlibrary' || key === 'searchresearchdocuments') {
     const query = stringValue(parsed, 'query') ?? stringValue(parsed, 'pattern');
     return {
-      title: key === 'grep' ? '搜索文件内容' : '搜索研究资料',
+      title: '搜索研究资料',
       items: [],
       meta: query ? truncate(query) : summarizeToolInput(input),
     };

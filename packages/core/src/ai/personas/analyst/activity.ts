@@ -15,9 +15,6 @@ const FIXED_TOOL_ACTIVITIES: Record<string, string> = Object.assign(Object.creat
 
 const RESEARCH_TOOL_ARG_KEYS: Record<string, string> = Object.assign(Object.create(null), {
   bash: 'command',
-  read_file: 'path',
-  list_files: 'path',
-  grep: 'pattern',
   read_skill: 'name',
 });
 

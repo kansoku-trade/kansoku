@@ -50,11 +50,7 @@ import {
   buildReassessPack as defaultBuildReassessPack,
   type ReassessPack,
 } from '../agents/datapack.js';
-import {
-  memoryProcessors,
-  memoryReadMounts,
-  memoryWriteMount,
-} from '../conversation/messages/memoryProviders.js';
+import { memoryProcessors, memoryWriteMount } from '../conversation/messages/memoryProviders.js';
 import { buildMemoryWriteTools } from '../agents/agentTools/memoryWriteTools.js';
 import { sessionMessagesEngine } from '../conversation/messages/messageEngine.js';
 import { SkillCatalogProvider, toSkillContexts } from '../conversation/messages/sharedProviders.js';
@@ -420,7 +416,6 @@ function prepareTurn(
       const { tools: researchTools, skillIndex } = buildResearchTools({
         repoRoot,
         exec: deps.exec,
-        readMounts: memoryReadMounts(),
         onSkillRead: (name) => loadedSkills.add(name),
       });
       const messageEngine = sessionMessagesEngine(activeSessionId, () => [

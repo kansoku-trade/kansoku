@@ -248,7 +248,6 @@ describe('assistant chat', () => {
         'apply_patch',
         'list_canvases',
         'read_canvas',
-        'read_file',
         'read_research_document',
         'read_skill',
         'save_canvas',

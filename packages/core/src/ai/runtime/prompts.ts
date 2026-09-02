@@ -34,7 +34,7 @@ export const ANALYST_ADAPTER_PROMPT = [
   "- Instead of Step 5's PATCH prediction, call submit_prediction and succeed exactly once. It has hard validation; correct and resubmit if rejected. There is no tool for the context field, so put sources_used and news annotations in the journal.",
   "- Instead of Step 7's journal update, call write_journal. The server determines the path from the US Eastern trading date and appends a section for the same day; provide only Markdown content, including a timestamped section heading. The ordering differs from the skill: write_journal must run before submit_prediction, because a successful submission ends the run with no chance to write afterward.",
   '- Perform the remaining skill steps (checking X, options-levels scripts, finance-calendar, portfolio positions, and journal/lessons.md) through bash with cwd at the repository root. Bash is read-only and must not write files.',
-  '- Use fetch_kline for additional bars, fetch_news for current news, and append_comment for process observations. read_skill and read_file can load related skills (twitter-reader, options-levels, chart) and repository files.',
+  '- Use fetch_kline for additional bars, fetch_news for current news, and append_comment for process observations. read_skill loads related skills (twitter-reader, options-levels, chart); read repository files with bash (cat).',
   `- ${KLINE_TABLE_FORMAT} fetch_kline takes sessions:"reg" to return only regular-session bars, which is far cheaper when the question is about regular-hours action; it defaults to sessions:"all" because overnight gaps often carry the whole story.`,
   '- 读完消息面/资金面后，用 submit_section 提交一段 context 读数（≤200 字 + 倾向）；两段都是中间读数，最终判断以 submit_prediction 为准。',
   '- If the snapshot has no archived prediction, this is an initial analysis rather than a reassessment. Still complete the whole workflow and provide a complete conclusion.',
@@ -49,7 +49,7 @@ export function deepDiveAdapterPrompt(): string {
     'The project skill catalog is injected as runtime context (available_skills). Load a full skill with read_skill when needed.',
     'Tool rules:',
     '- Use bash to run the longbridge CLI and Python scripts under .claude/skills. Do not write files through bash (no redirection, tee, rm, mv, or cp).',
-    '- Use read_file to inspect repository files, including an existing stocks/{SYMBOL}.md note.',
+    '- Read repository files with bash (cat), including an existing stocks/{SYMBOL}.md note.',
     '- write_note is the only way to persist research conclusions; it writes only to stocks/{SYMBOL}.md for this research target.',
     '- A run that does not call write_note has failed and must not end.',
     '- Follow TD-NOTES-01 from the discipline above when updating notes.',
@@ -80,11 +80,11 @@ export const RESEARCH_TOOLING_RULES = [
 ].join('\n');
 
 export const MEMORY_WRITE_RULES = [
-  'Persistent memory (memory mount, writable in this conversation):',
+  'Persistent memory (memory/ under the workspace root, writable in this conversation):',
   '- Save durable preferences, corrections, and trading theses the user states or confirms. Never save prices, positions, news, or current market state; tools return those fresh.',
   '- MEMORY.md holds global preferences and a short index; symbols/<SYMBOL>.md holds one symbol; markets/<MARKET>.md holds one market; long notes go to notes/<slug>.md with a one-line pointer in MEMORY.md.',
   '- One fact per line, prefixed with the date: "- YYYY-MM-DD: ...". Supersede an old fact by adding a new dated line that says so; keep MEMORY.md under 60 lines by moving detail into files.',
-  '- Before writing, grep the memory mount for the same fact to avoid duplicates. Use memory_apply_patch for existing files and memory_write_file only for new files. Tell the user what was saved and where.',
+  '- Before writing, run `grep -rn <keyword> memory/` through bash to avoid duplicate facts. Use memory_apply_patch for existing files and memory_write_file only for new files. Tell the user what was saved and where.',
 ].join('\n');
 
 export const CHAT_TOOLING_SCOPE_NOTE =

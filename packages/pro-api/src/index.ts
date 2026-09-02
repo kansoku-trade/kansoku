@@ -38,15 +38,13 @@ export interface ProLicenseGate {
 export type ProAiSurface =
   'assistant' | 'chart-chat' | 'analyst' | 'deep-dive' | 'research-chat' | 'research-refresh';
 
-/** A host-owned filesystem mount that a Pro AI extension may expose read-only. */
-export interface ProAiReadMount {
+/** A host-owned filesystem mount that a Pro AI extension exposes for tool writes. */
+export interface ProAiWriteMount {
   name: string;
   root: string;
   include?: string[];
   exclude?: string[];
 }
-
-export type ProAiWriteMount = ProAiReadMount;
 
 export interface ProAiMemoryScope {
   symbol?: string;
@@ -61,6 +59,5 @@ export interface ProAiMemoryScope {
 export interface ProAiMemory {
   indexContext(): Promise<string | undefined>;
   scopeContext(scope: ProAiMemoryScope): Promise<string | undefined>;
-  readMount(): ProAiReadMount | undefined;
   writeMount(): ProAiWriteMount | undefined;
 }

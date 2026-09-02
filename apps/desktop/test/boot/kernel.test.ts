@@ -143,7 +143,6 @@ describe('bootKernel', () => {
     const aiMemory = {
       indexContext: vi.fn(),
       scopeContext: vi.fn(),
-      readMount: vi.fn(),
       writeMount: vi.fn(),
     };
     const desktopComposition = {

@@ -12,7 +12,8 @@ export function buildResearchLibraryTools(rootDir: string): AgentTool<any>[] {
   const searchTool: AgentTool<typeof searchSchema> = {
     name: 'search_research_documents',
     label: 'Search Research Library',
-    description: 'Search local research materials by title, path, symbol, excerpt, and body; returns at most eight metadata records.',
+    description:
+      'Search local research materials by title, path, symbol, excerpt, and body; returns at most eight metadata records.',
     parameters: searchSchema,
     execute: async (_id, params) => {
       const rows = await library.list({ query: params.query });
@@ -26,7 +27,9 @@ export function buildResearchLibraryTools(rootDir: string): AgentTool<any>[] {
     parameters: readDocumentSchema,
     execute: async (_id, params) => {
       if (canvasSlugFromResearchPath(params.path)) {
-        return textResult('This path is a canvas. Use read_file with its journal/canvases path.');
+        return textResult(
+          'This path is a canvas. Read it with bash using its journal/canvases path.',
+        );
       }
       const document = await library.get({ path: params.path });
       return textResult(document.markdown);
