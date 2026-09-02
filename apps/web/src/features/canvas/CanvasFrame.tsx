@@ -40,6 +40,7 @@ export function CanvasFrame({ source, slug, data }: CanvasFrameProps) {
   sourceRef.current = source;
   const dataRef = useRef(data);
   dataRef.current = data;
+  const readyRef = useRef(false);
   const [height, setHeight] = useState(INITIAL_HEIGHT);
 
   useEffect(() => {
@@ -58,6 +59,7 @@ export function CanvasFrame({ source, slug, data }: CanvasFrameProps) {
       const payload = event.data;
       if (!payload || typeof payload !== 'object') return;
       if (payload.type === 'ready') {
+        readyRef.current = true;
         postSource();
         return;
       }
@@ -72,10 +74,16 @@ export function CanvasFrame({ source, slug, data }: CanvasFrameProps) {
       void client.canvas.recordCheck({ slug, issues, stage });
     };
 
-    frame.addEventListener('load', postSource);
+    const onLoad = () => {
+      readyRef.current = false;
+      postSource();
+    };
+
+    if (readyRef.current) postSource();
+    frame.addEventListener('load', onLoad);
     window.addEventListener('message', onMessage);
     return () => {
-      frame.removeEventListener('load', postSource);
+      frame.removeEventListener('load', onLoad);
       window.removeEventListener('message', onMessage);
     };
   }, [data, slug, source]);

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render } from '@testing-library/react';
+import { act, cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@web/lib/client', () => ({
@@ -22,5 +22,30 @@ describe('CanvasFrame', () => {
     expect(iframe?.getAttribute('src')).toBe('/canvas-guest.html');
     expect(iframe?.getAttribute('sandbox')).toBe('allow-scripts allow-same-origin');
     expect(iframe?.getAttribute('tabindex')).toBe('-1');
+  });
+
+  it('re-posts the source once the guest is ready and data changes', () => {
+    const source = 'export default function App() { return null; }';
+    const { container, rerender } = render(<CanvasFrame source={source} data={{ bars: 1 }} />);
+    const iframe = container.querySelector('iframe')!;
+    const posts: unknown[] = [];
+    const guest = iframe.contentWindow!;
+    vi.spyOn(guest, 'postMessage').mockImplementation((message: unknown) => {
+      posts.push(message);
+    });
+
+    rerender(<CanvasFrame source={source} data={{ bars: 2 }} />);
+    expect(posts).toEqual([]);
+
+    act(() => {
+      window.dispatchEvent(new MessageEvent('message', { data: { type: 'ready' }, source: guest }));
+    });
+    expect(posts).toEqual([{ type: 'source', source, data: { bars: 2 } }]);
+
+    rerender(<CanvasFrame source={source} data={{ bars: 3 }} />);
+    expect(posts).toEqual([
+      { type: 'source', source, data: { bars: 2 } },
+      { type: 'source', source, data: { bars: 3 } },
+    ]);
   });
 });
