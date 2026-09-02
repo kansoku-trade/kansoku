@@ -4,6 +4,7 @@ import { colors, fontSizes, radii, sizes } from '../theme/tokens.stylex';
 
 type ButtonProps = {
   accent?: boolean;
+  danger?: boolean;
   size?: 'sm';
   state?: 'busy' | 'done' | 'failed';
 } & ButtonHTMLAttributes<HTMLButtonElement>;
@@ -28,6 +29,11 @@ const styles = stylex.create({
       borderColor: colors.accent,
       color: colors.accent,
     },
+    ':not(:disabled):is([data-danger="true"])': {
+      backgroundColor: colors.down,
+      borderColor: colors.down,
+      color: colors.textBright,
+    },
     ':not(:disabled):is([data-state="busy"])': {
       color: colors.textSecondary,
       cursor: 'wait',
@@ -47,6 +53,10 @@ const styles = stylex.create({
     ':hover:not(:disabled)': {
       borderColor: colors.accent,
     },
+    ':hover:not(:disabled):is([data-danger="true"])': {
+      backgroundColor: '#d94946',
+      borderColor: '#d94946',
+    },
     ':focus-visible': {
       borderColor: colors.focusBorder,
       boxShadow: colors.focusRing,
@@ -63,6 +73,7 @@ const styles = stylex.create({
 
 export function Button({
   accent,
+  danger,
   size,
   state,
   disabled,
@@ -79,6 +90,7 @@ export function Button({
     <button
       className={cls}
       data-accent={accent ? 'true' : undefined}
+      data-danger={danger ? 'true' : undefined}
       data-state={state}
       disabled={disabled}
       {...rest}

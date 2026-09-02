@@ -116,6 +116,7 @@ export function AgentKitSection() {
       title: '清理 Agent Kit',
       message: '这会删除本地生成的引导文件、skills 软链接与 kansoku-cli 入口。',
       confirmLabel: '确认清理',
+      danger: true,
       onConfirm: () => void withBusy(() => bridge.clean()),
     });
 

@@ -5,6 +5,7 @@ import { money } from '@web/lib/format';
 import { client } from '@web/lib/client';
 import { Button, Dot, Input, openModal, SectionTitle, Select } from '@web/ui';
 import { colors, fonts, fontSizes } from '../../theme/tokens.stylex';
+import { SettingsConfirmActions, SettingsConfirmDialog } from './openSettingsConfirm';
 import { DeviceLoginDialog } from './DeviceLoginDialog';
 import { ProviderAuthRow } from './ProviderAuthRow';
 import {
@@ -63,10 +64,10 @@ const styles = stylex.create({
     padding: '8px 9px',
   },
   providerRow: {
-    borderTopColor: colors.border,
-    borderTopStyle: 'solid',
-    borderTopWidth: '1px',
-    padding: '10px 11px',
+    'borderTopColor': colors.border,
+    'borderTopStyle': 'solid',
+    'borderTopWidth': '1px',
+    'padding': '10px 11px',
     ':first-child': {
       borderTopStyle: 'none',
     },
@@ -123,12 +124,6 @@ const styles = stylex.create({
     overflowWrap: 'anywhere',
     paddingLeft: '7px',
   },
-  credActions: {
-    display: 'flex',
-    gap: '6px',
-    justifyContent: 'flex-end',
-    marginTop: '12px',
-  },
   providerAdd: {
     'alignItems': 'center',
     'borderTopColor': colors.border,
@@ -178,8 +173,7 @@ function ResetCredentialsDialog({
   };
 
   return (
-    <div className="settings-reset-confirm">
-      <p>会清空全部已存 key，需重新填写。确定继续吗？</p>
+    <SettingsConfirmDialog danger message="会清空全部已存 key，之后需要重新填写。">
       {error ? (
         <div
           className={`settings-test-result settings-test-result--fail ${stylex.props(styles.testResult, styles.testResultFail).className}`}
@@ -187,15 +181,15 @@ function ResetCredentialsDialog({
           {error}
         </div>
       ) : null}
-      <div className={`settings-cred-actions ${stylex.props(styles.credActions).className}`}>
+      <SettingsConfirmActions>
         <Button disabled={busy} onClick={closeModal}>
           取消
         </Button>
-        <Button accent disabled={busy} onClick={reset}>
+        <Button danger disabled={busy} onClick={reset}>
           {busy ? '重置中…' : '确认重置'}
         </Button>
-      </div>
-    </div>
+      </SettingsConfirmActions>
+    </SettingsConfirmDialog>
   );
 }
 

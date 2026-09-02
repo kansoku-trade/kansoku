@@ -3,7 +3,7 @@ import * as stylex from '@stylexjs/stylex';
 import { Check, TriangleAlert } from 'lucide-react';
 import { errorMessage } from '@web/lib/api';
 import { client } from '@web/lib/client';
-import { Button, Chip, openModal, Select, Spinner } from '@web/ui';
+import { Button, Chip, Select, Spinner } from '@web/ui';
 import { colors, fontSizes } from '../../theme/tokens.stylex';
 import {
   defaultCustom,
@@ -16,6 +16,7 @@ import {
 } from './roleShared';
 import { thinkingLabel, type Catalog, type CredentialEntry, type RoleSetting } from './types';
 import { useSaveQueue } from './useSaveQueue';
+import { openSettingsConfirm } from './openSettingsConfirm';
 
 const styles = stylex.create({
   row: {
@@ -77,12 +78,6 @@ const styles = stylex.create({
     justifyContent: 'space-between',
     margin: '0 11px 10px',
     padding: '6px 8px',
-  },
-  actions: {
-    display: 'flex',
-    gap: '6px',
-    justifyContent: 'flex-end',
-    marginTop: '12px',
   },
   roleWarning: {
     color: colors.accent,
@@ -177,32 +172,18 @@ export function PrimaryRow({
   };
 
   const clear = () => {
-    openModal({
+    openSettingsConfirm({
       title: '清除主模型',
-      size: 'sm',
-      body: (closeModal) => (
-        <div className="settings-reset-confirm">
-          <p>清除后，所有「跟随主模型」的用途将变为未配置，直到重新设置主模型。确定继续吗？</p>
-          <div className={`settings-cred-actions ${stylex.props(styles.actions).className}`}>
-            <Button onClick={closeModal}>取消</Button>
-            <Button
-              accent
-              onClick={() => {
-                push({
-                  mode: 'disabled',
-                  provider: null,
-                  modelId: null,
-                  thinkingLevel: null,
-                  stale: false,
-                });
-                closeModal();
-              }}
-            >
-              确认清除
-            </Button>
-          </div>
-        </div>
-      ),
+      message: '清除后，所有「跟随主模型」的用途将变为未配置，直到重新设置主模型。',
+      confirmLabel: '确认清除',
+      onConfirm: () =>
+        push({
+          mode: 'disabled',
+          provider: null,
+          modelId: null,
+          thinkingLevel: null,
+          stale: false,
+        }),
     });
   };
 

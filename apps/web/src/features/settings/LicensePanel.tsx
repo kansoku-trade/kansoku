@@ -8,6 +8,7 @@ import { openLicenseModal } from '@web/features/edition/licenseModalStore';
 import { getDesktopAppControlBridge } from './desktopAppControl';
 import { Badge, Button, Input, openModal } from '@web/ui';
 import { colors, fontSizes } from '../../theme/tokens.stylex';
+import { SettingsConfirmActions, SettingsConfirmDialog } from './openSettingsConfirm';
 
 const styles = stylex.create({
   preference: {
@@ -40,12 +41,6 @@ const styles = stylex.create({
   },
   testResultFail: {
     color: colors.down,
-  },
-  credActions: {
-    display: 'flex',
-    justifyContent: 'flex-end',
-    gap: '6px',
-    marginTop: '12px',
   },
   activateRow: {
     flexDirection: 'column',
@@ -113,8 +108,7 @@ function DeactivateConfirm({ closeModal }: { closeModal: () => void }) {
   };
 
   return (
-    <div className="settings-reset-confirm">
-      <p>停用后本机将失去 AI 功能授权，可随时用授权码重新激活。确定继续吗？</p>
+    <SettingsConfirmDialog danger message="停用后本机将失去 AI 功能授权，可随时用授权码重新激活。">
       {error ? (
         <div
           className={`settings-test-result settings-test-result--fail ${stylex.props(styles.testResult, styles.testResultFail).className}`}
@@ -122,15 +116,15 @@ function DeactivateConfirm({ closeModal }: { closeModal: () => void }) {
           {error}
         </div>
       ) : null}
-      <div className={`settings-cred-actions ${stylex.props(styles.credActions).className}`}>
+      <SettingsConfirmActions>
         <Button disabled={busy} onClick={closeModal}>
           取消
         </Button>
-        <Button accent disabled={busy} onClick={() => void deactivate()}>
+        <Button danger disabled={busy} onClick={() => void deactivate()}>
           {busy ? '停用中…' : '确认停用'}
         </Button>
-      </div>
-    </div>
+      </SettingsConfirmActions>
+    </SettingsConfirmDialog>
   );
 }
 
