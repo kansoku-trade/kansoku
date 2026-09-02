@@ -147,6 +147,7 @@ interface ProAiMemory {
 - 2026-09-03 第 1 步已合并到 main（`dd0295b8`）。
 - 2026-09-03 第 2 步拆成 2a（读路径，本记录）和 2b（移除「记忆整理」角色与文案，另开分支）。2a 期间在 message-engine 修了一个 pin 回放缺陷并发 0.4.1：turn scope 的 pinned-user provider 只在 scope 变化时才产出，之前没有新贡献的编译会丢掉已有 pin。
 - 2a 的两个偏离：`MemoryScopeProvider` 只在 symbol / market 变化时才钉一次，同一标的连续多条消息不重复注入；`researchChat.ts` 暂时仍每轮新建 engine，因为它的文档上下文 provider 在会话内会随文档编辑变化，切到会话级 engine 需要先让该 provider 按文档版本刷新。
+- 2026-09-03 第 2b 步：移除「记忆整理」模型角色（core 角色表、用量归类、校验、web 设置类型与标签、共享 `AiTaskRole` / `UsageTodayOut`），启动时删除已持久化的 `memory` 角色行与迁移标记；pro 侧在 `initMemoryRuntime` 里清理旧目录（删 INSTRUCTIONS.md、INDEX.md、.runtime/、sessions/、archive/，`strategies/` 挪到 `notes/strategies/`）。文案（§9）留到第 4 步。
 
 ## 已定
 

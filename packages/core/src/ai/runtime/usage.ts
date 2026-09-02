@@ -31,7 +31,6 @@ export interface AiUsageLogContext {
     | 'chat-suggest'
     | 'research-chat'
     | 'research-refresh'
-    | 'memory'
     | 'assistant'
     | 'session-title'
     | 'case-pick';

@@ -24,7 +24,6 @@ describe('normalizeAiRoles', () => {
       analyst: configured,
       deepDive: configured,
       chat: configured,
-      memory: configured,
       casePick: configured,
       title: configured,
     };
@@ -45,7 +44,7 @@ describe('normalizeAiRoles', () => {
 
     const normalized = normalizeAiRoles(staleRoles);
 
-    expect(normalized.memory).toEqual({
+    expect(normalized.title).toEqual({
       mode: 'inherit',
       provider: null,
       modelId: null,

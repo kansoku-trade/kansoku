@@ -74,7 +74,6 @@ const preEndpointsSettings: PersistedAiSettings = {
     analyst: disabled,
     deepDive: disabled,
     chat: disabled,
-    memory: disabled,
     casePick: disabled,
     title: disabled,
   },
@@ -98,7 +97,6 @@ function mockSettingsPageQueries(settings: PersistedAiSettings) {
       analyst: { calls: 0, cost: 0 },
       deepDive: { calls: 0, cost: 0 },
       chat: { calls: 0, cost: 0 },
-      memory: { calls: 0, cost: 0 },
       title: { calls: 0, cost: 0 },
     },
     total: { calls: 0, cost: 0 },
@@ -147,7 +145,7 @@ describe('SettingsPage', () => {
 
     renderWithClient(<SettingsPage />);
 
-    const memoryRole = await screen.findByText('记忆整理');
+    const memoryRole = await screen.findByText('追问');
     const page = memoryRole.closest('.settings-page');
     expect(page).toBeTruthy();
     expect(page?.querySelector(':scope > .settings-page-viewport')).toBeTruthy();
@@ -158,7 +156,7 @@ describe('SettingsPage', () => {
 
     renderWithClient(<SettingsPage />);
 
-    const memoryRole = await screen.findByText('记忆整理');
+    const memoryRole = await screen.findByText('追问');
     expect(memoryRole.closest('.settings-page')).toBeTruthy();
   });
 });

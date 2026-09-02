@@ -126,7 +126,6 @@ describe('aiConfig', () => {
       analystModel: null,
       deepDiveModel: null,
       chatModel: null,
-      memoryModel: null,
       casePickModel: null,
       titleModel: null,
     });
@@ -190,7 +189,6 @@ describe('aiConfig', () => {
     expect(config.chatModel).toBe(config.analystModel);
     expect(config.commentModel).toBe(config.analystModel);
     expect(config.deepDiveModel).toBe(config.analystModel);
-    expect(config.memoryModel).toBe(config.analystModel);
     expect(config.titleModel).toBe(config.analystModel);
   });
 

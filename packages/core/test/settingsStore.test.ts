@@ -26,15 +26,7 @@ describe('createSettingsStore defaults', () => {
     try {
       const db = createDb(path);
       const store = createSettingsStore(db);
-      for (const role of [
-        'comment',
-        'analyst',
-        'deepDive',
-        'chat',
-        'memory',
-        'casePick',
-        'title',
-      ] as const) {
+      for (const role of ['comment', 'analyst', 'deepDive', 'chat', 'casePick', 'title'] as const) {
         expect(store.getRole(role)).toEqual({
           mode: 'inherit',
           provider: null,
@@ -48,7 +40,7 @@ describe('createSettingsStore defaults', () => {
         modelId: null,
         thinkingLevel: null,
       });
-      expect(warn).toHaveBeenCalledTimes(8);
+      expect(warn).toHaveBeenCalledTimes(7);
     } finally {
       warn.mockRestore();
       rmSync(dir, { recursive: true, force: true });
@@ -68,7 +60,6 @@ describe('createSettingsStore defaults', () => {
         'chat',
         'comment',
         'deepDive',
-        'memory',
         'primary',
         'title',
       ]);
@@ -365,7 +356,6 @@ describe('aiConfig integration with settingsStore', () => {
     expect(config.chatModel).toEqual({ ...realModel, thinkingLevel: 'medium' });
     expect(config.commentModel).toBe(config.chatModel);
     expect(config.analystModel).toBe(config.chatModel);
-    expect(config.memoryModel).toBe(config.chatModel);
     expect(config.titleModel).toBe(config.chatModel);
   });
 

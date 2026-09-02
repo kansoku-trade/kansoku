@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   initAiSettings,
   runEnvImport,
-  runMemoryModelMigration,
+  runMemoryRoleRemoval,
   runPrimaryModelMigration,
   runTitleModelMigration,
 } from '../src/ai/settings/initAiSettings.js';
@@ -397,7 +397,6 @@ describe('runPrimaryModelMigration', () => {
       expect(config.analystModel?.id).toBe('claude-sonnet-4-5');
       expect(config.chatModel).toBe(config.analystModel);
       expect(config.commentModel).toBeNull();
-      expect(config.memoryModel).toBe(config.chatModel);
     } finally {
       setActiveSettingsStore(null);
       setModelsRuntimeForTests(null);
@@ -405,7 +404,7 @@ describe('runPrimaryModelMigration', () => {
   });
 });
 
-describe('runMemoryModelMigration', () => {
+describe('runMemoryRoleRemoval', () => {
   let dir: string;
   let db: Db;
 
@@ -435,73 +434,19 @@ describe('runMemoryModelMigration', () => {
     return db.select().from(aiRoleSettings).where(eq(aiRoleSettings.role, role)).get();
   }
 
-  it('copies the comment role that maintenance previously preferred', () => {
-    insertRole('primary', 'custom', 'anthropic', 'primary-model', 'high');
-    insertRole('comment', 'custom', 'anthropic', 'small-model', 'off');
-    insertRole('chat', 'inherit', null, null, null);
-
-    runMemoryModelMigration(db);
-
-    expect(role('memory')).toMatchObject({
-      mode: 'custom',
-      provider: 'anthropic',
-      modelId: 'small-model',
-      thinkingLevel: 'off',
-    });
-    expect(db.select().from(appMeta).where(eq(appMeta.key, 'memory_model_v1')).get()?.value).toBe(
-      'completed',
-    );
-  });
-
-  it('copies chat when comment cannot resolve', () => {
-    insertRole('primary', 'custom', 'anthropic', 'primary-model', 'high');
-    insertRole('comment', 'disabled', null, null, null);
-    insertRole('chat', 'inherit', null, null, null);
-
-    runMemoryModelMigration(db);
-
-    expect(role('memory')).toMatchObject({
-      mode: 'inherit',
-      provider: null,
-      modelId: null,
-      thinkingLevel: null,
-    });
-  });
-
-  it('disables memory when neither previous fallback can resolve', () => {
-    insertRole('primary', 'disabled', null, null, null);
-    insertRole('comment', 'inherit', null, null, null);
-    insertRole('chat', 'disabled', null, null, null);
-
-    runMemoryModelMigration(db);
-
-    expect(role('memory')).toMatchObject({
-      mode: 'disabled',
-      provider: null,
-      modelId: null,
-      thinkingLevel: null,
-    });
-  });
-
-  it('preserves an existing explicit memory role and becomes idempotent', () => {
+  it('drops the persisted memory role and its migration marker, idempotently', () => {
     insertRole('memory', 'custom', 'openai', 'memory-model', 'low');
+    insertRole('chat', 'inherit', null, null, null);
+    db.insert(appMeta).values({ key: 'memory_model_v1', value: 'completed' }).run();
 
-    runMemoryModelMigration(db);
-    runMemoryModelMigration(db);
+    runMemoryRoleRemoval(db);
+    runMemoryRoleRemoval(db);
 
-    expect(role('memory')).toMatchObject({
-      mode: 'custom',
-      provider: 'openai',
-      modelId: 'memory-model',
-      thinkingLevel: 'low',
-    });
+    expect(role('memory')).toBeUndefined();
+    expect(role('chat')).toMatchObject({ mode: 'inherit' });
     expect(
-      db
-        .select()
-        .from(aiRoleSettings)
-        .all()
-        .filter((row) => row.role === 'memory'),
-    ).toHaveLength(1);
+      db.select().from(appMeta).where(eq(appMeta.key, 'memory_model_v1')).get(),
+    ).toBeUndefined();
   });
 });
 
@@ -521,7 +466,9 @@ describe('runTitleModelMigration', () => {
 
   it('inserts an inherit title role when missing', () => {
     runTitleModelMigration(db);
-    expect(db.select().from(aiRoleSettings).where(eq(aiRoleSettings.role, 'title')).get()).toMatchObject({
+    expect(
+      db.select().from(aiRoleSettings).where(eq(aiRoleSettings.role, 'title')).get(),
+    ).toMatchObject({
       mode: 'inherit',
       provider: null,
       modelId: null,
@@ -547,7 +494,9 @@ describe('runTitleModelMigration', () => {
     runTitleModelMigration(db);
     runTitleModelMigration(db);
 
-    expect(db.select().from(aiRoleSettings).where(eq(aiRoleSettings.role, 'title')).get()).toMatchObject({
+    expect(
+      db.select().from(aiRoleSettings).where(eq(aiRoleSettings.role, 'title')).get(),
+    ).toMatchObject({
       mode: 'custom',
       provider: 'openai',
       modelId: 'gpt-4o-mini',

@@ -15,14 +15,7 @@ export interface CredentialListEntry {
   ok: boolean;
 }
 
-export type AiTaskRole =
-  | 'comment'
-  | 'analyst'
-  | 'deepDive'
-  | 'chat'
-  | 'memory'
-  | 'casePick'
-  | 'title';
+export type AiTaskRole = 'comment' | 'analyst' | 'deepDive' | 'chat' | 'casePick' | 'title';
 export type AiRole = AiTaskRole | 'primary';
 export type RoleMode = 'custom' | 'disabled' | 'inherit';
 
@@ -62,7 +55,7 @@ export type TestConnectionResult =
 
 export interface UsageTodayOut {
   roles: Record<
-    'comment' | 'analyst' | 'deepDive' | 'chat' | 'memory' | 'casePick' | 'title',
+    'comment' | 'analyst' | 'deepDive' | 'chat' | 'casePick' | 'title',
     { calls: number; cost: number }
   >;
   total: { calls: number; cost: number };

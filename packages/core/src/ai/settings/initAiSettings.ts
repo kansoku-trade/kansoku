@@ -38,7 +38,7 @@ export function setAiRuntimeForTests(next: AiRuntime | null): void {
 
 // Background roles are configured in the settings UI only; they get no env var,
 // so they never anchor the primary role either.
-type EnvAiTaskRole = Exclude<AiTaskRole, 'memory' | 'casePick' | 'title'>;
+type EnvAiTaskRole = Exclude<AiTaskRole, 'casePick' | 'title'>;
 
 const ROLE_ENV_VARS: Record<EnvAiTaskRole, string> = {
   comment: 'AI_COMMENT_MODEL',
@@ -173,61 +173,9 @@ export function runPrimaryModelMigration(db: Db): void {
   });
 }
 
-function roleCanResolve(
-  row: typeof aiRoleSettings.$inferSelect | undefined,
-  primary: typeof aiRoleSettings.$inferSelect | undefined,
-): boolean {
-  if (!row) return false;
-  if (row.mode === 'custom') return true;
-  return row.mode === 'inherit' && primary?.mode === 'custom';
-}
-
-/**
- * Give Memory its own role without changing the model existing installs used.
- * Before this migration maintenance preferred comment and then chat, so copy
- * the first configured source in that order. The copied row is independent and
- * can be changed or disabled from Settings after migration.
- */
-export function runMemoryModelMigration(db: Db): void {
-  const marker = db.select().from(appMeta).where(eq(appMeta.key, MEMORY_MODEL_MARKER_KEY)).get();
-  if (marker?.value === ENV_IMPORT_MARKER_VALUE) return;
-
-  db.transaction((tx) => {
-    const rows = tx.select().from(aiRoleSettings).all();
-    const byRole = new Map(rows.map((row) => [row.role, row]));
-    const existing = byRole.get('memory');
-
-    if (!existing) {
-      const primary = byRole.get('primary');
-      const comment = byRole.get('comment');
-      const chat = byRole.get('chat');
-      const source = roleCanResolve(comment, primary)
-        ? comment
-        : roleCanResolve(chat, primary)
-          ? chat
-          : undefined;
-      const setting = source
-        ? {
-            mode: source.mode,
-            provider: source.provider,
-            modelId: source.modelId,
-            thinkingLevel: source.thinkingLevel,
-          }
-        : { mode: 'disabled', provider: null, modelId: null, thinkingLevel: null };
-
-      tx.insert(aiRoleSettings)
-        .values({ role: 'memory', ...setting, updatedAt: new Date().toISOString() })
-        .run();
-    }
-
-    tx.insert(appMeta)
-      .values({ key: MEMORY_MODEL_MARKER_KEY, value: ENV_IMPORT_MARKER_VALUE })
-      .onConflictDoUpdate({
-        target: appMeta.key,
-        set: { value: ENV_IMPORT_MARKER_VALUE },
-      })
-      .run();
-  });
+export function runMemoryRoleRemoval(db: Db): void {
+  db.delete(aiRoleSettings).where(eq(aiRoleSettings.role, 'memory')).run();
+  db.delete(appMeta).where(eq(appMeta.key, MEMORY_MODEL_MARKER_KEY)).run();
 }
 
 /**
@@ -276,7 +224,7 @@ export function initAiSettings(
   const box = opts?.secretBox ?? createSecretBox(join(CHART_DATA_DIR, 'ai-secret.key'));
   runEnvImport(db, box, opts?.env ?? process.env);
   runPrimaryModelMigration(db);
-  runMemoryModelMigration(db);
+  runMemoryRoleRemoval(db);
   runTitleModelMigration(db);
   setActiveSettingsStore(createSettingsStore(db));
   const credentials = createCredentialStore(db, box, { codexAuthPath: opts?.codexAuthPath });

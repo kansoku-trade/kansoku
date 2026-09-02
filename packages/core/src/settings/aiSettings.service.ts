@@ -19,20 +19,23 @@ import {
 } from './settingsValidation.js';
 
 const credentialKeySchema = z.string().min(1);
-const httpUrlSchema = z.string().trim().transform((trimmed) => {
-  if (!trimmed) return null;
-  const stripped = trimmed.replace(/\/+$/, '');
-  let url: URL;
-  try {
-    url = new URL(stripped);
-  } catch {
-    throw new ClientError(`invalid baseUrl: ${stripped}`, 'expected a full http(s) URL');
-  }
-  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-    throw new ClientError(`invalid baseUrl: ${stripped}`, 'expected a full http(s) URL');
-  }
-  return stripped;
-});
+const httpUrlSchema = z
+  .string()
+  .trim()
+  .transform((trimmed) => {
+    if (!trimmed) return null;
+    const stripped = trimmed.replace(/\/+$/, '');
+    let url: URL;
+    try {
+      url = new URL(stripped);
+    } catch {
+      throw new ClientError(`invalid baseUrl: ${stripped}`, 'expected a full http(s) URL');
+    }
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      throw new ClientError(`invalid baseUrl: ${stripped}`, 'expected a full http(s) URL');
+    }
+    return stripped;
+  });
 
 function normalizeProviderBaseUrl(raw: unknown): string | null {
   if (typeof raw !== 'string') return null;
@@ -41,7 +44,7 @@ function normalizeProviderBaseUrl(raw: unknown): string | null {
 
 function usageRole(
   record: AiUsageRecord,
-): 'comment' | 'analyst' | 'deepDive' | 'chat' | 'memory' | 'casePick' | 'title' | null {
+): 'comment' | 'analyst' | 'deepDive' | 'chat' | 'casePick' | 'title' | null {
   switch (record.layer) {
     case 'commentator':
     case 'event-filter':
@@ -57,9 +60,6 @@ function usageRole(
     }
     case 'research-refresh': {
       return 'deepDive';
-    }
-    case 'memory': {
-      return 'memory';
     }
     case 'case-pick': {
       return 'casePick';
@@ -229,7 +229,6 @@ export const aiSettingsService: AiSettingsService = {
       analyst: { calls: 0, cost: 0 },
       deepDive: { calls: 0, cost: 0 },
       chat: { calls: 0, cost: 0 },
-      memory: { calls: 0, cost: 0 },
       casePick: { calls: 0, cost: 0 },
       title: { calls: 0, cost: 0 },
     };

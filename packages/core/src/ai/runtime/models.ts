@@ -20,7 +20,6 @@ export type AiConfig = {
   analystModel: AiModel | null;
   deepDiveModel: AiModel | null;
   chatModel: AiModel | null;
-  memoryModel: AiModel | null;
   casePickModel: AiModel | null;
   titleModel: AiModel | null;
 };
@@ -94,7 +93,6 @@ export function aiConfig(): AiConfig {
     analystModel: resolve('analyst'),
     deepDiveModel: resolve('deepDive'),
     chatModel: resolve('chat'),
-    memoryModel: resolve('memory'),
     casePickModel: resolve('casePick'),
     titleModel: resolve('title'),
   };

@@ -7,15 +7,7 @@ import { LOBEHUB_PROVIDER } from '../ai/lobehub/types.js';
 import type { AiRole, RoleMode, RoleSetting } from '../ai/settings/settingsStore.js';
 
 export const CODEX_PROVIDER = 'openai-codex';
-export const ROLES: AiRole[] = [
-  'primary',
-  'comment',
-  'analyst',
-  'deepDive',
-  'chat',
-  'memory',
-  'title',
-];
+export const ROLES: AiRole[] = ['primary', 'comment', 'analyst', 'deepDive', 'chat', 'title'];
 const MODES: [RoleMode, ...RoleMode[]] = ['custom', 'disabled', 'inherit'];
 const roleSchema = z.enum(ROLES as [AiRole, ...AiRole[]]);
 const modeSchema = z.enum(MODES);
@@ -96,7 +88,10 @@ export function validateRoleSetting(
 ): RoleSetting {
   const modeResult = modeSchema.safeParse(body.mode);
   if (!modeResult.success) {
-    throw new ClientError(`unknown mode: ${String(body.mode)}`, `expected one of ${MODES.join(', ')}`);
+    throw new ClientError(
+      `unknown mode: ${String(body.mode)}`,
+      `expected one of ${MODES.join(', ')}`,
+    );
   }
   const mode = modeResult.data;
   if (mode === 'inherit' && role === 'primary') {
