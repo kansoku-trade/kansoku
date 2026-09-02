@@ -11,8 +11,6 @@ const chatToolStatusPulse = stylex.keyframes({
   '50%': { opacity: 1, transform: 'scale(1)' },
 });
 
-const runningBorder = 'rgb(94 78 38)';
-
 const styles = stylex.create({
   tool: {
     alignSelf: 'flex-start',
@@ -23,13 +21,12 @@ const styles = stylex.create({
     gap: 0,
     padding: '3px 8px',
     backgroundColor: colors.backgroundSurface,
-    borderColor: colors.border,
-    borderStyle: 'solid',
-    borderWidth: '1px',
+    borderStyle: 'none',
+    borderWidth: 0,
     borderRadius: radii.lg,
   },
   toolRunning: {
-    borderColor: runningBorder,
+    backgroundColor: `color-mix(in srgb, ${colors.accent} 5%, ${colors.backgroundSurface})`,
   },
   nested: {
     padding: 0,
@@ -177,12 +174,6 @@ const styles = stylex.create({
   rail: {
     margin: '0 0 3px 11px',
     paddingLeft: '8px',
-    borderLeftColor: colors.border,
-    borderLeftStyle: 'solid',
-    borderLeftWidth: '1px',
-  },
-  railRunning: {
-    borderLeftColor: runningBorder,
   },
   groupMeta: {
     flexGrow: 1,
@@ -354,7 +345,7 @@ export function ToolGroupRow({
         {shown.length > 0 ? (
           <motion.div
             id={id}
-            className={stylex.props(styles.fold, styles.rail, running && styles.railRunning).className}
+            className={stylex.props(styles.fold, styles.rail).className}
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}

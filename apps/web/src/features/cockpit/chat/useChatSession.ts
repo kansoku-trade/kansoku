@@ -4,7 +4,6 @@ import { client } from '@web/lib/client';
 import { trackFeatureUsed } from '@web/lib/analytics';
 import { subscribeChannel } from '@web/lib/ws/wsHub';
 import { applyLiveBeat } from './liveBeats.js';
-import { useSmoothStream } from './useSmoothStream.js';
 
 export interface ChatSessionInfo {
   id: string;
@@ -22,6 +21,7 @@ export interface ChatRow {
   id: string;
   ts: string;
   kind: ChatRowKind;
+  optimistic?: boolean;
   text?: string;
   label?: string;
   input?: string;
@@ -80,6 +80,8 @@ type ChatWsEvent =
 
 type ChatWsEnvelope =
   { type: 'init'; busy: boolean; partial: string } | { type: 'event'; event: ChatWsEvent };
+
+const STREAM_SETTLE_MS = 800;
 
 const isErrorBody = (value: unknown): value is { error: string; hint?: string } =>
   typeof value === 'object' &&
@@ -157,13 +159,7 @@ function useConversationSession(
   const [rows, setRows] = useState<ChatRow[]>([]);
   const [busy, setBusy] = useState(false);
   const [aborting, setAborting] = useState(false);
-  const {
-    text: streamText,
-    push: streamPush,
-    flush: streamFlush,
-    finish: streamFinish,
-    reset: streamReset,
-  } = useSmoothStream();
+  const [streamText, setStreamText] = useState('');
   const [liveBeats, setLiveBeats] = useState<ChatLiveBeat[]>([]);
   const liveTools = useMemo(
     () =>
@@ -207,8 +203,7 @@ function useConversationSession(
               : env.messages,
           );
           setBusy(env.busy);
-          if (env.busy) streamFlush(env.partial);
-          else streamReset();
+          setStreamText(env.busy ? env.partial : '');
           setUsage(usageFromEnvelope(env));
           setLoaded(true);
           setHint((prev) => (prev === '对话记录加载失败' ? null : prev));
@@ -221,7 +216,7 @@ function useConversationSession(
           setHint('对话记录加载失败');
         });
     },
-    [adapter, id, streamFlush, streamReset],
+    [adapter, id],
   );
 
   useEffect(() => {
@@ -232,18 +227,19 @@ function useConversationSession(
     setRows([]);
     setBusy(false);
     setAborting(false);
-    streamReset();
+    setStreamText('');
     setLiveBeats([]);
     setHint(null);
     setLoaded(false);
     setSuggestions([]);
     setUsage(null);
     reload();
-  }, [id, enabled, reload, streamReset]);
+  }, [id, enabled, reload]);
 
   useEffect(() => {
     if (!enabled) return;
     let connectedOnce = false;
+    let settleTimer: ReturnType<typeof setTimeout> | null = null;
     const off = subscribeChannel(
       adapter.channel(id),
       (payload) => {
@@ -251,19 +247,14 @@ function useConversationSession(
         if (env.type !== 'init' && env.type !== 'event') return;
         if (env.type === 'init') {
           setBusy(env.busy);
-          if (env.busy) {
-            streamFlush(env.partial);
-            setLiveBeats(env.partial ? [{ kind: 'text', text: env.partial }] : []);
-          } else {
-            streamReset();
-            setLiveBeats([]);
-          }
+          setStreamText(env.busy ? env.partial : '');
+          setLiveBeats(env.busy && env.partial ? [{ kind: 'text', text: env.partial }] : []);
           return;
         }
         const evt = env.event;
         if (evt.event === 'delta') {
           setBusy(true);
-          streamPush(evt.text);
+          setStreamText((prev) => prev + evt.text);
           setLiveBeats((prev) => applyLiveBeat(prev, evt, `tool-${toolSeqRef.current}`));
           return;
         }
@@ -274,7 +265,7 @@ function useConversationSession(
         }
         if (evt.event === 'tool') {
           if (evt.status === 'start') {
-            streamReset();
+            setStreamText('');
             const toolId = `tool-${toolSeqRef.current++}`;
             setLiveBeats((prev) => applyLiveBeat(prev, evt, toolId));
             return;
@@ -287,25 +278,27 @@ function useConversationSession(
           return;
         }
         if (evt.event === 'aborted') {
-          streamFlush();
           setBusy(false);
           setAborting(false);
           reload(undefined, () => {
             setLiveBeats([]);
-            streamReset();
+            setStreamText('');
           });
           return;
         }
         const markError = evt.event === 'done' ? undefined : evt.message;
-        streamFinish(() => {
+        // Streamdown keeps revealing after the last delta; swapping to the static
+        // renderer before it settles snaps the tail in and cuts the fade.
+        settleTimer = setTimeout(() => {
+          settleTimer = null;
           setAborting(false);
           suggestionsRequestedRef.current = false;
           reload(markError, () => {
             setBusy(false);
             setLiveBeats([]);
-            streamReset();
+            setStreamText('');
           });
-        });
+        }, STREAM_SETTLE_MS);
       },
       (connected) => {
         if (!connected) return;
@@ -313,8 +306,11 @@ function useConversationSession(
         connectedOnce = true;
       },
     );
-    return off;
-  }, [adapter, id, enabled, reload, streamFlush, streamFinish, streamPush, streamReset]);
+    return () => {
+      off();
+      if (settleTimer) clearTimeout(settleTimer);
+    };
+  }, [adapter, id, enabled, reload]);
 
   const send = useCallback(
     async (text: string): Promise<ChatSendResult> => {
@@ -331,7 +327,7 @@ function useConversationSession(
       setSuggestions([]);
       setRows((prev) => [
         ...prev,
-        { id: optimisticId, ts: new Date().toISOString(), kind: 'user', text: trimmed },
+        { id: optimisticId, ts: new Date().toISOString(), kind: 'user', text: trimmed, optimistic: true },
       ]);
       try {
         const result = await adapter.send(id, trimmed);

@@ -798,6 +798,12 @@ function markdownComponents(variant: MarkdownVariant): Components {
   } as Components;
 }
 
+const REMARK_PLUGINS = [remarkGfm];
+const COMPONENTS: Record<MarkdownVariant, Components> = {
+  chat: markdownComponents('chat'),
+  report: markdownComponents('report'),
+};
+
 export function Markdown({
   children,
   variant = 'report',
@@ -816,11 +822,11 @@ export function Markdown({
           content={children}
           granularity="char"
           smoothing="realtime"
-          remarkPlugins={[remarkGfm]}
-          components={markdownComponents(variant)}
+          remarkPlugins={REMARK_PLUGINS}
+          components={COMPONENTS[variant]}
         />
       ) : (
-        <CachedMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents(variant)}>
+        <CachedMarkdown remarkPlugins={REMARK_PLUGINS} components={COMPONENTS[variant]}>
           {children}
         </CachedMarkdown>
       )}

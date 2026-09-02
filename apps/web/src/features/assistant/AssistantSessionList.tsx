@@ -1,192 +1,128 @@
-import { useMemo, useState, type FormEvent } from 'react';
-import { Plus, Search, X } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { PanelLeftClose, PanelLeftOpen, Plus, Search } from 'lucide-react';
 import * as stylex from '@stylexjs/stylex';
 import type { AssistantSessionMeta } from '@kansoku/core/contract/index';
-import {
-  Button,
-  Empty,
-  Input,
-  Spinner,
-  TimeAgo,
-  openModal,
-  showContextMenu,
-  type ContextMenuItem,
-} from '@web/ui';
+import { Button, Empty, Tooltip, openModal, type ContextMenuItem } from '@web/ui';
 import { colors, fontSizes, radii, sizes } from '../../theme/tokens.stylex';
+import { SessionRow } from './SessionRow';
+import { groupSessionsByRecency } from './sessionGroups';
 
 const styles = stylex.create({
   sidebar: {
     backgroundColor: colors.backgroundSurface,
-    borderRightColor: colors.border,
-    borderRightStyle: 'solid',
-    borderRightWidth: '1px',
     display: 'flex',
     flexDirection: 'column',
     minHeight: 0,
+    overflow: 'hidden',
+    width: sizes.sidebarWidth,
   },
-  sidebarHead: {
+  head: {
     alignItems: 'center',
-    borderBottomColor: colors.border,
-    borderBottomStyle: 'solid',
-    borderBottomWidth: '1px',
     display: 'flex',
     flex: '0 0 auto',
-    height: sizes.paneHeaderHeight,
-    overflow: 'hidden',
-    padding: '0 6px',
-  },
-  toolbar: {
-    alignItems: 'center',
-    display: 'flex',
-    flex: '1 1 auto',
-    gap: '6px',
-    minWidth: 0,
-  },
-  search: {
-    alignItems: 'center',
-    display: 'flex',
-    flex: '1 1 auto',
-    minWidth: 0,
-    position: 'relative',
-  },
-  searchIcon: {
-    color: colors.textMuted,
-    left: '8px',
-    pointerEvents: 'none',
-    position: 'absolute',
-    zIndex: 1,
-  },
-  searchInput: {
-    boxSizing: 'border-box',
-    borderRadius: radii.default,
-    minWidth: 0,
-    paddingLeft: '28px',
-    width: '100%',
-  },
-  visuallyHidden: {
-    border: 0,
-    clip: 'rect(0, 0, 0, 0)',
-    height: '1px',
-    margin: '-1px',
-    overflow: 'hidden',
-    padding: 0,
-    position: 'absolute',
-    whiteSpace: 'nowrap',
-    width: '1px',
-  },
-  newSession: {
-    'alignItems': 'center',
-    'backgroundColor': colors.backgroundElement,
-    'borderColor': colors.borderStrong,
-    'borderRadius': radii.default,
-    'borderStyle': 'solid',
-    'borderWidth': '1px',
-    'boxSizing': 'border-box',
-    'color': colors.textPrimary,
-    'cursor': 'pointer',
-    'display': 'inline-flex',
-    'flex': '0 0 auto',
-    'height': sizes.controlHeight,
-    'justifyContent': 'center',
-    'padding': 0,
-    'transition': 'border-color 0.12s ease, color 0.12s ease, transform 0.12s ease',
-    'width': sizes.controlHeight,
-    ':hover': {
-      borderColor: colors.accent,
-    },
-    ':active': {
-      transform: 'scale(0.96)',
-    },
-    ':focus-visible': {
-      borderColor: colors.focusBorder,
-      boxShadow: colors.focusRing,
-      outline: 'none',
-    },
-  },
-  sidebarScroll: {
-    flex: '1 1 auto',
-    minHeight: 0,
-    overflowY: 'auto',
-    padding: '6px',
-  },
-  sidebarState: {
-    alignItems: 'center',
-    color: colors.textMuted,
-    display: 'flex',
-    fontSize: fontSizes.xs,
-    gap: '6px',
-    margin: '6px 5px',
-  },
-  sidebarEmpty: {
-    margin: '12px 5px',
-  },
-  sessionRow: {
-    'alignItems': 'center',
-    'borderRadius': radii.default,
-    'cursor': 'pointer',
-    'display': 'flex',
-    'gap': '6px',
-    'minHeight': sizes.controlHeight,
-    'padding': '6px 8px',
-    'position': 'relative',
-    'transition': 'background-color 0.12s ease',
-    ':hover': {
-      backgroundColor: colors.backgroundHover,
-    },
-    ':hover .assistant-session-delete': {
-      opacity: 0.6,
-    },
-  },
-  sessionRowActive: {
-    backgroundColor: 'rgba(255, 176, 0, 0.1)',
-  },
-  sessionRowMain: {
-    display: 'flex',
-    flex: '1 1 auto',
-    flexDirection: 'column',
     gap: '2px',
-    minWidth: 0,
+    height: sizes.paneHeaderHeight,
+    padding: '0 8px',
   },
-  sessionTitle: {
-    color: colors.textPrimary,
-    fontSize: fontSizes.base,
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-  },
-  sessionTitleActive: {
-    color: colors.accent,
-  },
-  sessionTime: {
-    color: colors.textMuted,
-    fontSize: fontSizes.sm,
-  },
-  sessionDelete: {
+  iconButton: {
     'alignItems': 'center',
     'backgroundColor': 'transparent',
+    'borderRadius': radii.md,
     'borderStyle': 'none',
     'borderWidth': 0,
-    'borderRadius': radii.full,
     'color': colors.textMuted,
     'cursor': 'pointer',
     'display': 'inline-flex',
     'flex': '0 0 auto',
-    'height': '20px',
+    'height': '28px',
     'justifyContent': 'center',
-    'opacity': 0,
-    'padding': '1px 6px',
-    'transition': 'opacity 0.12s ease, color 0.12s ease, background-color 0.12s ease',
-    'width': '20px',
+    'padding': 0,
+    'transition': 'background-color 0.12s ease, color 0.12s ease',
+    'width': '28px',
     ':hover': {
       backgroundColor: colors.backgroundElement,
       color: colors.textPrimary,
-      opacity: 1,
     },
     ':focus-visible': {
-      backgroundColor: colors.backgroundElement,
-      color: colors.textPrimary,
-      opacity: 1,
+      boxShadow: colors.focusRing,
+      outline: 'none',
     },
+  },
+  search: {
+    'alignItems': 'center',
+    'borderRadius': radii.full,
+    'color': colors.textMuted,
+    'display': 'flex',
+    'flex': '1 1 auto',
+    'gap': '6px',
+    'height': '28px',
+    'minWidth': 0,
+    'padding': '0 10px',
+    'transition': 'background-color 0.12s ease',
+    ':focus-within': {
+      backgroundColor: colors.backgroundElement,
+      color: colors.textSecondary,
+    },
+  },
+  searchIcon: {
+    flex: '0 0 auto',
+  },
+  searchInput: {
+    'backgroundColor': 'transparent',
+    'borderStyle': 'none',
+    'borderWidth': 0,
+    'color': colors.textPrimary,
+    'fontFamily': 'inherit',
+    'fontSize': fontSizes.base,
+    'minWidth': 0,
+    'outline': 'none',
+    'padding': 0,
+    'width': '100%',
+    '::placeholder': {
+      color: colors.textMuted,
+    },
+    '::-webkit-search-cancel-button': {
+      display: 'none',
+    },
+  },
+  scroll: {
+    flex: '1 1 auto',
+    maskImage:
+      'linear-gradient(to bottom, transparent, #000 14px, #000 calc(100% - 18px), transparent)',
+    minHeight: 0,
+    overflowY: 'auto',
+    padding: '6px 8px 18px',
+  },
+  group: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '2px',
+  },
+  groupLabel: {
+    color: colors.textMuted,
+    fontSize: fontSizes.xs,
+    fontWeight: 500,
+    padding: '14px 8px 4px',
+  },
+  state: {
+    color: colors.textMuted,
+    fontSize: fontSizes.xs,
+    padding: '12px 8px',
+  },
+  empty: {
+    margin: '12px 4px',
+  },
+  skeleton: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '2px',
+    padding: '14px 0 0',
+  },
+  skeletonRow: {
+    backgroundColor: colors.backgroundElement,
+    borderRadius: radii.lg,
+    height: '32px',
+    opacity: 0.6,
   },
   confirmText: {
     color: colors.textPrimary,
@@ -200,10 +136,6 @@ const styles = stylex.create({
     gap: '6px',
     justifyContent: 'flex-end',
   },
-  renameField: {
-    marginBottom: '12px',
-    width: '100%',
-  },
 });
 
 interface AssistantSessionListProps {
@@ -215,6 +147,7 @@ interface AssistantSessionListProps {
   onCreate: () => void;
   onRename: (id: string, title: string) => void;
   onDelete: (id: string) => void;
+  onCollapse?: () => void;
 }
 
 export function filterSessions(
@@ -223,7 +156,11 @@ export function filterSessions(
 ): AssistantSessionMeta[] {
   const needle = query.trim().toLowerCase();
   if (!needle) return sessions;
-  return sessions.filter((session) => session.title.toLowerCase().includes(needle));
+  return sessions.filter(
+    (session) =>
+      session.title.toLowerCase().includes(needle) ||
+      (session.preview ?? '').toLowerCase().includes(needle),
+  );
 }
 
 export function buildSessionMenuItems(handlers: {
@@ -235,57 +172,6 @@ export function buildSessionMenuItems(handlers: {
     { type: 'divider' },
     { key: 'delete', label: '删除', danger: true, onClick: handlers.onDelete },
   ];
-}
-
-function RenameForm({
-  session,
-  onRename,
-  close,
-}: {
-  session: AssistantSessionMeta;
-  onRename: (id: string, title: string) => void;
-  close: () => void;
-}) {
-  const [title, setTitle] = useState(session.title);
-
-  const submit = (event: FormEvent) => {
-    event.preventDefault();
-    const next = title.trim();
-    if (!next) return;
-    onRename(session.id, next);
-    close();
-  };
-
-  return (
-    <form onSubmit={submit}>
-      <Input
-        className={stylex.props(styles.renameField).className}
-        value={title}
-        maxLength={40}
-        autoFocus
-        onChange={(event) => setTitle(event.target.value)}
-      />
-      <div {...stylex.props(styles.confirmActions)}>
-        <Button type="button" onClick={close}>
-          取消
-        </Button>
-        <Button accent type="submit">
-          保存
-        </Button>
-      </div>
-    </form>
-  );
-}
-
-function confirmRename(
-  session: AssistantSessionMeta,
-  onRename: (id: string, title: string) => void,
-): void {
-  openModal({
-    title: '重命名会话',
-    size: 'sm',
-    body: (close) => <RenameForm session={session} onRename={onRename} close={close} />,
-  });
 }
 
 function confirmDelete(session: AssistantSessionMeta, onDelete: (id: string) => void): void {
@@ -312,6 +198,26 @@ function confirmDelete(session: AssistantSessionMeta, onDelete: (id: string) => 
   });
 }
 
+export function SidebarToggle({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
+  const label = collapsed ? '展开侧栏' : '收起侧栏';
+  return (
+    <Tooltip content={`${label} ⌘B`}>
+      <button
+        type="button"
+        className={`assistant-sidebar-toggle ${stylex.props(styles.iconButton).className}`}
+        aria-label={label}
+        onClick={onToggle}
+      >
+        {collapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+      </button>
+    </Tooltip>
+  );
+}
+
+function isPlainMeta(event: KeyboardEvent): boolean {
+  return (event.metaKey || event.ctrlKey) && !event.altKey;
+}
+
 export function AssistantSessionList({
   sessions,
   activeId,
@@ -321,106 +227,107 @@ export function AssistantSessionList({
   onCreate,
   onRename,
   onDelete,
+  onCollapse,
 }: AssistantSessionListProps) {
   const [query, setQuery] = useState('');
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
   const visible = useMemo(() => filterSessions(sessions, query), [query, sessions]);
+  const groups = useMemo(() => groupSessionsByRecency(visible), [visible]);
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (!isPlainMeta(event)) return;
+      const key = event.key.toLowerCase();
+      if (key === 'f' && !event.shiftKey) {
+        event.preventDefault();
+        searchRef.current?.focus();
+        searchRef.current?.select();
+      } else if (key === 'n' && event.shiftKey) {
+        event.preventDefault();
+        onCreate();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onCreate]);
+
+  let body;
+  if (loading && sessions.length === 0) {
+    body = (
+      <div className={stylex.props(styles.skeleton).className} aria-label="正在读取会话" role="status">
+        {['72%', '54%', '64%'].map((width) => (
+          <div key={width} className={stylex.props(styles.skeletonRow).className} style={{ width }} />
+        ))}
+      </div>
+    );
+  } else if (error) {
+    body = <div className={stylex.props(styles.state).className}>{error}</div>;
+  } else if (sessions.length === 0) {
+    body = <Empty className={stylex.props(styles.empty).className}>还没有会话</Empty>;
+  } else if (visible.length === 0) {
+    body = <Empty className={stylex.props(styles.empty).className}>没有匹配的会话</Empty>;
+  } else {
+    body = groups.map((group) => (
+      <div key={group.key} className={stylex.props(styles.group).className}>
+        <div className={stylex.props(styles.groupLabel).className}>{group.label}</div>
+        {group.sessions.map((session) => (
+          <SessionRow
+            key={session.id}
+            session={session}
+            active={session.id === activeId}
+            renaming={session.id === renamingId}
+            menuItems={buildSessionMenuItems({
+              onRename: () => setRenamingId(session.id),
+              onDelete: () => confirmDelete(session, onDelete),
+            })}
+            onSelect={() => onSelect(session.id)}
+            onStartRename={() => setRenamingId(session.id)}
+            onCommitRename={(title) => {
+              setRenamingId(null);
+              onRename(session.id, title);
+            }}
+            onCancelRename={() => setRenamingId(null)}
+          />
+        ))}
+      </div>
+    ));
+  }
 
   return (
-    <div className={`assistant-sidebar ${stylex.props(styles.sidebar).className}`}>
-      <div className={`assistant-sidebar-head ${stylex.props(styles.sidebarHead).className}`}>
-        <div className={`assistant-sidebar-toolbar ${stylex.props(styles.toolbar).className}`}>
-          <label className={`assistant-session-search ${stylex.props(styles.search).className}`}>
-            <Search size={13} aria-hidden="true" {...stylex.props(styles.searchIcon)} />
-            <span className={`sr-only ${stylex.props(styles.visuallyHidden).className}`}>
-              搜索会话
-            </span>
-            <Input
-              type="search"
-              value={query}
-              className={stylex.props(styles.searchInput).className}
-              style={{ borderRadius: 2, minWidth: 0 }}
-              placeholder="搜索会话"
-              onChange={(event) => setQuery(event.target.value)}
-            />
-          </label>
+    <aside className={`assistant-sidebar ${stylex.props(styles.sidebar).className}`} aria-label="会话列表">
+      <div className={`assistant-sidebar-head ${stylex.props(styles.head).className}`}>
+        {onCollapse ? <SidebarToggle collapsed={false} onToggle={onCollapse} /> : null}
+        <label className={`assistant-session-search ${stylex.props(styles.search).className}`}>
+          <Search size={13} aria-hidden="true" {...stylex.props(styles.searchIcon)} />
+          <input
+            ref={searchRef}
+            type="search"
+            aria-label="搜索会话"
+            className={stylex.props(styles.searchInput).className}
+            value={query}
+            placeholder="搜索会话"
+            onChange={(event) => setQuery(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape') {
+                setQuery('');
+                event.currentTarget.blur();
+              }
+            }}
+          />
+        </label>
+        <Tooltip content="新建会话 ⇧⌘N">
           <button
             type="button"
-            className={`assistant-new-session ${stylex.props(styles.newSession).className}`}
+            className={`assistant-new-session ${stylex.props(styles.iconButton).className}`}
             onClick={onCreate}
             aria-label="新建会话"
           >
-            <Plus size={14} />
+            <Plus size={16} />
           </button>
-        </div>
+        </Tooltip>
       </div>
-      <div className={`assistant-sidebar-scroll ${stylex.props(styles.sidebarScroll).className}`}>
-        {loading && sessions.length === 0 ? (
-          <div className={`assistant-sidebar-state ${stylex.props(styles.sidebarState).className}`}>
-            <Spinner /> 正在读取会话…
-          </div>
-        ) : error ? (
-          <div className={`assistant-sidebar-state ${stylex.props(styles.sidebarState).className}`}>
-            {error}
-          </div>
-        ) : sessions.length === 0 ? (
-          <Empty
-            className={`assistant-sidebar-empty ${stylex.props(styles.sidebarEmpty).className}`}
-          >
-            还没有会话
-          </Empty>
-        ) : visible.length === 0 ? (
-          <Empty
-            className={`assistant-sidebar-empty ${stylex.props(styles.sidebarEmpty).className}`}
-          >
-            没有匹配的会话
-          </Empty>
-        ) : (
-          visible.map((session) => (
-            <div
-              key={session.id}
-              className={`assistant-session-row${session.id === activeId ? ' active' : ''} ${stylex.props(styles.sessionRow, session.id === activeId && styles.sessionRowActive).className}`}
-              onClick={() => onSelect(session.id)}
-              onContextMenu={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                showContextMenu(
-                  buildSessionMenuItems({
-                    onRename: () => confirmRename(session, onRename),
-                    onDelete: () => confirmDelete(session, onDelete),
-                  }),
-                  { x: event.clientX, y: event.clientY },
-                );
-              }}
-            >
-              <div
-                className={`assistant-session-row-main ${stylex.props(styles.sessionRowMain).className}`}
-              >
-                <span
-                  className={`assistant-session-title ${stylex.props(styles.sessionTitle, session.id === activeId && styles.sessionTitleActive).className}`}
-                >
-                  {session.title}
-                </span>
-                <span
-                  className={`assistant-session-time ${stylex.props(styles.sessionTime).className}`}
-                >
-                  <TimeAgo since={session.updatedAt} />
-                </span>
-              </div>
-              <button
-                type="button"
-                className={`assistant-session-delete ${stylex.props(styles.sessionDelete).className}`}
-                aria-label="删除会话"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  confirmDelete(session, onDelete);
-                }}
-              >
-                <X size={13} />
-              </button>
-            </div>
-          ))
-        )}
-      </div>
-    </div>
+      <div className={`assistant-sidebar-scroll ${stylex.props(styles.scroll).className}`}>{body}</div>
+    </aside>
   );
 }

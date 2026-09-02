@@ -104,10 +104,24 @@ const scrollBottomChrome = stylex.create({
 });
 
 const SCROLL_STICK_THRESHOLD = 48;
+const ANCHOR_SCROLL_SMOOTH_MS = 450;
+
+function reducedMotion(): boolean {
+  return globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+}
+
+function scrollToBottom(viewport: HTMLElement, smooth: boolean): void {
+  if (smooth && typeof viewport.scrollTo === 'function') {
+    viewport.scrollTo({ top: viewport.scrollHeight, behavior: 'smooth' });
+    return;
+  }
+  viewport.scrollTop = viewport.scrollHeight;
+}
+const EMPTY_INSERTS: TranscriptInsert[] = [];
 
 function ConversationTranscriptView({
   rows,
-  inserts = [],
+  inserts = EMPTY_INSERTS,
   busy,
   streamText,
   liveTools,
@@ -129,6 +143,7 @@ function ConversationTranscriptView({
   modelLabels,
   onOpenCanvas,
   onRetryLast,
+  onViewportScroll,
 }: {
   rows: ChatRow[];
   inserts?: TranscriptInsert[];
@@ -153,10 +168,13 @@ function ConversationTranscriptView({
   modelLabels?: Readonly<Record<string, string>>;
   onOpenCanvas?: (slug: string) => void;
   onRetryLast?: () => void;
+  onViewportScroll?: (scrollTop: number) => void;
 }) {
   const bodyRef = useRef<HTMLDivElement>(null);
   const streamSpaceRef = useRef<HTMLDivElement>(null);
   const stickRef = useRef(true);
+  const lastScrollTopRef = useRef(0);
+  const smoothUntilRef = useRef(0);
   const anchoredUserIdRef = useRef<string | null>(null);
   const [stuck, setStuck] = useState(true);
   const blocks = useMemo(
@@ -211,8 +229,10 @@ function ConversationTranscriptView({
     if (anchoredUserIdRef.current !== activeUserId) {
       anchoredUserIdRef.current = activeUserId;
       stickRef.current = true;
+      smoothUntilRef.current = reducedMotion() ? 0 : performance.now() + ANCHOR_SCROLL_SMOOTH_MS;
     }
-    if (stickRef.current) viewport.scrollTop = viewport.scrollHeight;
+    // Later syncs inside the window must stay smooth: an instant jump mid-scroll cancels it.
+    if (stickRef.current) scrollToBottom(viewport, performance.now() < smoothUntilRef.current);
   }, [activeUserId]);
 
   useLayoutEffect(() => {
@@ -252,8 +272,13 @@ function ConversationTranscriptView({
       onScroll={() => {
         const element = bodyRef.current;
         if (!element) return;
-        const next =
-          element.scrollHeight - element.scrollTop - element.clientHeight < SCROLL_STICK_THRESHOLD;
+        onViewportScroll?.(element.scrollTop);
+        const distance = element.scrollHeight - element.scrollTop - element.clientHeight;
+        const scrolledUp = element.scrollTop < lastScrollTopRef.current && distance > 1;
+        lastScrollTopRef.current = element.scrollTop;
+        // Any upward scroll releases the follow, however small; only reaching the
+        // bottom again re-engages it. A distance threshold alone snaps small scrolls back.
+        const next = scrolledUp ? false : distance < SCROLL_STICK_THRESHOLD;
         stickRef.current = next;
         setStuck(next);
       }}

@@ -5,8 +5,10 @@ import {
   runAssistantChatTurn,
 } from './assistantChat.js';
 import {
+  type AssistantSession,
   createAssistantSession,
   deleteAssistantSession,
+  digestAssistantSessions,
   getAssistantSession,
   listAssistantMessages,
   listAssistantSessions,
@@ -22,7 +24,7 @@ import {
 import { DEFAULT_ASSISTANT_TITLE } from './sessionTitle.js';
 import { toDisplayMessages } from '../chat/chat.js';
 import { aiConfig } from '../runtime/models.js';
-import type { AssistantApi } from '../../contract/assistant.js';
+import type { AssistantApi, AssistantSessionMeta } from '../../contract/assistant.js';
 import { ClientError } from '../../platform/errors.js';
 
 let testDeps: AssistantChatDeps | null = null;
@@ -43,9 +45,30 @@ async function requireSession(id: string, db: AssistantChatDeps['db']) {
   return session;
 }
 
+async function toSessionMetas(sessions: AssistantSession[]): Promise<AssistantSessionMeta[]> {
+  const digests = await digestAssistantSessions(
+    sessions.map((session) => session.id),
+    testDeps?.db,
+  );
+  return sessions.map((session) => {
+    const digest = digests.get(session.id);
+    return {
+      ...session,
+      busy: assistantChatTurnState(session.id).busy,
+      messageCount: digest?.messageCount ?? 0,
+      preview: digest?.preview ?? null,
+    };
+  });
+}
+
+async function toSessionMeta(session: AssistantSession): Promise<AssistantSessionMeta> {
+  const [meta] = await toSessionMetas([session]);
+  return meta;
+}
+
 export const assistantChatService: AssistantApi = {
   async listSessions() {
-    const sessions = await listAssistantSessions(testDeps?.db);
+    const sessions = await toSessionMetas(await listAssistantSessions(testDeps?.db));
     return { sessions };
   },
 
@@ -53,7 +76,7 @@ export const assistantChatService: AssistantApi = {
     const rawTitle = parseClientInput(assistantOptionalTitleSchema, input.title);
     const title = rawTitle?.trim() || DEFAULT_ASSISTANT_TITLE;
     const session = await createAssistantSession({ title }, testDeps?.db);
-    return { session };
+    return { session: await toSessionMeta(session) };
   },
 
   async updateSession(input) {
@@ -61,7 +84,7 @@ export const assistantChatService: AssistantApi = {
     await requireSession(input.id, testDeps?.db);
     const session = await updateAssistantSessionTitle(input.id, title, testDeps?.db);
     if (!session) throw new ClientError('assistant session not found', undefined, 404);
-    return { session };
+    return { session: await toSessionMeta(session) };
   },
 
   async deleteSession(input) {
@@ -76,7 +99,7 @@ export const assistantChatService: AssistantApi = {
     const messages = toDisplayMessages(await listAssistantMessages(input.id, testDeps?.db));
     const { busy, partial } = assistantChatTurnState(input.id);
     const usage = await sumAssistantSessionUsage(input.id, testDeps?.db);
-    return { session, messages, busy, partial, usage };
+    return { session: await toSessionMeta(session), messages, busy, partial, usage };
   },
 
   async postMessage(input) {

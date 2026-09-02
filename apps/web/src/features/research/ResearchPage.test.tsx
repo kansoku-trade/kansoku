@@ -126,6 +126,9 @@ beforeEach(() => {
       title: '画布：MU 验收面板',
       createdAt: '2026-09-01T00:00:00.000Z',
       updatedAt: '2026-09-01T00:00:00.000Z',
+      busy: false,
+      messageCount: 0,
+      preview: null,
     },
   });
 });

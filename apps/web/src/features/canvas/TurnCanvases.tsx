@@ -1,3 +1,4 @@
+import { LayoutTemplate } from 'lucide-react';
 import * as stylex from '@stylexjs/stylex';
 import { colors, fonts, fontSizes, radii } from '../../theme/tokens.stylex';
 import type { CanvasEntry } from './canvasEntries';
@@ -5,32 +6,31 @@ import type { CanvasEntry } from './canvasEntries';
 const styles = stylex.create({
   card: {
     backgroundColor: colors.backgroundSurface,
-    borderColor: colors.border,
     borderRadius: radii.lg,
-    borderStyle: 'solid',
-    borderWidth: '1px',
     marginTop: '2px',
     overflow: 'hidden',
+    padding: '0 0 4px',
   },
   head: {
     display: 'flex',
     alignItems: 'center',
     gap: '10px',
-    padding: '10px 12px',
-    borderBottomColor: colors.border,
-    borderBottomStyle: 'solid',
-    borderBottomWidth: '1px',
+    padding: '12px 12px 6px',
   },
   thumb: {
-    backgroundImage: `linear-gradient(180deg, ${colors.backgroundElement}, ${colors.backgroundCanvas})`,
-    borderColor: colors.border,
+    alignItems: 'center',
+    backgroundColor: `color-mix(in srgb, ${colors.accent} 7%, transparent)`,
+    borderColor: `color-mix(in srgb, ${colors.accent} 18%, transparent)`,
     borderRadius: radii.lg,
     borderStyle: 'solid',
     borderWidth: '1px',
+    color: colors.accent,
+    display: 'inline-flex',
     flexGrow: 0,
     flexShrink: 0,
     flexBasis: 'auto',
     height: '28px',
+    justifyContent: 'center',
     width: '28px',
   },
   kicker: {
@@ -48,7 +48,7 @@ const styles = stylex.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: '12px',
-    padding: '9px 12px',
+    padding: '6px 12px',
   },
   title: {
     color: colors.textPrimary,
@@ -86,7 +86,9 @@ export function TurnCanvases({
   return (
     <div className={`chat-turn-canvases ${stylex.props(styles.card).className}`}>
       <div className={stylex.props(styles.head).className}>
-        <div className={stylex.props(styles.thumb).className} aria-hidden="true" />
+        <div className={stylex.props(styles.thumb).className} aria-hidden="true">
+          <LayoutTemplate size={15} />
+        </div>
         <div>
           <div className={stylex.props(styles.kicker).className}>{entries.length} 张画布</div>
           <div className={stylex.props(styles.sub).className}>本轮保存</div>

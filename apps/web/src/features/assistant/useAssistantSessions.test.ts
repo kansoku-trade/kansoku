@@ -7,6 +7,9 @@ const session = (id: string): AssistantSessionMeta => ({
   title: id,
   createdAt: '2026-07-14T09:00:00Z',
   updatedAt: '2026-07-14T09:00:00Z',
+  busy: false,
+  messageCount: 0,
+  preview: null,
 });
 
 describe('mergeOptimisticSessions', () => {

@@ -109,7 +109,7 @@ function emitTools(tools: PresentedTool[]): TranscriptBlock[] {
   return [
     {
       type: 'tool-group',
-      id: `group:${tools[0].id}:${tools[tools.length - 1].id}`,
+      id: `group:${tools[0].id}`,
       tools,
       running: tools.some((tool) => tool.running),
       titles: toolTitles(tools),

@@ -42,23 +42,15 @@ const styles = stylex.create({
   caretOpen: {
     transform: 'rotate(90deg)',
   },
-  line: {
-    flexGrow: 1,
-    flexShrink: 1,
-    flexBasis: 'auto',
-    height: '1px',
-    backgroundColor: colors.border,
-  },
   fold: {
     display: 'flex',
     flexDirection: 'column',
     gap: '10px',
-    margin: '0 0 2px 8px',
+    margin: '4px 0 2px',
     overflow: 'hidden',
-    padding: '8px 0 4px 14px',
-    borderLeftColor: colors.border,
-    borderLeftStyle: 'solid',
-    borderLeftWidth: '1px',
+    padding: '10px 12px',
+    backgroundColor: colors.backgroundSurface,
+    borderRadius: radii.lg,
   },
 });
 
@@ -90,7 +82,6 @@ export function WorkedFold({
             className={stylex.props(styles.caret, open && styles.caretOpen).className}
           />
         </button>
-        <span className={stylex.props(styles.line).className} aria-hidden="true" />
       </div>
       <AnimatePresence initial={false}>
         {open ? (

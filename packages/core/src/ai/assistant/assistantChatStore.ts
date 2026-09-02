@@ -1,12 +1,14 @@
 import type { AgentMessage } from '@earendil-works/pi-agent-core';
-import { desc, eq } from 'drizzle-orm';
+import { and, count, desc, eq, inArray, sql } from 'drizzle-orm';
 import { getDb, type Db } from '../../db/index.js';
 import { assistantSessions, chatMessages } from '../../db/schema.js';
 import { nextSnowflake } from '../../db/snowflake.js';
+import { textOf } from '../conversation/conversationShared.js';
 import {
   type ConversationMessageRow,
   type ConversationSessionBase,
   createConversationStore,
+  titleFromText,
 } from '../conversation/conversationStore.js';
 import { isUsage } from '../runtime/usage.js';
 import { DEFAULT_ASSISTANT_TITLE, shouldAssignGeneratedTitle } from './sessionTitle.js';
@@ -79,6 +81,48 @@ export function appendAssistantMessages(
 
 export function listAssistantSessions(db: Db = getDb()): Promise<AssistantSession[]> {
   return db.select().from(assistantSessions).orderBy(desc(assistantSessions.updatedAt));
+}
+
+export interface AssistantSessionDigest {
+  messageCount: number;
+  preview: string | null;
+}
+
+function userText(message: AgentMessage): string {
+  if (message.role !== 'user') return '';
+  if (typeof message.content === 'string') return message.content;
+  return message.content.map((block) => textOf(block)).join('');
+}
+
+export async function digestAssistantSessions(
+  ids: string[],
+  db: Db = getDb(),
+): Promise<Map<string, AssistantSessionDigest>> {
+  const digests = new Map<string, AssistantSessionDigest>();
+  if (ids.length === 0) return digests;
+  const counts = await db
+    .select({ sessionId: chatMessages.sessionId, total: count() })
+    .from(chatMessages)
+    .where(inArray(chatMessages.sessionId, ids))
+    .groupBy(chatMessages.sessionId);
+  for (const row of counts) digests.set(row.sessionId, { messageCount: row.total, preview: null });
+  const firstUserRows = await db
+    .select({ sessionId: chatMessages.sessionId, payload: chatMessages.payload })
+    .from(chatMessages)
+    .where(
+      and(
+        inArray(chatMessages.sessionId, ids),
+        eq(chatMessages.role, 'user'),
+        sql`${chatMessages.id} = (select m.id from chat_messages m where m.session_id = ${chatMessages.sessionId} and m.role = 'user' order by m.ts, m.id limit 1)`,
+      ),
+    );
+  for (const row of firstUserRows) {
+    const digest = digests.get(row.sessionId);
+    if (!digest) continue;
+    const preview = titleFromText(userText(row.payload as AgentMessage));
+    digest.preview = preview || null;
+  }
+  return digests;
 }
 
 export async function deleteAssistantSession(id: string, db: Db = getDb()): Promise<void> {

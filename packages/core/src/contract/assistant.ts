@@ -6,6 +6,9 @@ export interface AssistantSessionMeta {
   title: string;
   createdAt: string;
   updatedAt: string;
+  busy: boolean;
+  messageCount: number;
+  preview: string | null;
 }
 
 export interface AssistantChatUsage {

@@ -5,9 +5,11 @@ import { isContextMenuDivider, type ContextMenuCommandItem } from '../../ui/cont
 import { AssistantSessionList, buildSessionMenuItems, filterSessions } from './AssistantSessionList';
 import type { AssistantSessionMeta } from '@kansoku/core/contract/index';
 
+const meta = { busy: false, messageCount: 1, preview: null };
 const sessions: AssistantSessionMeta[] = [
-  { id: '1', title: 'Go Ahead Request', createdAt: '2026-09-01T00:00:00.000Z', updatedAt: '2026-09-01T00:00:00.000Z' },
-  { id: '2', title: '新对话', createdAt: '2026-09-01T00:00:00.000Z', updatedAt: '2026-09-01T00:00:00.000Z' },
+  { id: '1', title: 'Go Ahead Request', createdAt: '2026-09-01T00:00:00.000Z', updatedAt: '2026-09-01T00:00:00.000Z', ...meta },
+  { id: '2', title: '新对话', createdAt: '2026-09-01T00:00:00.000Z', updatedAt: '2026-09-01T00:00:00.000Z', ...meta },
+  { id: '3', title: '新对话', createdAt: '2026-09-01T00:00:00.000Z', updatedAt: '2026-09-01T00:00:00.000Z', ...meta, preview: 'MU 盘前怎么看' },
 ];
 
 describe('filterSessions', () => {
@@ -17,7 +19,8 @@ describe('filterSessions', () => {
 
   it('filters by title case-insensitively', () => {
     expect(filterSessions(sessions, 'ahead')).toEqual([sessions[0]]);
-    expect(filterSessions(sessions, '对话')).toEqual([sessions[1]]);
+    expect(filterSessions(sessions, '对话')).toEqual([sessions[1], sessions[2]]);
+    expect(filterSessions(sessions, '盘前')).toEqual([sessions[2]]);
     expect(filterSessions(sessions, 'nvda')).toEqual([]);
   });
 });
@@ -54,6 +57,32 @@ describe('AssistantSessionList chrome', () => {
 
     fireEvent.click(create);
     expect(onCreate).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the first message for untitled sessions and renames inline', () => {
+    const onRename = vi.fn();
+    render(
+      <AssistantSessionList
+        sessions={sessions}
+        activeId="1"
+        loading={false}
+        error={null}
+        onSelect={() => {}}
+        onCreate={() => {}}
+        onRename={onRename}
+        onDelete={() => {}}
+      />,
+    );
+
+    const row = screen.getByText('MU 盘前怎么看');
+    expect(screen.queryByRole('button', { name: /删除/ })).toBeNull();
+    fireEvent.doubleClick(row);
+    const input = screen.getByRole('textbox', { name: '会话标题' }) as HTMLInputElement;
+    expect(input.value).toBe('MU 盘前怎么看');
+    fireEvent.change(input, { target: { value: 'MU 盘前' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(onRename).toHaveBeenCalledWith('3', 'MU 盘前');
+    expect(screen.queryByRole('textbox', { name: '会话标题' })).toBeNull();
   });
 });
 

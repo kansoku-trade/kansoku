@@ -1,7 +1,7 @@
 import { gsap } from 'gsap';
 import { AtSign } from 'lucide-react';
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import type { CSSProperties, SyntheticEvent } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import type { CSSProperties, ReactNode, SyntheticEvent } from 'react';
 import { canvasSlugFromResearchPath, researchCanvasPath } from '@kansoku/core/contract/index';
 import * as stylex from '@stylexjs/stylex';
 import { navigate } from '@web/lib/router';
@@ -29,6 +29,8 @@ import { decideSubmitAction } from './messageQueue.js';
 import { useMessageQueue } from './useMessageQueue.js';
 import { colors, fontSizes, radii, sizes } from '../../theme/tokens.stylex';
 
+const HEAD_FADE_SCROLL_PX = 32;
+
 const styles = stylex.create({
   conversation: {
     backgroundColor: colors.backgroundCanvas,
@@ -44,20 +46,37 @@ const styles = stylex.create({
   },
   head: {
     'alignItems': 'center',
-    'borderBottomColor': colors.border,
-    'borderBottomStyle': 'solid',
-    'borderBottomWidth': '1px',
     'display': 'flex',
-    'flexGrow': 0,
-    'flexShrink': 0,
-    'flexBasis': 'auto',
     'height': sizes.paneHeaderHeight,
-    'overflow': 'hidden',
+    'left': 0,
     'padding': '0 max(12px, calc((100% - 68ch) / 2))',
+    'pointerEvents': 'none',
+    'position': 'absolute',
+    'right': 0,
+    'top': 0,
+    'zIndex': 5,
     '@media (max-width: 720px)': {
       paddingLeft: '8px',
       paddingRight: '8px',
     },
+  },
+  headBackdrop: {
+    opacity: 'var(--assistant-head-fade, 1)',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: '12px',
+    bottom: '-56px',
+    backgroundImage: `linear-gradient(to bottom, ${colors.backgroundCanvas} 36%, transparent)`,
+    backdropFilter: 'blur(12px)',
+    maskImage: 'linear-gradient(to bottom, #000 36%, transparent)',
+  },
+  headLeading: {
+    display: 'inline-flex',
+    flex: '0 0 auto',
+    marginRight: '6px',
+    pointerEvents: 'auto',
+    position: 'relative',
   },
   title: {
     color: colors.textPrimary,
@@ -66,6 +85,8 @@ const styles = stylex.create({
     lineHeight: 1.2,
     minWidth: 0,
     overflow: 'hidden',
+    pointerEvents: 'auto',
+    position: 'relative',
     textOverflow: 'ellipsis',
     textWrap: 'balance',
     whiteSpace: 'nowrap',
@@ -142,6 +163,7 @@ const styles = stylex.create({
     'gap': '12px',
     'minHeight': '100%',
     'padding': '16px max(12px, calc((100% - 68ch) / 2))',
+    'paddingTop': `calc(${sizes.paneHeaderHeight} + 20px)`,
     'paddingBottom': 'calc(var(--assistant-dock-height, 0px) + 28px)',
     '@media (max-width: 720px)': {
       paddingLeft: '8px',
@@ -365,6 +387,8 @@ export function AssistantConversation({
   modelError,
   modelLabels,
   onModelChange,
+  focusRequest = 0,
+  headLeading,
 }: {
   sessionId: string;
   sessionTitle?: string;
@@ -377,6 +401,8 @@ export function AssistantConversation({
   modelError: string | null;
   modelLabels: Readonly<Record<string, string>>;
   onModelChange: (value: string) => void;
+  focusRequest?: number;
+  headLeading?: ReactNode;
 }) {
   const {
     session,
@@ -396,6 +422,14 @@ export function AssistantConversation({
   const canvasReloadKey = latestCanvasChangeToken(rows, liveTools);
   const [text, setText] = useState('');
   const dockRef = useRef<HTMLDivElement>(null);
+  const conversationRef = useRef<HTMLDivElement>(null);
+  const headFadeRef = useRef(-1);
+  const onViewportScroll = useCallback((scrollTop: number) => {
+    const fade = Math.min(1, scrollTop / HEAD_FADE_SCROLL_PX);
+    if (fade === headFadeRef.current) return;
+    headFadeRef.current = fade;
+    conversationRef.current?.style.setProperty('--assistant-head-fade', fade.toFixed(3));
+  }, []);
   const [dockHeight, setDockHeight] = useState(0);
   useLayoutEffect(() => {
     const dock = dockRef.current;
@@ -418,9 +452,13 @@ export function AssistantConversation({
   const [actionSlot, setActionSlot] = useState<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (wasBusyRef.current && !busy) refreshSessions();
+    if (wasBusyRef.current !== busy) refreshSessions();
     wasBusyRef.current = busy;
   }, [busy, refreshSessions]);
+
+  useEffect(() => {
+    if (focusRequest > 0) textareaRef.current?.focus();
+  }, [focusRequest]);
 
   useEffect(() => {
     if (session?.title) refreshSessions();
@@ -606,10 +644,13 @@ export function AssistantConversation({
       storageKey="canvas-assistant-pane"
     >
       <div
+        ref={conversationRef}
         className={`assistant-conversation ${stylex.props(styles.conversation).className}`}
-        style={{ '--assistant-dock-height': `${dockHeight}px` } as CSSProperties}
+        style={{ '--assistant-dock-height': `${dockHeight}px`, '--assistant-head-fade': 0 } as CSSProperties}
       >
         <div className={`assistant-conversation-head ${stylex.props(styles.head).className}`}>
+          <div {...stylex.props(styles.headBackdrop)} aria-hidden="true" />
+          {headLeading ? <div {...stylex.props(styles.headLeading)}>{headLeading}</div> : null}
           <span className={`assistant-conversation-title ${stylex.props(styles.title).className}`}>
             {sessionTitle ?? session?.title ?? '新的会话'}
           </span>
@@ -637,6 +678,7 @@ export function AssistantConversation({
           }}
           userBubbleClassName={stylex.props(styles.userBubble).className}
           onRetryLast={() => void retryLast()}
+          onViewportScroll={onViewportScroll}
         />
         <div
           ref={dockRef}

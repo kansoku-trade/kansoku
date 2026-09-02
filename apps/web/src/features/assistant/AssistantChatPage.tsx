@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ResearchDocumentMeta } from '@kansoku/core/contract/index';
 import { canvasSlugFromResearchPath } from '@kansoku/core/contract/index';
 import * as stylex from '@stylexjs/stylex';
@@ -12,7 +12,8 @@ import { useTitle } from '@web/lib/useTitle';
 import { saveRole } from '../settings/roleShared';
 import type { AiSettings, Catalog } from '../settings/types';
 import { AssistantConversation } from './AssistantConversation';
-import { AssistantSessionList } from './AssistantSessionList';
+import { AssistantSessionList, SidebarToggle } from './AssistantSessionList';
+import { isBlankSession } from './sessionGroups';
 import {
   assistantModelLabels,
   buildAssistantModelChoices,
@@ -22,17 +23,35 @@ import {
 import type { MentionCandidate } from './atMention.js';
 import { resolveActiveSessionId } from './assistantPageState.js';
 import { useAssistantSessions } from './useAssistantSessions';
-import { colors, radii } from '../../theme/tokens.stylex';
+import { colors, radii, sizes } from '../../theme/tokens.stylex';
 
 const styles = stylex.create({
   page: {
-    backgroundColor: colors.backgroundCanvas,
-    color: colors.textPrimary,
-    display: 'grid',
-    gridTemplateColumns: '260px 1fr',
-    height: '100vh',
+    'backgroundColor': colors.backgroundCanvas,
+    'color': colors.textPrimary,
+    'display': 'grid',
+    'gridTemplateColumns': `${sizes.sidebarWidth} 1fr`,
+    'height': '100vh',
+    'minHeight': 0,
+    'overflow': 'hidden',
+    'transition': 'grid-template-columns 0.2s ease',
+    '@media (prefers-reduced-motion: reduce)': {
+      transition: 'none',
+    },
+  },
+  pageCollapsed: {
+    gridTemplateColumns: '0px 1fr',
+  },
+  sidebarSlot: {
+    display: 'flex',
     minHeight: 0,
+    minWidth: 0,
     overflow: 'hidden',
+  },
+  emptyToggle: {
+    left: '8px',
+    position: 'absolute',
+    top: '8px',
   },
   pageDesktop: {
     height: 'calc(100vh - 40px)',
@@ -43,6 +62,7 @@ const styles = stylex.create({
     flexDirection: 'column',
     minHeight: 0,
     minWidth: 0,
+    position: 'relative',
   },
   empty: {
     alignItems: 'center',
@@ -53,6 +73,24 @@ const styles = stylex.create({
     justifyContent: 'center',
   },
 });
+
+const SIDEBAR_COLLAPSED_KEY = 'assistant.sidebar-collapsed';
+
+function readSidebarCollapsed(): boolean {
+  try {
+    return window.localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function writeSidebarCollapsed(collapsed: boolean): void {
+  try {
+    window.localStorage.setItem(SIDEBAR_COLLAPSED_KEY, collapsed ? '1' : '0');
+  } catch {
+    /* storage unavailable */
+  }
+}
 
 function assistantRoute(id: string | null, canvasPath?: string | null): string {
   const params = new URLSearchParams();
@@ -79,6 +117,25 @@ export function AssistantChatPage() {
   const [pendingModelValue, setPendingModelValue] = useState<string | null>(null);
   const [modelSaving, setModelSaving] = useState(false);
   const [modelError, setModelError] = useState<string | null>(null);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(readSidebarCollapsed);
+  const [composerFocusRequest, setComposerFocusRequest] = useState(0);
+  const toggleSidebar = useCallback(() => {
+    setSidebarCollapsed((current) => {
+      writeSidebarCollapsed(!current);
+      return !current;
+    });
+  }, []);
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && !event.altKey && !event.shiftKey && event.key.toLowerCase() === 'b') {
+        event.preventDefault();
+        toggleSidebar();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [toggleSidebar]);
 
   const modelChoices = useMemo(
     () => (catalog ? buildAssistantModelChoices(catalog) : []),
@@ -135,10 +192,16 @@ export function AssistantChatPage() {
     }
   };
 
-  const handleCreate = async () => {
+  const handleCreate = useCallback(async () => {
+    const active = sessions.find((session) => session.id === activeId);
+    if (active && isBlankSession(active)) {
+      setComposerFocusRequest((n) => n + 1);
+      return;
+    }
     const created = await create();
     navigate(assistantRoute(created.id));
-  };
+  }, [activeId, create, sessions]);
+  const onCreate = useCallback(() => void handleCreate(), [handleCreate]);
 
   const handleDelete = async (id: string) => {
     await remove(id);
@@ -146,18 +209,21 @@ export function AssistantChatPage() {
 
   return (
     <div
-      className={`fullpage ${stylex.props(styles.page, desktopShell && styles.pageDesktop).className}`}
+      className={`fullpage ${stylex.props(styles.page, desktopShell && styles.pageDesktop, sidebarCollapsed && styles.pageCollapsed).className}`}
     >
-      <AssistantSessionList
-        sessions={sessions}
-        activeId={activeId}
-        loading={loading}
-        error={error}
-        onSelect={(id) => navigate(assistantRoute(id))}
-        onCreate={() => void handleCreate()}
-        onRename={(id, title) => void rename(id, title)}
-        onDelete={(id) => void handleDelete(id)}
-      />
+      <div {...stylex.props(styles.sidebarSlot)} aria-hidden={sidebarCollapsed} inert={sidebarCollapsed}>
+        <AssistantSessionList
+          sessions={sessions}
+          activeId={activeId}
+          loading={loading}
+          error={error}
+          onSelect={(id) => navigate(assistantRoute(id))}
+          onCreate={onCreate}
+          onRename={(id, title) => void rename(id, title)}
+          onDelete={(id) => void handleDelete(id)}
+          onCollapse={toggleSidebar}
+        />
+      </div>
       <div {...stylex.props(styles.main)}>
         {activeId ? (
           <AssistantConversation
@@ -173,6 +239,10 @@ export function AssistantChatPage() {
             modelError={modelError}
             modelLabels={modelLabels}
             onModelChange={(value) => void handleModelChange(value)}
+            focusRequest={composerFocusRequest}
+            headLeading={
+              sidebarCollapsed ? <SidebarToggle collapsed onToggle={toggleSidebar} /> : null
+            }
           />
         ) : loading ? (
           <div className="assistant-sidebar-state">
@@ -180,8 +250,13 @@ export function AssistantChatPage() {
           </div>
         ) : (
           <Empty className={stylex.props(styles.empty).className}>
+            {sidebarCollapsed ? (
+              <div {...stylex.props(styles.emptyToggle)}>
+                <SidebarToggle collapsed onToggle={toggleSidebar} />
+              </div>
+            ) : null}
             <p>选一个会话，或者新建一个开始对话</p>
-            <Button accent style={{ borderRadius: radii.full }} onClick={() => void handleCreate()}>
+            <Button accent style={{ borderRadius: radii.full }} onClick={onCreate}>
               新建会话
             </Button>
           </Empty>

@@ -52,6 +52,25 @@ describe('assistantChatService session lifecycle', () => {
     expect(sessions.map((s) => s.id)).toEqual([session.id]);
   });
 
+  it('lists sessions with a message digest', async () => {
+    setAssistantChatDepsForTests({ model, db });
+    const { session } = await assistantChatService.createSession({});
+    const fresh = (await assistantChatService.listSessions()).sessions[0];
+    expect(fresh).toMatchObject({ busy: false, messageCount: 0, preview: null });
+
+    await appendAssistantMessages(
+      session.id,
+      [
+        { role: 'user', content: '  MU 盘前\n怎么看 ', timestamp: Date.now() } as AgentMessage,
+        assistantMessage('看多'),
+        { role: 'user', content: '第二问', timestamp: Date.now() } as AgentMessage,
+      ],
+      db,
+    );
+    const digested = (await assistantChatService.listSessions()).sessions[0];
+    expect(digested).toMatchObject({ busy: false, messageCount: 3, preview: 'MU 盘前 怎么看' });
+  });
+
   it('falls back to the default title when the given title is blank', async () => {
     setAssistantChatDepsForTests({ model, db });
     const { session } = await assistantChatService.createSession({ title: '   ' });
