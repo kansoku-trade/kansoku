@@ -59,7 +59,7 @@ const styles = stylex.create({
     right: 0,
   },
   scrollbarVertical: {
-    bottom: 0,
+    bottom: 'var(--scroll-area-inset-bottom, 0px)',
     position: 'absolute',
     right: 0,
     top: 0,

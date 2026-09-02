@@ -163,7 +163,7 @@ const styles = stylex.create({
     'gap': '12px',
     'minHeight': '100%',
     'padding': '16px max(12px, calc((100% - 68ch) / 2))',
-    'paddingTop': `calc(${sizes.paneHeaderHeight} + 20px)`,
+    'paddingTop': `calc(${sizes.paneHeaderHeight} + 44px)`,
     'paddingBottom': 'calc(var(--assistant-dock-height, 0px) + 28px)',
     '@media (max-width: 720px)': {
       paddingLeft: '8px',
@@ -646,7 +646,13 @@ export function AssistantConversation({
       <div
         ref={conversationRef}
         className={`assistant-conversation ${stylex.props(styles.conversation).className}`}
-        style={{ '--assistant-dock-height': `${dockHeight}px`, '--assistant-head-fade': 0 } as CSSProperties}
+        style={
+          {
+            '--assistant-dock-height': `${dockHeight}px`,
+            '--scroll-area-inset-bottom': `${dockHeight}px`,
+            '--assistant-head-fade': 0,
+          } as CSSProperties
+        }
       >
         <div className={`assistant-conversation-head ${stylex.props(styles.head).className}`}>
           <div {...stylex.props(styles.headBackdrop)} aria-hidden="true" />
