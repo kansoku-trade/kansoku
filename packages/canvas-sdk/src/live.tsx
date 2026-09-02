@@ -39,7 +39,6 @@ function subscribeFeed(kind: FeedKind, symbol: string, listener: () => void): ()
     current.listeners.delete(listener);
     current.count -= 1;
     if (current.count > 0) return;
-    entries.delete(key);
     post({ type: 'unsub', kind, symbol });
   };
 }

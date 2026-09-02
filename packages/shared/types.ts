@@ -226,14 +226,18 @@ export interface OffSessionSegment {
   kind: Exclude<SessionKind, 'regular'>;
 }
 
-export interface IntradayTfData {
+export interface CandleFeedTf {
   candles: Candle[];
   volumes: ColoredPoint[];
   emas: EmaLine[];
-  vwap?: LinePoint[];
   macdDif: LinePoint[];
   macdDea: LinePoint[];
   macdHist: ColoredPoint[];
+  offSession?: OffSessionSegment[];
+}
+
+export interface IntradayTfData extends CandleFeedTf {
+  vwap?: LinePoint[];
   macdCrossMarkers: SeriesMarker[];
   markers: SeriesMarker[];
   priceConnectors: Connector[];
@@ -242,7 +246,6 @@ export interface IntradayTfData {
   autoBeichi: DivergencePair[];
   pattern123?: Pattern123[];
   secondBreakouts?: SecondBreakout[];
-  offSession?: OffSessionSegment[];
   fvgZones?: IntradayFvgZone[];
   chanStructure?: ChanStructure;
 }
@@ -662,7 +665,7 @@ export interface IntradayBuilt {
 export interface CandleFeed {
   symbol: string;
   asOf: string;
-  timeframes: Record<TimeframeKey, IntradayTfData>;
+  timeframes: Record<TimeframeKey, CandleFeedTf>;
 }
 
 export interface FlowRow {
@@ -957,8 +960,7 @@ export interface CockpitComment {
 }
 
 export type ExplainResult =
-  | { ok: true; comment: CockpitComment }
-  | { ok: false; reason: 'disabled' | 'busy' | 'failed' };
+  { ok: true; comment: CockpitComment } | { ok: false; reason: 'disabled' | 'busy' | 'failed' };
 
 export type NoticeKind = 'analysis_done' | 'deep_dive_done' | 'deep_dive_failed';
 
@@ -1000,13 +1002,7 @@ export interface Annotation {
 }
 
 export type MarketEventClass =
-  | 'macro'
-  | 'earnings'
-  | 'filing'
-  | 'news'
-  | 'policy'
-  | 'flow'
-  | 'technical';
+  'macro' | 'earnings' | 'filing' | 'news' | 'policy' | 'flow' | 'technical';
 
 // Who vouches for the content: an SEC filing and a scraped headline both describe
 // the same world, and the UI must be able to say which one it is.

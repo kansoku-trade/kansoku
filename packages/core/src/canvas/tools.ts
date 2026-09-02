@@ -10,6 +10,7 @@ import { isLicensed } from '../license/licenseGate.js';
 import { ClientError } from '../platform/errors.js';
 import { normalizeSymbol } from '../symbols/symbol.utils.js';
 import { assertCanvasQuota } from './quotaEnforce.js';
+import { projectCandleFeedTf } from './candleFeed.js';
 import { applyChunks, parsePatch, PatchError } from './applyPatch.js';
 import { checkCanvasSource, reviewCanvasStructure } from './check.js';
 import { type CanvasDoc, loadCanvas, listCanvases, saveCanvas, saveCanvasData } from './store.js';
@@ -268,7 +269,11 @@ export function buildCanvasTools(dir: string, opts: CanvasToolsOptions = {}): Ag
       const feed: CandleFeed = {
         symbol,
         asOf: (now?.() ?? new Date()).toISOString(),
-        timeframes: built.timeframes,
+        timeframes: {
+          m5: projectCandleFeedTf(built.timeframes.m5),
+          m15: projectCandleFeedTf(built.timeframes.m15),
+          h1: projectCandleFeedTf(built.timeframes.h1),
+        },
       };
       const result = await saveCanvasData(dir, {
         slug: params.slug,

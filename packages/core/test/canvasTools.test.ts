@@ -168,7 +168,91 @@ describe('save_canvas_data', () => {
   });
 });
 
+function heavyTimeframe(offset: number) {
+  const bars = Array.from({ length: 1000 }, (_, index) => offset + index * 300);
+  const marker = (time: number) => ({
+    time,
+    position: 'aboveBar' as const,
+    color: '#26a69a',
+    shape: 'circle' as const,
+    text: `auto signal at ${time} with a fairly long tooltip body`,
+    id: `marker-${time}`,
+    tooltip: 'server-side automatic annotation, not agent authored, kept out of the feed',
+  });
+  return {
+    candles: bars.map((time) => ({ time, open: 10.5, high: 11.25, low: 10.125, close: 10.875 })),
+    volumes: bars.map((time) => ({ time, value: 1234567, color: '#26a69a' })),
+    emas: [
+      { period: 20, data: bars.map((time) => ({ time, value: 10.6 })) },
+      { period: 50, data: bars.map((time) => ({ time, value: 10.4 })) },
+    ],
+    vwap: bars.map((time) => ({ time, value: 10.55 })),
+    macdDif: bars.map((time) => ({ time, value: 0.125 })),
+    macdDea: bars.map((time) => ({ time, value: 0.0625 })),
+    macdHist: bars.map((time) => ({ time, value: 0.0625, color: '#26a69a' })),
+    macdCrossMarkers: bars.map(marker),
+    markers: bars.map(marker),
+    priceConnectors: [],
+    macdConnectors: [],
+    autoDivergence: [],
+    autoBeichi: [],
+    offSession: [
+      { startTime: offset - 100_000, endTime: offset - 1, kind: 'pre' as const },
+      {
+        startTime: bars[bars.length - 1] - 60,
+        endTime: bars[bars.length - 1],
+        kind: 'post' as const,
+      },
+    ],
+  };
+}
+
 describe('snapshot_candles', () => {
+  it('projects and tails a real-sized build under the 512 KB data cap', async () => {
+    const timeframes = {
+      m5: heavyTimeframe(1_000_000),
+      m15: heavyTimeframe(2_000_000),
+      h1: heavyTimeframe(3_000_000),
+    };
+    expect(JSON.stringify(timeframes).length).toBeGreaterThan(512 * 1024);
+    build.buildChart.mockResolvedValueOnce({ built: { kind: 'intraday', timeframes } });
+    const { byName, dir } = tools();
+    await byName.save_canvas.execute('c1', { slug: 'mu-demo', title: 'MU demo', source });
+
+    const result = await byName.snapshot_candles.execute('c2', {
+      slug: 'mu-demo',
+      name: 'snap',
+      symbol: 'MU',
+    });
+    expect(textOf(result)).toBe(
+      'snapshot saved slug=mu-demo name=snap symbol=MU.US bars m5=300 m15=300 h1=300',
+    );
+
+    const fs = await import('node:fs/promises');
+    const path = await import('node:path');
+    const file = path.join(dir, 'mu-demo.snap.json');
+    const raw = await fs.readFile(file, 'utf8');
+    expect(Buffer.byteLength(raw, 'utf8')).toBeLessThan(512 * 1024);
+    const feed = JSON.parse(raw) as { timeframes: Record<string, Record<string, unknown>> };
+    for (const key of ['m5', 'm15', 'h1']) {
+      const tf = feed.timeframes[key];
+      expect(Object.keys(tf).sort()).toEqual([
+        'candles',
+        'emas',
+        'macdDea',
+        'macdDif',
+        'macdHist',
+        'offSession',
+        'volumes',
+      ]);
+      expect((tf.candles as unknown[]).length).toBe(300);
+      expect((tf.volumes as unknown[]).length).toBe(300);
+      expect((tf.macdHist as unknown[]).length).toBe(300);
+      expect((tf.emas as { data: unknown[] }[])[0].data.length).toBe(300);
+      expect((tf.offSession as unknown[]).length).toBe(1);
+    }
+  });
+
   it('writes a CandleFeed-shaped data file from buildChart', async () => {
     build.buildChart.mockResolvedValueOnce({
       built: {

@@ -150,7 +150,7 @@ export function CandleChart({
       feedRef.current = null;
       handles.chart.remove();
     };
-  }, [hasSource, overlayKey, tf]);
+  }, [hasSource, overlayKey, source?.symbol, tf]);
 
   useEffect(() => {
     const handles = feedRef.current;

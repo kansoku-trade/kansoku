@@ -80,7 +80,9 @@ caption (TD-DATA-02). What you could not fetch goes in `Coverage`, never into a 
   source. Both data tools require the canvas (the `slug`) to already exist — `save_canvas`
   first if it does not.
 - **Live quotes**: `useQuote(symbol)` returns a live-updating `QuoteCell | null`, e.g. for
-  `Stat`.
+  `Stat`. Its fields are `last`、`pct`、`regularLast`、`regularPct`、`session`、`turnover?`、
+  `asOf?`；`QuoteCell` / `CandleFeed` / `CandleFeedTf` / `TimeframeKey` 的完整定义在
+  `.claude/skills/canvas/sdk/shared.d.ts`。
 - **Caption discipline**: a canvas driven by `useQuote` / `useCandles` writes `Source` as
   「实时」; one driven by a snapshot file writes the data's cutoff time, taken from
   `CandleFeed.asOf`.
@@ -105,7 +107,8 @@ silently dropped rather than erroring. Exact prop shapes are declared next to th
 `core.d.ts` — it holds everything the mandatory parts of the skeleton use (layout, text,
 `Stat`, `Table`, `Compare`, `Coverage`, `Source`). Read the rest only when you reach for
 them: `charts.d.ts`, `CandleChart.d.ts`, `analysis.d.ts` (`Scenarios` / `RRPlan` /
-`Timeline`), `control.d.ts`, `theme.d.ts`, `live.d.ts` (`useQuote` / `useCandles`).
+`Timeline`), `control.d.ts`, `theme.d.ts`, `live.d.ts` (`useQuote` / `useCandles`), `shared.d.ts`
+(`QuoteCell` / `CandleFeed` 等行情数据结构).
 
 | Group | Components |
 | --- | --- |

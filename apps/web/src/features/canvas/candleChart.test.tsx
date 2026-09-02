@@ -98,9 +98,12 @@ function tfData(times: number[], price: number): IntradayTfData {
   };
 }
 
-function feed(overrides: Partial<Record<TimeframeKey, IntradayTfData>> = {}): CandleFeed {
+function feed(
+  overrides: Partial<Record<TimeframeKey, IntradayTfData>> = {},
+  symbol = 'MU.US',
+): CandleFeed {
   return {
-    symbol: 'MU.US',
+    symbol,
     asOf: '2026-09-02T14:00:00Z',
     timeframes: {
       m5: tfData([1000, 1300], 10),
@@ -190,6 +193,20 @@ describe('CandleChart feed mode', () => {
     expect(charts.length).toBe(2);
     const candle = charts[1].series.find((series) => series.kind === 'candle');
     expect(candle?.data.map((row) => row.time)).toEqual([1000, 1300]);
+  });
+
+  it('recreates the chart when the symbol changes on identical times', () => {
+    const view = render(<CandleChart source={feed()} tf="m5" />);
+    view.rerender(
+      <CandleChart source={feed({ m5: tfData([1000, 1300], 55) }, 'NVDA.US')} tf="m5" />,
+    );
+    expect(charts.length).toBe(2);
+    expect(charts[0].removed).toBe(true);
+    const candle = charts[1].series.find((series) => series.kind === 'candle');
+    expect(candle?.data.map((row) => row.time)).toEqual([1000, 1300]);
+    expect(candle?.data.map((row) => (row as unknown as { close: number }).close)).toEqual([
+      55, 55,
+    ]);
   });
 
   it('recreates the chart when the timeframe changes', () => {

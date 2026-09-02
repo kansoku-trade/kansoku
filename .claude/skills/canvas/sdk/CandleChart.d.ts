@@ -1,4 +1,4 @@
-import type { CandleFeed, TimeframeKey } from '@kansoku/shared/types';
+import type { CandleFeed, TimeframeKey } from './shared.js';
 export interface CanvasBar {
     time: number;
     open: number;

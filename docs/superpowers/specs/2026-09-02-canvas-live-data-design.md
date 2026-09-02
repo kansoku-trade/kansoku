@@ -44,12 +44,24 @@ useCandles(symbol: string): CandleFeed | null
 `CandleFeed` 是 `IntradayBuilt` 的画布视图：
 
 ```ts
+interface CandleFeedTf {
+  candles: Candle[];
+  volumes: ColoredPoint[];
+  emas: EmaLine[];
+  macdDif: LinePoint[];
+  macdDea: LinePoint[];
+  macdHist: ColoredPoint[];
+  offSession?: OffSessionSegment[];
+}
+
 interface CandleFeed {
   symbol: string;
   asOf: string;
-  timeframes: Record<'m5' | 'm15' | 'h1', IntradayTfData>;
+  timeframes: Record<'m5' | 'm15' | 'h1', CandleFeedTf>;
 }
 ```
+
+`CandleFeedTf` 就是 `CandleChart` 真正要读的这七个键，`IntradayTfData` 继承它、另外再带服务端自动标注那一堆；凡是产出 `CandleFeed` 的地方（`snapshot_candles`、`CanvasFrame` 的 preview 代理）都只投影出这七个键。快照每个周期保留最后 300 根；实时推送只投影不截断。
 
 `snapshot_candles` 写的就是这个形状，静态就是冻结的 live。
 

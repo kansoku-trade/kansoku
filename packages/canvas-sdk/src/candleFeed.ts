@@ -15,8 +15,8 @@ import {
 } from 'lightweight-charts';
 import type {
   Candle,
+  CandleFeedTf,
   ColoredPoint,
-  IntradayTfData,
   LinePoint,
   OffSessionSegment,
 } from '@kansoku/shared/types';
@@ -211,7 +211,7 @@ function since<T extends { time: number }, R>(rows: T[], from: number, map: (row
   return rows.filter((row) => row.time >= from).map(map);
 }
 
-export function applyFeed(handles: FeedChart, data: IntradayTfData): void {
+export function applyFeed(handles: FeedChart, data: CandleFeedTf): void {
   const last = data.candles.at(-1);
   if (!last) return;
   const from = handles.lastTime !== null && last.time >= handles.lastTime ? handles.lastTime : null;

@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import type { CandleFeed, QuoteSnapshot } from '@kansoku/shared/types';
+import type {
+  CandleFeed,
+  CandleFeedTf,
+  IntradayTfData,
+  QuoteSnapshot,
+} from '@kansoku/shared/types';
 import * as stylex from '@stylexjs/stylex';
 import { client } from '@web/lib/client';
 import { ScrollArea } from '@web/ui';
@@ -46,6 +51,20 @@ type GuestMessage =
   | { type: 'sub' | 'unsub'; kind: FeedKind; symbol: string };
 
 const INITIAL_HEIGHT = 320;
+
+const MAX_SUBS = 6;
+
+function projectTf(tf: IntradayTfData): CandleFeedTf {
+  return {
+    candles: tf.candles,
+    volumes: tf.volumes,
+    emas: tf.emas,
+    macdDif: tf.macdDif,
+    macdDea: tf.macdDea,
+    macdHist: tf.macdHist,
+    ...(tf.offSession ? { offSession: tf.offSession } : {}),
+  };
+}
 
 export function CanvasFrame({ source, slug, data, onLiveStatus }: CanvasFrameProps) {
   const frameRef = useRef<HTMLIFrameElement>(null);
@@ -105,6 +124,7 @@ export function CanvasFrame({ source, slug, data, onLiveStatus }: CanvasFramePro
     const openSub = (kind: FeedKind, symbol: string) => {
       const key = `${kind}:${symbol}`;
       if (subsRef.current.has(key)) return;
+      if (subsRef.current.size >= MAX_SUBS) return;
       subsRef.current.set(key, () => {});
       const forward = (payload: QuoteSnapshot['quotes'][number] | CandleFeed) => {
         toGuest({ type: 'feed', kind, symbol, data: payload });
@@ -138,10 +158,15 @@ export function CanvasFrame({ source, slug, data, onLiveStatus }: CanvasFramePro
                 else if (decoded.degraded !== undefined) emitStatus({ degraded: decoded.degraded });
                 if (!decoded.built) return;
                 hadBuilt = true;
+                const { m5, m15, h1 } = decoded.built.timeframes;
                 forward({
                   symbol,
                   asOf: new Date().toISOString(),
-                  timeframes: decoded.built.timeframes,
+                  timeframes: {
+                    m5: projectTf(m5),
+                    m15: projectTf(m15),
+                    h1: projectTf(h1),
+                  },
                 });
               },
               onConnected,

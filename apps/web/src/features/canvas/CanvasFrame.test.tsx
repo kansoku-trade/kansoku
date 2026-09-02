@@ -122,18 +122,53 @@ describe('CanvasFrame live bridge', () => {
     send({ type: 'sub', kind: 'preview', symbol: 'MU.US' });
     expect(subscribeChannel.mock.calls[0][0]).toEqual({ kind: 'preview', symbol: 'MU.US' });
 
+    const tf = () => ({
+      candles: [{ time: 1000, open: 1, high: 2, low: 0, close: 1 }],
+      volumes: [{ time: 1000, value: 10 }],
+      emas: [{ period: 20, data: [{ time: 1000, value: 1 }] }],
+      macdDif: [{ time: 1000, value: 0.1 }],
+      macdDea: [{ time: 1000, value: 0.2 }],
+      macdHist: [{ time: 1000, value: -0.1 }],
+      offSession: [{ startTime: 900, endTime: 1000, kind: 'pre' }],
+      markers: [{ time: 1000, text: 'server' }],
+      macdCrossMarkers: [{ time: 1000, text: 'cross' }],
+      autoDivergence: [{ from: 1 }],
+      chanStructure: { bi: [] },
+    });
     const onPayload = subscribeChannel.mock.calls[0][1];
     act(() => {
       onPayload({
         type: 'data',
-        data: { built: { kind: 'intraday', timeframes: { m5: { candles: [] } } } },
+        data: {
+          built: { kind: 'intraday', timeframes: { m5: tf(), m15: tf(), h1: tf() } },
+        },
       });
     });
     const feed = posts.find((post) => post.type === 'feed')!;
     expect(feed.kind).toBe('preview');
     expect(feed.data.symbol).toBe('MU.US');
-    expect(feed.data.timeframes).toEqual({ m5: { candles: [] } });
+    expect(Object.keys(feed.data.timeframes).sort()).toEqual(['h1', 'm15', 'm5']);
+    for (const key of ['m5', 'm15', 'h1']) {
+      expect(Object.keys(feed.data.timeframes[key]).sort()).toEqual([
+        'candles',
+        'emas',
+        'macdDea',
+        'macdDif',
+        'macdHist',
+        'offSession',
+        'volumes',
+      ]);
+    }
+    expect(feed.data.timeframes.m5.candles).toEqual(tf().candles);
     expect(typeof feed.data.asOf).toBe('string');
+  });
+
+  it('ignores subscriptions past the per-canvas cap', () => {
+    const { send } = setup();
+    for (const symbol of ['A.US', 'B.US', 'C.US', 'D.US', 'E.US', 'F.US', 'G.US']) {
+      send({ type: 'sub', kind: 'quotes', symbol });
+    }
+    expect(subscribeChannel.mock.calls.length).toBe(6);
   });
 
   it('goes degraded when a preview build fails before any data', () => {

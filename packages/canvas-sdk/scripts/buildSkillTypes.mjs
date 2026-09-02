@@ -11,6 +11,34 @@ const outDir = join(pkgRoot, '..', '..', '.claude', 'skills', 'canvas', 'sdk');
 // are conditional and stay separate so a canvas that needs none of them reads none.
 const CORE = ['layout', 'text', 'data'];
 
+const SHARED = [
+  'LinePoint',
+  'ColoredPoint',
+  'Candle',
+  'TimeframeKey',
+  'EmaLine',
+  'SessionKind',
+  'OffSessionSegment',
+  'CandleFeedTf',
+  'CandleFeed',
+  'QuoteCell',
+];
+
+function sharedBlock(text, name) {
+  const start = text.search(new RegExp(`^export (?:interface|type) ${name}\\b`, 'm'));
+  if (start < 0) throw new Error(`shared type not found in packages/shared/types.ts: ${name}`);
+  let depth = 0;
+  for (let i = start; i < text.length; i += 1) {
+    const char = text[i];
+    if (char === '{') depth += 1;
+    else if (char === '}') {
+      depth -= 1;
+      if (depth === 0) return text.slice(start, i + 1);
+    } else if (char === ';' && depth === 0) return text.slice(start, i + 1);
+  }
+  throw new Error(`unterminated shared type: ${name}`);
+}
+
 rmSync(outDir, { force: true, recursive: true });
 execFileSync('tsgo', ['-p', 'tsconfig.json'], { cwd: pkgRoot, stdio: 'inherit' });
 
@@ -41,9 +69,28 @@ const header = [...specifiers]
 
 writeFileSync(
   join(outDir, 'core.d.ts'),
-  `${header}\n${bodies.join('\n').replace(/\n{3,}/g, '\n\n').trim()}\n`,
+  `${header}\n${bodies
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()}\n`,
   'utf8',
 );
+
+const sharedSource = readFileSync(join(pkgRoot, '..', 'shared', 'types.ts'), 'utf8');
+writeFileSync(
+  join(outDir, 'shared.d.ts'),
+  `${SHARED.map((name) => sharedBlock(sharedSource, name)).join('\n\n')}\n`,
+  'utf8',
+);
+
+unlinkSync(join(outDir, 'candleFeed.d.ts'));
+
+for (const file of readdirSync(outDir)) {
+  const path = join(outDir, file);
+  const text = readFileSync(path, 'utf8');
+  const rewritten = text.replaceAll("from '@kansoku/shared/types'", "from './shared.js'");
+  if (rewritten !== text) writeFileSync(path, rewritten, 'utf8');
+}
 
 const emitted = readdirSync(outDir).sort();
 console.log(`canvas skill declarations: ${emitted.join(', ')}`);

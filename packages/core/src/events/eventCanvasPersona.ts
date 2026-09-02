@@ -19,15 +19,18 @@ function canvasSkillText(): string | null {
   }
 }
 
+const EXCLUDED_TOOLS = new Set(['save_canvas_data', 'snapshot_candles']);
+
 function bindCanvasSlug(tools: AgentTool[], slug: string): AgentTool[] {
-  return tools.map((tool) => {
-    if (tool.name !== 'save_canvas') return tool;
-    return {
-      ...tool,
-      execute: async (id, params) =>
-        tool.execute(id, { ...(params as { slug?: string }), slug }),
-    };
-  });
+  return tools
+    .filter((tool) => !EXCLUDED_TOOLS.has(tool.name))
+    .map((tool) => {
+      if (tool.name !== 'save_canvas') return tool;
+      return {
+        ...tool,
+        execute: async (id, params) => tool.execute(id, { ...(params as { slug?: string }), slug }),
+      };
+    });
 }
 
 const SYSTEM_PROMPT = [

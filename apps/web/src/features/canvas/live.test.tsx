@@ -76,17 +76,37 @@ describe('canvas live hooks', () => {
   it('keeps quotes and candles on separate channels', () => {
     render(
       <>
-        <QuoteProbe symbol="MU" />
-        <CandleProbe symbol="MU" />
+        <QuoteProbe symbol="AVGO" />
+        <CandleProbe symbol="AVGO" />
       </>,
     );
     expect(posts).toEqual([
-      { type: 'sub', kind: 'quotes', symbol: 'MU.US' },
-      { type: 'sub', kind: 'preview', symbol: 'MU.US' },
+      { type: 'sub', kind: 'quotes', symbol: 'AVGO.US' },
+      { type: 'sub', kind: 'preview', symbol: 'AVGO.US' },
     ]);
 
-    feed('preview', 'MU.US', { symbol: 'MU.US', asOf: '2026-09-02T13:00:00.000Z', timeframes: {} });
+    feed('preview', 'AVGO.US', {
+      symbol: 'AVGO.US',
+      asOf: '2026-09-02T13:00:00.000Z',
+      timeframes: {},
+    });
     expect(screen.getByTestId('candles').textContent).toBe('2026-09-02T13:00:00.000Z');
     expect(screen.getByTestId('quote').textContent).toBe('none');
+  });
+
+  it('keeps the last value when the last consumer leaves and comes back', () => {
+    const view = render(<QuoteProbe symbol="TSM" />);
+    feed('quotes', 'TSM.US', { symbol: 'TSM.US', session: 'regular', last: 240.5 });
+    expect(screen.getByTestId('quote').textContent).toBe('TSM.US@240.5');
+
+    view.rerender(<span />);
+    expect(posts).toEqual([
+      { type: 'sub', kind: 'quotes', symbol: 'TSM.US' },
+      { type: 'unsub', kind: 'quotes', symbol: 'TSM.US' },
+    ]);
+
+    view.rerender(<QuoteProbe symbol="TSM" />);
+    expect(screen.getByTestId('quote').textContent).toBe('TSM.US@240.5');
+    expect(posts.at(-1)).toEqual({ type: 'sub', kind: 'quotes', symbol: 'TSM.US' });
   });
 });
