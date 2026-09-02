@@ -49,10 +49,9 @@ const styles = stylex.create({
     fontSize: fontSizes.base,
     fontWeight: 500,
   },
-  preferenceDescription: {
+  hint: {
     color: colors.textMuted,
     fontSize: fontSizes.sm,
-    marginTop: '3px',
     overflowWrap: 'anywhere',
   },
 });
@@ -107,17 +106,6 @@ function WatchedMarketsCardLoaded({
       <div className={`settings-card-heading ${stylex.props(styles.cardHeading).className}`}>
         <SectionTitle className={stylex.props(styles.cardTitle).className}>关注市场</SectionTitle>
       </div>
-      <div className={`settings-time-preference ${stylex.props(styles.preference).className}`}>
-        <div
-          className={`settings-preference-copy ${stylex.props(styles.preferenceCopy).className}`}
-        >
-          <div
-            className={`settings-preference-description ${stylex.props(styles.preferenceDescription).className}`}
-          >
-            全市场轮动与盘中巡检仅覆盖已勾选的市场
-          </div>
-        </div>
-      </div>
       {MARKET_ORDER.map((market) => (
         <div
           className={`settings-time-preference ${stylex.props(styles.preference).className}`}
@@ -144,11 +132,7 @@ function WatchedMarketsCardLoaded({
           <div
             className={`settings-preference-copy ${stylex.props(styles.preferenceCopy).className}`}
           >
-            <div
-              className={`settings-preference-description ${stylex.props(styles.preferenceDescription).className}`}
-            >
-              至少保留一个市场
-            </div>
+            <div className={stylex.props(styles.hint).className}>至少保留一个市场</div>
           </div>
         </div>
       ) : null}
@@ -157,11 +141,7 @@ function WatchedMarketsCardLoaded({
           <div
             className={`settings-preference-copy ${stylex.props(styles.preferenceCopy).className}`}
           >
-            <div
-              className={`settings-preference-description ${stylex.props(styles.preferenceDescription).className}`}
-            >
-              {error}
-            </div>
+            <div className={stylex.props(styles.hint).className}>{error}</div>
           </div>
         </div>
       ) : null}
