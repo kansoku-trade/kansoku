@@ -21,7 +21,7 @@ Spec: `docs/superpowers/specs/2026-09-02-canvas-live-data-design.md`（唯一权
 3. `store.ts`：
    - `canvasDataPath(dir, slug, name)`；`loadCanvas` 读出所有 `<slug>.*.json` 填进 `data`（坏 JSON 的文件跳过并在 `check` 里不动）。
    - `saveCanvasData(dir, { slug, name, json: string })`：画布不存在 → `{ ok:false, issues:['canvas not found'] }`；`name` 不合法 / `JSON.parse` 失败 / 超 512 KB → 各自一条 issue；成功写文件后返回 `{ ok:true }`。
-   - `saveCanvas` 在静态检查后、落盘前，对源码里每个 `./<name>.json` 导入检查文件存在，缺则拒收 `missing data file: <slug>.<name>.json`。`listCanvases` 不变。
+   - `saveCanvas` 在静态检查后、落盘前，对源码里每个 `./<name>.json` 导入检查文件存在，缺则拒收 `missing data file: <slug>.<name>.json`（`apply_patch` 走 `saveCanvas`，自动受同一检查）。`listCanvases` 不变。
 4. `check.ts`：
    - `IMPORT_RE` 命中的 spec 若匹配 `/^\.\/([a-z0-9-]+)\.json$/` 放行；其余相对路径照旧拒。导出 `canvasDataImports(source): string[]` 给 store 和 compile 用。
    - 源码里出现 `function useQuote` / `function useCandles` / `const useQuote` / `const useCandles` 拒收 `useQuote / useCandles must come from @kansoku/canvas`。
@@ -31,7 +31,7 @@ Spec: `docs/superpowers/specs/2026-09-02-canvas-live-data-design.md`（唯一权
    - `save_canvas_data`（`slug`、`name`、`json`）：受 `skillLoaded` 门禁；调 `saveCanvasData`；成功回 `saved data slug=<slug> name=<name> bytes=<n>`，失败回 `rejected:\n<issues>`。
    - `snapshot_candles`（`slug`、`name`、`symbol`）：受 `skillLoaded` 门禁；画布不存在拒；`normalizeSymbol` 后调 `buildChart({ type:'intraday', symbol, session:'all', skip_news:true, day_kline_lazy:true, enrichment_lazy:true })`（`packages/core/src/charts/build.ts:304`），从 `result.built`（`IntradayBuilt`）取 `timeframes` 组成 `CandleFeed`（`asOf` 为当前 ISO 时间），JSON 化后走 `saveCanvasData`。回 `snapshot saved slug=<slug> name=<name> symbol=<symbol> bars m5=<n> m15=<n> h1=<n>`。构建失败回 `rejected: <message>`。
    - `read_canvas` 返回体去掉 `data` 内容，换成 `dataFiles: [{ name, bytes, shape }]`，`shape` 为数组时 `array[<len>]`，对象时 `object{<keys>}`。
-   - `save_canvas` / `edit_file` 的 description 各加一句：K 线数据用 `snapshot_candles`，任意数据用 `save_canvas_data`，源码里 `import x from './<name>.json'`。
+   - `save_canvas` / `apply_patch` 的 description 各加一句：K 线数据用 `snapshot_candles`，任意数据用 `save_canvas_data`，源码里 `import x from './<name>.json'`。
 7. `canvas.service.ts` 不需要新路由；`get` 自然带出 `data`。
 8. 测试：`check.test.ts`（放行 `./a.json`、拒 `../a.json` `./a.ts` `./A.json`、自定义 hook 拒、超 6 拒）；`compile.test.ts`（JSON 导入注入取得到）；`store.test.ts`（`saveCanvasData` 四种拒收 + 成功、`loadCanvas` 带 `data`、`saveCanvas` 缺文件拒）；`tools.test.ts`（`snapshot_candles` mock `buildChart` 后文件形状是 `CandleFeed`；`read_canvas` 只回清单）。先写测试再实现。
 
