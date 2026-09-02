@@ -13,6 +13,8 @@ function makeDeps(overrides: Partial<MenuActionDeps> = {}): MenuActionDeps {
     openChat: vi.fn(),
     openTrainer: vi.fn(),
     checkForUpdates: vi.fn(),
+    updateAvailable: () => false,
+    installUpdate: vi.fn(),
     newWindow: vi.fn(),
     newTab: vi.fn(),
     closeTab: vi.fn(),
@@ -127,6 +129,19 @@ describe('buildAppMenuTemplate', () => {
     );
     expect(deps.checkForUpdates).toHaveBeenCalledOnce();
     expect(deps.openSettings).toHaveBeenCalledOnce();
+  });
+
+  it('swaps check-updates for restart-to-update when an update is available', () => {
+    const deps = makeDeps({ updateAvailable: () => true });
+    const appMenu = asSubmenu(buildAppMenuTemplate('Kansoku', deps)[0]);
+    expect(appMenu.some((item) => item.label === '检查更新…')).toBe(false);
+    findByLabel(appMenu, '重启以更新…').click?.(
+      undefined as never,
+      undefined as never,
+      undefined as never,
+    );
+    expect(deps.installUpdate).toHaveBeenCalledOnce();
+    expect(deps.checkForUpdates).not.toHaveBeenCalled();
   });
 
   it('puts logs, the fixed Workspace, and safe data import in the help menu', () => {

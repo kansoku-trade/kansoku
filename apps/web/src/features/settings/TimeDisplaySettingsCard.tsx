@@ -34,11 +34,11 @@ const styles = stylex.create({
     margin: 0,
   },
   timePreference: {
-    alignItems: 'center',
-    display: 'flex',
-    gap: '12px',
-    justifyContent: 'space-between',
-    padding: '11px',
+    'alignItems': 'center',
+    'display': 'flex',
+    'gap': '12px',
+    'justifyContent': 'space-between',
+    'padding': '11px',
     '@media (max-width: 560px)': {
       alignItems: 'stretch',
       flexDirection: 'column',
@@ -61,7 +61,6 @@ const styles = stylex.create({
   },
   timeMode: {
     'width': '168px',
-    'height': sizes.controlHeight,
     'flex': '0 0 auto',
     'gridTemplateColumns': '1fr 1fr',
     '@media (max-width: 560px)': { width: '100%' },
@@ -78,8 +77,12 @@ export function TimeDisplaySettingsCard() {
         <SectionTitle className={stylex.props(styles.headingTitle).className}>显示</SectionTitle>
       </div>
       <div className={`settings-time-preference ${stylex.props(styles.timePreference).className}`}>
-        <div className={`settings-preference-copy ${stylex.props(styles.preferenceCopy).className}`}>
-          <div className={`settings-preference-name ${stylex.props(styles.preferenceName).className}`}>
+        <div
+          className={`settings-preference-copy ${stylex.props(styles.preferenceCopy).className}`}
+        >
+          <div
+            className={`settings-preference-name ${stylex.props(styles.preferenceName).className}`}
+          >
             优先显示的时间
           </div>
           <div

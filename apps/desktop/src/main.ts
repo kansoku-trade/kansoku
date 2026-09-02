@@ -51,7 +51,7 @@ import {
 import { createTabsService, type TabsService } from './shell/tabs/service.js';
 import { TabsIpc } from './shell/tabs/ipc.js';
 import { initTelemetry } from './platform/telemetry/telemetry.js';
-import { initUpdater } from './shell/updater/updater.js';
+import { initUpdater, type UpdaterHandle } from './shell/updater/updater.js';
 import { UpdaterIpc } from './shell/updater/ipc.js';
 import { isPopoutWindow } from './shell/window/popoutWindow.js';
 import { isAboutWindow, openAboutWindow } from './shell/window/aboutWindow.js';
@@ -117,14 +117,14 @@ app.on('second-instance', (_event, argv) => {
 });
 
 interface InstallAppMenuOptions {
-  checkForUpdates: () => void;
+  updater: UpdaterHandle;
   openWindow: () => void;
   tabs: TabsService;
   rendererCalls: RendererCallClient;
 }
 
 function installAppMenu({
-  checkForUpdates,
+  updater,
   openWindow,
   tabs,
   rendererCalls,
@@ -211,7 +211,9 @@ function installAppMenu({
       openResearch: () => sendTabsCommand('open-research'),
       openChat: () => sendTabsCommand('open-chat'),
       openTrainer: () => sendTabsCommand('open-trainer', anyTabWindow()),
-      checkForUpdates,
+      checkForUpdates: () => updater.checkNow(),
+      updateAvailable: () => updater.getStatus().kind === 'available',
+      installUpdate: () => updater.installNow(),
       newWindow: openWindow,
       newTab: () => sendTabsCommand('new-tab'),
       closeTab: () => {
@@ -237,6 +239,7 @@ function installAppMenu({
     },
   });
   menuManager.install();
+  updater.onStatus(() => menuManager?.rebuild());
 }
 
 app.whenReady().then(async () => {
@@ -278,7 +281,7 @@ app.whenReady().then(async () => {
       onWindowFocus: () => updater.silentCheckOnActivate(),
     });
     installAppMenu({
-      checkForUpdates: () => updater.checkNow(),
+      updater,
       openWindow: () => windowManager.openWindow(),
       tabs: tabsService,
       rendererCalls: createRendererCallClient(),

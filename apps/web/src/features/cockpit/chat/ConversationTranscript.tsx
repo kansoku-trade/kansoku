@@ -66,7 +66,8 @@ const styles = stylex.create({
     display: 'flex',
     flexDirection: 'column',
     gap: '6px',
-    alignItems: 'center',
+    alignItems: 'flex-start',
+    justifyContent: 'flex-start',
   },
   suggestion: {
     'fontSize': fontSizes.sm,
@@ -181,16 +182,13 @@ function ConversationTranscriptView({
     () => presentTranscript({ rows, inserts, liveBeats, liveTools, streamText, busy }),
     [rows, inserts, liveBeats, liveTools, streamText, busy],
   );
-  const activeUserId = useMemo(
-    () => {
-      if (!busy) return undefined;
-      for (let index = rows.length - 1; index >= 0; index -= 1) {
-        if (rows[index]?.kind === 'user') return rows[index]?.id;
-      }
-      return undefined;
-    },
-    [busy, rows],
-  );
+  const activeUserId = useMemo(() => {
+    if (!busy) return undefined;
+    for (let index = rows.length - 1; index >= 0; index -= 1) {
+      if (rows[index]?.kind === 'user') return rows[index]?.id;
+    }
+    return undefined;
+  }, [busy, rows]);
   const lastAssistantIndex = useMemo(() => {
     for (let index = blocks.length - 1; index >= 0; index -= 1) {
       if (blocks[index]?.type === 'assistant') return index;
@@ -318,7 +316,9 @@ function ConversationTranscriptView({
           insertClassName={insertClassName}
           onOpenCanvas={onOpenCanvas}
           onRetry={onRetryLast}
-          showActions={block.type === 'assistant' && !block.streaming && !busy && index === lastAssistantIndex}
+          showActions={
+            block.type === 'assistant' && !block.streaming && !busy && index === lastAssistantIndex
+          }
         />
       ))}
       {!isEmpty && !busy && suggestions.length > 0 ? (

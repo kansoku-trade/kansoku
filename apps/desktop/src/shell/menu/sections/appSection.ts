@@ -13,10 +13,9 @@ export function buildAppSectionWithName(
         click: () => deps.openAbout(),
       },
       { type: 'separator' },
-      {
-        label: '检查更新…',
-        click: () => deps.checkForUpdates(),
-      },
+      deps.updateAvailable()
+        ? { label: '重启以更新…', click: () => deps.installUpdate() }
+        : { label: '检查更新…', click: () => deps.checkForUpdates() },
       { type: 'separator' },
       {
         label: '设置…',
