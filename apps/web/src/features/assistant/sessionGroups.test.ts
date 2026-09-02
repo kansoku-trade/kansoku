@@ -7,7 +7,14 @@ import {
   sessionGroupKey,
 } from './sessionGroups';
 
-const now = new Date('2026-09-02T18:30:00+08:00');
+const DAY_MS = 24 * 60 * 60 * 1000;
+const now = new Date('2026-09-02T10:30:00.000Z');
+
+function isoFromLocalMidnight(date: Date, offsetMs: number): string {
+  const start = new Date(date);
+  start.setHours(0, 0, 0, 0);
+  return new Date(start.getTime() + offsetMs).toISOString();
+}
 
 const session = (id: string, updatedAt: string): AssistantSessionMeta => ({
   id,
@@ -21,10 +28,10 @@ const session = (id: string, updatedAt: string): AssistantSessionMeta => ({
 
 describe('sessionGroupKey', () => {
   it('splits by local calendar day', () => {
-    expect(sessionGroupKey('2026-09-02T00:30:00+08:00', now)).toBe('today');
-    expect(sessionGroupKey('2026-09-01T23:30:00+08:00', now)).toBe('yesterday');
-    expect(sessionGroupKey('2026-08-28T12:00:00+08:00', now)).toBe('week');
-    expect(sessionGroupKey('2026-08-20T12:00:00+08:00', now)).toBe('earlier');
+    expect(sessionGroupKey(isoFromLocalMidnight(now, 30 * 60 * 1000), now)).toBe('today');
+    expect(sessionGroupKey(isoFromLocalMidnight(now, -30 * 60 * 1000), now)).toBe('yesterday');
+    expect(sessionGroupKey(isoFromLocalMidnight(now, -5 * DAY_MS), now)).toBe('week');
+    expect(sessionGroupKey(isoFromLocalMidnight(now, -13 * DAY_MS), now)).toBe('earlier');
     expect(sessionGroupKey('not-a-date', now)).toBe('earlier');
   });
 });
@@ -33,9 +40,9 @@ describe('groupSessionsByRecency', () => {
   it('keeps order and drops empty groups', () => {
     const groups = groupSessionsByRecency(
       [
-        session('a', '2026-09-02T10:00:00+08:00'),
-        session('b', '2026-08-20T10:00:00+08:00'),
-        session('c', '2026-09-02T09:00:00+08:00'),
+        session('a', isoFromLocalMidnight(now, 10 * 60 * 60 * 1000)),
+        session('b', isoFromLocalMidnight(now, -13 * DAY_MS)),
+        session('c', isoFromLocalMidnight(now, 9 * 60 * 60 * 1000)),
       ],
       now,
     );
