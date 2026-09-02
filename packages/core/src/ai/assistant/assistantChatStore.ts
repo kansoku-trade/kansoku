@@ -3,7 +3,7 @@ import { and, count, desc, eq, inArray, sql } from 'drizzle-orm';
 import { getDb, type Db } from '../../db/index.js';
 import { assistantSessions, chatMessages } from '../../db/schema.js';
 import { nextSnowflake } from '../../db/snowflake.js';
-import { textOf } from '../conversation/conversationShared.js';
+import { stripSentAt, textOf } from '../conversation/conversationShared.js';
 import {
   type ConversationMessageRow,
   type ConversationSessionBase,
@@ -90,8 +90,8 @@ export interface AssistantSessionDigest {
 
 function userText(message: AgentMessage): string {
   if (message.role !== 'user') return '';
-  if (typeof message.content === 'string') return message.content;
-  return message.content.map((block) => textOf(block)).join('');
+  if (typeof message.content === 'string') return stripSentAt(message.content);
+  return stripSentAt(message.content.map((block) => textOf(block)).join(''));
 }
 
 export async function digestAssistantSessions(

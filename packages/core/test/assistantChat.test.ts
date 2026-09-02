@@ -3,7 +3,7 @@ import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import type { AiAgentFactory } from '../src/ai/agents/agentSession.js';
+import { promptText, type AiAgentFactory } from '../src/ai/agents/agentSession.js';
 import {
   abortAssistantChatTurn,
   assistantChatTurnState,
@@ -70,7 +70,7 @@ describe('assistant chat', () => {
       const state = { messages: [...(config.messages ?? [])] };
       return {
         prompt: async (text) => {
-          state.messages.push({ role: 'user', content: text, timestamp: Date.now() });
+          state.messages.push({ role: 'user', content: promptText(text), timestamp: Date.now() });
           state.messages.push(assistant('你好，我是助手。'));
         },
         abort: () => undefined,
@@ -347,7 +347,7 @@ describe('assistant chat', () => {
       const state = { messages: [...(config.messages ?? [])] };
       return {
         prompt: async (text) => {
-          state.messages.push({ role: 'user', content: text, timestamp: Date.now() });
+          state.messages.push({ role: 'user', content: promptText(text), timestamp: Date.now() });
           state.messages.push(assistant('第一次回答', usageA));
         },
         abort: () => undefined,
@@ -370,7 +370,7 @@ describe('assistant chat', () => {
       const state = { messages: [...(config.messages ?? [])] };
       return {
         prompt: async (text) => {
-          state.messages.push({ role: 'user', content: text, timestamp: Date.now() });
+          state.messages.push({ role: 'user', content: promptText(text), timestamp: Date.now() });
           state.messages.push(assistant('第二次回答', usageB));
         },
         abort: () => undefined,
@@ -402,7 +402,7 @@ describe('assistant chat', () => {
       const state = { messages: [...(config.messages ?? [])] };
       return {
         prompt: async (text) => {
-          state.messages.push({ role: 'user', content: text, timestamp: Date.now() });
+          state.messages.push({ role: 'user', content: promptText(text), timestamp: Date.now() });
           state.messages.push({
             role: 'assistant',
             content: [{ type: 'text', text: '无用量数据' }],
@@ -443,7 +443,7 @@ describe('assistant chat', () => {
       const state = { messages: [...(config.messages ?? [])] };
       return {
         prompt: async (text) => {
-          state.messages.push({ role: 'user', content: text, timestamp: Date.now() });
+          state.messages.push({ role: 'user', content: promptText(text), timestamp: Date.now() });
           state.messages.push(assistant('好。'));
         },
         abort: () => undefined,
@@ -473,7 +473,7 @@ describe('assistant chat', () => {
       const state = { messages: [...(config.messages ?? [])] };
       return {
         prompt: async (text) => {
-          state.messages.push({ role: 'user', content: text, timestamp: Date.now() });
+          state.messages.push({ role: 'user', content: promptText(text), timestamp: Date.now() });
           state.messages.push(assistant('好。'));
         },
         abort: () => undefined,

@@ -37,7 +37,7 @@ import {
   type ConversationPreparedTurn,
   createConversationEngine,
 } from '../conversation/conversationEngine.js';
-import { stringifyPayload, textOf } from '../conversation/conversationShared.js';
+import { stringifyPayload, stripSentAt, textOf } from '../conversation/conversationShared.js';
 import {
   buildDataPackTool,
   buildDrawAnnotationsTool,
@@ -50,7 +50,7 @@ import {
   buildReassessPack as defaultBuildReassessPack,
   type ReassessPack,
 } from '../agents/datapack.js';
-import { MessagesEngine } from '../conversation/messages/messageEngine.js';
+import { sessionMessagesEngine } from '../conversation/messages/messageEngine.js';
 import { SkillCatalogProvider, toSkillContexts } from '../conversation/messages/sharedProviders.js';
 import type { AiModel } from '../runtime/models.js';
 import {
@@ -139,7 +139,7 @@ export function toDisplayMessages(rows: ChatMessageRow[]): ChatDisplayMessage[] 
         typeof message.content === 'string'
           ? message.content
           : message.content.map(textOf).join('');
-      out.push({ id: row.id, ts: row.ts, kind: 'user', text });
+      out.push({ id: row.id, ts: row.ts, kind: 'user', text: stripSentAt(text) });
       continue;
     }
     if (message.role === 'assistant') {
@@ -418,7 +418,7 @@ function prepareTurn(
         readMounts: proTurn.readMounts,
         onSkillRead: (name) => loadedSkills.add(name),
       });
-      const messageEngine = new MessagesEngine([
+      const messageEngine = sessionMessagesEngine(activeSessionId, () => [
         ...proTurn.processors,
         new SkillCatalogProvider(toSkillContexts(skillIndex)),
       ]);

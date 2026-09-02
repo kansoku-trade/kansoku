@@ -1,6 +1,7 @@
 import type { AgentEvent, AgentMessage } from '@earendil-works/pi-agent-core';
 import { describe, expect, it } from 'vitest';
-import type { AiAgentFactory } from '../src/ai/agents/agentSession.js';
+import { promptText, type AiAgentFactory } from '../src/ai/agents/agentSession.js';
+import { stampSentAt } from '../src/ai/conversation/conversationShared.js';
 import {
   type ConversationEvent,
   type ConversationPreparedTurn,
@@ -246,7 +247,11 @@ describe('createConversationEngine persistence', () => {
 
     expect(store.titles).toEqual(['问题 换行']);
     expect(store.rows.map((r) => r.role)).toEqual(['user', 'assistant']);
-    expect(store.rows[0].payload).toEqual({ role: 'user', content: '  问题  换行 ', timestamp: 0 });
+    expect(store.rows[0].payload).toEqual({
+      role: 'user',
+      content: stampSentAt('  问题  换行 ', 0),
+      timestamp: 0,
+    });
     expect(store.rows[1].payload).toEqual(reply);
     expect(events).toEqual([{ event: 'done' }]);
   });
@@ -277,7 +282,9 @@ describe('createConversationEngine persistence', () => {
     );
     if (result.started) await result.done;
 
-    expect(completed).toEqual([[{ role: 'user', content: '记住这个偏好', timestamp: 0 }, reply]]);
+    expect(completed).toEqual([
+      [{ role: 'user', content: stampSentAt('记住这个偏好', 0), timestamp: 0 }, reply],
+    ]);
   });
 
   it('synthesizes a partial assistant row when the turn fails after streaming', async () => {
@@ -506,7 +513,7 @@ describe('createConversationEngine translation', () => {
       const messages: AgentMessage[] = [...(config.messages ?? [])];
       return {
         prompt: async (text: string) => {
-          prompts.push(text);
+          prompts.push(promptText(text));
           listener?.(messageStartEvent());
           listener?.(messageUpdateEvent('未核验的自由文本'));
           listener?.({
@@ -524,7 +531,7 @@ describe('createConversationEngine translation', () => {
           });
           if (prompts.length === 2) answer = '核验后的回答';
           messages.push(
-            { role: 'user', content: text, timestamp: 0 },
+            { role: 'user', content: promptText(text), timestamp: 0 },
             assistantMessage('未核验的自由文本'),
           );
         },
@@ -550,7 +557,7 @@ describe('createConversationEngine translation', () => {
     if (result.started) await result.done;
     unsub();
 
-    expect(prompts).toEqual(['突破了吗\n\nGATED-INSTR', 'RETRY-INSTR']);
+    expect(prompts).toEqual([`${stampSentAt('突破了吗', 0)}\n\nGATED-INSTR`, 'RETRY-INSTR']);
     expect(events.filter((e) => e.event === 'tool')).toHaveLength(4);
     expect(events.filter((e) => e.event === 'delta')).toEqual([
       { event: 'delta', text: '核验后的回答' },
@@ -569,7 +576,7 @@ describe('createConversationEngine translation', () => {
     const prompts: string[] = [];
     const factory: AiAgentFactory = (config) => ({
       prompt: async (text: string) => {
-        prompts.push(text);
+        prompts.push(promptText(text));
       },
       abort: () => {},
       state: { messages: [...(config.messages ?? [])] },
@@ -585,7 +592,7 @@ describe('createConversationEngine translation', () => {
     expect(result.started).toBe(true);
     if (result.started) await result.done;
 
-    expect(prompts).toEqual(['突破了吗\n\nGATED-INSTR']);
+    expect(prompts).toEqual([`${stampSentAt('突破了吗', 0)}\n\nGATED-INSTR`]);
   });
 
   it('fails closed with the gate message after exactly one retry when the answer never lands', async () => {
@@ -597,7 +604,7 @@ describe('createConversationEngine translation', () => {
     const prompts: string[] = [];
     const factory: AiAgentFactory = (config) => ({
       prompt: async (text: string) => {
-        prompts.push(text);
+        prompts.push(promptText(text));
       },
       abort: () => {},
       state: {
@@ -620,7 +627,7 @@ describe('createConversationEngine translation', () => {
     if (result.started) await result.done;
     unsub();
 
-    expect(prompts).toEqual(['见底了吗\n\nGATED-INSTR', 'RETRY-INSTR']);
+    expect(prompts).toEqual([`${stampSentAt('见底了吗', 0)}\n\nGATED-INSTR`, 'RETRY-INSTR']);
     expect(events).toEqual([{ event: 'error', message: '回答未通过核验，已拦截' }]);
     expect(store.rows.map((r) => r.role)).toEqual(['user', 'assistant']);
   });

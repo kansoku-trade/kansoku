@@ -19,6 +19,27 @@ export function stringifyPayload(value: unknown): string | undefined {
   }
 }
 
+const SENT_AT_PREFIX = /^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2} UTC[+-]\d{2}:\d{2}\] /u;
+
+export function formatSentAt(at: number): string {
+  const date = new Date(at);
+  const pad = (value: number): string => String(value).padStart(2, '0');
+  const offsetMinutes = -date.getTimezoneOffset();
+  const sign = offsetMinutes >= 0 ? '+' : '-';
+  const offset = Math.abs(offsetMinutes);
+  const ymd = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+  const hm = `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  return `${ymd} ${hm} UTC${sign}${pad(Math.floor(offset / 60))}:${pad(offset % 60)}`;
+}
+
+export function stampSentAt(text: string, at: number): string {
+  return `[${formatSentAt(at)}] ${text}`;
+}
+
+export function stripSentAt(text: string): string {
+  return text.replace(SENT_AT_PREFIX, '');
+}
+
 export function textOf(block: { type: string; text?: string }): string {
   return block.type === 'text' && typeof block.text === 'string' ? block.text : '';
 }

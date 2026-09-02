@@ -28,7 +28,7 @@ import {
   type ConversationPreparedTurn,
   createConversationEngine,
 } from '../conversation/conversationEngine.js';
-import { MessagesEngine } from '../conversation/messages/messageEngine.js';
+import { sessionMessagesEngine } from '../conversation/messages/messageEngine.js';
 import { SkillCatalogProvider, toSkillContexts } from '../conversation/messages/sharedProviders.js';
 import {
   composeWithDiscipline,
@@ -102,7 +102,7 @@ function prepareTurn(
         readMounts: proTurn.readMounts,
         onSkillRead: (name) => loadedSkills.add(name),
       });
-      const messageEngine = new MessagesEngine([
+      const messageEngine = sessionMessagesEngine(activeSessionId, () => [
         ...proTurn.processors,
         new SkillCatalogProvider(toSkillContexts(skillIndex)),
       ]);

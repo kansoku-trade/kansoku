@@ -61,7 +61,7 @@ export class MessagesEngine {
     signal?: AbortSignal,
   ) => Promise<AgentMessage[]>;
 
-  constructor(processors: MessageProcessor[]) {
+  constructor(processors: MessageProcessor[], sessionId: string = createSessionId()) {
     const pipeline = [new AfterSystemPromptLanguageInjector(), ...processors];
 
     this.engine = createPiMessageEngine<
@@ -78,7 +78,7 @@ export class MessagesEngine {
         },
       ],
       services: {},
-      sessionId: createSessionId(),
+      sessionId,
     });
     this.transformContext = async (messages, signal) =>
       (
@@ -92,4 +92,42 @@ export class MessagesEngine {
   async process(messages: readonly AgentMessage[]): Promise<MessagesEngineResult> {
     return this.engine.process(messages, { step: {} });
   }
+
+  destroy(): Promise<unknown> {
+    return this.engine.destroy();
+  }
+}
+
+// ponytail: LRU cap only, no idle sweep; add one if desktop sessions pile up past the cap
+const SESSION_ENGINE_CAP = 32;
+const sessionEngines = new Map<string, MessagesEngine>();
+
+export function sessionMessagesEngine(
+  sessionId: string,
+  processors: () => MessageProcessor[],
+): MessagesEngine {
+  const existing = sessionEngines.get(sessionId);
+  if (existing) {
+    sessionEngines.delete(sessionId);
+    sessionEngines.set(sessionId, existing);
+    return existing;
+  }
+  const engine = new MessagesEngine(processors(), sessionId);
+  sessionEngines.set(sessionId, engine);
+  if (sessionEngines.size > SESSION_ENGINE_CAP) {
+    const oldest = sessionEngines.keys().next().value;
+    if (oldest !== undefined) disposeSessionMessagesEngine(oldest);
+  }
+  return engine;
+}
+
+export function disposeSessionMessagesEngine(sessionId: string): void {
+  const engine = sessionEngines.get(sessionId);
+  if (!engine) return;
+  sessionEngines.delete(sessionId);
+  void engine.destroy().catch(() => undefined);
+}
+
+export function resetSessionMessagesEnginesForTests(): void {
+  for (const sessionId of [...sessionEngines.keys()]) disposeSessionMessagesEngine(sessionId);
 }

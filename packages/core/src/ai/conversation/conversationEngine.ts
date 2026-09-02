@@ -7,6 +7,7 @@ import {
   hasAssistantText,
   persistFailureIncrement,
   persistIncrement,
+  stampSentAt,
   stringifyPayload,
   synthesizePartialAssistantMessage,
 } from './conversationShared.js';
@@ -220,7 +221,12 @@ export function createConversationEngine<TInput, TReason extends string>(
       const history = await turn.store.listMessages(session.id);
       const historyPayloads = history.map((row) => row.payload);
 
-      const userMessage: AgentMessage = { role: 'user', content: text, timestamp: nowFn() };
+      const sentAt = nowFn();
+      const userMessage: AgentMessage = {
+        role: 'user',
+        content: stampSentAt(text, sentAt),
+        timestamp: sentAt,
+      };
       await turn.store.appendMessages(session.id, [userMessage]);
 
       const plan = await turn.buildTurn(session.id);
@@ -264,7 +270,11 @@ export function createConversationEngine<TInput, TReason extends string>(
       };
 
       try {
-        await agentSession.runTurn(plan.gate ? `${text}\n\n${plan.gate.instruction}` : text);
+        await agentSession.runTurn(
+          plan.gate
+            ? { ...userMessage, content: `${userMessage.content}\n\n${plan.gate.instruction}` }
+            : userMessage,
+        );
 
         // One explicit retry: a rejected submit only returns a tool result, so without an outer
         // nudge the model is free to give up and ship nothing.

@@ -39,8 +39,20 @@ export const runtimeStreamFn: StreamFn = (model, context, options) => {
   return getModelsRuntime().streamSimple(requestModel, context, options);
 };
 
+export type AiAgentPrompt = string | AgentMessage;
+
+export function promptText(input: AiAgentPrompt): string {
+  if (typeof input === 'string') return input;
+  const content: unknown = 'content' in input ? input.content : undefined;
+  if (typeof content === 'string') return content;
+  if (!Array.isArray(content)) return '';
+  return content
+    .map((block: { text?: unknown }) => (typeof block.text === 'string' ? block.text : ''))
+    .join('');
+}
+
 export interface AiAgentHandle {
-  prompt(text: string): Promise<unknown>;
+  prompt(input: AiAgentPrompt): Promise<unknown>;
   continue?(): Promise<unknown>;
   abort(): void;
   setTools?(tools: AgentTool[]): void;
@@ -107,7 +119,7 @@ async function retryNetwork(agent: AiAgentHandle, first: unknown): Promise<void>
   throw last instanceof Error ? last : new Error(String(last));
 }
 
-async function runUntilSettled(agent: AiAgentHandle, prompt: string): Promise<void> {
+async function runUntilSettled(agent: AiAgentHandle, prompt: AiAgentPrompt): Promise<void> {
   try {
     await agent.prompt(prompt);
   } catch (err) {
@@ -138,7 +150,8 @@ const defaultAgentFactory: AiAgentFactory = (config) => {
     transformContext: config.transformContext,
   });
   return {
-    prompt: (text: string) => agent.prompt(text),
+    prompt: (input: AiAgentPrompt) =>
+      typeof input === 'string' ? agent.prompt(input) : agent.prompt(input),
     continue: () => agent.continue(),
     abort: () => agent.abort(),
     setTools: (tools) => {
@@ -164,7 +177,7 @@ export function createAgentSession(config: {
   persistUsage?: boolean;
 }): {
   agent: AiAgentHandle;
-  runTurn(prompt: string, timeoutMs?: number): Promise<void>;
+  runTurn(prompt: AiAgentPrompt, timeoutMs?: number): Promise<void>;
   isDone(): boolean;
 } {
   const factory = config.agentFactory ?? defaultAgentFactory;
@@ -191,7 +204,7 @@ export function createAgentSession(config: {
   let done = false;
   let inFlight = false;
 
-  async function runTurn(prompt: string, timeoutMs?: number): Promise<void> {
+  async function runTurn(prompt: AiAgentPrompt, timeoutMs?: number): Promise<void> {
     if (inFlight) {
       throw new Error('agent session turn already in flight');
     }

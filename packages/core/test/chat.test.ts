@@ -3,7 +3,8 @@ import { join } from 'node:path';
 import type { AgentEvent, AgentMessage, AgentTool } from '@earendil-works/pi-agent-core';
 import { describe, expect, it, vi } from 'vitest';
 import type { ChartDoc, CockpitComment } from '@kansoku/shared/types';
-import type { AiAgentFactory } from '../src/ai/agents/agentSession.js';
+import { promptText, type AiAgentFactory } from '../src/ai/agents/agentSession.js';
+import { stampSentAt } from '../src/ai/conversation/conversationShared.js';
 import type { ChatMessageRow } from '../src/ai/chat/chatStore.js';
 import type { AiModel } from '../src/ai/runtime/models.js';
 
@@ -15,7 +16,8 @@ const ctx = vi.hoisted(() => {
 });
 
 vi.mock('../src/platform/env.js', async () => {
-  const actual = await vi.importActual<typeof import('../src/platform/env.js')>('../src/platform/env.js');
+  const actual =
+    await vi.importActual<typeof import('../src/platform/env.js')>('../src/platform/env.js');
   return { ...actual, CHART_DATA_DIR: ctx.dir, PROJECT_ROOT: ctx.dir };
 });
 
@@ -315,7 +317,7 @@ describe('runChatTurn persistence', () => {
     const rows = await expectSessionRows(chartId);
     expect(rows).toHaveLength(1);
     expect(rows[0].role).toBe('user');
-    expect((rows[0].payload as { content: string }).content).toBe('会失败的问题');
+    expect((rows[0].payload as { content: string }).content).toBe(stampSentAt('会失败的问题', 0));
 
     const again = await runChatTurn(chartId, '重试', baseDeps({ agentFactory: noopFactory() }));
     expect(again.started).toBe(true);
@@ -367,7 +369,7 @@ describe('runChatTurn persistence', () => {
         capturedConfigs.push(config);
         return {
           prompt: async (text: string) => {
-            promptTexts.push(text);
+            promptTexts.push(promptText(text));
           },
           abort: () => {},
           state: {
@@ -393,9 +395,9 @@ describe('runChatTurn persistence', () => {
     expect(turn2.started).toBe(true);
     if (turn2.started) await turn2.done;
 
-    expect(promptTexts).toEqual(['第一问', '第二问']);
+    expect(promptTexts).toEqual([stampSentAt('第一问', 0), stampSentAt('第二问', 0)]);
     expect(capturedConfigs[1].messages).toEqual([
-      { role: 'user', content: '第一问', timestamp: 0 },
+      { role: 'user', content: stampSentAt('第一问', 0), timestamp: 0 },
       assistantMessage('答一'),
     ]);
   });

@@ -4,9 +4,17 @@ import { join } from 'node:path';
 import type { AgentMessage } from '@earendil-works/pi-agent-core';
 import { describe, expect, it } from 'vitest';
 import type { CockpitComment } from '@kansoku/shared/types';
-import type { AiAgentFactory, AiAgentHandle } from '../src/ai/agents/agentSession.js';
+import {
+  promptText,
+  type AiAgentFactory,
+  type AiAgentHandle,
+} from '../src/ai/agents/agentSession.js';
 import type { AnalystDeps } from '../src/ai/personas/analyst/types.js';
-import { buildAnalystSystemPrompt, executeAnalystRun, runAnalyst } from '../src/ai/personas/analyst/run.js';
+import {
+  buildAnalystSystemPrompt,
+  executeAnalystRun,
+  runAnalyst,
+} from '../src/ai/personas/analyst/run.js';
 import { analystRunStatus, escalationOnCooldown } from '../src/ai/personas/analyst/runState.js';
 import { buildJournalTool } from '../src/ai/personas/analyst/tools.js';
 import type { ReassessPack } from '../src/ai/agents/datapack.js';
@@ -88,7 +96,7 @@ function harness(
         ? () => new Promise<void>(() => {})
         : async (text) => {
             const rawMessages: AgentMessage[] = [
-              { role: 'user', content: text, timestamp: Date.now() },
+              { role: 'user', content: promptText(text), timestamp: Date.now() },
             ];
             engineeredMessages.push(
               transformContext ? await transformContext(rawMessages) : rawMessages,
@@ -320,7 +328,9 @@ describe('analyst message pipeline', () => {
     expect(injected).toContain('假技能全文');
     expect(injected).toContain('假纪律全文');
     expect(injected).toContain('<data_snapshot');
-    expect(messageText(messages[2])).toContain('Reassess the short-term multi-period conclusion for MU.US.');
+    expect(messageText(messages[2])).toContain(
+      'Reassess the short-term multi-period conclusion for MU.US.',
+    );
   });
 
   it('aborts with an error comment when the skill file is missing', async () => {
@@ -336,8 +346,12 @@ describe('analyst message pipeline', () => {
     const { deps, engineeredMessages } = harness(async () => {});
     await executeAnalystRun('MU.US', deps);
     const context = messageText(engineeredMessages[0][1]);
-    expect(context.indexOf('假纪律全文')).toBeLessThan(context.indexOf('Kansoku environment mapping'));
-    expect(context.indexOf('假技能全文')).toBeLessThan(context.indexOf('Kansoku environment mapping'));
+    expect(context.indexOf('假纪律全文')).toBeLessThan(
+      context.indexOf('Kansoku environment mapping'),
+    );
+    expect(context.indexOf('假技能全文')).toBeLessThan(
+      context.indexOf('Kansoku environment mapping'),
+    );
   });
 
   it('aborts with an error comment when the shared discipline is missing', async () => {
