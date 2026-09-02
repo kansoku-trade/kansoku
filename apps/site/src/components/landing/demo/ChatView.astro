@@ -1,0 +1,164 @@
+---
+import Icon from '../../Icon.astro';
+import { DEMO_CANVASES } from '../../../scripts/landing/replica/canvasDocs';
+import { CHAT_SESSIONS, canvasTitle } from '../../../scripts/landing/replica/chatSession';
+import CanvasPanel from './CanvasPanel.astro';
+import '../../../styles/landing/chat.css';
+---
+
+<div class="app-view app-view--stack" data-app-view="chat" data-active="false">
+  <div class="chat-page" data-canvas-open="false">
+    <aside class="chat-sidebar">
+      <div class="chat-sidebar-toolbar">
+        <label class="chat-search">
+          <Icon name="search" size={13} />
+          <span>搜索会话</span>
+        </label>
+        <span class="chat-new" aria-hidden="true"><Icon name="plus" size={14} /></span>
+      </div>
+      <div class="chat-session-list">
+        {
+          CHAT_SESSIONS.map((session, i) => (
+            <button
+              type="button"
+              class:list={['chat-session-row', { active: i === 0 }]}
+              data-chat-session-row
+              data-index={i}
+            >
+              <span class="chat-session-title">{session.title}</span>
+              <span class="chat-session-date">{session.date}</span>
+            </button>
+          ))
+        }
+      </div>
+    </aside>
+
+    <main class="chat-main">
+      <header class="chat-head">
+        <span class="chat-head-title" data-chat-head>{CHAT_SESSIONS[0].title}</span>
+      </header>
+
+      <div class="chat-transcripts">
+        {
+          CHAT_SESSIONS.map((session, s) => (
+            <div
+              class="chat-transcript"
+              data-chat-session={s}
+              data-active={s === 0 ? 'true' : 'false'}
+            >
+              {session.blocks.map((block) => {
+                const on = s === 0 ? 'false' : 'true';
+                if (block.type === 'user') {
+                  return (
+                    <div class="chat-row chat-row--user" data-chat-row data-on={on}>
+                      <div class="chat-bubble chat-bubble--user">{block.text}</div>
+                    </div>
+                  );
+                }
+                if (block.type === 'tools') {
+                  return (
+                    <div class="chat-tool-group" data-chat-row data-on={on} data-open="true">
+                      <button type="button" class="chat-tool-head" data-chat-tool-head>
+                        <span class="chat-tool-status">
+                          <Icon name="check" size={10} strokeWidth={2} />
+                        </span>
+                        <span class="chat-tool-title">{block.calls.length} 个工具</span>
+                        <span class="chat-tool-state">已完成</span>
+                        <span class="chat-tool-meta">
+                          {block.calls.map((call) => call.title).join(' · ')}
+                        </span>
+                        <Icon name="chevron-right" size={12} class="chat-tool-caret" />
+                      </button>
+                      <div class="chat-tool-list">
+                        {block.calls.map((call) => (
+                          <div class="chat-tool chat-tool--nested">
+                            <span class="chat-tool-status">
+                              <Icon name="check" size={10} strokeWidth={2} />
+                            </span>
+                            <span class="chat-tool-title">{call.title}</span>
+                            <span class="chat-tool-state">已完成</span>
+                            <span class="chat-tool-items">
+                              {call.items.map((item) => (
+                                <span class="chat-tool-item">{item}</span>
+                              ))}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                }
+                if (block.type === 'assistant') {
+                  return (
+                    <div class="chat-row" data-chat-row data-on={on}>
+                      <div class="chat-assistant">
+                        {block.paragraphs.map((text) => (
+                          <p>{text}</p>
+                        ))}
+                        <div class="chat-message-meta">{block.meta}</div>
+                      </div>
+                    </div>
+                  );
+                }
+                if (block.type === 'canvas') {
+                  return (
+                    <button
+                      type="button"
+                      class="chat-canvas-card"
+                      data-chat-row
+                      data-on={on}
+                      data-chat-canvas={block.slug}
+                    >
+                      <span class="chat-canvas-icon"><Icon name="layout-dashboard" size={14} /></span>
+                      <span class="chat-canvas-body">
+                        <span class="chat-canvas-title">{canvasTitle(block.slug)}</span>
+                        <span class="chat-canvas-slug">canvas/{block.slug}.md</span>
+                      </span>
+                      <span class="chat-canvas-open">打开画布 →</span>
+                    </button>
+                  );
+                }
+                return (
+                  <div class="chat-row" data-chat-row data-on={on}>
+                    <div class="chat-thinking" aria-label="正在思考">
+                      <i />
+                      <i />
+                      <i />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ))
+        }
+      </div>
+
+      <div class="chat-dock">
+        <div class="chat-composer">
+          <span class="chat-composer-input">问点什么，或用 @ 引用研究资料…</span>
+          <div class="chat-composer-bar">
+            <span class="chat-composer-tool"><Icon name="at-sign" size={13} /> 引用资料</span>
+            <span class="app-spacer" />
+            <span class="chat-model">claude-sonnet-4.5 <Icon name="chevron-down" size={12} /></span>
+            <span class="chat-send"><Icon name="arrow-up" size={14} /></span>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <aside class="chat-canvas-pane" aria-label="画布">
+      <div class="chat-canvas-pane-head">
+        <div class="chat-canvas-pane-titles">
+          <span class="chat-canvas-pane-title" data-chat-pane-title>{DEMO_CANVASES[0].title}</span>
+          <span class="chat-canvas-pane-slug" data-chat-pane-slug>{DEMO_CANVASES[0].slug}</span>
+        </div>
+        <button type="button" class="chat-canvas-pane-close" data-chat-pane-close aria-label="关闭">
+          <Icon name="x" size={14} />
+        </button>
+      </div>
+      <div class="chat-canvas-pane-body">
+        {DEMO_CANVASES.map((canvas, i) => <CanvasPanel canvas={canvas} index={i} />)}
+      </div>
+    </aside>
+  </div>
+</div>

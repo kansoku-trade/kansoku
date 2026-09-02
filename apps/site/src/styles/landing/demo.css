@@ -23,14 +23,13 @@
 }
 
 .demo-copy {
-  position: relative;
+  display: grid;
   flex: none;
-  height: 104px;
+  min-height: 104px;
 }
 
 .demo-chapter {
-  position: absolute;
-  inset: 0;
+  grid-area: 1 / 1;
   display: grid;
   grid-template-columns: minmax(0, 420px) minmax(0, 1fr);
   gap: 40px;
@@ -112,13 +111,20 @@
   display: flex;
   flex-direction: column;
   opacity: 0;
+  /* Inactive views must be hidden, not just pointer-events: none — panels inside them re-enable
+     pointer-events on their active child, which then swallows clicks meant for the view below. */
+  visibility: hidden;
   pointer-events: none;
-  transition: opacity 300ms ease;
+  transition:
+    opacity 300ms ease,
+    visibility 0s linear 300ms;
 }
 
 .app-view[data-active='true'] {
   opacity: 1;
+  visibility: visible;
   pointer-events: auto;
+  transition: opacity 300ms ease;
 }
 
 .app-view--stack {
@@ -453,7 +459,7 @@
   }
 
   .demo-copy {
-    height: 150px;
+    min-height: 150px;
   }
 }
 

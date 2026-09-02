@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { barShare, DEMO_CANVASES, maxAbs, signedText } from './canvasDocs';
 
 describe('DEMO_CANVASES', () => {
-  it('ships three named canvases with a conclusion and at most four stats', () => {
-    expect(DEMO_CANVASES).toHaveLength(3);
+  it('ships four named canvases with a conclusion and at most four stats', () => {
+    expect(DEMO_CANVASES).toHaveLength(4);
     for (const canvas of DEMO_CANVASES) {
       expect(canvas.slug).toMatch(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
       expect(canvas.title.length).toBeGreaterThan(0);
@@ -16,12 +16,20 @@ describe('DEMO_CANVASES', () => {
     }
   });
 
+  it('gives every canvas scenarios that sum to 100 and a current timeline point', () => {
+    for (const canvas of DEMO_CANVASES) {
+      expect(canvas.scenarios!.reduce((sum, item) => sum + item.probability, 0)).toBe(100);
+      expect(canvas.timeline?.some((item) => item.current)).toBe(true);
+      expect(canvas.coverage.some((item) => item.status === 'missing')).toBe(true);
+    }
+  });
+
   it('keeps slugs unique', () => {
     const slugs = DEMO_CANVASES.map((canvas) => canvas.slug);
     expect(new Set(slugs).size).toBe(slugs.length);
   });
 
-  it('fills the free quota with a five-part session canvas', () => {
+  it('keeps the MU session canvas as the full five-part example', () => {
     const session = DEMO_CANVASES.find((canvas) => canvas.slug === 'mu-session');
     expect(session).toBeDefined();
     expect(session!.stats).toHaveLength(4);

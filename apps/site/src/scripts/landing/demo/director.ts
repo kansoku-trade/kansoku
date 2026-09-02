@@ -1,7 +1,13 @@
 import { scoredJudgments, hitRate } from '../scorecardData';
-import { CHAPTERS, type TimelineState } from './timeline';
+import { CHAPTERS, chapterOrder, type TimelineState } from './timeline';
 
 const TRACE_CALLS = 6;
+// The verdict chapter opens on the tool-call trace, then hands over to the scenario bars.
+const TRACE_SHARE = 0.4;
+const VERDICT = chapterOrder('verdict');
+const ARCHIVE = chapterOrder('archive');
+const SCORE = chapterOrder('score');
+const CHAT = chapterOrder('chat');
 
 export interface DirectorRefs {
   root: HTMLElement;
@@ -13,6 +19,7 @@ export interface DirectorRefs {
   stamp: HTMLElement | null;
   challenges: HTMLElement[];
   scoreRows: HTMLElement[];
+  chatRows: HTMLElement[];
   rateValue: HTMLElement | null;
   toolButtons: HTMLElement[];
   chapterBlocks: HTMLElement[];
@@ -33,6 +40,9 @@ export const collectRefs = (root: HTMLElement): DirectorRefs => ({
   stamp: root.querySelector<HTMLElement>('[data-demo-stamp]'),
   challenges: Array.from(root.querySelectorAll<HTMLElement>('[data-demo-challenge]')),
   scoreRows: Array.from(root.querySelectorAll<HTMLElement>('[data-demo-score-row]')),
+  chatRows: Array.from(
+    root.querySelectorAll<HTMLElement>('[data-chat-session="0"] [data-chat-row]'),
+  ),
   rateValue: root.querySelector<HTMLElement>('[data-demo-rate]'),
   toolButtons: Array.from(
     root.querySelectorAll<HTMLElement>('[data-app-view="chart"] [data-demo-tool]'),
@@ -71,29 +81,40 @@ export const applyState = (refs: DirectorRefs, state: TimelineState): void => {
     tab.dataset.active = String(tab.dataset.appTab === chapter.view);
   });
 
+  const panel =
+    id === 'tools'
+      ? 'tools'
+      : id === 'verdict' && progress < TRACE_SHARE
+        ? 'trace'
+        : id === 'score'
+          ? 'score'
+          : 'verdict';
   refs.panelViews.forEach((view) => {
-    const target = view.dataset.panelView;
-    const active =
-      (id === 'trace' && target === 'trace') ||
-      (id === 'score' && target === 'score') ||
-      (id === 'tools' && target === 'tools') ||
-      ((id === 'verdict' || id === 'archive') && target === 'verdict');
-    view.dataset.active = String(active);
+    view.dataset.active = String(view.dataset.panelView === panel);
   });
 
   const revealed =
-    id === 'trace' ? Math.round(progress * TRACE_CALLS) : index > 0 ? TRACE_CALLS : 0;
+    id === 'verdict'
+      ? Math.round(Math.min(1, progress / TRACE_SHARE) * TRACE_CALLS)
+      : index > VERDICT
+        ? TRACE_CALLS
+        : 0;
   refs.traceRows.forEach((row, i) => {
     row.dataset.on = String(i < revealed);
   });
   if (refs.traceMeta) {
-    const shown = Math.min(TRACE_CALLS, revealed);
-    refs.traceMeta.textContent = `${shown} / ${TRACE_CALLS} calls`;
+    refs.traceMeta.textContent = `${revealed} / ${TRACE_CALLS} calls`;
   }
 
-  const verdictOn = index >= 1;
+  const verdictProgress =
+    id === 'verdict'
+      ? Math.max(0, (progress - TRACE_SHARE) / (1 - TRACE_SHARE))
+      : index > VERDICT
+        ? 1
+        : 0;
+  const verdictOn = verdictProgress > 0;
   if (refs.verdict) refs.verdict.dataset.on = String(verdictOn);
-  const barProgress = id === 'verdict' ? Math.min(1, progress * 1.6) : verdictOn ? 1 : 0;
+  const barProgress = Math.min(1, verdictProgress * 1.6);
   refs.bars.forEach((bar) => {
     bar.style.width = `${probabilityOf(bar) * barProgress}%`;
   });
@@ -103,7 +124,7 @@ export const applyState = (refs: DirectorRefs, state: TimelineState): void => {
   });
 
   if (refs.stamp) {
-    refs.stamp.dataset.on = String(index >= 2 && (id !== 'archive' || progress > 0.12));
+    refs.stamp.dataset.on = String(index > ARCHIVE || (id === 'archive' && progress > 0.12));
   }
 
   // The sidebar is taller than the panel. Rather than let the wheel fight the scroll-driven
@@ -111,7 +132,7 @@ export const applyState = (refs: DirectorRefs, state: TimelineState): void => {
   // down to the challenges at the bottom.
   if (refs.sidebar) {
     const span = refs.sidebar.scrollHeight - refs.sidebar.clientHeight;
-    const pan = id === 'archive' ? Math.min(1, progress * 1.15) : index > 2 ? 1 : 0;
+    const pan = id === 'archive' ? Math.min(1, progress * 1.15) : index > ARCHIVE ? 1 : 0;
     refs.sidebar.scrollTop = Math.max(0, span) * pan;
   }
 
@@ -119,7 +140,7 @@ export const applyState = (refs: DirectorRefs, state: TimelineState): void => {
   const challengesShown =
     id === 'archive'
       ? Math.round(Math.max(0, progress - 0.2) * 1.5 * challengeCount)
-      : index > 2
+      : index > ARCHIVE
         ? challengeCount
         : 0;
   refs.challenges.forEach((item, i) => {
@@ -129,7 +150,7 @@ export const applyState = (refs: DirectorRefs, state: TimelineState): void => {
   const scoreShown =
     id === 'score'
       ? Math.round(progress * refs.scoreRows.length)
-      : index > 3
+      : index > SCORE
         ? refs.scoreRows.length
         : 0;
   let hits = 0;
@@ -140,8 +161,18 @@ export const applyState = (refs: DirectorRefs, state: TimelineState): void => {
   });
   if (refs.rateValue) {
     const rate = scoreShown === 0 ? 0 : Math.round((hits / scoreShown) * 100);
-    refs.rateValue.textContent = `${index > 3 ? FINAL_RATE : rate}%`;
+    refs.rateValue.textContent = `${index > SCORE ? FINAL_RATE : rate}%`;
   }
+
+  const chatShown =
+    id === 'chat'
+      ? Math.ceil(Math.min(1, progress * 1.25) * refs.chatRows.length)
+      : index > CHAT
+        ? refs.chatRows.length
+        : 0;
+  refs.chatRows.forEach((row, i) => {
+    row.dataset.on = String(i < chatShown);
+  });
 
   // Once the visitor has picked a tool themselves the toolbar is theirs; scrolling on must not
   // yank it back to whatever the chapter would have shown.

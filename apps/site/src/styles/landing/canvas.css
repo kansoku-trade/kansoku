@@ -296,6 +296,94 @@
   color: #ef5350;
 }
 
+.demo-canvas-mark.is-pass {
+  color: #26a69a;
+}
+
+.demo-canvas-mark.is-fail {
+  color: #ef5350;
+}
+
+.demo-canvas-mark.is-unknown {
+  color: #9a9a9a;
+}
+
+.demo-canvas-levels {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.demo-canvas-levels li {
+  display: grid;
+  grid-template-columns: 64px 12px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-height: 24px;
+  font-size: 11.5px;
+  color: #9a9a9a;
+}
+
+.demo-canvas-level-price {
+  font-family: var(--mono);
+  font-size: 12px;
+  text-align: right;
+  color: #e8e8e8;
+}
+
+.demo-canvas-level-rail {
+  position: relative;
+  height: 100%;
+  min-height: 24px;
+}
+
+.demo-canvas-level-rail::before {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 0;
+  bottom: 0;
+  border-left: 1px dashed #3a3a3a;
+}
+
+.demo-canvas-level-rail::after {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  background: #5c5c5c;
+}
+
+.demo-canvas-levels li.is-resist .demo-canvas-level-rail::after {
+  background: #ef5350;
+}
+
+.demo-canvas-levels li.is-support .demo-canvas-level-rail::after {
+  background: #26a69a;
+}
+
+.demo-canvas-levels li.is-current {
+  color: #e8e8e8;
+}
+
+.demo-canvas-levels li.is-current .demo-canvas-level-price {
+  color: var(--accent);
+}
+
+.demo-canvas-levels li.is-current .demo-canvas-level-rail::after {
+  width: 9px;
+  height: 9px;
+  left: 1px;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px rgba(255, 176, 0, 0.18);
+}
+
 .demo-canvas-coverage small {
   color: #5c5c5c;
   font-size: 11px;

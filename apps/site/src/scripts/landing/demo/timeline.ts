@@ -1,4 +1,4 @@
-export type AppView = 'chart' | 'train' | 'research' | 'canvas';
+export type AppView = 'chart' | 'chat' | 'canvas' | 'research' | 'train';
 
 export interface Chapter {
   id: string;
@@ -8,15 +8,18 @@ export interface Chapter {
 }
 
 export const CHAPTERS: Chapter[] = [
-  { id: 'trace', label: '数据', seconds: 6, view: 'chart' },
-  { id: 'verdict', label: '判断', seconds: 5, view: 'chart' },
+  { id: 'tools', label: '看盘', seconds: 6, view: 'chart' },
+  { id: 'verdict', label: '判断', seconds: 7, view: 'chart' },
   { id: 'archive', label: '归档', seconds: 6, view: 'chart' },
   { id: 'score', label: '结果', seconds: 5, view: 'chart' },
-  { id: 'tools', label: '工具', seconds: 4, view: 'chart' },
-  { id: 'train', label: '盲盘训练', seconds: 6, view: 'train' },
-  { id: 'research', label: '研究库', seconds: 5, view: 'research' },
+  { id: 'chat', label: 'AI 对话', seconds: 6, view: 'chat' },
   { id: 'canvas', label: '画布', seconds: 5, view: 'canvas' },
+  { id: 'research', label: '研究库', seconds: 5, view: 'research' },
+  { id: 'train', label: '盲盘训练', seconds: 6, view: 'train' },
 ];
+
+export const chapterOrder = (id: string): number =>
+  CHAPTERS.findIndex((chapter) => chapter.id === id);
 
 export const chapterIndexOfView = (view: AppView): number =>
   CHAPTERS.findIndex((chapter) => chapter.view === view);

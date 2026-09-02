@@ -3,6 +3,7 @@ import type { DrawingTool } from '../replica/drawingShapes';
 import type { Tier } from '../tier';
 import { applyState, collectRefs } from './director';
 import { mountCanvasControls } from './canvasControls';
+import { mountChatControls } from './chatControls';
 import { mountResearchControls } from './researchControls';
 import {
   CHAPTERS,
@@ -52,16 +53,30 @@ export const mountDemoScene = async (root: ParentNode, tier: Tier): Promise<Demo
     if (trainerToolbar) teardown.push(trainerToolbar.destroy);
   }
 
+  const span = (): number => scene.offsetHeight - window.innerHeight;
+
+  const scrollToView = (view: (typeof CHAPTERS)[number]['view']): void => {
+    const index = chapterIndexOfView(view);
+    if (index < 0) return;
+    const total = span();
+    if (total <= 0) return;
+    // Land a third into the chapter rather than on its boundary — the boundary is exactly where
+    // the previous chapter is still one rounding error away from winning.
+    const seconds = chapterStart(index) + CHAPTERS[index].seconds / 3;
+    const top = scene.offsetTop + (seconds / TOTAL_SECONDS) * total;
+    window.scrollTo({ top, behavior: 'smooth' });
+  };
+
   const research = mountResearchControls(scene);
   if (research) teardown.push(research.destroy);
   const canvas = mountCanvasControls(scene);
   if (canvas) teardown.push(canvas.destroy);
+  const chat = mountChatControls(scene);
+  if (chat) teardown.push(chat.destroy);
 
   const unsubscribe = timeline.subscribe((state) => applyState(refs, state));
   teardown.push(unsubscribe);
   if (chart) teardown.push(() => chart?.destroy());
-
-  const span = (): number => scene.offsetHeight - window.innerHeight;
 
   const sync = (): void => {
     const rect = scene.getBoundingClientRect();
@@ -90,16 +105,7 @@ export const mountDemoScene = async (root: ParentNode, tier: Tier): Promise<Demo
   const onTab = (event: Event): void => {
     const button = (event.target as HTMLElement).closest<HTMLElement>('[data-app-tab]');
     const view = button?.dataset.appTab;
-    if (!view) return;
-    const index = chapterIndexOfView(view as (typeof CHAPTERS)[number]['view']);
-    if (index < 0) return;
-    const total = span();
-    if (total <= 0) return;
-    // Land a third into the chapter rather than on its boundary — the boundary is exactly where
-    // the previous chapter is still one rounding error away from winning.
-    const seconds = chapterStart(index) + CHAPTERS[index].seconds / 3;
-    const top = scene.offsetTop + (seconds / TOTAL_SECONDS) * total;
-    window.scrollTo({ top, behavior: 'smooth' });
+    if (view) scrollToView(view as (typeof CHAPTERS)[number]['view']);
   };
   tabbar?.addEventListener('click', onTab);
   teardown.push(() => tabbar?.removeEventListener('click', onTab));
