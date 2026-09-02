@@ -4,11 +4,11 @@ import { app, BrowserWindow, dialog } from 'electron';
 import { IpcMethod, IpcService } from 'electron-ipc-decorator';
 import { getDb } from '@kansoku/core/db/index';
 import type { AgentKitLocation, AgentKitStatus } from '@kansoku/core/contract/agentKit';
-import { dataRoot, dataRootStatus } from '../boot/env.js';
+import { dataRoot, databasePath } from '../boot/env.js';
 import { toEnvelope } from '../kernel/ipc/envelope.js';
 import { ensureAgentKit } from './ensureAgentKit.js';
 import { readManifest, type ManifestTemplate } from './manifest.js';
-import { isFollowBlocked, resolveAgentKitDir } from './resolveLocation.js';
+import { resolveAgentKitDir } from './resolveLocation.js';
 import { cleanAgentKitSkillLinks } from './skillLinks.js';
 import {
   readState,
@@ -32,18 +32,12 @@ function templateFor(dest: string): ManifestTemplate {
   return template;
 }
 
-function resolveDir(store: AgentKitStore): string | null {
-  return resolveAgentKitDir(store.read().location, dataRoot, dataRootStatus.mode);
+function resolveDir(store: AgentKitStore): string {
+  return resolveAgentKitDir(store.read().location, dataRoot);
 }
 
 function requireDir(store: AgentKitStore): string {
-  const dir = resolveDir(store);
-  if (dir === null) {
-    throw new Error(
-      'agentKit: no writable location — data root is the app default, please pick a custom folder',
-    );
-  }
-  return dir;
+  return resolveDir(store);
 }
 
 function requireState(agentKitDir: string): AgentKitDataState {
@@ -54,13 +48,12 @@ function requireState(agentKitDir: string): AgentKitDataState {
 
 function buildStatus(store: AgentKitStore): AgentKitStatus {
   const s = store.read();
-  const dir = resolveAgentKitDir(s.location, dataRoot, dataRootStatus.mode);
-  const state = dir ? readState(dir) : null;
+  const dir = resolveAgentKitDir(s.location, dataRoot);
+  const state = readState(dir);
   return {
     enabled: s.enabled,
     location: s.location,
     resolvedPath: dir,
-    followBlocked: isFollowBlocked(s.location, dataRootStatus.mode),
     dataRoot,
     lastSyncAt: s.lastSyncAt,
     kitVersion: state?.kitVersion,
@@ -73,6 +66,7 @@ async function runSync(store: AgentKitStore, agentKitDir: string) {
   const result = await ensureAgentKit({
     agentKitDir,
     dataRoot,
+    databasePath,
     resourcesPath: resourcesPath(),
     db: getDb(),
   });
@@ -80,12 +74,15 @@ async function runSync(store: AgentKitStore, agentKitDir: string) {
   return result;
 }
 
-async function applyLocation(store: AgentKitStore, location: AgentKitLocation): Promise<AgentKitStatus> {
+async function applyLocation(
+  store: AgentKitStore,
+  location: AgentKitLocation,
+): Promise<AgentKitStatus> {
   store.write({ ...store.read(), location });
   const s = store.read();
   if (s.enabled) {
-    const dir = resolveAgentKitDir(s.location, dataRoot, dataRootStatus.mode);
-    if (dir) await runSync(store, dir);
+    const dir = resolveAgentKitDir(s.location, dataRoot);
+    await runSync(store, dir);
   }
   return buildStatus(store);
 }
@@ -107,10 +104,6 @@ export class AgentKitIpc extends IpcService {
         return { enabled: false };
       }
       const dir = resolveDir(store);
-      if (dir === null) {
-        store.write({ ...store.read(), enabled: true });
-        return { enabled: true, conflicts: [], updates: [] };
-      }
       const result = await runSync(store, dir);
       store.write({ ...store.read(), enabled: true });
       return { enabled: true, ...result };
@@ -176,21 +169,19 @@ export class AgentKitIpc extends IpcService {
     return toEnvelope('agentKit.clean', () => {
       const store = defaultAgentKitStore(app);
       const dir = resolveDir(store);
-      if (dir) {
-        const state = readState(dir);
-        if (state) {
-          for (const [dest, templateState] of Object.entries(state.templates)) {
-            if (templateState.kept) continue;
-            const targetPath = join(dir, dest);
-            if (!existsSync(targetPath)) continue;
-            if (sha256(readFileSync(targetPath)) === templateState.initialContentHash) {
-              rmSync(targetPath, { force: true });
-            }
+      const state = readState(dir);
+      if (state) {
+        for (const [dest, templateState] of Object.entries(state.templates)) {
+          if (templateState.kept) continue;
+          const targetPath = join(dir, dest);
+          if (!existsSync(targetPath)) continue;
+          if (sha256(readFileSync(targetPath)) === templateState.initialContentHash) {
+            rmSync(targetPath, { force: true });
           }
         }
-        cleanAgentKitSkillLinks(dir);
-        rmSync(join(dir, '.kansoku-agent-kit'), { recursive: true, force: true });
       }
+      cleanAgentKitSkillLinks(dir);
+      rmSync(join(dir, '.kansoku-agent-kit'), { recursive: true, force: true });
       store.write({ ...store.read(), enabled: false });
       return { cleaned: true };
     });

@@ -12,11 +12,11 @@ export function buildHelpSection(deps: MenuActionDeps): MenuItemConstructorOptio
       },
       { type: 'separator' },
       {
-        label: '选择数据目录…',
-        click: () => deps.selectDataRoot(),
+        label: '显示 Agent Workspace…',
+        click: () => deps.openWorkspace(),
       },
       {
-        label: '从 repo 导入数据…',
+        label: '导入 Kansoku 数据…',
         click: () => deps.importFromRepo(),
       },
     ],

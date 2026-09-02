@@ -1,5 +1,7 @@
 # Desktop configurable data root Implementation Plan
 
+> 已废止：由 `../specs/2026-09-02-agent-workspace-storage-migration-design.md` 取代。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Packaged Kansoku can bind its project-root data directory to a user-chosen path (e.g. the trade repo), so charts/`app.db`/`stocks` share one tree with server/dev; preference lives in real userData; bad paths degrade safely.

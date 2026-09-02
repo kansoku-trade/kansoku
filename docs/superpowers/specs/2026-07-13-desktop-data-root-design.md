@@ -1,7 +1,7 @@
 # 桌面版可配置数据目录（项目根绑定）
 
 日期：2026-07-13  
-状态：已与用户对齐，待实施  
+状态：已废止，由 `2026-09-02-agent-workspace-storage-migration-design.md` 取代
 相关：`2026-07-11-electron-app-design.md`、`2026-07-11-electron-phase3-distribution-design.md`、`apps/desktop` 数据导入
 
 ## 背景与目标

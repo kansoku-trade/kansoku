@@ -21,6 +21,7 @@ files:
   # bare imports (@tsuki-hono/*) to the same node_modules copy the main bundle
   # uses (single instance). Matches nothing on free builds.
   - pro/pro.enc
+  - pro/kansoku_icloud.node
   - package.json
   # Production packages often publish source maps, declarations, and native
   # build inputs alongside their runtime files. None of these are read by the
@@ -77,6 +78,7 @@ asar:
   smartUnpack: false
 asarUnpack:
   - '**/node_modules/electron-sparkle-updater/native/build/Release/*.node'
+  - 'pro/kansoku_icloud.node'
 # Updates ship via Sparkle, not electron-updater — skip blockmaps for both targets.
 # dmg has a native knob; zip needs the app-builder-lib patch (patches/app-builder-lib@…).
 dmg:
@@ -85,6 +87,10 @@ zip:
   writeUpdateInfo: false
 mac:
   icon: build/icon.icns
+  # Free default. scripts/packageApp.mjs overrides this with the iCloud
+  # entitlement only when stagePro produced the Pro native module.
+  entitlements: build/entitlements.mac.inherit.plist
+  entitlementsInherit: build/entitlements.mac.inherit.plist
   target:
     - target: dmg
       arch: [arm64]

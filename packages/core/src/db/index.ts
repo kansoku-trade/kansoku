@@ -8,7 +8,7 @@ import { CHART_DATA_DIR, PROJECT_ROOT } from '../platform/env.js';
 
 // PROJECT_ROOT already honors TRADE_PROJECT_ROOT (see env.ts) for the same
 // bundling-relocation reason. A packaged desktop app points TRADE_PROJECT_ROOT
-// at userData (not a repo checkout, no packages/core/drizzle folder there), so
+// at its Agent Workspace (not a repo checkout, no packages/core/drizzle folder there), so
 // it sets TRADE_MIGRATIONS_DIR explicitly at the extraResources copy instead.
 // Resolved lazily: the desktop bundle merges this module into main.mjs, where
 // a top-level const would evaluate before main.ts assigns TRADE_PROJECT_ROOT /
@@ -36,6 +36,8 @@ export function createDb(path: string): Db {
 let singleton: Db | null = null;
 
 export function getDb(): Db {
-  if (!singleton) singleton = createDb(join(CHART_DATA_DIR, 'app.db'));
+  if (!singleton) {
+    singleton = createDb(process.env.KANSOKU_DB_PATH ?? join(CHART_DATA_DIR, 'app.db'));
+  }
   return singleton;
 }

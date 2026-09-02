@@ -2,7 +2,11 @@ import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { resolveDataRoot, resolveRepoRoot, scaffoldDataRoot } from '@desktop/boot/paths.js';
+import {
+  resolveDesktopStoragePaths,
+  resolveRepoRoot,
+  scaffoldDataRoot,
+} from '@desktop/boot/paths.js';
 
 describe('resolveRepoRoot', () => {
   it('lands on the repo root regardless of whether this module runs from src or a relocated build output', () => {
@@ -12,86 +16,58 @@ describe('resolveRepoRoot', () => {
   });
 });
 
-describe('resolveDataRoot', () => {
-  it('prefers an explicit TRADE_PROJECT_ROOT override regardless of packaged state', () => {
-    const root = resolveDataRoot({
-      isPackaged: true,
-      envOverride: '/explicit/override',
-      userDataPath: '/unused/userData',
+describe('resolveDesktopStoragePaths', () => {
+  it('keeps packaged user files in a dedicated Workspace and the database in local State', () => {
+    expect(
+      resolveDesktopStoragePaths({
+        isPackaged: true,
+        envOverride: undefined,
+        userDataPath: '/Users/x/Library/Application Support/Kansoku',
+      }),
+    ).toEqual({
+      workspaceRoot: '/Users/x/Library/Application Support/Kansoku/Workspace',
+      stateRoot: '/Users/x/Library/Application Support/Kansoku/State',
+      databasePath: '/Users/x/Library/Application Support/Kansoku/State/app.db',
     });
-    expect(root).toBe('/explicit/override');
   });
 
-  it('falls back to userData when packaged with no override', () => {
-    const root = resolveDataRoot({
-      isPackaged: true,
-      envOverride: undefined,
-      userDataPath: '/Users/x/Library/Application Support/Kansoku',
+  it('keeps an explicit workspace override but never moves packaged local state into it', () => {
+    expect(
+      resolveDesktopStoragePaths({
+        isPackaged: true,
+        envOverride: '/tmp/agent-workspace',
+        userDataPath: '/Users/x/Library/Application Support/Kansoku',
+      }),
+    ).toEqual({
+      workspaceRoot: '/tmp/agent-workspace',
+      stateRoot: '/Users/x/Library/Application Support/Kansoku/State',
+      databasePath: '/Users/x/Library/Application Support/Kansoku/State/app.db',
     });
-    expect(root).toBe('/Users/x/Library/Application Support/Kansoku');
   });
 
-  it('falls back to the repo root in dev, ignoring userData', () => {
-    const root = resolveDataRoot({
+  it('lets a resolved iCloud workspace replace only the packaged user-file root', () => {
+    expect(
+      resolveDesktopStoragePaths({
+        isPackaged: true,
+        envOverride: undefined,
+        userDataPath: '/Users/x/Library/Application Support/Kansoku',
+        iCloudWorkspacePath: '/iCloud/Documents/Workspace',
+      }),
+    ).toEqual({
+      workspaceRoot: '/iCloud/Documents/Workspace',
+      stateRoot: '/Users/x/Library/Application Support/Kansoku/State',
+      databasePath: '/Users/x/Library/Application Support/Kansoku/State/app.db',
+    });
+  });
+
+  it('preserves the repository layout for development', () => {
+    const paths = resolveDesktopStoragePaths({
       isPackaged: false,
       envOverride: undefined,
-      userDataPath: '/unused/userData',
+      userDataPath: '/unused',
     });
-    expect(root).toBe(resolveRepoRoot());
-  });
-
-  it('uses a usable custom path when packaged and no env override', () => {
-    const root = resolveDataRoot({
-      isPackaged: true,
-      envOverride: undefined,
-      userDataPath: '/unused/userData',
-      customPath: '/Users/me/git/trade',
-      customPathUsable: true,
-    });
-    expect(root).toBe('/Users/me/git/trade');
-  });
-
-  it('ignores custom path when marked unusable', () => {
-    const root = resolveDataRoot({
-      isPackaged: true,
-      envOverride: undefined,
-      userDataPath: '/Users/x/Library/Application Support/Kansoku',
-      customPath: '/gone/path',
-      customPathUsable: false,
-    });
-    expect(root).toBe('/Users/x/Library/Application Support/Kansoku');
-  });
-
-  it('ignores custom path when usability is omitted', () => {
-    const root = resolveDataRoot({
-      isPackaged: true,
-      envOverride: undefined,
-      userDataPath: '/Users/x/Library/Application Support/Kansoku',
-      customPath: '/Users/me/git/trade',
-    });
-    expect(root).toBe('/Users/x/Library/Application Support/Kansoku');
-  });
-
-  it('env override still wins over a usable custom path', () => {
-    const root = resolveDataRoot({
-      isPackaged: true,
-      envOverride: '/explicit/override',
-      userDataPath: '/unused/userData',
-      customPath: '/Users/me/git/trade',
-      customPathUsable: true,
-    });
-    expect(root).toBe('/explicit/override');
-  });
-
-  it('dev mode ignores custom path and stays on repo root', () => {
-    const root = resolveDataRoot({
-      isPackaged: false,
-      envOverride: undefined,
-      userDataPath: '/unused/userData',
-      customPath: '/Users/me/git/trade',
-      customPathUsable: true,
-    });
-    expect(root).toBe(resolveRepoRoot());
+    expect(paths.workspaceRoot).toBe(resolveRepoRoot());
+    expect(paths.databasePath).toBe(join(resolveRepoRoot(), 'journal', 'charts', 'data', 'app.db'));
   });
 });
 

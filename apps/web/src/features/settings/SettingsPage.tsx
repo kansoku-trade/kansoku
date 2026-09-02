@@ -8,7 +8,7 @@ import { navigate } from '@web/lib/router';
 import { Button, Card, ErrorBox, NoteBlock, ScrollArea, SectionTitle } from '@web/ui';
 import { useTitle } from '@web/lib/useTitle';
 import { AgentKitSection } from './AgentKitSection';
-import { DataRootSection } from './DataRootSection';
+import { WorkspaceSection } from './WorkspaceSection';
 import { DiagnosticsSection } from './DiagnosticsSection';
 import { LicenseSection } from './LicenseSection';
 import { LongbridgeSection } from './LongbridgeSection';
@@ -32,6 +32,7 @@ import type {
   UsageToday,
 } from './types';
 import { colors, fontSizes } from '../../theme/tokens.stylex';
+import { useProComposition } from '../edition/useProComposition';
 
 const styles = stylex.create({
   page: {
@@ -164,6 +165,7 @@ function SettingsWorkspace({
   lobehubCredits: LobeHubCredits | null;
   lobehubCreditsError: string | null;
 }) {
+  const proComposition = useProComposition();
   const [roleDrafts, setRoleDrafts] = useState<AiRoles>(() => settings.roles);
   const updateRoleDraft = (role: Role | 'primary', next: RoleSetting) => {
     setRoleDrafts((current) => ({ ...current, [role]: next }));
@@ -217,7 +219,12 @@ function SettingsWorkspace({
               </SectionTitle>
             </div>
             <LongbridgeSection />
-            <DataRootSection />
+            <WorkspaceSection />
+            {proComposition.status === 'ready'
+              ? proComposition.composition?.settingsSections?.map((Section, index) => (
+                  <Section key={index} />
+                ))
+              : null}
             <AgentKitSection />
             <TrainingSection />
             <DiagnosticsSection />

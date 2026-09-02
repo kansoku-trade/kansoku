@@ -8,7 +8,6 @@ const baseStatus = {
   enabled: true,
   location: { kind: 'follow-data-root' as const },
   resolvedPath: '/tmp/kansoku-data',
-  followBlocked: false,
   dataRoot: '/tmp/kansoku-data',
 };
 
@@ -176,27 +175,6 @@ describe('AgentKitSection', () => {
     confirmSpy.mockRestore();
   });
 
-  it('shows blocked hint + disables follow when data root is the app default', async () => {
-    mockDesktop({
-      'agentKit.getStatus': () => ({
-        ok: true,
-        data: {
-          ...baseStatus,
-          location: { kind: 'follow-data-root' as const },
-          resolvedPath: null,
-          followBlocked: true,
-          dataRoot: '/Users/x/Library/Application Support/Kansoku',
-        },
-      }),
-    });
-
-    render(<AgentKitSection />);
-
-    expect(await screen.findByText(/跟随不可用/)).toBeTruthy();
-    const follow = screen.getByRole('button', { name: '跟随数据目录' });
-    expect(follow.hasAttribute('disabled')).toBe(true);
-  });
-
   it('pick custom location calls pickCustomLocation and updates status', async () => {
     const picked = {
       ...baseStatus,
@@ -215,7 +193,7 @@ describe('AgentKitSection', () => {
 
     render(<AgentKitSection />);
 
-    fireEvent.click(await screen.findByRole('button', { name: '选择目录…' }));
+    fireEvent.click(await screen.findByRole('button', { name: '接入其他项目…' }));
 
     await vi.waitFor(() => expect(pickCustomLocation).toHaveBeenCalledTimes(1));
     await vi.waitFor(() => expect(getStatus).toHaveBeenCalledTimes(2));

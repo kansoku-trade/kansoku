@@ -202,7 +202,9 @@ pnpm -C apps/server exec vite-node scripts/deep-dive-smoke.ts NVDA.US --full # �
 分两层：**图表文档留文件，运行流水进 SQLite**。
 
 - 每张图一个 JSON：`journal/charts/data/YYYY-MM-DD-<slug>.json`（带 `schema_version`，跟着 journal 一起被 gitignore）。前端永远用最新代码渲染旧数据，改组件不影响历史图表。
-- SQLite 库在 `journal/charts/data/app.db`（drizzle 定义 schema，迁移文件提交在 `packages/core/drizzle/`，server 启动时自动建表），四张表：
+- Server/开发态的 SQLite 库默认在 `journal/charts/data/app.db`；打包版 Desktop 通过
+  `KANSOKU_DB_PATH` 使用本地 `Application Support/Kansoku/State/app.db`。drizzle 定义
+  schema，迁移文件提交在 `packages/core/drizzle/`，进程启动时自动建表。主要表包括：
   - `comments` — 盘中点评流水（替代原来按天按标的拆的 JSON 文件）
   - `ai_usage` — AI 花费流水（替代 `ai-usage/*.json`）
   - `chart_meta` — 图表索引（替代 `index.json`；表为空时自动扫文件目录重建，图表文档本体仍是文件）

@@ -3,4 +3,5 @@ import type { ResearchAssistantProps } from '@web/features/research/ResearchAssi
 
 export interface WebProComposition {
   researchAssistantPanel: ComponentType<ResearchAssistantProps>;
+  settingsSections?: readonly ComponentType[];
 }

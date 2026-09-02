@@ -6,6 +6,9 @@
 
 新增迁移后，用真实数据库核对账本和表结构：
 
+下列路径是 Server/开发态默认值；打包版 Desktop 请对
+`$KANSOKU_DB_PATH`（`Application Support/Kansoku/State/app.db`）执行同样检查。
+
 ```bash
 sqlite3 journal/charts/data/app.db \
   "select id, name, created_at from __drizzle_migrations order by id;"

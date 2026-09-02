@@ -21,7 +21,8 @@ export const KERNEL_IPC_GROUPS = [
 export const SHELL_IPC_GROUPS = [
   'onboarding',
   'appControl',
-  'dataRoot',
+  'workspace',
+  'icloud',
   'tabs',
   'windows',
   'logs',

@@ -1,114 +1,49 @@
-import { copyFileSync, existsSync, mkdirSync, readdirSync, realpathSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, lstatSync, readdirSync, realpathSync } from 'node:fs';
+import { join, relative } from 'node:path';
+import { copyUserContentSafely } from '../../storage/migration.js';
 
-const CHART_DATA_REL = join('journal', 'charts', 'data');
+const USER_CONTENT_DIRS = ['journal', 'stocks'] as const;
+const EXCLUDED_FILES = new Set([
+  join('journal', 'charts', 'data', 'app.db'),
+  join('journal', 'charts', 'data', 'app.db-wal'),
+  join('journal', 'charts', 'data', 'app.db-shm'),
+]);
 
-function isChartJson(name: string): boolean {
-  return name.endsWith('.json') && name !== 'index.json';
-}
-
-// app.db is deliberately never part of the import scope: the packaged
-// kernel holds an open WAL-mode connection to dataRoot's app.db for the
-// entire app lifetime (see packages/core/src/db/index.ts), and this menu item
-// runs while that connection is live — copyFileSync-ing over it would risk
-// corrupting the WAL. Only chart JSONs, which nothing holds open, are safe
-// to import this way.
 export type SourceValidation =
-  { ok: true } | { ok: false; reason: 'self' | 'missing-journal' | 'empty' };
+  { ok: true } | { ok: false; reason: 'self' | 'missing-content' | 'empty' };
 
 export function validateImportSource(sourceRoot: string, destRoot: string): SourceValidation {
   if (realpathOrSelf(sourceRoot) === realpathOrSelf(destRoot)) {
     return { ok: false, reason: 'self' };
   }
-  const chartDataDir = join(sourceRoot, CHART_DATA_REL);
-  if (!existsSync(chartDataDir)) {
-    return { ok: false, reason: 'missing-journal' };
+  if (!USER_CONTENT_DIRS.some((name) => existsSync(join(sourceRoot, name)))) {
+    return { ok: false, reason: 'missing-content' };
   }
-  const hasJson = readdirSync(chartDataDir).some(isChartJson);
-  if (!hasJson) {
+  if (!USER_CONTENT_DIRS.some((name) => hasImportableFile(sourceRoot, join(sourceRoot, name)))) {
     return { ok: false, reason: 'empty' };
   }
   return { ok: true };
 }
 
-interface ImportManifestEntry {
-  relPath: string;
-  sourcePath: string;
-  destPath: string;
-  exists: boolean;
-}
-
-export interface ImportManifest {
-  entries: ImportManifestEntry[];
-  collisionCount: number;
-}
-
-export function buildImportManifest(sourceRoot: string, destRoot: string): ImportManifest {
-  const sourceChartDataDir = join(sourceRoot, CHART_DATA_REL);
-  const destChartDataDir = join(destRoot, CHART_DATA_REL);
-
-  const fileNames = existsSync(sourceChartDataDir)
-    ? readdirSync(sourceChartDataDir).filter(isChartJson)
-    : [];
-
-  const entries: ImportManifestEntry[] = fileNames.map((name) => {
-    const relPath = join(CHART_DATA_REL, name);
-    const destPath = join(destChartDataDir, name);
-    return {
-      relPath,
-      sourcePath: join(sourceChartDataDir, name),
-      destPath,
-      exists: existsSync(destPath),
-    };
+export function importUserContent(sourceRoot: string, destRoot: string) {
+  return copyUserContentSafely({
+    sourceRoot,
+    workspaceRoot: destRoot,
+    startedAt: new Date().toISOString(),
   });
-
-  return { entries, collisionCount: entries.filter((entry) => entry.exists).length };
 }
 
-export interface CopyImportOptions {
-  overwrite: boolean;
-}
-
-interface CopyImportFailure {
-  relPath: string;
-  error: string;
-}
-
-export interface CopyImportResult {
-  copied: number;
-  skipped: number;
-  failed: number;
-  failures: CopyImportFailure[];
-}
-
-// Each entry is copied independently and a failure (disk full, permission
-// denied, etc.) never aborts the rest of the batch — the caller gets a full
-// per-file account of what actually landed instead of a half-populated dest
-// dir plus an unhandled rejection.
-export function copyImportManifest(
-  manifest: ImportManifest,
-  opts: CopyImportOptions,
-): CopyImportResult {
-  let copied = 0;
-  let skipped = 0;
-  const failures: CopyImportFailure[] = [];
-  for (const entry of manifest.entries) {
-    if (entry.exists && !opts.overwrite) {
-      skipped++;
-      continue;
-    }
-    try {
-      mkdirSync(join(entry.destPath, '..'), { recursive: true });
-      copyFileSync(entry.sourcePath, entry.destPath);
-      copied++;
-    } catch (error) {
-      failures.push({
-        relPath: entry.relPath,
-        error: error instanceof Error ? error.message : String(error),
-      });
-    }
+function hasImportableFile(sourceRoot: string, dir: string): boolean {
+  if (!existsSync(dir)) return false;
+  const info = lstatSync(dir);
+  if (info.isSymbolicLink() || !info.isDirectory()) return false;
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const path = join(dir, entry.name);
+    if (entry.isSymbolicLink()) continue;
+    if (entry.isDirectory() && hasImportableFile(sourceRoot, path)) return true;
+    if (entry.isFile() && !EXCLUDED_FILES.has(relative(sourceRoot, path))) return true;
   }
-  return { copied, skipped, failed: failures.length, failures };
+  return false;
 }
 
 function realpathOrSelf(path: string): string {

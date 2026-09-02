@@ -54,8 +54,15 @@ if (!process.env.KANSOKU_BUNDLE_KEY && process.env.KANSOKU_BUNDLE_DEV_RANDOM_KEY
 const packEnc = spawnSync('node', args, { stdio: 'inherit' });
 if (packEnc.status !== 0) process.exit(packEnc.status ?? 1);
 
+const nativeBuild = spawnSync(
+  'node',
+  [join(proDir, 'scripts', 'buildICloudNative.mjs'), '--out', join(destDir, 'kansoku_icloud.node')],
+  { stdio: 'inherit' },
+);
+if (nativeBuild.status !== 0) process.exit(nativeBuild.status ?? 1);
+
 // The plaintext pro chunks must never reach electron-builder — pro.enc is the
 // only artifact that ships. afterPack's canary scan backstops this deletion.
 rmSync(nodeStage, { recursive: true, force: true });
 rmSync(webStage, { recursive: true, force: true });
-console.log('stagePro: staged pro.enc and removed both plaintext __pro__ dirs');
+console.log('stagePro: staged pro.enc + iCloud native module and removed plaintext __pro__ dirs');

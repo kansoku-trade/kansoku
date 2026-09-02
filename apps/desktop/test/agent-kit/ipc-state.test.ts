@@ -5,14 +5,15 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('electron-ipc-decorator', () => ({
-  IpcMethod: () => (_target: unknown, _propertyKey: string, descriptor: PropertyDescriptor) => descriptor,
+  IpcMethod: () => (_target: unknown, _propertyKey: string, descriptor: PropertyDescriptor) =>
+    descriptor,
   IpcService: class {},
 }));
 
 const env = vi.hoisted(() => ({
   dataRoot: '',
+  databasePath: '',
   userDataPath: '',
-  dataRootMode: 'custom' as 'custom' | 'default',
 }));
 const dialogMock = vi.hoisted(() => ({ showOpenDialog: vi.fn() }));
 vi.mock('electron', () => ({
@@ -24,13 +25,8 @@ vi.mock('../../src/boot/env.js', () => ({
   get dataRoot() {
     return env.dataRoot;
   },
-  get dataRootStatus() {
-    return {
-      mode: env.dataRootMode,
-      effectivePath: env.dataRoot,
-      configuredPath: null,
-      degraded: false,
-    };
+  get databasePath() {
+    return env.databasePath;
   },
 }));
 vi.mock('@kansoku/core/db/index', () => ({ getDb: () => ({}) }));
@@ -81,14 +77,22 @@ describe('agent-kit ipc state mutations', () => {
     userDataPath = await mkdtemp(join(tmpdir(), 'agent-kit-ipc-userdata-'));
     env.dataRoot = dataRoot;
     env.userDataPath = userDataPath;
-    env.dataRootMode = 'custom';
+    env.databasePath = join(userDataPath, 'State', 'app.db');
     dialogMock.showOpenDialog.mockReset();
     setResourcesPath(resourcesPath);
 
     await mkdir(join(resourcesPath, 'kansoku-agent-kit', 'templates'), { recursive: true });
     await mkdir(join(resourcesPath, 'kansoku-agent-kit', 'bin'), { recursive: true });
-    await writeFile(join(resourcesPath, 'kansoku-agent-kit', 'templates', 'CLAUDE.md.tpl'), TEMPLATE_V1, 'utf8');
-    await writeFile(join(resourcesPath, 'kansoku-agent-kit', 'bin', 'kansoku-cli'), '#!/bin/sh\necho cli\n', 'utf8');
+    await writeFile(
+      join(resourcesPath, 'kansoku-agent-kit', 'templates', 'CLAUDE.md.tpl'),
+      TEMPLATE_V1,
+      'utf8',
+    );
+    await writeFile(
+      join(resourcesPath, 'kansoku-agent-kit', 'bin', 'kansoku-cli'),
+      '#!/bin/sh\necho cli\n',
+      'utf8',
+    );
     await writeBundledSkills(resourcesPath);
     await writeManifest(resourcesPath, 'sha-claude-v1');
   });
@@ -153,7 +157,10 @@ describe('agent-kit ipc state mutations', () => {
       data: { conflicts: [{ dest: 'CLAUDE.md', reason: 'target-exists-no-state' }] },
     });
 
-    const resolveResult = await instance.resolveConflict({ dest: 'CLAUDE.md', choice: 'use-template' });
+    const resolveResult = await instance.resolveConflict({
+      dest: 'CLAUDE.md',
+      choice: 'use-template',
+    });
     expect(resolveResult).toEqual({ ok: true, data: { dest: 'CLAUDE.md' } });
 
     expect(await readFile(join(dataRoot, 'CLAUDE.md.bak'), 'utf8')).toBe('USER OWNED CONTENT\n');
@@ -170,7 +177,10 @@ describe('agent-kit ipc state mutations', () => {
     const instance = new AgentKitIpc();
     await instance.forceSync();
 
-    const resolveResult = await instance.resolveConflict({ dest: 'CLAUDE.md', choice: 'keep-original' });
+    const resolveResult = await instance.resolveConflict({
+      dest: 'CLAUDE.md',
+      choice: 'keep-original',
+    });
     expect(resolveResult).toEqual({ ok: true, data: { dest: 'CLAUDE.md' } });
 
     expect(existsSync(join(dataRoot, 'CLAUDE.md.bak'))).toBe(false);
@@ -186,20 +196,30 @@ describe('agent-kit ipc state mutations', () => {
     await instance.forceSync();
     expect(await readFile(join(dataRoot, 'CLAUDE.md'), 'utf8')).toBe(TEMPLATE_V1);
 
-    await writeFile(join(resourcesPath, 'kansoku-agent-kit', 'templates', 'CLAUDE.md.tpl'), TEMPLATE_V2, 'utf8');
+    await writeFile(
+      join(resourcesPath, 'kansoku-agent-kit', 'templates', 'CLAUDE.md.tpl'),
+      TEMPLATE_V2,
+      'utf8',
+    );
     await writeManifest(resourcesPath, 'sha-claude-v2');
 
     const syncResult = await instance.forceSync();
     expect(syncResult).toMatchObject({
       ok: true,
-      data: { updates: [{ dest: 'CLAUDE.md', oldTemplateHash: 'sha-claude-v1', newTemplateHash: 'sha-claude-v2' }] },
+      data: {
+        updates: [
+          { dest: 'CLAUDE.md', oldTemplateHash: 'sha-claude-v1', newTemplateHash: 'sha-claude-v2' },
+        ],
+      },
     });
 
     const applyResult = await instance.applyUpdate({ dest: 'CLAUDE.md' });
     expect(applyResult).toEqual({ ok: true, data: { dest: 'CLAUDE.md' } });
 
     const expectedSuffix = 'sha-claude-v1'.slice(0, 8);
-    expect(await readFile(join(dataRoot, `CLAUDE.md.bak.${expectedSuffix}`), 'utf8')).toBe(TEMPLATE_V1);
+    expect(await readFile(join(dataRoot, `CLAUDE.md.bak.${expectedSuffix}`), 'utf8')).toBe(
+      TEMPLATE_V1,
+    );
     expect(existsSync(join(dataRoot, 'CLAUDE.md.bak'))).toBe(false);
     expect(await readFile(join(dataRoot, 'CLAUDE.md'), 'utf8')).toBe(TEMPLATE_V2);
 
@@ -217,14 +237,20 @@ describe('agent-kit ipc state mutations', () => {
     expect(await readFile(join(dataRoot, 'CLAUDE.md.bak'), 'utf8')).toBe('PRE-KIT USER FILE\n');
     expect(await readFile(join(dataRoot, 'CLAUDE.md'), 'utf8')).toBe(TEMPLATE_V1);
 
-    await writeFile(join(resourcesPath, 'kansoku-agent-kit', 'templates', 'CLAUDE.md.tpl'), TEMPLATE_V2, 'utf8');
+    await writeFile(
+      join(resourcesPath, 'kansoku-agent-kit', 'templates', 'CLAUDE.md.tpl'),
+      TEMPLATE_V2,
+      'utf8',
+    );
     await writeManifest(resourcesPath, 'sha-claude-v2');
     await instance.forceSync();
 
     await instance.applyUpdate({ dest: 'CLAUDE.md' });
 
     const expectedSuffix = 'sha-claude-v1'.slice(0, 8);
-    expect(await readFile(join(dataRoot, `CLAUDE.md.bak.${expectedSuffix}`), 'utf8')).toBe(TEMPLATE_V1);
+    expect(await readFile(join(dataRoot, `CLAUDE.md.bak.${expectedSuffix}`), 'utf8')).toBe(
+      TEMPLATE_V1,
+    );
     expect(await readFile(join(dataRoot, 'CLAUDE.md.bak'), 'utf8')).toBe('PRE-KIT USER FILE\n');
     expect(await readFile(join(dataRoot, 'CLAUDE.md'), 'utf8')).toBe(TEMPLATE_V2);
   });
@@ -242,15 +268,23 @@ describe('agent-kit ipc location handling', () => {
     userDataPath = await mkdtemp(join(tmpdir(), 'agent-kit-ipc-userdata-'));
     customDir = await mkdtemp(join(tmpdir(), 'agent-kit-ipc-custom-'));
     env.dataRoot = dataRoot;
+    env.databasePath = join(userDataPath, 'State', 'app.db');
     env.userDataPath = userDataPath;
-    env.dataRootMode = 'custom';
     dialogMock.showOpenDialog.mockReset();
     setResourcesPath(resourcesPath);
 
     await mkdir(join(resourcesPath, 'kansoku-agent-kit', 'templates'), { recursive: true });
     await mkdir(join(resourcesPath, 'kansoku-agent-kit', 'bin'), { recursive: true });
-    await writeFile(join(resourcesPath, 'kansoku-agent-kit', 'templates', 'CLAUDE.md.tpl'), TEMPLATE_V1, 'utf8');
-    await writeFile(join(resourcesPath, 'kansoku-agent-kit', 'bin', 'kansoku-cli'), '#!/bin/sh\necho cli\n', 'utf8');
+    await writeFile(
+      join(resourcesPath, 'kansoku-agent-kit', 'templates', 'CLAUDE.md.tpl'),
+      TEMPLATE_V1,
+      'utf8',
+    );
+    await writeFile(
+      join(resourcesPath, 'kansoku-agent-kit', 'bin', 'kansoku-cli'),
+      '#!/bin/sh\necho cli\n',
+      'utf8',
+    );
     await writeBundledSkills(resourcesPath);
     await writeManifest(resourcesPath, 'sha-claude-v1');
   });
@@ -356,15 +390,23 @@ describe('agent-kit ipc clean', () => {
     resourcesPath = await mkdtemp(join(tmpdir(), 'agent-kit-ipc-resources-'));
     userDataPath = await mkdtemp(join(tmpdir(), 'agent-kit-ipc-userdata-'));
     env.dataRoot = dataRoot;
+    env.databasePath = join(userDataPath, 'State', 'app.db');
     env.userDataPath = userDataPath;
-    env.dataRootMode = 'custom';
     dialogMock.showOpenDialog.mockReset();
     setResourcesPath(resourcesPath);
 
     await mkdir(join(resourcesPath, 'kansoku-agent-kit', 'templates'), { recursive: true });
     await mkdir(join(resourcesPath, 'kansoku-agent-kit', 'bin'), { recursive: true });
-    await writeFile(join(resourcesPath, 'kansoku-agent-kit', 'templates', 'CLAUDE.md.tpl'), TEMPLATE_V1, 'utf8');
-    await writeFile(join(resourcesPath, 'kansoku-agent-kit', 'bin', 'kansoku-cli'), '#!/bin/sh\necho cli\n', 'utf8');
+    await writeFile(
+      join(resourcesPath, 'kansoku-agent-kit', 'templates', 'CLAUDE.md.tpl'),
+      TEMPLATE_V1,
+      'utf8',
+    );
+    await writeFile(
+      join(resourcesPath, 'kansoku-agent-kit', 'bin', 'kansoku-cli'),
+      '#!/bin/sh\necho cli\n',
+      'utf8',
+    );
     await writeBundledSkills(resourcesPath);
     await writeManifest(resourcesPath, 'sha-claude-v1');
   });
@@ -433,7 +475,11 @@ describe('agent-kit ipc clean', () => {
   });
 
   it('flips store.enabled to false', async () => {
-    await writeFile(join(userDataPath, 'agent-kit.json'), JSON.stringify({ enabled: true }), 'utf8');
+    await writeFile(
+      join(userDataPath, 'agent-kit.json'),
+      JSON.stringify({ enabled: true }),
+      'utf8',
+    );
     const instance = new AgentKitIpc();
     await instance.forceSync();
 

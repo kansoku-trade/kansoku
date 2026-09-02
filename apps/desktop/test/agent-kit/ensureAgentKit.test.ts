@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { lstatSync, readlinkSync, realpathSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -67,26 +68,35 @@ describe('ensureAgentKit', () => {
   });
 
   it('provisions runtime.env, the CLI symlink, templates, and state on a clean data root', async () => {
-    const result = await ensureAgentKit({ agentKitDir: dataRoot, dataRoot, resourcesPath, db, now });
+    const result = await ensureAgentKit({
+      agentKitDir: dataRoot,
+      dataRoot,
+      resourcesPath,
+      db,
+      now,
+    });
     expect(result).toEqual({ conflicts: [], updates: [] });
 
     const kitDir = join(dataRoot, '.kansoku-agent-kit');
     const envContent = await readFile(join(kitDir, 'runtime.env'), 'utf8');
     expect(envContent).toBe(
       [
-        `KANSOKU_CLI=${join(kitDir, 'bin', 'kansoku-cli')}`,
-        `KANSOKU_DATA_ROOT=${dataRoot}`,
-        `KANSOKU_AGENT_KIT_DIR=${dataRoot}`,
-        'KANSOKU_APP_VERSION=1.0.0',
-        'KANSOKU_KIT_VERSION=1.0.0+20260722',
-        `TRADE_MIGRATIONS_DIR=${join(resourcesPath, 'drizzle')}`,
+        `KANSOKU_CLI='${join(kitDir, 'bin', 'kansoku-cli')}'`,
+        `KANSOKU_DATA_ROOT='${dataRoot}'`,
+        `KANSOKU_DB_PATH='${join(dataRoot, 'journal', 'charts', 'data', 'app.db')}'`,
+        `KANSOKU_AGENT_KIT_DIR='${dataRoot}'`,
+        "KANSOKU_APP_VERSION='1.0.0'",
+        "KANSOKU_KIT_VERSION='1.0.0+20260722'",
+        `TRADE_MIGRATIONS_DIR='${join(resourcesPath, 'drizzle')}'`,
         '',
       ].join('\n'),
     );
 
     const shimPath = join(kitDir, 'bin', 'kansoku-cli');
     expect(lstatSync(shimPath).isSymbolicLink()).toBe(true);
-    expect(readlinkSync(shimPath)).toBe(join(resourcesPath, 'kansoku-agent-kit', 'bin', 'kansoku-cli'));
+    expect(readlinkSync(shimPath)).toBe(
+      join(resourcesPath, 'kansoku-agent-kit', 'bin', 'kansoku-cli'),
+    );
 
     const bundledSkills = join(resourcesPath, 'skills');
     for (const relativePath of ['.claude/skills', '.agent/skill']) {
@@ -125,7 +135,9 @@ describe('ensureAgentKit', () => {
 
     await ensureAgentKit({ agentKitDir: dataRoot, dataRoot, resourcesPath, db, now });
 
-    expect(readlinkSync(shimPath)).toBe(join(resourcesPath, 'kansoku-agent-kit', 'bin', 'kansoku-cli'));
+    expect(readlinkSync(shimPath)).toBe(
+      join(resourcesPath, 'kansoku-agent-kit', 'bin', 'kansoku-cli'),
+    );
   });
 
   it('repairs deleted, retargeted, and real-directory skill links on re-sync', async () => {
@@ -172,7 +184,13 @@ describe('ensureAgentKit', () => {
     await ensureAgentKit({ agentKitDir: dataRoot, dataRoot, resourcesPath, db, now });
     const claudeMdBefore = await readFile(join(dataRoot, 'CLAUDE.md'), 'utf8');
 
-    const result = await ensureAgentKit({ agentKitDir: dataRoot, dataRoot, resourcesPath, db, now });
+    const result = await ensureAgentKit({
+      agentKitDir: dataRoot,
+      dataRoot,
+      resourcesPath,
+      db,
+      now,
+    });
     expect(result).toEqual({ conflicts: [], updates: [] });
     expect(await readFile(join(dataRoot, 'CLAUDE.md'), 'utf8')).toBe(claudeMdBefore);
   });
@@ -184,7 +202,13 @@ describe('ensureAgentKit', () => {
     await ensureAgentKit({ agentKitDir: dataRoot, dataRoot, resourcesPath, db, now: nowFirst });
     const writtenAtFirst = readState(dataRoot)?.templates['CLAUDE.md']?.writtenAt;
 
-    const result = await ensureAgentKit({ agentKitDir: dataRoot, dataRoot, resourcesPath, db, now: nowSecond });
+    const result = await ensureAgentKit({
+      agentKitDir: dataRoot,
+      dataRoot,
+      resourcesPath,
+      db,
+      now: nowSecond,
+    });
     expect(result).toEqual({ conflicts: [], updates: [] });
 
     const stateAfterSecond = readState(dataRoot);
@@ -205,8 +229,8 @@ describe('ensureAgentKit', () => {
 
       const kitDir = join(agentKitDir, '.kansoku-agent-kit');
       const envContent = await readFile(join(kitDir, 'runtime.env'), 'utf8');
-      expect(envContent).toContain(`KANSOKU_DATA_ROOT=${dataRoot}`);
-      expect(envContent).toContain(`KANSOKU_AGENT_KIT_DIR=${agentKitDir}`);
+      expect(envContent).toContain(`KANSOKU_DATA_ROOT='${dataRoot}'`);
+      expect(envContent).toContain(`KANSOKU_AGENT_KIT_DIR='${agentKitDir}'`);
 
       expect(await readFile(join(agentKitDir, 'CLAUDE.md'), 'utf8')).toBe('CLAUDE TEMPLATE\n');
       await expect(readFile(join(dataRoot, 'CLAUDE.md'), 'utf8')).rejects.toThrow();
@@ -223,5 +247,19 @@ describe('ensureAgentKit', () => {
     } finally {
       await rm(agentKitDir, { recursive: true, force: true });
     }
+  });
+
+  it('can be sourced by POSIX sh when Workspace paths contain spaces and quotes', async () => {
+    const spacedRoot = join(dataRoot, 'Application Support', "Kansoku's Workspace");
+    const agentKitDir = join(dataRoot, 'Agent Project');
+    await mkdir(spacedRoot, { recursive: true });
+    await ensureAgentKit({ agentKitDir, dataRoot: spacedRoot, resourcesPath, db, now });
+
+    const envPath = join(agentKitDir, '.kansoku-agent-kit', 'runtime.env');
+    expect(
+      execFileSync('/bin/sh', ['-c', '. "$1"; printf %s "$KANSOKU_DATA_ROOT"', 'sh', envPath], {
+        encoding: 'utf8',
+      }),
+    ).toBe(spacedRoot);
   });
 });

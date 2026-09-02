@@ -1,20 +1,28 @@
-# CLAUDE.md — Kansoku 数据目录
+# Kansoku Agent Kit
 
-这里不是 kansoku 源码仓库，是 kansoku desktop app 的数据目录。所有研究结果、
-图表、决策日志都存在这里。
+这里是接入 Kansoku 的 Agent 项目。用户研究内容统一存放在
+`$KANSOKU_DATA_ROOT` 指向的 Agent Workspace；当前目录只有在 Agent Kit
+选择“使用 Agent Workspace”时才与它相同。
 
-## 怎么操作数据
+## 开始前
 
-数据存储：
+每次新 shell 先加载运行环境：
 
-- SQLite: `charts/data/app.db`（chart_meta、comments、chat_sessions、
-  symbol_follows、watched_markets_settings 等）
-- 图表 JSON: `journal/charts/data/<id>.json`
-- Markdown: `journal/YYYY-MM-DD-*.md`、`stocks/<SYMBOL>.md`
+```sh
+[ -f .kansoku-agent-kit/runtime.env ] && . .kansoku-agent-kit/runtime.env
+```
 
-操作接口：`kansoku-cli`，位置见环境变量 `$KANSOKU_CLI`（由 App 写入
-`.kansoku-agent-kit/runtime.env`）。想在 shell 里直接用，把
-`$KANSOKU_DATA_ROOT/.kansoku-agent-kit/bin` 加到 `PATH`。
+关键路径：
+
+- 用户文件：`$KANSOKU_DATA_ROOT/journal/`、`$KANSOKU_DATA_ROOT/stocks/`
+- 图表 JSON：`$KANSOKU_DATA_ROOT/journal/charts/data/<id>.json`
+- SQLite：不要直接操作文件，统一使用 `$KANSOKU_CLI`
+- CLI：`$KANSOKU_CLI`
+- CLI 目录：`$KANSOKU_AGENT_KIT_DIR/.kansoku-agent-kit/bin`
+
+直接写 Markdown 或其他用户文件时，目标必须位于 `$KANSOKU_DATA_ROOT`，
+不要假设当前工作目录就是数据目录。如果当前 Agent 沙箱不允许跨项目写入，
+请直接把 `$KANSOKU_DATA_ROOT` 作为 Agent 项目打开。
 
 调用示例：
 
@@ -28,8 +36,8 @@
 `.claude/skills/`（Claude Code）和 `.agent/skill/`（Agent Kit 客户端）都是指向
 Kansoku 内置研究 skills 的软链接。应用更新、启动同步或手动重刷时会校验
 最终指向，被删除或改指向后会自动修复。其中包含市场读取、深度研究、
-图表生成、决策关卡、日内多周期预测等。任何 skill 里的接口调用都会通过
-`kansoku-cli` 落到本地 SQLite / JSON，不需要额外服务。
+图表生成、决策关卡、日内多周期预测等。任何 skill 里的 SQLite / 图表操作
+都会通过 `kansoku-cli` 落到同一个 Workspace 和本地数据库，不需要额外服务。
 
 ## 规则
 

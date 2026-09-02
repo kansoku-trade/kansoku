@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('electron-ipc-decorator', () => ({
-  IpcMethod: () => (_target: unknown, _propertyKey: string, descriptor: PropertyDescriptor) => descriptor,
+  IpcMethod: () => (_target: unknown, _propertyKey: string, descriptor: PropertyDescriptor) =>
+    descriptor,
   IpcService: class {},
 }));
 
@@ -16,11 +17,15 @@ vi.mock('@kansoku/core/db/index', () => ({ getDb }));
 
 vi.mock('../../src/boot/env.js', () => ({
   dataRoot: '/tmp/agent-kit-ipc-smoke-dataroot',
-  dataRootStatus: { mode: 'custom', effectivePath: '/tmp/agent-kit-ipc-smoke-dataroot', configuredPath: null, degraded: false },
+  databasePath: '/tmp/agent-kit-ipc-smoke-state/app.db',
 }));
 
 const store = vi.hoisted(() => ({
-  read: vi.fn(() => ({ enabled: true, location: { kind: 'follow-data-root' as const }, lastSyncAt: undefined })),
+  read: vi.fn(() => ({
+    enabled: true,
+    location: { kind: 'follow-data-root' as const },
+    lastSyncAt: undefined,
+  })),
   write: vi.fn(),
 }));
 vi.mock('../../src/agent-kit/store.js', () => ({ defaultAgentKitStore: () => store }));
@@ -62,7 +67,6 @@ describe('agent-kit ipc', () => {
         enabled: true,
         location: { kind: 'follow-data-root' },
         resolvedPath: '/tmp/agent-kit-ipc-smoke-dataroot',
-        followBlocked: false,
         dataRoot: '/tmp/agent-kit-ipc-smoke-dataroot',
         lastSyncAt: undefined,
         kitVersion: '1.0.0+20260722',
@@ -76,7 +80,9 @@ describe('agent-kit ipc', () => {
     const instance = new AgentKitIpc();
     const result = await instance.forceSync();
     expect(ensureAgentKit).toHaveBeenCalledTimes(1);
-    expect(store.write).toHaveBeenCalledWith(expect.objectContaining({ lastSyncAt: expect.any(String) }));
+    expect(store.write).toHaveBeenCalledWith(
+      expect.objectContaining({ lastSyncAt: expect.any(String) }),
+    );
     expect(result).toEqual({ ok: true, data: { conflicts: [], updates: [] } });
   });
 

@@ -12,7 +12,7 @@
     "dev": "node scripts/dev.mjs",
     "generate-icon": "bash scripts/generate-icon.sh",
     "prepackage": "pnpm --filter @kansoku/web build && (test -f ../web/dist/index.html || (echo 'web/dist/index.html missing after build' && exit 1))",
-    "package": "pnpm build && node scripts/stageSkills.mjs && node scripts/stageAgentKit.mjs && node scripts/buildCli.mjs && node scripts/stagePro.mjs && pnpm build:native && electron-builder --mac dmg zip --arm64",
+    "package": "pnpm build && node scripts/stageSkills.mjs && node scripts/stageAgentKit.mjs && node scripts/buildCli.mjs && pnpm build:native && node scripts/stagePro.mjs && node scripts/packageApp.mjs",
     "prestart": "node scripts/ensureDevNative.mjs",
     "start": "electron .",
     "test": "vitest run",

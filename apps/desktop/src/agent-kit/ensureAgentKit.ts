@@ -16,6 +16,7 @@ import { makeRender, syncTemplate } from './templates.js';
 export async function ensureAgentKit(input: {
   agentKitDir: string;
   dataRoot: string;
+  databasePath?: string;
   resourcesPath: string;
   db: Db;
   now?: () => Date;
@@ -33,12 +34,18 @@ export async function ensureAgentKit(input: {
   writeFileSync(
     join(kitDir, 'runtime.env'),
     [
-      `KANSOKU_CLI=${cliShim}`,
-      `KANSOKU_DATA_ROOT=${input.dataRoot}`,
-      `KANSOKU_AGENT_KIT_DIR=${input.agentKitDir}`,
-      `KANSOKU_APP_VERSION=${manifest.appVersion}`,
-      `KANSOKU_KIT_VERSION=${manifest.kitVersion}`,
-      `TRADE_MIGRATIONS_DIR=${join(input.resourcesPath, 'drizzle')}`,
+      shellEnvLine('KANSOKU_CLI', cliShim),
+      shellEnvLine('KANSOKU_DATA_ROOT', input.dataRoot),
+      shellEnvLine(
+        'KANSOKU_DB_PATH',
+        input.databasePath ??
+          process.env.KANSOKU_DB_PATH ??
+          join(input.dataRoot, 'journal', 'charts', 'data', 'app.db'),
+      ),
+      shellEnvLine('KANSOKU_AGENT_KIT_DIR', input.agentKitDir),
+      shellEnvLine('KANSOKU_APP_VERSION', manifest.appVersion),
+      shellEnvLine('KANSOKU_KIT_VERSION', manifest.kitVersion),
+      shellEnvLine('TRADE_MIGRATIONS_DIR', join(input.resourcesPath, 'drizzle')),
       '',
     ].join('\n'),
     'utf8',
@@ -96,4 +103,8 @@ export async function ensureAgentKit(input: {
   });
 
   return { conflicts, updates };
+}
+
+function shellEnvLine(name: string, value: string): string {
+  return `${name}='${value.replaceAll("'", "'\\''")}'`;
 }

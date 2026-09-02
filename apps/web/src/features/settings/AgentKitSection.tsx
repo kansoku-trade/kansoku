@@ -42,20 +42,6 @@ const styles = stylex.create({
     marginTop: '3px',
     overflowWrap: 'anywhere',
   },
-  warning: {
-    alignItems: 'center',
-    backgroundColor: colors.backgroundElement,
-    borderColor: colors.down,
-    borderStyle: 'solid',
-    borderWidth: '1px',
-    color: colors.down,
-    display: 'flex',
-    fontSize: fontSizes.control,
-    gap: '10px',
-    justifyContent: 'space-between',
-    margin: '10px',
-    padding: '8px 9px',
-  },
   result: {
     color: colors.down,
     fontSize: fontSizes.control,
@@ -81,7 +67,7 @@ const styles = stylex.create({
 
 function locationLabel(status: AgentKitStatus): string {
   if (status.location.kind === 'custom') return status.location.path;
-  return `跟随数据目录 · ${status.dataRoot}`;
+  return `Agent Workspace · ${status.dataRoot}`;
 }
 
 export function AgentKitSection() {
@@ -186,12 +172,6 @@ export function AgentKitSection() {
         <NoteBlock>加载中…</NoteBlock>
       )}
 
-      {status?.followBlocked ? (
-        <div className={`settings-warning-strip ${stylex.props(styles.warning).className}`}>
-          数据目录是 App 默认位置（Application Support），跟随不可用——请选择自定义目录或先切换数据目录。
-        </div>
-      ) : null}
-
       {status ? (
         <div className={`settings-provider-meta ${stylex.props(styles.providerMeta).className}`}>
           版本 {status.kitVersion ?? '—'} · 上次同步 {status.lastSyncAt ?? '—'}
@@ -221,14 +201,11 @@ export function AgentKitSection() {
       ) : null}
 
       <div {...stylex.props(styles.actionsBar)}>
-        <Button
-          disabled={busy || status?.location.kind === 'follow-data-root' || status?.followBlocked}
-          onClick={follow}
-        >
-          跟随数据目录
+        <Button disabled={busy || status?.location.kind === 'follow-data-root'} onClick={follow}>
+          使用 Agent Workspace
         </Button>
         <Button disabled={busy} onClick={pick}>
-          选择目录…
+          接入其他项目…
         </Button>
         <span {...stylex.props(styles.spacer)} />
         <Button disabled={busy || !canSync} onClick={forceSync}>

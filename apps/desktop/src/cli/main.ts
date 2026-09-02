@@ -21,8 +21,9 @@ Data root resolution (priority):
   $TRADE_PROJECT_ROOT        environment
 
 Environment set by App:
-  $KANSOKU_CLI, $KANSOKU_DATA_ROOT, $KANSOKU_APP_VERSION, $KANSOKU_KIT_VERSION
-  loaded from <dataRoot>/.kansoku-agent-kit/runtime.env
+  $KANSOKU_CLI, $KANSOKU_DATA_ROOT, $KANSOKU_DB_PATH, $KANSOKU_AGENT_KIT_DIR
+  $KANSOKU_APP_VERSION, $KANSOKU_KIT_VERSION
+  loaded from <agentKitDir>/.kansoku-agent-kit/runtime.env
 `;
 
 function printHelp(): void {

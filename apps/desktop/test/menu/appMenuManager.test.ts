@@ -6,7 +6,7 @@ function makeDeps(overrides: Partial<MenuActionDeps> = {}): MenuActionDeps {
   return {
     openAbout: vi.fn(),
     importFromRepo: vi.fn(),
-    selectDataRoot: vi.fn(),
+    openWorkspace: vi.fn(),
     openSettings: vi.fn(),
     openLogs: vi.fn(),
     openResearch: vi.fn(),
@@ -108,8 +108,8 @@ describe('buildAppMenuTemplate', () => {
     });
     expect(findByRole(appMenu, 'quit').role).toBe('quit');
     expect(appMenu.some((item) => item.label === '查看日志…')).toBe(false);
-    expect(appMenu.some((item) => item.label === '选择数据目录…')).toBe(false);
-    expect(appMenu.some((item) => item.label === '从 repo 导入数据…')).toBe(false);
+    expect(appMenu.some((item) => item.label === '显示 Agent Workspace…')).toBe(false);
+    expect(appMenu.some((item) => item.label === '导入 Kansoku 数据…')).toBe(false);
   });
 
   it('wires app menu clicks to deps', () => {
@@ -129,30 +129,30 @@ describe('buildAppMenuTemplate', () => {
     expect(deps.openSettings).toHaveBeenCalledOnce();
   });
 
-  it('puts logs and data tools in the help menu', () => {
+  it('puts logs, the fixed Workspace, and safe data import in the help menu', () => {
     const deps = makeDeps();
     const helpMenu = asSubmenu(buildAppMenuTemplate('Kansoku', deps)[5]);
     expect(findByLabel(helpMenu, '查看日志…').label).toBe('查看日志…');
-    expect(findByLabel(helpMenu, '选择数据目录…').label).toBe('选择数据目录…');
-    expect(findByLabel(helpMenu, '从 repo 导入数据…').label).toBe('从 repo 导入数据…');
+    expect(findByLabel(helpMenu, '显示 Agent Workspace…').label).toBe('显示 Agent Workspace…');
+    expect(findByLabel(helpMenu, '导入 Kansoku 数据…').label).toBe('导入 Kansoku 数据…');
 
     findByLabel(helpMenu, '查看日志…').click?.(
       undefined as never,
       undefined as never,
       undefined as never,
     );
-    findByLabel(helpMenu, '选择数据目录…').click?.(
+    findByLabel(helpMenu, '显示 Agent Workspace…').click?.(
       undefined as never,
       undefined as never,
       undefined as never,
     );
-    findByLabel(helpMenu, '从 repo 导入数据…').click?.(
+    findByLabel(helpMenu, '导入 Kansoku 数据…').click?.(
       undefined as never,
       undefined as never,
       undefined as never,
     );
     expect(deps.openLogs).toHaveBeenCalledOnce();
-    expect(deps.selectDataRoot).toHaveBeenCalledOnce();
+    expect(deps.openWorkspace).toHaveBeenCalledOnce();
     expect(deps.importFromRepo).toHaveBeenCalledOnce();
   });
 

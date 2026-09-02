@@ -1,6 +1,6 @@
 'use strict';
 
-const { existsSync, readdirSync, readFileSync } = require('node:fs');
+const { copyFileSync, existsSync, readdirSync, readFileSync } = require('node:fs');
 const { join, relative } = require('node:path');
 const { listPackage } = require('@electron/asar');
 
@@ -70,16 +70,32 @@ function verifyNoPlaintextPro(context) {
 
 module.exports = async function afterPack(context) {
   verifyNoPlaintextPro(context);
-  // CSC_LINK present + `identity: null` dropped from electron-builder.yml
-  // (the CI signing step does both together) means electron-builder will
-  // Developer-ID-sign right after this hook (notarization + stapling run as
-  // explicit CI steps after packaging) — an ad-hoc --deep sign here would
-  // only be thrown away by that re-sign. Both conditions are required: a
-  // stray local CSC_LINK with identity still null must keep the ad-hoc path,
-  // or the app ships with no signature at all.
-  if (process.env.CSC_LINK && context.packager.platformSpecificBuildOptions.identity !== null) {
-    return;
+  const identity = context.packager.platformSpecificBuildOptions.identity;
+  const signingRequested =
+    identity !== null &&
+    (Boolean(process.env.CSC_LINK) || (typeof identity === 'string' && identity.length > 0));
+  const appPath = join(context.appOutDir, `${context.packager.appInfo.productFilename}.app`);
+  const proNative = join(
+    appPath,
+    'Contents',
+    'Resources',
+    'app.asar.unpacked',
+    'pro',
+    'kansoku_icloud.node',
+  );
+  if (process.env.KANSOKU_PROVISIONING_PROFILE) {
+    copyFileSync(
+      process.env.KANSOKU_PROVISIONING_PROFILE,
+      join(appPath, 'Contents', 'embedded.provisionprofile'),
+    );
+  } else if (existsSync(proNative) && signingRequested) {
+    throw new Error(
+      'signed Pro build requires KANSOKU_PROVISIONING_PROFILE with iCloud + CloudKit entitlements',
+    );
   }
+  // CI supplies CSC_LINK; local verification can name a Keychain identity.
+  // In both cases electron-builder signs after this hook, so don't ad-hoc sign first.
+  if (signingRequested) return;
   const { adHocSignAfterPack } = await import('electron-sparkle-updater/builder');
   return adHocSignAfterPack(context);
 };

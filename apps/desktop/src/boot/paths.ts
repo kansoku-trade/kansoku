@@ -19,19 +19,31 @@ export function resolveRepoRoot(): string {
   return join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 }
 
-export interface DataRootOptions {
+export interface DesktopStoragePaths {
+  workspaceRoot: string;
+  stateRoot: string;
+  databasePath: string;
+}
+
+export function resolveDesktopStoragePaths(input: {
   isPackaged: boolean;
   envOverride: string | undefined;
   userDataPath: string;
-  customPath?: string | null;
-  customPathUsable?: boolean;
-}
-
-export function resolveDataRoot(opts: DataRootOptions): string {
-  if (opts.envOverride) return opts.envOverride;
-  if (!opts.isPackaged) return resolveRepoRoot();
-  if (opts.customPath && opts.customPathUsable) return opts.customPath;
-  return opts.userDataPath;
+  iCloudWorkspacePath?: string | null;
+}): DesktopStoragePaths {
+  const workspaceRoot = input.envOverride
+    ? input.envOverride
+    : !input.isPackaged
+      ? resolveRepoRoot()
+      : (input.iCloudWorkspacePath ?? join(input.userDataPath, 'Workspace'));
+  const stateRoot = join(input.userDataPath, 'State');
+  return {
+    workspaceRoot,
+    stateRoot,
+    databasePath: input.isPackaged
+      ? join(stateRoot, 'app.db')
+      : join(workspaceRoot, 'journal', 'charts', 'data', 'app.db'),
+  };
 }
 
 const DATA_ROOT_SUBDIRS = [

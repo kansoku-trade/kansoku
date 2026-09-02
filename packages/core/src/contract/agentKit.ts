@@ -13,15 +13,12 @@ export type PendingUpdate = {
   newTemplateHash: string;
 };
 
-export type AgentKitLocation =
-  | { kind: 'follow-data-root' }
-  | { kind: 'custom'; path: string };
+export type AgentKitLocation = { kind: 'follow-data-root' } | { kind: 'custom'; path: string };
 
 export type AgentKitStatus = {
   enabled: boolean;
   location: AgentKitLocation;
   resolvedPath: string | null;
-  followBlocked: boolean;
   dataRoot: string;
   lastSyncAt?: string;
   kitVersion?: string;
@@ -35,8 +32,7 @@ export type AgentKitSyncResult = {
 };
 
 export type AgentKitSetEnabledResult =
-  | { enabled: false }
-  | ({ enabled: true } & AgentKitSyncResult);
+  { enabled: false } | ({ enabled: true } & AgentKitSyncResult);
 
 export interface AgentKitApi {
   getStatus(): Promise<AgentKitStatus>;

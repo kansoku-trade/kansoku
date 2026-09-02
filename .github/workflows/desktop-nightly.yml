@@ -197,6 +197,21 @@ jobs:
           grep -q '^  identity: null$' electron-builder.yml
           sed -i '' '/^  identity: null$/d' electron-builder.yml
 
+      - name: install Developer ID provisioning profile for Pro iCloud
+        if: steps.signing.outputs.enabled == 'true'
+        env:
+          PROFILE_BASE64: ${{ secrets.MACOS_ICLOUD_PROVISIONING_PROFILE_BASE64 }}
+        run: |
+          if [ ! -f apps/pro/package.json ]; then exit 0; fi
+          if [ -z "$PROFILE_BASE64" ]; then
+            echo "::error::MACOS_ICLOUD_PROVISIONING_PROFILE_BASE64 is required for a signed Pro build"
+            exit 1
+          fi
+          PROFILE_PATH="$RUNNER_TEMP/Kansoku.provisionprofile"
+          printf '%s' "$PROFILE_BASE64" | base64 -D > "$PROFILE_PATH"
+          security cms -D -i "$PROFILE_PATH" >/dev/null
+          echo "KANSOKU_PROVISIONING_PROFILE=$PROFILE_PATH" >> "$GITHUB_ENV"
+
       # Identical to the release path, including the pro encryption. packEnc
       # hard-fails without the bundle secrets when the pro slot is present, which
       # is what makes this artifact real evidence rather than a lookalike.

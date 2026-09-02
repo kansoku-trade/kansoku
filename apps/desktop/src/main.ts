@@ -12,7 +12,7 @@ import { app, BrowserWindow } from 'electron';
 import { createServices } from 'electron-ipc-decorator';
 import { AppControlIpc } from './shell/appControl/ipc.js';
 import { createAppMenuManager } from './shell/menu/appMenuManager.js';
-import { bootKernel } from './boot/kernel.js';
+import { prepareDesktopStorageWithRecovery } from './storage/recovery.js';
 import { createWindowManager, type WindowManager } from './shell/window/windowManager.js';
 import { dispatchDeepLink, findDeepLinkArg } from './platform/deepLink/deepLink.js';
 import { showFatalErrorWindow } from './shell/window/fatalErrorWindow.js';
@@ -26,8 +26,8 @@ import {
 import { createOnboardingStore } from './shell/onboarding/store.js';
 import { OnboardingIpc } from './shell/onboarding/ipc.js';
 import { runImportFromRepoFlow } from './data/dataImport/flow.js';
-import { runSelectDataRootFlow } from './data/dataRoot/flow.js';
-import { DataRootIpc } from './data/dataRoot/ipc.js';
+import { WorkspaceIpc } from './storage/ipc.js';
+import { openAgentWorkspace } from './storage/openWorkspace.js';
 import {
   createFileLogger,
   installConsoleBridge,
@@ -200,9 +200,9 @@ function installAppMenu({
           console.error('[desktop] import-from-repo flow crashed', error);
         });
       },
-      selectDataRoot: () => {
-        runSelectDataRootFlow(BrowserWindow.getFocusedWindow()).catch((error: unknown) => {
-          console.error('[desktop] select-data-root flow crashed', error);
+      openWorkspace: () => {
+        openAgentWorkspace().catch((error: unknown) => {
+          console.error('[desktop] open Agent Workspace failed', error);
         });
       },
       openSettings: () => sendTabsCommand('open-settings'),
@@ -240,7 +240,9 @@ function installAppMenu({
 
 app.whenReady().then(async () => {
   try {
+    if (!(await prepareDesktopStorageWithRecovery())) return;
     applyDevDockIcon();
+    const { bootKernel } = await import('./boot/kernel.js');
     const { proComposition, webFiles, dispose: disposeKernel } = await bootKernel();
     const { ipcServiceClasses } = await import('./kernel/ipc/index.js');
     createServices([...ipcServiceClasses, ...(proComposition?.ipcServices ?? [])]);
@@ -254,7 +256,7 @@ app.whenReady().then(async () => {
 
     new OnboardingIpc(createOnboardingStore());
     new AppControlIpc();
-    new DataRootIpc();
+    new WorkspaceIpc();
     const tabsFileStore: TabsFileStore = createTabsFileStore(
       join(app.getPath('userData'), 'tabs.json'),
     );

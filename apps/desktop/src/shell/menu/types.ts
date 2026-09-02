@@ -1,7 +1,7 @@
 export type MenuActionDeps = {
   openAbout: () => void;
   importFromRepo: () => void;
-  selectDataRoot: () => void;
+  openWorkspace: () => void;
   openSettings: () => void;
   openLogs: () => void;
   openResearch: () => void;
