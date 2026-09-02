@@ -3,15 +3,13 @@ import { promises as fs } from 'node:fs';
 import { relative, sep } from 'node:path';
 import { Type } from 'typebox';
 import { textResult } from '../ai/agents/dataTools.js';
-import {
-  isSymlinkSafe,
-  resolveRepoRelative,
-  slashPath,
-} from '../ai/agents/agentTools/fsMounts.js';
+import { isSymlinkSafe, resolveRepoRelative, slashPath } from '../ai/agents/agentTools/fsMounts.js';
 import { isLicensed } from '../license/licenseGate.js';
 import { ClientError } from '../platform/errors.js';
 import { assertCanvasQuota } from './quotaEnforce.js';
-import { listCanvases, loadCanvas, saveCanvas } from './store.js';
+import { applyChunks, parsePatch, PatchError } from './applyPatch.js';
+import { checkCanvasSource, reviewCanvasStructure } from './check.js';
+import { type CanvasDoc, listCanvases, loadCanvas, saveCanvas } from './store.js';
 
 const saveSchema = Type.Object({
   slug: Type.String(),
@@ -25,11 +23,8 @@ const readSchema = Type.Object({
 
 const listSchema = Type.Object({});
 
-const editFileSchema = Type.Object({
-  path: Type.String({ minLength: 1, maxLength: 2_000 }),
-  old_text: Type.String({ minLength: 1, maxLength: 100_000 }),
-  new_text: Type.String({ maxLength: 100_000 }),
-  replace_all: Type.Optional(Type.Boolean()),
+const applyPatchSchema = Type.Object({
+  patch: Type.String({ minLength: 1, maxLength: 200_000 }),
 });
 
 const CANVAS_FILE_RE = /^([a-z0-9]+(?:-[a-z0-9]+)*)\.canvas\.tsx$/;
@@ -62,60 +57,77 @@ function canvasEditTarget(
   return { path: slashPath(relative(repoRoot, target)), slug, target };
 }
 
-export function buildCanvasEditFileTool(
+export function buildCanvasApplyPatchTool(
   repoRoot: string,
   dir: string,
   opts: Pick<CanvasToolsOptions, 'now' | 'skillLoaded'> = {},
-): AgentTool<typeof editFileSchema> {
+): AgentTool<typeof applyPatchSchema> {
   return {
-    name: 'edit_file',
-    label: 'Edit File',
+    name: 'apply_patch',
+    label: 'Apply Patch',
     description:
-      'Replace an exact text fragment in an existing journal/canvases/*.canvas.tsx file. Read the file and the canvas skill first. The updated source is validated before it is written.',
-    parameters: editFileSchema,
+      'Apply one patch to existing journal/canvases/*.canvas.tsx files. Read the file and the canvas skill first. ' +
+      'Format: "*** Begin Patch", then one or more "*** Update File: <path>" sections, each holding hunks; a hunk may open with "@@ <context line>" to pin its position, ' +
+      'and its body lines start with " " (unchanged), "-" (remove), or "+" (add). End with "*** End Patch". Only Update File is accepted; creation goes through save_canvas. ' +
+      'All hunks across all files apply together or not at all, and every updated source is validated before it is written.',
+    parameters: applyPatchSchema,
     execute: async (_id, params) => {
       if (opts.skillLoaded && !opts.skillLoaded()) {
         return textResult(`edit failed: read_skill(name="${CANVAS_SKILL_NAME}") first`);
       }
-      const resolved = canvasEditTarget(repoRoot, dir, params.path);
-      if (!resolved) {
-        return textResult(
-          `edit failed: path must be a journal/canvases/*.canvas.tsx file: ${params.path}`,
-        );
-      }
       try {
-        const stat = await fs.lstat(resolved.target);
-        if (!stat.isFile() || stat.isSymbolicLink()) {
-          return textResult(`edit failed: not a regular canvas file: ${params.path}`);
+        const files = parsePatch(params.patch);
+        const staged: {
+          path: string;
+          slug: string;
+          title: string;
+          source: string;
+          origin: CanvasDoc['origin'];
+        }[] = [];
+        for (const file of files) {
+          const resolved = canvasEditTarget(repoRoot, dir, file.path);
+          if (!resolved) {
+            return textResult(
+              `edit failed: path must be a journal/canvases/*.canvas.tsx file: ${file.path}`,
+            );
+          }
+          const stat = await fs.lstat(resolved.target);
+          if (!stat.isFile() || stat.isSymbolicLink()) {
+            return textResult(`edit failed: not a regular canvas file: ${file.path}`);
+          }
+          if (!(await isSymlinkSafe({ name: 'canvases', root: dir }, resolved.target))) {
+            return textResult(
+              `edit failed: path resolves outside the canvas directory: ${file.path}`,
+            );
+          }
+          const existing = await loadCanvas(dir, resolved.slug);
+          if (!existing) return textResult(`edit failed: canvas not found: ${resolved.slug}`);
+          let source: string;
+          try {
+            source = applyChunks(existing.source, file.chunks);
+          } catch (error) {
+            if (error instanceof PatchError) {
+              return textResult(`edit failed: ${file.path}: ${error.message}`);
+            }
+            throw error;
+          }
+          const issues = [...checkCanvasSource(source), ...reviewCanvasStructure(source)];
+          if (issues.length) return textResult(`edit failed: ${file.path}:\n${issues.join('\n')}`);
+          staged.push({
+            path: resolved.path,
+            slug: resolved.slug,
+            title: existing.title,
+            source,
+            origin: existing.origin,
+          });
         }
-        if (!(await isSymlinkSafe({ name: 'canvases', root: dir }, resolved.target))) {
-          return textResult(
-            `edit failed: path resolves outside the canvas directory: ${params.path}`,
-          );
+        const lines: string[] = [];
+        for (const entry of staged) {
+          const result = await saveCanvas(dir, { ...entry, now: opts.now });
+          if (!result.ok) return textResult(`edit failed:\n${result.issues.join('\n')}`);
+          lines.push(`edited path=${entry.path} slug=${result.doc.slug} title=${result.doc.title}`);
         }
-        const existing = await loadCanvas(dir, resolved.slug);
-        if (!existing) return textResult(`edit failed: canvas not found: ${resolved.slug}`);
-        const occurrences = existing.source.split(params.old_text).length - 1;
-        if (occurrences === 0) return textResult('edit failed: old_text was not found');
-        if (occurrences > 1 && !params.replace_all) {
-          return textResult(
-            'edit failed: old_text is not unique; set replace_all or provide more context',
-          );
-        }
-        const source = params.replace_all
-          ? existing.source.replaceAll(params.old_text, params.new_text)
-          : existing.source.replace(params.old_text, params.new_text);
-        const result = await saveCanvas(dir, {
-          slug: resolved.slug,
-          title: existing.title,
-          source,
-          origin: existing.origin,
-          now: opts.now,
-        });
-        if (!result.ok) return textResult(`edit failed:\n${result.issues.join('\n')}`);
-        return textResult(
-          `edited path=${resolved.path} slug=${result.doc.slug} title=${result.doc.title}`,
-        );
+        return textResult(lines.join('\n'));
       } catch (error) {
         return textResult(`edit failed: ${error instanceof Error ? error.message : String(error)}`);
       }
@@ -156,7 +168,8 @@ export function buildCanvasTools(dir: string, opts: CanvasToolsOptions = {}): Ag
   const read: AgentTool<typeof readSchema> = {
     name: 'read_canvas',
     label: 'Read Canvas',
-    description: 'Read an existing canvas source and its last check record. Call this before editing.',
+    description:
+      'Read an existing canvas source and its last check record. Call this before editing.',
     parameters: readSchema,
     execute: async (_id, params) => {
       const doc = await loadCanvas(dir, params.slug);

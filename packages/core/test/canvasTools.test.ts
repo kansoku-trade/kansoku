@@ -2,7 +2,7 @@ import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { buildCanvasEditFileTool, buildCanvasTools } from '../src/canvas/tools.js';
+import { buildCanvasApplyPatchTool, buildCanvasTools } from '../src/canvas/tools.js';
 
 const source = `import { Canvas, Text } from '@kansoku/canvas';
 export default function App() {
@@ -77,88 +77,105 @@ describe('canvas skill gate', () => {
       buildCanvasTools(dir, { skillLoaded: () => read }).map((tool) => [tool.name, tool]),
     );
 
-    const refused = await byName.save_canvas.execute('1', { slug: 'gated', title: 'Gated', source });
+    const refused = await byName.save_canvas.execute('1', {
+      slug: 'gated',
+      title: 'Gated',
+      source,
+    });
     expect(textOf(refused)).toContain('read_skill(name="canvas")');
     expect(textOf(await byName.read_canvas.execute('2', { slug: 'gated' }))).toContain('not found');
 
     read = true;
-    expect(textOf(await byName.save_canvas.execute('3', { slug: 'gated', title: 'Gated', source }))).toContain(
-      'saved slug=gated',
-    );
+    expect(
+      textOf(await byName.save_canvas.execute('3', { slug: 'gated', title: 'Gated', source })),
+    ).toContain('saved slug=gated');
   });
 
   it('saves without a gate when no skillLoaded check is supplied', async () => {
     const { byName } = tools();
-    expect(textOf(await byName.save_canvas.execute('1', { slug: 'free', title: 'Free', source }))).toContain(
-      'saved slug=free',
-    );
+    expect(
+      textOf(await byName.save_canvas.execute('1', { slug: 'free', title: 'Free', source })),
+    ).toContain('saved slug=free');
   });
 });
 
-describe('canvas edit_file', () => {
-  it('edits one exact fragment and keeps the canvas valid', async () => {
+describe('canvas apply_patch', () => {
+  const patchFor = (path: string, body: string): string =>
+    `*** Begin Patch\n*** Update File: ${path}\n${body}\n*** End Patch`;
+
+  it('applies several hunks in one call and keeps the canvas valid', async () => {
     const root = mkdtempSync(join(tmpdir(), 'canvas-edit-'));
     const dir = join(root, 'journal', 'canvases');
     const { byName } = tools(dir);
     await byName.save_canvas.execute('save', { slug: 'mu-demo', title: 'MU demo', source });
-    const edit = buildCanvasEditFileTool(root, dir);
+    const edit = buildCanvasApplyPatchTool(root, dir);
 
     const result = await edit.execute('edit', {
-      path: 'journal/canvases/mu-demo.canvas.tsx',
-      old_text: '<Text>ok</Text>',
-      new_text: '<Text>updated</Text>',
+      patch: patchFor(
+        'journal/canvases/mu-demo.canvas.tsx',
+        [
+          '@@ export default function App() {',
+          '-  return <Canvas title="Demo" caption="Longbridge · demo"><Text>ok</Text></Canvas>;',
+          '+  return <Canvas title="Demo 2" caption="Longbridge · demo"><Text>updated</Text></Canvas>;',
+        ].join('\n'),
+      ),
     });
 
-    expect(textOf(result)).toContain('edited path=journal/canvases/mu-demo.canvas.tsx');
+    expect(textOf(result)).toContain(
+      'edited path=journal/canvases/mu-demo.canvas.tsx slug=mu-demo',
+    );
     const read = await byName.read_canvas.execute('read', { slug: 'mu-demo' });
     expect(textOf(read)).toContain('<Text>updated</Text>');
+    expect(textOf(read)).toContain('Demo 2');
   });
 
-  it('rejects paths outside the canvas directory and ambiguous replacements', async () => {
+  it('rejects paths outside the canvas directory and hunks that do not match', async () => {
     const root = mkdtempSync(join(tmpdir(), 'canvas-edit-'));
     const dir = join(root, 'journal', 'canvases');
     const { byName } = tools(dir);
-    await byName.save_canvas.execute('save', {
-      slug: 'mu-demo',
-      title: 'MU demo',
-      source: source.replace('<Text>ok</Text>', '<><Text>ok</Text><Text>ok</Text></>'),
-    });
-    const edit = buildCanvasEditFileTool(root, dir);
+    await byName.save_canvas.execute('save', { slug: 'mu-demo', title: 'MU demo', source });
+    const edit = buildCanvasApplyPatchTool(root, dir);
 
     expect(
-      textOf(
-        await edit.execute('outside', {
-          path: 'stocks/MU.md',
-          old_text: 'a',
-          new_text: 'b',
-        }),
-      ),
+      textOf(await edit.execute('outside', { patch: patchFor('stocks/MU.md', '-a\n+b') })),
     ).toContain('path must be a journal/canvases');
     expect(
       textOf(
-        await edit.execute('ambiguous', {
-          path: 'journal/canvases/mu-demo.canvas.tsx',
-          old_text: '<Text>ok</Text>',
-          new_text: '<Text>updated</Text>',
+        await edit.execute('missing', {
+          patch: patchFor(
+            'journal/canvases/mu-demo.canvas.tsx',
+            '-<Text>nope</Text>\n+<Text>x</Text>',
+          ),
         }),
       ),
-    ).toContain('old_text is not unique');
+    ).toContain('lines not found');
+    expect(textOf(await edit.execute('bad', { patch: 'not a patch' }))).toContain(
+      'must start with',
+    );
   });
 
-  it('validates the resulting source before writing', async () => {
+  it('writes nothing when any file in the patch fails validation', async () => {
     const root = mkdtempSync(join(tmpdir(), 'canvas-edit-'));
     const dir = join(root, 'journal', 'canvases');
     const { byName } = tools(dir);
     await byName.save_canvas.execute('save', { slug: 'mu-demo', title: 'MU demo', source });
-    const edit = buildCanvasEditFileTool(root, dir);
+    await byName.save_canvas.execute('save', { slug: 'nvda-demo', title: 'NVDA demo', source });
+    const edit = buildCanvasApplyPatchTool(root, dir);
 
     const result = await edit.execute('edit', {
-      path: 'journal/canvases/mu-demo.canvas.tsx',
-      old_text: '<Text>ok</Text>',
-      new_text: '<Text>{fetch("/bad")}</Text>',
+      patch: [
+        '*** Begin Patch',
+        '*** Update File: journal/canvases/mu-demo.canvas.tsx',
+        '-  return <Canvas title="Demo" caption="Longbridge · demo"><Text>ok</Text></Canvas>;',
+        '+  return <Canvas title="Demo" caption="Longbridge · demo"><Text>updated</Text></Canvas>;',
+        '*** Update File: journal/canvases/nvda-demo.canvas.tsx',
+        '-  return <Canvas title="Demo" caption="Longbridge · demo"><Text>ok</Text></Canvas>;',
+        '+  return <Canvas title="Demo" caption="Longbridge · demo"><Text>{fetch("/bad")}</Text></Canvas>;',
+        '*** End Patch',
+      ].join('\n'),
     });
 
-    expect(textOf(result)).toContain('edit failed:');
+    expect(textOf(result)).toContain('edit failed: journal/canvases/nvda-demo.canvas.tsx');
     const read = await byName.read_canvas.execute('read', { slug: 'mu-demo' });
     expect(textOf(read)).toContain('<Text>ok</Text>');
   });

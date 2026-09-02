@@ -56,9 +56,10 @@ caption (TD-DATA-02). What you could not fetch goes in `Coverage`, never into a 
 - Import **only** from `@kansoku/canvas`. No relative paths, no `react`, no `node:`, no npm.
 - Banned in source: `fetch(`, `XMLHttpRequest`, `import(`, `require(`, `setTimeout` /
   `setInterval`, `document.`, `window.`. 64 KB limit.
-- Revising: `read_file` the existing `journal/canvases/<slug>.canvas.tsx`, then use
-  `edit_file` for exact replacements. Keep the same path. Use `save_canvas` only when creating a
-  canvas or replacing the whole source. One question, one slug.
+- Revising: `read_file` the existing `journal/canvases/<slug>.canvas.tsx`, then send one
+  `apply_patch` call carrying every hunk (`*** Begin Patch` / `*** Update File: <path>` /
+  `@@ context` / ` `, `-`, `+` lines / `*** End Patch`). Keep the same path. Use `save_canvas`
+  only when creating a canvas or replacing the whole source. One question, one slug.
 - Free builds may keep at most 3 canvases. Overwriting an existing slug is always allowed;
   a fourth new slug is rejected until the user upgrades to Pro.
 

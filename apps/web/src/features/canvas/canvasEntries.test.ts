@@ -36,21 +36,24 @@ describe('collectCanvasEntries', () => {
     ).toEqual([]);
   });
 
-  it('treats a successful edit_file call as an update to the same canvas', () => {
+  it('treats a successful apply_patch call as an update to every patched canvas', () => {
     const edited: ChatRow = {
       id: 'edit-1',
       ts: '2026-08-28T00:00:00.000Z',
       kind: 'tool',
-      label: 'Edit File',
-      input: JSON.stringify({
-        path: 'journal/canvases/mu-panel.canvas.tsx',
-        old_text: '初稿',
-        new_text: '终稿',
-      }),
-      output: 'edited path=journal/canvases/mu-panel.canvas.tsx slug=mu-panel title=MU 面板',
+      label: 'Apply Patch',
+      input: JSON.stringify({ patch: '*** Begin Patch\n*** End Patch' }),
+      output: [
+        'edited path=journal/canvases/mu-panel.canvas.tsx slug=mu-panel title=MU 面板',
+        'edited path=journal/canvases/nvda-panel.canvas.tsx slug=nvda-panel title=NVDA 面板',
+      ].join('\n'),
     };
 
-    expect(collectCanvasEntries([edited])).toEqual([{ slug: 'mu-panel', title: 'MU 面板' }]);
+    expect(collectCanvasEntries([edited])).toEqual([
+      { slug: 'mu-panel', title: 'MU 面板' },
+      { slug: 'nvda-panel', title: 'NVDA 面板' },
+    ]);
     expect(latestCanvasChangeToken([edited])).toBe('edit-1');
+    expect(isLastSaveForSlug([edited], 0, 'nvda-panel')).toBe(true);
   });
 });

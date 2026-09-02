@@ -245,7 +245,7 @@ describe('assistant chat', () => {
     expect([...capturedToolNames].sort()).toEqual(
       [
         'bash',
-        'edit_file',
+        'apply_patch',
         'list_canvases',
         'read_canvas',
         'read_file',

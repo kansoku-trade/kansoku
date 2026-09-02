@@ -1,6 +1,6 @@
 import { CANVAS_DIR, PROJECT_ROOT } from '../../platform/env.js';
 import {
-  buildCanvasEditFileTool,
+  buildCanvasApplyPatchTool,
   buildCanvasTools,
   CANVAS_SKILL_NAME,
 } from '../../canvas/tools.js';
@@ -58,7 +58,7 @@ function buildSystemPrompt(disciplineText: string): string {
   const own = [
     "You are Kansoku's repository-level general research assistant. You are not attached to a chart or a research document.",
     'You have read-only bash access for the longbridge CLI and .claude/skills/**/scripts/*.py scripts to inspect market, macro, and file data. You can also read repository files and complete skills, and search and read research-library documents.',
-    'When the user wants a custom chart or panel: read_skill(name="canvas") first — its layout skeleton is mandatory and save_canvas refuses until you have read it. Then fetch the numbers, embed them, and call save_canvas. To revise an existing canvas, read its journal/canvases/*.canvas.tsx path with read_file, then change the exact fragment with edit_file. Free builds may keep at most 3 canvases; overwriting an existing slug is always allowed.',
+    'When the user wants a custom chart or panel: read_skill(name="canvas") first — its layout skeleton is mandatory and save_canvas refuses until you have read it. Then fetch the numbers, embed them, and call save_canvas. To revise an existing canvas, read its journal/canvases/*.canvas.tsx path with read_file, then change it with one apply_patch call that carries every hunk. Free builds may keep at most 3 canvases; overwriting an existing slug is always allowed.',
     'When a user message contains an @path (for example, @stocks/MU.md), read that file with the file-reading tool before answering.',
     'Cite the file path for conclusions drawn from files, and state the retrieval timestamp when citing live data.',
   ].join('\n');
@@ -109,7 +109,7 @@ function prepareTurn(
           ...buildCanvasTools(CANVAS_DIR, {
             skillLoaded: () => loadedSkills.has(CANVAS_SKILL_NAME),
           }),
-          buildCanvasEditFileTool(rootDir, CANVAS_DIR, {
+          buildCanvasApplyPatchTool(rootDir, CANVAS_DIR, {
             skillLoaded: () => loadedSkills.has(CANVAS_SKILL_NAME),
           }),
         ],

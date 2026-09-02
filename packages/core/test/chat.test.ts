@@ -215,7 +215,7 @@ describe('runChatTurn tools', () => {
       'save_canvas',
       'read_canvas',
       'list_canvases',
-      'edit_file',
+      'apply_patch',
     ]);
   });
 

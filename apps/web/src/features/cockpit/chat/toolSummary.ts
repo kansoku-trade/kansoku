@@ -90,6 +90,11 @@ function presentBash(input: ToolInput | null, rawInput?: string): ToolPresentati
   };
 }
 
+function patchedPaths(patch?: string): string[] {
+  if (!patch) return [];
+  return [...patch.matchAll(/^\*\*\* Update File: (.+)$/gm)].map((m) => m[1].trim());
+}
+
 export function summarizeToolInput(input?: string): string {
   if (!input) return '';
   const firstLine = input.split('\n')[0]?.trim() ?? '';
@@ -151,9 +156,13 @@ export function presentToolCall(label: string, input?: string): ToolPresentation
     return { title: '读取画布', items: [], meta: slug };
   }
 
-  if (key === 'editfile') {
-    const path = stringValue(parsed, 'path');
-    return { title: '修改画布文件', items: [], meta: path ? truncate(path) : undefined };
+  if (key === 'applypatch') {
+    const paths = patchedPaths(stringValue(parsed, 'patch'));
+    return {
+      title: '修改画布文件',
+      items: [],
+      meta: paths.length ? truncate(paths.join(', ')) : undefined,
+    };
   }
 
   if (key === 'listcanvases') {

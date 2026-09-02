@@ -11,7 +11,7 @@ import type {
 } from '@kansoku/shared/types';
 import { CANVAS_DIR, PROJECT_ROOT } from '../../platform/env.js';
 import {
-  buildCanvasEditFileTool,
+  buildCanvasApplyPatchTool,
   buildCanvasTools,
   CANVAS_SKILL_NAME,
 } from '../../canvas/tools.js';
@@ -425,7 +425,7 @@ function prepareTurn(
           ...buildCanvasTools(CANVAS_DIR, {
             skillLoaded: () => loadedSkills.has(CANVAS_SKILL_NAME),
           }),
-          buildCanvasEditFileTool(repoRoot, CANVAS_DIR, {
+          buildCanvasApplyPatchTool(repoRoot, CANVAS_DIR, {
             skillLoaded: () => loadedSkills.has(CANVAS_SKILL_NAME),
           }),
         ],

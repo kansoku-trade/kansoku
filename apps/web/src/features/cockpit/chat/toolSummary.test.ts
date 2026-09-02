@@ -76,8 +76,11 @@ describe('presentToolCall', () => {
     });
     expect(
       presentToolCall(
-        'Edit File',
-        JSON.stringify({ path: 'journal/canvases/mu-panel.canvas.tsx' }),
+        'Apply Patch',
+        JSON.stringify({
+          patch:
+            '*** Begin Patch\n*** Update File: journal/canvases/mu-panel.canvas.tsx\n-a\n+b\n*** End Patch',
+        }),
       ),
     ).toEqual({
       title: '修改画布文件',
