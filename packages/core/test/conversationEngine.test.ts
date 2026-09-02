@@ -57,7 +57,7 @@ function messageUpdateEvent(fullText: string): AgentEvent {
 }
 
 function messageUpdateThinking(thinking: string, text = ''): AgentEvent {
-  const message: AgentMessage = {
+  const message = {
     ...assistantMessage(text),
     content: text
       ? [
@@ -65,7 +65,7 @@ function messageUpdateThinking(thinking: string, text = ''): AgentEvent {
           { type: 'text', text },
         ]
       : [{ type: 'thinking', thinking }],
-  };
+  } as AgentMessage;
   return {
     type: 'message_update',
     message,
