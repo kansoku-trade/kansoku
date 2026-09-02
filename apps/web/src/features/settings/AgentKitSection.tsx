@@ -5,6 +5,7 @@ import { colors, fonts, fontSizes } from '../../theme/tokens.stylex';
 import { SettingsConnectionSection } from './SettingsConnectionSection';
 import { AgentKitConflictDialog } from './AgentKitConflictDialog';
 import { AgentKitUpdateDialog } from './AgentKitUpdateDialog';
+import { openSettingsConfirm } from './openSettingsConfirm';
 import {
   getDesktopAgentKitBridge,
   type AgentKitStatus,
@@ -110,15 +111,13 @@ export function AgentKitSection() {
   const follow = () => void withBusy(() => bridge.followDataRoot());
   const pick = () => void withBusy(() => bridge.pickCustomLocation());
   const forceSync = () => void withBusy(() => bridge.forceSync());
-  const clean = () => {
-    if (
-      !window.confirm(
-        '确定要清理 Agent Kit 吗？这会删除本地生成的引导文件、skills 软链接与 kansoku-cli 入口。',
-      )
-    )
-      return;
-    void withBusy(() => bridge.clean());
-  };
+  const clean = () =>
+    openSettingsConfirm({
+      title: '清理 Agent Kit',
+      message: '这会删除本地生成的引导文件、skills 软链接与 kansoku-cli 入口。',
+      confirmLabel: '确认清理',
+      onConfirm: () => void withBusy(() => bridge.clean()),
+    });
 
   const openConflict = (conflict: PendingConflict) =>
     openModal({

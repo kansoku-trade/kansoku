@@ -158,21 +158,24 @@ describe('AgentKitSection', () => {
       'agentKit.getStatus': () => getStatus(),
       'agentKit.clean': () => clean(),
     });
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
-
-    render(<AgentKitSection />);
+    render(
+      <>
+        <AgentKitSection />
+        <ModalHost />
+      </>,
+    );
 
     const button = await screen.findByRole('button', { name: '清理' });
     fireEvent.click(button);
 
-    expect(confirmSpy).toHaveBeenCalledTimes(1);
+    expect(await screen.findByText('清理 Agent Kit')).toBeTruthy();
     expect(clean).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: '取消' }));
+    await vi.waitFor(() => expect(screen.queryByText('清理 Agent Kit')).toBeNull());
 
-    confirmSpy.mockReturnValue(true);
     fireEvent.click(button);
-
+    fireEvent.click(await screen.findByRole('button', { name: '确认清理' }));
     await vi.waitFor(() => expect(clean).toHaveBeenCalledTimes(1));
-    confirmSpy.mockRestore();
   });
 
   it('pick custom location calls pickCustomLocation and updates status', async () => {

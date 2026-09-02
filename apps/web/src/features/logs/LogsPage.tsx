@@ -91,7 +91,18 @@ const errorClassName = stylex.props(styles.error).className;
 
 export function LogsPage() {
   useTitle('日志');
-  const bridge = getDesktopLogsBridge();
+
+  return (
+    <div className={pageClassName}>
+      <LogsBackLink />
+      <h1 {...stylex.props(styles.title)}>日志</h1>
+      <LogsViewer />
+    </div>
+  );
+}
+
+export function LogsViewer() {
+  const [bridge] = useState(() => getDesktopLogsBridge());
   const [path, setPath] = useState<string | null>(null);
   const [text, setText] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -158,24 +169,14 @@ export function LogsPage() {
   };
 
   if (!bridge) {
-    return (
-      <div className={pageClassName}>
-        <LogsBackLink />
-        <h1>日志</h1>
-        <div className="note-block">日志查看仅在桌面 App 中可用。</div>
-      </div>
-    );
+    return <div className="note-block">日志查看仅在桌面 App 中可用。</div>;
   }
 
   return (
-    <div className={pageClassName}>
-      <LogsBackLink />
+    <div {...stylex.props(styles.page)}>
       <div {...stylex.props(styles.header)}>
-        <div>
-          <h1 {...stylex.props(styles.title)}>日志</h1>
-          <div {...stylex.props(styles.path)} title={path ?? undefined}>
-            {path ?? '加载中…'}
-          </div>
+        <div {...stylex.props(styles.path)} title={path ?? undefined}>
+          {path ?? '加载中…'}
         </div>
         <div {...stylex.props(styles.actions)}>
           <Button className={actionButtonClassName} type="button" onClick={() => void reload()}>

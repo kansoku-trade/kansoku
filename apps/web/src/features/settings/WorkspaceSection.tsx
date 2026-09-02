@@ -4,6 +4,7 @@ import { Badge, Button } from '@web/ui';
 import { colors, fonts, fontSizes } from '../../theme/tokens.stylex';
 import { getDesktopWorkspaceBridge, type WorkspaceStatus } from './desktopWorkspace';
 import { SettingsConnectionSection } from './SettingsConnectionSection';
+import { openSettingsConfirm } from './openSettingsConfirm';
 
 const styles = stylex.create({
   section: { padding: '10px 11px' },
@@ -71,7 +72,6 @@ export function WorkspaceSection() {
   };
 
   const restoreLocal = async () => {
-    if (!window.confirm('确定把 iCloud Workspace 复制回本机吗？iCloud 原文件不会删除。')) return;
     setBusy(true);
     setError(null);
     try {
@@ -81,6 +81,14 @@ export function WorkspaceSection() {
       setBusy(false);
     }
   };
+
+  const confirmRestoreLocal = () =>
+    openSettingsConfirm({
+      title: '恢复到本机',
+      message: '这会把 iCloud Workspace 复制回本机，iCloud 原文件不会删除。',
+      confirmLabel: '确认恢复',
+      onConfirm: () => void restoreLocal(),
+    });
 
   return (
     <SettingsConnectionSection
@@ -104,7 +112,7 @@ export function WorkspaceSection() {
       {error ? <div {...stylex.props(styles.error)}>{error}</div> : null}
       <div {...stylex.props(styles.actions)}>
         {status?.mode === 'iCloud' ? (
-          <Button disabled={busy} onClick={() => void restoreLocal()}>
+          <Button disabled={busy} onClick={confirmRestoreLocal}>
             恢复到本机…
           </Button>
         ) : null}

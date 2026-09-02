@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import * as stylex from '@stylexjs/stylex';
-import { navigate } from '@web/lib/router';
-import { Button } from '@web/ui';
+import { Button, openModal } from '@web/ui';
 import { getDesktopLogsBridge } from '../logs/desktopLogs';
+import { LogsViewer } from '../logs/LogsPage';
 import { colors, fonts, fontSizes } from '../../theme/tokens.stylex';
 import { SettingsConnectionSection } from './SettingsConnectionSection';
 
@@ -47,7 +47,7 @@ const styles = stylex.create({
 });
 
 export function DiagnosticsSection() {
-  const bridge = getDesktopLogsBridge();
+  const [bridge] = useState(() => getDesktopLogsBridge());
   const [path, setPath] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -81,6 +81,13 @@ export function DiagnosticsSection() {
     }
   };
 
+  const openLogs = () =>
+    openModal({
+      title: '诊断日志',
+      size: 'lg',
+      body: <LogsViewer />,
+    });
+
   return (
     <SettingsConnectionSection
       className={`settings-conn-longbridge ${stylex.props(styles.section).className}`}
@@ -101,7 +108,7 @@ export function DiagnosticsSection() {
       )}
 
       <div className={`settings-cred-actions ${stylex.props(styles.actions).className}`}>
-        <Button type="button" disabled={busy} onClick={() => navigate('/logs')}>
+        <Button type="button" disabled={busy} onClick={openLogs}>
           查看日志
         </Button>
         <Button type="button" disabled={busy} onClick={() => void reveal()}>

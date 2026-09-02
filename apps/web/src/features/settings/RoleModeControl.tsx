@@ -11,7 +11,6 @@ const MODE_OPTIONS = [
 const styles = stylex.create({
   root: {
     'width': '236px',
-    'height': '30px',
     'gridTemplateColumns': '1.35fr 1fr 0.75fr',
     '@media (max-width: 560px)': { width: 'min(100%, 260px)' },
   },
