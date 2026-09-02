@@ -36,6 +36,8 @@ export function writeWorkspaceModeSync(userDataPath: string, mode: WorkspaceMode
   try {
     writeFileSync(tempPath, `${JSON.stringify(mode, null, 2)}\n`, { mode: 0o600 });
     renameSync(tempPath, path);
+    process.env.TRADE_PROJECT_ROOT =
+      mode.mode === 'icloud' ? mode.workspacePath : join(userDataPath, 'Workspace');
   } finally {
     rmSync(tempPath, { force: true });
   }
