@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   CANVAS_MAX_SOURCE_BYTES,
+  canvasDataImports,
   checkCanvasSource,
   reviewCanvasStructure,
 } from '../src/canvas/check.js';
@@ -65,6 +66,66 @@ ${valid}`);
   it('rejects source over 64 KB', () => {
     const issues = checkCanvasSource(`${valid}\n${'x'.repeat(CANVAS_MAX_SOURCE_BYTES)}\n`);
     expect(issues.some((issue) => /64/.test(issue))).toBe(true);
+  });
+
+  it('allows a relative import of ./<name>.json', () => {
+    const issues = checkCanvasSource(`import bars from './bars.json';\n${valid}`);
+    expect(issues).toEqual([]);
+  });
+
+  it('rejects a relative json import that escapes the canvas directory', () => {
+    const issues = checkCanvasSource(`import bars from '../bars.json';\n${valid}`);
+    expect(issues.some((issue) => /relative/i.test(issue))).toBe(true);
+  });
+
+  it('rejects a relative import that is not json', () => {
+    const issues = checkCanvasSource(`import bars from './bars.ts';\n${valid}`);
+    expect(issues.some((issue) => /relative/i.test(issue))).toBe(true);
+  });
+
+  it('rejects a data file name with uppercase letters', () => {
+    const issues = checkCanvasSource(`import bars from './Bars.json';\n${valid}`);
+    expect(issues.some((issue) => /relative/i.test(issue))).toBe(true);
+  });
+
+  it('rejects a locally declared useQuote or useCandles', () => {
+    for (const decl of [
+      'function useQuote() { return null; }',
+      'function useCandles() { return null; }',
+      'const useQuote = () => null;',
+      'const useCandles = () => null;',
+    ]) {
+      const issues = checkCanvasSource(`${valid}\n${decl}\n`);
+      expect(issues, decl).toContain('useQuote / useCandles must come from @kansoku/canvas');
+    }
+  });
+
+  it('allows up to 6 live subscriptions and rejects more', () => {
+    const six = `import { Canvas, Text, useCandles, useQuote } from '@kansoku/canvas';
+export default function App() {
+  useCandles('MU.US'); useCandles('NVDA.US'); useCandles('TSM.US');
+  useQuote('MU.US'); useQuote('NVDA.US'); useQuote('TSM.US');
+  return <Canvas title="Demo"><Text>ok</Text></Canvas>;
+}
+`;
+    expect(checkCanvasSource(six)).toEqual([]);
+
+    const seven = six.replace("useQuote('TSM.US');", "useQuote('TSM.US'); useQuote('AAPL.US');");
+    expect(checkCanvasSource(seven)).toContain('at most 6 live subscriptions per canvas');
+  });
+});
+
+describe('canvasDataImports', () => {
+  it('extracts data file names from ./<name>.json imports', () => {
+    expect(
+      canvasDataImports(`import bars from './bars.json';\nimport more from './more-data.json';\n`),
+    ).toEqual(['bars', 'more-data']);
+  });
+
+  it('ignores non-json and non-relative imports', () => {
+    expect(
+      canvasDataImports(`import { Canvas } from '@kansoku/canvas';\nimport x from './x.ts';\n`),
+    ).toEqual([]);
   });
 });
 

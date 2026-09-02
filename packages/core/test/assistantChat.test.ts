@@ -252,6 +252,8 @@ describe('assistant chat', () => {
         'read_research_document',
         'read_skill',
         'save_canvas',
+        'save_canvas_data',
+        'snapshot_candles',
         'search_research_documents',
       ].sort(),
     );

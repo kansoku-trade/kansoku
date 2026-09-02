@@ -1,8 +1,16 @@
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { describe, expect, it } from 'vitest';
-import { buildCanvasApplyPatchTool, buildCanvasTools } from '../src/canvas/tools.js';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
+const build = vi.hoisted(() => ({ buildChart: vi.fn() }));
+vi.mock('../src/charts/build.js', () => build);
+
+const { buildCanvasApplyPatchTool, buildCanvasTools } = await import('../src/canvas/tools.js');
+
+afterEach(() => {
+  build.buildChart.mockReset();
+});
 
 const source = `import { Canvas, Text } from '@kansoku/canvas';
 export default function App() {
@@ -20,10 +28,33 @@ function tools(dir = mkdtempSync(join(tmpdir(), 'canvas-tools-'))) {
   return { dir, byName };
 }
 
+function timeframe(offset: number) {
+  return {
+    candles: [{ time: offset, open: 1, high: 1, low: 1, close: 1, volume: 1 }],
+    volumes: [],
+    emas: [],
+    macdDif: [],
+    macdDea: [],
+    macdHist: [],
+    macdCrossMarkers: [],
+    markers: [],
+    priceConnectors: [],
+    macdConnectors: [],
+    autoDivergence: [],
+    autoBeichi: [],
+  };
+}
+
 describe('buildCanvasTools', () => {
-  it('exposes save_canvas, read_canvas, list_canvases', () => {
+  it('exposes save_canvas, read_canvas, list_canvases, save_canvas_data, snapshot_candles', () => {
     const { byName } = tools();
-    expect(Object.keys(byName).sort()).toEqual(['list_canvases', 'read_canvas', 'save_canvas']);
+    expect(Object.keys(byName).sort()).toEqual([
+      'list_canvases',
+      'read_canvas',
+      'save_canvas',
+      'save_canvas_data',
+      'snapshot_candles',
+    ]);
   });
 
   it('saves then reads a canvas as JSON', async () => {
@@ -96,6 +127,140 @@ describe('canvas skill gate', () => {
     expect(
       textOf(await byName.save_canvas.execute('1', { slug: 'free', title: 'Free', source })),
     ).toContain('saved slug=free');
+  });
+});
+
+describe('save_canvas_data', () => {
+  it('saves data for an existing canvas and reports byte length', async () => {
+    const { byName } = tools();
+    await byName.save_canvas.execute('c1', { slug: 'mu-demo', title: 'MU demo', source });
+    const result = await byName.save_canvas_data.execute('c2', {
+      slug: 'mu-demo',
+      name: 'bars',
+      json: '[1,2,3]',
+    });
+    expect(textOf(result)).toBe('saved data slug=mu-demo name=bars bytes=7');
+  });
+
+  it('rejects when the canvas does not exist', async () => {
+    const { byName } = tools();
+    const result = await byName.save_canvas_data.execute('c1', {
+      slug: 'missing',
+      name: 'bars',
+      json: '[1]',
+    });
+    expect(textOf(result)).toBe('rejected:\ncanvas not found');
+  });
+
+  it('is gated by skillLoaded', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'canvas-gate-'));
+    let read = false;
+    const byName = Object.fromEntries(
+      buildCanvasTools(dir, { skillLoaded: () => read }).map((tool) => [tool.name, tool]),
+    );
+    await byName.save_canvas.execute('c0', { slug: 'mu-demo', title: 'MU demo', source: source });
+    const refused = await byName.save_canvas_data.execute('c1', {
+      slug: 'mu-demo',
+      name: 'bars',
+      json: '[1]',
+    });
+    expect(textOf(refused)).toContain('read_skill(name="canvas")');
+  });
+});
+
+describe('snapshot_candles', () => {
+  it('writes a CandleFeed-shaped data file from buildChart', async () => {
+    build.buildChart.mockResolvedValueOnce({
+      built: {
+        kind: 'intraday',
+        timeframes: { m5: timeframe(1), m15: timeframe(2), h1: timeframe(3) },
+      },
+    });
+    const { byName, dir } = tools();
+    await byName.save_canvas.execute('c1', { slug: 'mu-demo', title: 'MU demo', source });
+
+    const result = await byName.snapshot_candles.execute('c2', {
+      slug: 'mu-demo',
+      name: 'snap',
+      symbol: 'mu',
+    });
+    expect(textOf(result)).toBe(
+      'snapshot saved slug=mu-demo name=snap symbol=MU.US bars m5=1 m15=1 h1=1',
+    );
+    expect(build.buildChart).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'intraday',
+        symbol: 'MU.US',
+        session: 'all',
+        skip_news: true,
+        day_kline_lazy: true,
+        enrichment_lazy: true,
+      }),
+    );
+
+    const fs = await import('node:fs/promises');
+    const path = await import('node:path');
+    const raw = await fs.readFile(path.join(dir, 'mu-demo.snap.json'), 'utf8');
+    const feed = JSON.parse(raw) as {
+      symbol: string;
+      asOf: string;
+      timeframes: Record<string, unknown>;
+    };
+    expect(feed.symbol).toBe('MU.US');
+    expect(typeof feed.asOf).toBe('string');
+    expect(Object.keys(feed.timeframes).sort()).toEqual(['h1', 'm15', 'm5']);
+  });
+
+  it('rejects when the canvas does not exist', async () => {
+    const { byName } = tools();
+    const result = await byName.snapshot_candles.execute('c1', {
+      slug: 'missing',
+      name: 'snap',
+      symbol: 'MU',
+    });
+    expect(textOf(result)).toContain('rejected: canvas not found: missing');
+    expect(build.buildChart).not.toHaveBeenCalled();
+  });
+
+  it('reports a build failure', async () => {
+    build.buildChart.mockRejectedValueOnce(new Error('longbridge unavailable'));
+    const { byName } = tools();
+    await byName.save_canvas.execute('c1', { slug: 'mu-demo', title: 'MU demo', source });
+    const result = await byName.snapshot_candles.execute('c2', {
+      slug: 'mu-demo',
+      name: 'snap',
+      symbol: 'MU',
+    });
+    expect(textOf(result)).toBe('rejected: longbridge unavailable');
+  });
+});
+
+describe('read_canvas data listing', () => {
+  it('returns dataFiles metadata instead of raw data content', async () => {
+    build.buildChart.mockResolvedValueOnce({
+      built: {
+        kind: 'intraday',
+        timeframes: { m5: timeframe(1), m15: timeframe(2), h1: timeframe(3) },
+      },
+    });
+    const { byName } = tools();
+    await byName.save_canvas.execute('c1', { slug: 'mu-demo', title: 'MU demo', source });
+    await byName.save_canvas_data.execute('c2', {
+      slug: 'mu-demo',
+      name: 'bars',
+      json: '[1,2,3]',
+    });
+    await byName.snapshot_candles.execute('c3', { slug: 'mu-demo', name: 'snap', symbol: 'MU' });
+
+    const read = await byName.read_canvas.execute('c4', { slug: 'mu-demo' });
+    const doc = JSON.parse(textOf(read)) as {
+      data?: unknown;
+      dataFiles: { name: string; bytes: number; shape: string }[];
+    };
+    expect(doc.data).toBeUndefined();
+    const byName2 = Object.fromEntries(doc.dataFiles.map((f) => [f.name, f]));
+    expect(byName2.bars.shape).toBe('array[3]');
+    expect(byName2.snap.shape).toMatch(/^object\{/);
   });
 });
 

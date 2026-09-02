@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { loadCanvas, saveCanvas, setCanvasOrigin } from '../src/canvas/store.js';
+import { loadCanvas, saveCanvas, saveCanvasData, setCanvasOrigin } from '../src/canvas/store.js';
 
 const dirs: string[] = [];
 
@@ -72,5 +72,96 @@ describe('canvas origin', () => {
       eventId: 'abc123',
       clusterId: 'c1',
     });
+  });
+});
+
+describe('saveCanvasData', () => {
+  it('rejects when the canvas does not exist', async () => {
+    const root = dir();
+    const result = await saveCanvasData(root, { slug: 'missing', name: 'bars', json: '[1]' });
+    expect(result).toEqual({ ok: false, issues: ['canvas not found'] });
+  });
+
+  it('rejects an invalid data file name', async () => {
+    const root = dir();
+    await saveCanvas(root, { slug: 'mu-demo', title: 'MU demo', source: SOURCE });
+    const result = await saveCanvasData(root, { slug: 'mu-demo', name: 'Bars', json: '[1]' });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.issues.length).toBe(1);
+  });
+
+  it('rejects invalid JSON', async () => {
+    const root = dir();
+    await saveCanvas(root, { slug: 'mu-demo', title: 'MU demo', source: SOURCE });
+    const result = await saveCanvasData(root, { slug: 'mu-demo', name: 'bars', json: '{not json' });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.issues.length).toBe(1);
+  });
+
+  it('rejects a file over 512 KB', async () => {
+    const root = dir();
+    await saveCanvas(root, { slug: 'mu-demo', title: 'MU demo', source: SOURCE });
+    const big = JSON.stringify('x'.repeat(512 * 1024 + 1));
+    const result = await saveCanvasData(root, { slug: 'mu-demo', name: 'bars', json: big });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.issues.length).toBe(1);
+  });
+
+  it('writes the file on success', async () => {
+    const root = dir();
+    await saveCanvas(root, { slug: 'mu-demo', title: 'MU demo', source: SOURCE });
+    const result = await saveCanvasData(root, { slug: 'mu-demo', name: 'bars', json: '[1,2,3]' });
+    expect(result).toEqual({ ok: true });
+    const loaded = await loadCanvas(root, 'mu-demo');
+    expect(loaded?.data).toEqual({ bars: [1, 2, 3] });
+  });
+});
+
+describe('loadCanvas data', () => {
+  it('loads all <slug>.*.json files into data, skipping bad JSON', async () => {
+    const root = dir();
+    await saveCanvas(root, { slug: 'mu-demo', title: 'MU demo', source: SOURCE });
+    await saveCanvasData(root, { slug: 'mu-demo', name: 'bars', json: '[1,2,3]' });
+    const fs = await import('node:fs/promises');
+    await fs.writeFile(path.join(root, 'mu-demo.broken.json'), '{not json', 'utf8');
+
+    const loaded = await loadCanvas(root, 'mu-demo');
+    expect(loaded?.data).toEqual({ bars: [1, 2, 3] });
+  });
+
+  it('returns an empty data object when there are no data files', async () => {
+    const root = dir();
+    await saveCanvas(root, { slug: 'mu-demo', title: 'MU demo', source: SOURCE });
+    expect((await loadCanvas(root, 'mu-demo'))?.data).toEqual({});
+  });
+});
+
+describe('saveCanvas missing data file', () => {
+  it('rejects a canvas that imports a json file that does not exist', async () => {
+    const root = dir();
+    const source = SOURCE.replace(
+      "import { Canvas, Section, Text } from '@kansoku/canvas';",
+      "import { Canvas, Section, Text } from '@kansoku/canvas';\nimport bars from './bars.json';",
+    );
+    const result = await saveCanvas(root, { slug: 'mu-demo', title: 'MU demo', source });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.issues).toContain('missing data file: mu-demo.bars.json');
+  });
+
+  it('accepts once the data file has been written', async () => {
+    const root = dir();
+    const source = SOURCE.replace(
+      "import { Canvas, Section, Text } from '@kansoku/canvas';",
+      "import { Canvas, Section, Text } from '@kansoku/canvas';\nimport bars from './bars.json';",
+    );
+    const fs = await import('node:fs/promises');
+    await fs.mkdir(root, { recursive: true });
+    await fs.writeFile(path.join(root, 'mu-demo.bars.json'), '[1,2,3]', 'utf8');
+    const result = await saveCanvas(root, { slug: 'mu-demo', title: 'MU demo', source });
+    expect(result.ok).toBe(true);
   });
 });

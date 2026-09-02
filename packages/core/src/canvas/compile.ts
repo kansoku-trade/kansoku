@@ -3,6 +3,7 @@ import { checkCanvasSource } from './check.js';
 
 const SDK = '@kansoku/canvas';
 const INJECTED = '__kansoku_canvas__';
+const INJECTED_DATA = '__kansoku_canvas_data__';
 
 export function compileCanvasSource(
   source: string,
@@ -27,9 +28,10 @@ export function instantiateCanvas(
   code: string,
   sdk: Record<string, unknown>,
   react: unknown,
+  data: Record<string, unknown> = {},
 ): unknown {
-  const factory = new Function(INJECTED, 'React', code);
-  const exported = factory(sdk, react);
+  const factory = new Function(INJECTED, 'React', INJECTED_DATA, code);
+  const exported = factory(sdk, react, data);
   if (typeof exported === 'function' || exported == null) return exported;
   return function GeneratedCanvas() {
     return exported;
@@ -40,6 +42,11 @@ function toFactoryBody(code: string): string {
   let body = code.replace(
     /import\s+([\s\S]*?)\s+from\s+['"]__kansoku_canvas__['"];?/,
     (_match, spec: string) => `const ${spec.trim()} = ${INJECTED};`,
+  );
+  body = body.replace(
+    /import\s+(\w+)\s+from\s+['"]\.\/([a-z0-9-]+)\.json['"];?/g,
+    (_match, name: string, dataName: string) =>
+      `const ${name} = ${INJECTED_DATA}[${JSON.stringify(dataName)}];`,
   );
   const named = body.match(/export\s+default\s+function\s+(\w+)/);
   if (named) {

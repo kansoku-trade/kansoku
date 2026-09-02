@@ -659,6 +659,12 @@ export interface IntradayBuilt {
   previewLevels?: Array<{ price: number; label: string }>;
 }
 
+export interface CandleFeed {
+  symbol: string;
+  asOf: string;
+  timeframes: Record<TimeframeKey, IntradayTfData>;
+}
+
 export interface FlowRow {
   time: string;
   inflow: string | number;

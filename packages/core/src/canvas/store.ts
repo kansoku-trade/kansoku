@@ -6,12 +6,14 @@ import type {
   CanvasMeta,
   CanvasOrigin,
 } from '../contract/canvas.js';
-import { checkCanvasSource, reviewCanvasStructure } from './check.js';
+import { canvasDataImports, checkCanvasSource, reviewCanvasStructure } from './check.js';
 
 export type { CanvasCheckRecord, CanvasDoc, CanvasMeta, CanvasOrigin };
 
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const DATA_NAME_RE = /^[a-z0-9-]+$/;
 const META_FILE = '.meta.json';
+const CANVAS_MAX_DATA_BYTES = 512 * 1024;
 
 interface MetaEntry {
   title: string;
@@ -23,6 +25,10 @@ type MetaMap = Record<string, MetaEntry>;
 
 export function canvasPath(dir: string, slug: string): string {
   return join(dir, `${slug}.canvas.tsx`);
+}
+
+export function canvasDataPath(dir: string, slug: string, name: string): string {
+  return join(dir, `${slug}.${name}.json`);
 }
 
 function metaPath(dir: string): string {
@@ -69,6 +75,15 @@ export async function saveCanvas(
   const issues = [...checkCanvasSource(input.source), ...reviewCanvasStructure(input.source)];
   if (issues.length) return { ok: false, issues };
 
+  for (const name of canvasDataImports(input.source)) {
+    try {
+      await fs.access(canvasDataPath(dir, input.slug, name));
+    } catch {
+      issues.push(`missing data file: ${input.slug}.${name}.json`);
+    }
+  }
+  if (issues.length) return { ok: false, issues };
+
   await fs.mkdir(dir, { recursive: true });
   const path = canvasPath(dir, input.slug);
   await fs.writeFile(path, input.source, 'utf8');
@@ -87,8 +102,53 @@ export async function saveCanvas(
       mtime,
       check: null,
       origin,
+      data: await readCanvasData(dir, input.slug),
     },
   };
+}
+
+async function readCanvasData(dir: string, slug: string): Promise<Record<string, unknown>> {
+  let files: string[];
+  try {
+    files = await fs.readdir(dir);
+  } catch {
+    return {};
+  }
+  const prefix = `${slug}.`;
+  const data: Record<string, unknown> = {};
+  for (const file of files) {
+    if (!file.startsWith(prefix) || !file.endsWith('.json') || file === META_FILE) continue;
+    const name = file.slice(prefix.length, -'.json'.length);
+    if (!DATA_NAME_RE.test(name)) continue;
+    try {
+      data[name] = JSON.parse(await fs.readFile(join(dir, file), 'utf8'));
+    } catch {
+      continue;
+    }
+  }
+  return data;
+}
+
+export async function saveCanvasData(
+  dir: string,
+  input: { slug: string; name: string; json: string },
+): Promise<{ ok: true } | { ok: false; issues: string[] }> {
+  const canvas = await loadCanvas(dir, input.slug);
+  if (!canvas) return { ok: false, issues: ['canvas not found'] };
+  if (!DATA_NAME_RE.test(input.name)) {
+    return { ok: false, issues: ['name must be lowercase kebab-case'] };
+  }
+  if (Buffer.byteLength(input.json, 'utf8') > CANVAS_MAX_DATA_BYTES) {
+    return { ok: false, issues: ['data exceeds 512 KB'] };
+  }
+  try {
+    JSON.parse(input.json);
+  } catch {
+    return { ok: false, issues: ['invalid JSON'] };
+  }
+  await fs.mkdir(dir, { recursive: true });
+  await fs.writeFile(canvasDataPath(dir, input.slug, input.name), input.json, 'utf8');
+  return { ok: true };
 }
 
 export async function loadCanvas(dir: string, slug: string): Promise<CanvasDoc | null> {
@@ -109,6 +169,7 @@ export async function loadCanvas(dir: string, slug: string): Promise<CanvasDoc |
     mtime: await fileMtime(path),
     check: entry?.check ?? null,
     origin: entry?.origin ?? null,
+    data: await readCanvasData(dir, slug),
   };
 }
 

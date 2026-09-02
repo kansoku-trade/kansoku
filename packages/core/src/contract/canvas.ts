@@ -25,6 +25,7 @@ export interface CanvasDoc {
   mtime: string;
   check: CanvasCheckRecord | null;
   origin?: CanvasOrigin | null;
+  data: Record<string, unknown>;
 }
 
 export interface CanvasApi {
