@@ -12,6 +12,8 @@ export interface FsReadMount {
   exclude?: string[];
 }
 
+export type FsWriteMount = FsReadMount;
+
 export interface ResolvedFsMount extends FsReadMount {
   root: string;
 }

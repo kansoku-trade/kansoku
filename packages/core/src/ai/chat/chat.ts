@@ -50,7 +50,12 @@ import {
   buildReassessPack as defaultBuildReassessPack,
   type ReassessPack,
 } from '../agents/datapack.js';
-import { memoryProcessors, memoryReadMounts } from '../conversation/messages/memoryProviders.js';
+import {
+  memoryProcessors,
+  memoryReadMounts,
+  memoryWriteMount,
+} from '../conversation/messages/memoryProviders.js';
+import { buildMemoryWriteTools } from '../agents/agentTools/memoryWriteTools.js';
 import { sessionMessagesEngine } from '../conversation/messages/messageEngine.js';
 import { SkillCatalogProvider, toSkillContexts } from '../conversation/messages/sharedProviders.js';
 import type { AiModel } from '../runtime/models.js';
@@ -59,6 +64,7 @@ import {
   CHAT_GATED_RETRY_INSTRUCTION,
   CHAT_GATED_TURN_INSTRUCTION,
   CHAT_TOOLING_SCOPE_NOTE,
+  MEMORY_WRITE_RULES,
   RESEARCH_TOOLING_RULES,
 } from '../runtime/prompts.js';
 import {
@@ -210,6 +216,7 @@ export function buildChatSystemPrompt(
   doc: ChartDoc,
   analysisDayComments: CockpitComment[],
   disciplineText = '',
+  options: { memoryWritable?: boolean } = {},
 ): string {
   const prediction = (doc.input.prediction as IntradayPrediction | undefined) ?? null;
   const predictionText = prediction
@@ -235,6 +242,7 @@ export function buildChatSystemPrompt(
     '',
     RESEARCH_TOOLING_RULES,
     CHAT_TOOLING_SCOPE_NOTE,
+    ...(options.memoryWritable ? ['', MEMORY_WRITE_RULES] : []),
   ].join('\n');
 
   // Chat is where the user pushes back on a call, so it is a judgment agent: the caller loads the
@@ -377,7 +385,10 @@ function prepareTurn(
       const disciplineText =
         deps.disciplineText ?? loadSharedDiscipline(deps.repoRoot ?? PROJECT_ROOT);
       if (!disciplineText) throw new DisciplineMissingError();
-      const systemPrompt = buildChatSystemPrompt(doc, analysisDayComments, disciplineText);
+      const memoryWrite = memoryWriteMount();
+      const systemPrompt = buildChatSystemPrompt(doc, analysisDayComments, disciplineText, {
+        memoryWritable: Boolean(memoryWrite),
+      });
 
       const gated = isDirectionalClaim(text);
       const verifyCtx: VerifyCtx | null = gated
@@ -430,6 +441,7 @@ function prepareTurn(
           buildCanvasApplyPatchTool(repoRoot, CANVAS_DIR, {
             skillLoaded: canvasSkillLoaded,
           }),
+          ...(memoryWrite ? buildMemoryWriteTools(memoryWrite) : []),
         ],
         transformContext: messageEngine.transformContext,
         gate: verifyCtx

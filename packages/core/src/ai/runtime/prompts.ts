@@ -79,6 +79,14 @@ export const RESEARCH_TOOLING_RULES = [
   '- Cite the retrieval time and basis for data fetched through tools (TD-DATA-02).',
 ].join('\n');
 
+export const MEMORY_WRITE_RULES = [
+  'Persistent memory (memory mount, writable in this conversation):',
+  '- Save durable preferences, corrections, and trading theses the user states or confirms. Never save prices, positions, news, or current market state; tools return those fresh.',
+  '- MEMORY.md holds global preferences and a short index; symbols/<SYMBOL>.md holds one symbol; markets/<MARKET>.md holds one market; long notes go to notes/<slug>.md with a one-line pointer in MEMORY.md.',
+  '- One fact per line, prefixed with the date: "- YYYY-MM-DD: ...". Supersede an old fact by adding a new dated line that says so; keep MEMORY.md under 60 lines by moving detail into files.',
+  '- Before writing, grep the memory mount for the same fact to avoid duplicates. Use memory_apply_patch for existing files and memory_write_file only for new files. Tell the user what was saved and where.',
+].join('\n');
+
 export const CHAT_TOOLING_SCOPE_NOTE =
   '- draw_annotations and verify_directional_read remain limited to the current chart symbol; these additional tools do not expand their scope.';
 

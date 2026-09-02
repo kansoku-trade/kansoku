@@ -1,7 +1,7 @@
 import type { AgentMessage } from '@earendil-works/pi-agent-core';
 import { BasePinnedUserProvider } from '@innei/message-engine';
 import type { ProAiMemory, ProAiMemoryScope } from '@kansoku/pro-api';
-import type { FsReadMount } from '../../agents/agentTools/fsMounts.js';
+import type { FsReadMount, FsWriteMount } from '../../agents/agentTools/fsMounts.js';
 import { proAiMemory } from '../../../pro/aiMemory.js';
 import { BaseFirstUserContentProvider } from './injectors/baseFirstUserContentProvider.js';
 import { wrapSystemContext } from './injectors/systemContext.js';
@@ -92,4 +92,9 @@ export function memoryProcessors(fixedScope?: ProAiMemoryScope): MessageProcesso
 export function memoryReadMounts(): FsReadMount[] {
   const mount = proAiMemory()?.readMount();
   return mount ? [{ ...mount }] : [];
+}
+
+export function memoryWriteMount(): FsWriteMount | undefined {
+  const mount = proAiMemory()?.writeMount();
+  return mount ? { ...mount } : undefined;
 }

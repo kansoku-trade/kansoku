@@ -149,6 +149,7 @@ interface ProAiMemory {
 - 2a 的两个偏离：`MemoryScopeProvider` 只在 symbol / market 变化时才钉一次，同一标的连续多条消息不重复注入；`researchChat.ts` 暂时仍每轮新建 engine，因为它的文档上下文 provider 在会话内会随文档编辑变化，切到会话级 engine 需要先让该 provider 按文档版本刷新。
 - 2026-09-03 第 2b 步：移除「记忆整理」模型角色（core 角色表、用量归类、校验、web 设置类型与标签、共享 `AiTaskRole` / `UsageTodayOut`），启动时删除已持久化的 `memory` 角色行与迁移标记；pro 侧在 `initMemoryRuntime` 里清理旧目录（删 INSTRUCTIONS.md、INDEX.md、.runtime/、sessions/、archive/，`strategies/` 挪到 `notes/strategies/`）。文案（§9）留到第 4 步。
 - 2026-09-03 第 2c 步：记忆根目录从 `~/.kansoku/memory` 改为 `<Workspace>/memory`，首启从旧目录复制用户内容。`~/.kansoku` 只剩 `training/`，另行处理。
+- 2026-09-03 第 3 步：写路径。core 新增 `memory_write_file`（只新建）与 `memory_apply_patch`（复用画布的 patch 解析与应用，全部 hunk 原子生效），路径限制在 memory mount 内、只允许 `.md`、拒绝符号链接、单文件 64 KB；`MEMORY_WRITE_RULES` 只在拿到写 mount 的 surface 进 system prompt；chart-chat 与 research-chat 挂写工具，其余只读；pro `writeMount()` 在授权时返回 mount。两个偏离：工具名带 `memory_` 前缀，因为 chart-chat 里画布已占用 `apply_patch`；没有单独的写入 trace 事件，工具的 label（更新记忆 / 新建记忆文件）与输出行（`edited memory/... (2 → 3 lines)`）已经走现有 tool 事件进 UI。
 
 ## 已定
 
