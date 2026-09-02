@@ -82,6 +82,7 @@ export function CanvasFrame({ source, slug }: CanvasFrameProps) {
           style={{ height }}
           ref={frameRef}
           title="canvas"
+          tabIndex={-1}
           scrolling="no"
           src="/canvas-guest.html"
           sandbox="allow-scripts allow-same-origin"

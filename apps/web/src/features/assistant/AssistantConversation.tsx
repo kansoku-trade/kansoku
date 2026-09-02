@@ -459,6 +459,27 @@ export function AssistantConversation({
     [],
   );
 
+  useLayoutEffect(() => {
+    const focusComposer = () => textareaRef.current?.focus();
+    focusComposer();
+    if (!linkedCanvasSlug) return;
+
+    const reclaimIfCanvasIframe = (target: EventTarget | null) => {
+      if (!(target instanceof HTMLIFrameElement) || target.title !== 'canvas') return;
+      if (document.activeElement === target) focusComposer();
+    };
+    let frame = 0;
+    const onLoad = (event: Event) => {
+      const target = event.target;
+      frame = requestAnimationFrame(() => reclaimIfCanvasIframe(target));
+    };
+    document.addEventListener('load', onLoad, true);
+    return () => {
+      cancelAnimationFrame(frame);
+      document.removeEventListener('load', onLoad, true);
+    };
+  }, [sessionId, linkedCanvasSlug]);
+
   const submit = (value: string) => {
     const trimmed = value.trim();
     if (!trimmed) return;
@@ -635,6 +656,7 @@ export function AssistantConversation({
                   }
                   onValueDetail={(value, selectionStart) => syncCursor(value, selectionStart)}
                   inputProps={{
+                    autoFocus: true,
                     onKeyUp: syncCursorFromEvent,
                     onClick: syncCursorFromEvent,
                     onSelect: syncCursorFromEvent,
