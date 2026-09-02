@@ -208,6 +208,22 @@ describe('useQuery', () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 
+  it('keeps the same reload function across re-renders', async () => {
+    const client = createClient();
+    const fetch = vi.fn(() => Promise.resolve('value'));
+    const stateRef: { current: QueryState<string> | null } = { current: null };
+
+    render(
+      <QueryClientProvider client={client}>
+        <Probe stateRef={stateRef} queryKey="k-reload" fetch={fetch} />
+      </QueryClientProvider>,
+    );
+    const first = stateRef.current?.reload;
+    await waitFor(() => expect(stateRef.current?.data).toBe('value'));
+
+    expect(stateRef.current?.reload).toBe(first);
+  });
+
   it('keeps dataUpdatedAt null until data lands, then reports a number', async () => {
     const client = createClient();
     const fetch = vi.fn(() => Promise.resolve('value'));

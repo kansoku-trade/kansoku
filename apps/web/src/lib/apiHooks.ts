@@ -1,5 +1,5 @@
 import { useQuery as useReactQuery } from '@tanstack/react-query';
-import { useRef } from 'react';
+import { useCallback, useRef } from 'react';
 import { ApiError, errorMessage } from './api';
 
 interface QueryFailure {
@@ -50,6 +50,12 @@ function useQueryState<T>(
 
   const data = query.data ?? null;
   const failure = query.error ? failureFrom(query.error) : null;
+  const { refetch } = query;
+  // Callers put reload in effect deps; a fresh closure per render would refetch forever.
+  const reload = useCallback(() => {
+    if (key === null) return;
+    void refetch();
+  }, [key, refetch]);
 
   return {
     data,
@@ -58,10 +64,7 @@ function useQueryState<T>(
     loading: query.isLoading,
     dataUpdatedAt: data === null ? null : query.dataUpdatedAt,
     refreshed: query.isFetchedAfterMount && query.isSuccess,
-    reload: () => {
-      if (key === null) return;
-      void query.refetch();
-    },
+    reload,
   };
 }
 
