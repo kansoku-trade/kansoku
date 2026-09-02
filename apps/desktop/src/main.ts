@@ -35,6 +35,7 @@ import {
 } from './platform/logging/fileLogger.js';
 import { installDefaultContextMenu } from './shell/contextMenu/defaultMenu.js';
 import { ContextMenuIpc } from './shell/contextMenu/ipc.js';
+import { DevtoolsIpc } from './shell/devtools/ipc.js';
 import { LogsIpc } from './platform/logging/ipc.js';
 import {
   createRendererCallClient,
@@ -264,6 +265,7 @@ app.whenReady().then(async () => {
     new TabsIpc(tabsService);
     new LogsIpc(fileLogger);
     new ContextMenuIpc();
+    if (!app.isPackaged) new DevtoolsIpc();
     await installDefaultContextMenu();
 
     const telemetry = await initTelemetry();

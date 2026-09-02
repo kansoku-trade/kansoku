@@ -31,7 +31,7 @@ const styles = stylex.create({
     'color': colors.textPrimary,
     'display': 'grid',
     'gridTemplateColumns': `${sizes.sidebarWidth} 1fr`,
-    'height': '100vh',
+    'height': '100cqh',
     'minHeight': 0,
     'overflow': 'hidden',
     'transition': 'grid-template-columns 0.2s ease',
@@ -54,7 +54,7 @@ const styles = stylex.create({
     top: '8px',
   },
   pageDesktop: {
-    height: 'calc(100vh - 40px)',
+    height: 'calc(100cqh - 40px)',
   },
   main: {
     backgroundColor: colors.backgroundCanvas,

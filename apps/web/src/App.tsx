@@ -3,12 +3,19 @@ import { RouterProvider } from 'react-router';
 import { AppSkeleton } from './AppSkeleton';
 import { getDesktopDeepLinkBridge } from './features/desktop/desktopDeepLinkBridge';
 import { DesktopShell } from './features/desktop/DesktopShell';
+import { DevDockLayout } from './features/devdock/DevDockLayout';
 import { Onboarding } from './features/onboarding/Onboarding';
 import { useCredentialsGate } from './features/onboarding/useCredentialsGate';
 import { CommandPalette } from './features/palette/CommandPalette';
 import { RestrictedBanner } from './features/edition/RestrictedBanner';
 import { isDesktopRealtime } from './lib/portTransport';
-import { getBrowserRouter, matchPopoutSymbolRoute, navigate, routePathname, useRoute } from './lib/router';
+import {
+  getBrowserRouter,
+  matchPopoutSymbolRoute,
+  navigate,
+  routePathname,
+  useRoute,
+} from './lib/router';
 import { useOnboardingAnalytics, useScreenAnalytics } from './lib/useScreenAnalytics';
 import { ContextMenuHost, ModalHost } from './ui';
 import { RoutedGlobalNotifications } from './features/notifications/GlobalNotifications';
@@ -48,7 +55,11 @@ export function App() {
   }
 
   if (isDesktopRealtime()) {
-    return <DesktopShell />;
+    return (
+      <DevDockLayout>
+        <DesktopShell />
+      </DevDockLayout>
+    );
   }
 
   return (

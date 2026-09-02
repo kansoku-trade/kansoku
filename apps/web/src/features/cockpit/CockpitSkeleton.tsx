@@ -7,11 +7,11 @@ const styles = stylex.create({
   fullpage: {
     display: 'flex',
     flexDirection: 'column',
-    height: '100vh',
+    height: '100cqh',
     overflow: 'hidden',
   },
   fullpageDesktop: {
-    height: 'calc(100vh - 40px)',
+    height: 'calc(100cqh - 40px)',
   },
   detailBody: {
     flex: 1,

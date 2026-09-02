@@ -50,14 +50,14 @@ const styles = stylex.create({
   pageSplit: {
     'width': '100%',
     '@media (min-width: 1001px)': {
-      height: '100vh',
+      height: '100cqh',
       minHeight: 0,
       overflow: 'hidden',
     },
   },
   pageSplitDesktop: {
     '@media (min-width: 1001px)': {
-      height: 'calc(100vh - 40px)',
+      height: 'calc(100cqh - 40px)',
     },
   },
   pageSplitViewport: {
@@ -80,7 +80,7 @@ const styles = stylex.create({
     },
   },
   side: {
-    'height': 'calc(100vh - 32px)',
+    'height': 'calc(100cqh - 32px)',
     'marginRight': '-8px',
     'position': {
       'default': 'sticky',
@@ -93,7 +93,7 @@ const styles = stylex.create({
     },
   },
   sideDesktop: {
-    height: 'calc(100vh - 72px)',
+    height: 'calc(100cqh - 72px)',
     top: '56px',
   },
   sideContent: {

@@ -9,11 +9,11 @@ const styles = stylex.create({
     backgroundColor: colors.backgroundCanvas,
     display: 'flex',
     flexDirection: 'column',
-    height: '100vh',
+    height: '100cqh',
     overflow: 'hidden',
   },
   pageDesktop: {
-    height: 'calc(100vh - 40px)',
+    height: 'calc(100cqh - 40px)',
   },
 });
 

@@ -65,6 +65,10 @@ if (isPrivilegedOrigin) {
     get: () => ipcRenderer.invoke(CREDENTIALS_CHANNELS.get),
   };
 
+  desktopApi.devtools = {
+    getMemoryInfo: () => process.getProcessMemoryInfo(),
+  };
+
   desktopApi.tabs = {
     onCommand: (cb: (command: TabsCommand) => void) => {
       const listener = (_event: Electron.IpcRendererEvent, command: TabsCommand) => cb(command);

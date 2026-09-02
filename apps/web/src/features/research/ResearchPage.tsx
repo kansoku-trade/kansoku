@@ -115,19 +115,19 @@ const styles = stylex.create({
   fullpage: {
     display: 'flex',
     flexDirection: 'column',
-    height: '100vh',
+    height: '100cqh',
     overflow: 'hidden',
     '@media (max-width: 760px)': {
       height: 'auto',
-      minHeight: '100vh',
+      minHeight: '100cqh',
       overflow: 'visible',
     },
   },
   fullpageDesktop: {
-    height: 'calc(100vh - 40px)',
+    height: 'calc(100cqh - 40px)',
     '@media (max-width: 760px)': {
       height: 'auto',
-      minHeight: 'calc(100vh - 40px)',
+      minHeight: 'calc(100cqh - 40px)',
     },
   },
   page: {

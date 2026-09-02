@@ -41,14 +41,14 @@ const styles = stylex.create({
     'padding': 0,
     'width': '100%',
     '@media (min-width: 1001px)': {
-      height: '100vh',
+      height: '100cqh',
       minHeight: 0,
       overflow: 'hidden',
     },
   },
   pageDesktop: {
     '@media (min-width: 1001px)': {
-      height: 'calc(100vh - 40px)',
+      height: 'calc(100cqh - 40px)',
     },
   },
   viewport: {
