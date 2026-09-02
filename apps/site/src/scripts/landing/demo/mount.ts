@@ -1,7 +1,7 @@
 import { mountReplicaChart, type ReplicaChart } from '../replica/chart';
 import type { DrawingTool } from '../replica/drawingShapes';
 import type { Tier } from '../tier';
-import { applyState, collectRefs } from './director';
+import { applyState, collectRefs, panToFocus } from './director';
 import { mountCanvasControls } from './canvasControls';
 import { mountChatControls } from './chatControls';
 import { mountResearchControls } from './researchControls';
@@ -95,10 +95,15 @@ export const mountDemoScene = async (root: ParentNode, tier: Tier): Promise<Demo
     sync();
   };
 
+  const onResize = (): void => {
+    sync();
+    panToFocus(refs, CHAPTERS[timeline.state().chapterIndex].id);
+  };
+
   window.addEventListener('scroll', onScroll, { passive: true });
-  window.addEventListener('resize', onScroll);
+  window.addEventListener('resize', onResize);
   teardown.push(() => window.removeEventListener('scroll', onScroll));
-  teardown.push(() => window.removeEventListener('resize', onScroll));
+  teardown.push(() => window.removeEventListener('resize', onResize));
   sync();
 
   const tabbar = scene.querySelector<HTMLElement>('.app-tabbar');

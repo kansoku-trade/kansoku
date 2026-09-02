@@ -27,6 +27,7 @@ export interface DirectorRefs {
   appViews: HTMLElement[];
   appTabs: HTMLElement[];
   sidebar: HTMLElement | null;
+  viewport: HTMLElement | null;
   selectTool?: (tool: string) => void;
 }
 
@@ -52,7 +53,54 @@ export const collectRefs = (root: HTMLElement): DirectorRefs => ({
   appViews: Array.from(root.querySelectorAll<HTMLElement>('[data-app-view]')),
   appTabs: Array.from(root.querySelectorAll<HTMLElement>('[data-app-tab]')),
   sidebar: root.querySelector<HTMLElement>('[data-panel-view="verdict"]'),
+  viewport: root.querySelector<HTMLElement>('.demo-viewport'),
 });
+
+export type FocusAlign = 'center' | 'start' | 'end';
+
+// A region wider than the viewport can't be centred meaningfully; show its leading edge unless
+// the markup asks for the trailing one (e.g. the trainer chart, whose latest bars sit on the right).
+export const focusScrollLeft = (
+  targetLeft: number,
+  targetWidth: number,
+  viewportWidth: number,
+  overflow: number,
+  align: FocusAlign = 'center',
+): number => {
+  const fits = targetWidth <= viewportWidth;
+  const raw =
+    fits || align === 'center'
+      ? targetLeft + targetWidth / 2 - viewportWidth / 2
+      : align === 'end'
+        ? targetLeft + targetWidth - viewportWidth
+        : targetLeft;
+  return Math.max(0, Math.min(overflow, raw));
+};
+
+// On narrow screens the app keeps its desktop width and the viewport pans so the chapter's
+// focus region sits centred. On wide screens there is no overflow and this is a no-op.
+export const panToFocus = (refs: DirectorRefs, chapterId: string): void => {
+  const viewport = refs.viewport;
+  const app = viewport?.firstElementChild;
+  if (!viewport || !app) return;
+  const overflow = viewport.scrollWidth - viewport.clientWidth;
+  if (overflow <= 0) return;
+  const target = refs.root.querySelector<HTMLElement>(`[data-demo-focus~="${chapterId}"]`);
+  if (!target) return;
+  const rect = target.getBoundingClientRect();
+  const left = rect.left - app.getBoundingClientRect().left;
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  viewport.scrollTo({
+    left: focusScrollLeft(
+      left,
+      rect.width,
+      viewport.clientWidth,
+      overflow,
+      (target.dataset.demoFocusAlign as FocusAlign | undefined) ?? 'start',
+    ),
+    behavior: reduced ? 'auto' : 'smooth',
+  });
+};
 
 const FINAL_RATE = hitRate(scoredJudgments);
 
@@ -66,6 +114,7 @@ export const applyState = (refs: DirectorRefs, state: TimelineState): void => {
   const index = state.chapterIndex;
   const progress = state.chapterProgress;
 
+  const chapterChanged = refs.root.dataset.chapter !== id;
   refs.root.dataset.chapter = id;
   refs.root.dataset.view = chapter.view;
 
@@ -80,6 +129,8 @@ export const applyState = (refs: DirectorRefs, state: TimelineState): void => {
   refs.appTabs.forEach((tab) => {
     tab.dataset.active = String(tab.dataset.appTab === chapter.view);
   });
+
+  if (chapterChanged) panToFocus(refs, id);
 
   const panel =
     id === 'tools'

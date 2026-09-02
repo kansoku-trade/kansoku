@@ -688,14 +688,3 @@
   border-radius: 2px;
   flex: 0 0 auto;
 }
-
-@media (max-width: 1180px) {
-  .research-workspace {
-    grid-template-columns: minmax(200px, 240px) minmax(0, 1fr);
-  }
-
-  .research-context,
-  .research-search-actions {
-    display: none;
-  }
-}

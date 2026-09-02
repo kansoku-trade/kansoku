@@ -519,18 +519,3 @@
   background: var(--accent);
   color: #0a0a0a;
 }
-
-@media (max-width: 900px) {
-  .chat-page,
-  .chat-page[data-canvas-open='true'] {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .chat-canvas-pane {
-    display: none;
-  }
-
-  .chat-sidebar {
-    display: none;
-  }
-}

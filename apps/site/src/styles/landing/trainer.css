@@ -251,9 +251,3 @@
 .trainer-lane-num--rr {
   color: var(--accent);
 }
-
-@media (max-width: 1080px) {
-  .trainer-stack {
-    display: none;
-  }
-}

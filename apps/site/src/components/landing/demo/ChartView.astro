@@ -74,7 +74,7 @@ const challenges = [
   </header>
 
   <div class="app-body">
-    <aside class="app-tools" aria-label="画线工具" data-demo-toolbar>
+    <aside class="app-tools" aria-label="画线工具" data-demo-toolbar data-demo-focus="tools">
       {
         tools.map((tool, i) => (
           <button
@@ -108,7 +108,7 @@ const challenges = [
       </div>
     </div>
 
-    <aside class="app-panel demo-panel">
+    <aside class="app-panel demo-panel" data-demo-focus="verdict archive score">
       <div class="demo-view" data-panel-view="trace" data-active="false">
         <div class="demo-view-head">
           <span>TOOL CALL TRACE</span>

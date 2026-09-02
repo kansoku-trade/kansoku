@@ -616,27 +616,3 @@
   line-height: 1.5;
   color: #9a9a9a;
 }
-
-@media (max-width: 1100px) {
-  .demo-canvas-stats[data-cols='4'] {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 720px) {
-  .demo-canvas-workspace {
-    grid-template-columns: 1fr;
-  }
-
-  .demo-canvas-explorer {
-    border-right: none;
-    border-bottom: 1px solid #262626;
-    max-height: 120px;
-  }
-
-  .demo-canvas-stats,
-  .demo-canvas-stats[data-cols='4'],
-  .demo-canvas-split {
-    grid-template-columns: 1fr;
-  }
-}

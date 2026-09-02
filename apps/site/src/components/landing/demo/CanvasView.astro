@@ -41,7 +41,7 @@ import '../../../styles/landing/canvas.css';
       </div>
     </aside>
 
-    <main class="demo-canvas-reader">
+    <main class="demo-canvas-reader" data-demo-focus="canvas">
       {DEMO_CANVASES.map((canvas, i) => <CanvasPanel canvas={canvas} index={i} active={i === 0} />)}
     </main>
   </div>

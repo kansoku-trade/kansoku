@@ -92,6 +92,20 @@
   padding-top: 2px;
 }
 
+.demo-viewport {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+
+.demo-viewport::-webkit-scrollbar {
+  display: none;
+}
+
 .demo-app {
   flex: 1;
   min-height: 0;
@@ -452,7 +466,7 @@
   color: var(--down);
 }
 
-@media (max-width: 1080px) {
+@media (max-width: 1180px) {
   .demo-chapter {
     grid-template-columns: minmax(0, 1fr);
     gap: 8px;
@@ -460,6 +474,27 @@
 
   .demo-copy {
     min-height: 150px;
+  }
+
+  /* The app is a desktop UI; below this width it keeps its desktop size and the viewport pans
+     to each chapter's focus instead of hiding panels. */
+  .demo-app {
+    width: 1280px;
+  }
+}
+
+@media (max-width: 720px) {
+  .demo-inner {
+    padding: 16px 12px 12px;
+  }
+
+  /* Just enough that the widest focus regions (372px AI panel, 62ch chat column) fit a 390px phone. */
+  .demo-app {
+    zoom: 0.87;
+  }
+
+  .demo-app .chat-transcript {
+    padding-inline: max(16px, calc((100% - 46ch) / 2));
   }
 }
 

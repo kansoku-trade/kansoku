@@ -518,23 +518,3 @@
   cursor: pointer;
   font-size: 13px;
 }
-
-@media (max-width: 1100px) {
-  .app-body {
-    grid-template-columns: 40px minmax(0, 1fr);
-  }
-
-  .app-panel {
-    display: none;
-  }
-}
-
-@media (max-width: 720px) {
-  .app-tools {
-    display: none;
-  }
-
-  .app-body {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
