@@ -48,3 +48,5 @@ stocks/
 .kansoku-overlay-links.json
 
 .worktrees/
+# Agent Workspace memory (dev workspace is the repo root)
+/memory/

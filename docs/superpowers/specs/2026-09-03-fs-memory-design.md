@@ -27,7 +27,7 @@
 
 ### 1. 目录与格式
 
-根目录不变：`join(kansokuHome, 'memory')`。
+根目录是 Agent Workspace：`join(PROJECT_ROOT, 'memory')`（打包版为 `~/Library/Application Support/Kansoku/Workspace/memory`，Pro iCloud 开启后在 iCloud 容器的 Workspace 里，开发态为仓库根，已 gitignore）。记忆因此随 Workspace 走 iCloud 文件同步，纯 Agent 在 Workspace 里也能直接读写。`~/.kansoku/memory` 退役：首次启动时若 Workspace 里没有 `memory/`，把旧目录的 `MEMORY.md`、`markets/`、`symbols/`、`notes/` 复制过来，旧目录不删。
 
 ```
 memory/
@@ -148,6 +148,7 @@ interface ProAiMemory {
 - 2026-09-03 第 2 步拆成 2a（读路径，本记录）和 2b（移除「记忆整理」角色与文案，另开分支）。2a 期间在 message-engine 修了一个 pin 回放缺陷并发 0.4.1：turn scope 的 pinned-user provider 只在 scope 变化时才产出，之前没有新贡献的编译会丢掉已有 pin。
 - 2a 的两个偏离：`MemoryScopeProvider` 只在 symbol / market 变化时才钉一次，同一标的连续多条消息不重复注入；`researchChat.ts` 暂时仍每轮新建 engine，因为它的文档上下文 provider 在会话内会随文档编辑变化，切到会话级 engine 需要先让该 provider 按文档版本刷新。
 - 2026-09-03 第 2b 步：移除「记忆整理」模型角色（core 角色表、用量归类、校验、web 设置类型与标签、共享 `AiTaskRole` / `UsageTodayOut`），启动时删除已持久化的 `memory` 角色行与迁移标记；pro 侧在 `initMemoryRuntime` 里清理旧目录（删 INSTRUCTIONS.md、INDEX.md、.runtime/、sessions/、archive/，`strategies/` 挪到 `notes/strategies/`）。文案（§9）留到第 4 步。
+- 2026-09-03 第 2c 步：记忆根目录从 `~/.kansoku/memory` 改为 `<Workspace>/memory`，首启从旧目录复制用户内容。`~/.kansoku` 只剩 `training/`，另行处理。
 
 ## 已定
 
