@@ -13,9 +13,8 @@ const styles = stylex.create({
     color: colors.down,
   },
   credActions: {
-    display: 'flex',
-    justifyContent: 'flex-end',
-    gap: '6px',
+    display: 'grid',
+    gap: '8px',
     marginTop: '12px',
   },
 });

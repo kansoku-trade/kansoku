@@ -87,6 +87,7 @@ const styles = stylex.create({
     'flex': '0 0 auto',
     'height': '28px',
     'justifyContent': 'center',
+    'marginRight': '-7px',
     'padding': 0,
     'transition': 'background-color 0.12s ease, color 0.12s ease, transform 0.12s ease',
     'width': '28px',
