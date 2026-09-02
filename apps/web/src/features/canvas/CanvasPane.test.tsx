@@ -1,6 +1,15 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { act } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
+interface LiveStatus {
+  subscribed: boolean;
+  connected: boolean;
+  degraded: boolean;
+}
+
+let emitLiveStatus: ((status: LiveStatus) => void) | undefined;
 
 const get = vi.fn().mockResolvedValue({
   slug: 'acceptance-mu-panel',
@@ -18,7 +27,10 @@ vi.mock('@web/lib/client', () => ({
   },
 }));
 vi.mock('./CanvasFrame', () => ({
-  CanvasFrame: () => <div data-testid="canvas-frame" />,
+  CanvasFrame: (props: { onLiveStatus?: (status: LiveStatus) => void }) => {
+    emitLiveStatus = props.onLiveStatus;
+    return <div data-testid="canvas-frame" />;
+  },
 }));
 
 const { CanvasPane } = await import('./CanvasPane');
@@ -49,5 +61,33 @@ describe('CanvasPane chrome', () => {
     rerender(<CanvasPane slug="acceptance-mu-panel" onClose={() => {}} reloadKey="v2" />);
 
     await waitFor(() => expect(get).toHaveBeenCalledTimes(2));
+  });
+});
+
+describe('CanvasPane live dot', () => {
+  async function open() {
+    render(<CanvasPane slug="acceptance-mu-panel" onClose={() => {}} />);
+    await screen.findByTestId('canvas-frame');
+  }
+
+  it('shows nothing until the canvas subscribes', async () => {
+    await open();
+    expect(screen.queryByTestId('canvas-live-dot')).toBeNull();
+  });
+
+  it('turns live once subscribed and connected', async () => {
+    await open();
+    act(() => emitLiveStatus!({ subscribed: true, connected: true, degraded: false }));
+    expect(screen.getByTestId('canvas-live-dot').dataset.state).toBe('live');
+  });
+
+  it('goes idle when disconnected or degraded', async () => {
+    await open();
+    act(() => emitLiveStatus!({ subscribed: true, connected: false, degraded: false }));
+    expect(screen.getByTestId('canvas-live-dot').dataset.state).toBe('idle');
+    act(() => emitLiveStatus!({ subscribed: true, connected: true, degraded: true }));
+    expect(screen.getByTestId('canvas-live-dot').dataset.state).toBe('idle');
+    act(() => emitLiveStatus!({ subscribed: false, connected: true, degraded: false }));
+    expect(screen.queryByTestId('canvas-live-dot')).toBeNull();
   });
 });

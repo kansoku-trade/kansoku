@@ -6,7 +6,7 @@ import { errorMessage } from '@web/lib/api';
 import { client } from '@web/lib/client';
 import { Spinner } from '@web/ui';
 import { colors, fonts, fontSizes, radii, sizes } from '../../theme/tokens.stylex';
-import { CanvasFrame } from './CanvasFrame';
+import { CanvasFrame, type CanvasLiveStatus } from './CanvasFrame';
 
 const styles = stylex.create({
   pane: {
@@ -37,6 +37,24 @@ const styles = stylex.create({
     justifyContent: 'center',
     minWidth: 0,
     overflow: 'hidden',
+  },
+  titleRow: {
+    alignItems: 'center',
+    display: 'flex',
+    gap: '6px',
+    minWidth: 0,
+  },
+  dot: {
+    borderRadius: radii.full,
+    flex: '0 0 auto',
+    height: '6px',
+    width: '6px',
+  },
+  dotLive: {
+    backgroundColor: colors.up,
+  },
+  dotIdle: {
+    backgroundColor: colors.textMuted,
   },
   title: {
     color: colors.textPrimary,
@@ -106,11 +124,13 @@ export function CanvasPane({
 }) {
   const [doc, setDoc] = useState<CanvasDoc | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [live, setLive] = useState<CanvasLiveStatus | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     setDoc(null);
     setError(null);
+    setLive(null);
     void client.canvas
       .get({ slug })
       .then((next) => {
@@ -128,9 +148,21 @@ export function CanvasPane({
     <div className={`canvas-pane ${stylex.props(styles.pane).className}`}>
       <div className={`canvas-pane-head ${stylex.props(styles.head).className}`}>
         <div className={`canvas-pane-titles ${stylex.props(styles.titles).className}`}>
-          <span className={`canvas-pane-title ${stylex.props(styles.title).className}`}>
-            {doc?.title ?? slug}
-          </span>
+          <div {...stylex.props(styles.titleRow)}>
+            {live?.subscribed ? (
+              <span
+                data-testid="canvas-live-dot"
+                data-state={live.connected && !live.degraded ? 'live' : 'idle'}
+                {...stylex.props(
+                  styles.dot,
+                  live.connected && !live.degraded ? styles.dotLive : styles.dotIdle,
+                )}
+              />
+            ) : null}
+            <span className={`canvas-pane-title ${stylex.props(styles.title).className}`}>
+              {doc?.title ?? slug}
+            </span>
+          </div>
           <span className={`canvas-pane-slug ${stylex.props(styles.slug).className}`}>{slug}</span>
         </div>
         <button
@@ -152,7 +184,7 @@ export function CanvasPane({
             <Spinner /> 正在打开画布…
           </div>
         ) : (
-          <CanvasFrame source={doc.source} slug={doc.slug} data={doc.data} />
+          <CanvasFrame source={doc.source} slug={doc.slug} data={doc.data} onLiveStatus={setLive} />
         )}
       </div>
     </div>

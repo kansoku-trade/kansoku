@@ -7,3 +7,4 @@ export { Select, Toggle } from './control.js';
 export { AreaChart, BarChart, LineChart, PieChart, Sparkline } from './charts.js';
 export { CandleChart } from './CandleChart.js';
 export { RRPlan, Scenarios, Timeline } from './analysis.js';
+export { useCandles, useQuote } from './live.js';

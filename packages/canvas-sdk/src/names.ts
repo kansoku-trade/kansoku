@@ -7,7 +7,13 @@ export const CANVAS_COMPONENT_NAMES = {
   chart: ['LineChart', 'BarChart', 'AreaChart', 'PieChart', 'Sparkline', 'CandleChart'],
 } as const;
 
-export const CANVAS_NON_COMPONENT_EXPORTS = ['theme', 'useMemo', 'useState'] as const;
+export const CANVAS_NON_COMPONENT_EXPORTS = [
+  'theme',
+  'useCandles',
+  'useMemo',
+  'useQuote',
+  'useState',
+] as const;
 
 export function canvasComponentNames(
   groups: readonly (keyof typeof CANVAS_COMPONENT_NAMES)[],

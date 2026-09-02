@@ -6,5 +6,5 @@ export declare const CANVAS_COMPONENT_NAMES: {
     readonly control: readonly ['Toggle', 'Select'];
     readonly chart: readonly ['LineChart', 'BarChart', 'AreaChart', 'PieChart', 'Sparkline', 'CandleChart'];
 };
-export declare const CANVAS_NON_COMPONENT_EXPORTS: readonly ['theme', 'useMemo', 'useState'];
+export declare const CANVAS_NON_COMPONENT_EXPORTS: readonly ['theme', 'useCandles', 'useMemo', 'useQuote', 'useState'];
 export declare function canvasComponentNames(groups: readonly (keyof typeof CANVAS_COMPONENT_NAMES)[]): string[];

@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
+import type { CandleFeed, QuoteSnapshot } from '@kansoku/shared/types';
 import * as stylex from '@stylexjs/stylex';
 import { client } from '@web/lib/client';
 import { ScrollArea } from '@web/ui';
+import { subscribeChannel } from '@web/lib/ws/wsHub';
 import { colors } from '../../theme/tokens.stylex';
+import { decodePreviewEnvelope } from '../charts/intraday/useIntradayPreview';
 
 const styles = stylex.create({
   root: {
@@ -20,28 +23,54 @@ const styles = stylex.create({
   },
 });
 
+export interface CanvasLiveStatus {
+  subscribed: boolean;
+  connected: boolean;
+  degraded: boolean;
+}
+
 export interface CanvasFrameProps {
   source: string;
   slug?: string;
   data?: Record<string, unknown>;
+  onLiveStatus?: (status: CanvasLiveStatus) => void;
 }
+
+type FeedKind = 'quotes' | 'preview';
 
 type GuestMessage =
   | { type: 'ready' }
   | { type: 'ok' }
   | { type: 'height'; height: number }
-  | { type: 'runtime-error'; issues?: string[]; stage?: 'compile' | 'runtime' };
+  | { type: 'runtime-error'; issues?: string[]; stage?: 'compile' | 'runtime' }
+  | { type: 'sub' | 'unsub'; kind: FeedKind; symbol: string };
 
 const INITIAL_HEIGHT = 320;
 
-export function CanvasFrame({ source, slug, data }: CanvasFrameProps) {
+export function CanvasFrame({ source, slug, data, onLiveStatus }: CanvasFrameProps) {
   const frameRef = useRef<HTMLIFrameElement>(null);
   const sourceRef = useRef(source);
   sourceRef.current = source;
   const dataRef = useRef(data);
   dataRef.current = data;
   const readyRef = useRef(false);
+  const subsRef = useRef(new Map<string, () => void>());
+  const statusRef = useRef<CanvasLiveStatus>({
+    subscribed: false,
+    connected: false,
+    degraded: false,
+  });
+  const onLiveStatusRef = useRef(onLiveStatus);
+  onLiveStatusRef.current = onLiveStatus;
   const [height, setHeight] = useState(INITIAL_HEIGHT);
+
+  useEffect(
+    () => () => {
+      for (const release of subsRef.current.values()) release();
+      subsRef.current.clear();
+    },
+    [],
+  );
 
   useEffect(() => {
     const frame = frameRef.current;
@@ -54,6 +83,81 @@ export function CanvasFrame({ source, slug, data }: CanvasFrameProps) {
       );
     };
 
+    const toGuest = (message: unknown) => {
+      frame.contentWindow?.postMessage(message, '*');
+    };
+
+    const emitStatus = (patch: Partial<CanvasLiveStatus>) => {
+      const previous = statusRef.current;
+      const next = { ...previous, ...patch, subscribed: subsRef.current.size > 0 };
+      if (
+        next.subscribed === previous.subscribed &&
+        next.connected === previous.connected &&
+        next.degraded === previous.degraded
+      ) {
+        return;
+      }
+      statusRef.current = next;
+      toGuest({ type: 'feed-status', connected: next.connected, degraded: next.degraded });
+      onLiveStatusRef.current?.(next);
+    };
+
+    const openSub = (kind: FeedKind, symbol: string) => {
+      const key = `${kind}:${symbol}`;
+      if (subsRef.current.has(key)) return;
+      subsRef.current.set(key, () => {});
+      const forward = (payload: QuoteSnapshot['quotes'][number] | CandleFeed) => {
+        toGuest({ type: 'feed', kind, symbol, data: payload });
+      };
+      const onConnected = (connected: boolean) => emitStatus({ connected });
+      let hadBuilt = false;
+      const release =
+        kind === 'quotes'
+          ? subscribeChannel(
+              { kind: 'quotes', extra: [symbol] },
+              (payload) => {
+                const envelope = payload as {
+                  type?: string;
+                  data?: QuoteSnapshot;
+                  degraded?: boolean;
+                };
+                if (envelope?.type === 'status') {
+                  emitStatus({ degraded: Boolean(envelope.degraded) });
+                  return;
+                }
+                const cell = envelope?.data?.quotes.find((item) => item.symbol === symbol);
+                if (cell) forward(cell);
+              },
+              onConnected,
+            )
+          : subscribeChannel(
+              { kind: 'preview', symbol },
+              (payload) => {
+                const decoded = decodePreviewEnvelope(payload, hadBuilt);
+                if (decoded.degraded !== undefined) emitStatus({ degraded: decoded.degraded });
+                if (!decoded.built) return;
+                hadBuilt = true;
+                forward({
+                  symbol,
+                  asOf: new Date().toISOString(),
+                  timeframes: decoded.built.timeframes,
+                });
+              },
+              onConnected,
+            );
+      subsRef.current.set(key, release);
+      emitStatus({});
+    };
+
+    const closeSub = (kind: FeedKind, symbol: string) => {
+      const key = `${kind}:${symbol}`;
+      const release = subsRef.current.get(key);
+      if (!release) return;
+      subsRef.current.delete(key);
+      release();
+      emitStatus({});
+    };
+
     const onMessage = (event: MessageEvent<GuestMessage>) => {
       if (event.source !== frame.contentWindow) return;
       const payload = event.data;
@@ -61,6 +165,13 @@ export function CanvasFrame({ source, slug, data }: CanvasFrameProps) {
       if (payload.type === 'ready') {
         readyRef.current = true;
         postSource();
+        return;
+      }
+      if (payload.type === 'sub' || payload.type === 'unsub') {
+        if (payload.kind !== 'quotes' && payload.kind !== 'preview') return;
+        if (typeof payload.symbol !== 'string' || !payload.symbol) return;
+        if (payload.type === 'sub') openSub(payload.kind, payload.symbol);
+        else closeSub(payload.kind, payload.symbol);
         return;
       }
       if (payload.type === 'height') {
@@ -76,6 +187,9 @@ export function CanvasFrame({ source, slug, data }: CanvasFrameProps) {
 
     const onLoad = () => {
       readyRef.current = false;
+      for (const release of subsRef.current.values()) release();
+      subsRef.current.clear();
+      emitStatus({});
       postSource();
     };
 
