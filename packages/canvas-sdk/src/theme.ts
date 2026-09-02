@@ -17,6 +17,27 @@ export const theme = {
   radius: 2,
 } as const;
 
+export const type = {
+  title: 16,
+  section: 13,
+  body: 13,
+  caption: 12,
+  small: 11,
+  stat: 22,
+  lineHeight: 1.6,
+} as const;
+
+// 组件只管内边距；外边距归零，兄弟间距由父级 gap 决定。
+export const space = {
+  flow: 16,
+  section: 12,
+  grid: 10,
+  cardY: 10,
+  cardX: 12,
+  cellY: 7,
+  cellX: 12,
+} as const;
+
 export const seriesPalette = [
   theme.accent,
   theme.textPrimary,

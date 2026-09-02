@@ -98,9 +98,11 @@ caption (TD-DATA-02). What you could not fetch goes in `Coverage`, never into a 
 gaps is its job. If the whole canvas would be empty, say what is missing instead.
 
 **Label every plot.** Charts get screenshotted alone. Each needs a `title` naming the
-specific measure (`08-28 相对各自开盘价（都从 0 起）`, not `走势图`), units via `xUnit` /
-`yUnit`, series names when multi-series, and any transformation stated (归一化 / 累计 /
-相对开盘). A missing title renders as `Untitled` — never ship that.
+specific measure (`08-28 相对各自开盘价（都从 0 起）`, not `走势图`), `yUnit` only when the
+axis carries a real dimension (`%` / `USD` / `亿`) — a category axis of tickers takes no
+`xUnit` — series names when multi-series, and any transformation stated (归一化 / 累计 /
+相对开盘). A missing title renders as `Untitled` — never ship that. A `Section` holding one
+chart gets no title of its own: the chart title is the heading.
 
 **Components.** The table below is the complete allow-list; referencing an export that does
 not exist — or inventing a prop — is the most common failure, and an unknown prop is
@@ -174,7 +176,7 @@ lines · no `Section` for fewer than 2 elements.
 | Events in time order | `Timeline` | `Table` / a run of `Text` |
 | Which data exists and which does not | `Coverage` | `Table` |
 | A tiny inline trend | `Sparkline` | `LineChart` |
-| One number with its change | `Stat` | a number inside `Text` |
+| One number with its change | `Stat` (`delta` = the number only; words like「30 天最强」go in `note`) | a number inside `Text` |
 | Genuine multi-row detail | `Table` | — |
 
 ### Slop patterns — forbidden

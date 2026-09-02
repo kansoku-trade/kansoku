@@ -1,22 +1,28 @@
 import type { ReactNode } from 'react';
 import type { Box } from './layout.js';
-import { theme } from './theme.js';
+import { space, theme, type } from './theme.js';
 
 export function H1({ children }: Box) {
   return (
-    <h1 style={{ margin: 0, fontSize: 15, fontWeight: 600, color: theme.textPrimary }}>{children}</h1>
+    <h1 style={{ margin: 0, fontSize: type.title, fontWeight: 600, color: theme.textPrimary }}>
+      {children}
+    </h1>
   );
 }
 
 export function H2({ children }: Box) {
   return (
-    <h2 style={{ margin: 0, fontSize: 14, fontWeight: 600, color: theme.textPrimary }}>{children}</h2>
+    <h2 style={{ margin: 0, fontSize: 14, fontWeight: 600, color: theme.textPrimary }}>
+      {children}
+    </h2>
   );
 }
 
 export function H3({ children }: Box) {
   return (
-    <h3 style={{ margin: 0, fontSize: 13, fontWeight: 500, color: theme.textPrimary }}>{children}</h3>
+    <h3 style={{ margin: 0, fontSize: type.section, fontWeight: 500, color: theme.textPrimary }}>
+      {children}
+    </h3>
   );
 }
 
@@ -31,9 +37,9 @@ export function Text({ children, style, muted }: Box & { muted?: boolean }) {
     <p
       style={{
         margin: 0,
-        fontSize: 13,
-        lineHeight: 1.55,
-        color: muted ? theme.textMuted : theme.textPrimary,
+        fontSize: muted ? type.caption : type.body,
+        lineHeight: type.lineHeight,
+        color: muted ? theme.textSecondary : theme.textPrimary,
         ...style,
       }}
     >
@@ -44,7 +50,10 @@ export function Text({ children, style, muted }: Box & { muted?: boolean }) {
 
 export function Link({ href, children }: { href?: string; children?: ReactNode }) {
   return (
-    <a href={href} style={{ color: theme.accent, fontSize: 13, textDecoration: 'underline' }}>
+    <a
+      href={href}
+      style={{ color: theme.accent, fontSize: type.body, textDecoration: 'underline' }}
+    >
       {children}
     </a>
   );
@@ -70,10 +79,9 @@ export function Callout({
       style={{
         borderLeft: `3px solid ${accent}`,
         background: theme.bgSurface,
-        padding: '8px 11px',
-        margin: '8px 0',
-        fontSize: 13,
-        lineHeight: 1.55,
+        padding: `${space.cardY}px ${space.cardX}px`,
+        fontSize: type.body,
+        lineHeight: type.lineHeight,
         color: theme.textPrimary,
       }}
     >
@@ -94,7 +102,7 @@ export function Pill({
     <span
       style={{
         display: 'inline-block',
-        fontSize: 11,
+        fontSize: type.small,
         lineHeight: '16px',
         padding: '0 6px',
         borderRadius: theme.radius,
@@ -113,17 +121,9 @@ export function Badge({ children, tone }: { children?: ReactNode; tone?: string 
   return <Pill tone={mapped}>{children}</Pill>;
 }
 
-export function Source({
-  from,
-  at,
-  note,
-}: {
-  from: string;
-  at?: string;
-  note?: ReactNode;
-}) {
+export function Source({ from, at, note }: { from: string; at?: string; note?: ReactNode }) {
   return (
-    <span style={{ fontSize: 11, color: theme.textMuted, fontFamily: theme.fontMono }}>
+    <span style={{ fontSize: type.small, color: theme.textMuted, fontFamily: theme.fontMono }}>
       {from}
       {at ? ` · ${at}` : ''}
       {note ? <> · {note}</> : null}

@@ -1,27 +1,30 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { Sparkline } from './charts.js';
 import { Card, Stack } from './layout.js';
-import { theme } from './theme.js';
+import { space, theme, type } from './theme.js';
 
 export function Stat({
   label,
   value,
   delta,
+  note,
   tone = 'neutral',
 }: {
   label: string;
   value: string;
   delta?: string;
+  note?: ReactNode;
   tone?: 'up' | 'down' | 'neutral';
 }) {
-  const toneColor =
-    tone === 'up' ? theme.up : tone === 'down' ? theme.down : theme.textPrimary;
+  const toneColor = tone === 'up' ? theme.up : tone === 'down' ? theme.down : theme.textPrimary;
   return (
     <Card>
-      <div style={{ fontSize: 11, color: theme.textSecondary, marginBottom: 3 }}>{label}</div>
+      <div style={{ fontSize: type.small, color: theme.textSecondary, marginBottom: 3 }}>
+        {label}
+      </div>
       <div
         style={{
-          fontSize: 20,
+          fontSize: type.stat,
           fontWeight: 400,
           letterSpacing: '-0.01em',
           fontFamily: theme.fontMono,
@@ -34,7 +37,7 @@ export function Stat({
       {delta ? (
         <div
           style={{
-            fontSize: 11,
+            fontSize: type.caption,
             marginTop: 2,
             color: toneColor,
             fontFamily: theme.fontMono,
@@ -44,6 +47,9 @@ export function Stat({
           {delta}
         </div>
       ) : null}
+      {note ? (
+        <div style={{ fontSize: type.small, marginTop: 3, color: theme.textSecondary }}>{note}</div>
+      ) : null}
     </Card>
   );
 }
@@ -52,14 +58,16 @@ export function Metric({
   label,
   value,
   delta,
+  note,
   tone = 'neutral',
 }: {
   label: string;
   value: string;
   delta?: string;
+  note?: ReactNode;
   tone?: 'up' | 'down' | 'neutral';
 }) {
-  return <Stat label={label} value={value} delta={delta} tone={tone} />;
+  return <Stat label={label} value={value} delta={delta} note={note} tone={tone} />;
 }
 
 type TableColumn = { key: string; header: string; align?: 'left' | 'right' };
@@ -69,10 +77,8 @@ function headCell(align: 'left' | 'right', first = false): CSSProperties {
     textAlign: align,
     fontWeight: 400,
     color: theme.textMuted,
-    fontSize: 10,
-    letterSpacing: '0.05em',
-    textTransform: 'uppercase',
-    padding: first ? '0 0 5px' : '0 0 5px 10px',
+    fontSize: type.small,
+    padding: first ? `0 0 ${space.cellY}px` : `0 0 ${space.cellY}px ${space.cellX}px`,
     borderBottom: `1px solid ${theme.border}`,
   };
 }
@@ -80,7 +86,7 @@ function headCell(align: 'left' | 'right', first = false): CSSProperties {
 function bodyCell(align: 'left' | 'right', first = false): CSSProperties {
   return {
     textAlign: align,
-    padding: first ? '5px 0' : '5px 0 5px 10px',
+    padding: first ? `${space.cellY}px 0` : `${space.cellY}px 0 ${space.cellY}px ${space.cellX}px`,
     borderBottom: '1px solid #1a1a1a',
     color: theme.textPrimary,
   };
@@ -114,7 +120,7 @@ export function Table({
   const cols = normalizeColumns(columns);
   const data = normalizeRows(cols, rows);
   return (
-    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: type.caption }}>
       <thead>
         <tr>
           {cols.map((col, index) => (
@@ -186,7 +192,7 @@ export function Compare({
   const hasNote = ordered.some((row) => row.note != null);
 
   return (
-    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: type.caption }}>
       <thead>
         <tr>
           <th style={headCell('left', true)}>标的</th>
@@ -221,7 +227,9 @@ export function Compare({
                   key={metric.key}
                   style={{
                     ...bodyCell(align),
-                    color: metric.signed ? (signedColor(value) ?? theme.textPrimary) : theme.textPrimary,
+                    color: metric.signed
+                      ? (signedColor(value) ?? theme.textPrimary)
+                      : theme.textPrimary,
                     fontFamily: align === 'right' ? theme.fontMono : undefined,
                     fontVariantNumeric: align === 'right' ? 'tabular-nums' : undefined,
                   }}
@@ -230,7 +238,9 @@ export function Compare({
                 </td>
               );
             })}
-            {hasNote ? <td style={bodyCell('left')}>{row.note}</td> : null}
+            {hasNote ? (
+              <td style={{ ...bodyCell('left'), color: theme.textSecondary }}>{row.note}</td>
+            ) : null}
           </tr>
         ))}
       </tbody>

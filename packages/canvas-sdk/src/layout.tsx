@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react';
-import { theme } from './theme.js';
+import { space, theme, type } from './theme.js';
 
 export type Box = { children?: ReactNode; style?: CSSProperties };
 
@@ -9,7 +9,7 @@ const font = theme.fontUi;
 // width the user actually dragged to — no container queries needed. Without this a
 // four-column Grid keeps four columns at 320px and the numbers overflow their cards.
 const RESPONSIVE_CSS = `
-.kc-grid { display: grid; gap: 8px; grid-template-columns: repeat(var(--kc-cols), minmax(0, 1fr)); }
+.kc-grid { display: grid; gap: ${space.grid}px; grid-template-columns: repeat(var(--kc-cols), minmax(0, 1fr)); }
 @media (max-width: 620px) { .kc-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); } }
 .kc-select-trigger:hover, .kc-select-trigger[data-popup-open] { background: ${theme.bgHover}; color: ${theme.textPrimary}; }
 .kc-select-trigger:focus-visible { border-color: #7a7a7a; box-shadow: 0 0 0 2px rgb(232 232 232 / 0.12); outline: none; }
@@ -17,6 +17,10 @@ const RESPONSIVE_CSS = `
 .kc-select-item[data-selected] { color: ${theme.textPrimary}; }
 .kc-select-item:focus-visible { outline: none; }
 `;
+
+function flow(gap: number): CSSProperties {
+  return { display: 'flex', flexDirection: 'column', gap };
+}
 
 export function Canvas({
   title,
@@ -38,7 +42,7 @@ export function Canvas({
       <h1
         style={{
           margin: 0,
-          fontSize: 15,
+          fontSize: type.title,
           fontWeight: 600,
           color: theme.textPrimary,
         }}
@@ -49,14 +53,14 @@ export function Canvas({
         <p
           style={{
             margin: '3px 0 0',
-            fontSize: 11,
+            fontSize: type.small,
             color: theme.textMuted,
           }}
         >
           {caption}
         </p>
       ) : null}
-      <div style={{ marginTop: 16 }}>{children}</div>
+      <div style={{ ...flow(space.flow), marginTop: space.flow }}>{children}</div>
       <style>{RESPONSIVE_CSS}</style>
     </div>
   );
@@ -64,19 +68,18 @@ export function Canvas({
 
 export function Section({ title, children }: { title: string } & Box) {
   return (
-    <section style={{ margin: '20px 0 8px' }}>
+    <section style={{ paddingTop: 8 }}>
       <div
         style={{
-          fontSize: 11,
-          color: theme.textMuted,
-          letterSpacing: '0.08em',
-          textTransform: 'uppercase',
+          fontSize: type.section,
+          fontWeight: 600,
+          color: theme.textPrimary,
           marginBottom: 8,
         }}
       >
         {title}
       </div>
-      {children}
+      <div style={flow(space.section)}>{children}</div>
     </section>
   );
 }
@@ -134,7 +137,7 @@ export function Card({ children, style }: Box) {
         background: theme.bgSurface,
         border: `1px solid ${theme.border}`,
         borderRadius: theme.radius,
-        padding: '9px 11px',
+        padding: `${space.cardY}px ${space.cardX}px`,
         ...style,
       }}
     >
@@ -144,5 +147,5 @@ export function Card({ children, style }: Box) {
 }
 
 export function Divider() {
-  return <hr style={{ border: 0, borderTop: `1px solid ${theme.border}`, margin: '14px 0' }} />;
+  return <hr style={{ border: 0, borderTop: `1px solid ${theme.border}`, margin: 0 }} />;
 }

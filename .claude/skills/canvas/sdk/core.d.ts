@@ -55,16 +55,18 @@ export declare function Source({ from, at, note }: {
     note?: ReactNode;
 }): import("react").JSX.Element;
 
-export declare function Stat({ label, value, delta, tone }: {
+export declare function Stat({ label, value, delta, note, tone }: {
     label: string;
     value: string;
     delta?: string;
+    note?: ReactNode;
     tone?: 'up' | 'down' | 'neutral';
 }): import("react").JSX.Element;
-export declare function Metric({ label, value, delta, tone }: {
+export declare function Metric({ label, value, delta, note, tone }: {
     label: string;
     value: string;
     delta?: string;
+    note?: ReactNode;
     tone?: 'up' | 'down' | 'neutral';
 }): import("react").JSX.Element;
 type TableColumn = {

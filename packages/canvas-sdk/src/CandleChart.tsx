@@ -255,8 +255,8 @@ export function CandleChart({
   const waiting = !feedData && !bars?.length;
 
   return (
-    <div style={{ margin: '8px 0 16px' }}>
-      <div style={{ fontSize: 13, fontWeight: 500, color: theme.textPrimary, marginBottom: 8 }}>
+    <div>
+      <div style={{ fontSize: 12, fontWeight: 500, color: theme.textSecondary, marginBottom: 8 }}>
         {title?.trim() ? title : 'Untitled'}
       </div>
       <div
