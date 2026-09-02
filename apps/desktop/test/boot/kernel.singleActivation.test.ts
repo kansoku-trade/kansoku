@@ -56,8 +56,8 @@ vi.mock('@kansoku/core/pro/bundleState', () => ({ setProPresent, hasEncBundle, i
 const registerProHooks = vi.hoisted(() => vi.fn());
 vi.mock('@kansoku/core/pro/hooks', () => ({ registerProHooks }));
 
-const registerProAiExtension = vi.hoisted(() => vi.fn());
-vi.mock('@kansoku/core/pro/aiExtension', () => ({ registerProAiExtension }));
+const registerProAiMemory = vi.hoisted(() => vi.fn());
+vi.mock('@kansoku/core/pro/aiMemory', () => ({ registerProAiMemory }));
 
 const registerProChannels = vi.hoisted(() => vi.fn());
 vi.mock('@kansoku/core/pro/channels', () => ({ registerProChannels }));
@@ -89,7 +89,13 @@ const serverLoadProComposition = vi.hoisted(() =>
       deepDiveStatus: vi.fn(),
     },
     realtimeChannels: ['server-channel'],
-    aiExtension: { prepareTurn: vi.fn(), tag: 'server' },
+    aiMemory: {
+      indexContext: vi.fn(),
+      scopeContext: vi.fn(),
+      readMount: vi.fn(),
+      writeMount: vi.fn(),
+      tag: 'server',
+    },
     start: serverStart,
     dispose: serverDispose,
   })),
@@ -109,7 +115,7 @@ const desktopLoadProComposition = vi.hoisted(() =>
       deepDiveStatus: vi.fn(),
     },
     realtimeChannels: ['desktop-channel'],
-    aiExtension: { prepareTurn: vi.fn(), tag: 'desktop' },
+    aiMemory: { prepareTurn: vi.fn(), tag: 'desktop' },
     start: desktopStart,
     dispose: desktopDispose,
   })),
@@ -169,8 +175,8 @@ describe('bootKernel pro composition activation (real seam, not mocked away)', (
     expect(setProPresent).toHaveBeenCalledTimes(1);
     expect(setProPresent).toHaveBeenCalledWith(true);
     expect(registerProHooks).toHaveBeenCalledTimes(1);
-    expect(registerProAiExtension).toHaveBeenCalledTimes(1);
-    expect(registerProAiExtension).toHaveBeenCalledWith(expect.objectContaining({ tag: 'desktop' }));
+    expect(registerProAiMemory).toHaveBeenCalledTimes(1);
+    expect(registerProAiMemory).toHaveBeenCalledWith(expect.objectContaining({ tag: 'desktop' }));
     expect(registerProChannels).toHaveBeenCalledTimes(1);
     expect(registerProChannels).toHaveBeenCalledWith(['desktop-channel']);
 

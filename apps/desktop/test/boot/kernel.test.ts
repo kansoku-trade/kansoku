@@ -140,12 +140,17 @@ describe('bootKernel', () => {
       startDeepDiveForNote: vi.fn(),
       deepDiveStatus: vi.fn(),
     };
-    const aiExtension = { prepareTurn: vi.fn() };
+    const aiMemory = {
+      indexContext: vi.fn(),
+      scopeContext: vi.fn(),
+      readMount: vi.fn(),
+      writeMount: vi.fn(),
+    };
     const desktopComposition = {
       ipcServices: [ipcServiceClass],
       realtimeChannels: [],
       hooks,
-      aiExtension,
+      aiMemory,
       start,
       dispose,
     };

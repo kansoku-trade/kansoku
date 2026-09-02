@@ -16,7 +16,7 @@
   "dependencies": {
     "@earendil-works/pi-agent-core": "^0.84.1",
     "@earendil-works/pi-ai": "^0.84.1",
-    "@innei/message-engine": "0.4.0",
+    "@innei/message-engine": "0.4.1",
     "@kansoku/canvas": "workspace:*",
     "@kansoku/pro-api": "workspace:*",
     "@kansoku/shared": "workspace:*",

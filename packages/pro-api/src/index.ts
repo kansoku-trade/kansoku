@@ -46,30 +46,21 @@ export interface ProAiReadMount {
   exclude?: string[];
 }
 
-export interface ProAiTurnContext {
-  surface: ProAiSurface;
-  sessionId: string;
+export type ProAiWriteMount = ProAiReadMount;
+
+export interface ProAiMemoryScope {
   symbol?: string;
   market?: string;
 }
 
-export interface ProAiPreparedTurn {
-  /** Ephemeral provider-facing context. Core injects it through MessagesEngine. */
-  promptContext?: string;
-  /** Optional read-only mounts consumed by Core's generic FS tools. */
-  readMounts?: ProAiReadMount[];
-}
-
-export interface ProAiTranscriptMessage {
-  role: 'user' | 'assistant' | 'tool';
-  text: string;
-}
-
-export interface ProAiCompletedTurn extends ProAiTurnContext {
-  messages: ProAiTranscriptMessage[];
-}
-
-export interface ProAiExtension {
-  prepareTurn(context: ProAiTurnContext): Promise<ProAiPreparedTurn>;
-  afterTurn?(context: ProAiCompletedTurn): void | Promise<void>;
+/**
+ * Memory contract between core and the Pro composition. Pro owns the files,
+ * truncation, and license gate; core owns where the text lands in the prompt
+ * and which surfaces may write.
+ */
+export interface ProAiMemory {
+  indexContext(): Promise<string | undefined>;
+  scopeContext(scope: ProAiMemoryScope): Promise<string | undefined>;
+  readMount(): ProAiReadMount | undefined;
+  writeMount(): ProAiWriteMount | undefined;
 }

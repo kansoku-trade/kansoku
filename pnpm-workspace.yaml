@@ -43,7 +43,7 @@ overrides:
 minimumReleaseAgeExclude:
   - '@earendil-works/pi-ai@0.80.6 || 0.84.1'
   - '@earendil-works/pi-agent-core@0.80.6 || 0.84.1'
-  - '@innei/message-engine@0.2.0 || 0.4.0'
+  - '@innei/message-engine@0.2.0 || 0.4.0 || 0.4.1'
   - tsdown@0.22.5
   - electron-sparkle-updater@0.1.0
   - astro@7.1.3

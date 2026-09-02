@@ -50,6 +50,7 @@ import {
   buildReassessPack as defaultBuildReassessPack,
   type ReassessPack,
 } from '../agents/datapack.js';
+import { memoryProcessors, memoryReadMounts } from '../conversation/messages/memoryProviders.js';
 import { sessionMessagesEngine } from '../conversation/messages/messageEngine.js';
 import { SkillCatalogProvider, toSkillContexts } from '../conversation/messages/sharedProviders.js';
 import type { AiModel } from '../runtime/models.js';
@@ -72,7 +73,6 @@ import {
   rejectAnswer,
   verifyDirectionalRead,
 } from '../agents/verifyRead.js';
-import { prepareProAiTurn } from '../../pro/aiExtension.js';
 
 const COMMENT_CAP = 20;
 const RELEVANT_COMMENT_SOURCES = new Set(['analyst', 'system']);
@@ -399,12 +399,6 @@ function prepareTurn(
       );
 
       const repoRoot = deps.repoRoot ?? PROJECT_ROOT;
-      const proTurn = await prepareProAiTurn({
-        surface: 'chart-chat',
-        sessionId: activeSessionId,
-        symbol,
-        market: marketOf(symbol),
-      });
       const loadedSkills = new Set<string>();
       const canvasSkillInTranscript = transcriptHasSkillRead(
         (await listMessages(activeSessionId)).map((row) => row.payload),
@@ -415,13 +409,14 @@ function prepareTurn(
       const { tools: researchTools, skillIndex } = buildResearchTools({
         repoRoot,
         exec: deps.exec,
-        readMounts: proTurn.readMounts,
+        readMounts: memoryReadMounts(),
         onSkillRead: (name) => loadedSkills.add(name),
       });
       const messageEngine = sessionMessagesEngine(activeSessionId, () => [
-        ...proTurn.processors,
+        ...memoryProcessors(),
         new SkillCatalogProvider(toSkillContexts(skillIndex)),
       ]);
+      messageEngine.setStep({ symbol, market: marketOf(symbol) });
 
       return {
         symbol,
@@ -437,7 +432,6 @@ function prepareTurn(
           }),
         ],
         transformContext: messageEngine.transformContext,
-        onTurnComplete: proTurn.onTurnComplete,
         gate: verifyCtx
           ? {
               instruction: CHAT_GATED_TURN_INSTRUCTION,

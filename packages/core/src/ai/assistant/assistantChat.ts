@@ -28,6 +28,7 @@ import {
   type ConversationPreparedTurn,
   createConversationEngine,
 } from '../conversation/conversationEngine.js';
+import { memoryProcessors, memoryReadMounts } from '../conversation/messages/memoryProviders.js';
 import { sessionMessagesEngine } from '../conversation/messages/messageEngine.js';
 import { SkillCatalogProvider, toSkillContexts } from '../conversation/messages/sharedProviders.js';
 import {
@@ -37,7 +38,6 @@ import {
 } from '../runtime/promptPolicy.js';
 import { buildResearchLibraryTools } from '../agents/researchLibraryTools.js';
 import type { AiModel } from '../runtime/models.js';
-import { prepareProAiTurn } from '../../pro/aiExtension.js';
 
 export interface AssistantChatDeps {
   model: AiModel | null;
@@ -85,10 +85,6 @@ function prepareTurn(
     buildTurn: async (activeSessionId) => {
       const disciplineText = deps.disciplineText ?? loadSharedDiscipline(rootDir);
       if (!disciplineText) throw new DisciplineMissingError();
-      const proTurn = await prepareProAiTurn({
-        surface: 'assistant',
-        sessionId: activeSessionId,
-      });
       const loadedSkills = new Set<string>();
       const canvasSkillInTranscript = transcriptHasSkillRead(
         (await listAssistantMessages(activeSessionId, deps.db)).map((row) => row.payload),
@@ -99,11 +95,11 @@ function prepareTurn(
       const { tools: researchTools, skillIndex } = buildResearchTools({
         repoRoot: rootDir,
         exec: deps.exec,
-        readMounts: proTurn.readMounts,
+        readMounts: memoryReadMounts(),
         onSkillRead: (name) => loadedSkills.add(name),
       });
       const messageEngine = sessionMessagesEngine(activeSessionId, () => [
-        ...proTurn.processors,
+        ...memoryProcessors(),
         new SkillCatalogProvider(toSkillContexts(skillIndex)),
       ]);
       return {
@@ -121,7 +117,6 @@ function prepareTurn(
           }),
         ],
         transformContext: messageEngine.transformContext,
-        onTurnComplete: proTurn.onTurnComplete,
       };
     },
   };

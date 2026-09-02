@@ -15,24 +15,30 @@ export interface MessagePipelineMetadata {
 }
 
 type EmptyContext = Record<string, never>;
+
+export interface MessageStep {
+  symbol?: string;
+  market?: string;
+}
+
 export type MessagePipelineContext = PublishedMessagePipelineContext<
   AgentMessage,
   EmptyContext,
-  EmptyContext,
+  MessageStep,
   EmptyContext,
   MessagePipelineMetadata
 >;
 export type MessageProcessor = PublishedMessageProcessor<
   AgentMessage,
   EmptyContext,
-  EmptyContext,
+  MessageStep,
   EmptyContext,
   MessagePipelineMetadata
 >;
 type PublishedEngine = SessionMessagesEngine<
   AgentMessage,
   EmptyContext,
-  EmptyContext,
+  MessageStep,
   EmptyContext,
   MessagePipelineMetadata
 >;
@@ -56,6 +62,7 @@ function createSessionId(): string {
  */
 export class MessagesEngine {
   private readonly engine: PublishedEngine;
+  private step: MessageStep = {};
   readonly transformContext: (
     messages: AgentMessage[],
     signal?: AbortSignal,
@@ -66,7 +73,7 @@ export class MessagesEngine {
 
     this.engine = createPiMessageEngine<
       EmptyContext,
-      EmptyContext,
+      MessageStep,
       EmptyContext,
       MessagePipelineMetadata
     >({
@@ -84,13 +91,17 @@ export class MessagesEngine {
       (
         await this.engine.process(messages, {
           ...(signal ? { signal } : {}),
-          step: {},
+          step: this.step,
         })
       ).messages;
   }
 
+  setStep(step: MessageStep): void {
+    this.step = step;
+  }
+
   async process(messages: readonly AgentMessage[]): Promise<MessagesEngineResult> {
-    return this.engine.process(messages, { step: {} });
+    return this.engine.process(messages, { step: this.step });
   }
 
   destroy(): Promise<unknown> {

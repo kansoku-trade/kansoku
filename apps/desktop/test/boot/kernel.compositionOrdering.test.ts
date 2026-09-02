@@ -65,8 +65,8 @@ vi.mock('@kansoku/core/pro/bundleState', () => ({ setProPresent, hasEncBundle, i
 const registerProHooks = vi.hoisted(() => vi.fn());
 vi.mock('@kansoku/core/pro/hooks', () => ({ registerProHooks }));
 
-const registerProAiExtension = vi.hoisted(() => vi.fn());
-vi.mock('@kansoku/core/pro/aiExtension', () => ({ registerProAiExtension }));
+const registerProAiMemory = vi.hoisted(() => vi.fn());
+vi.mock('@kansoku/core/pro/aiMemory', () => ({ registerProAiMemory }));
 
 const registerProChannels = vi.hoisted(() => vi.fn());
 vi.mock('@kansoku/core/pro/channels', () => ({ registerProChannels }));

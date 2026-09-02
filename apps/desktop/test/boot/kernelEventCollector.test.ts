@@ -41,7 +41,7 @@ vi.mock('@kansoku/core/pro/bundleState', () => ({
   setProPresent: vi.fn(),
 }));
 vi.mock('@kansoku/core/pro/hooks', () => ({ registerProHooks: vi.fn() }));
-vi.mock('@kansoku/core/pro/aiExtension', () => ({ registerProAiExtension: vi.fn() }));
+vi.mock('@kansoku/core/pro/aiMemory', () => ({ registerProAiMemory: vi.fn() }));
 vi.mock('@kansoku/core/pro/channels', () => ({ registerProChannels: vi.fn() }));
 vi.mock('@kansoku/core/pro/detectors', () => ({ registerProDetectors: vi.fn() }));
 vi.mock('@kansoku/core/pro/loader', () => ({ loadPro: vi.fn(async () => null) }));

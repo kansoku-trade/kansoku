@@ -21,7 +21,7 @@ import { setProPresent } from '@kansoku/core/pro/bundleState';
 import { registerProChannels } from '@kansoku/core/pro/channels';
 import { registerProDetectors } from '@kansoku/core/pro/detectors';
 import { registerProHooks } from '@kansoku/core/pro/hooks';
-import { registerProAiExtension } from '@kansoku/core/pro/aiExtension';
+import { registerProAiMemory } from '@kansoku/core/pro/aiMemory';
 import type { ServerProComposition } from './edition/types.js';
 
 export interface ServerRuntimeOptions {
@@ -105,12 +105,12 @@ async function prepareServerRuntime(
 export async function activateProComposition(
   composition: Pick<
     ServerProComposition,
-    'hooks' | 'aiExtension' | 'realtimeChannels' | 'detectors' | 'start'
+    'hooks' | 'aiMemory' | 'realtimeChannels' | 'detectors' | 'start'
   > | null,
 ): Promise<void> {
   setProPresent(composition != null);
   if (composition?.hooks) registerProHooks(composition.hooks);
-  if (composition?.aiExtension) registerProAiExtension(composition.aiExtension);
+  if (composition?.aiMemory) registerProAiMemory(composition.aiMemory);
   if (composition?.realtimeChannels) registerProChannels(composition.realtimeChannels);
   if (composition?.detectors) registerProDetectors(composition.detectors);
   await composition?.start?.();

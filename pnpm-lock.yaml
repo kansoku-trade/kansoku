@@ -591,8 +591,8 @@ importers:
         specifier: ^0.84.1
         version: 0.84.1(ws@8.21.1)(zod@4.5.4)
       '@innei/message-engine':
-        specifier: 0.4.0
-        version: 0.4.0(@earendil-works/pi-agent-core@0.84.1(ws@8.21.1)(zod@4.5.4))(react@19.2.7)
+        specifier: 0.4.1
+        version: 0.4.1(@earendil-works/pi-agent-core@0.84.1(ws@8.21.1)(zod@4.5.4))(react@19.2.7)
       '@kansoku/canvas':
         specifier: workspace:*
         version: link:../canvas-sdk
@@ -1988,8 +1988,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@innei/message-engine@0.4.0':
-    resolution: {integrity: sha512-mSmpS6oYh8J6wgaVuNz0njocPgUAJWl3XuB4P5O6P8vUyFUGjA6pjMhv/XaofdF3BTJgMHYnrIhJQIflsFisrA==}
+  '@innei/message-engine@0.4.1':
+    resolution: {integrity: sha512-r+RqddK+wWv2c+7UziLRxLmIkN2Px9ObS8kD7Xv/qVjthenDGZajH+ePAh3Hc/jLZ9hkCTXZ99mgrUcYxsTWhQ==}
     engines: {node: '>=22'}
     peerDependencies:
       '@earendil-works/pi-agent-core': ^0.84.1
@@ -9807,7 +9807,7 @@ snapshots:
   '@img/sharp-win32-x64@0.35.3':
     optional: true
 
-  '@innei/message-engine@0.4.0(@earendil-works/pi-agent-core@0.84.1(ws@8.21.1)(zod@4.5.4))(react@19.2.7)':
+  '@innei/message-engine@0.4.1(@earendil-works/pi-agent-core@0.84.1(ws@8.21.1)(zod@4.5.4))(react@19.2.7)':
     optionalDependencies:
       '@earendil-works/pi-agent-core': 0.84.1(ws@8.21.1)(zod@4.5.4)
       react: 19.2.7

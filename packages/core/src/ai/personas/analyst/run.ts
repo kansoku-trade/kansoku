@@ -4,7 +4,7 @@ import { JOURNAL_DIR, PROJECT_ROOT, skillSearchDirs } from '../../../platform/en
 import { getProvider } from '../../../marketdata/registry.js';
 import { marketOf } from '../../../symbols/symbol.utils.js';
 import { loadSkillIndex, readSkill } from '../../agents/skills.js';
-import { prepareProAiTurn } from '../../../pro/aiExtension.js';
+import { memoryProcessors, memoryReadMounts } from '../../conversation/messages/memoryProviders.js';
 import { AgentTimeoutError, createAgentSession } from '../../agents/agentSession.js';
 import { AnalystMessagesEngine } from '../../conversation/messages/analystMessagesEngine.js';
 import {
@@ -100,12 +100,6 @@ export async function executeAnalystRun(symbol: string, deps: AnalystDeps): Prom
     const dataPack = await (deps.buildReassessPack ?? defaultBuildReassessPack)(symbol);
     if (dataPack.prediction_chart_id) state.chartId = dataPack.prediction_chart_id;
     const sessionId = `analyst:${symbol}:${runStartedAt}`;
-    const proTurn = await prepareProAiTurn({
-      surface: 'analyst',
-      sessionId,
-      symbol,
-      market: marketOf(symbol),
-    });
 
     const tools = buildTools(
       symbol,
@@ -123,7 +117,7 @@ export async function executeAnalystRun(symbol: string, deps: AnalystDeps): Prom
         exec: deps.exec ?? createDefaultExec(repoRoot),
         now,
         skillIndex,
-        readMounts: proTurn.readMounts,
+        readMounts: memoryReadMounts(),
       },
       state,
       () => session?.isDone() ?? false,
@@ -146,7 +140,7 @@ export async function executeAnalystRun(symbol: string, deps: AnalystDeps): Prom
         loadedSkillIds: [...state.loadedSkillIds].sort(),
         submitted: state.submitted,
       }),
-      extraProcessors: proTurn.processors,
+      extraProcessors: memoryProcessors({ symbol, market: marketOf(symbol) }),
     });
 
     session = createAgentSession({
@@ -173,7 +167,6 @@ export async function executeAnalystRun(symbol: string, deps: AnalystDeps): Prom
     if (!state.submitted && !session.agent.state?.errorMessage) {
       await session.runTurn(ANALYST_RETRY_PROMPT, timeoutMs);
     }
-    proTurn.onTurnComplete?.(session.agent.state?.messages ?? []);
 
     if (!state.submitted) {
       const errorMessage = session.agent.state?.errorMessage;
