@@ -32,7 +32,9 @@ import {
   Text,
   Timeline,
   Toggle,
+  useCandles,
   useMemo,
+  useQuote,
   useState,
 } from '@kansoku/canvas';
 
@@ -125,6 +127,8 @@ const RANGE_OPTIONS = [
 export default function App() {
   const [showVolume, setShowVolume] = useState(true);
   const [range, setRange] = useState('1d');
+  const quote = useQuote('MU.US');
+  const candles = useCandles('MU.US');
 
   const flow = useMemo(
     () => (range === '1d' ? FLOW : FLOW.map((point) => ({ ...point, y: point.y * 2.3 }))),
@@ -289,6 +293,20 @@ export default function App() {
           zones={[{ low: 59, high: 60.4, kind: 'range', label: '密集区' }]}
           markers={[{ time: 1_756_011_600, price: 61.2, bias: 'bullish', label: '入场' }]}
         />
+      </Section>
+
+      <Section title="实时行情">
+        <Grid columns={2}>
+          {quote ? (
+            <Stat
+              label="MU 最新价"
+              value={quote.last.toFixed(2)}
+              delta={quote.pct === null ? undefined : `${quote.pct >= 0 ? '+' : ''}${quote.pct.toFixed(2)}%`}
+              tone={quote.pct === null ? undefined : quote.pct >= 0 ? 'up' : 'down'}
+            />
+          ) : null}
+          <CandleChart title="MU 5 分钟实时" source={candles} tf="m5" />
+        </Grid>
       </Section>
     </Canvas>
   );

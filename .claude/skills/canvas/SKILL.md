@@ -41,7 +41,9 @@ numbers yet.
 ### 2. Fetch first, then embed
 
 `fetch_kline` / `read_data_pack` / bash `longbridge` / research files. Write the numbers into
-the TSX. A canvas cannot `fetch` and cannot pull live quotes — it is frozen at analysis time.
+the TSX, or offload them to a data file (see "Where data comes from" below). A canvas itself
+still cannot `fetch` — no sandboxed network access — but it can pull live quotes and K-line
+through the two hooks in that section.
 
 Indicators are computed server-side and passed in; `CandleChart` draws, it does not compute
 (`ema` needs `{ label, points }`, not periods). Attribute every number's vintage in the
@@ -50,10 +52,11 @@ caption (TD-DATA-02). What you could not fetch goes in `Coverage`, never into a 
 
 ### 3. Write the canvas
 
-- One file, saved via `save_canvas({ slug, title, source })`. Slug is kebab-case. No helper
-  files.
+- One file, saved via `save_canvas({ slug, title, source })`. Slug is kebab-case. A canvas may
+  have sibling data files (see below); it has no other helper `.tsx`/`.ts` files.
 - Exactly one `export default`, the top-level component.
-- Import **only** from `@kansoku/canvas`. No relative paths, no `react`, no `node:`, no npm.
+- Import from `@kansoku/canvas`, or a same-directory JSON data file (`./<name>.json`). No
+  other relative paths, no `react`, no `node:`, no npm.
 - Banned in source: `fetch(`, `XMLHttpRequest`, `import(`, `require(`, `setTimeout` /
   `setInterval`, `document.`, `window.`. 64 KB limit.
 - Revising: `read_file` the existing `journal/canvases/<slug>.canvas.tsx`, then send one
@@ -62,6 +65,29 @@ caption (TD-DATA-02). What you could not fetch goes in `Coverage`, never into a 
   only when creating a canvas or replacing the whole source. One question, one slug.
 - Free builds may keep at most 3 canvases. Overwriting an existing slug is always allowed;
   a fourth new slug is rejected until the user upgrades to Pro.
+
+### 4. Where data comes from
+
+- **Small data** (a handful of numbers, a short series): inline it in the TSX as before.
+- **K-line, always through a tool — never hand-typed `bars`.** Use `snapshot_candles({ slug,
+  name, symbol })` for a post-hoc read: the server builds a three-timeframe `CandleFeed` and
+  writes `journal/canvases/<slug>.<name>.json`; `import snap from './<name>.json'` and pass it
+  to `CandleChart` as `source={snap} tf="m5"`. Use `useCandles(symbol)` instead only when the
+  user explicitly wants to watch the market live — it returns a live-updating `CandleFeed`.
+  Either way `CandleChart` never takes hand-typed `bars` for real market data.
+- **Any other data too big or awkward to inline**: `save_canvas_data({ slug, name, json })`
+  writes `journal/canvases/<slug>.<name>.json`, then `import x from './<name>.json'` in the
+  source. Both data tools require the canvas (the `slug`) to already exist — `save_canvas`
+  first if it does not.
+- **Live quotes**: `useQuote(symbol)` returns a live-updating `QuoteCell | null`, e.g. for
+  `Stat`.
+- **Caption discipline**: a canvas driven by `useQuote` / `useCandles` writes `Source` as
+  「实时」; one driven by a snapshot file writes the data's cutoff time, taken from
+  `CandleFeed.asOf`.
+- **The only permitted empty state** is `<CandleChart source={null} .../>` rendering its
+  built-in「等待行情…」placeholder while a live feed has not delivered a first frame. Every
+  other empty state is still forbidden (see below).
+- **Live subscription budget**: at most 6 combined `useQuote` / `useCandles` calls per canvas.
 
 **Never render empty states.** No data means omit the element — no placeholder text, no
 「暂无数据」, no zeroed rows, no empty chart frame. `Coverage` is the sole exception; naming
@@ -79,7 +105,7 @@ silently dropped rather than erroring. Exact prop shapes are declared next to th
 `core.d.ts` — it holds everything the mandatory parts of the skeleton use (layout, text,
 `Stat`, `Table`, `Compare`, `Coverage`, `Source`). Read the rest only when you reach for
 them: `charts.d.ts`, `CandleChart.d.ts`, `analysis.d.ts` (`Scenarios` / `RRPlan` /
-`Timeline`), `control.d.ts`, `theme.d.ts`.
+`Timeline`), `control.d.ts`, `theme.d.ts`, `live.d.ts` (`useQuote` / `useCandles`).
 
 | Group | Components |
 | --- | --- |
@@ -88,7 +114,8 @@ them: `charts.d.ts`, `CandleChart.d.ts`, `analysis.d.ts` (`Scenarios` / `RRPlan`
 | Numbers | `Stat`, `Metric`, `Table`, `Compare`, `Coverage` |
 | Conclusions | `Scenarios`, `RRPlan`, `Timeline` |
 | Controls | `Toggle`, `Select` |
-| Charts | `LineChart`, `BarChart` (`signed`), `AreaChart`, `PieChart`, `Sparkline`, `CandleChart` |
+| Charts | `LineChart`, `BarChart` (`signed`), `AreaChart`, `PieChart`, `Sparkline`, `CandleChart` (`bars` or `source`+`tf`) |
+| Live | `useQuote(symbol)`, `useCandles(symbol)` — hooks, not components; feed `Stat` / `CandleChart source` |
 
 Four of them validate themselves against the discipline rules: `Scenarios` flags
 probabilities that miss 100 (TD-SCENARIO-01), `RRPlan` reddens reward-to-risk under 1.5
@@ -192,3 +219,7 @@ available when that diagnostic record is needed.
 
 A blank canvas almost always referenced an export that does not exist. A prop that has no
 effect was invented — check it against the declarations in `.claude/skills/canvas/sdk/`.
+
+`missing data file: <slug>.<name>.json` means the source imports a data file that has not
+been written yet — call `save_canvas_data` or `snapshot_candles` with that `name` first, then
+`save_canvas` / `apply_patch`.
