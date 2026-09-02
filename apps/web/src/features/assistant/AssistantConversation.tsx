@@ -1,7 +1,7 @@
 import { gsap } from 'gsap';
 import { AtSign } from 'lucide-react';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import type { SyntheticEvent } from 'react';
+import type { CSSProperties, SyntheticEvent } from 'react';
 import { canvasSlugFromResearchPath, researchCanvasPath } from '@kansoku/core/contract/index';
 import * as stylex from '@stylexjs/stylex';
 import { navigate } from '@web/lib/router';
@@ -40,6 +40,7 @@ const styles = stylex.create({
     minHeight: 0,
     minWidth: 0,
     overflow: 'hidden',
+    position: 'relative',
   },
   head: {
     'alignItems': 'center',
@@ -76,19 +77,32 @@ const styles = stylex.create({
     minHeight: 0,
   },
   dock: {
-    'flexGrow': 0,
-    'flexShrink': 0,
-    'flexBasis': 'auto',
+    'position': 'absolute',
+    'bottom': 0,
+    'left': 0,
+    'right': 0,
     'padding': '8px max(12px, calc((100% - 68ch) / 2)) 10px',
-    'position': 'relative',
+    'pointerEvents': 'none',
     'zIndex': 5,
     '@media (max-width: 720px)': {
       paddingLeft: '8px',
       paddingRight: '8px',
     },
   },
+  dockBackdrop: {
+    position: 'absolute',
+    top: '-36px',
+    left: 0,
+    right: '12px',
+    bottom: 0,
+    backgroundImage: `linear-gradient(to bottom, transparent, ${colors.backgroundCanvas} 44px)`,
+    backdropFilter: 'blur(14px)',
+    maskImage: 'linear-gradient(to bottom, transparent, #000 44px)',
+  },
   dockInner: {
     minWidth: 0,
+    pointerEvents: 'auto',
+    position: 'relative',
   },
   composerWrap: {
     position: 'relative',
@@ -128,6 +142,7 @@ const styles = stylex.create({
     'gap': '12px',
     'minHeight': '100%',
     'padding': '16px max(12px, calc((100% - 68ch) / 2))',
+    'paddingBottom': 'calc(var(--assistant-dock-height, 0px) + 28px)',
     '@media (max-width: 720px)': {
       paddingLeft: '8px',
       paddingRight: '8px',
@@ -380,6 +395,18 @@ export function AssistantConversation({
   const canvas = useCanvasWorkspace(linkedCanvasSlug);
   const canvasReloadKey = latestCanvasChangeToken(rows, liveTools);
   const [text, setText] = useState('');
+  const dockRef = useRef<HTMLDivElement>(null);
+  const [dockHeight, setDockHeight] = useState(0);
+  useLayoutEffect(() => {
+    const dock = dockRef.current;
+    const Observer = globalThis.ResizeObserver;
+    if (!dock || !Observer) return;
+    const observer = new Observer(() => {
+      setDockHeight(dock.offsetHeight);
+    });
+    observer.observe(dock);
+    return () => observer.disconnect();
+  }, []);
   const [mentionState, setMentionState] = useState<MentionState | null>(null);
   const [composerFocused, setComposerFocused] = useState(false);
   const [modelPickerOpen, setModelPickerOpen] = useState(false);
@@ -578,7 +605,10 @@ export function AssistantConversation({
       reloadKey={canvasReloadKey}
       storageKey="canvas-assistant-pane"
     >
-      <div className={`assistant-conversation ${stylex.props(styles.conversation).className}`}>
+      <div
+        className={`assistant-conversation ${stylex.props(styles.conversation).className}`}
+        style={{ '--assistant-dock-height': `${dockHeight}px` } as CSSProperties}
+      >
         <div className={`assistant-conversation-head ${stylex.props(styles.head).className}`}>
           <span className={`assistant-conversation-title ${stylex.props(styles.title).className}`}>
             {sessionTitle ?? session?.title ?? '新的会话'}
@@ -608,7 +638,11 @@ export function AssistantConversation({
           userBubbleClassName={stylex.props(styles.userBubble).className}
           onRetryLast={() => void retryLast()}
         />
-        <div className={`assistant-conversation-dock ${stylex.props(styles.dock).className}`}>
+        <div
+          ref={dockRef}
+          className={`assistant-conversation-dock ${stylex.props(styles.dock).className}`}
+        >
+          <div {...stylex.props(styles.dockBackdrop)} aria-hidden="true" />
           <div
             className={`assistant-conversation-dock-inner ${stylex.props(styles.dockInner).className}`}
           >

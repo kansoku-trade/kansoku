@@ -31,7 +31,7 @@ const styles = stylex.create({
   },
   scrollBottom: {
     'position': 'sticky',
-    'bottom': '6px',
+    'bottom': 'calc(var(--assistant-dock-height, 0px) + 6px)',
     'alignSelf': 'flex-end',
     'marginLeft': 'auto',
     'display': 'inline-flex',
