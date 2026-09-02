@@ -136,6 +136,22 @@ describe('CanvasFrame live bridge', () => {
     expect(typeof feed.data.asOf).toBe('string');
   });
 
+  it('goes degraded when a preview build fails before any data', () => {
+    const onLiveStatus = vi.fn();
+    const { posts, send } = setup(onLiveStatus);
+    send({ type: 'sub', kind: 'preview', symbol: 'MU.US' });
+
+    const onPayload = subscribeChannel.mock.calls[0][1];
+    act(() => onPayload({ type: 'status', error: 'boom' }));
+
+    expect(onLiveStatus).toHaveBeenLastCalledWith({
+      subscribed: true,
+      connected: false,
+      degraded: true,
+    });
+    expect(posts).toContainEqual({ type: 'feed-status', connected: false, degraded: true });
+  });
+
   it('releases on unsub, on iframe reload, and on unmount', () => {
     const { container } = render(
       <CanvasFrame source="export default function App() { return null; }" />,

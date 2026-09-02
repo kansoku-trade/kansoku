@@ -134,7 +134,8 @@ export function CanvasFrame({ source, slug, data, onLiveStatus }: CanvasFramePro
               { kind: 'preview', symbol },
               (payload) => {
                 const decoded = decodePreviewEnvelope(payload, hadBuilt);
-                if (decoded.degraded !== undefined) emitStatus({ degraded: decoded.degraded });
+                if (decoded.error !== undefined) emitStatus({ degraded: true });
+                else if (decoded.degraded !== undefined) emitStatus({ degraded: decoded.degraded });
                 if (!decoded.built) return;
                 hadBuilt = true;
                 forward({
