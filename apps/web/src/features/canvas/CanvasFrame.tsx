@@ -23,6 +23,7 @@ const styles = stylex.create({
 export interface CanvasFrameProps {
   source: string;
   slug?: string;
+  data?: Record<string, unknown>;
 }
 
 type GuestMessage =
@@ -33,10 +34,12 @@ type GuestMessage =
 
 const INITIAL_HEIGHT = 320;
 
-export function CanvasFrame({ source, slug }: CanvasFrameProps) {
+export function CanvasFrame({ source, slug, data }: CanvasFrameProps) {
   const frameRef = useRef<HTMLIFrameElement>(null);
   const sourceRef = useRef(source);
   sourceRef.current = source;
+  const dataRef = useRef(data);
+  dataRef.current = data;
   const [height, setHeight] = useState(INITIAL_HEIGHT);
 
   useEffect(() => {
@@ -44,25 +47,28 @@ export function CanvasFrame({ source, slug }: CanvasFrameProps) {
     if (!frame) return;
 
     const postSource = () => {
-      frame.contentWindow?.postMessage({ type: 'source', source: sourceRef.current }, '*');
+      frame.contentWindow?.postMessage(
+        { type: 'source', source: sourceRef.current, data: dataRef.current ?? {} },
+        '*',
+      );
     };
 
     const onMessage = (event: MessageEvent<GuestMessage>) => {
       if (event.source !== frame.contentWindow) return;
-      const data = event.data;
-      if (!data || typeof data !== 'object') return;
-      if (data.type === 'ready') {
+      const payload = event.data;
+      if (!payload || typeof payload !== 'object') return;
+      if (payload.type === 'ready') {
         postSource();
         return;
       }
-      if (data.type === 'height') {
-        if (data.height > 0) setHeight(data.height);
+      if (payload.type === 'height') {
+        if (payload.height > 0) setHeight(payload.height);
         return;
       }
-      if (data.type !== 'ok' && data.type !== 'runtime-error') return;
+      if (payload.type !== 'ok' && payload.type !== 'runtime-error') return;
       if (!slug) return;
-      const issues = data.type === 'ok' ? [] : (data.issues ?? ['canvas failed']);
-      const stage = data.type === 'ok' ? 'compile' : (data.stage ?? 'runtime');
+      const issues = payload.type === 'ok' ? [] : (payload.issues ?? ['canvas failed']);
+      const stage = payload.type === 'ok' ? 'compile' : (payload.stage ?? 'runtime');
       void client.canvas.recordCheck({ slug, issues, stage });
     };
 
@@ -72,7 +78,7 @@ export function CanvasFrame({ source, slug }: CanvasFrameProps) {
       frame.removeEventListener('load', postSource);
       window.removeEventListener('message', onMessage);
     };
-  }, [slug, source]);
+  }, [data, slug, source]);
 
   return (
     <ScrollArea className={stylex.props(styles.root).className}>

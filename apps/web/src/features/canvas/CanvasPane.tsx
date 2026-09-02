@@ -152,7 +152,7 @@ export function CanvasPane({
             <Spinner /> 正在打开画布…
           </div>
         ) : (
-          <CanvasFrame source={doc.source} slug={doc.slug} />
+          <CanvasFrame source={doc.source} slug={doc.slug} data={doc.data} />
         )}
       </div>
     </div>

@@ -3,14 +3,16 @@ import * as React from 'react';
 import { compileCanvasSource, instantiateCanvas } from '@kansoku/core/canvas/compile';
 
 export type LoadCanvasResult =
-  | { ok: true; Component: React.ComponentType }
-  | { ok: false; issues: string[] };
+  { ok: true; Component: React.ComponentType } | { ok: false; issues: string[] };
 
-export function loadCanvasComponent(source: string): LoadCanvasResult {
+export function loadCanvasComponent(
+  source: string,
+  data: Record<string, unknown> = {},
+): LoadCanvasResult {
   const compiled = compileCanvasSource(source);
   if (!compiled.ok) return compiled;
   try {
-    const Component = instantiateCanvas(compiled.code, canvasSdk, React);
+    const Component = instantiateCanvas(compiled.code, canvasSdk, React, data);
     if (typeof Component !== 'function') {
       return { ok: false, issues: ['compiled canvas did not export a component'] };
     }

@@ -23,6 +23,20 @@ describe('loadCanvasComponent', () => {
     expect(screen.getByText('hello canvas')).toBeTruthy();
   });
 
+  it('injects data files a canvas imports', () => {
+    const source = `import { Canvas, Text } from '@kansoku/canvas';
+import bars from './bars.json';
+export default function App() {
+  return <Canvas title="Data demo"><Text>{bars.symbol}</Text></Canvas>;
+}
+`;
+    const result = loadCanvasComponent(source, { bars: { symbol: 'MU.US' } });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    render(<result.Component />);
+    expect(screen.getByText('MU.US')).toBeTruthy();
+  });
+
   it('returns static-check issues without throwing', () => {
     const result = loadCanvasComponent('export function App() { return null; }\n');
     expect(result.ok).toBe(false);

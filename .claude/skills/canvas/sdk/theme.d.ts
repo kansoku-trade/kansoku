@@ -13,6 +13,7 @@ export declare const theme: {
     readonly up: '#26a69a';
     readonly down: '#ef5350';
     readonly fontMono: "ui-monospace, 'SF Mono', Menlo, monospace";
+    readonly fontUi: "-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', sans-serif";
     readonly radius: 2;
 };
 export declare const seriesPalette: readonly ["#ffb000", "#e8e8e8", "#26a69a", "#ef5350", "#9a9a9a"];

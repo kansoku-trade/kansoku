@@ -113,10 +113,10 @@ const EXPLORER_WIDTH_STORAGE_KEY = 'kansoku.research.explorer-width';
 
 const styles = stylex.create({
   fullpage: {
-    display: 'flex',
-    flexDirection: 'column',
-    height: '100cqh',
-    overflow: 'hidden',
+    'display': 'flex',
+    'flexDirection': 'column',
+    'height': '100cqh',
+    'overflow': 'hidden',
     '@media (max-width: 760px)': {
       height: 'auto',
       minHeight: '100cqh',
@@ -124,15 +124,15 @@ const styles = stylex.create({
     },
   },
   fullpageDesktop: {
-    height: 'calc(100cqh - 40px)',
+    'height': 'calc(100cqh - 40px)',
     '@media (max-width: 760px)': {
       height: 'auto',
       minHeight: 'calc(100cqh - 40px)',
     },
   },
   page: {
-    'backgroundColor': colors.backgroundCanvas,
-    'color': colors.textPrimary,
+    backgroundColor: colors.backgroundCanvas,
+    color: colors.textPrimary,
   },
   header: {
     'alignItems': 'center',
@@ -602,10 +602,10 @@ const styles = stylex.create({
     padding: '2px 5px',
   },
   cockpitLink: {
-    color: colors.textPrimary,
-    flex: '0 0 auto',
-    textDecoration: 'none',
-    whiteSpace: 'nowrap',
+    'color': colors.textPrimary,
+    'flex': '0 0 auto',
+    'textDecoration': 'none',
+    'whiteSpace': 'nowrap',
     ':hover': {
       color: colors.accent,
     },
@@ -750,9 +750,7 @@ function ResearchReader({
       <header {...stylex.props(styles.readerHead, compactHead && styles.readerHeadCompact)}>
         <div {...stylex.props(styles.readerHeading)}>
           <div
-            {...stylex.props(
-              compactHead ? styles.readerTitleRowCompact : styles.readerTitleRow,
-            )}
+            {...stylex.props(compactHead ? styles.readerTitleRowCompact : styles.readerTitleRow)}
           >
             <Badge
               className={
@@ -829,7 +827,7 @@ function ResearchCanvasBody({ path }: { path: string }) {
   }
   if (error) return <ErrorBox className={stylex.props(styles.error).className}>{error}</ErrorBox>;
   if (!data || !slug) return <Empty>画布不存在</Empty>;
-  return <CanvasFrame source={data.source} slug={data.slug} />;
+  return <CanvasFrame source={data.source} slug={data.slug} data={data.data} />;
 }
 
 function ResearchContext({
@@ -997,7 +995,11 @@ export function ResearchPage() {
           ariaLabel="研究库视图"
           className={`research-view-switch ${stylex.props(styles.viewSwitch).className}`}
           onChange={changeView}
-          options={viewOptions({ stocks: stockCount, journal: journalCount, canvases: canvasCount })}
+          options={viewOptions({
+            stocks: stockCount,
+            journal: journalCount,
+            canvases: canvasCount,
+          })}
           size="lg"
           value={view}
           variant="plain"
@@ -1047,7 +1049,11 @@ export function ResearchPage() {
               {view === 'canvases' ? (
                 <CanvasQuotaHint count={canvasCount} />
               ) : (
-                <button type="button" {...stylex.props(styles.newButton)} onClick={openCreateDialog}>
+                <button
+                  type="button"
+                  {...stylex.props(styles.newButton)}
+                  onClick={openCreateDialog}
+                >
                   <Plus size={12} /> 新建
                 </button>
               )}

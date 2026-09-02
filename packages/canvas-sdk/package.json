@@ -13,12 +13,12 @@
       "default": "./src/names.ts"
     }
   },
-  "peerDependencies": {
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7"
+  "scripts": {
+    "types:skill": "node scripts/buildSkillTypes.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
+    "@kansoku/shared": "workspace:*",
     "lightweight-charts": "^5.2.0",
     "recharts": "^3.9.2"
   },
@@ -28,7 +28,8 @@
     "react-dom": "^19.2.7",
     "typescript": "^7.0.2"
   },
-  "scripts": {
-    "types:skill": "node scripts/buildSkillTypes.mjs"
+  "peerDependencies": {
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
   }
 }

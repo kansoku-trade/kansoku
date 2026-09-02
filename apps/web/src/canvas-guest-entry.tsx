@@ -20,14 +20,19 @@ class GuestBoundary extends Component<
 
   render(): ReactNode {
     if (this.state.error) {
-      return <pre style={{ margin: 16, color: '#ef5350', whiteSpace: 'pre-wrap' }}>{this.state.error}</pre>;
+      return (
+        <pre style={{ margin: 16, color: '#ef5350', whiteSpace: 'pre-wrap' }}>
+          {this.state.error}
+        </pre>
+      );
     }
     return this.props.children;
   }
 }
 
 function report(
-  message: { type: 'ok' } | { type: 'runtime-error'; issues: string[]; stage: 'compile' | 'runtime' },
+  message:
+    { type: 'ok' } | { type: 'runtime-error'; issues: string[]; stage: 'compile' | 'runtime' },
 ) {
   parent.postMessage(message, '*');
 }
@@ -51,9 +56,13 @@ function renderIssues(issues: string[]): void {
 }
 
 window.addEventListener('message', (event) => {
-  const data = event.data as { type?: string; source?: string } | null;
-  if (!data || data.type !== 'source' || typeof data.source !== 'string') return;
-  const result = loadCanvasComponent(data.source);
+  const message = event.data as {
+    type?: string;
+    source?: string;
+    data?: Record<string, unknown>;
+  } | null;
+  if (!message || message.type !== 'source' || typeof message.source !== 'string') return;
+  const result = loadCanvasComponent(message.source, message.data ?? {});
   if (!result.ok) {
     renderIssues(result.issues);
     report({ type: 'runtime-error', issues: result.issues, stage: 'compile' });
