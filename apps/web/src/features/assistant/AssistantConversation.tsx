@@ -363,8 +363,19 @@ export function AssistantConversation({
   modelLabels: Readonly<Record<string, string>>;
   onModelChange: (value: string) => void;
 }) {
-  const { session, rows, busy, aborting, streamText, liveTools, liveBeats, hint, send, abort } =
-    useAssistantChatSession(sessionId);
+  const {
+    session,
+    rows,
+    busy,
+    aborting,
+    streamText,
+    liveTools,
+    liveBeats,
+    hint,
+    send,
+    retryLast,
+    abort,
+  } = useAssistantChatSession(sessionId);
   const linkedCanvasSlug = linkedCanvas ? canvasSlugFromResearchPath(linkedCanvas.path) : null;
   const canvas = useCanvasWorkspace(linkedCanvasSlug);
   const canvasReloadKey = latestCanvasChangeToken(rows, liveTools);
@@ -595,6 +606,7 @@ export function AssistantConversation({
             );
           }}
           userBubbleClassName={stylex.props(styles.userBubble).className}
+          onRetryLast={() => void retryLast()}
         />
         <div className={`assistant-conversation-dock ${stylex.props(styles.dock).className}`}>
           <div

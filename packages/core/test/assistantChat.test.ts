@@ -383,7 +383,15 @@ describe('assistant chat', () => {
     if (second.started) await second.done;
 
     const total = await sumAssistantSessionUsage(session.id, db);
-    expect(total).toEqual({ totalTokens: 350, costTotal: 1.75, calls: 2 });
+    expect(total).toEqual({
+      totalTokens: 350,
+      costTotal: 1.75,
+      calls: 2,
+      input: 0,
+      output: 0,
+      cacheRead: 0,
+      cacheWrite: 0,
+    });
   });
 
   it('sumAssistantSessionUsage ignores messages without usage fields', async () => {
@@ -414,7 +422,15 @@ describe('assistant chat', () => {
     if (result.started) await result.done;
 
     const total = await sumAssistantSessionUsage(session.id, db);
-    expect(total).toEqual({ totalTokens: 0, costTotal: 0, calls: 0 });
+    expect(total).toEqual({
+      totalTokens: 0,
+      costTotal: 0,
+      calls: 0,
+      input: 0,
+      output: 0,
+      cacheRead: 0,
+      cacheWrite: 0,
+    });
   });
 
   it('assigns a generated title after the first turn of a new conversation', async () => {

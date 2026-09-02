@@ -775,6 +775,35 @@ describe('toDisplayMessages', () => {
     const [tool] = toDisplayMessages(rows);
     expect(tool.output).toBe(`${'x'.repeat(4000)}…（已截断）`);
   });
+
+  it('maps thinking blocks onto their own display rows', () => {
+    const rows: ChatMessageRow[] = [
+      {
+        id: 'r1',
+        sessionId: 's1',
+        ts: 't1',
+        role: 'assistant',
+        payload: {
+          role: 'assistant',
+          content: [
+            { type: 'thinking', thinking: '先核对持仓' },
+            { type: 'text', text: '结论：继续拿' },
+          ],
+          api: 'anthropic-messages',
+          provider: 'anthropic',
+          model: 'x',
+          usage: ZERO_USAGE,
+          stopReason: 'stop',
+          timestamp: 0,
+        },
+      },
+    ];
+
+    expect(toDisplayMessages(rows)).toEqual([
+      { id: 'r1', ts: 't1', kind: 'thinking', text: '先核对持仓' },
+      { id: 'r1:1', ts: 't1', kind: 'assistant', text: '结论：继续拿' },
+    ]);
+  });
 });
 
 describe('buildChatSystemPrompt', () => {

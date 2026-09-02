@@ -2,6 +2,7 @@ import type { ChatLiveBeat } from './useChatSession';
 
 export type LiveBeatEvent =
   | { event: 'delta'; text: string }
+  | { event: 'reasoning'; text: string }
   | { event: 'tool'; label: string; status: 'start' | 'end'; input?: string; output?: string };
 
 export function applyLiveBeat(
@@ -16,6 +17,14 @@ export function applyLiveBeat(
       return [...beats.slice(0, -1), { kind: 'text', text: last.text + event.text }];
     }
     return [...beats, { kind: 'text', text: event.text }];
+  }
+  if (event.event === 'reasoning') {
+    if (!event.text) return beats;
+    const last = beats.at(-1);
+    if (last?.kind === 'reasoning') {
+      return [...beats.slice(0, -1), { kind: 'reasoning', text: last.text + event.text }];
+    }
+    return [...beats, { kind: 'reasoning', text: event.text }];
   }
   if (event.status === 'start') {
     return [

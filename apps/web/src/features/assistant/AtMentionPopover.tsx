@@ -18,7 +18,7 @@ const styles = stylex.create({
     padding: '4px',
   },
   item: {
-    'alignItems': 'baseline',
+    'alignItems': 'center',
     'backgroundColor': 'transparent',
     'borderColor': 'transparent',
     'borderStyle': 'none',

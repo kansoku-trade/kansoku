@@ -65,7 +65,15 @@ describe('assistant routes', () => {
     expect(emptyChatBody.session.id).toBe(created.id);
     expect(emptyChatBody.messages).toEqual([]);
     expect(emptyChatBody.busy).toBe(false);
-    expect(emptyChatBody.usage).toEqual({ totalTokens: 0, costTotal: 0, calls: 0 });
+    expect(emptyChatBody.usage).toEqual({
+      totalTokens: 0,
+      costTotal: 0,
+      calls: 0,
+      input: 0,
+      output: 0,
+      cacheRead: 0,
+      cacheWrite: 0,
+    });
 
     let releasePrompt: () => void = () => {};
     const gate = new Promise<void>((resolve) => {

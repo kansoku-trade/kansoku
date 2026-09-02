@@ -5,11 +5,19 @@ import type { ChatLiveBeat } from './useChatSession';
 function summarize(beats: ChatLiveBeat[]): string[] {
   return beats.map((beat) => {
     if (beat.kind === 'text') return `text:${beat.text}`;
+    if (beat.kind === 'reasoning') return `reasoning:${beat.text}`;
     return `tool:${beat.tool.id}:${beat.tool.label}:${beat.tool.status}`;
   });
 }
 
 describe('applyLiveBeat', () => {
+  it('appends reasoning deltas onto one beat', () => {
+    const once = applyLiveBeat([], { event: 'reasoning', text: '先核' }, 't0');
+    expect(summarize(applyLiveBeat(once, { event: 'reasoning', text: '对持仓' }, 't0'))).toEqual([
+      'reasoning:先核对持仓',
+    ]);
+  });
+
   it('opens a text beat on the first delta', () => {
     expect(summarize(applyLiveBeat([], { event: 'delta', text: '先读' }, 't0'))).toEqual(['text:先读']);
   });

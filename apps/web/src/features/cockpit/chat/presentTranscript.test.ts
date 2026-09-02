@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { ChatRow } from './useChatSession';
 import {
+  formatRuntime,
   formatWorkedDuration,
   presentTranscript,
   type TranscriptBlock,
@@ -64,6 +65,12 @@ function summarize(blocks: TranscriptBlock[]): string[] {
       case 'canvases': {
         return `canvases:${block.entries.map((entry) => entry.slug).join(',')}`;
       }
+      case 'reasoning': {
+        return `reasoning:${block.text}${block.streaming ? ':stream' : ''}`;
+      }
+      case 'runtime': {
+        return `runtime:${block.startedAt}`;
+      }
       case 'thinking': {
         return 'thinking';
       }
@@ -99,7 +106,35 @@ describe('formatWorkedDuration', () => {
   });
 });
 
+describe('formatRuntime', () => {
+  it('mirrors worked duration with a live prefix', () => {
+    expect(formatRuntime(6_000)).toBe('运行了 6 秒');
+    expect(formatRuntime(72_000)).toBe('运行了 1 分 12 秒');
+  });
+
+  it('falls back when the stamp is not a duration', () => {
+    expect(formatRuntime(Number.NaN)).toBe('运行中');
+  });
+});
+
 describe('presentTranscript', () => {
+  it('lifts thinking rows out of the worked fold', () => {
+    const blocks = presentTranscript({
+      rows: [
+        user('u1', '10:00:00', '怎么看'),
+        { id: 'th1', ts: ts('10:00:04'), kind: 'thinking', text: '先核对持仓' },
+        tool('t1', '10:00:05', 'read_file', { path: 'stocks/MU.md' }),
+        assistant('a1', '10:00:08', '继续拿'),
+      ],
+    });
+    expect(summarize(blocks)).toEqual([
+      'user:怎么看',
+      'reasoning:先核对持仓',
+      'worked:8000:tool:read_file',
+      'text:继续拿',
+    ]);
+  });
+
   it('leaves a no-tool turn unfolded', () => {
     const blocks = presentTranscript({
       rows: [user('u1', '10:00:00', '怎么看 MU'), assistant('a1', '10:00:08', '先看开盘')],
@@ -256,8 +291,42 @@ describe('presentTranscript', () => {
     });
     expect(summarize(blocks)).toEqual([
       'user:拉三只',
+      `runtime:${ts('10:00:00')}`,
       'text:先读流程',
       'group:3:run:加载分析流程,执行数据命令',
+    ]);
+  });
+
+  it('streams a reasoning beat outside the text bubble', () => {
+    const blocks = presentTranscript({
+      busy: true,
+      rows: [user('u1', '10:00:00', '怎么看')],
+      liveBeats: [{ kind: 'reasoning', text: '先核对持仓' }],
+    });
+    expect(summarize(blocks)).toEqual([
+      'user:怎么看',
+      `runtime:${ts('10:00:00')}`,
+      'reasoning:先核对持仓:stream',
+    ]);
+  });
+
+  it('keeps live reasoning open after tools start', () => {
+    const blocks = presentTranscript({
+      busy: true,
+      rows: [user('u1', '10:00:00', '怎么看')],
+      liveBeats: [
+        { kind: 'reasoning', text: '先核对持仓再读新闻' },
+        {
+          kind: 'tool',
+          tool: { id: 'lt1', label: 'bash', status: 'start', input: '{}' },
+        },
+      ],
+    });
+    expect(summarize(blocks)).toEqual([
+      'user:怎么看',
+      `runtime:${ts('10:00:00')}`,
+      'reasoning:先核对持仓再读新闻:stream',
+      'tool:bash:run',
     ]);
   });
 
@@ -266,7 +335,7 @@ describe('presentTranscript', () => {
       busy: true,
       rows: [user('u1', '10:00:00', '问')],
     });
-    expect(summarize(blocks)).toEqual(['user:问', 'thinking']);
+    expect(summarize(blocks)).toEqual(['user:问', `runtime:${ts('10:00:00')}`, 'thinking']);
   });
 
   it('surfaces a live canvas after the current beats', () => {
@@ -289,6 +358,7 @@ describe('presentTranscript', () => {
     });
     expect(summarize(blocks)).toEqual([
       'user:画',
+      `runtime:${ts('10:00:00')}`,
       'tool:save_canvas',
       'text:画布写好了:stream',
       'canvases:mu-panel',

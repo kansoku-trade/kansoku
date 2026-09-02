@@ -92,6 +92,10 @@ export interface AssistantSessionUsageTotal {
   totalTokens: number;
   costTotal: number;
   calls: number;
+  input: number;
+  output: number;
+  cacheRead: number;
+  cacheWrite: number;
 }
 
 export async function sumAssistantSessionUsage(
@@ -99,12 +103,24 @@ export async function sumAssistantSessionUsage(
   db?: Db,
 ): Promise<AssistantSessionUsageTotal> {
   const rows = await listAssistantMessages(sessionId, db);
-  const total: AssistantSessionUsageTotal = { totalTokens: 0, costTotal: 0, calls: 0 };
+  const total: AssistantSessionUsageTotal = {
+    totalTokens: 0,
+    costTotal: 0,
+    calls: 0,
+    input: 0,
+    output: 0,
+    cacheRead: 0,
+    cacheWrite: 0,
+  };
   for (const row of rows) {
     const usage = (row.payload as { usage?: unknown }).usage;
     if (!isUsage(usage)) continue;
     total.totalTokens += usage.totalTokens;
     total.costTotal += usage.cost.total;
+    total.input += usage.input;
+    total.output += usage.output;
+    total.cacheRead += usage.cacheRead;
+    total.cacheWrite += usage.cacheWrite;
     total.calls += 1;
   }
   return total;

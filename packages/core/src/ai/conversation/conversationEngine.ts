@@ -3,6 +3,7 @@ import { type AiAgentFactory, createAgentSession } from '../agents/agentSession.
 import {
   agentToolResultText,
   concatAssistantText,
+  concatThinking,
   hasAssistantText,
   persistFailureIncrement,
   persistIncrement,
@@ -16,6 +17,7 @@ import type { AiUsageLogContext } from '../runtime/usage.js';
 
 export type ConversationEvent =
   | { event: 'delta'; text: string }
+  | { event: 'reasoning'; text: string }
   | { event: 'tool'; label: string; status: 'start' | 'end'; input?: string; output?: string }
   | { event: 'title'; title: string }
   | { event: 'done' }
@@ -84,6 +86,7 @@ interface TurnState {
 
 interface TranslatorCtx {
   emittedLen: number;
+  emittedThinkingLen: number;
   settled: boolean;
   // On a gated turn the model's free text is suppressed until the gate has passed. Streaming it
   // live would defeat the gate entirely — the words are already on the user's screen by the time
@@ -102,12 +105,19 @@ function translateEvent(
   if (event.type === 'message_start') {
     if (event.message.role === 'assistant') {
       ctx.emittedLen = 0;
+      ctx.emittedThinkingLen = 0;
       state.partial = '';
     }
     return;
   }
   if (event.type === 'message_update') {
     if (event.message.role !== 'assistant') return;
+    const thinking = concatThinking(event.message);
+    if (thinking.length > ctx.emittedThinkingLen) {
+      const delta = thinking.slice(ctx.emittedThinkingLen);
+      ctx.emittedThinkingLen = thinking.length;
+      if (!ctx.buffered) emit({ event: 'reasoning', text: delta });
+    }
     const full = concatAssistantText(event.message);
     if (full.length > ctx.emittedLen) {
       const delta = full.slice(ctx.emittedLen);
@@ -217,6 +227,7 @@ export function createConversationEngine<TInput, TReason extends string>(
       const toolLabels = new Map(plan.tools.map((tool) => [tool.name, tool.label]));
       const translatorCtx: TranslatorCtx = {
         emittedLen: 0,
+        emittedThinkingLen: 0,
         settled: false,
         buffered: Boolean(plan.gate),
       };

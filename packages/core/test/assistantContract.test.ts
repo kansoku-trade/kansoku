@@ -166,11 +166,19 @@ describe('assistantChatService getChat', () => {
       model: 'test-model',
       totalTokens: USAGE.totalTokens,
       costTotal: USAGE.cost.total,
+      input: USAGE.input,
+      output: USAGE.output,
+      cacheRead: USAGE.cacheRead,
+      cacheWrite: USAGE.cacheWrite,
     });
     expect(state.usage).toEqual({
       totalTokens: USAGE.totalTokens,
       costTotal: USAGE.cost.total,
       calls: 1,
+      input: USAGE.input,
+      output: USAGE.output,
+      cacheRead: USAGE.cacheRead,
+      cacheWrite: USAGE.cacheWrite,
     });
   });
 });

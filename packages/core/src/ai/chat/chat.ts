@@ -81,7 +81,7 @@ export type ChatEvent = ConversationEvent;
 export interface ChatDisplayMessage {
   id: string;
   ts: string;
-  kind: 'user' | 'assistant' | 'tool';
+  kind: 'user' | 'assistant' | 'tool' | 'thinking';
   text?: string;
   label?: string;
   input?: string;
@@ -91,6 +91,10 @@ export interface ChatDisplayMessage {
     model: string;
     totalTokens: number;
     costTotal: number;
+    input?: number;
+    output?: number;
+    cacheRead?: number;
+    cacheWrite?: number;
   };
 }
 
@@ -153,6 +157,10 @@ export function toDisplayMessages(rows: ChatMessageRow[]): ChatDisplayMessage[] 
               model: message.model,
               totalTokens: usage.totalTokens,
               costTotal: usage.cost.total,
+              input: usage.input,
+              output: usage.output,
+              cacheRead: usage.cacheRead,
+              cacheWrite: usage.cacheWrite,
             }
           : undefined;
       message.content.forEach((block, idx) => {
@@ -165,6 +173,10 @@ export function toDisplayMessages(rows: ChatMessageRow[]): ChatDisplayMessage[] 
             text: block.text,
             ...(idx === lastTextIndex && meta ? { meta } : {}),
           });
+        } else if (block.type === 'thinking') {
+          const thinking = 'thinking' in block ? String(block.thinking ?? '') : '';
+          if (!thinking) return;
+          out.push({ id, ts: row.ts, kind: 'thinking', text: thinking });
         } else if (block.type === 'toolCall') {
           out.push({
             id,

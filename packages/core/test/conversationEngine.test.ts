@@ -56,6 +56,28 @@ function messageUpdateEvent(fullText: string): AgentEvent {
   };
 }
 
+function messageUpdateThinking(thinking: string, text = ''): AgentEvent {
+  const message: AgentMessage = {
+    ...assistantMessage(text),
+    content: text
+      ? [
+          { type: 'thinking', thinking },
+          { type: 'text', text },
+        ]
+      : [{ type: 'thinking', thinking }],
+  };
+  return {
+    type: 'message_update',
+    message,
+    assistantMessageEvent: {
+      type: 'thinking_delta',
+      contentIndex: 0,
+      delta: thinking,
+      partial: message as never,
+    },
+  };
+}
+
 function memoryStore() {
   const rows: ConversationMessageRow[] = [];
   let session: { id: string } | null = null;
@@ -303,6 +325,58 @@ describe('createConversationEngine persistence', () => {
       stopReason: 'aborted',
       timestamp: 0,
     });
+  });
+
+  it('streams reasoning deltas before the visible answer', async () => {
+    const engine = makeEngine();
+    const store = memoryStore();
+    const events: ConversationEvent[] = [];
+    const unsub = engine.onEvent('k-think', (e) => events.push(e));
+    const reply = {
+      ...assistantMessage('继续拿'),
+      content: [
+        { type: 'thinking', thinking: '先核对持仓' },
+        { type: 'text', text: '继续拿' },
+      ],
+    } as AgentMessage;
+
+    const factory: AiAgentFactory = (config) => {
+      let listener: ((event: AgentEvent) => void) | undefined;
+      return {
+        prompt: async () => {
+          listener?.(messageStartEvent());
+          listener?.(messageUpdateThinking('先核对'));
+          listener?.(messageUpdateThinking('先核对持仓'));
+          listener?.(messageUpdateThinking('先核对持仓', '继续拿'));
+        },
+        abort: () => {},
+        subscribe: (l) => {
+          listener = l;
+          return () => {
+            listener = undefined;
+          };
+        },
+        state: {
+          messages: [
+            ...(config.messages ?? []),
+            { role: 'user', content: '怎么看', timestamp: 0 },
+            reply,
+          ],
+        },
+      };
+    };
+
+    const result = await engine.run('k-think', '怎么看', makeTurn(store, factory));
+    expect(result.started).toBe(true);
+    if (result.started) await result.done;
+    unsub();
+
+    expect(events).toEqual([
+      { event: 'reasoning', text: '先核对' },
+      { event: 'reasoning', text: '持仓' },
+      { event: 'delta', text: '继续拿' },
+      { event: 'done' },
+    ]);
   });
 });
 

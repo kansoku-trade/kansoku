@@ -158,7 +158,7 @@ export interface ChatSession {
 export interface ChatDisplayMessage {
   id: string;
   ts: string;
-  kind: 'user' | 'assistant' | 'tool';
+  kind: 'user' | 'assistant' | 'tool' | 'thinking';
   text?: string;
   label?: string;
   input?: string;
@@ -168,6 +168,10 @@ export interface ChatDisplayMessage {
     model: string;
     totalTokens: number;
     costTotal: number;
+    input?: number;
+    output?: number;
+    cacheRead?: number;
+    cacheWrite?: number;
   };
 }
 

@@ -12,6 +12,10 @@ export interface AssistantChatUsage {
   totalTokens: number;
   costTotal: number;
   calls: number;
+  input: number;
+  output: number;
+  cacheRead: number;
+  cacheWrite: number;
 }
 
 export interface AssistantChatState {

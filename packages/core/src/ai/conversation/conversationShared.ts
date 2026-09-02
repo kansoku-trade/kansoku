@@ -23,6 +23,10 @@ export function textOf(block: { type: string; text?: string }): string {
   return block.type === 'text' && typeof block.text === 'string' ? block.text : '';
 }
 
+export function thinkingOf(block: { type: string; thinking?: string }): string {
+  return block.type === 'thinking' && typeof block.thinking === 'string' ? block.thinking : '';
+}
+
 export function agentToolResultText(result: unknown): string | undefined {
   if (typeof result !== 'object' || result === null) return undefined;
   const content = (result as { content?: unknown }).content;
@@ -32,6 +36,10 @@ export function agentToolResultText(result: unknown): string | undefined {
 
 export function concatAssistantText(message: AgentMessage): string {
   return message.role === 'assistant' ? message.content.map(textOf).join('') : '';
+}
+
+export function concatThinking(message: AgentMessage): string {
+  return message.role === 'assistant' ? message.content.map(thinkingOf).join('') : '';
 }
 
 export function hasAssistantText(messages: AgentMessage[]): boolean {

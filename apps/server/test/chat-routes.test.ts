@@ -347,13 +347,29 @@ describe('GET /:id/chat/suggestions', () => {
     });
   });
 
-  it('returns nothing once a chat session exists', async () => {
+  it('still returns questions after a chat session exists', async () => {
     const chartId = 'chart-suggest-existing';
     store.loadChart.mockResolvedValue(fakeDoc({ id: chartId }));
     await createSession({ chartId, symbol: 'MU.US', title: '已经聊过' });
+    setChatSuggestionDepsForTests({
+      model: fakeModel,
+      loadChart: async () => fakeDoc({ id: chartId }),
+      listComments: async () => [],
+      agentFactory: (config) => ({
+        prompt: async () => {
+          await config.tools[0].execute('call-1', {
+            questions: ['下一问看什么', '失效位还成立吗', '量能怎么对'],
+          } as never);
+        },
+        abort: () => {},
+        state: { messages: [] },
+      }),
+    });
 
     const res = await get(`/${chartId}/chat/suggestions`);
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ suggestions: [] });
+    expect(await res.json()).toEqual({
+      suggestions: ['下一问看什么', '失效位还成立吗', '量能怎么对'],
+    });
   });
 });

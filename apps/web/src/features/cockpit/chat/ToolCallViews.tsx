@@ -11,6 +11,8 @@ const chatToolStatusPulse = stylex.keyframes({
   '50%': { opacity: 1, transform: 'scale(1)' },
 });
 
+const runningBorder = 'rgb(94 78 38)';
+
 const styles = stylex.create({
   tool: {
     alignSelf: 'flex-start',
@@ -19,7 +21,7 @@ const styles = stylex.create({
     display: 'flex',
     flexDirection: 'column',
     gap: 0,
-    padding: '4px 8px',
+    padding: '3px 8px',
     backgroundColor: colors.backgroundSurface,
     borderColor: colors.border,
     borderStyle: 'solid',
@@ -27,19 +29,27 @@ const styles = stylex.create({
     borderRadius: radii.lg,
   },
   toolRunning: {
-    borderColor: 'rgb(94 78 38)',
+    borderColor: runningBorder,
+  },
+  nested: {
+    padding: 0,
+    backgroundColor: 'transparent',
+    borderStyle: 'none',
+    borderWidth: 0,
+    borderRadius: 0,
   },
   toolHead: {
     'display': 'grid',
-    'gridTemplateColumns': '18px minmax(0, 1fr) auto',
-    'alignItems': 'start',
-    'gap': '9px',
+    'gridTemplateColumns': '14px minmax(0, 1fr) auto',
+    'alignItems': 'center',
+    'gap': '8px',
     'width': '100%',
-    'padding': '6px 4px',
+    'minHeight': '26px',
+    'padding': '3px 4px',
     'backgroundColor': 'transparent',
     'borderStyle': 'none',
     'borderWidth': 0,
-    'borderRadius': radii.lg,
+    'borderRadius': radii.default,
     'color': colors.textSecondary,
     'cursor': 'pointer',
     'textAlign': 'left',
@@ -54,16 +64,12 @@ const styles = stylex.create({
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
-    width: '18px',
-    height: '18px',
-    marginTop: '1px',
+    width: '14px',
+    height: '14px',
     color: colors.up,
-    backgroundColor: 'rgb(38 166 154 / 0.16)',
-    borderRadius: radii.full,
   },
   toolStatusRunning: {
     color: colors.accent,
-    backgroundColor: 'rgb(255 176 0 / 0.14)',
   },
   toolStatusDot: {
     'width': '6px',
@@ -80,56 +86,56 @@ const styles = stylex.create({
   },
   toolContent: {
     display: 'flex',
-    flexDirection: 'column',
-    gap: '6px',
+    alignItems: 'center',
+    gap: '8px',
     minWidth: 0,
-  },
-  toolTitleRow: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    alignItems: 'baseline',
-    gap: '5px 10px',
+    overflow: 'hidden',
   },
   toolTitle: {
+    flexShrink: 0,
     color: colors.textPrimary,
-    fontSize: fontSizes.base,
-    fontWeight: 600,
+    fontSize: fontSizes.sm,
+    fontWeight: 500,
+    whiteSpace: 'nowrap',
   },
   toolState: {
+    flexShrink: 0,
     color: colors.textMuted,
     fontSize: fontSizes.sm,
+    whiteSpace: 'nowrap',
   },
   toolContext: {
     display: 'flex',
-    flexWrap: 'wrap',
     alignItems: 'center',
-    gap: '5px',
+    gap: '4px',
     minWidth: 0,
+    overflow: 'hidden',
   },
   toolItem: {
+    flexShrink: 0,
     display: 'inline-flex',
     alignItems: 'center',
-    minHeight: '20px',
-    padding: '2px 7px',
+    height: '18px',
+    padding: '0 6px',
     backgroundColor: colors.backgroundElement,
     borderRadius: radii.full,
     color: colors.textSecondary,
     fontFamily: fonts.mono,
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.xs,
     fontVariantNumeric: 'tabular-nums',
   },
   toolMeta: {
     minWidth: 0,
     overflow: 'hidden',
     color: colors.textMuted,
-    fontSize: fontSizes.sm,
+    fontFamily: fonts.mono,
+    fontSize: fontSizes.xs,
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
   },
   toolCaret: {
     'flex': 'none',
     'alignSelf': 'center',
-    'marginTop': '2px',
     'color': colors.textMuted,
     'transition': 'transform 0.12s ease',
     '@media (prefers-reduced-motion: reduce)': {
@@ -143,11 +149,7 @@ const styles = stylex.create({
     display: 'flex',
     flexDirection: 'column',
     gap: '10px',
-    margin: '4px 0 0 31px',
-    padding: '4px 0 2px 12px',
-    borderLeftColor: colors.border,
-    borderLeftStyle: 'solid',
-    borderLeftWidth: '1px',
+    margin: '2px 0 4px 26px',
   },
   toolDetailLabel: {
     fontSize: fontSizes.xs,
@@ -172,16 +174,26 @@ const styles = stylex.create({
   fold: {
     overflow: 'hidden',
   },
-  nested: {
-    marginLeft: '8px',
-    marginTop: '6px',
-    backgroundColor: colors.backgroundCanvas,
+  rail: {
+    margin: '0 0 3px 11px',
+    paddingLeft: '8px',
+    borderLeftColor: colors.border,
+    borderLeftStyle: 'solid',
+    borderLeftWidth: '1px',
   },
-  groupLine: {
-    display: 'flex',
-    alignItems: 'baseline',
-    gap: '8px',
+  railRunning: {
+    borderLeftColor: runningBorder,
+  },
+  groupMeta: {
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: 0,
     minWidth: 0,
+    overflow: 'hidden',
+    color: colors.textMuted,
+    fontSize: fontSizes.sm,
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
   },
 });
 
@@ -196,7 +208,7 @@ function StatusMark({ running }: { running: boolean }) {
       {running ? (
         <span className={`chat-tool-status-dot ${stylex.props(styles.toolStatusDot).className}`} />
       ) : (
-        <Check size={10} strokeWidth={2} />
+        <Check size={11} strokeWidth={2.2} />
       )}
     </span>
   );
@@ -217,7 +229,7 @@ export function ToolRow({
 
   return (
     <div
-      className={`chat-tool${running ? ' chat-tool--running' : ''} ${stylex.props(styles.tool, running && styles.toolRunning, nested && styles.nested).className}`}
+      className={`chat-tool${running ? ' chat-tool--running' : ''} ${stylex.props(styles.tool, running && !nested && styles.toolRunning, nested && styles.nested).className}`}
     >
       <button
         type="button"
@@ -229,17 +241,17 @@ export function ToolRow({
       >
         <StatusMark running={running} />
         <span className={`chat-tool-content ${stylex.props(styles.toolContent).className}`}>
-          <span className={`chat-tool-title-row ${stylex.props(styles.toolTitleRow).className}`}>
-            <span className={`chat-tool-title ${stylex.props(styles.toolTitle).className}`}>
-              {presentation.title}
-            </span>
+          <span className={`chat-tool-title ${stylex.props(styles.toolTitle).className}`}>
+            {presentation.title}
+          </span>
+          {nested ? null : (
             <span
               className={`chat-tool-state ${stylex.props(styles.toolState).className}`}
               aria-live="polite"
             >
               {running ? '进行中' : '已完成'}
             </span>
-          </span>
+          )}
           {hasContext ? (
             <span className={`chat-tool-context ${stylex.props(styles.toolContext).className}`}>
               {presentation.items.map((item) => (
@@ -325,15 +337,13 @@ export function ToolGroupRow({
       >
         <StatusMark running={running} />
         <span className={`chat-tool-content ${stylex.props(styles.toolContent).className}`}>
-          <span className={stylex.props(styles.groupLine).className}>
-            <span className={`chat-tool-title ${stylex.props(styles.toolTitle).className}`}>{label}</span>
-            <span className={`chat-tool-state ${stylex.props(styles.toolState).className}`}>{state}</span>
-            {titles.length > 0 ? (
-              <span className={`chat-tool-meta ${stylex.props(styles.toolMeta).className}`}>
-                {titles.join(' · ')}
-              </span>
-            ) : null}
-          </span>
+          <span className={`chat-tool-title ${stylex.props(styles.toolTitle).className}`}>{label}</span>
+          <span className={`chat-tool-state ${stylex.props(styles.toolState).className}`}>{state}</span>
+          {titles.length > 0 ? (
+            <span className={`chat-tool-meta ${stylex.props(styles.groupMeta).className}`}>
+              {titles.join(' · ')}
+            </span>
+          ) : null}
         </span>
         <ChevronRight
           size={12}
@@ -344,7 +354,7 @@ export function ToolGroupRow({
         {shown.length > 0 ? (
           <motion.div
             id={id}
-            className={stylex.props(styles.fold).className}
+            className={stylex.props(styles.fold, styles.rail, running && styles.railRunning).className}
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}

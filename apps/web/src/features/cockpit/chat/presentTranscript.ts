@@ -21,6 +21,8 @@ export type TranscriptBlock =
   | { type: 'tool-group'; id: string; tools: PresentedTool[]; running: boolean; titles: string[] }
   | { type: 'worked'; id: string; durationMs: number; blocks: TranscriptBlock[] }
   | { type: 'canvases'; entries: CanvasEntry[] }
+  | { type: 'reasoning'; text: string; streaming?: boolean }
+  | { type: 'runtime'; startedAt: string }
   | { type: 'thinking' };
 
 export function blockKey(block: TranscriptBlock, index: number): string {
@@ -49,6 +51,12 @@ export function blockKey(block: TranscriptBlock, index: number): string {
     case 'canvases': {
       return `canvases:${block.entries.map((entry) => entry.slug).join(',')}`;
     }
+    case 'reasoning': {
+      return `reasoning:${index}`;
+    }
+    case 'runtime': {
+      return `runtime:${block.startedAt}`;
+    }
     case 'thinking': {
       return `thinking:${index}`;
     }
@@ -67,6 +75,11 @@ export function formatWorkedDuration(ms: number): string {
   const hours = Math.floor(minutes / 60);
   const rest = minutes % 60;
   return rest === 0 ? `跑了 ${hours} 小时` : `跑了 ${hours} 小时 ${rest} 分`;
+}
+
+export function formatRuntime(ms: number): string {
+  if (!Number.isFinite(ms) || ms < 0) return '运行中';
+  return formatWorkedDuration(ms).replace(/^跑了/, '运行了');
 }
 
 function presentedTool(id: string, label: string, running: boolean, input?: string, output?: string): PresentedTool {
@@ -156,6 +169,10 @@ function isToolEntry(entry: TimelineEntry): boolean {
   return entry.kind === 'row' && entry.row.kind === 'tool';
 }
 
+function isReasoningEntry(entry: TimelineEntry): boolean {
+  return entry.kind === 'row' && entry.row.kind === 'thinking';
+}
+
 function splitTurns(timeline: TimelineEntry[]): { prefix: TimelineEntry[]; turns: TimelineEntry[][] } {
   const prefix: TimelineEntry[] = [];
   const turns: TimelineEntry[][] = [];
@@ -178,6 +195,7 @@ function entryToBlocks(entry: TimelineEntry): TranscriptBlock[] {
   const { row } = entry;
   if (row.kind === 'user') return [{ type: 'user', row }];
   if (row.kind === 'assistant') return [{ type: 'assistant', row }];
+  if (row.kind === 'thinking') return [{ type: 'reasoning', text: row.text ?? '' }];
   if (row.kind === 'tool') return [{ type: 'tool', tool: toolFromRow(row) }];
   return [{ type: 'error', row }];
 }
@@ -200,7 +218,8 @@ function presentCompletedTurn(entries: TimelineEntry[]): TranscriptBlock[] {
   const userRow = userEntry?.kind === 'row' ? userEntry.row : undefined;
   const rest = userEntry ? entries.slice(1) : entries;
   const errors = rest.filter(isErrorEntry);
-  const body = rest.filter((entry) => !isErrorEntry(entry));
+  const reasoning = rest.filter(isReasoningEntry);
+  const body = rest.filter((entry) => !isErrorEntry(entry) && !isReasoningEntry(entry));
   const hasTools = body.some(isToolEntry);
   let lastText: TimelineEntry | undefined;
   for (let i = body.length - 1; i >= 0; i -= 1) {
@@ -215,6 +234,7 @@ function presentCompletedTurn(entries: TimelineEntry[]): TranscriptBlock[] {
   if (!hasTools) {
     return [
       ...(userRow ? [{ type: 'user' as const, row: userRow }] : []),
+      ...sequenceFromEntries(reasoning),
       ...sequenceFromEntries(body),
       ...canvases,
       ...errorBlocks,
@@ -238,6 +258,7 @@ function presentCompletedTurn(entries: TimelineEntry[]): TranscriptBlock[] {
 
   return [
     ...(userRow ? [{ type: 'user' as const, row: userRow }] : []),
+    ...sequenceFromEntries(reasoning),
     ...worked,
     ...(lastText ? entryToBlocks(lastText) : []),
     ...canvases,
@@ -259,6 +280,14 @@ function beatsToBlocks(beats: ChatLiveBeat[], streamText: string): TranscriptBlo
           kind: 'assistant',
           text: streaming ? streamText || beat.text : beat.text,
         },
+      });
+      continue;
+    }
+    if (beat.kind === 'reasoning') {
+      blocks.push({
+        type: 'reasoning',
+        streaming: index === beats.length - 1,
+        text: beat.text,
       });
       continue;
     }
@@ -304,18 +333,19 @@ function presentLiveTurn(
   const errors = rest.filter(isErrorEntry).flatMap(entryToBlocks);
   const blocks: TranscriptBlock[] = [
     ...(userRow ? [{ type: 'user' as const, row: userRow }] : []),
+    ...(userRow ? [{ type: 'runtime' as const, startedAt: userRow.ts }] : []),
     ...persisted,
     ...live,
     ...canvases,
     ...errors,
-  ];
+  ].map((block) => (block.type === 'reasoning' ? { ...block, streaming: true } : block));
   const hasRunning = live.some(
     (block) =>
       (block.type === 'tool' && block.tool.running) || (block.type === 'tool-group' && block.running),
   );
   const hasText =
-    live.some((block) => block.type === 'assistant') ||
-    persisted.some((block) => block.type === 'assistant');
+    live.some((block) => block.type === 'assistant' || block.type === 'reasoning') ||
+    persisted.some((block) => block.type === 'assistant' || block.type === 'reasoning');
   if (!hasRunning && !hasText) blocks.push({ type: 'thinking' });
   return blocks;
 }

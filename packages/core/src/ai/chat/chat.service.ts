@@ -93,8 +93,6 @@ export const chatService: ChatApi = {
         404,
       );
     }
-    const session = await getSessionByChartId(input.id);
-    if (session) return { suggestions: [] };
     return { suggestions: await buildChatSuggestions(input.id, testSuggestionDeps ?? {}) };
   },
 };

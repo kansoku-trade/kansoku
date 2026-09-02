@@ -7,7 +7,9 @@ import type {
   ReactElement,
   ReactNode,
 } from 'react';
-import { type Components, type ExtraProps, Streamdown } from 'streamdown';
+import { CachedMarkdown, Streamdown } from '@lobehub/streamdown';
+import type { Components, ExtraProps } from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import * as stylex from '@stylexjs/stylex';
 import { parseAppDeepLink, type AppDeepLink } from '@kansoku/shared/appDeepLink';
 import { navigate } from '@web/lib/router';
@@ -25,7 +27,7 @@ const styles = stylex.create({
     wordBreak: 'break-word',
   },
   chat: {
-    fontSize: fontSizes.md,
+    fontSize: fontSizes.base,
     lineHeight: 1.6,
   },
   report: {
@@ -809,15 +811,19 @@ export function Markdown({
     <div
       className={`typeset typeset-${variant} ${stylex.props(styles.typeset, variant === 'chat' ? styles.chat : styles.report).className}`}
     >
-      <Streamdown
-        mode={streaming ? 'streaming' : 'static'}
-        isAnimating={streaming}
-        controls={false}
-        linkSafety={{ enabled: false }}
-        components={markdownComponents(variant)}
-      >
-        {children}
-      </Streamdown>
+      {streaming ? (
+        <Streamdown
+          content={children}
+          granularity="char"
+          smoothing="realtime"
+          remarkPlugins={[remarkGfm]}
+          components={markdownComponents(variant)}
+        />
+      ) : (
+        <CachedMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents(variant)}>
+          {children}
+        </CachedMarkdown>
+      )}
     </div>
   );
 }

@@ -128,6 +128,7 @@ function ConversationTranscriptView({
   insertClassName,
   modelLabels,
   onOpenCanvas,
+  onRetryLast,
 }: {
   rows: ChatRow[];
   inserts?: TranscriptInsert[];
@@ -151,6 +152,7 @@ function ConversationTranscriptView({
   insertClassName?: string;
   modelLabels?: Readonly<Record<string, string>>;
   onOpenCanvas?: (slug: string) => void;
+  onRetryLast?: () => void;
 }) {
   const bodyRef = useRef<HTMLDivElement>(null);
   const streamSpaceRef = useRef<HTMLDivElement>(null);
@@ -162,9 +164,21 @@ function ConversationTranscriptView({
     [rows, inserts, liveBeats, liveTools, streamText, busy],
   );
   const activeUserId = useMemo(
-    () => (busy ? rows.findLast((row) => row.kind === 'user')?.id : undefined),
+    () => {
+      if (!busy) return undefined;
+      for (let index = rows.length - 1; index >= 0; index -= 1) {
+        if (rows[index]?.kind === 'user') return rows[index]?.id;
+      }
+      return undefined;
+    },
     [busy, rows],
   );
+  const lastAssistantIndex = useMemo(() => {
+    for (let index = blocks.length - 1; index >= 0; index -= 1) {
+      if (blocks[index]?.type === 'assistant') return index;
+    }
+    return -1;
+  }, [blocks]);
 
   const syncActiveTurn = useCallback(() => {
     const viewport = bodyRef.current;
@@ -278,8 +292,24 @@ function ConversationTranscriptView({
           userBubbleClassName={userBubbleClassName}
           insertClassName={insertClassName}
           onOpenCanvas={onOpenCanvas}
+          onRetry={onRetryLast}
+          showActions={block.type === 'assistant' && !block.streaming && !busy && index === lastAssistantIndex}
         />
       ))}
+      {!isEmpty && !busy && suggestions.length > 0 ? (
+        <div className={`chat-suggestions ${stylex.props(styles.suggestions).className}`}>
+          {suggestions.map((question) => (
+            <button
+              type="button"
+              key={question}
+              className={`chat-suggestion ${stylex.props(styles.suggestion, suggestionChrome[variant]).className}${suggestionClassName ? ` ${suggestionClassName}` : ''}`}
+              onClick={() => onPickSuggestion(question)}
+            >
+              {question}
+            </button>
+          ))}
+        </div>
+      ) : null}
       {activeUserId ? (
         <div
           ref={streamSpaceRef}

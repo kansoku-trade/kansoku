@@ -109,6 +109,7 @@ export function ChatDock({ chartId, docCreatedAt }: ChatDockProps) {
     loaded,
     suggestions,
     send,
+    retryLast,
     abort,
     ensureSuggestions,
   } = useChatSession(chartId);
@@ -134,8 +135,8 @@ export function ChatDock({ chartId, docCreatedAt }: ChatDockProps) {
   }, [busy]);
 
   useEffect(() => {
-    if (mode !== 'dock' && loaded && !session) ensureSuggestions();
-  }, [mode, loaded, session, ensureSuggestions]);
+    if (mode !== 'dock' && loaded && !busy) ensureSuggestions();
+  }, [mode, loaded, busy, ensureSuggestions]);
 
   useEffect(() => {
     if (mode !== 'full') return;
@@ -232,6 +233,7 @@ export function ChatDock({ chartId, docCreatedAt }: ChatDockProps) {
             canvas.open(slug);
             setMode('full');
           }}
+          onRetryLast={() => void retryLast()}
         />
       </CanvasSplit>
       {composer}

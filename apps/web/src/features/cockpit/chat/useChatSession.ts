@@ -16,7 +16,7 @@ export interface ChatSessionInfo {
   updatedAt: string;
 }
 
-type ChatRowKind = 'user' | 'assistant' | 'tool' | 'error';
+type ChatRowKind = 'user' | 'assistant' | 'tool' | 'error' | 'thinking';
 
 export interface ChatRow {
   id: string;
@@ -31,6 +31,10 @@ export interface ChatRow {
     model: string;
     totalTokens: number;
     costTotal: number;
+    input?: number;
+    output?: number;
+    cacheRead?: number;
+    cacheWrite?: number;
   };
 }
 
@@ -44,12 +48,17 @@ export interface ChatLiveTool {
 
 export type ChatLiveBeat =
   | { kind: 'text'; text: string }
+  | { kind: 'reasoning'; text: string }
   | { kind: 'tool'; tool: ChatLiveTool };
 
 export interface ChatUsage {
   totalTokens: number;
   costTotal: number;
   calls: number;
+  input?: number;
+  output?: number;
+  cacheRead?: number;
+  cacheWrite?: number;
 }
 
 interface ChatEnvelope {
@@ -62,6 +71,7 @@ interface ChatEnvelope {
 
 type ChatWsEvent =
   | { event: 'delta'; text: string }
+  | { event: 'reasoning'; text: string }
   | { event: 'tool'; label: string; status: 'start' | 'end'; input?: string; output?: string }
   | { event: 'title'; title: string }
   | { event: 'done' }
@@ -132,6 +142,7 @@ export interface ChatSessionState {
   suggestions: string[];
   usage: ChatUsage | null;
   send: (text: string) => Promise<ChatSendResult>;
+  retryLast: () => Promise<ChatSendResult>;
   abort: () => Promise<void>;
   ensureSuggestions: () => void;
 }
@@ -256,6 +267,11 @@ function useConversationSession(
           setLiveBeats((prev) => applyLiveBeat(prev, evt, `tool-${toolSeqRef.current}`));
           return;
         }
+        if (evt.event === 'reasoning') {
+          setBusy(true);
+          setLiveBeats((prev) => applyLiveBeat(prev, evt, `tool-${toolSeqRef.current}`));
+          return;
+        }
         if (evt.event === 'tool') {
           if (evt.status === 'start') {
             streamReset();
@@ -283,6 +299,7 @@ function useConversationSession(
         const markError = evt.event === 'done' ? undefined : evt.message;
         streamFinish(() => {
           setAborting(false);
+          suggestionsRequestedRef.current = false;
           reload(markError, () => {
             setBusy(false);
             setLiveBeats([]);
@@ -353,6 +370,12 @@ function useConversationSession(
     }
   }, [adapter, id]);
 
+  const retryLast = useCallback((): Promise<ChatSendResult> => {
+    const lastUser = [...rows].reverse().find((row) => row.kind === 'user' && row.text?.trim());
+    if (!lastUser?.text) return Promise.resolve({ ok: false, error: '没有可重试的问题' });
+    return send(lastUser.text);
+  }, [rows, send]);
+
   const ensureSuggestions = useCallback(() => {
     if (suggestionsRequestedRef.current) return;
     suggestionsRequestedRef.current = true;
@@ -382,6 +405,7 @@ function useConversationSession(
     suggestions,
     usage,
     send,
+    retryLast,
     abort,
     ensureSuggestions,
   };
