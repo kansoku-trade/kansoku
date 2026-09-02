@@ -8,8 +8,8 @@ description: >-
   or weekly post-mortems, multi-period chart layouts, coverage-and-gap reports, or any
   answer that is carried by numbers laid out visually. If you catch yourself about to
   write a markdown table of market data, stop and build a canvas instead. You MUST also
-  read this skill whenever you create, edit, or debug any .canvas.tsx file, and before
-  every save_canvas call — save_canvas refuses until you have. Do not use a canvas for a
+  read this skill once per conversation before creating, editing, or debugging any
+  .canvas.tsx file — save_canvas and apply_patch refuse until you have. Do not use a canvas for a
   single quote or one-line answer, or for the four fixed chart types (flow / cohort /
   sepa / intraday), which belong to the `chart` skill. Triggers: 画布、自定义面板、
   拼一张图、并排对比、自定义图表、多标的对照, canvas, save_canvas, custom panel,
@@ -59,8 +59,10 @@ caption (TD-DATA-02). What you could not fetch goes in `Coverage`, never into a 
   other relative paths, no `react`, no `node:`, no npm.
 - Banned in source: `fetch(`, `XMLHttpRequest`, `import(`, `require(`, `setTimeout` /
   `setInterval`, `document.`, `window.`. 64 KB limit.
-- Revising: `read_file` the existing `journal/canvases/<slug>.canvas.tsx`, then send one
-  `apply_patch` call carrying every hunk (`*** Begin Patch` / `*** Update File: <path>` /
+- Revising: if the current source is not already in this conversation (you wrote or read it
+  earlier and nothing else changed it), `read_file` `journal/canvases/<slug>.canvas.tsx`
+  first; otherwise patch directly. Do not re-read after a successful `apply_patch` — its
+  result already confirms the write. Send one `apply_patch` call carrying every hunk (`*** Begin Patch` / `*** Update File: <path>` /
   `@@ context` / ` `, `-`, `+` lines / `*** End Patch`). Keep the same path. Use `save_canvas`
   only when creating a canvas or replacing the whole source. One question, one slug.
 - Free builds may keep at most 3 canvases. Overwriting an existing slug is always allowed;
@@ -215,7 +217,7 @@ why it beat plain text. Later ones: just the slug.
 ## Troubleshooting
 
 `rejected:` lists one line per reason — fix those, do not work around them. `save_canvas`
-refuses outright until this skill has been read this turn.
+refuses outright until this skill has been read once in this conversation.
 
 Compile and runtime errors are written into the canvas's check record; `read_canvas` remains
 available when that diagnostic record is needed.

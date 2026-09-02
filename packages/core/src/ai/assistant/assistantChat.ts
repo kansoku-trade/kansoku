@@ -1,8 +1,9 @@
 import { CANVAS_DIR, PROJECT_ROOT } from '../../platform/env.js';
 import {
+  CANVAS_SKILL_NAME,
   buildCanvasApplyPatchTool,
   buildCanvasTools,
-  CANVAS_SKILL_NAME,
+  transcriptHasSkillRead,
 } from '../../canvas/tools.js';
 import type { Db } from '../../db/index.js';
 import type { ExecFn } from '../agents/agentTools/execTool.js';
@@ -89,6 +90,12 @@ function prepareTurn(
         sessionId: activeSessionId,
       });
       const loadedSkills = new Set<string>();
+      const canvasSkillInTranscript = transcriptHasSkillRead(
+        (await listAssistantMessages(activeSessionId, deps.db)).map((row) => row.payload),
+        CANVAS_SKILL_NAME,
+      );
+      const canvasSkillLoaded = () =>
+        canvasSkillInTranscript || loadedSkills.has(CANVAS_SKILL_NAME);
       const { tools: researchTools, skillIndex } = buildResearchTools({
         repoRoot: rootDir,
         exec: deps.exec,
@@ -107,10 +114,10 @@ function prepareTurn(
           ...researchTools,
           ...buildResearchLibraryTools(rootDir),
           ...buildCanvasTools(CANVAS_DIR, {
-            skillLoaded: () => loadedSkills.has(CANVAS_SKILL_NAME),
+            skillLoaded: canvasSkillLoaded,
           }),
           buildCanvasApplyPatchTool(rootDir, CANVAS_DIR, {
-            skillLoaded: () => loadedSkills.has(CANVAS_SKILL_NAME),
+            skillLoaded: canvasSkillLoaded,
           }),
         ],
         transformContext: messageEngine.transformContext,

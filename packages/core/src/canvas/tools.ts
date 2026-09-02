@@ -1,4 +1,4 @@
-import type { AgentTool } from '@earendil-works/pi-agent-core';
+import type { AgentMessage, AgentTool } from '@earendil-works/pi-agent-core';
 import type { CandleFeed, IntradayBuilt } from '@kansoku/shared/types';
 import { promises as fs } from 'node:fs';
 import { relative, sep } from 'node:path';
@@ -47,6 +47,19 @@ const CANVAS_FILE_RE = /^([a-z0-9]+(?:-[a-z0-9]+)*)\.canvas\.tsx$/;
 
 export const CANVAS_SKILL_NAME = 'canvas';
 
+export function transcriptHasSkillRead(messages: AgentMessage[], skill: string): boolean {
+  return messages.some(
+    (message) =>
+      message.role === 'assistant' &&
+      message.content.some(
+        (block) =>
+          block.type === 'toolCall' &&
+          block.name === 'read_skill' &&
+          (block.arguments as { name?: unknown } | undefined)?.name === skill,
+      ),
+  );
+}
+
 export interface CanvasToolsOptions {
   now?: () => Date;
   /**
@@ -82,7 +95,7 @@ export function buildCanvasApplyPatchTool(
     name: 'apply_patch',
     label: 'Apply Patch',
     description:
-      'Apply one patch to existing journal/canvases/*.canvas.tsx files. Read the file and the canvas skill first. ' +
+      'Apply one patch to existing journal/canvases/*.canvas.tsx files. The canvas skill must have been read once in this conversation; do not read it again. Do not re-read the file if its current source is already in this conversation, and do not re-read after a successful patch. ' +
       'Format: "*** Begin Patch", then one or more "*** Update File: <path>" sections, each holding hunks; a hunk may open with "@@ <context line>" to pin its position, ' +
       'and its body lines start with " " (unchanged), "-" (remove), or "+" (add). End with "*** End Patch". Only Update File is accepted; creation goes through save_canvas. ' +
       'All hunks across all files apply together or not at all, and every updated source is validated before it is written. ' +
@@ -164,7 +177,7 @@ export function buildCanvasTools(dir: string, opts: CanvasToolsOptions = {}): Ag
     name: 'save_canvas',
     label: 'Save Canvas',
     description:
-      'Create or overwrite a named canvas file. Read the canvas skill first (read_skill name="canvas") — it carries the required layout skeleton. slug is kebab-case. source is the full TSX. Same slug updates the same canvas. Free builds may keep at most 3 canvases; overwriting an existing slug is always allowed. ' +
+      'Create or overwrite a named canvas file. The canvas skill (read_skill name="canvas") must have been read once in this conversation — it carries the required layout skeleton; do not read it again. slug is kebab-case. source is the full TSX. Same slug updates the same canvas. Free builds may keep at most 3 canvases; overwriting an existing slug is always allowed. ' +
       "For K-line data use snapshot_candles, for any other data use save_canvas_data, then import x from './<name>.json' in the source.",
     parameters: saveSchema,
     execute: async (_id, params) => {
@@ -193,7 +206,7 @@ export function buildCanvasTools(dir: string, opts: CanvasToolsOptions = {}): Ag
     name: 'read_canvas',
     label: 'Read Canvas',
     description:
-      'Read an existing canvas source and its last check record. Call this before editing.',
+      'Read an existing canvas source and its last check record. Call this only when the current source is not already in this conversation or when you need the check record.',
     parameters: readSchema,
     execute: async (_id, params) => {
       const doc = await loadCanvas(dir, params.slug);

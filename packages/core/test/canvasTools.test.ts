@@ -6,7 +6,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 const build = vi.hoisted(() => ({ buildChart: vi.fn() }));
 vi.mock('../src/charts/build.js', () => build);
 
-const { buildCanvasApplyPatchTool, buildCanvasTools } = await import('../src/canvas/tools.js');
+const { buildCanvasApplyPatchTool, buildCanvasTools, transcriptHasSkillRead } =
+  await import('../src/canvas/tools.js');
 
 afterEach(() => {
   build.buildChart.mockReset();
@@ -427,5 +428,25 @@ describe('canvas apply_patch', () => {
     expect(textOf(result)).toContain('edit failed: journal/canvases/nvda-demo.canvas.tsx');
     const read = await byName.read_canvas.execute('read', { slug: 'mu-demo' });
     expect(textOf(read)).toContain('<Text>ok</Text>');
+  });
+});
+
+describe('transcriptHasSkillRead', () => {
+  const call = (name: string, args: unknown) =>
+    ({
+      role: 'assistant',
+      content: [{ type: 'toolCall', id: 't1', name, arguments: args }],
+    }) as unknown as import('@earendil-works/pi-agent-core').AgentMessage;
+
+  it('finds a read_skill call for the given skill', () => {
+    expect(transcriptHasSkillRead([call('read_skill', { name: 'canvas' })], 'canvas')).toBe(true);
+  });
+
+  it('ignores other skills, other tools, and user messages', () => {
+    expect(transcriptHasSkillRead([call('read_skill', { name: 'chart' })], 'canvas')).toBe(false);
+    expect(transcriptHasSkillRead([call('read_file', { path: 'x' })], 'canvas')).toBe(false);
+    expect(
+      transcriptHasSkillRead([{ role: 'user', content: 'read_skill canvas' } as never], 'canvas'),
+    ).toBe(false);
   });
 });
