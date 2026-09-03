@@ -1,5 +1,6 @@
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, rmSync } from 'node:fs';
+import { randomBytes } from 'node:crypto';
+import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -51,8 +52,20 @@ const args = [
 if (!process.env.KANSOKU_BUNDLE_KEY && process.env.KANSOKU_BUNDLE_DEV_RANDOM_KEY === '1') {
   args.push('--dev-random-key');
 }
-const packEnc = spawnSync('node', args, { stdio: 'inherit' });
+const localTestBuild = process.env.KANSOKU_LOCAL_TEST_BUILD === '1';
+const env = localTestBuild
+  ? {
+      ...process.env,
+      KANSOKU_BUNDLE_KEY: randomBytes(32).toString('hex'),
+      KANSOKU_BUNDLE_KEY_ID: 'local-test',
+    }
+  : process.env;
+const packEnc = spawnSync('node', args, { stdio: 'inherit', env });
 if (packEnc.status !== 0) process.exit(packEnc.status ?? 1);
+if (localTestBuild) {
+  writeFileSync(join(destDir, 'bundle-key.local'), `${env.KANSOKU_BUNDLE_KEY}\n`, { mode: 0o600 });
+  console.log('stagePro: local test build, throwaway key written to pro/bundle-key.local');
+}
 
 const nativeBuild = spawnSync(
   'node',

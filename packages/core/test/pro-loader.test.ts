@@ -1,6 +1,8 @@
+import { createCipheriv, randomBytes } from 'node:crypto';
 import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { gzipSync } from 'node:zlib';
 import { afterEach, describe, expect, it } from 'vitest';
 import { loadPro } from '../src/pro/loader.js';
 import { hasEncBundle } from '../src/pro/bundleState.js';
@@ -15,6 +17,20 @@ function stageAppDir(): string {
   roots.push(root);
   mkdirSync(join(root, 'pro'), { recursive: true });
   return root;
+}
+
+function packEnc(files: Record<string, string>, keyHex: string): Buffer {
+  const manifest = {
+    keyId: 'test',
+    files: Object.fromEntries(
+      Object.entries(files).map(([rel, src]) => [rel, Buffer.from(src).toString('base64')]),
+    ),
+  };
+  const gz = gzipSync(Buffer.from(JSON.stringify(manifest)));
+  const iv = randomBytes(12);
+  const cipher = createCipheriv('aes-256-gcm', Buffer.from(keyHex, 'hex'), iv);
+  const ct = Buffer.concat([cipher.update(gz), cipher.final()]);
+  return Buffer.concat([Buffer.from('KPRO1', 'utf8'), iv, cipher.getAuthTag(), ct]);
 }
 
 describe('loadPro', () => {
@@ -34,6 +50,20 @@ describe('loadPro', () => {
     process.env.KANSOKU_BUNDLE_KEY = '00'.repeat(32);
     try {
       await expect(loadPro(root)).resolves.toBeNull();
+    } finally {
+      delete process.env.KANSOKU_BUNDLE_KEY;
+    }
+  });
+
+  it('prefers pro/bundle-key.local over the env key', async () => {
+    const root = stageAppDir();
+    const localKey = randomBytes(32).toString('hex');
+    writeFileSync(join(root, 'pro', 'pro.enc'), packEnc({ 'web/a.js': 'a' }, localKey));
+    writeFileSync(join(root, 'pro', 'bundle-key.local'), `${localKey}\n`);
+    process.env.KANSOKU_BUNDLE_KEY = '00'.repeat(32);
+    try {
+      const payload = await loadPro(root);
+      expect([...(payload?.webFiles.keys() ?? [])]).toEqual(['a.js']);
     } finally {
       delete process.env.KANSOKU_BUNDLE_KEY;
     }

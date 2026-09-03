@@ -22,6 +22,8 @@ files:
   # uses (single instance). Matches nothing on free builds.
   - pro/pro.enc
   - pro/kansoku_icloud.node
+  # Only written by stagePro.mjs under KANSOKU_LOCAL_TEST_BUILD=1; afterPack refuses it otherwise.
+  - pro/bundle-key.local
   - package.json
   # Production packages often publish source maps, declarations, and native
   # build inputs alongside their runtime files. None of these are read by the

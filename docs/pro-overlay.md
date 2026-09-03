@@ -70,6 +70,7 @@ node 侧构建还给 `ssr.noExternal: true`（只有 `electron`、`electron-spar
   - 若 `KANSOKU_FORCE_FREE=1` 或 `apps/pro/package.json` 不存在（社区构建），要求两个 `__pro__` 目录都不存在（陈旧构建的话直接报错退出），否则直接放行、不产出 `pro.enc`。
   - 否则要求 `dist-main/__pro__` 与 `dist/assets/__pro__` 都存在，调 `apps/pro/scripts/packEnc.mjs` 把两者打包加密成一个 `apps/desktop/pro/pro.enc`（放在 `desktop/` 下是因为 electron-builder 的 `files` 配置要把它打进 `app.asar`，解密路径也是照这个位置去找）。
   - 加密完成后**删除**两个明文 `__pro__` 目录——`pro.enc` 是唯一进入打包流程的 pro 产物。
+  - **本地测试包**：`pnpm package:desktop:local`（即 `KANSOKU_LOCAL_TEST_BUILD=1`）不需要真 key，`stagePro` 会现场随机生成一把，加密后把 key 明文写到 `apps/desktop/pro/bundle-key.local` 跟 `pro.enc` 一起打进 asar；运行时 `loadPro` 发现这个文件就优先用它，压过许可证里存的正式 key。没有这个环境变量时 `afterPack` 一旦在 asar 里看到这个文件就直接报错，正式发版不可能带上它。签名上：`packageApp` 会从钥匙串里挑一张 Developer ID Application 证书，借用 `/Applications/Kansoku.app` 里的描述文件（也可用 `KANSOKU_PROVISIONING_PROFILE` 指定），由 `afterPack` 按证书 hash 自己签——helper 用 inherit 权限，只有外层带 iCloud 权限。找不到证书就退回 ad-hoc 签名，但 CloudKit 会在启动几秒后把进程 abort 掉，Pro 的 iCloud 部分没法测。
 - **`packEnc.mjs`**：把 node/web 两份 `__pro__` 文件收集成一个 manifest（`node/` / `web/` 前缀 + base64 内容），注入 `bundle.json`（`formatVersion`、`buildId`、`publicCommit`、`proCommit`，只做诊断用，不再有 ABI 版本字段），用 `KANSOKU_BUNDLE_KEY`（64 位十六进制、32 字节）+ `KANSOKU_BUNDLE_KEY_ID` 做 AES-256-GCM 加密，字节格式是 `MAGIC("KPRO1") + 12 字节 IV + 16 字节 authTag + gzip(JSON) 密文`——这个格式被公开仓的 golden fixture 钉死，改格式要重新生成 fixture。web 侧 chunk 还会被扫一遍，确认没有引用 `electron` 或 `node:` 内置模块（浏览器侧代码不能有 Node/Electron 专属引用）。
 - **运行时解密**（`packages/core/src/pro/loader.ts` 的 `loadPro`）：
   - 找不到 `pro.enc` → 直接返回 `null`（免费）。

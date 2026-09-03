@@ -11,6 +11,14 @@ export interface ProPayload {
 const NODE_PREFIX = 'node/';
 const WEB_PREFIX = 'web/';
 
+// A local test build (KANSOKU_LOCAL_TEST_BUILD=1) encrypts pro.enc with a
+// throwaway key shipped beside it; it must beat the licence key, which was
+// minted for the release bundle and cannot open this one.
+function readLocalTestKey(appDir: string): string | undefined {
+  const path = join(appDir, 'pro', 'bundle-key.local');
+  return existsSync(path) ? readFileSync(path, 'utf8').trim() : undefined;
+}
+
 export async function loadPro(appDir?: string): Promise<ProPayload | null> {
   if (!appDir) {
     setEncBundlePresent(false);
@@ -21,7 +29,7 @@ export async function loadPro(appDir?: string): Promise<ProPayload | null> {
   setEncBundlePresent(present);
   if (!present) return null;
 
-  const keyHex = getActiveBundleKey() ?? process.env.KANSOKU_BUNDLE_KEY;
+  const keyHex = readLocalTestKey(appDir) ?? getActiveBundleKey() ?? process.env.KANSOKU_BUNDLE_KEY;
   if (!keyHex) {
     console.info('pro slot: encrypted bundle present but no key, running free');
     return null;
