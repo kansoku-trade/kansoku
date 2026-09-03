@@ -103,6 +103,11 @@ mac:
   # .github/scripts/notarize-and-staple.sh after packaging.
   notarize: false
   extendInfo:
+    NSUbiquitousContainers:
+      iCloud.dev.innei.kansoku:
+        NSUbiquitousContainerIsDocumentScopePublic: true
+        NSUbiquitousContainerName: Kansoku
+        NSUbiquitousContainerSupportedFolderLevels: Any
     SUFeedURL: https://github.com/Innei/kansoku/releases/latest/download/appcast.xml
     # CI injects the real EdDSA public key over this placeholder at build time — keep it
     # greppable (SPARKLE_ED_PUBLIC_KEY_PLACEHOLDER) so that step has a stable anchor.
