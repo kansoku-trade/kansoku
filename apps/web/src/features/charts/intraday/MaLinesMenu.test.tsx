@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
+import type { IntradayBuilt } from '@kansoku/shared/types';
 import { MaLinesMenu } from './MaLinesMenu';
 import { IntradayControlsProvider } from './controlsContext';
 
@@ -12,7 +13,11 @@ afterEach(() => {
 function open() {
   render(
     <IntradayControlsProvider>
-      <MaLinesMenu candles={[]} />
+      <MaLinesMenu
+        built={{ timeframes: {} } as unknown as IntradayBuilt}
+        activeTf="m15"
+        symbol="NVDA.US"
+      />
     </IntradayControlsProvider>,
   );
   fireEvent.click(screen.getByLabelText('均线设置'));

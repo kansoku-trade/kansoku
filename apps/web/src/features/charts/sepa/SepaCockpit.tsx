@@ -1,6 +1,6 @@
 import * as stylex from '@stylexjs/stylex';
 import { ArrowLeft } from 'lucide-react';
-import type { QuoteCell, SepaBuilt } from '@kansoku/shared/types';
+import type { SepaBuilt } from '@kansoku/shared/types';
 import { useSepaRefresh } from '@web/features/cockpit/useSepaRefresh';
 import { TopbarQuote } from '@web/features/quotes/QuoteBar';
 import { Button, Spinner } from '@web/ui';
@@ -73,12 +73,10 @@ export function SepaCockpit({
   sym,
   doc,
   reload,
-  liveQuote,
 }: {
   sym: string;
   doc: SepaDocView;
   reload: () => void;
-  liveQuote: QuoteCell | null;
 }) {
   const sepaRefresh = useSepaRefresh(doc, reload);
   const isResearchSepa = doc.input.origin === 'research';
@@ -113,7 +111,7 @@ export function SepaCockpit({
               更新数据
             </Button>
           )}
-          {doc.symbol && <TopbarQuote quote={liveQuote} />}
+          {doc.symbol && <TopbarQuote sym={sym} />}
         </span>
       </div>
       <div className={`detail-body ${stylex.props(styles.detailBody).className}`}>

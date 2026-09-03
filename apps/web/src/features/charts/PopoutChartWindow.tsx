@@ -2,7 +2,7 @@ import * as stylex from '@stylexjs/stylex';
 import { IntradayChartOnly, IntradayTimeframeSwitch } from './intraday/IntradayDashboard';
 import { ChartLayerMenu } from './intraday/ChartLayerMenu';
 import { MaLinesMenu } from './intraday/MaLinesMenu';
-import { tfDataOf, withViewTimeframe } from './intraday/timeframes';
+import { withViewTimeframe } from './intraday/timeframes';
 import { useViewTimeframe } from './intraday/useViewTimeframe';
 import { IntradayControlsProvider } from './intraday/controlsContext';
 import { getShellRpc } from '../desktop/shellRpc';
@@ -10,7 +10,6 @@ import { resolveIntradayTf } from './intraday/useIntradayDoc';
 import { useIntradayPreview } from './intraday/useIntradayPreview';
 import { TopbarQuote } from '../quotes/QuoteBar';
 import { Dot, Empty, ErrorBox } from '../../ui';
-import { useLiveQuote } from '../quotes/useLiveQuote';
 import { useTitle } from '../../lib/useTitle';
 import { colors, fontSizes } from '../../theme/tokens.stylex';
 
@@ -56,11 +55,10 @@ const styles = stylex.create({
 
 export function PopoutChartWindow({ sym }: { sym: string }) {
   const symLabel = sym.toUpperCase().replace(/\.US$/, '');
-  const liveQuote = useLiveQuote(sym);
   const { built, error, degraded, intradayTf, setIntradayTf } = useIntradayPreview(sym);
   const isDesktop = getShellRpc() !== null;
   useTitle(symLabel);
-  const viewTimeframe = useViewTimeframe(sym, intradayTf ?? 'm15', { live: true, liveQuote });
+  const viewTimeframe = useViewTimeframe(sym, intradayTf ?? 'm15', { live: true });
   const activeTf = built ? resolveIntradayTf(built, intradayTf) : null;
   const chartBuilt =
     built && activeTf ? withViewTimeframe(built, activeTf, viewTimeframe.tf) : built;
@@ -82,11 +80,11 @@ export function PopoutChartWindow({ sym }: { sym: string }) {
           <span className={`topbar-chart-tail ${stylex.props(styles.chartTail).className}`}>
             {chartBuilt && activeTf && (
               <>
-                <MaLinesMenu candles={tfDataOf(chartBuilt, activeTf)?.candles ?? []} />
+                <MaLinesMenu built={chartBuilt} activeTf={activeTf} symbol={sym} live />
                 <ChartLayerMenu built={chartBuilt} activeTf={activeTf} />
               </>
             )}
-            <TopbarQuote quote={liveQuote} />
+            <TopbarQuote sym={sym} />
           </span>
         </div>
         <div className={`popout-body ${stylex.props(styles.body).className}`}>
@@ -95,7 +93,7 @@ export function PopoutChartWindow({ sym }: { sym: string }) {
           ) : !chartBuilt || !activeTf ? (
             <Empty>加载中…</Empty>
           ) : (
-            <IntradayChartOnly symbol={sym} built={chartBuilt} activeTf={activeTf} popout />
+            <IntradayChartOnly symbol={sym} built={chartBuilt} activeTf={activeTf} popout live />
           )}
         </div>
       </div>

@@ -4,7 +4,6 @@ import * as stylex from '@stylexjs/stylex';
 import type { ChartMeta } from '@kansoku/shared/types';
 import { symbolAnalysisPath } from '@kansoku/shared/chartUrl';
 import { CockpitSkeleton } from '@web/features/cockpit/CockpitSkeleton';
-import { useLiveQuote } from '@web/features/quotes/useLiveQuote';
 import { useQuery } from '@web/lib/apiHooks';
 import { client } from '@web/lib/client';
 import { Empty, ErrorBox } from '@web/ui';
@@ -40,7 +39,6 @@ function Page({ children }: { children: ReactNode }) {
 }
 
 function PinnedSepaView({ sym, analysisId }: { sym: string; analysisId: string }) {
-  const liveQuote = useLiveQuote(sym);
   const { doc, error, reload } = useIntradayDoc(analysisId);
 
   if (error) {
@@ -67,11 +65,10 @@ function PinnedSepaView({ sym, analysisId }: { sym: string; analysisId: string }
     );
   }
   const sepaDoc: SepaDocView = { ...doc, built: doc.built };
-  return <SepaCockpit sym={sym} doc={sepaDoc} reload={reload} liveQuote={liveQuote} />;
+  return <SepaCockpit sym={sym} doc={sepaDoc} reload={reload} />;
 }
 
 function LatestSepaView({ sym }: { sym: string }) {
-  const liveQuote = useLiveQuote(sym);
   const { data: charts, error: listError } = useQuery<ChartMeta[]>(
     `charts.list:sepa:${sym}`,
     () => client.charts.list({ type: 'sepa', symbol: sym }),
@@ -112,7 +109,7 @@ function LatestSepaView({ sym }: { sym: string }) {
   }
   if (!doc || doc.built.kind !== 'sepa') return <CockpitSkeleton />;
   const sepaDoc: SepaDocView = { ...doc, built: doc.built };
-  return <SepaCockpit sym={sym} doc={sepaDoc} reload={reload} liveQuote={liveQuote} />;
+  return <SepaCockpit sym={sym} doc={sepaDoc} reload={reload} />;
 }
 
 export function SepaSymbolPage({ sym, analysisId }: { sym: string; analysisId: string | null }) {

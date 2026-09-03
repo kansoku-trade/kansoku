@@ -125,7 +125,6 @@ describe('PreviewCockpit prediction tab', () => {
         analysesRows={[]}
         onLive={() => {}}
         onSelectAnalysis={() => {}}
-        liveQuote={null}
       />,
     );
 
@@ -165,7 +164,6 @@ describe('PreviewCockpit prediction tab', () => {
         ]}
         onLive={() => {}}
         onSelectAnalysis={() => {}}
-        liveQuote={null}
       />,
     );
 
@@ -202,7 +200,6 @@ describe('PreviewCockpit prediction tab', () => {
         analysesRows={[]}
         onLive={() => {}}
         onSelectAnalysis={() => {}}
-        liveQuote={null}
       />,
     );
 
@@ -235,7 +232,6 @@ describe('PreviewCockpit prediction tab', () => {
         analysesRows={[]}
         onLive={() => {}}
         onSelectAnalysis={() => {}}
-        liveQuote={null}
       />,
     );
 
@@ -267,7 +263,6 @@ describe('PreviewCockpit prediction tab', () => {
         analysesRows={[]}
         onLive={() => {}}
         onSelectAnalysis={() => {}}
-        liveQuote={null}
       />,
     );
 
@@ -314,7 +309,6 @@ describe('PreviewCockpit prediction tab', () => {
         ]}
         onLive={() => {}}
         onSelectAnalysis={() => {}}
-        liveQuote={null}
       />,
     );
 
@@ -359,7 +353,6 @@ describe('PreviewCockpit prediction tab', () => {
         ]}
         onLive={() => {}}
         onSelectAnalysis={() => {}}
-        liveQuote={null}
       />,
     );
 
@@ -405,7 +398,6 @@ describe('PreviewCockpit prediction tab', () => {
         ]}
         onLive={() => {}}
         onSelectAnalysis={() => {}}
-        liveQuote={null}
       />,
     );
 
@@ -442,7 +434,6 @@ describe('PreviewCockpit preview levels overlay', () => {
         analysesRows={[]}
         onLive={() => {}}
         onSelectAnalysis={() => {}}
-        liveQuote={null}
       />,
     );
   };

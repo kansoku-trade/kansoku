@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { IntradayTfData, QuoteCell } from '@kansoku/shared/types';
+import type { IntradayTfData } from '@kansoku/shared/types';
 
 const viewTimeframe = vi.fn();
 
@@ -9,7 +9,8 @@ vi.mock('@web/lib/client', () => ({
   client: { charts: { viewTimeframe: (input: unknown) => viewTimeframe(input) } },
 }));
 
-const { applyLiveQuote, useViewTimeframe } = await import('./useViewTimeframe');
+const { useViewTimeframe } = await import('./useViewTimeframe');
+const { applyLiveQuote } = await import('./useLiveBuilt');
 
 const tfOf = (close: number, high = close, low = close): IntradayTfData =>
   ({
@@ -18,16 +19,6 @@ const tfOf = (close: number, high = close, low = close): IntradayTfData =>
       { time: 2, open: close, high, low, close },
     ],
   }) as unknown as IntradayTfData;
-
-const quote = (last: number): QuoteCell =>
-  ({
-    symbol: 'NVDA.US',
-    last,
-    pct: 0,
-    session: '日盘',
-    regularLast: last,
-    regularPct: 0,
-  }) as QuoteCell;
 
 beforeEach(() => {
   viewTimeframe.mockReset();
@@ -67,14 +58,12 @@ describe('useViewTimeframe', () => {
     expect(result.current.tf).toBeNull();
   });
 
-  it('fetches a view period and overlays the live quote on the last bar', async () => {
-    const { result } = renderHook(() =>
-      useViewTimeframe('NVDA.US', 'day', { live: true, liveQuote: quote(123) }),
-    );
+  it('fetches a view period', async () => {
+    const { result } = renderHook(() => useViewTimeframe('NVDA.US', 'day', { live: true }));
 
     await waitFor(() => expect(result.current.tf).toBeTruthy());
     expect(viewTimeframe).toHaveBeenCalledWith({ symbol: 'NVDA.US', period: 'day' });
-    expect(result.current.tf?.candles.at(-1)?.close).toBe(123);
+    expect(result.current.tf?.candles.at(-1)?.close).toBe(100);
   });
 
   it('passes as_of through so a frozen chart stays frozen', async () => {

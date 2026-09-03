@@ -4,7 +4,7 @@ import * as stylex from '@stylexjs/stylex';
 import { IntradayDashboard, IntradayTimeframeSwitch } from '../charts/intraday/IntradayDashboard';
 import { ChartLayerMenu } from '../charts/intraday/ChartLayerMenu';
 import { MaLinesMenu } from '../charts/intraday/MaLinesMenu';
-import { isViewPeriod, tfDataOf, withViewTimeframe } from '../charts/intraday/timeframes';
+import { isViewPeriod, withViewTimeframe } from '../charts/intraday/timeframes';
 import { useViewTimeframe } from '../charts/intraday/useViewTimeframe';
 import { IntradayControlsProvider } from '../charts/intraday/controlsContext';
 import { resolveIntradayTf, useIntradayDoc } from '../charts/intraday/useIntradayDoc';
@@ -16,7 +16,6 @@ import { recordRecentSymbol } from '../charts/recentCharts';
 import { Dot, ErrorBox, MarketTime, Tooltip } from '../../ui';
 import { useTitle } from '../../lib/useTitle';
 import { isDesktopRealtime } from '../../lib/portTransport';
-import { useLiveQuote } from '../quotes/useLiveQuote';
 import { AnalysisRunDetails } from './AnalysisRunDetails';
 import { CockpitSkeleton } from './CockpitSkeleton';
 import { AnalysisTimeline } from './AnalysisTimeline';
@@ -184,7 +183,6 @@ export function SymbolCockpit({ sym }: { sym: string }) {
   const symLabel = sym.toUpperCase().replace(/\.US$/, '');
   const desktopShell = isDesktopRealtime();
   const market = marketOfSymbol(sym);
-  const liveQuote = useLiveQuote(sym);
   const {
     mode,
     activeId: latestId,
@@ -235,7 +233,6 @@ export function SymbolCockpit({ sym }: { sym: string }) {
   const viewTimeframe = useViewTimeframe(sym, intradayTf ?? 'm15', {
     asOf: live ? undefined : intradaySidebar?.asOf,
     live,
-    liveQuote,
   });
   const reassessNow = Date.now();
   const reassessNeeded =
@@ -264,7 +261,6 @@ export function SymbolCockpit({ sym }: { sym: string }) {
         analysesRows={analyses}
         onLive={goToLive}
         onSelectAnalysis={goToAnalysis}
-        liveQuote={liveQuote}
       />
     );
   }
@@ -289,7 +285,6 @@ export function SymbolCockpit({ sym }: { sym: string }) {
         analysesRows={analyses}
         onLive={goToLive}
         onSelectAnalysis={goToAnalysis}
-        liveQuote={liveQuote}
       />
     );
   }
@@ -312,7 +307,7 @@ export function SymbolCockpit({ sym }: { sym: string }) {
 
   if (doc.built.kind === 'sepa') {
     const sepaDoc: SepaDocView = { ...doc, built: doc.built };
-    return <SepaCockpit sym={sym} doc={sepaDoc} reload={reload} liveQuote={liveQuote} />;
+    return <SepaCockpit sym={sym} doc={sepaDoc} reload={reload} />;
   }
 
   if (doc.built.kind !== 'intraday')
@@ -421,7 +416,12 @@ export function SymbolCockpit({ sym }: { sym: string }) {
               <span
                 className={`topbar-chart-tail ${stylex.props(styles.topbarChartTail).className}`}
               >
-                <MaLinesMenu candles={tfDataOf(chartBuilt, activeIntradayTf)?.candles ?? []} />
+                <MaLinesMenu
+                  built={chartBuilt}
+                  activeTf={activeIntradayTf}
+                  symbol={sym}
+                  live={live}
+                />
                 <ChartLayerMenu built={chartBuilt} activeTf={activeIntradayTf} />
               </span>
             </div>
@@ -468,7 +468,7 @@ export function SymbolCockpit({ sym }: { sym: string }) {
                   </button>
                 </Tooltip>
               )}
-              {doc.symbol && <TopbarQuote quote={liveQuote} />}
+              {doc.symbol && <TopbarQuote sym={sym} />}
             </div>
           </div>
           <div className={`detail-body ${stylex.props(styles.detailBody).className}`}>
@@ -484,7 +484,7 @@ export function SymbolCockpit({ sym }: { sym: string }) {
               activeTab={activeTab}
               onTabChange={setActiveTab}
               dock={<ChatDock chartId={doc.id} docCreatedAt={doc.created_at} />}
-              liveQuote={live ? liveQuote : null}
+              live={live}
             />
           </div>
         </div>

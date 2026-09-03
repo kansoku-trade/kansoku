@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import * as stylex from '@stylexjs/stylex';
 import { ArrowLeft } from 'lucide-react';
-import type { QuoteCell, SymbolAnalysisRow } from '@kansoku/shared/types';
+import type { SymbolAnalysisRow } from '@kansoku/shared/types';
 import {
   IntradayDashboard,
   IntradayTimeframeSwitch,
@@ -10,7 +10,6 @@ import { ChartLayerMenu } from '@web/features/charts/intraday/ChartLayerMenu';
 import { MaLinesMenu } from '@web/features/charts/intraday/MaLinesMenu';
 import {
   isViewPeriod,
-  tfDataOf,
   withPreviewLevels,
   withViewTimeframe,
 } from '@web/features/charts/intraday/timeframes';
@@ -123,13 +122,11 @@ export function PreviewCockpit({
   analysesRows,
   onLive,
   onSelectAnalysis,
-  liveQuote,
 }: {
   sym: string;
   analysesRows: SymbolAnalysisRow[];
   onLive: () => void;
   onSelectAnalysis: (id: string | null) => void;
-  liveQuote: QuoteCell | null;
 }) {
   const symLabel = sym.toUpperCase().replace(/\.US$/, '');
   const desktopShell = isDesktopRealtime();
@@ -156,7 +153,7 @@ export function PreviewCockpit({
   const [activeTab, setActiveTab] = useState('prediction');
   const { comments, error: commentsError, loaded: commentsLoaded } = useCockpitComments(sym);
   const { unread } = useAiUnreadBadge(sym, comments, commentsLoaded, activeTab);
-  const viewTimeframe = useViewTimeframe(sym, intradayTf ?? 'm15', { live: true, liveQuote });
+  const viewTimeframe = useViewTimeframe(sym, intradayTf ?? 'm15', { live: true });
   const analystRunStatus = useAnalystRunStatus(sym);
   const analystRunLastEndedRaw = useAnalystRunLastEnded(sym);
   const analystRunLastEnded =
@@ -282,12 +279,12 @@ export function PreviewCockpit({
               <span
                 className={`topbar-chart-tail ${stylex.props(styles.topbarChartTail).className}`}
               >
-                <MaLinesMenu candles={tfDataOf(chartBuilt, activeIntradayTf)?.candles ?? []} />
+                <MaLinesMenu built={chartBuilt} activeTf={activeIntradayTf} symbol={sym} live />
                 <ChartLayerMenu built={chartBuilt} activeTf={activeIntradayTf} />
               </span>
             </div>
             <div className={`topbar-side ${stylex.props(styles.topbarSide).className}`}>
-              <TopbarQuote quote={liveQuote} />
+              <TopbarQuote sym={sym} />
             </div>
           </div>
           <div className={`detail-body ${stylex.props(styles.detailBody).className}`}>
@@ -298,7 +295,7 @@ export function PreviewCockpit({
               sidebarTabs={sidebarTabs}
               activeTab={activeTab}
               onTabChange={setActiveTab}
-              liveQuote={liveQuote}
+              live
             />
           </div>
         </div>

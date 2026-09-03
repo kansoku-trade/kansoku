@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { IntradayBuilt, QuoteCell, TimeframeKey } from '@kansoku/shared/types';
+import type { IntradayBuilt, TimeframeKey } from '@kansoku/shared/types';
 import * as stylex from '@stylexjs/stylex';
 import type { SidebarTab } from '../SidebarTabs';
 import type { ConclusionReassess } from './ConclusionCard';
@@ -68,7 +68,7 @@ interface IntradayDashboardProps {
   activeTab?: string;
   onTabChange?: (key: string) => void;
   dock?: ReactNode;
-  liveQuote?: QuoteCell | null;
+  live?: boolean;
 }
 
 export function IntradayTimeframeSwitch({
@@ -116,7 +116,7 @@ export function IntradayDashboard({
   activeTab,
   onTabChange,
   dock,
-  liveQuote,
+  live,
 }: IntradayDashboardProps) {
   const sidebarTf = isViewPeriod(activeTf) ? built.defaultTf : activeTf;
   return (
@@ -126,6 +126,7 @@ export function IntradayDashboard({
         built={built}
         activeTf={activeTf}
         onLoadHistory={onLoadHistory}
+        live={live}
       />
       <IntradaySidebar
         built={built}
@@ -138,7 +139,7 @@ export function IntradayDashboard({
         active={activeTab}
         onActiveChange={onTabChange}
         dock={dock}
-        liveQuote={liveQuote}
+        live={live}
       />
     </div>
   );

@@ -48,9 +48,7 @@ describe('SepaCockpit', () => {
     useSepaRefresh.mockReturnValue(refreshController());
     const reload = vi.fn();
 
-    render(
-      <SepaCockpit sym="MRVL.US" doc={sepaDoc()} reload={reload} liveQuote={null} />,
-    );
+    render(<SepaCockpit sym="MRVL.US" doc={sepaDoc()} reload={reload} />);
 
     expect(screen.getByText('更新数据')).toBeTruthy();
     expect(screen.getByTestId('sepa-dashboard')).toBeTruthy();
@@ -59,14 +57,7 @@ describe('SepaCockpit', () => {
   it('hides the refresh button for a non-research-origin doc', () => {
     useSepaRefresh.mockReturnValue(refreshController());
 
-    render(
-      <SepaCockpit
-        sym="MRVL.US"
-        doc={sepaDoc({ input: {} })}
-        reload={vi.fn()}
-        liveQuote={null}
-      />,
-    );
+    render(<SepaCockpit sym="MRVL.US" doc={sepaDoc({ input: {} })} reload={vi.fn()} />);
 
     expect(screen.queryByText('更新数据')).toBeNull();
   });
@@ -74,7 +65,7 @@ describe('SepaCockpit', () => {
   it('shows a spinner hint while refreshing', () => {
     useSepaRefresh.mockReturnValue(refreshController({ refreshing: true }));
 
-    render(<SepaCockpit sym="MRVL.US" doc={sepaDoc()} reload={vi.fn()} liveQuote={null} />);
+    render(<SepaCockpit sym="MRVL.US" doc={sepaDoc()} reload={vi.fn()} />);
 
     expect(screen.getByText('正在更新到最新数据…')).toBeTruthy();
   });
@@ -82,7 +73,7 @@ describe('SepaCockpit', () => {
   it('shows the stale-data hint once the refresh fails', () => {
     useSepaRefresh.mockReturnValue(refreshController({ error: 'network down' }));
 
-    render(<SepaCockpit sym="MRVL.US" doc={sepaDoc()} reload={vi.fn()} liveQuote={null} />);
+    render(<SepaCockpit sym="MRVL.US" doc={sepaDoc()} reload={vi.fn()} />);
 
     expect(screen.getByText('更新失败，展示的是 2026-07-20 的数据')).toBeTruthy();
   });
@@ -91,7 +82,7 @@ describe('SepaCockpit', () => {
     const refresh = vi.fn();
     useSepaRefresh.mockReturnValue(refreshController({ refresh }));
 
-    render(<SepaCockpit sym="MRVL.US" doc={sepaDoc()} reload={vi.fn()} liveQuote={null} />);
+    render(<SepaCockpit sym="MRVL.US" doc={sepaDoc()} reload={vi.fn()} />);
     fireEvent.click(screen.getByText('更新数据'));
 
     expect(refresh).toHaveBeenCalledTimes(1);
@@ -102,7 +93,7 @@ describe('SepaCockpit', () => {
     const reload = vi.fn();
     const doc = sepaDoc();
 
-    render(<SepaCockpit sym="MRVL.US" doc={doc} reload={reload} liveQuote={null} />);
+    render(<SepaCockpit sym="MRVL.US" doc={doc} reload={reload} />);
 
     expect(useSepaRefresh).toHaveBeenCalledWith(doc, reload);
   });

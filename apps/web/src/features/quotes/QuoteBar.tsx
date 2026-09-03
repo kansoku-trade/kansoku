@@ -1,9 +1,9 @@
-import type { QuoteCell } from '@kansoku/shared/types';
 import * as stylex from '@stylexjs/stylex';
 import { money, signed, upDown } from '../../lib/format';
 import { marketOfSymbol } from '../../lib/market';
 import { colors, fonts, fontSizes } from '../../theme/tokens.stylex';
 import { Badge, MarketTime } from '../../ui';
+import { useLiveQuote } from './useLiveQuote';
 
 const styles = stylex.create({
   root: {
@@ -42,7 +42,8 @@ function pctText(pct: number | null): string {
   return pct == null ? '—' : `${signed(pct)}%`;
 }
 
-export function TopbarQuote({ quote }: { quote: QuoteCell | null }) {
+export function TopbarQuote({ sym }: { sym: string }) {
+  const quote = useLiveQuote(sym);
   if (!quote) return null;
 
   const tone = pctTone(quote.pct);

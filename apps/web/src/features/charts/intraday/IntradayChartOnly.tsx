@@ -6,6 +6,7 @@ import { colors, fontSizes, radii } from '../../../theme/tokens.stylex';
 import type { DrawingsHandle } from '../drawings/useDrawings';
 import { namespacedKey, useIntradayControls } from './controlsContext';
 import { isSessionlessTf, tfDataOf, type ChartTf } from './timeframes';
+import { useLiveBuilt } from './useLiveBuilt';
 import { useMaSeries } from './useMaLines';
 import { useIntradayCharts, type DrawingChartHandle } from './useIntradayCharts';
 
@@ -45,12 +46,12 @@ const styles = stylex.create({
     minHeight: 0,
   },
   resizer: {
-    backgroundColor: colors.backgroundSurface,
-    cursor: 'row-resize',
-    flex: '0 0 6px',
-    position: 'relative',
-    touchAction: 'none',
-    zIndex: 11,
+    'backgroundColor': colors.backgroundSurface,
+    'cursor': 'row-resize',
+    'flex': '0 0 6px',
+    'position': 'relative',
+    'touchAction': 'none',
+    'zIndex': 11,
     '::after': {
       backgroundColor: colors.borderStrong,
       borderRadius: radii.default,
@@ -70,7 +71,7 @@ const styles = stylex.create({
     },
   },
   resizerDragging: {
-    backgroundColor: colors.backgroundHover,
+    'backgroundColor': colors.backgroundHover,
     '::after': {
       backgroundColor: colors.accent,
     },
@@ -140,18 +141,21 @@ export interface IntradayChartOnlyProps {
   storageNamespace?: string;
   onChartHandle?: (handle: DrawingChartHandle | null) => void;
   popout?: boolean;
+  live?: boolean;
 }
 
 export function IntradayChartOnly({
   symbol,
-  built,
+  built: frozenBuilt,
   activeTf,
   onLoadHistory,
   drawings = true,
   storageNamespace,
   onChartHandle,
   popout = false,
+  live = false,
 }: IntradayChartOnlyProps) {
+  const built = useLiveBuilt(frozenBuilt, activeTf, symbol, live);
   const macdHeightKey = namespacedKey(MACD_HEIGHT_KEY, storageNamespace);
   const [macdHeight, setMacdHeight] = useState(() => {
     const saved = Number(localStorage.getItem(macdHeightKey));

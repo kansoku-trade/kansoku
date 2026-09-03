@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 import * as stylex from '@stylexjs/stylex';
 import { TriangleAlert } from 'lucide-react';
 import type { IntradayBuilt, QuoteCell, TimeframeKey } from '@kansoku/shared/types';
+import { useLiveQuote } from '@web/features/quotes/useLiveQuote';
 import { fmt } from '@web/lib/format';
 import { marketOfSymbol } from '@web/lib/market';
 import { MarketTime } from '@web/ui';
@@ -82,7 +83,7 @@ interface IntradaySidebarProps {
   active?: string;
   onActiveChange?: (key: string) => void;
   dock?: ReactNode;
-  liveQuote?: QuoteCell | null;
+  live?: boolean;
 }
 
 export function resolveSidebarQuote(
@@ -107,11 +108,11 @@ export function IntradaySidebar({
   active: activeProp,
   onActiveChange,
   dock,
-  liveQuote,
+  live = false,
 }: IntradaySidebarProps) {
   const s = built.sidebar;
   const market = marketOfSymbol(s.symbol);
-  const displayedQuote = resolveSidebarQuote(s, liveQuote);
+  const displayedQuote = resolveSidebarQuote(s, useLiveQuote(live ? s.symbol : null));
   const [internalActive, setInternalActive] = useState('prediction');
   const active = activeProp ?? internalActive;
   const setActive = onActiveChange ?? setInternalActive;

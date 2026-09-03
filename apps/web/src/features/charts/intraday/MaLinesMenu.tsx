@@ -2,9 +2,12 @@ import { useState } from 'react';
 import { Popover } from '@base-ui/react/popover';
 import { ChevronDown, Eye, EyeOff, Plus, X } from 'lucide-react';
 import * as stylex from '@stylexjs/stylex';
+import type { IntradayBuilt } from '@kansoku/shared/types';
 import { fmt } from '@web/lib/format';
 import { colors, fontSizes, radii } from '../../../theme/tokens.stylex';
 import { useIntradayControls } from './controlsContext';
+import { tfDataOf, type ChartTf } from './timeframes';
+import { useLiveBuilt } from './useLiveBuilt';
 import { MAX_MA_LINES, MAX_MA_PERIOD, MIN_MA_PERIOD, useMaSeries, type MaLine } from './useMaLines';
 
 const styles = stylex.create({
@@ -215,7 +218,18 @@ function MaRow({ line, last, takenPeriods, onChange, onRemove }: MaRowProps) {
   );
 }
 
-export function MaLinesMenu({ candles }: { candles: { time: number; close: number }[] }) {
+export function MaLinesMenu({
+  built,
+  activeTf,
+  symbol,
+  live = false,
+}: {
+  built: IntradayBuilt;
+  activeTf: ChartTf;
+  symbol: string;
+  live?: boolean;
+}) {
+  const candles = tfDataOf(useLiveBuilt(built, activeTf, symbol, live), activeTf)?.candles ?? [];
   const { maLines, addMaLine, removeMaLine, updateMaLine } = useIntradayControls();
   const [open, setOpen] = useState(false);
   const series = useMaSeries(candles, maLines);

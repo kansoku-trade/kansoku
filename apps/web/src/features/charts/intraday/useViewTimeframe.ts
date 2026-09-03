@@ -1,25 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import type { IntradayTfData, QuoteCell } from '@kansoku/shared/types';
+import type { IntradayTfData } from '@kansoku/shared/types';
 import { client } from '@web/lib/client';
 import { isViewPeriod, type ChartTf } from './timeframes';
 
 const REFETCH_MS = 15_000;
-
-export function applyLiveQuote(
-  tf: IntradayTfData,
-  last: number | null | undefined,
-): IntradayTfData {
-  const bar = tf.candles.at(-1);
-  if (!bar || last == null || !Number.isFinite(last) || last <= 0) return tf;
-  if (bar.close === last) return tf;
-  const patched = {
-    ...bar,
-    close: last,
-    high: Math.max(bar.high, last),
-    low: Math.min(bar.low, last),
-  };
-  return { ...tf, candles: [...tf.candles.slice(0, -1), patched] };
-}
 
 export interface ViewTimeframeState {
   tf: IntradayTfData | null;
@@ -30,9 +14,9 @@ export interface ViewTimeframeState {
 export function useViewTimeframe(
   symbol: string,
   activeTf: ChartTf,
-  options: { asOf?: string; live?: boolean; liveQuote?: QuoteCell | null } = {},
+  options: { asOf?: string; live?: boolean } = {},
 ): ViewTimeframeState {
-  const { asOf, live = false, liveQuote = null } = options;
+  const { asOf, live = false } = options;
   const [state, setState] = useState<ViewTimeframeState>({ tf: null, error: null, loading: false });
   const wanted = isViewPeriod(activeTf) ? activeTf : null;
   const tokenRef = useRef<object | null>(null);
@@ -75,6 +59,5 @@ export function useViewTimeframe(
     };
   }, [symbol, wanted, asOf, live]);
 
-  if (!state.tf || !live) return state;
-  return { ...state, tf: applyLiveQuote(state.tf, liveQuote?.last) };
+  return state;
 }
