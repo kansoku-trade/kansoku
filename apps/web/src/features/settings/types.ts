@@ -1,5 +1,10 @@
 import type { Market } from '@kansoku/shared/time';
 
+export type SettingsSectionId = 'ai' | 'display' | 'connections' | 'license' | 'advanced';
+
+export const DEFAULT_SETTINGS_SECTION: SettingsSectionId = 'ai';
+export const SETTINGS_SECTION_ROUTE = `/settings/${DEFAULT_SETTINGS_SECTION}`;
+
 export type RoleMode = 'custom' | 'disabled' | 'inherit';
 export type Role = 'comment' | 'analyst' | 'deepDive' | 'chat' | 'casePick' | 'title';
 

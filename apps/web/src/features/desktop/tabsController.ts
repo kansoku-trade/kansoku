@@ -11,6 +11,7 @@ import {
   type TabsSnapshot as SharedSnapshot,
 } from './desktopTabsBridge';
 import { useCapabilities } from '../edition/capabilitiesStore';
+import { SETTINGS_SECTION_ROUTE } from '../settings/types';
 import { requestTrainerWindow } from '../training/requestTrainerWindow';
 import { getOpenTrainerBridge, getWindowsBridge } from './desktopWindowsBridge';
 import { registerGlobalCall } from './globalCalls';
@@ -372,13 +373,19 @@ export function useTabsController(): TabsController {
   const focusOrOpenSettings = useCallback(() => {
     if (!bridge) {
       setSnapshot((prev) =>
-        tabsStore.focusOrOpenRoute(withCurrentScrollCaptured(prev), '/settings'),
+        tabsStore.focusOrOpenRoutePrefix(
+          withCurrentScrollCaptured(prev),
+          '/settings',
+          SETTINGS_SECTION_ROUTE,
+        ),
       );
       return;
     }
-    const existing = snapshotRef.current.tabs.find((tab) => tab.route === '/settings');
+    const existing = snapshotRef.current.tabs.find(
+      (tab) => tabsStore.tabKind(tab.route) === 'settings',
+    );
     if (existing) activateTab(existing.id);
-    else openTab('/settings');
+    else openTab(SETTINGS_SECTION_ROUTE);
   }, [bridge, activateTab, openTab]);
 
   const focusOrOpenLogs = useCallback(() => {

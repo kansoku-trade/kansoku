@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import * as stylex from '@stylexjs/stylex';
-import { Button, NoteBlock, openModal, Switch } from '@web/ui';
-import { colors, fonts, fontSizes } from '../../theme/tokens.stylex';
-import { SettingsConnectionSection } from './SettingsConnectionSection';
+import { Button, openModal, Switch } from '@web/ui';
 import { AgentKitConflictDialog } from './AgentKitConflictDialog';
 import { AgentKitUpdateDialog } from './AgentKitUpdateDialog';
+import { SettingsField, SettingsGroup, SettingsRow } from './SettingsGroup';
 import { openSettingsConfirm } from './openSettingsConfirm';
 import {
   getDesktopAgentKitBridge,
@@ -14,52 +13,10 @@ import {
 } from './desktopAgentKit';
 
 const styles = stylex.create({
-  section: {
-    padding: '10px 11px',
-  },
-  title: {
-    alignItems: 'center',
-    color: colors.textPrimary,
-    display: 'flex',
-    fontSize: fontSizes.base,
-    fontWeight: 600,
-    gap: '8px',
-    justifyContent: 'space-between',
-  },
-  summary: {
-    color: colors.textMuted,
-    fontFamily: fonts.mono,
-    fontSize: fontSizes.sm,
-    fontVariantNumeric: 'tabular-nums',
-    fontWeight: 400,
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-  },
-  providerMeta: {
-    color: colors.textMuted,
-    fontFamily: fonts.mono,
-    fontSize: fontSizes.sm,
-    marginTop: '3px',
-    overflowWrap: 'anywhere',
-  },
-  result: {
-    color: colors.down,
-    fontSize: fontSizes.control,
-  },
-  pendingRow: {
-    alignItems: 'center',
-    display: 'flex',
-    gap: '8px',
-    justifyContent: 'space-between',
-    marginTop: '6px',
-  },
-  actionsBar: {
+  actions: {
     display: 'flex',
     flexWrap: 'wrap',
     gap: '6px',
-    justifyContent: 'flex-end',
-    marginTop: '10px',
   },
   spacer: {
     flex: 1,
@@ -146,75 +103,60 @@ export function AgentKitSection() {
   const canSync = Boolean(status?.enabled && status?.resolvedPath);
 
   return (
-    <SettingsConnectionSection
-      className={`settings-conn-longbridge ${stylex.props(styles.section).className}`}
-    >
-      <div className={`settings-conn-title ${stylex.props(styles.title).className}`}>
-        <span>Agent Kit</span>
+    <SettingsGroup name="Agent Kit">
+      <SettingsRow
+        label="启用"
+        description="为外部 Claude Code / Codex 提供内置 skills 软链接与 kansoku-cli 入口"
+        error={error ?? undefined}
+      >
         <Switch
           ariaLabel="启用 Agent Kit"
           checked={status?.enabled ?? false}
           disabled={busy || !status}
           onCheckedChange={(checked) => toggle(checked)}
         />
-      </div>
-
-      <div className={`settings-conn-summary ${stylex.props(styles.summary).className}`}>
-        为外部 Claude Code / Codex 提供内置 skills 软链接 + kansoku-cli 入口
-      </div>
-
+      </SettingsRow>
+      <SettingsRow
+        label="接入位置"
+        mono={
+          status
+            ? `${locationLabel(status)}${status.resolvedPath === null ? '（未生效）' : ''}`
+            : '加载中…'
+        }
+      />
       {status ? (
-        <div className={`settings-provider-meta ${stylex.props(styles.providerMeta).className}`}>
-          位置：{locationLabel(status)}
-          {status.resolvedPath === null ? '（未生效）' : null}
-        </div>
-      ) : (
-        <NoteBlock>加载中…</NoteBlock>
-      )}
-
-      {status ? (
-        <div className={`settings-provider-meta ${stylex.props(styles.providerMeta).className}`}>
-          版本 {status.kitVersion ?? '—'} · 上次同步 {status.lastSyncAt ?? '—'}
-        </div>
+        <SettingsRow
+          label="模板版本"
+          mono={`${status.kitVersion ?? '—'} · 上次同步 ${status.lastSyncAt ?? '—'}`}
+        />
       ) : null}
-
       {status?.pendingConflicts?.map((conflict) => (
-        <div key={conflict.dest} {...stylex.props(styles.pendingRow)}>
-          <span>⚠ 冲突 · {conflict.dest}</span>
+        <SettingsRow key={conflict.dest} label="冲突待处理" mono={conflict.dest}>
           <Button onClick={() => openConflict(conflict)}>处理</Button>
-        </div>
+        </SettingsRow>
       ))}
-
       {status?.pendingUpdates?.map((update) => (
-        <div key={update.dest} {...stylex.props(styles.pendingRow)}>
-          <span>ℹ 更新 · {update.dest}</span>
+        <SettingsRow key={update.dest} label="新模板可用" mono={update.dest}>
           <Button onClick={() => openUpdate(update)}>查看</Button>
-        </div>
+        </SettingsRow>
       ))}
-
-      {error ? (
-        <div
-          className={`settings-test-result settings-test-result--fail ${stylex.props(styles.result).className}`}
-        >
-          {error}
+      <SettingsField label="操作">
+        <div {...stylex.props(styles.actions)}>
+          <Button disabled={busy || status?.location.kind === 'follow-data-root'} onClick={follow}>
+            使用 Agent Workspace
+          </Button>
+          <Button disabled={busy} onClick={pick}>
+            接入其他项目…
+          </Button>
+          <span {...stylex.props(styles.spacer)} />
+          <Button disabled={busy || !canSync} onClick={forceSync}>
+            重刷
+          </Button>
+          <Button disabled={busy} onClick={clean}>
+            清理
+          </Button>
         </div>
-      ) : null}
-
-      <div {...stylex.props(styles.actionsBar)}>
-        <Button disabled={busy || status?.location.kind === 'follow-data-root'} onClick={follow}>
-          使用 Agent Workspace
-        </Button>
-        <Button disabled={busy} onClick={pick}>
-          接入其他项目…
-        </Button>
-        <span {...stylex.props(styles.spacer)} />
-        <Button disabled={busy || !canSync} onClick={forceSync}>
-          重刷
-        </Button>
-        <Button disabled={busy} onClick={clean}>
-          清理
-        </Button>
-      </div>
-    </SettingsConnectionSection>
+      </SettingsField>
+    </SettingsGroup>
   );
 }

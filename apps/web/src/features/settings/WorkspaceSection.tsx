@@ -1,38 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import * as stylex from '@stylexjs/stylex';
 import { Badge, Button } from '@web/ui';
-import { colors, fonts, fontSizes } from '../../theme/tokens.stylex';
 import { getDesktopWorkspaceBridge, type WorkspaceStatus } from './desktopWorkspace';
-import { SettingsConnectionSection } from './SettingsConnectionSection';
+import { SettingsGroup, SettingsRow } from './SettingsGroup';
 import { openSettingsConfirm } from './openSettingsConfirm';
-
-const styles = stylex.create({
-  section: { padding: '10px 11px' },
-  title: {
-    alignItems: 'center',
-    color: colors.textPrimary,
-    display: 'flex',
-    fontSize: fontSizes.base,
-    fontWeight: 600,
-    gap: '8px',
-    justifyContent: 'space-between',
-  },
-  path: {
-    color: colors.textMuted,
-    fontFamily: fonts.mono,
-    fontSize: fontSizes.sm,
-    marginTop: '3px',
-    overflowWrap: 'anywhere',
-  },
-  note: {
-    color: colors.textSecondary,
-    fontSize: fontSizes.control,
-    lineHeight: 1.4,
-    marginTop: '6px',
-  },
-  error: { color: colors.down, fontSize: fontSizes.control, marginTop: '6px' },
-  actions: { display: 'flex', gap: '6px', justifyContent: 'flex-end', marginTop: '10px' },
-});
 
 const MODE_LABEL: Record<WorkspaceStatus['mode'], string> = {
   'local': '本地',
@@ -91,35 +61,39 @@ export function WorkspaceSection() {
     });
 
   return (
-    <SettingsConnectionSection
-      className={`settings-conn-longbridge ${stylex.props(styles.section).className}`}
-    >
-      <div className={`settings-conn-title ${stylex.props(styles.title).className}`}>
-        <span>Agent Workspace</span>
-        {status ? (
+    <SettingsGroup
+      name="Agent Workspace"
+      badge={
+        status ? (
           <Badge tone={status.mode === 'iCloud' ? 'accent' : undefined}>
             {MODE_LABEL[status.mode]}
           </Badge>
-        ) : null}
-      </div>
-      <div className={`settings-provider-meta ${stylex.props(styles.path).className}`}>
-        {status?.path ?? '加载中…'}
-      </div>
-      <div className={`note-block ${stylex.props(styles.note).className}`}>
-        journal、stocks 与 Agent skills 都在这里；可直接把这个目录作为 Codex 或 Claude Code
-        项目打开。
-      </div>
-      {error ? <div {...stylex.props(styles.error)}>{error}</div> : null}
-      <div {...stylex.props(styles.actions)}>
-        {status?.mode === 'iCloud' ? (
-          <Button disabled={busy} onClick={confirmRestoreLocal}>
-            恢复到本机…
-          </Button>
-        ) : null}
+        ) : null
+      }
+    >
+      <SettingsRow
+        label="目录位置"
+        mono={status?.path ?? '加载中…'}
+        error={error ?? undefined}
+      >
         <Button disabled={busy || !status} onClick={() => void open()}>
           在 Finder 中显示
         </Button>
-      </div>
-    </SettingsConnectionSection>
+      </SettingsRow>
+      <SettingsRow
+        label="存放内容"
+        description="journal、stocks 与 Agent skills 都在这里，可以直接把这个目录当 Codex 或 Claude Code 项目打开"
+      />
+      {status?.mode === 'iCloud' ? (
+        <SettingsRow
+          label="恢复到本机"
+          description="把 iCloud Workspace 复制回本机，iCloud 原文件保留"
+        >
+          <Button disabled={busy} onClick={confirmRestoreLocal}>
+            恢复…
+          </Button>
+        </SettingsRow>
+      ) : null}
+    </SettingsGroup>
   );
 }

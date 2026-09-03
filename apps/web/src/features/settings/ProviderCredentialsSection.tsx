@@ -3,10 +3,11 @@ import * as stylex from '@stylexjs/stylex';
 import { errorMessage } from '@web/lib/api';
 import { money } from '@web/lib/format';
 import { client } from '@web/lib/client';
-import { Button, Dot, Input, openModal, SectionTitle, Select } from '@web/ui';
+import { Button, Dot, Input, openModal, Select } from '@web/ui';
 import { colors, fonts, fontSizes } from '../../theme/tokens.stylex';
 import { SettingsConfirmActions, SettingsConfirmDialog } from './openSettingsConfirm';
 import { DeviceLoginDialog } from './DeviceLoginDialog';
+import { SettingsGroup } from './SettingsGroup';
 import { ProviderAuthRow } from './ProviderAuthRow';
 import {
   CODEX_PROVIDER,
@@ -505,15 +506,14 @@ export function ProviderCredentialsSection({
         : 'LobeHub 未连接';
 
   return (
-    <section id="settings-provider-panel">
-      <div className={`settings-card-heading ${stylex.props(styles.cardHeading).className}`}>
-        <SectionTitle className={stylex.props(styles.cardTitle).className}>
-          Provider 与凭据
-        </SectionTitle>
+    <SettingsGroup
+      name="Provider 与凭据"
+      badge={
         <span className={`settings-conn-summary ${stylex.props(styles.connSummary).className}`}>
           {apiKeyCount + ' 个 key · ' + codexSummary + ' · ' + lobehubSummary}
         </span>
-      </div>
+      }
+    >
       {settings.masterKey === 'invalid' ? (
         <div className={`settings-warning-strip ${stylex.props(styles.warningStrip).className}`}>
           <span>主密钥异常，已存的凭据无法解密</span>
@@ -588,6 +588,6 @@ export function ProviderCredentialsSection({
           </div>
         ) : null}
       </div>
-    </section>
+    </SettingsGroup>
   );
 }

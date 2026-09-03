@@ -140,7 +140,7 @@ export function QuickBar({
           <a {...stylex.props(styles.action)} href="/chat" aria-label="AI 对话" title="AI 对话">
             <MessageCircle size={16} />
           </a>
-          <a {...stylex.props(styles.action)} href="/settings" aria-label="设置" title="设置">
+          <a {...stylex.props(styles.action)} href="/settings/ai" aria-label="设置" title="设置">
             <Settings size={16} />
           </a>
         </span>

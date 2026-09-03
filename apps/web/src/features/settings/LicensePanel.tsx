@@ -9,6 +9,7 @@ import { getDesktopAppControlBridge } from './desktopAppControl';
 import { Badge, Button, Input, openModal } from '@web/ui';
 import { colors, fontSizes } from '../../theme/tokens.stylex';
 import { SettingsConfirmActions, SettingsConfirmDialog } from './openSettingsConfirm';
+import { SettingsField, SettingsRow } from './SettingsGroup';
 
 const styles = stylex.create({
   preference: {
@@ -240,52 +241,35 @@ function LicensedStatus({
   proUnavailable?: boolean;
 }) {
   return (
-    <div className={`settings-time-preference ${stylex.props(styles.preference).className}`}>
-      <div className={`settings-preference-copy ${stylex.props(styles.preferenceCopy).className}`}>
-        <div
-          className={`settings-preference-name ${stylex.props(styles.preferenceName).className}`}
-        >
-          {state === 'grace' ? (
-            <Badge tone="accent">离线宽限中</Badge>
-          ) : (
-            <Badge tone="up">已授权</Badge>
-          )}
-        </div>
-        <div
-          className={`settings-preference-description ${stylex.props(styles.preferenceDescription).className}`}
-        >
+    <SettingsRow
+      label={
+        state === 'grace' ? <Badge tone="accent">离线宽限中</Badge> : <Badge tone="up">已授权</Badge>
+      }
+      description={
+        <>
           {maskedKey ? `授权码 ${maskedKey}` : null}
           {deviceName ? ` · 设备 ${deviceName}` : null}
           {state === 'grace' && graceUntil
             ? ` · 离线宽限至 ${new Date(graceUntil).toLocaleString()}`
             : null}
-        </div>
-        {restartRequired ? (
-          <div
-            className={`settings-preference-description ${stylex.props(styles.restartNotice).className}`}
-          >
-            {getDesktopAppControlBridge() ? (
-              <>
-                AI 付费功能需要重启应用后才会生效。
-                <Button onClick={() => void getDesktopAppControlBridge()?.relaunch()}>
-                  立即重启
-                </Button>
-              </>
-            ) : (
-              'AI 付费功能需要重启应用后才会生效，请手动退出并重新打开 Kansoku。'
-            )}
-          </div>
-        ) : null}
-        {proUnavailable ? (
-          <div
-            className={`settings-preference-description ${stylex.props(styles.restartNotice).className}`}
-          >
-            当前构建不包含付费模块，无法启用 AI 付费功能。
-          </div>
-        ) : null}
-      </div>
+        </>
+      }
+      error={
+        restartRequired ? (
+          getDesktopAppControlBridge() ? (
+            <>
+              AI 付费功能需要重启应用后才会生效。
+              <Button onClick={() => void getDesktopAppControlBridge()?.relaunch()}>立即重启</Button>
+            </>
+          ) : (
+            'AI 付费功能需要重启应用后才会生效，请手动退出并重新打开 Kansoku。'
+          )
+        ) : proUnavailable ? (
+          '当前构建不包含付费模块，无法启用 AI 付费功能。'
+        ) : undefined
+      }
+    >
       <Button
-        className={stylex.props(styles.deactivateButton).className}
         onClick={() =>
           openModal({
             title: '停用本机',
@@ -296,7 +280,7 @@ function LicensedStatus({
       >
         停用本机
       </Button>
-    </div>
+    </SettingsRow>
   );
 }
 
@@ -318,5 +302,9 @@ export function LicensePanel() {
 
   const notice =
     license?.state === 'invalid' ? 'invalid' : license?.state === 'expired' ? 'expired' : undefined;
-  return <ActivateForm notice={notice} />;
+  return (
+    <SettingsField label="激活" description="输入授权码启用付费功能">
+      <ActivateForm notice={notice} />
+    </SettingsField>
+  );
 }

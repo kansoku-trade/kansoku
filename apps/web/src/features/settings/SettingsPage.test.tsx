@@ -143,7 +143,7 @@ describe('SettingsPage', () => {
   it('renders without crashing when the settings.getAi response is missing a role added after the client last cached it', async () => {
     mockSettingsPageQueries(preMemoryRoleSettings);
 
-    renderWithClient(<SettingsPage />);
+    renderWithClient(<SettingsPage section="ai" />);
 
     const memoryRole = await screen.findByText('追问');
     const page = memoryRole.closest('.settings-page');
@@ -151,10 +151,23 @@ describe('SettingsPage', () => {
     expect(page?.querySelector(':scope > .settings-page-viewport')).toBeTruthy();
   });
 
+  it('lists every category in the rail and heads the pane with the active one', async () => {
+    mockSettingsPageQueries(preEndpointsSettings);
+
+    renderWithClient(<SettingsPage section="display" />);
+
+    const rail = await screen.findByRole('navigation', { name: '设置分类' });
+    expect(
+      Array.from(rail.querySelectorAll('a[href^="/settings/"]')).map((link) => link.textContent),
+    ).toEqual(['AI 模型', '显示', '连接', '订阅与授权', '高级']);
+    expect(rail.querySelector('[aria-current="page"]')?.textContent).toBe('显示');
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('显示');
+  });
+
   it('renders without crashing when the settings.getAi response has no endpoints key at all', async () => {
     mockSettingsPageQueries(preEndpointsSettings);
 
-    renderWithClient(<SettingsPage />);
+    renderWithClient(<SettingsPage section="ai" />);
 
     const memoryRole = await screen.findByText('追问');
     expect(memoryRole.closest('.settings-page')).toBeTruthy();

@@ -152,6 +152,13 @@ describe('focusOrOpenRoutePrefix', () => {
     const next = focusOrOpenRoutePrefix(snapshot, '/research', '/research?view=journal');
     expect(next.tabs[1].route).toBe('/research?view=journal');
   });
+
+  it('focuses an existing settings tab regardless of the open section', () => {
+    const snapshot = snapshotOf(['/', '/settings/advanced'], 0);
+    const next = focusOrOpenRoutePrefix(snapshot, '/settings', '/settings/ai');
+    expect(next.tabs).toHaveLength(2);
+    expect(next.activeTabId).toBe(snapshot.tabs[1].id);
+  });
 });
 
 describe('activateTab / updateTabRoute / updateTabTitle / updateTabScroll', () => {
@@ -184,6 +191,10 @@ describe('tabKind', () => {
   it('classifies settings routes, with or without a query string', () => {
     expect(tabKind('/settings')).toBe('settings');
     expect(tabKind('/settings?tab=billing')).toBe('settings');
+  });
+
+  it('classifies a settings section sub-route as the same kind', () => {
+    expect(tabKind('/settings/advanced')).toBe('settings');
   });
 
   it('classifies research routes', () => {

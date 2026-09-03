@@ -1,38 +1,13 @@
-import { useState, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import * as stylex from '@stylexjs/stylex';
 import { ArrowLeft } from 'lucide-react';
-import { useQuery } from '@web/lib/apiHooks';
-import { client } from '@web/lib/client';
 import { isDesktopRealtime } from '@web/lib/portTransport';
 import { navigate } from '@web/lib/router';
-import { Button, Card, ErrorBox, NoteBlock, ScrollArea, SectionTitle } from '@web/ui';
+import { ScrollArea } from '@web/ui';
 import { useTitle } from '@web/lib/useTitle';
-import { AgentKitSection } from './AgentKitSection';
-import { WorkspaceSection } from './WorkspaceSection';
-import { DiagnosticsSection } from './DiagnosticsSection';
-import { LicenseSection } from './LicenseSection';
-import { LongbridgeSection } from './LongbridgeSection';
-import { ProviderCredentialsSection } from './ProviderCredentialsSection';
-import { TrainingSection } from './TrainingSection';
-import { RoleModelsCard } from './RoleModelsCard';
-import { SettingsStatusStrip } from './SettingsStatusStrip';
-import { TimeDisplaySettingsCard } from './TimeDisplaySettingsCard';
-import { WatchedMarketsCard } from './WatchedMarketsCard';
-import { deriveSettingsViewModel } from './settingsViewModel';
-import { normalizeAiSettings } from './types';
-import type {
-  AiRoles,
-  AiSettings,
-  Catalog,
-  LobeHubAccount,
-  LobeHubCredits,
-  PersistedAiSettings,
-  Role,
-  RoleSetting,
-  UsageToday,
-} from './types';
-import { colors, fontSizes } from '../../theme/tokens.stylex';
-import { useProComposition } from '../edition/useProComposition';
+import { SETTINGS_SECTIONS, findSettingsSection } from './sections';
+import type { SettingsSectionId } from './types';
+import { colors, fontSizes, radii } from '../../theme/tokens.stylex';
 
 const styles = stylex.create({
   page: {
@@ -59,12 +34,120 @@ const styles = stylex.create({
   },
   content: {
     'margin': '0 auto',
-    'maxWidth': '1180px',
-    'padding': '24px 20px 60px',
+    'maxWidth': '1024px',
+    'padding': '0 20px',
     'width': '100%',
-    '@media (max-width: 560px)': {
+    '@media (max-width: 860px)': {
       paddingInline: '12px',
     },
+  },
+  shell: {
+    'display': 'grid',
+    'gridTemplateColumns': '200px minmax(0, 1fr)',
+    '@media (max-width: 860px)': {
+      gridTemplateColumns: 'minmax(0, 1fr)',
+    },
+  },
+  rail: {
+    'borderRightColor': colors.border,
+    'borderRightStyle': 'solid',
+    'borderRightWidth': '1px',
+    'minWidth': 0,
+    '@media (max-width: 860px)': {
+      borderBottomColor: colors.border,
+      borderBottomStyle: 'solid',
+      borderBottomWidth: '1px',
+      borderRightWidth: 0,
+    },
+  },
+  railInner: {
+    'display': 'flex',
+    'flexDirection': 'column',
+    'gap': '1px',
+    'padding': '20px 12px 20px 0',
+    'position': 'sticky',
+    'top': 0,
+    '@media (max-width: 860px)': {
+      backgroundColor: colors.backgroundCanvas,
+      flexDirection: 'row',
+      gap: '6px',
+      overflowX: 'auto',
+      padding: '10px 0',
+      zIndex: 1,
+    },
+  },
+  backLink: {
+    'alignItems': 'center',
+    'color': {
+      'default': colors.textSecondary,
+      ':hover': colors.textPrimary,
+    },
+    'display': 'inline-flex',
+    'fontSize': fontSizes.control,
+    'gap': '4px',
+    'marginBottom': '8px',
+    'paddingInline': '7px',
+    '@media (max-width: 860px)': {
+      display: 'none',
+    },
+  },
+  railLink: {
+    'alignItems': 'center',
+    'backgroundColor': {
+      'default': 'transparent',
+      ':hover': colors.backgroundSurface,
+    },
+    'borderRadius': radii.default,
+    'color': {
+      'default': colors.textSecondary,
+      ':hover': colors.textPrimary,
+    },
+    'display': 'flex',
+    'fontSize': fontSizes.control,
+    'gap': '8px',
+    'outline': {
+      ':focus-visible': colors.focusOutline,
+    },
+    'outlineOffset': '1px',
+    'padding': '6px 7px',
+    'textDecoration': 'none',
+    'width': '100%',
+    '@media (max-width: 860px)': {
+      borderRadius: radii.full,
+      flex: 'none',
+      whiteSpace: 'nowrap',
+      width: 'auto',
+    },
+  },
+  railLinkActive: {
+    backgroundColor: colors.backgroundElement,
+    color: colors.textBright,
+  },
+  icon: {
+    verticalAlign: '-2px',
+  },
+  railIcon: {
+    flex: 'none',
+  },
+  railIconActive: {
+    color: colors.accent,
+  },
+  pane: {
+    'display': 'flex',
+    'flexDirection': 'column',
+    'gap': '12px',
+    'minWidth': 0,
+    'padding': '20px 0 60px 20px',
+    '@media (max-width: 860px)': {
+      padding: '14px 0 40px',
+    },
+  },
+  paneBody: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '22px',
+    maxWidth: '720px',
+    minWidth: 0,
   },
   heading: {
     color: colors.textPrimary,
@@ -72,68 +155,15 @@ const styles = stylex.create({
     fontWeight: 600,
     margin: '0 0 4px',
   },
-  backLink: {
-    alignItems: 'center',
-    color: {
-      'default': colors.textSecondary,
-      ':hover': colors.textPrimary,
-    },
-    display: 'inline-flex',
-    fontSize: fontSizes.control,
-    gap: '4px',
-    marginBottom: '8px',
-  },
   subtitle: {
     color: colors.textMuted,
     fontSize: fontSizes.base,
-    marginBottom: '16px',
-  },
-  loadError: {
-    alignItems: 'center',
-    display: 'flex',
-    gap: '12px',
-    justifyContent: 'space-between',
-  },
-  workspace: {
-    'alignItems': 'start',
-    'display': 'grid',
-    'gap': '12px',
-    'gridTemplateColumns': 'minmax(0, 1.15fr) minmax(300px, 1fr)',
-    '@media (max-width: 900px)': {
-      gridTemplateColumns: '1fr',
-    },
-  },
-  column: {
-    display: 'grid',
-    gap: '12px',
-    minWidth: 0,
-  },
-  card: {
-    marginBottom: 0,
-    minWidth: 0,
-    overflow: 'hidden',
-    padding: 0,
-  },
-  cardHeading: {
-    alignItems: 'center',
-    borderBottomColor: colors.border,
-    borderBottomStyle: 'solid',
-    borderBottomWidth: '1px',
-    display: 'flex',
-    gap: '12px',
-    justifyContent: 'space-between',
-    minHeight: '34px',
-    padding: '0 11px',
-  },
-  cardHeadingTitle: {
-    margin: 0,
-  },
-  icon: {
-    verticalAlign: '-2px',
+    marginBottom: '4px',
   },
   aboutLink: {
     fontSize: fontSizes.sm,
     marginTop: '24px',
+    maxWidth: '720px',
     textAlign: 'center',
   },
   aboutLinkAnchor: {
@@ -143,97 +173,6 @@ const styles = stylex.create({
     },
   },
 });
-
-function SettingsWorkspace({
-  settings,
-  catalog,
-  usage,
-  usageError,
-  reloadUsage,
-  reloadAll,
-  lobehubAccount,
-  lobehubCredits,
-  lobehubCreditsError,
-}: {
-  settings: AiSettings;
-  catalog: Catalog;
-  usage: UsageToday | null;
-  usageError: string | null;
-  reloadUsage: () => void;
-  reloadAll: () => void;
-  lobehubAccount: LobeHubAccount | null;
-  lobehubCredits: LobeHubCredits | null;
-  lobehubCreditsError: string | null;
-}) {
-  const proComposition = useProComposition();
-  const [roleDrafts, setRoleDrafts] = useState<AiRoles>(() => settings.roles);
-  const updateRoleDraft = (role: Role | 'primary', next: RoleSetting) => {
-    setRoleDrafts((current) => ({ ...current, [role]: next }));
-  };
-  const view = deriveSettingsViewModel({ settings, catalog, usage, roles: roleDrafts });
-  const usedProviderIds = Array.from(
-    new Set(
-      Object.values(roleDrafts).flatMap((setting) =>
-        setting.mode === 'custom' && setting.provider ? [setting.provider] : [],
-      ),
-    ),
-  );
-
-  return (
-    <>
-      <SettingsStatusStrip
-        summary={view.summary}
-        usageError={usageError}
-        onRetryUsage={reloadUsage}
-      />
-      <div className={`settings-workspace ${stylex.props(styles.workspace).className}`}>
-        <div className={`settings-main-column ${stylex.props(styles.column).className}`}>
-          <RoleModelsCard
-            initialRoles={settings.roles}
-            roles={roleDrafts}
-            catalog={catalog}
-            credentials={settings.credentials}
-            view={view}
-            onDraftChange={updateRoleDraft}
-          />
-          <Card className={`settings-provider-card ${stylex.props(styles.card).className}`}>
-            <ProviderCredentialsSection
-              settings={settings}
-              catalog={catalog}
-              usedProviderIds={usedProviderIds}
-              onChanged={reloadAll}
-              lobehubAccount={lobehubAccount}
-              lobehubCredits={lobehubCredits}
-              lobehubCreditsError={lobehubCreditsError}
-            />
-          </Card>
-        </div>
-        <div className={`settings-side-column ${stylex.props(styles.column).className}`}>
-          <LicenseSection />
-          <TimeDisplaySettingsCard />
-          <WatchedMarketsCard />
-          <Card className={`settings-connections-card ${stylex.props(styles.card).className}`}>
-            <div className={`settings-card-heading ${stylex.props(styles.cardHeading).className}`}>
-              <SectionTitle className={stylex.props(styles.cardHeadingTitle).className}>
-                连接
-              </SectionTitle>
-            </div>
-            <LongbridgeSection />
-            <WorkspaceSection />
-            {proComposition.status === 'ready'
-              ? proComposition.composition?.settingsSections?.map((Section, index) => (
-                  <Section key={index} />
-                ))
-              : null}
-            <AgentKitSection />
-            <TrainingSection />
-            <DiagnosticsSection />
-          </Card>
-        </div>
-      </div>
-    </>
-  );
-}
 
 function SettingsBackLink() {
   return (
@@ -259,6 +198,33 @@ function SettingsBackLink() {
   );
 }
 
+function SettingsRail({ active }: { active: SettingsSectionId }) {
+  return (
+    <nav className={`settings-rail ${stylex.props(styles.rail).className}`} aria-label="设置分类">
+      <div className={`settings-rail-inner ${stylex.props(styles.railInner).className}`}>
+        <SettingsBackLink />
+        {SETTINGS_SECTIONS.map(({ id, label, Icon }) => {
+          const current = id === active;
+          return (
+            <a
+              key={id}
+              href={`/settings/${id}`}
+              aria-current={current ? 'page' : undefined}
+              {...stylex.props(styles.railLink, current && styles.railLinkActive)}
+            >
+              <Icon
+                size={14}
+                {...stylex.props(styles.railIcon, current && styles.railIconActive)}
+              />
+              {label}
+            </a>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}
+
 function SettingsPageScrollArea({ children }: { children: ReactNode }) {
   const pageStyle = stylex.props(styles.page, isDesktopRealtime() && styles.pageDesktop);
   return (
@@ -272,94 +238,29 @@ function SettingsPageScrollArea({ children }: { children: ReactNode }) {
   );
 }
 
-export function SettingsPage() {
+export function SettingsPage({ section }: { section: SettingsSectionId }) {
+  const active = findSettingsSection(section) ?? SETTINGS_SECTIONS[0];
   useTitle('设置');
-  const {
-    data: settings,
-    error: settingsError,
-    reload: reloadSettings,
-  } = useQuery<PersistedAiSettings>('settings.getAi', () => client.settings.getAi());
-  const {
-    data: catalog,
-    error: catalogError,
-    reload: reloadCatalog,
-  } = useQuery<Catalog>('settings.getCatalog', () => client.settings.getCatalog());
-  const {
-    data: usage,
-    error: usageError,
-    reload: reloadUsage,
-  } = useQuery<UsageToday>('settings.getUsageToday', () => client.settings.getUsageToday());
-  const { data: lobehubAccount, reload: reloadLobeHubAccount } = useQuery<LobeHubAccount>(
-    'lobehub.getAccount',
-    () => client.lobehub.getAccount(),
-  );
-  const {
-    data: lobehubCredits,
-    error: lobehubCreditsError,
-    reload: reloadLobeHubCredits,
-  } = useQuery<LobeHubCredits>('lobehub.getCredits', () => client.lobehub.getCredits());
-
-  const reloadAll = () => {
-    reloadSettings();
-    reloadCatalog();
-    reloadLobeHubAccount();
-    reloadLobeHubCredits();
-  };
-
-  if (settingsError || catalogError) {
-    return (
-      <SettingsPageScrollArea>
-        <SettingsBackLink />
-        <h1 {...stylex.props(styles.heading)}>设置</h1>
-        <ErrorBox className={`settings-load-error ${stylex.props(styles.loadError).className}`}>
-          <span>{settingsError ?? catalogError}</span>
-          <Button
-            onClick={() => {
-              reloadSettings();
-              reloadCatalog();
-            }}
-          >
-            重试
-          </Button>
-        </ErrorBox>
-      </SettingsPageScrollArea>
-    );
-  }
-
-  if (!settings || !catalog) {
-    return (
-      <SettingsPageScrollArea>
-        <SettingsBackLink />
-        <h1 {...stylex.props(styles.heading)}>设置</h1>
-        <NoteBlock>加载中…</NoteBlock>
-      </SettingsPageScrollArea>
-    );
-  }
-
-  const normalizedSettings = normalizeAiSettings(settings);
+  const { Pane } = active;
 
   return (
     <SettingsPageScrollArea>
-      <SettingsBackLink />
-      <h1 {...stylex.props(styles.heading)}>设置</h1>
-      <div className={`settings-page-subtitle ${stylex.props(styles.subtitle).className}`}>
-        显示、AI 模型、Provider 与用量
-      </div>
-      <SettingsWorkspace
-        settings={normalizedSettings}
-        catalog={catalog}
-        usage={usage}
-        usageError={usageError}
-        reloadUsage={reloadUsage}
-        reloadAll={reloadAll}
-        lobehubAccount={lobehubAccount}
-        lobehubCredits={lobehubCredits}
-        lobehubCreditsError={lobehubCreditsError}
-      />
-      <div className={`settings-about-link ${stylex.props(styles.aboutLink).className}`}>
-        <a {...stylex.props(styles.aboutLinkAnchor)} href="/about">
-          关于 Kansoku · 版本 {__APP_VERSION__}
-        </a>
+      <div className={`settings-shell ${stylex.props(styles.shell).className}`}>
+        <SettingsRail active={active.id} />
+        <div className={`settings-pane ${stylex.props(styles.pane).className}`}>
+          <div {...stylex.props(styles.paneBody)}>
+            <h1 {...stylex.props(styles.heading)}>{active.label}</h1>
+            <div className={`settings-pane-subtitle ${stylex.props(styles.subtitle).className}`}>
+              {active.description}
+            </div>
+            <Pane />
+          </div>
+          <div className={`settings-about-link ${stylex.props(styles.aboutLink).className}`}>
+            <a {...stylex.props(styles.aboutLinkAnchor)} href="/about">
+              关于 Kansoku · 版本 {__APP_VERSION__}
+            </a>
+          </div>
+        </div>
       </div>
     </SettingsPageScrollArea>
   );

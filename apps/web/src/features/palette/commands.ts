@@ -31,7 +31,7 @@ const STATIC_COMMANDS: PaletteCommand[] = [
     keywords: ['canvas', 'canvases', '画布', '面板'],
     route: '/research?view=canvases',
   },
-  { id: 'nav:settings', title: '打开设置', keywords: ['settings', 'config'], route: '/settings' },
+  { id: 'nav:settings', title: '打开设置', keywords: ['settings', 'config'], route: '/settings/ai' },
   { id: 'nav:logs', title: '查看日志', keywords: ['logs', 'log', '日志', 'debug'], route: '/logs' },
 ];
 

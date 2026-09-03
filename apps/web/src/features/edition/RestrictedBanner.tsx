@@ -55,7 +55,7 @@ export function RestrictedBanner() {
       <span>未配置行情凭证 — 部分功能不可用</span>
       <div {...stylex.props(styles.actions)}>
         {canConfigure && (
-          <button {...stylex.props(styles.link)} onClick={() => navigate('/settings')}>
+          <button {...stylex.props(styles.link)} onClick={() => navigate('/settings/license')}>
             去设置
           </button>
         )}

@@ -34,7 +34,8 @@ export function tabKind(route: string): TabKind {
   if (isHomeRoute(route)) return 'home';
   if (route === '/research' || route.startsWith('/research?')) return 'research';
   if (route === '/chat' || route.startsWith('/chat?')) return 'chat';
-  if (route === '/settings' || route.startsWith('/settings?')) return 'settings';
+  if (route === '/settings' || route.startsWith('/settings?') || route.startsWith('/settings/'))
+    return 'settings';
   if (route === '/logs' || route.startsWith('/logs?')) return 'logs';
   if (route.startsWith('/symbol/')) return 'symbol';
   return 'other';
@@ -177,7 +178,10 @@ export function focusOrOpenRoutePrefix(
   initialRoute: string,
 ): TabsSnapshot {
   const existing = snapshot.tabs.find(
-    (tab) => tab.route === prefix || tab.route.startsWith(`${prefix}?`),
+    (tab) =>
+      tab.route === prefix ||
+      tab.route.startsWith(`${prefix}?`) ||
+      tab.route.startsWith(`${prefix}/`),
   );
   if (existing) return { ...snapshot, activeTabId: existing.id };
   return openTab(snapshot, initialRoute);

@@ -11,6 +11,7 @@ const PREFIX_SCREENS: readonly (readonly [string, AnalyticsScreen])[] = [
   ['/symbol/', 'symbol'],
   ['/charts/', 'chart'],
   ['/training/stats', 'training_stats'],
+  ['/settings/', 'settings'],
 ];
 
 const EXACT_SCREENS: Readonly<Record<string, AnalyticsScreen>> = {
