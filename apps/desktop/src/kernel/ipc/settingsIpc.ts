@@ -69,6 +69,16 @@ export class SettingsIpc extends IpcService implements WrapEnvelope<SettingsApi>
   }
 
   @IpcMethod()
+  getWebSearch() {
+    return toEnvelope('settings.getWebSearch', () => settingsService.getWebSearch());
+  }
+
+  @IpcMethod()
+  putWebSearchCodex(input: Parameters<SettingsApi['putWebSearchCodex']>[0]) {
+    return toEnvelope('settings.putWebSearchCodex', () => settingsService.putWebSearchCodex(input));
+  }
+
+  @IpcMethod()
   getLongbridgeRegion() {
     return toEnvelope('settings.getLongbridgeRegion', () => settingsService.getLongbridgeRegion());
   }

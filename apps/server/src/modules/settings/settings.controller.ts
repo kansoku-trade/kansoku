@@ -80,6 +80,18 @@ export class SettingsController {
     return { ok: true, data };
   }
 
+  @Get('/web-search')
+  async getWebSearch() {
+    const data = await settingsService.getWebSearch();
+    return { ok: true, data };
+  }
+
+  @Put('/web-search/codex')
+  async putWebSearchCodex(@Body() body: { enabled?: unknown } | null) {
+    const data = await settingsService.putWebSearchCodex({ enabled: body?.enabled });
+    return { ok: true, data };
+  }
+
   @Get('/longbridge-region')
   async getLongbridgeRegion() {
     const data = await settingsService.getLongbridgeRegion();

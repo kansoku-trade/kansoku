@@ -413,7 +413,7 @@ function prepareTurn(
       );
       const canvasSkillLoaded = () =>
         canvasSkillInTranscript || loadedSkills.has(CANVAS_SKILL_NAME);
-      const { tools: researchTools, skillIndex } = buildResearchTools({
+      const { tools: researchTools, skillIndex } = await buildResearchTools({
         repoRoot,
         exec: deps.exec,
         onSkillRead: (name) => loadedSkills.add(name),

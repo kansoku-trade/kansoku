@@ -4,9 +4,11 @@ import { AgentKitSection } from './AgentKitSection';
 import { DiagnosticsSection } from './DiagnosticsSection';
 import { LicenseSection } from './LicenseSection';
 import { LongbridgeSection } from './LongbridgeSection';
+import { OpencliSection } from './OpencliSection';
 import { TimeDisplaySettingsCard } from './TimeDisplaySettingsCard';
 import { TrainingSection } from './TrainingSection';
 import { WatchedMarketsCard } from './WatchedMarketsCard';
+import { WebSearchSection } from './WebSearchSection';
 import { WorkspaceSection } from './WorkspaceSection';
 import type { SettingsSectionId } from './types';
 import { useProComposition } from '../edition/useProComposition';
@@ -34,6 +36,8 @@ export function ConnectionsPane() {
   return (
     <>
       <LongbridgeSection />
+      <OpencliSection />
+      <WebSearchSection />
       <WorkspaceSection />
       <ProSections section="connections" />
     </>

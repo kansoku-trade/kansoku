@@ -17,7 +17,12 @@ import type { SkillMeta } from '../../agents/skills.js';
 import { createChart } from '../../../charts/store.js';
 import type { ExecFn } from '../../agents/agentTools/execTool.js';
 import { buildResearchTools } from '../../agents/agentTools/researchTools.js';
-import { buildDataPackTool, buildKlineTool, buildNewsTool, textResult } from '../../agents/dataTools.js';
+import {
+  buildDataPackTool,
+  buildKlineTool,
+  buildNewsTool,
+  textResult,
+} from '../../agents/dataTools.js';
 import type { ReassessPack } from '../../agents/datapack.js';
 import { DISCIPLINE_SKILL } from '../../runtime/promptPolicy.js';
 import type { AnalystSkillContext } from '../../conversation/messages/analystMessagesEngine.js';
@@ -101,7 +106,8 @@ export function buildAnalystSkillContexts(
       SKILL_NAME,
       {
         content: skillText,
-        fallbackDescription: 'Multi-period direction, scenarios, and trade-plan analysis for one symbol across intraday to several trading days.',
+        fallbackDescription:
+          'Multi-period direction, scenarios, and trade-plan analysis for one symbol across intraday to several trading days.',
       },
     ],
   ]);
@@ -141,7 +147,8 @@ export function buildSubmitPredictionTool(
   return {
     name: 'submit_prediction',
     label: 'Submit Prediction',
-    description: 'Submit the complete conclusion and create the chart. Call exactly once after research is complete.',
+    description:
+      'Submit the complete conclusion and create the chart. Call exactly once after research is complete.',
     parameters: predictionSchema,
     execute: async (_id, params: PredictionParams) => {
       if (hooks.isDone()) return textResult('skipped', true);
@@ -190,7 +197,8 @@ export function buildSubmitSectionTool(
   return {
     name: 'submit_section',
     label: 'Submit Section',
-    description: 'Submit an intermediate section for this run: technical after reading the data pack, context after covering news/flows. Keep it short. submit_prediction supersedes both at the end.',
+    description:
+      'Submit an intermediate section for this run: technical after reading the data pack, context after covering news/flows. Keep it short. submit_prediction supersedes both at the end.',
     parameters: submitSectionSchema,
     execute: async (_id, params: SubmitSectionParams) => {
       if (!Check(submitSectionSchema, params)) {
@@ -209,7 +217,11 @@ export function buildSubmitSectionTool(
         params.kind === 'technical'
           ? {
               kind: 'technical',
-              data: { trends: params.trends ?? [], levels: params.levels ?? [], summary: params.summary },
+              data: {
+                trends: params.trends ?? [],
+                levels: params.levels ?? [],
+                summary: params.summary,
+              },
             }
           : { kind: 'context', data: { summary: params.summary, bias: params.bias ?? 'neutral' } },
         hooks.now,
@@ -219,7 +231,7 @@ export function buildSubmitSectionTool(
   };
 }
 
-export function buildTools(
+export async function buildTools(
   symbol: string,
   deps: Required<Pick<AnalystDeps, 'createChart' | 'appendComment'>> & {
     buildReassessPack: (symbol: string) => Promise<ReassessPack>;
@@ -234,7 +246,7 @@ export function buildTools(
   state: RunState,
   isDone: () => boolean,
   reportProgress: (phase: ReassessPhase, activity: string) => void,
-): AgentTool[] {
+): Promise<AgentTool[]> {
   const readDataPack = buildDataPackTool(symbol, {
     buildPack: (symbol) => {
       reportProgress('researching', '正在整理多周期行情、资金流与持仓');
@@ -288,15 +300,17 @@ export function buildTools(
 
   const submitSection = buildSubmitSectionTool(symbol, { now: deps.now });
 
-  const researchTools = buildResearchTools({
-    repoRoot: deps.repoRoot,
-    exec: (command) => {
-      reportProgress('researching', '正在补充外部资料与风险信息');
-      return deps.exec(command);
-    },
-    skillIndex: deps.skillIndex,
-    onSkillRead: (name) => state.loadedSkillIds.add(name),
-  }).tools;
+  const researchTools = (
+    await buildResearchTools({
+      repoRoot: deps.repoRoot,
+      exec: (command) => {
+        reportProgress('researching', '正在补充外部资料与风险信息');
+        return deps.exec(command);
+      },
+      skillIndex: deps.skillIndex,
+      onSkillRead: (name) => state.loadedSkillIds.add(name),
+    })
+  ).tools;
 
   return [
     readDataPack,

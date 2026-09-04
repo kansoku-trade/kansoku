@@ -81,7 +81,7 @@ export async function executeAnalystRun(symbol: string, deps: AnalystDeps): Prom
 
   reportProgress('preparing', '正在加载分析纪律与工具');
   const repoRoot = deps.repoRoot ?? PROJECT_ROOT;
-  const skillIndex = loadSkillIndex(skillSearchDirs(repoRoot));
+  const skillIndex = loadSkillIndex(skillSearchDirs(repoRoot), { repoRoot, runtime: 'app' });
   const skillText = deps.skillText ?? readSkill(skillIndex, SKILL_NAME);
   if (!skillText) {
     await writeError(`${SKILL_NAME} SKILL.md 读不到，重估中止——纪律缺席时不允许裸跑。`);
@@ -101,7 +101,7 @@ export async function executeAnalystRun(symbol: string, deps: AnalystDeps): Prom
     if (dataPack.prediction_chart_id) state.chartId = dataPack.prediction_chart_id;
     const sessionId = `analyst:${symbol}:${runStartedAt}`;
 
-    const tools = buildTools(
+    const tools = await buildTools(
       symbol,
       {
         buildReassessPack: async () => dataPack,

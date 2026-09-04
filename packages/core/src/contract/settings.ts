@@ -45,6 +45,8 @@ export interface SettingsApi {
   resetCredentials(): Promise<{ reset: true }>;
   getWatchedMarkets(): Promise<{ markets: Market[] }>;
   putWatchedMarkets(input: { markets: unknown }): Promise<{ markets: Market[] }>;
+  getWebSearch(): Promise<WebSearchStatus>;
+  putWebSearchCodex(input: { enabled: unknown }): Promise<WebSearchStatus>;
   getLongbridgeRegion(): Promise<{ region: LongbridgeRegionPreference }>;
   putLongbridgeRegion(input: { region: string }): Promise<{ region: LongbridgeRegionPreference }>;
   getSubscribeUrl(): Promise<{
@@ -64,6 +66,12 @@ export interface SettingsApi {
   }>;
 }
 
+export interface WebSearchStatus {
+  providers: Array<{ id: string; configured: boolean; fromEnv: boolean }>;
+  codex: { enabled: boolean; cliAvailable: boolean };
+  configured: boolean;
+}
+
 export const settingsRoutes = defineRoutes<SettingsApi>('settings', {
   getAi: { method: 'GET', path: '/ai' },
   putRole: { method: 'PUT', path: '/ai/roles/:role' },
@@ -77,6 +85,8 @@ export const settingsRoutes = defineRoutes<SettingsApi>('settings', {
   resetCredentials: { method: 'POST', path: '/ai/reset-credentials' },
   getWatchedMarkets: { method: 'GET', path: '/watched-markets' },
   putWatchedMarkets: { method: 'PUT', path: '/watched-markets' },
+  getWebSearch: { method: 'GET', path: '/web-search' },
+  putWebSearchCodex: { method: 'PUT', path: '/web-search/codex' },
   getLongbridgeRegion: { method: 'GET', path: '/longbridge-region' },
   putLongbridgeRegion: { method: 'PUT', path: '/longbridge-region' },
   getSubscribeUrl: { method: 'GET', path: '/subscribe-url' },

@@ -16,6 +16,7 @@ const FIXED_TOOL_ACTIVITIES: Record<string, string> = Object.assign(Object.creat
 const RESEARCH_TOOL_ARG_KEYS: Record<string, string> = Object.assign(Object.create(null), {
   bash: 'command',
   read_skill: 'name',
+  web_search: 'query',
 });
 
 const ARG_SUMMARY_MAX_CHARS = 40;

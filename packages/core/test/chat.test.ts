@@ -189,7 +189,7 @@ describe('runChatTurn gating', () => {
 });
 
 describe('runChatTurn tools', () => {
-  it('wires the five data/draw tools plus read_skill and bash, no submit_prediction or append_comment', async () => {
+  it('wires the five data/draw tools plus read_skill and bash, and leaves web_search out until a search backend is configured', async () => {
     const chartId = 'tools-1';
     let capturedTools: AgentTool[] | undefined;
     const factory: AiAgentFactory = (config) => {
@@ -220,6 +220,7 @@ describe('runChatTurn tools', () => {
       'snapshot_candles',
       'apply_patch',
     ]);
+    expect(capturedTools?.map((tool) => tool.name)).not.toContain('web_search');
   });
 
   it('reaches a custom exec through the bash tool', async () => {

@@ -8,6 +8,8 @@ import {
   getActiveWatchedMarketsStore,
   validateWatchedMarkets,
 } from '../marketdata/watchedMarketsStore.js';
+import { setCodexSearchEnabled } from '../ai/websearch/codexOptIn.js';
+import { webSearchStatus } from '../ai/websearch/index.js';
 import type { SettingsApi } from '../contract/settings.js';
 import { aiSettingsService } from './aiSettings.service.js';
 
@@ -51,6 +53,15 @@ export const settingsService: SettingsApi = {
     const store = getActiveWatchedMarketsStore();
     store.set(validateWatchedMarkets(input.markets));
     return { markets: store.get() };
+  },
+
+  async getWebSearch() {
+    return webSearchStatus();
+  },
+
+  async putWebSearchCodex(input) {
+    setCodexSearchEnabled(input.enabled === true);
+    return webSearchStatus();
   },
 
   async getLongbridgeRegion() {

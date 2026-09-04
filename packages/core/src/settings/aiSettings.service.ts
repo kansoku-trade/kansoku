@@ -1,6 +1,7 @@
 import { getSupportedThinkingLevels } from '@earendil-works/pi-ai';
 import type { AiRole, AiSettingsService, AiUsageRecord, RoleSettingOut } from '@kansoku/pro-api';
 import { SINGLE_KEY_PROVIDERS } from '../ai/runtime/modelsRuntime.js';
+import { WEB_SEARCH_KEY_PROVIDERS } from '../ai/websearch/index.js';
 import { LOBEHUB_PROVIDER } from '../ai/lobehub/types.js';
 import { applyBaseUrlOverride } from '../ai/runtime/providerOverrides.js';
 import { listUsage } from '../ai/runtime/usageStore.js';
@@ -121,10 +122,10 @@ export const aiSettingsService: AiSettingsService = {
         'managed by codex CLI login',
       );
     }
-    if (!SINGLE_KEY_PROVIDERS.has(provider)) {
+    if (!SINGLE_KEY_PROVIDERS.has(provider) && !WEB_SEARCH_KEY_PROVIDERS.has(provider)) {
       throw new ClientError(
         `unknown provider: ${provider}`,
-        `expected one of ${[...SINGLE_KEY_PROVIDERS].join(', ')}`,
+        `expected one of ${[...SINGLE_KEY_PROVIDERS, ...WEB_SEARCH_KEY_PROVIDERS].join(', ')}`,
       );
     }
     const keyResult = credentialKeySchema.safeParse(input.key);

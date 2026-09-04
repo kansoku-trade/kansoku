@@ -488,8 +488,10 @@ export function ProviderCredentialsSection({
       !usedProviders.has(provider.id),
   );
   const effectiveAddProvider = addProvider || availableToAdd[0]?.id || '';
+  const catalogProviderIds = new Set(catalog.providers.map((provider) => provider.id));
   const apiKeyCount = settings.credentials.filter(
-    (credential) => credential.kind === 'api_key' && credential.ok,
+    (credential) =>
+      credential.kind === 'api_key' && credential.ok && catalogProviderIds.has(credential.provider),
   ).length;
   const codex = catalog.providers.find((provider) => provider.id === CODEX_PROVIDER);
   const codexSummary =
