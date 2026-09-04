@@ -49,3 +49,5 @@ stocks/
 .worktrees/
 # Agent Workspace memory (dev workspace is the repo root)
 /memory/
+
+.tmp/
