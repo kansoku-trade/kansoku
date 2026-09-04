@@ -329,13 +329,30 @@ export function useTabsController(): TabsController {
     [bridge, captureScroll, applySnapshot],
   );
 
+  const focusPinnedHome = useCallback(
+    (route: string): boolean => {
+      const pinned = snapshotRef.current.tabs[0];
+      if (!pinned || !isHomeRoute(pinned.route)) return false;
+      const router = routersRef.current.get(pinned.id);
+      if (router) {
+        const { pathname, search } = router.state.location;
+        if (pathname + search !== route) void router.navigate(route);
+      } else if (pinned.route !== route) {
+        if (bridge) {
+          void bridge.mutate({ op: 'updateRoute', id: pinned.id, route }).then(applySnapshot);
+        } else {
+          setSnapshot((prev) => tabsStore.updateTabRoute(prev, pinned.id, route));
+        }
+      }
+      activateTab(pinned.id);
+      return true;
+    },
+    [bridge, applySnapshot, activateTab],
+  );
+
   const openTab = useCallback(
     (route: string) => {
-      const pinned = snapshotRef.current.tabs[0];
-      if (pinned && isHomeRoute(route)) {
-        activateTab(pinned.id);
-        return;
-      }
+      if (isHomeRoute(route) && focusPinnedHome(route)) return;
       if (!bridge) {
         setSnapshot((prev) => tabsStore.openTab(withCurrentScrollCaptured(prev), route));
         return;
@@ -350,25 +367,26 @@ export function useTabsController(): TabsController {
         }),
       );
     },
-    [bridge, captureScroll, applySnapshot, activateTab],
+    [bridge, captureScroll, applySnapshot, focusPinnedHome],
   );
 
   const [newTabLauncherOpen, setNewTabLauncherOpen] = useState(false);
 
   useEffect(() => {
     setNavigationInterceptor((route, options) => {
+      if (isHomeRoute(route) && focusPinnedHome(route)) return true;
       if (options.newTab) {
         openTab(route);
         return true;
       }
       const { tabs, activeTabId } = snapshotRef.current;
       const pinned = tabs[0];
-      if (!pinned || pinned.id !== activeTabId || isHomeRoute(route)) return false;
+      if (!pinned || pinned.id !== activeTabId) return false;
       openTab(route);
       return true;
     });
     return () => setNavigationInterceptor(null);
-  }, [openTab]);
+  }, [openTab, focusPinnedHome]);
 
   const focusOrOpenSettings = useCallback(() => {
     if (!bridge) {

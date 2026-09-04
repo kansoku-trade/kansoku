@@ -325,6 +325,21 @@ describe('useTabsController with shared bridge', () => {
     expect(getController().snapshot.activeTabId).toBe('a');
   });
 
+  it('sends home navigation from a non-pinned tab back to the pinned tab', async () => {
+    bridge.seed([makeTab('/', 'a'), makeTab('/settings', 'b')]);
+    const getController = renderController();
+    await waitFor(() => expect(getController().snapshot.tabs).toHaveLength(2));
+    act(() => getController().activateTab('b'));
+    await waitFor(() => expect(getController().snapshot.activeTabId).toBe('b'));
+
+    act(() => navigate('/'));
+    await settlePendingMutations();
+
+    expect(bridge.mutateCalls.some((op) => op.op === 'open')).toBe(false);
+    expect(getController().snapshot.activeTabId).toBe('a');
+    expect(getController().snapshot.tabs.find((tab) => tab.id === 'b')?.route).toBe('/settings');
+  });
+
   it('navigates in place when a non-pinned tab is active', async () => {
     bridge.seed([makeTab('/', 'a'), makeTab('/settings', 'b')]);
     const getController = renderController();
