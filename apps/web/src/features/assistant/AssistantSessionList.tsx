@@ -14,7 +14,7 @@ const styles = stylex.create({
     flexDirection: 'column',
     minHeight: 0,
     overflow: 'hidden',
-    width: sizes.sidebarWidth,
+    width: '100%',
   },
   head: {
     alignItems: 'center',
