@@ -77,18 +77,33 @@ def sync_third_party() -> int:
     return changed
 
 
+CLAUDE_TARGET_PREFIX = os.path.join("..", "..", ".claude", "skills")
+
+
 def prune_dangling() -> int:
+    """Both projections rot, not just one.
+
+    A skill that moves out of .claude/skills (an app-only skill relocating to
+    packages/core/skills, say) leaves .agents/skills/<name> pointing at nothing,
+    and nothing recreates or removes it — external agents then read a broken link.
+    """
     removed = 0
-    for name in os.listdir(CLAUDE_ROOT):
-        dst = os.path.join(CLAUDE_ROOT, name)
-        if not os.path.islink(dst):
+    for root, label, prefix in (
+        (CLAUDE_ROOT, ".claude/skills", AGENTS_TARGET_PREFIX),
+        (AGENTS_ROOT, ".agents/skills", CLAUDE_TARGET_PREFIX),
+    ):
+        if not os.path.isdir(root):
             continue
-        if not os.readlink(dst).startswith(AGENTS_TARGET_PREFIX):
-            continue
-        if not os.path.exists(dst):
-            os.remove(dst)
-            print(f"pruned dangling .claude/skills/{name}")
-            removed += 1
+        for name in os.listdir(root):
+            dst = os.path.join(root, name)
+            if not os.path.islink(dst):
+                continue
+            if not os.readlink(dst).startswith(prefix):
+                continue
+            if not os.path.exists(dst):
+                os.remove(dst)
+                print(f"pruned dangling {label}/{name}")
+                removed += 1
     return removed
 
 

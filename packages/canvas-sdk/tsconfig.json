@@ -12,7 +12,7 @@
     ],
     "declaration": true,
     "emitDeclarationOnly": true,
-    "outDir": "../../.claude/skills/canvas/sdk",
+    "outDir": "../core/skills/canvas/sdk",
     "rootDir": "src"
   },
   "include": [

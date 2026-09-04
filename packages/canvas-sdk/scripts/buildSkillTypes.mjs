@@ -4,7 +4,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const pkgRoot = dirname(dirname(fileURLToPath(import.meta.url)));
-const outDir = join(pkgRoot, '..', '..', '.claude', 'skills', 'canvas', 'sdk');
+const outDir = join(pkgRoot, '..', 'core', 'skills', 'canvas', 'sdk');
 
 // Models pay per read, not per byte. Parts 1 / 2 / 5 of the skill's skeleton appear in
 // every canvas, so their declarations merge into one file; charts, scenarios and controls

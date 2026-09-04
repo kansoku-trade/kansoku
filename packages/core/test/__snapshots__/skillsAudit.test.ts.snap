@@ -1,0 +1,35 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`skills audit > matches the recorded app-visible skill set 1`] = `
+[
+  "canvas @ packages/core/skills",
+  "capital-rotation @ .claude/skills",
+  "company-valuation @ .claude/skills",
+  "earnings-preview @ .claude/skills",
+  "earnings-recap @ .claude/skills",
+  "estimate-analysis @ .claude/skills",
+  "etf-premium @ .claude/skills",
+  "fred @ .claude/skills",
+  "gdelt @ .claude/skills",
+  "hithink-a-share @ .claude/skills",
+  "hormuz-strait @ .claude/skills",
+  "intraday-signal @ .claude/skills",
+  "korea-market @ .claude/skills",
+  "market-session-tracker @ .claude/skills",
+  "options-payoff @ .claude/skills",
+  "saas-valuation-compression @ .claude/skills",
+  "sec-edgar @ .claude/skills",
+  "sepa-strategy @ .claude/skills",
+  "serenity-skill @ .claude/skills",
+  "startup-analysis @ .claude/skills",
+  "stock-correlation @ .claude/skills",
+  "stock-deep-dive @ .claude/skills",
+  "stock-liquidity @ .claude/skills",
+  "trade-gate @ .claude/skills",
+  "trading-discipline @ .claude/skills +journal.md,market-analysis.md,us-market-data.md",
+  "trump-truth-monitor @ .claude/skills",
+  "twitter-reader @ .claude/skills",
+  "yc-reader @ .claude/skills",
+  "yfinance-data @ .claude/skills",
+]
+`;

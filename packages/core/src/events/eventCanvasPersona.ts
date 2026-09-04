@@ -13,7 +13,7 @@ import type { EventEvidencePack } from './evidencePack.js';
 // to save by loading the guide on demand — inject it the way the analyst persona does.
 function canvasSkillText(): string | null {
   try {
-    return readSkill(loadSkillIndex(skillSearchDirs(PROJECT_ROOT)), CANVAS_SKILL_NAME);
+    return readSkill(loadSkillIndex(skillSearchDirs(PROJECT_ROOT), { repoRoot: PROJECT_ROOT, runtime: 'app' }), CANVAS_SKILL_NAME);
   } catch {
     return null;
   }
@@ -40,7 +40,7 @@ const SYSTEM_PROMPT = [
   'If a price or peer item has coverage "unavailable", write that gap in the canvas. Do not present later bars as the event window.',
   `Use only these @kansoku/canvas names: ${canvasComponentNames(['layout', 'text', 'data', 'analysis']).join(', ')}.`,
   'Table columns are {key, header}[] and rows are objects, or string[] columns with array rows.',
-  'The canvas skill below is authoritative for layout. For exact prop shapes, read_file the declarations under .claude/skills/canvas/sdk/ rather than guessing — an invented prop is silently dropped.',
+  'The canvas skill below is authoritative for layout. For exact prop shapes, read_file the declarations under packages/core/skills/canvas/sdk/ rather than guessing — an invented prop is silently dropped.',
   'Arrange the evidence as TSX, then call save_canvas.',
   'You must use the exact slug you are given. The same event always overwrites the same canvas.',
 ].join('\n');

@@ -26,11 +26,21 @@ export const HOST_MODE: 'dev' | 'prod' = process.env.HOST_MODE === 'dev' ? 'dev'
 export const BASE_URL = `http://localhost:${PORT}`;
 export const WEB_DIST = join(WEB_ROOT, 'dist');
 
-/** Skill search roots: packaged desktop sets TRADE_SKILLS_DIR to Resources/skills. */
+/**
+ * Skill search roots, most specific first — `loadSkillIndex` keeps the first hit for a name.
+ *
+ * `packages/core/skills` holds app-only skills. They live outside `.claude/skills` because that
+ * is the ONLY lever against external agents: an agent scans the directory and injects whatever it
+ * finds, so a manifest cannot hide anything from it — only absence can.
+ *
+ * Packaged desktop sets TRADE_SKILLS_DIR to Resources/skills, where `stageSkills` has already
+ * merged both roots; there `repoRoot` is the user's workspace, so the two repo paths simply miss.
+ */
 export function skillSearchDirs(repoRoot: string = PROJECT_ROOT): string[] {
   const dirs: string[] = [];
   const envDir = process.env.TRADE_SKILLS_DIR;
   if (envDir) dirs.push(envDir);
+  dirs.push(join(repoRoot, 'packages', 'core', 'skills'));
   dirs.push(join(repoRoot, '.claude', 'skills'));
   return dirs;
 }

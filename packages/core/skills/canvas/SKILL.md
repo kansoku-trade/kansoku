@@ -84,7 +84,7 @@ caption (TD-DATA-02). What you could not fetch goes in `Coverage`, never into a 
 - **Live quotes**: `useQuote(symbol)` returns a live-updating `QuoteCell | null`, e.g. for
   `Stat`. Its fields are `last`、`pct`、`regularLast`、`regularPct`、`session`、`turnover?`、
   `asOf?`；`QuoteCell` / `CandleFeed` / `CandleFeedTf` / `TimeframeKey` 的完整定义在
-  `.claude/skills/canvas/sdk/shared.d.ts`。
+  `packages/core/skills/canvas/sdk/shared.d.ts`。
 - **Caption discipline**: a canvas driven by `useQuote` / `useCandles` writes `Source` as
   「实时」; one driven by a snapshot file writes the data's cutoff time, taken from
   `CandleFeed.asOf`.
@@ -107,7 +107,7 @@ chart gets no title of its own: the chart title is the heading.
 **Components.** The table below is the complete allow-list; referencing an export that does
 not exist — or inventing a prop — is the most common failure, and an unknown prop is
 silently dropped rather than erroring. Exact prop shapes are declared next to this file in
-`.claude/skills/canvas/sdk/`. **read_file them instead of guessing**, starting with
+`packages/core/skills/canvas/sdk/`. **read_file them instead of guessing**, starting with
 `core.d.ts` — it holds everything the mandatory parts of the skeleton use (layout, text,
 `Stat`, `Table`, `Compare`, `Coverage`, `Source`). Read the rest only when you reach for
 them: `charts.d.ts`, `CandleChart.d.ts`, `analysis.d.ts` (`Scenarios` / `RRPlan` /
@@ -225,7 +225,7 @@ Compile and runtime errors are written into the canvas's check record; `read_can
 available when that diagnostic record is needed.
 
 A blank canvas almost always referenced an export that does not exist. A prop that has no
-effect was invented — check it against the declarations in `.claude/skills/canvas/sdk/`.
+effect was invented — check it against the declarations in `packages/core/skills/canvas/sdk/`.
 
 `missing data file: <slug>.<name>.json` means the source imports a data file that has not
 been written yet — call `save_canvas_data` or `snapshot_candles` with that `name` first, then

@@ -9,15 +9,19 @@ afterEach(() => {
 });
 
 describe('skillSearchDirs', () => {
-  it('always includes repo .claude/skills', () => {
+  it('puts the app-only root ahead of .claude/skills so it can shadow a shared name', () => {
     delete process.env.TRADE_SKILLS_DIR;
-    expect(skillSearchDirs('/data/root')).toEqual(['/data/root/.claude/skills']);
+    expect(skillSearchDirs('/data/root')).toEqual([
+      '/data/root/packages/core/skills',
+      '/data/root/.claude/skills',
+    ]);
   });
 
   it('prepends TRADE_SKILLS_DIR when set', () => {
     process.env.TRADE_SKILLS_DIR = '/App/Resources/skills';
     expect(skillSearchDirs('/data/root')).toEqual([
       '/App/Resources/skills',
+      '/data/root/packages/core/skills',
       '/data/root/.claude/skills',
     ]);
   });

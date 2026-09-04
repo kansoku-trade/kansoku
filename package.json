@@ -34,7 +34,8 @@
     "typecheck": "pnpm -r typecheck",
     "typecheck:desktop": "pnpm --filter @kansoku/desktop typecheck",
     "video:dev": "pnpm --filter @kansoku/video start",
-    "video:render": "pnpm --filter @kansoku/video render"
+    "video:render": "pnpm --filter @kansoku/video render",
+    "skills:audit": "pnpm --filter @kansoku/core exec tsx ../../scripts/skills-audit.mjs"
   },
   "devDependencies": {
     "@lobehub/eslint-config": "^2.1.5",
