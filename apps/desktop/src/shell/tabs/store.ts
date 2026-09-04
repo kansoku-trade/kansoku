@@ -41,8 +41,10 @@ function isPinnedTab(state: TabsState, id: string): boolean {
 }
 
 function withPinnedHome(tabs: TabState[]): TabState[] {
-  if (tabs.length > 0 && isHomeRoute(tabs[0].route)) return tabs;
-  return [makeTab(HOME_ROUTE), ...tabs];
+  const pinned = tabs.length > 0 && isHomeRoute(tabs[0].route) ? tabs[0] : makeTab(HOME_ROUTE);
+  const rest = tabs.filter((tab) => tab.id !== pinned.id && !isHomeRoute(tab.route));
+  if (rest.length === tabs.length - 1 && tabs[0] === pinned) return tabs;
+  return [pinned, ...rest];
 }
 
 export function emptyTabsState(): TabsState {
