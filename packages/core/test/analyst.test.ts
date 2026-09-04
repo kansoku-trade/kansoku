@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { AgentMessage } from '@earendil-works/pi-agent-core';
@@ -331,6 +331,26 @@ describe('analyst message pipeline', () => {
     expect(messageText(messages[2])).toContain(
       'Reassess the short-term multi-period conclusion for MU.US.',
     );
+  });
+
+  it('drops the catalog description of an activated skill, keeping it for the rest', async () => {
+    const { deps, engineeredMessages } = harness(async () => {});
+    const otherSkill = join(deps.repoRoot!, '.claude', 'skills', 'trade-gate');
+    mkdirSync(otherSkill, { recursive: true });
+    writeFileSync(
+      join(otherSkill, 'SKILL.md'),
+      '---\nname: trade-gate\ndescription: trade decision gate\n---\nbody',
+    );
+    await executeAnalystRun('MU.US', deps);
+
+    const catalog = messageText(engineeredMessages[0][1]);
+    const entry = (name: string) =>
+      catalog.slice(catalog.indexOf(`name="${name}"`)).split('</skill>')[0];
+
+    expect(entry('intraday-signal')).toContain('status="activated"');
+    expect(entry('intraday-signal')).not.toContain('<description>');
+    expect(entry('intraday-signal')).toContain('The skill instructions are loaded below.');
+    expect(entry('trade-gate')).toContain('<description>');
   });
 
   it('aborts with an error comment when the skill file is missing', async () => {

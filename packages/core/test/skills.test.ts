@@ -1,9 +1,18 @@
-import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { CANVAS_COMPONENT_NAMES } from '@kansoku/canvas/names';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { loadSkillIndex, readSkill } from '../src/ai/agents/skills.js';
+import { loadSkillIndex, loadSkillsPolicy, readSkill } from '../src/ai/agents/skills.js';
+import { PROJECT_ROOT, skillSearchDirs } from '../src/platform/env.js';
 
 let root: string;
 
@@ -26,7 +35,7 @@ describe('loadSkillIndex', () => {
     writeSkill('alpha', `---\nname: alpha\ndescription: does alpha things\n---\n\n# Alpha\n`);
     const index = loadSkillIndex([root]);
     expect(index).toEqual([
-      { name: 'alpha', description: 'does alpha things', dir: join(root, 'alpha') },
+      { name: 'alpha', description: 'does alpha things', dir: join(root, 'alpha'), references: [] },
     ]);
   });
 
@@ -37,7 +46,12 @@ describe('loadSkillIndex', () => {
     );
     const index = loadSkillIndex([root]);
     expect(index).toEqual([
-      { name: 'beta', description: 'first line of the description', dir: join(root, 'beta') },
+      {
+        name: 'beta',
+        description: 'first line of the description',
+        dir: join(root, 'beta'),
+        references: [],
+      },
     ]);
   });
 
@@ -48,14 +62,21 @@ describe('loadSkillIndex', () => {
     );
     const index = loadSkillIndex([root]);
     expect(index).toEqual([
-      { name: 'gamma', description: 'piped first piped second', dir: join(root, 'gamma') },
+      {
+        name: 'gamma',
+        description: 'piped first piped second',
+        dir: join(root, 'gamma'),
+        references: [],
+      },
     ]);
   });
 
   it('defaults description to empty string when missing', () => {
     writeSkill('delta', `---\nname: delta\n---\n\n# Delta\n`);
     const index = loadSkillIndex([root]);
-    expect(index).toEqual([{ name: 'delta', description: '', dir: join(root, 'delta') }]);
+    expect(index).toEqual([
+      { name: 'delta', description: '', dir: join(root, 'delta'), references: [] },
+    ]);
   });
 
   it('skips folders missing SKILL.md', () => {
@@ -115,7 +136,10 @@ describe('loadSkillIndex', () => {
       ['folded-strip', '>-'],
       ['literal-keep', '|+'],
     ]) {
-      writeSkill(name, `---\nname: ${name}\ndescription: ${marker}\n  first line\n  second line\n---\n\n# ${name}\n`);
+      writeSkill(
+        name,
+        `---\nname: ${name}\ndescription: ${marker}\n  first line\n  second line\n---\n\n# ${name}\n`,
+      );
     }
     const index = loadSkillIndex([root]);
     for (const name of ['folded', 'folded-strip', 'literal-keep']) {
@@ -139,11 +163,15 @@ describe('readSkill', () => {
 });
 
 describe('canvas skill sdk declarations', () => {
-  const sdkDir = join(process.cwd(), '..', '..', '.claude', 'skills', 'canvas', 'sdk');
+  const sdkDir = join(PROJECT_ROOT, 'packages', 'core', 'skills', 'canvas', 'sdk');
 
   it('keeps the always-needed components in one file so a canvas costs one read', () => {
     const core = readFileSync(join(sdkDir, 'core.d.ts'), 'utf8');
-    for (const name of [...CANVAS_COMPONENT_NAMES.layout, ...CANVAS_COMPONENT_NAMES.text, ...CANVAS_COMPONENT_NAMES.data]) {
+    for (const name of [
+      ...CANVAS_COMPONENT_NAMES.layout,
+      ...CANVAS_COMPONENT_NAMES.text,
+      ...CANVAS_COMPONENT_NAMES.data,
+    ]) {
       expect(core).toContain(`declare function ${name}(`);
     }
   });
@@ -157,5 +185,105 @@ describe('canvas skill sdk declarations', () => {
       .flat()
       .filter((name) => !new RegExp(`declare function ${name}\\b`).test(declared));
     expect(missing).toEqual([]);
+  });
+});
+
+describe('agent-only policy', () => {
+  const writePolicy = (dir: string, agentOnly: unknown) =>
+    writeFileSync(join(dir, 'skills-policy.json'), JSON.stringify({ version: 1, agentOnly }));
+
+  it('keeps repo-tooling skills out of the injected catalog and out of read_skill', () => {
+    const repoRoot = mkdtempSync(join(tmpdir(), 'skills-policy-'));
+    writePolicy(repoRoot, ['release']);
+    writeSkill('release', '---\nname: release\ndescription: bump the desktop version\n---\nbody');
+    writeSkill('trade-gate', '---\nname: trade-gate\ndescription: trade decision gate\n---\nbody');
+
+    const index = loadSkillIndex([root], { repoRoot });
+    expect(index.map((skill) => skill.name)).toEqual(['trade-gate']);
+    expect(readSkill(index, 'release')).toBeNull();
+  });
+
+  it('hides every name the policy lists', () => {
+    const repoRoot = mkdtempSync(join(tmpdir(), 'skills-policy-'));
+    const names = ['acceptance', 'chart', 'generative-ui', 'release', 'skill-creator'];
+    writePolicy(repoRoot, names);
+    for (const name of names) {
+      writeSkill(name, `---\nname: ${name}\ndescription: repo tooling\n---\nbody`);
+    }
+    expect(loadSkillIndex([root], { repoRoot })).toEqual([]);
+  });
+
+  it('filters nothing when the policy file is missing or malformed', () => {
+    const missing = mkdtempSync(join(tmpdir(), 'skills-policy-'));
+    const malformed = mkdtempSync(join(tmpdir(), 'skills-policy-'));
+    writeFileSync(join(malformed, 'skills-policy.json'), '{ not json');
+    writeSkill('release', '---\nname: release\ndescription: repo tooling\n---\nbody');
+
+    expect(loadSkillsPolicy(missing).agentOnly).toEqual([]);
+    expect(loadSkillsPolicy(malformed).agentOnly).toEqual([]);
+    expect(loadSkillIndex([root], { repoRoot: missing }).map((s) => s.name)).toEqual(['release']);
+  });
+
+  it('reads the real repo policy so a caller that omits repoRoot still filters', () => {
+    expect(loadSkillsPolicy(PROJECT_ROOT).agentOnly).toContain('release');
+  });
+});
+
+describe('runtime reference chapters', () => {
+  const writeChapter = (skill: string, runtime: string, file: string, body: string) => {
+    const dir = join(root, skill, 'references', runtime);
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, file), body);
+  };
+
+  beforeEach(() => {
+    writeSkill('td', '---\nname: td\ndescription: discipline\n---\ncore body');
+    writeChapter('td', 'app', 'b-second.md', 'app chapter two');
+    writeChapter('td', 'app', 'a-first.md', 'app chapter one');
+    writeChapter('td', 'bench', 'episode.md', 'bench chapter');
+    writeChapter('td', 'app', 'notes.txt', 'not markdown');
+  });
+
+  it('appends only the requested runtime chapters, name-sorted', () => {
+    const text = readSkill(loadSkillIndex([root], { runtime: 'app' }), 'td')!;
+    expect(text).toContain('core body');
+    expect(text.indexOf('app chapter one')).toBeLessThan(text.indexOf('app chapter two'));
+    expect(text).not.toContain('bench chapter');
+    expect(text).not.toContain('not markdown');
+  });
+
+  it('appends the bench chapter and no app chapter for the bench runtime', () => {
+    const text = readSkill(loadSkillIndex([root], { runtime: 'bench' }), 'td')!;
+    expect(text).toContain('core body');
+    expect(text).toContain('bench chapter');
+    expect(text).not.toContain('app chapter');
+  });
+
+  it('returns the bare SKILL.md when no runtime is given', () => {
+    const index = loadSkillIndex([root]);
+    expect(index.find((s) => s.name === 'td')!.references).toEqual([]);
+    const text = readSkill(index, 'td')!;
+    expect(text).toContain('core body');
+    expect(text).not.toContain('chapter');
+  });
+
+  it('tolerates a skill with no references directory', () => {
+    writeSkill('plain', '---\nname: plain\ndescription: plain\n---\nplain body');
+    expect(readSkill(loadSkillIndex([root], { runtime: 'app' }), 'plain')).toContain('plain body');
+  });
+});
+
+describe('app-only skills root', () => {
+  it('resolves canvas from packages/core/skills, not from .claude/skills', () => {
+    const dirs = skillSearchDirs(PROJECT_ROOT);
+    const canvas = loadSkillIndex(dirs, { runtime: 'app' }).find((s) => s.name === 'canvas');
+    expect(canvas).toBeDefined();
+    expect(canvas!.dir).toBe(join(PROJECT_ROOT, 'packages', 'core', 'skills', 'canvas'));
+    expect(existsSync(join(PROJECT_ROOT, '.claude', 'skills', 'canvas'))).toBe(false);
+  });
+
+  it('keeps the generated SDK declarations next to the skill', () => {
+    const sdk = join(PROJECT_ROOT, 'packages', 'core', 'skills', 'canvas', 'sdk', 'index.d.ts');
+    expect(existsSync(sdk)).toBe(true);
   });
 });

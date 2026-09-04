@@ -59,12 +59,16 @@ export class SkillCatalogProvider extends BaseFirstUserContentProvider {
       ]
         .filter(Boolean)
         .join(' ');
+      // An activated skill carries its whole body a few lines further down, so its catalog
+      // description would be paid for twice to say less than the body already says.
       const invoke = skill.activated
         ? 'The skill instructions are loaded below.'
         : `read_skill(name="${escapeXml(skill.name)}")`;
       lines.push(
         `  <skill ${attrs}>`,
-        `    <description>${escapeXml(skill.description)}</description>`,
+        ...(skill.activated
+          ? []
+          : [`    <description>${escapeXml(skill.description)}</description>`]),
         `    <invoke>${invoke}</invoke>`,
         '  </skill>',
       );

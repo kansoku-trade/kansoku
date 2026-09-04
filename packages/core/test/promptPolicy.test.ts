@@ -7,6 +7,8 @@ import {
   DisciplineMissingError,
   appendWatchedMarketsLine,
   disciplineFor,
+  loadAppDiscipline,
+  loadBenchDiscipline,
   loadSharedDiscipline,
   watchedMarketsLine,
   withDiscipline,
@@ -122,13 +124,13 @@ describe('watched-markets line injection', () => {
     setActiveWatchedMarketsStore(fakeWatchedMarketsStore(['HK']));
     const merged = appendWatchedMarketsLine('BASE_DISCIPLINE');
     expect(merged).toBe(
-      'BASE_DISCIPLINE\n\nWatched markets: HK. Market-wide scans cover only these markets; single-symbol analysis follows the symbol\'s market (TD-LANG-03).',
+      "BASE_DISCIPLINE\n\nWatched markets: HK. Market-wide scans cover only these markets; single-symbol analysis follows the symbol's market (TD-LANG-03).",
     );
   });
 
   it('joins multiple markets with a slash', () => {
     expect(watchedMarketsLine(['US', 'HK', 'CN'])).toBe(
-      'Watched markets: US / HK / CN. Market-wide scans cover only these markets; single-symbol analysis follows the symbol\'s market (TD-LANG-03).',
+      "Watched markets: US / HK / CN. Market-wide scans cover only these markets; single-symbol analysis follows the symbol's market (TD-LANG-03).",
     );
   });
 
@@ -140,7 +142,40 @@ describe('watched-markets line injection', () => {
     setActiveWatchedMarketsStore(fakeWatchedMarketsStore(['HK']));
     const text = loadSharedDiscipline(PROJECT_ROOT);
     expect(text).toContain(
-      'Watched markets: HK. Market-wide scans cover only these markets; single-symbol analysis follows the symbol\'s market (TD-LANG-03).',
+      "Watched markets: HK. Market-wide scans cover only these markets; single-symbol analysis follows the symbol's market (TD-LANG-03).",
     );
+  });
+});
+
+describe('runtime chapter composition against the real skill tree', () => {
+  const app = loadAppDiscipline(PROJECT_ROOT);
+  const bench = loadBenchDiscipline(PROJECT_ROOT);
+
+  // Markers are phrases that live ONLY in a chapter body. Rule IDs alone are not enough:
+  // the core SKILL.md cross-references TD-KOREA-01 and TD-LEVERAGE-01 in its own prose.
+  const APP_MARKERS = [
+    'FX-polluted lagging proxies', // references/app/us-market-data.md
+    'grind it to zero', // references/app/market-analysis.md
+    'TD-JOURNAL-01', // references/app/journal.md
+  ];
+  const BENCH_MARKERS = ['TD-FLIP-01', 'TD-CADENCE-01']; // references/bench/episode-execution.md
+
+  it('gives the app runtime its three chapters and none of bench', () => {
+    expect(app).toBeTruthy();
+    for (const marker of APP_MARKERS) expect(app).toContain(marker);
+    for (const marker of BENCH_MARKERS) expect(app).not.toContain(marker);
+  });
+
+  it('gives the bench runtime its chapter and none of app', () => {
+    expect(bench).toBeTruthy();
+    for (const marker of BENCH_MARKERS) expect(bench).toContain(marker);
+    for (const marker of APP_MARKERS) expect(bench).not.toContain(marker);
+  });
+
+  it('keeps the shared core in both', () => {
+    for (const text of [app, bench]) {
+      expect(text).toContain('TD-VERIFY-01');
+      expect(text).toContain('TD-TREND-01');
+    }
   });
 });

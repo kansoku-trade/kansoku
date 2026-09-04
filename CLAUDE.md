@@ -102,7 +102,7 @@ Shared conventions (enforced by `.claude/skills/_shared/`):
 
 @.claude/skills/trading-discipline/SKILL.md
 
-The main `SKILL.md` is imported here; the `references/` chapters (`us-market-data.md`, `journal.md`, `market-analysis.md`, `episode-execution.md`) are composed into agent prompts by the AI pipeline based on the runtime, not by Claude Code's `@import`. Concretely: `packages/core/src/ai/promptPolicy.ts` exposes `loadAppDiscipline(repoRoot)` (SKILL.md + the three app-only references) and `loadBenchDiscipline(repoRoot)` (SKILL.md + the bench-only reference). App agents (`analyst` / `deepDive` / `chat`) call the first; the bench episode runner calls the second. Claude Code sessions in this repo receive only the SKILL.md core through `@import` — the model can `read_file` a specific reference when it needs the detail, but the base discipline is the core, mirroring the app runtime's baseline load.
+The main `SKILL.md` is imported here; the `references/<runtime>/` chapters are composed into agent prompts by the AI pipeline based on the runtime, not by Claude Code's `@import`. Concretely: `packages/core/src/ai/runtime/promptPolicy.ts` exposes `loadAppDiscipline(repoRoot)` and `loadBenchDiscipline(repoRoot)`; each builds a skill index for its runtime and `readSkill` appends whatever `references/<runtime>/` holds — adding a chapter is adding a file, there is no list to update. App agents (`analyst` / `deepDive` / `chat`) call the first; the bench episode runner calls the second. Claude Code sessions in this repo receive only the SKILL.md core through `@import` — the model can `read_file` a specific reference when it needs the detail, but the base discipline is the core, mirroring the app runtime's baseline load.
 
 ### Known data gotchas
 

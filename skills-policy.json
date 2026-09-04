@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "agentOnly": [
+    "acceptance",
+    "chart",
+    "generative-ui",
+    "release",
+    "skill-creator"
+  ]
+}

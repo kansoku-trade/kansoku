@@ -14,14 +14,14 @@ description: >
 
 > **This SKILL.md file applies to every agent that forms a judgment and every trading context**, including the app-side real-portfolio review and the bench synthetic episodes.
 >
-> Any additional chapters listed at the end of this prompt (composed in from the `references/` directory according to the runtime) are just as binding as this core file. Follow them the same way you follow the rules below.
+> Any additional chapters listed at the end of this prompt (composed in from `references/<runtime>/` according to the runtime) are just as binding as this core file. Follow them the same way you follow the rules below.
 >
 > Rule IDs stay in the global `TD-*` namespace across all chapters so cross-references keep working. Chapter inventory (which chapters actually appear depends on your runtime):
 >
-> - `references/us-market-data.md` — app runtime. US / Longbridge / news / GDELT / Korea-lead data traps and forced-liquidation guardrails.
-> - `references/market-analysis.md` — app runtime. Post-mortem discipline, mindset, leveraged-ETF mechanics.
-> - `references/journal.md` — app runtime. Write-rules for the `journal/` and `stocks/` directories.
-> - `references/episode-execution.md` — bench runtime. Runtime-specific rules (h1-bar flip cooldown, direction-submit cadence, mandatory `fetch_kline` before submit).
+> - `references/app/us-market-data.md` — app runtime. US / Longbridge / news / GDELT / Korea-lead data traps and forced-liquidation guardrails.
+> - `references/app/market-analysis.md` — app runtime. Post-mortem discipline, mindset, leveraged-ETF mechanics.
+> - `references/app/journal.md` — app runtime. Write-rules for the `journal/` and `stocks/` directories.
+> - `references/bench/episode-execution.md` — bench runtime. Runtime-specific rules (h1-bar flip cooldown, direction-submit cadence, mandatory `fetch_kline` before submit).
 >
 > **Domain skills reference rule IDs only; they do not copy rule text.** Copying causes drift — proven 2026-07-14 when `capital-rotation/SKILL.md` demanded a unit conversion that CLAUDE.md explicitly forbade.
 
@@ -83,7 +83,7 @@ When you receive a claim like "breakout / spike / pullback / bottomed / stabilis
 
 This section governs the **execution layer**: how to align direction with trend, size risk, protect profit, and back up every claim with a checkable fact. It applies equally to simulated (bench) and live (app) trading.
 
-Three additional bench-only execution rules (flip cooldown counted in h1 bars, 40-session decision cadence, and mandatory `fetch_kline` before submit) live in `references/episode-execution.md` — the app has no equivalent runtime for them.
+Three additional bench-only execution rules (flip cooldown counted in h1 bars, 40-session decision cadence, and mandatory `fetch_kline` before submit) live in `references/bench/episode-execution.md` — the app has no equivalent runtime for them.
 
 **TD-TREND-01 — Trend alignment first.**
 
@@ -117,9 +117,9 @@ Reason.summary for any submit must state which window (h1 or day) and which tren
 ## Related
 
 - `journal/lessons.md` — **lessons that change day to day**; do not fold them here. This file is stable discipline that ships with releases; lessons live in the user data directory.
-- `references/us-market-data.md` — US/Longbridge/news/Korea data rules (app only).
-- `references/market-analysis.md` — post-mortem, mindset, leveraged-ETF mechanics (app only).
-- `references/journal.md` — write rules for `journal/` and `stocks/` (app only).
-- `references/episode-execution.md` — bench-only h1/session/fetch_kline rules.
-- `stocks/_leveraged-etf-mechanics.md` — full derivation for TD-LEVERAGE-01 (in `references/market-analysis.md`).
-- `.claude/skills/korea-market/` — tooling for TD-KOREA-01 (in `references/us-market-data.md`).
+- `references/app/us-market-data.md` — US/Longbridge/news/Korea data rules (app only).
+- `references/app/market-analysis.md` — post-mortem, mindset, leveraged-ETF mechanics (app only).
+- `references/app/journal.md` — write rules for `journal/` and `stocks/` (app only).
+- `references/bench/episode-execution.md` — bench-only h1/session/fetch_kline rules.
+- `stocks/_leveraged-etf-mechanics.md` — full derivation for TD-LEVERAGE-01 (in `references/app/market-analysis.md`).
+- `.claude/skills/korea-market/` — tooling for TD-KOREA-01 (in `references/app/us-market-data.md`).
