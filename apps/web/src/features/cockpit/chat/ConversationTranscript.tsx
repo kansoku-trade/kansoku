@@ -7,7 +7,7 @@ import type { TranscriptInsert } from './transcriptTimeline.js';
 import { blockKey, presentTranscript } from './presentTranscript.js';
 import { TranscriptBlockView } from './TranscriptBlockView.js';
 import type { ChatChromeVariant } from './ChatComposer';
-import type { ChatLiveBeat, ChatLiveTool, ChatRow } from './useChatSession';
+import { lastUserRow, type ChatLiveBeat, type ChatLiveTool, type ChatRow } from './useChatSession';
 
 const styles = stylex.create({
   panelBodyContent: {
@@ -144,6 +144,7 @@ function ConversationTranscriptView({
   modelLabels,
   onOpenCanvas,
   onRetryLast,
+  onEditLast,
   onViewportScroll,
 }: {
   rows: ChatRow[];
@@ -169,6 +170,7 @@ function ConversationTranscriptView({
   modelLabels?: Readonly<Record<string, string>>;
   onOpenCanvas?: (slug: string) => void;
   onRetryLast?: () => void;
+  onEditLast?: () => void;
   onViewportScroll?: (scrollTop: number) => void;
 }) {
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -195,6 +197,7 @@ function ConversationTranscriptView({
     }
     return -1;
   }, [blocks]);
+  const lastUserId = lastUserRow(rows)?.id;
 
   const syncActiveTurn = useCallback(() => {
     const viewport = bodyRef.current;
@@ -318,6 +321,17 @@ function ConversationTranscriptView({
           onRetry={onRetryLast}
           showActions={
             block.type === 'assistant' && !block.streaming && !busy && index === lastAssistantIndex
+          }
+          showUserActions={block.type === 'user'}
+          userActions={
+            block.type === 'user' && block.row.id === lastUserId
+              ? {
+                  onRetry: onRetryLast,
+                  onEdit: onEditLast,
+                  retryDisabled: busy,
+                  editDisabled: busy,
+                }
+              : {}
           }
         />
       ))}

@@ -1,4 +1,4 @@
-import { Check, Copy, RotateCcw } from 'lucide-react';
+import { Check, Copy, Pencil, RotateCcw } from 'lucide-react';
 import { useState } from 'react';
 import * as stylex from '@stylexjs/stylex';
 import { colors, radii, sizes } from '../../../theme/tokens.stylex';
@@ -9,6 +9,12 @@ const styles = stylex.create({
     alignItems: 'center',
     gap: '2px',
     marginTop: '4px',
+  },
+  alignStart: {
+    alignSelf: 'flex-start',
+  },
+  alignEnd: {
+    alignSelf: 'flex-end',
   },
   button: {
     'display': 'inline-flex',
@@ -30,20 +36,36 @@ const styles = stylex.create({
     ':active': {
       scale: 0.96,
     },
+    ':disabled': {
+      opacity: 0.28,
+      cursor: 'default',
+      color: colors.textMuted,
+      backgroundColor: 'transparent',
+    },
   },
 });
 
 export function MessageActions({
   text,
   onRetry,
+  onEdit,
+  align = 'start',
+  retryDisabled,
+  editDisabled,
 }: {
   text: string;
   onRetry?: () => void;
+  onEdit?: () => void;
+  align?: 'start' | 'end';
+  retryDisabled?: boolean;
+  editDisabled?: boolean;
 }) {
   const [copied, setCopied] = useState(false);
 
   return (
-    <div className={`chat-message-actions ${stylex.props(styles.row).className}`}>
+    <div
+      className={`chat-message-actions ${stylex.props(styles.row, align === 'end' ? styles.alignEnd : styles.alignStart).className}`}
+    >
       <button
         type="button"
         className={stylex.props(styles.button).className}
@@ -57,11 +79,23 @@ export function MessageActions({
       >
         {copied ? <Check size={13} /> : <Copy size={13} />}
       </button>
+      {onEdit ? (
+        <button
+          type="button"
+          className={stylex.props(styles.button).className}
+          aria-label="编辑"
+          disabled={editDisabled}
+          onClick={onEdit}
+        >
+          <Pencil size={13} />
+        </button>
+      ) : null}
       {onRetry ? (
         <button
           type="button"
           className={stylex.props(styles.button).className}
           aria-label="重试"
+          disabled={retryDisabled}
           onClick={onRetry}
         >
           <RotateCcw size={13} />

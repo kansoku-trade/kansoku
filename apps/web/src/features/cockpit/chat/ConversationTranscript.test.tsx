@@ -212,3 +212,38 @@ describe('ConversationTranscript folding', () => {
     expect(screen.queryByText('canvas')).toBeNull();
   });
 });
+
+describe('ConversationTranscript user actions', () => {
+  it('shows copy on an earlier user bubble and copy-edit-retry on the last user bubble', () => {
+    const rows: ChatRow[] = [
+      row({ id: 'u1', ts: ts('10:00:00'), kind: 'user', text: '第一问' }),
+      row({ id: 'a1', ts: ts('10:00:01'), kind: 'assistant', text: '答' }),
+      row({ id: 'u2', ts: ts('10:00:02'), kind: 'user', text: '第二问' }),
+      row({ id: 'a2', ts: ts('10:00:03'), kind: 'assistant', text: '再答' }),
+    ];
+    renderTranscript(rows, { onRetryLast: () => {}, onEditLast: () => {} });
+    const copyButtons = screen.getAllByRole('button', { name: '复制' });
+    expect(copyButtons.length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByRole('button', { name: '编辑' })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: '重试' }).length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('disables edit and retry on the last user bubble while busy', () => {
+    render(
+      <ConversationTranscript
+        rows={[row({ id: 'u1', ts: ts('10:00:00'), kind: 'user', text: '问' })]}
+        busy
+        streamText=""
+        liveTools={[]}
+        suggestions={[]}
+        emptyText=""
+        onPickSuggestion={() => {}}
+        onRetryLast={() => {}}
+        onEditLast={() => {}}
+      />,
+    );
+    expect(screen.getByRole('button', { name: '编辑' })).toHaveProperty('disabled', true);
+    expect(screen.getByRole('button', { name: '重试' })).toHaveProperty('disabled', true);
+    expect(screen.getByRole('button', { name: '复制' })).toHaveProperty('disabled', false);
+  });
+});

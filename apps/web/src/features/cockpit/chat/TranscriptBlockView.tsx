@@ -34,6 +34,8 @@ const styles = stylex.create({
   },
   rowUser: {
     justifyContent: 'flex-end',
+    flexDirection: 'column',
+    alignItems: 'flex-end',
   },
   assistantMessage: {
     minWidth: 0,
@@ -172,6 +174,8 @@ export function TranscriptBlockView({
   onOpenCanvas,
   onRetry,
   showActions = false,
+  showUserActions = false,
+  userActions,
 }: {
   block: TranscriptBlock;
   variant?: ChatChromeVariant;
@@ -181,6 +185,13 @@ export function TranscriptBlockView({
   onOpenCanvas?: (slug: string) => void;
   onRetry?: () => void;
   showActions?: boolean;
+  showUserActions?: boolean;
+  userActions?: {
+    onRetry?: () => void;
+    onEdit?: () => void;
+    retryDisabled?: boolean;
+    editDisabled?: boolean;
+  };
 }) {
   if (block.type === 'user') {
     return (
@@ -190,6 +201,16 @@ export function TranscriptBlockView({
         >
           {block.row.text}
         </div>
+        {showUserActions ? (
+          <MessageActions
+            text={block.row.text ?? ''}
+            align="end"
+            onRetry={userActions?.onRetry}
+            onEdit={userActions?.onEdit}
+            retryDisabled={userActions?.retryDisabled}
+            editDisabled={userActions?.editDisabled}
+          />
+        ) : null}
       </div>
     );
   }
@@ -265,6 +286,8 @@ export function TranscriptBlockView({
             insertClassName={insertClassName}
             onOpenCanvas={onOpenCanvas}
             onRetry={onRetry}
+            showUserActions={showUserActions}
+            userActions={userActions}
           />
         ))}
       </WorkedFold>

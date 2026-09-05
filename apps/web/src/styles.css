@@ -42,3 +42,16 @@ body.trainer-dragging-level * {
   cursor: ns-resize !important;
   user-select: none !important;
 }
+
+.chat-row--user {
+  padding-bottom: 34px;
+}
+.chat-row--user .chat-message-actions {
+  opacity: 0;
+  pointer-events: none;
+}
+.chat-row--user:hover .chat-message-actions,
+.chat-row--user:focus-within .chat-message-actions {
+  opacity: 1;
+  pointer-events: auto;
+}
