@@ -33,7 +33,7 @@ export class ChatController {
     const result = await chatService.postMessage({
       id,
       text,
-      replaceLast: body.replaceLast === true,
+      replaceLast: body?.replaceLast === true,
     });
     return jsonResponse(result.status, result.body);
   }
