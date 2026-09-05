@@ -211,11 +211,13 @@ function Progress({
 export function Onboarding({
   step,
   status,
+  ripgrepAvailable,
   onRecheck,
   onComplete,
 }: {
   step: OnboardingStep;
   status: CredentialsGetResult | null;
+  ripgrepAvailable: boolean;
   onRecheck: () => void;
   onComplete: () => Promise<void>;
 }) {
@@ -239,7 +241,7 @@ export function Onboarding({
           {renderStep === 'longbridge' ? (
             <StepLongbridge status={status} onRecheck={onRecheck} />
           ) : renderStep === 'ai' ? (
-            <StepAi onNext={() => setLocalStep('twitter')} />
+            <StepAi ripgrepAvailable={ripgrepAvailable} onNext={() => setLocalStep('twitter')} />
           ) : renderStep === 'twitter' ? (
             <StepTwitter onComplete={offerPro ? async () => setLocalStep('pro') : onComplete} />
           ) : (

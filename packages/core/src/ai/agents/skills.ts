@@ -8,6 +8,7 @@ export type SkillMeta = {
   name: string;
   description: string;
   dir: string;
+  runtime?: SkillRuntime;
   /**
    * Absolute paths of the reference chapters this runtime appends after SKILL.md, name-sorted.
    * Optional because callers hand `buildResearchTools` their own index; `readSkill` treats a
@@ -128,6 +129,7 @@ export function loadSkillIndex(dirs: string[], opts: LoadSkillIndexOptions = {})
         name: parsed.name,
         description: parsed.description,
         dir: entryDir,
+        ...(opts.runtime ? { runtime: opts.runtime } : {}),
         references: resolveReferences(entryDir, opts.runtime),
       });
     }
@@ -139,9 +141,15 @@ export function loadSkillIndex(dirs: string[], opts: LoadSkillIndexOptions = {})
 export function readSkill(index: SkillMeta[], name: string): string | null {
   const meta = index.find((s) => s.name === name);
   if (!meta) return null;
-  const parts = [readFileSync(join(meta.dir, 'SKILL.md'), 'utf8')];
+  const render = (text: string) =>
+    meta.runtime === 'app'
+      ? text
+          .replaceAll(/python3 \.claude\/skills\/([^\s`]+)/g, 'python3 "$KANSOKU_SKILLS_DIR/$1"')
+          .replaceAll('.claude/skills/', '$KANSOKU_SKILLS_DIR/')
+      : text;
+  const parts = [render(readFileSync(join(meta.dir, 'SKILL.md'), 'utf8'))];
   for (const reference of meta.references ?? []) {
-    const text = readFileSync(reference, 'utf8');
+    const text = render(readFileSync(reference, 'utf8'));
     if (text.trim()) parts.push(text);
   }
   return parts.join('\n\n---\n\n');

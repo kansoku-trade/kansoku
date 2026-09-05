@@ -19,6 +19,7 @@ import {
 import type { ChatEvent } from '../src/ai/chat/chat.js';
 import type { AiModel } from '../src/ai/runtime/models.js';
 import { createDb, type Db } from '../src/db/index.js';
+import { registerProAiMemory, resetProAiMemoryForTests } from '../src/pro/aiMemory.js';
 
 const model = { provider: 'anthropic', id: 'test-model' } as unknown as AiModel;
 const ZERO_USAGE = {
@@ -61,7 +62,10 @@ beforeEach(() => {
   );
 });
 
-afterEach(() => rmSync(root, { recursive: true, force: true }));
+afterEach(() => {
+  resetProAiMemoryForTests();
+  rmSync(root, { recursive: true, force: true });
+});
 
 describe('assistant chat', () => {
   it('runs a happy-path turn and persists messages', async () => {
@@ -217,11 +221,18 @@ describe('assistant chat', () => {
     });
   });
 
-  it('exposes exactly the read-only bash/skill/library tool set', async () => {
+  it('exposes the converged bash/skill/canvas tools and memory writers', async () => {
     const session = await createAssistantSession({ title: '新对话' }, db);
+    registerProAiMemory({
+      indexContext: async () => undefined,
+      scopeContext: async () => undefined,
+      writeMount: () => ({ name: 'memory', root: join(root, 'memory'), include: ['**/*.md'] }),
+    });
     let capturedToolNames: string[] = [];
+    let capturedSystemPrompt = '';
     const factory: AiAgentFactory = (config) => {
       capturedToolNames = config.tools.map((tool) => tool.name);
+      capturedSystemPrompt = config.systemPrompt ?? '';
       const state = { messages: [...(config.messages ?? [])] };
       return {
         prompt: async () => {
@@ -246,16 +257,17 @@ describe('assistant chat', () => {
       [
         'bash',
         'apply_patch',
-        'list_canvases',
-        'read_canvas',
-        'read_research_document',
+        'memory_apply_patch',
+        'memory_write_file',
+        'read_bash_transcript',
         'read_skill',
         'save_canvas',
         'save_canvas_data',
         'snapshot_candles',
-        'search_research_documents',
       ].sort(),
     );
+    expect(capturedSystemPrompt).toContain('Persistent memory');
+    expect(capturedSystemPrompt).toContain('memory_write_file');
   });
 
   it("wires transformContext to inject the skill catalog from the repo's skill index", async () => {
@@ -316,6 +328,9 @@ describe('assistant chat', () => {
 
     expect(capturedSystemPrompt).toContain('测试纪律标记。');
     expect(capturedSystemPrompt).toContain('@path');
+    expect(capturedSystemPrompt).toContain("rg -n -i -F --glob '*.md'");
+    expect(capturedSystemPrompt).toContain("cat -- '<path>'");
+    expect(capturedSystemPrompt).not.toContain('.claude/skills');
   });
 
   it('fails closed when the shared discipline text cannot be loaded', async () => {

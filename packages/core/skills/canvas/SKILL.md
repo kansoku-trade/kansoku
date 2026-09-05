@@ -60,7 +60,7 @@ caption (TD-DATA-02). What you could not fetch goes in `Coverage`, never into a 
 - Banned in source: `fetch(`, `XMLHttpRequest`, `import(`, `require(`, `setTimeout` /
   `setInterval`, `document.`, `window.`. 64 KB limit.
 - Revising: if the current source is not already in this conversation (you wrote or read it
-  earlier and nothing else changed it), `read_file` `journal/canvases/<slug>.canvas.tsx`
+  earlier and nothing else changed it), use bash `cat -- journal/canvases/<slug>.canvas.tsx`
   first; otherwise patch directly. Do not re-read after a successful `apply_patch` — its
   result already confirms the write. Send one `apply_patch` call carrying every hunk (`*** Begin Patch` / `*** Update File: <path>` /
   `@@ context` / ` `, `-`, `+` lines / `*** End Patch`). Keep the same path. Use `save_canvas`
@@ -84,7 +84,7 @@ caption (TD-DATA-02). What you could not fetch goes in `Coverage`, never into a 
 - **Live quotes**: `useQuote(symbol)` returns a live-updating `QuoteCell | null`, e.g. for
   `Stat`. Its fields are `last`、`pct`、`regularLast`、`regularPct`、`session`、`turnover?`、
   `asOf?`；`QuoteCell` / `CandleFeed` / `CandleFeedTf` / `TimeframeKey` 的完整定义在
-  `packages/core/skills/canvas/sdk/shared.d.ts`。
+  `$KANSOKU_APP_SKILLS_DIR/canvas/sdk/shared.d.ts`。
 - **Caption discipline**: a canvas driven by `useQuote` / `useCandles` writes `Source` as
   「实时」; one driven by a snapshot file writes the data's cutoff time, taken from
   `CandleFeed.asOf`.
@@ -107,7 +107,7 @@ chart gets no title of its own: the chart title is the heading.
 **Components.** The table below is the complete allow-list; referencing an export that does
 not exist — or inventing a prop — is the most common failure, and an unknown prop is
 silently dropped rather than erroring. Exact prop shapes are declared next to this file in
-`packages/core/skills/canvas/sdk/`. **read_file them instead of guessing**, starting with
+`$KANSOKU_APP_SKILLS_DIR/canvas/sdk/`. **Use bash `cat` to read them instead of guessing**, starting with
 `core.d.ts` — it holds everything the mandatory parts of the skeleton use (layout, text,
 `Stat`, `Table`, `Compare`, `Coverage`, `Source`). Read the rest only when you reach for
 them: `charts.d.ts`, `CandleChart.d.ts`, `analysis.d.ts` (`Scenarios` / `RRPlan` /
@@ -224,11 +224,12 @@ why it beat plain text. Later ones: just the slug.
 `rejected:` lists one line per reason — fix those, do not work around them. `save_canvas`
 refuses outright until this skill has been read once in this conversation.
 
-Compile and runtime errors are written into the canvas's check record; `read_canvas` remains
-available when that diagnostic record is needed.
+Compile and runtime errors are written into `journal/canvases/.meta.json`; inspect that file
+with bash `cat -- journal/canvases/.meta.json` when the diagnostic record is needed.
 
 A blank canvas almost always referenced an export that does not exist. A prop that has no
-effect was invented — check it against the declarations in `packages/core/skills/canvas/sdk/`.
+effect was invented — use bash `cat` to check it against the declarations in
+`$KANSOKU_APP_SKILLS_DIR/canvas/sdk/`.
 
 `missing data file: <slug>.<name>.json` means the source imports a data file that has not
 been written yet — call `save_canvas_data` or `snapshot_candles` with that `name` first, then

@@ -7,6 +7,7 @@ import {
 } from '../../canvas/tools.js';
 import type { Db } from '../../db/index.js';
 import type { ExecFn } from '../agents/agentTools/execTool.js';
+import { buildMemoryWriteTools } from '../agents/agentTools/memoryWriteTools.js';
 import { buildResearchTools } from '../agents/agentTools/researchTools.js';
 import type { AiAgentFactory } from '../agents/agentSession.js';
 import {
@@ -30,7 +31,7 @@ import {
   type ConversationRunOptions,
   createConversationEngine,
 } from '../conversation/conversationEngine.js';
-import { memoryProcessors } from '../conversation/messages/memoryProviders.js';
+import { memoryProcessors, memoryWriteMount } from '../conversation/messages/memoryProviders.js';
 import { sessionMessagesEngine } from '../conversation/messages/messageEngine.js';
 import { SkillCatalogProvider, toSkillContexts } from '../conversation/messages/sharedProviders.js';
 import {
@@ -38,8 +39,8 @@ import {
   DisciplineMissingError,
   loadSharedDiscipline,
 } from '../runtime/promptPolicy.js';
-import { buildResearchLibraryTools } from '../agents/researchLibraryTools.js';
 import type { AiModel } from '../runtime/models.js';
+import { MEMORY_WRITE_RULES, REPOSITORY_FILE_TOOLING_RULES } from '../runtime/prompts.js';
 
 export interface AssistantChatDeps {
   model: AiModel | null;
@@ -57,13 +58,15 @@ export type AssistantChatStartResult =
   | { started: false; reason: 'busy' | 'no_model' | 'not_found' }
   | { started: true; done: Promise<void> };
 
-function buildSystemPrompt(disciplineText: string): string {
+function buildSystemPrompt(disciplineText: string, memoryWritable = false): string {
   const own = [
     "You are Kansoku's repository-level general research assistant. You are not attached to a chart or a research document.",
-    'You have read-only bash access for the longbridge CLI and .claude/skills/**/scripts/*.py scripts to inspect market, macro, and file data. You can also read repository files and complete skills, and search and read research-library documents.',
-    'When the user wants a custom chart or panel: read_skill(name="canvas") first — its layout skeleton is mandatory and save_canvas refuses until you have read it. Then fetch the numbers, embed them, and call save_canvas. To revise an existing canvas, read its journal/canvases/*.canvas.tsx path with bash (cat), then change it with one apply_patch call that carries every hunk. Free builds may keep at most 3 canvases; overwriting an existing slug is always allowed.',
-    'When a user message contains an @path (for example, @stocks/MU.md), read that file with bash (cat) before answering.',
+    'You have read-only bash access for the longbridge CLI and commands documented by skills loaded through read_skill. Use it to inspect market, macro, and repository data.',
+    REPOSITORY_FILE_TOOLING_RULES,
+    'When the user wants a custom chart or panel: read_skill(name="canvas") first — its layout skeleton is mandatory and save_canvas refuses until you have read it. Then fetch the numbers, embed them, and call save_canvas. To revise an existing canvas, read it with `cat -- journal/canvases/<slug>.canvas.tsx`, then change it with one apply_patch call that carries every hunk. Free builds may keep at most 3 canvases; overwriting an existing slug is always allowed.',
+    "When a user message contains an @path (for example, @stocks/MU.md), read it with `cat -- '<path>'` before answering.",
     'Cite the file path for conclusions drawn from files, and state the retrieval timestamp when citing live data.',
+    ...(memoryWritable ? ['', MEMORY_WRITE_RULES] : []),
   ].join('\n');
   return composeWithDiscipline(disciplineText, own);
 }
@@ -100,6 +103,7 @@ function prepareTurn(
         exec: deps.exec,
         onSkillRead: (name) => loadedSkills.add(name),
       });
+      const memoryWrite = memoryWriteMount();
       const messageEngine = sessionMessagesEngine(activeSessionId, () => [
         ...memoryProcessors(),
         new SkillCatalogProvider(toSkillContexts(skillIndex)),
@@ -107,16 +111,16 @@ function prepareTurn(
       return {
         symbol: 'ASSISTANT',
         origin: 'assistant',
-        systemPrompt: buildSystemPrompt(disciplineText),
+        systemPrompt: buildSystemPrompt(disciplineText, Boolean(memoryWrite)),
         tools: [
           ...researchTools,
-          ...buildResearchLibraryTools(rootDir),
           ...buildCanvasTools(CANVAS_DIR, {
             skillLoaded: canvasSkillLoaded,
           }),
           buildCanvasApplyPatchTool(rootDir, CANVAS_DIR, {
             skillLoaded: canvasSkillLoaded,
           }),
+          ...(memoryWrite ? buildMemoryWriteTools(memoryWrite) : []),
         ],
         transformContext: messageEngine.transformContext,
       };
@@ -171,7 +175,7 @@ async function assignSessionTitle(
   if (!session || !shouldAssignGeneratedTitle(session.title)) return;
 
   const fallback = titleFromText(text);
-  let title = fallback;
+  let title: string;
   try {
     title = deps.generateTitle
       ? sanitizeGeneratedTitle(await deps.generateTitle(text), fallback)

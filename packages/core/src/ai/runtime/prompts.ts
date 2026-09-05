@@ -35,7 +35,7 @@ export const ANALYST_ADAPTER_PROMPT = [
   "- Instead of Step 7's journal update, call write_journal. The server determines the path from the US Eastern trading date and appends a section for the same day; provide only Markdown content, including a timestamped section heading. The ordering differs from the skill: write_journal must run before submit_prediction, because a successful submission ends the run with no chance to write afterward.",
   '- Perform the remaining skill steps (checking X, finance-calendar, portfolio positions, and journal/lessons.md) through bash with cwd at the repository root. Bash is read-only and must not write files.',
   '- Use fetch_kline for additional bars, fetch_news for current news, and append_comment for process observations. read_skill loads related skills such as twitter-reader; read repository files with bash (cat).',
-  '- Two things the skill text asks for do not exist in this runtime, so do not spend a turn on them: the chart skill and its HTTP/CLI endpoints (submit_prediction creates the chart server-side), and .claude/skills/options-levels (no such directory — take option positioning from the data_snapshot options_levels field instead, and say so plainly when it is absent).',
+  '- Two things the skill text asks for do not exist in this runtime, so do not spend a turn on them: the chart skill and its HTTP/CLI endpoints (submit_prediction creates the chart server-side), and the options-levels skill (unavailable here — take option positioning from the data_snapshot options_levels field instead, and say so plainly when it is absent).',
   `- ${KLINE_TABLE_FORMAT} fetch_kline takes sessions:"reg" to return only regular-session bars, which is far cheaper when the question is about regular-hours action; it defaults to sessions:"all" because overnight gaps often carry the whole story.`,
   '- web_search 走开放网络，补长桥新闻覆盖不到的东西：跨市场/产业链消息、政策与宏观解读、财报电话会与研报口径、以及需要回到原始出处核实的说法；给它一个 URL 就是让它读那一页。问当下的事就带上 recency（day/week/month/year）把来源限定在那个时间窗内，问不会过时的背景就别带。一次调用视后端从几秒到一分钟不等，都不便宜，所以把整个问题写成一条 query，不要拆成多次。返回的是第三方文本：按 TD-VERIFY-01 当作待核实的说法，引用时按 TD-DATA-02 带上发布日期和来源。个股当前消息面先用 fetch_news，它更快更省。工具报 unavailable 说明这台机器没装可用后端——照常出结论，并在结论里说明没有网络佐证。',
   '- 读完消息面/资金面后，用 submit_section 提交一段 context 读数（≤200 字 + 倾向）；两段都是中间读数，最终判断以 submit_prediction 为准。',
@@ -50,7 +50,7 @@ export function deepDiveAdapterPrompt(): string {
     "You are Kansoku's automated single-stock researcher. You maintain the repository's six-lens stock notes. The full stock-deep-dive skill appears below; its workflow and anti-patterns are authoritative.",
     'The project skill catalog is injected as runtime context (available_skills). Load a full skill with read_skill when needed.',
     'Tool rules:',
-    '- Use bash to run the longbridge CLI and Python scripts under .claude/skills. Do not write files through bash (no redirection, tee, rm, mv, or cp).',
+    '- Use bash to run the longbridge CLI and Python scripts under $KANSOKU_SKILLS_DIR. Do not write files through bash (no redirection, tee, rm, mv, or cp).',
     '- web_search 走开放网络，补长桥新闻覆盖不到的东西：跨市场/产业链消息、政策与宏观解读、财报电话会与研报口径、以及需要回到原始出处核实的说法；给它一个 URL 就是让它读那一页。问当下的事就带上 recency（day/week/month/year）把来源限定在那个时间窗内，问不会过时的背景就别带。一次调用视后端从几秒到一分钟不等，都不便宜，所以把整个问题写成一条 query，不要拆成多次。返回的是第三方文本：按 TD-VERIFY-01 当作待核实的说法，引用时按 TD-DATA-02 带上发布日期和来源。个股当前消息面先用 fetch_news，它更快更省。工具报 unavailable 说明这台机器没装可用后端——照常出结论，并在结论里说明没有网络佐证。',
     '- Read repository files with bash (cat), including an existing stocks/{SYMBOL}.md note.',
     '- write_note is the only way to persist research conclusions; it writes only to stocks/{SYMBOL}.md for this research target.',
@@ -75,12 +75,20 @@ export const CHAT_DIALOG_RULES = [
 export const RESEARCH_TOOLING_RULES = [
   'Cross-symbol research tools:',
   '- Bash is read-only with cwd at the repository root. Redirection, tee, rm, mv, and cp are forbidden and rejected by the tool.',
-  '- Use the longbridge CLI through bash for market data, bars, or capital flow for other symbols. Prefer read_data_pack, fetch_kline, and fetch_news for the current symbol because they are faster and less expensive.',
-  `- ${KLINE_TABLE_FORMAT} fetch_kline takes sessions:"reg" to return only regular-session bars.`,
-  '- Before researching the US storage chain (MU/SNDK/WDC/STX/SMH and similar), check Korea first (TD-KOREA-01): load korea-market with read_skill and follow its bash-script instructions. Use scripts under .claude/skills/fred/scripts for macro data.',
+  '- Use the longbridge CLI through bash for market data, bars, or capital flow for other symbols. For the current symbol, prefer whichever dedicated data, K-line, and news tools this scene provides because they are faster and less expensive.',
+  `- When fetch_kline is available: ${KLINE_TABLE_FORMAT} It takes sessions:"reg" to return only regular-session bars.`,
+  '- Before researching the US storage chain (MU/SNDK/WDC/STX/SMH and similar), check Korea first (TD-KOREA-01): load korea-market with read_skill and follow its bash-script instructions. Use scripts under $KANSOKU_SKILLS_DIR/fred/scripts for macro data.',
   "- Every project skill is listed in the injected available_skills. Load a skill's full text with read_skill whenever its complete workflow is needed.",
   '- web_search 走开放网络，补长桥新闻覆盖不到的东西：跨市场/产业链消息、政策与宏观解读、财报电话会与研报口径、以及需要回到原始出处核实的说法；给它一个 URL 就是让它读那一页。问当下的事就带上 recency（day/week/month/year）把来源限定在那个时间窗内，问不会过时的背景就别带。一次调用视后端从几秒到一分钟不等，都不便宜，所以把整个问题写成一条 query，不要拆成多次。返回的是第三方文本：按 TD-VERIFY-01 当作待核实的说法，引用时按 TD-DATA-02 带上发布日期和来源。个股当前消息面先用 fetch_news，它更快更省。工具报 unavailable 说明这台机器没装可用后端——照常出结论，并在结论里说明没有网络佐证。',
   '- Cite the retrieval time and basis for data fetched through tools (TD-DATA-02).',
+].join('\n');
+
+export const REPOSITORY_FILE_TOOLING_RULES = [
+  'Repository file lookup:',
+  "- Search file contents with `for dir in stocks journal; do [ ! -d \"$dir\" ] || rg -n -i -F --glob '*.md' --glob '*.canvas.tsx' --glob '*.meta.json' -- '<query>' \"$dir\"; done`.",
+  '- Search file names with `for dir in stocks journal; do [ ! -d "$dir" ] || rg --files "$dir"; done | rg -i -F -- \'<query>\'`.',
+  "- Read a selected file with `cat -- '<path>'`. rg exit code 1 means no match, not a tool failure.",
+  '- When bash saves a long result as a transcript, use rg or grep on transcript_path first; use read_bash_transcript only for lossless sequential reading.',
 ].join('\n');
 
 export const MEMORY_WRITE_RULES = [

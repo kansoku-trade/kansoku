@@ -2,6 +2,7 @@ import { getShellRpc } from '../desktop/shellRpc';
 
 export interface OnboardingState {
   completed: boolean;
+  ripgrepAvailable: boolean;
 }
 
 export interface DesktopOnboardingBridge {

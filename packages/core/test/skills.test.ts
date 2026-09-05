@@ -252,6 +252,16 @@ describe('runtime reference chapters', () => {
     expect(text).not.toContain('not markdown');
   });
 
+  it('hides the external-agent skill path from app instructions', () => {
+    writeSkill(
+      'scripted',
+      '---\nname: scripted\ndescription: scripted\n---\npython3 .claude/skills/scripted/scripts/run.py',
+    );
+    const text = readSkill(loadSkillIndex([root], { runtime: 'app' }), 'scripted')!;
+    expect(text).toContain('python3 "$KANSOKU_SKILLS_DIR/scripted/scripts/run.py"');
+    expect(text).not.toContain('.claude/skills');
+  });
+
   it('appends the bench chapter and no app chapter for the bench runtime', () => {
     const text = readSkill(loadSkillIndex([root], { runtime: 'bench' }), 'td')!;
     expect(text).toContain('core body');

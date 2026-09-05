@@ -28,16 +28,21 @@ function writeSkill(dir: string, name: string, content: string) {
 }
 
 describe('buildResearchTools', () => {
-  it('returns read_skill and bash, plus web_search once a backend is configured', async () => {
+  it('returns shared skill, bash, and lossless transcript tools, plus configured web search', async () => {
     const bare = await buildResearchTools({ repoRoot, skillIndex: [], webSearchConfigured: false });
-    expect(bare.tools.map((t) => t.name)).toEqual(['read_skill', 'bash']);
+    expect(bare.tools.map((t) => t.name)).toEqual(['read_skill', 'bash', 'read_bash_transcript']);
 
     const configured = await buildResearchTools({
       repoRoot,
       skillIndex: [],
       webSearchConfigured: true,
     });
-    expect(configured.tools.map((t) => t.name)).toEqual(['read_skill', 'bash', 'web_search']);
+    expect(configured.tools.map((t) => t.name)).toEqual([
+      'read_skill',
+      'bash',
+      'read_bash_transcript',
+      'web_search',
+    ]);
   });
 
   it('uses a provided skillIndex as-is and returns it', async () => {
@@ -95,6 +100,15 @@ describe('buildResearchTools', () => {
     }
   });
 
+  it('default exec exposes stable skill roots and returns nonzero exit codes', async () => {
+    const exec = createDefaultExec(repoRoot);
+    const roots = await exec('printf "%s\n%s" "$KANSOKU_SKILLS_DIR" "$KANSOKU_APP_SKILLS_DIR"');
+    expect(roots.stdout).toBe(
+      `${join(repoRoot, '.claude', 'skills')}\n${join(repoRoot, 'packages', 'core', 'skills')}`,
+    );
+    expect((await exec('exit 1')).exitCode).toBe(1);
+  });
+
   it('uses a custom exec for the bash tool', async () => {
     const calls: string[] = [];
     const { tools } = await buildResearchTools({
@@ -111,6 +125,71 @@ describe('buildResearchTools', () => {
 
     expect(calls).toEqual(['echo hi']);
     expect((res.content[0] as { text: string }).text).toContain('custom-output');
+  });
+
+  it('spools long bash output and reads every character through transcript pages', async () => {
+    const expected = '甲乙丙'.repeat(12_000);
+    const { tools } = await buildResearchTools({
+      repoRoot,
+      skillIndex: [],
+      exec: async () => ({ stdout: expected, stderr: '' }),
+      webSearchConfigured: false,
+    });
+    const bash = tools.find((tool) => tool.name === 'bash')!;
+    const reader = tools.find((tool) => tool.name === 'read_bash_transcript')!;
+    const result = await bash.execute('bash-1', { command: 'large-output' });
+    const summary = (result.content[0] as { text: string }).text;
+    const id = /transcript_id=([^\n]+)/.exec(summary)?.[1];
+    const path = /transcript_path=([^\n]+)/.exec(summary)?.[1];
+    expect(id).toBeTruthy();
+    expect(path).toBeTruthy();
+
+    let offset = 0;
+    let received = '';
+    for (;;) {
+      const page = await reader.execute('read-1', {
+        transcript_id: id!,
+        offset,
+        limit: 10_000,
+      });
+      const payload = JSON.parse((page.content[0] as { text: string }).text) as {
+        text: string;
+        next_offset: number;
+        eof: boolean;
+      };
+      received += payload.text;
+      offset = payload.next_offset;
+      if (payload.eof) break;
+    }
+    expect(received).toBe(expected);
+    rmSync(path!);
+  });
+
+  it('reports rg no-match as an exit code instead of a failed tool call', async () => {
+    const { tools } = await buildResearchTools({
+      repoRoot,
+      skillIndex: [],
+      exec: async () => ({ stdout: '', stderr: '', exitCode: 1 }),
+      webSearchConfigured: false,
+    });
+    const result = await tools
+      .find((tool) => tool.name === 'bash')!
+      .execute('bash-1', {
+        command: 'rg query',
+      });
+    expect((result.content[0] as { text: string }).text).toBe('[exit_code 1]\n');
+  });
+
+  it('does not let transcript reads escape the managed temp directory', async () => {
+    const { tools } = await buildResearchTools({
+      repoRoot,
+      skillIndex: [],
+      webSearchConfigured: false,
+    });
+    const result = await tools
+      .find((tool) => tool.name === 'read_bash_transcript')!
+      .execute('read-1', { transcript_id: '../../etc/passwd' });
+    expect((result.content[0] as { text: string }).text).toBe('rejected: invalid transcript_id');
   });
 });
 

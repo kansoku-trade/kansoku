@@ -99,14 +99,13 @@ describe('ensureAgentKit', () => {
     );
 
     const bundledSkills = join(resourcesPath, 'skills');
-    for (const relativePath of ['.claude/skills', '.agent/skill']) {
-      const skillLink = join(dataRoot, relativePath);
-      expect(lstatSync(skillLink).isSymbolicLink()).toBe(true);
-      expect(realpathSync(skillLink)).toBe(realpathSync(bundledSkills));
-      expect(await readFile(join(skillLink, 'trading-discipline', 'SKILL.md'), 'utf8')).toBe(
-        '# Trading discipline\n',
-      );
-    }
+    const skillLink = join(dataRoot, '.agent', 'skill');
+    expect(lstatSync(skillLink).isSymbolicLink()).toBe(true);
+    expect(realpathSync(skillLink)).toBe(realpathSync(bundledSkills));
+    expect(await readFile(join(skillLink, 'trading-discipline', 'SKILL.md'), 'utf8')).toBe(
+      '# Trading discipline\n',
+    );
+    expect(() => lstatSync(join(dataRoot, '.claude', 'skills'))).toThrow();
 
     expect(await readFile(join(dataRoot, 'CLAUDE.md'), 'utf8')).toBe('CLAUDE TEMPLATE\n');
     expect(await readFile(join(dataRoot, 'AGENTS.md'), 'utf8')).toBe('AGENTS TEMPLATE\n');
@@ -140,31 +139,21 @@ describe('ensureAgentKit', () => {
     );
   });
 
-  it('repairs deleted, retargeted, and real-directory skill links on re-sync', async () => {
+  it('repairs the Agent Kit link and removes the legacy Claude link on re-sync', async () => {
     await ensureAgentKit({ agentKitDir: dataRoot, dataRoot, resourcesPath, db, now });
 
     const claudeSkills = join(dataRoot, '.claude', 'skills');
     const agentSkill = join(dataRoot, '.agent', 'skill');
-    const wrongTarget = await mkdtemp(join(tmpdir(), 'agent-kit-wrong-skills-'));
-    try {
-      await rm(claudeSkills, { force: true });
-      await rm(agentSkill, { force: true });
-      await mkdir(agentSkill, { recursive: true });
-      await writeFile(join(agentSkill, 'tampered.txt'), 'tampered', 'utf8');
+    await mkdir(join(dataRoot, '.claude'), { recursive: true });
+    await symlink(join(resourcesPath, 'skills'), claudeSkills, 'dir');
+    await rm(agentSkill, { force: true });
+    await mkdir(agentSkill, { recursive: true });
+    await writeFile(join(agentSkill, 'tampered.txt'), 'tampered', 'utf8');
 
-      await ensureAgentKit({ agentKitDir: dataRoot, dataRoot, resourcesPath, db, now });
+    await ensureAgentKit({ agentKitDir: dataRoot, dataRoot, resourcesPath, db, now });
 
-      expect(realpathSync(claudeSkills)).toBe(realpathSync(join(resourcesPath, 'skills')));
-      expect(realpathSync(agentSkill)).toBe(realpathSync(join(resourcesPath, 'skills')));
-
-      await rm(claudeSkills, { force: true });
-      await symlink(wrongTarget, claudeSkills, 'dir');
-      await ensureAgentKit({ agentKitDir: dataRoot, dataRoot, resourcesPath, db, now });
-
-      expect(realpathSync(claudeSkills)).toBe(realpathSync(join(resourcesPath, 'skills')));
-    } finally {
-      await rm(wrongTarget, { recursive: true, force: true });
-    }
+    expect(() => lstatSync(claudeSkills)).toThrow();
+    expect(realpathSync(agentSkill)).toBe(realpathSync(join(resourcesPath, 'skills')));
   });
 
   it('fails sync instead of creating dangling links when bundled skills are unavailable', async () => {
@@ -234,9 +223,7 @@ describe('ensureAgentKit', () => {
 
       expect(await readFile(join(agentKitDir, 'CLAUDE.md'), 'utf8')).toBe('CLAUDE TEMPLATE\n');
       await expect(readFile(join(dataRoot, 'CLAUDE.md'), 'utf8')).rejects.toThrow();
-      expect(realpathSync(join(agentKitDir, '.claude', 'skills'))).toBe(
-        realpathSync(join(resourcesPath, 'skills')),
-      );
+      expect(() => lstatSync(join(agentKitDir, '.claude', 'skills'))).toThrow();
       expect(realpathSync(join(agentKitDir, '.agent', 'skill'))).toBe(
         realpathSync(join(resourcesPath, 'skills')),
       );

@@ -63,8 +63,8 @@ extraResources:
     to: icon.png
   - from: ../../packages/core/drizzle
     to: drizzle
-  # Agent skill texts + scripts (intraday-signal, options-payoff, …). Linked
-  # into the data root at boot so analyst reassess can read SKILL.md.
+  # Agent skill texts + scripts (intraday-signal, options-payoff, …). The app
+  # reads this directory directly; it is not projected into the user workspace.
   # dist-skills is staged by scripts/stageSkills.mjs — .claude/skills holds
   # symlinks into .agents that electron-builder would copy as dead links.
   - from: dist-skills

@@ -70,7 +70,7 @@ describe('StepAi', () => {
     });
     const onNext = vi.fn();
 
-    renderWithClient(<StepAi onNext={onNext} />);
+    renderWithClient(<StepAi ripgrepAvailable onNext={onNext} />);
     await openApiKeyForm();
     expect(document.querySelectorAll('.onboarding-apikey-row')).toHaveLength(2);
     enterApiKey();
@@ -115,7 +115,7 @@ describe('StepAi', () => {
     });
     const onNext = vi.fn();
 
-    renderWithClient(<StepAi onNext={onNext} />);
+    renderWithClient(<StepAi ripgrepAvailable onNext={onNext} />);
     await openApiKeyForm();
     enterApiKey();
     fireEvent.click(screen.getByRole('button', { name: '保存并使用' }));
@@ -132,7 +132,7 @@ describe('StepAi', () => {
     );
     const onNext = vi.fn();
 
-    renderWithClient(<StepAi onNext={onNext} />);
+    renderWithClient(<StepAi ripgrepAvailable onNext={onNext} />);
     await openApiKeyForm();
     enterApiKey();
     fireEvent.change(screen.getByLabelText('Base URL（可选）'), {
@@ -145,5 +145,14 @@ describe('StepAi', () => {
     ).toBeTruthy();
     expect(onNext).not.toHaveBeenCalled();
     expect(putRole).not.toHaveBeenCalled();
+  });
+
+  it('shows a non-blocking install hint when rg is unavailable', async () => {
+    getCatalog.mockResolvedValue(catalog);
+    renderWithClient(<StepAi ripgrepAvailable={false} onNext={() => {}} />);
+
+    expect(await screen.findByText(/未检测到 rg/)).toBeTruthy();
+    expect(screen.getByText('brew install ripgrep')).toBeTruthy();
+    expect(screen.getByRole('button', { name: '填入' })).toBeTruthy();
   });
 });

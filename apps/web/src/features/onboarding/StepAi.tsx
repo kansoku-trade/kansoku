@@ -12,6 +12,7 @@ import { CodexLogo, KeyLogo, LobeHubLogo } from './brandLogos';
 
 const CODEX_INSTALL_COMMAND = 'npm install -g @openai/codex';
 const CODEX_INSTALL_URL = 'https://github.com/openai/codex';
+const RIPGREP_INSTALL_COMMAND = 'brew install ripgrep';
 
 const styles = stylex.create({
   card: {
@@ -179,7 +180,13 @@ interface ProviderRow {
   action: { label: string; accent: boolean; onClick: () => void };
 }
 
-export function StepAi({ onNext }: { onNext: () => void }) {
+export function StepAi({
+  ripgrepAvailable,
+  onNext,
+}: {
+  ripgrepAvailable: boolean;
+  onNext: () => void;
+}) {
   const { data: catalog, loading } = useQuery<Catalog>('onboarding.catalog', fetchCatalog);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -311,6 +318,17 @@ export function StepAi({ onNext }: { onNext: () => void }) {
       <p className={`onboarding-explainer ${stylex.props(styles.explainer).className}`}>
         AI 用于盘中快评、升级分析、深度研究和追问。可以先跳过，之后随时在设置里配置。
       </p>
+
+      {!ripgrepAvailable ? (
+        <div className={`onboarding-install ${stylex.props(styles.install).className}`}>
+          <p className={`onboarding-explainer ${stylex.props(styles.explainer).className}`}>
+            未检测到 rg。AI 仍可使用，但无法可靠搜索研究库；安装后重新打开 Kansoku 即可。
+          </p>
+          <pre className={`onboarding-cli-command ${stylex.props(styles.cliCommand).className}`}>
+            <code>{RIPGREP_INSTALL_COMMAND}</code>
+          </pre>
+        </div>
+      ) : null}
 
       <div {...stylex.props(styles.aiList)}>
         {rows.map((row) => (

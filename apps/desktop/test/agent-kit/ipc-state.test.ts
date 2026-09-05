@@ -1,5 +1,5 @@
 import { existsSync, lstatSync } from 'node:fs';
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -461,8 +461,11 @@ describe('agent-kit ipc clean', () => {
   it('removes managed skill symlinks without deleting a user replacement directory', async () => {
     const instance = new AgentKitIpc();
     await instance.forceSync();
-    expect(lstatSync(join(dataRoot, '.claude', 'skills')).isSymbolicLink()).toBe(true);
+    expect(existsSync(join(dataRoot, '.claude', 'skills'))).toBe(false);
     expect(lstatSync(join(dataRoot, '.agent', 'skill')).isSymbolicLink()).toBe(true);
+
+    await mkdir(join(dataRoot, '.claude'), { recursive: true });
+    await symlink(join(resourcesPath, 'skills'), join(dataRoot, '.claude', 'skills'), 'dir');
 
     await rm(join(dataRoot, '.agent', 'skill'), { force: true });
     await mkdir(join(dataRoot, '.agent', 'skill'), { recursive: true });

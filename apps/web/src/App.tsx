@@ -44,6 +44,7 @@ export function App() {
       <Onboarding
         step={gate.step}
         status={gate.details}
+        ripgrepAvailable={gate.ripgrepAvailable}
         onRecheck={gate.recheck}
         onComplete={gate.completeOnboarding}
       />

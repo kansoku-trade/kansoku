@@ -18,18 +18,24 @@ describe('createOnboardingFileStore', () => {
   });
 
   it('reports not-completed when the file is absent', async () => {
-    const store = createOnboardingFileStore(path);
-    expect(await store.getState()).toEqual({ completed: false });
+    const store = createOnboardingFileStore(path, async () => true);
+    expect(await store.getState()).toEqual({ completed: false, ripgrepAvailable: true });
   });
 
   it('persists completion and reads it back', async () => {
-    const store = createOnboardingFileStore(path);
-    expect(await store.complete()).toEqual({ completed: true });
-    expect(await createOnboardingFileStore(path).getState()).toEqual({ completed: true });
+    const store = createOnboardingFileStore(path, async () => true);
+    expect(await store.complete()).toEqual({ completed: true, ripgrepAvailable: true });
+    expect(await createOnboardingFileStore(path, async () => true).getState()).toEqual({
+      completed: true,
+      ripgrepAvailable: true,
+    });
   });
 
   it('treats a corrupt file as not-completed', async () => {
     await writeFile(path, 'not json');
-    expect(await createOnboardingFileStore(path).getState()).toEqual({ completed: false });
+    expect(await createOnboardingFileStore(path, async () => false).getState()).toEqual({
+      completed: false,
+      ripgrepAvailable: false,
+    });
   });
 });

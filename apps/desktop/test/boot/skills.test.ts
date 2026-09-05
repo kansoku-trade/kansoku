@@ -1,8 +1,8 @@
-import { existsSync, mkdirSync, mkdtempSync, readlinkSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, rmSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { bundledSkillsPath, ensureBundledSkills } from '@desktop/boot/skills.js';
+import { bundledSkillsPath, removeLegacyBundledSkillsLink } from '@desktop/boot/skills.js';
 
 const temps: string[] = [];
 
@@ -18,32 +18,35 @@ afterEach(() => {
   }
 });
 
-describe('ensureBundledSkills', () => {
-  it('symlinks dataRoot/.claude/skills to the bundled skills tree', () => {
+describe('removeLegacyBundledSkillsLink', () => {
+  it('removes only the old link to the bundled skills tree', () => {
     const dataRoot = tempDir('kansoku-data-');
     const bundled = tempDir('kansoku-skills-');
-    mkdirSync(join(bundled, 'intraday-signal'), { recursive: true });
-    writeFileSync(join(bundled, 'intraday-signal', 'SKILL.md'), '# skill\n');
+    mkdirSync(join(dataRoot, '.claude'), { recursive: true });
+    symlinkSync(bundled, join(dataRoot, '.claude', 'skills'), 'dir');
 
-    expect(ensureBundledSkills(dataRoot, bundled)).toBe(true);
-    const target = join(dataRoot, '.claude', 'skills');
-    expect(existsSync(join(target, 'intraday-signal', 'SKILL.md'))).toBe(true);
-    expect(readlinkSync(target)).toBe(bundled);
+    expect(removeLegacyBundledSkillsLink(dataRoot, bundled)).toBe(true);
+    expect(existsSync(join(dataRoot, '.claude'))).toBe(false);
   });
 
-  it('is a no-op when the symlink already points at the bundled tree', () => {
+  it('leaves a user-owned skills directory untouched', () => {
     const dataRoot = tempDir('kansoku-data-');
     const bundled = tempDir('kansoku-skills-');
-    mkdirSync(join(bundled, 'intraday-signal'), { recursive: true });
-    writeFileSync(join(bundled, 'intraday-signal', 'SKILL.md'), '# skill\n');
+    mkdirSync(join(dataRoot, '.claude', 'skills'), { recursive: true });
 
-    expect(ensureBundledSkills(dataRoot, bundled)).toBe(true);
-    expect(ensureBundledSkills(dataRoot, bundled)).toBe(true);
+    expect(removeLegacyBundledSkillsLink(dataRoot, bundled)).toBe(false);
+    expect(existsSync(join(dataRoot, '.claude', 'skills'))).toBe(true);
   });
 
-  it('returns false when the bundled skills dir is missing', () => {
+  it('leaves a link to another target untouched', () => {
     const dataRoot = tempDir('kansoku-data-');
-    expect(ensureBundledSkills(dataRoot, join(dataRoot, 'missing-skills'))).toBe(false);
+    const bundled = tempDir('kansoku-skills-');
+    const userSkills = tempDir('user-skills-');
+    mkdirSync(join(dataRoot, '.claude'), { recursive: true });
+    symlinkSync(userSkills, join(dataRoot, '.claude', 'skills'), 'dir');
+
+    expect(removeLegacyBundledSkillsLink(dataRoot, bundled)).toBe(false);
+    expect(existsSync(join(dataRoot, '.claude', 'skills'))).toBe(true);
   });
 });
 

@@ -1,51 +1,24 @@
-import {
-  existsSync,
-  lstatSync,
-  mkdirSync,
-  readlinkSync,
-  realpathSync,
-  rmSync,
-  symlinkSync,
-} from 'node:fs';
+import { existsSync, lstatSync, readlinkSync, realpathSync, rmSync, rmdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
 /**
- * Packaged builds ship agent skills under Resources/skills. The kernel still
- * looks for `.claude/skills` under TRADE_PROJECT_ROOT (data root), and bash
- * tools run with that root as cwd. Link the bundled tree into the data root
- * so SKILL.md reads and script paths both work.
+ * Older packaged builds exposed Resources/skills as Workspace/.claude/skills.
+ * Skill discovery and bash now resolve the bundled directory independently, so
+ * remove only that exact legacy link and leave user-owned directories untouched.
  */
-export function ensureBundledSkills(dataRoot: string, bundledSkillsDir: string): boolean {
-  if (!existsSync(bundledSkillsDir)) return false;
-
+export function removeLegacyBundledSkillsLink(dataRoot: string, bundledSkillsDir: string): boolean {
   const target = join(dataRoot, '.claude', 'skills');
-  mkdirSync(dirname(target), { recursive: true });
-
-  if (existsSync(target)) {
-    try {
-      const st = lstatSync(target);
-      if (st.isSymbolicLink()) {
-        const current = readlinkSync(target);
-        const currentAbs = current.startsWith('/') ? current : join(dirname(target), current);
-        if (samePath(currentAbs, bundledSkillsDir)) return true;
-        rmSync(target);
-      } else if (st.isDirectory() && existsSync(join(target, 'intraday-signal', 'SKILL.md'))) {
-        // User/data already has a real skills tree — leave it alone.
-        return true;
-      } else {
-        rmSync(target, { recursive: true, force: true });
-      }
-    } catch {
-      try {
-        rmSync(target, { recursive: true, force: true });
-      } catch {
-        return false;
-      }
-    }
-  }
-
   try {
-    symlinkSync(bundledSkillsDir, target, 'dir');
+    if (!existsSync(target) || !lstatSync(target).isSymbolicLink()) return false;
+    const current = readlinkSync(target);
+    const currentAbs = current.startsWith('/') ? current : join(dirname(target), current);
+    if (!samePath(currentAbs, bundledSkillsDir)) return false;
+    rmSync(target);
+    try {
+      rmdirSync(dirname(target));
+    } catch {
+      // Keep .claude when it contains user-owned files.
+    }
     return true;
   } catch {
     return false;

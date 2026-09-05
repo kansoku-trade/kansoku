@@ -10,8 +10,10 @@ import {
   symlinkSync,
 } from 'node:fs';
 import path from 'node:path';
+import { removeLegacyBundledSkillsLink } from '../boot/skills.js';
 
-const AGENT_KIT_SKILL_LINK_PATHS = ['.claude/skills', '.agent/skill'] as const;
+const AGENT_KIT_SKILL_LINK_PATHS = ['.agent/skill'] as const;
+const LEGACY_CLAUDE_SKILL_LINK = '.claude/skills';
 
 function bundledSkillProbe(skillsDir: string): string {
   let entries: string[];
@@ -62,6 +64,7 @@ function isValidSkillLink(dest: string, skillsDir: string, probe: string): boole
 export function ensureAgentKitSkillLinks(agentKitDir: string, resourcesPath: string): void {
   const skillsDir = path.join(resourcesPath, 'skills');
   const probe = bundledSkillProbe(skillsDir);
+  removeLegacyBundledSkillsLink(agentKitDir, skillsDir);
 
   for (const relativePath of AGENT_KIT_SKILL_LINK_PATHS) {
     const dest = path.join(agentKitDir, relativePath);
@@ -80,7 +83,7 @@ export function ensureAgentKitSkillLinks(agentKitDir: string, resourcesPath: str
 
 /** Remove Kit-managed links without deleting real directories placed there by a user. */
 export function cleanAgentKitSkillLinks(agentKitDir: string): void {
-  for (const relativePath of AGENT_KIT_SKILL_LINK_PATHS) {
+  for (const relativePath of [...AGENT_KIT_SKILL_LINK_PATHS, LEGACY_CLAUDE_SKILL_LINK]) {
     const dest = path.join(agentKitDir, relativePath);
     try {
       if (lstatSync(dest).isSymbolicLink()) rmSync(dest, { force: true });

@@ -13,19 +13,13 @@ import { assertCanvasQuota } from './quotaEnforce.js';
 import { projectCandleFeedTf } from './candleFeed.js';
 import { applyChunks, parsePatch, PatchError } from './applyPatch.js';
 import { checkCanvasSource, reviewCanvasStructure } from './check.js';
-import { type CanvasDoc, loadCanvas, listCanvases, saveCanvas, saveCanvasData } from './store.js';
+import { type CanvasDoc, loadCanvas, saveCanvas, saveCanvasData } from './store.js';
 
 const saveSchema = Type.Object({
   slug: Type.String(),
   title: Type.String(),
   source: Type.String(),
 });
-
-const readSchema = Type.Object({
-  slug: Type.String(),
-});
-
-const listSchema = Type.Object({});
 
 const saveDataSchema = Type.Object({
   slug: Type.String(),
@@ -165,12 +159,6 @@ export function buildCanvasApplyPatchTool(
   };
 }
 
-function shapeOf(value: unknown): string {
-  if (Array.isArray(value)) return `array[${value.length}]`;
-  if (value && typeof value === 'object') return `object{${Object.keys(value).join(',')}}`;
-  return typeof value;
-}
-
 export function buildCanvasTools(dir: string, opts: CanvasToolsOptions = {}): AgentTool[] {
   const { now, skillLoaded, licensed = isLicensed } = opts;
   const save: AgentTool<typeof saveSchema> = {
@@ -200,33 +188,6 @@ export function buildCanvasTools(dir: string, opts: CanvasToolsOptions = {}): Ag
       }
       return textResult(`saved slug=${result.doc.slug} title=${result.doc.title}`);
     },
-  };
-
-  const read: AgentTool<typeof readSchema> = {
-    name: 'read_canvas',
-    label: 'Read Canvas',
-    description:
-      'Read an existing canvas source and its last check record. Call this only when the current source is not already in this conversation or when you need the check record.',
-    parameters: readSchema,
-    execute: async (_id, params) => {
-      const doc = await loadCanvas(dir, params.slug);
-      if (!doc) return textResult(`rejected: canvas not found: ${params.slug}`);
-      const { data, ...rest } = doc;
-      const dataFiles = Object.entries(data).map(([name, value]) => ({
-        name,
-        bytes: Buffer.byteLength(JSON.stringify(value), 'utf8'),
-        shape: shapeOf(value),
-      }));
-      return textResult(JSON.stringify({ ...rest, dataFiles }));
-    },
-  };
-
-  const list: AgentTool<typeof listSchema> = {
-    name: 'list_canvases',
-    label: 'List Canvases',
-    description: 'List saved canvases as JSON [{ slug, title, mtime }].',
-    parameters: listSchema,
-    execute: async () => textResult(JSON.stringify(await listCanvases(dir))),
   };
 
   const saveData: AgentTool<typeof saveDataSchema> = {
@@ -300,5 +261,5 @@ export function buildCanvasTools(dir: string, opts: CanvasToolsOptions = {}): Ag
     },
   };
 
-  return [save, read, list, saveData, snapshotCandles];
+  return [save, saveData, snapshotCandles];
 }

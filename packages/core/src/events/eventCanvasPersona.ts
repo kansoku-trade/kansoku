@@ -3,7 +3,7 @@ import { canvasComponentNames } from '@kansoku/canvas/names';
 import { buildCanvasTools, CANVAS_SKILL_NAME } from '../canvas/tools.js';
 import { buildReadFileTool } from '../ai/agents/agentTools/fileTools.js';
 import { createAgentSession } from '../ai/agents/agentSession.js';
-import { loadSkillIndex, readSkill } from '../ai/agents/skills.js';
+import { loadSkillIndex, readSkill, type SkillMeta } from '../ai/agents/skills.js';
 import { PROJECT_ROOT, skillSearchDirs } from '../platform/env.js';
 import { aiConfig } from '../ai/runtime/models.js';
 
@@ -11,9 +11,16 @@ import type { EventEvidencePack } from './evidencePack.js';
 
 // This persona has no read_skill tool and writes a canvas on every run, so there is nothing
 // to save by loading the guide on demand — inject it the way the analyst persona does.
-function canvasSkillText(): string | null {
+function canvasSkill(): { meta: SkillMeta; text: string } | null {
   try {
-    return readSkill(loadSkillIndex(skillSearchDirs(PROJECT_ROOT), { repoRoot: PROJECT_ROOT, runtime: 'app' }), CANVAS_SKILL_NAME);
+    const index = loadSkillIndex(skillSearchDirs(PROJECT_ROOT), {
+      repoRoot: PROJECT_ROOT,
+      runtime: 'app',
+    });
+    const meta = index.find((skill) => skill.name === CANVAS_SKILL_NAME);
+    if (!meta) return null;
+    const text = readSkill(index, CANVAS_SKILL_NAME);
+    return text ? { meta, text } : null;
   } catch {
     return null;
   }
@@ -40,7 +47,7 @@ const SYSTEM_PROMPT = [
   'If a price or peer item has coverage "unavailable", write that gap in the canvas. Do not present later bars as the event window.',
   `Use only these @kansoku/canvas names: ${canvasComponentNames(['layout', 'text', 'data', 'analysis']).join(', ')}.`,
   'Table columns are {key, header}[] and rows are objects, or string[] columns with array rows.',
-  'The canvas skill below is authoritative for layout. For exact prop shapes, read_file the declarations under packages/core/skills/canvas/sdk/ rather than guessing — an invented prop is silently dropped.',
+  'The canvas skill below is authoritative for layout. In this persona, use read_file with sdk/core.d.ts (and another sdk/*.d.ts only when needed) instead of the bash paths mentioned by the skill.',
   'Arrange the evidence as TSX, then call save_canvas.',
   'You must use the exact slug you are given. The same event always overwrites the same canvas.',
 ].join('\n');
@@ -55,18 +62,18 @@ export async function runEventCanvasPersona(input: {
   if (!model) {
     throw new Error('no model configured for event canvas');
   }
-  const skillText = canvasSkillText();
+  const skill = canvasSkill();
   const session = createAgentSession({
     layer: 'assistant',
     symbol: input.pack.event.symbols[0] ?? 'MACRO',
     origin: `event-canvas:${input.pack.event.id}`,
     model,
-    systemPrompt: skillText
+    systemPrompt: skill
       ? [
           SYSTEM_PROMPT,
           '',
           '<activated_skill name="canvas">',
-          skillText,
+          skill.text,
           '</activated_skill>',
         ].join('\n')
       : SYSTEM_PROMPT,
@@ -74,7 +81,7 @@ export async function runEventCanvasPersona(input: {
     // persona invented props (`Callout title`, `Source url`) that silently dropped.
     tools: [
       ...bindCanvasSlug(buildCanvasTools(input.canvasDir), input.slug),
-      buildReadFileTool(PROJECT_ROOT),
+      buildReadFileTool(skill?.meta.dir ?? PROJECT_ROOT),
     ],
   });
   await session.runTurn(

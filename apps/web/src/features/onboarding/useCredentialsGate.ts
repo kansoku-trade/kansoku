@@ -15,6 +15,7 @@ export function useCredentialsGate(): {
   step: OnboardingStep | null;
   bridge: ReturnType<typeof getDesktopCredentialsBridge>;
   details: CredentialsGetResult | null;
+  ripgrepAvailable: boolean;
   recheck: () => void;
   completeOnboarding: () => Promise<void>;
 } {
@@ -59,5 +60,13 @@ export function useCredentialsGate(): {
     reloadOnboarding();
   }, [onboardingBridge, reloadOnboarding]);
 
-  return { status, step, bridge, details: data ?? null, recheck: reload, completeOnboarding };
+  return {
+    status,
+    step,
+    bridge,
+    details: data ?? null,
+    ripgrepAvailable: onboardingState?.ripgrepAvailable ?? true,
+    recheck: reload,
+    completeOnboarding,
+  };
 }

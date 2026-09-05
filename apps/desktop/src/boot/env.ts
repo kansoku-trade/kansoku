@@ -11,7 +11,7 @@ import {
 } from '../storage/migration.js';
 import { readWorkspaceModeSync } from '../storage/workspaceMode.js';
 import { resolveDesktopStoragePaths, scaffoldDataRoot } from './paths.js';
-import { bundledSkillsPath, ensureBundledSkills } from './skills.js';
+import { bundledSkillsPath, removeLegacyBundledSkillsLink } from './skills.js';
 
 // package.json's "name" is the scoped npm id ("@kansoku/desktop"), which
 // Electron would otherwise use verbatim for app.getPath("userData").
@@ -47,7 +47,10 @@ export async function prepareDesktopStorage(options?: {
   sourceRootOverride?: string;
   skipMigration?: boolean;
 }): Promise<StorageMigrationResult | null> {
-  if (!isPackaged) return null;
+  if (!isPackaged) {
+    scaffoldDataRoot(dataRoot);
+    return null;
+  }
 
   if (workspaceMode.mode === 'icloud') await assertWorkspaceAvailable(dataRoot);
 
@@ -66,7 +69,7 @@ export async function prepareDesktopStorage(options?: {
 
   scaffoldDataRoot(dataRoot);
   const skillsDir = bundledSkillsPath(process.resourcesPath);
-  ensureBundledSkills(dataRoot, skillsDir);
+  removeLegacyBundledSkillsLink(dataRoot, skillsDir);
   if (!result?.performed) await syncAgentKitAtBoot(false);
   return result;
 }

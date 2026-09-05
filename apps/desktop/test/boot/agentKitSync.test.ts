@@ -19,7 +19,7 @@ vi.mock('../../src/boot/paths.js', () => ({
 }));
 vi.mock('../../src/boot/skills.js', () => ({
   bundledSkillsPath: vi.fn(() => '/tmp/agent-kit-boot-smoke-skills'),
-  ensureBundledSkills: vi.fn(),
+  removeLegacyBundledSkillsLink: vi.fn(),
 }));
 const migrateLegacyStorage = vi.hoisted(() =>
   vi.fn(async (input: { beforeComplete?: () => Promise<void> }) => {

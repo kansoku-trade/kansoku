@@ -1,4 +1,4 @@
-import { mkdtempSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -47,31 +47,24 @@ function timeframe(offset: number) {
 }
 
 describe('buildCanvasTools', () => {
-  it('exposes save_canvas, read_canvas, list_canvases, save_canvas_data, snapshot_candles', () => {
+  it('exposes only the canvas write tools', () => {
     const { byName } = tools();
     expect(Object.keys(byName).sort()).toEqual([
-      'list_canvases',
-      'read_canvas',
       'save_canvas',
       'save_canvas_data',
       'snapshot_candles',
     ]);
   });
 
-  it('saves then reads a canvas as JSON', async () => {
-    const { byName } = tools();
+  it('saves a canvas file', async () => {
+    const { byName, dir } = tools();
     const saved = await byName.save_canvas.execute('c1', {
       slug: 'mu-demo',
       title: 'MU demo',
       source,
     });
     expect(textOf(saved)).toBe('saved slug=mu-demo title=MU demo');
-
-    const read = await byName.read_canvas.execute('c2', { slug: 'mu-demo' });
-    const doc = JSON.parse(textOf(read)) as { slug: string; title: string; source: string };
-    expect(doc.slug).toBe('mu-demo');
-    expect(doc.title).toBe('MU demo');
-    expect(doc.source).toBe(source);
+    expect(readFileSync(join(dir, 'mu-demo.canvas.tsx'), 'utf8')).toBe(source);
   });
 
   it('rejects invalid source with a rejected: prefix', async () => {
@@ -84,20 +77,6 @@ describe('buildCanvasTools', () => {
     const text = textOf(result);
     expect(text.startsWith('rejected:')).toBe(true);
     expect(text).toMatch(/export default/i);
-  });
-
-  it('read of a missing canvas is rejected', async () => {
-    const { byName } = tools();
-    const result = await byName.read_canvas.execute('c1', { slug: 'missing' });
-    expect(textOf(result)).toBe('rejected: canvas not found: missing');
-  });
-
-  it('lists saved canvases', async () => {
-    const { byName } = tools();
-    await byName.save_canvas.execute('c1', { slug: 'alpha', title: 'Alpha', source });
-    const listed = await byName.list_canvases.execute('c2', {});
-    const items = JSON.parse(textOf(listed)) as { slug: string; title: string }[];
-    expect(items).toEqual([expect.objectContaining({ slug: 'alpha', title: 'Alpha' })]);
   });
 });
 
@@ -115,7 +94,7 @@ describe('canvas skill gate', () => {
       source,
     });
     expect(textOf(refused)).toContain('read_skill(name="canvas")');
-    expect(textOf(await byName.read_canvas.execute('2', { slug: 'gated' }))).toContain('not found');
+    expect(existsSync(join(dir, 'gated.canvas.tsx'))).toBe(false);
 
     read = true;
     expect(
@@ -155,11 +134,11 @@ describe('save_canvas_data', () => {
 
   it('is gated by skillLoaded', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'canvas-gate-'));
-    let read = false;
+    const read = false;
     const byName = Object.fromEntries(
       buildCanvasTools(dir, { skillLoaded: () => read }).map((tool) => [tool.name, tool]),
     );
-    await byName.save_canvas.execute('c0', { slug: 'mu-demo', title: 'MU demo', source: source });
+    await byName.save_canvas.execute('c0', { slug: 'mu-demo', title: 'MU demo', source });
     const refused = await byName.save_canvas_data.execute('c1', {
       slug: 'mu-demo',
       name: 'bars',
@@ -320,35 +299,6 @@ describe('snapshot_candles', () => {
   });
 });
 
-describe('read_canvas data listing', () => {
-  it('returns dataFiles metadata instead of raw data content', async () => {
-    build.buildChart.mockResolvedValueOnce({
-      built: {
-        kind: 'intraday',
-        timeframes: { m5: timeframe(1), m15: timeframe(2), h1: timeframe(3) },
-      },
-    });
-    const { byName } = tools();
-    await byName.save_canvas.execute('c1', { slug: 'mu-demo', title: 'MU demo', source });
-    await byName.save_canvas_data.execute('c2', {
-      slug: 'mu-demo',
-      name: 'bars',
-      json: '[1,2,3]',
-    });
-    await byName.snapshot_candles.execute('c3', { slug: 'mu-demo', name: 'snap', symbol: 'MU' });
-
-    const read = await byName.read_canvas.execute('c4', { slug: 'mu-demo' });
-    const doc = JSON.parse(textOf(read)) as {
-      data?: unknown;
-      dataFiles: { name: string; bytes: number; shape: string }[];
-    };
-    expect(doc.data).toBeUndefined();
-    const byName2 = Object.fromEntries(doc.dataFiles.map((f) => [f.name, f]));
-    expect(byName2.bars.shape).toBe('array[3]');
-    expect(byName2.snap.shape).toMatch(/^object\{/);
-  });
-});
-
 describe('canvas apply_patch', () => {
   const patchFor = (path: string, body: string): string =>
     `*** Begin Patch\n*** Update File: ${path}\n${body}\n*** End Patch`;
@@ -374,9 +324,9 @@ describe('canvas apply_patch', () => {
     expect(textOf(result)).toContain(
       'edited path=journal/canvases/mu-demo.canvas.tsx slug=mu-demo',
     );
-    const read = await byName.read_canvas.execute('read', { slug: 'mu-demo' });
-    expect(textOf(read)).toContain('<Text>updated</Text>');
-    expect(textOf(read)).toContain('Demo 2');
+    const updated = readFileSync(join(dir, 'mu-demo.canvas.tsx'), 'utf8');
+    expect(updated).toContain('<Text>updated</Text>');
+    expect(updated).toContain('Demo 2');
   });
 
   it('rejects paths outside the canvas directory and hunks that do not match', async () => {
@@ -426,8 +376,7 @@ describe('canvas apply_patch', () => {
     });
 
     expect(textOf(result)).toContain('edit failed: journal/canvases/nvda-demo.canvas.tsx');
-    const read = await byName.read_canvas.execute('read', { slug: 'mu-demo' });
-    expect(textOf(read)).toContain('<Text>ok</Text>');
+    expect(readFileSync(join(dir, 'mu-demo.canvas.tsx'), 'utf8')).toContain('<Text>ok</Text>');
   });
 });
 
