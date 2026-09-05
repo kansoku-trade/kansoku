@@ -91,11 +91,30 @@ const isErrorBody = (value: unknown): value is { error: string; hint?: string } 
 export const usageFromEnvelope = (env: { usage?: ChatUsage }): ChatUsage | null =>
   env.usage ?? null;
 
+export function lastUserRow(rows: readonly ChatRow[]): ChatRow | undefined {
+  for (let index = rows.length - 1; index >= 0; index -= 1) {
+    const row = rows[index];
+    if (row?.kind === 'user' && row.text?.trim()) return row;
+  }
+  return undefined;
+}
+
+export function postMessageInput(
+  text: string,
+  options?: { replaceLast?: boolean },
+): { text: string; replaceLast?: boolean } {
+  return options?.replaceLast ? { text, replaceLast: true } : { text };
+}
+
 type ConversationKind = 'chart' | 'research' | 'assistant';
 
 interface ConversationAdapter {
   fetchChat: (id: string) => Promise<ChatEnvelope>;
-  send: (id: string, text: string) => Promise<{ status: number; body: unknown }>;
+  send: (
+    id: string,
+    text: string,
+    options?: { replaceLast?: boolean },
+  ) => Promise<{ status: number; body: unknown }>;
   abort: (id: string) => Promise<unknown>;
   channel: (id: string) => Parameters<typeof subscribeChannel>[0];
   suggest: ((id: string) => Promise<{ suggestions: string[] }>) | null;
@@ -104,7 +123,7 @@ interface ConversationAdapter {
 export const conversationAdapters: Record<ConversationKind, ConversationAdapter> = {
   chart: {
     fetchChat: async (id) => (await client.chat.get({ id })) as unknown as ChatEnvelope,
-    send: (id, text) => client.chat.postMessage({ id, text }),
+    send: (id, text, options) => client.chat.postMessage({ id, ...postMessageInput(text, options) }),
     abort: (id) => client.chat.abort({ id }),
     channel: (id) => ({ kind: 'chat', id }),
     suggest: (id) => client.chat.suggestions({ id }),
@@ -112,14 +131,16 @@ export const conversationAdapters: Record<ConversationKind, ConversationAdapter>
   research: {
     fetchChat: async (id) =>
       (await client.research.getChat({ path: id })) as unknown as ChatEnvelope,
-    send: (id, text) => client.research.postMessage({ path: id, text }),
+    send: (id, text, options) =>
+      client.research.postMessage({ path: id, ...postMessageInput(text, options) }),
     abort: (id) => client.research.abortChat({ path: id }),
     channel: (id) => ({ kind: 'research-chat', path: id }),
     suggest: (id) => client.research.suggestions({ path: id }),
   },
   assistant: {
     fetchChat: async (id) => (await client.assistant.getChat({ id })) as unknown as ChatEnvelope,
-    send: (id, text) => client.assistant.postMessage({ id, text }),
+    send: (id, text, options) =>
+      client.assistant.postMessage({ id, ...postMessageInput(text, options) }),
     abort: (id) => client.assistant.abortChat({ id }),
     channel: (id) => ({ kind: 'assistant-chat', id }),
     suggest: null,
@@ -143,8 +164,9 @@ export interface ChatSessionState {
   loaded: boolean;
   suggestions: string[];
   usage: ChatUsage | null;
-  send: (text: string) => Promise<ChatSendResult>;
+  send: (text: string, options?: { replaceLast?: boolean }) => Promise<ChatSendResult>;
   retryLast: () => Promise<ChatSendResult>;
+  replaceLast: (text: string) => Promise<ChatSendResult>;
   abort: () => Promise<void>;
   ensureSuggestions: () => void;
 }
@@ -313,10 +335,11 @@ function useConversationSession(
   }, [adapter, id, enabled, reload]);
 
   const send = useCallback(
-    async (text: string): Promise<ChatSendResult> => {
+    async (text: string, options?: { replaceLast?: boolean }): Promise<ChatSendResult> => {
       const trimmed = text.trim();
       if (!trimmed) return { ok: false, error: '内容不能为空' };
       const optimisticId = `optimistic-${Date.now()}`;
+      const replaceLast = options?.replaceLast === true;
       // Counted on intent, not on delivery: a message the backend then refuses is still the
       // trader having reached for the assistant, which is what the feature column measures.
       trackFeatureUsed('ai_chat', { surface: kind });
@@ -325,12 +348,28 @@ function useConversationSession(
       setBusy(true);
       setLiveBeats([]);
       setSuggestions([]);
-      setRows((prev) => [
-        ...prev,
-        { id: optimisticId, ts: new Date().toISOString(), kind: 'user', text: trimmed, optimistic: true },
-      ]);
+      setRows((prev) => {
+        if (!replaceLast) {
+          return [
+            ...prev,
+            {
+              id: optimisticId,
+              ts: new Date().toISOString(),
+              kind: 'user',
+              text: trimmed,
+              optimistic: true,
+            },
+          ];
+        }
+        const last = lastUserRow(prev);
+        if (!last) return prev;
+        const lastIndex = prev.lastIndexOf(last);
+        const kept = prev.slice(0, lastIndex + 1);
+        if (last.text === trimmed) return kept;
+        return [...kept.slice(0, lastIndex), { ...last, text: trimmed }];
+      });
       try {
-        const result = await adapter.send(id, trimmed);
+        const result = await adapter.send(id, trimmed, options);
         if (result.status === 202) {
           sendPendingRef.current = false;
           return { ok: true };
@@ -342,19 +381,21 @@ function useConversationSession(
           : `HTTP ${result.status}`;
         setBusy(false);
         setHint(message);
-        setRows((prev) => prev.filter((row) => row.id !== optimisticId));
+        if (replaceLast) reload(message);
+        else setRows((prev) => prev.filter((row) => row.id !== optimisticId));
         sendPendingRef.current = false;
         return { ok: false, error: message };
       } catch (err) {
         const message = errorMessage(err);
         setBusy(false);
         setHint(message);
-        setRows((prev) => prev.filter((row) => row.id !== optimisticId));
+        if (replaceLast) reload(message);
+        else setRows((prev) => prev.filter((row) => row.id !== optimisticId));
         sendPendingRef.current = false;
         return { ok: false, error: message };
       }
     },
-    [adapter, id, kind],
+    [adapter, id, kind, reload],
   );
 
   const abort = useCallback(async (): Promise<void> => {
@@ -367,10 +408,15 @@ function useConversationSession(
   }, [adapter, id]);
 
   const retryLast = useCallback((): Promise<ChatSendResult> => {
-    const lastUser = [...rows].reverse().find((row) => row.kind === 'user' && row.text?.trim());
+    const lastUser = lastUserRow(rows);
     if (!lastUser?.text) return Promise.resolve({ ok: false, error: '没有可重试的问题' });
-    return send(lastUser.text);
+    return send(lastUser.text, { replaceLast: true });
   }, [rows, send]);
+
+  const replaceLast = useCallback(
+    (text: string): Promise<ChatSendResult> => send(text, { replaceLast: true }),
+    [send],
+  );
 
   const ensureSuggestions = useCallback(() => {
     if (suggestionsRequestedRef.current) return;
@@ -402,6 +448,7 @@ function useConversationSession(
     usage,
     send,
     retryLast,
+    replaceLast,
     abort,
     ensureSuggestions,
   };

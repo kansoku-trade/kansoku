@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { conversationAdapters, usageFromEnvelope } from './useChatSession';
+import {
+  conversationAdapters,
+  lastUserRow,
+  postMessageInput,
+  usageFromEnvelope,
+  type ChatRow,
+} from './useChatSession';
 
 describe('conversationAdapters', () => {
   it('wires the assistant kind to the assistant-chat channel', () => {
@@ -27,6 +33,36 @@ describe('conversationAdapters', () => {
   it('has a suggestions adapter for chart and research', () => {
     expect(conversationAdapters.chart.suggest).not.toBeNull();
     expect(conversationAdapters.research.suggest).not.toBeNull();
+  });
+});
+
+describe('lastUserRow', () => {
+  it('returns the last user row with text', () => {
+    const rows: ChatRow[] = [
+      { id: 'u1', ts: 't', kind: 'user', text: 'a' },
+      { id: 'a1', ts: 't', kind: 'assistant', text: 'b' },
+      { id: 'u2', ts: 't', kind: 'user', text: 'c' },
+      { id: 'e1', ts: 't', kind: 'error', text: 'fail' },
+    ];
+    expect(lastUserRow(rows)?.id).toBe('u2');
+  });
+
+  it('skips blank user rows', () => {
+    const rows: ChatRow[] = [
+      { id: 'u1', ts: 't', kind: 'user', text: 'a' },
+      { id: 'u2', ts: 't', kind: 'user', text: '   ' },
+    ];
+    expect(lastUserRow(rows)?.id).toBe('u1');
+  });
+});
+
+describe('postMessageInput', () => {
+  it('omits replaceLast unless asked', () => {
+    expect(postMessageInput('hi')).toEqual({ text: 'hi' });
+    expect(postMessageInput('hi', { replaceLast: true })).toEqual({
+      text: 'hi',
+      replaceLast: true,
+    });
   });
 });
 
