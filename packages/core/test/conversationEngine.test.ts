@@ -1,7 +1,7 @@
 import type { AgentEvent, AgentMessage } from '@earendil-works/pi-agent-core';
 import { describe, expect, it } from 'vitest';
 import { promptText, type AiAgentFactory } from '../src/ai/agents/agentSession.js';
-import { stampSentAt } from '../src/ai/conversation/conversationShared.js';
+import { stampSentAt, stripSentAt } from '../src/ai/conversation/conversationShared.js';
 import {
   type ConversationEvent,
   type ConversationPreparedTurn,
@@ -104,6 +104,23 @@ function memoryStore() {
             payload: message,
           });
         }
+      },
+      replaceLastUserTurn: async (_sessionId: string, text: string) => {
+        let lastUserIndex = -1;
+        let firstUserIndex = -1;
+        for (let index = 0; index < rows.length; index += 1) {
+          if (rows[index]?.role !== 'user') continue;
+          if (firstUserIndex === -1) firstUserIndex = index;
+          lastUserIndex = index;
+        }
+        if (lastUserIndex === -1) return { ok: false as const, reason: 'no_user' as const };
+        rows.splice(lastUserIndex + 1);
+        const last = rows[lastUserIndex];
+        last.payload = { ...last.payload, content: stampSentAt(text, 0), timestamp: 0 };
+        return { ok: true as const, isFirstUser: firstUserIndex === lastUserIndex };
+      },
+      updateTitle: async (_sessionId: string, title: string) => {
+        titles.push(`retitle:${title}`);
       },
     },
   };
@@ -254,6 +271,55 @@ describe('createConversationEngine persistence', () => {
     });
     expect(store.rows[1].payload).toEqual(reply);
     expect(events).toEqual([{ event: 'done' }]);
+  });
+
+  it('replaceLast reuses the last user row instead of appending another', async () => {
+    const engine = makeEngine();
+    const store = memoryStore();
+    const first = await engine.run('k-replace', 'first', makeTurn(store, noopFactory()));
+    if (first.started) await first.done;
+    const second = await engine.run('k-replace', 'second', makeTurn(store, noopFactory()));
+    if (second.started) await second.done;
+    expect(store.rows.filter((row) => row.role === 'user')).toHaveLength(2);
+
+    const factory: AiAgentFactory = (config) => ({
+      prompt: async () => {},
+      abort: () => {},
+      state: {
+        messages: [
+          ...(config.messages ?? []),
+          { role: 'user', content: stampSentAt('second edited', 0), timestamp: 0 },
+          assistantMessage('replay'),
+        ],
+      },
+    });
+    const replay = await engine.run('k-replace', 'second edited', makeTurn(store, factory), {
+      replaceLast: true,
+    });
+    expect(replay.started).toBe(true);
+    if (replay.started) await replay.done;
+
+    const users = store.rows.filter((row) => row.role === 'user');
+    expect(users).toHaveLength(2);
+    expect(stripSentAt(String(users[1].payload.content))).toBe('second edited');
+    expect(store.rows.filter((row) => row.role === 'assistant').at(-1)?.payload).toEqual(
+      assistantMessage('replay'),
+    );
+  });
+
+  it('replaceLast with no user message emits error and leaves history empty', async () => {
+    const engine = makeEngine();
+    const store = memoryStore();
+    const events: ConversationEvent[] = [];
+    engine.onEvent('k-empty', (event) => events.push(event));
+    await store.adapter.createSession('t');
+    const result = await engine.run('k-empty', 'hi', makeTurn(store, noopFactory()), {
+      replaceLast: true,
+    });
+    expect(result.started).toBe(true);
+    if (result.started) await result.done;
+    expect(store.rows).toEqual([]);
+    expect(events.some((event) => event.event === 'error')).toBe(true);
   });
 
   it('notifies the non-blocking after-turn hook with the persisted visible turn', async () => {

@@ -11,7 +11,11 @@ import {
   stringifyPayload,
   synthesizePartialAssistantMessage,
 } from './conversationShared.js';
-import { type ConversationMessageRow, titleFromText } from './conversationStore.js';
+import {
+  type ConversationMessageRow,
+  type ReplaceLastUserTurnResult,
+  titleFromText,
+} from './conversationStore.js';
 import type { AiModel } from '../runtime/models.js';
 import { createRunLock } from '../agents/runLock.js';
 import type { AiUsageLogContext } from '../runtime/usage.js';
@@ -26,11 +30,15 @@ export type ConversationEvent =
   | { event: 'error'; message: string };
 
 // Methods are passed around as free functions — implementations must not depend on `this`.
+export type ConversationRunOptions = { replaceLast?: boolean };
+
 export interface ConversationTurnStore {
   getSession(): Promise<{ id: string } | null>;
   createSession(title: string): Promise<{ id: string }>;
   listMessages(sessionId: string): Promise<ConversationMessageRow[]>;
   appendMessages(sessionId: string, messages: AgentMessage[]): Promise<void>;
+  replaceLastUserTurn(sessionId: string, text: string): Promise<ReplaceLastUserTurnResult>;
+  updateTitle?(sessionId: string, title: string): Promise<void>;
 }
 
 export interface ConversationTurnGate {
@@ -75,7 +83,12 @@ export interface ConversationEngine<TInput, TReason extends string> {
   turnState(key: string): { busy: boolean; partial: string };
   abort(key: string): boolean;
   emit(key: string, event: ConversationEvent): void;
-  run(key: string, text: string, input: TInput): Promise<ConversationStartResult<TReason>>;
+  run(
+    key: string,
+    text: string,
+    input: TInput,
+    options?: ConversationRunOptions,
+  ): Promise<ConversationStartResult<TReason>>;
 }
 
 interface TurnState {
@@ -211,23 +224,47 @@ export function createConversationEngine<TInput, TReason extends string>(
     text: string,
     turn: ConversationPreparedTurn,
     state: TurnState,
+    options?: ConversationRunOptions,
   ): Promise<void> {
     try {
       const nowFn = turn.now ?? Date.now;
 
       let session = await turn.store.getSession();
-      if (!session) session = await turn.store.createSession(titleFromText(text));
+      if (options?.replaceLast) {
+        if (!session) {
+          broadcast(key, { event: 'error', message: '没有可重试的问题' });
+          return;
+        }
+        const replaced = await turn.store.replaceLastUserTurn(session.id, text);
+        if (!replaced.ok) {
+          broadcast(key, { event: 'error', message: '没有可重试的问题' });
+          return;
+        }
+        if (replaced.isFirstUser) await turn.store.updateTitle?.(session.id, titleFromText(text));
+      } else if (!session) {
+        session = await turn.store.createSession(titleFromText(text));
+      }
 
       const history = await turn.store.listMessages(session.id);
-      const historyPayloads = history.map((row) => row.payload);
-
-      const sentAt = nowFn();
-      const userMessage: AgentMessage = {
-        role: 'user',
-        content: stampSentAt(text, sentAt),
-        timestamp: sentAt,
-      };
-      await turn.store.appendMessages(session.id, [userMessage]);
+      let historyPayloads = history.map((row) => row.payload);
+      let userMessage: AgentMessage;
+      if (options?.replaceLast) {
+        const last = history.at(-1);
+        if (!last || last.role !== 'user') {
+          broadcast(key, { event: 'error', message: '没有可重试的问题' });
+          return;
+        }
+        userMessage = last.payload;
+        historyPayloads = history.slice(0, -1).map((row) => row.payload);
+      } else {
+        const sentAt = nowFn();
+        userMessage = {
+          role: 'user',
+          content: stampSentAt(text, sentAt),
+          timestamp: sentAt,
+        };
+        await turn.store.appendMessages(session.id, [userMessage]);
+      }
 
       const plan = await turn.buildTurn(session.id);
       const toolLabels = new Map(plan.tools.map((tool) => [tool.name, tool.label]));
@@ -261,7 +298,7 @@ export function createConversationEngine<TInput, TReason extends string>(
           config.logLabels.persistFailure,
           session.id,
           agentSession.agent,
-          history.length,
+          historyPayloads.length,
           state.partial,
           turn.model,
           nowFn(),
@@ -296,7 +333,7 @@ export function createConversationEngine<TInput, TReason extends string>(
           turn.store.appendMessages,
           session.id,
           agentSession.agent,
-          history.length,
+          historyPayloads.length,
         );
         const errorMessage = agentSession.agent.state?.errorMessage;
 
@@ -345,7 +382,7 @@ export function createConversationEngine<TInput, TReason extends string>(
           config.logLabels.persistFailure,
           session.id,
           agentSession.agent,
-          history.length,
+          historyPayloads.length,
           state.partial,
           turn.model,
           nowFn(),
@@ -364,6 +401,7 @@ export function createConversationEngine<TInput, TReason extends string>(
     key: string,
     text: string,
     input: TInput,
+    options?: ConversationRunOptions,
   ): Promise<ConversationStartResult<TReason>> {
     if (!lock.tryAcquire(key)) return { started: false, reason: 'busy' };
 
@@ -382,7 +420,7 @@ export function createConversationEngine<TInput, TReason extends string>(
     const state: TurnState = { busy: true, partial: '', aborted: false, abort: null };
     turnStates.set(key, state);
 
-    const done = executeTurn(key, text, prepared.turn, state).finally(() => {
+    const done = executeTurn(key, text, prepared.turn, state, options).finally(() => {
       lock.release(key);
       turnStates.delete(key);
     });
