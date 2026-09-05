@@ -22,7 +22,7 @@ export interface ChatSuggestions {
 
 export interface ChatApi {
   get(input: { id: string }): Promise<ChatState>;
-  postMessage(input: { id: string; text: string }): Promise<PostMessageResult>;
+  postMessage(input: { id: string; text: string; replaceLast?: boolean }): Promise<PostMessageResult>;
   abort(input: { id: string }): Promise<AbortResult>;
   suggestions(input: { id: string }): Promise<ChatSuggestions>;
 }

@@ -13,6 +13,14 @@ function requireText(body: { text?: unknown } | null): string {
   return body.text;
 }
 
+function requireReplaceLast(body: { replaceLast?: unknown } | null): boolean | undefined {
+  if (body?.replaceLast === undefined) return undefined;
+  if (typeof body.replaceLast !== 'boolean') {
+    throw new ClientError('`replaceLast` must be a boolean', '{"text":"...","replaceLast":true}');
+  }
+  return body.replaceLast;
+}
+
 function requireTitle(body: { title?: unknown } | null): string | undefined {
   if (body?.title !== undefined && typeof body.title !== 'string') {
     throw new ClientError('`title` must be a string');
@@ -51,8 +59,15 @@ export class AssistantController {
   }
 
   @Post('/sessions/:id/chat/messages')
-  async postMessage(@Param('id') id: string, @Body() body: { text?: unknown } | null) {
-    const result = await assistantChatService.postMessage({ id, text: requireText(body) });
+  async postMessage(
+    @Param('id') id: string,
+    @Body() body: { text?: unknown; replaceLast?: unknown } | null,
+  ) {
+    const result = await assistantChatService.postMessage({
+      id,
+      text: requireText(body),
+      replaceLast: requireReplaceLast(body),
+    });
     return jsonResponse(result.status, result.body);
   }
 

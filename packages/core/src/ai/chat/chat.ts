@@ -30,11 +30,14 @@ import {
   createSession,
   getSessionByChartId,
   listMessages,
+  replaceLastUserTurn,
+  updateTitle,
 } from './chatStore.js';
 import { listComments as defaultListComments } from '../personas/comments.js';
 import {
   type ConversationEvent,
   type ConversationPreparedTurn,
+  type ConversationRunOptions,
   createConversationEngine,
 } from '../conversation/conversationEngine.js';
 import { stringifyPayload, stripSentAt, textOf } from '../conversation/conversationShared.js';
@@ -357,6 +360,8 @@ function prepareTurn(
       createSession: (title) => createSession({ chartId, symbol, title }),
       listMessages: (sessionId) => listMessages(sessionId),
       appendMessages: (sessionId, messages) => appendMessages(sessionId, messages),
+      replaceLastUserTurn: (sessionId, text) => replaceLastUserTurn(sessionId, text),
+      updateTitle: (sessionId, title) => updateTitle(sessionId, title),
     },
     buildTurn: async (activeSessionId) => {
       const listCommentsFn = deps.listComments ?? defaultListComments;
@@ -485,6 +490,7 @@ export function runChatTurn(
   chartId: string,
   text: string,
   deps: ChatDeps,
+  options?: ConversationRunOptions,
 ): Promise<ChatStartResult> {
-  return engine.run(chartId, text, deps);
+  return engine.run(chartId, text, deps, options);
 }

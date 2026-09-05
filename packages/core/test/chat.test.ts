@@ -4,7 +4,7 @@ import type { AgentEvent, AgentMessage, AgentTool } from '@earendil-works/pi-age
 import { describe, expect, it, vi } from 'vitest';
 import type { ChartDoc, CockpitComment } from '@kansoku/shared/types';
 import { promptText, type AiAgentFactory } from '../src/ai/agents/agentSession.js';
-import { stampSentAt } from '../src/ai/conversation/conversationShared.js';
+import { stampSentAt, stripSentAt } from '../src/ai/conversation/conversationShared.js';
 import type { ChatMessageRow } from '../src/ai/chat/chatStore.js';
 import type { AiModel } from '../src/ai/runtime/models.js';
 
@@ -400,6 +400,41 @@ describe('runChatTurn persistence', () => {
       { role: 'user', content: stampSentAt('第一问', 0), timestamp: 0 },
       assistantMessage('答一'),
     ]);
+  });
+
+  it('replaceLast keeps a single last user message and drops the previous assistant reply', async () => {
+    const chartId = 'replace-last-1';
+    function factory(reply: string): AiAgentFactory {
+      return (config) => ({
+        prompt: async () => {},
+        abort: () => {},
+        state: {
+          messages: [
+            ...(config.messages ?? []),
+            { role: 'user', content: 'own-copy', timestamp: 0 },
+            assistantMessage(reply),
+          ],
+        },
+      });
+    }
+
+    const turn1 = await runChatTurn(chartId, '问1', baseDeps({ agentFactory: factory('答1') }));
+    expect(turn1.started).toBe(true);
+    if (turn1.started) await turn1.done;
+
+    const turn2 = await runChatTurn(
+      chartId,
+      '问1改',
+      baseDeps({ agentFactory: factory('答2') }),
+      { replaceLast: true },
+    );
+    expect(turn2.started).toBe(true);
+    if (turn2.started) await turn2.done;
+
+    const rows = await expectSessionRows(chartId);
+    expect(rows.map((row) => row.role)).toEqual(['user', 'assistant']);
+    expect(stripSentAt(String((rows[0].payload as { content: string }).content))).toBe('问1改');
+    expect(rows[1].payload).toEqual(assistantMessage('答2'));
   });
 });
 

@@ -51,7 +51,9 @@ export const chatService: ChatApi = {
 
   async postMessage(input) {
     const text = parseClientInput(clientMessageSchema, input.text, 'e.g. {"text": "..."}');
-    const result = await runChatTurn(input.id, text, buildDeps());
+    const result = await runChatTurn(input.id, text, buildDeps(), {
+      replaceLast: input.replaceLast === true,
+    });
     if (result.started) {
       result.done.catch((err) => console.error('chat: turn failed', err));
       return { status: 202, body: { accepted: true } };

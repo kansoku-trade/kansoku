@@ -15,6 +15,7 @@ import {
   type AssistantSession,
   getAssistantSession,
   listAssistantMessages,
+  replaceLastUserTurn,
 } from './assistantChatStore.js';
 import {
   generateSessionTitle,
@@ -26,6 +27,7 @@ import { aiConfig } from '../runtime/models.js';
 import type { ChatEvent } from '../chat/chat.js';
 import {
   type ConversationPreparedTurn,
+  type ConversationRunOptions,
   createConversationEngine,
 } from '../conversation/conversationEngine.js';
 import { memoryProcessors } from '../conversation/messages/memoryProviders.js';
@@ -81,6 +83,7 @@ function prepareTurn(
       createSession: () => Promise.resolve(session),
       listMessages: (id) => listAssistantMessages(id, deps.db),
       appendMessages: (id, messages) => appendAssistantMessages(id, messages, deps.db),
+      replaceLastUserTurn: (id, text) => replaceLastUserTurn(id, text, deps.db),
     },
     buildTurn: async (activeSessionId) => {
       const disciplineText = deps.disciplineText ?? loadSharedDiscipline(rootDir);
@@ -191,8 +194,9 @@ export async function runAssistantChatTurn(
   sessionId: string,
   text: string,
   deps: AssistantChatDeps,
+  options?: ConversationRunOptions,
 ): Promise<AssistantChatStartResult> {
-  const result = await engine.run(sessionId, text, deps);
+  const result = await engine.run(sessionId, text, deps, options);
   if (!result.started) return result;
   const titled = assignSessionTitle(sessionId, text, deps).catch((error) => {
     console.warn('assistant chat: title generation failed', error);

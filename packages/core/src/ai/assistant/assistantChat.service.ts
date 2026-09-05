@@ -104,7 +104,9 @@ export const assistantChatService: AssistantApi = {
 
   async postMessage(input) {
     const text = parseClientInput(assistantMessageSchema, input.text, '{"text":"..."}');
-    const result = await runAssistantChatTurn(input.id, text, buildDeps());
+    const result = await runAssistantChatTurn(input.id, text, buildDeps(), {
+      replaceLast: input.replaceLast === true,
+    });
     if (result.started) {
       result.done.catch((error) => console.error('assistant chat: turn failed', error));
       return { status: 202, body: { accepted: true } };

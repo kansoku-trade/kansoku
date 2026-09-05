@@ -153,7 +153,11 @@ export interface ResearchApi {
   get(input: { path: string }): Promise<ResearchDocument>;
   create(input: ResearchCreateInput): Promise<ResearchCreateResult>;
   getChat(input: { path: string }): Promise<ResearchChatState>;
-  postMessage(input: { path: string; text: string }): Promise<ResearchPostMessageResult>;
+  postMessage(input: {
+    path: string;
+    text: string;
+    replaceLast?: boolean;
+  }): Promise<ResearchPostMessageResult>;
   abortChat(input: { path: string }): Promise<ResearchAbortResult>;
   suggestions(input: { path: string }): Promise<{ suggestions: string[] }>;
   getRefresh(input: { path: string }): Promise<ResearchRefreshTask | null>;

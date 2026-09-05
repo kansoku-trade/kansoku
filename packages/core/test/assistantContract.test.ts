@@ -42,6 +42,14 @@ beforeEach(() => {
 
 afterEach(() => setAssistantChatDepsForTests(null));
 
+async function waitIdle(sessionId: string): Promise<void> {
+  for (let attempt = 0; attempt < 50; attempt += 1) {
+    if (!assistantChatTurnState(sessionId).busy) return;
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+  throw new Error(`session ${sessionId} still busy`);
+}
+
 describe('assistantChatService session lifecycle', () => {
   it('creates a session with a default title when omitted', async () => {
     setAssistantChatDepsForTests({ model, db });
@@ -255,6 +263,41 @@ describe('assistantChatService postMessage result mapping', () => {
     const second = await assistantChatService.postMessage({ id: session.id, text: '第二条' });
     expect(second).toEqual({ status: 409, body: { error: '上一条还在回答中' } });
     release();
+  });
+
+  it('replaceLast keeps a single user message', async () => {
+    const factory: AiAgentFactory = (config) => ({
+      prompt: async () => {},
+      abort: () => undefined,
+      state: {
+        messages: [
+          ...(config.messages ?? []),
+          { role: 'user', content: 'own', timestamp: Date.now() } as AgentMessage,
+          assistantMessage('答'),
+        ],
+      },
+    });
+    setAssistantChatDepsForTests({
+      model,
+      db,
+      rootDir: process.cwd(),
+      agentFactory: factory,
+      disciplineText: '# trading-discipline\n测试纪律。',
+    });
+    const { session } = await assistantChatService.createSession({});
+    const first = await assistantChatService.postMessage({ id: session.id, text: '第一问' });
+    expect(first.status).toBe(202);
+    await waitIdle(session.id);
+    const second = await assistantChatService.postMessage({
+      id: session.id,
+      text: '第一问改',
+      replaceLast: true,
+    });
+    expect(second.status).toBe(202);
+    await waitIdle(session.id);
+    const chat = await assistantChatService.getChat({ id: session.id });
+    expect(chat.messages.filter((row) => row.kind === 'user')).toHaveLength(1);
+    expect(chat.messages.find((row) => row.kind === 'user')?.text).toBe('第一问改');
   });
 });
 
