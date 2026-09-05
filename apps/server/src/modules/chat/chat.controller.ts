@@ -16,7 +16,10 @@ export class ChatController {
   }
 
   @Post('/:id/chat/messages')
-  async postMessage(@Param('id') id: string, @Body() body: { text?: unknown } | null) {
+  async postMessage(
+    @Param('id') id: string,
+    @Body() body: { text?: unknown; replaceLast?: unknown } | null,
+  ) {
     const text = body?.text;
     if (typeof text !== 'string') {
       throw new ClientError(
@@ -24,7 +27,14 @@ export class ChatController {
         'e.g. {"text": "..."}',
       );
     }
-    const result = await chatService.postMessage({ id, text });
+    if (body?.replaceLast !== undefined && typeof body.replaceLast !== 'boolean') {
+      throw new ClientError('`replaceLast` must be a boolean', 'e.g. {"text": "...", "replaceLast": true}');
+    }
+    const result = await chatService.postMessage({
+      id,
+      text,
+      replaceLast: body.replaceLast === true,
+    });
     return jsonResponse(result.status, result.body);
   }
 

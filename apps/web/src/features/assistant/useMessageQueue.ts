@@ -16,6 +16,7 @@ function nextQueueId(): string {
 
 export interface UseMessageQueueOptions {
   busy: boolean;
+  paused?: boolean;
   onSend: (text: string) => Promise<{ ok: boolean; error?: string }>;
 }
 
@@ -25,7 +26,11 @@ export interface MessageQueueState {
   remove: (id: string) => void;
 }
 
-export function useMessageQueue({ busy, onSend }: UseMessageQueueOptions): MessageQueueState {
+export function useMessageQueue({
+  busy,
+  paused = false,
+  onSend,
+}: UseMessageQueueOptions): MessageQueueState {
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const queueRef = useRef(queue);
   queueRef.current = queue;
@@ -45,9 +50,9 @@ export function useMessageQueue({ busy, onSend }: UseMessageQueueOptions): Messa
   useEffect(() => {
     const prevBusy = wasBusyRef.current;
     wasBusyRef.current = busy;
-    if (flushingRef.current) return;
+    if (paused || flushingRef.current) return;
 
-    const action = nextQueueAction(prevBusy, busy, queueRef.current);
+    const action = nextQueueAction(prevBusy, busy, queueRef.current, paused);
     const head = action.send;
     if (!head) return;
 
@@ -69,7 +74,7 @@ export function useMessageQueue({ busy, onSend }: UseMessageQueueOptions): Messa
       .finally(() => {
         flushingRef.current = false;
       });
-  }, [busy]);
+  }, [busy, paused]);
 
   return { queue, enqueue, remove };
 }

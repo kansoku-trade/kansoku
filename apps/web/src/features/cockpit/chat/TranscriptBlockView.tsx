@@ -5,6 +5,7 @@ import { Markdown } from '../markdown';
 import { collectSources } from './collectSources.js';
 import { formatUsageLine } from './formatChatUsage.js';
 import { MessageActions } from './MessageActions.js';
+import { UserMessageBlock } from './UserMessageBlock.js';
 import { blockKey, type TranscriptBlock } from './presentTranscript.js';
 import { ReasoningFold } from './ReasoningFold.js';
 import { SourcesFold } from './SourcesFold.js';
@@ -12,11 +13,6 @@ import { TurnRuntime } from './TurnRuntime.js';
 import { ToolGroupRow, ToolRow } from './ToolCallViews.js';
 import { WorkedFold } from './WorkedFold.js';
 import type { ChatChromeVariant } from './ChatComposer';
-
-const chatBubbleRise = stylex.keyframes({
-  from: { opacity: 0, transform: 'translateY(16px) scale(0.98)' },
-  to: { opacity: 1, transform: 'translateY(0) scale(1)' },
-});
 
 const chatThinkingBar = stylex.keyframes({
   '0%, 100%': { transform: 'scaleY(0.25)', opacity: 0.45 },
@@ -32,9 +28,6 @@ const styles = stylex.create({
   row: {
     display: 'flex',
   },
-  rowUser: {
-    justifyContent: 'flex-end',
-  },
   assistantMessage: {
     minWidth: 0,
     maxWidth: '100%',
@@ -44,21 +37,6 @@ const styles = stylex.create({
     fontSize: fontSizes.base,
     lineHeight: 1.5,
     overflowWrap: 'anywhere',
-  },
-  userBubbleEnter: {
-    'animationName': chatBubbleRise,
-    'animationDuration': '0.26s',
-    'animationTimingFunction': 'cubic-bezier(0.2, 0.9, 0.3, 1)',
-    'animationFillMode': 'both',
-    'transformOrigin': 'bottom right',
-    '@media (prefers-reduced-motion: reduce)': {
-      animationName: 'none',
-    },
-  },
-  userBubble: {
-    backgroundColor: colors.backgroundElement,
-    color: colors.textPrimary,
-    padding: '6px 10px',
   },
   assistantBubble: {
     maxWidth: '100%',
@@ -143,15 +121,6 @@ const styles = stylex.create({
   },
 });
 
-const userBubbleChrome = stylex.create({
-  assistant: {
-    borderRadius: radii.userBubble,
-  },
-  panel: {
-    borderRadius: radii.default,
-  },
-});
-
 const errorRowChrome = stylex.create({
   assistant: {
     borderRadius: radii.lg,
@@ -172,6 +141,11 @@ export function TranscriptBlockView({
   onOpenCanvas,
   onRetry,
   showActions = false,
+  showUserActions = false,
+  userActions,
+  editing = false,
+  onSubmitEdit,
+  onCancelEdit,
 }: {
   block: TranscriptBlock;
   variant?: ChatChromeVariant;
@@ -181,16 +155,30 @@ export function TranscriptBlockView({
   onOpenCanvas?: (slug: string) => void;
   onRetry?: () => void;
   showActions?: boolean;
+  showUserActions?: boolean;
+  userActions?: {
+    onRetry?: () => void;
+    onEdit?: () => void;
+    retryDisabled?: boolean;
+    editDisabled?: boolean;
+  };
+  editing?: boolean;
+  onSubmitEdit?: (text: string) => void;
+  onCancelEdit?: () => void;
 }) {
   if (block.type === 'user') {
     return (
-      <div className={`chat-row chat-row--user ${stylex.props(styles.row, styles.rowUser).className}`}>
-        <div
-          className={`chat-bubble chat-bubble--user ${stylex.props(styles.bubble, styles.userBubble, block.row.optimistic && styles.userBubbleEnter, userBubbleChrome[variant]).className}${userBubbleClassName ? ` ${userBubbleClassName}` : ''}`}
-        >
-          {block.row.text}
-        </div>
-      </div>
+      <UserMessageBlock
+        text={block.row.text ?? ''}
+        optimistic={block.row.optimistic}
+        variant={variant}
+        userBubbleClassName={userBubbleClassName}
+        showUserActions={showUserActions && !editing}
+        userActions={userActions}
+        editing={editing}
+        onSubmitEdit={onSubmitEdit}
+        onCancelEdit={onCancelEdit}
+      />
     );
   }
   if (block.type === 'assistant') {
@@ -265,6 +253,11 @@ export function TranscriptBlockView({
             insertClassName={insertClassName}
             onOpenCanvas={onOpenCanvas}
             onRetry={onRetry}
+            showUserActions={showUserActions}
+            userActions={userActions}
+            editing={editing}
+            onSubmitEdit={onSubmitEdit}
+            onCancelEdit={onCancelEdit}
           />
         ))}
       </WorkedFold>

@@ -32,7 +32,13 @@ export interface QueueAction {
   queue: QueueItem[];
 }
 
-export function nextQueueAction(prevBusy: boolean, busy: boolean, queue: QueueItem[]): QueueAction {
+export function nextQueueAction(
+  prevBusy: boolean,
+  busy: boolean,
+  queue: QueueItem[],
+  paused = false,
+): QueueAction {
+  if (paused) return { send: null, queue };
   const becameIdle = prevBusy && !busy;
   if (!becameIdle || !canAutoSend(queue)) return { send: null, queue };
   const { head } = popQueueHead(queue);

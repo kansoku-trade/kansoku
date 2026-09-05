@@ -99,6 +99,11 @@ describe('nextQueueAction', () => {
   it('returns null when the queue is empty', () => {
     expect(nextQueueAction(true, false, []).send).toBeNull();
   });
+
+  it('does not dequeue while paused', () => {
+    const queue = [{ id: 'q1', text: 'a', error: null }];
+    expect(nextQueueAction(true, false, queue, true)).toEqual({ send: null, queue });
+  });
 });
 
 describe('decideSubmitAction', () => {

@@ -12,6 +12,7 @@ vi.mock('gsap', () => ({
 }));
 
 vi.mock('../cockpit/chat/useChatSession', () => ({
+  lastUserRow: () => undefined,
   useAssistantChatSession: () => ({
     session: {
       id: 'chat-1',
@@ -34,6 +35,7 @@ vi.mock('../cockpit/chat/useChatSession', () => ({
     usage: null,
     send: vi.fn(),
     retryLast: vi.fn(),
+    replaceLast: vi.fn(),
     abort: vi.fn(),
     ensureSuggestions: vi.fn(),
   }),

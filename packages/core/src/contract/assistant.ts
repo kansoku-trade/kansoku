@@ -41,7 +41,11 @@ export interface AssistantApi {
   updateSession(input: { id: string; title: string }): Promise<{ session: AssistantSessionMeta }>;
   deleteSession(input: { id: string }): Promise<{ ok: true }>;
   getChat(input: { id: string }): Promise<AssistantChatState>;
-  postMessage(input: { id: string; text: string }): Promise<AssistantPostMessageResult>;
+  postMessage(input: {
+    id: string;
+    text: string;
+    replaceLast?: boolean;
+  }): Promise<AssistantPostMessageResult>;
   abortChat(input: { id: string }): Promise<{ ok: boolean }>;
 }
 

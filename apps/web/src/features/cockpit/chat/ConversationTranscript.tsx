@@ -7,7 +7,7 @@ import type { TranscriptInsert } from './transcriptTimeline.js';
 import { blockKey, presentTranscript } from './presentTranscript.js';
 import { TranscriptBlockView } from './TranscriptBlockView.js';
 import type { ChatChromeVariant } from './ChatComposer';
-import type { ChatLiveBeat, ChatLiveTool, ChatRow } from './useChatSession';
+import { lastUserRow, type ChatLiveBeat, type ChatLiveTool, type ChatRow } from './useChatSession';
 
 const styles = stylex.create({
   panelBodyContent: {
@@ -144,6 +144,9 @@ function ConversationTranscriptView({
   modelLabels,
   onOpenCanvas,
   onRetryLast,
+  onEditLast,
+  onReplaceLast,
+  onEditingChange,
   onViewportScroll,
 }: {
   rows: ChatRow[];
@@ -169,6 +172,9 @@ function ConversationTranscriptView({
   modelLabels?: Readonly<Record<string, string>>;
   onOpenCanvas?: (slug: string) => void;
   onRetryLast?: () => void;
+  onEditLast?: () => void;
+  onReplaceLast?: (text: string) => void;
+  onEditingChange?: (editing: boolean) => void;
   onViewportScroll?: (scrollTop: number) => void;
 }) {
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -195,6 +201,20 @@ function ConversationTranscriptView({
     }
     return -1;
   }, [blocks]);
+  const lastUserId = lastUserRow(rows)?.id;
+  const [editingId, setEditingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (busy) setEditingId(null);
+  }, [busy]);
+
+  useEffect(() => {
+    if (editingId && lastUserId && editingId !== lastUserId) setEditingId(null);
+  }, [editingId, lastUserId]);
+
+  useEffect(() => {
+    onEditingChange?.(editingId !== null);
+  }, [editingId, onEditingChange]);
 
   const syncActiveTurn = useCallback(() => {
     const viewport = bodyRef.current;
@@ -319,6 +339,25 @@ function ConversationTranscriptView({
           showActions={
             block.type === 'assistant' && !block.streaming && !busy && index === lastAssistantIndex
           }
+          showUserActions={block.type === 'user'}
+          userActions={
+            block.type === 'user' && block.row.id === lastUserId
+              ? {
+                  onRetry: onRetryLast,
+                  onEdit: onReplaceLast
+                    ? () => setEditingId(lastUserId)
+                    : onEditLast,
+                  retryDisabled: busy,
+                  editDisabled: busy,
+                }
+              : {}
+          }
+          editing={block.type === 'user' && block.row.id === editingId}
+          onSubmitEdit={(text) => {
+            setEditingId(null);
+            onReplaceLast?.(text);
+          }}
+          onCancelEdit={() => setEditingId(null)}
         />
       ))}
       {!isEmpty && !busy && suggestions.length > 0 ? (

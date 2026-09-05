@@ -23,6 +23,8 @@ interface ChatPanelProps {
   onPickSuggestion: (question: string) => void;
   onOpenCanvas?: (slug: string) => void;
   onRetryLast?: () => void;
+  onReplaceLast?: (text: string) => void;
+  onEditingChange?: (editing: boolean) => void;
 }
 
 const styles = stylex.create({
@@ -124,6 +126,8 @@ export function ChatPanel({
   onPickSuggestion,
   onOpenCanvas,
   onRetryLast,
+  onReplaceLast,
+  onEditingChange,
 }: ChatPanelProps) {
   return (
     <div className={`chat-panel ${stylex.props(styles.panel).className}`}>
@@ -172,6 +176,8 @@ export function ChatPanel({
         onPickSuggestion={onPickSuggestion}
         onOpenCanvas={onOpenCanvas}
         onRetryLast={onRetryLast}
+        onReplaceLast={onReplaceLast}
+        onEditingChange={onEditingChange}
       />
     </div>
   );

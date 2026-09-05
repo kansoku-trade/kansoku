@@ -110,10 +110,12 @@ export function ChatDock({ chartId, docCreatedAt }: ChatDockProps) {
     suggestions,
     send,
     retryLast,
+    replaceLast,
     abort,
     ensureSuggestions,
   } = useChatSession(chartId);
   const [mode, setMode] = useState<ChatMode>('dock');
+  const [editing, setEditing] = useState(false);
   const canvas = useCanvasWorkspace();
   const canvasReloadKey = latestCanvasChangeToken(rows, liveTools);
   const [text, setText] = useState('');
@@ -165,6 +167,7 @@ export function ChatDock({ chartId, docCreatedAt }: ChatDockProps) {
       aborting={aborting}
       dock={mode === 'dock'}
       placeholder="就这份分析继续追问…"
+      disabled={editing}
       onSubmit={(value) => void submit(value)}
       onAbort={() => void abort()}
       hint={hint}
@@ -234,6 +237,8 @@ export function ChatDock({ chartId, docCreatedAt }: ChatDockProps) {
             setMode('full');
           }}
           onRetryLast={() => void retryLast()}
+          onReplaceLast={(value) => void replaceLast(value)}
+          onEditingChange={setEditing}
         />
       </CanvasSplit>
       {composer}

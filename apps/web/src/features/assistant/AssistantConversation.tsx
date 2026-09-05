@@ -415,6 +415,7 @@ export function AssistantConversation({
     hint,
     send,
     retryLast,
+    replaceLast,
     abort,
   } = useAssistantChatSession(sessionId);
   const linkedCanvasSlug = linkedCanvas ? canvasSlugFromResearchPath(linkedCanvas.path) : null;
@@ -473,7 +474,8 @@ export function AssistantConversation({
     return send(message);
   };
 
-  const queue = useMessageQueue({ busy, onSend: doSend });
+  const [editing, setEditing] = useState(false);
+  const queue = useMessageQueue({ busy, paused: editing, onSend: doSend });
 
   const filteredMentions = mentionState
     ? filterMentionCandidates(mentionCandidates, mentionState.trigger.query)
@@ -684,6 +686,8 @@ export function AssistantConversation({
           }}
           userBubbleClassName={stylex.props(styles.userBubble).className}
           onRetryLast={() => void retryLast()}
+          onReplaceLast={(value) => void replaceLast(value)}
+          onEditingChange={setEditing}
           onViewportScroll={onViewportScroll}
         />
         <div
@@ -726,7 +730,7 @@ export function AssistantConversation({
                   busy={busy}
                   aborting={aborting}
                   allowInputWhileBusy
-                  disabled={modelSaving}
+                  disabled={modelSaving || editing}
                   multiline
                   textareaRef={textareaRef}
                   placeholder="写下问题、判断或行动要求，@ 引用研究资料…"

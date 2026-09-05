@@ -1,12 +1,15 @@
 import type { AgentMessage } from '@earendil-works/pi-agent-core';
 import { describe, expect, it } from 'vitest';
 import { createDb } from '../src/db/index.js';
+import { stripSentAt } from '../src/ai/conversation/conversationShared.js';
 import {
   appendMessages,
   createSession,
   getSessionByChartId,
   listMessages,
+  replaceLastUserTurn,
   titleFromText,
+  updateTitle,
 } from '../src/ai/chat/chatStore.js';
 
 function userMessage(text: string): AgentMessage {
@@ -20,6 +23,26 @@ function toolResultMessage(text: string): AgentMessage {
     toolName: 'example',
     content: [{ type: 'text', text }],
     isError: false,
+    timestamp: Date.now(),
+  };
+}
+
+function assistantMessage(text: string): AgentMessage {
+  return {
+    role: 'assistant',
+    content: [{ type: 'text', text }],
+    api: 'anthropic-messages',
+    provider: 'anthropic',
+    model: 'test-model',
+    usage: {
+      input: 0,
+      output: 0,
+      cacheRead: 0,
+      cacheWrite: 0,
+      totalTokens: 0,
+      cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
+    },
+    stopReason: 'stop',
     timestamp: Date.now(),
   };
 }
@@ -124,5 +147,71 @@ describe('titleFromText', () => {
     const result = titleFromText(astral);
     expect([...result]).toHaveLength(40);
     expect(result).toBe('😀'.repeat(40));
+  });
+});
+
+describe('chatStore replaceLastUserTurn', () => {
+  it('returns no_user when the session has no user message', async () => {
+    const db = createDb(':memory:');
+    const session = await createSession({ chartId: 'c1', symbol: 'MU.US', title: 'a' }, db);
+    expect(await replaceLastUserTurn(session.id, 'hi', db)).toEqual({
+      ok: false,
+      reason: 'no_user',
+    });
+  });
+
+  it('deletes messages after the last user and rewrites that user payload', async () => {
+    const db = createDb(':memory:');
+    const session = await createSession({ chartId: 'c1', symbol: 'MU.US', title: 'a' }, db);
+    const first = userMessage('first');
+    await appendMessages(
+      session.id,
+      [
+        first,
+        assistantMessage('ok'),
+        userMessage('second'),
+        assistantMessage('later'),
+        toolResultMessage('tool'),
+      ],
+      db,
+    );
+
+    const result = await replaceLastUserTurn(session.id, 'second edited', db);
+    expect(result).toEqual({ ok: true, isFirstUser: false });
+
+    const rows = await listMessages(session.id, db);
+    expect(rows).toHaveLength(3);
+    expect(rows.map((row) => row.role)).toEqual(['user', 'assistant', 'user']);
+    const rewritten = rows[2].payload;
+    expect(rewritten.role).toBe('user');
+    if (rewritten.role !== 'user' || typeof rewritten.content !== 'string') {
+      throw new Error('expected user text');
+    }
+    expect(stripSentAt(rewritten.content)).toBe('second edited');
+    expect(rows[0].payload).toEqual(first);
+  });
+
+  it('marks isFirstUser when the last user is also the first', async () => {
+    const db = createDb(':memory:');
+    const session = await createSession({ chartId: 'c1', symbol: 'MU.US', title: 'a' }, db);
+    await appendMessages(session.id, [userMessage('only'), assistantMessage('ok')], db);
+    expect(await replaceLastUserTurn(session.id, 'only', db)).toEqual({
+      ok: true,
+      isFirstUser: true,
+    });
+    expect(await listMessages(session.id, db)).toHaveLength(1);
+  });
+});
+
+describe('chatStore updateTitle', () => {
+  it('rewrites title and bumps updatedAt', async () => {
+    const db = createDb(':memory:');
+    const session = await createSession({ chartId: 'c1', symbol: 'MU.US', title: 'old' }, db);
+    await updateTitle(session.id, 'new title', db);
+    const found = await getSessionByChartId('c1', db);
+    expect(found?.title).toBe('new title');
+    expect(new Date(found!.updatedAt).getTime()).toBeGreaterThanOrEqual(
+      new Date(session.updatedAt).getTime(),
+    );
   });
 });
