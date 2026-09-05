@@ -30,7 +30,7 @@ const styles = stylex.create({
     borderColor: colors.borderStrong,
     borderStyle: 'solid',
     borderWidth: '1px',
-    borderRadius: radii.lg,
+    borderRadius: radii.composer,
   },
   shellFloat: {
     position: 'fixed',

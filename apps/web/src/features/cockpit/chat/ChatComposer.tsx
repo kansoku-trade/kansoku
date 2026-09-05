@@ -89,9 +89,6 @@ const shell = stylex.create({
       boxShadow: shadows.composerFocus,
     },
   },
-  compactRadius: {
-    borderRadius: radii.md,
-  },
 });
 
 const bareField = stylex.create({
@@ -140,7 +137,6 @@ interface ChatComposerProps {
   onSubmit: (value: string) => void;
   onAbort: () => void;
   hint?: string | null;
-  compactRadius?: boolean;
   className?: string;
   layoutClassName?: string;
   fieldClassName?: string;
@@ -166,7 +162,6 @@ export function ChatComposer({
   onSubmit,
   onAbort,
   hint,
-  compactRadius = false,
   className,
   layoutClassName,
   fieldClassName,
@@ -248,7 +243,7 @@ export function ChatComposer({
   return (
     <>
       <div
-        className={`chat-composer ${stylex.props(styles.composer, Boolean(layoutClassName) && styles.contents, !layoutClassName && shell.root, compactRadius && shell.compactRadius).className}${className ? ` ${className}` : ''}${layoutClassName ? ` ${layoutClassName}` : ''}`}
+        className={`chat-composer ${stylex.props(styles.composer, Boolean(layoutClassName) && styles.contents, !layoutClassName && shell.root).className}${className ? ` ${className}` : ''}${layoutClassName ? ` ${layoutClassName}` : ''}`}
       >
         {multiline ? (
           <textarea
