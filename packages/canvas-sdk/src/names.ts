@@ -3,7 +3,7 @@ export const CANVAS_COMPONENT_NAMES = {
   text: ['H1', 'H2', 'H3', 'Heading', 'Text', 'Link', 'Callout', 'Pill', 'Badge', 'Source'],
   data: ['Stat', 'Metric', 'Table', 'Compare', 'Coverage'],
   analysis: ['Scenarios', 'RRPlan', 'Timeline'],
-  control: ['Toggle', 'Select'],
+  control: ['Toggle', 'Select', 'Param'],
   chart: ['LineChart', 'BarChart', 'AreaChart', 'PieChart', 'Sparkline', 'CandleChart'],
 } as const;
 

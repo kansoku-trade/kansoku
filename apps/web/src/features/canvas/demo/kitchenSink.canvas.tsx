@@ -16,6 +16,7 @@ import {
   LineChart,
   Link,
   Metric,
+  Param,
   PieChart,
   Pill,
   RRPlan,
@@ -127,6 +128,10 @@ const RANGE_OPTIONS = [
 export default function App() {
   const [showVolume, setShowVolume] = useState(true);
   const [range, setRange] = useState('1d');
+  const [entry, setEntry] = useState(61.2);
+  const [stop, setStop] = useState(59.4);
+  const [shares, setShares] = useState(100);
+  const risk = useMemo(() => (entry - stop) * shares, [entry, stop, shares]);
   const quote = useQuote('MU.US');
   const candles = useCandles('MU.US');
 
@@ -178,6 +183,31 @@ export default function App() {
 
       <Divider />
 
+      <Section title="当场算">
+        <Stack gap="sm">
+          <Param
+            label="入场"
+            value={entry}
+            onChange={setEntry}
+            min={55}
+            max={65}
+            step={0.05}
+            unit="USD"
+          />
+          <Param
+            label="止损"
+            value={stop}
+            onChange={setStop}
+            min={55}
+            max={65}
+            step={0.05}
+            unit="USD"
+          />
+          <Param label="股数" value={shares} onChange={setShares} step={1} unit="股" />
+          <Stat label="单笔风险" value={risk.toFixed(2)} />
+        </Stack>
+      </Section>
+
       <Section title="场景与计划">
         <Grid columns={2}>
           <Scenarios
@@ -204,11 +234,11 @@ export default function App() {
           />
           <Stack gap="sm">
             <RRPlan
-              entry={61.2}
-              stop={59.4}
+              entry={entry}
+              stop={stop}
               targets={[64.5, 68]}
               unit="USD"
-              note="按 1R = 1.8 美元算，两档目标都过 1.5 下限。"
+              note="按 1R 算，两档目标都过 1.5 下限。"
             />
             <RRPlan entry={61.2} stop={58} targets={62.5} unit="USD" note="这一档故意做成不合格。" />
           </Stack>

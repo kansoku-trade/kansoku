@@ -1,5 +1,7 @@
 import type { CSSProperties } from 'react';
+import { NumberField } from '@base-ui/react/number-field';
 import { Select as BaseSelect } from '@base-ui/react/select';
+import { Slider } from '@base-ui/react/slider';
 import { theme } from './theme.js';
 
 export function Toggle({
@@ -137,5 +139,170 @@ export function Select({
         </BaseSelect.Portal>
       </BaseSelect.Root>
     </span>
+  );
+}
+
+function fractionDigits(step: number): number {
+  const text = String(step);
+  const exp = text.indexOf('e-');
+  if (exp !== -1) return Number(text.slice(exp + 2));
+  const dot = text.indexOf('.');
+  return dot === -1 ? 0 : text.length - dot - 1;
+}
+
+function snap(n: number, step: number, min?: number, max?: number): number {
+  const snapped = Math.round(n / step) * step;
+  const rounded = Number(snapped.toFixed(fractionDigits(step)));
+  if (min != null && rounded < min) return min;
+  if (max != null && rounded > max) return max;
+  return rounded;
+}
+
+const paramRowStyle: CSSProperties = {
+  alignItems: 'center',
+  display: 'flex',
+  gap: 8,
+  minHeight: 26,
+  width: '100%',
+};
+
+const paramLabelStyle: CSSProperties = {
+  color: theme.textSecondary,
+  flex: '0 0 4em',
+  fontSize: 13,
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+};
+
+const paramInputStyle: CSSProperties = {
+  background: theme.bgElement,
+  border: `1px solid ${theme.borderStrong}`,
+  borderRadius: theme.radius,
+  boxSizing: 'border-box',
+  color: theme.textPrimary,
+  fontFamily: theme.fontMono,
+  fontSize: 13,
+  fontVariantNumeric: 'tabular-nums',
+  height: 26,
+  padding: '0 9px',
+  width: '9ch',
+};
+
+const paramUnitStyle: CSSProperties = {
+  color: theme.textMuted,
+  flex: '0 0 auto',
+  fontSize: 13,
+};
+
+const sliderRootStyle: CSSProperties = {
+  alignItems: 'center',
+  display: 'flex',
+  flex: 1,
+  height: 26,
+  minWidth: 80,
+};
+
+const sliderControlStyle: CSSProperties = {
+  display: 'flex',
+  flex: 1,
+  height: 26,
+  alignItems: 'center',
+  position: 'relative',
+};
+
+const sliderTrackStyle: CSSProperties = {
+  background: theme.bgHover,
+  borderRadius: theme.radius,
+  height: 2,
+  width: '100%',
+};
+
+const sliderIndicatorStyle: CSSProperties = {
+  background: theme.accent,
+  borderRadius: theme.radius,
+  height: 2,
+};
+
+const sliderThumbStyle: CSSProperties = {
+  background: theme.accent,
+  border: 'none',
+  borderRadius: 2,
+  height: 10,
+  width: 10,
+};
+
+export function Param({
+  label,
+  value,
+  onChange,
+  min,
+  max,
+  step = 1,
+  unit,
+}: {
+  label: string;
+  value: number;
+  onChange: (next: number) => void;
+  min?: number;
+  max?: number;
+  step?: number;
+  unit?: string;
+}) {
+  if (!Number.isFinite(value)) throw new Error('Param: value must be a finite number');
+  if (!Number.isFinite(step) || step <= 0) throw new Error('Param: step must be > 0');
+  const ranged = Number.isFinite(min) && Number.isFinite(max);
+  if (ranged && min! > max!) throw new Error('Param: min must be <= max');
+
+  const digits = fractionDigits(step);
+  const commit = (next: number | null) => {
+    if (next == null || !Number.isFinite(next)) return;
+    const snapped = snap(next, step, ranged ? min : undefined, ranged ? max : undefined);
+    if (snapped !== value) onChange(snapped);
+  };
+
+  return (
+    <div style={paramRowStyle}>
+      <span style={paramLabelStyle}>{label}</span>
+      {ranged ? (
+        <Slider.Root
+          aria-label={label}
+          min={min}
+          max={max}
+          step={step}
+          value={value}
+          onValueChange={commit}
+          style={sliderRootStyle}
+        >
+          <Slider.Control style={sliderControlStyle}>
+            <Slider.Track style={sliderTrackStyle}>
+              <Slider.Indicator style={sliderIndicatorStyle} />
+            </Slider.Track>
+            <Slider.Thumb style={sliderThumbStyle} />
+          </Slider.Control>
+        </Slider.Root>
+      ) : null}
+      <NumberField.Root
+        value={value}
+        min={ranged ? min : undefined}
+        max={ranged ? max : undefined}
+        step={step}
+        snapOnStep
+        locale="en-US"
+        format={{
+          maximumFractionDigits: digits,
+          minimumFractionDigits: digits,
+          useGrouping: false,
+        }}
+        onValueChange={(next, details) => {
+          if (details.reason === 'input-change' || details.reason === 'input-clear') return;
+          commit(next);
+        }}
+        onValueCommitted={commit}
+      >
+        <NumberField.Input aria-label={label} style={paramInputStyle} />
+      </NumberField.Root>
+      {unit ? <span style={paramUnitStyle}>{unit}</span> : null}
+    </div>
   );
 }
