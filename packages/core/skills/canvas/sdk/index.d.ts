@@ -3,7 +3,7 @@ export { theme } from './theme.js';
 export { Canvas, Card, Divider, Grid, Row, Section, Stack } from './layout.js';
 export { Badge, Callout, H1, H2, H3, Heading, Link, Pill, Source, Text } from './text.js';
 export { Compare, Coverage, Metric, Stat, Table } from './data.js';
-export { Select, Toggle } from './control.js';
+export { Param, Select, Toggle } from './control.js';
 export { AreaChart, BarChart, LineChart, PieChart, Sparkline } from './charts.js';
 export { CandleChart } from './CandleChart.js';
 export { RRPlan, Scenarios, Timeline } from './analysis.js';

@@ -8,27 +8,27 @@ type Series = {
     label?: string;
     color?: string;
 };
-export declare function LineChart({ title, data, xUnit, yUnit, series }: {
+export declare function LineChart({ title, data, xUnit, yUnit, series, }: {
     title?: string;
     data: Point[];
     xUnit?: string;
     yUnit?: string;
     series?: (string | Series)[];
 }): import("react").JSX.Element;
-export declare function BarChart({ title, data, xUnit, yUnit, signed }: {
+export declare function BarChart({ title, data, xUnit, yUnit, signed, }: {
     title?: string;
     data: Point[];
     xUnit?: string;
     yUnit?: string;
     signed?: boolean;
 }): import("react").JSX.Element;
-export declare function AreaChart({ title, data, xUnit, yUnit }: {
+export declare function AreaChart({ title, data, xUnit, yUnit, }: {
     title?: string;
     data: Point[];
     xUnit?: string;
     yUnit?: string;
 }): import("react").JSX.Element;
-export declare function PieChart({ title, data }: {
+export declare function PieChart({ title, data, }: {
     title?: string;
     data: {
         label: string;
@@ -36,7 +36,7 @@ export declare function PieChart({ title, data }: {
         color?: string;
     }[];
 }): import("react").JSX.Element;
-export declare function Sparkline({ data, width, height, tone }: {
+export declare function Sparkline({ data, width, height, tone, }: {
     data: number[];
     width?: number;
     height?: number;

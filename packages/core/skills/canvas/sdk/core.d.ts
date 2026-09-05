@@ -3,7 +3,7 @@ export type Box = {
     children?: ReactNode;
     style?: CSSProperties;
 };
-export declare function Canvas({ title, caption, children }: {
+export declare function Canvas({ title, caption, children, }: {
     title: string;
     caption?: string;
 } & Box): import("react").JSX.Element;
@@ -13,7 +13,7 @@ export declare function Section({ title, children }: {
 export declare function Grid({ columns, children }: {
     columns?: number;
 } & Box): import("react").JSX.Element;
-export declare function Row({ children, style, gap, justify, align }: Box & {
+export declare function Row({ children, style, gap, justify, align, }: Box & {
     gap?: string | number;
     justify?: string;
     align?: string;
@@ -37,11 +37,11 @@ export declare function Link({ href, children }: {
     href?: string;
     children?: ReactNode;
 }): import("react").JSX.Element;
-export declare function Callout({ tone, children }: {
+export declare function Callout({ tone, children, }: {
     tone?: 'neutral' | 'up' | 'down' | 'warn';
     children: ReactNode;
 }): import("react").JSX.Element;
-export declare function Pill({ children, tone }: {
+export declare function Pill({ children, tone, }: {
     children: ReactNode;
     tone?: 'up' | 'down' | 'neutral';
 }): import("react").JSX.Element;
@@ -55,14 +55,14 @@ export declare function Source({ from, at, note }: {
     note?: ReactNode;
 }): import("react").JSX.Element;
 
-export declare function Stat({ label, value, delta, note, tone }: {
+export declare function Stat({ label, value, delta, note, tone, }: {
     label: string;
     value: string;
     delta?: string;
     note?: ReactNode;
     tone?: 'up' | 'down' | 'neutral';
 }): import("react").JSX.Element;
-export declare function Metric({ label, value, delta, note, tone }: {
+export declare function Metric({ label, value, delta, note, tone, }: {
     label: string;
     value: string;
     delta?: string;
@@ -74,7 +74,7 @@ type TableColumn = {
     header: string;
     align?: 'left' | 'right';
 };
-export declare function Table({ columns, rows }: {
+export declare function Table({ columns, rows, }: {
     columns: Array<string | TableColumn>;
     rows: Array<Record<string, ReactNode> | ReactNode[]>;
 }): import("react").JSX.Element;
@@ -92,13 +92,13 @@ export interface CompareRow {
     trend?: number[];
     note?: ReactNode;
 }
-export declare function Compare({ metrics, rows, sortBy, trendLabel }: {
+export declare function Compare({ metrics, rows, sortBy, trendLabel, }: {
     metrics: CompareMetric[];
     rows: CompareRow[];
     sortBy?: string;
     trendLabel?: string;
 }): import("react").JSX.Element;
-export declare function Coverage({ items }: {
+export declare function Coverage({ items, }: {
     items: {
         label: string;
         status: 'ok' | 'partial' | 'missing';

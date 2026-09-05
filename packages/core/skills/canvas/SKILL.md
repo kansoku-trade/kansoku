@@ -120,7 +120,7 @@ them: `charts.d.ts`, `CandleChart.d.ts`, `analysis.d.ts` (`Scenarios` / `RRPlan`
 | Text | `H1` `H2` `H3`, `Heading`, `Text`, `Link`, `Callout`, `Pill`, `Badge`, `Source` |
 | Numbers | `Stat`, `Metric`, `Table`, `Compare`, `Coverage` |
 | Conclusions | `Scenarios`, `RRPlan`, `Timeline` |
-| Controls | `Toggle`, `Select` |
+| Controls | `Toggle`, `Select`, `Param` |
 | Charts | `LineChart`, `BarChart` (`signed`), `AreaChart`, `PieChart`, `Sparkline`, `CandleChart` (`bars` or `source`+`tf`) |
 | Live | `useQuote(symbol)`, `useCandles(symbol)` — hooks, not components; feed `Stat` / `CandleChart source` |
 
@@ -128,7 +128,9 @@ Four of them validate themselves against the discipline rules: `Scenarios` flags
 probabilities that miss 100 (TD-SCENARIO-01), `RRPlan` reddens reward-to-risk under 1.5
 (TD-RR-01), `Coverage` carries TD-DATA-01, `Source` carries TD-DATA-02.
 
-Interactivity is `useState` / `useMemo` plus `Toggle` / `Select`. There is no `useEffect`.
+Interactivity is `useState` / `useMemo` plus `Toggle` / `Select` / `Param`. There is no `useEffect`.
+
+`Param` only rewrites numbers already in the canvas. Do not use it to switch symbols, switch timeframes, or trigger a new fetch. Give both `min` and `max` or neither — one side alone is rejected at save. Native `<input>` / `<textarea>` are rejected; use `Param` / `Toggle` / `Select`.
 
 ## Design guidance
 
@@ -177,6 +179,7 @@ lines · no `Section` for fewer than 2 elements.
 | Which data exists and which does not | `Coverage` | `Table` |
 | A tiny inline trend | `Sparkline` | `LineChart` |
 | One number with its change | `Stat` (`delta` = the number only; words like「30 天最强」go in `note`) | a number inside `Text` |
+| A number the user should change so other numbers update | `Param` | a native input, a slider plus a separate field, `Text` |
 | Genuine multi-row detail | `Table` | — |
 
 ### Slop patterns — forbidden

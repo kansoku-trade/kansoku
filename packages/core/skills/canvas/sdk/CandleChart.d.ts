@@ -53,4 +53,4 @@ export interface CandleChartProps {
         kind?: string;
     }[];
 }
-export declare function CandleChart({ title, bars, source, tf, volume, macd, ema, priceLines, zones, markers }: CandleChartProps): import("react").JSX.Element;
+export declare function CandleChart({ title, bars, source, tf, volume, macd, ema, priceLines, zones, markers, }: CandleChartProps): import("react").JSX.Element;
