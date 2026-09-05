@@ -10,6 +10,7 @@ import type {
 import { CachedMarkdown, Streamdown } from '@lobehub/streamdown';
 import type { Components, ExtraProps } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { clsx } from 'clsx';
 import * as stylex from '@stylexjs/stylex';
 import { parseAppDeepLink, type AppDeepLink } from '@kansoku/shared/appDeepLink';
 import { navigate } from '@web/lib/router';
@@ -29,6 +30,11 @@ const styles = stylex.create({
   chat: {
     fontSize: fontSizes.base,
     lineHeight: 1.6,
+  },
+  muted: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.sm,
+    lineHeight: 1.5,
   },
   report: {
     'fontSize': `calc(${fontSizes.md} * 1.125)`,
@@ -515,12 +521,10 @@ export function MarkdownLink(
     return (
       <a
         {...anchorProps}
-        className={[
+        className={clsx(
           className,
           stylex.props(styles.link, variant === 'chat' && styles.linkChat).className,
-        ]
-          .filter(Boolean)
-          .join(' ')}
+        )}
         href={href}
         rel={anchorProps.rel ?? 'noreferrer'}
         target={anchorProps.target ?? '_blank'}
@@ -533,13 +537,11 @@ export function MarkdownLink(
   return (
     <a
       {...anchorProps}
-      className={[
+      className={clsx(
         `app-deep-link app-deep-link--${meta.variant}`,
         className,
         stylex.props(styles.deepLink, variant === 'chat' && styles.deepLinkChat).className,
-      ]
-        .filter(Boolean)
-        .join(' ')}
+      )}
       href={appLink.route}
       aria-label={`${meta.title}：${meta.subject}，${meta.detail}`}
       title={href}
@@ -577,7 +579,7 @@ function styledElement(
   return ({ node: _node, className, ...props }: SemanticProps) =>
     createElement(tag, {
       ...props,
-      className: [className, stylex.props(...styleValues).className].filter(Boolean).join(' '),
+      className: clsx(className, stylex.props(...styleValues).className),
     });
 }
 
@@ -590,9 +592,7 @@ function MarkdownInput({
   return (
     <input
       {...props}
-      className={[className, type === 'checkbox' && stylex.props(styles.taskCheckbox).className]
-        .filter(Boolean)
-        .join(' ')}
+      className={clsx(className, type === 'checkbox' && stylex.props(styles.taskCheckbox).className)}
       type={type}
     />
   );
@@ -603,15 +603,13 @@ function MarkdownPre({ children, variant }: { children?: ReactNode; variant: Mar
 
   return cloneElement(children as ReactElement<Record<string, unknown>>, {
     'data-block': 'true',
-    'className': [
+    'className': clsx(
       (children.props as { className?: string }).className,
       stylex.props(
         styles.codeBlock,
         variant === 'chat' ? styles.codeBlockChat : styles.codeBlockReport,
       ).className,
-    ]
-      .filter(Boolean)
-      .join(' '),
+    ),
   });
 }
 
@@ -643,7 +641,7 @@ function markdownComponents(variant: MarkdownVariant): Components {
     ul: ({ children, className, node: _node, ...props }: SemanticProps) => (
       <ul
         {...props}
-        className={[
+        className={clsx(
           className,
           stylex.props(
             styles.unorderedList,
@@ -651,9 +649,7 @@ function markdownComponents(variant: MarkdownVariant): Components {
             className?.includes('contains-task-list') && styles.taskList,
             stylex.defaultMarker(),
           ).className,
-        ]
-          .filter(Boolean)
-          .join(' ')}
+        )}
       >
         {children}
       </ul>
@@ -683,15 +679,13 @@ function markdownComponents(variant: MarkdownVariant): Components {
     section: ({ children, className, node: _node, ...props }: SemanticProps) => (
       <section
         {...props}
-        className={[
+        className={clsx(
           className,
           stylex.props(
             flowStyle,
             (className?.includes('footnotes') || 'data-footnotes' in props) && styles.footnotes,
           ).className,
-        ]
-          .filter(Boolean)
-          .join(' ')}
+        )}
       >
         {children}
       </section>
@@ -704,7 +698,7 @@ function markdownComponents(variant: MarkdownVariant): Components {
     }: HTMLAttributes<HTMLHeadingElement> & ExtraProps) => (
       <h1
         {...props}
-        className={[className, headingStyle(1).className].filter(Boolean).join(' ')}
+        className={clsx(className, headingStyle(1).className)}
         data-streamdown="heading-1"
       >
         {children}
@@ -718,7 +712,7 @@ function markdownComponents(variant: MarkdownVariant): Components {
     }: HTMLAttributes<HTMLHeadingElement> & ExtraProps) => (
       <h2
         {...props}
-        className={[className, headingStyle(2).className].filter(Boolean).join(' ')}
+        className={clsx(className, headingStyle(2).className)}
         data-streamdown="heading-2"
       >
         {children}
@@ -732,7 +726,7 @@ function markdownComponents(variant: MarkdownVariant): Components {
     }: HTMLAttributes<HTMLHeadingElement> & ExtraProps) => (
       <h3
         {...props}
-        className={[className, headingStyle(3).className].filter(Boolean).join(' ')}
+        className={clsx(className, headingStyle(3).className)}
         data-streamdown="heading-3"
       >
         {children}
@@ -746,7 +740,7 @@ function markdownComponents(variant: MarkdownVariant): Components {
     }: HTMLAttributes<HTMLHeadingElement> & ExtraProps) => (
       <h4
         {...props}
-        className={[className, headingStyle(4).className].filter(Boolean).join(' ')}
+        className={clsx(className, headingStyle(4).className)}
         data-streamdown="heading-4"
       >
         {children}
@@ -770,13 +764,11 @@ function markdownComponents(variant: MarkdownVariant): Components {
     }: HTMLAttributes<HTMLTableCellElement> & ExtraProps) => (
       <th
         {...props}
-        className={[
+        className={clsx(
           'whitespace-nowrap px-4 py-2 text-left font-semibold text-sm',
           className,
           stylex.props(styles.tableHead).className,
-        ]
-          .filter(Boolean)
-          .join(' ')}
+        )}
         data-streamdown="table-header-cell"
       >
         {children}
@@ -790,7 +782,7 @@ function markdownComponents(variant: MarkdownVariant): Components {
     }: HTMLAttributes<HTMLTableCellElement> & ExtraProps) => (
       <td
         {...props}
-        className={[className, stylex.props(styles.tableCell).className].filter(Boolean).join(' ')}
+        className={clsx(className, stylex.props(styles.tableCell).className)}
       >
         {children}
       </td>
@@ -808,14 +800,16 @@ export function Markdown({
   children,
   variant = 'report',
   streaming = false,
+  muted = false,
 }: {
   children: string;
   variant?: MarkdownVariant;
   streaming?: boolean;
+  muted?: boolean;
 }) {
   return (
     <div
-      className={`typeset typeset-${variant} ${stylex.props(styles.typeset, variant === 'chat' ? styles.chat : styles.report).className}`}
+      className={`typeset typeset-${variant} ${stylex.props(styles.typeset, variant === 'chat' ? styles.chat : styles.report, muted && styles.muted).className}`}
     >
       {streaming ? (
         <Streamdown

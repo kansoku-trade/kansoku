@@ -1,3 +1,4 @@
+import { clsx } from 'clsx';
 import * as stylex from '@stylexjs/stylex';
 import { ANNOTATION_PALETTE } from '@kansoku/shared/drawings';
 import type { AnnotationStyle } from '@kansoku/shared/types';
@@ -82,7 +83,7 @@ export function StylePanel({
 }) {
   return (
     <div
-      className={[stylex.props(styles.panel).className, className].filter(Boolean).join(' ')}
+      className={clsx(stylex.props(styles.panel).className, className)}
       aria-label="样式"
     >
       <div className={stylex.props(styles.row).className}>

@@ -207,6 +207,7 @@ export function ChatDock({ chartId, docCreatedAt }: ChatDockProps) {
         storageKey="canvas-chatdock-pane"
       >
         <ChatPanel
+          conversationKey={`chart:${chartId}`}
           session={session}
           docCreatedAt={docCreatedAt}
           rows={rows}

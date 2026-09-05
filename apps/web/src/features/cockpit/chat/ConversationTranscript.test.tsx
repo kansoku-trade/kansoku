@@ -4,8 +4,17 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ConversationTranscript } from './ConversationTranscript';
 import type { ChatRow } from './useChatSession';
 
+const subscribeChannel = vi.fn((..._args: unknown[]) => vi.fn());
+vi.mock('@web/lib/ws/wsHub', () => ({
+  subscribeChannel: (spec: unknown, onPayload: unknown, onConnected: unknown) =>
+    subscribeChannel(spec, onPayload, onConnected),
+}));
+
+const store = await import('./conversationStore.js');
+
 afterEach(() => {
   cleanup();
+  store.resetConversationStoreForTests();
   vi.restoreAllMocks();
 });
 
@@ -177,10 +186,49 @@ describe('ConversationTranscript folding', () => {
     renderTranscript(completedRows, { onOpenCanvas: vi.fn() });
     fireEvent.click(screen.getByRole('button', { name: /跑了 1 分 12 秒/ }));
     expect(screen.getByText('先读流程')).toBeTruthy();
-    expect(screen.getByText('3 个工具')).toBeTruthy();
+    expect(screen.queryByText(/个工具/)).toBeNull();
+    expect(screen.getByRole('button', { name: '加载分析流程，已完成' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: '执行数据命令，已完成' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: '保存画布，已完成' })).toBeTruthy();
   });
 
-  it('shows only the group head and the running tool while the turn is live', () => {
+  it('lays completed thinking out as text inside 跑了', () => {
+    renderTranscript(
+      [
+        row({ id: 'u1', ts: ts('10:00:00'), kind: 'user', text: '怎么看' }),
+        row({ id: 'th1', ts: ts('10:00:04'), kind: 'thinking', text: '**先核对持仓**' }),
+        row({
+          id: 't1',
+          ts: ts('10:00:05'),
+          kind: 'tool',
+          label: 'read_file',
+          input: JSON.stringify({ path: 'stocks/MU.md' }),
+        }),
+        row({ id: 'a1', ts: ts('10:00:08'), kind: 'assistant', text: '继续拿' }),
+      ],
+      { onOpenCanvas: vi.fn() },
+    );
+    expect(screen.queryByRole('button', { name: '思考过程' })).toBeNull();
+    expect(screen.queryByText('先核对持仓')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /跑了/ }));
+    expect(screen.queryByRole('button', { name: '思考过程' })).toBeNull();
+    expect(screen.queryByText('**先核对持仓**')).toBeNull();
+    const thinking = screen.getByText('先核对持仓');
+    expect(thinking.closest('strong')).toBeTruthy();
+    expect(thinking.closest('.chat-reasoning')?.querySelector('[aria-hidden="true"]')).toBeTruthy();
+  });
+
+  it('keeps live reasoning behind 思考中', () => {
+    renderTranscript([row({ id: 'u1', ts: ts('10:00:00'), kind: 'user', text: '怎么看' })], {
+      busy: true,
+      liveBeats: [{ kind: 'reasoning', text: '先核对持仓' }],
+    });
+    expect(screen.getByRole('button', { name: '思考中' })).toBeTruthy();
+    expect(screen.getByText('先核对持仓')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: '思考过程' })).toBeNull();
+  });
+
+  it('shows finished and running tools on the live timeline', () => {
     renderTranscript([row({ id: 'u1', ts: ts('10:00:00'), kind: 'user', text: '拉三只' })], {
       busy: true,
       liveBeats: [
@@ -206,10 +254,13 @@ describe('ConversationTranscript folding', () => {
       ],
     });
     expect(screen.getByText('先读流程')).toBeTruthy();
-    expect(screen.getByRole('button', { name: '2 个工具，进行中' })).toBeTruthy();
+    expect(screen.queryByText(/个工具/)).toBeNull();
+    expect(screen.getByRole('button', { name: '加载分析流程，已完成' })).toBeTruthy();
+    expect(screen.getByText('canvas')).toBeTruthy();
+    expect(screen.getByRole('button', { name: '执行数据命令，进行中' })).toBeTruthy();
     expect(screen.getByText(/longbridge kline SMH\.US/)).toBeTruthy();
     expect(screen.queryByRole('button', { name: /跑了/ })).toBeNull();
-    expect(screen.queryByText('canvas')).toBeNull();
+    expect(screen.queryByText('原始请求')).toBeNull();
   });
 });
 
@@ -271,5 +322,62 @@ describe('ConversationTranscript user actions', () => {
     fireEvent.click(screen.getByRole('button', { name: '取消' }));
     expect(screen.queryByRole('textbox')).toBeNull();
     expect(screen.getByText('原问')).toBeTruthy();
+  });
+});
+
+describe('ConversationTranscript fold persistence', () => {
+  const idleAdapter = {
+    fetchChat: async () => ({ session: null, messages: [], busy: true, partial: '' }),
+    send: async () => ({ status: 202, body: {} }),
+    abort: async () => undefined,
+    channel: (id: string) => ({ kind: 'assistant-chat' as const, id }),
+    suggest: null,
+  };
+
+  it('keeps a tool detail open after remounting the same conversationKey', async () => {
+    store.setConversationAdaptersForTests({
+      assistant: idleAdapter,
+      chart: idleAdapter,
+      research: idleAdapter,
+    });
+    store.acquire('assistant', 's1');
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(store.getConversationSnapshot('assistant', 's1')).not.toBeNull();
+    store.toggleFold('assistant', 's1', 'tool:lt1', false);
+    expect(store.isFoldOpen('assistant', 's1', 'tool:lt1', false)).toBe(true);
+
+    const extra = {
+      conversationKey: 'assistant:s1',
+      busy: true,
+      liveBeats: [
+        {
+          kind: 'tool' as const,
+          tool: {
+            id: 'lt1',
+            label: 'read_skill',
+            status: 'end' as const,
+            input: JSON.stringify({ name: 'canvas' }),
+          },
+        },
+        {
+          kind: 'tool' as const,
+          tool: {
+            id: 'lt2',
+            label: 'bash',
+            status: 'start' as const,
+            input: JSON.stringify({ command: 'longbridge kline SMH.US --period day --count 20' }),
+          },
+        },
+      ],
+    };
+    const { unmount } = renderTranscript(
+      [row({ id: 'u1', ts: ts('10:00:00'), kind: 'user', text: '拉三只' })],
+      extra,
+    );
+    expect(screen.getByText('原始请求')).toBeTruthy();
+    unmount();
+    renderTranscript([row({ id: 'u1', ts: ts('10:00:00'), kind: 'user', text: '拉三只' })], extra);
+    expect(screen.getByText('原始请求')).toBeTruthy();
   });
 });

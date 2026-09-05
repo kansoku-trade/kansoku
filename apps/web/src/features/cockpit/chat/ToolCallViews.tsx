@@ -1,8 +1,9 @@
-import { useState } from 'react';
-import { Check, ChevronRight } from 'lucide-react';
-import { AnimatePresence, motion } from 'motion/react';
+import { useConversationFold } from './conversationFold.js';
+import { Check } from 'lucide-react';
+import { clsx } from 'clsx';
 import * as stylex from '@stylexjs/stylex';
 import { colors, fonts, fontSizes, radii } from '../../../theme/tokens.stylex';
+import { Fold } from '@web/ui';
 import { presentToolCall } from './toolSummary.js';
 import type { PresentedTool } from './presentTranscript.js';
 
@@ -13,14 +14,12 @@ const chatToolStatusPulse = stylex.keyframes({
 
 const styles = stylex.create({
   tool: {
-    alignSelf: 'flex-start',
     width: '100%',
-    maxWidth: '100%',
     display: 'flex',
     flexDirection: 'column',
     gap: 0,
-    padding: '3px 8px',
-    backgroundColor: colors.backgroundSurface,
+    padding: '1px 2px',
+    backgroundColor: 'transparent',
     borderStyle: 'none',
     borderWidth: 0,
     borderRadius: radii.lg,
@@ -28,21 +27,10 @@ const styles = stylex.create({
   toolRunning: {
     backgroundColor: `color-mix(in srgb, ${colors.accent} 5%, ${colors.backgroundSurface})`,
   },
-  nested: {
-    padding: 0,
-    backgroundColor: 'transparent',
-    borderStyle: 'none',
-    borderWidth: 0,
-    borderRadius: 0,
-  },
   toolHead: {
-    'display': 'grid',
-    'gridTemplateColumns': '14px minmax(0, 1fr) auto',
-    'alignItems': 'center',
     'gap': '8px',
-    'width': '100%',
-    'minHeight': '26px',
-    'padding': '3px 4px',
+    'minHeight': '22px',
+    'padding': '2px 4px',
     'backgroundColor': 'transparent',
     'borderStyle': 'none',
     'borderWidth': 0,
@@ -84,6 +72,8 @@ const styles = stylex.create({
   toolContent: {
     display: 'flex',
     alignItems: 'center',
+    flexGrow: 1,
+    flexShrink: 1,
     gap: '8px',
     minWidth: 0,
     overflow: 'hidden',
@@ -130,18 +120,6 @@ const styles = stylex.create({
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
   },
-  toolCaret: {
-    'flex': 'none',
-    'alignSelf': 'center',
-    'color': colors.textMuted,
-    'transition': 'transform 0.12s ease',
-    '@media (prefers-reduced-motion: reduce)': {
-      transition: 'none',
-    },
-  },
-  toolCaretOpen: {
-    transform: 'rotate(90deg)',
-  },
   toolDetail: {
     display: 'flex',
     flexDirection: 'column',
@@ -168,36 +146,20 @@ const styles = stylex.create({
     whiteSpace: 'pre-wrap',
     overflowWrap: 'anywhere',
   },
-  fold: {
-    overflow: 'hidden',
-  },
-  rail: {
-    margin: '0 0 3px 11px',
-    paddingLeft: '8px',
-  },
-  groupMeta: {
-    flexGrow: 1,
-    flexShrink: 1,
-    flexBasis: 0,
-    minWidth: 0,
-    overflow: 'hidden',
-    color: colors.textMuted,
-    fontSize: fontSizes.sm,
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-  },
 });
-
-const foldTransition = { duration: 0.2, ease: [0.2, 0.9, 0.3, 1] } as const;
 
 function StatusMark({ running }: { running: boolean }) {
   return (
     <span
-      className={`chat-tool-status${running ? ' running' : ''} ${stylex.props(styles.toolStatus, running && styles.toolStatusRunning).className}`}
+      className={clsx(
+        'chat-tool-status',
+        running && 'running',
+        stylex.props(styles.toolStatus, running && styles.toolStatusRunning).className,
+      )}
       aria-hidden="true"
     >
       {running ? (
-        <span className={`chat-tool-status-dot ${stylex.props(styles.toolStatusDot).className}`} />
+        <span className={clsx('chat-tool-status-dot', stylex.props(styles.toolStatusDot).className)} />
       ) : (
         <Check size={11} strokeWidth={2.2} />
       )}
@@ -205,158 +167,89 @@ function StatusMark({ running }: { running: boolean }) {
   );
 }
 
-export function ToolRow({
-  tool,
-  nested = false,
-}: {
-  tool: PresentedTool;
-  nested?: boolean;
-}) {
-  const [open, setOpen] = useState(false);
+export function ToolRow({ tool }: { tool: PresentedTool }) {
+  const [open, setOpen] = useConversationFold(`tool:${tool.id}`);
   const hasDetail = Boolean(tool.input || tool.output);
   const presentation = presentToolCall(tool.label, tool.input);
   const hasContext = presentation.items.length > 0 || Boolean(presentation.meta);
   const running = tool.running;
 
   return (
-    <div
-      className={`chat-tool${running ? ' chat-tool--running' : ''} ${stylex.props(styles.tool, running && !nested && styles.toolRunning, nested && styles.nested).className}`}
+    <Fold
+      open={open}
+      onToggle={() => setOpen()}
+      className={clsx(
+        'chat-tool',
+        running && 'chat-tool--running',
+        stylex.props(styles.tool, running && styles.toolRunning).className,
+      )}
     >
-      <button
-        type="button"
-        className={`chat-tool-head ${stylex.props(styles.toolHead).className}`}
-        onClick={() => setOpen((current) => !current)}
+      <Fold.Trigger
+        className={clsx('chat-tool-head', stylex.props(styles.toolHead).className)}
         disabled={!hasDetail}
-        aria-expanded={open}
+        caret={hasDetail}
         aria-label={`${presentation.title}，${running ? '进行中' : '已完成'}`}
       >
         <StatusMark running={running} />
-        <span className={`chat-tool-content ${stylex.props(styles.toolContent).className}`}>
-          <span className={`chat-tool-title ${stylex.props(styles.toolTitle).className}`}>
+        <span className={clsx('chat-tool-content', stylex.props(styles.toolContent).className)}>
+          <span className={clsx('chat-tool-title', stylex.props(styles.toolTitle).className)}>
             {presentation.title}
           </span>
-          {nested ? null : (
-            <span
-              className={`chat-tool-state ${stylex.props(styles.toolState).className}`}
-              aria-live="polite"
-            >
-              {running ? '进行中' : '已完成'}
-            </span>
-          )}
+          <span
+            className={clsx('chat-tool-state', stylex.props(styles.toolState).className)}
+            aria-live="polite"
+          >
+            {running ? '进行中' : '已完成'}
+          </span>
           {hasContext ? (
-            <span className={`chat-tool-context ${stylex.props(styles.toolContext).className}`}>
+            <span className={clsx('chat-tool-context', stylex.props(styles.toolContext).className)}>
               {presentation.items.map((item) => (
-                <span className={`chat-tool-item ${stylex.props(styles.toolItem).className}`} key={item}>
+                <span
+                  className={clsx('chat-tool-item', stylex.props(styles.toolItem).className)}
+                  key={item}
+                >
                   {item}
                 </span>
               ))}
               {presentation.meta ? (
-                <span className={`chat-tool-meta ${stylex.props(styles.toolMeta).className}`}>
+                <span className={clsx('chat-tool-meta', stylex.props(styles.toolMeta).className)}>
                   {presentation.meta}
                 </span>
               ) : null}
             </span>
           ) : null}
         </span>
-        {hasDetail ? (
-          <ChevronRight
-            size={12}
-            className={`chat-tool-caret${open ? ' open' : ''} ${stylex.props(styles.toolCaret, open && styles.toolCaretOpen).className}`}
-          />
-        ) : null}
-      </button>
-      <AnimatePresence initial={false}>
-        {open && hasDetail ? (
-          <motion.div
-            className={`chat-tool-detail ${stylex.props(styles.fold, styles.toolDetail).className}`}
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={foldTransition}
-          >
-            {tool.input ? (
-              <div>
-                <div className={`chat-tool-detail-label ${stylex.props(styles.toolDetailLabel).className}`}>
-                  原始请求
-                </div>
-                <pre className={stylex.props(styles.toolDetailPre).className}>{tool.input}</pre>
+      </Fold.Trigger>
+      {hasDetail ? (
+        <Fold.Panel className={clsx('chat-tool-detail', stylex.props(styles.toolDetail).className)}>
+          {tool.input ? (
+            <div>
+              <div
+                className={clsx(
+                  'chat-tool-detail-label',
+                  stylex.props(styles.toolDetailLabel).className,
+                )}
+              >
+                原始请求
               </div>
-            ) : null}
-            {tool.output ? (
-              <div>
-                <div className={`chat-tool-detail-label ${stylex.props(styles.toolDetailLabel).className}`}>
-                  原始响应
-                </div>
-                <pre className={stylex.props(styles.toolDetailPre).className}>{tool.output}</pre>
-              </div>
-            ) : null}
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-export function ToolGroupRow({
-  id,
-  tools,
-  running,
-  titles,
-}: {
-  id: string;
-  tools: PresentedTool[];
-  running: boolean;
-  titles: string[];
-}) {
-  const [open, setOpen] = useState(false);
-  const current = tools.filter((tool) => tool.running);
-  const shown = open ? tools : current;
-  const label = `${tools.length} 个工具`;
-  const state = running ? '进行中' : '已完成';
-
-  return (
-    <div
-      className={`chat-tool-group${running ? ' chat-tool-group--running' : ''} ${stylex.props(styles.tool, running && styles.toolRunning).className}`}
-    >
-      <button
-        type="button"
-        className={`chat-tool-head ${stylex.props(styles.toolHead).className}`}
-        onClick={() => setOpen((currentOpen) => !currentOpen)}
-        aria-expanded={open}
-        aria-controls={id}
-        aria-label={`${label}，${state}`}
-      >
-        <StatusMark running={running} />
-        <span className={`chat-tool-content ${stylex.props(styles.toolContent).className}`}>
-          <span className={`chat-tool-title ${stylex.props(styles.toolTitle).className}`}>{label}</span>
-          <span className={`chat-tool-state ${stylex.props(styles.toolState).className}`}>{state}</span>
-          {titles.length > 0 ? (
-            <span className={`chat-tool-meta ${stylex.props(styles.groupMeta).className}`}>
-              {titles.join(' · ')}
-            </span>
+              <pre className={stylex.props(styles.toolDetailPre).className}>{tool.input}</pre>
+            </div>
           ) : null}
-        </span>
-        <ChevronRight
-          size={12}
-          className={`chat-tool-caret${open ? ' open' : ''} ${stylex.props(styles.toolCaret, open && styles.toolCaretOpen).className}`}
-        />
-      </button>
-      <AnimatePresence initial={false}>
-        {shown.length > 0 ? (
-          <motion.div
-            id={id}
-            className={stylex.props(styles.fold, styles.rail).className}
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={foldTransition}
-          >
-            {shown.map((tool) => (
-              <ToolRow key={tool.id} tool={tool} nested />
-            ))}
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
-    </div>
+          {tool.output ? (
+            <div>
+              <div
+                className={clsx(
+                  'chat-tool-detail-label',
+                  stylex.props(styles.toolDetailLabel).className,
+                )}
+              >
+                原始响应
+              </div>
+              <pre className={stylex.props(styles.toolDetailPre).className}>{tool.output}</pre>
+            </div>
+          ) : null}
+        </Fold.Panel>
+      ) : null}
+    </Fold>
   );
 }

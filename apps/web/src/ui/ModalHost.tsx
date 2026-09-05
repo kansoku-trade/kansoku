@@ -6,6 +6,7 @@ import {
   type ReactNode,
 } from 'react';
 import { X } from 'lucide-react';
+import { clsx } from 'clsx';
 import * as stylex from '@stylexjs/stylex';
 import { closeModal, getSnapshot, subscribe, type ModalEntry } from './modalStore';
 import { ScrollArea } from './ScrollArea';
@@ -86,9 +87,7 @@ const styles = stylex.create({
 function styledHeaderAction(action: ReactNode): ReactNode {
   if (!isValidElement<{ className?: string }>(action)) return action;
   return cloneElement(action, {
-    className: [action.props.className, stylex.props(styles.headAction).className]
-      .filter(Boolean)
-      .join(' '),
+    className: clsx(action.props.className, stylex.props(styles.headAction).className),
   });
 }
 
@@ -106,13 +105,11 @@ function ModalFrame({ entry }: { entry: ModalEntry }) {
   const body = typeof entry.body === 'function' ? entry.body(close) : entry.body;
   const headerAction =
     typeof entry.headerAction === 'function' ? entry.headerAction(close) : entry.headerAction;
-  const panelClasses = [
+  const panelClasses = clsx(
     'modal-panel',
     entry.size && entry.size !== 'lg' && `modal-panel--${entry.size}`,
     entry.panelClassName,
-  ]
-    .filter(Boolean)
-    .join(' ');
+  );
   const panelStyle = stylex.props(
     styles.panel,
     entry.size === 'sm' && styles.panelSm,

@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react';
-import { ChevronRight } from 'lucide-react';
-import { AnimatePresence, motion } from 'motion/react';
+import { useConversationFold } from './conversationFold.js';
+import { Brain } from 'lucide-react';
+import { clsx } from 'clsx';
 import * as stylex from '@stylexjs/stylex';
 import { colors, fontSizes, radii } from '../../../theme/tokens.stylex';
+import { Fold } from '@web/ui';
+import { Markdown } from '../markdown';
 
 const styles = stylex.create({
   root: {
@@ -11,9 +13,6 @@ const styles = stylex.create({
     gap: '4px',
   },
   button: {
-    'display': 'inline-flex',
-    'alignItems': 'center',
-    'alignSelf': 'flex-start',
     'gap': '6px',
     'padding': '3px 8px 3px 9px',
     'backgroundColor': colors.backgroundElement,
@@ -29,16 +28,6 @@ const styles = stylex.create({
       borderColor: colors.borderStrong,
     },
   },
-  caret: {
-    'color': colors.textMuted,
-    'transition': 'transform 0.12s ease',
-    '@media (prefers-reduced-motion: reduce)': {
-      transition: 'none',
-    },
-  },
-  caretOpen: {
-    transform: 'rotate(90deg)',
-  },
   body: {
     margin: '2px 0',
     overflow: 'hidden',
@@ -47,49 +36,76 @@ const styles = stylex.create({
     borderRadius: radii.lg,
     color: colors.textSecondary,
     fontSize: fontSizes.sm,
-    whiteSpace: 'pre-wrap',
-    overflowWrap: 'anywhere',
+  },
+  plain: {
+    display: 'inline-flex',
+    alignItems: 'flex-start',
+    alignSelf: 'flex-start',
+    gap: '8px',
+    maxWidth: '100%',
+    minHeight: '22px',
+    padding: '2px 6px',
+  },
+  mark: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+    width: '14px',
+    height: '14px',
+    marginTop: '2px',
+    color: colors.textMuted,
+  },
+  plainBody: {
+    minWidth: 0,
+    maxWidth: '100%',
   },
 });
 
-const foldTransition = { duration: 0.2, ease: [0.2, 0.9, 0.3, 1] } as const;
-
-export function ReasoningFold({ text, streaming }: { text: string; streaming?: boolean }) {
-  const [open, setOpen] = useState(Boolean(streaming));
-
-  useEffect(() => {
-    setOpen(Boolean(streaming));
-  }, [streaming]);
-
+export function ReasoningFold({
+  foldId,
+  text,
+  streaming,
+}: {
+  foldId: string;
+  text: string;
+  streaming?: boolean;
+}) {
   if (!text) return null;
+  if (!streaming) {
+    return (
+      <div className={clsx('chat-reasoning', stylex.props(styles.plain).className)}>
+        <span className={stylex.props(styles.mark).className} aria-hidden="true">
+          <Brain size={11} strokeWidth={2.2} />
+        </span>
+        <div className={stylex.props(styles.plainBody).className}>
+          <Markdown variant="chat" muted>
+            {text}
+          </Markdown>
+        </div>
+      </div>
+    );
+  }
+  return <LiveReasoning foldId={foldId} text={text} />;
+}
+
+function LiveReasoning({ foldId, text }: { foldId: string; text: string }) {
+  const [open, setOpen] = useConversationFold(foldId, true);
 
   return (
-    <div className={`chat-reasoning ${stylex.props(styles.root).className}`}>
-      <button
-        type="button"
-        className={`chat-reasoning-btn ${stylex.props(styles.button).className}`}
-        aria-expanded={open}
-        onClick={() => setOpen((current) => !current)}
-      >
-        {streaming ? '思考中' : '思考过程'}
-        <ChevronRight
-          size={12}
-          className={stylex.props(styles.caret, open && styles.caretOpen).className}
-        />
-      </button>
-      <AnimatePresence initial={false}>
-        {open ? (
-          <motion.div
-            className={`chat-reasoning-body ${stylex.props(styles.body).className}`}
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={foldTransition}
-          >
-            {text}
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
-    </div>
+    <Fold
+      open={open}
+      onToggle={() => setOpen()}
+      className={clsx('chat-reasoning', stylex.props(styles.root).className)}
+    >
+      <Fold.Trigger fit className={clsx('chat-reasoning-btn', stylex.props(styles.button).className)}>
+        思考中
+      </Fold.Trigger>
+      <Fold.Panel className={clsx('chat-reasoning-body', stylex.props(styles.body).className)}>
+        <Markdown variant="chat" muted>
+          {text}
+        </Markdown>
+      </Fold.Panel>
+    </Fold>
   );
 }

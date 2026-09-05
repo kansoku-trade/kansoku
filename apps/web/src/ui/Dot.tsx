@@ -1,4 +1,5 @@
 import type { HTMLAttributes } from 'react';
+import { clsx } from 'clsx';
 import * as stylex from '@stylexjs/stylex';
 import { colors } from '../theme/tokens.stylex';
 
@@ -53,12 +54,7 @@ export function Dot({ tone, pulse, className, ...rest }: DotProps) {
     tone === 'down' && styles.down,
     pulse && styles.pulse,
   ).className;
-  const hookClassName = [
-    pulse && 'dot--pulse',
-    className,
-  ]
-    .filter(Boolean)
-    .join(' ');
-
-  return <span className={[styleClassName, hookClassName].filter(Boolean).join(' ')} {...rest} />;
+  return (
+    <span className={clsx(styleClassName, pulse && 'dot--pulse', className)} {...rest} />
+  );
 }

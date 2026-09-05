@@ -6,6 +6,7 @@ import { colors, fontSizes, radii, sizes } from '../../../theme/tokens.stylex';
 import type { TranscriptInsert } from './transcriptTimeline.js';
 import { blockKey, presentTranscript } from './presentTranscript.js';
 import { TranscriptBlockView } from './TranscriptBlockView.js';
+import { ConversationKeyProvider } from './conversationFold.js';
 import { lastUserRow, type ChatLiveBeat, type ChatLiveTool, type ChatRow } from './useChatSession';
 
 const styles = stylex.create({
@@ -104,6 +105,7 @@ function scrollToBottom(viewport: HTMLElement, smooth: boolean): void {
 const EMPTY_INSERTS: TranscriptInsert[] = [];
 
 function ConversationTranscriptView({
+  conversationKey,
   rows,
   inserts = EMPTY_INSERTS,
   busy,
@@ -131,6 +133,7 @@ function ConversationTranscriptView({
   onEditingChange,
   onViewportScroll,
 }: {
+  conversationKey?: string;
   rows: ChatRow[];
   inserts?: TranscriptInsert[];
   busy: boolean;
@@ -263,119 +266,125 @@ function ConversationTranscriptView({
     !liveBeats?.length;
 
   return (
-    <ScrollArea
-      className={className}
-      viewportClassName={`chat-transcript-viewport ${stylex.props(styles.transcriptViewport).className}${viewportClassName ? ` ${viewportClassName}` : ''}`}
-      contentClassName={`chat-panel-body-content ${stylex.props(styles.panelBodyContent, full && styles.fullContext, canvasOpen && styles.canvasOpenContext).className}${contentClassName ? ` ${contentClassName}` : ''}`}
-      viewportRef={bodyRef}
-      onScroll={() => {
-        const element = bodyRef.current;
-        if (!element) return;
-        onViewportScroll?.(element.scrollTop);
-        const distance = element.scrollHeight - element.scrollTop - element.clientHeight;
-        const scrolledUp = element.scrollTop < lastScrollTopRef.current && distance > 1;
-        lastScrollTopRef.current = element.scrollTop;
-        // Any upward scroll releases the follow, however small; only reaching the
-        // bottom again re-engages it. A distance threshold alone snaps small scrolls back.
-        const next = scrolledUp ? false : distance < SCROLL_STICK_THRESHOLD;
-        stickRef.current = next;
-        setStuck(next);
-      }}
-    >
-      {isEmpty && !busy ? (
-        <div
-          className={`chat-empty ${stylex.props(styles.empty).className}${emptyClassName ? ` ${emptyClassName}` : ''}`}
-        >
+    <ConversationKeyProvider conversationKey={conversationKey}>
+      <ScrollArea
+        className={className}
+        viewportClassName={`chat-transcript-viewport ${stylex.props(styles.transcriptViewport).className}${viewportClassName ? ` ${viewportClassName}` : ''}`}
+        contentClassName={`chat-panel-body-content ${stylex.props(styles.panelBodyContent, full && styles.fullContext, canvasOpen && styles.canvasOpenContext).className}${contentClassName ? ` ${contentClassName}` : ''}`}
+        viewportRef={bodyRef}
+        onScroll={() => {
+          const element = bodyRef.current;
+          if (!element) return;
+          onViewportScroll?.(element.scrollTop);
+          const distance = element.scrollHeight - element.scrollTop - element.clientHeight;
+          const scrolledUp = element.scrollTop < lastScrollTopRef.current && distance > 1;
+          lastScrollTopRef.current = element.scrollTop;
+          // Any upward scroll releases the follow, however small; only reaching the
+          // bottom again re-engages it. A distance threshold alone snaps small scrolls back.
+          const next = scrolledUp ? false : distance < SCROLL_STICK_THRESHOLD;
+          stickRef.current = next;
+          setStuck(next);
+        }}
+      >
+        {isEmpty && !busy ? (
           <div
-            className={`chat-empty-text ${stylex.props(styles.emptyText).className}${emptyTextClassName ? ` ${emptyTextClassName}` : ''}`}
+            className={`chat-empty ${stylex.props(styles.empty).className}${emptyClassName ? ` ${emptyClassName}` : ''}`}
           >
-            {emptyText}
-          </div>
-          {suggestions.length > 0 ? (
-            <div className={`chat-suggestions ${stylex.props(styles.suggestions).className}`}>
-              {suggestions.map((question) => (
-                <button
-                  type="button"
-                  key={question}
-                  className={`chat-suggestion ${stylex.props(styles.suggestion).className}${suggestionClassName ? ` ${suggestionClassName}` : ''}`}
-                  onClick={() => onPickSuggestion(question)}
-                >
-                  {question}
-                </button>
-              ))}
-            </div>
-          ) : null}
-        </div>
-      ) : null}
-      {blocks.map((block, index) => (
-        <TranscriptBlockView
-          key={blockKey(block, index)}
-          block={block}
-          modelLabels={modelLabels}
-          userBubbleClassName={userBubbleClassName}
-          insertClassName={insertClassName}
-          onOpenCanvas={onOpenCanvas}
-          onRetry={onRetryLast}
-          showActions={
-            block.type === 'assistant' && !block.streaming && !busy && index === lastAssistantIndex
-          }
-          showUserActions={block.type === 'user'}
-          userActions={
-            block.type === 'user' && block.row.id === lastUserId
-              ? {
-                  onRetry: onRetryLast,
-                  onEdit: onReplaceLast ? () => setEditingId(lastUserId) : onEditLast,
-                  retryDisabled: busy,
-                  editDisabled: busy,
-                }
-              : {}
-          }
-          editing={block.type === 'user' && block.row.id === editingId}
-          onSubmitEdit={(text) => {
-            setEditingId(null);
-            onReplaceLast?.(text);
-          }}
-          onCancelEdit={() => setEditingId(null)}
-        />
-      ))}
-      {!isEmpty && !busy && suggestions.length > 0 ? (
-        <div className={`chat-suggestions ${stylex.props(styles.suggestions).className}`}>
-          {suggestions.map((question) => (
-            <button
-              type="button"
-              key={question}
-              className={`chat-suggestion ${stylex.props(styles.suggestion).className}${suggestionClassName ? ` ${suggestionClassName}` : ''}`}
-              onClick={() => onPickSuggestion(question)}
+            <div
+              className={`chat-empty-text ${stylex.props(styles.emptyText).className}${emptyTextClassName ? ` ${emptyTextClassName}` : ''}`}
             >
-              {question}
-            </button>
-          ))}
-        </div>
-      ) : null}
-      {activeUserId ? (
-        <div
-          ref={streamSpaceRef}
-          className={`chat-stream-space ${stylex.props(styles.streamSpace).className}`}
-          aria-hidden="true"
-        />
-      ) : null}
-      {!stuck && busy ? (
-        <button
-          type="button"
-          className={`chat-scroll-bottom ${stylex.props(styles.scrollBottom).className}`}
-          aria-label="回到底部"
-          onClick={() => {
-            const element = bodyRef.current;
-            if (!element) return;
-            stickRef.current = true;
-            setStuck(true);
-            element.scrollTop = element.scrollHeight;
-          }}
-        >
-          <ArrowDown size={14} />
-        </button>
-      ) : null}
-    </ScrollArea>
+              {emptyText}
+            </div>
+            {suggestions.length > 0 ? (
+              <div className={`chat-suggestions ${stylex.props(styles.suggestions).className}`}>
+                {suggestions.map((question) => (
+                  <button
+                    type="button"
+                    key={question}
+                    className={`chat-suggestion ${stylex.props(styles.suggestion).className}${suggestionClassName ? ` ${suggestionClassName}` : ''}`}
+                    onClick={() => onPickSuggestion(question)}
+                  >
+                    {question}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+        {blocks.map((block, index) => (
+          <TranscriptBlockView
+            key={blockKey(block, index)}
+            block={block}
+            index={index}
+            modelLabels={modelLabels}
+            userBubbleClassName={userBubbleClassName}
+            insertClassName={insertClassName}
+            onOpenCanvas={onOpenCanvas}
+            onRetry={onRetryLast}
+            showActions={
+              block.type === 'assistant' &&
+              !block.streaming &&
+              !busy &&
+              index === lastAssistantIndex
+            }
+            showUserActions={block.type === 'user'}
+            userActions={
+              block.type === 'user' && block.row.id === lastUserId
+                ? {
+                    onRetry: onRetryLast,
+                    onEdit: onReplaceLast ? () => setEditingId(lastUserId) : onEditLast,
+                    retryDisabled: busy,
+                    editDisabled: busy,
+                  }
+                : {}
+            }
+            editing={block.type === 'user' && block.row.id === editingId}
+            onSubmitEdit={(text) => {
+              setEditingId(null);
+              onReplaceLast?.(text);
+            }}
+            onCancelEdit={() => setEditingId(null)}
+          />
+        ))}
+        {!isEmpty && !busy && suggestions.length > 0 ? (
+          <div className={`chat-suggestions ${stylex.props(styles.suggestions).className}`}>
+            {suggestions.map((question) => (
+              <button
+                type="button"
+                key={question}
+                className={`chat-suggestion ${stylex.props(styles.suggestion).className}${suggestionClassName ? ` ${suggestionClassName}` : ''}`}
+                onClick={() => onPickSuggestion(question)}
+              >
+                {question}
+              </button>
+            ))}
+          </div>
+        ) : null}
+        {activeUserId ? (
+          <div
+            ref={streamSpaceRef}
+            className={`chat-stream-space ${stylex.props(styles.streamSpace).className}`}
+            aria-hidden="true"
+          />
+        ) : null}
+        {!stuck && busy ? (
+          <button
+            type="button"
+            className={`chat-scroll-bottom ${stylex.props(styles.scrollBottom).className}`}
+            aria-label="回到底部"
+            onClick={() => {
+              const element = bodyRef.current;
+              if (!element) return;
+              stickRef.current = true;
+              setStuck(true);
+              element.scrollTop = element.scrollHeight;
+            }}
+          >
+            <ArrowDown size={14} />
+          </button>
+        ) : null}
+      </ScrollArea>
+    </ConversationKeyProvider>
   );
 }
 

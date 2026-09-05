@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { clsx } from 'clsx';
 import * as stylex from '@stylexjs/stylex';
 import {
   ArrowUpCircle,
@@ -242,7 +243,7 @@ function classNames(
   legacy: string,
   ...styleValues: Array<stylex.StyleXStyles | undefined>
 ): string {
-  return [legacy, stylex.props(...styleValues).className].filter(Boolean).join(' ');
+  return clsx(legacy, stylex.props(...styleValues).className);
 }
 
 const TAB_ICONS: Record<ReturnType<typeof tabKind>, typeof LayoutDashboard> = {

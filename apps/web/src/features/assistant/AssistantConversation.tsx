@@ -665,6 +665,7 @@ export function AssistantConversation({
           </span>
         </div>
         <ConversationTranscript
+          conversationKey={`assistant:${sessionId}`}
           className={`assistant-conversation-body ${stylex.props(styles.body).className}`}
           contentClassName={stylex.props(styles.transcriptContent).className}
           emptyClassName={stylex.props(styles.transcriptEmpty).className}

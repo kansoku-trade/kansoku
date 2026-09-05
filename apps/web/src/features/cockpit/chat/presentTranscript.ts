@@ -1,6 +1,5 @@
 import type { CanvasEntry } from '../../canvas/canvasEntries';
 import { collectCanvasEntries } from '../../canvas/canvasEntries';
-import { presentToolCall } from './toolSummary.js';
 import { mergeTimeline, type TimelineEntry, type TranscriptInsert } from './transcriptTimeline.js';
 import type { ChatLiveBeat, ChatLiveTool, ChatRow } from './useChatSession';
 
@@ -18,7 +17,6 @@ export type TranscriptBlock =
   | { type: 'error'; row: ChatRow }
   | { type: 'insert'; insert: TranscriptInsert }
   | { type: 'tool'; tool: PresentedTool }
-  | { type: 'tool-group'; id: string; tools: PresentedTool[]; running: boolean; titles: string[] }
   | { type: 'worked'; id: string; durationMs: number; blocks: TranscriptBlock[] }
   | { type: 'canvases'; id: string; entries: CanvasEntry[] }
   | { type: 'reasoning'; text: string; streaming?: boolean }
@@ -41,9 +39,6 @@ export function blockKey(block: TranscriptBlock, index: number): string {
     }
     case 'tool': {
       return block.tool.id;
-    }
-    case 'tool-group': {
-      return block.id;
     }
     case 'worked': {
       return block.id;
@@ -94,48 +89,6 @@ function toolFromLive(tool: ChatLiveTool): PresentedTool {
   return presentedTool(tool.id, tool.label, tool.status === 'start', tool.input, tool.output);
 }
 
-function toolTitles(tools: PresentedTool[]): string[] {
-  const titles: string[] = [];
-  for (const tool of tools) {
-    const title = presentToolCall(tool.label, tool.input).title;
-    if (titles.at(-1) !== title) titles.push(title);
-  }
-  return titles;
-}
-
-function emitTools(tools: PresentedTool[]): TranscriptBlock[] {
-  if (tools.length === 0) return [];
-  if (tools.length === 1) return [{ type: 'tool', tool: tools[0] }];
-  return [
-    {
-      type: 'tool-group',
-      id: `group:${tools[0].id}`,
-      tools,
-      running: tools.some((tool) => tool.running),
-      titles: toolTitles(tools),
-    },
-  ];
-}
-
-function groupSequence(blocks: TranscriptBlock[]): TranscriptBlock[] {
-  const out: TranscriptBlock[] = [];
-  let pending: PresentedTool[] = [];
-  const flush = () => {
-    out.push(...emitTools(pending));
-    pending = [];
-  };
-  for (const block of blocks) {
-    if (block.type === 'tool') {
-      pending.push(block.tool);
-      continue;
-    }
-    flush();
-    out.push(block);
-  }
-  flush();
-  return out;
-}
-
 function parseTs(value: string): number {
   const parsed = Date.parse(value);
   return Number.isNaN(parsed) ? Number.NaN : parsed;
@@ -169,10 +122,6 @@ function isToolEntry(entry: TimelineEntry): boolean {
   return entry.kind === 'row' && entry.row.kind === 'tool';
 }
 
-function isReasoningEntry(entry: TimelineEntry): boolean {
-  return entry.kind === 'row' && entry.row.kind === 'thinking';
-}
-
 function splitTurns(timeline: TimelineEntry[]): { prefix: TimelineEntry[]; turns: TimelineEntry[][] } {
   const prefix: TimelineEntry[] = [];
   const turns: TimelineEntry[][] = [];
@@ -201,7 +150,7 @@ function entryToBlocks(entry: TimelineEntry): TranscriptBlock[] {
 }
 
 function sequenceFromEntries(entries: TimelineEntry[]): TranscriptBlock[] {
-  return groupSequence(entries.flatMap(entryToBlocks));
+  return entries.flatMap(entryToBlocks);
 }
 
 function canvasesFromRows(
@@ -222,8 +171,7 @@ function presentCompletedTurn(entries: TimelineEntry[]): TranscriptBlock[] {
   const userRow = userEntry?.kind === 'row' ? userEntry.row : undefined;
   const rest = userEntry ? entries.slice(1) : entries;
   const errors = rest.filter(isErrorEntry);
-  const reasoning = rest.filter(isReasoningEntry);
-  const body = rest.filter((entry) => !isErrorEntry(entry) && !isReasoningEntry(entry));
+  const body = rest.filter((entry) => !isErrorEntry(entry));
   const hasTools = body.some(isToolEntry);
   let lastText: TimelineEntry | undefined;
   for (let i = body.length - 1; i >= 0; i -= 1) {
@@ -238,7 +186,6 @@ function presentCompletedTurn(entries: TimelineEntry[]): TranscriptBlock[] {
   if (!hasTools) {
     return [
       ...(userRow ? [{ type: 'user' as const, row: userRow }] : []),
-      ...sequenceFromEntries(reasoning),
       ...sequenceFromEntries(body),
       ...canvases,
       ...errorBlocks,
@@ -262,7 +209,6 @@ function presentCompletedTurn(entries: TimelineEntry[]): TranscriptBlock[] {
 
   return [
     ...(userRow ? [{ type: 'user' as const, row: userRow }] : []),
-    ...sequenceFromEntries(reasoning),
     ...worked,
     ...(lastText ? entryToBlocks(lastText) : []),
     ...canvases,
@@ -297,7 +243,7 @@ function beatsToBlocks(beats: ChatLiveBeat[], streamText: string): TranscriptBlo
     }
     blocks.push({ type: 'tool', tool: toolFromLive(beat.tool) });
   }
-  return groupSequence(blocks);
+  return blocks;
 }
 
 function fallbackLiveBlocks(liveTools: ChatLiveTool[], streamText: string): TranscriptBlock[] {
@@ -312,7 +258,7 @@ function fallbackLiveBlocks(liveTools: ChatLiveTool[], streamText: string): Tran
       row: { id: 'stream', ts: '', kind: 'assistant', text: streamText },
     });
   }
-  return groupSequence(blocks);
+  return blocks;
 }
 
 function presentLiveTurn(
@@ -343,10 +289,7 @@ function presentLiveTurn(
     ...canvases,
     ...errors,
   ].map((block) => (block.type === 'reasoning' ? { ...block, streaming: true } : block));
-  const hasRunning = live.some(
-    (block) =>
-      (block.type === 'tool' && block.tool.running) || (block.type === 'tool-group' && block.running),
-  );
+  const hasRunning = live.some((block) => block.type === 'tool' && block.tool.running);
   const hasText =
     live.some((block) => block.type === 'assistant' || block.type === 'reasoning') ||
     persisted.some((block) => block.type === 'assistant' || block.type === 'reasoning');

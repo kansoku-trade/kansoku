@@ -1,4 +1,5 @@
 import type { HTMLAttributes } from 'react';
+import { clsx } from 'clsx';
 import * as stylex from '@stylexjs/stylex';
 import { colors, radii } from '../theme/tokens.stylex';
 
@@ -28,7 +29,7 @@ const styles = stylex.create({
 export function Spinner({ className, ...rest }: HTMLAttributes<HTMLSpanElement>) {
   return (
     <span
-      className={[stylex.props(styles.root).className, className].filter(Boolean).join(' ')}
+      className={clsx(stylex.props(styles.root).className, className)}
       {...rest}
     />
   );

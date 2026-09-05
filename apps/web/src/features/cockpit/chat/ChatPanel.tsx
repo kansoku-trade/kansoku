@@ -7,6 +7,7 @@ import type { ChatLiveBeat, ChatLiveTool, ChatRow, ChatSessionInfo } from './use
 import { colors, fontSizes } from '../../../theme/tokens.stylex';
 
 interface ChatPanelProps {
+  conversationKey?: string;
   session: ChatSessionInfo | null;
   docCreatedAt: string;
   rows: ChatRow[];
@@ -110,6 +111,7 @@ const styles = stylex.create({
 });
 
 export function ChatPanel({
+  conversationKey,
   session,
   docCreatedAt,
   rows,
@@ -160,6 +162,7 @@ export function ChatPanel({
         </div>
       </div>
       <ConversationTranscript
+        conversationKey={conversationKey}
         className={`chat-panel-body ${stylex.props(styles.body).className}`}
         viewportClassName={stylex.props(styles.bodyViewport).className}
         contentClassName={!full ? stylex.props(styles.bodyContent).className : undefined}

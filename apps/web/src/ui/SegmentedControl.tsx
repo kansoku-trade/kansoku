@@ -1,4 +1,5 @@
 import { useId, type ReactNode } from 'react';
+import { clsx } from 'clsx';
 import * as stylex from '@stylexjs/stylex';
 import { colors, fontSizes, radii } from '../theme/tokens.stylex';
 
@@ -133,7 +134,7 @@ export function SegmentedControl<Value extends string>({
 }: SegmentedControlProps<Value>) {
   const name = useId();
   const solid = variant === 'solid';
-  const classes = [
+  const classes = clsx(
     'ui-segmented-control',
     `ui-segmented-control--${variant}`,
     size && `ui-segmented-control--${size}`,
@@ -146,9 +147,7 @@ export function SegmentedControl<Value extends string>({
       (fit || !solid) && styles.fit,
     ).className,
     className,
-  ]
-    .filter(Boolean)
-    .join(' ');
+  );
 
   return (
     <div

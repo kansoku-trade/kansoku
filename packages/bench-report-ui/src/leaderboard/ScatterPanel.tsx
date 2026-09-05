@@ -1,3 +1,4 @@
+import { clsx } from 'clsx';
 import type { LeaderboardDetailCardView, LeaderboardReportViewData } from '../types';
 import { Tooltip } from '../ui/Tooltip';
 
@@ -73,10 +74,8 @@ export function ScatterPanel({
         ) : null}
         {scatter.dots.map((dot) => {
           const sel = dot.id === selectedId;
-          const dotClass = ['dot', sel ? 'sel' : '', dot.lead ? 'lead' : '', dot.below ? 'below' : '']
-            .filter(Boolean)
-            .join(' ');
-          const labelClass = ['dotlab', sel ? 'sel' : '', dot.below ? 'dim' : ''].filter(Boolean).join(' ');
+          const dotClass = clsx('dot', sel && 'sel', dot.lead && 'lead', dot.below && 'below');
+          const labelClass = clsx('dotlab', sel && 'sel', dot.below && 'dim');
           const summary = dotSummary(data.details[dot.id]);
           const circle = (
             <circle

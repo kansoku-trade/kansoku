@@ -57,9 +57,6 @@ function summarize(blocks: TranscriptBlock[]): string[] {
       case 'tool': {
         return `tool:${block.tool.label}${block.tool.running ? ':run' : ''}`;
       }
-      case 'tool-group': {
-        return `group:${block.tools.length}:${block.running ? 'run' : 'done'}:${block.titles.join(',')}`;
-      }
       case 'worked': {
         return `worked:${block.durationMs}:${summarize(block.blocks).join('|')}`;
       }
@@ -119,7 +116,7 @@ describe('formatRuntime', () => {
 });
 
 describe('presentTranscript', () => {
-  it('lifts thinking rows out of the worked fold', () => {
+  it('keeps thinking rows on the worked timeline with tools', () => {
     const blocks = presentTranscript({
       rows: [
         user('u1', '10:00:00', '怎么看'),
@@ -130,8 +127,25 @@ describe('presentTranscript', () => {
     });
     expect(summarize(blocks)).toEqual([
       'user:怎么看',
-      'reasoning:先核对持仓',
-      'worked:8000:tool:read_file',
+      'worked:8000:reasoning:先核对持仓|tool:read_file',
+      'text:继续拿',
+    ]);
+  });
+
+  it('interleaves later thinking with tools inside the fold', () => {
+    const blocks = presentTranscript({
+      rows: [
+        user('u1', '10:00:00', '怎么看'),
+        { id: 'th1', ts: ts('10:00:02'), kind: 'thinking', text: '先读持仓' },
+        tool('t1', '10:00:03', 'read_file', { path: 'stocks/MU.md' }),
+        { id: 'th2', ts: ts('10:00:05'), kind: 'thinking', text: '再对盘面' },
+        tool('t2', '10:00:06', 'bash', { command: 'longbridge quote MU.US' }),
+        assistant('a1', '10:00:08', '继续拿'),
+      ],
+    });
+    expect(summarize(blocks)).toEqual([
+      'user:怎么看',
+      'worked:8000:reasoning:先读持仓|tool:read_file|reasoning:再对盘面|tool:bash',
       'text:继续拿',
     ]);
   });
@@ -156,7 +170,7 @@ describe('presentTranscript', () => {
     });
     expect(summarize(blocks)).toEqual([
       'user:拉三只',
-      'worked:72000:text:先读流程|group:3:done:加载分析流程,执行数据命令',
+      'worked:72000:text:先读流程|tool:read_skill|tool:bash|tool:bash',
       'text:MRVL 最强',
     ]);
   });
@@ -172,7 +186,7 @@ describe('presentTranscript', () => {
     expect(summarize(blocks)).toEqual(['user:保存', 'worked:5000:tool:read_file', 'text:看完了']);
   });
 
-  it('splits tool groups when text sits between them', () => {
+  it('keeps tools in order when text sits between them', () => {
     const blocks = presentTranscript({
       rows: [
         user('u1', '10:00:00', '对照'),
@@ -185,7 +199,7 @@ describe('presentTranscript', () => {
     });
     expect(summarize(blocks)).toEqual([
       'user:对照',
-      'worked:20000:group:2:done:加载分析流程|text:三只都齐了|tool:save_canvas',
+      'worked:20000:tool:read_skill|tool:read_skill|text:三只都齐了|tool:save_canvas',
       'text:MRVL 最强',
       'canvases:e2e-three-layer',
     ]);
@@ -201,7 +215,7 @@ describe('presentTranscript', () => {
     });
     expect(summarize(blocks)).toEqual([
       'user:画一张',
-      'worked:9000:group:2:done:加载分析流程,保存画布',
+      'worked:9000:tool:read_skill|tool:save_canvas',
       'canvases:mu-panel',
     ]);
   });
@@ -307,7 +321,9 @@ describe('presentTranscript', () => {
       'user:拉三只',
       `runtime:${ts('10:00:00')}`,
       'text:先读流程',
-      'group:3:run:加载分析流程,执行数据命令',
+      'tool:read_skill',
+      'tool:bash',
+      'tool:bash:run',
     ]);
   });
 

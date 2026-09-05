@@ -1,4 +1,5 @@
 import { Lock } from 'lucide-react';
+import { clsx } from 'clsx';
 import * as stylex from '@stylexjs/stylex';
 import { colors, fontSizes, radii } from '../../theme/tokens.stylex';
 import { openLicenseModal } from '../edition/licenseModalStore';
@@ -43,13 +44,7 @@ export function LockedAiNotice({
   message?: string;
   className?: string;
 }) {
-  const noticeClassName = [
-    'locked-ai-notice',
-    stylex.props(styles.root).className,
-    className,
-  ]
-    .filter(Boolean)
-    .join(' ');
+  const noticeClassName = clsx('locked-ai-notice', stylex.props(styles.root).className, className);
 
   return (
     <div className={noticeClassName}>

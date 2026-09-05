@@ -1,4 +1,5 @@
 import { ArrowLeft } from 'lucide-react';
+import { clsx } from 'clsx';
 import * as stylex from '@stylexjs/stylex';
 import { isDesktopRealtime } from '@web/lib/portTransport';
 import { colors, fontSizes, sizes } from '../../theme/tokens.stylex';
@@ -162,9 +163,7 @@ const styles = stylex.create({
 function Bone({ style }: { style: stylex.StyleXStyles }) {
   return (
     <div
-      className={[stylex.props(styles.bone, style).className, 'app-skeleton-bone']
-        .filter(Boolean)
-        .join(' ')}
+      className={clsx(stylex.props(styles.bone, style).className, 'app-skeleton-bone')}
     />
   );
 }

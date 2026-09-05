@@ -1,3 +1,4 @@
+import { clsx } from 'clsx';
 import type { LeaderboardModelRowView, LeaderboardReportViewData } from '../types';
 import { Gauge } from './Gauge';
 
@@ -10,7 +11,7 @@ function Row({
   selected: boolean;
   onSelect: (id: string) => void;
 }) {
-  const rowClass = ['row', row.isBaseline ? 'base' : '', selected ? 'sel' : ''].filter(Boolean).join(' ');
+  const rowClass = clsx('row', row.isBaseline && 'base', selected && 'sel');
   return (
     <tr className={rowClass} data-model={row.id} onClick={() => onSelect(row.id)}>
       <td>{row.rank ?? '—'}</td>

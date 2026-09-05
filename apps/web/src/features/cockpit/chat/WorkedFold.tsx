@@ -1,21 +1,15 @@
-import { useState, type ReactNode } from 'react';
-import { ChevronRight } from 'lucide-react';
-import { AnimatePresence, motion } from 'motion/react';
+import { type ReactNode } from 'react';
+import { clsx } from 'clsx';
+import { useConversationFold } from './conversationFold.js';
 import * as stylex from '@stylexjs/stylex';
 import { colors, fontSizes, radii } from '../../../theme/tokens.stylex';
+import { Fold } from '@web/ui';
 import { formatWorkedDuration } from './presentTranscript.js';
 
 const styles = stylex.create({
-  row: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    margin: '2px 0',
-  },
   button: {
-    'display': 'inline-flex',
-    'alignItems': 'center',
     'gap': '6px',
+    'margin': '2px 0',
     'padding': '3px 8px 3px 9px',
     'backgroundColor': colors.backgroundElement,
     'borderColor': colors.border,
@@ -32,70 +26,40 @@ const styles = stylex.create({
       borderColor: colors.borderStrong,
     },
   },
-  caret: {
-    'color': colors.textMuted,
-    'transition': 'transform 0.12s ease',
-    '@media (prefers-reduced-motion: reduce)': {
-      transition: 'none',
-    },
-  },
-  caretOpen: {
-    transform: 'rotate(90deg)',
-  },
   fold: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '10px',
     margin: '4px 0 2px',
-    overflow: 'hidden',
-    padding: '10px 12px',
+    padding: '4px 8px',
     backgroundColor: colors.backgroundSurface,
     borderRadius: radii.lg,
   },
 });
 
-const foldTransition = { duration: 0.2, ease: [0.2, 0.9, 0.3, 1] } as const;
-
 export function WorkedFold({
+  id,
   durationMs,
   children,
 }: {
+  id: string;
   durationMs: number;
   children: ReactNode;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useConversationFold(id);
   const label = formatWorkedDuration(durationMs);
 
   return (
-    <div className="chat-worked">
-      <div className={stylex.props(styles.row).className}>
-        <button
-          type="button"
-          className={`chat-worked-btn ${stylex.props(styles.button).className}`}
-          aria-expanded={open}
-          aria-label={label}
-          onClick={() => setOpen((current) => !current)}
-        >
-          {label}
-          <ChevronRight
-            size={12}
-            className={stylex.props(styles.caret, open && styles.caretOpen).className}
-          />
-        </button>
-      </div>
-      <AnimatePresence initial={false}>
-        {open ? (
-          <motion.div
-            className={`chat-worked-fold ${stylex.props(styles.fold).className}`}
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={foldTransition}
-          >
-            {children}
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
-    </div>
+    <Fold open={open} onToggle={() => setOpen()} className="chat-worked">
+      <Fold.Trigger
+        fit
+        className={clsx('chat-worked-btn', stylex.props(styles.button).className)}
+        aria-label={label}
+      >
+        {label}
+      </Fold.Trigger>
+      <Fold.Panel className={clsx('chat-worked-fold', stylex.props(styles.fold).className)}>
+        {children}
+      </Fold.Panel>
+    </Fold>
   );
 }

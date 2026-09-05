@@ -1,4 +1,5 @@
 import type { ButtonHTMLAttributes } from 'react';
+import { clsx } from 'clsx';
 import * as stylex from '@stylexjs/stylex';
 import { colors, fontSizes, radii, sizes } from '../theme/tokens.stylex';
 
@@ -82,9 +83,7 @@ export function Button({
   ...rest
 }: ButtonProps) {
   const styleClassName = stylex.props(styles.base, size === 'sm' && styles.sm).className;
-  const cls = ['btn', accent && 'btn--accent', state && `btn--${state}`, className, styleClassName]
-    .filter(Boolean)
-    .join(' ');
+  const cls = clsx('btn', accent && 'btn--accent', state && `btn--${state}`, className, styleClassName);
 
   return (
     <button

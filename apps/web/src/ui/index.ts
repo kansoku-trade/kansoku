@@ -14,6 +14,7 @@ export { SectionTitle } from './SectionTitle';
 export { NoteBlock } from './NoteBlock';
 export { Num } from './Num';
 export { Spinner } from './Spinner';
+export { Fold, useFoldActions, useFoldState } from './Fold';
 export { Empty } from './Empty';
 export { ErrorBox } from './ErrorBox';
 export { Tooltip } from './Tooltip';

@@ -1,3 +1,4 @@
+import { clsx } from 'clsx';
 import * as stylex from '@stylexjs/stylex';
 import { colors, fonts, fontSizes, radii } from './theme/tokens.stylex';
 
@@ -419,8 +420,7 @@ const styles = stylex.create({
 });
 
 function classNames(hook: string, ...styleValues: stylex.StyleXStyles[]): string {
-  const className = stylex.props(...styleValues).className;
-  return [hook, className].filter(Boolean).join(' ');
+  return clsx(hook, stylex.props(...styleValues).className);
 }
 
 function isElectronShell(): boolean {
@@ -430,9 +430,7 @@ function isElectronShell(): boolean {
 function Bone({ className = '', style }: { className?: string; style?: stylex.StyleXStyles }) {
   return (
     <div
-      className={[classNames('', styles.bone, style), 'app-skeleton-bone', className]
-        .filter(Boolean)
-        .join(' ')}
+      className={clsx(classNames('', styles.bone, style), 'app-skeleton-bone', className)}
     />
   );
 }

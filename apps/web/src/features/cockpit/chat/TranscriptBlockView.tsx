@@ -10,7 +10,7 @@ import { blockKey, type TranscriptBlock } from './presentTranscript.js';
 import { ReasoningFold } from './ReasoningFold.js';
 import { SourcesFold } from './SourcesFold.js';
 import { TurnRuntime } from './TurnRuntime.js';
-import { ToolGroupRow, ToolRow } from './ToolCallViews.js';
+import { ToolRow } from './ToolCallViews.js';
 import { WorkedFold } from './WorkedFold.js';
 
 const chatThinkingBar = stylex.keyframes({
@@ -124,6 +124,7 @@ const styles = stylex.create({
 
 export function TranscriptBlockView({
   block,
+  index = 0,
   modelLabels,
   userBubbleClassName,
   insertClassName,
@@ -137,6 +138,7 @@ export function TranscriptBlockView({
   onCancelEdit,
 }: {
   block: TranscriptBlock;
+  index?: number;
   modelLabels?: Readonly<Record<string, string>>;
   userBubbleClassName?: string;
   insertClassName?: string;
@@ -200,7 +202,7 @@ export function TranscriptBlockView({
               {text}
             </Markdown>
           </div>
-          <SourcesFold sources={sources} />
+          <SourcesFold foldId={`sources:${block.row.id}`} sources={sources} />
           {showActions && !block.streaming ? (
             <MessageActions text={text} onRetry={onRetry} />
           ) : null}
@@ -226,26 +228,19 @@ export function TranscriptBlockView({
     return <TurnRuntime startedAt={block.startedAt} />;
   }
   if (block.type === 'reasoning') {
-    return <ReasoningFold text={block.text} streaming={block.streaming} />;
-  }
-  if (block.type === 'tool') return <ToolRow tool={block.tool} />;
-  if (block.type === 'tool-group') {
     return (
-      <ToolGroupRow
-        id={block.id}
-        tools={block.tools}
-        running={block.running}
-        titles={block.titles}
-      />
+      <ReasoningFold foldId={`reasoning:${index}`} text={block.text} streaming={block.streaming} />
     );
   }
+  if (block.type === 'tool') return <ToolRow tool={block.tool} />;
   if (block.type === 'worked') {
     return (
-      <WorkedFold durationMs={block.durationMs}>
-        {block.blocks.map((child, index) => (
+      <WorkedFold id={block.id} durationMs={block.durationMs}>
+        {block.blocks.map((child, childIndex) => (
           <TranscriptBlockView
-            key={blockKey(child, index)}
+            key={blockKey(child, childIndex)}
             block={child}
+            index={childIndex}
             modelLabels={modelLabels}
             userBubbleClassName={userBubbleClassName}
             insertClassName={insertClassName}

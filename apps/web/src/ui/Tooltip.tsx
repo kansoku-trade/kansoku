@@ -1,5 +1,6 @@
 import { Tooltip as BaseTooltip } from '@base-ui/react/tooltip';
 import type { ReactElement, ReactNode } from 'react';
+import { clsx } from 'clsx';
 import * as stylex from '@stylexjs/stylex';
 import { colors, fontSizes, radii } from '../theme/tokens.stylex';
 
@@ -62,13 +63,7 @@ export function Tooltip({
 
   const trigger = renderTrigger ?? (
     <span
-      className={[
-        stylex.props(styles.anchor).className,
-        'tooltip-anchor',
-        className,
-      ]
-        .filter(Boolean)
-        .join(' ')}
+      className={clsx(stylex.props(styles.anchor).className, 'tooltip-anchor', className)}
       tabIndex={focusable ? 0 : undefined}
     />
   );
@@ -81,16 +76,12 @@ export function Tooltip({
       {active && (
         <BaseTooltip.Portal>
           <BaseTooltip.Positioner
-            className={['tooltip-positioner', stylex.props(styles.positioner).className]
-              .filter(Boolean)
-              .join(' ')}
+            className={clsx('tooltip-positioner', stylex.props(styles.positioner).className)}
             side={placement}
             sideOffset={8}
           >
             <BaseTooltip.Popup
-              className={['tooltip-panel', stylex.props(styles.panel).className]
-                .filter(Boolean)
-                .join(' ')}
+              className={clsx('tooltip-panel', stylex.props(styles.panel).className)}
             >
               {content}
             </BaseTooltip.Popup>
