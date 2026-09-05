@@ -188,4 +188,36 @@ describe('reviewCanvasStructure', () => {
     );
     expect(reviewCanvasStructure(source)).toEqual([]);
   });
+
+  it('rejects native input and textarea', () => {
+    expect(reviewCanvasStructure(wrap('<Text>x</Text><input value={1} />'))).toContain(
+      'use Param / Toggle / Select, not native input',
+    );
+    expect(reviewCanvasStructure(wrap('<Text>x</Text><textarea></textarea>'))).toContain(
+      'use Param / Toggle / Select, not native input',
+    );
+    expect(reviewCanvasStructure(wrap('<Text>x</Text><Input value={1} />'))).toContain(
+      'use Param / Toggle / Select, not native input',
+    );
+  });
+
+  it('rejects Param with only min or only max', () => {
+    expect(
+      reviewCanvasStructure(wrap('<Text>x</Text><Param label="止损" value={58} min={50} />')),
+    ).toContain('Param min and max must both be set, or neither');
+    expect(
+      reviewCanvasStructure(wrap('<Text>x</Text><Param label="止损" value={58} max={70} />')),
+    ).toContain('Param min and max must both be set, or neither');
+  });
+
+  it('allows Param with both ends of the range, or with neither', () => {
+    expect(
+      reviewCanvasStructure(
+        wrap('<Text>x</Text><Param label="止损" value={58} min={50} max={70} />'),
+      ),
+    ).toEqual([]);
+    expect(reviewCanvasStructure(wrap('<Text>x</Text><Param label="股数" value={100} />'))).toEqual(
+      [],
+    );
+  });
 });

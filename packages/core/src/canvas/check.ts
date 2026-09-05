@@ -154,5 +154,17 @@ export function reviewCanvasStructure(source: string): string[] {
     issues.push('no Callout or Text: a canvas states a conclusion, it is not a pile of numbers');
   }
 
+  if (/<(input|textarea)\b/i.test(source)) {
+    issues.push('use Param / Toggle / Select, not native input');
+  }
+
+  for (const attrs of openingTags(source, 'Param')) {
+    const hasMin = hasProp(attrs, 'min');
+    const hasMax = hasProp(attrs, 'max');
+    if (hasMin !== hasMax) {
+      issues.push('Param min and max must both be set, or neither');
+    }
+  }
+
   return issues;
 }
