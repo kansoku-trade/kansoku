@@ -246,4 +246,30 @@ describe('ConversationTranscript user actions', () => {
     expect(screen.getByRole('button', { name: '重试' })).toHaveProperty('disabled', true);
     expect(screen.getByRole('button', { name: '复制' })).toHaveProperty('disabled', false);
   });
+
+  it('turns the last user bubble into an editor and submits via onReplaceLast', () => {
+    const onReplaceLast = vi.fn();
+    renderTranscript(
+      [
+        row({ id: 'u1', ts: ts('10:00:00'), kind: 'user', text: '原问' }),
+        row({ id: 'a1', ts: ts('10:00:01'), kind: 'assistant', text: '答' }),
+      ],
+      { onRetryLast: () => {}, onReplaceLast },
+    );
+    fireEvent.click(screen.getByRole('button', { name: '编辑' }));
+    const box = screen.getByRole('textbox');
+    fireEvent.change(box, { target: { value: '新问' } });
+    fireEvent.click(screen.getByRole('button', { name: '发送' }));
+    expect(onReplaceLast).toHaveBeenCalledWith('新问');
+  });
+
+  it('cancel restores the original bubble', () => {
+    renderTranscript([row({ id: 'u1', ts: ts('10:00:00'), kind: 'user', text: '原问' })], {
+      onReplaceLast: () => {},
+    });
+    fireEvent.click(screen.getByRole('button', { name: '编辑' }));
+    fireEvent.click(screen.getByRole('button', { name: '取消' }));
+    expect(screen.queryByRole('textbox')).toBeNull();
+    expect(screen.getByText('原问')).toBeTruthy();
+  });
 });
