@@ -119,8 +119,7 @@ export function createConversationStore<TSession extends ConversationSessionBase
     const lastUser = rows[lastUserIndex];
     const deleteIds = rows.slice(lastUserIndex + 1).map((row) => row.id);
     const sentAt = Date.now();
-    const payload: AgentMessage = {
-      ...(lastUser.payload as AgentMessage),
+    const payload: Extract<AgentMessage, { role: 'user' }> = {
       role: 'user',
       content: stampSentAt(text, sentAt),
       timestamp: sentAt,

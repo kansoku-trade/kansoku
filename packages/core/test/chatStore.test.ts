@@ -31,6 +31,18 @@ function assistantMessage(text: string): AgentMessage {
   return {
     role: 'assistant',
     content: [{ type: 'text', text }],
+    api: 'anthropic-messages',
+    provider: 'anthropic',
+    model: 'test-model',
+    usage: {
+      input: 0,
+      output: 0,
+      cacheRead: 0,
+      cacheWrite: 0,
+      totalTokens: 0,
+      cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
+    },
+    stopReason: 'stop',
     timestamp: Date.now(),
   };
 }
@@ -170,7 +182,12 @@ describe('chatStore replaceLastUserTurn', () => {
     const rows = await listMessages(session.id, db);
     expect(rows).toHaveLength(3);
     expect(rows.map((row) => row.role)).toEqual(['user', 'assistant', 'user']);
-    expect(stripSentAt(String(rows[2].payload.content))).toBe('second edited');
+    const rewritten = rows[2].payload;
+    expect(rewritten.role).toBe('user');
+    if (rewritten.role !== 'user' || typeof rewritten.content !== 'string') {
+      throw new Error('expected user text');
+    }
+    expect(stripSentAt(rewritten.content)).toBe('second edited');
     expect(rows[0].payload).toEqual(first);
   });
 

@@ -247,10 +247,10 @@ export function createConversationEngine<TInput, TReason extends string>(
 
       const history = await turn.store.listMessages(session.id);
       let historyPayloads = history.map((row) => row.payload);
-      let userMessage: AgentMessage;
+      let userMessage: Extract<AgentMessage, { role: 'user' }>;
       if (options?.replaceLast) {
         const last = history.at(-1);
-        if (!last || last.role !== 'user') {
+        if (!last || last.payload.role !== 'user') {
           broadcast(key, { event: 'error', message: '没有可重试的问题' });
           return;
         }

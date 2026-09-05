@@ -116,7 +116,7 @@ function memoryStore() {
         if (lastUserIndex === -1) return { ok: false as const, reason: 'no_user' as const };
         rows.splice(lastUserIndex + 1);
         const last = rows[lastUserIndex];
-        last.payload = { ...last.payload, content: stampSentAt(text, 0), timestamp: 0 };
+        last.payload = { role: 'user', content: stampSentAt(text, 0), timestamp: 0 };
         return { ok: true as const, isFirstUser: firstUserIndex === lastUserIndex };
       },
       updateTitle: async (_sessionId: string, title: string) => {
@@ -301,7 +301,12 @@ describe('createConversationEngine persistence', () => {
 
     const users = store.rows.filter((row) => row.role === 'user');
     expect(users).toHaveLength(2);
-    expect(stripSentAt(String(users[1].payload.content))).toBe('second edited');
+    const rewritten = users[1].payload;
+    expect(rewritten.role).toBe('user');
+    if (rewritten.role !== 'user' || typeof rewritten.content !== 'string') {
+      throw new Error('expected user text');
+    }
+    expect(stripSentAt(rewritten.content)).toBe('second edited');
     expect(store.rows.filter((row) => row.role === 'assistant').at(-1)?.payload).toEqual(
       assistantMessage('replay'),
     );
