@@ -27,7 +27,7 @@ import { ComposerReferences } from './ComposerReferences';
 import { MessageQueueList } from './MessageQueueList';
 import { decideSubmitAction } from './messageQueue.js';
 import { useMessageQueue } from './useMessageQueue.js';
-import { colors, fontSizes, radii, sizes } from '../../theme/tokens.stylex';
+import { colors, fontSizes, radii, shadows, sizes } from '../../theme/tokens.stylex';
 
 const HEAD_FADE_SCROLL_PX = 32;
 
@@ -141,6 +141,7 @@ const styles = stylex.create({
     'borderRadius': radii.composer,
     'borderStyle': 'solid',
     'borderWidth': '1px',
+    'boxShadow': shadows.composer,
     'overflow': 'hidden',
     'padding': '8px',
     'position': 'relative',
@@ -153,7 +154,7 @@ const styles = stylex.create({
     'transitionTimingFunction': 'ease',
     ':focus-within': {
       borderColor: colors.focusBorder,
-      boxShadow: colors.focusRing,
+      boxShadow: shadows.composerFocus,
     },
     '@media (prefers-reduced-motion: reduce)': {
       transitionDuration: '0.01ms',
@@ -253,7 +254,7 @@ const styles = stylex.create({
   },
   composerExpanded: {
     borderColor: colors.focusBorder,
-    boxShadow: colors.focusRing,
+    boxShadow: shadows.composerFocus,
   },
   composerMeta: {
     'alignItems': 'center',

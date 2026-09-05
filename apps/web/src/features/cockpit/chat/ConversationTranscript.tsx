@@ -6,7 +6,6 @@ import { colors, fontSizes, radii, sizes } from '../../../theme/tokens.stylex';
 import type { TranscriptInsert } from './transcriptTimeline.js';
 import { blockKey, presentTranscript } from './presentTranscript.js';
 import { TranscriptBlockView } from './TranscriptBlockView.js';
-import type { ChatChromeVariant } from './ChatComposer';
 import { lastUserRow, type ChatLiveBeat, type ChatLiveTool, type ChatRow } from './useChatSession';
 
 const styles = stylex.create({
@@ -45,6 +44,7 @@ const styles = stylex.create({
     'borderColor': colors.border,
     'borderStyle': 'solid',
     'borderWidth': '1px',
+    'borderRadius': radii.full,
     'cursor': 'pointer',
     ':hover': {
       borderColor: colors.borderStrong,
@@ -76,6 +76,7 @@ const styles = stylex.create({
     'borderColor': colors.borderStrong,
     'borderStyle': 'dashed',
     'borderWidth': '1px',
+    'borderRadius': radii.full,
     'padding': '4px 9px',
     'cursor': 'pointer',
     ':hover': {
@@ -83,24 +84,6 @@ const styles = stylex.create({
       borderColor: colors.accent,
       borderStyle: 'solid',
     },
-  },
-});
-
-const suggestionChrome = stylex.create({
-  assistant: {
-    borderRadius: radii.full,
-  },
-  panel: {
-    borderRadius: radii.default,
-  },
-});
-
-const scrollBottomChrome = stylex.create({
-  assistant: {
-    borderRadius: radii.full,
-  },
-  panel: {
-    borderRadius: radii.md,
   },
 });
 
@@ -133,7 +116,6 @@ function ConversationTranscriptView({
   className,
   viewportClassName,
   contentClassName,
-  variant = 'assistant',
   full = false,
   canvasOpen = false,
   userBubbleClassName,
@@ -161,7 +143,6 @@ function ConversationTranscriptView({
   className?: string;
   viewportClassName?: string;
   contentClassName?: string;
-  variant?: ChatChromeVariant;
   full?: boolean;
   canvasOpen?: boolean;
   userBubbleClassName?: string;
@@ -316,7 +297,7 @@ function ConversationTranscriptView({
                 <button
                   type="button"
                   key={question}
-                  className={`chat-suggestion ${stylex.props(styles.suggestion, suggestionChrome[variant]).className}${suggestionClassName ? ` ${suggestionClassName}` : ''}`}
+                  className={`chat-suggestion ${stylex.props(styles.suggestion).className}${suggestionClassName ? ` ${suggestionClassName}` : ''}`}
                   onClick={() => onPickSuggestion(question)}
                 >
                   {question}
@@ -330,7 +311,6 @@ function ConversationTranscriptView({
         <TranscriptBlockView
           key={blockKey(block, index)}
           block={block}
-          variant={variant}
           modelLabels={modelLabels}
           userBubbleClassName={userBubbleClassName}
           insertClassName={insertClassName}
@@ -344,9 +324,7 @@ function ConversationTranscriptView({
             block.type === 'user' && block.row.id === lastUserId
               ? {
                   onRetry: onRetryLast,
-                  onEdit: onReplaceLast
-                    ? () => setEditingId(lastUserId)
-                    : onEditLast,
+                  onEdit: onReplaceLast ? () => setEditingId(lastUserId) : onEditLast,
                   retryDisabled: busy,
                   editDisabled: busy,
                 }
@@ -366,7 +344,7 @@ function ConversationTranscriptView({
             <button
               type="button"
               key={question}
-              className={`chat-suggestion ${stylex.props(styles.suggestion, suggestionChrome[variant]).className}${suggestionClassName ? ` ${suggestionClassName}` : ''}`}
+              className={`chat-suggestion ${stylex.props(styles.suggestion).className}${suggestionClassName ? ` ${suggestionClassName}` : ''}`}
               onClick={() => onPickSuggestion(question)}
             >
               {question}
@@ -384,7 +362,7 @@ function ConversationTranscriptView({
       {!stuck && busy ? (
         <button
           type="button"
-          className={`chat-scroll-bottom ${stylex.props(styles.scrollBottom, scrollBottomChrome[variant]).className}`}
+          className={`chat-scroll-bottom ${stylex.props(styles.scrollBottom).className}`}
           aria-label="回到底部"
           onClick={() => {
             const element = bodyRef.current;

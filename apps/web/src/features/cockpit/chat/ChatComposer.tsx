@@ -11,9 +11,7 @@ import type {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { Button, Input } from '@web/ui';
-import { colors, fontSizes, radii, sizes } from '../../../theme/tokens.stylex';
-
-export type ChatChromeVariant = 'assistant' | 'panel';
+import { colors, fontSizes, radii, shadows, sizes } from '../../../theme/tokens.stylex';
 
 const styles = stylex.create({
   composer: {
@@ -23,9 +21,6 @@ const styles = stylex.create({
   },
   contents: {
     display: 'contents',
-  },
-  fullComposer: {
-    padding: '10px max(12px, calc((100% - 68ch) / 2))',
   },
   field: {
     flex: '1 1 auto',
@@ -76,12 +71,13 @@ const styles = stylex.create({
 });
 
 const shell = stylex.create({
-  assistant: {
+  root: {
     'backgroundColor': colors.backgroundElement,
     'borderColor': colors.borderStrong,
     'borderRadius': radii.composer,
     'borderStyle': 'solid',
     'borderWidth': '1px',
+    'boxShadow': shadows.composer,
     'gap': '8px',
     'overflow': 'hidden',
     'padding': '6px 8px 6px 12px',
@@ -90,81 +86,33 @@ const shell = stylex.create({
     'transitionTimingFunction': 'ease',
     ':focus-within': {
       borderColor: colors.focusBorder,
-      boxShadow: colors.focusRing,
+      boxShadow: shadows.composerFocus,
     },
   },
-  panel: {
-    gap: '8px',
-    padding: '8px 12px',
-  },
-});
-
-const dockShell = stylex.create({
-  assistant: {},
-  panel: {
-    padding: '6px 6px 6px 12px',
-  },
-});
-
-const bareField = stylex.create({
-  assistant: {
-    'backgroundColor': 'transparent',
-    'borderStyle': 'none',
-    'borderWidth': 0,
-    ':enabled': {
-      backgroundColor: 'transparent',
-      borderStyle: 'none',
-      borderWidth: 0,
-    },
-    ':disabled': {
-      backgroundColor: 'transparent',
-      borderStyle: 'none',
-      borderWidth: 0,
-    },
-    ':focus-visible': {
-      borderColor: 'transparent',
-      boxShadow: 'none',
-    },
-  },
-  panel: {},
-});
-
-const dockField = stylex.create({
-  assistant: {},
-  panel: {
-    'backgroundColor': 'transparent',
-    'borderStyle': 'none',
-    'borderWidth': 0,
-    ':enabled': {
-      backgroundColor: 'transparent',
-      borderStyle: 'none',
-      borderWidth: 0,
-    },
-    ':disabled': {
-      backgroundColor: 'transparent',
-      borderStyle: 'none',
-      borderWidth: 0,
-    },
-    ':focus-visible': {
-      borderColor: 'transparent',
-      boxShadow: 'none',
-    },
-  },
-});
-
-const actionRadius = stylex.create({
-  assistant: {
-    borderRadius: radii.full,
-  },
-  panel: {
+  compactRadius: {
     borderRadius: radii.md,
   },
 });
 
-const dockActionRadius = stylex.create({
-  assistant: {},
-  panel: {
-    borderRadius: radii.full,
+const bareField = stylex.create({
+  root: {
+    'backgroundColor': 'transparent',
+    'borderStyle': 'none',
+    'borderWidth': 0,
+    ':enabled': {
+      backgroundColor: 'transparent',
+      borderStyle: 'none',
+      borderWidth: 0,
+    },
+    ':disabled': {
+      backgroundColor: 'transparent',
+      borderStyle: 'none',
+      borderWidth: 0,
+    },
+    ':focus-visible': {
+      borderColor: 'transparent',
+      boxShadow: 'none',
+    },
   },
 });
 
@@ -184,9 +132,6 @@ interface ChatComposerProps {
   onChange: (value: string) => void;
   busy: boolean;
   aborting: boolean;
-  variant?: ChatChromeVariant;
-  dock?: boolean;
-  full?: boolean;
   disabled?: boolean;
   allowInputWhileBusy?: boolean;
   multiline?: boolean;
@@ -195,6 +140,7 @@ interface ChatComposerProps {
   onSubmit: (value: string) => void;
   onAbort: () => void;
   hint?: string | null;
+  compactRadius?: boolean;
   className?: string;
   layoutClassName?: string;
   fieldClassName?: string;
@@ -212,9 +158,6 @@ export function ChatComposer({
   onChange,
   busy,
   aborting,
-  variant = 'assistant',
-  dock = false,
-  full = false,
   disabled,
   allowInputWhileBusy = false,
   multiline = false,
@@ -223,6 +166,7 @@ export function ChatComposer({
   onSubmit,
   onAbort,
   hint,
+  compactRadius = false,
   className,
   layoutClassName,
   fieldClassName,
@@ -261,7 +205,7 @@ export function ChatComposer({
 
   const action = (
     <Button
-      className={`chat-composer-action chat-composer-action--${busy ? 'stop' : 'send'} ${stylex.props(styles.action, busy && styles.actionStop, actionRadius[variant], dock && dockActionRadius[variant]).className}${actionClassName ? ` ${actionClassName}` : ''}`}
+      className={`chat-composer-action chat-composer-action--${busy ? 'stop' : 'send'} ${stylex.props(styles.action, busy && styles.actionStop).className}${actionClassName ? ` ${actionClassName}` : ''}`}
       style={{
         backgroundColor: busy
           ? colors.down
@@ -269,7 +213,7 @@ export function ChatComposer({
             ? colors.backgroundHover
             : colors.accent,
         borderColor: 'transparent',
-        borderRadius: variant === 'panel' && !dock ? 6 : 999,
+        borderRadius: 999,
         borderStyle: 'none',
         color: busy ? colors.textBright : actionDisabled ? colors.textMuted : '#000',
         flexShrink: 0,
@@ -304,12 +248,12 @@ export function ChatComposer({
   return (
     <>
       <div
-        className={`chat-composer chat-composer--${variant} ${stylex.props(styles.composer, Boolean(layoutClassName) && styles.contents, !layoutClassName && shell[variant], dock && dockShell[variant], full && styles.fullComposer).className}${className ? ` ${className}` : ''}${layoutClassName ? ` ${layoutClassName}` : ''}`}
+        className={`chat-composer ${stylex.props(styles.composer, Boolean(layoutClassName) && styles.contents, !layoutClassName && shell.root, compactRadius && shell.compactRadius).className}${className ? ` ${className}` : ''}${layoutClassName ? ` ${layoutClassName}` : ''}`}
       >
         {multiline ? (
           <textarea
             ref={textareaRef}
-            className={`input chat-composer-field chat-composer-field--multiline ${stylex.props(styles.field, bareField.assistant).className}${fieldClassName ? ` ${fieldClassName}` : ''}`}
+            className={`input chat-composer-field chat-composer-field--multiline ${stylex.props(styles.field, bareField.root).className}${fieldClassName ? ` ${fieldClassName}` : ''}`}
             rows={1}
             aria-label={placeholder}
             autoComplete="off"
@@ -326,18 +270,14 @@ export function ChatComposer({
           />
         ) : (
           <Input
-            className={`chat-composer-field ${stylex.props(styles.field, bareField[variant], dock && dockField[variant]).className}${fieldClassName ? ` ${fieldClassName}` : ''}`}
-            style={
-              variant === 'assistant'
-                ? {
-                    backgroundColor: 'transparent',
-                    borderRadius: 0,
-                    borderStyle: 'none',
-                    borderWidth: 0,
-                    boxShadow: 'none',
-                  }
-                : undefined
-            }
+            className={`chat-composer-field ${stylex.props(styles.field, bareField.root).className}${fieldClassName ? ` ${fieldClassName}` : ''}`}
+            style={{
+              backgroundColor: 'transparent',
+              borderRadius: 0,
+              borderStyle: 'none',
+              borderWidth: 0,
+              boxShadow: 'none',
+            }}
             aria-label={placeholder}
             autoComplete="off"
             name="message"

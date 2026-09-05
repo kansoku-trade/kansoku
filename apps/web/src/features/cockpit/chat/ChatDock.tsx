@@ -16,9 +16,6 @@ const styles = stylex.create({
     'display': 'flex',
     'flex': '0 0 auto',
     'flexDirection': 'column',
-    'borderTopColor': colors.border,
-    'borderTopStyle': 'solid',
-    'borderTopWidth': '1px',
     'backgroundColor': colors.backgroundSurface,
     ':empty': {
       display: 'none',
@@ -50,16 +47,13 @@ const styles = stylex.create({
   shellDragging: {
     userSelect: 'none',
   },
-  shellComposer: {
-    borderTopColor: colors.border,
-    borderTopStyle: 'solid',
-    borderTopWidth: '1px',
+  composer: {
+    margin: '8px 10px 10px',
+    minWidth: 0,
   },
-  shellField: {
-    borderRadius: radii.md,
-  },
-  shellAction: {
-    borderRadius: radii.md,
+  composerFull: {
+    alignSelf: 'center',
+    width: 'min(calc(100% - 24px), 68ch)',
   },
   resize: {
     position: 'absolute',
@@ -160,21 +154,16 @@ export function ChatDock({ chartId, docCreatedAt }: ChatDockProps) {
 
   const composer = (
     <ChatComposer
-      variant="panel"
       value={text}
       onChange={setText}
       busy={busy}
       aborting={aborting}
-      dock={mode === 'dock'}
       placeholder="就这份分析继续追问…"
       disabled={editing}
       onSubmit={(value) => void submit(value)}
       onAbort={() => void abort()}
       hint={hint}
-      full={mode === 'full'}
-      className={mode !== 'dock' ? stylex.props(styles.shellComposer).className : undefined}
-      fieldClassName={mode !== 'dock' ? stylex.props(styles.shellField).className : undefined}
-      actionClassName={mode !== 'dock' ? stylex.props(styles.shellAction).className : undefined}
+      className={stylex.props(styles.composer, mode === 'full' && styles.composerFull).className}
       inputProps={{
         autoFocus: mode !== 'dock',
         onFocus: () => setMode((prev) => (prev === 'dock' ? 'float' : prev)),

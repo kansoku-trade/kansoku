@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import * as stylex from '@stylexjs/stylex';
 import { colors, fontSizes, radii, sizes } from '../../../theme/tokens.stylex';
-import type { ChatChromeVariant } from './ChatComposer';
 import { MessageActions } from './MessageActions.js';
 
 const chatBubbleRise = stylex.keyframes({
@@ -23,6 +22,7 @@ const styles = stylex.create({
     lineHeight: 1.5,
     overflowWrap: 'anywhere',
     backgroundColor: colors.backgroundElement,
+    borderRadius: radii.userBubble,
     color: colors.textPrimary,
     padding: '6px 10px',
   },
@@ -95,19 +95,9 @@ const styles = stylex.create({
   },
 });
 
-const userBubbleChrome = stylex.create({
-  assistant: {
-    borderRadius: radii.userBubble,
-  },
-  panel: {
-    borderRadius: radii.default,
-  },
-});
-
 export function UserMessageBlock({
   text,
   optimistic,
-  variant,
   userBubbleClassName,
   showUserActions,
   userActions,
@@ -117,7 +107,6 @@ export function UserMessageBlock({
 }: {
   text: string;
   optimistic?: boolean;
-  variant: ChatChromeVariant;
   userBubbleClassName?: string;
   showUserActions?: boolean;
   userActions?: {
@@ -164,7 +153,11 @@ export function UserMessageBlock({
             aria-label="编辑提问"
           />
           <div className={stylex.props(styles.editBar).className}>
-            <button type="button" className={stylex.props(styles.cancel).className} onClick={onCancelEdit}>
+            <button
+              type="button"
+              className={stylex.props(styles.cancel).className}
+              onClick={onCancelEdit}
+            >
               取消
             </button>
             <button
@@ -180,7 +173,7 @@ export function UserMessageBlock({
       ) : (
         <>
           <div
-            className={`chat-bubble chat-bubble--user ${stylex.props(styles.bubble, optimistic && styles.bubbleEnter, userBubbleChrome[variant]).className}${userBubbleClassName ? ` ${userBubbleClassName}` : ''}`}
+            className={`chat-bubble chat-bubble--user ${stylex.props(styles.bubble, optimistic && styles.bubbleEnter).className}${userBubbleClassName ? ` ${userBubbleClassName}` : ''}`}
           >
             {text}
           </div>

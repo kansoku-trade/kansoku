@@ -163,7 +163,6 @@ export function ChatPanel({
         className={`chat-panel-body ${stylex.props(styles.body).className}`}
         viewportClassName={stylex.props(styles.bodyViewport).className}
         contentClassName={!full ? stylex.props(styles.bodyContent).className : undefined}
-        variant="panel"
         full={full}
         canvasOpen={canvasOpen}
         rows={rows}

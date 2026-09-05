@@ -48,6 +48,12 @@ export const radii = stylex.defineConsts({
   full: '999px',
 });
 
+export const shadows = stylex.defineConsts({
+  composer: '0 8px 24px rgb(0 0 0 / 0.22), inset 0 1px 0 rgb(255 255 255 / 0.04)',
+  composerFocus:
+    '0 0 0 2px rgb(232 232 232 / 0.12), 0 8px 24px rgb(0 0 0 / 0.22), inset 0 1px 0 rgb(255 255 255 / 0.04)',
+});
+
 export const sizes = stylex.defineConsts({
   controlHeight: '30px',
   paneHeaderHeight: '44px',

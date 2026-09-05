@@ -12,7 +12,6 @@ import { SourcesFold } from './SourcesFold.js';
 import { TurnRuntime } from './TurnRuntime.js';
 import { ToolGroupRow, ToolRow } from './ToolCallViews.js';
 import { WorkedFold } from './WorkedFold.js';
-import type { ChatChromeVariant } from './ChatComposer';
 
 const chatThinkingBar = stylex.keyframes({
   '0%, 100%': { transform: 'scaleY(0.25)', opacity: 0.45 },
@@ -115,26 +114,16 @@ const styles = stylex.create({
     },
   },
   errorRow: {
+    borderRadius: radii.lg,
     fontSize: fontSizes.base,
     color: colors.down,
     backgroundColor: colors.backgroundElement,
-  },
-});
-
-const errorRowChrome = stylex.create({
-  assistant: {
-    borderRadius: radii.lg,
     padding: '6px 10px',
-  },
-  panel: {
-    borderRadius: radii.default,
-    padding: '6px 8px',
   },
 });
 
 export function TranscriptBlockView({
   block,
-  variant = 'assistant',
   modelLabels,
   userBubbleClassName,
   insertClassName,
@@ -148,7 +137,6 @@ export function TranscriptBlockView({
   onCancelEdit,
 }: {
   block: TranscriptBlock;
-  variant?: ChatChromeVariant;
   modelLabels?: Readonly<Record<string, string>>;
   userBubbleClassName?: string;
   insertClassName?: string;
@@ -171,7 +159,6 @@ export function TranscriptBlockView({
       <UserMessageBlock
         text={block.row.text ?? ''}
         optimistic={block.row.optimistic}
-        variant={variant}
         userBubbleClassName={userBubbleClassName}
         showUserActions={showUserActions && !editing}
         userActions={userActions}
@@ -184,7 +171,8 @@ export function TranscriptBlockView({
   if (block.type === 'assistant') {
     const meta = block.row.meta;
     const modelLabel = meta
-      ? (modelLabels?.[JSON.stringify([meta.provider, meta.model])] ?? `${meta.provider}/${meta.model}`)
+      ? (modelLabels?.[JSON.stringify([meta.provider, meta.model])] ??
+        `${meta.provider}/${meta.model}`)
       : null;
     const usageLine =
       meta && (meta.totalTokens > 0 || meta.costTotal > 0)
@@ -202,7 +190,9 @@ export function TranscriptBlockView({
     const sources = collectSources(text);
     return (
       <div className={`chat-row ${stylex.props(styles.row).className}`}>
-        <div className={`chat-assistant-message ${stylex.props(styles.assistantMessage).className}`}>
+        <div
+          className={`chat-assistant-message ${stylex.props(styles.assistantMessage).className}`}
+        >
           <div
             className={`chat-bubble chat-bubble--assistant ${stylex.props(styles.bubble, styles.assistantBubble).className}`}
           >
@@ -211,13 +201,17 @@ export function TranscriptBlockView({
             </Markdown>
           </div>
           <SourcesFold sources={sources} />
-          {showActions && !block.streaming ? <MessageActions text={text} onRetry={onRetry} /> : null}
+          {showActions && !block.streaming ? (
+            <MessageActions text={text} onRetry={onRetry} />
+          ) : null}
           {usageLine ? (
             <div className={`chat-context-bar ${stylex.props(styles.messageMeta).className}`}>
               {modelLabel ? (
                 <>
                   <span>{modelLabel}</span>
-                  <span className={stylex.props(styles.messageMetaSeparator).className}>{usageLine}</span>
+                  <span className={stylex.props(styles.messageMetaSeparator).className}>
+                    {usageLine}
+                  </span>
                 </>
               ) : (
                 usageLine
@@ -237,7 +231,12 @@ export function TranscriptBlockView({
   if (block.type === 'tool') return <ToolRow tool={block.tool} />;
   if (block.type === 'tool-group') {
     return (
-      <ToolGroupRow id={block.id} tools={block.tools} running={block.running} titles={block.titles} />
+      <ToolGroupRow
+        id={block.id}
+        tools={block.tools}
+        running={block.running}
+        titles={block.titles}
+      />
     );
   }
   if (block.type === 'worked') {
@@ -247,7 +246,6 @@ export function TranscriptBlockView({
           <TranscriptBlockView
             key={blockKey(child, index)}
             block={child}
-            variant={variant}
             modelLabels={modelLabels}
             userBubbleClassName={userBubbleClassName}
             insertClassName={insertClassName}
@@ -289,15 +287,15 @@ export function TranscriptBlockView({
             <span {...stylex.props(styles.thinkingBar)} />
           </span>
           <span>分析中</span>
-          <span className={`chat-thinking-cursor ${stylex.props(styles.thinkingCursor).className}`} />
+          <span
+            className={`chat-thinking-cursor ${stylex.props(styles.thinkingCursor).className}`}
+          />
         </div>
       </div>
     );
   }
   return (
-    <div
-      className={`chat-error-row ${stylex.props(styles.errorRow, errorRowChrome[variant]).className}`}
-    >
+    <div className={`chat-error-row ${stylex.props(styles.errorRow).className}`}>
       {block.row.text}
     </div>
   );
