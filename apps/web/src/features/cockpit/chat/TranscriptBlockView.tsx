@@ -140,9 +140,6 @@ const styles = stylex.create({
     fontSize: fontSizes.base,
     color: colors.down,
     backgroundColor: colors.backgroundElement,
-    borderLeftColor: colors.down,
-    borderLeftStyle: 'solid',
-    borderLeftWidth: '2px',
   },
 });
 
