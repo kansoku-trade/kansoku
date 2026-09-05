@@ -8,6 +8,7 @@ import {
   type ConversationMessageRow,
   type ConversationSessionBase,
   createConversationStore,
+  type ReplaceLastUserTurnResult,
   titleFromText,
 } from '../conversation/conversationStore.js';
 import { isUsage } from '../runtime/usage.js';
@@ -77,6 +78,18 @@ export function appendAssistantMessages(
   db?: Db,
 ): Promise<void> {
   return store.appendMessages(sessionId, messages, db);
+}
+
+export function replaceLastUserTurn(
+  sessionId: string,
+  text: string,
+  db?: Db,
+): Promise<ReplaceLastUserTurnResult> {
+  return store.replaceLastUserTurn(sessionId, text, db);
+}
+
+export function updateTitle(sessionId: string, title: string, db?: Db): Promise<void> {
+  return store.updateTitle(sessionId, title, db);
 }
 
 export function listAssistantSessions(db: Db = getDb()): Promise<AssistantSession[]> {

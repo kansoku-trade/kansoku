@@ -1,9 +1,10 @@
 import type { AgentMessage } from '@earendil-works/pi-agent-core';
-import { asc, eq, type AnyColumn } from 'drizzle-orm';
+import { asc, eq, inArray, type AnyColumn } from 'drizzle-orm';
 import type { SQLiteTable } from 'drizzle-orm/sqlite-core';
 import { getDb, type Db } from '../../db/index.js';
 import { chatMessages } from '../../db/schema.js';
 import { nextSnowflake } from '../../db/snowflake.js';
+import { stampSentAt } from './conversationShared.js';
 
 export interface ConversationMessageRow {
   id: string;
@@ -17,6 +18,10 @@ export function titleFromText(text: string): string {
   const collapsed = text.trim().replaceAll(/\s+/g, ' ');
   return [...collapsed].slice(0, 40).join('');
 }
+
+export type ReplaceLastUserTurnResult =
+  | { ok: false; reason: 'no_user' }
+  | { ok: true; isFirstUser: boolean };
 
 export interface ConversationSessionBase {
   id: string;
@@ -37,6 +42,12 @@ export interface ConversationStore<TSession extends ConversationSessionBase, TIn
   createSession(input: TInput, db?: Db): Promise<TSession>;
   listMessages(sessionId: string, db?: Db): Promise<ConversationMessageRow[]>;
   appendMessages(sessionId: string, messages: AgentMessage[], db?: Db): Promise<void>;
+  replaceLastUserTurn(
+    sessionId: string,
+    text: string,
+    db?: Db,
+  ): Promise<ReplaceLastUserTurnResult>;
+  updateTitle(sessionId: string, title: string, db?: Db): Promise<void>;
 }
 
 export function createConversationStore<TSession extends ConversationSessionBase, TInput>(
@@ -90,5 +101,63 @@ export function createConversationStore<TSession extends ConversationSessionBase
     });
   }
 
-  return { getSessionByKey, createSession, listMessages, appendMessages };
+  async function replaceLastUserTurn(
+    sessionId: string,
+    text: string,
+    db: Db = getDb(),
+  ): Promise<ReplaceLastUserTurnResult> {
+    const rows = await listMessages(sessionId, db);
+    let lastUserIndex = -1;
+    let firstUserIndex = -1;
+    for (let index = 0; index < rows.length; index += 1) {
+      if (rows[index]?.role !== 'user') continue;
+      if (firstUserIndex === -1) firstUserIndex = index;
+      lastUserIndex = index;
+    }
+    if (lastUserIndex === -1) return { ok: false, reason: 'no_user' };
+
+    const lastUser = rows[lastUserIndex];
+    const deleteIds = rows.slice(lastUserIndex + 1).map((row) => row.id);
+    const sentAt = Date.now();
+    const payload: AgentMessage = {
+      ...(lastUser.payload as AgentMessage),
+      role: 'user',
+      content: stampSentAt(text, sentAt),
+      timestamp: sentAt,
+    };
+    const now = new Date().toISOString();
+
+    db.transaction((tx) => {
+      if (deleteIds.length > 0) {
+        tx.delete(chatMessages).where(inArray(chatMessages.id, deleteIds)).run();
+      }
+      tx.update(chatMessages)
+        .set({ payload })
+        .where(eq(chatMessages.id, lastUser.id))
+        .run();
+      tx.update(config.sessionTable)
+        .set({ updatedAt: now } as Record<string, unknown>)
+        .where(eq(config.idColumn, sessionId))
+        .run();
+    });
+
+    return { ok: true, isFirstUser: firstUserIndex === lastUserIndex };
+  }
+
+  async function updateTitle(sessionId: string, title: string, db: Db = getDb()): Promise<void> {
+    const now = new Date().toISOString();
+    db.update(config.sessionTable)
+      .set({ title, updatedAt: now } as Record<string, unknown>)
+      .where(eq(config.idColumn, sessionId))
+      .run();
+  }
+
+  return {
+    getSessionByKey,
+    createSession,
+    listMessages,
+    appendMessages,
+    replaceLastUserTurn,
+    updateTitle,
+  };
 }

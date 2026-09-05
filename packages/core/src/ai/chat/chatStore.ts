@@ -5,6 +5,7 @@ import { nextSnowflake } from '../../db/snowflake.js';
 import {
   type ConversationMessageRow,
   createConversationStore,
+  type ReplaceLastUserTurnResult,
   titleFromText,
 } from '../conversation/conversationStore.js';
 
@@ -59,4 +60,16 @@ export function appendMessages(
   db?: Db,
 ): Promise<void> {
   return store.appendMessages(sessionId, messages, db);
+}
+
+export function replaceLastUserTurn(
+  sessionId: string,
+  text: string,
+  db?: Db,
+): Promise<ReplaceLastUserTurnResult> {
+  return store.replaceLastUserTurn(sessionId, text, db);
+}
+
+export function updateTitle(sessionId: string, title: string, db?: Db): Promise<void> {
+  return store.updateTitle(sessionId, title, db);
 }
