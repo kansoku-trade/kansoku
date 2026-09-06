@@ -11,6 +11,7 @@ import { ReasoningFold } from './ReasoningFold.js';
 import { SourcesFold } from './SourcesFold.js';
 import { TurnRuntime } from './TurnRuntime.js';
 import { ToolRow } from './ToolCallViews.js';
+import { StepText } from './StepRow.js';
 import { WorkedFold } from './WorkedFold.js';
 
 const chatThinkingBar = stylex.keyframes({
@@ -125,6 +126,7 @@ const styles = stylex.create({
 export function TranscriptBlockView({
   block,
   index = 0,
+  inFold = false,
   modelLabels,
   userBubbleClassName,
   insertClassName,
@@ -139,6 +141,7 @@ export function TranscriptBlockView({
 }: {
   block: TranscriptBlock;
   index?: number;
+  inFold?: boolean;
   modelLabels?: Readonly<Record<string, string>>;
   userBubbleClassName?: string;
   insertClassName?: string;
@@ -191,6 +194,15 @@ export function TranscriptBlockView({
         : null;
     const text = block.row.text ?? '';
     const sources = collectSources(text);
+    if (inFold) {
+      return (
+        <StepText foldId={`midtext:${block.row.id}`} contentKey={text}>
+          <Markdown variant="chat" muted streaming={block.streaming}>
+            {text}
+          </Markdown>
+        </StepText>
+      );
+    }
     return (
       <div className={`chat-row ${stylex.props(styles.row).className}`}>
         <div
@@ -242,6 +254,7 @@ export function TranscriptBlockView({
             key={blockKey(child, childIndex)}
             block={child}
             index={childIndex}
+            inFold
             modelLabels={modelLabels}
             userBubbleClassName={userBubbleClassName}
             insertClassName={insertClassName}

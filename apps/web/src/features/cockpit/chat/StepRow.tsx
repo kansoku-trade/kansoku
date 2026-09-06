@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { clsx } from 'clsx';
 import * as stylex from '@stylexjs/stylex';
 import { colors, fonts, fontSizes, radii } from '../../../theme/tokens.stylex';
@@ -117,6 +117,31 @@ const styles = stylex.create({
     margin: '2px 0 4px 26px',
     color: colors.textSecondary,
   },
+  dotHollow: {
+    backgroundColor: 'transparent',
+    boxShadow: `inset 0 0 0 1px ${colors.up}`,
+  },
+  text: {
+    margin: '0 0 6px 26px',
+    fontSize: fontSizes.sm,
+    maxWidth: '66ch',
+  },
+  textClamped: {
+    maxHeight: '4.5em',
+    overflow: 'hidden',
+    maskImage: 'linear-gradient(to bottom, #000 60%, transparent)',
+  },
+  more: {
+    'alignSelf': 'flex-start',
+    'marginTop': '4px',
+    'marginLeft': '26px',
+    'color': colors.textMuted,
+    'fontSize': fontSizes.sm,
+    'cursor': 'pointer',
+    ':hover': {
+      color: colors.textSecondary,
+    },
+  },
 });
 
 export function StepRow({
@@ -198,5 +223,54 @@ export function StepRow({
         </Fold.Panel>
       ) : null}
     </Fold>
+  );
+}
+
+export function StepText({
+  foldId,
+  title = '阶段结论',
+  contentKey,
+  children,
+}: {
+  foldId: string;
+  title?: string;
+  contentKey: string;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useConversationFold(foldId);
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const [clipped, setClipped] = useState(false);
+
+  useLayoutEffect(() => {
+    if (open) return;
+    const el = bodyRef.current;
+    if (!el) return;
+    setClipped(el.scrollHeight - el.clientHeight > 2);
+  }, [contentKey, open]);
+
+  return (
+    <div className={clsx('chat-step chat-step--text', stylex.props(styles.step).className)}>
+      <div className={clsx('chat-step-head', stylex.props(styles.head).className)}>
+        <span className={clsx('chat-step-gutter', stylex.props(styles.gutter).className)} aria-hidden="true">
+          <span className={clsx('chat-step-dot', stylex.props(styles.dot, styles.dotHollow).className)} />
+        </span>
+        <span className={clsx('chat-step-title', stylex.props(styles.title).className)}>{title}</span>
+      </div>
+      <div
+        ref={bodyRef}
+        className={clsx('chat-step-text', stylex.props(styles.text, !open && styles.textClamped).className)}
+      >
+        {children}
+      </div>
+      {clipped ? (
+        <button
+          type="button"
+          className={clsx('chat-step-more', stylex.props(styles.more).className)}
+          onClick={() => setOpen()}
+        >
+          {open ? '收起' : '展开全部'}
+        </button>
+      ) : null}
+    </div>
   );
 }
