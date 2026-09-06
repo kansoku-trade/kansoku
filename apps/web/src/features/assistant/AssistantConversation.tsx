@@ -30,6 +30,9 @@ import { useMessageQueue } from './useMessageQueue.js';
 import { colors, fontSizes, radii, shadows, sizes } from '../../theme/tokens.stylex';
 
 const HEAD_FADE_SCROLL_PX = 32;
+const COMPOSER_FIELD_MIN_HEIGHT = '60px';
+// Reserve the expanded field, toolbar, composer padding/border (18px), and dock padding (18px).
+const COMPOSER_DOCK_MIN_HEIGHT = `calc(${COMPOSER_FIELD_MIN_HEIGHT} + ${sizes.controlHeight} + 36px)`;
 
 const styles = stylex.create({
   conversation: {
@@ -218,7 +221,7 @@ const styles = stylex.create({
     },
   },
   composerFieldExpanded: {
-    minHeight: '60px',
+    minHeight: COMPOSER_FIELD_MIN_HEIGHT,
   },
   composerHint: {
     color: colors.down,
@@ -494,7 +497,7 @@ export function AssistantConversation({
     hasHint: Boolean(hint),
     hasReferences: mentionedCandidates.length > 0,
     hasText: text.trim().length > 0,
-    modelPickerOpen,
+    modelPickerOpen: modelPickerOpen || modelSaving,
     queueLength: queue.queue.length,
   });
 
@@ -651,8 +654,8 @@ export function AssistantConversation({
         className={`assistant-conversation ${stylex.props(styles.conversation).className}`}
         style={
           {
-            '--assistant-dock-height': `${dockHeight}px`,
-            '--scroll-area-inset-bottom': `${dockHeight}px`,
+            '--assistant-dock-height': `max(${dockHeight}px, ${COMPOSER_DOCK_MIN_HEIGHT})`,
+            '--scroll-area-inset-bottom': `max(${dockHeight}px, ${COMPOSER_DOCK_MIN_HEIGHT})`,
             '--assistant-head-fade': 0,
           } as CSSProperties
         }

@@ -282,6 +282,7 @@ export function AssistantChatPage() {
       setModelError(errorMessage(error));
     } finally {
       setModelSaving(false);
+      setComposerFocusRequest((n) => n + 1);
     }
   };
 

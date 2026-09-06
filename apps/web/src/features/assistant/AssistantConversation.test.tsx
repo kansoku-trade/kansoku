@@ -54,9 +54,10 @@ const { AssistantConversation } = await import('./AssistantConversation');
 
 const canvasPath = 'journal/canvases/acceptance-mu-panel.canvas.tsx';
 
-function renderConversation() {
-  return render(
+function conversation(focusRequest = 0) {
+  return (
     <AssistantConversation
+      focusRequest={focusRequest}
       sessionId="chat-1"
       sessionTitle="画布：MU 验收面板"
       refreshSessions={() => {}}
@@ -68,7 +69,7 @@ function renderConversation() {
       modelError={null}
       modelLabels={{}}
       onModelChange={() => {}}
-    />,
+    />
   );
 }
 
@@ -92,12 +93,20 @@ afterEach(() => {
 
 describe('AssistantConversation composer focus', () => {
   it('focuses the composer after opening a linked canvas conversation', () => {
-    renderConversation();
+    render(conversation());
     expect(composerField()).toBe(document.activeElement);
   });
 
+  it('returns focus to the composer when model saving requests it', () => {
+    const view = render(conversation());
+    composerField().blur();
+    expect(document.activeElement).not.toBe(composerField());
+    view.rerender(conversation(1));
+    expect(document.activeElement).toBe(composerField());
+  });
+
   it('reclaims focus if the linked canvas iframe takes it on load', async () => {
-    renderConversation();
+    render(conversation());
     const iframe = await canvasIframe();
     iframe.focus();
     iframe.dispatchEvent(new Event('load'));
@@ -105,7 +114,7 @@ describe('AssistantConversation composer focus', () => {
   });
 
   it('keeps focus on the canvas when the user clicks it', async () => {
-    renderConversation();
+    render(conversation());
     const iframe = await canvasIframe();
     iframe.focus();
     expect(iframe).toBe(document.activeElement);
