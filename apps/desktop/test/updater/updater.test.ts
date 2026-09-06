@@ -9,6 +9,7 @@ function mockBridge(overrides: Partial<SparkleBridge> = {}): SparkleBridge {
     checkForUpdates: vi.fn(),
     installUpdateNow: vi.fn(),
     setAutomaticChecks: vi.fn(),
+    setEventHandler: vi.fn(),
     ...overrides,
   };
 }

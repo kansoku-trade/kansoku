@@ -51,6 +51,7 @@ function stubModels(
     complete: base.complete.bind(base),
     streamSimple: base.streamSimple.bind(base),
     completeSimple,
+    streamDeferred: base.streamDeferred.bind(base),
     fetchDeferred: base.fetchDeferred.bind(base),
     cancelDeferred: base.cancelDeferred.bind(base),
     setProvider: base.setProvider.bind(base),
