@@ -340,7 +340,7 @@ describe('presentTranscript', () => {
     ]);
   });
 
-  it('keeps live reasoning open after tools start', () => {
+  it('closes the reasoning step once a tool starts after it', () => {
     const blocks = presentTranscript({
       busy: true,
       rows: [user('u1', '10:00:00', '怎么看')],
@@ -355,7 +355,7 @@ describe('presentTranscript', () => {
     expect(summarize(blocks)).toEqual([
       'user:怎么看',
       `runtime:${ts('10:00:00')}`,
-      'reasoning:先核对持仓再读新闻:stream',
+      'reasoning:先核对持仓再读新闻',
       'tool:bash:run',
     ]);
   });

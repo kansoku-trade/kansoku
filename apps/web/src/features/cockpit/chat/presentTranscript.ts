@@ -72,6 +72,20 @@ export function formatWorkedDuration(ms: number): string {
   return rest === 0 ? `跑了 ${hours} 小时` : `跑了 ${hours} 小时 ${rest} 分`;
 }
 
+const GIST_MAX_LENGTH = 48;
+
+export function reasoningGist(text: string): string {
+  const plain = text
+    .replaceAll(/```[\S\s]*?```/g, ' ')
+    .replaceAll(/[#*>_`~]/g, '')
+    .replaceAll(/\s+/g, ' ')
+    .trim();
+  if (!plain) return '';
+  const stop = plain.search(/[!?。！？]|\.\s/);
+  const sentence = stop > 0 ? plain.slice(0, stop + 1) : plain;
+  return sentence.length > GIST_MAX_LENGTH ? `${sentence.slice(0, GIST_MAX_LENGTH - 1)}…` : sentence;
+}
+
 export function formatRuntime(ms: number): string {
   if (!Number.isFinite(ms) || ms < 0) return '运行中';
   return formatWorkedDuration(ms).replace(/^跑了/, '运行了');
@@ -288,7 +302,7 @@ function presentLiveTurn(
     ...live,
     ...canvases,
     ...errors,
-  ].map((block) => (block.type === 'reasoning' ? { ...block, streaming: true } : block));
+  ];
   const hasRunning = live.some((block) => block.type === 'tool' && block.tool.running);
   const hasText =
     live.some((block) => block.type === 'assistant' || block.type === 'reasoning') ||

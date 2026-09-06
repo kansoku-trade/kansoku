@@ -16,6 +16,17 @@ const styles = stylex.create({
     flexDirection: 'column',
     alignItems: 'flex-end',
   },
+  spaced: {
+    marginTop: '20px',
+  },
+  line: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: '4px',
+    width: '100%',
+    minWidth: 0,
+  },
   bubble: {
     maxWidth: '88%',
     fontSize: fontSizes.base,
@@ -97,6 +108,7 @@ const styles = stylex.create({
 
 export function UserMessageBlock({
   text,
+  first = false,
   optimistic,
   userBubbleClassName,
   showUserActions,
@@ -106,6 +118,7 @@ export function UserMessageBlock({
   onCancelEdit,
 }: {
   text: string;
+  first?: boolean;
   optimistic?: boolean;
   userBubbleClassName?: string;
   showUserActions?: boolean;
@@ -119,6 +132,7 @@ export function UserMessageBlock({
   onSubmitEdit?: (text: string) => void;
   onCancelEdit?: () => void;
 }) {
+  const [active, setActive] = useState(false);
   const [draft, setDraft] = useState(text);
   useEffect(() => {
     if (editing) setDraft(text);
@@ -142,7 +156,13 @@ export function UserMessageBlock({
   };
 
   return (
-    <div className={`chat-row chat-row--user ${stylex.props(styles.row).className}`}>
+    <div
+      className={`chat-row chat-row--user ${stylex.props(styles.row, !first && styles.spaced).className}`}
+      onPointerEnter={() => setActive(true)}
+      onPointerLeave={() => setActive(false)}
+      onFocus={() => setActive(true)}
+      onBlur={() => setActive(false)}
+    >
       {editing ? (
         <>
           <textarea
@@ -171,23 +191,24 @@ export function UserMessageBlock({
           </div>
         </>
       ) : (
-        <>
-          <div
-            className={`chat-bubble chat-bubble--user ${stylex.props(styles.bubble, optimistic && styles.bubbleEnter).className}${userBubbleClassName ? ` ${userBubbleClassName}` : ''}`}
-          >
-            {text}
-          </div>
+        <div className={stylex.props(styles.line).className}>
           {showUserActions ? (
             <MessageActions
               text={text}
-              align="end"
+              inline
+              quiet={!active}
               onRetry={userActions?.onRetry}
               onEdit={userActions?.onEdit}
               retryDisabled={userActions?.retryDisabled}
               editDisabled={userActions?.editDisabled}
             />
           ) : null}
-        </>
+          <div
+            className={`chat-bubble chat-bubble--user ${stylex.props(styles.bubble, optimistic && styles.bubbleEnter).className}${userBubbleClassName ? ` ${userBubbleClassName}` : ''}`}
+          >
+            {text}
+          </div>
+        </div>
       )}
     </div>
   );

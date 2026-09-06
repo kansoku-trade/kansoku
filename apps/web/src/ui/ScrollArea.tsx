@@ -134,6 +134,7 @@ export function ScrollArea({
         className={`scroll-area-viewport ${stylex.props(styles.viewport, viewportOrientationStyle).className}${viewportClassName ? ` ${viewportClassName}` : ''}`}
       >
         <BaseScrollArea.Content
+          style={orientation === 'vertical' ? { minWidth: 0 } : undefined}
           className={`scroll-area-content ${stylex.props(orientation === 'vertical' && styles.contentVertical).className}${contentClassName ? ` ${contentClassName}` : ''}`}
         >
           {children}

@@ -160,6 +160,7 @@ export function TranscriptBlockView({
     return (
       <UserMessageBlock
         text={block.row.text ?? ''}
+        first={index === 0}
         optimistic={block.row.optimistic}
         userBubbleClassName={userBubbleClassName}
         showUserActions={showUserActions && !editing}

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ConversationTranscript } from './ConversationTranscript';
 import type { ChatRow } from './useChatSession';
@@ -213,18 +213,22 @@ describe('ConversationTranscript folding', () => {
     fireEvent.click(screen.getByRole('button', { name: /跑了/ }));
     expect(screen.queryByRole('button', { name: '思考过程' })).toBeNull();
     expect(screen.queryByText('**先核对持仓**')).toBeNull();
-    const thinking = screen.getByText('先核对持仓');
-    expect(thinking.closest('strong')).toBeTruthy();
-    expect(thinking.closest('.chat-reasoning')?.querySelector('[aria-hidden="true"]')).toBeTruthy();
+    const step = screen.getByRole('button', { name: '思考，已完成' });
+    expect(step.closest('.chat-reasoning')).toBeTruthy();
+    expect(within(step).getByText('先核对持仓')).toBeTruthy();
+    fireEvent.click(step);
+    expect(screen.getAllByText('先核对持仓').some((node) => node.closest('strong'))).toBe(true);
   });
 
-  it('keeps live reasoning behind 思考中', () => {
+  it('opens the live reasoning step and collapses the finished ones', () => {
     renderTranscript([row({ id: 'u1', ts: ts('10:00:00'), kind: 'user', text: '怎么看' })], {
       busy: true,
       liveBeats: [{ kind: 'reasoning', text: '先核对持仓' }],
     });
-    expect(screen.getByRole('button', { name: '思考中' })).toBeTruthy();
-    expect(screen.getByText('先核对持仓')).toBeTruthy();
+    const step = screen.getByRole('button', { name: '思考，进行中' });
+    expect(step.getAttribute('aria-expanded')).toBe('true');
+    expect(within(step).getByText('先核对持仓')).toBeTruthy();
+    expect(step.closest('.chat-reasoning')?.querySelector('.ui-fold-panel')).toBeTruthy();
     expect(screen.queryByRole('button', { name: '思考过程' })).toBeNull();
   });
 

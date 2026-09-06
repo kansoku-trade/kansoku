@@ -16,6 +16,20 @@ const styles = stylex.create({
   alignEnd: {
     alignSelf: 'flex-end',
   },
+  inline: {
+    marginTop: 0,
+    alignSelf: 'center',
+  },
+  quiet: {
+    opacity: 0,
+    pointerEvents: 'none',
+  },
+  fade: {
+    'transition': 'opacity 0.12s ease',
+    '@media (prefers-reduced-motion: reduce)': {
+      transition: 'none',
+    },
+  },
   button: {
     'display': 'inline-flex',
     'alignItems': 'center',
@@ -50,6 +64,8 @@ export function MessageActions({
   onRetry,
   onEdit,
   align = 'start',
+  inline = false,
+  quiet = false,
   retryDisabled,
   editDisabled,
 }: {
@@ -57,6 +73,8 @@ export function MessageActions({
   onRetry?: () => void;
   onEdit?: () => void;
   align?: 'start' | 'end';
+  inline?: boolean;
+  quiet?: boolean;
   retryDisabled?: boolean;
   editDisabled?: boolean;
 }) {
@@ -64,7 +82,15 @@ export function MessageActions({
 
   return (
     <div
-      className={`chat-message-actions ${stylex.props(styles.row, align === 'end' ? styles.alignEnd : styles.alignStart).className}`}
+      className={`chat-message-actions ${
+        stylex.props(
+          styles.row,
+          align === 'end' ? styles.alignEnd : styles.alignStart,
+          inline && styles.inline,
+          styles.fade,
+          quiet && styles.quiet,
+        ).className
+      }`}
     >
       <button
         type="button"
