@@ -26,6 +26,17 @@ git branch --show-current     # must be main
 git fetch origin main && git rev-list --count main..origin/main   # must be 0
 ```
 
+If `apps/pro` is present (linked worktree), also pin the release to that commit **before** opening the PR. `desktop-release.yml` fetches Pro at the GitHub Actions variable `KANSOKU_PRO_REF` and then runs `pnpm install --frozen-lockfile`. A stale pin (the SHA from the last release) against a lockfile that already absorbed a newer `apps/pro/package.json` fails install. This is what hung v0.41.0.
+
+```bash
+git -C apps/pro status --porcelain        # must be empty
+git -C apps/pro fetch origin
+PRO_SHA="$(git -C apps/pro rev-parse HEAD)"
+git -C apps/pro merge-base --is-ancestor "$PRO_SHA" origin/main   # HEAD must already be on origin/main
+gh variable set KANSOKU_PRO_REF --body "$PRO_SHA"
+gh variable get KANSOKU_PRO_REF             # must print $PRO_SHA
+```
+
 ### 2. Collect what shipped
 
 ```bash
@@ -87,3 +98,4 @@ Then switch back to main: `git checkout main`.
 - Never tag manually here — tagging is desktop-tag.yml's job after merge.
 - Never skip the CHANGELOG section — desktop-release.yml fails the build if the `## X.Y.Z` section is missing.
 - Version in package.json and the CHANGELOG heading must match exactly (CI cross-checks tag vs package.json).
+- Never open the release PR with a stale `KANSOKU_PRO_REF`. The pin must be `apps/pro` HEAD, already on `origin/main`, and must match the lockfile's `apps/pro` specifiers.
