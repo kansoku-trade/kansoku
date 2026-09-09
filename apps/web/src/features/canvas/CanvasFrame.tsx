@@ -1,17 +1,17 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type {
   CandleFeed,
   CandleFeedTf,
   IntradayTfData,
   QuoteSnapshot,
 } from '@kansoku/shared/types';
+import type { CanvasCompileResult } from '@kansoku/core/contract/canvas';
 import * as stylex from '@stylexjs/stylex';
 import { client } from '@web/lib/client';
 import { ErrorBox, ScrollArea } from '@web/ui';
 import { subscribeChannel } from '@web/lib/ws/wsHub';
 import { colors, fonts, fontSizes } from '../../theme/tokens.stylex';
 import { decodePreviewEnvelope } from '../charts/intraday/useIntradayPreview';
-import { loadCanvasComponent } from './canvasRuntime';
 
 const styles = stylex.create({
   root: {
@@ -74,8 +74,6 @@ function projectTf(tf: IntradayTfData): CandleFeedTf {
 
 export function CanvasFrame({ source, slug, data, onLiveStatus }: CanvasFrameProps) {
   const frameRef = useRef<HTMLIFrameElement>(null);
-  const sourceRef = useRef(source);
-  sourceRef.current = source;
   const dataRef = useRef(data);
   dataRef.current = data;
   const readyRef = useRef(false);
@@ -89,14 +87,11 @@ export function CanvasFrame({ source, slug, data, onLiveStatus }: CanvasFramePro
   onLiveStatusRef.current = onLiveStatus;
   const [height, setHeight] = useState(INITIAL_HEIGHT);
   const [runtimeIssues, setRuntimeIssues] = useState<string[] | null>(null);
-  const [sourceKey, setSourceKey] = useState(source);
-  if (sourceKey !== source) {
-    setSourceKey(source);
-    setRuntimeIssues(null);
-  }
-  const compiled = useMemo(() => loadCanvasComponent(source, data ?? {}), [source, data]);
-  const issues = compiled.ok ? runtimeIssues : compiled.issues;
-  const showFrame = compiled.ok && !runtimeIssues;
+  const [compiled, setCompiled] = useState<CanvasCompileResult | null>(null);
+  const compiledRef = useRef(compiled);
+  compiledRef.current = compiled;
+  const issues = compiled && !compiled.ok ? compiled.issues : runtimeIssues;
+  const showFrame = Boolean(compiled?.ok && !runtimeIssues);
 
   useEffect(
     () => () => {
@@ -107,7 +102,30 @@ export function CanvasFrame({ source, slug, data, onLiveStatus }: CanvasFramePro
   );
 
   useEffect(() => {
-    if (compiled.ok || !slug) return;
+    let cancelled = false;
+    readyRef.current = false;
+    setCompiled(null);
+    setRuntimeIssues(null);
+    void client.canvas
+      .compile({ source })
+      .then((result) => {
+        if (!cancelled) setCompiled(result);
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) {
+          setCompiled({
+            ok: false,
+            issues: [error instanceof Error ? error.message : String(error)],
+          });
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [source]);
+
+  useEffect(() => {
+    if (!compiled || compiled.ok || !slug) return;
     void client.canvas.recordCheck({ slug, issues: compiled.issues, stage: 'compile' });
   }, [compiled, slug]);
 
@@ -116,9 +134,11 @@ export function CanvasFrame({ source, slug, data, onLiveStatus }: CanvasFramePro
     const frame = frameRef.current;
     if (!frame) return;
 
-    const postSource = () => {
+    const postCode = () => {
+      const current = compiledRef.current;
+      if (!current?.ok) return;
       frame.contentWindow?.postMessage(
-        { type: 'source', source: sourceRef.current, data: dataRef.current ?? {} },
+        { type: 'code', code: current.code, data: dataRef.current ?? {} },
         '*',
       );
     };
@@ -211,7 +231,7 @@ export function CanvasFrame({ source, slug, data, onLiveStatus }: CanvasFramePro
       if (!payload || typeof payload !== 'object') return;
       if (payload.type === 'ready') {
         readyRef.current = true;
-        postSource();
+        postCode();
         return;
       }
       if (payload.type === 'sub' || payload.type === 'unsub') {
@@ -247,17 +267,17 @@ export function CanvasFrame({ source, slug, data, onLiveStatus }: CanvasFramePro
       for (const release of subsRef.current.values()) release();
       subsRef.current.clear();
       emitStatus({});
-      postSource();
+      postCode();
     };
 
-    if (readyRef.current) postSource();
+    if (readyRef.current) postCode();
     frame.addEventListener('load', onLoad);
     window.addEventListener('message', onMessage);
     return () => {
       frame.removeEventListener('load', onLoad);
       window.removeEventListener('message', onMessage);
     };
-  }, [data, slug, source, showFrame]);
+  }, [data, slug, showFrame, compiled]);
 
   return (
     <ScrollArea className={stylex.props(styles.root).className}>

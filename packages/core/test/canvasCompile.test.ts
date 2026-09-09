@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { compileCanvasSource, instantiateCanvas } from '../src/canvas/compile.js';
+import { compileCanvasSource } from '../src/canvas/compile.js';
+import { instantiateCanvas } from '../src/canvas/instantiate.js';
 
 const React = {
   createElement(type: unknown, props: Record<string, unknown> | null, ...children: unknown[]) {

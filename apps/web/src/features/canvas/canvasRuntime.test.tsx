@@ -1,11 +1,18 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { loadCanvasComponent } from './canvasRuntime';
+import { compileCanvasSource } from '@kansoku/core/canvas/compile';
+import { runCompiledCanvas } from './canvasRuntime';
 
 afterEach(() => {
   cleanup();
 });
+
+function loadCanvasComponent(source: string, data: Record<string, unknown> = {}) {
+  const compiled = compileCanvasSource(source);
+  if (!compiled.ok) return compiled;
+  return runCompiledCanvas(compiled.code, data);
+}
 
 const valid = `import { Canvas, Text } from '@kansoku/canvas';
 export default function App() {
@@ -13,7 +20,7 @@ export default function App() {
 }
 `;
 
-describe('loadCanvasComponent', () => {
+describe('runCompiledCanvas', () => {
   it('renders a compiled canvas', () => {
     const result = loadCanvasComponent(valid);
     expect(result.ok).toBe(true);

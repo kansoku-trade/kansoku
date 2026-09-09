@@ -1,5 +1,5 @@
 import { transform } from 'sucrase';
-import { checkCanvasSource, reviewCanvasBindings, reviewCanvasStructure } from './check.js';
+import { checkCanvasSource } from './check.js';
 
 const SDK = '@kansoku/canvas';
 const INJECTED = '__kansoku_canvas__';
@@ -22,37 +22,6 @@ export function compileCanvasSource(
     const message = error instanceof Error ? error.message : String(error);
     return { ok: false, issues: [message] };
   }
-}
-
-export function validateCanvasSource(source: string): string[] {
-  const issues = [
-    ...checkCanvasSource(source),
-    ...reviewCanvasStructure(source),
-    ...reviewCanvasBindings(source),
-  ];
-  if (issues.length) return issues;
-  const compiled = compileCanvasSource(source);
-  if (!compiled.ok) return compiled.issues;
-  try {
-    instantiateCanvas(compiled.code, {}, {}, {});
-  } catch (error) {
-    return [error instanceof Error ? error.message : String(error)];
-  }
-  return [];
-}
-
-export function instantiateCanvas(
-  code: string,
-  sdk: Record<string, unknown>,
-  react: unknown,
-  data: Record<string, unknown> = {},
-): unknown {
-  const factory = new Function(INJECTED, 'React', INJECTED_DATA, code);
-  const exported = factory(sdk, react, data);
-  if (typeof exported === 'function' || exported == null) return exported;
-  return function GeneratedCanvas() {
-    return exported;
-  };
 }
 
 function toFactoryBody(code: string): string {

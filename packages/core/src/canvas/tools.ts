@@ -12,7 +12,7 @@ import { normalizeSymbol } from '../symbols/symbol.utils.js';
 import { assertCanvasQuota } from './quotaEnforce.js';
 import { projectCandleFeedTf } from './candleFeed.js';
 import { applyChunks, parsePatch, PatchError } from './applyPatch.js';
-import { validateCanvasSource } from './compile.js';
+import { validateCanvasSource } from './validate.js';
 import { type CanvasDoc, loadCanvas, saveCanvas, saveCanvasData } from './store.js';
 
 const saveSchema = Type.Object({

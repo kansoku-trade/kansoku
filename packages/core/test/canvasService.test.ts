@@ -54,6 +54,18 @@ describe('createCanvasService', () => {
     ).rejects.toMatchObject({ status: 400 } satisfies Partial<ClientError>);
   });
 
+  it('compiles source without touching the store', async () => {
+    const canvas = service();
+    const ok = await canvas.compile({ source });
+    expect(ok).toEqual({ ok: true, code: expect.stringContaining('return App') });
+    await expect(canvas.list()).resolves.toEqual([]);
+
+    const bad = await canvas.compile({ source: 'export function App() { return null; }\n' });
+    expect(bad.ok).toBe(false);
+    if (bad.ok) return;
+    expect(bad.issues.some((issue) => /export default/i.test(issue))).toBe(true);
+  });
+
   it('lists saved canvases', async () => {
     const canvas = service();
     await canvas.save({ slug: 'alpha', title: 'Alpha', source });

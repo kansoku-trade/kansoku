@@ -1,9 +1,22 @@
 // @vitest-environment jsdom
-import { act, cleanup, render } from '@testing-library/react';
+import type { ReactElement } from 'react';
+import { act, cleanup, render, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+const COMPILED = 'return function App(){return null}';
+
 vi.mock('@web/lib/client', () => ({
-  client: { canvas: { recordCheck: vi.fn() } },
+  client: {
+    canvas: {
+      recordCheck: vi.fn(),
+      compile: vi.fn(async ({ source }: { source: string }) => {
+        if (!source.includes('export default')) {
+          return { ok: false, issues: ['must have exactly one export default'] };
+        }
+        return { ok: true, code: COMPILED };
+      }),
+    },
+  },
 }));
 
 const release = vi.fn();
@@ -26,11 +39,18 @@ afterEach(() => {
   release.mockClear();
   subscribeChannel.mockClear();
   vi.mocked(client.canvas.recordCheck).mockClear();
+  vi.mocked(client.canvas.compile).mockClear();
 });
 
+async function renderReady(ui: ReactElement) {
+  const view = render(ui);
+  await waitFor(() => expect(view.container.querySelector('iframe')).toBeTruthy());
+  return view;
+}
+
 describe('CanvasFrame', () => {
-  it('loads the guest page in a script-only sandbox', () => {
-    const { container } = render(
+  it('loads the guest page in a script-only sandbox', async () => {
+    const { container } = await renderReady(
       <CanvasFrame source="export default function App() { return null; }" />,
     );
     const iframe = container.querySelector('iframe');
@@ -40,9 +60,11 @@ describe('CanvasFrame', () => {
     expect(iframe?.getAttribute('tabindex')).toBe('-1');
   });
 
-  it('re-posts the source once the guest is ready and data changes', () => {
+  it('re-posts the compiled code once the guest is ready and data changes', async () => {
     const source = 'export default function App() { return null; }';
-    const { container, rerender } = render(<CanvasFrame source={source} data={{ bars: 1 }} />);
+    const { container, rerender } = await renderReady(
+      <CanvasFrame source={source} data={{ bars: 1 }} />,
+    );
     const iframe = container.querySelector('iframe')!;
     const posts: unknown[] = [];
     const guest = iframe.contentWindow!;
@@ -56,21 +78,23 @@ describe('CanvasFrame', () => {
     act(() => {
       window.dispatchEvent(new MessageEvent('message', { data: { type: 'ready' }, source: guest }));
     });
-    expect(posts).toEqual([{ type: 'source', source, data: { bars: 2 } }]);
+    expect(posts).toEqual([{ type: 'code', code: COMPILED, data: { bars: 2 } }]);
 
     rerender(<CanvasFrame source={source} data={{ bars: 3 }} />);
     expect(posts).toEqual([
-      { type: 'source', source, data: { bars: 2 } },
-      { type: 'source', source, data: { bars: 3 } },
+      { type: 'code', code: COMPILED, data: { bars: 2 } },
+      { type: 'code', code: COMPILED, data: { bars: 3 } },
     ]);
   });
 
-  it('does not mount an iframe when the source fails to compile', () => {
+  it('does not mount an iframe when the source fails to compile', async () => {
     const { container } = render(
       <CanvasFrame source="export function App() { return null; }" slug="broken" />,
     );
+    await waitFor(() => {
+      expect(container.querySelector('[role="alert"]')?.textContent).toMatch(/export default/i);
+    });
     expect(container.querySelector('iframe')).toBeNull();
-    expect(container.querySelector('[role="alert"]')?.textContent).toMatch(/export default/i);
     expect(client.canvas.recordCheck).toHaveBeenCalledWith({
       slug: 'broken',
       issues: expect.arrayContaining([expect.stringMatching(/export default/i)]),
@@ -78,9 +102,12 @@ describe('CanvasFrame', () => {
     });
   });
 
-  it('keeps compile errors visible in the host after the guest reports them', () => {
-    const { container } = render(
-      <CanvasFrame source="export default function App() { return null; }" slug="aapl-iphone-duo-launch" />,
+  it('keeps compile errors visible in the host after the guest reports them', async () => {
+    const { container } = await renderReady(
+      <CanvasFrame
+        source="export default function App() { return null; }"
+        slug="aapl-iphone-duo-launch"
+      />,
     );
     const iframe = container.querySelector('iframe')!;
     const guest = iframe.contentWindow!;
@@ -117,9 +144,9 @@ describe('CanvasFrame', () => {
     });
   });
 
-  it('remounts the iframe when the source is replaced after an error', () => {
+  it('remounts the iframe when the source is replaced after an error', async () => {
     const valid = 'export default function App() { return null; }';
-    const { container, rerender } = render(<CanvasFrame source={valid} slug="demo" />);
+    const { container, rerender } = await renderReady(<CanvasFrame source={valid} slug="demo" />);
     const guest = container.querySelector('iframe')!.contentWindow!;
     act(() => {
       window.dispatchEvent(
@@ -133,14 +160,14 @@ describe('CanvasFrame', () => {
     expect(container.querySelector('[role="alert"]')?.textContent).toContain('boom');
 
     rerender(<CanvasFrame source={`${valid}\n`} slug="demo" />);
+    await waitFor(() => expect(container.querySelector('iframe')).toBeTruthy());
     expect(container.querySelector('[role="alert"]')).toBeNull();
-    expect(container.querySelector('iframe')).toBeTruthy();
   });
 });
 
 describe('CanvasFrame live bridge', () => {
-  function setup(onLiveStatus?: (status: LiveStatus) => void) {
-    const { container } = render(
+  async function setup(onLiveStatus?: (status: LiveStatus) => void) {
+    const { container } = await renderReady(
       <CanvasFrame
         source="export default function App() { return null; }"
         onLiveStatus={onLiveStatus}
@@ -160,8 +187,8 @@ describe('CanvasFrame live bridge', () => {
     return { iframe, posts, send };
   }
 
-  it('proxies a quotes subscription and forwards only that symbol', () => {
-    const { posts, send } = setup();
+  it('proxies a quotes subscription and forwards only that symbol', async () => {
+    const { posts, send } = await setup();
     send({ type: 'sub', kind: 'quotes', symbol: 'MU.US' });
 
     expect(subscribeChannel).toHaveBeenCalledTimes(1);
@@ -191,8 +218,8 @@ describe('CanvasFrame live bridge', () => {
     });
   });
 
-  it('proxies a preview subscription and forwards a candle feed', () => {
-    const { posts, send } = setup();
+  it('proxies a preview subscription and forwards a candle feed', async () => {
+    const { posts, send } = await setup();
     send({ type: 'sub', kind: 'preview', symbol: 'MU.US' });
     expect(subscribeChannel.mock.calls[0][0]).toEqual({ kind: 'preview', symbol: 'MU.US' });
 
@@ -237,17 +264,17 @@ describe('CanvasFrame live bridge', () => {
     expect(typeof feed.data.asOf).toBe('string');
   });
 
-  it('ignores subscriptions past the per-canvas cap', () => {
-    const { send } = setup();
+  it('ignores subscriptions past the per-canvas cap', async () => {
+    const { send } = await setup();
     for (const symbol of ['A.US', 'B.US', 'C.US', 'D.US', 'E.US', 'F.US', 'G.US']) {
       send({ type: 'sub', kind: 'quotes', symbol });
     }
     expect(subscribeChannel.mock.calls.length).toBe(6);
   });
 
-  it('goes degraded when a preview build fails before any data', () => {
+  it('goes degraded when a preview build fails before any data', async () => {
     const onLiveStatus = vi.fn();
-    const { posts, send } = setup(onLiveStatus);
+    const { posts, send } = await setup(onLiveStatus);
     send({ type: 'sub', kind: 'preview', symbol: 'MU.US' });
 
     const onPayload = subscribeChannel.mock.calls[0][1];
@@ -261,8 +288,8 @@ describe('CanvasFrame live bridge', () => {
     expect(posts).toContainEqual({ type: 'feed-status', connected: false, degraded: true });
   });
 
-  it('releases on unsub, on iframe reload, and on unmount', () => {
-    const { container } = render(
+  it('releases on unsub, on iframe reload, and on unmount', async () => {
+    const { container } = await renderReady(
       <CanvasFrame source="export default function App() { return null; }" />,
     );
     const iframe = container.querySelector('iframe')!;
@@ -290,9 +317,9 @@ describe('CanvasFrame live bridge', () => {
     expect(release).toHaveBeenCalledTimes(3);
   });
 
-  it('reports subscription, connection and degraded state', () => {
+  it('reports subscription, connection and degraded state', async () => {
     const onLiveStatus = vi.fn();
-    const { posts, send } = setup(onLiveStatus);
+    const { posts, send } = await setup(onLiveStatus);
     expect(onLiveStatus).not.toHaveBeenCalled();
 
     send({ type: 'sub', kind: 'quotes', symbol: 'MU.US' });

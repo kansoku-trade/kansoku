@@ -17,6 +17,13 @@ export class CanvasController {
     return { ok: true, data };
   }
 
+  @Post('/compile')
+  async compile(@Body() body: unknown) {
+    const parsed = jsonBody(body);
+    const data = await canvasService.compile({ source: String(parsed.source ?? '') });
+    return { ok: true, data };
+  }
+
   @Get('/:slug')
   async getOne(@Param('slug') slug: string) {
     const data = await canvasService.get({ slug });

@@ -2,7 +2,9 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CANVAS_COMPONENT_NAMES, CANVAS_NON_COMPONENT_EXPORTS } from '@kansoku/canvas/names';
-import { checkCanvasSource, reviewCanvasBindings, reviewCanvasStructure } from '@kansoku/core/canvas/check';
+import { checkCanvasSource } from '@kansoku/core/canvas/check';
+import { compileCanvasSource } from '@kansoku/core/canvas/compile';
+import { reviewCanvasBindings, reviewCanvasStructure } from '@kansoku/core/canvas/review';
 import skeleton from './skeleton.canvas.tsx?raw';
 import source from './kitchenSink.canvas.tsx?raw';
 
@@ -17,7 +19,13 @@ vi.mock('lightweight-charts', () => ({
 }));
 
 const sdk = await import('@kansoku/canvas');
-const { loadCanvasComponent } = await import('../canvasRuntime');
+const { runCompiledCanvas } = await import('../canvasRuntime');
+
+function loadCanvasComponent(source: string, data: Record<string, unknown> = {}) {
+  const compiled = compileCanvasSource(source);
+  if (!compiled.ok) return compiled;
+  return runCompiledCanvas(compiled.code, data);
+}
 
 const names = Object.values(CANVAS_COMPONENT_NAMES).flat();
 

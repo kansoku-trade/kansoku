@@ -7,7 +7,7 @@ import type {
   CanvasOrigin,
 } from '../contract/canvas.js';
 import { canvasDataImports } from './check.js';
-import { validateCanvasSource } from './compile.js';
+import { validateCanvasSource } from './validate.js';
 
 export type { CanvasCheckRecord, CanvasDoc, CanvasMeta, CanvasOrigin };
 

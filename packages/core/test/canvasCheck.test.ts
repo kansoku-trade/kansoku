@@ -7,9 +7,8 @@ import {
   CANVAS_MAX_SOURCE_BYTES,
   canvasDataImports,
   checkCanvasSource,
-  reviewCanvasBindings,
-  reviewCanvasStructure,
 } from '../src/canvas/check.js';
+import { reviewCanvasBindings, reviewCanvasStructure } from '../src/canvas/review.js';
 import { parseCanvasTsx, sdkComponentProps } from '../src/canvas/canvasAst.js';
 
 const valid = `import { Canvas, Text } from '@kansoku/canvas';

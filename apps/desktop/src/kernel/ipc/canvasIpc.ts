@@ -22,6 +22,11 @@ export class CanvasIpc extends IpcService implements WrapEnvelope<CanvasApi> {
   }
 
   @IpcMethod()
+  compile(input: Parameters<CanvasApi['compile']>[0]) {
+    return toEnvelope('canvas.compile', () => canvasService.compile(input));
+  }
+
+  @IpcMethod()
   recordCheck(input: Parameters<CanvasApi['recordCheck']>[0]) {
     return toEnvelope('canvas.recordCheck', () => canvasService.recordCheck(input));
   }

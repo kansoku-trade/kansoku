@@ -1,6 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { loadCanvasComponent } from './features/canvas/canvasRuntime';
+import { runCompiledCanvas } from './features/canvas/canvasRuntime';
 
 const root = createRoot(document.getElementById('root')!);
 
@@ -67,11 +67,11 @@ function renderIssues(issues: string[]): void {
 window.addEventListener('message', (event) => {
   const message = event.data as {
     type?: string;
-    source?: string;
+    code?: string;
     data?: Record<string, unknown>;
   } | null;
-  if (!message || message.type !== 'source' || typeof message.source !== 'string') return;
-  const result = loadCanvasComponent(message.source, message.data ?? {});
+  if (!message || message.type !== 'code' || typeof message.code !== 'string') return;
+  const result = runCompiledCanvas(message.code, message.data ?? {});
   if (!result.ok) {
     renderIssues(result.issues);
     report({ type: 'runtime-error', issues: result.issues, stage: 'compile' });

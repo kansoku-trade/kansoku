@@ -2,6 +2,7 @@ import { CANVAS_DIR } from '../platform/env.js';
 import { isLicensed } from '../license/licenseGate.js';
 import { ClientError } from '../platform/errors.js';
 import type { CanvasApi } from '../contract/canvas.js';
+import { compileCanvasSource } from './compile.js';
 import { assertCanvasQuota } from './quotaEnforce.js';
 import { listCanvases, loadCanvas, recordCanvasCheck, saveCanvas } from './store.js';
 
@@ -26,6 +27,10 @@ export function createCanvasService(
       const result = await saveCanvas(dir, input);
       if (!result.ok) throw new ClientError(result.issues.join('; '), undefined, 400);
       return result.doc;
+    },
+
+    async compile(input) {
+      return compileCanvasSource(input.source);
     },
 
     async recordCheck(input) {

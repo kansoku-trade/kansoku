@@ -28,10 +28,15 @@ export interface CanvasDoc {
   data: Record<string, unknown>;
 }
 
+export type CanvasCompileResult =
+  | { ok: true; code: string }
+  | { ok: false; issues: string[] };
+
 export interface CanvasApi {
   list(): Promise<CanvasMeta[]>;
   get(input: { slug: string }): Promise<CanvasDoc>;
   save(input: { slug: string; title: string; source: string }): Promise<CanvasDoc>;
+  compile(input: { source: string }): Promise<CanvasCompileResult>;
   recordCheck(input: {
     slug: string;
     issues: string[];
@@ -41,6 +46,7 @@ export interface CanvasApi {
 
 export const canvasRoutes = defineRoutes<CanvasApi>('canvas', {
   list: { method: 'GET', path: '/' },
+  compile: { method: 'POST', path: '/compile' },
   get: { method: 'GET', path: '/:slug' },
   save: { method: 'PUT', path: '/:slug' },
   recordCheck: { method: 'POST', path: '/:slug/check' },
