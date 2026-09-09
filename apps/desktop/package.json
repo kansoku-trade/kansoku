@@ -28,7 +28,7 @@
     "@kansoku/core": "workspace:*",
     "@kansoku/pro-api": "workspace:*",
     "@kansoku/shared": "workspace:*",
-    "@types/node": "^26.4.1",
+    "@types/node": "^26.5.0",
     "@vibeloft/telemetry-electron": "0.1.0",
     "electron": "44.2.0",
     "electron-builder": "^26.15.3",

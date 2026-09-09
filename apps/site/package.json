@@ -16,15 +16,15 @@
     "@astrojs/sitemap": "^3.7.4",
     "astro": "^7.3.1",
     "lightweight-charts": "^5.2.1",
-    "marked": "^18.0.11",
+    "marked": "^18.0.12",
     "three": "^0.185.1"
   },
   "devDependencies": {
-    "@types/node": "^26.4.1",
+    "@types/node": "^26.5.0",
     "@types/three": "^0.185.4",
-    "lucide-static": "^1.41.0",
+    "lucide-static": "^1.42.0",
     "typescript": "^5.9.3",
     "vitest": "^5.0.0",
-    "wrangler": "^4.129.0"
+    "wrangler": "^4.129.1"
   }
 }
