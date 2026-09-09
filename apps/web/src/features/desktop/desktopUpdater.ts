@@ -3,7 +3,13 @@ import { getShellRpc } from './shellRpc';
 export type UpdaterUiStatus =
   | { kind: 'unknown' }
   | { kind: 'up-to-date'; current: string; latest: string }
-  | { kind: 'available'; version: string; htmlUrl: string }
+  | {
+      kind: 'available';
+      version: string;
+      htmlUrl: string;
+      phase?: 'downloading' | 'preparing' | 'ready';
+      percent?: number;
+    }
   | { kind: 'error'; message: string };
 
 export interface DesktopUpdaterBridge {

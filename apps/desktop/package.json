@@ -7,7 +7,7 @@
   "main": "dist-main/main.mjs",
   "scripts": {
     "build": "vite build -c vite.main.config.ts --configLoader runner && vite build -c vite.preload.config.ts",
-    "build:native": "npx electron-sparkle-updater rebuild --electron-version 43.1.0 --arch arm64",
+    "build:native": "npx electron-sparkle-updater rebuild --arch arm64",
     "predev": "node scripts/ensureDevNative.mjs",
     "dev": "node scripts/dev.mjs",
     "generate-icon": "bash scripts/generate-icon.sh",
@@ -19,7 +19,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "electron-sparkle-updater": "^0.3.0",
+    "electron-sparkle-updater": "^0.4.0",
     "zod": "^4.5.4"
   },
   "devDependencies": {

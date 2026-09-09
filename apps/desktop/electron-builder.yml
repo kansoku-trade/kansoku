@@ -47,6 +47,7 @@ files:
   - '!**/node_modules/electron-sparkle-updater/native/scripts/**'
   - '!**/node_modules/electron-sparkle-updater/native/src/**'
   - '!**/node_modules/electron-sparkle-updater/native/vendor/**'
+  - '!**/node_modules/electron-sparkle-updater/native/sparkle-chain.tar.xz'
 extraResources:
   - from: ../web/dist
     to: web-dist
@@ -116,6 +117,7 @@ mac:
     SUPublicEDKey: SPARKLE_ED_PUBLIC_KEY_PLACEHOLDER
     SUEnableInstallerLauncherService: false
     SUScheduledCheckInterval: 3600
+    SUDeltaChainHistory: 6
     CFBundleURLTypes:
       - CFBundleURLName: dev.innei.kansoku
         CFBundleURLSchemes:
