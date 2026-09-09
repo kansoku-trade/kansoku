@@ -269,6 +269,7 @@ function handlePayload(slot: Slot, payload: unknown): void {
   if (env.type !== 'init' && env.type !== 'event') return;
   const key = conversationKey(slot.kind, slot.id);
   if (env.type === 'init') {
+    if (slot.aborting) return;
     slot.busy = env.busy;
     slot.streamText = env.busy ? env.partial : '';
     const hasTools = slot.liveBeats.some((beat) => beat.kind === 'tool');
@@ -287,6 +288,7 @@ function handlePayload(slot: Slot, payload: unknown): void {
     disposeIfIdle(key);
   };
   if (evt.event === 'delta' || evt.event === 'reasoning' || evt.event === 'tool') {
+    if (slot.aborting) return;
     slot.busy = true;
     if (evt.event === 'delta') slot.streamText += evt.text;
     let toolId = `tool-${slot.toolSeq}`;
@@ -309,6 +311,7 @@ function handlePayload(slot: Slot, payload: unknown): void {
     reload(slot, undefined, clearLive);
     return;
   }
+  if (slot.aborting) return;
   const markError = evt.event === 'done' ? undefined : evt.message;
   if (slot.settleTimer) clearTimeout(slot.settleTimer);
   slot.settleTimer = setTimeout(() => {
@@ -440,8 +443,9 @@ export async function sendConversation(
 
 export async function abortConversation(kind: ConversationKind, id: string): Promise<void> {
   const slot = getSlot(kind, id);
-  if (!slot) return;
+  if (!slot || slot.aborting) return;
   slot.aborting = true;
+  slot.busy = false;
   emit(conversationKey(kind, id));
   try {
     await adapterOf(kind).abort(id);

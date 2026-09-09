@@ -175,7 +175,7 @@ export function ChatComposer({
 }: ChatComposerProps) {
   const prefersReducedMotion = useReducedMotion();
   const fieldDisabled = (busy && !allowInputWhileBusy) || disabled;
-  const actionDisabled = busy ? aborting : !value.trim() || disabled;
+  const actionDisabled = aborting || (busy ? false : !value.trim() || disabled);
   const sendIcon = busy ? (
     <Square size={12} fill="currentColor" aria-hidden="true" />
   ) : (
@@ -185,6 +185,7 @@ export function ChatComposer({
     if (onKeyDownIntercept?.(event)) return;
     if (event.key !== 'Enter' || event.nativeEvent.isComposing || (multiline && event.shiftKey))
       return;
+    if (aborting) return;
     event.preventDefault();
     onSubmit(value);
   };

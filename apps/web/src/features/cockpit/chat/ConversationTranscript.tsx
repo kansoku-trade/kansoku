@@ -109,6 +109,7 @@ function ConversationTranscriptView({
   rows,
   inserts = EMPTY_INSERTS,
   busy,
+  aborting = false,
   streamText,
   liveTools,
   liveBeats,
@@ -137,6 +138,7 @@ function ConversationTranscriptView({
   rows: ChatRow[];
   inserts?: TranscriptInsert[];
   busy: boolean;
+  aborting?: boolean;
   streamText: string;
   liveTools: ChatLiveTool[];
   liveBeats?: ChatLiveBeat[];
@@ -169,8 +171,8 @@ function ConversationTranscriptView({
   const anchoredUserIdRef = useRef<string | null>(null);
   const [stuck, setStuck] = useState(true);
   const blocks = useMemo(
-    () => presentTranscript({ rows, inserts, liveBeats, liveTools, streamText, busy }),
-    [rows, inserts, liveBeats, liveTools, streamText, busy],
+    () => presentTranscript({ rows, inserts, liveBeats, liveTools, streamText, busy, aborting }),
+    [rows, inserts, liveBeats, liveTools, streamText, busy, aborting],
   );
   const activeUserId = useMemo(() => {
     if (!busy) return undefined;

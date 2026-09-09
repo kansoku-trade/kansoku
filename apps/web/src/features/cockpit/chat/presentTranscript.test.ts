@@ -360,6 +360,17 @@ describe('presentTranscript', () => {
     ]);
   });
 
+  it('keeps frozen live text while aborting after stop', () => {
+    const blocks = presentTranscript({
+      busy: false,
+      aborting: true,
+      rows: [user('u1', '10:00:00', '问')],
+      streamText: '半截',
+      liveBeats: [{ kind: 'text', text: '半截' }],
+    });
+    expect(summarize(blocks)).toEqual(['user:问', `runtime:${ts('10:00:00')}`, 'text:半截']);
+  });
+
   it('shows thinking when the live turn is idle between tools and text', () => {
     const blocks = presentTranscript({
       busy: true,

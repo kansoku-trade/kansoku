@@ -115,7 +115,7 @@ function translateEvent(
   state: TurnState,
   emit: (event: ConversationEvent) => void,
 ): void {
-  if (ctx.settled) return;
+  if (ctx.settled || state.aborted) return;
   if (event.type === 'message_start') {
     if (event.message.role === 'assistant') {
       ctx.emittedLen = 0;
@@ -213,9 +213,9 @@ export function createConversationEngine<TInput, TReason extends string>(
 
   function abort(key: string): boolean {
     const state = turnStates.get(key);
-    if (!state?.busy || !state.abort) return false;
+    if (!state?.busy || state.aborted) return false;
     state.aborted = true;
-    state.abort();
+    state.abort?.();
     return true;
   }
 
@@ -266,7 +266,16 @@ export function createConversationEngine<TInput, TReason extends string>(
         await turn.store.appendMessages(session.id, [userMessage]);
       }
 
+      if (state.aborted) {
+        broadcast(key, { event: 'aborted' });
+        return;
+      }
+
       const plan = await turn.buildTurn(session.id);
+      if (state.aborted) {
+        broadcast(key, { event: 'aborted' });
+        return;
+      }
       const toolLabels = new Map(plan.tools.map((tool) => [tool.name, tool.label]));
       const translatorCtx: TranslatorCtx = {
         emittedLen: 0,
@@ -291,6 +300,11 @@ export function createConversationEngine<TInput, TReason extends string>(
       });
 
       state.abort = () => agentSession.agent.abort();
+      if (state.aborted) {
+        agentSession.agent.abort();
+        broadcast(key, { event: 'aborted' });
+        return;
+      }
 
       const settleAborted = async (): Promise<void> => {
         await persistFailureIncrement(
@@ -405,25 +419,27 @@ export function createConversationEngine<TInput, TReason extends string>(
   ): Promise<ConversationStartResult<TReason>> {
     if (!lock.tryAcquire(key)) return { started: false, reason: 'busy' };
 
+    const state: TurnState = { busy: true, partial: '', aborted: false, abort: null };
+    turnStates.set(key, state);
+
+    const release = (): void => {
+      lock.release(key);
+      turnStates.delete(key);
+    };
+
     let prepared: ConversationPrepareResult<TReason>;
     try {
       prepared = await config.prepare(key, text, input);
     } catch (err) {
-      lock.release(key);
+      release();
       throw err;
     }
     if (!prepared.ok) {
-      lock.release(key);
+      release();
       return { started: false, reason: prepared.reason };
     }
 
-    const state: TurnState = { busy: true, partial: '', aborted: false, abort: null };
-    turnStates.set(key, state);
-
-    const done = executeTurn(key, text, prepared.turn, state, options).finally(() => {
-      lock.release(key);
-      turnStates.delete(key);
-    });
+    const done = executeTurn(key, text, prepared.turn, state, options).finally(release);
 
     return { started: true, done };
   }

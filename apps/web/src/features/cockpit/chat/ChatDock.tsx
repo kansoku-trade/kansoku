@@ -131,8 +131,8 @@ export function ChatDock({ chartId, docCreatedAt }: ChatDockProps) {
   }, [busy]);
 
   useEffect(() => {
-    if (mode !== 'dock' && loaded && !busy) ensureSuggestions();
-  }, [mode, loaded, busy, ensureSuggestions]);
+    if (mode !== 'dock' && loaded && !busy && !aborting) ensureSuggestions();
+  }, [mode, loaded, busy, aborting, ensureSuggestions]);
 
   useEffect(() => {
     if (mode !== 'full') return;
@@ -145,7 +145,7 @@ export function ChatDock({ chartId, docCreatedAt }: ChatDockProps) {
 
   const submit = async (value: string) => {
     const trimmed = value.trim();
-    if (!trimmed || busy) return;
+    if (!trimmed || busy || aborting) return;
     setText('');
     setMode((prev) => (prev === 'dock' ? 'float' : prev));
     const result = await send(trimmed);
@@ -212,6 +212,7 @@ export function ChatDock({ chartId, docCreatedAt }: ChatDockProps) {
           docCreatedAt={docCreatedAt}
           rows={rows}
           busy={busy}
+          aborting={aborting}
           streamText={streamText}
           liveTools={liveTools}
           liveBeats={liveBeats}

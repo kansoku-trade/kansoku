@@ -12,6 +12,7 @@ interface ChatPanelProps {
   docCreatedAt: string;
   rows: ChatRow[];
   busy: boolean;
+  aborting?: boolean;
   streamText: string;
   liveTools: ChatLiveTool[];
   liveBeats?: ChatLiveBeat[];
@@ -116,6 +117,7 @@ export function ChatPanel({
   docCreatedAt,
   rows,
   busy,
+  aborting,
   streamText,
   liveTools,
   liveBeats,
@@ -170,6 +172,7 @@ export function ChatPanel({
         canvasOpen={canvasOpen}
         rows={rows}
         busy={busy}
+        aborting={aborting}
         streamText={streamText}
         liveTools={liveTools}
         liveBeats={liveBeats}

@@ -508,6 +508,90 @@ describe('createConversationEngine abort', () => {
   it('returns false when no turn is running', () => {
     expect(makeEngine().abort('idle')).toBe(false);
   });
+
+  it('accepts abort before the agent exists and never starts the model', async () => {
+    const engine = makeEngine();
+    const store = memoryStore();
+    const events: ConversationEvent[] = [];
+    const unsub = engine.onEvent('k-early', (e) => events.push(e));
+
+    let releaseBuild: (() => void) | undefined;
+    const buildGate = new Promise<void>((resolve) => {
+      releaseBuild = resolve;
+    });
+    let promptCalled = false;
+    const factory: AiAgentFactory = () => ({
+      prompt: async () => {
+        promptCalled = true;
+      },
+      abort: () => {},
+      state: { messages: [] },
+    });
+
+    const result = await engine.run(
+      'k-early',
+      '问',
+      makeTurn(store, factory, {}, {
+        buildTurn: async () => {
+          await buildGate;
+          return { symbol: 'MU.US', systemPrompt: 'sp', tools: [] };
+        },
+      }),
+    );
+    expect(result.started).toBe(true);
+    expect(engine.turnState('k-early').busy).toBe(true);
+    expect(engine.abort('k-early')).toBe(true);
+
+    releaseBuild?.();
+    if (result.started) await result.done;
+    unsub();
+
+    expect(promptCalled).toBe(false);
+    expect(events.at(-1)).toEqual({ event: 'aborted' });
+    expect(store.rows.map((row) => row.role)).toEqual(['user']);
+  });
+
+  it('drops stream events after abort even if the agent keeps emitting', async () => {
+    const engine = makeEngine();
+    const store = memoryStore();
+    const events: ConversationEvent[] = [];
+    const unsub = engine.onEvent('k-drop', (e) => events.push(e));
+
+    let rejectPrompt: ((err: Error) => void) | undefined;
+    const factory: AiAgentFactory = (config) => {
+      let listener: ((event: AgentEvent) => void) | undefined;
+      return {
+        prompt: () =>
+          new Promise((_resolve, reject) => {
+            rejectPrompt = reject;
+            listener?.(messageStartEvent());
+            listener?.(messageUpdateEvent('半截'));
+            queueMicrotask(() => {
+              engine.abort('k-drop');
+              listener?.(messageUpdateEvent('半截还在写'));
+            });
+          }),
+        abort: () => rejectPrompt?.(new Error('aborted')),
+        subscribe: (l) => {
+          listener = l;
+          return () => {
+            listener = undefined;
+          };
+        },
+        state: { messages: [...(config.messages ?? [])] },
+      };
+    };
+
+    const result = await engine.run('k-drop', '问', makeTurn(store, factory));
+    expect(result.started).toBe(true);
+    if (result.started) await result.done;
+    unsub();
+
+    expect(events.filter((event) => event.event === 'delta')).toEqual([
+      { event: 'delta', text: '半截' },
+    ]);
+    expect(events.at(-1)).toEqual({ event: 'aborted' });
+  });
 });
 
 describe('createConversationEngine translation', () => {

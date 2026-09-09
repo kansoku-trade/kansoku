@@ -175,6 +175,30 @@ describe('conversationStore', () => {
     expect(store.getConversationSnapshot('assistant', 's1')?.busy).toBe(true);
   });
 
+  it('freezes the live stream as soon as abort is requested', async () => {
+    const abort = vi.fn(async () => undefined);
+    store.setConversationAdaptersForTests({
+      assistant: { ...fakeAdapter(), abort },
+      chart: fakeAdapter(),
+      research: fakeAdapter(),
+    });
+    await acquireAssistant();
+    subs[0].onPayload({ type: 'event', event: { event: 'delta', text: '半截' } });
+    expect(store.getConversationSnapshot('assistant', 's1')?.busy).toBe(true);
+
+    const done = store.abortConversation('assistant', 's1');
+    const frozen = store.getConversationSnapshot('assistant', 's1');
+    expect(frozen?.aborting).toBe(true);
+    expect(frozen?.busy).toBe(false);
+    expect(frozen?.streamText).toBe('半截');
+
+    subs[0].onPayload({ type: 'event', event: { event: 'delta', text: '还在写' } });
+    expect(store.getConversationSnapshot('assistant', 's1')?.streamText).toBe('半截');
+
+    await done;
+    expect(abort).toHaveBeenCalledWith('s1');
+  });
+
   it('keeps live tools when the socket reports disconnected', async () => {
     await acquireAssistant();
     subs[0].onPayload({

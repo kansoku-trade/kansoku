@@ -564,7 +564,7 @@ export function AssistantConversation({
 
   const submit = (value: string) => {
     const trimmed = value.trim();
-    if (!trimmed) return;
+    if (!trimmed || aborting) return;
     setText('');
     setMentionState(null);
     if (decideSubmitAction(busy, queue.queue.length) === 'enqueue') {
@@ -675,6 +675,7 @@ export function AssistantConversation({
           emptyTextClassName={stylex.props(styles.transcriptEmptyText).className}
           rows={rows}
           busy={busy}
+          aborting={aborting}
           streamText={streamText}
           liveTools={liveTools}
           liveBeats={liveBeats}

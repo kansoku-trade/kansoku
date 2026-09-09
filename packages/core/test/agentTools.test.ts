@@ -100,6 +100,17 @@ describe('buildResearchTools', () => {
     }
   });
 
+  it('default exec stops a running command when the abort signal fires', async () => {
+    const exec = createDefaultExec(repoRoot);
+    const controller = new AbortController();
+    const started = Date.now();
+    const running = exec('sleep 30', controller.signal);
+    controller.abort();
+    const result = await running;
+    expect(Date.now() - started).toBeLessThan(2000);
+    expect(result.exitCode).not.toBe(0);
+  });
+
   it('default exec exposes stable skill roots and returns nonzero exit codes', async () => {
     const exec = createDefaultExec(repoRoot);
     const roots = await exec('printf "%s\n%s" "$KANSOKU_SKILLS_DIR" "$KANSOKU_APP_SKILLS_DIR"');
@@ -217,15 +228,21 @@ describe('web_search', () => {
   };
 
   it('passes the trimmed query and recency through', async () => {
-    const seen: Array<{ query: string; recency?: string }> = [];
+    const seen: Array<{ query: string; recency?: string; signal?: AbortSignal }> = [];
+    const signal = new AbortController().signal;
     const tool = await findWebSearch(async (options) => {
       seen.push(options);
       return 'MU 8月26日高管调整，来源 investors.micron.com';
     });
-    expect(await runTool(tool, { query: '  MU 最近消息  ', recency: 'week' })).toContain(
+    const result = await tool.execute(
+      'id',
+      { query: '  MU 最近消息  ', recency: 'week' } as never,
+      signal,
+    );
+    expect(result.content.map((part) => ('text' in part ? part.text : '')).join('')).toContain(
       '高管调整',
     );
-    expect(seen).toEqual([{ query: 'MU 最近消息', recency: 'week' }]);
+    expect(seen).toEqual([{ query: 'MU 最近消息', recency: 'week', signal }]);
   });
 
   it('rejects an empty query without running the search', async () => {

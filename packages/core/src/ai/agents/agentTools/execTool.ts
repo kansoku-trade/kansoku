@@ -3,7 +3,6 @@ import { randomUUID } from 'node:crypto';
 import { mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
-import { promisify } from 'node:util';
 import type { AgentTool } from '@earendil-works/pi-agent-core';
 import { Type } from 'typebox';
 import { locateOpencli } from '../../../credentials/opencli.js';
@@ -23,9 +22,7 @@ const TRANSCRIPT_ID_RE = /^[\da-f]{8}-[\da-f]{4}-4[\da-f]{3}-[89ab][\da-f]{3}-[\
 const TRANSCRIPT_DIR = join(tmpdir(), 'kansoku', 'bash');
 
 export type ExecResult = { stdout: string; stderr: string; exitCode?: number };
-export type ExecFn = (command: string) => Promise<ExecResult>;
-
-const nodeExecAsync = promisify(nodeExec);
+export type ExecFn = (command: string, signal?: AbortSignal) => Promise<ExecResult>;
 
 let cachedExecPathPromise: Promise<string> | null = null;
 
@@ -52,7 +49,7 @@ function resolveExecPath(): Promise<string> {
 }
 
 export function createDefaultExec(repoRoot: string): ExecFn {
-  return async (command: string) => {
+  return async (command: string, signal?: AbortSignal) => {
     const options = {
       cwd: repoRoot,
       timeout: BASH_TIMEOUT_MS,
@@ -65,18 +62,43 @@ export function createDefaultExec(repoRoot: string): ExecFn {
         PATH: await resolveExecPath(),
       },
     };
-    try {
-      const { stdout, stderr } = await nodeExecAsync(command, options);
-      return { stdout, stderr, exitCode: 0 };
-    } catch (error) {
-      const failed = error as Error & { code?: unknown; stdout?: unknown; stderr?: unknown };
-      if (typeof failed.code !== 'number') throw error;
-      return {
-        stdout: typeof failed.stdout === 'string' ? failed.stdout : '',
-        stderr: typeof failed.stderr === 'string' ? failed.stderr : '',
-        exitCode: failed.code,
+    if (signal?.aborted) return { stdout: '', stderr: 'aborted', exitCode: 130 };
+    return await new Promise<ExecResult>((resolve, reject) => {
+      const child = nodeExec(command, options, (error, stdout, stderr) => {
+        signal?.removeEventListener('abort', onAbort);
+        if (!error) {
+          resolve({ stdout, stderr, exitCode: 0 });
+          return;
+        }
+        const failed = error as Error & {
+          code?: unknown;
+          killed?: boolean;
+          stdout?: unknown;
+          stderr?: unknown;
+        };
+        if (signal?.aborted || failed.killed) {
+          resolve({
+            stdout: typeof failed.stdout === 'string' ? failed.stdout : '',
+            stderr: typeof failed.stderr === 'string' ? failed.stderr : 'aborted',
+            exitCode: 130,
+          });
+          return;
+        }
+        if (typeof failed.code !== 'number') {
+          reject(error);
+          return;
+        }
+        resolve({
+          stdout: typeof failed.stdout === 'string' ? failed.stdout : '',
+          stderr: typeof failed.stderr === 'string' ? failed.stderr : '',
+          exitCode: failed.code,
+        });
+      });
+      const onAbort = () => {
+        child.kill('SIGKILL');
       };
-    }
+      signal?.addEventListener('abort', onAbort, { once: true });
+    });
   };
 }
 
@@ -127,13 +149,13 @@ export function buildBashTool(exec: ExecFn): AgentTool<typeof bashSchema> {
     label: 'Bash',
     description: 'Run a shell command (cwd = repo root). Read-only commands only; no file writes.',
     parameters: bashSchema,
-    execute: async (_id, params) => {
+    execute: async (_id, params, signal) => {
       const command = params.command;
       if (isRejectedCommand(command)) {
         return textResult(`rejected: command "${command}" matches a disallowed write pattern`);
       }
       try {
-        const { stdout, stderr, exitCode = 0 } = await exec(command);
+        const { stdout, stderr, exitCode = 0 } = await exec(command, signal);
         const output = `${stdout}${stderr ? `\n[stderr]\n${stderr}` : ''}`;
         const status = exitCode === 0 ? '' : `[exit_code ${exitCode}]\n`;
         if (output.length <= OUTPUT_TRUNCATE_CHARS) return textResult(`${status}${output}`);

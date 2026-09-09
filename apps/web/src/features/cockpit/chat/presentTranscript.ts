@@ -230,19 +230,23 @@ function presentCompletedTurn(entries: TimelineEntry[]): TranscriptBlock[] {
   ];
 }
 
-function beatsToBlocks(beats: ChatLiveBeat[], streamText: string): TranscriptBlock[] {
+function beatsToBlocks(
+  beats: ChatLiveBeat[],
+  streamText: string,
+  streaming: boolean,
+): TranscriptBlock[] {
   const blocks: TranscriptBlock[] = [];
   for (const [index, beat] of beats.entries()) {
     if (beat.kind === 'text') {
-      const streaming = index === beats.length - 1;
+      const last = index === beats.length - 1;
       blocks.push({
         type: 'assistant',
-        streaming,
+        streaming: streaming && last,
         row: {
           id: `live-text-${index}`,
           ts: '',
           kind: 'assistant',
-          text: streaming ? streamText || beat.text : beat.text,
+          text: last ? streamText || beat.text : beat.text,
         },
       });
       continue;
@@ -250,7 +254,7 @@ function beatsToBlocks(beats: ChatLiveBeat[], streamText: string): TranscriptBlo
     if (beat.kind === 'reasoning') {
       blocks.push({
         type: 'reasoning',
-        streaming: index === beats.length - 1,
+        streaming: streaming && index === beats.length - 1,
         text: beat.text,
       });
       continue;
@@ -260,7 +264,11 @@ function beatsToBlocks(beats: ChatLiveBeat[], streamText: string): TranscriptBlo
   return blocks;
 }
 
-function fallbackLiveBlocks(liveTools: ChatLiveTool[], streamText: string): TranscriptBlock[] {
+function fallbackLiveBlocks(
+  liveTools: ChatLiveTool[],
+  streamText: string,
+  streaming: boolean,
+): TranscriptBlock[] {
   const blocks: TranscriptBlock[] = liveTools.map((tool) => ({
     type: 'tool' as const,
     tool: toolFromLive(tool),
@@ -268,7 +276,7 @@ function fallbackLiveBlocks(liveTools: ChatLiveTool[], streamText: string): Tran
   if (streamText) {
     blocks.push({
       type: 'assistant',
-      streaming: true,
+      streaming,
       row: { id: 'stream', ts: '', kind: 'assistant', text: streamText },
     });
   }
@@ -280,6 +288,7 @@ function presentLiveTurn(
   liveBeats: ChatLiveBeat[] | undefined,
   liveTools: ChatLiveTool[],
   streamText: string,
+  streaming: boolean,
 ): TranscriptBlock[] {
   const userEntry = entries[0] && isUserEntry(entries[0]) ? entries[0] : undefined;
   const userRow = userEntry?.kind === 'row' ? userEntry.row : undefined;
@@ -287,8 +296,8 @@ function presentLiveTurn(
   const persisted = sequenceFromEntries(rest.filter((entry) => !isErrorEntry(entry)));
   const live =
     liveBeats && liveBeats.length > 0
-      ? beatsToBlocks(liveBeats, streamText)
-      : fallbackLiveBlocks(liveTools, streamText);
+      ? beatsToBlocks(liveBeats, streamText, streaming)
+      : fallbackLiveBlocks(liveTools, streamText, streaming);
   const liveToolList =
     liveBeats && liveBeats.length > 0
       ? liveBeats.filter((beat): beat is { kind: 'tool'; tool: ChatLiveTool } => beat.kind === 'tool').map((beat) => beat.tool)
@@ -307,7 +316,7 @@ function presentLiveTurn(
   const hasText =
     live.some((block) => block.type === 'assistant' || block.type === 'reasoning') ||
     persisted.some((block) => block.type === 'assistant' || block.type === 'reasoning');
-  if (!hasRunning && !hasText) blocks.push({ type: 'thinking' });
+  if (streaming && !hasRunning && !hasText) blocks.push({ type: 'thinking' });
   return blocks;
 }
 
@@ -318,6 +327,7 @@ export function presentTranscript(input: {
   liveTools?: ChatLiveTool[];
   streamText?: string;
   busy?: boolean;
+  aborting?: boolean;
 }): TranscriptBlock[] {
   const timeline = mergeTimeline(input.rows, input.inserts ?? []);
   const { prefix, turns } = splitTurns(timeline);
@@ -325,18 +335,23 @@ export function presentTranscript(input: {
   const streamText = input.streamText ?? '';
   const out: TranscriptBlock[] = [...sequenceFromEntries(prefix)];
   const lastIndex = turns.length - 1;
+  const showLive = Boolean(input.busy || input.aborting);
 
   for (const [index, turn] of turns.entries()) {
-    const live = Boolean(input.busy) && index === lastIndex;
+    const live = showLive && index === lastIndex;
     if (live) {
-      out.push(...presentLiveTurn(turn, input.liveBeats, liveTools, streamText));
+      out.push(
+        ...presentLiveTurn(turn, input.liveBeats, liveTools, streamText, Boolean(input.busy)),
+      );
       continue;
     }
     out.push(...presentCompletedTurn(turn));
   }
 
-  if (input.busy && turns.length === 0) {
-    out.push(...presentLiveTurn([], input.liveBeats, liveTools, streamText));
+  if (showLive && turns.length === 0) {
+    out.push(
+      ...presentLiveTurn([], input.liveBeats, liveTools, streamText, Boolean(input.busy)),
+    );
   }
 
   return out;
