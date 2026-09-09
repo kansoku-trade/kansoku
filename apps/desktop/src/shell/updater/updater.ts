@@ -104,6 +104,52 @@ export function createUpdaterHandle(options: {
       });
     });
 
+  if (options.mode === 'sparkle' && options.sparkleBridge) {
+    options.sparkleBridge.setEventHandler((event) => {
+      const current = statusStore.get();
+      switch (event.type) {
+        case 'update-available':
+        case 'update-downloaded': {
+          const version =
+            event.version ?? (current.kind === 'available' ? current.version : undefined);
+          if (!version) break;
+          statusStore.set({
+            kind: 'available',
+            version,
+            htmlUrl:
+              current.kind === 'available' && current.version === version
+                ? current.htmlUrl
+                : `https://github.com/${OWNER_REPO}/releases/tag/${TAG_PREFIX}${encodeURIComponent(version)}`,
+            ...(event.type === 'update-downloaded' ? { phase: 'ready' as const } : {}),
+          });
+          break;
+        }
+        case 'download-progress': {
+          if (current.kind !== 'available') break;
+          const percent =
+            typeof event.percent === 'number' && Number.isFinite(event.percent)
+              ? Math.min(100, Math.max(0, event.percent))
+              : undefined;
+          statusStore.set({
+            ...current,
+            phase: percent === 100 ? 'preparing' : 'downloading',
+            percent,
+          });
+          break;
+        }
+        case 'update-not-available': {
+          statusStore.set({ kind: 'unknown' });
+          break;
+        }
+        case 'error': {
+          statusStore.set({ kind: 'error', message: event.message ?? '更新失败' });
+          log(`sparkle update failed: ${event.message ?? 'unknown error'}`);
+          break;
+        }
+      }
+    });
+  }
+
   let silentCheckInFlight = false;
 
   const applyResult = (result: CheckForUpdateResult) => {
@@ -213,6 +259,12 @@ export function createUpdaterHandle(options: {
       }
 
       if (options.mode === 'sparkle' && options.sparkleBridge) {
+        const current = statusStore.get();
+        if (
+          current.kind === 'available' &&
+          (current.phase === 'downloading' || current.phase === 'preparing')
+        )
+          return;
         try {
           options.sparkleBridge.installUpdateNow();
         } catch (err) {

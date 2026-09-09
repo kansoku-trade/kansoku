@@ -4,6 +4,7 @@ import * as stylex from '@stylexjs/stylex';
 import {
   ArrowUpCircle,
   Circle,
+  Download,
   LayoutDashboard,
   Library,
   MessageCircle,
@@ -457,6 +458,16 @@ export function DesktopTitlebar({ controller }: { controller: TabsController }) 
   } = controller;
   const updaterStatus = useUpdaterStatus();
   const showUpdateBadge = isAvailableStatus(updaterStatus);
+  const update = updaterStatus?.kind === 'available' ? updaterStatus : null;
+  const updateBusy = update?.phase === 'downloading' || update?.phase === 'preparing';
+  const updateLabel =
+    update?.phase === 'downloading'
+      ? `正在下载更新${update.percent === undefined ? '' : ` ${Math.floor(update.percent)}%`}`
+      : update?.phase === 'preparing'
+        ? '正在准备更新'
+        : update?.phase === 'ready'
+          ? '重启并安装更新'
+          : '有更新可用';
   const activeSymbol = symbolFromRoute(controller.activeTab.route);
   const { pro, licensed } = useCapabilities();
   const trainerBridge = getOpenTrainerBridge();
@@ -561,13 +572,15 @@ export function DesktopTitlebar({ controller }: { controller: TabsController }) 
           <button
             className={classNames('desktop-update-badge', styles.updateBadge)}
             type="button"
-            aria-label="有更新可用"
-            title="有更新可用"
+            aria-label={updateLabel}
+            title={updateLabel}
+            disabled={updateBusy}
+            aria-busy={updateBusy}
             onClick={() => {
               void getDesktopUpdaterBridge()?.installNow();
             }}
           >
-            <ArrowUpCircle size={16} />
+            {updateBusy ? <Download size={16} /> : <ArrowUpCircle size={16} />}
           </button>
         )}
         {activeSymbol && <PopoutTitlebarButton symbol={activeSymbol} />}

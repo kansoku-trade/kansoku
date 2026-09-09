@@ -1,7 +1,13 @@
 export type UpdaterUiStatus =
   | { kind: 'unknown' }
   | { kind: 'up-to-date'; current: string; latest: string }
-  | { kind: 'available'; version: string; htmlUrl: string }
+  | {
+      kind: 'available';
+      version: string;
+      htmlUrl: string;
+      phase?: 'downloading' | 'preparing' | 'ready';
+      percent?: number;
+    }
   | { kind: 'error'; message: string };
 
 export type CheckResultForStatus =
@@ -15,6 +21,8 @@ export function applyCheckResult(
   prev: UpdaterUiStatus,
   result: CheckResultForStatus,
 ): UpdaterUiStatus {
+  // A background GitHub check must not replace an in-progress native update.
+  if (prev.kind === 'available' && prev.phase) return prev;
   switch (result.kind) {
     case 'available': {
       return {
@@ -87,7 +95,13 @@ function sameStatus(a: UpdaterUiStatus, b: UpdaterUiStatus): boolean {
       return b.kind === 'up-to-date' && a.current === b.current && a.latest === b.latest;
     }
     case 'available': {
-      return b.kind === 'available' && a.version === b.version && a.htmlUrl === b.htmlUrl;
+      return (
+        b.kind === 'available' &&
+        a.version === b.version &&
+        a.htmlUrl === b.htmlUrl &&
+        a.phase === b.phase &&
+        a.percent === b.percent
+      );
     }
     case 'error': {
       return b.kind === 'error' && a.message === b.message;

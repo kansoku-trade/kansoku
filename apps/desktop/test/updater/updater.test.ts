@@ -55,6 +55,50 @@ describe('startUpdater', () => {
 });
 
 describe('createUpdaterHandle', () => {
+  it('tracks the final target through native preparation without a GitHub check replacing it', async () => {
+    const bridge = mockBridge();
+    const store = createUpdaterStatusStore();
+    const handle = createUpdaterHandle({
+      mode: 'sparkle',
+      sparkleBridge: bridge,
+      statusStore: store,
+      showMessage: vi.fn(),
+      runWeakCheck: vi
+        .fn()
+        .mockResolvedValue({
+          kind: 'available',
+          release: { version: '0.43.0', htmlUrl: 'https://example.com/new' },
+        }),
+    });
+    const emit = vi.mocked(bridge.setEventHandler).mock.calls[0]![0];
+    emit({ type: 'update-available', version: '0.42.0' });
+    emit({ type: 'download-progress', percent: 40 });
+    expect(handle.getStatus()).toMatchObject({
+      kind: 'available',
+      version: '0.42.0',
+      phase: 'downloading',
+      percent: 40,
+    });
+    handle.installNow();
+    expect(bridge.installUpdateNow).not.toHaveBeenCalled();
+    handle.silentCheckOnActivate();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(handle.getStatus()).toMatchObject({ version: '0.42.0', phase: 'downloading' });
+    emit({ type: 'download-progress', percent: 100 });
+    expect(handle.getStatus()).toMatchObject({ phase: 'preparing' });
+    // A full-download fallback starts a fresh progress range for the same target.
+    emit({ type: 'download-progress', percent: 3 });
+    expect(handle.getStatus()).toMatchObject({
+      version: '0.42.0',
+      phase: 'downloading',
+      percent: 3,
+    });
+    emit({ type: 'update-downloaded', version: '0.42.0' });
+    expect(handle.getStatus()).toMatchObject({ version: '0.42.0', phase: 'ready' });
+    handle.installNow();
+    expect(bridge.installUpdateNow).toHaveBeenCalledOnce();
+  });
+
   it('shows a dev dialog and does not touch sparkle or weak check', () => {
     const showMessage = vi.fn();
     const bridge = mockBridge();
