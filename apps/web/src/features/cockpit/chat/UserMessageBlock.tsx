@@ -48,20 +48,23 @@ const styles = stylex.create({
     },
   },
   editor: {
-    width: '78%',
-    maxWidth: '36ch',
-    minHeight: '52px',
-    resize: 'vertical',
+    boxSizing: 'border-box',
+    fieldSizing: 'content',
+    width: 'auto',
+    maxWidth: '88%',
+    resize: 'none',
+    overflow: 'hidden',
     backgroundColor: colors.backgroundElement,
     color: colors.textPrimary,
     borderColor: colors.borderStrong,
     borderStyle: 'solid',
     borderWidth: '1px',
-    borderRadius: radii.md,
-    padding: '8px 10px',
+    borderRadius: radii.userBubble,
+    padding: '5px 9px',
     fontFamily: 'inherit',
     fontSize: fontSizes.base,
     lineHeight: 1.5,
+    overflowWrap: 'anywhere',
     outline: colors.focusOutline,
     boxShadow: colors.focusRing,
   },
@@ -170,6 +173,7 @@ export function UserMessageBlock({
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
             onKeyDown={onKeyDown}
+            rows={1}
             aria-label="编辑提问"
           />
           <div className={stylex.props(styles.editBar).className}>
