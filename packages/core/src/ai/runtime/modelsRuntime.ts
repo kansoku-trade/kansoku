@@ -7,6 +7,7 @@ import type {
 import { registerBunOAuthFlows } from '@earendil-works/pi-ai/bun-oauth';
 import { getEnvApiKey } from '@earendil-works/pi-ai/compat';
 import { builtinModels } from '@earendil-works/pi-ai/providers/all';
+import { createCodexModelCatalog } from '../settings/codexModelCatalog.js';
 
 const CODEX_PROVIDER = 'openai-codex';
 
@@ -37,7 +38,7 @@ const isolatedAuthContext: AuthContext = {
 
 let singleton: MutableModels | null = null;
 
-function installStaticCodexOAuth(models: MutableModels): void {
+function installCodexProviderOverrides(models: MutableModels): void {
   // pi-ai 的内置 provider 会通过运行时动态 import 加载 OAuth 实现；桌面主进程
   // 合并为单个构建产物后没有对应文件。registerBunOAuthFlows 把各家 OAuth 流程
   // 静态注册进 lazy 加载器（0.80.10 起的官方钩子），随后只覆写 login——应用
@@ -50,8 +51,11 @@ function installStaticCodexOAuth(models: MutableModels): void {
     throw new Error('modelsRuntime: openai-codex OAuth provider is unavailable');
   }
 
+  // 内置模型列表是随 pi-ai 版本冻结的静态 JSON，落后于 codex 后端；
+  // codex CLI 已经把远端目录缓存在 ~/.codex/models_cache.json，直接读它。
   models.setProvider({
     ...provider,
+    getModels: createCodexModelCatalog(provider.getModels()),
     auth: {
       ...provider.auth,
       oauth: {
@@ -71,7 +75,7 @@ export function initModelsRuntime(credentials: CredentialStore): MutableModels {
     );
   }
   const models = builtinModels({ credentials, authContext: isolatedAuthContext });
-  installStaticCodexOAuth(models);
+  installCodexProviderOverrides(models);
   singleton = models;
   return singleton;
 }
