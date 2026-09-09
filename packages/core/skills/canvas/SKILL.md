@@ -221,7 +221,9 @@ why it beat plain text. Later ones: just the slug.
 
 ## Troubleshooting
 
-`rejected:` lists one line per reason — fix those, do not work around them. `save_canvas`
+`rejected:` lists one line per reason — fix those, do not work around them. Save also
+rejects unknown `@kansoku/canvas` exports, unknown JSX tags, invented props, and source
+that fails to compile (invalid TSX or leftover imports). `save_canvas`
 refuses outright until this skill has been read once in this conversation.
 
 Compile and runtime errors are written into `journal/canvases/.meta.json`; inspect that file

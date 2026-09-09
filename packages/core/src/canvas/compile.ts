@@ -1,5 +1,5 @@
 import { transform } from 'sucrase';
-import { checkCanvasSource } from './check.js';
+import { checkCanvasSource, reviewCanvasBindings, reviewCanvasStructure } from './check.js';
 
 const SDK = '@kansoku/canvas';
 const INJECTED = '__kansoku_canvas__';
@@ -24,6 +24,23 @@ export function compileCanvasSource(
   }
 }
 
+export function validateCanvasSource(source: string): string[] {
+  const issues = [
+    ...checkCanvasSource(source),
+    ...reviewCanvasStructure(source),
+    ...reviewCanvasBindings(source),
+  ];
+  if (issues.length) return issues;
+  const compiled = compileCanvasSource(source);
+  if (!compiled.ok) return compiled.issues;
+  try {
+    instantiateCanvas(compiled.code, {}, {}, {});
+  } catch (error) {
+    return [error instanceof Error ? error.message : String(error)];
+  }
+  return [];
+}
+
 export function instantiateCanvas(
   code: string,
   sdk: Record<string, unknown>,
@@ -40,7 +57,7 @@ export function instantiateCanvas(
 
 function toFactoryBody(code: string): string {
   let body = code.replace(
-    /import\s+([\s\S]*?)\s+from\s+['"]__kansoku_canvas__['"];?/,
+    /import\s+([\s\S]*?)\s+from\s+['"]__kansoku_canvas__['"];?/g,
     (_match, spec: string) => `const ${spec.trim()} = ${INJECTED};`,
   );
   body = body.replace(

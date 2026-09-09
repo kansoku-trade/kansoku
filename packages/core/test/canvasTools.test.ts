@@ -78,6 +78,36 @@ describe('buildCanvasTools', () => {
     expect(text.startsWith('rejected:')).toBe(true);
     expect(text).toMatch(/export default/i);
   });
+
+  it('rejects unknown components and props at save time', async () => {
+    const { byName } = tools();
+    const result = await byName.save_canvas.execute('c1', {
+      slug: 'bad-widget',
+      title: 'bad',
+      source: `import { Canvas, Text, Heatmap } from '@kansoku/canvas';
+export default function App() {
+  return <Canvas title="T" caption="C"><Text>ok</Text><Heatmap /></Canvas>;
+}
+`,
+    });
+    const text = textOf(result);
+    expect(text.startsWith('rejected:')).toBe(true);
+    expect(text).toContain('unknown export from @kansoku/canvas: Heatmap');
+  });
+
+  it('rejects source that is not valid TSX', async () => {
+    const { byName } = tools();
+    const result = await byName.save_canvas.execute('c1', {
+      slug: 'bad-tsx',
+      title: 'bad',
+      source: `import { Canvas, Text } from '@kansoku/canvas';
+export default function App() {
+  return <Canvas title="T" caption="C"><Text>ok</Text></Canvas
+}
+`,
+    });
+    expect(textOf(result).startsWith('rejected:')).toBe(true);
+  });
 });
 
 describe('canvas skill gate', () => {

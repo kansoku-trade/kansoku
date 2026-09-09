@@ -21,7 +21,7 @@ class GuestBoundary extends Component<
   render(): ReactNode {
     if (this.state.error) {
       return (
-        <pre style={{ margin: 16, color: '#ef5350', whiteSpace: 'pre-wrap' }}>
+        <pre style={{ margin: 0, padding: 16, color: '#ef5350', whiteSpace: 'pre-wrap' }}>
           {this.state.error}
         </pre>
       );
@@ -41,7 +41,14 @@ const host = document.getElementById('root')!;
 let lastHeight = 0;
 
 function reportHeight(): void {
-  const height = Math.ceil(host.getBoundingClientRect().height);
+  const height = Math.ceil(
+    Math.max(
+      host.scrollHeight,
+      host.getBoundingClientRect().height,
+      document.documentElement.scrollHeight,
+      document.body.scrollHeight,
+    ),
+  );
   if (height === lastHeight) return;
   lastHeight = height;
   parent.postMessage({ type: 'height', height }, '*');
@@ -51,7 +58,9 @@ new ResizeObserver(reportHeight).observe(host);
 
 function renderIssues(issues: string[]): void {
   root.render(
-    <pre style={{ margin: 16, color: '#ef5350', whiteSpace: 'pre-wrap' }}>{issues.join('\n')}</pre>,
+    <pre style={{ margin: 0, padding: 16, color: '#ef5350', whiteSpace: 'pre-wrap' }}>
+      {issues.join('\n')}
+    </pre>,
   );
 }
 

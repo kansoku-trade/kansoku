@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type {
   CandleFeed,
   CandleFeedTf,
@@ -7,10 +7,11 @@ import type {
 } from '@kansoku/shared/types';
 import * as stylex from '@stylexjs/stylex';
 import { client } from '@web/lib/client';
-import { ScrollArea } from '@web/ui';
+import { ErrorBox, ScrollArea } from '@web/ui';
 import { subscribeChannel } from '@web/lib/ws/wsHub';
-import { colors } from '../../theme/tokens.stylex';
+import { colors, fonts, fontSizes } from '../../theme/tokens.stylex';
 import { decodePreviewEnvelope } from '../charts/intraday/useIntradayPreview';
+import { loadCanvasComponent } from './canvasRuntime';
 
 const styles = stylex.create({
   root: {
@@ -25,6 +26,11 @@ const styles = stylex.create({
     borderWidth: 0,
     display: 'block',
     width: '100%',
+  },
+  error: {
+    fontFamily: fonts.mono,
+    fontSize: fontSizes.sm,
+    whiteSpace: 'pre-wrap',
   },
 });
 
@@ -82,6 +88,15 @@ export function CanvasFrame({ source, slug, data, onLiveStatus }: CanvasFramePro
   const onLiveStatusRef = useRef(onLiveStatus);
   onLiveStatusRef.current = onLiveStatus;
   const [height, setHeight] = useState(INITIAL_HEIGHT);
+  const [runtimeIssues, setRuntimeIssues] = useState<string[] | null>(null);
+  const [sourceKey, setSourceKey] = useState(source);
+  if (sourceKey !== source) {
+    setSourceKey(source);
+    setRuntimeIssues(null);
+  }
+  const compiled = useMemo(() => loadCanvasComponent(source, data ?? {}), [source, data]);
+  const issues = compiled.ok ? runtimeIssues : compiled.issues;
+  const showFrame = compiled.ok && !runtimeIssues;
 
   useEffect(
     () => () => {
@@ -92,6 +107,12 @@ export function CanvasFrame({ source, slug, data, onLiveStatus }: CanvasFramePro
   );
 
   useEffect(() => {
+    if (compiled.ok || !slug) return;
+    void client.canvas.recordCheck({ slug, issues: compiled.issues, stage: 'compile' });
+  }, [compiled, slug]);
+
+  useEffect(() => {
+    if (!showFrame) return;
     const frame = frameRef.current;
     if (!frame) return;
 
@@ -204,11 +225,21 @@ export function CanvasFrame({ source, slug, data, onLiveStatus }: CanvasFramePro
         if (payload.height > 0) setHeight(payload.height);
         return;
       }
-      if (payload.type !== 'ok' && payload.type !== 'runtime-error') return;
-      if (!slug) return;
-      const issues = payload.type === 'ok' ? [] : (payload.issues ?? ['canvas failed']);
-      const stage = payload.type === 'ok' ? 'compile' : (payload.stage ?? 'runtime');
-      void client.canvas.recordCheck({ slug, issues, stage });
+      if (payload.type === 'ok') {
+        setRuntimeIssues(null);
+        if (slug) void client.canvas.recordCheck({ slug, issues: [], stage: 'compile' });
+        return;
+      }
+      if (payload.type !== 'runtime-error') return;
+      const nextIssues = payload.issues?.length ? payload.issues : ['canvas failed'];
+      setRuntimeIssues(nextIssues);
+      if (slug) {
+        void client.canvas.recordCheck({
+          slug,
+          issues: nextIssues,
+          stage: payload.stage ?? 'runtime',
+        });
+      }
     };
 
     const onLoad = () => {
@@ -226,21 +257,28 @@ export function CanvasFrame({ source, slug, data, onLiveStatus }: CanvasFramePro
       frame.removeEventListener('load', onLoad);
       window.removeEventListener('message', onMessage);
     };
-  }, [data, slug, source]);
+  }, [data, slug, source, showFrame]);
 
   return (
     <ScrollArea className={stylex.props(styles.root).className}>
       <div {...stylex.props(styles.pad)}>
-        <iframe
-          {...stylex.props(styles.frame)}
-          style={{ height }}
-          ref={frameRef}
-          title="canvas"
-          tabIndex={-1}
-          scrolling="no"
-          src="/canvas-guest.html"
-          sandbox="allow-scripts allow-same-origin"
-        />
+        {issues ? (
+          <ErrorBox role="alert" className={stylex.props(styles.error).className}>
+            {issues.join('\n')}
+          </ErrorBox>
+        ) : null}
+        {showFrame ? (
+          <iframe
+            {...stylex.props(styles.frame)}
+            style={{ height }}
+            ref={frameRef}
+            title="canvas"
+            tabIndex={-1}
+            scrolling="no"
+            src="/canvas-guest.html"
+            sandbox="allow-scripts allow-same-origin"
+          />
+        ) : null}
       </div>
     </ScrollArea>
   );

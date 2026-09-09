@@ -1,8 +1,8 @@
 export { useMemo, useState } from 'react';
 export { theme } from './theme.js';
-export { Canvas, Card, Divider, Grid, Row, Section, Stack } from './layout.js';
-export { Badge, Callout, H1, H2, H3, Heading, Link, Pill, Source, Text } from './text.js';
-export { Compare, Coverage, Metric, Stat, Table } from './data.js';
+export { Canvas, Card, Divider, Grid, Row, Section, Stack } from './core.js';
+export { Badge, Callout, H1, H2, H3, Heading, Link, Pill, Source, Text } from './core.js';
+export { Compare, Coverage, Metric, Stat, Table } from './core.js';
 export { Param, Select, Toggle } from './control.js';
 export { AreaChart, BarChart, LineChart, PieChart, Sparkline } from './charts.js';
 export { CandleChart } from './CandleChart.js';

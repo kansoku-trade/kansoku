@@ -1,3 +1,11 @@
+import { canvasExportNames } from '@kansoku/canvas/names';
+import {
+  canvasImportBindings,
+  jsxElements,
+  parseCanvasTsx,
+  sdkComponentProps,
+} from './canvasAst.js';
+
 export const CANVAS_MAX_SOURCE_BYTES = 65536;
 export const CANVAS_MAX_LIVE_SUBSCRIPTIONS = 6;
 
@@ -77,40 +85,10 @@ export function checkCanvasSource(source: string): string[] {
   return issues;
 }
 
-const CHART_TAGS = ['LineChart', 'BarChart', 'AreaChart', 'PieChart', 'CandleChart'] as const;
+const CHART_TAGS = new Set(['LineChart', 'BarChart', 'AreaChart', 'PieChart', 'CandleChart']);
 const MAX_GRID_COLUMNS = 4;
 const MAX_CHARTS = 6;
-
-/**
- * Reads the attribute region of a JSX opening tag. A regex cannot do this: props like
- * `markers={[{ time: 1, price: 2 }]}` contain `>` and `}` inside nested braces and strings.
- */
-function openingTags(source: string, tag: string): string[] {
-  const found: string[] = [];
-  const opener = new RegExp(`<${tag}(?=[\\s/>])`, 'g');
-  for (const match of source.matchAll(opener)) {
-    let depth = 0;
-    let quote: string | null = null;
-    let i = match.index + match[0].length;
-    for (; i < source.length; i++) {
-      const ch = source[i];
-      if (quote) {
-        if (ch === quote && source[i - 1] !== '\\') quote = null;
-        continue;
-      }
-      if (ch === '"' || ch === "'" || ch === '`') quote = ch;
-      else if (ch === '{' || ch === '[' || ch === '(') depth++;
-      else if (ch === '}' || ch === ']' || ch === ')') depth--;
-      else if (ch === '>' && depth === 0) break;
-    }
-    found.push(source.slice(match.index + match[0].length, i));
-  }
-  return found;
-}
-
-function hasProp(attrs: string, name: string): boolean {
-  return new RegExp(`\\b${name}\\s*=`).test(attrs);
-}
+const ALWAYS_ALLOWED_PROPS = new Set(['key']);
 
 /**
  * Layout rules from the canvas skill, enforced at save time only. Deliberately NOT part of
@@ -118,39 +96,40 @@ function hasProp(attrs: string, name: string): boolean {
  * would stop already-saved canvases from rendering.
  */
 export function reviewCanvasStructure(source: string): string[] {
+  const parsed = parseCanvasTsx(source);
+  if (!parsed.ok) return [parsed.error];
+  const { locals } = canvasImportBindings(parsed.ast);
+  const elements = jsxElements(parsed.ast).map((element) => ({
+    ...element,
+    exported: locals.get(element.local) ?? element.local,
+  }));
   const issues: string[] = [];
 
-  const roots = openingTags(source, 'Canvas');
-  if (roots.length === 0) {
-    issues.push('Canvas must be the root component');
-  }
-  for (const attrs of roots) {
-    if (!hasProp(attrs, 'title')) issues.push('Canvas needs a title');
-    if (!hasProp(attrs, 'caption')) {
+  const roots = elements.filter((element) => element.exported === 'Canvas');
+  if (roots.length === 0) issues.push('Canvas must be the root component');
+  for (const root of roots) {
+    if (!root.props.includes('title')) issues.push('Canvas needs a title');
+    if (!root.props.includes('caption')) {
       issues.push('Canvas needs a caption: source · data basis · cutoff time');
     }
   }
 
-  let charts = 0;
-  for (const tag of CHART_TAGS) {
-    const tags = openingTags(source, tag);
-    charts += tags.length;
-    for (const attrs of tags) {
-      if (!hasProp(attrs, 'title')) issues.push(`${tag} needs a title`);
-    }
+  const charts = elements.filter((element) => CHART_TAGS.has(element.exported));
+  for (const chart of charts) {
+    if (!chart.props.includes('title')) issues.push(`${chart.exported} needs a title`);
   }
-  if (charts > MAX_CHARTS) {
-    issues.push(`at most ${MAX_CHARTS} charts per canvas, found ${charts} — split it in two`);
+  if (charts.length > MAX_CHARTS) {
+    issues.push(`at most ${MAX_CHARTS} charts per canvas, found ${charts.length} — split it in two`);
   }
 
-  for (const attrs of openingTags(source, 'Grid')) {
-    const columns = attrs.match(/\bcolumns\s*=\s*\{\s*(\d+)\s*\}/);
-    if (columns && Number(columns[1]) > MAX_GRID_COLUMNS) {
-      issues.push(`Grid columns must be <= ${MAX_GRID_COLUMNS}, found ${columns[1]}`);
+  for (const grid of elements.filter((element) => element.exported === 'Grid')) {
+    const columns = grid.values.columns;
+    if (typeof columns === 'number' && columns > MAX_GRID_COLUMNS) {
+      issues.push(`Grid columns must be <= ${MAX_GRID_COLUMNS}, found ${columns}`);
     }
   }
 
-  if (!/<(?:Callout|Text)(?=[\s/>])/.test(source)) {
+  if (!elements.some((element) => element.exported === 'Callout' || element.exported === 'Text')) {
     issues.push('no Callout or Text: a canvas states a conclusion, it is not a pile of numbers');
   }
 
@@ -158,13 +137,49 @@ export function reviewCanvasStructure(source: string): string[] {
     issues.push('use Param / Toggle / Select, not native input');
   }
 
-  for (const attrs of openingTags(source, 'Param')) {
-    const hasMin = hasProp(attrs, 'min');
-    const hasMax = hasProp(attrs, 'max');
-    if (hasMin !== hasMax) {
+  for (const param of elements.filter((element) => element.exported === 'Param')) {
+    if (param.props.includes('min') !== param.props.includes('max')) {
       issues.push('Param min and max must both be set, or neither');
     }
   }
 
+  return issues;
+}
+
+/**
+ * Unknown SDK exports, JSX tags, and invented props. Save-time only — same reason as
+ * `reviewCanvasStructure`: already-saved canvases must still compile.
+ */
+export function reviewCanvasBindings(source: string): string[] {
+  const parsed = parseCanvasTsx(source);
+  if (!parsed.ok) return [];
+  const allowedExports = new Set(canvasExportNames());
+  const allowedProps = sdkComponentProps();
+  const { issues, locals } = canvasImportBindings(parsed.ast);
+  for (const exported of new Set(locals.values())) {
+    if (!allowedExports.has(exported)) {
+      issues.push(`unknown export from @kansoku/canvas: ${exported}`);
+    }
+  }
+
+  const seen = new Set<string>();
+  for (const element of jsxElements(parsed.ast)) {
+    if (seen.has(element.local)) continue;
+    seen.add(element.local);
+    const exported = locals.get(element.local);
+    if (!exported || !allowedExports.has(exported)) {
+      issues.push(`unknown component <${element.local}>`);
+      continue;
+    }
+    const allowed = allowedProps[exported];
+    if (!allowed) continue;
+    const allow = new Set([...allowed, ...ALWAYS_ALLOWED_PROPS]);
+    for (const prop of element.props) {
+      if (allow.has(prop)) continue;
+      issues.push(
+        `${exported} does not accept prop "${prop}" (has: ${allowed.join(', ') || 'none'})`,
+      );
+    }
+  }
   return issues;
 }

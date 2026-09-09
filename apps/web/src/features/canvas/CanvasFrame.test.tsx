@@ -16,6 +16,7 @@ const subscribeChannel = vi.fn(
 );
 vi.mock('@web/lib/ws/wsHub', () => ({ subscribeChannel }));
 
+const { client } = await import('@web/lib/client');
 const { CanvasFrame } = await import('./CanvasFrame');
 
 type LiveStatus = { subscribed: boolean; connected: boolean; degraded: boolean };
@@ -24,6 +25,7 @@ afterEach(() => {
   cleanup();
   release.mockClear();
   subscribeChannel.mockClear();
+  vi.mocked(client.canvas.recordCheck).mockClear();
 });
 
 describe('CanvasFrame', () => {
@@ -61,6 +63,78 @@ describe('CanvasFrame', () => {
       { type: 'source', source, data: { bars: 2 } },
       { type: 'source', source, data: { bars: 3 } },
     ]);
+  });
+
+  it('does not mount an iframe when the source fails to compile', () => {
+    const { container } = render(
+      <CanvasFrame source="export function App() { return null; }" slug="broken" />,
+    );
+    expect(container.querySelector('iframe')).toBeNull();
+    expect(container.querySelector('[role="alert"]')?.textContent).toMatch(/export default/i);
+    expect(client.canvas.recordCheck).toHaveBeenCalledWith({
+      slug: 'broken',
+      issues: expect.arrayContaining([expect.stringMatching(/export default/i)]),
+      stage: 'compile',
+    });
+  });
+
+  it('keeps compile errors visible in the host after the guest reports them', () => {
+    const { container } = render(
+      <CanvasFrame source="export default function App() { return null; }" slug="aapl-iphone-duo-launch" />,
+    );
+    const iframe = container.querySelector('iframe')!;
+    const guest = iframe.contentWindow!;
+
+    act(() => {
+      window.dispatchEvent(
+        new MessageEvent('message', {
+          data: {
+            type: 'runtime-error',
+            issues: ['Cannot use import statement outside a module'],
+            stage: 'compile',
+          },
+          source: guest,
+        }),
+      );
+    });
+
+    const alert = container.querySelector('[role="alert"]');
+    expect(alert?.textContent).toContain('Cannot use import statement outside a module');
+
+    act(() => {
+      window.dispatchEvent(
+        new MessageEvent('message', { data: { type: 'height', height: 18 }, source: guest }),
+      );
+    });
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain(
+      'Cannot use import statement outside a module',
+    );
+    expect(container.querySelector('iframe')).toBeNull();
+    expect(client.canvas.recordCheck).toHaveBeenCalledWith({
+      slug: 'aapl-iphone-duo-launch',
+      issues: ['Cannot use import statement outside a module'],
+      stage: 'compile',
+    });
+  });
+
+  it('remounts the iframe when the source is replaced after an error', () => {
+    const valid = 'export default function App() { return null; }';
+    const { container, rerender } = render(<CanvasFrame source={valid} slug="demo" />);
+    const guest = container.querySelector('iframe')!.contentWindow!;
+    act(() => {
+      window.dispatchEvent(
+        new MessageEvent('message', {
+          data: { type: 'runtime-error', issues: ['boom'], stage: 'runtime' },
+          source: guest,
+        }),
+      );
+    });
+    expect(container.querySelector('iframe')).toBeNull();
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain('boom');
+
+    rerender(<CanvasFrame source={`${valid}\n`} slug="demo" />);
+    expect(container.querySelector('[role="alert"]')).toBeNull();
+    expect(container.querySelector('iframe')).toBeTruthy();
   });
 });
 

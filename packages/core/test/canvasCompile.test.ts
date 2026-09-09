@@ -59,6 +59,28 @@ export default (
     expect(tree.props.title).toBe('Element default');
   });
 
+  it('rewrites every SDK import, not just the first', () => {
+    const result = compileCanvasSource(`import { Canvas, Text } from '@kansoku/canvas';
+import { useQuote } from '@kansoku/canvas';
+export default function App() {
+  const q = useQuote('AAPL.US');
+  return <Canvas title="Demo"><Text>{q?.last}</Text></Canvas>;
+}
+`);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.code).not.toMatch(/\bimport\s+/);
+    const sdk = {
+      Canvas: ({ title, children }: { title: string; children?: unknown }) =>
+        React.createElement('section', { 'data-title': title }, children),
+      Text: ({ children }: { children?: unknown }) => React.createElement('span', null, children),
+      useQuote: () => ({ last: 312.47 }),
+    };
+    expect(() => instantiateCanvas(result.code, sdk, React)).not.toThrow();
+    const Component = instantiateCanvas(result.code, sdk, React);
+    expect(typeof Component).toBe('function');
+  });
+
   it('does not compile a source that fails the static check', () => {
     const result = compileCanvasSource('export function App() { return null; }\n');
     expect(result.ok).toBe(false);

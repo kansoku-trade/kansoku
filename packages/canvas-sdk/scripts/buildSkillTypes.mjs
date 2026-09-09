@@ -87,9 +87,12 @@ unlinkSync(join(outDir, 'candleFeed.d.ts'));
 
 for (const file of readdirSync(outDir)) {
   const path = join(outDir, file);
-  const text = readFileSync(path, 'utf8');
-  const rewritten = text.replaceAll("from '@kansoku/shared/types'", "from './shared.js'");
-  if (rewritten !== text) writeFileSync(path, rewritten, 'utf8');
+  let text = readFileSync(path, 'utf8');
+  text = text.replaceAll("from '@kansoku/shared/types'", "from './shared.js'");
+  for (const name of CORE) {
+    text = text.replaceAll(`from './${name}.js'`, "from './core.js'");
+  }
+  writeFileSync(path, text, 'utf8');
 }
 
 const emitted = readdirSync(outDir).sort();

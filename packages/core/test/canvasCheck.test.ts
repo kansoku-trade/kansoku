@@ -1,10 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import {
+  CANVAS_COMPONENT_NAMES,
+  canvasComponentNames,
+} from '@kansoku/canvas/names';
+import {
   CANVAS_MAX_SOURCE_BYTES,
   canvasDataImports,
   checkCanvasSource,
+  reviewCanvasBindings,
   reviewCanvasStructure,
 } from '../src/canvas/check.js';
+import { parseCanvasTsx, sdkComponentProps } from '../src/canvas/canvasAst.js';
 
 const valid = `import { Canvas, Text } from '@kansoku/canvas';
 export default function App() {
@@ -219,5 +225,127 @@ describe('reviewCanvasStructure', () => {
     expect(reviewCanvasStructure(wrap('<Text>x</Text><Param label="股数" value={100} />'))).toEqual(
       [],
     );
+  });
+});
+
+describe('reviewCanvasBindings', () => {
+  const canvas = (imports: string, body: string) =>
+    `import { Canvas, Text, ${imports} } from '@kansoku/canvas';
+export default function App() {
+  return <Canvas title="T" caption="C"><Text>ok</Text>${body}</Canvas>;
+}
+`;
+
+  it('rejects an unknown SDK import, component, and prop', () => {
+    const issues = reviewCanvasBindings(`import { Canvas, Text, Heatmap } from '@kansoku/canvas';
+export default function App() {
+  return <Canvas title="T" caption="C"><Text>ok</Text><Heatmap /><Stat label="a" value="1" color="red" /></Canvas>;
+}
+`);
+    expect(issues).toContain('unknown export from @kansoku/canvas: Heatmap');
+    expect(issues).toContain('unknown component <Heatmap>');
+    expect(issues).toContain('unknown component <Stat>');
+  });
+
+  it('rejects a prop the component does not accept', () => {
+    const issues = reviewCanvasBindings(canvas('Stat', '<Stat label="a" value="1" color="red" />'));
+    expect(issues.some((issue) => /Stat does not accept prop "color"/.test(issue))).toBe(true);
+  });
+
+  it('accepts boolean shorthand props', () => {
+    expect(reviewCanvasBindings(canvas('BarChart', '<BarChart title="净流入" data={[]} signed />'))).toEqual(
+      [],
+    );
+  });
+
+  it('rejects namespace and default imports from the sdk', () => {
+    expect(
+      reviewCanvasBindings(`import * as sdk from '@kansoku/canvas';
+export default function App() { return null; }
+`),
+    ).toContain('import * from @kansoku/canvas is not allowed; use named imports');
+    expect(
+      reviewCanvasBindings(`import Canvas from '@kansoku/canvas';
+export default function App() { return null; }
+`),
+    ).toContain('default import from @kansoku/canvas is not allowed; use named imports');
+  });
+
+  it('checks props against the exported name after an import alias', () => {
+    const issues = reviewCanvasBindings(`import { Canvas, Stat as MetricCard, Text } from '@kansoku/canvas';
+export default function App() {
+  return <Canvas title="T" caption="C"><Text>ok</Text><MetricCard label="a" value="1" color="red" /></Canvas>;
+}
+`);
+    expect(issues.some((issue) => /Stat does not accept prop "color"/.test(issue))).toBe(true);
+    expect(issues.some((issue) => /MetricCard/.test(issue))).toBe(false);
+  });
+
+  it('allows key and Box intersection props from the skill declarations', () => {
+    expect(
+      reviewCanvasBindings(`import { Canvas, Row, Text } from '@kansoku/canvas';
+export default function App() {
+  return (
+    <Canvas title="T" caption="C" key="root">
+      <Text>ok</Text>
+      <Row gap="sm" justify="between" style={{ marginTop: 8 }}>
+        <Text muted>x</Text>
+      </Row>
+    </Canvas>
+  );
+}
+`),
+    ).toEqual([]);
+  });
+
+  it('ignores type-only imports', () => {
+    expect(
+      reviewCanvasBindings(`import { Canvas, Text } from '@kansoku/canvas';
+import type { Heatmap } from '@kansoku/canvas';
+import { type Stat } from '@kansoku/canvas';
+export default function App() {
+  return <Canvas title="T" caption="C"><Text>ok</Text></Canvas>;
+}
+`),
+    ).toEqual([]);
+  });
+
+  it('reads JSX props that sit inside nested object literals', () => {
+    expect(
+      reviewCanvasBindings(
+        canvas(
+          'CandleChart',
+          '<CandleChart title="MU" bars={[{ time: 1, open: 2, high: 3, low: 1, close: 2 }]} markers={[{ time: 1, price: 2, bias: "bullish" }]} />',
+        ),
+      ),
+    ).toEqual([]);
+  });
+
+  it('does not treat a parse failure as an unknown binding', () => {
+    expect(reviewCanvasBindings('export default function App() { return <Canvas')).toEqual([]);
+  });
+});
+
+describe('canvasAst', () => {
+  it('returns a syntax error instead of throwing', () => {
+    const parsed = parseCanvasTsx('export default function App() { return <Canvas');
+    expect(parsed.ok).toBe(false);
+    if (parsed.ok) return;
+    expect(parsed.error.length).toBeGreaterThan(0);
+  });
+
+  it('extracts a props entry for every exported component from the skill d.ts', () => {
+    const props = sdkComponentProps();
+    expect(Object.keys(props).sort()).toEqual(
+      canvasComponentNames(
+        Object.keys(CANVAS_COMPONENT_NAMES) as (keyof typeof CANVAS_COMPONENT_NAMES)[],
+      ).sort(),
+    );
+    expect(props.Stat).toEqual(expect.arrayContaining(['label', 'value', 'delta', 'note', 'tone']));
+    expect(props.Row).toEqual(expect.arrayContaining(['children', 'style', 'gap', 'justify', 'align']));
+    expect(props.CandleChart).toEqual(
+      expect.arrayContaining(['title', 'bars', 'markers', 'sessions']),
+    );
+    expect(props.Divider).toEqual([]);
   });
 });

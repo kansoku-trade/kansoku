@@ -20,3 +20,12 @@ export function canvasComponentNames(
 ): string[] {
   return groups.flatMap((group) => [...CANVAS_COMPONENT_NAMES[group]]);
 }
+
+export function canvasExportNames(): string[] {
+  return [
+    ...canvasComponentNames(
+      Object.keys(CANVAS_COMPONENT_NAMES) as (keyof typeof CANVAS_COMPONENT_NAMES)[],
+    ),
+    ...CANVAS_NON_COMPONENT_EXPORTS,
+  ];
+}

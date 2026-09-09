@@ -6,7 +6,8 @@ import type {
   CanvasMeta,
   CanvasOrigin,
 } from '../contract/canvas.js';
-import { canvasDataImports, checkCanvasSource, reviewCanvasStructure } from './check.js';
+import { canvasDataImports } from './check.js';
+import { validateCanvasSource } from './compile.js';
 
 export type { CanvasCheckRecord, CanvasDoc, CanvasMeta, CanvasOrigin };
 
@@ -72,7 +73,7 @@ export async function saveCanvas(
   if (!isSlug(input.slug)) {
     return { ok: false, issues: ['slug must be kebab-case'] };
   }
-  const issues = [...checkCanvasSource(input.source), ...reviewCanvasStructure(input.source)];
+  const issues = validateCanvasSource(input.source);
   if (issues.length) return { ok: false, issues };
 
   for (const name of canvasDataImports(input.source)) {

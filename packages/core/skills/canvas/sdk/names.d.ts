@@ -8,3 +8,4 @@ export declare const CANVAS_COMPONENT_NAMES: {
 };
 export declare const CANVAS_NON_COMPONENT_EXPORTS: readonly ['theme', 'useCandles', 'useMemo', 'useQuote', 'useState'];
 export declare function canvasComponentNames(groups: readonly (keyof typeof CANVAS_COMPONENT_NAMES)[]): string[];
+export declare function canvasExportNames(): string[];

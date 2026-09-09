@@ -2,7 +2,7 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CANVAS_COMPONENT_NAMES, CANVAS_NON_COMPONENT_EXPORTS } from '@kansoku/canvas/names';
-import { checkCanvasSource, reviewCanvasStructure } from '@kansoku/core/canvas/check';
+import { checkCanvasSource, reviewCanvasBindings, reviewCanvasStructure } from '@kansoku/core/canvas/check';
 import skeleton from './skeleton.canvas.tsx?raw';
 import source from './kitchenSink.canvas.tsx?raw';
 
@@ -29,6 +29,7 @@ describe('canvas kitchen sink demo', () => {
   it('is a source the canvas checker accepts', () => {
     expect(checkCanvasSource(source)).toEqual([]);
     expect(reviewCanvasStructure(source)).toEqual([]);
+    expect(reviewCanvasBindings(source)).toEqual([]);
   });
 
   it('compiles and renders through the real canvas pipeline', () => {
@@ -48,6 +49,7 @@ describe('canvas skeleton', () => {
   it('is the shape the skill tells models to copy: valid, structural, and renderable', () => {
     expect(checkCanvasSource(skeleton)).toEqual([]);
     expect(reviewCanvasStructure(skeleton)).toEqual([]);
+    expect(reviewCanvasBindings(skeleton)).toEqual([]);
     const result = loadCanvasComponent(skeleton);
     if (!result.ok) throw new Error(result.issues.join('\n'));
     render(<result.Component />);

@@ -12,7 +12,7 @@ import { normalizeSymbol } from '../symbols/symbol.utils.js';
 import { assertCanvasQuota } from './quotaEnforce.js';
 import { projectCandleFeedTf } from './candleFeed.js';
 import { applyChunks, parsePatch, PatchError } from './applyPatch.js';
-import { checkCanvasSource, reviewCanvasStructure } from './check.js';
+import { validateCanvasSource } from './compile.js';
 import { type CanvasDoc, loadCanvas, saveCanvas, saveCanvasData } from './store.js';
 
 const saveSchema = Type.Object({
@@ -135,7 +135,7 @@ export function buildCanvasApplyPatchTool(
             }
             throw error;
           }
-          const issues = [...checkCanvasSource(source), ...reviewCanvasStructure(source)];
+          const issues = validateCanvasSource(source);
           if (issues.length) return textResult(`edit failed: ${file.path}:\n${issues.join('\n')}`);
           staged.push({
             path: resolved.path,
