@@ -464,7 +464,7 @@ export function DesktopTitlebar({ controller }: { controller: TabsController }) 
     update?.phase === 'downloading'
       ? `正在下载更新${update.percent === undefined ? '' : ` ${Math.floor(update.percent)}%`}`
       : update?.phase === 'preparing'
-        ? '正在准备更新'
+        ? `正在准备更新${update.percent === undefined ? '' : ` ${Math.floor(update.percent)}%`}`
         : update?.phase === 'ready'
           ? '重启并安装更新'
           : '有更新可用';

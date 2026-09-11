@@ -27,8 +27,8 @@ importers:
         specifier: ^10.0.5
         version: 10.0.5
       electron-sparkle-updater:
-        specifier: 0.4.0
-        version: 0.4.0(electron@44.2.0)
+        specifier: 0.4.1
+        version: 0.4.1(electron@44.2.0)
       eslint:
         specifier: ^10.10.0
         version: 10.10.0(jiti@2.7.0)
@@ -54,8 +54,8 @@ importers:
   apps/desktop:
     dependencies:
       electron-sparkle-updater:
-        specifier: ^0.4.0
-        version: 0.4.0(electron@44.2.0)
+        specifier: ^0.4.1
+        version: 0.4.1(electron@44.2.0)
       zod:
         specifier: ^4.5.4
         version: 4.5.4
@@ -4731,8 +4731,8 @@ packages:
   electron-publish@26.15.3:
     resolution: {integrity: sha512-g/2bn8YTavY4cuS5F+jOS7zmZbXXBV8KZ8yHKfJjFPoKtzBqrpCdNPxBd3tqdBwP7BVd0lGzf7Bk2s0KesWZ4Q==}
 
-  electron-sparkle-updater@0.4.0:
-    resolution: {integrity: sha512-8QSlL7tkejD2LtAh1XtydzQ04dLc/KGYVIZP2t3pbtTR12eQ5mTiEe6rGCukq8ZdcHQ+5BNmj3lPBKWscJpneg==}
+  electron-sparkle-updater@0.4.1:
+    resolution: {integrity: sha512-YPiQzb1ofimBsaw5IeNETStRk7L/25acdPPTs9wft2Av+Nv+aOphQtwPZ23T6HBL/xmRqiv9PJQ84zHab9I0oA==}
     engines: {node: '>=20.19'}
     hasBin: true
     peerDependencies:
@@ -12290,7 +12290,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  electron-sparkle-updater@0.4.0(electron@44.2.0):
+  electron-sparkle-updater@0.4.1(electron@44.2.0):
     dependencies:
       node-addon-api: 8.9.2
       node-gyp: 13.0.2

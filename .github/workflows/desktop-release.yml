@@ -353,7 +353,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: sign, generate appcast, and publish GitHub Release (electron-sparkle-updater)
-        uses: Innei/electron-sparkle-updater/action@v0.4.0
+        uses: Innei/electron-sparkle-updater/action@v0.4.1
         with:
           tag: ${{ steps.version.outputs.tag }}
           repo: ${{ env.REPO_SLUG }}

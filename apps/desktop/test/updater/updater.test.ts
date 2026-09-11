@@ -86,8 +86,14 @@ describe('createUpdaterHandle', () => {
     expect(handle.getStatus()).toMatchObject({ version: '0.42.0', phase: 'downloading' });
     emit({ type: 'download-progress', percent: 100 });
     expect(handle.getStatus()).toMatchObject({ phase: 'preparing' });
+    emit({ type: 'download-progress', phase: 'apply', percent: 40 });
+    expect(handle.getStatus()).toMatchObject({
+      version: '0.42.0',
+      phase: 'preparing',
+      percent: 40,
+    });
     // A full-download fallback starts a fresh progress range for the same target.
-    emit({ type: 'download-progress', percent: 3 });
+    emit({ type: 'download-progress', phase: 'download', percent: 3, fallback: true });
     expect(handle.getStatus()).toMatchObject({
       version: '0.42.0',
       phase: 'downloading',
