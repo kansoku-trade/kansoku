@@ -1,11 +1,22 @@
 import { createHash } from 'node:crypto';
-import { mkdtempSync, mkdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import {
+  mkdtempSync,
+  mkdirSync,
+  promises as fsPromises,
+  rmSync,
+  symlinkSync,
+  utimesSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { saveCanvas } from '../src/canvas/store.js';
 import { researchCanvasPath } from '../src/contract/research.js';
-import { createResearchService, writeResearchDocumentAtomic } from '../src/research/research.service.js';
+import {
+  createResearchService,
+  writeResearchDocumentAtomic,
+} from '../src/research/research.service.js';
 
 let root: string;
 
@@ -211,9 +222,9 @@ describe('research library canvases', () => {
     await expect(service.get({ path: 'journal/other.canvas.tsx' })).rejects.toMatchObject({
       status: 400,
     });
-    await expect(service.get({ path: 'journal/canvases/Not-Kebab.canvas.tsx' })).rejects.toMatchObject(
-      { status: 400 },
-    );
+    await expect(
+      service.get({ path: 'journal/canvases/Not-Kebab.canvas.tsx' }),
+    ).rejects.toMatchObject({ status: 400 });
   });
 
   it('refuses to write a canvas through the markdown document API', async () => {
@@ -243,5 +254,60 @@ describe('research library canvases', () => {
     });
     const rows = await createResearchService(root).list({ kind: 'canvas' });
     expect(rows.every((row) => row.path.endsWith('.canvas.tsx'))).toBe(true);
+  });
+});
+
+describe('research listing cache', () => {
+  it('reads each markdown file once until its mtime or size changes', async () => {
+    write('stocks/MU.md', '# MU\n\n第一版。\n');
+    const service = createResearchService(root);
+    const first = await service.list({ kind: 'stock' });
+    expect(first[0].excerpt).toBe('第一版。');
+
+    const spy = vi.spyOn(fsPromises, 'readFile');
+    const second = await service.list({ kind: 'stock' });
+    expect(second[0].excerpt).toBe('第一版。');
+    expect(spy).not.toHaveBeenCalled();
+
+    const path = join(root, 'stocks', 'MU.md');
+    writeFileSync(path, '# MU\n\n第二版。\n');
+    utimesSync(path, new Date(Date.now() + 5000), new Date(Date.now() + 5000));
+    const third = await service.list({ kind: 'stock' });
+    expect(third[0].excerpt).toBe('第二版。');
+    expect(spy).toHaveBeenCalledTimes(1);
+    spy.mockRestore();
+  });
+});
+
+describe('research listing with files still downloading', () => {
+  it('returns a pending placeholder instead of waiting, then the full row once the read lands', async () => {
+    write('stocks/MU.md', '# MU 长期研究\n\n正文。\n');
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    const realReadFile = fsPromises.readFile;
+    const spy = vi.spyOn(fsPromises, 'readFile').mockImplementation(async (...args) => {
+      await gate;
+      return realReadFile.apply(fsPromises, args as Parameters<typeof realReadFile>);
+    });
+
+    const service = createResearchService(root);
+    const started = Date.now();
+    const rows = await service.list({ kind: 'stock' });
+    expect(Date.now() - started).toBeLessThan(2000);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ path: 'stocks/MU.md', title: 'MU', pending: true });
+    expect(spy).toHaveBeenCalledTimes(1);
+
+    const again = await service.list({ kind: 'stock' });
+    expect(again[0].pending).toBe(true);
+    expect(spy).toHaveBeenCalledTimes(1);
+
+    release();
+    await vi.waitFor(async () => {
+      const settled = await service.list({ kind: 'stock' });
+      expect(settled[0]).toMatchObject({ title: 'MU 长期研究', excerpt: '正文。' });
+      expect(settled[0].pending).toBeUndefined();
+    });
+    spy.mockRestore();
   });
 });

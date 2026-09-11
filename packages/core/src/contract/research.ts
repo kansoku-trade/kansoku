@@ -35,6 +35,7 @@ export interface ResearchDocumentMeta {
   mtime: string;
   excerpt: string;
   origin?: { eventId: string; clusterId: string } | null;
+  pending?: boolean;
 }
 
 export interface ResearchDocument extends ResearchDocumentMeta {
@@ -131,8 +132,7 @@ export interface ResearchRefreshTask {
 }
 
 export type ResearchCreateInput =
-  | { kind: 'stock'; symbol: string }
-  | { kind: 'journal'; title: string; date?: string };
+  { kind: 'stock'; symbol: string } | { kind: 'journal'; title: string; date?: string };
 
 export interface ResearchCreateResult {
   document: ResearchDocument;

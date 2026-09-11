@@ -21,7 +21,7 @@ import { CanvasFrame } from '@web/features/canvas/CanvasFrame';
 import { useCapabilities } from '@web/features/edition/capabilitiesStore';
 import { openLicenseModal } from '@web/features/edition/licenseModalStore';
 import { errorMessage } from '@web/lib/api';
-import { useQuery } from '@web/lib/apiHooks';
+import { usePollingQuery, useQuery } from '@web/lib/apiHooks';
 import { client } from '@web/lib/client';
 import { queryClient } from '@web/lib/queryClient';
 import { navigate, useQueryParam } from '@web/lib/router';
@@ -110,6 +110,7 @@ function CanvasQuotaHint({ count }: { count: number }) {
 const EXPLORER_MIN_WIDTH = 240;
 const EXPLORER_MAX_WIDTH = 520;
 const EXPLORER_WIDTH_STORAGE_KEY = 'kansoku.research.explorer-width';
+const PENDING_LIST_POLL_MS = 2000;
 
 const styles = stylex.create({
   fullpage: {
@@ -718,12 +719,14 @@ function ResearchExplorer({
 function ResearchReader({
   document,
   loading,
+  downloading,
   error,
   continuingCanvas,
   onContinueCanvas,
 }: {
   document: ResearchDocument | null;
   loading: boolean;
+  downloading: boolean;
   error: string | null;
   continuingCanvas: boolean;
   onContinueCanvas: (document: ResearchDocument) => void;
@@ -731,7 +734,7 @@ function ResearchReader({
   if (loading && !document) {
     return (
       <div {...stylex.props(styles.state)}>
-        <Spinner /> 正在加载正文…
+        <Spinner /> {downloading ? 'iCloud 正在下载这份文件…' : '正在加载正文…'}
       </div>
     );
   }
@@ -887,9 +890,12 @@ export function ResearchPage() {
     error: allError,
     loading: allLoading,
     reload: reloadAll,
-  } = useQuery<ResearchDocumentMeta[]>('research.list:all', () => client.research.list({}), {
-    cache: false,
-  });
+  } = usePollingQuery<ResearchDocumentMeta[]>(
+    'research.list:all',
+    () => client.research.list({}),
+    (rows) => (rows?.some((row) => row.pending) ? PENDING_LIST_POLL_MS : false),
+    { cache: false },
+  );
   const {
     data: searchDocuments,
     error: searchError,
@@ -1077,6 +1083,7 @@ export function ResearchPage() {
           <ResearchReader
             document={document}
             loading={documentLoading}
+            downloading={Boolean(selected?.pending)}
             error={documentError}
             continuingCanvas={continuingCanvasPath === document?.path}
             onContinueCanvas={(canvas) => void continueCanvasInChat(canvas)}

@@ -17,6 +17,8 @@ export interface QueryState<T> {
   refreshed: boolean;
 }
 
+export type PollingInterval<T> = number | ((data: T | undefined) => number | false);
+
 export interface QueryOptions {
   cache?: boolean;
   persist?: boolean;
@@ -31,7 +33,7 @@ function useQueryState<T>(
   key: string | null,
   fetch: () => Promise<T>,
   options: QueryOptions,
-  refetchInterval?: number,
+  refetchInterval?: PollingInterval<T>,
 ): QueryState<T> {
   const useCache = options.cache !== false;
   const shouldPersist = useCache && options.persist !== false;
@@ -45,7 +47,10 @@ function useQueryState<T>(
     staleTime: useCache ? 30_000 : 0,
     gcTime: useCache ? undefined : 0,
     meta: shouldPersist ? undefined : { persist: false },
-    refetchInterval,
+    refetchInterval:
+      typeof refetchInterval === 'function'
+        ? (query) => refetchInterval(query.state.data)
+        : refetchInterval,
   });
 
   const data = query.data ?? null;
@@ -79,7 +84,7 @@ export function useQuery<T>(
 export function usePollingQuery<T>(
   key: string | null,
   fetch: () => Promise<T>,
-  ms: number,
+  ms: PollingInterval<T>,
   options: QueryOptions = {},
 ): QueryState<T> {
   return useQueryState(key, fetch, options, ms);

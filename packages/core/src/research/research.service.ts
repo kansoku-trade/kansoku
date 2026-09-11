@@ -163,37 +163,128 @@ function symbolsFromCanvas(title: string, slug: string): string[] {
   return [...symbols].sort();
 }
 
-async function readCanvasDocument(rootDir: string, slug: string): Promise<ResearchDocument> {
-  const doc = await loadCanvas(resolve(rootDir, 'journal', 'canvases'), slug);
-  if (!doc) throw new ClientError('research document not found', undefined, 404);
-  return {
-    path: researchCanvasPath(slug),
+function readCanvasDocument(rootDir: string, slug: string): Promise<ResearchDocument> {
+  return dedupe(`canvas:${slug}`, async () => {
+    const doc = await loadCanvas(resolve(rootDir, 'journal', 'canvases'), slug);
+    if (!doc) throw new ClientError('research document not found', undefined, 404);
+    return {
+      path: researchCanvasPath(slug),
+      kind: 'canvas',
+      type: 'canvas',
+      title: doc.title,
+      date: null,
+      symbols: symbolsFromCanvas(doc.title, slug),
+      mtime: doc.mtime,
+      excerpt: doc.title,
+      origin: doc.origin ?? null,
+      markdown: '',
+      revision: researchDocumentRevision(doc.source),
+    };
+  });
+}
+
+function listCanvasDocument(
+  rootDir: string,
+  item: { slug: string; title: string; mtime: string; origin?: ResearchDocument['origin'] },
+): Promise<ResearchDocument> {
+  return withDeadline(readCanvasDocument(rootDir, item.slug), {
+    path: researchCanvasPath(item.slug),
     kind: 'canvas',
     type: 'canvas',
-    title: doc.title,
+    title: item.title,
     date: null,
-    symbols: symbolsFromCanvas(doc.title, slug),
-    mtime: doc.mtime,
-    excerpt: doc.title,
-    origin: doc.origin ?? null,
+    symbols: symbolsFromCanvas(item.title, item.slug),
+    mtime: item.mtime,
+    excerpt: item.title,
+    origin: item.origin ?? null,
     markdown: '',
-    revision: researchDocumentRevision(doc.source),
-  };
+    revision: '',
+    pending: true,
+  });
 }
 
 export function researchDocumentRevision(markdown: string): string {
   return createHash('sha256').update(markdown).digest('hex');
 }
 
+// ponytail: process-wide cache keyed by mtime+size; a persisted index would also skip the cold-start read of iCloud-evicted files
+const documentCache = new Map<
+  string,
+  { mtimeMs: number; size: number; document: ResearchDocument }
+>();
+const inflight = new Map<string, Promise<ResearchDocument>>();
+// iCloud placeholders block the first read until the download lands; the list stops waiting after this and reports the row as pending
+const LIST_READ_DEADLINE_MS = 300;
+
+function dedupe(key: string, start: () => Promise<ResearchDocument>): Promise<ResearchDocument> {
+  const existing = inflight.get(key);
+  if (existing) return existing;
+  const task = start().finally(() => inflight.delete(key));
+  inflight.set(key, task);
+  return task;
+}
+
+function withDeadline(
+  task: Promise<ResearchDocument>,
+  placeholder: ResearchDocument,
+): Promise<ResearchDocument> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      task.catch(() => undefined);
+      resolve(placeholder);
+    }, LIST_READ_DEADLINE_MS);
+    task.then(
+      (document) => {
+        clearTimeout(timer);
+        resolve(document);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
+}
+
+function loadDocument(
+  rootDir: string,
+  absolutePath: string,
+  kind: ResearchKind,
+  stat: { mtime: Date; mtimeMs: number; size: number },
+): Promise<ResearchDocument> {
+  return dedupe(absolutePath, async () => {
+    const markdown = await fs.readFile(absolutePath, 'utf8');
+    const document = buildDocument(rootDir, absolutePath, kind, markdown, stat.mtime);
+    documentCache.set(absolutePath, { mtimeMs: stat.mtimeMs, size: stat.size, document });
+    return document;
+  });
+}
+
 async function readDocument(
   rootDir: string,
   absolutePath: string,
   kind: ResearchKind,
+  options: { deadline?: boolean } = {},
 ): Promise<ResearchDocument> {
-  const [markdown, stat] = await Promise.all([
-    fs.readFile(absolutePath, 'utf8'),
-    fs.stat(absolutePath),
-  ]);
+  const stat = await fs.stat(absolutePath);
+  const cached = documentCache.get(absolutePath);
+  if (cached && cached.mtimeMs === stat.mtimeMs && cached.size === stat.size)
+    return cached.document;
+  const task = loadDocument(rootDir, absolutePath, kind, stat);
+  if (!options.deadline) return task;
+  return withDeadline(task, {
+    ...buildDocument(rootDir, absolutePath, kind, '', stat.mtime),
+    pending: true,
+  });
+}
+
+function buildDocument(
+  rootDir: string,
+  absolutePath: string,
+  kind: ResearchKind,
+  markdown: string,
+  mtime: Date,
+): ResearchDocument {
   const relativePath = toPosix(relative(rootDir, absolutePath));
   const date = DATE_PREFIX_RE.exec(basename(absolutePath))?.[1] ?? null;
   return {
@@ -203,7 +294,7 @@ async function readDocument(
     title: titleFrom(markdown, absolutePath),
     date,
     symbols: symbolsFrom(kind, absolutePath, markdown),
-    mtime: stat.mtime.toISOString(),
+    mtime: mtime.toISOString(),
     excerpt: excerptFrom(markdown),
     markdown,
     revision: researchDocumentRevision(markdown),
@@ -299,7 +390,12 @@ export async function resolveResearchDocumentPath(
     );
   }
 
-  return resolveExistingResearchPath(rootDir, inputPath, kind, kind === 'stock' ? stocksRoot : journalRoot);
+  return resolveExistingResearchPath(
+    rootDir,
+    inputPath,
+    kind,
+    kind === 'stock' ? stocksRoot : journalRoot,
+  );
 }
 
 export type ResearchLibraryApi = Pick<ResearchApi, 'list' | 'get'>;
@@ -315,11 +411,13 @@ export function createResearchService(rootDir: string): ResearchLibraryApi {
         kinds.map(async (kind) => {
           if (kind === 'canvas') {
             const items = await listCanvases(resolve(rootDir, 'journal', 'canvases'));
-            return Promise.all(items.map((item) => readCanvasDocument(rootDir, item.slug)));
+            return Promise.all(items.map((item) => listCanvasDocument(rootDir, item)));
           }
           const dir = resolve(rootDir, kind === 'stock' ? 'stocks' : 'journal');
           const files = await listMarkdownFiles(dir);
-          return Promise.all(files.map((path) => readDocument(rootDir, path, kind)));
+          return Promise.all(
+            files.map((path) => readDocument(rootDir, path, kind, { deadline: true })),
+          );
         }),
       );
       const query = input.query?.trim().toLocaleLowerCase('zh-CN') ?? '';
@@ -363,7 +461,11 @@ export async function writeMarkdownFileAtomic(
 ): Promise<void> {
   const tempPath = `${path}.${process.pid}.${randomUUID()}.tmp`;
   try {
-    await fs.writeFile(tempPath, markdown, mode === undefined ? 'utf8' : { encoding: 'utf8', mode });
+    await fs.writeFile(
+      tempPath,
+      markdown,
+      mode === undefined ? 'utf8' : { encoding: 'utf8', mode },
+    );
     await fs.rename(tempPath, path);
   } catch (error) {
     await fs.rm(tempPath, { force: true }).catch(() => undefined);
@@ -382,10 +484,7 @@ export async function writeResearchDocumentAtomic(input: {
   }
   const resolved = await resolveResearchDocumentPath(input.rootDir, input.path);
   if (resolved.kind === 'canvas') {
-    throw new ClientError(
-      'cannot write canvas through research document API',
-      'use save_canvas',
-    );
+    throw new ClientError('cannot write canvas through research document API', 'use save_canvas');
   }
   const current = await readDocument(input.rootDir, resolved.path, resolved.kind);
   if (current.revision !== input.expectedRevision) {

@@ -1,3 +1,4 @@
+import { execFile } from 'node:child_process';
 import { enableCompileCache } from 'node:module';
 import { join } from 'node:path';
 import { app } from 'electron';
@@ -58,7 +59,10 @@ export async function prepareDesktopStorage(options?: {
     return null;
   }
 
-  if (workspaceMode.mode === 'icloud') await assertWorkspaceAvailable(dataRoot);
+  if (workspaceMode.mode === 'icloud') {
+    await assertWorkspaceAvailable(dataRoot);
+    prefetchICloudWorkspace(dataRoot);
+  }
 
   let result: StorageMigrationResult | null = null;
   if (!envOverride && !options?.skipMigration) {
@@ -78,6 +82,15 @@ export async function prepareDesktopStorage(options?: {
   removeLegacyBundledSkillsLink(dataRoot, skillsDir);
   if (!result?.performed) await syncAgentKitAtBoot(false);
   return result;
+}
+
+// iCloud leaves remotely-changed files as placeholders; a plain read then downloads them one at a time.
+// brctl materializes the whole tree in parallel so the first research listing does not serialize on the network.
+function prefetchICloudWorkspace(root: string): void {
+  if (process.platform !== 'darwin') return;
+  execFile('brctl', ['download', root], (error) => {
+    if (error) console.warn('[desktop] iCloud workspace prefetch failed', error.message);
+  });
 }
 
 async function syncAgentKitAtBoot(required: boolean): Promise<void> {
