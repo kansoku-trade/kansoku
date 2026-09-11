@@ -135,7 +135,7 @@ export function buildCanvasApplyPatchTool(
             }
             throw error;
           }
-          const issues = validateCanvasSource(source);
+          const issues = await validateCanvasSource(source);
           if (issues.length) return textResult(`edit failed: ${file.path}:\n${issues.join('\n')}`);
           staged.push({
             path: resolved.path,

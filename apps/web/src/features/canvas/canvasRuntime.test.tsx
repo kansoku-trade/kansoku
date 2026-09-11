@@ -8,8 +8,8 @@ afterEach(() => {
   cleanup();
 });
 
-function loadCanvasComponent(source: string, data: Record<string, unknown> = {}) {
-  const compiled = compileCanvasSource(source);
+async function loadCanvasComponent(source: string, data: Record<string, unknown> = {}) {
+  const compiled = await compileCanvasSource(source);
   if (!compiled.ok) return compiled;
   return runCompiledCanvas(compiled.code, data);
 }
@@ -21,8 +21,8 @@ export default function App() {
 `;
 
 describe('runCompiledCanvas', () => {
-  it('renders a compiled canvas', () => {
-    const result = loadCanvasComponent(valid);
+  it('renders a compiled canvas', async () => {
+    const result = await loadCanvasComponent(valid);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     render(<result.Component />);
@@ -30,28 +30,28 @@ describe('runCompiledCanvas', () => {
     expect(screen.getByText('hello canvas')).toBeTruthy();
   });
 
-  it('injects data files a canvas imports', () => {
+  it('injects data files a canvas imports', async () => {
     const source = `import { Canvas, Text } from '@kansoku/canvas';
 import bars from './bars.json';
 export default function App() {
   return <Canvas title="Data demo"><Text>{bars.symbol}</Text></Canvas>;
 }
 `;
-    const result = loadCanvasComponent(source, { bars: { symbol: 'MU.US' } });
+    const result = await loadCanvasComponent(source, { bars: { symbol: 'MU.US' } });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     render(<result.Component />);
     expect(screen.getByText('MU.US')).toBeTruthy();
   });
 
-  it('returns static-check issues without throwing', () => {
-    const result = loadCanvasComponent('export function App() { return null; }\n');
+  it('returns static-check issues without throwing', async () => {
+    const result = await loadCanvasComponent('export function App() { return null; }\n');
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.issues.some((issue) => /export default/i.test(issue))).toBe(true);
   });
 
-  it('renders the names a model actually writes: Badge, Heading, Metric, Link, and array Table', () => {
+  it('renders the names a model actually writes: Badge, Heading, Metric, Link, and array Table', async () => {
     const source = `import { Canvas, Stack, Row, Card, Heading, Text, Metric, Link, Table, Badge } from "@kansoku/canvas";
 export default function EventCanvas() {
   return (
@@ -75,7 +75,7 @@ export default function EventCanvas() {
   );
 }
 `;
-    const result = loadCanvasComponent(source);
+    const result = await loadCanvasComponent(source);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     render(<result.Component />);

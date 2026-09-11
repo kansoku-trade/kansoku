@@ -21,8 +21,8 @@ vi.mock('lightweight-charts', () => ({
 const sdk = await import('@kansoku/canvas');
 const { runCompiledCanvas } = await import('../canvasRuntime');
 
-function loadCanvasComponent(source: string, data: Record<string, unknown> = {}) {
-  const compiled = compileCanvasSource(source);
+async function loadCanvasComponent(source: string, data: Record<string, unknown> = {}) {
+  const compiled = await compileCanvasSource(source);
   if (!compiled.ok) return compiled;
   return runCompiledCanvas(compiled.code, data);
 }
@@ -40,8 +40,8 @@ describe('canvas kitchen sink demo', () => {
     expect(reviewCanvasBindings(source)).toEqual([]);
   });
 
-  it('compiles and renders through the real canvas pipeline', () => {
-    const result = loadCanvasComponent(source);
+  it('compiles and renders through the real canvas pipeline', async () => {
+    const result = await loadCanvasComponent(source);
     if (!result.ok) throw new Error(result.issues.join('\n'));
     render(<result.Component />);
     expect(screen.getByText('Canvas 组件总览')).toBeTruthy();
@@ -54,11 +54,11 @@ describe('canvas kitchen sink demo', () => {
 });
 
 describe('canvas skeleton', () => {
-  it('is the shape the skill tells models to copy: valid, structural, and renderable', () => {
+  it('is the shape the skill tells models to copy: valid, structural, and renderable', async () => {
     expect(checkCanvasSource(skeleton)).toEqual([]);
     expect(reviewCanvasStructure(skeleton)).toEqual([]);
     expect(reviewCanvasBindings(skeleton)).toEqual([]);
-    const result = loadCanvasComponent(skeleton);
+    const result = await loadCanvasComponent(skeleton);
     if (!result.ok) throw new Error(result.issues.join('\n'));
     render(<result.Component />);
     expect(screen.getByText('MU vs 板块强弱')).toBeTruthy();

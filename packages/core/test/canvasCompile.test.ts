@@ -15,8 +15,8 @@ export default function App() {
 `;
 
 describe('compileCanvasSource', () => {
-  it('compiles a valid canvas and rewrites the SDK import', () => {
-    const result = compileCanvasSource(valid);
+  it('compiles a valid canvas and rewrites the SDK import', async () => {
+    const result = await compileCanvasSource(valid);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.code).toContain('__kansoku_canvas__');
@@ -24,8 +24,8 @@ describe('compileCanvasSource', () => {
     expect(result.code).toMatch(/createElement|jsx/);
   });
 
-  it('produces a factory the host can run with new Function', () => {
-    const result = compileCanvasSource(valid);
+  it('produces a factory the host can run with new Function', async () => {
+    const result = await compileCanvasSource(valid);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     const sdk = {
@@ -40,8 +40,8 @@ describe('compileCanvasSource', () => {
     expect(tree.props.title).toBe('Demo');
   });
 
-  it('wraps a default-exported element so the host still gets a component', () => {
-    const result = compileCanvasSource(`import { Canvas, Text } from '@kansoku/canvas';
+  it('wraps a default-exported element so the host still gets a component', async () => {
+    const result = await compileCanvasSource(`import { Canvas, Text } from '@kansoku/canvas';
 export default (
   <Canvas title="Element default"><Text>ok</Text></Canvas>
 );
@@ -60,8 +60,8 @@ export default (
     expect(tree.props.title).toBe('Element default');
   });
 
-  it('rewrites every SDK import, not just the first', () => {
-    const result = compileCanvasSource(`import { Canvas, Text } from '@kansoku/canvas';
+  it('rewrites every SDK import, not just the first', async () => {
+    const result = await compileCanvasSource(`import { Canvas, Text } from '@kansoku/canvas';
 import { useQuote } from '@kansoku/canvas';
 export default function App() {
   const q = useQuote('AAPL.US');
@@ -82,15 +82,15 @@ export default function App() {
     expect(typeof Component).toBe('function');
   });
 
-  it('does not compile a source that fails the static check', () => {
-    const result = compileCanvasSource('export function App() { return null; }\n');
+  it('does not compile a source that fails the static check', async () => {
+    const result = await compileCanvasSource('export function App() { return null; }\n');
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.issues.some((issue) => /export default/i.test(issue))).toBe(true);
   });
 
-  it('rewrites a json data import to read from the injected data object', () => {
-    const result = compileCanvasSource(`import { Canvas, Text } from '@kansoku/canvas';
+  it('rewrites a json data import to read from the injected data object', async () => {
+    const result = await compileCanvasSource(`import { Canvas, Text } from '@kansoku/canvas';
 import bars from './bars.json';
 export default function App() {
   return <Canvas title="Demo"><Text>{bars.length}</Text></Canvas>;
@@ -102,8 +102,8 @@ export default function App() {
     expect(result.code).not.toContain("from './bars.json'");
   });
 
-  it('makes the injected data object available at runtime', () => {
-    const result = compileCanvasSource(`import { Canvas, Text } from '@kansoku/canvas';
+  it('makes the injected data object available at runtime', async () => {
+    const result = await compileCanvasSource(`import { Canvas, Text } from '@kansoku/canvas';
 import bars from './bars.json';
 export default function App() {
   return <Canvas title="Demo"><Text>{bars.length}</Text></Canvas>;

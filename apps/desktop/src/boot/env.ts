@@ -1,3 +1,4 @@
+import { enableCompileCache } from 'node:module';
 import { join } from 'node:path';
 import { app } from 'electron';
 import { ensureAgentKit } from '../agent-kit/ensureAgentKit.js';
@@ -12,6 +13,11 @@ import {
 import { readWorkspaceModeSync } from '../storage/workspaceMode.js';
 import { resolveDesktopStoragePaths, scaffoldDataRoot } from './paths.js';
 import { bundledSkillsPath, removeLegacyBundledSkillsLink } from './skills.js';
+
+// First module body to run: the statically imported graph is already compiled
+// by now, but every dynamic import after this (the kernel is the big one) hits
+// the V8 code cache — ~30ms off the boot → first-load path on a warm start.
+enableCompileCache();
 
 // package.json's "name" is the scoped npm id ("@kansoku/desktop"), which
 // Electron would otherwise use verbatim for app.getPath("userData").

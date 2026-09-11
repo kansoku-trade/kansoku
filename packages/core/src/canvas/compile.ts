@@ -1,18 +1,20 @@
-import { transform } from 'sucrase';
 import { checkCanvasSource } from './check.js';
 
 const SDK = '@kansoku/canvas';
 const INJECTED = '__kansoku_canvas__';
 const INJECTED_DATA = '__kansoku_canvas_data__';
 
-export function compileCanvasSource(
+// sucrase is ~900KB of parser tables; loading it on first compile keeps it
+// off the kernel boot path.
+export async function compileCanvasSource(
   source: string,
-): { ok: true; code: string } | { ok: false; issues: string[] } {
+): Promise<{ ok: true; code: string } | { ok: false; issues: string[] }> {
   const issues = checkCanvasSource(source);
   if (issues.length) return { ok: false, issues };
 
   const rewritten = source.replaceAll(SDK, INJECTED);
   try {
+    const { transform } = await import('sucrase');
     const { code } = transform(rewritten, {
       transforms: ['typescript', 'jsx'],
       production: true,

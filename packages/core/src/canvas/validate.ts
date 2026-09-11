@@ -3,14 +3,14 @@ import { compileCanvasSource } from './compile.js';
 import { instantiateCanvas } from './instantiate.js';
 import { reviewCanvasBindings, reviewCanvasStructure } from './review.js';
 
-export function validateCanvasSource(source: string): string[] {
+export async function validateCanvasSource(source: string): Promise<string[]> {
   const issues = [
     ...checkCanvasSource(source),
     ...reviewCanvasStructure(source),
     ...reviewCanvasBindings(source),
   ];
   if (issues.length) return issues;
-  const compiled = compileCanvasSource(source);
+  const compiled = await compileCanvasSource(source);
   if (!compiled.ok) return compiled.issues;
   try {
     instantiateCanvas(compiled.code, {}, {}, {});

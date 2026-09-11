@@ -73,7 +73,7 @@ export async function saveCanvas(
   if (!isSlug(input.slug)) {
     return { ok: false, issues: ['slug must be kebab-case'] };
   }
-  const issues = validateCanvasSource(input.source);
+  const issues = await validateCanvasSource(input.source);
   if (issues.length) return { ok: false, issues };
 
   for (const name of canvasDataImports(input.source)) {
