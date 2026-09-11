@@ -1,18 +1,18 @@
 {
   "name": "@kansoku/license-worker",
   "private": true,
+  "license": "SEE LICENSE IN LICENSE",
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev",
     "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@types/node": "^26.5.0",
+    "@types/node": "^26.5.1",
     "typescript": "^5.9.3",
     "vitest": "^5.0.0",
-    "wrangler": "^4.129.1"
-  },
-  "license": "SEE LICENSE IN LICENSE"
+    "wrangler": "^4.130.0"
+  }
 }

@@ -23,9 +23,9 @@
     "recharts": "^3.10.1"
   },
   "devDependencies": {
-    "@types/react": "^19.2.18",
-    "react": "^19.2.8",
-    "react-dom": "^19.2.8",
+    "@types/react": "^19.3.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
     "typescript": "^5.9.3"
   },
   "peerDependencies": {

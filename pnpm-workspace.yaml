@@ -36,10 +36,10 @@ allowBuilds:
   unrs-resolver: false
   workerd: true
 overrides:
-  'brace-expansion@^5.0.0': ^5.0.8
-  fast-uri: ^3.1.4
-  sharp: ^0.35.0
-  shell-quote: ^1.9.0
+  'brace-expansion@^5.0.0': ^5.0.9
+  fast-uri: ^3.1.7
+  sharp: ^0.35.4
+  shell-quote: ^1.10.0
 minimumReleaseAgeExclude:
   - '@earendil-works/pi-ai@0.80.6 || 0.84.1'
   - '@earendil-works/pi-agent-core@0.80.6 || 0.84.1'

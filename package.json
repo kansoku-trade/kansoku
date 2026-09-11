@@ -25,6 +25,7 @@
     "package:desktop:local": "KANSOKU_LOCAL_TEST_BUILD=1 pnpm --filter @kansoku/desktop package",
     "prepare": "node packages/build-overlay/scripts/sync.mjs || true; skills experimental_install; python3 scripts/sync-agents-skills.py || true",
     "release:desktop:dry-run": "apps/desktop/scripts/release-dry-run.sh",
+    "skills:audit": "pnpm --filter @kansoku/core exec tsx ../../scripts/skills-audit.mjs",
     "skills:install": "skills experimental_install",
     "skills:update": "skills update -p -y",
     "start": "pnpm --filter @kansoku/server start",
@@ -34,8 +35,7 @@
     "typecheck": "pnpm -r typecheck",
     "typecheck:desktop": "pnpm --filter @kansoku/desktop typecheck",
     "video:dev": "pnpm --filter @kansoku/video start",
-    "video:render": "pnpm --filter @kansoku/video render",
-    "skills:audit": "pnpm --filter @kansoku/core exec tsx ../../scripts/skills-audit.mjs"
+    "video:render": "pnpm --filter @kansoku/video render"
   },
   "devDependencies": {
     "@lobehub/eslint-config": "^2.1.5",
@@ -47,7 +47,7 @@
     "prettier-plugin-packagejson": "^3.0.2",
     "prettier-plugin-sh": "^0.19.0",
     "prettier-plugin-sort-json": "^4.2.0",
-    "skills": "^1.5.24",
+    "skills": "^1.5.25",
     "typescript": "^5.9.3"
   },
   "packageManager": "pnpm@11.10.0"
