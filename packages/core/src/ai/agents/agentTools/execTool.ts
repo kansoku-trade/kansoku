@@ -12,7 +12,7 @@ import { textResult } from '../dataTools.js';
 
 const OUTPUT_TRUNCATE_CHARS = 30_000;
 const OUTPUT_PREVIEW_CHARS = 12_000;
-const REJECTED_PATTERNS = [/>>?/, /\btee\s/, /\brm\s/, /\bmv\s/, /\bcp\s/];
+const REJECTED_PATTERNS = [/>>?(?!&)/, /\btee\s/, /\brm\s/, /\bmv\s/, /\bcp\s/];
 const BASH_TIMEOUT_MS = 120_000;
 const BASH_MAX_BUFFER = 10 * 1024 * 1024;
 const TRANSCRIPT_PAGE_CHARS = 20_000;

@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   createDefaultExec,
+  isRejectedCommand,
   resetExecPathCacheForTests,
 } from '../src/ai/agents/agentTools/execTool.js';
 import { buildResearchTools } from '../src/ai/agents/agentTools/researchTools.js';
@@ -262,5 +263,16 @@ describe('web_search', () => {
     const text = await runTool(tool, { query: 'anything' });
     expect(text).toContain('No web search backend is available.');
     expect(text).toContain('Continue the analysis without web results');
+  });
+});
+
+describe('isRejectedCommand', () => {
+  it('lets fd redirection through but still blocks file writes', () => {
+    for (const ok of ['longbridge market-temp --market US 2>&1 | head -20', 'cmd 1>&2', 'cat < in.txt']) {
+      expect(isRejectedCommand(ok), ok).toBe(false);
+    }
+    for (const bad of ['echo x > out.txt', 'echo x >> out.txt', 'cmd &> log', 'cmd | tee log', 'rm -rf x']) {
+      expect(isRejectedCommand(bad), bad).toBe(true);
+    }
   });
 });
