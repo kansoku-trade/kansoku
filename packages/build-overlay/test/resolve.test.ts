@@ -357,3 +357,80 @@ describe('proOverlayPlugin host-first resolution', () => {
     );
   });
 });
+
+describe('proOverlayPlugin dev URL requests', () => {
+  function devFixture() {
+    const root = makeRoot('kansoku-overlay-dev-');
+    const viteRoot = join(root, 'apps', 'web');
+    const overlayRoot = join(root, 'apps', 'pro', 'overlays');
+    const target = join(overlayRoot, 'apps', 'web', 'src', 'edition', 'pro.pro.ts');
+    mkdirSync(path.dirname(target), { recursive: true });
+    writeFileSync(target, '');
+    const projection = join(viteRoot, 'src', 'edition', 'pro.pro.ts');
+    mkdirSync(path.dirname(projection), { recursive: true });
+    symlinkSync(target, projection);
+    return { overlayRoot, projection, viteRoot };
+  }
+
+  function pluginFor(fixture: ReturnType<typeof devFixture>) {
+    const plugin = proOverlayPlugin({ overlayRoot: fixture.overlayRoot });
+    plugin.configResolved({ root: fixture.viteRoot });
+    return plugin;
+  }
+
+  it('keeps a root-relative URL on its projection path instead of the overlay target', async () => {
+    const fixture = devFixture();
+    const result = await pluginFor(fixture).resolveId.call(
+      {},
+      '/src/edition/pro.pro.ts',
+      join(fixture.viteRoot, 'index.html'),
+    );
+    expect(result).toBe(fixture.projection);
+  });
+
+  it('keeps an /@fs URL on its projection path', async () => {
+    const fixture = devFixture();
+    const result = await pluginFor(fixture).resolveId.call(
+      {},
+      `/@fs${fixture.projection}`,
+      join(fixture.viteRoot, 'index.html'),
+    );
+    expect(result).toBe(fixture.projection);
+  });
+
+  it('preserves a query on a root-relative URL', async () => {
+    const fixture = devFixture();
+    const result = await pluginFor(fixture).resolveId.call(
+      {},
+      '/src/edition/pro.pro.ts?t=1',
+      join(fixture.viteRoot, 'index.html'),
+    );
+    expect(result).toBe(`${fixture.projection}?t=1`);
+  });
+
+  it('ignores a root-relative URL that is not an overlay projection', async () => {
+    const fixture = devFixture();
+    const plain = join(fixture.viteRoot, 'src', 'main.ts');
+    writeFileSync(plain, '');
+    const result = await pluginFor(fixture).resolveId.call(
+      { resolve: async () => null },
+      '/src/main.ts',
+      join(fixture.viteRoot, 'index.html'),
+    );
+    expect(result).toBeNull();
+  });
+
+  it('ignores a symlink whose target lives outside the overlay root', async () => {
+    const fixture = devFixture();
+    const outside = join(fixture.viteRoot, 'outside.ts');
+    writeFileSync(outside, '');
+    const projection = join(fixture.viteRoot, 'src', 'linked.ts');
+    symlinkSync(outside, projection);
+    const result = await pluginFor(fixture).resolveId.call(
+      { resolve: async () => null },
+      '/src/linked.ts',
+      join(fixture.viteRoot, 'index.html'),
+    );
+    expect(result).toBeNull();
+  });
+});
