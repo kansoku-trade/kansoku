@@ -19,7 +19,7 @@
     "@tsuki-hono/common": "0.0.5",
     "@tsuki-hono/core": "0.0.5",
     "drizzle-orm": "1.0.0-rc.4",
-    "hono": "4.13.7",
+    "hono": "4.13.11",
     "reflect-metadata": "0.2.2",
     "typebox": "1.3.30",
     "ws": "^8.21.3"
