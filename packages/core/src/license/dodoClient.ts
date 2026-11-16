@@ -1,3 +1,5 @@
+import { electronIsPackaged, isDevEnvOverrideAllowed } from "./hostPackaging.js";
+
 export interface DodoInstance {
   id: string;
   bundleKey?: string;
@@ -29,7 +31,14 @@ export interface DodoClientOptions {
 const DEFAULT_TIMEOUT_MS = 10_000;
 const DEFAULT_LICENSE_API_URL = "https://kansoku-portal.innei.dev";
 
-export function resolveLicenseApiUrl(env: NodeJS.ProcessEnv = process.env): string {
+// A packaged build must never honor the override: pointing it at a Worker
+// backed by Dodo's test environment would trade a free test-card license for
+// the real bundle key.
+export function resolveLicenseApiUrl(
+  env: NodeJS.ProcessEnv = process.env,
+  isPackaged: boolean | null = electronIsPackaged,
+): string {
+  if (!isDevEnvOverrideAllowed(env, isPackaged)) return DEFAULT_LICENSE_API_URL;
   return env.KANSOKU_LICENSE_API_URL ?? DEFAULT_LICENSE_API_URL;
 }
 

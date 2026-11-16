@@ -10,10 +10,25 @@ describe("resolveLicenseApiUrl", () => {
     expect(resolveLicenseApiUrl({} as NodeJS.ProcessEnv)).toBe("https://kansoku-portal.innei.dev");
   });
 
-  it("uses KANSOKU_LICENSE_API_URL when set", () => {
-    expect(resolveLicenseApiUrl({ KANSOKU_LICENSE_API_URL: "https://staging.example.com" } as NodeJS.ProcessEnv)).toBe(
-      "https://staging.example.com",
-    );
+  it("uses KANSOKU_LICENSE_API_URL when set outside a packaged build", () => {
+    expect(
+      resolveLicenseApiUrl({ KANSOKU_LICENSE_API_URL: "https://staging.example.com" } as NodeJS.ProcessEnv, false),
+    ).toBe("https://staging.example.com");
+  });
+
+  it("ignores KANSOKU_LICENSE_API_URL in a packaged Electron build", () => {
+    expect(
+      resolveLicenseApiUrl({ KANSOKU_LICENSE_API_URL: "https://attacker.example" } as NodeJS.ProcessEnv, true),
+    ).toBe("https://kansoku-portal.innei.dev");
+  });
+
+  it("ignores KANSOKU_LICENSE_API_URL on a production non-Electron host", () => {
+    expect(
+      resolveLicenseApiUrl(
+        { KANSOKU_LICENSE_API_URL: "https://attacker.example", NODE_ENV: "production" } as NodeJS.ProcessEnv,
+        null,
+      ),
+    ).toBe("https://kansoku-portal.innei.dev");
   });
 });
 
