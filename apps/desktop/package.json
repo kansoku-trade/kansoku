@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "electron-sparkle-updater": "^0.4.1",
-    "zod": "^4.6.1"
+    "zod": "^4.6.6"
   },
   "devDependencies": {
     "@electron/asar": "^4.3.0",
