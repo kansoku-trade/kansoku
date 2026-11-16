@@ -30,7 +30,7 @@
     "@kansoku/shared": "workspace:*",
     "@types/node": "^26.5.1",
     "@vibeloft/telemetry-electron": "0.1.0",
-    "electron": "44.3.0",
+    "electron": "44.9.1",
     "electron-builder": "^26.15.3",
     "electron-context-menu": "^5.0.0",
     "electron-ipc-decorator": "^1.0.2",
